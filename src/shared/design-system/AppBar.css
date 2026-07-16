@@ -1,0 +1,99 @@
+.ds-appbar {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-w);
+  right: 0;
+  height: var(--topbar-h);
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--surface-border);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s6);
+  z-index: 100;
+  gap: var(--s3);
+  box-shadow: var(--shadow-sm);
+  transition: left 0.2s;
+}
+
+.ds-appbar--collapsed {
+  left: 0;
+}
+
+.ds-appbar__left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.ds-appbar__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ds-appbar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.ds-appbar__icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  position: relative;
+  transition: background 0.12s, color 0.12s;
+}
+
+.ds-appbar__icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.ds-appbar__notif-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sem-error);
+  border: 1.5px solid var(--surface-card);
+}
+
+.ds-appbar__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brand-100);
+  color: var(--brand-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid var(--brand-200);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 1023px) {
+  .ds-appbar {
+    left: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ds-appbar__menu-btn {
+    display: none;
+  }
+}

@@ -1,0 +1,214 @@
+.ds-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--neutral-900);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 99;
+  transition: transform 0.2s;
+}
+
+[data-theme="dark"] .ds-sidebar {
+  background: #0a0c09;
+  border-right: 1px solid #1a2018;
+}
+
+.ds-sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s5) var(--s5) var(--s4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.ds-sidebar__logo-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-400) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ds-sidebar__logo-text {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #d8e8d2;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.ds-sidebar__logo-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #3a5035;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ds-sidebar__section {
+  padding: var(--s3) 0 var(--s2);
+}
+
+.ds-sidebar__section-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #4a6445;
+  padding: var(--s2) var(--s5) var(--s1);
+  display: block;
+}
+
+.ds-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 9px var(--s5);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #8aaa80;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  border-left: 2px solid transparent;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+  font-family: var(--font-sans);
+}
+
+.ds-sidebar__item:hover {
+  color: #d4e0ce;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ds-sidebar__item--active {
+  color: #ffffff;
+  border-left-color: var(--brand-400);
+  background: rgba(46, 134, 52, 0.12);
+  font-weight: 600;
+}
+
+.ds-sidebar__item--locked {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ds-sidebar__item--locked:hover {
+  color: #8aaa80;
+  background: none;
+}
+
+.ds-sidebar__item-icon {
+  width: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ds-sidebar__item-label { flex: 1; }
+
+.ds-sidebar__item-lock {
+  margin-left: auto;
+  opacity: 0.5;
+  display: flex;
+}
+
+.ds-sidebar__divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin: var(--s2) var(--s5);
+}
+
+.ds-sidebar__footer {
+  margin-top: auto;
+  padding: var(--s3) var(--s5);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.ds-sidebar__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--brand-200);
+  color: var(--brand-800);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ds-sidebar__user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ds-sidebar__user-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.ds-sidebar__user-role {
+  font-size: 10px;
+  color: #4a6445;
+  display: block;
+}
+
+.ds-sidebar__logout {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #4a6445;
+  transition: color 0.12s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: var(--r-sm);
+}
+
+.ds-sidebar__logout:hover { color: #d4e0ce; }
+
+/* Mobile: hide sidebar */
+@media (max-width: 1023px) {
+  .ds-sidebar {
+    transform: translateX(-100%);
+  }
+  .ds-sidebar--open {
+    transform: translateX(0);
+  }
+}
+
+/* Main content wrapper — pushes right of sidebar on desktop, full-width on mobile */
+.ds-app-content {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+@media (max-width: 1023px) {
+  .ds-app-content {
+    margin-left: 0;
+  }
+}

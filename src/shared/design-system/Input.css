@@ -1,0 +1,116 @@
+.ds-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ds-field__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+}
+
+.ds-field__req {
+  color: var(--sem-error);
+}
+
+.ds-field__wrap {
+  position: relative;
+}
+
+.ds-field__input {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface-card);
+  border: 1.5px solid var(--surface-border);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-height: var(--s9);
+}
+
+.ds-field__input::placeholder {
+  color: var(--text-muted);
+}
+
+.ds-field__input:focus {
+  border-color: var(--brand-400);
+  box-shadow: 0 0 0 3px rgba(46, 134, 52, 0.12);
+}
+
+.ds-field__input--err {
+  border-color: var(--sem-error) !important;
+  box-shadow: 0 0 0 3px rgba(192, 40, 10, 0.08) !important;
+}
+
+.ds-field__input:disabled {
+  background: var(--surface-hover);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.ds-field__input--pl { padding-left: 40px; }
+.ds-field__input--pr { padding-right: 40px; }
+
+.ds-field__icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ds-field__icon--lead {
+  left: 12px;
+  pointer-events: none;
+}
+
+.ds-field__icon--trail {
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.12s;
+}
+
+.ds-field__icon--trail:hover {
+  color: var(--text-primary);
+}
+
+.ds-field__error {
+  font-size: 11px;
+  color: var(--sem-error);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ds-field__hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* textarea variant */
+textarea.ds-field__input {
+  resize: vertical;
+  min-height: 72px;
+  padding: 10px 14px;
+}
+
+/* select variant */
+select.ds-field__input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0a89a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
