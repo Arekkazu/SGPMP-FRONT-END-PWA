@@ -2,7 +2,7 @@ import React from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Shield, ClipboardList,
-  User, LogOut, Lock
+  User, LogOut, Lock, Settings
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { usePermission } from '../rbac/usePermission';
@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Gestión de usuarios', path: '/usuarios', icon: <Users size={16} aria-hidden />, requirePermission: [1, 2] },
   { label: 'Roles y permisos', path: '/roles', icon: <Shield size={16} aria-hidden />, requirePermission: [2, 2] },
   { label: 'Auditoría', path: '/auditoria', icon: <ClipboardList size={16} aria-hidden />, requirePermission: [6, 2] },
+  { label: 'Configuración', path: '/configuracion', icon: <Settings size={16} aria-hidden />, requirePermission: [8, 2] },
 ];
 
 const MY_ITEMS: NavItem[] = [

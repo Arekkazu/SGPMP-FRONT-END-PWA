@@ -40,6 +40,7 @@ import { UsuariosPage } from './usuarios/pages/UsuariosPage';
 import { PerfilPage } from './perfil/pages/PerfilPage';
 import { RolesPage } from './roles/pages/RolesPage';
 import { AuditoriaPage } from './auditoria/pages/AuditoriaPage';
+import { ConfigurationPage } from './configuration/pages/ConfigurationPage';
 
 setupIonicReact();
 
@@ -110,6 +111,7 @@ function AppRoutes() {
       <PrivateRoute path="/perfil" component={PerfilPage} />
       <PrivateRoute path="/roles" component={RolesPage} />
       <PrivateRoute path="/auditoria" component={AuditoriaPage} />
+      <PrivateRoute path="/configuracion" component={ConfigurationPage} />
 
       {/* Default */}
       <Route exact path="/">

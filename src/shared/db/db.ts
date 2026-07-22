@@ -17,6 +17,23 @@ export interface RolCacheRow {
   cachedAt: number;
 }
 
+export interface EspecieCacheRow {
+  id_especie: number;
+  nombre: string;
+  descripcion: string | null;
+  es_activo: boolean;
+  cachedAt: number;
+}
+
+export interface FincaCacheRow {
+  id_finca: number;
+  nombre: string;
+  departamento: string;
+  municipio: string;
+  es_activo: boolean;
+  cachedAt: number;
+}
+
 export interface SyncOperation {
   id?: number;
   modulo: string;
@@ -29,6 +46,8 @@ export interface SyncOperation {
 export class AppDB extends Dexie {
   usuarios!: Table<UsuarioCacheRow, number>;
   roles!: Table<RolCacheRow, number>;
+  config_especies!: Table<EspecieCacheRow, number>;
+  config_fincas!: Table<FincaCacheRow, number>;
   syncQueue!: Table<SyncOperation, number>;
 
   constructor() {
@@ -42,6 +61,13 @@ export class AppDB extends Dexie {
       usuarios: 'id_usuario, correo_electronico, estado_cuenta',
       roles: 'id_rol, nombre_rol',
       syncQueue: '++id, modulo, creadoEn',
+    });
+    this.version(3).stores({
+      usuarios: 'id_usuario, correo_electronico, estado_cuenta',
+      roles: 'id_rol, nombre_rol',
+      syncQueue: '++id, modulo, creadoEn',
+      config_especies: 'id_especie, es_activo',
+      config_fincas: 'id_finca, es_activo',
     });
   }
 }

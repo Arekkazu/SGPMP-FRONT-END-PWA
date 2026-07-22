@@ -1,0 +1,447 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { RotateCcw, Save } from 'lucide-react';
+import { usePermission } from '../../shared/rbac/usePermission';
+import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
+import { Alert } from '../../shared/design-system/Alert';
+import { Button } from '../../shared/design-system/Button';
+import { useDashboardLayout } from '../hooks/useDashboardLayout';
+import type { WidgetConfigDTO } from '../types';
+
+// ── Widget catalog ────────────────────────────────────────────────────────────
+interface WidgetDef {
+  id: number;
+  key: string;
+  nombre: string;
+  grupo: string;
+  icon: string;
+  defaultSpan: 1 | 2;
+}
+
+const WIDGET_CATALOG: WidgetDef[] = [
+  { id: 1,  key: 'temp_galpon',   nombre: 'Temperatura Galpón',       grupo: 'Ambiental',        icon: '🌡️', defaultSpan: 1 },
+  { id: 2,  key: 'hum_galpon',    nombre: 'Humedad Galpón',           grupo: 'Ambiental',        icon: '💧', defaultSpan: 1 },
+  { id: 3,  key: 'ph_estanque',   nombre: 'pH Estanque',              grupo: 'Ambiental',        icon: '⚗️', defaultSpan: 1 },
+  { id: 4,  key: 'co2_galpon',    nombre: 'CO₂ Ambiente',             grupo: 'Ambiental',        icon: '💨', defaultSpan: 1 },
+  { id: 5,  key: 'temp_corral',   nombre: 'Temperatura Corral',       grupo: 'Ambiental',        icon: '🌡️', defaultSpan: 1 },
+  { id: 6,  key: 'estado_iot',    nombre: 'Estado Dispositivos IoT',  grupo: 'IoT',              icon: '📡', defaultSpan: 2 },
+  { id: 7,  key: 'cal_sensores',  nombre: 'Calibraciones Recientes',  grupo: 'IoT',              icon: '🔧', defaultSpan: 1 },
+  { id: 8,  key: 'alertas',       nombre: 'Alertas Ambientales',      grupo: 'Alertas',          icon: '⚠️', defaultSpan: 1 },
+  { id: 9,  key: 'alertas_crit',  nombre: 'Alertas Críticas',         grupo: 'Alertas',          icon: '🔴', defaultSpan: 1 },
+  { id: 10, key: 'hist_temp',     nombre: 'Histórico Temperatura',    grupo: 'Histórico',        icon: '📈', defaultSpan: 2 },
+  { id: 11, key: 'hist_hum',      nombre: 'Histórico Humedad',        grupo: 'Histórico',        icon: '📊', defaultSpan: 2 },
+  { id: 12, key: 'prod_aves',     nombre: 'Indicadores Avicultura',   grupo: 'Producción',       icon: '🐔', defaultSpan: 1 },
+  { id: 13, key: 'prod_bovinos',  nombre: 'Indicadores Bovinos',      grupo: 'Producción',       icon: '🐄', defaultSpan: 1 },
+  { id: 14, key: 'fincas_estado', nombre: 'Estado de Fincas',         grupo: 'Infraestructura',  icon: '🏡', defaultSpan: 2 },
+  { id: 15, key: 'cfg_pendiente', nombre: 'Config. IoT Pendientes',   grupo: 'Infraestructura',  icon: '⏳', defaultSpan: 1 },
+];
+
+const GRUPOS = ['Ambiental', 'IoT', 'Alertas', 'Histórico', 'Producción', 'Infraestructura'];
+
+// ── Grid cell type ────────────────────────────────────────────────────────────
+// idWidget === -1 means "covered by the span of the widget to the left"
+type GridCell = { idWidget: number; key: string; span: number } | null;
+
+function initGrid(): GridCell[][] {
+  return Array.from({ length: 3 }, () => Array<GridCell>(4).fill(null));
+}
+
+function gridFromLayout(grid: WidgetConfigDTO[]): GridCell[][] {
+  const local = initGrid();
+  for (const w of grid) {
+    if (!w.visible) continue;
+    const f = w.posicion_fila - 1;
+    const c = w.posicion_columna - 1;
+    if (f < 0 || f > 2 || c < 0 || c > 3) continue;
+    const cat = WIDGET_CATALOG.find((x) => x.id === w.id_widget);
+    if (!cat) continue;
+    local[f][c] = { idWidget: w.id_widget, key: cat.key, span: w.span_columnas };
+    for (let s = 1; s < w.span_columnas && c + s < 4; s++) {
+      local[f][c + s] = { idWidget: -1, key: '', span: 0 };
+    }
+  }
+  return local;
+}
+
+// ── Confirm modal ─────────────────────────────────────────────────────────────
+function ConfirmModal({ onConfirm, onCancel, saving }: { onConfirm: () => void; onCancel: () => void; saving: boolean }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="restore-modal-title"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000, display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)',
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div style={{
+        background: 'var(--surface-card)', borderRadius: 'var(--r-xl)',
+        border: '1px solid var(--surface-border)', padding: 'var(--s6)',
+        width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)',
+      }}>
+        <h2 id="restore-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
+          Restaurar configuración predeterminada
+        </h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>
+          Se cargará el layout predeterminado para tu rol. Los cambios actuales se perderán.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>Cancelar</Button>
+          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>Restaurar</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+export function DashboardLayoutSection() {
+  const online = useOnlineStatus();
+  const puedeEditar = usePermission(25, 3);
+
+  const { layout, loading, saving, error, saveError, cargar, guardar, restaurar } = useDashboardLayout();
+
+  const [localGrid, setLocalGrid] = useState<GridCell[][]>(initGrid());
+  const [activeWidgets, setActiveWidgets] = useState<string[]>([]);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [confirmRestore, setConfirmRestore] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => { cargar(); }, [cargar]);
+
+  useEffect(() => {
+    if (!layout) return;
+    setLocalGrid(gridFromLayout(layout.grid));
+    setActiveWidgets(layout.active_widget);
+  }, [layout]);
+
+  // Check if a widget key is currently in the grid
+  const isInGrid = useCallback((key: string) => {
+    for (let f = 0; f < 3; f++) {
+      for (let c = 0; c < 4; c++) {
+        const cell = localGrid[f][c];
+        if (cell && cell.idWidget !== -1 && cell.key === key) return true;
+      }
+    }
+    return false;
+  }, [localGrid]);
+
+  const handleCatalogClick = (key: string) => {
+    if (isInGrid(key)) return;
+    setSelectedKey((prev) => (prev === key ? null : key));
+  };
+
+  const handleCellClick = (fila: number, col: number) => {
+    const cell = localGrid[fila][col];
+
+    if (cell && cell.idWidget !== -1) {
+      // Remove widget from grid
+      const newGrid = localGrid.map((row) => [...row]);
+      const span = cell.span;
+      for (let s = 0; s < span && col + s < 4; s++) {
+        newGrid[fila][col + s] = null;
+      }
+      setLocalGrid(newGrid);
+      setActiveWidgets((prev) => prev.filter((k) => k !== cell.key));
+      return;
+    }
+
+    if (cell && cell.idWidget === -1) return; // covered by span — ignore
+
+    if (!selectedKey) return; // empty cell, nothing selected
+
+    // Place the selected widget
+    const def = WIDGET_CATALOG.find((w) => w.key === selectedKey);
+    if (!def) return;
+
+    const span = def.defaultSpan;
+    // Validate: span must fit in row and not collide
+    if (col + span > 4) return;
+    for (let s = 0; s < span; s++) {
+      if (localGrid[fila][col + s] !== null) return;
+    }
+
+    const newGrid = localGrid.map((row) => [...row]);
+    newGrid[fila][col] = { idWidget: def.id, key: def.key, span };
+    for (let s = 1; s < span; s++) {
+      newGrid[fila][col + s] = { idWidget: -1, key: '', span: 0 };
+    }
+    setLocalGrid(newGrid);
+    setActiveWidgets((prev) => prev.includes(def.key) ? prev : [...prev, def.key]);
+    setSelectedKey(null);
+  };
+
+  const buildDTO = () => {
+    const layoutConfig: WidgetConfigDTO[] = [];
+    let orden = 0;
+    for (let f = 0; f < 3; f++) {
+      for (let c = 0; c < 4; c++) {
+        const cell = localGrid[f][c];
+        if (cell && cell.idWidget !== -1) {
+          layoutConfig.push({
+            id_widget: cell.idWidget,
+            posicion_fila: f + 1,
+            posicion_columna: c + 1,
+            span_columnas: cell.span,
+            visible: true,
+            orden: orden++,
+          });
+        }
+      }
+    }
+    return { layout_config: layoutConfig, active_widget: activeWidgets };
+  };
+
+  const handleGuardar = async () => {
+    setSaved(false);
+    const ok = await guardar(buildDTO());
+    if (ok) setSaved(true);
+  };
+
+  const handleRestaurar = async () => {
+    const ok = await restaurar();
+    setConfirmRestore(false);
+    if (ok) setSaved(false);
+  };
+
+  const canAct = online && puedeEditar;
+
+  if (loading) {
+    return (
+      <div>
+        <div style={{ height: 24, width: 200, borderRadius: 'var(--r-md)', background: 'var(--surface-hover)', marginBottom: 'var(--s4)', animation: 'pulse 1.4s infinite' }} />
+        <div style={{ height: 280, borderRadius: 'var(--r-lg)', background: 'var(--surface-hover)', animation: 'pulse 1.4s infinite' }} />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Section header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s5)' }}>
+        <div>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            Dashboard Personalizable
+          </h2>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
+            Organiza los widgets en la grilla 4×3. Selecciona un widget del catálogo y haz clic en una celda vacía para colocarlo.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 'var(--s3)', flexShrink: 0 }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={!canAct || saving}
+            onClick={() => setConfirmRestore(true)}
+          >
+            <RotateCcw size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
+            Restaurar predeterminado
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            loading={saving}
+            disabled={!canAct || saving}
+            onClick={handleGuardar}
+          >
+            <Save size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
+            Guardar configuración
+          </Button>
+        </div>
+      </div>
+
+      {/* Alerts */}
+      {!online && (
+        <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />
+      )}
+      {error && (
+        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+      )}
+      {saveError && (
+        <Alert variant="error" title="Error al guardar" description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
+      )}
+      {saved && (
+        <Alert variant="success" title="Guardado" description="El layout del dashboard se actualizó correctamente." style={{ marginBottom: 'var(--s4)' }} />
+      )}
+
+      {selectedKey && (
+        <Alert
+          variant="info"
+          title={`Widget seleccionado: ${WIDGET_CATALOG.find((w) => w.key === selectedKey)?.nombre}`}
+          description="Haz clic en una celda vacía de la grilla para colocarlo. Haz clic en el widget del catálogo nuevamente para deseleccionar."
+          style={{ marginBottom: 'var(--s4)' }}
+        />
+      )}
+
+      {/* Two-panel layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 'var(--s5)', alignItems: 'start' }}>
+
+        {/* Left: grid editor */}
+        <div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s3)' }}>
+            Grilla del dashboard (4 columnas × 3 filas)
+          </div>
+          {/* Row labels + grid */}
+          {[0, 1, 2].map((fila) => (
+            <div key={fila} style={{ display: 'flex', alignItems: 'stretch', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
+              <div style={{ width: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
+                F{fila + 1}
+              </div>
+              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--s2)' }}>
+                {[0, 1, 2, 3].map((col) => {
+                  const cell = localGrid[fila][col];
+
+                  // Covered by span — render nothing visible (the span widget spans over it)
+                  if (cell && cell.idWidget === -1) return null;
+
+                  const span = cell ? cell.span : 1;
+                  const def = cell ? WIDGET_CATALOG.find((w) => w.id === cell.idWidget) : null;
+                  const isEmpty = !cell;
+                  const isTarget = isEmpty && !!selectedKey;
+
+                  return (
+                    <button
+                      key={col}
+                      type="button"
+                      onClick={() => handleCellClick(fila, col)}
+                      disabled={!canAct}
+                      style={{
+                        gridColumn: `span ${span}`,
+                        height: 80,
+                        border: isEmpty
+                          ? `2px dashed ${isTarget ? 'var(--brand-500)' : 'var(--surface-border)'}`
+                          : '2px solid var(--brand-400)',
+                        borderRadius: 'var(--r-md)',
+                        background: isEmpty
+                          ? isTarget ? 'rgba(var(--brand-50-rgb, 240,253,244),0.5)' : 'var(--surface-hover)'
+                          : 'var(--surface-card)',
+                        cursor: canAct ? 'pointer' : 'default',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 'var(--s1)',
+                        padding: 'var(--s2)',
+                        transition: 'border-color 0.15s, background 0.15s',
+                        textAlign: 'center',
+                        overflow: 'hidden',
+                        position: 'relative',
+                      }}
+                      aria-label={def ? `Quitar ${def.nombre}` : isTarget ? `Colocar ${selectedKey}` : `Celda vacía fila ${fila + 1} columna ${col + 1}`}
+                    >
+                      {cell && def ? (
+                        <>
+                          <span style={{ fontSize: '20px', lineHeight: 1 }} role="img" aria-label={def.nombre}>{def.icon}</span>
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                            {def.nombre}
+                          </span>
+                          {span > 1 && (
+                            <span style={{ fontSize: '10px', color: 'var(--brand-600)', fontFamily: 'var(--font-mono)' }}>
+                              ×{span}col
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span style={{ fontSize: isTarget ? '20px' : '16px', color: isTarget ? 'var(--brand-500)' : 'var(--text-muted)' }}>
+                          {isTarget ? '+' : '·'}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {/* Column labels */}
+          <div style={{ display: 'flex', gap: 'var(--s2)', marginLeft: 36, marginTop: 'var(--s1)' }}>
+            {[1, 2, 3, 4].map((c) => (
+              <div key={c} style={{ flex: 1, textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                C{c}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: widget catalog */}
+        <div style={{
+          border: '1px solid var(--surface-border)',
+          borderRadius: 'var(--r-lg)',
+          overflow: 'hidden',
+        }}>
+          <div style={{ padding: 'var(--s3) var(--s4)', borderBottom: '1px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Catálogo de Widgets
+            </div>
+          </div>
+          <div style={{ padding: 'var(--s3)', maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
+            {GRUPOS.map((grupo) => {
+              const widgets = WIDGET_CATALOG.filter((w) => w.grupo === grupo);
+              return (
+                <div key={grupo}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s2)' }}>
+                    {grupo}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
+                    {widgets.map((w) => {
+                      const inGrid = isInGrid(w.key);
+                      const isSelected = selectedKey === w.key;
+                      return (
+                        <button
+                          key={w.key}
+                          type="button"
+                          disabled={inGrid || !canAct}
+                          onClick={() => handleCatalogClick(w.key)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--s2)',
+                            padding: 'var(--s2) var(--s3)',
+                            background: isSelected ? 'var(--surface-hover)' : 'var(--surface-card)',
+                            border: `1px solid ${isSelected ? 'var(--brand-500)' : 'var(--surface-border)'}`,
+                            borderRadius: 'var(--r-md)',
+                            cursor: inGrid || !canAct ? 'default' : 'pointer',
+                            textAlign: 'left',
+                            opacity: inGrid ? 0.5 : 1,
+                            transition: 'border-color 0.15s',
+                          }}
+                        >
+                          <span style={{ fontSize: '16px', flexShrink: 0 }} role="img" aria-label={w.nombre}>{w.icon}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {w.nombre}
+                            </div>
+                            {w.defaultSpan > 1 && (
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                                ancho ×{w.defaultSpan}
+                              </div>
+                            )}
+                          </div>
+                          {inGrid && (
+                            <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--sem-success)', border: '1px solid var(--sem-success)', borderRadius: 'var(--r-full)', padding: '1px 5px', flexShrink: 0 }}>
+                              ✓
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {confirmRestore && (
+        <ConfirmModal
+          saving={saving}
+          onConfirm={handleRestaurar}
+          onCancel={() => setConfirmRestore(false)}
+        />
+      )}
+    </div>
+  );
+}
