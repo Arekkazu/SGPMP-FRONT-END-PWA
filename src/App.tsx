@@ -41,6 +41,7 @@ import { PerfilPage } from './perfil/pages/PerfilPage';
 import { RolesPage } from './roles/pages/RolesPage';
 import { AuditoriaPage } from './auditoria/pages/AuditoriaPage';
 import { ConfigurationPage } from './configuration/pages/ConfigurationPage';
+import { ActivosBiologicosPage } from './biological_assets/pages/ActivosBiologicosPage';
 
 setupIonicReact();
 
@@ -112,6 +113,7 @@ function AppRoutes() {
       <PrivateRoute path="/roles" component={RolesPage} />
       <PrivateRoute path="/auditoria" component={AuditoriaPage} />
       <PrivateRoute path="/configuracion" component={ConfigurationPage} />
+      <PrivateRoute path="/activos-biologicos" component={ActivosBiologicosPage} />
 
       {/* Default */}
       <Route exact path="/">
