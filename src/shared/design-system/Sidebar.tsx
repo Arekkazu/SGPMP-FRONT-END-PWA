@@ -2,7 +2,7 @@ import React from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Shield, ClipboardList,
-  User, LogOut, Lock, Settings, Sprout
+  User, LogOut, Lock, Settings, Sprout, Activity
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { usePermission } from '../rbac/usePermission';
@@ -18,6 +18,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Panel principal', path: '/dashboard', icon: <LayoutDashboard size={16} aria-hidden /> },
   { label: 'Activos biológicos', path: '/activos-biologicos', icon: <Sprout size={16} aria-hidden />, requirePermission: [29, 2] },
+  { label: 'Telemetría IoT', path: '/telemetria', icon: <Activity size={16} aria-hidden />, requirePermission: [33, 2] },
   { label: 'Gestión de usuarios', path: '/usuarios', icon: <Users size={16} aria-hidden />, requirePermission: [1, 2] },
   { label: 'Roles y permisos', path: '/roles', icon: <Shield size={16} aria-hidden />, requirePermission: [2, 2] },
   { label: 'Auditoría', path: '/auditoria', icon: <ClipboardList size={16} aria-hidden />, requirePermission: [6, 2] },
