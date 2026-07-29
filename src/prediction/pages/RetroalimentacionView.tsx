@@ -1,0 +1,182 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { MessageSquareText, ClipboardCheck, Clock, TimerOff } from 'lucide-react';
+import { usePermission } from '../../shared/rbac/usePermission';
+import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
+import { Alert } from '../../shared/design-system/Alert';
+import { Button } from '../../shared/design-system/Button';
+import { usePatologias } from '../hooks/usePatologias';
+import { useRetroalimentacion } from '../hooks/useRetroalimentacion';
+import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
+import { RetroalimentacionFormModal } from '../components/RetroalimentacionFormModal';
+import { Pill, type Tono } from '../components/Pill';
+import { PermissionDenied } from '../components/PermissionDenied';
+import { TH, TD, TABLE_WRAP, THEAD_ROW, INPUT, LABEL, FILTER_GRID } from '../components/tableStyles';
+import { RECURSO_RETRO, ACCION_R, ACCION_C } from '../rbac';
+import { RETRO_PENDIENTES_MOCK, type RetroPendienteMock, type EstadoEvaluacion } from '../mocks/retroMock';
+
+const RIESGO_TONO: Record<string, Tono> = { ALTO: 'error', MEDIO: 'warning', BAJO: 'success' };
+const ESTADO_EVAL: Record<EstadoEvaluacion, { tono: Tono; label: string }> = {
+  PENDIENTE: { tono: 'info', label: 'Pendiente' },
+  EVALUADO: { tono: 'success', label: 'Evaluado' },
+  VENTANA_VENCIDA: { tono: 'neutral', label: 'Ventana vencida' },
+};
+
+function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: number; etiqueta: string; color: string }) {
+  return (
+    <div style={{ flex: '1 1 130px', minWidth: 130, background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', color }}>
+        {icon}<span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{valor}</span>
+      </div>
+      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{etiqueta}</div>
+    </div>
+  );
+}
+
+function fmt(dt: string): string {
+  const d = new Date(dt);
+  return isNaN(d.getTime()) ? dt : d.toLocaleDateString('es-CO');
+}
+
+export function RetroalimentacionView() {
+  const puedeVer = usePermission(RECURSO_RETRO, ACCION_R);
+  const puedeRegistrar = usePermission(RECURSO_RETRO, ACCION_C);
+  const online = useOnlineStatus();
+
+  const patologiasHook = usePatologias();
+  const retro = useRetroalimentacion();
+
+  const [fEstado, setFEstado] = useState('');
+  const [fRiesgo, setFRiesgo] = useState('');
+  const [sel, setSel] = useState<RetroPendienteMock | null>(null);
+  const [okFlash, setOkFlash] = useState(false);
+
+  useEffect(() => { if (puedeVer) patologiasHook.cargar({ solo_activas: true }); }, [puedeVer]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const patologiasOpciones = useMemo(
+    () => patologiasHook.patologias.map((p) => ({ id: p.id_patologia, nombre: p.nombre_patologia })),
+    [patologiasHook.patologias]
+  );
+
+  const visibles = useMemo(() => RETRO_PENDIENTES_MOCK.filter((r) =>
+    (!fEstado || r.estado_evaluacion === fEstado) && (!fRiesgo || r.riesgo_inferido === fRiesgo)
+  ), [fEstado, fRiesgo]);
+
+  const kpis = useMemo(() => ({
+    pendientes: RETRO_PENDIENTES_MOCK.filter((r) => r.estado_evaluacion === 'PENDIENTE').length,
+    evaluadas: RETRO_PENDIENTES_MOCK.filter((r) => r.estado_evaluacion === 'EVALUADO').length,
+    vencidas: RETRO_PENDIENTES_MOCK.filter((r) => r.estado_evaluacion === 'VENTANA_VENCIDA').length,
+  }), []);
+
+  const enviarRetro = async (dto: Parameters<typeof retro.registrar>[0]) => {
+    const ok = await retro.registrar(dto);
+    if (ok) { setSel(null); setOkFlash(true); setTimeout(() => setOkFlash(false), 4000); }
+  };
+
+  if (!puedeVer) return <PermissionDenied seccion="Retroalimentación clínica" />;
+
+  return (
+    <div style={{ minHeight: '100%' }}>
+      <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+          <MessageSquareText size={20} aria-hidden />
+          Retroalimentación Clínica
+        </h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
+          Evaluación de las predicciones del motor sanitario por el veterinario
+        </p>
+      </div>
+
+      <div style={{ padding: 'var(--s7)' }}>
+        <DatosSimuladosBanner detalle="La lista de inferencias pendientes es de ejemplo (el backend solo expone el registro, no la consulta). El envío de la evaluación sí usa el endpoint real" />
+
+        {okFlash && <Alert variant="success" title="Evaluación registrada" description="La retroalimentación clínica quedó registrada." style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title="Sin conexión" description="El registro de evaluaciones está deshabilitado." style={{ marginBottom: 'var(--s4)' }} />}
+        {!puedeRegistrar && <Alert variant="info" title="Solo supervisión" description="Tu rol puede consultar las evaluaciones, pero solo el veterinario puede registrarlas." style={{ marginBottom: 'var(--s4)' }} />}
+
+        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
+          <Kpi icon={<Clock size={18} aria-hidden />} valor={kpis.pendientes} etiqueta="Pendientes" color="var(--sem-info)" />
+          <Kpi icon={<ClipboardCheck size={18} aria-hidden />} valor={kpis.evaluadas} etiqueta="Evaluadas" color="var(--sem-success)" />
+          <Kpi icon={<TimerOff size={18} aria-hidden />} valor={kpis.vencidas} etiqueta="Ventana vencida" color="var(--text-muted)" />
+        </div>
+
+        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', marginBottom: 'var(--s5)' }}>
+          <div style={FILTER_GRID}>
+            <div>
+              <label style={LABEL} htmlFor="retro-estado">Estado de evaluación</label>
+              <select id="retro-estado" style={INPUT} value={fEstado} onChange={(e) => setFEstado(e.target.value)}>
+                <option value="">Todos</option>
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="EVALUADO">Evaluado</option>
+                <option value="VENTANA_VENCIDA">Ventana vencida</option>
+              </select>
+            </div>
+            <div>
+              <label style={LABEL} htmlFor="retro-riesgo">Riesgo inferido</label>
+              <select id="retro-riesgo" style={INPUT} value={fRiesgo} onChange={(e) => setFRiesgo(e.target.value)}>
+                <option value="">Todos</option>
+                <option value="ALTO">Alto</option>
+                <option value="MEDIO">Medio</option>
+                <option value="BAJO">Bajo</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style={TABLE_WRAP}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={THEAD_ROW}>
+                <th style={TH}>Activo</th>
+                <th style={TH}>Especie / Finca</th>
+                <th style={TH}>Riesgo</th>
+                <th style={TH}>Patología estimada</th>
+                <th style={{ ...TH, textAlign: 'right' }}>Prob.</th>
+                <th style={TH}>Fecha</th>
+                <th style={TH}>Estado</th>
+                <th style={{ ...TH, textAlign: 'right' }}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibles.map((r) => (
+                <tr key={r.id_resultado_inferencia}>
+                  <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{r.identificador}</td>
+                  <td style={TD}>{r.especie} · {r.finca}</td>
+                  <td style={TD}><Pill tono={RIESGO_TONO[r.riesgo_inferido]}>{r.riesgo_inferido}</Pill></td>
+                  <td style={TD}>{r.patologia_estimada}</td>
+                  <td style={{ ...TD, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{(r.probabilidad * 100).toFixed(0)}%</td>
+                  <td style={TD}>{fmt(r.fecha_inferencia)}</td>
+                  <td style={TD}><Pill tono={ESTADO_EVAL[r.estado_evaluacion].tono}>{ESTADO_EVAL[r.estado_evaluacion].label}</Pill></td>
+                  <td style={{ ...TD, textAlign: 'right' }}>
+                    <Button
+                      variant="secondary" size="sm"
+                      disabled={!puedeRegistrar || !online || r.estado_evaluacion !== 'PENDIENTE'}
+                      onClick={() => { retro.limpiarSaveError(); setSel(r); }}
+                    >
+                      Evaluar
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {sel && (
+        <RetroalimentacionFormModal
+          contexto={{
+            id_resultado_inferencia: sel.id_resultado_inferencia,
+            id_activo_biologico: sel.id_activo_biologico,
+            resumen: `${sel.identificador} · ${sel.patologia_estimada} (${(sel.probabilidad * 100).toFixed(0)}%)`,
+          }}
+          patologiasOpciones={patologiasOpciones}
+          saving={retro.saving}
+          saveError={retro.saveError}
+          online={online}
+          onSubmit={enviarRetro}
+          onClose={() => setSel(null)}
+        />
+      )}
+    </div>
+  );
+}
