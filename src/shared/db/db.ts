@@ -100,6 +100,71 @@ export interface TelemetriaDispositivoCacheRow {
   cachedAt: number;
 }
 
+// ── Módulo 4 · Predicción / IA (caché read-only offline) ─────────────
+export interface PrediccionPatologiaCacheRow {
+  id_patologia: number;
+  nombre_patologia: string;
+  especie_aplicable: string;
+  es_base: boolean;
+  es_activo: boolean;
+  version_catalogo: number;
+  fecha_actualizacion: string | null;
+  cachedAt: number;
+}
+
+export interface PrediccionMotorCacheRow {
+  id_configuracion_motor: number;
+  tipo_modelo: string;
+  umbral_riesgo_alto: number;
+  umbral_alerta_critica: number;
+  ventana_temporal_min: number;
+  modo_ejecucion: string;
+  es_activa: boolean;
+  cachedAt: number;
+}
+
+export interface PrediccionModeloCacheRow {
+  id_version_modelo: number;
+  nombre_version: string;
+  tipo_modelo: string;
+  estado_version: string;
+  f1_score: number | null;
+  recall_clase_riesgo_alto: number | null;
+  esta_produccion: boolean;
+  fecha_entrenamiento: string | null;
+  cachedAt: number;
+}
+
+export interface PrediccionDespliegueCacheRow {
+  id_despliegue_ota: number;
+  id_version_modelo: number;
+  id_dispositivo_iot: number;
+  tipo_modelo: string;
+  estado_despliegue: string;
+  fecha_inicio: string | null;
+  cachedAt: number;
+}
+
+export interface PrediccionAuditoriaCacheRow {
+  id_evento: string;
+  tipo_evento: string;
+  severidad_evento: string;
+  fecha_evento: string;
+  tipo_actor: string;
+  resultado_operacion: string | null;
+  cachedAt: number;
+}
+
+export interface PrediccionHistorialEventoCacheRow {
+  id_evento: string;
+  id_activo_biologico: number;
+  tipo_evento: string;
+  fecha_evento: string;
+  id_resultado_inferencia: string | null;
+  payload: Record<string, unknown> | null;
+  cachedAt: number;
+}
+
 export interface SyncOperation {
   id?: number;
   modulo: string;
@@ -119,6 +184,12 @@ export class AppDB extends Dexie {
   telemetria_sensores!: Table<TelemetriaSensorCacheRow, number>;
   telemetria_unidades!: Table<TelemetriaUnidadCacheRow, number>;
   telemetria_dispositivos!: Table<TelemetriaDispositivoCacheRow, number>;
+  prediccion_patologias!: Table<PrediccionPatologiaCacheRow, number>;
+  prediccion_motor!: Table<PrediccionMotorCacheRow, number>;
+  prediccion_modelos!: Table<PrediccionModeloCacheRow, number>;
+  prediccion_despliegues!: Table<PrediccionDespliegueCacheRow, number>;
+  prediccion_auditoria!: Table<PrediccionAuditoriaCacheRow, string>;
+  prediccion_historial_eventos!: Table<PrediccionHistorialEventoCacheRow, string>;
   syncQueue!: Table<SyncOperation, number>;
 
   constructor() {
@@ -159,6 +230,24 @@ export class AppDB extends Dexie {
       telemetria_sensores: 'id_sensor, id_infraestructura, estado_semaforo',
       telemetria_unidades: 'id_infraestructura',
       telemetria_dispositivos: 'id_dispositivo_iot, estado_actual',
+    });
+    this.version(6).stores({
+      usuarios: 'id_usuario, correo_electronico, estado_cuenta',
+      roles: 'id_rol, nombre_rol',
+      syncQueue: '++id, modulo, creadoEn',
+      config_especies: 'id_especie, es_activo',
+      config_fincas: 'id_finca, es_activo',
+      activos_biologicos: 'id_activo_biologico, tipo, id_especie, id_estado',
+      telemetria_alertas: 'id_alerta, estado_alerta, severidad',
+      telemetria_sensores: 'id_sensor, id_infraestructura, estado_semaforo',
+      telemetria_unidades: 'id_infraestructura',
+      telemetria_dispositivos: 'id_dispositivo_iot, estado_actual',
+      prediccion_patologias: 'id_patologia, especie_aplicable, es_activo',
+      prediccion_motor: 'id_configuracion_motor, tipo_modelo',
+      prediccion_modelos: 'id_version_modelo, tipo_modelo, estado_version',
+      prediccion_despliegues: 'id_despliegue_ota, id_version_modelo, estado_despliegue',
+      prediccion_auditoria: 'id_evento, tipo_evento, severidad_evento',
+      prediccion_historial_eventos: 'id_evento, id_activo_biologico',
     });
   }
 }

@@ -43,6 +43,7 @@ import { AuditoriaPage } from './auditoria/pages/AuditoriaPage';
 import { ConfigurationPage } from './configuration/pages/ConfigurationPage';
 import { ActivosBiologicosPage } from './biological_assets/pages/ActivosBiologicosPage';
 import { TelemetryPage } from './telemetry/pages/TelemetryPage';
+import { PrediccionPage } from './prediction/pages/PrediccionPage';
 
 setupIonicReact();
 
@@ -116,6 +117,7 @@ function AppRoutes() {
       <PrivateRoute path="/configuracion" component={ConfigurationPage} />
       <PrivateRoute path="/activos-biologicos" component={ActivosBiologicosPage} />
       <PrivateRoute path="/telemetria" component={TelemetryPage} />
+      <PrivateRoute path="/prediccion" component={PrediccionPage} />
 
       {/* Default */}
       <Route exact path="/">
