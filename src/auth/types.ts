@@ -36,3 +36,33 @@ export interface RestablecerContrasenaDTO {
   nueva_contrasena: string;
   confirmar_contrasena: string;
 }
+
+export interface SsoLoginResponse {
+  token: string;
+  tipo: string;
+  expira_en: number;
+  message: string;
+  perfil_incompleto: boolean;
+}
+
+export interface SsoPerfilPropio {
+  id_usuario: number;
+  nombre: string;
+  apellidos: string;
+  tipo_identificacion: string;
+  numero_identificacion: string;
+  fecha_nacimiento: string;
+  genero: string;
+  estado_cuenta: string;
+  version: number;
+}
+
+export interface CompletarPerfilSsoDTO {
+  nombre: string;
+  apellidos: string;
+  tipo_identificacion: string;
+  numero_identificacion: string;
+  fecha_nacimiento: string;
+  genero: string;
+  version: number;
+}
