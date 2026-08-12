@@ -63,6 +63,24 @@
   margin: var(--s5) 0;
 }
 
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin: var(--s5) 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--surface-border);
+}
+
 .auth-links {
   display: flex;
   justify-content: space-between;

@@ -19,8 +19,9 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (res) => res,
   (error) => {
-    const isLoginEndpoint = error.config?.url === '/sesiones/';
-    if (error.response?.status === 401 && !isLoginEndpoint) {
+    const PUBLIC_AUTH_ENDPOINTS = ['/sesiones/', '/sesiones/sso'];
+    const isPublicAuthEndpoint = PUBLIC_AUTH_ENDPOINTS.includes(error.config?.url ?? '');
+    if (error.response?.status === 401 && !isPublicAuthEndpoint) {
       tokenStore.clear();
       window.location.replace('/login');
     }

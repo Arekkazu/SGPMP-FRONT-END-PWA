@@ -33,6 +33,8 @@ import { ActivacionPage } from './auth/pages/ActivacionPage';
 import { ReenviarPage } from './auth/pages/ReenviarPage';
 import { RecuperarPage } from './auth/pages/RecuperarPage';
 import { RestablecerPage } from './auth/pages/RestablecerPage';
+import { SsoCallbackPage } from './auth/pages/SsoCallbackPage';
+import { CompletarPerfilSsoPage } from './auth/pages/CompletarPerfilSsoPage';
 
 /* Private pages */
 import { DashboardPage } from './dashboard/pages/DashboardPage';
@@ -84,15 +86,35 @@ function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 function PrivateRoute({ path, component: Component }: { path: string; component: React.ComponentType }) {
+  const { token, perfilIncompleto } = useAuth();
+  return (
+    <Route
+      path={path}
+      render={() => {
+        if (!token) return <Redirect to="/login" />;
+        if (perfilIncompleto === null) return null;
+        if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
+        return <AppShell><Component /></AppShell>;
+      }}
+    />
+  );
+}
+
+function AuthedRoute({
+  path,
+  exact,
+  component: Component,
+}: {
+  path: string;
+  exact?: boolean;
+  component: React.ComponentType;
+}) {
   const { token } = useAuth();
   return (
     <Route
       path={path}
-      render={() =>
-        token
-          ? <AppShell><Component /></AppShell>
-          : <Redirect to="/login" />
-      }
+      exact={exact}
+      render={() => (token ? <Component /> : <Redirect to="/login" />)}
     />
   );
 }
@@ -107,6 +129,10 @@ function AppRoutes() {
       <Route exact path="/reenviar-activacion" component={ReenviarPage} />
       <Route exact path="/recuperar-contrasena" component={RecuperarPage} />
       <Route exact path="/restablecer-contrasena" component={RestablecerPage} />
+      <Route exact path="/sso/callback" component={SsoCallbackPage} />
+
+      {/* Rutas autenticadas sin AppShell y sin guardia de perfil incompleto */}
+      <AuthedRoute exact path="/sso/completar-perfil" component={CompletarPerfilSsoPage} />
 
       {/* Private routes */}
       <PrivateRoute path="/dashboard" component={DashboardPage} />

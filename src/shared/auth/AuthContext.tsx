@@ -18,6 +18,7 @@ export interface UserInfo {
   apellidos: string;
   correo_electronico: string;
   nombre_rol: string;
+  estado_cuenta: string;
 }
 
 export interface PermisoUsuario {
@@ -30,8 +31,10 @@ interface AuthContextValue {
   claims: JwtClaims | null;
   userInfo: UserInfo | null;
   permisos: PermisoUsuario[] | null;
+  perfilIncompleto: boolean | null;
   setSession: (token: string) => void;
   clearSession: () => void;
+  refreshUserInfo: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue>({
@@ -39,8 +42,10 @@ export const AuthContext = createContext<AuthContextValue>({
   claims: null,
   userInfo: null,
   permisos: null,
+  perfilIncompleto: null,
   setSession: () => {},
   clearSession: () => {},
+  refreshUserInfo: async () => {},
 });
 
 function decodeJwtPayload(token: string): JwtClaims | null {
@@ -68,20 +73,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [claims, setClaims] = useState<JwtClaims | null>(validStored ? storedClaims : null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [permisos, setPermisos] = useState<PermisoUsuario[] | null>(null);
+  const [perfilIncompleto, setPerfilIncompleto] = useState<boolean | null>(null);
+
+  const fetchUserInfo = useCallback(async () => {
+    try {
+      const res = await http.get<UserInfo>('/usuarios/me');
+      setUserInfo(res.data);
+      setPerfilIncompleto(res.data.estado_cuenta === 'Pendiente Datos');
+    } catch {
+      // Fallar abierto: un error de red transitorio no debe bloquear a un usuario activo legítimo.
+      setPerfilIncompleto(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!token) {
       setUserInfo(null);
       setPermisos(null);
+      setPerfilIncompleto(null);
       return;
     }
-    http.get<UserInfo>('/usuarios/me')
-      .then((res) => setUserInfo(res.data))
-      .catch(() => {});
+    fetchUserInfo();
     http.get<{ permisos: PermisoUsuario[] }>('/sesiones/me/permisos')
       .then((res) => setPermisos(res.data.permisos))
       .catch(() => setPermisos([]));
-  }, [token]);
+  }, [token, fetchUserInfo]);
 
   const setSession = useCallback((newToken: string) => {
     tokenStore.set(newToken);
@@ -95,10 +111,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setClaims(null);
     setUserInfo(null);
     setPermisos(null);
+    setPerfilIncompleto(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ token, claims, userInfo, permisos, setSession, clearSession }}>
+    <AuthContext.Provider
+      value={{ token, claims, userInfo, permisos, perfilIncompleto, setSession, clearSession, refreshUserInfo: fetchUserInfo }}
+    >
       {children}
     </AuthContext.Provider>
   );
