@@ -67,9 +67,9 @@ function formatFecha(iso: string | null | undefined): string {
 
 // ── Confirm modal ─────────────────────────────────────────────────────────────
 
-function ConfirmModal({ titulo, mensaje, confirmLabel, saving, onCancel, onConfirm }: {
+function ConfirmModal({ titulo, mensaje, confirmLabel, saving, error, onCancel, onConfirm }: {
   titulo: string; mensaje: string; confirmLabel: string;
-  saving: boolean; onCancel: () => void; onConfirm: () => void;
+  saving: boolean; error?: ApiError | null; onCancel: () => void; onConfirm: () => void;
 }) {
   return (
     <div
@@ -81,6 +81,9 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, saving, onCancel, onConfi
       <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
+        {error && (
+          <Alert variant="error" title="No se pudo completar la acción" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        )}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
           <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>Cancelar</Button>
           <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{confirmLabel}</Button>
@@ -390,7 +393,6 @@ export function InfraestructuraSection() {
 
   const [fincaSeleccionada, setFincaSeleccionada] = useState<FincaResponse | null>(null);
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
-  const [accionError, setAccionError] = useState<string | null>(null);
 
   useEffect(() => { cargarFincas(); }, [cargarFincas]);
 
@@ -401,10 +403,8 @@ export function InfraestructuraSection() {
   const cerrar = () => setModal({ tipo: 'ninguno' });
 
   const handleDesactivar = async (infra: InfraestructuraResponse) => {
-    setAccionError(null);
     const ok = await desactivar(infra.id_infraestructura);
-    if (!ok) setAccionError(saveError?.message ?? 'Error al desactivar.');
-    else cerrar();
+    if (ok) cerrar();
   };
 
   const activas   = infraestructuras.filter((i) => i.es_activo).length;
@@ -470,7 +470,6 @@ export function InfraestructuraSection() {
           {/* Alerts */}
           {!online && <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />}
           {error && <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
-          {accionError && <Alert variant="error" title="Error" description={accionError} style={{ marginBottom: 'var(--s4)' }} />}
 
           {/* Table */}
           {loading ? (
@@ -583,6 +582,7 @@ export function InfraestructuraSection() {
               mensaje={`¿Deseas desactivar el área "${modal.infra.nombre_infraestructura}"? Los datos históricos permanecerán accesibles.`}
               confirmLabel="Desactivar"
               saving={saving}
+              error={saveError}
               onCancel={cerrar}
               onConfirm={() => handleDesactivar(modal.infra)}
             />

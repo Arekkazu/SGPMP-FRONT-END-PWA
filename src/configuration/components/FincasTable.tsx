@@ -7,6 +7,7 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
 import { FincaModal } from './FincaModal';
 import type { FincaResponse } from '../types';
+import type { ApiError } from '../../shared/api/errors';
 
 type ModalState =
   | { tipo: 'ninguno' }
@@ -41,9 +42,9 @@ function formatFecha(iso: string | null | undefined): string {
   }
 }
 
-function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, onCancel, onConfirm }: {
+function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, error, onCancel, onConfirm }: {
   titulo: string; mensaje: string; confirmLabel: string;
-  confirmVariant: 'danger' | 'primary'; saving: boolean;
+  confirmVariant: 'danger' | 'primary'; saving: boolean; error?: ApiError | null;
   onCancel: () => void; onConfirm: () => void;
 }) {
   return (
@@ -56,6 +57,9 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, o
       <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
+        {error && (
+          <Alert variant="error" title="No se pudo completar la acción" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        )}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
           <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>Cancelar</Button>
           <Button variant={confirmVariant} size="md" loading={saving} onClick={onConfirm}>{confirmLabel}</Button>
@@ -73,7 +77,6 @@ export function FincasTable() {
 
   const { fincas, loading, saving, error, saveError, fromCache, cargar, registrar, editar, desactivar, reactivar } = useFincas();
   const [modal, setModal]       = useState<ModalState>({ tipo: 'ninguno' });
-  const [accionError, setAccionError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => { cargar(); }, [cargar]);
@@ -81,17 +84,13 @@ export function FincasTable() {
   const cerrar = () => setModal({ tipo: 'ninguno' });
 
   const handleDesactivar = async (f: FincaResponse) => {
-    setAccionError(null);
     const ok = await desactivar(f.id_finca);
-    if (!ok) setAccionError(saveError?.message ?? 'Error al desactivar.');
-    else cerrar();
+    if (ok) cerrar();
   };
 
   const handleReactivar = async (f: FincaResponse) => {
-    setAccionError(null);
     const ok = await reactivar(f.id_finca);
-    if (!ok) setAccionError(saveError?.message ?? 'Error al reactivar.');
-    else cerrar();
+    if (ok) cerrar();
   };
 
   const fincasFiltradas = fincas.filter((f) =>
@@ -141,7 +140,6 @@ export function FincasTable() {
       {!online && <Alert variant="warning" title="Sin conexión" description="Mostrando datos cacheados. Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />}
       {fromCache && online && <Alert variant="info" title="Datos desde caché" description="No se pudo conectar con el servidor. Se muestran los últimos datos disponibles." style={{ marginBottom: 'var(--s4)' }} />}
       {error && !fromCache && <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
-      {accionError && <Alert variant="error" title="Error" description={accionError} style={{ marginBottom: 'var(--s4)' }} />}
 
       {/* Tabla */}
       {loading ? (
@@ -251,6 +249,7 @@ export function FincasTable() {
           confirmLabel="Desactivar"
           confirmVariant="danger"
           saving={saving}
+          error={saveError}
           onCancel={cerrar}
           onConfirm={() => handleDesactivar(modal.finca)}
         />
@@ -262,6 +261,7 @@ export function FincasTable() {
           confirmLabel="Reactivar"
           confirmVariant="primary"
           saving={saving}
+          error={saveError}
           onCancel={cerrar}
           onConfirm={() => handleReactivar(modal.finca)}
         />
