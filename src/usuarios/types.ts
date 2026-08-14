@@ -48,7 +48,6 @@ export interface EditarPerfilAdminDTO {
   telefono?: string;
   direccion?: string;
   version: number;
-  id_estado_cuenta?: number;
   id_rol?: number;
 }
 
