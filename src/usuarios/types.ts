@@ -51,7 +51,7 @@ export interface EditarPerfilAdminDTO {
   id_rol?: number;
 }
 
-export type AccionCuenta = 'ACTIVAR' | 'INACTIVAR' | 'BLOQUEAR' | 'ELIMINAR';
+export type AccionCuenta = 'activar' | 'inactivar' | 'bloquear' | 'eliminar';
 
 export interface GestionarCuentaDTO {
   accion_cuenta: AccionCuenta;

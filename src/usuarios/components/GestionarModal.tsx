@@ -28,7 +28,7 @@ interface OpcionAccion {
   requiresMotivo: boolean;
 }
 
-const REQUIERE_MOTIVO: AccionCuenta[] = ['INACTIVAR', 'BLOQUEAR', 'ELIMINAR'];
+const REQUIERE_MOTIVO: AccionCuenta[] = ['inactivar', 'bloquear', 'eliminar'];
 
 function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
   const estado = estadoActual.toUpperCase();
@@ -36,7 +36,7 @@ function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
 
   if (['INACTIVO', 'BLOQUEADO', 'PENDIENTE'].includes(estado)) {
     acciones.push({
-      value: 'ACTIVAR',
+      value: 'activar',
       label: 'Activar',
       descripcion: 'El usuario podrá acceder al sistema nuevamente.',
       variante: 'primary',
@@ -47,7 +47,7 @@ function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
 
   if (estado === 'ACTIVO') {
     acciones.push({
-      value: 'INACTIVAR',
+      value: 'inactivar',
       label: 'Inactivar',
       descripcion: 'El usuario perderá acceso inmediatamente. Las sesiones activas se cerrarán.',
       variante: 'secondary',
@@ -55,7 +55,7 @@ function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
       requiresMotivo: true,
     });
     acciones.push({
-      value: 'BLOQUEAR',
+      value: 'bloquear',
       label: 'Bloquear',
       descripcion: 'El usuario no podrá acceder. Sus sesiones activas se cerrarán.',
       variante: 'secondary',
@@ -65,7 +65,7 @@ function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
   }
 
   acciones.push({
-    value: 'ELIMINAR',
+    value: 'eliminar',
     label: 'Eliminar',
     descripcion: 'El usuario quedará marcado como ELIMINADO. Esta acción es irreversible.',
     variante: 'danger',
@@ -193,7 +193,7 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
             })}
           </div>
 
-          {accionSeleccionada === 'ELIMINAR' && (
+          {accionSeleccionada === 'eliminar' && (
             <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'flex-start', padding: 'var(--s3)', background: 'var(--sem-error-bg)', borderRadius: 'var(--r-md)', marginBottom: 'var(--s4)', border: '1px solid var(--sem-error-border)' }}>
               <AlertTriangle size={16} color="var(--sem-error)" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden />
               <p style={{ fontSize: '13px', color: 'var(--sem-error)', margin: 0 }}>
@@ -218,7 +218,7 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
             <Button type="button" variant="secondary" size="md" onClick={onClose}>Cancelar</Button>
             <Button
               type="submit"
-              variant={accionSeleccionada === 'ELIMINAR' ? 'danger' : 'primary'}
+              variant={accionSeleccionada === 'eliminar' ? 'danger' : 'primary'}
               size="md"
               loading={saving}
               disabled={!accionSeleccionada}

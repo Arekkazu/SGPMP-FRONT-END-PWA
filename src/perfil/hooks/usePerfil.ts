@@ -32,7 +32,8 @@ export function usePerfil() {
     setSaveError(null);
     setSaveSuccess(false);
     try {
-      const res = await perfilApi.editar(dto);
+      await perfilApi.editar(dto);
+      const res = await perfilApi.obtener();
       setPerfil(res);
       setSaveSuccess(true);
       return true;
