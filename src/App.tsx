@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
+import { useLogout } from './auth/hooks/useLogout';
 
 /* Ionic core CSS */
 import '@ionic/react/css/core.css';
@@ -50,12 +51,11 @@ import { PrediccionPage } from './prediction/pages/PrediccionPage';
 setupIonicReact();
 
 function AppShell({ children }: { children: React.ReactNode }) {
-  const { clearSession } = useAuth();
+  const logout = useLogout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
-    clearSession();
-    window.location.replace('/login');
+    void logout();
   };
 
   return (
@@ -63,13 +63,20 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar open={sidebarOpen} onLogout={handleLogout} />
       {sidebarOpen && (
         <div
-          style={{ position: 'fixed', inset: 0, zIndex: 98, background: 'rgba(0,0,0,0.4)' }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 98,
+            background: 'rgba(0,0,0,0.4)',
+          }}
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
       )}
+
       <div className="ds-app-content">
         <AppBar onToggleSidebar={() => setSidebarOpen((v) => !v)} />
+
         <main
           style={{
             flex: 1,
@@ -110,6 +117,7 @@ function AuthedRoute({
   component: React.ComponentType;
 }) {
   const { token } = useAuth();
+
   return (
     <Route
       path={path}
