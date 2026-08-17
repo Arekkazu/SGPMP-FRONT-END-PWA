@@ -48,11 +48,10 @@ export interface EditarPerfilAdminDTO {
   telefono?: string;
   direccion?: string;
   version: number;
-  id_estado_cuenta?: number;
   id_rol?: number;
 }
 
-export type AccionCuenta = 'ACTIVAR' | 'INACTIVAR' | 'BLOQUEAR' | 'ELIMINAR';
+export type AccionCuenta = 'activar' | 'inactivar' | 'bloquear' | 'eliminar';
 
 export interface GestionarCuentaDTO {
   accion_cuenta: AccionCuenta;
