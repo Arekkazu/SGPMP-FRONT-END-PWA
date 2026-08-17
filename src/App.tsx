@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
+import { useLogout } from './auth/hooks/useLogout';
 
 /* Ionic core CSS */
 import '@ionic/react/css/core.css';
@@ -50,12 +51,11 @@ import { PrediccionPage } from './prediction/pages/PrediccionPage';
 setupIonicReact();
 
 function AppShell({ children }: { children: React.ReactNode }) {
-  const { clearSession } = useAuth();
+  const logout = useLogout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
-    clearSession();
-    window.location.replace('/login');
+    void logout();
   };
 
   return (
