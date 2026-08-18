@@ -86,11 +86,12 @@ function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 function PrivateRoute({ path, component: Component }: { path: string; component: React.ComponentType }) {
-  const { token, perfilIncompleto } = useAuth();
+  const { token, perfilIncompleto, isBootstrapping } = useAuth();
   return (
     <Route
       path={path}
       render={() => {
+        if (isBootstrapping) return null;
         if (!token) return <Redirect to="/login" />;
         if (perfilIncompleto === null) return null;
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
@@ -109,12 +110,15 @@ function AuthedRoute({
   exact?: boolean;
   component: React.ComponentType;
 }) {
-  const { token } = useAuth();
+  const { token, isBootstrapping } = useAuth();
   return (
     <Route
       path={path}
       exact={exact}
-      render={() => (token ? <Component /> : <Redirect to="/login" />)}
+      render={() => {
+        if (isBootstrapping) return null;
+        return token ? <Component /> : <Redirect to="/login" />;
+      }}
     />
   );
 }

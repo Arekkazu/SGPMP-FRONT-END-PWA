@@ -1,6 +1,6 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react';
 import { tokenStore } from './tokenStore';
-import { http } from '../api/http';
+import { http, refreshAccessToken } from '../api/http';
 
 export interface JwtClaims {
   sub: string;
@@ -32,6 +32,7 @@ interface AuthContextValue {
   userInfo: UserInfo | null;
   permisos: PermisoUsuario[] | null;
   perfilIncompleto: boolean | null;
+  isBootstrapping: boolean;
   setSession: (token: string) => void;
   clearSession: () => void;
   refreshUserInfo: () => Promise<void>;
@@ -43,6 +44,7 @@ export const AuthContext = createContext<AuthContextValue>({
   userInfo: null,
   permisos: null,
   perfilIncompleto: null,
+  isBootstrapping: true,
   setSession: () => {},
   clearSession: () => {},
   refreshUserInfo: async () => {},
@@ -74,6 +76,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [permisos, setPermisos] = useState<PermisoUsuario[] | null>(null);
   const [perfilIncompleto, setPerfilIncompleto] = useState<boolean | null>(null);
+  const [isBootstrapping, setIsBootstrapping] = useState(!validStored);
+
+  // Recarga de página (F5, pestaña nueva): el JWT solo vive en memoria
+  // (tokenStore) por diseño (R-12), así que se pierde. Antes de decidir "no
+  // autenticado", intenta un refresh silencioso con la cookie httpOnly.
+  useEffect(() => {
+    if (validStored) return;
+    refreshAccessToken()
+      .then((newToken) => {
+        setToken(newToken);
+        setClaims(decodeJwtPayload(newToken));
+      })
+      .catch(() => {
+        // Sin sesión que recuperar — comportamiento normal en /login, /registro, etc.
+      })
+      .finally(() => setIsBootstrapping(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchUserInfo = useCallback(async () => {
     try {
@@ -116,7 +135,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ token, claims, userInfo, permisos, perfilIncompleto, setSession, clearSession, refreshUserInfo: fetchUserInfo }}
+      value={{
+        token,
+        claims,
+        userInfo,
+        permisos,
+        perfilIncompleto,
+        isBootstrapping,
+        setSession,
+        clearSession,
+        refreshUserInfo: fetchUserInfo,
+      }}
     >
       {children}
     </AuthContext.Provider>
