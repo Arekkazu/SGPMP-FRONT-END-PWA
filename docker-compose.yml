@@ -13,6 +13,6 @@ services:
         VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID}
         VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
         VITE_VAPID_KEY: ${VITE_VAPID_KEY}
-    ports:
-      - "${FRONTEND_PORT:-8020}:80"
+    expose:
+      - "80"
     restart: unless-stopped
