@@ -120,7 +120,7 @@ interface Props {
   saving: boolean;
   saveError: ApiError | null;
   onClose: () => void;
-  onAplicar: (idEspecieDestino: number, fechaCreacion: string) => Promise<AplicacionPlantillaResponse | null>;
+  onAplicar: (idEspecieDestino: number, fechaActualizacion: string | null) => Promise<AplicacionPlantillaResponse | null>;
 }
 
 export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, onAplicar }: Props) {
@@ -134,7 +134,7 @@ export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, 
 
   const handleAplicar = async () => {
     if (!targetEspecie) return;
-    const res = await onAplicar(targetEspecie.id_especie, targetEspecie.fecha_creacion);
+    const res = await onAplicar(targetEspecie.id_especie, targetEspecie.fecha_actualizacion);
     if (res) {
       setResultado(res);
       setStep(3);

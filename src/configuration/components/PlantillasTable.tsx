@@ -112,9 +112,9 @@ export function PlantillasTable() {
   const getEspecieNombre = (idEspecie: number) =>
     especies.find((e) => e.id_especie === idEspecie)?.nombre ?? `Especie #${idEspecie}`;
 
-  const handleAplicar = async (idEspecieDestino: number, fechaCreacion: string): Promise<AplicacionPlantillaResponse | null> => {
+  const handleAplicar = async (idEspecieDestino: number, fechaActualizacion: string | null): Promise<AplicacionPlantillaResponse | null> => {
     if (!wizardPlantilla) return null;
-    const result = await aplicar(wizardPlantilla.id_plantilla, { id_especie_destino: idEspecieDestino, fecha_creacion_especie_destino: fechaCreacion });
+    const result = await aplicar(wizardPlantilla.id_plantilla, { id_especie_destino: idEspecieDestino, fecha_actualizacion_especie_destino: fechaActualizacion });
     if (result) setWizardResult(result);
     return result;
   };
