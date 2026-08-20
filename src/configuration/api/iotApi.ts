@@ -51,8 +51,8 @@ export const configuracionRemotaApi = {
   },
 
   async listarConfiguraciones(idDispositivo: number): Promise<ConfiguracionRemotaResponse[]> {
-    const res = await http.get<ConfiguracionRemotaResponse[]>(`${DISP}/${idDispositivo}/configuraciones`);
-    return res.data;
+    const res = await http.get<{ items: ConfiguracionRemotaResponse[] }>(`${DISP}/${idDispositivo}/configuraciones`);
+    return res.data.items;
   },
 };
 
@@ -63,8 +63,8 @@ export const sensorAreaApi = {
   },
 
   async listarAsociaciones(idSensor: number): Promise<SensorAreaResponse[]> {
-    const res = await http.get<SensorAreaResponse[]>(`${SENS}/${idSensor}/asociaciones`);
-    return res.data;
+    const res = await http.get<{ items: SensorAreaResponse[] }>(`${SENS}/${idSensor}/asociaciones`);
+    return res.data.items;
   },
 };
 
@@ -75,7 +75,7 @@ export const calibracionApi = {
   },
 
   async listarCalibraciones(idSensor: number): Promise<CalibracionResponse[]> {
-    const res = await http.get<CalibracionResponse[]>(`${SENS}/${idSensor}/calibraciones`);
-    return res.data;
+    const res = await http.get<{ items: CalibracionResponse[] }>(`${SENS}/${idSensor}/calibraciones`);
+    return res.data.items;
   },
 };
