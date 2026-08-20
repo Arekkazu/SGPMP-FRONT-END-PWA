@@ -41,14 +41,6 @@ const LABEL_STYLE: React.CSSProperties = {
   marginBottom: 'var(--s1)',
 };
 
-const ESTADO_OPTIONS = [
-  { value: 1, label: 'Activo' },
-  { value: 2, label: 'Inactivo' },
-  { value: 3, label: 'Bloqueado' },
-  { value: 4, label: 'Pendiente' },
-  { value: 5, label: 'Eliminado' },
-];
-
 const ROL_OPTIONS = [
   { value: 1, label: 'Administrador' },
   { value: 2, label: 'Productor' },
@@ -76,7 +68,6 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
         direccion: detalle.direccion ?? '',
         version: detalle.version,
         id_rol: detalle.id_rol,
-        id_estado_cuenta: detalle.id_estado_cuenta,
       });
     }
   }, [detalle, reset]);
@@ -194,14 +185,6 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                   </div>
                   <div style={{ gridColumn: 'span 2' }}>
                     <Input label="Dirección" {...register('direccion')} />
-                  </div>
-                  <div>
-                    <label style={LABEL_STYLE}>Estado de cuenta</label>
-                    <select style={SELECT_STYLE} {...register('id_estado_cuenta', { valueAsNumber: true })}>
-                      {ESTADO_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
                   </div>
                   <div>
                     <label style={LABEL_STYLE}>Rol</label>
