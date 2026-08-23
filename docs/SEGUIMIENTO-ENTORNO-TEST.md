@@ -152,11 +152,15 @@ Si la variable no existe utiliza como fallback:
 
     http://localhost:8000
 
-Para el ambiente TEST no deberá utilizarse `localhost` como URL definitiva.
+Para el ambiente TEST desplegado no deberá utilizarse `localhost` como URL definitiva.
 
-`VITE_API_BASE_URL` deberá configurarse posteriormente con la URL pública HTTPS real del Backend TEST.
+La URL pública HTTPS definitiva del Backend TEST continúa pendiente de la configuración de exposición mediante Dokploy/Traefik.
 
-El valor definitivo dependerá de la configuración de exposición mediante Dokploy/Traefik y del prefijo utilizado por Backend TEST.
+Para la validación local integrada se utilizó temporalmente:
+
+    VITE_API_BASE_URL=http://127.0.0.1:8000/api
+
+Este valor fue utilizado únicamente para la prueba local y no corresponde a la URL definitiva de TEST.
 
 ## 8. Seguridad de archivos de entorno
 
@@ -724,20 +728,153 @@ Resultado:
 
 Resultado general de revisión pre-commit: **Correcto**.
 
+### Validación local Frontend TEST - Backend TEST - PostgreSQL TEST
+
+Después de validar Frontend TEST y Backend TEST de manera independiente se realizó una prueba local integrada.
+
+Se utilizaron archivos locales:
+
+    docker-compose.local.yml
+
+ignorados mediante `.git/info/exclude` y no destinados a versionarse.
+
+La publicación temporal fue:
+
+    Frontend TEST: 127.0.0.1:8080 -> 80
+    Backend TEST: 127.0.0.1:8000 -> 8000
+
+PostgreSQL TEST permaneció sin publicación de puerto hacia el host.
+
+#### Reconstrucción local del Frontend
+
+Debido a que las variables `VITE_*` se incorporan durante el build, el Frontend fue reconstruido utilizando:
+
+    VITE_API_BASE_URL=http://127.0.0.1:8000/api
+
+La construcción finalizó correctamente.
+
+El contenedor quedó disponible mediante:
+
+    http://127.0.0.1:8080
+
+Se comprobó:
+
+    GET / -> HTTP 200
+    GET /login -> HTTP 200
+
+El binding real quedó limitado a:
+
+    127.0.0.1:8080 -> 80
+
+#### Validación del bundle
+
+Dentro de los archivos estáticos servidos por Nginx se comprobó la presencia de:
+
+    http://127.0.0.1:8000/api
+
+También se verificó que no permanecieran:
+
+    https://backend-test.invalid/api
+    http://localhost:8000
+
+Por tanto, la imagen utilizada en la prueba local fue construida con la URL esperada.
+
+#### Validación de CORS local
+
+Desde:
+
+    http://127.0.0.1:8080
+
+se comprobó la preflight contra:
+
+    OPTIONS http://127.0.0.1:8000/api/sesiones/
+
+Resultado:
+
+    HTTP 200
+    access-control-allow-origin: http://127.0.0.1:8080
+    access-control-allow-credentials: true
+
+También:
+
+    GET http://127.0.0.1:8000/health -> HTTP 200
+
+con el mismo origen.
+
+CORS funcionó correctamente para la prueba local.
+
+Esta evidencia no sustituye la futura validación con los dominios HTTPS públicos reales de TEST.
+
+#### Solicitud real desde navegador
+
+El Frontend utiliza:
+
+    POST /sesiones/
+
+sobre `VITE_API_BASE_URL`.
+
+Por tanto, durante la prueba local el navegador realizó:
+
+    POST http://127.0.0.1:8000/api/sesiones/
+
+Se utilizó deliberadamente una cuenta ficticia y una contraseña no real.
+
+Resultado observado mediante DevTools:
+
+    Request Method: POST
+    Status Code: 401 Unauthorized
+    error_code: CREDENCIALES_INVALIDAS
+
+El resultado era esperado y confirma que la solicitud real del Frontend alcanzó la lógica de autenticación del Backend.
+
+No se utilizó ni modificó una cuenta TEST real.
+
+#### Confirmación del recorrido hasta PostgreSQL
+
+La inspección del Backend confirmó que el endpoint de login utiliza:
+
+    SqlAlchemyUsuarioRepository(db)
+
+y ejecuta una consulta mediante:
+
+    self.db.query(Usuarios)
+        .filter(...)
+        .first()
+
+La sesión SQLAlchemy utilizada por Backend TEST apunta a:
+
+    driver = postgresql
+    host = db
+    port = 5432
+    database = sgpmp_test
+
+Por tanto, la prueba confirma el recorrido técnico:
+
+    Frontend TEST
+        ->
+    Backend TEST
+        ->
+    SQLAlchemy
+        ->
+    PostgreSQL TEST
+
+Resultado de integración local: **Correcto**.
+
+La prueba no valida un inicio de sesión exitoso con una cuenta TEST real ni la comunicación mediante los futuros dominios HTTPS públicos.
+
 ## 14. Errores encontrados
 
 Ninguno durante la preparación inicial de la rama TEST.
 
 ## 15. Pendientes
 
-- Determinar la URL pública definitiva del Backend TEST.
-- Configurar `VITE_API_BASE_URL` para TEST.
+- Determinar la URL pública HTTPS definitiva del Backend TEST para el despliegue.
 - Confirmar con Desarrollo el tratamiento de `VITE_AGROFUSION_LOGIN_URL`.
 - Confirmar si `VITE_SW` debe formar parte del ambiente TEST.
 - Validar las variables Firebase requeridas para TEST.
-- Validar que el bundle utilice la URL del Backend TEST.
-- Validar posteriormente Frontend TEST - Backend TEST.
-- Comprobar comportamiento CORS con la URL real del Frontend TEST.
+- Validar nuevamente el bundle con la URL pública HTTPS definitiva del Backend TEST cuando sea definida.
+- Validar la integración desplegada Frontend TEST - Backend TEST utilizando las URLs públicas definitivas.
+- Comprobar nuevamente CORS con la URL HTTPS pública real del Frontend TEST.
 - Documentar progresivamente los resultados.
 
 ## 16. Evidencias
@@ -760,4 +897,18 @@ Se completó la auditoría inicial de:
 - archivos `.env`;
 - `.dockerignore`.
 
-La configuración TEST ya fue creada y la imagen Frontend TEST fue construida correctamente. El contenedor todavía no ha sido levantado.
+La configuración TEST fue creada y la imagen Frontend TEST fue construida correctamente.
+
+El contenedor Frontend TEST fue levantado y validado de forma independiente.
+
+Posteriormente se realizó una integración local controlada con Backend TEST y PostgreSQL TEST utilizando bindings exclusivos a `127.0.0.1`.
+
+Se comprobó:
+
+- Frontend TEST disponible en `http://127.0.0.1:8080`;
+- bundle construido con `http://127.0.0.1:8000/api`;
+- CORS local correcto;
+- solicitud real `POST /api/sesiones/` desde navegador;
+- recorrido técnico Frontend TEST - Backend TEST - PostgreSQL TEST.
+
+Continúan pendientes las URLs HTTPS definitivas, Firebase/AgroFusion según definición de Desarrollo y la validación final una vez desplegado TEST.
