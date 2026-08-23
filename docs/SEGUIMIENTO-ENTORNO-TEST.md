@@ -987,6 +987,27 @@ El árbol de trabajo Frontend quedó limpio al finalizar la auditoría.
 
 Resultado: **Validación previa a entrega correcta**.
 
+### Publicación de la rama de trabajo Frontend
+
+Después de completar las validaciones locales y la revisión previa a entrega, se publicó la rama de trabajo Frontend en el repositorio remoto.
+
+Comando ejecutado:
+
+    git push -u origin feat/ambiente-test
+
+Resultado:
+
+    rama remota = origin/feat/ambiente-test
+    commit local = 3915bae
+    commit remoto = 3915bae
+    tracking configurado = correcto
+
+La publicación se realizó sin `merge` hacia `integration-v2`, `main` u otra rama.
+
+La rama queda disponible para revisión y posterior integración por parte del responsable correspondiente.
+
+Resultado: **Publicación Frontend correcta**.
+
 ## 17. Evidencias
 
 Las evidencias se agregarán progresivamente durante la configuración y validación del ambiente.
