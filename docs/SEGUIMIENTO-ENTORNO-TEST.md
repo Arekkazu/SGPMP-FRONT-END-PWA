@@ -941,6 +941,52 @@ A partir de este punto Implementación se concentrará en disponer y exponer cor
 - Entregar al equipo de Pruebas la URL HTTPS estable del Frontend TEST y la información necesaria para consumir Backend TEST.
 - Documentar progresivamente los resultados.
 
+### Validación final previa a entrega de la rama
+
+Antes de preparar la entrega de la rama se actualizaron las referencias remotas mediante `git fetch origin`.
+
+La rama base Frontend permaneció en:
+
+    origin/integration-v2 = ef30a76
+
+La comparación entre `origin/integration-v2` y `feat/ambiente-test` mostró únicamente commits propios de la rama de trabajo, sin nuevos commits pendientes provenientes de la rama base.
+
+También se revisó el conjunto completo de cambios respecto a `origin/integration-v2`.
+
+Archivos incluidos en la entrega Frontend:
+
+    A  .env.test.example
+    M  .gitignore
+    A  docker-compose.test.yml
+    A  docs/SEGUIMIENTO-ENTORNO-TEST.md
+
+Se validó nuevamente `docker-compose.test.yml` sin utilizar el override local.
+
+Resultado de exposición del servicio:
+
+    Frontend TEST = expose 80
+    ports publicados por Compose TEST base = ninguno
+
+El Frontend TEST utiliza su red Docker propia y no requiere conexión directa a PostgreSQL.
+
+La comunicación con Backend se realiza desde el navegador mediante la URL definida en:
+
+    VITE_API_BASE_URL
+
+Se revisaron los archivos técnicos modificados para detectar incorporaciones relacionadas con Cypress, Playwright, cypress-axe, Pytest, Vitest, Newman, k6 u OWASP ZAP.
+
+Resultado:
+
+    herramientas de Pruebas añadidas en archivos técnicos = ninguna
+
+Se verificó que `.env.test.example` contiene únicamente variables de referencia y valores vacíos o no sensibles.
+
+También se comprobó que las variables `VITE_*` forman parte del proceso de build y que la imagen deberá reconstruirse cuando se defina la URL HTTPS pública definitiva del Backend TEST.
+
+El árbol de trabajo Frontend quedó limpio al finalizar la auditoría.
+
+Resultado: **Validación previa a entrega correcta**.
+
 ## 17. Evidencias
 
 Las evidencias se agregarán progresivamente durante la configuración y validación del ambiente.
