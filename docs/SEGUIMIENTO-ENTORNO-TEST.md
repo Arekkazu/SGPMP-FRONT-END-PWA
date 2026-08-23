@@ -866,7 +866,70 @@ La prueba no valida un inicio de sesión exitoso con una cuenta TEST real ni la 
 
 Ninguno durante la preparación inicial de la rama TEST.
 
-## 15. Pendientes
+## 15. Ajuste de alcance respecto a herramientas del equipo de Pruebas
+
+Posteriormente se revisó el documento `Ambiente_Implementación (2).xlsx`, específicamente la hoja `Aprobacion de Ambientes`, con el fin de aclarar las responsabilidades entre Implementación y Pruebas.
+
+La segunda evaluación del documento corrige expresamente el criterio inicial relacionado con las herramientas de validación.
+
+Para Frontend, el documento establece que Implementación no debe instalar, configurar ni mantener herramientas como:
+
+    Cypress
+    Playwright
+    cypress-axe
+
+De manera general, las herramientas de E2E, accesibilidad, carga y seguridad son operadas por el equipo de Pruebas contra el ambiente TEST entregado por Implementación.
+
+La responsabilidad de Implementación consiste en:
+
+- construir y mantener disponible Frontend TEST;
+- exponer una URL HTTPS estable del Frontend;
+- configurar correctamente la comunicación con Backend TEST;
+- comunicar al equipo de Pruebas las URLs y restricciones necesarias;
+- mantener el ambiente accesible para que Pruebas ejecute sus propias herramientas.
+
+La segunda evaluación identifica expresamente que fue incorrecto solicitar a Implementación la creación de `cypress.config.ts` y el reemplazo del caso Cypress existente.
+
+El criterio corregido es:
+
+    Implementación monta y orquesta el ambiente TEST.
+    Pruebas lo opera.
+
+### Corrección de trabajo realizado por interpretación anterior
+
+Antes de revisar esta aclaración se inició una preparación adicional de herramientas de prueba dentro del repositorio Frontend.
+
+Al identificar la discrepancia se detuvo ese trabajo y se realizó una limpieza controlada.
+
+Se realizó:
+
+- eliminación del `cypress.config.ts` creado por Implementación;
+- restauración de `cypress/e2e/test.cy.ts` a su contenido original de Desarrollo;
+- retiro de la documentación añadida específicamente para las validaciones de Cypress y Vitest;
+- eliminación de los screenshots generados durante la ejecución local de Cypress;
+- eliminación de la caché local `node_modules/.vitest`;
+- restauración de la rama al último commit correspondiente al trabajo válido del ambiente TEST.
+
+Resultado de la limpieza:
+
+    HEAD Frontend = 863c267
+    cypress.config.ts creado por Implementación = eliminado
+    test Cypress original = restaurado
+    screenshots Cypress generados = eliminados
+    cache Vitest generada = eliminada
+    working tree Frontend antes de esta actualización documental = limpio
+
+No se eliminaron Cypress, Vitest ni los archivos de pruebas que ya pertenecían al repositorio de Desarrollo.
+
+Tampoco se instalaron Playwright ni `cypress-axe`.
+
+No se realizó `push` del commit descartado.
+
+Resultado: **Alcance corregido**.
+
+A partir de este punto Implementación se concentrará en disponer y exponer correctamente Frontend TEST, sin asumir la instalación, configuración o mantenimiento del stack de herramientas del equipo de Pruebas.
+
+## 16. Pendientes
 
 - Determinar la URL pública HTTPS definitiva del Backend TEST para el despliegue.
 - Confirmar con Desarrollo el tratamiento de `VITE_AGROFUSION_LOGIN_URL`.
@@ -875,13 +938,14 @@ Ninguno durante la preparación inicial de la rama TEST.
 - Validar nuevamente el bundle con la URL pública HTTPS definitiva del Backend TEST cuando sea definida.
 - Validar la integración desplegada Frontend TEST - Backend TEST utilizando las URLs públicas definitivas.
 - Comprobar nuevamente CORS con la URL HTTPS pública real del Frontend TEST.
+- Entregar al equipo de Pruebas la URL HTTPS estable del Frontend TEST y la información necesaria para consumir Backend TEST.
 - Documentar progresivamente los resultados.
 
-## 16. Evidencias
+## 17. Evidencias
 
 Las evidencias se agregarán progresivamente durante la configuración y validación del ambiente.
 
-## 17. Estado actual
+## 18. Estado actual
 
 **En progreso.**
 
@@ -912,3 +976,5 @@ Se comprobó:
 - recorrido técnico Frontend TEST - Backend TEST - PostgreSQL TEST.
 
 Continúan pendientes las URLs HTTPS definitivas, Firebase/AgroFusion según definición de Desarrollo y la validación final una vez desplegado TEST.
+
+Una vez disponible el ambiente desplegado, Implementación entregará al equipo de Pruebas la URL estable correspondiente. Las herramientas de E2E, accesibilidad, carga y seguridad serán operadas por Pruebas contra dicho ambiente.
