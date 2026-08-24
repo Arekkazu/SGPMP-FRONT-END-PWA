@@ -465,7 +465,7 @@ export interface RegistrarPlantillaDTO {
 
 export interface AplicarPlantillaDTO {
   id_especie_destino: number;
-  fecha_creacion_especie_destino: string;
+  fecha_actualizacion_especie_destino: string | null;
 }
 
 export interface AplicacionPlantillaResponse {

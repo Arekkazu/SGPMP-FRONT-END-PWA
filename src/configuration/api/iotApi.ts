@@ -46,13 +46,18 @@ export const sensoresDispositivoApi = {
 
 export const configuracionRemotaApi = {
   async configurar(idDispositivo: number, dto: ConfigurarRemotamenteDTO): Promise<ConfiguracionRemotaResponse> {
-    const res = await http.post<ConfiguracionRemotaResponse>(`${DISP}/${idDispositivo}/configurar`, dto);
+    // El backend espera de forma sincrona el ACK del dispositivo (hasta ~35s,
+    // ver MqttHttpAdapter) antes de responder -- el timeout global de 15s de
+    // `http` corta la conexion antes de que el backend termine.
+    const res = await http.post<ConfiguracionRemotaResponse>(`${DISP}/${idDispositivo}/configurar`, dto, {
+      timeout: 40000,
+    });
     return res.data;
   },
 
   async listarConfiguraciones(idDispositivo: number): Promise<ConfiguracionRemotaResponse[]> {
-    const res = await http.get<ConfiguracionRemotaResponse[]>(`${DISP}/${idDispositivo}/configuraciones`);
-    return res.data;
+    const res = await http.get<{ items: ConfiguracionRemotaResponse[] }>(`${DISP}/${idDispositivo}/configuraciones`);
+    return res.data.items;
   },
 };
 
@@ -63,8 +68,8 @@ export const sensorAreaApi = {
   },
 
   async listarAsociaciones(idSensor: number): Promise<SensorAreaResponse[]> {
-    const res = await http.get<SensorAreaResponse[]>(`${SENS}/${idSensor}/asociaciones`);
-    return res.data;
+    const res = await http.get<{ items: SensorAreaResponse[] }>(`${SENS}/${idSensor}/asociaciones`);
+    return res.data.items;
   },
 };
 
@@ -75,7 +80,7 @@ export const calibracionApi = {
   },
 
   async listarCalibraciones(idSensor: number): Promise<CalibracionResponse[]> {
-    const res = await http.get<CalibracionResponse[]>(`${SENS}/${idSensor}/calibraciones`);
-    return res.data;
+    const res = await http.get<{ items: CalibracionResponse[] }>(`${SENS}/${idSensor}/calibraciones`);
+    return res.data.items;
   },
 };
