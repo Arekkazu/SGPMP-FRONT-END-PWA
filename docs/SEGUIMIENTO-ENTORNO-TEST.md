@@ -2,36 +2,46 @@
 
 ## 1. Objetivo
 
-Preparar y validar un ambiente TEST independiente para el Frontend del proyecto SGPMP, tomando como referencia la configuración existente de DEV y sin modificar su funcionamiento.
+Preparar, validar y dejar listo para entrega a Despliegue un ambiente TEST independiente para el Frontend del proyecto SGPMP, tomando como referencia la configuración de Desarrollo y sin modificar el funcionamiento de la rama `dev`.
 
 El trabajo contempla:
 
 - configuración Docker específica para TEST;
 - variables de build propias del ambiente;
-- seguridad de puertos;
-- integración posterior con Backend TEST;
+- seguridad y control de exposición de puertos;
+- integración con Backend TEST;
 - validaciones de construcción y ejecución;
-- documentación de comandos, resultados, hallazgos y pendientes.
+- sincronización final con la rama `dev` vigente;
+- registro de comandos, resultados, hallazgos, evidencias y pendientes.
 
 ## 2. Alcance
 
 Este documento cubre únicamente el trabajo del repositorio Frontend correspondiente al ambiente TEST.
 
-No se realizará configuración de producción.
+No se realiza configuración de producción.
 
-El archivo `docker-compose.yml` existente se utiliza únicamente como referencia DEV y no debe ser modificado salvo que exista una necesidad explícita y previamente validada.
+La rama `dev` se utiliza como referencia funcional y técnica. No se realizan cambios directos, commits ni `push` sobre `dev` desde este trabajo.
 
-## 3. Repositorio y ramas
+El archivo `docker-compose.yml` de Desarrollo se conserva como configuración DEV. La configuración propia de TEST se mantiene separada en:
+
+    docker-compose.test.yml
+    .env.test.example
+
+Los archivos locales con valores reales, como `.env.test`, no se versionan.
+
+Implementación no instala, configura ni mantiene el stack de herramientas del equipo de Pruebas. Las herramientas E2E, accesibilidad, carga y seguridad son responsabilidad del equipo de Pruebas sobre el ambiente TEST entregado.
+
+## 3. Repositorio, rama inicial y rama de trabajo
 
 Repositorio:
 
     Arekkazu/SGPMP-FRONT-END-PWA
 
-Rama base:
+Rama base utilizada al iniciar el trabajo:
 
     origin/integration-v2
 
-Commit base:
+Commit base inicial:
 
     ef30a761a8f9d629d2f909b8671c844cdafa48b3
 
@@ -39,9 +49,34 @@ Rama de trabajo:
 
     feat/ambiente-test
 
-La rama fue creada directamente desde `origin/integration-v2` utilizando `--no-track`.
+La rama fue creada inicialmente desde `origin/integration-v2` utilizando `--no-track`.
 
-## 4. Estado inicial
+Posteriormente, una vez Desarrollo avanzó sobre `dev`, la rama TEST fue sincronizada con la rama `origin/dev` vigente, sin modificar `dev`.
+
+Referencia `origin/dev` incorporada durante la sincronización final:
+
+    dc31301
+
+Commit de merge generado en la rama TEST:
+
+    c096ffa merge: incorpora cambios de dev en ambiente test
+
+Después del merge se verificó:
+
+    git rev-list --left-right --count origin/dev...HEAD
+
+Resultado:
+
+    0 6
+
+Interpretación:
+
+- `0`: la rama TEST no tiene commits pendientes por incorporar desde `origin/dev`;
+- `6`: la rama TEST conserva cinco commits propios previos de TEST más el commit de merge.
+
+Por tanto, al cierre técnico de esta etapa, `feat/ambiente-test` contiene el `dev` vigente utilizado durante la validación y mantiene sus cambios TEST de forma separada.
+
+## 4. Estado inicial del repositorio
 
 Al iniciar el trabajo el repositorio se encontraba en detached HEAD sobre:
 
@@ -67,7 +102,7 @@ Después del `fetch` se confirmó la existencia de:
 
     origin/integration-v2
 
-La rama `feat/ambiente-test` fue creada desde esa referencia y se validó que `HEAD` y `origin/integration-v2` apuntaran al mismo commit.
+La rama `feat/ambiente-test` fue creada desde esa referencia y se validó que `HEAD` y `origin/integration-v2` apuntaran inicialmente al mismo commit.
 
 ## 5. Arquitectura DEV de referencia
 
@@ -108,14 +143,24 @@ Nginx escucha internamente en:
 
     80
 
-El Compose utiliza:
+El Compose DEV utiliza:
 
     expose:
       - "80"
 
-No existe publicación del puerto mediante `ports`.
+No existe publicación directa del puerto mediante `ports`.
 
-La configuración de Nginx utiliza fallback a `index.html`, permitiendo el funcionamiento de las rutas SPA gestionadas por React.
+### Configuración Nginx vigente después de sincronizar con DEV
+
+La versión actual de `nginx.conf` incorporada desde `dev` mantiene el fallback SPA hacia `index.html` y agrega una política explícita de caché.
+
+Comportamientos relevantes:
+
+- las rutas que no corresponden a archivos físicos caen a `index.html`;
+- `index.html` se sirve con `Cache-Control: no-cache`;
+- los assets con hash pueden mantenerse en caché con política `public, immutable`.
+
+Este ajuste evita que un navegador conserve un `index.html` antiguo que apunte a bundles generados con un `VITE_API_BASE_URL` previo después de reconstruir la imagen.
 
 ## 6. Variables DEV de referencia
 
@@ -138,7 +183,7 @@ Vite las incorpora al bundle durante:
 
 Por tanto, cambiar sus valores requiere reconstruir la imagen y no solamente reiniciar el contenedor.
 
-## 7. Comunicación con Backend
+## 7. Comunicación con Backend y autenticación
 
 El cliente HTTP se encuentra configurado en:
 
@@ -152,11 +197,34 @@ Si la variable no existe utiliza como fallback:
 
     http://localhost:8000
 
-Para el ambiente TEST desplegado no deberá utilizarse `localhost` como URL definitiva.
+Para el ambiente TEST desplegado no debe utilizarse `localhost` como URL definitiva.
 
-La URL pública HTTPS definitiva del Backend TEST continúa pendiente de la configuración de exposición mediante Dokploy/Traefik.
+La URL pública HTTPS definitiva del Backend TEST será configurada por Despliegue mediante:
 
-Para la validación local integrada se utilizó temporalmente:
+    VITE_API_BASE_URL
+
+La plantilla de TEST indica que debe incluirse el prefijo `/api` si corresponde a la exposición definitiva.
+
+### Cambios de autenticación incorporados desde DEV
+
+La sincronización con `dev` incorporó cambios relevantes en el flujo HTTP y de autenticación:
+
+- Axios utiliza `withCredentials: true`;
+- existe manejo de refresh mediante `/sesiones/refresh`;
+- las solicitudes 401 por token expirado pueden disparar refresh y reintento;
+- existe recuperación silenciosa de sesión al recargar la aplicación;
+- el refresh token se maneja mediante cookie HTTP-only desde Backend;
+- el logout y el manejo de sesión fueron actualizados en Desarrollo.
+
+Esto implica que en TEST desplegado debe existir coherencia entre:
+
+    Frontend TEST HTTPS
+        ->
+    Backend TEST HTTPS
+
+junto con la configuración correspondiente de CORS y cookies del Backend.
+
+Para la validación local integrada se utilizó:
 
     VITE_API_BASE_URL=http://127.0.0.1:8000/api
 
@@ -174,7 +242,7 @@ Se comprobó que está ignorado por Git mediante la regla:
 
 También se comprobó que no está rastreado por Git.
 
-Resultado:
+Resultado histórico:
 
     env-tracked-exit=1
 
@@ -183,9 +251,9 @@ El archivo `.dockerignore` excluye:
     .env
     .env.*
 
-Por tanto, el archivo `.env` local no entra al contexto utilizado durante el build de Docker.
+Por tanto, los archivos locales de entorno no entran al contexto utilizado durante el build de Docker.
 
-No se mostraron ni documentaron sus valores.
+No se mostraron ni documentaron sus valores reales.
 
 ### Protección de `.env.test`
 
@@ -209,17 +277,19 @@ También se comprobó que la plantilla:
 
     .env.test.example
 
-permanece disponible para versionamiento:
+permanece disponible para versionamiento.
 
-    env-test-example-ignore-exit=1
+En la validación final, Git confirmó nuevamente:
+
+    .gitignore:17:.env.test .env.test
 
 Por tanto:
 
 - `.env.test` queda protegido de Git;
 - `.env.test.example` puede versionarse;
-- los valores reales del ambiente TEST no deberán almacenarse en el repositorio.
+- los valores reales del ambiente TEST no se almacenan en el repositorio.
 
-## 9. Hallazgos iniciales
+## 9. Hallazgos de variables y configuración
 
 ### `VITE_AGROFUSION_LOGIN_URL`
 
@@ -240,121 +310,136 @@ Si la variable no existe:
 - el botón queda deshabilitado;
 - la interfaz muestra `Configuración pendiente`.
 
-Sin embargo, actualmente la variable no se encuentra definida en:
+Sin embargo, durante la auditoría inicial la variable no formaba parte del contrato Docker documentado en:
 
 - `docker-compose.yml`;
 - `Dockerfile`;
-- `.env.example`;
-- el conjunto de nombres de variables presente en el `.env` local revisado.
+- `.env.example`.
 
-Por tanto, actualmente no forma parte del contrato Docker documentado del Frontend.
+Implementación no la agregó silenciosamente al contrato TEST.
 
-No será agregada silenciosamente por Implementación.
-
-Debe reportarse o confirmarse con Desarrollo antes de incorporarla a la configuración TEST.
+Pendiente: confirmar con Desarrollo si debe incorporarse formalmente.
 
 ### `VITE_SW`
 
-El archivo `.env` local contiene el nombre:
+El archivo `.env` local contenía el nombre:
 
     VITE_SW
 
-La búsqueda realizada encontró referencias en documentación del repositorio relacionadas con pruebas del Service Worker.
+La búsqueda inicial encontró referencias relacionadas con pruebas del Service Worker, pero no se encontró uso directo en el código fuente inspeccionado durante esa auditoría.
 
-No se encontró uso directo de esta variable en el código fuente inspeccionado durante esta auditoría.
-
-No será agregada al contrato TEST hasta disponer de evidencia de que sea necesaria para el build del ambiente.
+No fue agregada al contrato TEST.
 
 ### Gestor de paquetes
 
 El `Dockerfile` utiliza `pnpm` mediante Corepack.
 
-El archivo `package.json` no define actualmente el campo:
-
-    packageManager
-
-La construcción Docker utiliza como archivos de lock/workspace:
+El proyecto utiliza:
 
     pnpm-lock.yaml
     pnpm-workspace.yaml
 
-## 10. Arquitectura TEST propuesta
+## 10. Arquitectura TEST implementada
 
-El ambiente TEST deberá mantenerse separado de DEV.
+El ambiente TEST se mantiene separado de DEV.
 
-Se prevé crear:
+Archivos principales:
 
     docker-compose.test.yml
     .env.test.example
 
-El servicio TEST conservará:
+El servicio TEST conserva:
 
 - `target: prod`;
 - Nginx como servidor final;
 - puerto interno `80`;
-- ausencia de `ports`;
-- variables Vite inyectadas durante build.
+- ausencia de `ports` en el Compose TEST base;
+- variables Vite inyectadas durante build;
+- `restart: unless-stopped`.
 
-El Frontend TEST no necesita conectarse a PostgreSQL ni pertenecer a la red interna utilizada por Backend y AIoT, ya que su comunicación con Backend se realizará mediante la URL HTTPS pública del Backend TEST.
+El Frontend TEST no se conecta directamente a PostgreSQL.
 
-## 11. Archivos creados
+La comunicación con Backend se realiza desde el navegador del usuario mediante la URL HTTPS pública del Backend TEST configurada en:
 
-Hasta este punto se crearon:
+    VITE_API_BASE_URL
+
+No se agregó una red Docker compartida entre Frontend, Backend, PostgreSQL o AIoT para el Compose TEST del Frontend.
+
+## 11. Archivos propios del ambiente TEST
+
+Se crearon:
 
     docs/SEGUIMIENTO-ENTORNO-TEST.md
     .env.test.example
     docker-compose.test.yml
 
-La plantilla `.env.test.example` contiene únicamente nombres de variables y valores vacíos donde corresponde.
-
-No contiene valores reales del ambiente.
-
-## 12. Archivos modificados
-
 Se modificó:
 
     .gitignore
 
-El único cambio realizado fue agregar:
+El cambio en `.gitignore` corresponde a la protección de:
 
     .env.test
 
-para impedir el versionamiento accidental del archivo local TEST.
+Después de sincronizar con `dev`, se verificó:
 
-El archivo DEV:
+    git diff --name-status origin/dev..HEAD
 
-    docker-compose.yml
+Resultado:
 
-permanece sin modificaciones.
+    A  .env.test.example
+    M  .gitignore
+    A  docker-compose.test.yml
+    A  docs/SEGUIMIENTO-ENTORNO-TEST.md
 
-## 13. Pruebas y validaciones
+Esto confirma que, respecto al `dev` incorporado, los cambios propios de la rama corresponden exclusivamente al ambiente TEST y su documentación.
 
-### Validación de rama base
+## 12. Seguridad y exposición de puertos
 
-Se comprobó que:
+El Compose TEST entregable contiene:
+
+    expose:
+      - "80"
+
+No contiene publicación directa mediante `ports`.
+
+Por tanto, el puerto 80 queda disponible únicamente dentro del entorno Docker y está preparado para ser expuesto externamente por la capa de proxy/reverse proxy administrada por Despliegue.
+
+Arquitectura esperada en despliegue:
+
+    Internet
+        -> HTTPS :443
+        -> Traefik / Dokploy
+        -> Frontend Nginx :80 interno
+
+Para validaciones locales se utilizó un override no versionado:
+
+    docker-compose.local.yml
+
+con:
+
+    127.0.0.1:8080:80
+
+Este binding limita el acceso local a loopback y evita publicar el servicio en `0.0.0.0`.
+
+El override local está excluido mediante `.git/info/exclude` y no forma parte de la entrega.
+
+## 13. Pruebas y validaciones realizadas
+
+### 13.1 Validaciones iniciales de rama y configuración
+
+Se comprobó inicialmente:
 
     HEAD=ef30a761a8f9d629d2f909b8671c844cdafa48b3
     origin/integration-v2=ef30a761a8f9d629d2f909b8671c844cdafa48b3
 
 Resultado: **Correcto**.
 
-### Validación del estado inicial
-
-Después de descartar el cambio local no requerido de `package-lock.json` se obtuvo:
-
-    nothing to commit, working tree clean
+Después de descartar el cambio local no requerido de `package-lock.json` se obtuvo árbol limpio.
 
 Resultado: **Correcto**.
 
-### Validación de `.env`
-
-Se comprobó que `.env` está ignorado por Git y no se encuentra rastreado.
-
-También se comprobó que `.dockerignore` excluye `.env` y `.env.*`.
-
-Resultado: **Correcto**.
-
-### Auditoría del Compose DEV
+### 13.2 Auditoría del Compose DEV
 
 Se comprobó que:
 
@@ -366,7 +451,7 @@ Se comprobó que:
 
 Resultado: **Correcto**.
 
-### Diseño de `docker-compose.test.yml`
+### 13.3 Diseño y validación de `docker-compose.test.yml`
 
 Se creó un Compose independiente para TEST:
 
@@ -380,31 +465,31 @@ Contiene únicamente el servicio:
 
     frontend
 
-La configuración conserva la arquitectura validada de DEV:
+La variable `VITE_API_BASE_URL` fue declarada obligatoria mediante interpolación requerida.
 
-- mismo `Dockerfile`;
-- `target: prod`;
-- build de Vite;
-- imagen final Nginx;
-- `expose: 80`;
-- ausencia de `ports`;
-- `restart: unless-stopped`.
+Las variables Firebase/VAPID conservan el contrato existente y permiten valor vacío mientras se define su configuración definitiva.
 
-No se agregó una red compartida con PostgreSQL, Backend o AIoT.
+Se validó:
 
-El Frontend se ejecuta en el navegador del usuario, por lo que las solicitudes HTTP hacia Backend deberán realizarse mediante la URL pública HTTPS de Backend TEST definida en:
+    docker compose --env-file .env.test -f docker-compose.test.yml config --quiet
 
-    VITE_API_BASE_URL
+Resultado final observado:
 
-La variable `VITE_API_BASE_URL` fue declarada obligatoria en Compose mediante interpolación de variable requerida.
+    compose-check=0
 
-Las variables Firebase/VAPID conservan el mismo contrato existente en DEV y permiten valor vacío mientras se confirma su configuración definitiva para TEST.
+También se había realizado una prueba negativa dejando `VITE_API_BASE_URL` sin valor.
 
-### Validación del contrato de variables TEST
+Resultado histórico:
 
-Se creó `.env.test.example` utilizando el contrato de variables actualmente soportado por el Compose DEV.
+    required variable VITE_API_BASE_URL is missing a value
 
-Variables incluidas:
+Esto evita construir accidentalmente un Frontend TEST sin URL explícita del Backend.
+
+Resultado general: **Correcto**.
+
+### 13.4 Validación del contrato de variables TEST
+
+`.env.test.example` contiene:
 
     VITE_API_BASE_URL
     VITE_FIREBASE_API_KEY
@@ -415,464 +500,470 @@ Variables incluidas:
     VITE_FIREBASE_STORAGE_BUCKET
     VITE_VAPID_KEY
 
-Se comparó el conjunto de variables de `.env.test.example` contra los `build.args` definidos en `docker-compose.yml`.
+Durante la validación final se comprobó la presencia de todos esos nombres en `.env.test` sin mostrar sus valores.
 
-Los dos conjuntos coincidieron exactamente.
-
-No se agregaron:
+No se agregaron al contrato:
 
     VITE_AGROFUSION_LOGIN_URL
     VITE_SW
 
-debido a que todavía no forman parte del contrato Docker validado.
+por no contar con confirmación formal dentro del contrato Docker revisado.
 
 Resultado: **Correcto**.
 
-### Validación de protección de archivos TEST
+### 13.5 Construcción inicial de la imagen Frontend TEST
 
-Antes de modificar `.gitignore`:
-
-    env-test-ignore-exit=1
-
-Después de agregar la regla `.env.test`:
-
-    env-test-ignore-exit=0
-
-Para `.env.test.example`:
-
-    env-test-example-ignore-exit=1
-
-Esto confirma que el archivo con valores reales quedará ignorado mientras que la plantilla seguirá siendo versionable.
-
-Resultado: **Correcto**.
-
-### Preparación local de `.env.test`
-
-Se creó localmente:
-
-    .env.test
-
-El archivo se generó a partir de:
-
-    .env.test.example
-
-Para la validación técnica local se configuró únicamente una URL temporal y deliberadamente no válida para Backend:
-
-    https://backend-test.invalid/api
-
-El dominio `.invalid` se utiliza exclusivamente para evitar confundir esta prueba con una integración real.
-
-Las variables Firebase/VAPID permanecen vacías durante esta validación técnica.
-
-Se comprobó que:
-
-    .env.test
-
-está ignorado por Git mediante la regla agregada a `.gitignore`.
-
-También se comprobó que no está rastreado:
-
-    env-test-tracked-exit=1
-
-El estado de variables se verificó sin mostrar sus valores:
-
-    VITE_API_BASE_URL=SET
-    VITE_FIREBASE_API_KEY=EMPTY
-    VITE_FIREBASE_AUTH_DOMAIN=EMPTY
-    VITE_FIREBASE_PROJECT_ID=EMPTY
-    VITE_FIREBASE_STORAGE_BUCKET=EMPTY
-    VITE_FIREBASE_MESSAGING_SENDER_ID=EMPTY
-    VITE_FIREBASE_APP_ID=EMPTY
-    VITE_VAPID_KEY=EMPTY
-
-Compose fue validado utilizando directamente `.env.test`.
-
-Resultado:
-
-    compose-env-test-exit=0
-
-Esta configuración se utilizará únicamente para validar:
-
-- construcción de la imagen;
-- ejecución del contenedor;
-- Nginx;
-- navegación SPA básica;
-- seguridad del puerto.
-
-No constituye validación de:
-
-- integración Frontend - Backend;
-- Firebase;
-- Firebase Cloud Messaging;
-- notificaciones push.
-
-### Validación estructural de Compose TEST
-
-Se validó la configuración utilizando valores controlados y sin utilizar secretos reales.
-
-Comando equivalente:
-
-    docker compose -f docker-compose.test.yml config --quiet
-
-Resultado:
-
-    compose-test-config-exit=0
-
-Se consultaron los servicios reconocidos por Compose.
-
-Resultado:
-
-    frontend
-
-No se detectaron servicios adicionales.
-
-También se realizó una prueba negativa dejando `VITE_API_BASE_URL` sin valor.
-
-Compose rechazó correctamente la configuración con el mensaje:
-
-    required variable VITE_API_BASE_URL is missing a value
-
-Resultado:
-
-    missing-api-url-exit=1
-
-Esto evita construir accidentalmente un Frontend TEST sin una URL explícita para Backend.
-
-Resultado general: **Correcto**.
-
-### Construcción de la imagen Frontend TEST
-
-Se ejecutó la construcción real del servicio `frontend` utilizando:
-
-    docker compose --env-file .env.test -f docker-compose.test.yml build frontend
-
-Durante el proceso se ejecutaron correctamente:
+Durante la etapa inicial se ejecutó la construcción real del servicio `frontend` y finalizaron correctamente:
 
     pnpm install --frozen-lockfile
     tsc
     vite build
 
-Vite transformó 2957 módulos y generó el directorio de producción `dist`.
-
-La imagen final creada fue:
-
-    sgpmp-frontend-test-frontend:latest
-
-Tamaño observado:
-
-    80MB
+En esa validación inicial Vite transformó 2957 módulos.
 
 Resultado:
 
     frontend-test-build-exit=0
 
-Resultado general: **Correcto**.
+La advertencia de chunks superiores a 500 kB no bloqueó el build y se clasificó como observación de optimización del Frontend.
 
-Durante el build Vite emitió una advertencia indicando que algunos chunks superan 500 kB después de minificación.
+### 13.6 Validación inicial de ejecución, Nginx y SPA
 
-La advertencia no impidió la construcción y se considera un hallazgo de optimización del Frontend, no un error del ambiente TEST.
+Se levantó el contenedor Frontend TEST y se comprobó:
 
-La construcción con variables Firebase/VAPID vacías valida únicamente la capacidad de compilación actual. No constituye una validación funcional de Firebase o FCM.
+- Nginx inició sin errores críticos;
+- el servicio quedó `Up`;
+- el puerto 80 no fue publicado por el Compose TEST base;
+- las rutas SPA devolvieron `index.html` correctamente.
 
-### Ejecución y smoke test del Frontend TEST
-
-Se levantó el servicio mediante:
-
-    docker compose --env-file .env.test -f docker-compose.test.yml up -d frontend
-
-Resultado:
-
-    frontend-test-up-exit=0
-
-El contenedor creado fue:
-
-    sgpmp-frontend-test-frontend-1
-
-Compose reportó:
-
-    Up
-    80/tcp
-
-Los logs de Nginx mostraron inicialización completa y arranque de los procesos worker sin errores críticos.
-
-### Validación de seguridad del puerto
-
-Se comprobó la publicación de puertos del contenedor.
-
-`docker port` no devolvió ningún mapeo hacia el host.
-
-Docker inspect reportó:
-
-    PortBindings={}
-
-Por tanto, el puerto 80 permanece únicamente interno al contenedor.
+También se comprobó durante la validación inicial la presencia en el bundle de la URL técnica usada para la prueba y la ausencia del fallback `http://localhost:8000`.
 
 Resultado: **Correcto**.
 
-### Validación HTTP y fallback SPA
+### 13.7 Integración local Frontend TEST - Backend TEST - PostgreSQL TEST
 
-Las solicitudes realizadas desde el interior del contenedor produjeron:
+Para una prueba local integrada se utilizaron archivos `docker-compose.local.yml` no versionados.
 
-    /                         -> HTTP 200, 2358 bytes
-    /login                    -> HTTP 200, 2358 bytes
-    /dashboard                -> HTTP 200, 2358 bytes
-    /ruta-inexistente-test    -> HTTP 200, 2358 bytes
+Publicación temporal:
 
-Los cuatro archivos devueltos presentaron el mismo SHA-256:
+    Frontend TEST: 127.0.0.1:8080 -> 80
+    Backend TEST: 127.0.0.1:8000 -> 8000
 
-    e08861a7f64bd5a768ad8835f657adc3da79be0cf1bf1a694f355830e8062e7d
+PostgreSQL TEST permaneció sin publicación hacia el host.
 
-Las comparaciones produjeron:
+El Frontend fue reconstruido con:
 
-    root-login-same=0
-    root-dashboard-same=0
-    root-fake-same=0
+    VITE_API_BASE_URL=http://127.0.0.1:8000/api
 
-Esto confirma que Nginx entrega `index.html` como fallback para rutas gestionadas por React.
+Se comprobó:
 
-Resultado: **Correcto**.
+    GET http://127.0.0.1:8080/ -> HTTP 200
+    GET http://127.0.0.1:8080/login -> HTTP 200
 
-### Validación de `VITE_API_BASE_URL` en el bundle
+El bundle contenía:
 
-Se buscó en los assets construidos la URL técnica utilizada para esta prueba:
+    http://127.0.0.1:8000/api
 
-    https://backend-test.invalid/api
+Durante la prueba integrada inicial también se verificó una solicitud real del navegador:
 
-La URL fue encontrada en los bundles principal y legacy.
+    POST http://127.0.0.1:8000/api/sesiones/
 
-También se buscó:
+utilizando una cuenta ficticia.
 
-    http://localhost:8000
+Resultado observado:
 
-No se encontraron coincidencias en los assets construidos.
+    HTTP 401 Unauthorized
+    error_code: CREDENCIALES_INVALIDAS
 
-Esto confirma que `VITE_API_BASE_URL` fue incorporada correctamente durante el build.
+El resultado era esperado y confirmó que la solicitud del Frontend alcanzó la lógica de autenticación del Backend.
 
-Esta validación utiliza una URL técnica temporal y no constituye todavía integración real con Backend TEST.
+La inspección del Backend confirmó el recorrido técnico hasta PostgreSQL mediante SQLAlchemy.
 
-Resultado: **Correcto**.
+Resultado de integración local: **Correcto**.
 
-### Validación de integridad de DEV
+### 13.8 Sincronización final con `origin/dev`
 
-Se compararon los archivos de configuración compartidos contra la rama base:
+Antes de incorporar los cambios recientes de Desarrollo se comprobó:
 
-    origin/integration-v2
+    HEAD local = 87e27d7
+    origin/feat/ambiente-test = 87e27d7
+    origin/dev = dc31301
 
-Resultados:
+La divergencia era:
 
-    docker-compose.yml -> dev-compose-diff-exit=0
-    Dockerfile         -> dockerfile-diff-exit=0
-    nginx.conf         -> nginx-diff-exit=0
-    .env.example       -> env-example-diff-exit=0
+    origin/dev...HEAD = 19 5
 
-Por tanto, ninguno de estos archivos fue modificado durante la preparación del ambiente TEST.
+Interpretación:
 
-Al consultar los archivos rastreados modificados respecto de la rama base se obtuvo únicamente:
+- `dev` tenía 19 commits que todavía no estaban en TEST;
+- TEST tenía 5 commits propios que no estaban en `dev`.
 
-    M .gitignore
+Se creó una rama local de respaldo:
 
-El cambio en `.gitignore` corresponde exclusivamente a la protección de:
+    backup/ambiente-test-pre-dev-sync
 
-    .env.test
+apuntando a:
 
-Resultado: **Correcto**.
+    87e27d7
 
-### Revisión previa al commit
+Se compararon los archivos modificados por ambas ramas.
 
-Se realizó una revisión controlada del contenido preparado para versionamiento.
-
-Los archivos incluidos en staging fueron exclusivamente:
+Cambios propios TEST:
 
     .env.test.example
     .gitignore
     docker-compose.test.yml
     docs/SEGUIMIENTO-ENTORNO-TEST.md
 
-Se comprobó que:
+Cambios provenientes de DEV:
 
-    .env.test
+    nginx.conf
+    src/App.test.tsx
+    src/App.tsx
+    src/auth/hooks/useLogout.ts
+    src/configuration/api/iotApi.ts
+    src/configuration/components/AplicarPlantillaWizard.tsx
+    src/configuration/components/ConfiguracionRemotaSection.tsx
+    src/configuration/components/PlantillasTable.tsx
+    src/configuration/types.ts
+    src/shared/api/http.test.ts
+    src/shared/api/http.ts
+    src/shared/auth/AuthContext.tsx
+    src/shared/auth/tokenStore.ts
 
-no fue incluido en staging.
+No existían archivos modificados por ambos lados.
+
+Se ejecutó:
+
+    git merge origin/dev --no-commit --no-ff
 
 Resultado:
 
-    env-test-staged-exit=1
+    Automatic merge went well; stopped before committing as requested
 
-La versión staged de `.env.test.example` fue revisada y no contiene variables con valores configurados.
+No se presentaron conflictos.
 
-También se ejecutó:
+Se verificó:
+
+    git diff --name-only --diff-filter=U
+
+Resultado: sin salida.
+
+También:
 
     git diff --cached --check
 
 Resultado:
 
-    staged-diff-check-exit=0
+    staged-check=0
 
-Se realizó una búsqueda de firmas típicas de secretos sobre las líneas agregadas al staging.
+Resultado general: **Merge limpio y controlado**.
 
-El primer intento produjo código 2 porque `grep` interpretó el patrón que comenzaba por `-----BEGIN` como una opción.
+### 13.9 Verificación de integridad de los archivos TEST después del merge
 
-El comando fue corregido utilizando `grep -Eq --`.
+Se compararon los archivos propios de TEST contra el respaldo previo a la sincronización:
 
-Resultado final:
+    .env.test.example
+    docker-compose.test.yml
+    .gitignore
+    docs/SEGUIMIENTO-ENTORNO-TEST.md
 
-    staged-secret-signature-exit=1
+Resultado: sin diferencias.
 
-El valor 1 confirma que no se encontraron coincidencias con las firmas de secretos revisadas.
+Esto confirmó que los cambios de Desarrollo no sobrescribieron ni alteraron la configuración específica de TEST.
 
-Finalmente se volvió a validar Compose con el archivo local `.env.test`.
+Resultado: **Correcto**.
+
+### 13.10 Rebuild del Frontend TEST con el `dev` actualizado
+
+Con el merge aún pendiente de commit se volvió a construir la imagen mediante:
+
+    docker compose \
+      --env-file .env.test \
+      -f docker-compose.test.yml \
+      -f docker-compose.local.yml \
+      build frontend
+
+Durante el proceso se ejecutó:
+
+    tsc && vite build
+
+Resultado observado:
+
+    2958 modules transformed
+    built successfully
+    frontend-build-exit=0
+
+Se creó correctamente la imagen:
+
+    sgpmp-frontend-test-frontend:latest
+
+La advertencia de chunks superiores a 500 kB se mantuvo como advertencia de optimización y no bloqueó el build.
+
+Resultado: **Correcto**.
+
+### 13.11 Runtime final de Nginx y seguridad de puerto local
+
+Se levantó el Frontend mediante el override local:
+
+    docker compose \
+      --env-file .env.test \
+      -f docker-compose.test.yml \
+      -f docker-compose.local.yml \
+      up -d frontend
 
 Resultado:
 
-    precommit-compose-exit=0
+    frontend-up-exit=0
 
-Resultado general de revisión pre-commit: **Correcto**.
+Compose mostró:
 
-### Validación local Frontend TEST - Backend TEST - PostgreSQL TEST
+    sgpmp-frontend-test-frontend-1
+    Up
+    127.0.0.1:8080->80/tcp
 
-Después de validar Frontend TEST y Backend TEST de manera independiente se realizó una prueba local integrada.
+Esta publicación corresponde únicamente a la prueba local.
 
-Se utilizaron archivos locales:
+El Compose TEST base sigue sin publicar puertos al host.
 
-    docker-compose.local.yml
+Resultado: **Correcto**.
 
-ignorados mediante `.git/info/exclude` y no destinados a versionarse.
+### 13.12 HTTP, SPA y política de caché de Nginx
 
-La publicación temporal fue:
-
-    Frontend TEST: 127.0.0.1:8080 -> 80
-    Backend TEST: 127.0.0.1:8000 -> 8000
-
-PostgreSQL TEST permaneció sin publicación de puerto hacia el host.
-
-#### Reconstrucción local del Frontend
-
-Debido a que las variables `VITE_*` se incorporan durante el build, el Frontend fue reconstruido utilizando:
-
-    VITE_API_BASE_URL=http://127.0.0.1:8000/api
-
-La construcción finalizó correctamente.
-
-El contenedor quedó disponible mediante:
-
-    http://127.0.0.1:8080
-
-Se comprobó:
+Se verificó:
 
     GET / -> HTTP 200
-    GET /login -> HTTP 200
 
-El binding real quedó limitado a:
+Para `index.html`:
 
-    127.0.0.1:8080 -> 80
+    HTTP/1.1 200 OK
+    Content-Type: text/html
+    Cache-Control: no-cache
 
-#### Validación del bundle
+También se comprobó una ruta SPA inexistente:
 
-Dentro de los archivos estáticos servidos por Nginx se comprobó la presencia de:
+    /ruta-test-no-existe -> HTTP 200
+
+Esto confirma que el `nginx.conf` actualizado desde `dev` funciona correctamente dentro de TEST.
+
+Resultado: **Correcto**.
+
+### 13.13 Verificación final de `VITE_API_BASE_URL` en el bundle
+
+Dentro del contenedor se buscó:
 
     http://127.0.0.1:8000/api
 
-También se verificó que no permanecieran:
+La URL fue encontrada en:
 
-    https://backend-test.invalid/api
-    http://localhost:8000
+    /usr/share/nginx/html/assets/index-legacy-6xpa2Zz7.js
+    /usr/share/nginx/html/assets/index-DoreKSeF.js
 
-Por tanto, la imagen utilizada en la prueba local fue construida con la URL esperada.
+Esto confirma que la URL configurada durante el build fue incorporada realmente al bundle.
 
-#### Validación de CORS local
+Resultado: **Correcto**.
 
-Desde:
+### 13.14 Validación final Frontend - Backend
 
-    http://127.0.0.1:8080
+Se verificó el Backend local en:
 
-se comprobó la preflight contra:
-
-    OPTIONS http://127.0.0.1:8000/api/sesiones/
+    http://127.0.0.1:8000/health
 
 Resultado:
 
     HTTP 200
-    access-control-allow-origin: http://127.0.0.1:8080
-    access-control-allow-credentials: true
 
 También:
 
-    GET http://127.0.0.1:8000/health -> HTTP 200
+    http://127.0.0.1:8000/api/health
 
-con el mismo origen.
+Resultado:
 
-CORS funcionó correctamente para la prueba local.
+    HTTP 200
 
-Esta evidencia no sustituye la futura validación con los dominios HTTPS públicos reales de TEST.
+Esto confirma que el prefijo `/api` utilizado por el Frontend local es válido con el Backend TEST actual.
 
-#### Solicitud real desde navegador
+Resultado: **Correcto**.
 
-El Frontend utiliza:
+### 13.15 CORS con credenciales
 
-    POST /sesiones/
+Desde el origen real utilizado por el Frontend local:
 
-sobre `VITE_API_BASE_URL`.
+    http://127.0.0.1:8080
 
-Por tanto, durante la prueba local el navegador realizó:
+se ejecutó un preflight hacia Backend.
 
-    POST http://127.0.0.1:8000/api/sesiones/
+Respuesta relevante:
 
-Se utilizó deliberadamente una cuenta ficticia y una contraseña no real.
+    HTTP/1.1 200 OK
+    access-control-allow-origin: http://127.0.0.1:8080
+    access-control-allow-credentials: true
+    access-control-allow-headers: authorization,content-type
 
-Resultado observado mediante DevTools:
+La misma validación sobre la variante con `/api` respondió correctamente.
 
-    Request Method: POST
-    Status Code: 401 Unauthorized
-    error_code: CREDENCIALES_INVALIDAS
+Esto es especialmente relevante porque el cliente HTTP actual utiliza:
 
-El resultado era esperado y confirma que la solicitud real del Frontend alcanzó la lógica de autenticación del Backend.
+    withCredentials: true
 
-No se utilizó ni modificó una cuenta TEST real.
+Resultado: **Correcto**.
 
-#### Confirmación del recorrido hasta PostgreSQL
+Esta evidencia es local y no sustituye la futura validación con los dominios HTTPS públicos definitivos.
 
-La inspección del Backend confirmó que el endpoint de login utiliza:
+### 13.16 Pruebas unitarias existentes de Desarrollo
 
-    SqlAlchemyUsuarioRepository(db)
+Sin instalar ni configurar nuevas herramientas de QA se ejecutó el script ya presente en el repositorio:
 
-y ejecuta una consulta mediante:
+    pnpm test.unit --run
 
-    self.db.query(Usuarios)
-        .filter(...)
-        .first()
+Resultado:
 
-La sesión SQLAlchemy utilizada por Backend TEST apunta a:
+    Test Files  2 passed (2)
+    Tests       3 passed (3)
+    unit-tests-exit=0
 
-    driver = postgresql
-    host = db
-    port = 5432
-    database = sgpmp_test
+Archivos ejecutados:
 
-Por tanto, la prueba confirma el recorrido técnico:
+    src/shared/api/http.test.ts
+    src/App.test.tsx
 
-    Frontend TEST
-        ->
-    Backend TEST
-        ->
-    SQLAlchemy
-        ->
-    PostgreSQL TEST
+Estas pruebas se utilizaron exclusivamente como validación técnica de que la sincronización con `dev` no rompió el Frontend.
 
-Resultado de integración local: **Correcto**.
+Implementación no asumió la configuración ni mantenimiento de Vitest como herramienta del equipo de Pruebas.
 
-La prueba no valida un inicio de sesión exitoso con una cuenta TEST real ni la comunicación mediante los futuros dominios HTTPS públicos.
+Resultado: **Correcto**.
 
-## 14. Errores encontrados
+### 13.17 Validación de lint y hallazgo heredado de DEV
 
-Ninguno durante la preparación inicial de la rama TEST.
+Se ejecutó el script existente:
+
+    pnpm lint
+
+ESLint respondió:
+
+    ESLint couldn't find an eslint.config.(js|mjs|cjs) file.
+
+El comando falló realmente con código de salida 2.
+
+Posteriormente se validó directamente `origin/dev`:
+
+    git ls-tree -r --name-only origin/dev \
+      | grep -E '(^|/)(eslint\.config\.(js|mjs|cjs)|\.eslintrc(\..*)?)$'
+
+Resultado:
+
+    SIN_CONFIG_ESLINT_EN_DEV
+
+También se verificó en `origin/dev:package.json`:
+
+    "lint": "eslint"
+    "eslint": "^9.20.1"
+
+Conclusión:
+
+- el script `lint` existe;
+- ESLint 9 está declarado;
+- la configuración requerida por ESLint 9 no existe en `origin/dev`;
+- el problema no fue introducido por la rama TEST.
+
+Se clasifica como **hallazgo heredado de Desarrollo**.
+
+Implementación no modificó ESLint ni agregó una configuración propia para ocultar o corregir el problema.
+
+Resultado: **Hallazgo no bloqueante para el ambiente TEST**.
+
+### 13.18 Validación final del merge y comparación con DEV
+
+Antes de cerrar el merge se ejecutó:
+
+    git diff --cached --check
+
+Resultado:
+
+    staged-check=0
+
+Luego se creó el commit:
+
+    c096ffa merge: incorpora cambios de dev en ambiente test
+
+Después se verificó:
+
+    git rev-list --left-right --count origin/dev...HEAD
+
+Resultado:
+
+    0 6
+
+También:
+
+    git diff --name-status origin/dev..HEAD
+
+Resultado:
+
+    A  .env.test.example
+    M  .gitignore
+    A  docker-compose.test.yml
+    A  docs/SEGUIMIENTO-ENTORNO-TEST.md
+
+El árbol de trabajo quedó limpio.
+
+Resultado: **Sincronización con DEV correcta**.
+
+### 13.19 Publicación final de la rama Frontend TEST
+
+Se publicó exclusivamente la rama de trabajo:
+
+    git push origin feat/ambiente-test
+
+Resultado:
+
+    87e27d7..c096ffa  feat/ambiente-test -> feat/ambiente-test
+
+Después se verificó:
+
+    local = c096ffa
+    remoto = c096ffa
+    local vs remoto = 0 0
+    DEV vs feature = 0 6
+    working tree = limpio
+
+La publicación no realizó merge ni push hacia:
+
+    dev
+    main
+    integration-v2
+
+Resultado: **Publicación final correcta**.
+
+## 14. Errores y hallazgos encontrados
+
+### 14.1 Etapa inicial
+
+No se presentaron errores críticos durante la preparación inicial del ambiente TEST.
+
+### 14.2 Advertencia de tamaño de chunks
+
+Vite reportó que algunos chunks superan 500 kB después de minificación.
+
+La advertencia no impide el build y corresponde a optimización del Frontend, no a la configuración del ambiente TEST.
+
+### 14.3 ESLint 9 sin archivo de configuración
+
+Durante la validación final se detectó que:
+
+    pnpm lint
+
+no puede ejecutarse correctamente porque `origin/dev` contiene ESLint 9 pero no incluye `eslint.config.js`, `eslint.config.mjs`, `eslint.config.cjs` ni una configuración equivalente compatible.
+
+Se registró como hallazgo heredado de Desarrollo.
+
+No fue corregido por Implementación.
 
 ## 15. Ajuste de alcance respecto a herramientas del equipo de Pruebas
 
-Posteriormente se revisó el documento `Ambiente_Implementación (2).xlsx`, específicamente la hoja `Aprobacion de Ambientes`, con el fin de aclarar las responsabilidades entre Implementación y Pruebas.
+Se revisó el documento `Ambiente_Implementación (2).xlsx`, específicamente la hoja `Aprobacion de Ambientes`, con el fin de aclarar las responsabilidades entre Implementación y Pruebas.
 
-La segunda evaluación del documento corrige expresamente el criterio inicial relacionado con las herramientas de validación.
-
-Para Frontend, el documento establece que Implementación no debe instalar, configurar ni mantener herramientas como:
+La evaluación corregida establece que Implementación no debe instalar, configurar ni mantener herramientas como:
 
     Cypress
     Playwright
@@ -883,17 +974,10 @@ De manera general, las herramientas de E2E, accesibilidad, carga y seguridad son
 La responsabilidad de Implementación consiste en:
 
 - construir y mantener disponible Frontend TEST;
-- exponer una URL HTTPS estable del Frontend;
+- preparar su exposición mediante una URL HTTPS estable;
 - configurar correctamente la comunicación con Backend TEST;
 - comunicar al equipo de Pruebas las URLs y restricciones necesarias;
 - mantener el ambiente accesible para que Pruebas ejecute sus propias herramientas.
-
-La segunda evaluación identifica expresamente que fue incorrecto solicitar a Implementación la creación de `cypress.config.ts` y el reemplazo del caso Cypress existente.
-
-El criterio corregido es:
-
-    Implementación monta y orquesta el ambiente TEST.
-    Pruebas lo opera.
 
 ### Corrección de trabajo realizado por interpretación anterior
 
@@ -905,19 +989,10 @@ Se realizó:
 
 - eliminación del `cypress.config.ts` creado por Implementación;
 - restauración de `cypress/e2e/test.cy.ts` a su contenido original de Desarrollo;
-- retiro de la documentación añadida específicamente para las validaciones de Cypress y Vitest;
-- eliminación de los screenshots generados durante la ejecución local de Cypress;
-- eliminación de la caché local `node_modules/.vitest`;
+- retiro de documentación añadida específicamente para validaciones de Cypress y Vitest;
+- eliminación de screenshots generados durante ejecución local de Cypress;
+- eliminación de caché local `node_modules/.vitest`;
 - restauración de la rama al último commit correspondiente al trabajo válido del ambiente TEST.
-
-Resultado de la limpieza:
-
-    HEAD Frontend = 863c267
-    cypress.config.ts creado por Implementación = eliminado
-    test Cypress original = restaurado
-    screenshots Cypress generados = eliminados
-    cache Vitest generada = eliminada
-    working tree Frontend antes de esta actualización documental = limpio
 
 No se eliminaron Cypress, Vitest ni los archivos de pruebas que ya pertenecían al repositorio de Desarrollo.
 
@@ -927,121 +1002,111 @@ No se realizó `push` del commit descartado.
 
 Resultado: **Alcance corregido**.
 
-A partir de este punto Implementación se concentrará en disponer y exponer correctamente Frontend TEST, sin asumir la instalación, configuración o mantenimiento del stack de herramientas del equipo de Pruebas.
+La ejecución posterior de `pnpm test.unit --run` se utilizó únicamente como verificación técnica de los tests unitarios ya incluidos por Desarrollo y no representa adopción, instalación ni mantenimiento del stack de QA por Implementación.
 
-## 16. Pendientes
+## 16. Pendientes para Despliegue y validación posterior
 
-- Determinar la URL pública HTTPS definitiva del Backend TEST para el despliegue.
-- Confirmar con Desarrollo el tratamiento de `VITE_AGROFUSION_LOGIN_URL`.
-- Confirmar si `VITE_SW` debe formar parte del ambiente TEST.
-- Validar las variables Firebase requeridas para TEST.
-- Validar nuevamente el bundle con la URL pública HTTPS definitiva del Backend TEST cuando sea definida.
-- Validar la integración desplegada Frontend TEST - Backend TEST utilizando las URLs públicas definitivas.
-- Comprobar nuevamente CORS con la URL HTTPS pública real del Frontend TEST.
-- Entregar al equipo de Pruebas la URL HTTPS estable del Frontend TEST y la información necesaria para consumir Backend TEST.
-- Documentar progresivamente los resultados.
+La configuración técnica del Frontend TEST quedó preparada y publicada.
 
-### Validación final previa a entrega de la rama
+Continúan pendientes acciones que requieren el ambiente real de Despliegue:
 
-Antes de preparar la entrega de la rama se actualizaron las referencias remotas mediante `git fetch origin`.
+- definir la URL pública HTTPS definitiva del Backend TEST;
+- configurar `VITE_API_BASE_URL` con esa URL, incluyendo `/api` según corresponda;
+- reconstruir la imagen Frontend después de establecer la URL definitiva, ya que las variables `VITE_*` son build-time;
+- definir y cargar las variables Firebase/VAPID requeridas para TEST;
+- confirmar con Desarrollo el tratamiento de `VITE_AGROFUSION_LOGIN_URL`;
+- confirmar si `VITE_SW` debe formar parte del contrato TEST;
+- configurar dominio y HTTPS del Frontend mediante Dokploy/Traefik;
+- validar la integración desplegada Frontend TEST - Backend TEST con las URLs públicas reales;
+- comprobar CORS con la URL HTTPS pública real del Frontend TEST;
+- comprobar el flujo de cookies/refresh en HTTPS real;
+- entregar al equipo de Pruebas la URL HTTPS estable y la información necesaria para consumir Backend TEST;
+- reportar a Desarrollo el hallazgo de ESLint 9 sin archivo de configuración, si aún permanece vigente.
 
-La rama base Frontend permaneció en:
+## 17. Evidencias consolidadas
 
-    origin/integration-v2 = ef30a76
+Evidencias técnicas obtenidas durante el trabajo:
 
-La comparación entre `origin/integration-v2` y `feat/ambiente-test` mostró únicamente commits propios de la rama de trabajo, sin nuevos commits pendientes provenientes de la rama base.
+- rama TEST creada y protegida de cambios accidentales en DEV;
+- `.env.test` ignorado por Git;
+- `.env.test.example` versionable y sin secretos reales;
+- Compose TEST validado con `config --quiet`;
+- prueba negativa de `VITE_API_BASE_URL` obligatoria;
+- build inicial de producción correcto;
+- build posterior a sincronización con DEV correcto;
+- 2958 módulos transformados en el build final;
+- imagen `sgpmp-frontend-test-frontend:latest` creada;
+- contenedor Frontend `Up`;
+- `GET /` = HTTP 200;
+- fallback SPA = HTTP 200;
+- `index.html` con `Cache-Control: no-cache`;
+- `VITE_API_BASE_URL` encontrada en el bundle generado;
+- Backend `/health` = HTTP 200;
+- Backend `/api/health` = HTTP 200;
+- CORS desde `http://127.0.0.1:8080` = HTTP 200;
+- `Access-Control-Allow-Origin` correcto;
+- `Access-Control-Allow-Credentials: true`;
+- pruebas unitarias = 3/3 aprobadas;
+- merge de `origin/dev` sin conflictos;
+- `origin/dev...HEAD = 0 6`;
+- diferencias respecto de DEV limitadas a archivos TEST;
+- publicación final local/remoto = `c096ffa`;
+- divergencia local/remoto = `0 0`;
+- árbol de trabajo limpio al cierre.
 
-También se revisó el conjunto completo de cambios respecto a `origin/integration-v2`.
+## 18. Estado final
 
-Archivos incluidos en la entrega Frontend:
+**Configuración técnica del Frontend TEST completada y lista para entrega a Despliegue.**
 
-    A  .env.test.example
-    M  .gitignore
-    A  docker-compose.test.yml
-    A  docs/SEGUIMIENTO-ENTORNO-TEST.md
+La rama final es:
 
-Se validó nuevamente `docker-compose.test.yml` sin utilizar el override local.
+    feat/ambiente-test
 
-Resultado de exposición del servicio:
+Commit publicado:
 
-    Frontend TEST = expose 80
-    ports publicados por Compose TEST base = ninguno
+    c096ffa
 
-El Frontend TEST utiliza su red Docker propia y no requiere conexión directa a PostgreSQL.
+Estado frente al remoto:
 
-La comunicación con Backend se realiza desde el navegador mediante la URL definida en:
+    local = c096ffa
+    origin/feat/ambiente-test = c096ffa
+    local vs remoto = 0 0
 
-    VITE_API_BASE_URL
+Estado frente a DEV:
 
-Se revisaron los archivos técnicos modificados para detectar incorporaciones relacionadas con Cypress, Playwright, cypress-axe, Pytest, Vitest, Newman, k6 u OWASP ZAP.
+    origin/dev...HEAD = 0 6
 
-Resultado:
+Esto confirma que la rama TEST contiene el `dev` incorporado durante esta etapa y conserva únicamente sus cambios propios de ambiente TEST por encima de él.
 
-    herramientas de Pruebas añadidas en archivos técnicos = ninguna
+La rama `dev` no fue modificada por este trabajo.
 
-Se verificó que `.env.test.example` contiene únicamente variables de referencia y valores vacíos o no sensibles.
+El Frontend TEST fue validado en construcción, ejecución, Nginx, SPA, caché, integración local con Backend, CORS con credenciales y pruebas unitarias existentes.
 
-También se comprobó que las variables `VITE_*` forman parte del proceso de build y que la imagen deberá reconstruirse cuando se defina la URL HTTPS pública definitiva del Backend TEST.
+La seguridad de exposición del servicio quedó preparada mediante `expose: 80` sin publicación directa en el Compose TEST entregable.
 
-El árbol de trabajo Frontend quedó limpio al finalizar la auditoría.
+El acceso local `127.0.0.1:8080` corresponde únicamente a un override local ignorado y no forma parte de la entrega.
 
-Resultado: **Validación previa a entrega correcta**.
+El hallazgo de ESLint se considera heredado de Desarrollo y no bloquea la preparación del ambiente TEST, dado que el build real `tsc && vite build` finalizó correctamente.
 
-### Publicación de la rama de trabajo Frontend
+La siguiente etapa corresponde a Despliegue: configurar las variables reales, dominios y HTTPS, reconstruir el Frontend con la URL definitiva del Backend TEST y realizar la validación final sobre el ambiente publicado.
 
-Después de completar las validaciones locales y la revisión previa a entrega, se publicó la rama de trabajo Frontend en el repositorio remoto.
+## 19. Resumen de cumplimiento
 
-Comando ejecutado:
-
-    git push -u origin feat/ambiente-test
-
-Resultado:
-
-    rama remota = origin/feat/ambiente-test
-    commit local = 3915bae
-    commit remoto = 3915bae
-    tracking configurado = correcto
-
-La publicación se realizó sin `merge` hacia `integration-v2`, `main` u otra rama.
-
-La rama queda disponible para revisión y posterior integración por parte del responsable correspondiente.
-
-Resultado: **Publicación Frontend correcta**.
-
-## 17. Evidencias
-
-Las evidencias se agregarán progresivamente durante la configuración y validación del ambiente.
-
-## 18. Estado actual
-
-**En progreso.**
-
-La rama TEST se encuentra creada correctamente desde `origin/integration-v2`.
-
-Se completó la auditoría inicial de:
-
-- Docker Compose DEV;
-- Dockerfile;
-- Nginx;
-- variables Vite;
-- configuración HTTP;
-- archivos `.env`;
-- `.dockerignore`.
-
-La configuración TEST fue creada y la imagen Frontend TEST fue construida correctamente.
-
-El contenedor Frontend TEST fue levantado y validado de forma independiente.
-
-Posteriormente se realizó una integración local controlada con Backend TEST y PostgreSQL TEST utilizando bindings exclusivos a `127.0.0.1`.
-
-Se comprobó:
-
-- Frontend TEST disponible en `http://127.0.0.1:8080`;
-- bundle construido con `http://127.0.0.1:8000/api`;
-- CORS local correcto;
-- solicitud real `POST /api/sesiones/` desde navegador;
-- recorrido técnico Frontend TEST - Backend TEST - PostgreSQL TEST.
-
-Continúan pendientes las URLs HTTPS definitivas, Firebase/AgroFusion según definición de Desarrollo y la validación final una vez desplegado TEST.
-
-Una vez disponible el ambiente desplegado, Implementación entregará al equipo de Pruebas la URL estable correspondiente. Las herramientas de E2E, accesibilidad, carga y seguridad serán operadas por Pruebas contra dicho ambiente.
+    Configuración Docker TEST                     COMPLETADA
+    Separación respecto a DEV                     COMPLETADA
+    Protección de .env.test                       COMPLETADA
+    Seguridad de exposición del puerto            COMPLETADA
+    Build de producción                           COMPLETADO
+    Nginx / SPA                                   VALIDADO
+    Cache-Control index.html                      VALIDADO
+    VITE_API_BASE_URL en bundle                   VALIDADO
+    Integración local Frontend -> Backend         VALIDADA
+    CORS con credentials                          VALIDADO
+    Pruebas unitarias existentes                  3/3 APROBADAS
+    Sincronización con origin/dev                 COMPLETADA
+    Afectación directa de dev                     NINGUNA
+    Publicación feat/ambiente-test                COMPLETADA
+    Configuración HTTPS/Dokploy real              PENDIENTE DE DESPLIEGUE
+    Variables definitivas del ambiente            PENDIENTE DE DESPLIEGUE
+    Validación con URLs públicas reales           PENDIENTE
+    ESLint                                         HALLAZGO HEREDADO DE DEV
