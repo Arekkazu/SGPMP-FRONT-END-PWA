@@ -153,7 +153,7 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
   onSubmit: (dto: { frecuencia_captura: number; intervalo_transmision: number }) => void;
   onReload: () => void;
 }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, getValues, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
     defaultValues: {
       frecuencia_captura: ultima?.frecuencia_captura ?? 5,
@@ -263,6 +263,9 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
                       required: 'Obligatorio.',
                       valueAsNumber: true,
                       min: { value: 1, message: 'Mínimo 1 minuto.' },
+                      validate: (v) =>
+                        v >= getValues('frecuencia_captura') ||
+                        'Debe ser mayor o igual a la frecuencia de captura.',
                     })}
                   />
                   <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', pointerEvents: 'none' }}>min</span>

@@ -1,7 +1,7 @@
-const KEY = 'sgpmp_token';
+let accessToken: string | null = null;
 
 export const tokenStore = {
-  get: (): string | null => localStorage.getItem(KEY),
-  set: (token: string): void => { localStorage.setItem(KEY, token); },
-  clear: (): void => { localStorage.removeItem(KEY); },
+  get: (): string | null => accessToken,
+  set: (token: string): void => { accessToken = token; },
+  clear: (): void => { accessToken = null; },
 };
