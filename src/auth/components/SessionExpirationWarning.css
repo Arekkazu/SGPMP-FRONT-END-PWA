@@ -1,0 +1,14 @@
+.session-expiration-warning {
+  position: fixed;
+  top: calc(var(--topbar-h) + var(--s3));
+  right: var(--s4);
+  width: min(calc(100% - (2 * var(--s4))), 420px);
+  z-index: 120;
+}
+
+@media (max-width: 639px) {
+  .session-expiration-warning {
+    top: var(--s3);
+    left: var(--s4);
+  }
+}

@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { useLogout } from './auth/hooks/useLogout';
+import { useSessionTimeout } from './auth/hooks/useSessionTimeout';
+import { SessionExpirationWarning } from './auth/components/SessionExpirationWarning';
+import { refreshAccessToken } from './shared/api/http';
 
 /* Ionic core CSS */
 import '@ionic/react/css/core.css';
@@ -49,6 +52,32 @@ import { TelemetryPage } from './telemetry/pages/TelemetryPage';
 import { PrediccionPage } from './prediction/pages/PrediccionPage';
 
 setupIonicReact();
+
+function SessionManager() {
+  const { token, expiresAt } = useAuth();
+  const logout = useLogout();
+  const handleTimeout = useCallback(async (reason: 'inactivity' | 'expired') => {
+    if (reason === 'expired') {
+      try {
+        await refreshAccessToken();
+        return;
+      } catch {
+        // Si no existe un refresh vigente, se completa el cierre normal.
+      }
+    }
+    await logout();
+  }, [logout]);
+  const timeout = useSessionTimeout({ token, expiresAt, onTimeout: handleTimeout });
+
+  if (!timeout.showWarning) return null;
+
+  return (
+    <SessionExpirationWarning
+      reason={timeout.reason}
+      remainingSeconds={timeout.remainingSeconds}
+    />
+  );
+}
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const logout = useLogout();
@@ -160,6 +189,7 @@ function AppRoutes() {
 const App: React.FC = () => (
   <IonApp>
     <AuthProvider>
+      <SessionManager />
       <IonReactRouter>
         <AppRoutes />
       </IonReactRouter>

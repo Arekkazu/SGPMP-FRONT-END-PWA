@@ -28,9 +28,9 @@ let refreshPromise: Promise<string> | null = null;
 export function refreshAccessToken(): Promise<string> {
   if (!refreshPromise) {
     refreshPromise = http
-      .post<{ token: string }>('/sesiones/refresh')
+      .post<{ token: string; expira_en: number }>('/sesiones/refresh')
       .then((res) => {
-        tokenStore.set(res.data.token);
+        tokenStore.set(res.data.token, res.data.expira_en);
         return res.data.token;
       })
       .finally(() => {

@@ -29,11 +29,12 @@ export interface PermisoUsuario {
 interface AuthContextValue {
   token: string | null;
   claims: JwtClaims | null;
+  expiresAt: number | null;
   userInfo: UserInfo | null;
   permisos: PermisoUsuario[] | null;
   perfilIncompleto: boolean | null;
   isBootstrapping: boolean;
-  setSession: (token: string) => void;
+  setSession: (token: string, expiresInSeconds: number) => void;
   clearSession: () => void;
   refreshUserInfo: () => Promise<void>;
 }
@@ -41,6 +42,7 @@ interface AuthContextValue {
 export const AuthContext = createContext<AuthContextValue>({
   token: null,
   claims: null,
+  expiresAt: null,
   userInfo: null,
   permisos: null,
   perfilIncompleto: null,
@@ -65,6 +67,16 @@ function isTokenValid(claims: JwtClaims | null): boolean {
   return claims.exp > Date.now() / 1000;
 }
 
+function resolveExpiresAt(
+  claims: JwtClaims | null,
+  responseExpiresAt: number | null
+): number | null {
+  const jwtExpiresAt = claims?.exp ? claims.exp * 1000 : null;
+
+  if (jwtExpiresAt && responseExpiresAt) return Math.min(jwtExpiresAt, responseExpiresAt);
+  return jwtExpiresAt ?? responseExpiresAt;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const storedToken = tokenStore.get();
   const storedClaims = storedToken ? decodeJwtPayload(storedToken) : null;
@@ -73,10 +85,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const [token, setToken] = useState<string | null>(validStored);
   const [claims, setClaims] = useState<JwtClaims | null>(validStored ? storedClaims : null);
+  const [expiresAt, setExpiresAt] = useState<number | null>(
+    validStored ? resolveExpiresAt(storedClaims, tokenStore.getExpiresAt()) : null
+  );
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [permisos, setPermisos] = useState<PermisoUsuario[] | null>(null);
   const [perfilIncompleto, setPerfilIncompleto] = useState<boolean | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(!validStored);
+
+  // Mantiene el contexto sincronizado cuando el interceptor renueva o limpia
+  // el JWT fuera de los hooks de login/logout.
+  useEffect(() => tokenStore.subscribe(({ token: nextToken, expiresAt: responseExpiresAt }) => {
+    const nextClaims = nextToken ? decodeJwtPayload(nextToken) : null;
+    if (nextToken && !isTokenValid(nextClaims)) {
+      tokenStore.clear();
+      return;
+    }
+    setToken(nextToken);
+    setClaims(nextClaims);
+    setExpiresAt(nextToken ? resolveExpiresAt(nextClaims, responseExpiresAt) : null);
+  }), []);
 
   // Recarga de página (F5, pestaña nueva): el JWT solo vive en memoria
   // (tokenStore) por diseño (R-12), así que se pierde. Antes de decidir "no
@@ -85,8 +113,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (validStored) return;
     refreshAccessToken()
       .then((newToken) => {
-        setToken(newToken);
-        setClaims(decodeJwtPayload(newToken));
+        // En producción refreshAccessToken actualiza tokenStore y el listener
+        // anterior sincroniza el contexto. Este fallback conserva el contrato
+        // si una implementación de prueba solo devuelve el token.
+        if (tokenStore.get() !== newToken) tokenStore.set(newToken);
       })
       .catch(() => {
         // Sin sesión que recuperar — comportamiento normal en /login, /registro, etc.
@@ -118,16 +148,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => setPermisos([]));
   }, [token, fetchUserInfo]);
 
-  const setSession = useCallback((newToken: string) => {
-    tokenStore.set(newToken);
-    setToken(newToken);
-    setClaims(decodeJwtPayload(newToken));
+  const setSession = useCallback((newToken: string, expiresInSeconds: number) => {
+    tokenStore.set(newToken, expiresInSeconds);
   }, []);
 
   const clearSession = useCallback(() => {
     tokenStore.clear();
     setToken(null);
     setClaims(null);
+    setExpiresAt(null);
     setUserInfo(null);
     setPermisos(null);
     setPerfilIncompleto(null);
@@ -138,6 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         token,
         claims,
+        expiresAt,
         userInfo,
         permisos,
         perfilIncompleto,

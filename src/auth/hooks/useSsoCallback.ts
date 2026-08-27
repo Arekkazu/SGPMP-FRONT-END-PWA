@@ -21,7 +21,7 @@ export function useSsoCallback(token: string | null) {
     ssoApi
       .canjearToken(token)
       .then((res) => {
-        setSession(res.token);
+        setSession(res.token, res.expira_en);
         history.replace(res.perfil_incompleto ? '/sso/completar-perfil' : '/dashboard');
       })
       .catch((e: ApiError) => {
