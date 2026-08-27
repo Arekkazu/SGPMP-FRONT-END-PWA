@@ -23,6 +23,13 @@ export interface AuditoriaPaginadaResponse {
   items: AuditoriaItemResponse[];
 }
 
+export interface AuditoriaExportacionResponse {
+  items: AuditoriaItemResponse[];
+  total: number;
+  truncado: boolean;
+  limite: number;
+}
+
 export interface FiltrosAuditoria {
   id_usuario?: number;
   tipo_evento?: number;

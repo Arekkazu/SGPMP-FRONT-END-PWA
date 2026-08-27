@@ -4,26 +4,17 @@ import { useAuditoria } from '../hooks/useAuditoria';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { AuditoriaFiltros, TIPOS_EVENTO } from '../components/AuditoriaFiltros';
 import { AuditoriaTable } from '../components/AuditoriaTable';
+import { generarCsv } from '../lib/auditoriaCsv';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { AuditoriaItemResponse } from '../types';
 
 const DOCE_MESES_MS = 365 * 24 * 60 * 60 * 1000;
 
-function generarCsv(eventos: AuditoriaItemResponse[]): string {
-  const cabecera = ['ID', 'Usuario', 'Tipo evento', 'Módulo', 'Descripción', 'Resultado', 'IP', 'Fecha/Hora', 'Hash'];
-  const filas = eventos.map((e) => [
-    e.id_evento,
-    e.nombre_usuario ?? e.id_usuario,
-    TIPOS_EVENTO.find((t) => t.id === e.tipo_evento)?.label ?? e.tipo_evento,
-    e.modulo,
-    `"${(e.descripcion ?? '').replace(/"/g, '""')}"`,
-    e.resultado,
-    e.ip ?? '',
-    e.fecha_evento,
-    e.hash ?? '',
-  ]);
-  return [cabecera, ...filas].map((r) => r.join(',')).join('\n');
+interface ExportacionAviso {
+  variant: 'success' | 'warning';
+  title: string;
+  description: string;
 }
 
 function hashSimulado(evento: AuditoriaItemResponse): string {
@@ -37,9 +28,22 @@ function hashSimulado(evento: AuditoriaItemResponse): string {
 
 export function AuditoriaPage() {
   const puedeVer = usePermission(6, 2);
-  const { eventos, total, loading, error, filtros, cargar, actualizarFiltros, resetFiltros } = useAuditoria();
+  const {
+    eventos,
+    total,
+    loading,
+    error,
+    filtros,
+    cargar,
+    actualizarFiltros,
+    resetFiltros,
+    exportarTodos,
+    exportando,
+    exportError,
+  } = useAuditoria();
   const [eventoVerificar, setEventoVerificar] = useState<AuditoriaItemResponse | null>(null);
   const [archivoMsg, setArchivoMsg] = useState<string | null>(null);
+  const [exportacionAviso, setExportacionAviso] = useState<ExportacionAviso | null>(null);
 
   useEffect(() => {
     if (puedeVer) cargar();
@@ -53,15 +57,40 @@ export function AuditoriaPage() {
     );
   }
 
-  const handleExportarCsv = () => {
-    const csv = generarCsv(eventos);
+  const handleExportarCsv = async () => {
+    setExportacionAviso(null);
+    const resultado = await exportarTodos();
+    if (!resultado) return;
+
+    const csv = generarCsv(resultado.items, TIPOS_EVENTO);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `auditoria-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = `auditoria-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
     URL.revokeObjectURL(url);
+
+    const exportados = resultado.items.length.toLocaleString('es-CO');
+    const disponibles = resultado.total.toLocaleString('es-CO');
+    if (resultado.truncado) {
+      const porLimite = resultado.total > resultado.limite;
+      setExportacionAviso({
+        variant: 'warning',
+        title: 'Exportación parcial',
+        description: porLimite
+          ? `Se exportaron los primeros ${exportados} de ${disponibles} eventos. El límite por archivo es ${resultado.limite.toLocaleString('es-CO')}; aplica filtros adicionales para obtener los restantes.`
+          : `Se exportaron ${exportados} de ${disponibles} eventos. Algunos resultados no estuvieron disponibles; intenta nuevamente.`,
+      });
+    } else {
+      setExportacionAviso({
+        variant: 'success',
+        title: 'CSV generado',
+        description: `Se exportaron ${exportados} evento${resultado.items.length !== 1 ? 's' : ''} con los filtros aplicados.`,
+      });
+    }
   };
 
   const handleSimularArchivado = () => {
@@ -92,7 +121,13 @@ export function AuditoriaPage() {
             <Archive size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
             Simular archivado
           </Button>
-          <Button variant="secondary" size="sm" onClick={handleExportarCsv} disabled={eventos.length === 0}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportarCsv}
+            loading={exportando}
+            disabled={loading || exportando || total === 0}
+          >
             <Download size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
             Exportar CSV
           </Button>
@@ -104,6 +139,26 @@ export function AuditoriaPage() {
 
       {error && (
         <Alert variant="error" title="Error al cargar auditoría" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+      )}
+
+      {exportError && (
+        <Alert
+          variant="error"
+          title="Error al exportar CSV"
+          description={exportError.message}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
+      )}
+
+      {exportacionAviso && (
+        <Alert
+          key={`${exportacionAviso.variant}-${exportacionAviso.description}`}
+          variant={exportacionAviso.variant}
+          title={exportacionAviso.title}
+          description={exportacionAviso.description}
+          onDismiss={() => setExportacionAviso(null)}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
       )}
 
       {archivoMsg && (
