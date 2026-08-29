@@ -28,8 +28,22 @@ function stripPydanticPrefix(msg: string): string {
   return msg.startsWith('Value error, ') ? msg.slice('Value error, '.length) : msg;
 }
 
+// Mensajes por defecto de Pydantic que llegan en inglés; los de nuestros
+// field_validator ya vienen en español.
+const PYDANTIC_ES: Record<string, string> = {
+  'Field required': 'Campo obligatorio.',
+};
+
+function describeField({ field, message }: BackendFieldError): string {
+  const msg = PYDANTIC_ES[message] ?? stripPydanticPrefix(message);
+  if (!field) return msg;
+  const label = field.replace(/_/g, ' ');
+  return `${label.charAt(0).toUpperCase()}${label.slice(1)}: ${msg}`;
+}
+
 function resolveMessage(status: number, data?: Record<string, unknown>, fields?: BackendFieldError[]): string {
-  if (fields?.length && fields[0].message) return stripPydanticPrefix(fields[0].message);
+  const detalles = fields?.filter((f) => f.message).map(describeField) ?? [];
+  if (detalles.length) return detalles.join(' · ');
   if (data?.message) return data.message as string;
   if (data?.detail && typeof data.detail === 'string') return data.detail;
 
