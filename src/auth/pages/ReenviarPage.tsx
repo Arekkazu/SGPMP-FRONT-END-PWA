@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { CheckCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -19,12 +19,18 @@ export function ReenviarPage() {
   const [error, setError] = useState<ApiError | null>(null);
   const [sent, setSent] = useState(false);
 
+  // El login envía el correo ya tecleado cuando la cuenta está pendiente.
+  const { state } = useLocation<{ correo?: string } | undefined>();
+
   const {
     register,
     handleSubmit,
     getValues,
     formState: { errors },
-  } = useForm<FormFields>({ mode: 'onBlur' });
+  } = useForm<FormFields>({
+    mode: 'onBlur',
+    defaultValues: { correo_electronico: state?.correo ?? '' },
+  });
 
   const onSubmit = async (data: FormFields) => {
     setLoading(true);
