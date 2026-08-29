@@ -70,6 +70,7 @@ export function RegistroPage() {
     const dto: UsuarioCreateDTO = {
       correo_electronico: data.correo_electronico,
       contrasena: data.contrasena,
+      confirmar_contrasena: data.confirmar_contrasena,
       nombre: step1Data.nombre,
       apellidos: step1Data.apellidos,
       tipo_identificacion: step1Data.tipo_identificacion,
@@ -149,7 +150,7 @@ export function RegistroPage() {
                 >
                   <option value="CC">Cédula de ciudadanía (CC)</option>
                   <option value="CE">Cédula de extranjería (CE)</option>
-                  <option value="PAS">Pasaporte</option>
+                  <option value="Pasaporte">Pasaporte</option>
                 </select>
               </div>
 
