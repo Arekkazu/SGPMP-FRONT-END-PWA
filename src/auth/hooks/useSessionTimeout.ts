@@ -1,27 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  calculateSessionTiming,
-  SESSION_WARNING_SECONDS,
-  type SessionTimeoutReason,
-} from '../lib/sessionTiming';
+import { getLastAuthenticatedRequestAt } from '../../shared/api/http';
+import { authApi } from '../api/authApi';
 
-interface SessionTimeoutOptions {
-  token: string | null;
-  expiresAt: number | null;
-  onTimeout: (reason: SessionTimeoutReason) => Promise<void> | void;
-}
+export const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
+export const WARNING_BEFORE_MS = 5 * 60 * 1000;
 
-export interface SessionTimeoutState {
-  showWarning: boolean;
-  remainingSeconds: number;
-  reason: SessionTimeoutReason | null;
-}
-
-const EMPTY_STATE: SessionTimeoutState = {
-  showWarning: false,
-  remainingSeconds: 0,
-  reason: null,
-};
+// El keepalive solo se envía si la última petición autenticada ya es más vieja
+// que esto: un usuario que está navegando la app ya refresca `ultimo_acceso`
+// con sus propias peticiones y no genera tráfico extra.
+const KEEPALIVE_AFTER_MS = 60 * 1000;
 
 const ACTIVITY_EVENTS: Array<keyof WindowEventMap> = [
   'pointerdown',
@@ -31,14 +18,23 @@ const ACTIVITY_EVENTS: Array<keyof WindowEventMap> = [
   'touchstart',
 ];
 
-export function useSessionTimeout({
-  token,
-  expiresAt,
-  onTimeout,
-}: SessionTimeoutOptions): SessionTimeoutState {
-  const [state, setState] = useState<SessionTimeoutState>(EMPTY_STATE);
-  const lastActivityAtRef = useRef(Date.now());
-  const timedOutTokenRef = useRef<string | null>(null);
+interface SessionTimeoutOptions {
+  hasSession: boolean;
+  onTimeout: () => void;
+}
+
+/**
+ * Cierra la sesión tras 30 min sin interacción y expone los segundos restantes
+ * durante los últimos 5 min (RF-02).
+ *
+ * El backend aplica el mismo plazo, pero medido sobre `cuenta.ultimo_acceso`,
+ * que solo se actualiza en peticiones autenticadas (`get_current_user`). Leer
+ * una pantalla sin disparar peticiones es actividad para el usuario y silencio
+ * para el servidor, así que la actividad del DOM se traduce en un keepalive
+ * para que ambos plazos venzan a la vez.
+ */
+export function useSessionTimeout({ hasSession, onTimeout }: SessionTimeoutOptions): number | null {
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const onTimeoutRef = useRef(onTimeout);
 
   useEffect(() => {
@@ -46,78 +42,70 @@ export function useSessionTimeout({
   }, [onTimeout]);
 
   useEffect(() => {
-    if (!token) {
-      timedOutTokenRef.current = null;
-      setState(EMPTY_STATE);
+    if (!hasSession) {
+      setRemainingSeconds(null);
       return;
     }
 
-    lastActivityAtRef.current = Date.now();
-    timedOutTokenRef.current = null;
+    // No se reinicia al rotar el JWT: para el backend un refresh tampoco cuenta
+    // como actividad (ver refresh_token_use_case.py).
+    let lastActivityAt = Date.now();
+    let timedOut = false;
 
-    const triggerTimeout = (reason: SessionTimeoutReason) => {
-      setState(EMPTY_STATE);
-      if (timedOutTokenRef.current !== token) {
-        timedOutTokenRef.current = token;
-        void onTimeoutRef.current(reason);
-      }
-    };
+    const evaluate = () => {
+      if (timedOut) return;
+      const remainingMs = lastActivityAt + INACTIVITY_TIMEOUT_MS - Date.now();
 
-    const evaluateSession = (now = Date.now()) => {
-      const timing = calculateSessionTiming(now, lastActivityAtRef.current, expiresAt);
-
-      if (timing.remainingSeconds === 0) {
-        triggerTimeout(timing.reason);
+      if (remainingMs <= 0) {
+        timedOut = true;
+        setRemainingSeconds(null);
+        onTimeoutRef.current();
         return;
       }
 
-      if (timing.remainingSeconds <= SESSION_WARNING_SECONDS) {
-        setState({
-          showWarning: true,
-          remainingSeconds: timing.remainingSeconds,
-          reason: timing.reason,
-        });
-      } else {
-        setState((current) => current.showWarning ? EMPTY_STATE : current);
-      }
+      setRemainingSeconds(remainingMs <= WARNING_BEFORE_MS ? Math.ceil(remainingMs / 1000) : null);
     };
 
-    const recordActivity = () => {
+    const handleActivity = () => {
       const now = Date.now();
-      const currentTiming = calculateSessionTiming(now, lastActivityAtRef.current, expiresAt);
 
-      // Una pestaña suspendida no puede reactivar una sesión que ya agotó su plazo.
-      if (currentTiming.remainingSeconds === 0) {
-        triggerTimeout(currentTiming.reason);
+      // Una pestaña suspendida no revive una sesión cuyo plazo ya venció.
+      if (now - lastActivityAt >= INACTIVITY_TIMEOUT_MS) {
+        evaluate();
         return;
       }
+      if (now - lastActivityAt < 1000) return;
 
-      if (now - lastActivityAtRef.current < 1000) return;
-      lastActivityAtRef.current = now;
-      evaluateSession(now);
+      lastActivityAt = now;
+      if (now - getLastAuthenticatedRequestAt() > KEEPALIVE_AFTER_MS) {
+        void authApi.mantenerSesion().catch(() => {
+          // Si la sesión ya murió en el servidor, el interceptor 401 redirige.
+        });
+      }
+      evaluate();
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') evaluateSession();
+      if (document.visibilityState === 'visible') evaluate();
     };
 
     const listenerOptions: AddEventListenerOptions = { passive: true, capture: true };
     ACTIVITY_EVENTS.forEach((eventName) => {
-      window.addEventListener(eventName, recordActivity, listenerOptions);
+      window.addEventListener(eventName, handleActivity, listenerOptions);
     });
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    const intervalId = window.setInterval(() => evaluateSession(), 1000);
-    evaluateSession();
+    const intervalId = window.setInterval(evaluate, 1000);
+    evaluate();
 
     return () => {
       window.clearInterval(intervalId);
       ACTIVITY_EVENTS.forEach((eventName) => {
-        window.removeEventListener(eventName, recordActivity, listenerOptions);
+        window.removeEventListener(eventName, handleActivity, listenerOptions);
       });
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [expiresAt, token]);
+  }, [hasSession]);
 
-  return state;
+  return remainingSeconds;
 }

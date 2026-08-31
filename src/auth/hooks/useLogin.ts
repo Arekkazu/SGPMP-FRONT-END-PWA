@@ -26,7 +26,7 @@ export function useLogin() {
     setError(null);
     try {
       const res = await authApi.login(dto);
-      setSession(res.token, res.expira_en);
+      setSession(res.token);
       history.replace('/dashboard');
       return true;
     } catch (e) {

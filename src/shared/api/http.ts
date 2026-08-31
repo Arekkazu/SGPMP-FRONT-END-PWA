@@ -9,10 +9,20 @@ const http = axios.create({
   withCredentials: true,
 });
 
+// El backend mide el timeout de inactividad de 30 min sobre `cuenta.ultimo_acceso`,
+// que solo avanza cuando llega una petición autenticada (`get_current_user`).
+// `useSessionTimeout` lo consulta para saber si hace falta un keepalive.
+let lastAuthenticatedRequestAt = 0;
+
+export function getLastAuthenticatedRequestAt(): number {
+  return lastAuthenticatedRequestAt;
+}
+
 http.interceptors.request.use((config) => {
   const token = tokenStore.get();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    lastAuthenticatedRequestAt = Date.now();
   }
   return config;
 });
@@ -28,9 +38,9 @@ let refreshPromise: Promise<string> | null = null;
 export function refreshAccessToken(): Promise<string> {
   if (!refreshPromise) {
     refreshPromise = http
-      .post<{ token: string; expira_en: number }>('/sesiones/refresh')
+      .post<{ token: string }>('/sesiones/refresh')
       .then((res) => {
-        tokenStore.set(res.data.token, res.data.expira_en);
+        tokenStore.set(res.data.token);
         return res.data.token;
       })
       .finally(() => {

@@ -1,42 +1,24 @@
-interface TokenSnapshot {
-  token: string | null;
-  expiresAt: number | null;
-}
-
-type TokenListener = (snapshot: TokenSnapshot) => void;
+type TokenListener = (token: string | null) => void;
 
 let accessToken: string | null = null;
-let accessTokenExpiresAt: number | null = null;
 const listeners = new Set<TokenListener>();
-
-function notifyListeners(): void {
-  const snapshot = { token: accessToken, expiresAt: accessTokenExpiresAt };
-  listeners.forEach((listener) => listener(snapshot));
-}
 
 export const tokenStore = {
   get: (): string | null => accessToken,
-  getExpiresAt: (): number | null => accessTokenExpiresAt,
-  set: (token: string, expiresInSeconds?: number): void => {
-    const nextExpiresAt = expiresInSeconds != null
-      && Number.isFinite(expiresInSeconds)
-      && expiresInSeconds > 0
-      ? Date.now() + expiresInSeconds * 1000
-      : null;
-    if (accessToken === token && accessTokenExpiresAt === nextExpiresAt) return;
-
+  set: (token: string): void => {
+    if (accessToken === token) return;
     accessToken = token;
-    accessTokenExpiresAt = nextExpiresAt;
-    notifyListeners();
+    listeners.forEach((listener) => listener(accessToken));
   },
   clear: (): void => {
-    if (accessToken === null && accessTokenExpiresAt === null) return;
+    if (accessToken === null) return;
     accessToken = null;
-    accessTokenExpiresAt = null;
-    notifyListeners();
+    listeners.forEach((listener) => listener(null));
   },
+  // El interceptor renueva y limpia el JWT fuera de los hooks de login/logout;
+  // sin esto `AuthContext` se queda con el token anterior.
   subscribe: (listener: TokenListener): (() => void) => {
     listeners.add(listener);
-    return () => listeners.delete(listener);
+    return () => { listeners.delete(listener); };
   },
 };
