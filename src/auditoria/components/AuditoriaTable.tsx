@@ -11,11 +11,15 @@ interface Props {
   onVerificar: (evento: AuditoriaItemResponse) => void;
 }
 
+// Color por tipo de evento, siguiendo el catálogo de TIPOS_EVENTO.
 const EVENT_BADGE: Record<number, 'activo' | 'eliminado' | 'inactivo' | 'pendiente'> = {
-  1: 'activo', 2: 'eliminado', 3: 'inactivo', 4: 'pendiente',
-  5: 'pendiente', 6: 'pendiente', 7: 'activo', 8: 'pendiente',
-  9: 'pendiente', 10: 'pendiente', 11: 'pendiente', 12: 'eliminado',
-  13: 'pendiente', 14: 'pendiente', 15: 'inactivo',
+  1: 'pendiente', 2: 'activo', 3: 'activo', 4: 'eliminado',
+  5: 'inactivo', 6: 'pendiente', 7: 'pendiente', 8: 'pendiente',
+  9: 'pendiente', 10: 'pendiente', 11: 'pendiente', 12: 'pendiente',
+  13: 'eliminado', 14: 'pendiente', 15: 'eliminado', 16: 'inactivo',
+  17: 'inactivo', 18: 'inactivo', 19: 'inactivo', 20: 'activo',
+  21: 'pendiente', 22: 'pendiente', 23: 'inactivo', 24: 'eliminado',
+  25: 'eliminado',
 };
 
 function tipoLabel(tipo: number): string {
@@ -35,7 +39,7 @@ function formatFecha(fecha: string): string {
   }
 }
 
-const HEADERS = ['#', 'Usuario', 'Tipo evento', 'Módulo', 'Descripción', 'Resultado', 'IP', 'Fecha/Hora', 'Hash', 'Acción'];
+const HEADERS = ['#', 'Usuario', 'Tipo evento', 'Módulo', 'Descripción', 'Resultado', 'IP', 'Fecha/Hora', 'Integridad', 'Acción'];
 
 export function AuditoriaTable({ eventos, loading, onVerificar }: Props) {
   if (loading) {
@@ -111,13 +115,13 @@ export function AuditoriaTable({ eventos, loading, onVerificar }: Props) {
                 </Badge>
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                {e.ip ?? '—'}
+                {e.direccion_ip ?? '—'}
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                 {formatFecha(e.fecha_evento)}
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                {e.hash ? e.hash.slice(0, 8) + '…' : '—'}
+                {e.integridad}
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', whiteSpace: 'nowrap' }}>
                 <Button

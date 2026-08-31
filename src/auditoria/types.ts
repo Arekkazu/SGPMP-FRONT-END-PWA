@@ -12,8 +12,10 @@ export interface AuditoriaItemResponse {
   integridad_ok: boolean;
   nombre_usuario?: string;
   descripcion?: string;
-  ip?: string;
-  hash?: string;
+  direccion_ip?: string;
+  user_agent?: string;
+  // INTEGRO | LEGADO (anterior a la política de hash) | MANIPULADO.
+  integridad: string;
 }
 
 export interface AuditoriaPaginadaResponse {
@@ -23,7 +25,9 @@ export interface AuditoriaPaginadaResponse {
   items: AuditoriaItemResponse[];
 }
 
-export interface AuditoriaExportacionResponse {
+// No es una respuesta del backend: es el agregado de todas las páginas que
+// arma el hook para exportar.
+export interface AuditoriaExportacion {
   items: AuditoriaItemResponse[];
   total: number;
   truncado: boolean;

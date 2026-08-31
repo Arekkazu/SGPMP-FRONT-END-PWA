@@ -24,7 +24,7 @@ export function generarCsv(
     'Resultado',
     'IP',
     'Fecha/Hora',
-    'Hash',
+    'Integridad',
   ];
   const filas = eventos.map((evento) => [
     evento.id_evento,
@@ -33,9 +33,9 @@ export function generarCsv(
     evento.modulo,
     evento.descripcion ?? '',
     evento.resultado,
-    evento.ip ?? '',
+    evento.direccion_ip ?? '',
     evento.fecha_evento,
-    evento.hash ?? '',
+    evento.integridad,
   ]);
 
   // BOM + CRLF mejoran la apertura directa del archivo en Excel.

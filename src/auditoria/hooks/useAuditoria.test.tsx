@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { auditoriaApi } from '../api/auditoriaApi';
 import type {
-  AuditoriaExportacionResponse,
+  AuditoriaExportacion,
   AuditoriaItemResponse,
   AuditoriaPaginadaResponse,
   FiltrosAuditoria,
@@ -27,6 +27,7 @@ function evento(id: number): AuditoriaItemResponse {
     categoria: 'AUTENTICACION',
     estado: 'ACTIVO',
     integridad_ok: true,
+    integridad: 'INTEGRO',
   };
 }
 
@@ -62,7 +63,7 @@ describe('useAuditoria.exportarTodos', () => {
     await waitFor(() => expect(result.current.eventos).toHaveLength(20));
     consultarMock.mockClear();
 
-    let exportacion: AuditoriaExportacionResponse | null = null;
+    let exportacion: AuditoriaExportacion | null = null;
     await act(async () => {
       exportacion = await result.current.exportarTodos();
     });
@@ -91,7 +92,7 @@ describe('useAuditoria.exportarTodos', () => {
     consultarMock.mockImplementation(async (filtros) => pagina(filtros, 120));
     const { result } = renderHook(() => useAuditoria());
 
-    let exportacion: AuditoriaExportacionResponse | null = null;
+    let exportacion: AuditoriaExportacion | null = null;
     await act(async () => {
       exportacion = await result.current.exportarTodos(100);
     });

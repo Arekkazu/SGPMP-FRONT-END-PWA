@@ -14,6 +14,7 @@ function evento(overrides: Partial<AuditoriaItemResponse> = {}): AuditoriaItemRe
     categoria: 'AUTENTICACION',
     estado: 'ACTIVO',
     integridad_ok: true,
+    integridad: 'INTEGRO',
     ...overrides,
   };
 }
@@ -22,15 +23,18 @@ describe('generarCsv', () => {
   it('incluye BOM, usa CRLF y escapa comas, comillas y saltos de línea', () => {
     const csv = generarCsv([
       evento({
+        direccion_ip: '10.0.0.7',
         nombre_usuario: 'Ramírez, Leandro',
         descripcion: 'Intento "fallido"\nrevisado',
       }),
-    ], [{ id: 1, label: 'LOGIN_SUCCESS' }]);
+    ], [{ id: 1, label: 'REGISTRO_USUARIO' }]);
 
     expect(csv.startsWith('\uFEFFID,Usuario,Tipo evento')).toBe(true);
     expect(csv).toContain('"Ramírez, Leandro"');
     expect(csv).toContain('"Intento ""fallido""\nrevisado"');
     expect(csv).toContain('\r\n1,');
-    expect(csv).toContain(',LOGIN_SUCCESS,');
+    expect(csv).toContain(',REGISTRO_USUARIO,');
+    expect(csv).toContain(',10.0.0.7,');
+    expect(csv.trimEnd().endsWith(',INTEGRO')).toBe(true);
   });
 });

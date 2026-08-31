@@ -1,13 +1,16 @@
 import { useState, useCallback, useRef } from 'react';
 import { auditoriaApi } from '../api/auditoriaApi';
 import type {
-  AuditoriaExportacionResponse,
+  AuditoriaExportacion,
   AuditoriaItemResponse,
   FiltrosAuditoria,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 const DEFAULT_FILTROS: FiltrosAuditoria = { pagina: 1, tamano: 20 };
+// Ambos valores espejan el backend (ConsultarAuditoriaUseCase): `tamano` está
+// topado en 50 por query y a partir de 10.000 resultados la consulta se declara
+// saturada y responde 206.
 export const MAX_REGISTROS_EXPORTACION = 10_000;
 const TAMANO_PAGINA_EXPORTACION = 50;
 const PAGINAS_POR_LOTE = 5;
@@ -61,7 +64,7 @@ export function useAuditoria() {
 
   const exportarTodos = useCallback(async (
     limite = MAX_REGISTROS_EXPORTACION
-  ): Promise<AuditoriaExportacionResponse | null> => {
+  ): Promise<AuditoriaExportacion | null> => {
     if (exportandoRef.current) return null;
 
     const limiteSeguro = Number.isFinite(limite)

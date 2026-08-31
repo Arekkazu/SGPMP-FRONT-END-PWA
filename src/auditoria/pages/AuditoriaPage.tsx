@@ -17,15 +17,6 @@ interface ExportacionAviso {
   description: string;
 }
 
-function hashSimulado(evento: AuditoriaItemResponse): string {
-  const base = `${evento.id_evento}-${evento.tipo_evento}-${evento.fecha_evento}`;
-  let hash = 0;
-  for (let i = 0; i < base.length; i++) {
-    hash = (hash * 31 + base.charCodeAt(i)) >>> 0;
-  }
-  return hash.toString(16).padStart(8, '0') + 'a1b2c3d4e5f6';
-}
-
 export function AuditoriaPage() {
   const puedeVer = usePermission(6, 2);
   const {
@@ -236,23 +227,13 @@ export function AuditoriaPage() {
               {' · '}{TIPOS_EVENTO.find((t) => t.id === eventoVerificar.tipo_evento)?.label ?? eventoVerificar.tipo_evento}
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
-              <div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                  Hash almacenado
-                </p>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)', wordBreak: 'break-all', background: 'var(--surface-hover)', padding: 'var(--s2) var(--s3)', borderRadius: 'var(--r-md)' }}>
-                  {eventoVerificar.hash ?? '(no disponible)'}
-                </p>
-              </div>
-              <div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                  Hash recalculado
-                </p>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)', wordBreak: 'break-all', background: 'var(--surface-hover)', padding: 'var(--s2) var(--s3)', borderRadius: 'var(--r-md)' }}>
-                  {hashSimulado(eventoVerificar)}
-                </p>
-              </div>
+            <div style={{ marginBottom: 'var(--s5)' }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                Clasificación del backend
+              </p>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--surface-hover)', padding: 'var(--s2) var(--s3)', borderRadius: 'var(--r-md)' }}>
+                {eventoVerificar.integridad}
+              </p>
             </div>
 
             <div style={{
