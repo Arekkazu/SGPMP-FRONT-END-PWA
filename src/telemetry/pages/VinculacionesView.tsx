@@ -14,6 +14,7 @@ import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_VINCULACIONES, ACCION_R, ACCION_U } from '../rbac';
 import type { VinculacionesFiltros as VincFiltrosDTO, VinculacionLecturaSchema } from '../types';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 type Accion = 'resolver' | 'corregir' | null;
 
@@ -34,8 +35,8 @@ export function VinculacionesView() {
       if (filtros.mecanismo_vinculacion) f.mecanismo_vinculacion = filtros.mecanismo_vinculacion;
       if (filtros.id_telemetria) f.id_telemetria = Number(filtros.id_telemetria);
       if (filtros.id_infraestructura) f.id_infraestructura = Number(filtros.id_infraestructura);
-      if (filtros.fecha_desde) f.fecha_desde = `${filtros.fecha_desde}T00:00:00Z`;
-      if (filtros.fecha_hasta) f.fecha_hasta = `${filtros.fecha_hasta}T23:59:59Z`;
+      if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
+      if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
       return f;
     },
     [filtros]

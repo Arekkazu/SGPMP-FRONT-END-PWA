@@ -8,6 +8,7 @@ import { EstadoPill } from './EstadoPill';
 import { TRANSICIONES_VALIDAS } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import type { CambiarEstadoDTO, EstadoActivoNombre } from '../types';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   estado_nuevo: EstadoActivoNombre | '';
@@ -53,7 +54,7 @@ const ESTADO_LABEL: Record<EstadoActivoNombre, string> = {
   AISLADO: 'Aislado', CERRADO: 'Cerrado', BAJA: 'Baja',
 };
 
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = hoyLocal();
 
 function normalizar(estado: string | null | undefined): EstadoActivoNombre | null {
   if (!estado) return null;

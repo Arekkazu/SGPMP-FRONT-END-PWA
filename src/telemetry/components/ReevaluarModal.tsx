@@ -6,6 +6,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { INPUT, LABEL } from './tableStyles';
 import type { SolicitarReevaluacionDTO, ReevaluacionResponseSchema } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 interface Props {
   saving: boolean;
@@ -30,7 +31,11 @@ export function ReevaluarModal({ saving, saveError, reevaluacion, onConfirm, onC
   const [touched, setTouched] = useState(false);
 
   const faltaSensor = !idSensor.trim() || Number(idSensor) <= 0;
-  const faltaFechas = !desde || !hasta;
+  // El rango se normaliza al día calendario local del usuario; una fecha que no
+  // se pueda interpretar cuenta como faltante en vez de viajar corrupta.
+  const rangoDesde = desde ? inicioDelDiaUtc(desde) : undefined;
+  const rangoHasta = hasta ? finDelDiaUtc(hasta) : undefined;
+  const faltaFechas = !rangoDesde || !rangoHasta;
   const causaInvalida = causa.trim().length < 10;
 
   const confirmar = () => {
@@ -38,8 +43,8 @@ export function ReevaluarModal({ saving, saveError, reevaluacion, onConfirm, onC
     if (faltaSensor || faltaFechas || causaInvalida) return;
     onConfirm({
       id_sensor: Number(idSensor),
-      fecha_desde: `${desde}T00:00:00Z`,
-      fecha_hasta: `${hasta}T23:59:59Z`,
+      fecha_desde: rangoDesde,
+      fecha_hasta: rangoHasta,
       causa_documentada: causa.trim(),
     });
   };

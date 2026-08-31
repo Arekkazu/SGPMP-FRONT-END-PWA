@@ -13,6 +13,7 @@ import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_AUDITORIA, ACCION_R, ACCION_E } from '../rbac';
 import type { ListarAuditoriaFiltros, EventoAuditoriaM04Response } from '../types';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 type TabId = 'todos' | 'criticos' | 'tipo';
 
@@ -46,8 +47,8 @@ export function AuditoriaView() {
     if (f.tipo_evento) api.tipo_evento = f.tipo_evento;
     if (f.severidad) api.severidad_evento = f.severidad;
     if (f.id_referencia.trim()) api.id_referencia = f.id_referencia.trim();
-    if (f.fecha_desde) api.fecha_desde = `${f.fecha_desde}T00:00:00Z`;
-    if (f.fecha_hasta) api.fecha_hasta = `${f.fecha_hasta}T23:59:59Z`;
+    if (f.fecha_desde) api.fecha_desde = inicioDelDiaUtc(f.fecha_desde);
+    if (f.fecha_hasta) api.fecha_hasta = finDelDiaUtc(f.fecha_hasta);
     return api;
   }, []);
 

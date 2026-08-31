@@ -3,6 +3,7 @@ import { alertasApi } from '../api/alertasApi';
 import { cacheAlertas, getAlertasCache } from '../db/telemetriaTables';
 import type { AlertaSchema, ListarAlertasFiltros, ActualizarEstadoAlertaDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface PaginacionState {
   pagina: number;
@@ -23,11 +24,6 @@ interface Opciones {
   tecnicas?: boolean;
 }
 
-function hoyISO(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
 
 export function useAlertas({ tecnicas = false }: Opciones = {}) {
   const [alertas, setAlertas] = useState<AlertaSchema[]>([]);
@@ -125,7 +121,7 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
         listar({ estado: 'ACTIVA', por_pagina: 1 }),
         listar({ estado: 'EN_ATENCION', por_pagina: 1 }),
         listar({ estado: 'VENCIDA', por_pagina: 1 }),
-        listar({ estado: 'RESUELTA', fecha_desde: hoyISO(), por_pagina: 1 }),
+        listar({ estado: 'RESUELTA', fecha_desde: hoyLocal(), por_pagina: 1 }),
       ]);
       setResumen({
         activas: act.total ?? 0,
