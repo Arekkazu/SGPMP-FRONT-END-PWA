@@ -2,28 +2,32 @@ import React from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
-import { TIPOS_EVENTO } from './AuditoriaFiltros';
-import type { AuditoriaItemResponse } from '../types';
+import type { AuditoriaItemResponse, TipoEvento } from '../types';
 
 interface Props {
   eventos: AuditoriaItemResponse[];
   loading: boolean;
   onVerificar: (evento: AuditoriaItemResponse) => void;
+  tiposEvento: TipoEvento[];
 }
 
-// Color por tipo de evento, siguiendo el catálogo de TIPOS_EVENTO.
-const EVENT_BADGE: Record<number, 'activo' | 'eliminado' | 'inactivo' | 'pendiente'> = {
-  1: 'pendiente', 2: 'activo', 3: 'activo', 4: 'eliminado',
-  5: 'inactivo', 6: 'pendiente', 7: 'pendiente', 8: 'pendiente',
-  9: 'pendiente', 10: 'pendiente', 11: 'pendiente', 12: 'pendiente',
-  13: 'eliminado', 14: 'pendiente', 15: 'eliminado', 16: 'inactivo',
-  17: 'inactivo', 18: 'inactivo', 19: 'inactivo', 20: 'activo',
-  21: 'pendiente', 22: 'pendiente', 23: 'inactivo', 24: 'eliminado',
-  25: 'eliminado',
+// El color sale de la categoría funcional (3 valores) en vez de un mapa de 25
+// ids quemados: el catálogo del backend ya la trae por tipo.
+const BADGE_POR_CATEGORIA: Record<string, 'activo' | 'eliminado' | 'inactivo' | 'pendiente'> = {
+  AUTENTICACION: 'activo',
+  MODIFICACION: 'pendiente',
+  CONSULTA: 'inactivo',
 };
 
-function tipoLabel(tipo: number): string {
-  return TIPOS_EVENTO.find((t) => t.id === tipo)?.label ?? String(tipo);
+
+/** Etiqueta del catálogo; cae al id si aún no cargó o el tipo es desconocido. */
+function tipoLabel(tipo: number, catalogo: TipoEvento[]): string {
+  return catalogo.find((t) => t.id_tipo_evento === tipo)?.nombre ?? String(tipo);
+}
+
+function tipoBadge(tipo: number, catalogo: TipoEvento[]) {
+  const categoria = catalogo.find((t) => t.id_tipo_evento === tipo)?.categoria;
+  return (categoria && BADGE_POR_CATEGORIA[categoria]) ?? 'inactivo';
 }
 
 function truncar(texto: string | undefined, max: number): string {
@@ -41,7 +45,7 @@ function formatFecha(fecha: string): string {
 
 const HEADERS = ['#', 'Usuario', 'Tipo evento', 'Módulo', 'Descripción', 'Resultado', 'IP', 'Fecha/Hora', 'Integridad', 'Acción'];
 
-export function AuditoriaTable({ eventos, loading, onVerificar }: Props) {
+export function AuditoriaTable({ eventos, loading, onVerificar, tiposEvento }: Props) {
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -96,8 +100,8 @@ export function AuditoriaTable({ eventos, loading, onVerificar }: Props) {
                 {e.nombre_usuario ?? <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontFamily: 'var(--font-mono)', fontSize: '11px' }}>ID {e.id_usuario}</span>}
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', whiteSpace: 'nowrap' }}>
-                <Badge variant={EVENT_BADGE[e.tipo_evento] ?? 'inactivo'}>
-                  {tipoLabel(e.tipo_evento)}
+                <Badge variant={tipoBadge(e.tipo_evento, tiposEvento)}>
+                  {tipoLabel(e.tipo_evento, tiposEvento)}
                 </Badge>
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', color: 'var(--text-secondary)' }}>

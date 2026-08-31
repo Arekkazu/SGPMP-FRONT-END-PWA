@@ -2,45 +2,18 @@ import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
 import { Button } from '../../shared/design-system/Button';
-import type { FiltrosAuditoria } from '../types';
+import type { FiltrosAuditoria, TipoEvento } from '../types';
 
-// Espejo de `modulo1.tipos_eventos` (backend: `_NOMBRE_POR_TIPO_EVENTO` en
-// identity_access/domain/value_objects/evento_categoria.py). Los IDs son los que
-// viaja `tipo_evento`, tanto al filtrar como al etiquetar el CSV exportado.
-export const TIPOS_EVENTO = [
-  { id: 1,  label: 'REGISTRO_USUARIO' },
-  { id: 2,  label: 'ACTIVACION_CUENTA' },
-  { id: 3,  label: 'LOGIN_EXITOSO' },
-  { id: 4,  label: 'LOGIN_FALLIDO' },
-  { id: 5,  label: 'CIERRE_SESION' },
-  { id: 6,  label: 'CAMBIO_CONTRASENA' },
-  { id: 7,  label: 'SOLICITUD_RECUPERACION' },
-  { id: 8,  label: 'RESTABLECIMIENTO_CONTRASENA' },
-  { id: 9,  label: 'ACTUALIZACION_PERFIL' },
-  { id: 10, label: 'CAMBIO_ESTADO_CUENTA' },
-  { id: 11, label: 'CREACION_ROL' },
-  { id: 12, label: 'MODIFICACION_ROL' },
-  { id: 13, label: 'ELIMINACION_ROL' },
-  { id: 14, label: 'ASIGNACION_PERMISO' },
-  { id: 15, label: 'REVOCACION_PERMISO' },
-  { id: 16, label: 'CONSULTA_AUDITORIA' },
-  { id: 17, label: 'CONSULTA_LISTA_USUARIOS' },
-  { id: 18, label: 'CONSULTA_DETALLE_USUARIO' },
-  { id: 19, label: 'CONSULTA_PERFIL_PROPIO' },
-  { id: 20, label: 'LOGIN_SSO_EXITOSO' },
-  { id: 21, label: 'PROVISION_SSO_MINIMA' },
-  { id: 22, label: 'PROVISION_AGROFUSION_SYNC' },
-  { id: 23, label: 'REFRESH_TOKEN_ROTADO' },
-  { id: 24, label: 'REUSO_TOKEN_REFRESCO_DETECTADO' },
-  { id: 25, label: 'FALLO_ARCHIVADO_AUDITORIA' },
-];
 
 interface Props {
   onBuscar: (filtros: Partial<FiltrosAuditoria>) => void;
   onReset: () => void;
+  // Viene de `GET /auditoria/catalogo/tipos-evento`. Mantener esta lista a mano
+  // ya provocó que las 25 etiquetas apuntaran al evento equivocado.
+  tiposEvento: TipoEvento[];
 }
 
-export function AuditoriaFiltros({ onBuscar, onReset }: Props) {
+export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
   const [idUsuario, setIdUsuario] = useState('');
   const [tipoEvento, setTipoEvento] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
@@ -97,8 +70,8 @@ export function AuditoriaFiltros({ onBuscar, onReset }: Props) {
           }}
         >
           <option value="">Todos los tipos</option>
-          {TIPOS_EVENTO.map((t) => (
-            <option key={t.id} value={String(t.id)}>{t.label}</option>
+          {tiposEvento.map((t) => (
+            <option key={t.id_tipo_evento} value={String(t.id_tipo_evento)}>{t.nombre}</option>
           ))}
         </select>
       </div>

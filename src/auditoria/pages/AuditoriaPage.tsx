@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { RefreshCw, Download, Archive, X, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useAuditoria } from '../hooks/useAuditoria';
 import { usePermission } from '../../shared/rbac/usePermission';
-import { AuditoriaFiltros, TIPOS_EVENTO } from '../components/AuditoriaFiltros';
+import { AuditoriaFiltros } from '../components/AuditoriaFiltros';
 import { AuditoriaTable } from '../components/AuditoriaTable';
-import { generarCsv } from '../lib/auditoriaCsv';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { hoyLocal } from '../../shared/lib/fecha';
 import type { AuditoriaItemResponse } from '../types';
 
 const DOCE_MESES_MS = 365 * 24 * 60 * 60 * 1000;
@@ -30,7 +30,9 @@ export function AuditoriaPage() {
     resetFiltros,
     exportarTodos,
     exportando,
+    exportProgreso,
     exportError,
+    tiposEvento,
   } = useAuditoria();
   const [eventoVerificar, setEventoVerificar] = useState<AuditoriaItemResponse | null>(null);
   const [archivoMsg, setArchivoMsg] = useState<string | null>(null);
@@ -53,33 +55,30 @@ export function AuditoriaPage() {
     const resultado = await exportarTodos();
     if (!resultado) return;
 
-    const csv = generarCsv(resultado.items, TIPOS_EVENTO);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    // El CSV llega ya armado por el backend, con las etiquetas de su catálogo.
+    const blob = new Blob([resultado.csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const enlace = document.createElement('a');
     enlace.href = url;
-    enlace.download = `auditoria-${new Date().toISOString().slice(0, 10)}.csv`;
+    enlace.download = `auditoria-${hoyLocal()}.csv`;
     document.body.appendChild(enlace);
     enlace.click();
     enlace.remove();
     URL.revokeObjectURL(url);
 
-    const exportados = resultado.items.length.toLocaleString('es-CO');
+    const exportados = resultado.exportados.toLocaleString('es-CO');
     const disponibles = resultado.total.toLocaleString('es-CO');
     if (resultado.truncado) {
-      const porLimite = resultado.total > resultado.limite;
       setExportacionAviso({
         variant: 'warning',
         title: 'Exportación parcial',
-        description: porLimite
-          ? `Se exportaron los primeros ${exportados} de ${disponibles} eventos. El límite por archivo es ${resultado.limite.toLocaleString('es-CO')}; aplica filtros adicionales para obtener los restantes.`
-          : `Se exportaron ${exportados} de ${disponibles} eventos. Algunos resultados no estuvieron disponibles; intenta nuevamente.`,
+        description: `Se exportaron los primeros ${exportados} de ${disponibles} eventos. Aplica filtros adicionales para obtener los restantes.`,
       });
     } else {
       setExportacionAviso({
         variant: 'success',
         title: 'CSV generado',
-        description: `Se exportaron ${exportados} evento${resultado.items.length !== 1 ? 's' : ''} con los filtros aplicados.`,
+        description: `Se exportaron ${exportados} evento${resultado.exportados !== 1 ? 's' : ''} con los filtros aplicados.`,
       });
     }
   };
@@ -141,6 +140,15 @@ export function AuditoriaPage() {
         />
       )}
 
+      {exportProgreso && (
+        <Alert
+          variant="info"
+          title="Exportación en curso"
+          description={exportProgreso}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
+      )}
+
       {exportacionAviso && (
         <Alert
           key={`${exportacionAviso.variant}-${exportacionAviso.description}`}
@@ -161,9 +169,9 @@ export function AuditoriaPage() {
         />
       )}
 
-      <AuditoriaFiltros onBuscar={actualizarFiltros} onReset={resetFiltros} />
+      <AuditoriaFiltros onBuscar={actualizarFiltros} onReset={resetFiltros} tiposEvento={tiposEvento} />
 
-      <AuditoriaTable eventos={eventos} loading={loading} onVerificar={setEventoVerificar} />
+      <AuditoriaTable eventos={eventos} loading={loading} onVerificar={setEventoVerificar} tiposEvento={tiposEvento} />
 
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--s2)', marginTop: 'var(--s5)' }}>
@@ -224,7 +232,7 @@ export function AuditoriaPage() {
 
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>
               Evento <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>#{eventoVerificar.id_evento}</strong>
-              {' · '}{TIPOS_EVENTO.find((t) => t.id === eventoVerificar.tipo_evento)?.label ?? eventoVerificar.tipo_evento}
+              {' · '}{tiposEvento.find((t) => t.id_tipo_evento === eventoVerificar.tipo_evento)?.nombre ?? eventoVerificar.tipo_evento}
             </p>
 
             <div style={{ marginBottom: 'var(--s5)' }}>

@@ -6,6 +6,7 @@ import { Button } from '../../shared/design-system/Button';
 import { ModalShell } from './ModalShell';
 import type { ApiError } from '../../shared/api/errors';
 import type { CerrarCicloDTO } from '../types';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   fecha_cierre: string;
@@ -34,7 +35,7 @@ const TEXTAREA: React.CSSProperties = {
   outline: 'none',
 };
 
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = hoyLocal();
 
 export function CerrarCicloModal({ identificador, saving, error, onClose, onConfirmar }: Props) {
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({

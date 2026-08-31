@@ -6,6 +6,7 @@ import { Button } from '../../shared/design-system/Button';
 import { ModalShell } from './ModalShell';
 import type { ApiError } from '../../shared/api/errors';
 import type { ActivoBiologicoResponse, ActualizarActivoIndividualDTO } from '../types';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   raza: string;
@@ -34,7 +35,7 @@ const SELECT: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = hoyLocal();
 
 export function EditarActivoModal({ activo, saving, saveError, onClose, onGuardar }: Props) {
   const det = activo.detalle_individual;

@@ -6,6 +6,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { INPUT, LABEL } from './tableStyles';
 import type { VerificacionIntegridadSchema } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 interface Props {
   verificando: boolean;
@@ -20,8 +21,8 @@ export function VerificarIntegridadModal({ verificando, verificacion, verificarE
   const [hasta, setHasta] = useState('');
 
   const lanzar = () => onVerificar(
-    desde ? `${desde}T00:00:00Z` : undefined,
-    hasta ? `${hasta}T23:59:59Z` : undefined
+    desde ? inicioDelDiaUtc(desde) : undefined,
+    hasta ? finDelDiaUtc(hasta) : undefined
   );
 
   const comprometido = verificacion != null && verificacion.comprometidos > 0;

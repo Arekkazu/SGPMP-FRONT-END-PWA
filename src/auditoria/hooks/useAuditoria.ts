@@ -1,31 +1,22 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { auditoriaApi } from '../api/auditoriaApi';
 import type {
   AuditoriaExportacion,
   AuditoriaItemResponse,
   FiltrosAuditoria,
+  TipoEvento,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 const DEFAULT_FILTROS: FiltrosAuditoria = { pagina: 1, tamano: 20 };
-// Ambos valores espejan el backend (ConsultarAuditoriaUseCase): `tamano` está
-// topado en 50 por query y a partir de 10.000 resultados la consulta se declara
-// saturada y responde 206.
-export const MAX_REGISTROS_EXPORTACION = 10_000;
-const TAMANO_PAGINA_EXPORTACION = 50;
-const PAGINAS_POR_LOTE = 5;
 
-function fechaHastaParaExportacion(fechaHasta?: string): string {
-  const ahora = new Date();
-  if (!fechaHasta) return ahora.toISOString();
+// Cuando el volumen obliga a pasar por la cola, el backend procesa en un poller
+// que corre cada 15 s por defecto; consultamos algo más seguido para no sumar
+// esa latencia entera a la espera del usuario.
+const INTERVALO_SONDEO_MS = 3_000;
+const INTENTOS_SONDEO_MAX = 100;
 
-  const fechaConfigurada = new Date(fechaHasta);
-  if (!Number.isNaN(fechaConfigurada.getTime()) && fechaConfigurada > ahora) {
-    return ahora.toISOString();
-  }
-
-  return fechaHasta;
-}
+const esperar = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function useAuditoria() {
   const [eventos, setEventos] = useState<AuditoriaItemResponse[]>([]);
@@ -34,8 +25,10 @@ export function useAuditoria() {
   const [error, setError] = useState<ApiError | null>(null);
   const [exportando, setExportando] = useState(false);
   const [exportError, setExportError] = useState<ApiError | null>(null);
+  const [exportProgreso, setExportProgreso] = useState<string | null>(null);
   const exportandoRef = useRef(false);
   const [filtros, setFiltros] = useState<FiltrosAuditoria>(DEFAULT_FILTROS);
+  const [tiposEvento, setTiposEvento] = useState<TipoEvento[]>([]);
 
   const cargar = useCallback(async (f: FiltrosAuditoria = filtros) => {
     setLoading(true);
@@ -51,6 +44,17 @@ export function useAuditoria() {
     }
   }, [filtros]);
 
+  // El catálogo cambia poquísimo: se pide una vez por montaje. Si falla, la
+  // tabla y el filtro caen al id numérico en vez de romperse.
+  useEffect(() => {
+    let vigente = true;
+    auditoriaApi
+      .tiposEvento()
+      .then((tipos) => { if (vigente) setTiposEvento(tipos); })
+      .catch(() => { /* degradación silenciosa: se muestra el id */ });
+    return () => { vigente = false; };
+  }, []);
+
   const actualizarFiltros = useCallback((nuevos: Partial<FiltrosAuditoria>) => {
     const actualizados = { ...filtros, ...nuevos, pagina: nuevos.pagina ?? 1 };
     setFiltros(actualizados);
@@ -62,64 +66,62 @@ export function useAuditoria() {
     cargar(DEFAULT_FILTROS);
   }, [cargar]);
 
-  const exportarTodos = useCallback(async (
-    limite = MAX_REGISTROS_EXPORTACION
-  ): Promise<AuditoriaExportacion | null> => {
+  /** Encola la exportación, espera a que el worker la genere y la descarga. */
+  const exportarPorCola = useCallback(async (): Promise<AuditoriaExportacion> => {
+    const { id_cola } = await auditoriaApi.solicitarExportacion(filtros);
+    setExportProgreso('La exportación es grande y se está preparando en segundo plano…');
+
+    for (let intento = 0; intento < INTENTOS_SONDEO_MAX; intento++) {
+      await esperar(INTERVALO_SONDEO_MS);
+      const estado = await auditoriaApi.consultarExportacion(id_cola);
+      if (estado.descargable) return auditoriaApi.descargarExportacion(id_cola);
+      if (estado.estado === 'FALLIDO') {
+        throw {
+          code: 'EXPORTACION_FALLIDA',
+          message: estado.error ?? 'La exportación no pudo completarse. Intenta nuevamente.',
+          status: 500,
+        } as ApiError;
+      }
+    }
+
+    throw {
+      code: 'EXPORTACION_DEMORADA',
+      message:
+        'La exportación sigue en proceso. Puedes cerrar esta vista y volver a ' +
+        'intentarlo en unos minutos; el archivo se sigue generando.',
+      status: 408,
+    } as ApiError;
+  }, [filtros]);
+
+  const exportarTodos = useCallback(async (): Promise<AuditoriaExportacion | null> => {
     if (exportandoRef.current) return null;
-
-    const limiteSeguro = Number.isFinite(limite)
-      ? Math.max(1, Math.floor(limite))
-      : MAX_REGISTROS_EXPORTACION;
-    const filtrosExportacion: FiltrosAuditoria = {
-      ...filtros,
-      pagina: 1,
-      tamano: TAMANO_PAGINA_EXPORTACION,
-      // Consultar auditoría también genera un evento. Este corte congela el
-      // conjunto para que esos eventos nuevos no desplacen las páginas siguientes.
-      fecha_hasta: fechaHastaParaExportacion(filtros.fecha_hasta),
-    };
-
     exportandoRef.current = true;
     setExportando(true);
     setExportError(null);
+    setExportProgreso(null);
 
     try {
-      const primeraPagina = await auditoriaApi.consultar(filtrosExportacion);
-      const cantidadObjetivo = Math.min(primeraPagina.total, limiteSeguro);
-      const totalPaginas = Math.ceil(cantidadObjetivo / TAMANO_PAGINA_EXPORTACION);
-      const eventosPorId = new Map(
-        primeraPagina.items.map((evento) => [evento.id_evento, evento])
-      );
-
-      for (let paginaInicial = 2; paginaInicial <= totalPaginas; paginaInicial += PAGINAS_POR_LOTE) {
-        const paginas = Array.from(
-          { length: Math.min(PAGINAS_POR_LOTE, totalPaginas - paginaInicial + 1) },
-          (_, indice) => paginaInicial + indice
-        );
-        const respuestas = await Promise.all(
-          paginas.map((pagina) => auditoriaApi.consultar({ ...filtrosExportacion, pagina }))
-        );
-
-        respuestas.forEach((respuesta) => {
-          respuesta.items.forEach((evento) => eventosPorId.set(evento.id_evento, evento));
-        });
-      }
-
-      const items = Array.from(eventosPorId.values()).slice(0, cantidadObjetivo);
-      return {
-        items,
-        total: primeraPagina.total,
-        truncado: items.length < primeraPagina.total,
-        limite: limiteSeguro,
-      };
+      return await auditoriaApi.exportar(filtros);
     } catch (e) {
-      setExportError(e as ApiError);
+      const apiError = e as ApiError;
+      // Por encima del umbral el backend rechaza la descarga inmediata y pide
+      // usar la cola. No es un error para el usuario: es el otro camino.
+      if (apiError?.code === 'EXPORTACION_REQUIERE_MODO_ASINCRONO') {
+        try {
+          return await exportarPorCola();
+        } catch (eCola) {
+          setExportError(eCola as ApiError);
+          return null;
+        }
+      }
+      setExportError(apiError);
       return null;
     } finally {
       exportandoRef.current = false;
       setExportando(false);
+      setExportProgreso(null);
     }
-  }, [filtros]);
+  }, [filtros, exportarPorCola]);
 
   return {
     eventos,
@@ -127,11 +129,13 @@ export function useAuditoria() {
     loading,
     error,
     filtros,
+    tiposEvento,
     cargar,
     actualizarFiltros,
     resetFiltros,
     exportarTodos,
     exportando,
+    exportProgreso,
     exportError,
   };
 }

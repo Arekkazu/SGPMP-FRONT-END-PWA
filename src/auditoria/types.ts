@@ -25,13 +25,40 @@ export interface AuditoriaPaginadaResponse {
   items: AuditoriaItemResponse[];
 }
 
-// No es una respuesta del backend: es el agregado de todas las páginas que
-// arma el hook para exportar.
+// El CSV lo genera el backend; `total`/`exportados` vienen en las cabeceras
+// X-Total-Registros y X-Registros-Exportados.
 export interface AuditoriaExportacion {
-  items: AuditoriaItemResponse[];
+  csv: string;
   total: number;
+  exportados: number;
   truncado: boolean;
-  limite: number;
+}
+
+// Catálogo de modulo1.tipos_eventos servido por el backend, para que el cliente
+// no mantenga su propia copia de las etiquetas.
+export interface TipoEvento {
+  id_tipo_evento: number;
+  nombre: string;
+  accion?: string | null;
+  categoria?: 'AUTENTICACION' | 'MODIFICACION' | 'CONSULTA' | null;
+}
+
+// Exportación diferida: el backend responde 422 EXPORTACION_REQUIERE_MODO_ASINCRONO
+// cuando el volumen supera el umbral y hay que pasar por la cola.
+export interface ExportacionEncolada {
+  id_cola: number;
+  estado: string;
+  mensaje: string;
+}
+
+export interface EstadoExportacion {
+  id_cola: number;
+  estado: 'PENDIENTE' | 'EN_PROCESO' | 'COMPLETADO' | 'FALLIDO';
+  intentos: number;
+  error?: string | null;
+  total_exportado?: number | null;
+  total_disponible?: number | null;
+  descargable: boolean;
 }
 
 export interface FiltrosAuditoria {
