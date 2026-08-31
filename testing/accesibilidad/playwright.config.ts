@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: '.',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -11,7 +11,8 @@ export default defineConfig({
   use: {
     /* Es buena práctica incluir la diagonal final */
     baseURL: 'http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/',
-    trace: 'on-first-retry',
+    trace: 'on',
+    screenshot: 'only-on-failure',
   },
 
   projects: [
