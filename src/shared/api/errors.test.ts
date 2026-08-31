@@ -50,6 +50,13 @@ describe('mapToApiError', () => {
     );
   });
 
+  it('explica un 423 sin cuerpo como bloqueo temporal', () => {
+    const err = mapToApiError(axiosError(423, undefined));
+    expect(err.message).toBe(
+      'Acceso bloqueado temporalmente por seguridad. Intenta nuevamente en unos minutos.'
+    );
+  });
+
   it('conserva el mensaje del rate limit de recuperación, que el backend envía como 422', () => {
     const err = mapToApiError(
       axiosError(422, {

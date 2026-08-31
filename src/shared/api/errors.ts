@@ -56,6 +56,7 @@ function resolveMessage(status: number, data?: Record<string, unknown>, fields?:
     case 410: return 'El enlace o token ha expirado. Solicita uno nuevo e intenta nuevamente.';
     case 412: return 'Los datos fueron modificados por otro usuario. Recarga e intenta de nuevo.';
     case 422: return 'Los datos no cumplen las reglas de negocio.';
+    case 423: return 'Acceso bloqueado temporalmente por seguridad. Intenta nuevamente en unos minutos.';
     case 429: return 'Has realizado demasiadas solicitudes. Espera unos minutos antes de intentarlo nuevamente.';
     default:  return 'Ocurrió un error inesperado. Intenta nuevamente.';
   }
