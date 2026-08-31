@@ -100,6 +100,31 @@ describe('useNotificaciones', () => {
     expect(result.current.error?.message).toBe('No fue posible actualizar.');
   });
 
+  it('un refresco silencioso no descarta las páginas ya cargadas', async () => {
+    const antigua: NotificacionInternaResponse = {
+      ...pendiente,
+      id_notificacion: 3,
+      fecha_envio: '2026-08-20T09:00:00Z',
+    };
+    listarMock.mockImplementation(async (filtros = {}) => (
+      filtros.pagina === 2
+        ? { total: 2, no_leidas: 2, pagina: 2, tamano: 20, items: [antigua] }
+        : { total: 2, no_leidas: 2, pagina: 1, tamano: 20, items: [pendiente] }
+    ));
+
+    const { result } = renderHook(() => useNotificaciones(4));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => { await result.current.cargarMas(); });
+    expect(result.current.notificaciones).toHaveLength(2);
+
+    // Lo que dispara el intervalo, el focus de la ventana y un push entrante.
+    await act(async () => { await result.current.cargar(true); });
+
+    expect(result.current.notificaciones).toHaveLength(2);
+    expect(result.current.noLeidas).toBe(2);
+  });
+
   it('recupera la bandeja del usuario desde Dexie cuando no hay red', async () => {
     listarMock.mockRejectedValue({
       code: 'NETWORK_ERROR',

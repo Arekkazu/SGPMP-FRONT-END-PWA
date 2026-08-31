@@ -5,6 +5,9 @@ import type { PushPermission } from '../hooks/usePushNotifications';
 import type { NotificacionInternaResponse } from '../types';
 import './NotificationTray.css';
 
+// Espejo de `modulo1.tipos_eventos` (backend: `evento_categoria.py`). No se
+// consume `/auditoria/catalogo/tipos-evento` porque exige permiso de lectura de
+// auditoría: un productor recibe notificaciones pero recibiría 403 al pedirlo.
 const TIPOS_EVENTO: Record<number, string> = {
   1: 'Registro de usuario',
   2: 'Activación de cuenta',
@@ -25,6 +28,13 @@ const TIPOS_EVENTO: Record<number, string> = {
   17: 'Consulta de usuarios',
   18: 'Consulta de usuario',
   19: 'Consulta de perfil',
+  20: 'Inicio de sesión con AgroFusion',
+  21: 'Aprovisionamiento SSO',
+  22: 'Sincronización con AgroFusion',
+  23: 'Sesión renovada',
+  24: 'Reuso de token de sesión detectado',
+  25: 'Fallo del archivado de auditoría',
+  26: 'Exportación de auditoría',
 };
 
 interface NotificationTrayProps {

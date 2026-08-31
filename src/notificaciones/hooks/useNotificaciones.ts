@@ -50,6 +50,12 @@ export function useNotificaciones(idUsuario: number | null) {
   const idUsuarioActual = useRef(idUsuario);
   const solicitudActual = useRef(0);
   const marcandoIdsActuales = useRef<Set<number>>(new Set());
+  // `cargar` solo depende de `idUsuario`, así que leería una `pagina` obsoleta.
+  const paginaActual = useRef(1);
+
+  useEffect(() => {
+    paginaActual.current = pagina;
+  }, [pagina]);
 
   useEffect(() => {
     idUsuarioActual.current = idUsuario;
@@ -81,9 +87,16 @@ export function useNotificaciones(idUsuario: number | null) {
         || solicitudActual.current !== idSolicitud
       ) return;
 
-      setNotificaciones(respuesta.items);
       setTotal(respuesta.total);
       setNoLeidas(respuesta.no_leidas);
+
+      // Un refresco silencioso (intervalo, focus o push entrante) pide solo la
+      // primera página: sustituir la lista con ella descartaría las que el
+      // usuario ya trajo con «Mostrar más». Los contadores de arriba bastan
+      // para mantener vivo el badge; la lista se rehace al refrescar a mano.
+      if (silencioso && paginaActual.current > 1) return;
+
+      setNotificaciones(respuesta.items);
       setPagina(1);
       setFromCache(false);
       try {
