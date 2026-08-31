@@ -23,6 +23,7 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm<LoginDTO>({ mode: 'onBlur' });
 
@@ -58,12 +59,29 @@ export function LoginPage() {
         )}
 
         {error && error.code !== 'OFFLINE' && (
-          <Alert
-            variant="error"
-            title="Error al iniciar sesión"
-            description={error.message}
-            className="auth-alert"
-          />
+          <>
+            <Alert
+              variant="error"
+              title="Error al iniciar sesión"
+              description={error.message}
+              className="auth-alert"
+            />
+            {error.code === 'CUENTA_PENDIENTE' && (
+              // El mensaje del backend remite a "re-enviar token de activación";
+              // el correo ya tecleado prellena el formulario de destino.
+              <p style={{ textAlign: 'center', marginBottom: 'var(--s4)' }}>
+                <Link
+                  to={{
+                    pathname: '/reenviar-activacion',
+                    state: { correo: getValues('correo_electronico') },
+                  }}
+                  className="auth-link"
+                >
+                  Reenviar correo de activación
+                </Link>
+              </p>
+            )}
+          </>
         )}
 
         {failedAttempts > 0 && (
