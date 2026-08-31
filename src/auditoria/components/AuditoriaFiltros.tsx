@@ -2,32 +2,18 @@ import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
 import { Button } from '../../shared/design-system/Button';
-import type { FiltrosAuditoria } from '../types';
+import type { FiltrosAuditoria, TipoEvento } from '../types';
 
-export const TIPOS_EVENTO = [
-  { id: 1,  label: 'LOGIN_SUCCESS' },
-  { id: 2,  label: 'LOGIN_FAILED' },
-  { id: 3,  label: 'LOGOUT' },
-  { id: 4,  label: 'USER_REGISTER' },
-  { id: 5,  label: 'PASSWORD_CHANGE' },
-  { id: 6,  label: 'PASSWORD_RECOVERY' },
-  { id: 7,  label: 'PASSWORD_RESET' },
-  { id: 8,  label: 'USER_UPDATE' },
-  { id: 9,  label: 'USER_STATE_CHANGE' },
-  { id: 10, label: 'ROLE_CREATE' },
-  { id: 11, label: 'ROLE_UPDATE' },
-  { id: 12, label: 'ROLE_DELETE' },
-  { id: 13, label: 'PERMISSION_GRANT' },
-  { id: 14, label: 'PERMISSION_REVOKE' },
-  { id: 15, label: 'AUDIT_VIEW' },
-];
 
 interface Props {
   onBuscar: (filtros: Partial<FiltrosAuditoria>) => void;
   onReset: () => void;
+  // Viene de `GET /auditoria/catalogo/tipos-evento`. Mantener esta lista a mano
+  // ya provocó que las 25 etiquetas apuntaran al evento equivocado.
+  tiposEvento: TipoEvento[];
 }
 
-export function AuditoriaFiltros({ onBuscar, onReset }: Props) {
+export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
   const [idUsuario, setIdUsuario] = useState('');
   const [tipoEvento, setTipoEvento] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
@@ -84,8 +70,8 @@ export function AuditoriaFiltros({ onBuscar, onReset }: Props) {
           }}
         >
           <option value="">Todos los tipos</option>
-          {TIPOS_EVENTO.map((t) => (
-            <option key={t.id} value={String(t.id)}>{t.label}</option>
+          {tiposEvento.map((t) => (
+            <option key={t.id_tipo_evento} value={String(t.id_tipo_evento)}>{t.nombre}</option>
           ))}
         </select>
       </div>

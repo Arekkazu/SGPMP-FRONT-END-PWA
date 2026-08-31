@@ -12,6 +12,7 @@ import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_BITACORA, ACCION_R, ACCION_E } from '../rbac';
 import type { AuditoriaFiltros as AuditoriaFiltrosDTO, EventoAuditoriaIotSchema } from '../types';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 export function BitacoraView() {
   const puedeVer = usePermission(RECURSO_BITACORA, ACCION_R);
@@ -30,8 +31,8 @@ export function BitacoraView() {
       if (filtros.clasificacion_registro) f.clasificacion_registro = filtros.clasificacion_registro;
       if (filtros.resultado) f.resultado = filtros.resultado;
       if (filtros.entidad_afectada_id) f.entidad_afectada_id = filtros.entidad_afectada_id.trim();
-      if (filtros.fecha_desde) f.fecha_desde = `${filtros.fecha_desde}T00:00:00Z`;
-      if (filtros.fecha_hasta) f.fecha_hasta = `${filtros.fecha_hasta}T23:59:59Z`;
+      if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
+      if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
       return f;
     },
     [filtros]

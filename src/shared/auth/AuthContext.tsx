@@ -78,16 +78,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [perfilIncompleto, setPerfilIncompleto] = useState<boolean | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(!validStored);
 
+  // Mantiene el contexto sincronizado cuando el interceptor renueva o limpia
+  // el JWT fuera de los hooks de login/logout.
+  useEffect(() => tokenStore.subscribe((nextToken) => {
+    const nextClaims = nextToken ? decodeJwtPayload(nextToken) : null;
+    if (nextToken && !isTokenValid(nextClaims)) {
+      tokenStore.clear();
+      return;
+    }
+    setToken(nextToken);
+    setClaims(nextClaims);
+  }), []);
+
   // Recarga de página (F5, pestaña nueva): el JWT solo vive en memoria
   // (tokenStore) por diseño (R-12), así que se pierde. Antes de decidir "no
   // autenticado", intenta un refresh silencioso con la cookie httpOnly.
   useEffect(() => {
     if (validStored) return;
+    // `refreshAccessToken` guarda el token en tokenStore; el listener de arriba
+    // sincroniza el contexto.
     refreshAccessToken()
-      .then((newToken) => {
-        setToken(newToken);
-        setClaims(decodeJwtPayload(newToken));
-      })
       .catch(() => {
         // Sin sesión que recuperar — comportamiento normal en /login, /registro, etc.
       })
@@ -120,8 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setSession = useCallback((newToken: string) => {
     tokenStore.set(newToken);
-    setToken(newToken);
-    setClaims(decodeJwtPayload(newToken));
   }, []);
 
   const clearSession = useCallback(() => {

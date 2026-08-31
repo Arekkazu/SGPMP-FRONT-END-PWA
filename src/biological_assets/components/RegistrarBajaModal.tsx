@@ -7,6 +7,7 @@ import { ModalShell } from './ModalShell';
 import { FormSelect, FormTextArea, FORM_COL } from './formControls';
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarEventoBajaDTO, TipoBaja } from '../types';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   tipo_baja: TipoBaja;
@@ -23,7 +24,7 @@ interface Props {
   onConfirmar: (dto: RegistrarEventoBajaDTO) => Promise<boolean>;
 }
 
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = hoyLocal();
 
 export function RegistrarBajaModal({ esPoblacional, saving, saveError, onClose, onConfirmar }: Props) {
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({

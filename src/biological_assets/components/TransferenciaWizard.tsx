@@ -8,6 +8,7 @@ import { ModalShell } from './ModalShell';
 import { FormSelect, FormTextArea, FORM_COL } from './formControls';
 import { useTransferencias } from '../hooks/useTransferencias';
 import type { RegistrarTransferenciaDTO } from '../types';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   infraestructura_destino_id: string;
@@ -23,7 +24,7 @@ interface Props {
   onDone: () => void;
 }
 
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = hoyLocal();
 
 export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose, onDone }: Props) {
   const { disponibles, loadingDisponibles, errorDisponibles, saving, saveError, cargarDisponibles, registrar } = useTransferencias(idActivo);

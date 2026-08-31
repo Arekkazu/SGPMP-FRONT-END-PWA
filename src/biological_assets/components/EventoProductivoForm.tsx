@@ -7,6 +7,7 @@ import { ModalShell } from './ModalShell';
 import { FormTextArea, FORM_COL } from './formControls';
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarEventoProductivoDTO } from '../types';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   tipo_producto: string;
@@ -24,7 +25,7 @@ interface Props {
   onConfirmar: (dto: RegistrarEventoProductivoDTO) => Promise<boolean>;
 }
 
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = hoyLocal();
 
 export function EventoProductivoForm({ saving, saveError, onClose, onConfirmar }: Props) {
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({

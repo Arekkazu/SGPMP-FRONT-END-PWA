@@ -2,44 +2,41 @@ import React, { useEffect, useState } from 'react';
 import { RefreshCw, Download, Archive, X, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useAuditoria } from '../hooks/useAuditoria';
 import { usePermission } from '../../shared/rbac/usePermission';
-import { AuditoriaFiltros, TIPOS_EVENTO } from '../components/AuditoriaFiltros';
+import { AuditoriaFiltros } from '../components/AuditoriaFiltros';
 import { AuditoriaTable } from '../components/AuditoriaTable';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { hoyLocal } from '../../shared/lib/fecha';
 import type { AuditoriaItemResponse } from '../types';
 
 const DOCE_MESES_MS = 365 * 24 * 60 * 60 * 1000;
 
-function generarCsv(eventos: AuditoriaItemResponse[]): string {
-  const cabecera = ['ID', 'Usuario', 'Tipo evento', 'Módulo', 'Descripción', 'Resultado', 'IP', 'Fecha/Hora', 'Hash'];
-  const filas = eventos.map((e) => [
-    e.id_evento,
-    e.nombre_usuario ?? e.id_usuario,
-    TIPOS_EVENTO.find((t) => t.id === e.tipo_evento)?.label ?? e.tipo_evento,
-    e.modulo,
-    `"${(e.descripcion ?? '').replace(/"/g, '""')}"`,
-    e.resultado,
-    e.ip ?? '',
-    e.fecha_evento,
-    e.hash ?? '',
-  ]);
-  return [cabecera, ...filas].map((r) => r.join(',')).join('\n');
-}
-
-function hashSimulado(evento: AuditoriaItemResponse): string {
-  const base = `${evento.id_evento}-${evento.tipo_evento}-${evento.fecha_evento}`;
-  let hash = 0;
-  for (let i = 0; i < base.length; i++) {
-    hash = (hash * 31 + base.charCodeAt(i)) >>> 0;
-  }
-  return hash.toString(16).padStart(8, '0') + 'a1b2c3d4e5f6';
+interface ExportacionAviso {
+  variant: 'success' | 'warning';
+  title: string;
+  description: string;
 }
 
 export function AuditoriaPage() {
   const puedeVer = usePermission(6, 2);
-  const { eventos, total, loading, error, filtros, cargar, actualizarFiltros, resetFiltros } = useAuditoria();
+  const {
+    eventos,
+    total,
+    loading,
+    error,
+    filtros,
+    cargar,
+    actualizarFiltros,
+    resetFiltros,
+    exportarTodos,
+    exportando,
+    exportProgreso,
+    exportError,
+    tiposEvento,
+  } = useAuditoria();
   const [eventoVerificar, setEventoVerificar] = useState<AuditoriaItemResponse | null>(null);
   const [archivoMsg, setArchivoMsg] = useState<string | null>(null);
+  const [exportacionAviso, setExportacionAviso] = useState<ExportacionAviso | null>(null);
 
   useEffect(() => {
     if (puedeVer) cargar();
@@ -53,15 +50,37 @@ export function AuditoriaPage() {
     );
   }
 
-  const handleExportarCsv = () => {
-    const csv = generarCsv(eventos);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const handleExportarCsv = async () => {
+    setExportacionAviso(null);
+    const resultado = await exportarTodos();
+    if (!resultado) return;
+
+    // El CSV llega ya armado por el backend, con las etiquetas de su catálogo.
+    const blob = new Blob([resultado.csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `auditoria-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = `auditoria-${hoyLocal()}.csv`;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
     URL.revokeObjectURL(url);
+
+    const exportados = resultado.exportados.toLocaleString('es-CO');
+    const disponibles = resultado.total.toLocaleString('es-CO');
+    if (resultado.truncado) {
+      setExportacionAviso({
+        variant: 'warning',
+        title: 'Exportación parcial',
+        description: `Se exportaron los primeros ${exportados} de ${disponibles} eventos. Aplica filtros adicionales para obtener los restantes.`,
+      });
+    } else {
+      setExportacionAviso({
+        variant: 'success',
+        title: 'CSV generado',
+        description: `Se exportaron ${exportados} evento${resultado.exportados !== 1 ? 's' : ''} con los filtros aplicados.`,
+      });
+    }
   };
 
   const handleSimularArchivado = () => {
@@ -92,7 +111,13 @@ export function AuditoriaPage() {
             <Archive size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
             Simular archivado
           </Button>
-          <Button variant="secondary" size="sm" onClick={handleExportarCsv} disabled={eventos.length === 0}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportarCsv}
+            loading={exportando}
+            disabled={loading || exportando || total === 0}
+          >
             <Download size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
             Exportar CSV
           </Button>
@@ -106,6 +131,35 @@ export function AuditoriaPage() {
         <Alert variant="error" title="Error al cargar auditoría" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
+      {exportError && (
+        <Alert
+          variant="error"
+          title="Error al exportar CSV"
+          description={exportError.message}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
+      )}
+
+      {exportProgreso && (
+        <Alert
+          variant="info"
+          title="Exportación en curso"
+          description={exportProgreso}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
+      )}
+
+      {exportacionAviso && (
+        <Alert
+          key={`${exportacionAviso.variant}-${exportacionAviso.description}`}
+          variant={exportacionAviso.variant}
+          title={exportacionAviso.title}
+          description={exportacionAviso.description}
+          onDismiss={() => setExportacionAviso(null)}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
+      )}
+
       {archivoMsg && (
         <Alert
           variant="info"
@@ -115,9 +169,9 @@ export function AuditoriaPage() {
         />
       )}
 
-      <AuditoriaFiltros onBuscar={actualizarFiltros} onReset={resetFiltros} />
+      <AuditoriaFiltros onBuscar={actualizarFiltros} onReset={resetFiltros} tiposEvento={tiposEvento} />
 
-      <AuditoriaTable eventos={eventos} loading={loading} onVerificar={setEventoVerificar} />
+      <AuditoriaTable eventos={eventos} loading={loading} onVerificar={setEventoVerificar} tiposEvento={tiposEvento} />
 
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--s2)', marginTop: 'var(--s5)' }}>
@@ -178,26 +232,16 @@ export function AuditoriaPage() {
 
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>
               Evento <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>#{eventoVerificar.id_evento}</strong>
-              {' · '}{TIPOS_EVENTO.find((t) => t.id === eventoVerificar.tipo_evento)?.label ?? eventoVerificar.tipo_evento}
+              {' · '}{tiposEvento.find((t) => t.id_tipo_evento === eventoVerificar.tipo_evento)?.nombre ?? eventoVerificar.tipo_evento}
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
-              <div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                  Hash almacenado
-                </p>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)', wordBreak: 'break-all', background: 'var(--surface-hover)', padding: 'var(--s2) var(--s3)', borderRadius: 'var(--r-md)' }}>
-                  {eventoVerificar.hash ?? '(no disponible)'}
-                </p>
-              </div>
-              <div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                  Hash recalculado
-                </p>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)', wordBreak: 'break-all', background: 'var(--surface-hover)', padding: 'var(--s2) var(--s3)', borderRadius: 'var(--r-md)' }}>
-                  {hashSimulado(eventoVerificar)}
-                </p>
-              </div>
+            <div style={{ marginBottom: 'var(--s5)' }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                Clasificación del backend
+              </p>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--surface-hover)', padding: 'var(--s2) var(--s3)', borderRadius: 'var(--r-md)' }}>
+                {eventoVerificar.integridad}
+              </p>
             </div>
 
             <div style={{

@@ -3,6 +3,8 @@ import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { useLogout } from './auth/hooks/useLogout';
+import { useSessionTimeout } from './auth/hooks/useSessionTimeout';
+import { SessionExpirationWarning } from './auth/components/SessionExpirationWarning';
 
 /* Ionic core CSS */
 import '@ionic/react/css/core.css';
@@ -52,6 +54,15 @@ import { TelemetryPage } from './telemetry/pages/TelemetryPage';
 import { PrediccionPage } from './prediction/pages/PrediccionPage';
 
 setupIonicReact();
+
+function SessionManager() {
+  const { token } = useAuth();
+  const logout = useLogout();
+  const remainingSeconds = useSessionTimeout({ hasSession: token !== null, onTimeout: logout });
+
+  if (remainingSeconds === null) return null;
+  return <SessionExpirationWarning remainingSeconds={remainingSeconds} />;
+}
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const logout = useLogout();
@@ -208,6 +219,7 @@ function AppRoutes() {
 const App: React.FC = () => (
   <IonApp>
     <AuthProvider>
+      <SessionManager />
       <IonReactRouter>
         <AppRoutes />
       </IonReactRouter>

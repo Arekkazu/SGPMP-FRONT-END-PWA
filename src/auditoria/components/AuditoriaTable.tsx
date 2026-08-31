@@ -2,24 +2,32 @@ import React from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
-import { TIPOS_EVENTO } from './AuditoriaFiltros';
-import type { AuditoriaItemResponse } from '../types';
+import type { AuditoriaItemResponse, TipoEvento } from '../types';
 
 interface Props {
   eventos: AuditoriaItemResponse[];
   loading: boolean;
   onVerificar: (evento: AuditoriaItemResponse) => void;
+  tiposEvento: TipoEvento[];
 }
 
-const EVENT_BADGE: Record<number, 'activo' | 'eliminado' | 'inactivo' | 'pendiente'> = {
-  1: 'activo', 2: 'eliminado', 3: 'inactivo', 4: 'pendiente',
-  5: 'pendiente', 6: 'pendiente', 7: 'activo', 8: 'pendiente',
-  9: 'pendiente', 10: 'pendiente', 11: 'pendiente', 12: 'eliminado',
-  13: 'pendiente', 14: 'pendiente', 15: 'inactivo',
+// El color sale de la categoría funcional (3 valores) en vez de un mapa de 25
+// ids quemados: el catálogo del backend ya la trae por tipo.
+const BADGE_POR_CATEGORIA: Record<string, 'activo' | 'eliminado' | 'inactivo' | 'pendiente'> = {
+  AUTENTICACION: 'activo',
+  MODIFICACION: 'pendiente',
+  CONSULTA: 'inactivo',
 };
 
-function tipoLabel(tipo: number): string {
-  return TIPOS_EVENTO.find((t) => t.id === tipo)?.label ?? String(tipo);
+
+/** Etiqueta del catálogo; cae al id si aún no cargó o el tipo es desconocido. */
+function tipoLabel(tipo: number, catalogo: TipoEvento[]): string {
+  return catalogo.find((t) => t.id_tipo_evento === tipo)?.nombre ?? String(tipo);
+}
+
+function tipoBadge(tipo: number, catalogo: TipoEvento[]) {
+  const categoria = catalogo.find((t) => t.id_tipo_evento === tipo)?.categoria;
+  return (categoria && BADGE_POR_CATEGORIA[categoria]) ?? 'inactivo';
 }
 
 function truncar(texto: string | undefined, max: number): string {
@@ -35,9 +43,9 @@ function formatFecha(fecha: string): string {
   }
 }
 
-const HEADERS = ['#', 'Usuario', 'Tipo evento', 'Módulo', 'Descripción', 'Resultado', 'IP', 'Fecha/Hora', 'Hash', 'Acción'];
+const HEADERS = ['#', 'Usuario', 'Tipo evento', 'Módulo', 'Descripción', 'Resultado', 'IP', 'Fecha/Hora', 'Integridad', 'Acción'];
 
-export function AuditoriaTable({ eventos, loading, onVerificar }: Props) {
+export function AuditoriaTable({ eventos, loading, onVerificar, tiposEvento }: Props) {
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -92,8 +100,8 @@ export function AuditoriaTable({ eventos, loading, onVerificar }: Props) {
                 {e.nombre_usuario ?? <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontFamily: 'var(--font-mono)', fontSize: '11px' }}>ID {e.id_usuario}</span>}
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', whiteSpace: 'nowrap' }}>
-                <Badge variant={EVENT_BADGE[e.tipo_evento] ?? 'inactivo'}>
-                  {tipoLabel(e.tipo_evento)}
+                <Badge variant={tipoBadge(e.tipo_evento, tiposEvento)}>
+                  {tipoLabel(e.tipo_evento, tiposEvento)}
                 </Badge>
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', color: 'var(--text-secondary)' }}>
@@ -111,13 +119,13 @@ export function AuditoriaTable({ eventos, loading, onVerificar }: Props) {
                 </Badge>
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                {e.ip ?? '—'}
+                {e.direccion_ip ?? '—'}
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                 {formatFecha(e.fecha_evento)}
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                {e.hash ? e.hash.slice(0, 8) + '…' : '—'}
+                {e.integridad}
               </td>
               <td style={{ padding: 'var(--s3) var(--s4)', whiteSpace: 'nowrap' }}>
                 <Button

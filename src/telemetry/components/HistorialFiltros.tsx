@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, Download } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
+import { diasAtrasLocal, hoyLocal } from '../../shared/lib/fecha';
 
 export interface HistorialFiltrosState {
   fecha_inicio: string;   // yyyy-mm-dd (requerido)
@@ -14,18 +15,10 @@ export interface HistorialFiltrosState {
   origen_dato: string;
 }
 
-function diasAtras(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
-}
-function hoy(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export const HISTORIAL_FILTROS_DEFAULT: HistorialFiltrosState = {
-  fecha_inicio: diasAtras(30),
-  fecha_fin: hoy(),
+  fecha_inicio: diasAtrasLocal(30),
+  fecha_fin: hoyLocal(),
   tipo_variable: '', categoria_variable: '', id_infraestructura: '', especie: '',
   estado_dato: '', origen_dato: '',
 };
@@ -44,7 +37,7 @@ export function HistorialFiltros({ value, onChange, onAplicar, onExportar, puede
   const set = (k: keyof HistorialFiltrosState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     onChange({ ...value, [k]: e.target.value });
 
-  const aplicarRango = (n: number) => onChange({ ...value, fecha_inicio: diasAtras(n), fecha_fin: hoy() });
+  const aplicarRango = (n: number) => onChange({ ...value, fecha_inicio: diasAtrasLocal(n), fecha_fin: hoyLocal() });
 
   return (
     <>

@@ -6,6 +6,7 @@ import { Button } from '../../shared/design-system/Button';
 import { useAuditoriaM02 } from '../hooks/useAuditoriaM02';
 import { Paginacion } from '../components/Paginacion';
 import type { ConsultarBitacoraFiltros, EventoAuditoriaResponse } from '../types';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 const INPUT: React.CSSProperties = {
   width: '100%',
@@ -119,8 +120,8 @@ export function AuditoriaM02View() {
       if (filtros.clasificacion_biologica) f.clasificacion_biologica = filtros.clasificacion_biologica.trim();
       if (filtros.resultado) f.resultado = filtros.resultado;
       if (filtros.severidad_log) f.severidad_log = filtros.severidad_log;
-      if (filtros.fecha_inicio) f.fecha_inicio = `${filtros.fecha_inicio}T00:00:00Z`;
-      if (filtros.fecha_fin) f.fecha_fin = `${filtros.fecha_fin}T23:59:59Z`;
+      if (filtros.fecha_inicio) f.fecha_inicio = inicioDelDiaUtc(filtros.fecha_inicio);
+      if (filtros.fecha_fin) f.fecha_fin = finDelDiaUtc(filtros.fecha_fin);
       cargar(f);
     },
     [filtros, cargar]

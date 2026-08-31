@@ -17,6 +17,7 @@ import { PermissionDenied } from '../components/PermissionDenied';
 import { INPUT, LABEL } from '../components/tableStyles';
 import { RECURSO_INFRAESTRUCTURA, RECURSO_ALERTAS_TECNICAS, ACCION_R, ACCION_U } from '../rbac';
 import type { ListarAlertasFiltros, NuevoEstadoAlerta } from '../types';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 export function DispositivosView() {
   const puedeVerInfra = usePermission(RECURSO_INFRAESTRUCTURA, ACCION_R);
@@ -41,8 +42,8 @@ export function DispositivosView() {
       if (filtros.severidad) f.severidad = filtros.severidad;
       if (filtros.origen_evento) f.origen_evento = filtros.origen_evento;
       if (filtros.id_sensor) f.id_sensor = Number(filtros.id_sensor);
-      if (filtros.fecha_desde) f.fecha_desde = `${filtros.fecha_desde}T00:00:00Z`;
-      if (filtros.fecha_hasta) f.fecha_hasta = `${filtros.fecha_hasta}T23:59:59Z`;
+      if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
+      if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
       return f;
     },
     [filtros]
