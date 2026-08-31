@@ -12,20 +12,13 @@ interface BackendFieldError {
   message: string;
 }
 
-const RATE_LIMIT_CODES = new Set([
-  'LIMITE_SOLICITUDES_EXCEDIDO',
-]);
-
-const TOKEN_EXPIRED_MESSAGE = 'El enlace o token ha expirado. Solicita uno nuevo e intenta nuevamente.';
-const RATE_LIMIT_MESSAGE = 'Has realizado demasiadas solicitudes. Espera unos minutos antes de intentarlo nuevamente.';
-
 export function mapToApiError(error: AxiosError): ApiError {
   const status = error.response?.status ?? 0;
   const data = error.response?.data as Record<string, unknown> | undefined;
 
   const code = (data?.error_code as string) ?? (data?.code as string) ?? (data?.detail as string) ?? `HTTP_${status}`;
   const fields = data?.fields as BackendFieldError[] | undefined;
-  const message = resolveMessage(status, code, data, fields);
+  const message = resolveMessage(status, data, fields);
   const field = fields?.[0]?.field ?? (data?.field as string | undefined);
 
   return { code, message, field, status };
@@ -35,20 +28,24 @@ function stripPydanticPrefix(msg: string): string {
   return msg.startsWith('Value error, ') ? msg.slice('Value error, '.length) : msg;
 }
 
-function resolveMessage(
-  status: number,
-  code: string,
-  data?: Record<string, unknown>,
-  fields?: BackendFieldError[]
-): string {
-  if (fields?.length && fields[0].message) return stripPydanticPrefix(fields[0].message);
+// Mensajes por defecto de Pydantic que llegan en inglés; los de nuestros
+// field_validator ya vienen en español.
+const PYDANTIC_ES: Record<string, string> = {
+  'Field required': 'Campo obligatorio.',
+};
+
+function describeField({ field, message }: BackendFieldError): string {
+  const msg = PYDANTIC_ES[message] ?? stripPydanticPrefix(message);
+  if (!field) return msg;
+  const label = field.replace(/_/g, ' ');
+  return `${label.charAt(0).toUpperCase()}${label.slice(1)}: ${msg}`;
+}
+
+function resolveMessage(status: number, data?: Record<string, unknown>, fields?: BackendFieldError[]): string {
+  const detalles = fields?.filter((f) => f.message).map(describeField) ?? [];
+  if (detalles.length) return detalles.join(' · ');
   if (data?.message) return data.message as string;
   if (data?.detail && typeof data.detail === 'string') return data.detail;
-
-  // El backend de recuperación actualmente reporta el rate limit como 422,
-  // aunque el contrato HTTP lo documenta como 429. El código de negocio evita
-  // confundir este caso con una validación ordinaria mientras se corrige allí.
-  if (RATE_LIMIT_CODES.has(code)) return RATE_LIMIT_MESSAGE;
 
   switch (status) {
     case 400: return 'Solicitud inválida. Verifica los datos ingresados.';
@@ -56,10 +53,10 @@ function resolveMessage(
     case 403: return 'No tienes permisos para realizar esta acción.';
     case 404: return 'El recurso solicitado no fue encontrado.';
     case 409: return 'Ya existe un registro con los mismos datos.';
-    case 410: return TOKEN_EXPIRED_MESSAGE;
+    case 410: return 'El enlace o token ha expirado. Solicita uno nuevo e intenta nuevamente.';
     case 412: return 'Los datos fueron modificados por otro usuario. Recarga e intenta de nuevo.';
     case 422: return 'Los datos no cumplen las reglas de negocio.';
-    case 429: return RATE_LIMIT_MESSAGE;
+    case 429: return 'Has realizado demasiadas solicitudes. Espera unos minutos antes de intentarlo nuevamente.';
     default:  return 'Ocurrió un error inesperado. Intenta nuevamente.';
   }
 }
