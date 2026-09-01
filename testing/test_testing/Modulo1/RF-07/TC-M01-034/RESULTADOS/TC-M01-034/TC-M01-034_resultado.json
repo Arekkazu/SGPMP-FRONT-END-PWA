@@ -1,0 +1,32 @@
+{
+  "caso": "TC-M01-034",
+  "titulo": "Rechazo cuando la nueva contraseña y su confirmación no coinciden",
+  "cu": "CU07 - Cambio de contraseña",
+  "rf": "RF-07",
+  "tipo": "Manejo de errores (VAL_ENTRADA)",
+  "equipo": "Frontend & QA",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-01T08:05:50.197Z",
+  "peticionInfo": "Petición POST /sesiones/ bloqueada por política CORS (No Access-Control-Allow-Origin header).",
+  "checkpoints": [
+    {
+      "paso": "Paso 1: Autenticación inicial de usuario en la UI (/login)",
+      "esperado": "Inicio de sesión exitoso y redirección fuera de /login",
+      "obtenido": "FALLA DE RED / CORS: Bloqueado por política CORS al realizar POST /sesiones/ (No Access-Control-Allow-Origin header is present)",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "Paso 2: Navegación a la vista /perfil",
+      "esperado": "Acceso a la vista de perfil para cambiar contraseña",
+      "obtenido": "OMITIDO: No fue posible ingresar a /perfil debido al fallo de autenticación inicial",
+      "estado": "OBSERVACION"
+    }
+  ],
+  "veredicto": "CON FALLAS BLOQUEANTES (BLOQUEO CORS EN LOGIN DE BACKEND TEST)",
+  "hallazgos": [
+    "Paso 1: Autenticación inicial de usuario en la UI (/login) -> FALLA DE RED / CORS: Bloqueado por política CORS al realizar POST /sesiones/ (FALLA)",
+    "Paso 2: Navegación a la vista /perfil -> OMITIDO por error de inicio de sesión (OBSERVACION)"
+  ]
+}

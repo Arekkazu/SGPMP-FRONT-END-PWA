@@ -1,0 +1,39 @@
+{
+  "caso": "TC-M01-023",
+  "titulo": "Rechazo de un correo electrónico con formato inválido en el formulario de inicio de sesión",
+  "cu": "CU02 - Inicio de sesión",
+  "rf": "RF-02",
+  "tipo": "Manejo de errores (VAL_ENTRADA)",
+  "equipo": "Frontend & QA",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-01T07:12:19.651Z",
+  "peticionInfo": "Llamada directa HTTP POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/sesiones/ -> Status: 400. Respuesta: {\"error_code\":\"VAL_ENTRADA\",\"message\":\"Errores de validacion en la solicitud\",\"fields\":[{\"field\":\"correo_electronico\",\"message\":\"value is not a valid email address: An email address must have an @-sign.\"}],\"timestamp\":\"2026-09-01T07:12:24.981298+00:00\"}",
+  "checkpoints": [
+    {
+      "paso": "Checkpoint 1: Mensaje de error de formato en el cliente (UI)",
+      "esperado": "Muestra mensaje \"El formato del correo electrónico no es válido.\"",
+      "obtenido": "Mensaje visible en pantalla: \"El formato del correo electrónico no es válido.\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 2: Bloqueo de navegación/envío en el cliente (react-hook-form)",
+      "esperado": "Permanecer en /login sin emitir tráfico de red",
+      "obtenido": "react-hook-form impidió la navegación y la emisión del formulario en el navegador",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 3: Respuesta del Backend TEST al recibir payload con correo inválido (cy.request)",
+      "esperado": "HTTP Status 400 / 422 (Rechazo por validación de entrada)",
+      "obtenido": "HTTP 400 - Respuesta del servidor: {\"error_code\":\"VAL_ENTRADA\",\"message\":\"Errores de validacion en la solicitud\",\"fields\":[{\"field\":\"correo_electronico\",\"message\":\"value is not a valid email address: An email address must have an @-sign.\"}],\"timestamp\":\"2026-09-01T07:12:24.981298+00:00\"}",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "hallazgos": [
+    "Checkpoint 1: Mensaje de error de formato en el cliente (UI) -> Mensaje visible en pantalla: \"El formato del correo electrónico no es válido.\" (OK)",
+    "Checkpoint 2: Bloqueo de navegación/envío en el cliente (react-hook-form) -> react-hook-form impidió la navegación y la emisión del formulario en el navegador (OK)",
+    "Checkpoint 3: Respuesta del Backend TEST al recibir payload con correo inválido (cy.request) -> HTTP 400 - Respuesta del servidor: {\"error_code\":\"VAL_ENTRADA\",\"message\":\"Errores de validacion en la solicitud\",\"fields\":[{\"field\":\"correo_electronico\",\"message\":\"value is not a valid email address: An email address must have an @-sign.\"}],\"timestamp\":\"2026-09-01T07:12:24.981298+00:00\"} (OK)"
+  ]
+}
