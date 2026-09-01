@@ -7,10 +7,18 @@ import './AppBar.css';
 interface AppBarProps {
   onToggleSidebar?: () => void;
   notificationCount?: number;
+  notificationsOpen?: boolean;
+  onNotificationsClick?: () => void;
   pageTitle?: string;
 }
 
-export function AppBar({ onToggleSidebar, notificationCount = 0, pageTitle }: AppBarProps) {
+export function AppBar({
+  onToggleSidebar,
+  notificationCount = 0,
+  notificationsOpen = false,
+  onNotificationsClick,
+  pageTitle,
+}: AppBarProps) {
   const { userInfo } = useAuth();
   const { dark, toggle } = useTheme();
 
@@ -50,11 +58,16 @@ export function AppBar({ onToggleSidebar, notificationCount = 0, pageTitle }: Ap
         <button
           type="button"
           className="ds-appbar__icon-btn"
+          onClick={onNotificationsClick}
           aria-label={`Notificaciones${notificationCount > 0 ? ` (${notificationCount} sin leer)` : ''}`}
+          aria-expanded={notificationsOpen}
+          aria-haspopup="dialog"
         >
           <Bell size={18} aria-hidden />
           {notificationCount > 0 && (
-            <span className="ds-appbar__notif-dot" aria-hidden="true" />
+            <span className="ds-appbar__notif-badge" aria-hidden="true">
+              {notificationCount > 99 ? '99+' : notificationCount}
+            </span>
           )}
         </button>
 
