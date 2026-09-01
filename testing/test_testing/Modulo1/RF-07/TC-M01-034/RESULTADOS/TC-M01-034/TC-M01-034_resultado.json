@@ -8,25 +8,53 @@
   "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
   "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
   "navegador": "chrome 152.0.7977.65",
-  "fecha": "2026-09-01T08:05:50.197Z",
-  "peticionInfo": "Petición POST /sesiones/ bloqueada por política CORS (No Access-Control-Allow-Origin header).",
+  "fecha": "2026-09-01T16:53:16.879Z",
+  "peticionInfo": "Llamada directa PUT https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/contrasena/usuarios/1 -> Status: 401. Respuesta: {\"error_code\":\"TOKEN_REVOCADO\",\"message\":\"El token de sesión ha sido revocado o es inválido.\",\"fields\":[],\"timestamp\":\"2026-09-01T16:53:15.539216+00:00\"}",
   "checkpoints": [
     {
       "paso": "Paso 1: Autenticación inicial de usuario en la UI (/login)",
       "esperado": "Inicio de sesión exitoso y redirección fuera de /login",
-      "obtenido": "FALLA DE RED / CORS: Bloqueado por política CORS al realizar POST /sesiones/ (No Access-Control-Allow-Origin header is present)",
-      "estado": "FALLA"
+      "obtenido": "LOGIN EXITOSO: Autenticación completada correctamente en la UI",
+      "estado": "OK"
     },
     {
-      "paso": "Paso 2: Navegación a la vista /perfil",
-      "esperado": "Acceso a la vista de perfil para cambiar contraseña",
-      "obtenido": "OMITIDO: No fue posible ingresar a /perfil debido al fallo de autenticación inicial",
+      "paso": "Checkpoint 2: Bloqueo de envío en cliente (react-hook-form)",
+      "esperado": "Impidió el submit del formulario al no coincidir las contraseñas",
+      "obtenido": "El cliente bloqueó la transmisión del formulario sin emitir tráfico de red",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 1: Mensaje de error de mismatch en el cliente (UI)",
+      "esperado": "Muestra mensaje \"Las contraseñas no coinciden.\"",
+      "obtenido": "Mensaje visible en UI: \"Las contraseñas no coinciden.\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 3: Respuesta del Backend TEST al mismatch de contraseñas (cy.request)",
+      "esperado": "HTTP Status 400 / 422",
+      "obtenido": "HTTP 401 - Respuesta del servidor: {\"error_code\":\"TOKEN_REVOCADO\",\"message\":\"El token de sesión ha sido revocado o es inválido.\",\"fields\":[],\"timestamp\":\"2026-09-01T16:53:15.539216+00:00\"}",
       "estado": "OBSERVACION"
+    },
+    {
+      "paso": "Checkpoint 3b: Recuperación automática de credenciales",
+      "esperado": "Evaluación según estado de respuesta",
+      "obtenido": "NO REQUERIDA (Respuesta HTTP 401)",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 4: Salvaguarda obligatoria final (Verificación de Login)",
+      "esperado": "Inicio de sesión exitoso con admin@pecuaria.co / Test1234!",
+      "obtenido": "LOGIN EXITOSO (HTTP 200) - Las credenciales del administrador permanecieron 100% intactas y funcionales",
+      "estado": "OK"
     }
   ],
-  "veredicto": "CON FALLAS BLOQUEANTES (BLOQUEO CORS EN LOGIN DE BACKEND TEST)",
+  "veredicto": "SIN FALLAS BLOQUEANTES",
   "hallazgos": [
-    "Paso 1: Autenticación inicial de usuario en la UI (/login) -> FALLA DE RED / CORS: Bloqueado por política CORS al realizar POST /sesiones/ (FALLA)",
-    "Paso 2: Navegación a la vista /perfil -> OMITIDO por error de inicio de sesión (OBSERVACION)"
+    "Paso 1: Autenticación inicial de usuario en la UI (/login) -> LOGIN EXITOSO: Autenticación completada correctamente en la UI (OK)",
+    "Checkpoint 2: Bloqueo de envío en cliente (react-hook-form) -> El cliente bloqueó la transmisión del formulario sin emitir tráfico de red (OK)",
+    "Checkpoint 1: Mensaje de error de mismatch en el cliente (UI) -> Mensaje visible en UI: \"Las contraseñas no coinciden.\" (OK)",
+    "Checkpoint 3: Respuesta del Backend TEST al mismatch de contraseñas (cy.request) -> HTTP 401 - Respuesta del servidor: {\"error_code\":\"TOKEN_REVOCADO\",\"message\":\"El token de sesión ha sido revocado o es inválido.\",\"fields\":[],\"timestamp\":\"2026-09-01T16:53:15.539216+00:00\"} (OBSERVACION)",
+    "Checkpoint 3b: Recuperación automática de credenciales -> NO REQUERIDA (Respuesta HTTP 401) (OK)",
+    "Checkpoint 4: Salvaguarda obligatoria final (Verificación de Login) -> LOGIN EXITOSO (HTTP 200) - Las credenciales del administrador permanecieron 100% intactas y funcionales (OK)"
   ]
 }

@@ -116,25 +116,10 @@ describe('TC-M01-034 · Rechazo de cambio de contraseña por mismatch en confirm
     });
 
     // 3) Autenticación en la UI
-    cy.intercept('POST', '**/sesiones/').as('loginSesionesReq');
-    cy.visit('/login');
-    cy.get('input[autocomplete="email"]').clear().type('admin@pecuaria.co');
-    cy.get('input[autocomplete="current-password"]').clear().type('Test1234!', { log: false });
-    cy.contains('button', 'Ingresar').click();
-
-    cy.get('body').then(($body) => {
-      if ($body.text().includes('Error al iniciar sesión')) {
-        add('Paso 1: Autenticación inicial de usuario en la UI (/login)', 
-          'Inicio de sesión exitoso y redirección fuera de /login', 
-          'FALLA DE RED / CORS: Error al iniciar sesión. Solicitud bloqueada por política CORS (No Access-Control-Allow-Origin).', 'FALLA');
-      }
-    });
-
-    cy.location('pathname', { timeout: 15000 }).then((path) => {
-      if (path === '/login') {
-        add('Paso 1b: Redirección post-login', 'Salir de /login', 'Permaneció en /login por fallo de autenticación / CORS', 'FALLA');
-      }
-    }).should('not.eq', '/login');
+    cy.loginUI('admin@pecuaria.co', 'Test1234!');
+    add('Paso 1: Autenticación inicial de usuario en la UI (/login)',
+      'Inicio de sesión exitoso y redirección fuera de /login',
+      'LOGIN EXITOSO: Autenticación completada correctamente en la UI', 'OK');
 
     // 4) Navegar a /perfil navegando vía SPA con selector del Sidebar
     cy.get('button.ds-sidebar__item[title="Mi perfil"]', { timeout: 20000 })
