@@ -6,6 +6,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarActivoDTO, TipoActivo, OrigenFinanciero } from '../types';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   tipo_activo: TipoActivo;
@@ -93,7 +94,7 @@ function FieldError({ msg }: { msg?: string }) {
   );
 }
 
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = hoyLocal();
 
 export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: Props) {
   const {
