@@ -65,6 +65,24 @@ function isTokenValid(claims: JwtClaims | null): boolean {
   return claims.exp > Date.now() / 1000;
 }
 
+// Rutas públicas (ver AppRoutes en App.tsx): ninguna lee `token`/`isBootstrapping`
+// de este contexto, así que un restauro de sesión ahí no tiene efecto útil —
+// y si el usuario cae en /login con una cookie de refresco vieja (pestaña
+// anterior, sesión previa) todavía vigente, ese refresh silencioso compite
+// sin coordinación con el login explícito que está a punto de enviar. El
+// backend solo permite una sesión activa por cuenta: quien "pierda" esa
+// carrera puede terminar con el JWT/cookie de una sesión que el otro flujo
+// ya invalidó, y la siguiente petición autenticada cae en 401 (bug #1827).
+const RUTAS_PUBLICAS = [
+  '/login',
+  '/registro',
+  '/activar',
+  '/reenviar-activacion',
+  '/recuperar-contrasena',
+  '/restablecer-contrasena',
+  '/sso/callback',
+];
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const storedToken = tokenStore.get();
   const storedClaims = storedToken ? decodeJwtPayload(storedToken) : null;
@@ -95,11 +113,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // autenticado", intenta un refresh silencioso con la cookie httpOnly.
   useEffect(() => {
     if (validStored) return;
+    if (RUTAS_PUBLICAS.includes(window.location.pathname)) {
+      setIsBootstrapping(false);
+      return;
+    }
     // `refreshAccessToken` guarda el token en tokenStore; el listener de arriba
     // sincroniza el contexto.
     refreshAccessToken()
       .catch(() => {
-        // Sin sesión que recuperar — comportamiento normal en /login, /registro, etc.
+        // Sin sesión que recuperar — comportamiento normal en rutas protegidas
+        // sin cookie vigente.
       })
       .finally(() => setIsBootstrapping(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
