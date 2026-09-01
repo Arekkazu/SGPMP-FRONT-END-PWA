@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
@@ -28,6 +28,9 @@ import { useAuth } from './shared/auth/useAuth';
 /* Design system components */
 import { Sidebar } from './shared/design-system/Sidebar';
 import { AppBar } from './shared/design-system/AppBar';
+import { NotificationTray } from './notificaciones/components/NotificationTray';
+import { useNotificaciones } from './notificaciones/hooks/useNotificaciones';
+import { usePushNotifications } from './notificaciones/hooks/usePushNotifications';
 
 /* Auth pages */
 import { LoginPage } from './auth/pages/LoginPage';
@@ -63,7 +66,26 @@ function SessionManager() {
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const logout = useLogout();
+  const { claims, userInfo } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const idDesdeClaims = Number(claims?.sub);
+  const idUsuario = userInfo?.id_usuario
+    ?? (Number.isInteger(idDesdeClaims) && idDesdeClaims > 0 ? idDesdeClaims : null);
+  const notificaciones = useNotificaciones(idUsuario);
+  const refrescarPorPush = useCallback(() => {
+    void notificaciones.cargar(true);
+  }, [notificaciones.cargar]);
+  const push = usePushNotifications({ idUsuario, onNotification: refrescarPorPush });
+
+  const cerrarNotificaciones = useCallback(() => setNotificationsOpen(false), []);
+  const alternarNotificaciones = useCallback(() => {
+    setNotificationsOpen((open) => {
+      if (!open && !notificaciones.loading) void notificaciones.cargar(true);
+      return !open;
+    });
+  }, [notificaciones.cargar, notificaciones.loading]);
 
   const handleLogout = () => {
     void logout();
@@ -80,7 +102,33 @@ function AppShell({ children }: { children: React.ReactNode }) {
         />
       )}
       <div className="ds-app-content">
-        <AppBar onToggleSidebar={() => setSidebarOpen((v) => !v)} />
+        <AppBar
+          onToggleSidebar={() => setSidebarOpen((v) => !v)}
+          notificationCount={notificaciones.noLeidas}
+          notificationsOpen={notificationsOpen}
+          onNotificationsClick={alternarNotificaciones}
+        />
+        <NotificationTray
+          open={notificationsOpen}
+          notificaciones={notificaciones.notificaciones}
+          total={notificaciones.total}
+          noLeidas={notificaciones.noLeidas}
+          loading={notificaciones.loading}
+          loadingMore={notificaciones.loadingMore}
+          hasMore={notificaciones.hasMore}
+          error={notificaciones.error?.message}
+          fromCache={notificaciones.fromCache}
+          marcandoIds={notificaciones.marcandoIds}
+          pushPermission={push.permission}
+          pushLoading={push.isLoading || push.requestingPermission}
+          pushError={push.error}
+          onClose={cerrarNotificaciones}
+          onRefresh={() => void notificaciones.cargar()}
+          onLoadMore={() => void notificaciones.cargarMas()}
+          onMarkAsRead={notificaciones.marcarComoLeida}
+          onEnablePush={push.requestNotificationPermission}
+          onDismissError={notificaciones.clearError}
+        />
         <main
           style={{
             flex: 1,

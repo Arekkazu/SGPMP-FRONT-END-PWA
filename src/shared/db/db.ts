@@ -165,6 +165,23 @@ export interface PrediccionHistorialEventoCacheRow {
   cachedAt: number;
 }
 
+export interface NotificacionCacheRow {
+  id_usuario: number;
+  id_notificacion: number;
+  id_evento: number;
+  tipo_evento: number;
+  mensaje: string;
+  fecha_envio: string;
+  es_leido: boolean;
+  cachedAt: number;
+}
+
+export interface FcmRegistroCacheRow {
+  id_usuario: number;
+  token: string;
+  registradoEn: number;
+}
+
 export interface SyncOperation {
   id?: number;
   modulo: string;
@@ -190,6 +207,8 @@ export class AppDB extends Dexie {
   prediccion_despliegues!: Table<PrediccionDespliegueCacheRow, number>;
   prediccion_auditoria!: Table<PrediccionAuditoriaCacheRow, string>;
   prediccion_historial_eventos!: Table<PrediccionHistorialEventoCacheRow, string>;
+  notificaciones!: Table<NotificacionCacheRow, [number, number]>;
+  fcm_registros!: Table<FcmRegistroCacheRow, number>;
   syncQueue!: Table<SyncOperation, number>;
 
   constructor() {
@@ -248,6 +267,26 @@ export class AppDB extends Dexie {
       prediccion_despliegues: 'id_despliegue_ota, id_version_modelo, estado_despliegue',
       prediccion_auditoria: 'id_evento, tipo_evento, severidad_evento',
       prediccion_historial_eventos: 'id_evento, id_activo_biologico',
+    });
+    this.version(7).stores({
+      usuarios: 'id_usuario, correo_electronico, estado_cuenta',
+      roles: 'id_rol, nombre_rol',
+      syncQueue: '++id, modulo, creadoEn',
+      config_especies: 'id_especie, es_activo',
+      config_fincas: 'id_finca, es_activo',
+      activos_biologicos: 'id_activo_biologico, tipo, id_especie, id_estado',
+      telemetria_alertas: 'id_alerta, estado_alerta, severidad',
+      telemetria_sensores: 'id_sensor, id_infraestructura, estado_semaforo',
+      telemetria_unidades: 'id_infraestructura',
+      telemetria_dispositivos: 'id_dispositivo_iot, estado_actual',
+      prediccion_patologias: 'id_patologia, especie_aplicable, es_activo',
+      prediccion_motor: 'id_configuracion_motor, tipo_modelo',
+      prediccion_modelos: 'id_version_modelo, tipo_modelo, estado_version',
+      prediccion_despliegues: 'id_despliegue_ota, id_version_modelo, estado_despliegue',
+      prediccion_auditoria: 'id_evento, tipo_evento, severidad_evento',
+      prediccion_historial_eventos: 'id_evento, id_activo_biologico',
+      notificaciones: '[id_usuario+id_notificacion], id_usuario, fecha_envio',
+      fcm_registros: 'id_usuario, token',
     });
   }
 }

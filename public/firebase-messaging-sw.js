@@ -1,57 +1,65 @@
-// Service Worker simple para Firebase Cloud Messaging
-self.addEventListener("install", (event) => {
-  console.log("Service Worker instalado");
-  self.skipWaiting();
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting());
 });
 
-self.addEventListener("activate", (event) => {
-  console.log("Service Worker activado");
-  self.clients.claim();
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
 });
 
-// Manejar notificaciones en background
-self.addEventListener("push", (event) => {
-  console.log("Push recibido en background:", event);
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
 
-  if (event.data) {
+  event.waitUntil((async () => {
     try {
-      const data = event.data.json();
-      console.log("Datos de notificación:", data);
-
-      const notification = data.notification || {};
-      const title = notification.title || "Notificación";
+      const payload = event.data.json();
+      const notification = payload.notification || {};
+      const data = payload.data || {};
+      const title = notification.title || data.title || 'Notificación';
       const options = {
-        body: notification.body || "",
-        icon: notification.icon || "/favicon.png",
-        badge: "/favicon.png",
-        tag: "notification",
-        data: data.data || {},
+        body: notification.body || data.body || '',
+        icon: notification.icon || '/favicon.png',
+        badge: '/favicon.png',
+        tag: data.id_notificacion
+          ? `notificacion-${data.id_notificacion}`
+          : 'sgpmp-notificacion',
+        data: { ...data, url: data.url || '/dashboard' },
       };
 
-      event.waitUntil(self.registration.showNotification(title, options));
-    } catch (error) {
-      console.error("Error procesando notificación:", error);
+      const windows = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      windows.forEach((client) => {
+        client.postMessage({ type: 'SGPMP_FCM_NOTIFICATION' });
+      });
+      await self.registration.showNotification(title, options);
+    } catch {
+      // Un payload inválido no debe interrumpir otros eventos del Service Worker.
     }
-  }
+  })());
 });
 
-// Manejar clicks en notificaciones
-self.addEventListener("notificationclick", (event) => {
-  console.log("Notificación clickeada:", event);
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  const requestedUrl = event.notification.data?.url || '/dashboard';
+  let targetUrl = new URL('/dashboard', self.location.origin).href;
+  try {
+    const parsedUrl = new URL(requestedUrl, self.location.origin);
+    if (parsedUrl.origin === self.location.origin) targetUrl = parsedUrl.href;
+  } catch {
+    // Mantiene el destino seguro por defecto.
+  }
 
-  event.waitUntil(
-    clients.matchAll({ type: "window" }).then((clientList) => {
-      // Si hay una ventana abierta, enfocarse en ella
-      for (let client of clientList) {
-        if (client.url === "/" && "focus" in client) {
-          return client.focus();
-        }
-      }
-      // Si no, abrir una nueva ventana
-      if (clients.openWindow) {
-        return clients.openWindow("/");
-      }
-    }),
-  );
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true,
+    });
+    const client = windows[0];
+    if (client) {
+      if ('navigate' in client) await client.navigate(targetUrl);
+      return client.focus();
+    }
+    return self.clients.openWindow(targetUrl);
+  })());
 });

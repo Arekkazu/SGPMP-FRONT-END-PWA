@@ -22,7 +22,7 @@ export function RolesPage() {
   const puedeEditar = usePermission(2, 3);
   const puedeEliminar = usePermission(2, 4);
   const online = useOnlineStatus();
-  const { roles, recursos, acciones, loading, error, cargar, crearRol, editarRol, eliminarRol, asignarPermiso, retirarPermiso } = useRoles();
+  const { roles, recursos, acciones, loading, error, cargar, crearRol, editarRol, eliminarRol, asignarPermiso, retirarPermiso, limpiarError } = useRoles();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<import('../../shared/api/errors').ApiError | null>(null);
@@ -145,7 +145,7 @@ export function RolesPage() {
           puedeEditar={puedeEditar && online}
           puedeEliminar={puedeEliminar && online}
           onEditar={(rol) => setModal({ tipo: 'editar', rol })}
-          onEliminar={(rol) => setModal({ tipo: 'confirmar-eliminar', rol })}
+          onEliminar={(rol) => { limpiarError(); setModal({ tipo: 'confirmar-eliminar', rol }); }}
         />
       </div>
 
@@ -187,6 +187,9 @@ export function RolesPage() {
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>
               ¿Confirmas que deseas eliminar el rol <strong>{modal.rol.nombre_rol}</strong>? Esta acción no se puede deshacer.
             </p>
+            {error && (
+              <Alert variant="error" title="No se pudo eliminar el rol" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+            )}
             <div style={{ display: 'flex', gap: 'var(--s3)', justifyContent: 'flex-end' }}>
               <Button variant="secondary" size="md" onClick={() => setModal({ tipo: 'ninguno' })}>Cancelar</Button>
               <Button variant="danger" size="md" loading={eliminando} onClick={() => handleEliminar(modal.rol)}>Eliminar</Button>
