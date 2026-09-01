@@ -1,0 +1,46 @@
+{
+  "caso": "TC-M01-011",
+  "titulo": "Rechazo del formulario de registro cuando falla la validación de CAPTCHA",
+  "cu": "CU01 - Registro de usuario",
+  "rf": "RF-01",
+  "tipo": "Manejo de errores / Seguridad",
+  "equipo": "Frontend & QA",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-01T06:49:42.891Z",
+  "peticionInfo": "Petición REAL realizada a /usuarios/. HTTP Status: 201. Respuesta: {\"message\":\"Registro exitoso, envío de correo en proceso.\"}",
+  "checkpoints": [
+    {
+      "paso": "Paso 1: Llenado de datos personales",
+      "esperado": "Campos obligatorios válidos",
+      "obtenido": "Ingresados datos para ID 9995372325",
+      "estado": "OK"
+    },
+    {
+      "paso": "Verificar estado del checkbox de CAPTCHA",
+      "esperado": "Checkbox no marcado (checked = false)",
+      "obtenido": "checked = false",
+      "estado": "OK"
+    },
+    {
+      "paso": "Estado del botón Registrarse sin CAPTCHA marcado",
+      "esperado": "Deshabilitado (disabled = true)",
+      "obtenido": "disabled = true",
+      "estado": "OK"
+    },
+    {
+      "paso": "Respuesta del Backend TEST al enviar sin CAPTCHA válido",
+      "esperado": "HTTP Status 400 (Debe rechazar)",
+      "obtenido": "HALLAZGO DE SEGURIDAD: El backend ACEPTÓ el registro sin CAPTCHA (HTTP 201). Respuesta: {\"message\":\"Registro exitoso, envío de correo en proceso.\"}",
+      "estado": "FALLA"
+    }
+  ],
+  "veredicto": "CON FALLAS",
+  "hallazgos": [
+    "Paso 1: Llenado de datos personales -> Ingresados datos para ID 9995372325 (OK)",
+    "Verificar estado del checkbox de CAPTCHA -> checked = false (OK)",
+    "Estado del botón Registrarse sin CAPTCHA marcado -> disabled = true (OK)",
+    "Respuesta del Backend TEST al enviar sin CAPTCHA válido -> HALLAZGO DE SEGURIDAD: El backend ACEPTÓ el registro sin CAPTCHA (HTTP 201). Respuesta: {\"message\":\"Registro exitoso, envío de correo en proceso.\"} (FALLA)"
+  ]
+}
