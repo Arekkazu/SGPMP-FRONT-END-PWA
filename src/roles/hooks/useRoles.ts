@@ -101,5 +101,7 @@ export function useRoles() {
     }
   }, []);
 
-  return { roles, recursos, acciones, loading, error, cargar, crearRol, editarRol, eliminarRol, asignarPermiso, retirarPermiso };
+  const limpiarError = useCallback(() => setError(null), []);
+
+  return { roles, recursos, acciones, loading, error, cargar, crearRol, editarRol, eliminarRol, asignarPermiso, retirarPermiso, limpiarError };
 }
