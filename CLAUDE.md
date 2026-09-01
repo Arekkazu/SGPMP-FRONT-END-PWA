@@ -506,6 +506,9 @@ Ver `.env.example`. Las obligatorias para levantar el sistema:
 # Backend
 VITE_API_BASE_URL=http://localhost:8000
 
+# Google reCAPTCHA v2 (site key pública; la clave secreta solo va en el backend)
+VITE_RECAPTCHA_SITE_KEY=
+
 # Firebase Cloud Messaging
 VITE_FIREBASE_API_KEY=
 VITE_FIREBASE_AUTH_DOMAIN=
