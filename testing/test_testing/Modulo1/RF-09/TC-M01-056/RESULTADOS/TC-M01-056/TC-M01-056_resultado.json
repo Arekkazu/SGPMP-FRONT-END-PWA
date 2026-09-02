@@ -1,0 +1,39 @@
+{
+  "caso": "TC-M01-056",
+  "titulo": "Rechazo cuando la nueva contraseña y su confirmación no coinciden en restablecimiento",
+  "cu": "CU09 - Restablecer contraseña",
+  "rf": "RF-09",
+  "tipo": "Manejo de errores (VAL_ENTRADA)",
+  "equipo": "Frontend & QA",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-01T17:40:30.774Z",
+  "peticionInfo": "Llamada directa POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/autenticacion/restablecer-contrasena -> Status: 404. Respuesta: {\"detail\":\"Not Found\"}",
+  "checkpoints": [
+    {
+      "paso": "Checkpoint 2: Bloqueo de envío en cliente (react-hook-form)",
+      "esperado": "Impidió el submit del formulario al no coincidir las contraseñas",
+      "obtenido": "El cliente bloqueó la transmisión del formulario sin emitir tráfico de red",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 1: Mensaje de error de mismatch en cliente (UI)",
+      "esperado": "Muestra mensaje \"Las contraseñas no coinciden.\"",
+      "obtenido": "Mensaje visible en UI: \"Las contraseñas no coinciden.\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 3: Respuesta del Backend TEST al mismatch en restablecimiento (cy.request)",
+      "esperado": "HTTP Status 400 / 422",
+      "obtenido": "HTTP 404 - Respuesta del servidor: {\"detail\":\"Not Found\"}",
+      "estado": "OBSERVACION"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "hallazgos": [
+    "Checkpoint 2: Bloqueo de envío en cliente (react-hook-form) -> El cliente bloqueó la transmisión del formulario sin emitir tráfico de red (OK)",
+    "Checkpoint 1: Mensaje de error de mismatch en cliente (UI) -> Mensaje visible en UI: \"Las contraseñas no coinciden.\" (OK)",
+    "Checkpoint 3: Respuesta del Backend TEST al mismatch en restablecimiento (cy.request) -> HTTP 404 - Respuesta del servidor: {\"detail\":\"Not Found\"} (OBSERVACION)"
+  ]
+}

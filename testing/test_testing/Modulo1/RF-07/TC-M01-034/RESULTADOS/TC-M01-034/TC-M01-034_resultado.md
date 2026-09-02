@@ -7,27 +7,36 @@
 | Ambiente (front) | http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io |
 | Backend | https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test |
 | Navegador | chrome 152.0.7977.65 |
-| Fecha ejecución | 2026-09-01T08:05:50.197Z |
+| Fecha ejecución | 2026-09-01T16:53:16.879Z |
 | Cuenta de Prueba | admin@pecuaria.co |
 
 ## Checkpoints
 | Paso | Esperado | Obtenido | Estado |
 |---|---|---|---|
-| Paso 1: Autenticación inicial de usuario en la UI (`/login`) | Inicio de sesión exitoso y redirección fuera de `/login` | **FALLA DE RED / CORS:** Bloqueado por política CORS al realizar `POST /sesiones/` y `POST /sesiones/refresh` (No 'Access-Control-Allow-Origin' header is present). | **FALLA** |
-| Paso 2: Navegación a la vista `/perfil` | Acceso a la vista de perfil para cambiar contraseña | **OMITIDO:** No fue posible ingresar a `/perfil` debido al fallo de autenticación inicial. | **OBSERVACION** |
-| Paso 3: Validación de mismatch de contraseñas en UI | Muestra mensaje de error y bloquea el envío | **OMITIDO:** La prueba no pudo alcanzar el formulario de cambio de contraseña. | **OBSERVACION** |
+| Paso 1: Autenticación inicial de usuario en la UI (/login) | Inicio de sesión exitoso y redirección fuera de /login | LOGIN EXITOSO: Autenticación completada correctamente en la UI | **OK** |
+| Checkpoint 2: Bloqueo de envío en cliente (react-hook-form) | Impidió el submit del formulario al no coincidir las contraseñas | El cliente bloqueó la transmisión del formulario sin emitir tráfico de red | **OK** |
+| Checkpoint 1: Mensaje de error de mismatch en el cliente (UI) | Muestra mensaje "Las contraseñas no coinciden." | Mensaje visible en UI: "Las contraseñas no coinciden." | **OK** |
+| Checkpoint 3: Respuesta del Backend TEST al mismatch de contraseñas (cy.request) | HTTP Status 400 / 422 | HTTP 401 - Respuesta del servidor: {"error_code":"TOKEN_REVOCADO","message":"El token de sesión ha sido revocado o es inválido.","fields":[],"timestamp":"2026-09-01T16:53:15.539216+00:00"} | **OBSERVACION** |
+| Checkpoint 3b: Recuperación automática de credenciales | Evaluación según estado de respuesta | NO REQUERIDA (Respuesta HTTP 401) | **OK** |
+| Checkpoint 4: Salvaguarda obligatoria final (Verificación de Login) | Inicio de sesión exitoso con admin@pecuaria.co / Test1234! | LOGIN EXITOSO (HTTP 200) - Las credenciales del administrador permanecieron 100% intactas y funcionales | **OK** |
 
-## Veredicto: CON FALLAS BLOQUEANTES (BLOQUEO CORS EN LOGIN DE BACKEND TEST)
+## Veredicto: SIN FALLAS BLOQUEANTES
 
 ## Nota de Clasificación QA (Responsabilidad de Equipo)
-> **IMPORTANTE**: La ejecución del caso de prueba no pudo completarse debido a un bloqueo de políticas CORS entre el frontend de TEST (`sigab-frontendtest-...`) y el backend de TEST (`sigab-backendtest-...`) durante las peticiones a `POST /sesiones/` y `POST /sesiones/refresh`. Esta configuración del servidor impide el inicio de sesión. La responsabilidad de corregir la política de orígenes permitidos (CORS headers) corresponde al **equipo de Backend / Infraestructura**.
+> **IMPORTANTE**: Según la clasificación oficial de QA del sistema, la validación de coincidencia de contraseñas corresponde a **Interfaz/UI o navegación (Frontend / Equipo de Diseño)**. Se verifica adicionalmente la respuesta de la API del backend.
 
-## Registro Técnico de Red (Error Detectado)
-- **Error HTTP / Browser**: `Access to XMLHttpRequest at 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/sesiones/' from origin 'https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.`
-- **Recurso afectado**: `POST /sesiones/` y `POST /sesiones/refresh` (Status: `net::ERR_FAILED`).
+## Registro Técnico de Red (Evaluación API cy.request)
+- **Datos de prueba**: Contraseña actual `Test1234!`, Nueva `Nueva#2027`, Confirmación `Nueva#2028` (mismatch).
+- **Detalle de Petición HTTP Real al Backend**: Llamada directa PUT https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/contrasena/usuarios/1 -> Status: 401. Respuesta: {"error_code":"TOKEN_REVOCADO","message":"El token de sesión ha sido revocado o es inválido.","fields":[],"timestamp":"2026-09-01T16:53:15.539216+00:00"}
 - **Hallazgos**:
-- Paso 1: Autenticación inicial de usuario en la UI (/login) -> FALLA DE RED / CORS: Bloqueado por política CORS al realizar POST /sesiones/ (FALLA)
-- El cliente mostró en pantalla el mensaje de error: "Error al iniciar sesión: Ocurrió un error inesperado. Intente nuevamente." (1 de 5 intentos fallidos).
+- Paso 1: Autenticación inicial de usuario en la UI (/login) -> LOGIN EXITOSO: Autenticación completada correctamente en la UI (OK)
+- Checkpoint 2: Bloqueo de envío en cliente (react-hook-form) -> El cliente bloqueó la transmisión del formulario sin emitir tráfico de red (OK)
+- Checkpoint 1: Mensaje de error de mismatch en el cliente (UI) -> Mensaje visible en UI: "Las contraseñas no coinciden." (OK)
+- Checkpoint 3: Respuesta del Backend TEST al mismatch de contraseñas (cy.request) -> HTTP 401 - Respuesta del servidor: {"error_code":"TOKEN_REVOCADO","message":"El token de sesión ha sido revocado o es inválido.","fields":[],"timestamp":"2026-09-01T16:53:15.539216+00:00"} (OBSERVACION)
+- Checkpoint 3b: Recuperación automática de credenciales -> NO REQUERIDA (Respuesta HTTP 401) (OK)
+- Checkpoint 4: Salvaguarda obligatoria final (Verificación de Login) -> LOGIN EXITOSO (HTTP 200) - Las credenciales del administrador permanecieron 100% intactas y funcionales (OK)
 
 ## Evidencias Visuales (Capturas .PNG)
-- [TC-M01-034 (failed).png](screenshots/tc-m01-034-rechazo-mismatch-confirmar-contrasena.cy.ts/TC-M01-034%20%C2%B7%20Rechazo%20de%20cambio%20de%20contrase%C3%B1a%20por%20mismatch%20en%20confirmaci%C3%B3n%20--%20valida%20el%20rechazo%20de%20cambio%20de%20contrase%C3%B1a%20cuando%20nueva%20y%20confirmaci%C3%B3n%20difieren%20(failed).png) — Muestra el fallo de inicio de sesión por CORS y la alerta roja en la UI.
+- [01_mismatch_contrasenas_ui.png](screenshots/01_mismatch_contrasenas_ui.png) — Formulario de cambio de contraseña diligenciado con mismatch.
+- [02_error_mismatch_ui.png](screenshots/02_error_mismatch_ui.png) — Mensaje de error de validación en la UI ("Las contraseñas no coinciden.").
+- [03_login_salvaguarda_intacto.png](screenshots/03_login_salvaguarda_intacto.png) — Salvaguarda final: Confirmación de inicio de sesión exitoso con credenciales originales.
