@@ -42,7 +42,13 @@ function describeField({ field, message }: BackendFieldError): string {
 }
 
 function resolveMessage(status: number, data?: Record<string, unknown>, fields?: BackendFieldError[]): string {
-  const detalles = fields?.filter((f) => f.message).map(describeField) ?? [];
+  // Los errores de dominio (app_error_handler) repiten su `message` dentro de
+  // `fields[0].message`. Anteponerle la etiqueta del campo produce ruido del
+  // tipo "Captcha token: Validación de seguridad fallida…", así que esas
+  // entradas se descartan y gana el `message` de arriba. Las de Pydantic
+  // (`VAL_ENTRADA`) traen un texto distinto y corto, y sí necesitan la etiqueta.
+  const detalles =
+    fields?.filter((f) => f.message && f.message !== data?.message).map(describeField) ?? [];
   if (detalles.length) return detalles.join(' · ');
   if (data?.message) return data.message as string;
   if (data?.detail && typeof data.detail === 'string') return data.detail;
