@@ -4,7 +4,7 @@ import type {
   IdentidadVisualResponse, GuardarIdentidadVisualDTO, ActualizarIdentidadVisualDTO,
   TemaResueltoResponse, TemaVisualResponse, GuardarTemaDTO,
   IdiomaResueltoResponse, PreferenciaIdiomaResponse, GuardarIdiomaDTO,
-  DashboardLayoutResponse, GuardarDashboardDTO,
+  DashboardLayoutResponse, GuardarDashboardDTO, WidgetCatalogoItem, WidgetDatosResponse,
 } from '../types';
 
 export const contextoApi = {
@@ -100,6 +100,16 @@ export const dashboardLayoutApi = {
 
   async restaurar(): Promise<DashboardLayoutResponse> {
     const res = await http.post<DashboardLayoutResponse>('/configuracion/personalizacion/dashboard/restaurar');
+    return res.data;
+  },
+
+  async catalogo(): Promise<WidgetCatalogoItem[]> {
+    const res = await http.get<WidgetCatalogoItem[]>('/configuracion/personalizacion/dashboard/widgets');
+    return res.data;
+  },
+
+  async datos(): Promise<WidgetDatosResponse[]> {
+    const res = await http.get<WidgetDatosResponse[]>('/configuracion/personalizacion/dashboard/datos');
     return res.data;
   },
 };
