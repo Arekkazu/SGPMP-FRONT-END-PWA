@@ -6,6 +6,8 @@ import { useRegistro } from '../hooks/useRegistro';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
+import { RecaptchaField } from '../components/RecaptchaField';
+import { recaptchaConfigured, recaptchaSiteKey } from '../config/recaptcha';
 import type { UsuarioCreateDTO } from '../types';
 import './AuthPages.css';
 
@@ -48,8 +50,10 @@ export function RegistroPage() {
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [pwValue, setPwValue] = useState('');
-  const [captchaChecked, setCaptchaChecked] = useState(false);
-  const { registrar, loading, error, success } = useRegistro();
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const { registrar, loading, error, success, online } = useRegistro();
 
   const form1 = useForm<Step1Fields>({ mode: 'onBlur' });
   const form2 = useForm<Step2Fields>({ mode: 'onBlur' });
@@ -61,12 +65,18 @@ export function RegistroPage() {
     setStep1Data(data);
     setStep(2);
     setPwValue('');
-    setCaptchaChecked(false);
+    setCaptchaToken(null);
+    setCaptchaError(null);
+    setCaptchaResetKey((key) => key + 1);
     form2.reset();
   };
 
   const onStep2Submit = async (data: Step2Fields) => {
     if (!step1Data) return;
+    if (!captchaToken) {
+      setCaptchaError('Completa la verificación de seguridad antes de registrarte.');
+      return;
+    }
     const dto: UsuarioCreateDTO = {
       correo_electronico: data.correo_electronico,
       contrasena: data.contrasena,
@@ -79,8 +89,19 @@ export function RegistroPage() {
       genero: step1Data.genero,
       telefono: step1Data.telefono || undefined,
       direccion: step1Data.direccion || undefined,
+      captcha_token: captchaToken,
     };
-    await registrar(dto);
+    const registrado = await registrar(dto);
+    if (!registrado) {
+      setCaptchaToken(null);
+      setCaptchaError('Completa nuevamente la verificación antes de reintentar.');
+      setCaptchaResetKey((key) => key + 1);
+    }
+  };
+
+  const handleCaptchaChange = (token: string | null) => {
+    setCaptchaToken(token);
+    if (token) setCaptchaError(null);
   };
 
   if (success) {
@@ -273,6 +294,14 @@ export function RegistroPage() {
                 className="auth-alert"
               />
             )}
+            {!online && (
+              <Alert
+                variant="warning"
+                title="Sin conexión"
+                description="El registro y la verificación CAPTCHA requieren conexión a internet."
+                className="auth-alert"
+              />
+            )}
 
             <div className="auth-field">
               <Input
@@ -345,21 +374,34 @@ export function RegistroPage() {
               />
             </div>
 
-            <div className="auth-captcha-row">
-              <input
-                type="checkbox"
-                id="captcha-check"
-                checked={captchaChecked}
-                onChange={(e) => setCaptchaChecked(e.target.checked)}
+            {online && (
+              <RecaptchaField
+                key={captchaResetKey}
+                siteKey={recaptchaSiteKey}
+                error={captchaError}
+                onTokenChange={handleCaptchaChange}
+                onExpired={() => {
+                  setCaptchaToken(null);
+                  setCaptchaError('La verificación expiró. Complétala nuevamente.');
+                }}
+                onErrored={() => {
+                  setCaptchaToken(null);
+                  setCaptchaError('No fue posible cargar reCAPTCHA. Revisa tu conexión e intenta nuevamente.');
+                }}
               />
-              <label htmlFor="captcha-check">No soy un robot (simulación)</label>
-            </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--s3)' }}>
               <Button type="button" variant="secondary" size="md" onClick={() => setStep(1)}>
                 ← Anterior
               </Button>
-              <Button type="submit" variant="primary" size="md" loading={loading} disabled={!captchaChecked}>
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                loading={loading}
+                disabled={!online || !recaptchaConfigured || !captchaToken}
+              >
                 Registrarse
               </Button>
             </div>
