@@ -22,6 +22,7 @@ export interface UsuarioCreateDTO {
   genero: string;
   telefono?: string;
   direccion?: string;
+  captcha_token: string;
 }
 
 export interface MessageResponse {
