@@ -197,6 +197,7 @@ export function EventosSection({ idActivo, tipo, estadoActual, onChanged }: Prop
       )}
       {modal === 'reproductivo' && (
         <EventoReproductivoForm
+          esPoblacional={esPoblacional}
           saving={saving}
           saveError={saveError}
           onClose={cerrar}

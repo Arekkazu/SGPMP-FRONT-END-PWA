@@ -19,16 +19,17 @@ interface FormValues {
 }
 
 interface Props {
+  esPoblacional: boolean;
   saving: boolean;
   saveError: ApiError | null;
   onClose: () => void;
   onConfirmar: (dto: RegistrarEventoReproductivoDTO) => Promise<boolean>;
 }
 
-export function EventoReproductivoForm({ saving, saveError, onClose, onConfirmar }: Props) {
+export function EventoReproductivoForm({ esPoblacional, saving, saveError, onClose, onConfirmar }: Props) {
   const { register, handleSubmit } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { categoria: 'inseminacion', resultado: 'exitoso', numero_crias: '0' },
+    defaultValues: { categoria: esPoblacional ? 'nacimiento' : 'inseminacion', resultado: 'exitoso', numero_crias: '0' },
   });
 
   const submit = async (v: FormValues) => {
@@ -57,13 +58,19 @@ export function EventoReproductivoForm({ saving, saveError, onClose, onConfirmar
       )}
       <form onSubmit={handleSubmit(submit)} noValidate>
         <div style={FORM_COL}>
-          <FormSelect label="Categoría" required {...register('categoria')}>
-            <option value="servicio">Servicio</option>
-            <option value="inseminacion">Inseminación</option>
-            <option value="diagnostico">Diagnóstico</option>
-            <option value="parto">Parto</option>
-            <option value="aborto">Aborto</option>
-            <option value="nacimiento">Nacimiento</option>
+          <FormSelect label="Categoría" required disabled={esPoblacional} {...register('categoria')}>
+            {esPoblacional ? (
+              <option value="nacimiento">Nacimiento</option>
+            ) : (
+              <>
+                <option value="servicio">Servicio</option>
+                <option value="inseminacion">Inseminación</option>
+                <option value="diagnostico">Diagnóstico</option>
+                <option value="parto">Parto</option>
+                <option value="aborto">Aborto</option>
+                <option value="nacimiento">Nacimiento</option>
+              </>
+            )}
           </FormSelect>
 
           <FormSelect label="Resultado" required {...register('resultado')}>
