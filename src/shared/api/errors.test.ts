@@ -26,6 +26,25 @@ describe('mapToApiError', () => {
     expect(err.field).toBe('confirmar_contrasena');
   });
 
+  it('no antepone la etiqueta cuando el campo solo repite el message del backend', () => {
+    const err = mapToApiError(
+      axiosError(400, {
+        error_code: 'CAPTCHA_INVALIDO',
+        message: 'Validación de seguridad fallida. Confirme que no es un robot.',
+        fields: [
+          {
+            field: 'captcha_token',
+            message: 'Validación de seguridad fallida. Confirme que no es un robot.',
+          },
+        ],
+      })
+    );
+
+    expect(err.message).toBe('Validación de seguridad fallida. Confirme que no es un robot.');
+    // El campo sigue disponible para resaltar el input; solo se omite del texto.
+    expect(err.field).toBe('captcha_token');
+  });
+
   it('cae al message del backend cuando no hay fields', () => {
     const err = mapToApiError(
       axiosError(409, { error_code: 'CORREO_DUPLICADO', message: 'El correo ya existe.', fields: [] })
