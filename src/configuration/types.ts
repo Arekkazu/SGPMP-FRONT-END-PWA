@@ -437,11 +437,39 @@ export interface DashboardLayoutResponse {
   grid: WidgetConfigDTO[];
   active_widget: string[];
   fecha_actualizacion: string | null;
+  // Se reenvia en el PATCH para que el backend detecte que el perfil cambio
+  // mientras el usuario editaba (RF-28, conflicto de concurrencia).
+  version_perfil: number | null;
 }
 
 export interface GuardarDashboardDTO {
   layout_config: WidgetConfigDTO[];
   active_widget: string[];
+  version_perfil?: number | null;
+}
+
+// El catalogo lo define el backend (modulo9.widgets) y viene filtrado por el rol
+// del usuario: cada widget se habilita con el permiso de lectura de su propio
+// recurso, no con el del dashboard.
+export interface WidgetCatalogoItem {
+  id_widget: number;
+  clave: string;
+  nombre: string;
+  grupo: string;
+  span_predeterminado: 1 | 2;
+}
+
+export interface WidgetDatosResponse {
+  id_widget: number;
+  clave: string;
+  nombre: string;
+  posicion_fila: number;
+  posicion_columna: number;
+  span_columnas: number;
+  orden: number;
+  sin_datos: boolean;
+  mensaje: string | null;
+  datos: Record<string, unknown>[];
 }
 
 // =====================================================================
