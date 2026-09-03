@@ -1,3 +1,11 @@
+## [1.0.0-rc.3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.2...v1.0.0-rc.3) (2026-09-03)
+
+### Features
+
+* **configuration:** agregar el flujo de nueva version de plantilla (RF-30, RF-31) ([76b1bb8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/76b1bb85bcba550038b73b5e6b260eeb33a2b7f8))
+* **configuration:** capturar la configuracion real de la especie al crear plantillas (RF-31) ([0b87497](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0b874977beb70540f0ebb173c63fd575432edbd0))
+* **i18n:** traducir los codigos de error nuevos de plantillas ([9d883b0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9d883b03dfebaa365be22b90d446c4553bb6c6fd))
+
 ## [1.0.0-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2026-09-03)
 
 ### Features
