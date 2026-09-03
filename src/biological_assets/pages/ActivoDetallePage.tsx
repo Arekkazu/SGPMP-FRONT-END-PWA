@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useHistory, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
@@ -55,6 +56,7 @@ const TAB_BTN_ACTIVE: React.CSSProperties = {
 };
 
 export function ActivoDetallePage() {
+  const { t } = useT('biologicalAssets');
   const history = useHistory();
   const { id } = useParams<{ id: string }>();
   const idActivo = Number(id);
@@ -76,7 +78,7 @@ export function ActivoDetallePage() {
   if (!idValido) {
     return (
       <div style={{ padding: 'var(--s7)' }}>
-        <Alert variant="error" title="Activo inválido" description="El identificador de la ruta no es válido." />
+        <Alert variant="error" title={t('activodetallepage.activo_invalido')} description={t('activodetallepage.el_identificador_de_la_ruta_no_es_valido')} />
       </div>
     );
   }
@@ -95,15 +97,13 @@ export function ActivoDetallePage() {
           onClick={() => history.push('/activos-biologicos')}
           style={{ marginBottom: 'var(--s3)' }}
         >
-          <ArrowLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-          Volver a la lista
-        </Button>
+          <ArrowLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('activodetallepage.volver_a_la_lista')}</Button>
 
         {error && (
           <Alert
             variant="error"
-            title="No se pudo cargar el activo"
-            description={error.status === 404 ? 'El activo no existe o fue eliminado.' : error.message}
+            title={t('activodetallepage.no_se_pudo_cargar_el_activo')}
+            description={error.status === 404 ? t('activodetallepage.el_activo_no_existe_o_fue_eliminado') : error.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
         )}
@@ -123,17 +123,17 @@ export function ActivoDetallePage() {
       {/* Tab bar */}
       <nav
         style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', padding: '0 var(--s7)', overflowX: 'auto', marginTop: 'var(--s5)' }}
-        aria-label="Secciones del activo"
+        aria-label={t('activodetallepage.secciones_del_activo')}
       >
-        {TABS.map((t) => (
+        {TABS.map((item) => (
           <button
-            key={t.id}
+            key={item.id}
             type="button"
-            style={tab === t.id ? TAB_BTN_ACTIVE : TAB_BTN}
-            onClick={() => setTab(t.id)}
-            aria-current={tab === t.id ? 'page' : undefined}
+            style={tab === item.id ? TAB_BTN_ACTIVE : TAB_BTN}
+            onClick={() => setTab(item.id)}
+            aria-current={tab === item.id ? 'page' : undefined}
           >
-            {t.label}
+            {item.label}
           </button>
         ))}
       </nav>

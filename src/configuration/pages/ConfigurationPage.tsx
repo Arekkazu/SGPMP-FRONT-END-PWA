@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, RefreshCw } from 'lucide-react';
+import { useT } from '../../shared/i18n/useT';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
@@ -25,14 +26,14 @@ import type { EspecieResponse } from '../types';
 // ── Tabs ────────────────────────────────────────────────────────────────────
 type TabId = 'catalogo' | 'por-especie' | 'fincas' | 'iot' | 'sistema' | 'personalizacion' | 'plantillas';
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'catalogo', label: 'Catálogo' },
-  { id: 'por-especie', label: 'Por Especie' },
-  { id: 'fincas', label: 'Fincas' },
-  { id: 'iot', label: 'IoT' },
-  { id: 'sistema', label: 'Sistema' },
-  { id: 'personalizacion', label: 'Personalización' },
-  { id: 'plantillas', label: 'Plantillas' },
+const TABS: { id: TabId; claveLabel: string }[] = [
+  { id: 'catalogo', claveLabel: 'tabs.catalogo' },
+  { id: 'por-especie', claveLabel: 'tabs.por_especie' },
+  { id: 'fincas', claveLabel: 'tabs.fincas' },
+  { id: 'iot', claveLabel: 'tabs.iot' },
+  { id: 'sistema', claveLabel: 'tabs.sistema' },
+  { id: 'personalizacion', claveLabel: 'tabs.personalizacion' },
+  { id: 'plantillas', claveLabel: 'tabs.plantillas' },
 ];
 
 const TAB_BTN: React.CSSProperties = {
@@ -66,6 +67,7 @@ type ModalState =
 
 // ── Catálogo tab ─────────────────────────────────────────────────────────────
 function CatalogoTab() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear  = usePermission(8, 1);
   const puedeEditar = usePermission(8, 3);
@@ -101,9 +103,7 @@ function CatalogoTab() {
       {/* Header de sección */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <div>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Catálogo de Especies
-          </h2>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('configurationpage.catalogo_de_especies')}</h2>
           {!loading && (
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0, fontFamily: 'var(--font-mono)' }}>
               {activas} activas · {inactivas} inactivas
@@ -112,7 +112,7 @@ function CatalogoTab() {
           )}
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label="Recargar especies">
+          <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('configurationpage.recargar_especies')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           {puedeCrear && (
@@ -122,9 +122,7 @@ function CatalogoTab() {
               onClick={() => setModal({ tipo: 'crear' })}
               disabled={!online}
             >
-              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Nueva especie
-            </Button>
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('configurationpage.nueva_especie')}</Button>
           )}
         </div>
       </div>
@@ -133,24 +131,24 @@ function CatalogoTab() {
       {!online && (
         <Alert
           variant="warning"
-          title="Sin conexión"
-          description="Mostrando datos cacheados. Las acciones de escritura están deshabilitadas."
+          title={t('configurationpage.sin_conexion')}
+          description={t('configurationpage.mostrando_datos_cacheados_las_acciones_de')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
       {fromCache && online && (
         <Alert
           variant="info"
-          title="Datos desde caché"
-          description="No se pudo conectar con el servidor. Se muestran los últimos datos disponibles."
+          title={t('configurationpage.datos_desde_cache')}
+          description={t('configurationpage.no_se_pudo_conectar_con_el_servidor_se')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
       {error && !fromCache && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('configurationpage.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {accionError && (
-        <Alert variant="error" title="Error" description={accionError} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('configurationpage.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {/* Tabla */}
@@ -217,6 +215,7 @@ interface ConfirmProps {
 }
 
 function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, onCancel, onConfirm }: ConfirmProps) {
+  const { t } = useT('common');
   return (
     <div
       role="dialog"
@@ -253,7 +252,7 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, o
         </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
           <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>
-            Cancelar
+            {t('acciones.cancelar', { ns: 'common' })}
           </Button>
           <Button variant={confirmVariant} size="md" loading={saving} onClick={onConfirm}>
             {confirmLabel}
@@ -266,6 +265,7 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, o
 
 // ── ConfigurationPage ────────────────────────────────────────────────────────
 export function ConfigurationPage() {
+  const { t } = useT('configuration');
   const [activeTab, setActiveTab] = useState<TabId>('catalogo');
 
   return (
@@ -273,17 +273,17 @@ export function ConfigurationPage() {
       {/* Header */}
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Configuración del Sistema
+          {t('pagina.titulo')}
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          Gestión de especies, fincas, dispositivos IoT y personalización
+          {t('pagina.subtitulo')}
         </p>
       </div>
 
       {/* Tab bar */}
       <nav
         style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', padding: '0 var(--s7)', overflowX: 'auto' }}
-        aria-label="Secciones de configuración"
+        aria-label={t('pagina.aria_secciones')}
       >
         {TABS.map((tab) => (
           <button
@@ -293,7 +293,7 @@ export function ConfigurationPage() {
             onClick={() => setActiveTab(tab.id)}
             aria-current={activeTab === tab.id ? 'page' : undefined}
           >
-            {tab.label}
+            {t(tab.claveLabel)}
           </button>
         ))}
       </nav>

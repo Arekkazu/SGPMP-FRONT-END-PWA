@@ -76,8 +76,10 @@ export const idiomaApi = {
     return res.data;
   },
 
-  async obtenerGlobal(): Promise<IdiomaResueltoResponse> {
-    const res = await http.get<IdiomaResueltoResponse>('/configuracion/personalizacion/idioma/global');
+  // Devuelve `PreferenciaIdiomaResponse`, no el idioma resuelto: este endpoint
+  // no aplica la jerarquía, lee la fila global directa (y puede ser `null`).
+  async obtenerGlobal(): Promise<PreferenciaIdiomaResponse | null> {
+    const res = await http.get<PreferenciaIdiomaResponse | null>('/configuracion/personalizacion/idioma/global');
     return res.data;
   },
 

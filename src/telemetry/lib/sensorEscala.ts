@@ -1,4 +1,5 @@
 import type { GaugeStatus } from '../../shared/design-system/Gauge';
+import { formatearHora } from '../../shared/i18n/formato';
 
 /** Mapea el semáforo del backend al estado de color del Gauge. */
 export function semaforoToGauge(estado: string | null | undefined): GaugeStatus {
@@ -35,7 +36,7 @@ export function horaCaptura(iso: string | null | undefined): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso).slice(11, 19) || '—';
-  return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return formatearHora(d, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 /** "hace N min/s" a partir de minutos sin reporte. */

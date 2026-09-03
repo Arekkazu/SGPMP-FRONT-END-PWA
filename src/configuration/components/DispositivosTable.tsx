@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { Cpu, RefreshCw, Plus, PowerOff, ChevronLeft, Warehouse } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
@@ -32,7 +34,7 @@ const TD: React.CSSProperties = {
 function formatFecha(iso: string | null | undefined): string {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    return formatearFecha(iso, { day: '2-digit', month: '2-digit', year: '2-digit' });
   } catch {
     return iso;
   }
@@ -42,6 +44,7 @@ function ConfirmModal({ titulo, mensaje, saving, onCancel, onConfirm }: {
   titulo: string; mensaje: string; saving: boolean;
   onCancel: () => void; onConfirm: () => void;
 }) {
+  const { t } = useT('configuration');
   return (
     <div
       role="dialog"
@@ -53,8 +56,8 @@ function ConfirmModal({ titulo, mensaje, saving, onCancel, onConfirm }: {
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>Cancelar</Button>
-          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>Desactivar</Button>
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('dispositivostable.cancelar')}</Button>
+          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{t('dispositivostable.desactivar')}</Button>
         </div>
       </div>
     </div>
@@ -64,6 +67,7 @@ function ConfirmModal({ titulo, mensaje, saving, onCancel, onConfirm }: {
 // ── Finca selector ────────────────────────────────────────────────────────────
 
 function FincaSelector({ fincas, loading, onSelect }: { fincas: FincaResponse[]; loading: boolean; onSelect: (f: FincaResponse) => void }) {
+  const { t } = useT('configuration');
   const activas = fincas.filter((f) => f.es_activo);
 
   if (loading) {
@@ -77,7 +81,7 @@ function FincaSelector({ fincas, loading, onSelect }: { fincas: FincaResponse[];
     );
   }
   if (activas.length === 0) {
-    return <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>No hay fincas activas. Registra una finca primero.</p>;
+    return <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('dispositivostable.no_hay_fincas_activas_registra_una_finca')}</p>;
   }
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 'var(--s4)' }}>
@@ -107,18 +111,16 @@ function AreaSelector({ infras, loading, onSelect, onBack }: {
   infras: InfraestructuraResponse[]; loading: boolean;
   onSelect: (i: InfraestructuraResponse) => void; onBack: () => void;
 }) {
+  const { t } = useT('configuration');
   const activas = infras.filter((i) => i.es_activo);
 
   return (
     <div>
       <div style={{ marginBottom: 'var(--s4)' }}>
-        <Button variant="ghost" size="sm" onClick={onBack} aria-label="Volver a fincas">
-          <ChevronLeft size={16} aria-hidden /> Cambiar finca
-        </Button>
+        <Button variant="ghost" size="sm" onClick={onBack} aria-label={t('dispositivostable.volver_a_fincas')}>
+          <ChevronLeft size={16} aria-hidden />{t('dispositivostable.cambiar_finca')}</Button>
       </div>
-      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
-        Selecciona el área productiva donde está instalado el dispositivo:
-      </p>
+      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('dispositivostable.selecciona_el_area_productiva_donde_esta')}</p>
       {loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 'var(--s3)' }}>
           {Array.from({ length: 3 }).map((_, i) => (
@@ -127,9 +129,7 @@ function AreaSelector({ infras, loading, onSelect, onBack }: {
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
       ) : activas.length === 0 ? (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s6) 0', fontSize: '14px' }}>
-          Esta finca no tiene áreas productivas activas. Regístralas primero en el tab "Fincas".
-        </p>
+        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s6) 0', fontSize: '14px' }}>{t('dispositivostable.esta_finca_no_tiene_areas_productivas')}</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 'var(--s3)' }}>
           {activas.map((infra) => (
@@ -143,7 +143,7 @@ function AreaSelector({ infras, loading, onSelect, onBack }: {
             >
               <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{infra.nombre_infraestructura}</div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                {infra.tipo_area} · {infra.superficie.toLocaleString('es-CO')} m²
+                {infra.tipo_area} · {formatearFechaHora(infra.superficie)} m²
               </div>
             </button>
           ))}
@@ -159,6 +159,7 @@ type Step = 'finca' | 'area' | 'dispositivos';
 type ModalState = { tipo: 'ninguno' } | { tipo: 'crear' } | { tipo: 'desactivar'; id: number; serial: string };
 
 export function DispositivosTable() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear  = usePermission(11, 1);
   const puedeDesact = usePermission(11, 4);
@@ -220,21 +221,15 @@ export function DispositivosTable() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
         <Cpu size={18} color="var(--brand-500)" aria-hidden />
         <div>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Dispositivos IoT
-          </h2>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>
-            Los dispositivos se asocian a un área productiva de una finca
-          </p>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('dispositivostable.dispositivos_iot')}</h2>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>{t('dispositivostable.los_dispositivos_se_asocian_a_un_area')}</p>
         </div>
       </div>
 
       {/* Step 1: Finca */}
       {step === 'finca' && (
         <>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
-            Paso 1 — Selecciona la finca:
-          </p>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('dispositivostable.paso_1_selecciona_la_finca')}</p>
           <FincaSelector fincas={fincas} loading={loadingFincas} onSelect={handleSelectFinca} />
         </>
       )}
@@ -242,8 +237,7 @@ export function DispositivosTable() {
       {/* Step 2: Area */}
       {step === 'area' && finca && (
         <>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>
-            Paso 2 — Selecciona el área de <strong>{finca.nombre}</strong>:
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivostable.paso_2_selecciona_el_area_de')}<strong>{finca.nombre}</strong>:
           </p>
           <AreaSelector
             infras={infraestructuras}
@@ -260,9 +254,8 @@ export function DispositivosTable() {
           {/* Breadcrumb / context */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--s5)', flexWrap: 'wrap', gap: 'var(--s3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
-              <Button variant="ghost" size="sm" onClick={handleBackToFinca} aria-label="Cambiar finca">
-                <ChevronLeft size={16} aria-hidden /> Fincas
-              </Button>
+              <Button variant="ghost" size="sm" onClick={handleBackToFinca} aria-label={t('dispositivostable.cambiar_finca')}>
+                <ChevronLeft size={16} aria-hidden />{t('dispositivostable.fincas')}</Button>
               <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>›</span>
               <button
                 type="button"
@@ -280,22 +273,20 @@ export function DispositivosTable() {
               )}
             </div>
             <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-              <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label="Recargar dispositivos">
+              <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('dispositivostable.recargar_dispositivos')}>
                 <RefreshCw size={15} aria-hidden />
               </Button>
               {puedeCrear && (
                 <Button variant="primary" size="sm" onClick={() => setModal({ tipo: 'crear' })} disabled={!online}>
-                  <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-                  Nuevo dispositivo
-                </Button>
+                  <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('dispositivostable.nuevo_dispositivo')}</Button>
               )}
             </div>
           </div>
 
           {/* Alerts */}
-          {!online && <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />}
-          {error && <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
-          {accionError && <Alert variant="error" title="Error" description={accionError} style={{ marginBottom: 'var(--s4)' }} />}
+          {!online && <Alert variant="warning" title={t('dispositivostable.sin_conexion')} description={t('dispositivostable.las_acciones_de_escritura_estan')} style={{ marginBottom: 'var(--s4)' }} />}
+          {error && <Alert variant="error" title={t('dispositivostable.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+          {accionError && <Alert variant="error" title={t('dispositivostable.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />}
 
           {/* Table */}
           {loading ? (
@@ -308,12 +299,10 @@ export function DispositivosTable() {
           ) : dispositivosDelArea.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 'var(--s7) 0', color: 'var(--text-muted)' }}>
               <Cpu size={32} color="var(--text-muted)" style={{ marginBottom: 'var(--s3)' }} aria-hidden />
-              <p style={{ fontSize: '14px' }}>No hay dispositivos en esta área.</p>
+              <p style={{ fontSize: '14px' }}>{t('dispositivostable.no_hay_dispositivos_en_esta_area')}</p>
               {puedeCrear && online && (
                 <Button variant="primary" size="sm" onClick={() => setModal({ tipo: 'crear' })} style={{ marginTop: 'var(--s3)' }}>
-                  <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-                  Registrar primer dispositivo
-                </Button>
+                  <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('dispositivostable.registrar_primer_dispositivo')}</Button>
               )}
             </div>
           ) : (

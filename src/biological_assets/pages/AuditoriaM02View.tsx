@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useHistory } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck, Search } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
@@ -107,6 +108,7 @@ function Row({ ev }: { ev: EventoAuditoriaResponse }) {
 }
 
 export function AuditoriaM02View() {
+  const { t } = useT('biologicalAssets');
   const history = useHistory();
   const { registros, paginacion, loading, error, cargar } = useAuditoriaM02();
   const [filtros, setFiltros] = useState<FiltrosState>(VACIO);
@@ -137,59 +139,49 @@ export function AuditoriaM02View() {
     <div style={{ minHeight: '100%', background: 'var(--surface-bg)' }}>
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <Button variant="ghost" size="sm" onClick={() => history.push('/activos-biologicos')} style={{ marginBottom: 'var(--s3)' }}>
-          <ArrowLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-          Volver a la lista
-        </Button>
+          <ArrowLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriam02view.volver_a_la_lista')}</Button>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <ShieldCheck size={20} aria-hidden />
-          Auditoría y Trazabilidad
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          Bitácora de eventos del módulo de activos biológicos
-        </p>
+          <ShieldCheck size={20} aria-hidden />{t('auditoriam02view.auditoria_y_trazabilidad')}</h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('auditoriam02view.bitacora_de_eventos_del_modulo_de_activos')}</p>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
         {/* Filtros */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
-          <div><label style={LABEL} htmlFor="a-rf">RF origen</label><input id="a-rf" style={INPUT} placeholder="Ej: RF40" value={filtros.rf_origen} onChange={set('rf_origen')} /></div>
-          <div><label style={LABEL} htmlFor="a-tipo">Tipo de evento</label><input id="a-tipo" style={INPUT} value={filtros.tipo_evento} onChange={set('tipo_evento')} /></div>
-          <div><label style={LABEL} htmlFor="a-id">ID activo</label><input id="a-id" type="number" style={INPUT} value={filtros.id_activo_biologico} onChange={set('id_activo_biologico')} /></div>
-          <div><label style={LABEL} htmlFor="a-clas">Clasificación</label><input id="a-clas" style={INPUT} value={filtros.clasificacion_biologica} onChange={set('clasificacion_biologica')} /></div>
+          <div><label style={LABEL} htmlFor="a-rf">{t('auditoriam02view.rf_origen')}</label><input id="a-rf" style={INPUT} placeholder="Ej: RF40" value={filtros.rf_origen} onChange={set('rf_origen')} /></div>
+          <div><label style={LABEL} htmlFor="a-tipo">{t('auditoriam02view.tipo_de_evento')}</label><input id="a-tipo" style={INPUT} value={filtros.tipo_evento} onChange={set('tipo_evento')} /></div>
+          <div><label style={LABEL} htmlFor="a-id">{t('auditoriam02view.id_activo')}</label><input id="a-id" type="number" style={INPUT} value={filtros.id_activo_biologico} onChange={set('id_activo_biologico')} /></div>
+          <div><label style={LABEL} htmlFor="a-clas">{t('auditoriam02view.clasificacion')}</label><input id="a-clas" style={INPUT} value={filtros.clasificacion_biologica} onChange={set('clasificacion_biologica')} /></div>
           <div>
-            <label style={LABEL} htmlFor="a-res">Resultado</label>
+            <label style={LABEL} htmlFor="a-res">{t('auditoriam02view.resultado')}</label>
             <select id="a-res" style={INPUT} value={filtros.resultado} onChange={set('resultado')}>
-              <option value="">Todos</option>
-              <option value="EXITOSO">Exitoso</option>
-              <option value="FALLIDO">Fallido</option>
+              <option value="">{t('auditoriam02view.todos')}</option>
+              <option value="EXITOSO">{t('auditoriam02view.exitoso')}</option>
+              <option value="FALLIDO">{t('auditoriam02view.fallido')}</option>
             </select>
           </div>
           <div>
-            <label style={LABEL} htmlFor="a-sev">Severidad</label>
+            <label style={LABEL} htmlFor="a-sev">{t('auditoriam02view.severidad')}</label>
             <select id="a-sev" style={INPUT} value={filtros.severidad_log} onChange={set('severidad_log')}>
-              <option value="">Todas</option>
-              <option value="INFO">Info</option>
-              <option value="WARNING">Warning</option>
-              <option value="ERROR">Error</option>
+              <option value="">{t('auditoriam02view.todas')}</option>
+              <option value="INFO">{t('auditoriam02view.info')}</option>
+              <option value="WARNING">{t('auditoriam02view.warning')}</option>
+              <option value="ERROR">{t('auditoriam02view.error')}</option>
             </select>
           </div>
-          <div><label style={LABEL} htmlFor="a-desde">Desde</label><input id="a-desde" type="date" style={INPUT} value={filtros.fecha_inicio} onChange={set('fecha_inicio')} /></div>
-          <div><label style={LABEL} htmlFor="a-hasta">Hasta</label><input id="a-hasta" type="date" style={INPUT} value={filtros.fecha_fin} onChange={set('fecha_fin')} /></div>
+          <div><label style={LABEL} htmlFor="a-desde">{t('auditoriam02view.desde')}</label><input id="a-desde" type="date" style={INPUT} value={filtros.fecha_inicio} onChange={set('fecha_inicio')} /></div>
+          <div><label style={LABEL} htmlFor="a-hasta">{t('auditoriam02view.hasta')}</label><input id="a-hasta" type="date" style={INPUT} value={filtros.fecha_fin} onChange={set('fecha_fin')} /></div>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)' }}>
           <Button variant="primary" size="sm" onClick={() => consultar(1)}>
-            <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Aplicar filtros
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => { setFiltros(VACIO); cargar({ pagina: 1, page_size: 20 }); }}>
-            Limpiar
-          </Button>
+            <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriam02view.aplicar_filtros')}</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setFiltros(VACIO); cargar({ pagina: 1, page_size: 20 }); }}>{t('auditoriam02view.limpiar')}</Button>
         </div>
 
         {error && (
           <Alert
             variant={error.status === 403 ? 'warning' : 'error'}
-            title={error.status === 403 ? 'Sin acceso a la auditoría' : 'Error al cargar la bitácora'}
+            title={error.status === 403 ? t('auditoriam02view.sin_acceso_a_la_auditoria') : t('auditoriam02view.error_al_cargar_la_bitacora')}
             description={error.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
@@ -200,7 +192,7 @@ export function AuditoriaM02View() {
             <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
           </div>
         ) : registros.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Sin registros de auditoría para los filtros seleccionados.</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('auditoriam02view.sin_registros_de_auditoria_para_los_filtros')}</p>
         ) : (
           <div style={{ overflowX: 'auto', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>

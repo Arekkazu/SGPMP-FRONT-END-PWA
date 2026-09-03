@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X, MapPin } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
@@ -41,6 +43,7 @@ const SECTION_LABEL: React.CSSProperties = {
 };
 
 export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onEditar }: Props) {
+  const { t } = useT('configuration');
   const modoEditar = finca !== null;
   const titulo = modoEditar ? `Editar finca — ${finca.nombre}` : 'Registrar nueva finca';
 
@@ -107,7 +110,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
           <h2 id="finca-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {titulo}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('fincamodal.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
         </div>
@@ -116,7 +119,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
           {saveError && (
             <Alert
               variant="error"
-              title={saveError.status === 412 ? 'Conflicto de edición' : 'Error al guardar'}
+              title={saveError.status === 412 ? t('fincamodal.conflicto_de_edicion') : t('fincamodal.error_al_guardar')}
               description={saveError.status === 412
                 ? 'Otro usuario modificó esta finca. Recarga para ver los datos actuales antes de guardar.'
                 : saveError.message}
@@ -126,19 +129,19 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             {/* SECCIÓN 1: Info general */}
-            <div style={SECTION_LABEL}>1 · Información general</div>
+            <div style={SECTION_LABEL}>{t('fincamodal.1_informacion_general')}</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)' }}>
               <Input
-                label="Nombre de la finca"
+                label={t('fincamodal.nombre_de_la_finca')}
                 required
                 aria-required="true"
-                placeholder="Ej: La Esperanza, El Palmar…"
+                placeholder={t('fincamodal.ej_la_esperanza_el_palmar')}
                 error={errors.nombre?.message}
                 {...register('nombre', {
-                  required: 'El nombre es obligatorio.',
-                  minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                  maxLength: { value: 55, message: 'Máximo 55 caracteres.' },
-                  pattern: { value: NOMBRE_REGEX, message: 'Solo letras, espacios y tildes.' },
+                  required: t('fincamodal.el_nombre_es_obligatorio'),
+                  minLength: { value: 3, message: t('fincamodal.minimo_3_caracteres') },
+                  maxLength: { value: 55, message: t('fincamodal.maximo_55_caracteres') },
+                  pattern: { value: NOMBRE_REGEX, message: t('fincamodal.solo_letras_espacios_y_tildes') },
                 })}
               />
               <Input
@@ -149,67 +152,65 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                 placeholder="Ej: 25.50"
                 error={errors.tamano_h?.message}
                 {...register('tamano_h', {
-                  required: 'El tamaño es obligatorio.',
+                  required: t('fincamodal.el_tamano_es_obligatorio'),
                   valueAsNumber: true,
-                  min: { value: 0.01, message: 'Debe ser mayor a 0.' },
+                  min: { value: 0.01, message: t('fincamodal.debe_ser_mayor_a_0') },
                 })}
               />
               <Input
-                label="ID Productor asignado"
+                label={t('fincamodal.id_productor_asignado')}
                 type="number"
-                placeholder="ID del usuario productor"
+                placeholder={t('fincamodal.id_del_usuario_productor')}
                 error={errors.id_usuario?.message}
                 {...register('id_usuario', {
-                  min: { value: 1, message: 'ID inválido.' },
+                  min: { value: 1, message: t('fincamodal.id_invalido') },
                 })}
               />
             </div>
 
             {/* SECCIÓN 2: Ubicación */}
-            <div style={SECTION_LABEL}>2 · Ubicación geográfica</div>
+            <div style={SECTION_LABEL}>{t('fincamodal.2_ubicacion_geografica')}</div>
             <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)', marginBottom: 'var(--s6)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s4)', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                <MapPin size={14} color="var(--brand-500)" aria-hidden />
-                Datos de ubicación administrativa y coordenadas
-              </div>
+                <MapPin size={14} color="var(--brand-500)" aria-hidden />{t('fincamodal.datos_de_ubicacion_administrativa_y')}</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
                 <Input
-                  label="Departamento"
+                  label={t('fincamodal.departamento')}
                   required
                   aria-required="true"
-                  placeholder="Ej: Antioquia"
+                  placeholder={t('fincamodal.ej_antioquia')}
                   error={errors.departamento?.message}
                   {...register('departamento', {
                     required: 'Requerido.',
                     validate: (v) => !!v.trim() || 'Requerido.',
-                    maxLength: { value: 60, message: 'Máx. 60 caracteres.' },
-                    pattern: { value: TEXTO_REGEX, message: 'Solo letras y espacios.' },
+                    maxLength: { value: 60, message: t('fincamodal.max_60_caracteres') },
+                    pattern: { value: TEXTO_REGEX, message: t('fincamodal.solo_letras_y_espacios') },
                   })}
                 />
                 <Input
-                  label="Municipio"
+                  label={t('fincamodal.municipio')}
                   required
                   aria-required="true"
-                  placeholder="Ej: Rionegro"
+                  placeholder={t('fincamodal.ej_rionegro')}
                   error={errors.municipio?.message}
                   {...register('municipio', {
                     required: 'Requerido.',
                     validate: (v) => !!v.trim() || 'Requerido.',
-                    maxLength: { value: 60, message: 'Máx. 60 caracteres.' },
-                    pattern: { value: TEXTO_REGEX, message: 'Solo letras y espacios.' },
+                    maxLength: { value: 60, message: t('fincamodal.max_60_caracteres') },
+                    pattern: { value: TEXTO_REGEX, message: t('fincamodal.solo_letras_y_espacios') },
                   })}
                 />
                 <Input
-                  label="Vereda"
+                  label={t('fincamodal.vereda')}
                   required
                   aria-required="true"
-                  placeholder="Ej: La Mosquitera"
+                  placeholder={t('fincamodal.ej_la_mosquitera')}
                   error={errors.vereda?.message}
                   {...register('vereda', {
                     required: 'Requerido.',
                     validate: (v) => !!v.trim() || 'Requerido.',
-                    maxLength: { value: 60, message: 'Máx. 60 caracteres.' },
-                    pattern: { value: TEXTO_REGEX, message: 'Solo letras y espacios.' },
+                    maxLength: { value: 60, message: t('fincamodal.max_60_caracteres') },
+                    pattern: { value: TEXTO_REGEX, message: t('fincamodal.solo_letras_y_espacios') },
                   })}
                 />
               </div>
@@ -219,7 +220,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)' }}>
                 <div>
                   <Input
-                    label="Latitud"
+                    label={t('fincamodal.latitud')}
                     type="number"
                     required
                     aria-required="true"
@@ -228,15 +229,15 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                     {...register('latitud', {
                       required: 'Requerida.',
                       valueAsNumber: true,
-                      min: { value: -90, message: 'Mín. -90.' },
-                      max: { value: 90,  message: 'Máx. 90.' },
+                      min: { value: -90, message: t('fincamodal.min_90') },
+                      max: { value: 90,  message: t('fincamodal.max_90') },
                     })}
                   />
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>Rango: -90 a 90</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('fincamodal.rango_90_a_90')}</p>
                 </div>
                 <div>
                   <Input
-                    label="Longitud"
+                    label={t('fincamodal.longitud')}
                     type="number"
                     required
                     aria-required="true"
@@ -245,11 +246,11 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                     {...register('longitud', {
                       required: 'Requerida.',
                       valueAsNumber: true,
-                      min: { value: -180, message: 'Mín. -180.' },
-                      max: { value: 180,  message: 'Máx. 180.' },
+                      min: { value: -180, message: t('fincamodal.min_180') },
+                      max: { value: 180,  message: t('fincamodal.max_180') },
                     })}
                   />
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>Rango: -180 a 180</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('fincamodal.rango_180_a_180')}</p>
                 </div>
               </div>
             </div>
@@ -257,22 +258,22 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
             {/* Fechas (readonly, solo en editar) */}
             {modoEditar && finca && (
               <>
-                <div style={SECTION_LABEL}>3 · Fechas del registro</div>
+                <div style={SECTION_LABEL}>{t('fincamodal.3_fechas_del_registro')}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s5)', padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                   <div>
-                    <div style={{ fontWeight: 600, marginBottom: 2 }}>Creado</div>
-                    <div>{finca.fecha_creacion ? new Date(finca.fecha_creacion).toLocaleString('es-CO') : '—'}</div>
+                    <div style={{ fontWeight: 600, marginBottom: 2 }}>{t('fincamodal.creado')}</div>
+                    <div>{finca.fecha_creacion ? formatearFechaHora(finca.fecha_creacion) : '—'}</div>
                   </div>
                   <div>
-                    <div style={{ fontWeight: 600, marginBottom: 2 }}>Actualizado</div>
-                    <div>{finca.fecha_actualizacion ? new Date(finca.fecha_actualizacion).toLocaleString('es-CO') : '—'}</div>
+                    <div style={{ fontWeight: 600, marginBottom: 2 }}>{t('fincamodal.actualizado')}</div>
+                    <div>{finca.fecha_actualizacion ? formatearFechaHora(finca.fecha_actualizacion) : '—'}</div>
                   </div>
                 </div>
               </>
             )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-              <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Cancelar</Button>
+              <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('fincamodal.cancelar')}</Button>
               <Button type="submit" variant="primary" size="md" loading={saving}>
                 {modoEditar ? 'Guardar cambios' : 'Registrar finca'}
               </Button>

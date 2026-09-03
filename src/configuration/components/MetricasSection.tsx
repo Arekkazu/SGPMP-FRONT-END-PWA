@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -73,7 +75,7 @@ const SELECT_STYLE: React.CSSProperties = {
 function formatFecha(iso: string | null): string {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    return formatearFecha(iso, { day: '2-digit', month: '2-digit', year: '2-digit' });
   } catch {
     return iso;
   }
@@ -96,6 +98,7 @@ function MetricaModal({
   onRegistrar: (dto: import('../types').RegistrarMetricaDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarMetricaDTO) => Promise<boolean>;
 }) {
+  const { t } = useT('configuration');
   const modoEditar = metrica !== null;
   const {
     register,
@@ -152,7 +155,7 @@ function MetricaModal({
           <h2 id="metrica-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {modoEditar ? `Editar métrica — ${metrica!.nombre}` : 'Nueva métrica de producción'}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('metricassection.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
         </div>
@@ -160,7 +163,7 @@ function MetricaModal({
         {saveError && (
           <Alert
             variant="error"
-            title={saveError.status === 412 ? 'Conflicto de edición' : 'Error al guardar'}
+            title={saveError.status === 412 ? t('metricassection.conflicto_de_edicion') : t('metricassection.error_al_guardar')}
             description={saveError.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
@@ -169,40 +172,39 @@ function MetricaModal({
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
             <Input
-              label="Nombre"
+              label={t('metricassection.nombre')}
               required
               aria-required="true"
-              placeholder="Ej: Peso vivo, Producción de leche…"
+              placeholder={t('metricassection.ej_peso_vivo_produccion_de_leche')}
               error={errors.nombre?.message}
               {...register('nombre', {
-                required: 'El nombre es obligatorio.',
-                minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                maxLength: { value: 50, message: 'Máximo 50 caracteres.' },
+                required: t('metricassection.el_nombre_es_obligatorio'),
+                minLength: { value: 3, message: t('metricassection.minimo_3_caracteres') },
+                maxLength: { value: 50, message: t('metricassection.maximo_50_caracteres') },
               })}
             />
 
             <Input
-              label="Unidad de medida"
+              label={t('metricassection.unidad_de_medida')}
               required
               aria-required="true"
-              placeholder="Ej: kg, L, cm, unidades…"
+              placeholder={t('metricassection.ej_kg_l_cm_unidades')}
               error={errors.unidad_medida?.message}
               {...register('unidad_medida', {
-                required: 'La unidad es obligatoria.',
+                required: t('metricassection.la_unidad_es_obligatoria'),
                 minLength: { value: 1, message: 'Campo obligatorio.' },
-                maxLength: { value: 20, message: 'Máximo 20 caracteres.' },
+                maxLength: { value: 20, message: t('metricassection.maximo_20_caracteres') },
               })}
             />
 
             <div>
-              <label htmlFor="tipo-medicion" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>
-                Tipo de medición <span style={{ color: 'var(--sem-error)' }}>*</span>
+              <label htmlFor="tipo-medicion" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('metricassection.tipo_de_medicion')}<span style={{ color: 'var(--sem-error)' }}>*</span>
               </label>
               <select
                 id="tipo-medicion"
                 style={SELECT_STYLE}
                 aria-required="true"
-                {...register('tipo_medicion', { required: 'Selecciona un tipo.' })}
+                {...register('tipo_medicion', { required: t('metricassection.selecciona_un_tipo') })}
               >
                 {(Object.entries(TIPO_MEDICION_LABELS) as [TipoMedicion, string][]).map(([val, label]) => (
                   <option key={val} value={val}>{label}</option>
@@ -216,14 +218,13 @@ function MetricaModal({
             </div>
 
             <div>
-              <label htmlFor="aplica-tipo-activo" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>
-                Aplica a tipo de activo <span style={{ color: 'var(--sem-error)' }}>*</span>
+              <label htmlFor="aplica-tipo-activo" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('metricassection.aplica_a_tipo_de_activo')}<span style={{ color: 'var(--sem-error)' }}>*</span>
               </label>
               <select
                 id="aplica-tipo-activo"
                 style={SELECT_STYLE}
                 aria-required="true"
-                {...register('aplica_a_tipo_activo', { required: 'Selecciona un tipo.' })}
+                {...register('aplica_a_tipo_activo', { required: t('metricassection.selecciona_un_tipo') })}
               >
                 {(Object.entries(TIPO_ACTIVO_LABELS) as [TipoActivo, string][]).map(([val, label]) => (
                   <option key={val} value={val}>{label}</option>
@@ -238,7 +239,7 @@ function MetricaModal({
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
-            <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Cancelar</Button>
+            <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('metricassection.cancelar')}</Button>
             <Button type="submit" variant="primary" size="md" loading={saving}>
               {modoEditar ? 'Guardar cambios' : 'Registrar métrica'}
             </Button>
@@ -250,6 +251,7 @@ function MetricaModal({
 }
 
 function ConfirmDesactivar({ metrica, saving, onCancel, onConfirm }: { metrica: MetricaProduccionResponse; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const { t } = useT('configuration');
   return (
     <div
       role="dialog"
@@ -258,13 +260,13 @@ function ConfirmDesactivar({ metrica, saving, onCancel, onConfirm }: { metrica: 
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>Confirmar desactivación</h2>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('metricassection.confirmar_desactivacion')}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>
           ¿Deseas desactivar la métrica "{metrica.nombre}"? Los registros históricos permanecerán accesibles.
         </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>Cancelar</Button>
-          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>Desactivar</Button>
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('metricassection.cancelar')}</Button>
+          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{t('metricassection.desactivar')}</Button>
         </div>
       </div>
     </div>
@@ -272,6 +274,7 @@ function ConfirmDesactivar({ metrica, saving, onCancel, onConfirm }: { metrica: 
 }
 
 export function MetricasSection({ idEspecie }: Props) {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear  = usePermission(19, 1);
   const puedeEditar = usePermission(19, 3);
@@ -298,7 +301,7 @@ export function MetricasSection({ idEspecie }: Props) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <div>
-          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Métricas de Producción</h3>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('metricassection.metricas_de_produccion')}</h3>
           {!loading && (
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0, fontFamily: 'var(--font-mono)' }}>
               {activas} activas · {metricas.length - activas} inactivas
@@ -306,26 +309,24 @@ export function MetricasSection({ idEspecie }: Props) {
           )}
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <Button variant="ghost" size="sm" onClick={() => cargar(idEspecie)} aria-label="Recargar métricas">
+          <Button variant="ghost" size="sm" onClick={() => cargar(idEspecie)} aria-label={t('metricassection.recargar_metricas')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           {puedeCrear && (
             <Button variant="primary" size="sm" onClick={() => setModal({ tipo: 'crear' })} disabled={!online}>
-              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Nueva métrica
-            </Button>
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('metricassection.nueva_metrica')}</Button>
           )}
         </div>
       </div>
 
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="warning" title={t('metricassection.sin_conexion')} description={t('metricassection.las_acciones_de_escritura_estan')} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {error && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('metricassection.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {accionError && (
-        <Alert variant="error" title="Error" description={accionError} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('metricassection.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {loading ? (
@@ -336,9 +337,7 @@ export function MetricasSection({ idEspecie }: Props) {
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
       ) : metricas.length === 0 ? (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>
-          No hay métricas registradas para esta especie.
-        </p>
+        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('metricassection.no_hay_metricas_registradas_para_esta')}</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>

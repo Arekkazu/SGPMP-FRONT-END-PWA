@@ -24,6 +24,7 @@ import './shared/design-system/tokens.css';
 /* Auth provider */
 import { AuthProvider } from './shared/auth/AuthContext';
 import { useAuth } from './shared/auth/useAuth';
+import { useIdiomaSesion } from './shared/i18n/useIdiomaSesion';
 
 /* Design system components */
 import { Sidebar } from './shared/design-system/Sidebar';
@@ -66,7 +67,10 @@ function SessionManager() {
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const logout = useLogout();
-  const { claims, userInfo } = useAuth();
+  const { claims, userInfo, token } = useAuth();
+  // RF-29: aplicar la preferencia guardada en el backend, no solo la de
+  // localStorage, para que el idioma viaje entre navegadores y dispositivos.
+  useIdiomaSesion(token);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 

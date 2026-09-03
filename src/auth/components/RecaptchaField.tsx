@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Alert } from '../../shared/design-system/Alert';
 import { useTheme } from '../../shared/hooks/useTheme';
@@ -19,21 +20,22 @@ export function RecaptchaField({
   onExpired,
   onErrored,
 }: RecaptchaFieldProps) {
+  const { t } = useT('auth');
   const { dark } = useTheme();
 
   if (!siteKey) {
     return (
       <Alert
         variant="error"
-        title="Verificación de seguridad no configurada"
-        description="No es posible completar el registro en este momento. Contacta al administrador."
+        title={t('recaptchafield.verificacion_de_seguridad_no_configurada')}
+        description={t('recaptchafield.no_es_posible_completar_el_registro_en_este')}
         className={styles.configError}
       />
     );
   }
 
   return (
-    <div className={styles.recaptcha} role="group" aria-label="Verificación de seguridad">
+    <div className={styles.recaptcha} role="group" aria-label={t('recaptchafield.verificacion_de_seguridad')}>
       <div className={styles.widget}>
         <ReCAPTCHA
           sitekey={siteKey}

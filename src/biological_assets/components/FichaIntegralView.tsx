@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { AlertTriangle } from 'lucide-react';
 import type { FichaIntegralResponse } from '../types';
 
@@ -74,6 +75,7 @@ function DictList({ items, vacio }: { items: Record<string, unknown>[]; vacio: s
 }
 
 export function FichaIntegralView({ ficha, loading }: Props) {
+  const { t } = useT('biologicalAssets');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
@@ -86,7 +88,7 @@ export function FichaIntegralView({ ficha, loading }: Props) {
   }
 
   if (!ficha) {
-    return <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay ficha disponible para este activo.</p>;
+    return <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('fichaintegralview.no_hay_ficha_disponible_para_este_activo')}</p>;
   }
 
   const esPoblacional = String(ficha.tipo).toUpperCase() === 'POBLACIONAL';
@@ -103,9 +105,7 @@ export function FichaIntegralView({ ficha, loading }: Props) {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', color: 'var(--sem-warning)', fontWeight: 600, fontSize: '13px', marginBottom: 'var(--s2)' }}>
-            <AlertTriangle size={15} aria-hidden />
-            Advertencias
-          </div>
+            <AlertTriangle size={15} aria-hidden />{t('fichaintegralview.advertencias')}</div>
           <ul style={{ margin: 0, paddingLeft: 'var(--s5)', color: 'var(--text-secondary)', fontSize: '13px' }}>
             {ficha.advertencias.map((a, i) => <li key={i}>{a}</li>)}
           </ul>
@@ -114,16 +114,16 @@ export function FichaIntegralView({ ficha, loading }: Props) {
 
       {/* Datos principales */}
       <div style={CARD}>
-        <h3 style={CARD_TITLE}>Datos del activo</h3>
+        <h3 style={CARD_TITLE}>{t('fichaintegralview.datos_del_activo')}</h3>
         <InfoGrid>
-          <Dato label="Identificador" value={ficha.identificador} />
-          <Dato label="Tipo" value={esPoblacional ? 'Poblacional' : 'Individual'} />
-          <Dato label="Especie" value={ficha.especie} />
-          <Dato label="Estado actual" value={ficha.estado_actual} />
-          <Dato label="Infraestructura" value={ficha.infraestructura_asociada} />
-          <Dato label="Fase productiva" value={ficha.fase_productiva_activa} />
-          <Dato label="Fecha de registro" value={ficha.fecha_registro} />
-          <Dato label="Días en sistema" value={ficha.dias_en_sistema} />
+          <Dato label={t('fichaintegralview.identificador')} value={ficha.identificador} />
+          <Dato label={t('fichaintegralview.tipo')} value={esPoblacional ? 'Poblacional' : 'Individual'} />
+          <Dato label={t('fichaintegralview.especie')} value={ficha.especie} />
+          <Dato label={t('fichaintegralview.estado_actual')} value={ficha.estado_actual} />
+          <Dato label={t('fichaintegralview.infraestructura')} value={ficha.infraestructura_asociada} />
+          <Dato label={t('fichaintegralview.fase_productiva')} value={ficha.fase_productiva_activa} />
+          <Dato label={t('fichaintegralview.fecha_de_registro')} value={ficha.fecha_registro} />
+          <Dato label={t('fichaintegralview.dias_en_sistema')} value={ficha.dias_en_sistema} />
         </InfoGrid>
       </div>
 
@@ -133,25 +133,25 @@ export function FichaIntegralView({ ficha, loading }: Props) {
         <InfoGrid>
           {!esPoblacional && (
             <>
-              <Dato label="Raza" value={ficha.raza} />
-              <Dato label="Sexo" value={ficha.sexo} />
-              <Dato label="Fecha de nacimiento" value={ficha.fecha_nacimiento} />
+              <Dato label={t('fichaintegralview.raza')} value={ficha.raza} />
+              <Dato label={t('fichaintegralview.sexo')} value={ficha.sexo} />
+              <Dato label={t('fichaintegralview.fecha_de_nacimiento')} value={ficha.fecha_nacimiento} />
               <Dato
-                label="Peso actual"
+                label={t('fichaintegralview.peso_actual')}
                 value={ficha.peso_actual != null ? `${ficha.peso_actual} ${ficha.unidad_peso ?? ''}`.trim() : null}
               />
-              <Dato label="Último pesaje" value={ficha.fecha_ultimo_peso} />
+              <Dato label={t('fichaintegralview.ultimo_pesaje')} value={ficha.fecha_ultimo_peso} />
             </>
           )}
           {esPoblacional && (
             <>
-              <Dato label="Cantidad actual" value={ficha.cantidad_actual} />
+              <Dato label={t('fichaintegralview.cantidad_actual')} value={ficha.cantidad_actual} />
               <Dato
-                label="Peso promedio"
+                label={t('fichaintegralview.peso_promedio')}
                 value={ficha.peso_actual != null ? `${ficha.peso_actual} ${ficha.unidad_peso ?? ''}`.trim() : null}
               />
-              <Dato label="Biomasa total" value={ficha.biomasa_total} />
-              <Dato label="Densidad" value={ficha.densidad} />
+              <Dato label={t('fichaintegralview.biomasa_total')} value={ficha.biomasa_total} />
+              <Dato label={t('fichaintegralview.densidad')} value={ficha.densidad} />
             </>
           )}
         </InfoGrid>
@@ -160,23 +160,23 @@ export function FichaIntegralView({ ficha, loading }: Props) {
       {/* Eventos e indicadores resumidos */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--s5)' }}>
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>Eventos sanitarios</h3>
+          <h3 style={CARD_TITLE}>{t('fichaintegralview.eventos_sanitarios')}</h3>
           <DictList items={ficha.eventos_sanitarios} vacio="Sin eventos sanitarios." />
         </div>
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>Eventos de crecimiento</h3>
+          <h3 style={CARD_TITLE}>{t('fichaintegralview.eventos_de_crecimiento')}</h3>
           <DictList items={ficha.eventos_crecimiento} vacio="Sin eventos de crecimiento." />
         </div>
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>Eventos productivos</h3>
+          <h3 style={CARD_TITLE}>{t('fichaintegralview.eventos_productivos')}</h3>
           <DictList items={ficha.eventos_productivos} vacio="Sin eventos productivos." />
         </div>
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>Eventos reproductivos</h3>
+          <h3 style={CARD_TITLE}>{t('fichaintegralview.eventos_reproductivos')}</h3>
           <DictList items={ficha.eventos_reproductivos} vacio="Sin eventos reproductivos." />
         </div>
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>Indicadores</h3>
+          <h3 style={CARD_TITLE}>{t('fichaintegralview.indicadores')}</h3>
           <DictList items={ficha.indicadores} vacio="Sin indicadores calculados." />
         </div>
       </div>

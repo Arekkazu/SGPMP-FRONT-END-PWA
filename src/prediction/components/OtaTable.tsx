@@ -1,4 +1,6 @@
 import React from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { Eye } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { EstadoOtaPill } from './EstadoOtaPill';
@@ -9,7 +11,7 @@ import type { DespliegueOtaResponse } from '../types';
 function fmt(dt: string | null): string {
   if (!dt) return '—';
   const d = new Date(dt);
-  return isNaN(d.getTime()) ? dt : d.toLocaleString('es-CO');
+  return isNaN(d.getTime()) ? dt : formatearFechaHora(d);
 }
 
 interface Props {
@@ -19,12 +21,11 @@ interface Props {
 }
 
 export function OtaTable({ despliegues, loading, onVer }: Props) {
-  if (loading) return <div style={{ padding: 'var(--s7)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>Cargando despliegues…</div>;
+  const { t } = useT('prediction');
+  if (loading) return <div style={{ padding: 'var(--s7)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('otatable.cargando_despliegues')}</div>;
   if (despliegues.length === 0) {
     return (
-      <div style={{ padding: 'var(--s8) var(--s4)', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
-        No hay despliegues que coincidan con los filtros.
-      </div>
+      <div style={{ padding: 'var(--s8) var(--s4)', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>{t('otatable.no_hay_despliegues_que_coincidan_con_los')}</div>
     );
   }
 
@@ -34,13 +35,13 @@ export function OtaTable({ despliegues, loading, onVer }: Props) {
         <thead>
           <tr style={THEAD_ROW}>
             <th style={TH}>ID</th>
-            <th style={TH}>Tipo de modelo</th>
-            <th style={TH}>Versión</th>
-            <th style={TH}>Dispositivo</th>
-            <th style={TH}>Modo</th>
-            <th style={TH}>Estado</th>
-            <th style={TH}>Inicio</th>
-            <th style={{ ...TH, textAlign: 'right' }}>Acciones</th>
+            <th style={TH}>{t('otatable.tipo_de_modelo')}</th>
+            <th style={TH}>{t('otatable.version')}</th>
+            <th style={TH}>{t('otatable.dispositivo')}</th>
+            <th style={TH}>{t('otatable.modo')}</th>
+            <th style={TH}>{t('otatable.estado')}</th>
+            <th style={TH}>{t('otatable.inicio')}</th>
+            <th style={{ ...TH, textAlign: 'right' }}>{t('otatable.acciones')}</th>
           </tr>
         </thead>
         <tbody>
@@ -54,7 +55,7 @@ export function OtaTable({ despliegues, loading, onVer }: Props) {
               <td style={TD}><EstadoOtaPill estado={d.estado_despliegue} /></td>
               <td style={{ ...TD, fontSize: '12px', whiteSpace: 'nowrap' }}>{fmt(d.fecha_inicio)}</td>
               <td style={{ ...TD, textAlign: 'right' }}>
-                <Button variant="ghost" size="sm" onClick={() => onVer(d)} aria-label="Ver despliegue" title="Ver detalle">
+                <Button variant="ghost" size="sm" onClick={() => onVer(d)} aria-label={t('otatable.ver_despliegue')} title={t('otatable.ver_detalle')}>
                   <Eye size={16} aria-hidden />
                 </Button>
               </td>

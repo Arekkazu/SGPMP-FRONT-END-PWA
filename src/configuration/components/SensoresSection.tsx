@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Radio, ChevronLeft, Check, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -86,6 +88,7 @@ function Stepper({ current }: { current: WizardStep }) {
 function DispSelector({ dispositivos, loading, onSelect }: {
   dispositivos: DispositivoIotResponse[]; loading: boolean; onSelect: (d: DispositivoIotResponse) => void;
 }) {
+  const { t } = useT('configuration');
   const activos = dispositivos.filter((d) => d.es_activo);
   if (loading) {
     return (
@@ -98,7 +101,7 @@ function DispSelector({ dispositivos, loading, onSelect }: {
     );
   }
   if (activos.length === 0) {
-    return <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s7) 0' }}>No hay dispositivos IoT activos. Regístralos primero en la sección "Dispositivos IoT".</p>;
+    return <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s7) 0' }}>{t('sensoressection.no_hay_dispositivos_iot_activos_registralos')}</p>;
   }
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
@@ -134,13 +137,13 @@ function SensorSelector({ sensores, loading, error, onSelect, onBack }: {
   sensores: SensorResponse[]; loading: boolean; error: { message: string } | null;
   onSelect: (s: SensorResponse) => void; onBack: () => void;
 }) {
+  const { t } = useT('configuration');
   const activos = sensores.filter((s) => s.es_activo);
   return (
     <div>
-      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s4)' }} aria-label="Cambiar dispositivo">
-        <ChevronLeft size={16} aria-hidden /> Cambiar dispositivo
-      </Button>
-      {error && <Alert variant="error" title="Error al cargar sensores" description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s4)' }} aria-label={t('sensoressection.cambiar_dispositivo')}>
+        <ChevronLeft size={16} aria-hidden />{t('sensoressection.cambiar_dispositivo')}</Button>
+      {error && <Alert variant="error" title={t('sensoressection.error_al_cargar_sensores')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
       {loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
           {Array.from({ length: 3 }).map((_, i) => (
@@ -149,9 +152,7 @@ function SensorSelector({ sensores, loading, error, onSelect, onBack }: {
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
       ) : activos.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s6) 0' }}>
-          Este dispositivo no tiene sensores activos registrados.
-        </p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s6) 0' }}>{t('sensoressection.este_dispositivo_no_tiene_sensores_activos')}</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
           {activos.map((s) => {
@@ -195,13 +196,13 @@ function AreaDestSelector({ fincas, infraestructuras, loadingFincas, loadingInfr
   onSelectArea: (i: InfraestructuraResponse) => void;
   onBack: () => void;
 }) {
+  const { t } = useT('configuration');
   const activas = infraestructuras.filter((i) => i.es_activo);
 
   return (
     <div>
-      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s4)' }} aria-label="Cambiar sensor">
-        <ChevronLeft size={16} aria-hidden /> Cambiar sensor
-      </Button>
+      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s4)' }} aria-label={t('sensoressection.cambiar_sensor')}>
+        <ChevronLeft size={16} aria-hidden />{t('sensoressection.cambiar_sensor')}</Button>
 
       {/* Finca filter pills */}
       <div style={{ marginBottom: 'var(--s4)' }}>
@@ -209,7 +210,7 @@ function AreaDestSelector({ fincas, infraestructuras, loadingFincas, loadingInfr
           {fincaSeleccionada ? `Áreas de ${fincaSeleccionada.nombre}:` : 'Selecciona la finca:'}
         </p>
         {loadingFincas ? (
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Cargando fincas…</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('sensoressection.cargando_fincas')}</p>
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)' }}>
             {fincas.filter((f) => f.es_activo).map((f) => (
@@ -244,9 +245,7 @@ function AreaDestSelector({ fincas, infraestructuras, loadingFincas, loadingInfr
             <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
           </div>
         ) : activas.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s5) 0' }}>
-            Esta finca no tiene áreas productivas activas.
-          </p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s5) 0' }}>{t('sensoressection.esta_finca_no_tiene_areas_productivas')}</p>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 'var(--s4)' }}>
             {activas.map((infra) => {
@@ -269,7 +268,7 @@ function AreaDestSelector({ fincas, infraestructuras, loadingFincas, loadingInfr
                         {infra.tipo_area} · {fincaSeleccionada.nombre}
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>
-                        {infra.superficie.toLocaleString('es-CO')} m²
+                        {formatearFechaHora(infra.superficie)} m²
                       </div>
                     </div>
                   </div>
@@ -299,18 +298,18 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
   onBack: () => void;
   onConfirm: (punto: string) => void;
 }) {
+  const { t } = useT('configuration');
   const { register, handleSubmit, formState: { errors } } = useForm<ConfirmFormValues>({ mode: 'onBlur' });
   const emoji = sensor.categoria ? (CATEGORIA_EMOJI[sensor.categoria] ?? '📡') : '📡';
   const areaEmoji = TIPO_EMOJI[area.tipo_area] ?? '🏗️';
 
   return (
     <div>
-      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s5)' }} aria-label="Cambiar área">
-        <ChevronLeft size={16} aria-hidden /> Cambiar área
-      </Button>
+      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s5)' }} aria-label={t('sensoressection.cambiar_area')}>
+        <ChevronLeft size={16} aria-hidden />{t('sensoressection.cambiar_area')}</Button>
 
       {saveError && (
-        <Alert variant="error" title="Error al asociar" description={saveError.message} style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="error" title={t('sensoressection.error_al_asociar')} description={saveError.message} style={{ marginBottom: 'var(--s5)' }} />
       )}
 
       {/* Summary cards */}
@@ -318,7 +317,7 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
         {/* Sensor node */}
         <div style={{ flex: 1, minWidth: 160, background: 'var(--brand-50)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'center' }}>
           <div style={{ fontSize: 28, marginBottom: 'var(--s2)' }}>{emoji}</div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>Sensor</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>{t('sensoressection.sensor')}</div>
           <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{sensor.nombre}</div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</div>
         </div>
@@ -329,7 +328,7 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
         {/* Area node */}
         <div style={{ flex: 1, minWidth: 160, background: 'var(--sem-success-bg)', border: '1px solid var(--sem-success-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'center' }}>
           <div style={{ fontSize: 28, marginBottom: 'var(--s2)' }}>{areaEmoji}</div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>Área productiva</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>{t('sensoressection.area_productiva')}</div>
           <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--brand-700)' }}>{area.nombre_infraestructura}</div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{finca.nombre}</div>
         </div>
@@ -338,33 +337,27 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
       {/* Punto instalacion form */}
       <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-xl)', overflow: 'hidden' }}>
         <div style={{ background: 'var(--surface-hover)', padding: 'var(--s3) var(--s5)', borderBottom: '1px solid var(--surface-border)' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Datos de la asociación
-          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('sensoressection.datos_de_la_asociacion')}</span>
         </div>
         <div style={{ padding: 'var(--s5)' }}>
           <form onSubmit={handleSubmit((d) => onConfirm(d.punto_instalacion))} noValidate>
             <Input
-              label="Punto de instalación física"
+              label={t('sensoressection.punto_de_instalacion_fisica')}
               required
               aria-required="true"
-              placeholder="Ej: Centro del galpón, cerca al bebedero"
+              placeholder={t('sensoressection.ej_centro_del_galpon_cerca_al_bebedero')}
               error={errors.punto_instalacion?.message}
               {...register('punto_instalacion', {
-                required: 'Indica el punto de instalación del sensor.',
-                minLength: { value: 5, message: 'Mínimo 5 caracteres.' },
-                maxLength: { value: 100, message: 'Máximo 100 caracteres.' },
+                required: t('sensoressection.indica_el_punto_de_instalacion_del_sensor'),
+                minLength: { value: 5, message: t('sensoressection.minimo_5_caracteres') },
+                maxLength: { value: 100, message: t('sensoressection.maximo_100_caracteres') },
               })}
             />
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s2)', marginBottom: 'var(--s5)' }}>
-              Describe la ubicación física exacta del sensor dentro del área.
-            </p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s2)', marginBottom: 'var(--s5)' }}>{t('sensoressection.describe_la_ubicacion_fisica_exacta_del')}</p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-              <Button type="button" variant="secondary" size="md" onClick={onBack} disabled={saving}>Atrás</Button>
+              <Button type="button" variant="secondary" size="md" onClick={onBack} disabled={saving}>{t('sensoressection.atras')}</Button>
               <Button type="submit" variant="primary" size="md" loading={saving}>
-                <Check size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-                Confirmar asociación
-              </Button>
+                <Check size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('sensoressection.confirmar_asociacion')}</Button>
             </div>
           </form>
         </div>
@@ -376,6 +369,7 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
 // ── SensoresSection ───────────────────────────────────────────────────────────
 
 export function SensoresSection() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeAsociar = usePermission(12, 1);
 
@@ -466,45 +460,36 @@ export function SensoresSection() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
           <Radio size={18} color="var(--brand-500)" aria-hidden />
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Asociación de Sensores a Áreas
-            </h2>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>
-              Vincula cada sensor a la zona física de la finca que debe monitorear
-            </p>
+            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('sensoressection.asociacion_de_sensores_a_areas')}</h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>{t('sensoressection.vincula_cada_sensor_a_la_zona_fisica_de_la')}</p>
           </div>
         </div>
         {step !== 'dispositivo' && (
           <Button variant="ghost" size="sm" onClick={() => { handleBackToDisp(); cargarDisp(); }}>
-            <RefreshCw size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Reiniciar
-          </Button>
+            <RefreshCw size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('sensoressection.reiniciar')}</Button>
         )}
       </div>
 
       {/* Alerts */}
-      {!online && <Alert variant="warning" title="Sin conexión" description="La asociación de sensores requiere conexión al servidor." style={{ marginBottom: 'var(--s4)' }} />}
-      {successMsg && <Alert variant="success" title="Asociación registrada" description={successMsg} style={{ marginBottom: 'var(--s4)' }} />}
+      {!online && <Alert variant="warning" title={t('sensoressection.sin_conexion')} description={t('sensoressection.la_asociacion_de_sensores_requiere_conexion')} style={{ marginBottom: 'var(--s4)' }} />}
+      {successMsg && <Alert variant="success" title={t('sensoressection.asociacion_registrada')} description={successMsg} style={{ marginBottom: 'var(--s4)' }} />}
 
       {!puedeAsociar ? (
-        <Alert variant="warning" title="Sin permiso" description="No tienes permiso para asociar sensores a áreas productivas." />
+        <Alert variant="warning" title={t('sensoressection.sin_permiso')} description={t('sensoressection.no_tienes_permiso_para_asociar_sensores_a')} />
       ) : !online ? null : (
         <>
           <Stepper current={step} />
 
           {step === 'dispositivo' && (
             <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
-                Paso 1 — Elige el dispositivo que contiene el sensor a vincular:
-              </p>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_1_elige_el_dispositivo_que_contiene_el')}</p>
               <DispSelector dispositivos={dispositivos} loading={loadingDisp} onSelect={handleSelectDisp} />
             </>
           )}
 
           {step === 'sensor' && dispositivo && (
             <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
-                Paso 2 — Elige el sensor de <strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong> a asociar:
-              </p>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_2_elige_el_sensor_de')}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{t('sensoressection.a_asociar')}</p>
               <SensorSelector
                 sensores={sensores}
                 loading={loadingSensores}
@@ -517,8 +502,7 @@ export function SensoresSection() {
 
           {step === 'area' && dispositivo && sensor && (
             <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
-                Paso 3 — Elige el área productiva destino para <strong>{sensor.nombre}</strong>:
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_3_elige_el_area_productiva_destino_para')}<strong>{sensor.nombre}</strong>:
               </p>
               <AreaDestSelector
                 fincas={fincas}

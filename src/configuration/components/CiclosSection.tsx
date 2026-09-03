@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -45,7 +47,7 @@ const TD: React.CSSProperties = {
 function formatFecha(iso: string | null): string {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    return formatearFecha(iso, { day: '2-digit', month: '2-digit', year: '2-digit' });
   } catch {
     return iso;
   }
@@ -68,6 +70,7 @@ function CicloModal({
   onRegistrar: (dto: import('../types').RegistrarCicloDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarCicloDTO) => Promise<boolean>;
 }) {
+  const { t } = useT('configuration');
   const modoEditar = ciclo !== null;
   const {
     register,
@@ -115,7 +118,7 @@ function CicloModal({
           <h2 id="ciclo-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {modoEditar ? `Editar ciclo — ${ciclo!.nombre}` : 'Nuevo ciclo biológico'}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('ciclossection.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
         </div>
@@ -123,7 +126,7 @@ function CicloModal({
         {saveError && (
           <Alert
             variant="error"
-            title={saveError.status === 412 ? 'Conflicto de edición' : 'Error al guardar'}
+            title={saveError.status === 412 ? t('ciclossection.conflicto_de_edicion') : t('ciclossection.error_al_guardar')}
             description={saveError.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
@@ -132,15 +135,15 @@ function CicloModal({
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
             <Input
-              label="Nombre"
+              label={t('ciclossection.nombre')}
               required
               aria-required="true"
-              placeholder="Ej: Ciclo de crecimiento, Fase de engorde…"
+              placeholder={t('ciclossection.ej_ciclo_de_crecimiento_fase_de_engorde')}
               error={errors.nombre?.message}
               {...register('nombre', {
-                required: 'El nombre es obligatorio.',
-                minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                maxLength: { value: 50, message: 'Máximo 50 caracteres.' },
+                required: t('ciclossection.el_nombre_es_obligatorio'),
+                minLength: { value: 3, message: t('ciclossection.minimo_3_caracteres') },
+                maxLength: { value: 50, message: t('ciclossection.maximo_50_caracteres') },
               })}
             />
             <Input
@@ -151,21 +154,19 @@ function CicloModal({
               placeholder="Ej: 90"
               error={errors.duracion_dias?.message}
               {...register('duracion_dias', {
-                required: 'La duración es obligatoria.',
-                min: { value: 1, message: 'Mínimo 1 día.' },
-                max: { value: 9999, message: 'Máximo 9999 días.' },
+                required: t('ciclossection.la_duracion_es_obligatoria'),
+                min: { value: 1, message: t('ciclossection.minimo_1_dia') },
+                max: { value: 9999, message: t('ciclossection.maximo_9999_dias') },
                 validate: (v) => Number.isInteger(Number(v)) || 'Debe ser un número entero.',
               })}
             />
             <div>
-              <label htmlFor="ciclo-desc" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>
-                Descripción
-              </label>
+              <label htmlFor="ciclo-desc" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('ciclossection.descripcion')}</label>
               <textarea
                 id="ciclo-desc"
                 style={{ width: '100%', minHeight: 72, padding: 'var(--s3)', borderRadius: 'var(--r-md)', border: '1.5px solid var(--surface-border)', background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-sans)', resize: 'vertical', outline: 'none' }}
-                placeholder="Descripción opcional…"
-                {...register('descripcion', { maxLength: { value: 255, message: 'Máximo 255 caracteres.' } })}
+                placeholder={t('ciclossection.descripcion_opcional')}
+                {...register('descripcion', { maxLength: { value: 255, message: t('ciclossection.maximo_255_caracteres') } })}
               />
               {errors.descripcion && (
                 <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
@@ -176,7 +177,7 @@ function CicloModal({
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
-            <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Cancelar</Button>
+            <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('ciclossection.cancelar')}</Button>
             <Button type="submit" variant="primary" size="md" loading={saving}>
               {modoEditar ? 'Guardar cambios' : 'Registrar ciclo'}
             </Button>
@@ -188,6 +189,7 @@ function CicloModal({
 }
 
 function ConfirmDesactivar({ ciclo, saving, onCancel, onConfirm }: { ciclo: CicloBiologicoResponse; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const { t } = useT('configuration');
   return (
     <div
       role="dialog"
@@ -196,13 +198,13 @@ function ConfirmDesactivar({ ciclo, saving, onCancel, onConfirm }: { ciclo: Cicl
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>Confirmar desactivación</h2>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('ciclossection.confirmar_desactivacion')}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>
           ¿Deseas desactivar el ciclo "{ciclo.nombre}"? Los datos históricos permanecerán accesibles.
         </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>Cancelar</Button>
-          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>Desactivar</Button>
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('ciclossection.cancelar')}</Button>
+          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{t('ciclossection.desactivar')}</Button>
         </div>
       </div>
     </div>
@@ -210,6 +212,7 @@ function ConfirmDesactivar({ ciclo, saving, onCancel, onConfirm }: { ciclo: Cicl
 }
 
 export function CiclosSection({ idEspecie }: Props) {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear  = usePermission(17, 1);
   const puedeEditar = usePermission(17, 3);
@@ -236,7 +239,7 @@ export function CiclosSection({ idEspecie }: Props) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <div>
-          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Ciclos Biológicos</h3>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('ciclossection.ciclos_biologicos')}</h3>
           {!loading && (
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0, fontFamily: 'var(--font-mono)' }}>
               {activos} activos · {ciclos.length - activos} inactivos
@@ -244,26 +247,24 @@ export function CiclosSection({ idEspecie }: Props) {
           )}
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <Button variant="ghost" size="sm" onClick={() => cargar(idEspecie)} aria-label="Recargar ciclos">
+          <Button variant="ghost" size="sm" onClick={() => cargar(idEspecie)} aria-label={t('ciclossection.recargar_ciclos')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           {puedeCrear && (
             <Button variant="primary" size="sm" onClick={() => setModal({ tipo: 'crear' })} disabled={!online}>
-              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Nuevo ciclo
-            </Button>
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('ciclossection.nuevo_ciclo')}</Button>
           )}
         </div>
       </div>
 
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="warning" title={t('ciclossection.sin_conexion')} description={t('ciclossection.las_acciones_de_escritura_estan')} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {error && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('ciclossection.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {accionError && (
-        <Alert variant="error" title="Error" description={accionError} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('ciclossection.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {loading ? (
@@ -274,9 +275,7 @@ export function CiclosSection({ idEspecie }: Props) {
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
       ) : ciclos.length === 0 ? (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>
-          No hay ciclos registrados para esta especie.
-        </p>
+        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('ciclossection.no_hay_ciclos_registrados_para_esta_especie')}</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { RotateCcw, Save } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -83,6 +84,7 @@ function gridFromLayout(grid: WidgetConfigDTO[], catalogo: WidgetDef[]): GridCel
 
 // ── Confirm modal ─────────────────────────────────────────────────────────────
 function ConfirmModal({ onConfirm, onCancel, saving }: { onConfirm: () => void; onCancel: () => void; saving: boolean }) {
+  const { t } = useT('configuration');
   return (
     <div
       role="dialog"
@@ -100,15 +102,11 @@ function ConfirmModal({ onConfirm, onCancel, saving }: { onConfirm: () => void; 
         border: '1px solid var(--surface-border)', padding: 'var(--s6)',
         width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)',
       }}>
-        <h2 id="restore-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-          Restaurar configuración predeterminada
-        </h2>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>
-          Se cargará el layout predeterminado para tu rol. Los cambios actuales se perderán.
-        </p>
+        <h2 id="restore-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('dashboardlayoutsection.restaurar_configuracion_predeterminada')}</h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{t('dashboardlayoutsection.se_cargara_el_layout_predeterminado_para_tu')}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>Cancelar</Button>
-          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>Restaurar</Button>
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('dashboardlayoutsection.cancelar')}</Button>
+          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{t('dashboardlayoutsection.restaurar')}</Button>
         </div>
       </div>
     </div>
@@ -117,6 +115,7 @@ function ConfirmModal({ onConfirm, onCancel, saving }: { onConfirm: () => void; 
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function DashboardLayoutSection() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeEditar = usePermission(25, 3);
 
@@ -264,12 +263,8 @@ export function DashboardLayoutSection() {
       {/* Section header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s5)' }}>
         <div>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Dashboard Personalizable
-          </h2>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            Organiza los widgets en la grilla 4×3. Selecciona un widget del catálogo y haz clic en una celda vacía para colocarlo.
-          </p>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('dashboardlayoutsection.dashboard_personalizable')}</h2>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('dashboardlayoutsection.organiza_los_widgets_en_la_grilla_43')}</p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s3)', flexShrink: 0 }}>
           <Button
@@ -278,9 +273,7 @@ export function DashboardLayoutSection() {
             disabled={!canAct || saving}
             onClick={() => setConfirmRestore(true)}
           >
-            <RotateCcw size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Restaurar predeterminado
-          </Button>
+            <RotateCcw size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('dashboardlayoutsection.restaurar_predeterminado')}</Button>
           <Button
             variant="primary"
             size="sm"
@@ -288,23 +281,21 @@ export function DashboardLayoutSection() {
             disabled={!canAct || saving}
             onClick={handleGuardar}
           >
-            <Save size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Guardar configuración
-          </Button>
+            <Save size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('dashboardlayoutsection.guardar_configuracion')}</Button>
         </div>
       </div>
 
       {/* Alerts */}
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="warning" title={t('dashboardlayoutsection.sin_conexion')} description={t('dashboardlayoutsection.las_acciones_de_escritura_estan')} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {error && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('dashboardlayoutsection.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {saveError && (
         <Alert
           variant="error"
-          title={saveError.code === 'CONFLICTO_PERFIL_MODIFICADO' ? 'Configuración desactualizada' : 'Error al guardar'}
+          title={saveError.code === 'CONFLICTO_PERFIL_MODIFICADO' ? t('dashboardlayoutsection.configuracion_desactualizada') : t('dashboardlayoutsection.error_al_guardar')}
           description={saveError.message}
           style={{ marginBottom: 'var(--s4)' }}
         />
@@ -312,20 +303,20 @@ export function DashboardLayoutSection() {
       {limiteAviso && (
         <Alert
           variant="warning"
-          title="Límite de widgets alcanzado"
+          title={t('dashboardlayoutsection.limite_de_widgets_alcanzado')}
           description={`El dashboard permite un máximo de ${MAX_WIDGETS} elementos activos simultáneamente. Por favor, desactive un widget antes de agregar uno nuevo.`}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
       {saved && (
-        <Alert variant="success" title="Guardado" description="El layout del dashboard se actualizó correctamente." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="success" title={t('dashboardlayoutsection.guardado')} description={t('dashboardlayoutsection.el_layout_del_dashboard_se_actualizo')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {selectedKey && (
         <Alert
           variant="info"
           title={`Widget seleccionado: ${widgets.find((w) => w.key === selectedKey)?.nombre}`}
-          description="Haz clic en una celda vacía de la grilla para colocarlo. Haz clic en el widget del catálogo nuevamente para deseleccionar."
+          description={t('dashboardlayoutsection.haz_clic_en_una_celda_vacia_de_la_grilla')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
@@ -427,9 +418,7 @@ export function DashboardLayoutSection() {
           overflow: 'hidden',
         }}>
           <div style={{ padding: 'var(--s3) var(--s4)', borderBottom: '1px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Catálogo de Widgets
-            </div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('dashboardlayoutsection.catalogo_de_widgets')}</div>
           </div>
           <div style={{ padding: 'var(--s3)', maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
             {grupos.map((grupo) => {

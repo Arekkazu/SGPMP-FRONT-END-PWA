@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { RefreshCw, Radio, CheckCircle2, AlertTriangle, AlertOctagon, CircleOff, Filter } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -35,6 +36,7 @@ function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: n
 }
 
 export function MonitoreoView() {
+  const { t } = useT('telemetry');
   const puedeVer = usePermission(RECURSO_MONITOREO, ACCION_R);
   const online = useOnlineStatus();
   const { sensores, unidades, loading, refreshing, error, fromCache, actualizadoEn, cargar } = useMonitoreo();
@@ -93,9 +95,7 @@ export function MonitoreoView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            <Radio size={20} aria-hidden />
-            Monitoreo en Tiempo Real
-          </h1>
+            <Radio size={20} aria-hidden />{t('monitoreoview.monitoreo_en_tiempo_real')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : `${kpis.total} sensor(es)`}
             {actualizadoEn && ` · actualizado ${horaCaptura(new Date(actualizadoEn).toISOString())}`}
@@ -107,19 +107,19 @@ export function MonitoreoView() {
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: '2px var(--s2)' }}>
             <Filter size={13} aria-hidden style={{ color: 'var(--text-muted)' }} />
             <input
-              aria-label="Filtrar por ID de infraestructura"
-              placeholder="ID infra."
+              aria-label={t('monitoreoview.filtrar_por_id_de_infraestructura')}
+              placeholder={t('monitoreoview.id_infra')}
               type="number"
               value={filtroInfra}
               onChange={(e) => setFiltroInfra(e.target.value)}
               style={{ width: 78, border: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '13px', outline: 'none' }}
             />
           </span>
-          <Button variant={autoRefresh ? 'secondary' : 'ghost'} size="sm" onClick={() => setAutoRefresh((v) => !v)} title="Auto-refresco cada 30 s">
+          <Button variant={autoRefresh ? 'secondary' : 'ghost'} size="sm" onClick={() => setAutoRefresh((v) => !v)} title={t('monitoreoview.auto_refresco_cada_30_s')}>
             <RefreshCw size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
             Auto {autoRefresh ? 'ON' : 'OFF'}
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => cargar(filtros)} aria-label="Refrescar ahora">
+          <Button variant="ghost" size="sm" onClick={() => cargar(filtros)} aria-label={t('monitoreoview.refrescar_ahora')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
         </div>
@@ -127,13 +127,13 @@ export function MonitoreoView() {
 
       <div style={{ padding: 'var(--s7)' }}>
         {!online && (
-          <Alert variant="warning" title="Sin conexión" description="Mostrando el último dashboard cacheado. El auto-refresco está pausado." style={{ marginBottom: 'var(--s4)' }} />
+          <Alert variant="warning" title={t('monitoreoview.sin_conexion')} description={t('monitoreoview.mostrando_el_ultimo_dashboard_cacheado_el')} style={{ marginBottom: 'var(--s4)' }} />
         )}
         {fromCache && online && (
-          <Alert variant="info" title="Datos desde caché" description="No se pudo actualizar el dashboard; se muestran los últimos datos disponibles." style={{ marginBottom: 'var(--s4)' }} />
+          <Alert variant="info" title={t('monitoreoview.datos_desde_cache')} description="No se pudo actualizar el dashboard; se muestran los últimos datos disponibles." style={{ marginBottom: 'var(--s4)' }} />
         )}
         {error && !fromCache && (
-          <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso al monitoreo' : 'Error al cargar el dashboard'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+          <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('monitoreoview.sin_acceso_al_monitoreo') : t('monitoreoview.error_al_cargar_el_dashboard')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
         )}
 
         {/* KPIs globales */}
@@ -153,7 +153,7 @@ export function MonitoreoView() {
             <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
           </div>
         ) : sensores.length === 0 && !error ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay sensores para mostrar con los filtros actuales.</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('monitoreoview.no_hay_sensores_para_mostrar_con_los')}</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s7)' }}>
             {unidades.map((u) => {

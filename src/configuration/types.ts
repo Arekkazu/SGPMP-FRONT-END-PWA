@@ -402,9 +402,13 @@ export interface GuardarTemaDTO {
 // Idioma
 // =====================================================================
 export interface IdiomaResueltoResponse {
+  /** Siempre 'es-CO' o 'en-US'. El backend rechaza 'es'/'en' con 400. */
   locale_code: string;
-  fuente: 'personal' | 'global' | 'default';
+  /** El backend responde 'defecto', no 'default'. */
+  fuente: 'personal' | 'global' | 'defecto';
   id_preferencia_idioma: number | null;
+  /** Se reenvía en el PATCH para detectar el conflicto de perfil (409). */
+  version_perfil?: number | null;
 }
 
 export interface PreferenciaIdiomaResponse {
@@ -413,10 +417,13 @@ export interface PreferenciaIdiomaResponse {
   locale_code: string;
   es_por_defecto: boolean;
   fecha_actualizacion: string | null;
+  version_perfil?: number | null;
 }
 
 export interface GuardarIdiomaDTO {
   locale_code: string;
+  /** Opcional: omitirla salta la comprobación de concurrencia en el backend. */
+  version_perfil?: number | null;
 }
 
 // =====================================================================

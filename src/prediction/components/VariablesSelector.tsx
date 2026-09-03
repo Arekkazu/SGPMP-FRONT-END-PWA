@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { CATALOGO_VARIABLES } from '../lib/catalogos';
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
  * Regla del backend: entre 2 y 6 variables. La validación de rango se hace en el form.
  */
 export function VariablesSelector({ seleccionadas, onChange, error, disabled }: Props) {
+  const { t } = useT('prediction');
   const toggle = (id: number) => {
     if (disabled) return;
     onChange(seleccionadas.includes(id) ? seleccionadas.filter((x) => x !== id) : [...seleccionadas, id]);
@@ -22,7 +24,7 @@ export function VariablesSelector({ seleccionadas, onChange, error, disabled }: 
     <div>
       <div
         role="group"
-        aria-label="Variables sensóricas asociadas"
+        aria-label={t('variablesselector.variables_sensoricas_asociadas')}
         style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)' }}
       >
         {CATALOGO_VARIABLES.map((v) => {
