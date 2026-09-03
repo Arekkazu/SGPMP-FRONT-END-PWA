@@ -125,7 +125,7 @@ function PatologiaModal({
         {saveError && (
           <Alert
             variant="error"
-            title={saveError.status === 412 ? 'Conflicto de edición' : 'Error al guardar'}
+            title={saveError.status === 412 ? t('patologiassection.conflicto_de_edicion') : t('patologiassection.error_al_guardar')}
             description={saveError.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
@@ -140,9 +140,9 @@ function PatologiaModal({
               placeholder={t('patologiassection.ej_mastitis_fiebre_aftosa')}
               error={errors.nombre?.message}
               {...register('nombre', {
-                required: 'El nombre es obligatorio.',
-                minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                maxLength: { value: 50, message: 'Máximo 50 caracteres.' },
+                required: t('patologiassection.el_nombre_es_obligatorio'),
+                minLength: { value: 3, message: t('patologiassection.minimo_3_caracteres') },
+                maxLength: { value: 50, message: t('patologiassection.maximo_50_caracteres') },
               })}
             />
             <div>
@@ -151,7 +151,7 @@ function PatologiaModal({
                 id="patologia-desc"
                 style={{ width: '100%', minHeight: 80, padding: 'var(--s3)', borderRadius: 'var(--r-md)', border: '1.5px solid var(--surface-border)', background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-sans)', resize: 'vertical', outline: 'none' }}
                 placeholder={t('patologiassection.descripcion_opcional_de_la_patologia')}
-                {...register('descripcion', { maxLength: { value: 255, message: 'Máximo 255 caracteres.' } })}
+                {...register('descripcion', { maxLength: { value: 255, message: t('patologiassection.maximo_255_caracteres') } })}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--s1)' }}>
                 {errors.descripcion ? (

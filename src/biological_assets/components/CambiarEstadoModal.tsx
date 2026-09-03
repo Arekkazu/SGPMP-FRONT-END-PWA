@@ -104,7 +104,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
         <Alert
           variant="info"
           title={t('cambiarestadomodal.sin_transiciones_disponibles')}
-          description={actual === 'BAJA' ? 'El estado BAJA es terminal.' : 'No hay cambios de estado manuales disponibles (usa «Cerrar ciclo» si aplica).'}
+          description={actual === 'BAJA' ? t('cambiarestadomodal.el_estado_baja_es_terminal') : t('cambiarestadomodal.no_hay_cambios_de_estado_manuales')}
         />
       ) : (
         <form onSubmit={handleSubmit(submit)} noValidate>
@@ -115,7 +115,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
               <select
                 id="estado-nuevo"
                 style={SELECT}
-                {...register('estado_nuevo', { required: 'Selecciona el nuevo estado.' })}
+                {...register('estado_nuevo', { required: t('cambiarestadomodal.selecciona_el_nuevo_estado') })}
               >
                 <option value="">{t('cambiarestadomodal.seleccionar')}</option>
                 {destinos.map((e) => (
@@ -133,7 +133,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
               label={t('cambiarestadomodal.fecha_del_cambio')} required type="date" max={HOY}
               error={errors.fecha_cambio_estado?.message}
               {...register('fecha_cambio_estado', {
-                required: 'La fecha es obligatoria.',
+                required: t('cambiarestadomodal.la_fecha_es_obligatoria'),
                 validate: (val) => val <= HOY || 'No puede ser una fecha futura.',
               })}
             />
@@ -146,7 +146,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
                 style={TEXTAREA}
                 placeholder={t('cambiarestadomodal.describe_la_razon_del_cambio_de_estado')}
                 {...register('motivo_cambio', {
-                  required: 'El motivo es obligatorio.',
+                  required: t('cambiarestadomodal.el_motivo_es_obligatorio'),
                   validate: (val) => val.trim().length > 0 || 'El motivo no puede estar vacío.',
                 })}
               />

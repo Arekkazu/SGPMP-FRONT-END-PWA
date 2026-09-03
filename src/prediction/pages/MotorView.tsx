@@ -60,7 +60,7 @@ export function MotorView() {
       <div style={{ padding: 'var(--s7)' }}>
         {!online && <Alert variant="warning" title={t('motorview.sin_conexion')} description={t('motorview.mostrando_configuracion_cacheada_los')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('motorview.datos_desde_cache')} description="No se pudo conectar; se muestra la última configuración disponible." style={{ marginBottom: 'var(--s4)' }} />}
-        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a la configuración' : 'Error al cargar la configuración'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('motorview.sin_acceso_a_la_configuracion') : t('motorview.error_al_cargar_la_configuracion')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
         {!puedeEditar && !error && <Alert variant="info" title={t('motorview.solo_lectura')} description={t('motorview.tu_rol_puede_consultar_la_configuracion')} style={{ marginBottom: 'var(--s4)' }} />}
 
         {/* Tabs por tipo de modelo */}

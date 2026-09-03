@@ -72,7 +72,7 @@ export function VerificarIntegridadModal({ verificando, verificacion, verificarE
       )}
 
       {verificarError && (
-        <Alert variant={verificarError.status === 403 ? 'warning' : 'error'} title={verificarError.status === 403 ? 'Sin permiso para verificar' : 'No se pudo verificar la integridad'} description={verificarError.message} style={{ marginTop: 'var(--s4)' }} />
+        <Alert variant={verificarError.status === 403 ? 'warning' : 'error'} title={verificarError.status === 403 ? t('verificarintegridadmodal.sin_permiso_para_verificar') : t('verificarintegridadmodal.no_se_pudo_verificar_la_integridad')} description={verificarError.message} style={{ marginTop: 'var(--s4)' }} />
       )}
     </ModalShell>
   );

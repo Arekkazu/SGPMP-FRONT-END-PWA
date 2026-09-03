@@ -178,7 +178,7 @@ export function EventosSection({ idActivo, tipo, estadoActual, onChanged }: Prop
           onClose={cerrar}
           onConfirmar={async (dto) => {
             const res = await registrarCrecimiento(dto);
-            if (res) { setAviso(res.fase_avanzada ? 'Registrado. Se avanzó de fase automáticamente.' : 'Evento de crecimiento registrado.'); await refrescar(); return true; }
+            if (res) { setAviso(res.fase_avanzada ? t('eventossection.registrado_se_avanzo_de_fase_automaticamente') : t('eventossection.evento_de_crecimiento_registrado')); await refrescar(); return true; }
             return false;
           }}
         />
@@ -190,7 +190,7 @@ export function EventosSection({ idActivo, tipo, estadoActual, onChanged }: Prop
           onClose={cerrar}
           onConfirmar={async (dto) => {
             const res = await registrarSanitario(dto);
-            if (res) { setAviso(res.cambio_estado ? 'Registrado. Se aplicó un cambio de estado.' : 'Evento sanitario registrado.'); await refrescar(); return true; }
+            if (res) { setAviso(res.cambio_estado ? t('eventossection.registrado_se_aplico_un_cambio_de_estado') : 'Evento sanitario registrado.'); await refrescar(); return true; }
             return false;
           }}
         />

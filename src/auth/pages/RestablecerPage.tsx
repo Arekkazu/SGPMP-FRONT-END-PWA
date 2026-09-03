@@ -120,8 +120,8 @@ export function RestablecerPage() {
               trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               onTrailingClick={() => setShowPw((v) => !v)}
               {...register('nueva_contrasena', {
-                required: 'La contraseña es obligatoria.',
-                pattern: { value: PW_REGEX, message: 'La contraseña no cumple los requisitos de seguridad.' },
+                required: t('restablecerpage.la_contrasena_es_obligatoria'),
+                pattern: { value: PW_REGEX, message: t('restablecerpage.la_contrasena_no_cumple_los_requisitos_de') },
               })}
             />
             <div className="pw-rules">
@@ -161,7 +161,7 @@ export function RestablecerPage() {
               trailingIcon={showConfirmPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               onTrailingClick={() => setShowConfirmPw((v) => !v)}
               {...register('confirmar_contrasena', {
-                required: 'Confirma tu contraseña.',
+                required: t('restablecerpage.confirma_tu_contrasena'),
                 validate: (v) => v === getValues('nueva_contrasena') || 'Las contraseñas no coinciden.',
               })}
             />

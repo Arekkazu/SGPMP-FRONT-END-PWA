@@ -57,7 +57,7 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
                     {p.variables_sensoricas_asociadas.map((v) => (
                       <span
                         key={v.id_variable_ambiental}
-                        title={v.es_variable_critica ? 'Variable crítica' : undefined}
+                        title={v.es_variable_critica ? t('patologiastable.variable_critica') : undefined}
                         style={{
                           fontSize: '11px',
                           padding: '1px var(--s2)',
@@ -84,7 +84,7 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
                     disabled={!puedeEditar || bloqueada}
                     onClick={() => onEditar(p)}
                     aria-label={`Editar ${p.nombre_patologia}`}
-                    title={bloqueada ? 'Las patologías base no se pueden editar' : 'Editar'}
+                    title={bloqueada ? t('patologiastable.las_patologias_base_no_se_pueden_editar') : 'Editar'}
                   >
                     <Pencil size={16} aria-hidden />
                   </Button>
@@ -94,7 +94,7 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
                     disabled={!puedeDesactivar || bloqueada || !p.es_activo}
                     onClick={() => onDesactivar(p)}
                     aria-label={`Inactivar ${p.nombre_patologia}`}
-                    title={bloqueada ? 'Las patologías base no se pueden inactivar' : 'Inactivar'}
+                    title={bloqueada ? t('patologiastable.las_patologias_base_no_se_pueden_inactivar') : 'Inactivar'}
                   >
                     <Ban size={16} aria-hidden />
                   </Button>

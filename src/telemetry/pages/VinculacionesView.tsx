@@ -75,7 +75,7 @@ export function VinculacionesView() {
 
       <div style={{ padding: 'var(--s7)' }}>
         {!online && <Alert variant="warning" title={t('vinculacionesview.sin_conexion')} description={t('vinculacionesview.resolver_y_corregir_estan_deshabilitados')} style={{ marginBottom: 'var(--s4)' }} />}
-        {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a vinculaciones' : 'Error al cargar vinculaciones'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('vinculacionesview.sin_acceso_a_vinculaciones') : t('vinculacionesview.error_al_cargar_vinculaciones')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <VinculacionesFiltros
           value={filtros}

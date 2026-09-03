@@ -64,7 +64,7 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, on
                   variant={m.variant}
                   size="sm"
                   disabled={!puedeGestionar || !online}
-                  title={!puedeGestionar ? 'Sin permiso' : !online ? 'Sin conexión' : m.label}
+                  title={!puedeGestionar ? t('alertadetallemodal.sin_permiso') : !online ? t('alertadetallemodal.sin_conexion') : m.label}
                   onClick={() => onAccion(a)}
                 >
                   {m.icon}{m.label}

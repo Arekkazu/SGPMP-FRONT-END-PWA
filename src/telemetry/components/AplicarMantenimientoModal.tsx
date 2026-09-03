@@ -82,7 +82,7 @@ export function AplicarMantenimientoModal({ idDispositivo, estadoActual, saving,
         value={motivo}
         maxLength={500}
         onChange={(e) => setMotivo(e.target.value)}
-        placeholder={enMantenimiento ? 'Ej: mantenimiento resuelto, sensor recalibrado…' : 'Ej: revisión programada, reemplazo de batería…'}
+        placeholder={enMantenimiento ? 'Ej: mantenimiento resuelto, sensor recalibrado…' : t('aplicarmantenimientomodal.ej_revision_programada_reemplazo_de_bateria')}
       />
 
       {saveError && (
@@ -97,7 +97,7 @@ export function AplicarMantenimientoModal({ idDispositivo, estadoActual, saving,
                   ? 'Dispositivo no encontrado'
                   : 'No se pudo aplicar el cambio'
           }
-          description={saveError.status != null && saveError.status >= 500 ? 'Ocurrió un error del servidor. Intenta de nuevo más tarde.' : saveError.message}
+          description={saveError.status != null && saveError.status >= 500 ? t('aplicarmantenimientomodal.ocurrio_un_error_del_servidor_intenta_de') : saveError.message}
           style={{ marginTop: 'var(--s4)' }}
         />
       )}

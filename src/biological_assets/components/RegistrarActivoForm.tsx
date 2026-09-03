@@ -201,8 +201,8 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
             hint="ID numérico de la especie del catálogo"
             error={errors.id_especie?.message}
             {...register('id_especie', {
-              required: 'La especie es obligatoria.',
-              min: { value: 1, message: 'ID inválido.' },
+              required: t('registraractivoform.la_especie_es_obligatoria'),
+              min: { value: 1, message: t('registraractivoform.id_invalido') },
             })}
           />
           <Input
@@ -211,18 +211,18 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
             hint="ID de la infraestructura donde se ubica"
             error={errors.id_infraestructura?.message}
             {...register('id_infraestructura', {
-              required: 'La infraestructura es obligatoria.',
-              min: { value: 1, message: 'ID inválido.' },
+              required: t('registraractivoform.la_infraestructura_es_obligatoria'),
+              min: { value: 1, message: t('registraractivoform.id_invalido') },
             })}
           />
           <Input
             label={t('registraractivoform.fecha_de_inicio_de_ciclo')} required type="date" max={HOY}
             error={errors.fecha_inicio_ciclo?.message}
             {...register('fecha_inicio_ciclo', {
-              required: 'La fecha de inicio es obligatoria.',
+              required: t('registraractivoform.la_fecha_de_inicio_es_obligatoria'),
               validate: (val) => {
-                if (val > HOY) return 'No puede ser una fecha futura.';
-                if (val < '1970-01-01') return 'No puede ser anterior a 1970.';
+                if (val > HOY) return t('registraractivoform.no_puede_ser_una_fecha_futura');
+                if (val < '1970-01-01') return t('registraractivoform.no_puede_ser_anterior_a_1970');
                 return true;
               },
             })}
@@ -251,7 +251,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                 placeholder="Ej: 1500000"
                 error={errors.costo_adquisicion?.message}
                 {...register('costo_adquisicion', {
-                  required: requiereSoporte ? 'El costo es obligatorio para compra/donación.' : false,
+                  required: requiereSoporte ? t('registraractivoform.el_costo_es_obligatorio_para_compra_donacion') : false,
                   validate: (val) =>
                     !requiereSoporte || Number(val) > 0 || 'El costo debe ser mayor a 0.',
                 })}
@@ -261,7 +261,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                 placeholder={t('registraractivoform.ej_factura_n_o_00123')}
                 error={errors.soporte_documental?.message}
                 {...register('soporte_documental', {
-                  required: requiereSoporte ? 'El soporte documental es obligatorio.' : false,
+                  required: requiereSoporte ? t('registraractivoform.el_soporte_documental_es_obligatorio') : false,
                 })}
               />
             </>
@@ -290,13 +290,13 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
               label={t('registraractivoform.identificador')} required
               placeholder={t('registraractivoform.ej_bov_2024_001')}
               error={errors.identificador?.message}
-              {...register('identificador', { required: 'El identificador es obligatorio para activos individuales.' })}
+              {...register('identificador', { required: t('registraractivoform.el_identificador_es_obligatorio_para') })}
             />
             <Input
               label={t('registraractivoform.raza')} required
               placeholder={t('registraractivoform.ej_holstein')}
               error={errors.raza?.message}
-              {...register('raza', { required: 'La raza es obligatoria.' })}
+              {...register('raza', { required: t('registraractivoform.la_raza_es_obligatoria') })}
             />
             <div>
               <label style={FIELD_LABEL} htmlFor="sexo">{t('registraractivoform.sexo')}<span aria-hidden="true">*</span></label>
@@ -311,7 +311,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
               label={t('registraractivoform.fecha_de_nacimiento')} required type="date" max={HOY}
               error={errors.fecha_nacimiento?.message}
               {...register('fecha_nacimiento', {
-                required: 'La fecha de nacimiento es obligatoria.',
+                required: t('registraractivoform.la_fecha_de_nacimiento_es_obligatoria'),
                 validate: (val) => val <= HOY || 'No puede ser una fecha futura.',
               })}
             />
@@ -331,8 +331,8 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
               placeholder="Ej: 1800"
               error={errors.cantidad_inicial?.message}
               {...register('cantidad_inicial', {
-                required: 'La cantidad inicial es obligatoria para lotes.',
-                min: { value: 1, message: 'Debe ser mayor a 0.' },
+                required: t('registraractivoform.la_cantidad_inicial_es_obligatoria_para'),
+                min: { value: 1, message: t('registraractivoform.debe_ser_mayor_a_0') },
               })}
             />
             <Input

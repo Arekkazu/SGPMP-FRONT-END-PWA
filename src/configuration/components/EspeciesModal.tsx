@@ -119,7 +119,7 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
         {saveError && (
           <Alert
             variant={saveError.status === 412 ? 'error' : 'error'}
-            title={saveError.status === 412 ? 'Conflicto de edición' : 'Error al guardar'}
+            title={saveError.status === 412 ? t('especiesmodal.conflicto_de_edicion') : t('especiesmodal.error_al_guardar')}
             description={saveError.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
@@ -134,10 +134,10 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
               placeholder={t('especiesmodal.ej_bovino_avicola_porcino')}
               error={errors.nombre?.message}
               {...register('nombre', {
-                required: 'El nombre es obligatorio.',
-                minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                maxLength: { value: 50, message: 'Máximo 50 caracteres.' },
-                pattern: { value: NOMBRE_REGEX, message: 'Solo letras y espacios.' },
+                required: t('especiesmodal.el_nombre_es_obligatorio'),
+                minLength: { value: 3, message: t('especiesmodal.minimo_3_caracteres') },
+                maxLength: { value: 50, message: t('especiesmodal.maximo_50_caracteres') },
+                pattern: { value: NOMBRE_REGEX, message: t('especiesmodal.solo_letras_y_espacios') },
               })}
             />
 
@@ -151,7 +151,7 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
                 style={TEXTAREA}
                 placeholder={t('especiesmodal.descripcion_opcional_de_la_especie')}
                 {...register('descripcion', {
-                  maxLength: { value: 255, message: 'Máximo 255 caracteres.' },
+                  maxLength: { value: 255, message: t('especiesmodal.maximo_255_caracteres') },
                 })}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--s1)' }}>

@@ -348,9 +348,9 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
               placeholder={t('sensoressection.ej_centro_del_galpon_cerca_al_bebedero')}
               error={errors.punto_instalacion?.message}
               {...register('punto_instalacion', {
-                required: 'Indica el punto de instalación del sensor.',
-                minLength: { value: 5, message: 'Mínimo 5 caracteres.' },
-                maxLength: { value: 100, message: 'Máximo 100 caracteres.' },
+                required: t('sensoressection.indica_el_punto_de_instalacion_del_sensor'),
+                minLength: { value: 5, message: t('sensoressection.minimo_5_caracteres') },
+                maxLength: { value: 100, message: t('sensoressection.maximo_100_caracteres') },
               })}
             />
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s2)', marginBottom: 'var(--s5)' }}>{t('sensoressection.describe_la_ubicacion_fisica_exacta_del')}</p>

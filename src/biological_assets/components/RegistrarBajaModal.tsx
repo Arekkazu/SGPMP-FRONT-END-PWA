@@ -78,7 +78,7 @@ export function RegistrarBajaModal({ esPoblacional, saving, saveError, onClose, 
           <Input
             label={t('registrarbajamodal.fecha_de_baja')} required type="date" max={HOY}
             error={errors.fecha_baja?.message}
-            {...register('fecha_baja', { required: 'La fecha es obligatoria.' })}
+            {...register('fecha_baja', { required: t('registrarbajamodal.la_fecha_es_obligatoria') })}
           />
 
           {esPoblacional && (
@@ -93,7 +93,7 @@ export function RegistrarBajaModal({ esPoblacional, saving, saveError, onClose, 
             label={t('registrarbajamodal.motivo_de_la_baja')} required error={errors.motivo_baja?.message}
             placeholder={t('registrarbajamodal.describe_el_motivo')}
             {...register('motivo_baja', {
-              required: 'El motivo es obligatorio.',
+              required: t('registrarbajamodal.el_motivo_es_obligatorio'),
               validate: (v) => v.trim().length > 0 || 'El motivo no puede estar vacío.',
             })}
           />

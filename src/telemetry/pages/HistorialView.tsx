@@ -69,7 +69,7 @@ export function HistorialView() {
         {error && (
           <Alert
             variant={error.status === 403 ? 'warning' : 'error'}
-            title={error.status === 403 ? 'Sin acceso al historial' : error.status === 400 ? 'Parámetros inválidos' : 'Error al cargar el historial'}
+            title={error.status === 403 ? t('historialview.sin_acceso_al_historial') : error.status === 400 ? t('historialview.parametros_invalidos') : t('historialview.error_al_cargar_el_historial')}
             description={error.message}
             style={{ marginBottom: 'var(--s4)' }}
           />

@@ -133,7 +133,7 @@ export function MonitoreoView() {
           <Alert variant="info" title={t('monitoreoview.datos_desde_cache')} description="No se pudo actualizar el dashboard; se muestran los últimos datos disponibles." style={{ marginBottom: 'var(--s4)' }} />
         )}
         {error && !fromCache && (
-          <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso al monitoreo' : 'Error al cargar el dashboard'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+          <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('monitoreoview.sin_acceso_al_monitoreo') : t('monitoreoview.error_al_cargar_el_dashboard')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
         )}
 
         {/* KPIs globales */}

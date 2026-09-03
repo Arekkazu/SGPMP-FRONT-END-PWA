@@ -126,7 +126,7 @@ function CicloModal({
         {saveError && (
           <Alert
             variant="error"
-            title={saveError.status === 412 ? 'Conflicto de edición' : 'Error al guardar'}
+            title={saveError.status === 412 ? t('ciclossection.conflicto_de_edicion') : t('ciclossection.error_al_guardar')}
             description={saveError.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
@@ -141,9 +141,9 @@ function CicloModal({
               placeholder={t('ciclossection.ej_ciclo_de_crecimiento_fase_de_engorde')}
               error={errors.nombre?.message}
               {...register('nombre', {
-                required: 'El nombre es obligatorio.',
-                minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                maxLength: { value: 50, message: 'Máximo 50 caracteres.' },
+                required: t('ciclossection.el_nombre_es_obligatorio'),
+                minLength: { value: 3, message: t('ciclossection.minimo_3_caracteres') },
+                maxLength: { value: 50, message: t('ciclossection.maximo_50_caracteres') },
               })}
             />
             <Input
@@ -154,9 +154,9 @@ function CicloModal({
               placeholder="Ej: 90"
               error={errors.duracion_dias?.message}
               {...register('duracion_dias', {
-                required: 'La duración es obligatoria.',
-                min: { value: 1, message: 'Mínimo 1 día.' },
-                max: { value: 9999, message: 'Máximo 9999 días.' },
+                required: t('ciclossection.la_duracion_es_obligatoria'),
+                min: { value: 1, message: t('ciclossection.minimo_1_dia') },
+                max: { value: 9999, message: t('ciclossection.maximo_9999_dias') },
                 validate: (v) => Number.isInteger(Number(v)) || 'Debe ser un número entero.',
               })}
             />
@@ -166,7 +166,7 @@ function CicloModal({
                 id="ciclo-desc"
                 style={{ width: '100%', minHeight: 72, padding: 'var(--s3)', borderRadius: 'var(--r-md)', border: '1.5px solid var(--surface-border)', background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-sans)', resize: 'vertical', outline: 'none' }}
                 placeholder={t('ciclossection.descripcion_opcional')}
-                {...register('descripcion', { maxLength: { value: 255, message: 'Máximo 255 caracteres.' } })}
+                {...register('descripcion', { maxLength: { value: 255, message: t('ciclossection.maximo_255_caracteres') } })}
               />
               {errors.descripcion && (
                 <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>

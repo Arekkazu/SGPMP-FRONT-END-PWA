@@ -58,7 +58,7 @@ export function ResolverVinculacionModal({ vinc, saving, saveError, onConfirm, o
       </div>
 
       {saveError && (
-        <Alert variant={saveError.status === 403 ? 'warning' : 'error'} title={saveError.status === 403 ? 'Sin permiso para resolver' : 'No se pudo resolver la vinculación'} description={saveError.message} style={{ marginTop: 'var(--s4)' }} />
+        <Alert variant={saveError.status === 403 ? 'warning' : 'error'} title={saveError.status === 403 ? t('resolvervinculacionmodal.sin_permiso_para_resolver') : t('resolvervinculacionmodal.no_se_pudo_resolver_la_vinculacion')} description={saveError.message} style={{ marginTop: 'var(--s4)' }} />
       )}
     </ModalShell>
   );

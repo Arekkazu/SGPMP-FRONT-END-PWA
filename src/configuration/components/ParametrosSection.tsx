@@ -213,7 +213,7 @@ export function ParametrosSection() {
             {saveError && (
               <Alert
                 variant="error"
-                title={saveError.status === 412 ? 'Conflicto de edición detectado' : 'Error al guardar'}
+                title={saveError.status === 412 ? t('parametrossection.conflicto_de_edicion_detectado') : t('parametrossection.error_al_guardar')}
                 description={saveError.status === 412
                   ? 'Otro administrador modificó los parámetros mientras editabas. Recarga la página para obtener los valores actuales antes de guardar.'
                   : saveError.message}
@@ -235,7 +235,7 @@ export function ParametrosSection() {
                     {...register('frecuencia_muestreo', {
                       required: 'Campo obligatorio.',
                       valueAsNumber: true,
-                      min: { value: 1, message: 'Mínimo 1 minuto.' },
+                      min: { value: 1, message: t('parametrossection.minimo_1_minuto') },
                       validate: (v) => Number.isInteger(Number(v)) || 'Debe ser un entero positivo.',
                     })}
                   />
@@ -254,7 +254,7 @@ export function ParametrosSection() {
                     {...register('heartbeat', {
                       required: 'Campo obligatorio.',
                       valueAsNumber: true,
-                      min: { value: 1, message: 'Mínimo 1 minuto.' },
+                      min: { value: 1, message: t('parametrossection.minimo_1_minuto') },
                       validate: (v, all) =>
                         Number(v) >= Number(all.frecuencia_muestreo) ||
                         'Debe ser mayor o igual a la frecuencia de muestreo.',

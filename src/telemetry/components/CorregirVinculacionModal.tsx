@@ -72,7 +72,7 @@ export function CorregirVinculacionModal({ vinc, saving, saveError, onConfirm, o
       </div>
 
       {saveError && (
-        <Alert variant={saveError.status === 403 ? 'warning' : 'error'} title={saveError.status === 403 ? 'Sin permiso para corregir' : 'No se pudo corregir la vinculación'} description={saveError.message} style={{ marginTop: 'var(--s4)' }} />
+        <Alert variant={saveError.status === 403 ? 'warning' : 'error'} title={saveError.status === 403 ? t('corregirvinculacionmodal.sin_permiso_para_corregir') : t('corregirvinculacionmodal.no_se_pudo_corregir_la_vinculacion')} description={saveError.message} style={{ marginTop: 'var(--s4)' }} />
       )}
     </ModalShell>
   );

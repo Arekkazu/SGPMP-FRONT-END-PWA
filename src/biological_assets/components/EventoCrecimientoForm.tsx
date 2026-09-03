@@ -72,7 +72,7 @@ export function EventoCrecimientoForm({ esPoblacional, saving, saveError, onClos
         <div style={FORM_COL}>
           <FormSelect
             label={t('eventocrecimientoform.tipo_de_medicion')} required error={errors.tipo_medicion?.message}
-            {...register('tipo_medicion', { required: 'Selecciona el tipo.' })}
+            {...register('tipo_medicion', { required: t('eventocrecimientoform.selecciona_el_tipo') })}
           >
             <option value="PESO">{t('eventocrecimientoform.peso')}</option>
             <option value="TALLA">{t('eventocrecimientoform.talla')}</option>
@@ -83,14 +83,14 @@ export function EventoCrecimientoForm({ esPoblacional, saving, saveError, onClos
             label={t('eventocrecimientoform.valor')} required type="number" min={0} step="0.001"
             error={errors.valor_medicion?.message}
             {...register('valor_medicion', {
-              required: 'El valor es obligatorio.',
+              required: t('eventocrecimientoform.el_valor_es_obligatorio'),
               validate: (v) => Number(v) > 0 || 'Debe ser mayor a 0.',
             })}
           />
 
           <FormSelect
             label={t('eventocrecimientoform.unidad_de_medida')} required error={errors.unidad_medida?.message}
-            {...register('unidad_medida', { required: 'Selecciona la unidad.' })}
+            {...register('unidad_medida', { required: t('eventocrecimientoform.selecciona_la_unidad') })}
           >
             <option value="">{t('eventocrecimientoform.seleccionar')}</option>
             {unidades.map((u) => <option key={u} value={u}>{u}</option>)}

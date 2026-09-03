@@ -103,8 +103,8 @@ export function ReevaluarModal({ saving, saveError, reevaluacion, onConfirm, onC
           {saveError && (
             <Alert
               variant={saveError.status === 403 ? 'warning' : 'error'}
-              title={saveError.status === 403 ? 'Sin permiso para re-evaluar' : 'No se pudo solicitar la re-evaluación'}
-              description={es500 ? 'Ocurrió un error del servidor. Intenta de nuevo más tarde.' : saveError.message}
+              title={saveError.status === 403 ? t('reevaluarmodal.sin_permiso_para_re_evaluar') : t('reevaluarmodal.no_se_pudo_solicitar_la_re_evaluacion')}
+              description={es500 ? t('reevaluarmodal.ocurrio_un_error_del_servidor_intenta_de') : saveError.message}
               style={{ marginTop: 'var(--s4)' }}
             />
           )}

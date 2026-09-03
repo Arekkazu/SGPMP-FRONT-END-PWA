@@ -92,7 +92,7 @@ export function CambiarEstadoAlertaModal({ alerta, estado, saving, saveError, on
       {saveError && (
         <Alert
           variant={saveError.status === 403 ? 'warning' : 'error'}
-          title={saveError.status === 403 ? 'Sin permiso para cambiar el estado' : 'No se pudo actualizar la alerta'}
+          title={saveError.status === 403 ? t('cambiarestadoalertamodal.sin_permiso_para_cambiar_el_estado') : t('cambiarestadoalertamodal.no_se_pudo_actualizar_la_alerta')}
           description={saveError.message}
           style={{ marginTop: 'var(--s4)' }}
         />

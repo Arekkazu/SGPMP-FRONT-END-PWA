@@ -47,7 +47,7 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
 
   return (
     <ModalShell
-      title={modelo ? modelo.nombre_version : 'Versión de modelo'}
+      title={modelo ? modelo.nombre_version : t('modelodetallemodal.version_de_modelo')}
       onClose={onClose}
       maxWidth={720}
       footer={<Button variant="secondary" onClick={onClose}>{t('modelodetallemodal.cerrar')}</Button>}

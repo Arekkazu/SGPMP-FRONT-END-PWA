@@ -48,7 +48,7 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
           error={errors.contrasena_actual?.message}
           trailingIcon={showActual ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
           onTrailingClick={() => setShowActual((v) => !v)}
-          {...register('contrasena_actual', { required: 'La contraseña actual es obligatoria.' })}
+          {...register('contrasena_actual', { required: t('cambiarcontrasenaform.la_contrasena_actual_es_obligatoria') })}
         />
 
         <Input
@@ -60,8 +60,8 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
           trailingIcon={showNueva ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
           onTrailingClick={() => setShowNueva((v) => !v)}
           {...register('nueva_contrasena', {
-            required: 'La nueva contraseña es obligatoria.',
-            pattern: { value: PW_REGEX, message: 'Mínimo 8 caracteres, una mayúscula, un número y un carácter especial.' },
+            required: t('cambiarcontrasenaform.la_nueva_contrasena_es_obligatoria'),
+            pattern: { value: PW_REGEX, message: t('cambiarcontrasenaform.minimo_8_caracteres_una_mayuscula_un_numero') },
           })}
         />
 
@@ -74,7 +74,7 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
           trailingIcon={showConfirm ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
           onTrailingClick={() => setShowConfirm((v) => !v)}
           {...register('confirmar_nueva_contrasena', {
-            required: 'Confirma tu nueva contraseña.',
+            required: t('cambiarcontrasenaform.confirma_tu_nueva_contrasena'),
             validate: (v) => v === getValues('nueva_contrasena') || 'Las contraseñas no coinciden.',
           })}
         />

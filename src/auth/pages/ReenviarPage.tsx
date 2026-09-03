@@ -97,10 +97,10 @@ export function ReenviarPage() {
               autoComplete="email"
               error={errors.correo_electronico?.message}
               {...register('correo_electronico', {
-                required: 'El correo es obligatorio.',
+                required: t('reenviarpage.el_correo_es_obligatorio'),
                 pattern: {
                   value: /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/,
-                  message: 'Formato de correo inválido.',
+                  message: t('reenviarpage.formato_de_correo_invalido'),
                 },
               })}
             />

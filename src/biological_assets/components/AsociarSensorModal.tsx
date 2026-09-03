@@ -59,7 +59,7 @@ export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, s
         <Alert
           variant={saveError.status >= 500 ? 'error' : 'warning'}
           title={t('asociarsensormodal.no_se_pudo_asociar_el_sensor')}
-          description={saveError.status === 403 ? 'Solo Administrador e Ingeniero pueden asociar sensores.' : saveError.message}
+          description={saveError.status === 403 ? t('asociarsensormodal.solo_administrador_e_ingeniero_pueden') : saveError.message}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
@@ -79,17 +79,17 @@ export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, s
           <Input
             label={t('asociarsensormodal.id_dispositivo_iot')} required type="number" min={1}
             error={errors.dispositivo_iot_id?.message}
-            {...register('dispositivo_iot_id', { required: 'El dispositivo es obligatorio.', min: { value: 1, message: 'ID inválido.' } })}
+            {...register('dispositivo_iot_id', { required: t('asociarsensormodal.el_dispositivo_es_obligatorio'), min: { value: 1, message: t('asociarsensormodal.id_invalido') } })}
           />
           <Input
             label={t('asociarsensormodal.id_sensor')} required type="number" min={1}
             error={errors.sensor_id?.message}
-            {...register('sensor_id', { required: 'El sensor es obligatorio.', min: { value: 1, message: 'ID inválido.' } })}
+            {...register('sensor_id', { required: t('asociarsensormodal.el_sensor_es_obligatorio'), min: { value: 1, message: t('asociarsensormodal.id_invalido') } })}
           />
           <Input
             label={t('asociarsensormodal.id_infraestructura')} required type="number" min={1}
             error={errors.id_infraestructura?.message}
-            {...register('id_infraestructura', { required: 'La infraestructura es obligatoria.', min: { value: 1, message: 'ID inválido.' } })}
+            {...register('id_infraestructura', { required: t('asociarsensormodal.la_infraestructura_es_obligatoria'), min: { value: 1, message: t('asociarsensormodal.id_invalido') } })}
           />
           <Input label={t('asociarsensormodal.fecha_de_inicio')} type="date" {...register('fecha_inicio')} />
           <FormTextArea label={t('asociarsensormodal.motivo')} placeholder={t('asociarsensormodal.opcional')} {...register('motivo')} />

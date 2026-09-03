@@ -266,7 +266,7 @@ function UmbralModal({
           {saveError && (
             <Alert
               variant="error"
-              title={saveError.status === 412 ? 'Conflicto de edición' : 'Error al guardar'}
+              title={saveError.status === 412 ? t('umbralessection.conflicto_de_edicion') : t('umbralessection.error_al_guardar')}
               description={saveError.message}
               style={{ marginBottom: 'var(--s5)' }}
             />

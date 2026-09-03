@@ -148,7 +148,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                       error={errors.nombre?.message}
                       {...register('nombre', {
                         required: 'Obligatorio.',
-                        pattern: { value: NAME_REGEX, message: 'Solo letras y espacios.' },
+                        pattern: { value: NAME_REGEX, message: t('usuariomodal.solo_letras_y_espacios') },
                       })}
                     />
                   </div>
@@ -159,7 +159,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                       error={errors.apellidos?.message}
                       {...register('apellidos', {
                         required: 'Obligatorio.',
-                        pattern: { value: NAME_REGEX, message: 'Solo letras y espacios.' },
+                        pattern: { value: NAME_REGEX, message: t('usuariomodal.solo_letras_y_espacios') },
                       })}
                     />
                   </div>
@@ -169,7 +169,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                       type="email"
                       error={errors.correo_electronico?.message}
                       {...register('correo_electronico', {
-                        pattern: { value: /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/, message: 'Formato inválido.' },
+                        pattern: { value: /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/, message: t('usuariomodal.formato_invalido') },
                       })}
                     />
                   </div>
@@ -180,7 +180,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                       hint="Opcional, 7-15 dígitos"
                       error={errors.telefono?.message}
                       {...register('telefono', {
-                        pattern: { value: /^[0-9]{7,15}$/, message: 'Solo números, 7-15 dígitos.' },
+                        pattern: { value: /^[0-9]{7,15}$/, message: t('usuariomodal.solo_numeros_7_15_digitos') },
                       })}
                     />
                   </div>

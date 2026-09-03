@@ -82,7 +82,7 @@ export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose,
           <FormSelect
             label={t('transferenciawizard.infraestructura_destino')} required error={errors.infraestructura_destino_id?.message}
             disabled={loadingDisponibles}
-            {...register('infraestructura_destino_id', { required: 'Selecciona el destino.' })}
+            {...register('infraestructura_destino_id', { required: t('transferenciawizard.selecciona_el_destino') })}
           >
             <option value="">
               {loadingDisponibles ? 'Cargando…' : 'Seleccionar destino…'}
@@ -105,7 +105,7 @@ export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose,
             label={t('transferenciawizard.fecha_de_transferencia')} required type="date" max={HOY}
             error={errors.fecha_transferencia?.message}
             {...register('fecha_transferencia', {
-              required: 'La fecha es obligatoria.',
+              required: t('transferenciawizard.la_fecha_es_obligatoria'),
               validate: (val) => val <= HOY || 'No puede ser posterior a hoy.',
             })}
           />
@@ -114,7 +114,7 @@ export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose,
             label={t('transferenciawizard.motivo_de_la_transferencia')} required error={errors.motivo_transferencia?.message}
             placeholder={t('transferenciawizard.describe_el_motivo')}
             {...register('motivo_transferencia', {
-              required: 'El motivo es obligatorio.',
+              required: t('transferenciawizard.el_motivo_es_obligatorio'),
               validate: (v) => v.trim().length > 0 || 'El motivo no puede estar vacío.',
             })}
           />

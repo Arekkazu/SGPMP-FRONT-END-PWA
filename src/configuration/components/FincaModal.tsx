@@ -119,7 +119,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
           {saveError && (
             <Alert
               variant="error"
-              title={saveError.status === 412 ? 'Conflicto de edición' : 'Error al guardar'}
+              title={saveError.status === 412 ? t('fincamodal.conflicto_de_edicion') : t('fincamodal.error_al_guardar')}
               description={saveError.status === 412
                 ? 'Otro usuario modificó esta finca. Recarga para ver los datos actuales antes de guardar.'
                 : saveError.message}
@@ -138,10 +138,10 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                 placeholder={t('fincamodal.ej_la_esperanza_el_palmar')}
                 error={errors.nombre?.message}
                 {...register('nombre', {
-                  required: 'El nombre es obligatorio.',
-                  minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                  maxLength: { value: 55, message: 'Máximo 55 caracteres.' },
-                  pattern: { value: NOMBRE_REGEX, message: 'Solo letras, espacios y tildes.' },
+                  required: t('fincamodal.el_nombre_es_obligatorio'),
+                  minLength: { value: 3, message: t('fincamodal.minimo_3_caracteres') },
+                  maxLength: { value: 55, message: t('fincamodal.maximo_55_caracteres') },
+                  pattern: { value: NOMBRE_REGEX, message: t('fincamodal.solo_letras_espacios_y_tildes') },
                 })}
               />
               <Input
@@ -152,9 +152,9 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                 placeholder="Ej: 25.50"
                 error={errors.tamano_h?.message}
                 {...register('tamano_h', {
-                  required: 'El tamaño es obligatorio.',
+                  required: t('fincamodal.el_tamano_es_obligatorio'),
                   valueAsNumber: true,
-                  min: { value: 0.01, message: 'Debe ser mayor a 0.' },
+                  min: { value: 0.01, message: t('fincamodal.debe_ser_mayor_a_0') },
                 })}
               />
               <Input
@@ -163,7 +163,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                 placeholder={t('fincamodal.id_del_usuario_productor')}
                 error={errors.id_usuario?.message}
                 {...register('id_usuario', {
-                  min: { value: 1, message: 'ID inválido.' },
+                  min: { value: 1, message: t('fincamodal.id_invalido') },
                 })}
               />
             </div>
@@ -183,8 +183,8 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   {...register('departamento', {
                     required: 'Requerido.',
                     validate: (v) => !!v.trim() || 'Requerido.',
-                    maxLength: { value: 60, message: 'Máx. 60 caracteres.' },
-                    pattern: { value: TEXTO_REGEX, message: 'Solo letras y espacios.' },
+                    maxLength: { value: 60, message: t('fincamodal.max_60_caracteres') },
+                    pattern: { value: TEXTO_REGEX, message: t('fincamodal.solo_letras_y_espacios') },
                   })}
                 />
                 <Input
@@ -196,8 +196,8 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   {...register('municipio', {
                     required: 'Requerido.',
                     validate: (v) => !!v.trim() || 'Requerido.',
-                    maxLength: { value: 60, message: 'Máx. 60 caracteres.' },
-                    pattern: { value: TEXTO_REGEX, message: 'Solo letras y espacios.' },
+                    maxLength: { value: 60, message: t('fincamodal.max_60_caracteres') },
+                    pattern: { value: TEXTO_REGEX, message: t('fincamodal.solo_letras_y_espacios') },
                   })}
                 />
                 <Input
@@ -209,8 +209,8 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   {...register('vereda', {
                     required: 'Requerido.',
                     validate: (v) => !!v.trim() || 'Requerido.',
-                    maxLength: { value: 60, message: 'Máx. 60 caracteres.' },
-                    pattern: { value: TEXTO_REGEX, message: 'Solo letras y espacios.' },
+                    maxLength: { value: 60, message: t('fincamodal.max_60_caracteres') },
+                    pattern: { value: TEXTO_REGEX, message: t('fincamodal.solo_letras_y_espacios') },
                   })}
                 />
               </div>
@@ -229,8 +229,8 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                     {...register('latitud', {
                       required: 'Requerida.',
                       valueAsNumber: true,
-                      min: { value: -90, message: 'Mín. -90.' },
-                      max: { value: 90,  message: 'Máx. 90.' },
+                      min: { value: -90, message: t('fincamodal.min_90') },
+                      max: { value: 90,  message: t('fincamodal.max_90') },
                     })}
                   />
                   <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('fincamodal.rango_90_a_90')}</p>
@@ -246,8 +246,8 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                     {...register('longitud', {
                       required: 'Requerida.',
                       valueAsNumber: true,
-                      min: { value: -180, message: 'Mín. -180.' },
-                      max: { value: 180,  message: 'Máx. 180.' },
+                      min: { value: -180, message: t('fincamodal.min_180') },
+                      max: { value: 180,  message: t('fincamodal.max_180') },
                     })}
                   />
                   <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('fincamodal.rango_180_a_180')}</p>

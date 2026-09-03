@@ -205,7 +205,7 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
                 required
                 placeholder={t('gestionarmodal.describe_el_motivo_de_la_accion')}
                 error={errors.motivo_accion?.message}
-                {...register('motivo_accion', { required: 'El motivo es obligatorio para esta acción.' })}
+                {...register('motivo_accion', { required: t('gestionarmodal.el_motivo_es_obligatorio_para_esta_accion') })}
               />
             </div>
           )}

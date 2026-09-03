@@ -32,7 +32,7 @@ export function PatologiaDetalleModal({ patologia, loading, onClose }: Props) {
   const { t } = useT('prediction');
   return (
     <ModalShell
-      title={patologia?.nombre_patologia ?? 'Detalle de patología'}
+      title={patologia?.nombre_patologia ?? t('patologiadetallemodal.detalle_de_patologia')}
       onClose={onClose}
       maxWidth={640}
       footer={<Button variant="secondary" onClick={onClose}>{t('patologiadetallemodal.cerrar')}</Button>}

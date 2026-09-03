@@ -86,7 +86,7 @@ export function DistribucionOtaView() {
 
         {!online && <Alert variant="warning" title={t('distribucionotaview.sin_conexion')} description={t('distribucionotaview.mostrando_despliegues_cacheados')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('distribucionotaview.datos_desde_cache')} description="No se pudo conectar; se muestran los últimos despliegues disponibles." style={{ marginBottom: 'var(--s4)' }} />}
-        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a la distribución' : 'Error al cargar despliegues'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('distribucionotaview.sin_acceso_a_la_distribucion') : t('distribucionotaview.error_al_cargar_despliegues')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
           <Kpi icon={<Package size={18} aria-hidden />} valor={kpis.total} etiqueta="Despliegues totales" color="var(--brand-500)" />

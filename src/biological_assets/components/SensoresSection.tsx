@@ -59,7 +59,7 @@ export function SensoresSection({ idActivo, esPoblacional, idInfraestructura }: 
       {ultima && (
         <Alert
           variant={ultima.advertencia ? 'warning' : 'success'}
-          title={ultima.advertencia ? 'Asociación creada con advertencia' : 'Sensor asociado'}
+          title={ultima.advertencia ? t('sensoressection.asociacion_creada_con_advertencia') : 'Sensor asociado'}
           description={
             ultima.advertencia
               ?? `Sensor #${ultima.sensor_id} asociado (${ultima.tipo_asociacion}). Estado: ${ultima.estado_asociacion}.`

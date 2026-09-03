@@ -103,7 +103,7 @@ export function ActivoDetallePage() {
           <Alert
             variant="error"
             title={t('activodetallepage.no_se_pudo_cargar_el_activo')}
-            description={error.status === 404 ? 'El activo no existe o fue eliminado.' : error.message}
+            description={error.status === 404 ? t('activodetallepage.el_activo_no_existe_o_fue_eliminado') : error.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
         )}

@@ -95,7 +95,7 @@ export function AlertasView() {
       <div style={{ padding: 'var(--s7)' }}>
         {!online && <Alert variant="warning" title={t('alertasview.sin_conexion')} description={t('alertasview.mostrando_alertas_cacheadas_la_gestion_esta')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('alertasview.datos_desde_cache')} description="No se pudo conectar; se muestran las últimas alertas disponibles." style={{ marginBottom: 'var(--s4)' }} />}
-        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a las alertas' : 'Error al cargar alertas'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('alertasview.sin_acceso_a_las_alertas') : t('alertasview.error_al_cargar_alertas')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
           <Kpi icon={<BellRing size={18} aria-hidden />} valor={resumen?.activas ?? null} etiqueta="Activas ahora" color="var(--sem-error)" />

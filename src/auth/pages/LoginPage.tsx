@@ -107,10 +107,10 @@ export function LoginPage() {
               required
               error={errors.correo_electronico?.message}
               {...register('correo_electronico', {
-                required: 'El correo es obligatorio.',
+                required: t('loginpage.el_correo_es_obligatorio'),
                 pattern: {
                   value: /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/,
-                  message: 'El formato del correo electrónico no es válido.',
+                  message: t('loginpage.el_formato_del_correo_electronico_no_es'),
                 },
               })}
             />
@@ -125,7 +125,7 @@ export function LoginPage() {
               error={errors.contrasena?.message}
               trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               onTrailingClick={() => setShowPw((v) => !v)}
-              {...register('contrasena', { required: 'La contraseña es obligatoria.' })}
+              {...register('contrasena', { required: t('loginpage.la_contrasena_es_obligatoria') })}
             />
           </div>
 

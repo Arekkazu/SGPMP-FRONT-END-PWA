@@ -36,8 +36,8 @@ export function ExportarModal({ exportando, exportError, onExportar, onClose }: 
       {exportError && (
         <Alert
           variant={es503 ? 'warning' : 'error'}
-          title={es503 ? 'Exportación no disponible por ahora' : 'No se pudo exportar'}
-          description={es503 ? 'La exportación depende del módulo de reportes (M08), aún no disponible. Inténtalo más adelante.' : exportError.message}
+          title={es503 ? t('exportarmodal.exportacion_no_disponible_por_ahora') : t('exportarmodal.no_se_pudo_exportar')}
+          description={es503 ? t('exportarmodal.la_exportacion_depende_del_modulo_de') : exportError.message}
           style={{ marginTop: 'var(--s4)' }}
         />
       )}

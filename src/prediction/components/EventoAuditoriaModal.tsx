@@ -33,7 +33,7 @@ export function EventoAuditoriaModal({ evento, loading, correlacionados, onClose
   const { t } = useT('prediction');
   return (
     <ModalShell
-      title={evento ? evento.tipo_evento : 'Evento de auditoría'}
+      title={evento ? evento.tipo_evento : t('eventoauditoriamodal.evento_de_auditoria')}
       onClose={onClose}
       maxWidth={720}
       footer={<Button variant="secondary" onClick={onClose}>{t('eventoauditoriamodal.cerrar')}</Button>}

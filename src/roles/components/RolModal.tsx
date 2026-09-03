@@ -133,7 +133,7 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
                 required
                 error={errors.nombre_rol?.message}
                 disabled={rol?.es_protegido}
-                {...register('nombre_rol', { required: 'El nombre es obligatorio.' })}
+                {...register('nombre_rol', { required: t('rolmodal.el_nombre_es_obligatorio') })}
               />
             </div>
             <div>

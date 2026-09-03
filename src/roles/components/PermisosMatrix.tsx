@@ -63,7 +63,7 @@ export function PermisosMatrix({ recursos, acciones, permisos, onChange, readonl
                       checked={checked}
                       disabled={deshabilitado}
                       aria-label={`${a.codigo} para ${r.nombre_recurso}`}
-                      title={ejecutarBloqueado ? 'Acción Ejecutar solo disponible para procesos especiales' : deshabilitado && checked ? 'Mínimo un permiso requerido' : undefined}
+                      title={ejecutarBloqueado ? t('permisosmatrix.accion_ejecutar_solo_disponible_para') : deshabilitado && checked ? t('permisosmatrix.minimo_un_permiso_requerido') : undefined}
                       onChange={(e) => {
                         if (e.target.checked) {
                           onChange(r.id_recurso, a.id_accion, true);

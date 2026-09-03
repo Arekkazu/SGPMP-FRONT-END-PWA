@@ -119,7 +119,7 @@ function Historial({ historial, loading }: { historial: ConfiguracionRemotaRespo
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ background: 'var(--surface-hover)' }}>
-            {['Fecha/Hora', 'Frec. captura', 'Interv. transmisión', 'Estado cfg.', 'Mensaje'].map((h) => (
+            {['Fecha/Hora', 'Frec. captura', t('configuracionremotasection.interv_transmision'), t('configuracionremotasection.estado_cfg'), 'Mensaje'].map((h) => (
               <th key={h} style={TH}>{h}</th>
             ))}
           </tr>
@@ -233,7 +233,7 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
                     {...register('frecuencia_captura', {
                       required: 'Obligatorio.',
                       valueAsNumber: true,
-                      min: { value: 1, message: 'Mínimo 1 minuto.' },
+                      min: { value: 1, message: t('configuracionremotasection.minimo_1_minuto') },
                     })}
                   />
                   <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', pointerEvents: 'none' }}>min</span>
@@ -261,7 +261,7 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
                     {...register('intervalo_transmision', {
                       required: 'Obligatorio.',
                       valueAsNumber: true,
-                      min: { value: 1, message: 'Mínimo 1 minuto.' },
+                      min: { value: 1, message: t('configuracionremotasection.minimo_1_minuto') },
                       validate: (v) =>
                         v >= getValues('frecuencia_captura') ||
                         'Debe ser mayor o igual a la frecuencia de captura.',

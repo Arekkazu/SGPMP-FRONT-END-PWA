@@ -102,7 +102,7 @@ export function RolesTable({ roles, loading, puedeEditar, puedeEliminar, onEdita
                         onClick={() => onEditar(r)}
                         disabled={r.es_protegido}
                         aria-label={`Editar ${r.nombre_rol}`}
-                        title={r.es_protegido ? 'El rol Administrador no puede modificarse.' : undefined}
+                        title={r.es_protegido ? t('rolestable.el_rol_administrador_no_puede_modificarse') : undefined}
                       >
                         <Edit2 size={13} aria-hidden style={{ marginRight: 4 }} />{t('rolestable.editar')}</Button>
                     )}

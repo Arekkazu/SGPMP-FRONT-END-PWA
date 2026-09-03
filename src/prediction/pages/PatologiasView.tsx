@@ -120,7 +120,7 @@ export function PatologiasView() {
       <div style={{ padding: 'var(--s7)' }}>
         {!online && <Alert variant="warning" title={t('patologiasview.sin_conexion')} description={t('patologiasview.mostrando_catalogo_cacheado_la_edicion_esta')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('patologiasview.datos_desde_cache')} description="No se pudo conectar; se muestra el último catálogo disponible." style={{ marginBottom: 'var(--s4)' }} />}
-        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso al catálogo' : 'Error al cargar patologías'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('patologiasview.sin_acceso_al_catalogo') : t('patologiasview.error_al_cargar_patologias')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <PatologiasFiltros value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} />
 

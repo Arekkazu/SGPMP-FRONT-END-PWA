@@ -92,9 +92,9 @@ export function AuditoriaView() {
   if (!puedeVer) return <PermissionDenied seccion="Bitácora de auditoría" />;
 
   const TABS: { id: TabId; label: string; badge?: number }[] = [
-    { id: 'todos', label: 'Todos los eventos' },
-    { id: 'criticos', label: 'Eventos críticos', badge: criticosCount },
-    { id: 'tipo', label: 'Por tipo de evento' },
+    { id: 'todos', label: t('auditoriaview.todos_los_eventos') },
+    { id: 'criticos', label: t('auditoriaview.eventos_criticos'), badge: criticosCount },
+    { id: 'tipo', label: t('auditoriaview.por_tipo_de_evento') },
   ];
 
   return (
@@ -120,7 +120,7 @@ export function AuditoriaView() {
       <div style={{ padding: 'var(--s7)' }}>
         {!online && <Alert variant="warning" title={t('auditoriaview.sin_conexion')} description={t('auditoriaview.mostrando_bitacora_cacheada')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('auditoriaview.datos_desde_cache')} description="No se pudo conectar; se muestran los últimos eventos disponibles." style={{ marginBottom: 'var(--s4)' }} />}
-        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Solo el administrador puede consultar la auditoría' : 'Error al cargar la bitácora'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('auditoriaview.solo_el_administrador_puede_consultar_la') : t('auditoriaview.error_al_cargar_la_bitacora')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
           <Kpi icon={<ListChecks size={18} aria-hidden />} valor={resumen?.total ?? null} etiqueta="Eventos totales" color="var(--brand-500)" />

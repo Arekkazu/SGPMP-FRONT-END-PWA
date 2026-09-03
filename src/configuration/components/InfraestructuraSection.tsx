@@ -173,7 +173,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
           {saveError && (
             <Alert
               variant="error"
-              title={saveError.status === 412 ? 'Conflicto de edición' : 'Error al guardar'}
+              title={saveError.status === 412 ? t('infraestructurasection.conflicto_de_edicion') : t('infraestructurasection.error_al_guardar')}
               description={saveError.status === 412
                 ? 'Otro usuario modificó esta área. Recarga para ver los datos actuales antes de guardar.'
                 : saveError.message}
@@ -198,7 +198,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
               <select
                 aria-required="true"
                 style={SELECT_STYLE}
-                {...register('tipo_area', { required: 'Selecciona un tipo de área.' })}
+                {...register('tipo_area', { required: t('infraestructurasection.selecciona_un_tipo_de_area') })}
               >
                 {TIPOS_AREA.map((tipo) => (
                   <option key={tipo} value={tipo}>{TIPO_EMOJI[tipo]} {tipo}</option>
@@ -220,9 +220,9 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
                 placeholder={t('infraestructurasection.ej_galpon_norte_estanque_1')}
                 error={errors.nombre_infraestructura?.message}
                 {...register('nombre_infraestructura', {
-                  required: 'El nombre es obligatorio.',
-                  minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                  maxLength: { value: 50, message: 'Máximo 50 caracteres.' },
+                  required: t('infraestructurasection.el_nombre_es_obligatorio'),
+                  minLength: { value: 3, message: t('infraestructurasection.minimo_3_caracteres') },
+                  maxLength: { value: 50, message: t('infraestructurasection.maximo_50_caracteres') },
                 })}
               />
             </div>
@@ -237,9 +237,9 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
                 placeholder="Ej: 250.00"
                 error={errors.superficie?.message}
                 {...register('superficie', {
-                  required: 'La superficie es obligatoria.',
+                  required: t('infraestructurasection.la_superficie_es_obligatoria'),
                   valueAsNumber: true,
-                  min: { value: 0.01, message: 'Debe ser mayor a 0.' },
+                  min: { value: 0.01, message: t('infraestructurasection.debe_ser_mayor_a_0') },
                 })}
               />
             </div>
@@ -266,7 +266,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
                     boxSizing: 'border-box',
                   }}
                   {...register('descripcion_infraestructura', {
-                    maxLength: { value: 100, message: 'Máximo 100 caracteres.' },
+                    maxLength: { value: 100, message: t('infraestructurasection.maximo_100_caracteres') },
                   })}
                 />
                 <span style={{ position: 'absolute', bottom: 'var(--s2)', right: 'var(--s3)', fontSize: '11px', color: (desc?.length ?? 0) > 90 ? 'var(--sem-warning)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>

@@ -47,11 +47,11 @@ export function VinculacionDetalleModal({ vinc, puedeGestionar, online, onResolv
         (puedeResolver || puedeCorregir) ? (
           <div style={{ display: 'flex', gap: 'var(--s2)' }}>
             {puedeResolver && (
-              <Button variant="primary" size="sm" disabled={disabled} title={disabled ? 'Sin permiso o sin conexión' : 'Resolver'} onClick={onResolver}>
+              <Button variant="primary" size="sm" disabled={disabled} title={disabled ? t('vinculaciondetallemodal.sin_permiso_o_sin_conexion') : 'Resolver'} onClick={onResolver}>
                 <GitFork size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('vinculaciondetallemodal.resolver')}</Button>
             )}
             {puedeCorregir && (
-              <Button variant="danger" size="sm" disabled={disabled} title={disabled ? 'Sin permiso o sin conexión' : 'Corregir'} onClick={onCorregir}>
+              <Button variant="danger" size="sm" disabled={disabled} title={disabled ? t('vinculaciondetallemodal.sin_permiso_o_sin_conexion') : 'Corregir'} onClick={onCorregir}>
                 <Pencil size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('vinculaciondetallemodal.corregir')}</Button>
             )}
           </div>

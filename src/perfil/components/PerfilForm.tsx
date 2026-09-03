@@ -41,8 +41,8 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
       {saveError && (
         <Alert
           variant="error"
-          title={saveError.status === 412 ? 'Conflicto de datos' : 'Error al guardar'}
-          description={saveError.status === 412 ? 'Los datos han cambiado. Recarga la página para ver la versión más reciente.' : saveError.message}
+          title={saveError.status === 412 ? t('perfilform.conflicto_de_datos') : t('perfilform.error_al_guardar')}
+          description={saveError.status === 412 ? t('perfilform.los_datos_han_cambiado_recarga_la_pagina') : saveError.message}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
@@ -57,8 +57,8 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
             required
             error={errors.nombre?.message}
             {...register('nombre', {
-              required: 'El nombre es obligatorio.',
-              pattern: { value: NAME_REGEX, message: 'Solo letras y espacios.' },
+              required: t('perfilform.el_nombre_es_obligatorio'),
+              pattern: { value: NAME_REGEX, message: t('perfilform.solo_letras_y_espacios') },
             })}
           />
         </div>
@@ -68,8 +68,8 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
             required
             error={errors.apellidos?.message}
             {...register('apellidos', {
-              required: 'Los apellidos son obligatorios.',
-              pattern: { value: NAME_REGEX, message: 'Solo letras y espacios.' },
+              required: t('perfilform.los_apellidos_son_obligatorios'),
+              pattern: { value: NAME_REGEX, message: t('perfilform.solo_letras_y_espacios') },
             })}
           />
         </div>
@@ -80,7 +80,7 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
             hint="Opcional, 7-15 dígitos"
             error={errors.telefono?.message}
             {...register('telefono', {
-              pattern: { value: /^[0-9]{7,15}$/, message: 'Solo números, 7-15 dígitos.' },
+              pattern: { value: /^[0-9]{7,15}$/, message: t('perfilform.solo_numeros_7_15_digitos') },
             })}
           />
         </div>

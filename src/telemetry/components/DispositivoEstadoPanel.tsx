@@ -49,7 +49,7 @@ export function DispositivoEstadoPanel({ idConsultado, estado, historial, loadin
     return (
       <Alert
         variant={error.status === 403 ? 'warning' : error.status === 404 ? 'info' : 'error'}
-        title={error.status === 404 ? 'Dispositivo no encontrado' : error.status === 403 ? 'Sin acceso al estado del dispositivo' : 'Error al consultar el dispositivo'}
+        title={error.status === 404 ? t('dispositivoestadopanel.dispositivo_no_encontrado') : error.status === 403 ? t('dispositivoestadopanel.sin_acceso_al_estado_del_dispositivo') : t('dispositivoestadopanel.error_al_consultar_el_dispositivo')}
         description={error.message}
       />
     );

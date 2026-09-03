@@ -181,7 +181,7 @@ export function AuditoriaM02View() {
         {error && (
           <Alert
             variant={error.status === 403 ? 'warning' : 'error'}
-            title={error.status === 403 ? 'Sin acceso a la auditoría' : 'Error al cargar la bitácora'}
+            title={error.status === 403 ? t('auditoriam02view.sin_acceso_a_la_auditoria') : t('auditoriam02view.error_al_cargar_la_bitacora')}
             description={error.message}
             style={{ marginBottom: 'var(--s4)' }}
           />

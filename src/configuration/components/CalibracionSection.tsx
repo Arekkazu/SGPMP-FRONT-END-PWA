@@ -280,7 +280,7 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
                   aria-required="true"
                   style={{ width: '100%', padding: 'var(--s3)', borderRadius: 'var(--r-md)', border: `1.5px solid ${errors.valor_referencia ? 'var(--sem-error)' : 'var(--surface-border)'}`, background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '15px', fontFamily: 'var(--font-mono)', fontWeight: 700, outline: 'none', boxSizing: 'border-box' }}
                   {...register('valor_referencia', {
-                    required: 'El valor de referencia es obligatorio.',
+                    required: t('calibracionsection.el_valor_de_referencia_es_obligatorio'),
                     valueAsNumber: true,
                     validate: (v) => !isNaN(v) || 'Debe ser un número válido.',
                   })}
@@ -297,7 +297,7 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
                   required
                   aria-required="true"
                   error={errors.fecha_calibracion?.message}
-                  {...register('fecha_calibracion', { required: 'La fecha de calibración es obligatoria.' })}
+                  {...register('fecha_calibracion', { required: t('calibracionsection.la_fecha_de_calibracion_es_obligatoria') })}
                 />
               </div>
             </div>
@@ -311,7 +311,7 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
                   rows={3}
                   placeholder={t('calibracionsection.condiciones_de_calibracion_motivo_drift')}
                   style={{ width: '100%', padding: 'var(--s3)', borderRadius: 'var(--r-md)', border: `1.5px solid ${errors.observaciones ? 'var(--sem-error)' : 'var(--surface-border)'}`, background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-sans)', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
-                  {...register('observaciones', { maxLength: { value: 200, message: 'Máximo 200 caracteres.' } })}
+                  {...register('observaciones', { maxLength: { value: 200, message: t('calibracionsection.maximo_200_caracteres') } })}
                 />
                 <span style={{ position: 'absolute', bottom: 'var(--s2)', right: 'var(--s3)', fontSize: '11px', color: (obs?.length ?? 0) > 180 ? 'var(--sem-warning)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                   {obs?.length ?? 0}/200

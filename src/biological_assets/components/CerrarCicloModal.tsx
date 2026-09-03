@@ -77,7 +77,7 @@ export function CerrarCicloModal({ identificador, saving, error, onClose, onConf
             label={t('cerrarciclomodal.fecha_de_cierre')} required type="date" max={HOY}
             error={errors.fecha_cierre?.message}
             {...register('fecha_cierre', {
-              required: 'La fecha de cierre es obligatoria.',
+              required: t('cerrarciclomodal.la_fecha_de_cierre_es_obligatoria'),
               validate: (val) => val <= HOY || 'No puede ser una fecha futura.',
             })}
           />
@@ -88,7 +88,7 @@ export function CerrarCicloModal({ identificador, saving, error, onClose, onConf
               id="motivo-cierre" style={TEXTAREA}
               placeholder={t('cerrarciclomodal.ej_venta_fin_de_ciclo_productivo')}
               {...register('motivo_cierre', {
-                required: 'El motivo es obligatorio.',
+                required: t('cerrarciclomodal.el_motivo_es_obligatorio'),
                 validate: (val) => val.trim().length > 0 || 'El motivo no puede estar vacío.',
               })}
             />

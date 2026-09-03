@@ -74,7 +74,7 @@ export function AuditoriaPage() {
     if (resultado.truncado) {
       setExportacionAviso({
         variant: 'warning',
-        title: 'Exportación parcial',
+        title: t('auditoriapage.exportacion_parcial'),
         description: `Se exportaron los primeros ${exportados} de ${disponibles} eventos. Aplica filtros adicionales para obtener los restantes.`,
       });
     } else {

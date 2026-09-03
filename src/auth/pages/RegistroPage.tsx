@@ -184,7 +184,7 @@ export function RegistroPage() {
                   maxLength={20}
                   error={form1.formState.errors.numero_identificacion?.message}
                   {...form1.register('numero_identificacion', {
-                    required: 'El número de identificación es obligatorio.',
+                    required: t('registropage.el_numero_de_identificacion_es_obligatorio'),
                   })}
                 />
               </div>
@@ -196,8 +196,8 @@ export function RegistroPage() {
                   placeholder={t('registropage.solo_letras_y_n')}
                   error={form1.formState.errors.nombre?.message}
                   {...form1.register('nombre', {
-                    required: 'El nombre es obligatorio.',
-                    pattern: { value: NAME_REGEX, message: 'Solo letras, espacios y caracteres españoles.' },
+                    required: t('registropage.el_nombre_es_obligatorio'),
+                    pattern: { value: NAME_REGEX, message: t('registropage.solo_letras_espacios_y_caracteres_espanoles') },
                   })}
                 />
               </div>
@@ -209,8 +209,8 @@ export function RegistroPage() {
                   placeholder={t('registropage.solo_letras_y_n')}
                   error={form1.formState.errors.apellidos?.message}
                   {...form1.register('apellidos', {
-                    required: 'Los apellidos son obligatorios.',
-                    pattern: { value: NAME_REGEX, message: 'Solo letras, espacios y caracteres españoles.' },
+                    required: t('registropage.los_apellidos_son_obligatorios'),
+                    pattern: { value: NAME_REGEX, message: t('registropage.solo_letras_espacios_y_caracteres_espanoles') },
                   })}
                 />
               </div>
@@ -222,7 +222,7 @@ export function RegistroPage() {
                   required
                   error={form1.formState.errors.fecha_nacimiento?.message}
                   {...form1.register('fecha_nacimiento', {
-                    required: 'La fecha de nacimiento es obligatoria.',
+                    required: t('registropage.la_fecha_de_nacimiento_es_obligatoria'),
                     validate: (v) => {
                       const birth = new Date(v);
                       const today = new Date();
@@ -259,7 +259,7 @@ export function RegistroPage() {
                   hint="Opcional, solo números, 7-15 dígitos"
                   error={form1.formState.errors.telefono?.message}
                   {...form1.register('telefono', {
-                    pattern: { value: /^[0-9]{7,15}$/, message: 'Teléfono inválido. Solo números, 7-15 dígitos.' },
+                    pattern: { value: /^[0-9]{7,15}$/, message: t('registropage.telefono_invalido_solo_numeros_7_15_digitos') },
                   })}
                 />
               </div>
@@ -311,8 +311,8 @@ export function RegistroPage() {
                 placeholder="usuario@dominio.com"
                 error={form2.formState.errors.correo_electronico?.message}
                 {...form2.register('correo_electronico', {
-                  required: 'El correo es obligatorio.',
-                  pattern: { value: /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/, message: 'Formato de correo inválido.' },
+                  required: t('registropage.el_correo_es_obligatorio'),
+                  pattern: { value: /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/, message: t('registropage.formato_de_correo_invalido') },
                 })}
               />
             </div>
@@ -326,8 +326,8 @@ export function RegistroPage() {
                 trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
                 onTrailingClick={() => setShowPw((v) => !v)}
                 {...form2.register('contrasena', {
-                  required: 'La contraseña es obligatoria.',
-                  pattern: { value: PW_REGEX, message: 'La contraseña no cumple los requisitos de seguridad.' },
+                  required: t('registropage.la_contrasena_es_obligatoria'),
+                  pattern: { value: PW_REGEX, message: t('registropage.la_contrasena_no_cumple_los_requisitos_de') },
                   onChange: (e) => setPwValue(e.target.value),
                 })}
               />
@@ -368,7 +368,7 @@ export function RegistroPage() {
                 trailingIcon={showConfirmPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
                 onTrailingClick={() => setShowConfirmPw((v) => !v)}
                 {...form2.register('confirmar_contrasena', {
-                  required: 'Confirma tu contraseña.',
+                  required: t('registropage.confirma_tu_contrasena'),
                   validate: (v) => v === form2.getValues('contrasena') || 'Las contraseñas no coinciden.',
                 })}
               />

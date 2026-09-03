@@ -77,7 +77,7 @@ export function CompletarPerfilSsoPage() {
           <Alert
             variant="error"
             title={t('completarperfilssopage.no_se_pudo_cargar_tu_perfil')}
-            description={loadError?.message || 'Ocurrió un error inesperado.'}
+            description={loadError?.message || t('completarperfilssopage.ocurrio_un_error_inesperado')}
             className="auth-alert"
           />
           <Button variant="secondary" size="md" onClick={() => recargar()}>{t('completarperfilssopage.reintentar')}</Button>
@@ -98,7 +98,7 @@ export function CompletarPerfilSsoPage() {
         {saveError && saveError.status !== 409 && (
           <Alert
             variant="error"
-            title={saveError.status === 412 ? 'Los datos cambiaron' : 'Error al guardar'}
+            title={saveError.status === 412 ? t('completarperfilssopage.los_datos_cambiaron') : t('completarperfilssopage.error_al_guardar')}
             description={saveError.message}
             className="auth-alert"
           />
@@ -112,8 +112,8 @@ export function CompletarPerfilSsoPage() {
                 required
                 error={errors.nombre?.message}
                 {...register('nombre', {
-                  required: 'El nombre es obligatorio.',
-                  pattern: { value: NAME_REGEX, message: 'Solo letras, espacios y caracteres españoles.' },
+                  required: t('completarperfilssopage.el_nombre_es_obligatorio'),
+                  pattern: { value: NAME_REGEX, message: t('completarperfilssopage.solo_letras_espacios_y_caracteres_espanoles') },
                 })}
               />
             </div>
@@ -124,8 +124,8 @@ export function CompletarPerfilSsoPage() {
                 required
                 error={errors.apellidos?.message}
                 {...register('apellidos', {
-                  required: 'Los apellidos son obligatorios.',
-                  pattern: { value: NAME_REGEX, message: 'Solo letras, espacios y caracteres españoles.' },
+                  required: t('completarperfilssopage.los_apellidos_son_obligatorios'),
+                  pattern: { value: NAME_REGEX, message: t('completarperfilssopage.solo_letras_espacios_y_caracteres_espanoles') },
                 })}
               />
             </div>
@@ -151,7 +151,7 @@ export function CompletarPerfilSsoPage() {
                 maxLength={20}
                 error={errors.numero_identificacion?.message}
                 {...register('numero_identificacion', {
-                  required: 'El número de identificación es obligatorio.',
+                  required: t('completarperfilssopage.el_numero_de_identificacion_es_obligatorio'),
                 })}
               />
             </div>
@@ -163,7 +163,7 @@ export function CompletarPerfilSsoPage() {
                 required
                 error={errors.fecha_nacimiento?.message}
                 {...register('fecha_nacimiento', {
-                  required: 'La fecha de nacimiento es obligatoria.',
+                  required: t('completarperfilssopage.la_fecha_de_nacimiento_es_obligatoria'),
                   validate: (v) => {
                     const birth = new Date(v);
                     const today = new Date();

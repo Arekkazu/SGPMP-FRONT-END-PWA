@@ -106,7 +106,7 @@ export function PorEspeciePage() {
             onClick={() => { if (tab.disponible) setSubTab(tab.id); }}
             disabled={!tab.disponible}
             aria-current={subTab === tab.id ? 'page' : undefined}
-            title={!tab.disponible ? 'Disponible próximamente' : undefined}
+            title={!tab.disponible ? t('porespeciepage.disponible_proximamente') : undefined}
           >
             {tab.label}
             {!tab.disponible && (

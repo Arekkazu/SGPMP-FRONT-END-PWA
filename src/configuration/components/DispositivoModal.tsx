@@ -40,7 +40,7 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
 
   useEffect(() => {
     if (saveError?.status === 409) {
-      setError('serial', { message: 'Ya existe un dispositivo con este serial.' });
+      setError('serial', { message: t('dispositivomodal.ya_existe_un_dispositivo_con_este_serial') });
     }
   }, [saveError, setError]);
 
@@ -131,10 +131,10 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
                   boxSizing: 'border-box',
                 }}
                 {...register('serial', {
-                  required: 'El serial del dispositivo es obligatorio.',
-                  minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                  maxLength: { value: 50, message: 'Máximo 50 caracteres.' },
-                  pattern: { value: SERIAL_REGEX, message: 'Solo letras, números, guiones y guiones bajos.' },
+                  required: t('dispositivomodal.el_serial_del_dispositivo_es_obligatorio'),
+                  minLength: { value: 3, message: t('dispositivomodal.minimo_3_caracteres') },
+                  maxLength: { value: 50, message: t('dispositivomodal.maximo_50_caracteres') },
+                  pattern: { value: SERIAL_REGEX, message: t('dispositivomodal.solo_letras_numeros_guiones_y_guiones_bajos') },
                 })}
               />
               {errors.serial && (
@@ -154,9 +154,9 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
                 placeholder={t('dispositivomodal.ej_sensor_esp32_temperatura_humedad_modelo')}
                 error={errors.descripcion?.message}
                 {...register('descripcion', {
-                  required: 'La descripción es obligatoria.',
-                  minLength: { value: 5, message: 'Mínimo 5 caracteres.' },
-                  maxLength: { value: 100, message: 'Máximo 100 caracteres.' },
+                  required: t('dispositivomodal.la_descripcion_es_obligatoria'),
+                  minLength: { value: 5, message: t('dispositivomodal.minimo_5_caracteres') },
+                  maxLength: { value: 100, message: t('dispositivomodal.maximo_100_caracteres') },
                 })}
               />
             </div>

@@ -124,8 +124,8 @@ function CambiarFaseModal({
             hint="ID de la fase/ciclo destino del catálogo"
             error={errors.id_ciclo_productiva?.message}
             {...register('id_ciclo_productiva', {
-              required: 'El ciclo productivo es obligatorio.',
-              min: { value: 1, message: 'ID inválido.' },
+              required: t('fasessection.el_ciclo_productivo_es_obligatorio'),
+              min: { value: 1, message: t('fasessection.id_invalido') },
             })}
           />
           <Input label={t('fasessection.fecha_de_inicio')} type="date" {...register('fecha_inicio')} />

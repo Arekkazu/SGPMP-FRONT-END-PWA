@@ -63,25 +63,25 @@ export function EventoProductivoForm({ saving, saveError, onClose, onConfirmar }
           <Input
             label={t('eventoproductivoform.tipo_de_producto')} required placeholder={t('eventoproductivoform.ej_leche_carne_huevo')}
             error={errors.tipo_producto?.message}
-            {...register('tipo_producto', { required: 'El tipo de producto es obligatorio.' })}
+            {...register('tipo_producto', { required: t('eventoproductivoform.el_tipo_de_producto_es_obligatorio') })}
           />
           <Input
             label={t('eventoproductivoform.cantidad_producida')} required type="number" min={0} step="0.001"
             error={errors.cantidad_producida?.message}
             {...register('cantidad_producida', {
-              required: 'La cantidad es obligatoria.',
+              required: t('eventoproductivoform.la_cantidad_es_obligatoria'),
               validate: (v) => Number(v) > 0 || 'Debe ser mayor a 0.',
             })}
           />
           <Input
             label={t('eventoproductivoform.unidad_de_medida')} required placeholder={t('eventoproductivoform.ej_litros_kg')}
             error={errors.unidad_medida?.message}
-            {...register('unidad_medida', { required: 'La unidad es obligatoria.' })}
+            {...register('unidad_medida', { required: t('eventoproductivoform.la_unidad_es_obligatoria') })}
           />
           <Input
             label={t('eventoproductivoform.fecha_del_evento')} required type="date" max={HOY}
             error={errors.fecha_evento?.message}
-            {...register('fecha_evento', { required: 'La fecha es obligatoria.' })}
+            {...register('fecha_evento', { required: t('eventoproductivoform.la_fecha_es_obligatoria') })}
           />
           <FormTextArea label={t('eventoproductivoform.condiciones_de_produccion')} placeholder={t('eventoproductivoform.opcional')} {...register('condiciones_produccion')} />
           <FormTextArea label={t('eventoproductivoform.observaciones')} placeholder={t('eventoproductivoform.opcional')} {...register('observaciones')} />

@@ -295,7 +295,7 @@ export function DashboardLayoutSection() {
       {saveError && (
         <Alert
           variant="error"
-          title={saveError.code === 'CONFLICTO_PERFIL_MODIFICADO' ? 'Configuración desactualizada' : 'Error al guardar'}
+          title={saveError.code === 'CONFLICTO_PERFIL_MODIFICADO' ? t('dashboardlayoutsection.configuracion_desactualizada') : t('dashboardlayoutsection.error_al_guardar')}
           description={saveError.message}
           style={{ marginBottom: 'var(--s4)' }}
         />

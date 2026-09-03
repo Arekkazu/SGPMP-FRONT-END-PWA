@@ -99,7 +99,7 @@ export function HistorialView() {
         {retroOk && <Alert variant="success" title={t('historialview.retroalimentacion_registrada')} description={t('historialview.gracias_la_evaluacion_clinica_quedo')} style={{ marginBottom: 'var(--s4)' }} />}
         {!online && <Alert variant="warning" title={t('historialview.sin_conexion')} description={t('historialview.mostrando_historial_cacheado_del_ultimo')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('historialview.datos_desde_cache')} description="No se pudo conectar; se muestra el último historial disponible." style={{ marginBottom: 'var(--s4)' }} />}
-        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso al historial' : 'Error al consultar'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('historialview.sin_acceso_al_historial') : t('historialview.error_al_consultar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <HistorialFiltros
           value={filtros}

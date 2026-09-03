@@ -55,7 +55,7 @@ export function CalidadDetalleModal({ item, puedeEjecutar, online, saving, saveE
       footer={
         <>
           <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>{t('calidaddetallemodal.cerrar')}</Button>
-          <Button variant="secondary" size="sm" loading={saving} disabled={disabled} title={!puedeEjecutar ? 'Sin permiso (E)' : !online ? 'Sin conexión' : 'Re-evaluar esta lectura'} onClick={() => onEvaluar(item.id_telemetria)}>
+          <Button variant="secondary" size="sm" loading={saving} disabled={disabled} title={!puedeEjecutar ? t('calidaddetallemodal.sin_permiso_e') : !online ? t('calidaddetallemodal.sin_conexion') : t('calidaddetallemodal.re_evaluar_esta_lectura')} onClick={() => onEvaluar(item.id_telemetria)}>
             <RefreshCcw size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('calidaddetallemodal.evaluar_de_nuevo')}</Button>
         </>
       }
@@ -89,7 +89,7 @@ export function CalidadDetalleModal({ item, puedeEjecutar, online, saving, saveE
       {saveError && (
         <Alert
           variant={saveError.status === 403 ? 'warning' : 'error'}
-          title={saveError.status === 403 ? 'Sin permiso para evaluar' : 'No se pudo evaluar la lectura'}
+          title={saveError.status === 403 ? t('calidaddetallemodal.sin_permiso_para_evaluar') : t('calidaddetallemodal.no_se_pudo_evaluar_la_lectura')}
           description={saveError.message}
           style={{ marginTop: 'var(--s4)' }}
         />

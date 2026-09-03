@@ -90,7 +90,7 @@ export function EventoSanitarioForm({ saving, saveError, onClose, onConfirmar }:
             <FormTextArea
               label={t('eventosanitarioform.diagnostico')} required error={errors.diagnostico?.message}
               placeholder={t('eventosanitarioform.describe_el_diagnostico')}
-              {...register('diagnostico', { required: 'El diagnóstico es obligatorio.' })}
+              {...register('diagnostico', { required: t('eventosanitarioform.el_diagnostico_es_obligatorio') })}
             />
           )}
 
@@ -99,13 +99,13 @@ export function EventoSanitarioForm({ saving, saveError, onClose, onConfirmar }:
               <Input
                 label={t('eventosanitarioform.medicamento')} required error={errors.medicamento?.message}
                 placeholder={t('eventosanitarioform.ej_aftovaxpur_doe')}
-                {...register('medicamento', { required: 'El medicamento es obligatorio.' })}
+                {...register('medicamento', { required: t('eventosanitarioform.el_medicamento_es_obligatorio') })}
               />
               <Input
                 label={t('eventosanitarioform.dosis')} required type="number" min={0} step="0.01"
                 error={errors.dosis?.message}
                 {...register('dosis', {
-                  required: 'La dosis es obligatoria.',
+                  required: t('eventosanitarioform.la_dosis_es_obligatoria'),
                   validate: (v) => Number(v) > 0 || 'Debe ser mayor a 0.',
                 })}
               />
@@ -118,12 +118,12 @@ export function EventoSanitarioForm({ saving, saveError, onClose, onConfirmar }:
               <Input
                 label="Frecuencia (veces/día)" required type="number" min={1}
                 error={errors.frecuencia?.message}
-                {...register('frecuencia', { required: 'La frecuencia es obligatoria para tratamiento.' })}
+                {...register('frecuencia', { required: t('eventosanitarioform.la_frecuencia_es_obligatoria_para') })}
               />
               <Input
                 label="Duración (días)" required type="number" min={1}
                 error={errors.duracion?.message}
-                {...register('duracion', { required: 'La duración es obligatoria para tratamiento.' })}
+                {...register('duracion', { required: t('eventosanitarioform.la_duracion_es_obligatoria_para_tratamiento') })}
               />
             </>
           )}
@@ -132,7 +132,7 @@ export function EventoSanitarioForm({ saving, saveError, onClose, onConfirmar }:
             <FormTextArea
               label={t('eventosanitarioform.observaciones')} required error={errors.observaciones?.message}
               placeholder={t('eventosanitarioform.observaciones_del_control')}
-              {...register('observaciones', { required: 'Las observaciones son obligatorias.' })}
+              {...register('observaciones', { required: t('eventosanitarioform.las_observaciones_son_obligatorias') })}
             />
           )}
 

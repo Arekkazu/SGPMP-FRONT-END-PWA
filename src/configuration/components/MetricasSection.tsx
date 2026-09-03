@@ -163,7 +163,7 @@ function MetricaModal({
         {saveError && (
           <Alert
             variant="error"
-            title={saveError.status === 412 ? 'Conflicto de edición' : 'Error al guardar'}
+            title={saveError.status === 412 ? t('metricassection.conflicto_de_edicion') : t('metricassection.error_al_guardar')}
             description={saveError.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
@@ -178,9 +178,9 @@ function MetricaModal({
               placeholder={t('metricassection.ej_peso_vivo_produccion_de_leche')}
               error={errors.nombre?.message}
               {...register('nombre', {
-                required: 'El nombre es obligatorio.',
-                minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                maxLength: { value: 50, message: 'Máximo 50 caracteres.' },
+                required: t('metricassection.el_nombre_es_obligatorio'),
+                minLength: { value: 3, message: t('metricassection.minimo_3_caracteres') },
+                maxLength: { value: 50, message: t('metricassection.maximo_50_caracteres') },
               })}
             />
 
@@ -191,9 +191,9 @@ function MetricaModal({
               placeholder={t('metricassection.ej_kg_l_cm_unidades')}
               error={errors.unidad_medida?.message}
               {...register('unidad_medida', {
-                required: 'La unidad es obligatoria.',
+                required: t('metricassection.la_unidad_es_obligatoria'),
                 minLength: { value: 1, message: 'Campo obligatorio.' },
-                maxLength: { value: 20, message: 'Máximo 20 caracteres.' },
+                maxLength: { value: 20, message: t('metricassection.maximo_20_caracteres') },
               })}
             />
 
@@ -204,7 +204,7 @@ function MetricaModal({
                 id="tipo-medicion"
                 style={SELECT_STYLE}
                 aria-required="true"
-                {...register('tipo_medicion', { required: 'Selecciona un tipo.' })}
+                {...register('tipo_medicion', { required: t('metricassection.selecciona_un_tipo') })}
               >
                 {(Object.entries(TIPO_MEDICION_LABELS) as [TipoMedicion, string][]).map(([val, label]) => (
                   <option key={val} value={val}>{label}</option>
@@ -224,7 +224,7 @@ function MetricaModal({
                 id="aplica-tipo-activo"
                 style={SELECT_STYLE}
                 aria-required="true"
-                {...register('aplica_a_tipo_activo', { required: 'Selecciona un tipo.' })}
+                {...register('aplica_a_tipo_activo', { required: t('metricassection.selecciona_un_tipo') })}
               >
                 {(Object.entries(TIPO_ACTIVO_LABELS) as [TipoActivo, string][]).map(([val, label]) => (
                   <option key={val} value={val}>{label}</option>
