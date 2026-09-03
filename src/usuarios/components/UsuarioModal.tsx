@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
@@ -208,7 +209,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                   ['Correo', detalle.correo_electronico],
                   ['Identificación', `${detalle.tipo_identificacion}: ${mascararId(detalle.numero_identificacion)}`],
                   ['Fecha de nacimiento', detalle.fecha_nacimiento],
-                  ['Fecha de registro', new Date(detalle.fecha_registro).toLocaleDateString('es-CO')],
+                  ['Fecha de registro', formatearFecha(detalle.fecha_registro)],
                   ['Teléfono', detalle.telefono ?? '—'],
                   ['Dirección', detalle.direccion ?? '—'],
                 ].map(([label, value]) => (

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
@@ -169,9 +170,9 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
 
             {modoEditar && especie && (
               <div style={{ padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                Creado: {especie.fecha_creacion ? new Date(especie.fecha_creacion).toLocaleDateString('es-CO') : '—'}
+                Creado: {especie.fecha_creacion ? formatearFecha(especie.fecha_creacion) : '—'}
                 {especie.fecha_actualizacion && (
-                  <span> · Actualizado: {new Date(especie.fecha_actualizacion).toLocaleDateString('es-CO')}</span>
+                  <span> · Actualizado: {formatearFecha(especie.fecha_actualizacion)}</span>
                 )}
               </div>
             )}

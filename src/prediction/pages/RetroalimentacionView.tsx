@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { MessageSquareText, ClipboardCheck, Clock, TimerOff } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -35,7 +36,7 @@ function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: n
 
 function fmt(dt: string): string {
   const d = new Date(dt);
-  return isNaN(d.getTime()) ? dt : d.toLocaleDateString('es-CO');
+  return isNaN(d.getTime()) ? dt : formatearFecha(d);
 }
 
 export function RetroalimentacionView() {

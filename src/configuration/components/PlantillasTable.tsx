@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Plus, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -70,7 +71,7 @@ function PlantillaCard({ plantilla, especieNombre, puedeAplicar, online, onAplic
           🌿 {especieNombre}
         </span>
         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-          {new Date(plantilla.fecha_creacion).toLocaleDateString('es-CO')}
+          {formatearFecha(plantilla.fecha_creacion)}
         </span>
       </div>
 

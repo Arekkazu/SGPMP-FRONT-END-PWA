@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
@@ -74,7 +75,7 @@ const SELECT_STYLE: React.CSSProperties = {
 function formatFecha(iso: string | null): string {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    return formatearFecha(iso, { day: '2-digit', month: '2-digit', year: '2-digit' });
   } catch {
     return iso;
   }

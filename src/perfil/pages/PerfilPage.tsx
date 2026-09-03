@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { User, Lock, Edit2 } from 'lucide-react';
 import { usePerfil } from '../hooks/usePerfil';
@@ -15,7 +16,7 @@ function mascararId(valor: string): string {
 function formatFecha(fecha: string | undefined): string {
   if (!fecha) return '—';
   try {
-    return new Date(fecha).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return formatearFecha(fecha, { day: '2-digit', month: '2-digit', year: 'numeric' });
   } catch {
     return fecha;
   }
@@ -24,7 +25,7 @@ function formatFecha(fecha: string | undefined): string {
 function formatFechaHora(fecha: string | undefined): string {
   if (!fecha) return '—';
   try {
-    return new Date(fecha).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
+    return formatearFechaHora(fecha, { dateStyle: 'short', timeStyle: 'short' });
   } catch {
     return fecha;
   }

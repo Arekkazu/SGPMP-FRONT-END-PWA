@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Radio, ChevronLeft, Check, RefreshCw } from 'lucide-react';
@@ -267,7 +268,7 @@ function AreaDestSelector({ fincas, infraestructuras, loadingFincas, loadingInfr
                         {infra.tipo_area} · {fincaSeleccionada.nombre}
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>
-                        {infra.superficie.toLocaleString('es-CO')} m²
+                        {formatearFechaHora(infra.superficie)} m²
                       </div>
                     </div>
                   </div>

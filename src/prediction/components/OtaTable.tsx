@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Eye } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -10,7 +11,7 @@ import type { DespliegueOtaResponse } from '../types';
 function fmt(dt: string | null): string {
   if (!dt) return '—';
   const d = new Date(dt);
-  return isNaN(d.getTime()) ? dt : d.toLocaleString('es-CO');
+  return isNaN(d.getTime()) ? dt : formatearFechaHora(d);
 }
 
 interface Props {

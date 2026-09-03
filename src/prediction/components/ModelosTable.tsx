@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Eye, BadgeCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -14,7 +15,7 @@ function fmtPct(v: number | null): string {
 function fmtFecha(dt: string | null): string {
   if (!dt) return '—';
   const d = new Date(dt);
-  return isNaN(d.getTime()) ? dt : d.toLocaleDateString('es-CO');
+  return isNaN(d.getTime()) ? dt : formatearFecha(d);
 }
 
 interface Props {

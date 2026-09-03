@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { ShieldCheck } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
@@ -38,7 +39,7 @@ function truncar(texto: string | undefined, max: number): string {
 
 function formatFecha(fecha: string): string {
   try {
-    return new Date(fecha).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
+    return formatearFechaHora(fecha, { dateStyle: 'short', timeStyle: 'short' });
   } catch {
     return fecha;
   }

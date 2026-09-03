@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import type { AplicacionPlantillaResponse } from '../types';
 
@@ -50,7 +51,7 @@ export function PlantillaHistorial({ historial, loading }: Props) {
                 </td>
                 <td style={{ padding: '11px 14px', color: 'var(--text-secondary)', fontSize: '12px' }}>
                   {h.fecha_aplicacion
-                    ? new Date(h.fecha_aplicacion).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
+                    ? formatearFechaHora(h.fecha_aplicacion, { dateStyle: 'short', timeStyle: 'short' })
                     : '—'}
                 </td>
                 <td style={{ padding: '11px 14px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--brand-600)' }}>

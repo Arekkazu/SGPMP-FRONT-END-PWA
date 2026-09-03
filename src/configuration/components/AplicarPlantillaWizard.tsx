@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { X, Check } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -242,7 +243,7 @@ export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, 
                 <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s1)' }}>{t('aplicarplantillawizard.especie_destino')}</div>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{targetEspecie.nombre}</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-                  ID {targetEspecie.id_especie} · Creada {new Date(targetEspecie.fecha_creacion).toLocaleDateString('es-CO')}
+                  ID {targetEspecie.id_especie} · Creada {formatearFecha(targetEspecie.fecha_creacion)}
                 </div>
               </div>
               <Alert

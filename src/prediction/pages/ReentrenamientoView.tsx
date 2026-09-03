@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { RefreshCw, Play, TrendingDown, CheckCircle2, XCircle, Loader2, Cpu, Terminal } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -22,7 +23,7 @@ const ESTADO: Record<EstadoProceso, { tono: Tono; label: string; icon: React.Rea
 
 function fmt(dt: string): string {
   const d = new Date(dt);
-  return isNaN(d.getTime()) ? dt : d.toLocaleString('es-CO');
+  return isNaN(d.getTime()) ? dt : formatearFechaHora(d);
 }
 
 function MonitorModal({ proceso, onClose }: { proceso: ProcesoReentrenamiento; onClose: () => void }) {

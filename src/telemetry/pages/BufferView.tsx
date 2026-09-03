@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Layers, Cpu, Database, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
@@ -33,7 +34,7 @@ export function BufferView() {
           <KpiCard icon={<Cpu size={18} aria-hidden />} valor={BUFFER_KPIS.activos} etiqueta="Dispositivos activos" />
           <KpiCard icon={<Database size={18} aria-hidden />} valor={BUFFER_KPIS.enBuffer} etiqueta="En modo buffer" sub="sin conexión al backend" color="var(--sem-info)" />
           <KpiCard icon={<Layers size={18} aria-hidden />} valor={BUFFER_KPIS.pendientes} etiqueta="Datos pendientes" color="var(--sem-warning)" />
-          <KpiCard icon={<RefreshCw size={18} aria-hidden />} valor={BUFFER_KPIS.sincronizadosHoy.toLocaleString('es-CO')} etiqueta="Sincronizados hoy" color="var(--sem-success)" />
+          <KpiCard icon={<RefreshCw size={18} aria-hidden />} valor={formatearFechaHora(BUFFER_KPIS.sincronizadosHoy)} etiqueta="Sincronizados hoy" color="var(--sem-success)" />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)' }}>

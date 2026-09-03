@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Activity, Cpu, Gauge as GaugeIcon, Clock, Layers } from 'lucide-react';
 import { Gauge } from '../../shared/design-system/Gauge';
@@ -16,7 +17,7 @@ function EstadoMotor() {
   const { t } = useT('prediction');
   const m = MONITOR_MOTOR;
   const stats = [
-    { label: 'Paquetes hoy', valor: m.paquetes_hoy.toLocaleString('es-CO') },
+    { label: 'Paquetes hoy', valor: formatearFechaHora(m.paquetes_hoy) },
     { label: 'Latencia P95', valor: `${m.latencia_p95_ms} ms` },
     { label: 'Cola', valor: String(m.cola) },
     { label: 'Uptime', valor: m.uptime },

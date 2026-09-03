@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Eye, User, Cpu, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -8,7 +9,7 @@ import type { EventoAuditoriaM04Response } from '../types';
 
 function fmt(dt: string): string {
   const d = new Date(dt);
-  return isNaN(d.getTime()) ? dt : d.toLocaleString('es-CO');
+  return isNaN(d.getTime()) ? dt : formatearFechaHora(d);
 }
 
 interface Props {

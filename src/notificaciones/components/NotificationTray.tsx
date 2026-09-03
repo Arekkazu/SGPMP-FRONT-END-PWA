@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Bell, BellRing, Check, RefreshCw, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -63,7 +64,7 @@ interface NotificationTrayProps {
 function formatFecha(fecha: string): string {
   const date = new Date(fecha);
   if (Number.isNaN(date.getTime())) return fecha;
-  return date.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
+  return formatearFechaHora(date, { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function estadoPush(permission: PushPermission): string | null {

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X, MapPin } from 'lucide-react';
@@ -261,11 +262,11 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s5)', padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                   <div>
                     <div style={{ fontWeight: 600, marginBottom: 2 }}>{t('fincamodal.creado')}</div>
-                    <div>{finca.fecha_creacion ? new Date(finca.fecha_creacion).toLocaleString('es-CO') : '—'}</div>
+                    <div>{finca.fecha_creacion ? formatearFechaHora(finca.fecha_creacion) : '—'}</div>
                   </div>
                   <div>
                     <div style={{ fontWeight: 600, marginBottom: 2 }}>{t('fincamodal.actualizado')}</div>
-                    <div>{finca.fecha_actualizacion ? new Date(finca.fecha_actualizacion).toLocaleString('es-CO') : '—'}</div>
+                    <div>{finca.fecha_actualizacion ? formatearFechaHora(finca.fecha_actualizacion) : '—'}</div>
                   </div>
                 </div>
               </>

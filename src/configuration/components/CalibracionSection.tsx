@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { ShieldCheck, ChevronLeft, Check, RefreshCw } from 'lucide-react';
@@ -31,7 +32,7 @@ const TD: React.CSSProperties = { padding: 'var(--s3) var(--s4)', borderBottom: 
 
 function formatTs(iso: string | null | undefined): string {
   if (!iso) return '—';
-  try { return new Date(iso).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+  try { return formatearFechaHora(iso, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); }
   catch { return iso; }
 }
 

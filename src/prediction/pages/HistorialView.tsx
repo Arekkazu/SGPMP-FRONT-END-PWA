@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { History, ShieldCheck, Download, Clock, TrendingUp } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -61,7 +62,7 @@ export function HistorialView() {
     return [...eventos]
       .sort((a, b) => a.fecha_evento.localeCompare(b.fecha_evento))
       .map((e) => ({
-        fecha: new Date(e.fecha_evento).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' }),
+        fecha: formatearFecha(e.fecha_evento, { day: '2-digit', month: '2-digit' }),
         nivel: extraerNivelRiesgo(e.payload),
       }))
       .filter((d) => d.nivel != null);
