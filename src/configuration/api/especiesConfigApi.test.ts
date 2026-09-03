@@ -26,7 +26,7 @@ const PATOLOGIA = {
 };
 const METRICA = {
   id_metrica_produccion: 7, nombre: 'Peso promedio', unidad_medida: 'kg',
-  tipo_medicion: 'PESO', aplica_a_tipo_activo: 'ANIMAL', id_especie: 3,
+  tipo_medicion: 'PESO', aplica_a_tipo_activo: 'INDIVIDUAL', id_especie: 3,
   es_activo: true, fecha_actualizacion: null,
 };
 const UMBRAL = {
@@ -85,7 +85,7 @@ describe('capturarConfiguracionEspecie', () => {
       metricas_produccion: [
         {
           nombre: 'Peso promedio', unidad_medida: 'kg',
-          tipo_medicion: 'PESO', aplica_a_tipo_activo: 'ANIMAL',
+          tipo_medicion: 'PESO', aplica_a_tipo_activo: 'INDIVIDUAL',
         },
       ],
       umbrales_ambientales: [
