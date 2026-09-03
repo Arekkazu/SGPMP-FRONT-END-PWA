@@ -27,8 +27,10 @@ import { initReactI18next } from 'react-i18next';
 
 import esCommon from './locales/es-CO/common.json';
 import esNav from './locales/es-CO/nav.json';
+import esConfiguration from './locales/es-CO/configuration.json';
 import enCommon from './locales/en-US/common.json';
 import enNav from './locales/en-US/nav.json';
+import enConfiguration from './locales/en-US/configuration.json';
 
 export const LOCALES = ['es-CO', 'en-US'] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -37,9 +39,12 @@ export const LOCALE_DEFAULT: Locale = 'es-CO';
 const CLAVE_STORAGE = 'sgpmp-locale';
 
 export const RECURSOS = {
-  'es-CO': { common: esCommon, nav: esNav },
-  'en-US': { common: enCommon, nav: enNav },
+  'es-CO': { common: esCommon, nav: esNav, configuration: esConfiguration },
+  'en-US': { common: enCommon, nav: enNav, configuration: enConfiguration },
 } as const;
+
+/** Namespaces cargados. Un modulo nuevo se agrega aqui y en `RECURSOS`. */
+export const NAMESPACES = ['common', 'nav', 'configuration'] as const;
 
 export function esLocaleValido(valor: unknown): valor is Locale {
   return typeof valor === 'string' && (LOCALES as readonly string[]).includes(valor);
@@ -61,7 +66,7 @@ i18n.use(initReactI18next).init({
   fallbackLng: LOCALE_DEFAULT,
   supportedLngs: LOCALES,
   defaultNS: 'common',
-  ns: ['common', 'nav'],
+  ns: [...NAMESPACES],
   // React ya escapa todo lo que renderiza; volver a escapar aqui produce
   // entidades HTML visibles en pantalla.
   interpolation: { escapeValue: false },
