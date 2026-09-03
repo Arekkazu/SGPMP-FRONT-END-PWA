@@ -7,7 +7,10 @@ import { Alert } from '../../shared/design-system/Alert';
 import { useEspecies } from '../hooks/useEspecies';
 import { capturarConfiguracionEspecie } from '../api/especiesConfigApi';
 import { CATEGORIAS_PLANTILLA } from '../types';
-import type { CategoriaPlantilla, RegistrarPlantillaDTO, SnapshotEspecie } from '../types';
+import type {
+  CategoriaPlantilla, PlantillaResponse, RegistrarPlantillaDTO,
+  SnapshotEspecie, VersionarPlantillaDTO,
+} from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 // ── Categorías del RF-30 ──────────────────────────────────────────────────────
@@ -24,19 +27,28 @@ const ICONOS: Record<CategoriaPlantilla, string> = {
 interface Props {
   saving: boolean;
   saveError: ApiError | null;
+  /** Presente ⇒ el modal versiona esa plantilla en vez de crear una nueva. */
+  plantillaBase?: PlantillaResponse | null;
   onClose: () => void;
   onRegistrar: (dto: RegistrarPlantillaDTO) => Promise<boolean>;
+  onVersionar?: (id: number, dto: VersionarPlantillaDTO) => Promise<boolean>;
 }
 
-export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Props) {
+export function PlantillaModal({
+  saving, saveError, plantillaBase, onClose, onRegistrar, onVersionar,
+}: Props) {
   const { t } = useT('configuration');
   const { especies, cargar } = useEspecies();
   useEffect(() => { cargar(); }, [cargar]);
   const activas = especies.filter((e) => e.es_activo);
 
-  const [nombre, setNombre] = useState('');
+  // Al versionar, nombre y especie los hereda la plantilla base: cambiarlos
+  // sería crear otra plantilla, y el backend los ignora de todos modos.
+  const versionando = Boolean(plantillaBase);
+
+  const [nombre, setNombre] = useState(plantillaBase?.template_name ?? '');
   const [nombreErr, setNombreErr] = useState('');
-  const [idEspecie, setIdEspecie] = useState<number | ''>('');
+  const [idEspecie, setIdEspecie] = useState<number | ''>(plantillaBase?.id_especie ?? '');
   const [especieErr, setEspecieErr] = useState('');
   const [seleccionadas, setSeleccionadas] = useState<Set<CategoriaPlantilla>>(
     () => new Set(CATEGORIAS_PLANTILLA)
@@ -96,12 +108,21 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (totalParametros === 0) return; // el botón ya está deshabilitado
+
+    if (versionando) {
+      const ok = await onVersionar!(plantillaBase!.id_plantilla, {
+        params_snapshot: buildSnapshot(),
+      });
+      if (ok) onClose();
+      return;
+    }
+
     let valid = true;
     if (!nombre.trim()) { setNombreErr(t('plantillamodal.el_nombre_es_requerido')); valid = false; }
     else setNombreErr('');
     if (!idEspecie) { setEspecieErr(t('plantillamodal.selecciona_una_especie_error')); valid = false; }
     else setEspecieErr('');
-    if (totalParametros === 0) return; // el botón ya está deshabilitado
     if (!valid) return;
 
     const ok = await onRegistrar({
@@ -135,7 +156,11 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
           padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <h2 id="plantilla-modal-title" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('plantillamodal.nueva_plantilla_de_configuracion')}</h2>
+          <h2 id="plantilla-modal-title" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            {versionando
+              ? t('plantillamodal.nueva_version_de', { nombre: plantillaBase!.template_name, version: plantillaBase!.version + 1 })
+              : t('plantillamodal.nueva_plantilla_de_configuracion')}
+          </h2>
           <button type="button" onClick={onClose} style={{ background: 'var(--surface-hover)', border: 'none', borderRadius: 'var(--r-full)', width: 28, height: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }} aria-label={t('plantillamodal.cerrar')}>
             <X size={14} />
           </button>
@@ -148,6 +173,14 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
               <Alert variant="error" title={t('plantillamodal.error_al_crear')} description={saveError.message} />
             )}
 
+            {versionando && (
+              <Alert
+                variant="info"
+                title={t('plantillamodal.se_creara_la_version', { version: plantillaBase!.version + 1 })}
+                description={t('plantillamodal.la_version_anterior_se_conserva')}
+              />
+            )}
+
             {/* Nombre */}
             <div>
               <label htmlFor="tpl-nombre" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('plantillamodal.nombre_de_la_plantilla')}<span aria-hidden>*</span>
@@ -156,12 +189,16 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
                 id="tpl-nombre"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                onBlur={() => { if (!nombre.trim()) setNombreErr(t('plantillamodal.el_nombre_es_requerido')); else setNombreErr(''); }}
+                onBlur={() => { if (!versionando && !nombre.trim()) setNombreErr(t('plantillamodal.el_nombre_es_requerido')); else setNombreErr(''); }}
                 placeholder={t('plantillamodal.ej_config_estandar_pollos_de_engorde')}
-                maxLength={100}
+                maxLength={50}
                 aria-required="true"
+                disabled={versionando}
                 error={nombreErr}
               />
+              {versionando && (
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('plantillamodal.el_nombre_se_hereda_de_la_version_anterior')}</p>
+              )}
             </div>
 
             {/* Especie */}
@@ -173,6 +210,7 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
                 value={idEspecie}
                 onChange={(e) => { setIdEspecie(e.target.value ? Number(e.target.value) : ''); setEspecieErr(''); }}
                 aria-required="true"
+                disabled={versionando}
                 style={{
                   width: '100%', padding: 'var(--s3) var(--s4)',
                   border: `1.5px solid ${especieErr ? 'var(--sem-error)' : 'var(--surface-border)'}`,
@@ -262,7 +300,9 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
           {/* Footer */}
           <div style={{ padding: 'var(--s4) var(--s6)', borderTop: '1px solid var(--surface-border)', background: 'var(--surface-hover)', display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
             <Button variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('plantillamodal.cancelar')}</Button>
-            <Button type="submit" variant="primary" size="md" loading={saving} disabled={saving || cargandoConfig || totalParametros === 0}>{t('plantillamodal.crear_plantilla')}</Button>
+            <Button type="submit" variant="primary" size="md" loading={saving} disabled={saving || cargandoConfig || totalParametros === 0}>
+              {versionando ? t('plantillamodal.crear_version') : t('plantillamodal.crear_plantilla')}
+            </Button>
           </div>
         </form>
       </div>

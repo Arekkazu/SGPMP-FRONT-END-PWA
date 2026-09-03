@@ -536,6 +536,11 @@ export interface RegistrarPlantillaDTO {
   params_snapshot: Record<string, unknown>;
 }
 
+/** Versionar solo cambia los parámetros: nombre y especie los hereda la base. */
+export interface VersionarPlantillaDTO {
+  params_snapshot: Record<string, unknown>;
+}
+
 export interface AplicarPlantillaDTO {
   id_especie_destino: number;
   fecha_actualizacion_especie_destino: string | null;

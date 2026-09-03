@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { Plus, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, RefreshCw, ChevronDown, ChevronUp, GitBranch } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
@@ -11,21 +11,28 @@ import { useEspecies } from '../hooks/useEspecies';
 import { PlantillaModal } from './PlantillaModal';
 import { AplicarPlantillaWizard } from './AplicarPlantillaWizard';
 import { PlantillaHistorial } from './PlantillaHistorial';
+import { CATEGORIAS_PLANTILLA } from '../types';
 import type { PlantillaResponse, AplicacionPlantillaResponse } from '../types';
 
+// Solo las categorías del RF-30, con cuántos parámetros trae cada una. Listar
+// `Object.keys` mostraba `schema_version` como si fuera un parámetro incluido, y
+// una categoría con lista vacía como si tuviera contenido.
 function ParamsBadges({ snapshot }: { snapshot: Record<string, unknown> }) {
-  const keys = Object.keys(snapshot).filter((k) => snapshot[k]);
-  if (keys.length === 0) return <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>;
+  const conContenido = CATEGORIAS_PLANTILLA
+    .map((categoria) => ({ categoria, total: (snapshot[categoria] as unknown[] | undefined)?.length ?? 0 }))
+    .filter(({ total }) => total > 0);
+
+  if (conContenido.length === 0) return <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>;
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-      {keys.map((k) => (
-        <span key={k} style={{
+      {conContenido.map(({ categoria, total }) => (
+        <span key={categoria} style={{
           fontSize: '10px', fontWeight: 600, fontFamily: 'var(--font-mono)',
           padding: '2px 6px', borderRadius: 'var(--r-full)',
           background: 'var(--surface-hover)', border: '1px solid var(--surface-border)',
           color: 'var(--text-secondary)',
         }}>
-          {k}
+          {categoria} · {total}
         </span>
       ))}
     </div>
@@ -36,11 +43,15 @@ interface PlantillaCardProps {
   plantilla: PlantillaResponse;
   especieNombre: string;
   puedeAplicar: boolean;
+  puedeCrear: boolean;
   online: boolean;
   onAplicar: () => void;
+  onVersionar: () => void;
 }
 
-function PlantillaCard({ plantilla, especieNombre, puedeAplicar, online, onAplicar }: PlantillaCardProps) {
+function PlantillaCard({
+  plantilla, especieNombre, puedeAplicar, puedeCrear, online, onAplicar, onVersionar,
+}: PlantillaCardProps) {
   const { t } = useT('configuration');
   return (
     <div style={{
@@ -80,14 +91,30 @@ function PlantillaCard({ plantilla, especieNombre, puedeAplicar, online, onAplic
         <ParamsBadges snapshot={plantilla.params_snapshot} />
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t('plantillastable.inmutable')}</span>
-        <Button
-          variant="primary"
-          size="sm"
-          disabled={!puedeAplicar || !online}
-          onClick={onAplicar}
-        >{t('plantillastable.aplicar_plantilla')}</Button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s2)' }}>
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', minWidth: 0 }}>{t('plantillastable.inmutable')}</span>
+        <div style={{ display: 'flex', gap: 'var(--s2)', flexShrink: 0 }}>
+          {/* Las plantillas no se editan: actualizar una es crear su versión
+              siguiente. Versionar es acción C, igual que crear. */}
+          {puedeCrear && (
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!online}
+              onClick={onVersionar}
+              title={t('plantillastable.generar_la_version_siguiente')}
+            >
+              <GitBranch size={13} aria-hidden style={{ marginRight: 'var(--s1)' }} />
+              {t('plantillastable.nueva_version')}
+            </Button>
+          )}
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={!puedeAplicar || !online}
+            onClick={onAplicar}
+          >{t('plantillastable.aplicar_plantilla')}</Button>
+        </div>
       </div>
     </div>
   );
@@ -99,10 +126,11 @@ export function PlantillasTable() {
   const puedeCrear = usePermission(28, 1);
   const puedeAplicar = usePermission(28, 5);
 
-  const { plantillas, historial, loading, loadingHistorial, saving, error, saveError, listar, registrar, aplicar, cargarHistorial } = usePlantillas();
+  const { plantillas, historial, loading, loadingHistorial, saving, error, saveError, listar, registrar, versionar, aplicar, cargarHistorial } = usePlantillas();
   const { especies, cargar: cargarEspecies } = useEspecies();
 
   const [showModal, setShowModal] = useState(false);
+  const [plantillaBase, setPlantillaBase] = useState<PlantillaResponse | null>(null);
   const [wizardPlantilla, setWizardPlantilla] = useState<PlantillaResponse | null>(null);
   const [showHistorial, setShowHistorial] = useState(false);
   const [wizardResult, setWizardResult] = useState<AplicacionPlantillaResponse | null>(null);
@@ -137,7 +165,7 @@ export function PlantillasTable() {
             <RefreshCw size={15} aria-hidden />
           </Button>
           {puedeCrear && (
-            <Button variant="primary" size="sm" disabled={!online} onClick={() => setShowModal(true)}>
+            <Button variant="primary" size="sm" disabled={!online} onClick={() => { setPlantillaBase(null); setShowModal(true); }}>
               <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('plantillastable.nueva_plantilla')}</Button>
           )}
         </div>
@@ -171,8 +199,10 @@ export function PlantillasTable() {
               plantilla={p}
               especieNombre={getEspecieNombre(p.id_especie)}
               puedeAplicar={puedeAplicar}
+              puedeCrear={puedeCrear}
               online={online}
               onAplicar={() => { setWizardResult(null); setWizardPlantilla(p); }}
+              onVersionar={() => { setPlantillaBase(p); setShowModal(true); }}
             />
           ))}
         </div>
@@ -199,8 +229,10 @@ export function PlantillasTable() {
         <PlantillaModal
           saving={saving}
           saveError={saveError}
-          onClose={() => setShowModal(false)}
+          plantillaBase={plantillaBase}
+          onClose={() => { setShowModal(false); setPlantillaBase(null); }}
           onRegistrar={registrar}
+          onVersionar={versionar}
         />
       )}
 

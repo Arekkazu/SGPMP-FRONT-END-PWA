@@ -146,3 +146,103 @@ describe('PlantillaModal', () => {
     expect(onRegistrar).not.toHaveBeenCalled();
   });
 });
+
+// ── Modo versión (RF-30, RF-31) ──────────────────────────────────────────────
+// Crear y versionar son operaciones distintas: el backend rechaza con 409 crear
+// una plantilla con un nombre que ya existe, justo para que versionar sea una
+// decisión explícita y no el efecto secundario de repetir el nombre.
+
+const PLANTILLA_BASE = {
+  id_plantilla: 12,
+  id_especie: 3,
+  id_usuario: 1,
+  template_name: 'Tilapia Estándar',
+  params_snapshot: { schema_version: 1, ciclos_biologicos: [{ nombre: 'Alevín' }] },
+  version: 2,
+  fecha_creacion: '2026-05-01T10:00:00Z',
+};
+
+function renderVersionado(onVersionar = vi.fn().mockResolvedValue(true)) {
+  render(
+    <PlantillaModal
+      saving={false}
+      saveError={null}
+      plantillaBase={PLANTILLA_BASE as never}
+      onClose={vi.fn()}
+      onRegistrar={vi.fn()}
+      onVersionar={onVersionar}
+    />,
+  );
+  return onVersionar;
+}
+
+describe('PlantillaModal — versionar', () => {
+  it('lee la configuración de la especie base sin que el usuario la elija', async () => {
+    renderVersionado();
+    await waitFor(() => expect(capturarMock).toHaveBeenCalledWith(3));
+  });
+
+  it('hereda nombre y especie, y no deja cambiarlos', async () => {
+    renderVersionado();
+    await waitFor(() => expect(capturarMock).toHaveBeenCalled());
+
+    const nombre = screen.getByLabelText(/nombre de la plantilla/i);
+    expect(nombre).toHaveValue('Tilapia Estándar');
+    expect(nombre).toBeDisabled();
+    expect(screen.getByLabelText(/especie base/i)).toBeDisabled();
+  });
+
+  it('anuncia qué versión se va a crear y que la anterior se conserva', async () => {
+    renderVersionado();
+    await waitFor(() => expect(capturarMock).toHaveBeenCalled());
+
+    expect(screen.getByText(/se creará la versión 3/i)).toBeInTheDocument();
+    expect(screen.getByText(/la versión anterior se conserva/i)).toBeInTheDocument();
+  });
+
+  it('envía solo el snapshot al endpoint de versiones, no un DTO de creación', async () => {
+    const user = userEvent.setup();
+    const onVersionar = renderVersionado();
+    await waitFor(() => expect(capturarMock).toHaveBeenCalled());
+
+    await user.click(await screen.findByRole('button', { name: /crear versión/i }));
+
+    await waitFor(() => expect(onVersionar).toHaveBeenCalledTimes(1));
+    expect(onVersionar).toHaveBeenCalledWith(12, {
+      params_snapshot: {
+        ciclos_biologicos: CONFIG_TILAPIA.ciclos_biologicos,
+        patologias: CONFIG_TILAPIA.patologias,
+        umbrales_ambientales: CONFIG_TILAPIA.umbrales_ambientales,
+      },
+    });
+    // No se cuela el flujo de creación, que el backend rechazaría con 409.
+    const [, dto] = onVersionar.mock.calls[0];
+    expect(dto).not.toHaveProperty('template_name');
+    expect(dto).not.toHaveProperty('id_especie');
+  });
+
+  it('respeta las categorías desmarcadas igual que al crear', async () => {
+    const user = userEvent.setup();
+    const onVersionar = renderVersionado();
+    await waitFor(() => expect(capturarMock).toHaveBeenCalled());
+
+    await user.click(await screen.findByRole('checkbox', { name: /catálogo de patologías/i }));
+    await user.click(await screen.findByRole('checkbox', { name: /umbrales ambientales/i }));
+    await user.click(screen.getByRole('button', { name: /crear versión/i }));
+
+    await waitFor(() => expect(onVersionar).toHaveBeenCalled());
+    expect(Object.keys(onVersionar.mock.calls[0][1].params_snapshot)).toEqual(['ciclos_biologicos']);
+  });
+
+  it('tampoco deja versionar con una especie sin parámetros', async () => {
+    capturarMock.mockResolvedValue({
+      ciclos_biologicos: [], patologias: [],
+      metricas_produccion: [], umbrales_ambientales: [],
+    } as never);
+    const onVersionar = renderVersionado();
+    await waitFor(() => expect(capturarMock).toHaveBeenCalled());
+
+    expect(await screen.findByRole('button', { name: /crear versión/i })).toBeDisabled();
+    expect(onVersionar).not.toHaveBeenCalled();
+  });
+});
