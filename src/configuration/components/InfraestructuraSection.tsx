@@ -197,8 +197,8 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
                 style={SELECT_STYLE}
                 {...register('tipo_area', { required: 'Selecciona un tipo de área.' })}
               >
-                {TIPOS_AREA.map((t) => (
-                  <option key={t} value={t}>{TIPO_EMOJI[t]} {t}</option>
+                {TIPOS_AREA.map((tipo) => (
+                  <option key={tipo} value={tipo}>{TIPO_EMOJI[tipo]} {tipo}</option>
                 ))}
               </select>
               {errors.tipo_area && (

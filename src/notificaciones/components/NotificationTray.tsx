@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Bell, BellRing, Check, RefreshCw, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import type { PushPermission } from '../hooks/usePushNotifications';
@@ -96,6 +97,7 @@ export function NotificationTray({
   onEnablePush,
   onDismissError,
 }: NotificationTrayProps) {
+  const { t } = useT('notificaciones');
   useEffect(() => {
     if (!open) return;
     document.getElementById('notification-tray-close')?.focus();
@@ -121,7 +123,7 @@ export function NotificationTray({
       >
         <header className="notification-tray__header">
           <div>
-            <h2 id="notification-tray-title">Notificaciones</h2>
+            <h2 id="notification-tray-title">{t('notificationtray.notificaciones')}</h2>
             <p>{noLeidas} sin leer de {total}</p>
           </div>
           <div className="notification-tray__actions">
@@ -132,7 +134,7 @@ export function NotificationTray({
               className="notification-tray__icon-button"
               onClick={onRefresh}
               disabled={loading}
-              aria-label="Actualizar notificaciones"
+              aria-label={t('notificationtray.actualizar_notificaciones')}
             >
               <RefreshCw
                 size={20}
@@ -147,7 +149,7 @@ export function NotificationTray({
               size="sm"
               className="notification-tray__icon-button"
               onClick={onClose}
-              aria-label="Cerrar notificaciones"
+              aria-label={t('notificationtray.cerrar_notificaciones')}
             >
               <X size={20} aria-hidden />
             </Button>
@@ -159,17 +161,15 @@ export function NotificationTray({
           <div>
             {pushPermission === 'default' ? (
               <>
-                <strong>Recibe alertas en este dispositivo</strong>
-                <span>Activa las notificaciones para recibir avisos fuera de la bandeja.</span>
+                <strong>{t('notificationtray.recibe_alertas_en_este_dispositivo')}</strong>
+                <span>{t('notificationtray.activa_las_notificaciones_para_recibir')}</span>
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
                   loading={pushLoading}
                   onClick={() => void onEnablePush()}
-                >
-                  Activar notificaciones push
-                </Button>
+                >{t('notificationtray.activar_notificaciones_push')}</Button>
               </>
             ) : (
               <span>{pushStatus}</span>
@@ -179,9 +179,7 @@ export function NotificationTray({
         </div>
 
         {fromCache && (
-          <p className="notification-tray__notice">
-            Sin conexión: mostrando las notificaciones guardadas en este dispositivo.
-          </p>
+          <p className="notification-tray__notice">{t('notificationtray.sin_conexion_mostrando_las_notificaciones')}</p>
         )}
         {error && (
           <div className="notification-tray__notice notification-tray__notice--error" role="alert">
@@ -192,7 +190,7 @@ export function NotificationTray({
               size="sm"
               className="notification-tray__dismiss-button"
               onClick={onDismissError}
-              aria-label="Cerrar mensaje de error"
+              aria-label={t('notificationtray.cerrar_mensaje_de_error')}
             >
               <X size={20} aria-hidden />
             </Button>
@@ -201,12 +199,12 @@ export function NotificationTray({
 
         <div className="notification-tray__list" aria-live="polite">
           {loading && notificaciones.length === 0 && (
-            <p className="notification-tray__empty">Cargando notificaciones…</p>
+            <p className="notification-tray__empty">{t('notificationtray.cargando_notificaciones')}</p>
           )}
           {!loading && notificaciones.length === 0 && (
             <div className="notification-tray__empty">
               <Bell size={24} aria-hidden />
-              <p>No tienes notificaciones.</p>
+              <p>{t('notificationtray.no_tienes_notificaciones')}</p>
             </div>
           )}
           {notificaciones.map((notificacion) => (
@@ -236,7 +234,7 @@ export function NotificationTray({
                   disabled={marcandoIds.has(notificacion.id_notificacion)}
                   onClick={() => void onMarkAsRead(notificacion.id_notificacion)}
                   aria-label={`Marcar como leída: ${notificacion.mensaje}`}
-                  title="Marcar como leída"
+                  title={t('notificationtray.marcar_como_leida')}
                 >
                   <Check size={20} aria-hidden />
                 </Button>
@@ -253,9 +251,7 @@ export function NotificationTray({
               size="sm"
               loading={loadingMore}
               onClick={onLoadMore}
-            >
-              Mostrar más
-            </Button>
+            >{t('notificationtray.mostrar_mas')}</Button>
           </footer>
         )}
       </section>

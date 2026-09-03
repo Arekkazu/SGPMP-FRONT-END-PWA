@@ -125,15 +125,15 @@ export function ActivoDetallePage() {
         style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', padding: '0 var(--s7)', overflowX: 'auto', marginTop: 'var(--s5)' }}
         aria-label="Secciones del activo"
       >
-        {TABS.map((t) => (
+        {TABS.map((item) => (
           <button
-            key={t.id}
+            key={item.id}
             type="button"
-            style={tab === t.id ? TAB_BTN_ACTIVE : TAB_BTN}
-            onClick={() => setTab(t.id)}
-            aria-current={tab === t.id ? 'page' : undefined}
+            style={tab === item.id ? TAB_BTN_ACTIVE : TAB_BTN}
+            onClick={() => setTab(item.id)}
+            aria-current={tab === item.id ? 'page' : undefined}
           >
-            {t.label}
+            {item.label}
           </button>
         ))}
       </nav>

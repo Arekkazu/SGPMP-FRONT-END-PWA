@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Button } from '../../shared/design-system/Button';
@@ -26,6 +27,7 @@ interface FormFields {
 }
 
 export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave, onAsignarPermiso, onRetirarPermiso, onClose }: Props) {
+  const { t } = useT('roles');
   const [permisos, setPermisos] = useState<PermisoResponse[]>(rol?.permisos ?? []);
   const { register, handleSubmit, formState: { errors } } = useForm<FormFields>({
     mode: 'onBlur',
@@ -114,20 +116,20 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
           <h2 id="rol-modal-title" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
             {modo === 'crear' ? 'Crear rol' : 'Editar rol'}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('rolmodal.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
         </div>
 
         {error && (
-          <Alert variant="error" title="Error" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+          <Alert variant="error" title={t('rolmodal.error')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s5)' }}>
             <div>
               <Input
-                label="Nombre del rol"
+                label={t('rolmodal.nombre_del_rol')}
                 required
                 error={errors.nombre_rol?.message}
                 disabled={rol?.es_protegido}
@@ -136,8 +138,8 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
             </div>
             <div>
               <Input
-                label="Descripción"
-                placeholder="Opcional"
+                label={t('rolmodal.descripcion')}
+                placeholder={t('rolmodal.opcional')}
                 {...register('descripcion')}
               />
             </div>
@@ -147,9 +149,7 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
             <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s3)' }}>
               Permisos
               {permisos.length === 0 && (
-                <span style={{ color: 'var(--sem-error)', fontWeight: 400, marginLeft: 'var(--s2)' }}>
-                  — Selecciona al menos un permiso
-                </span>
+                <span style={{ color: 'var(--sem-error)', fontWeight: 400, marginLeft: 'var(--s2)' }}>{t('rolmodal.selecciona_al_menos_un_permiso')}</span>
               )}
             </p>
             <PermisosMatrix
@@ -162,7 +162,7 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-            <Button type="button" variant="secondary" size="md" onClick={onClose}>Cancelar</Button>
+            <Button type="button" variant="secondary" size="md" onClick={onClose}>{t('rolmodal.cancelar')}</Button>
             <Button
               type="submit"
               variant="primary"

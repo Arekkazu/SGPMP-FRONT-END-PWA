@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { X, AlertTriangle, CheckCircle, Lock, Unlock, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Button } from '../../shared/design-system/Button';
@@ -77,6 +78,7 @@ function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
 }
 
 export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose, onDone }: Props) {
+  const { t } = useT('usuarios');
   const [accionSeleccionada, setAccionSeleccionada] = useState<AccionCuenta | null>(null);
   const { saving, saveError, gestionar } = useUsuarioDetalle();
 
@@ -131,10 +133,8 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s4)' }}>
-          <h2 id="gestionar-modal-title" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-            Gestionar cuenta
-          </h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
+          <h2 id="gestionar-modal-title" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{t('gestionarmodal.gestionar_cuenta')}</h2>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('gestionarmodal.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
         </div>
@@ -144,13 +144,11 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
         </p>
 
         {saveError && (
-          <Alert variant="error" title="Error" description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
+          <Alert variant="error" title={t('gestionarmodal.error')} description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Selecciona la acción
-          </p>
+          <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('gestionarmodal.selecciona_la_accion')}</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
             {acciones.map(({ value, label, descripcion, variante, icon }) => {
@@ -196,18 +194,16 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
           {accionSeleccionada === 'eliminar' && (
             <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'flex-start', padding: 'var(--s3)', background: 'var(--sem-error-bg)', borderRadius: 'var(--r-md)', marginBottom: 'var(--s4)', border: '1px solid var(--sem-error-border)' }}>
               <AlertTriangle size={16} color="var(--sem-error)" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden />
-              <p style={{ fontSize: '13px', color: 'var(--sem-error)', margin: 0 }}>
-                Esta acción eliminará la cuenta de forma permanente y no puede deshacerse.
-              </p>
+              <p style={{ fontSize: '13px', color: 'var(--sem-error)', margin: 0 }}>{t('gestionarmodal.esta_accion_eliminara_la_cuenta_de_forma')}</p>
             </div>
           )}
 
           {necesitaMotivo && (
             <div style={{ marginBottom: 'var(--s4)' }}>
               <Input
-                label="Motivo"
+                label={t('gestionarmodal.motivo')}
                 required
-                placeholder="Describe el motivo de la acción"
+                placeholder={t('gestionarmodal.describe_el_motivo_de_la_accion')}
                 error={errors.motivo_accion?.message}
                 {...register('motivo_accion', { required: 'El motivo es obligatorio para esta acción.' })}
               />
@@ -215,7 +211,7 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
           )}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', borderTop: '1px solid var(--surface-border)', paddingTop: 'var(--s5)', marginTop: 'var(--s2)' }}>
-            <Button type="button" variant="secondary" size="md" onClick={onClose}>Cancelar</Button>
+            <Button type="button" variant="secondary" size="md" onClick={onClose}>{t('gestionarmodal.cancelar')}</Button>
             <Button
               type="submit"
               variant={accionSeleccionada === 'eliminar' ? 'danger' : 'primary'}

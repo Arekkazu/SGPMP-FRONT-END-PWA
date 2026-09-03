@@ -100,7 +100,7 @@ export function DistribucionOtaView() {
               <label style={LABEL} htmlFor="ota-tipo">Tipo de modelo</label>
               <select id="ota-tipo" style={INPUT} value={fTipo} onChange={(e) => setFTipo(e.target.value)}>
                 <option value="">Todos</option>
-                {TIPOS_MODELO.map((t) => <option key={t} value={t}>{TIPO_MODELO_LABEL[t]}</option>)}
+                {TIPOS_MODELO.map((tipo) => <option key={tipo} value={tipo}>{TIPO_MODELO_LABEL[tipo]}</option>)}
               </select>
             </div>
             <div>

@@ -173,12 +173,12 @@ function TemaPanel({
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
-        {TEMAS.map((t) => (
+        {TEMAS.map((tema) => (
           <TemaCard
-            key={t.mode}
-            {...t}
-            selected={selected === t.mode}
-            onClick={() => { setSelected(t.mode); setSaved(false); }}
+            key={tema.mode}
+            {...tema}
+            selected={selected === tema.mode}
+            onClick={() => { setSelected(tema.mode); setSaved(false); }}
           />
         ))}
       </div>

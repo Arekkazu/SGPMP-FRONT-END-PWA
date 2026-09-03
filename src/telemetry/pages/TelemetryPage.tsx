@@ -105,12 +105,12 @@ export function TelemetryPage() {
           overflowX: 'auto',
         }}
       >
-        {TABS_OPERACION.map((t) => <TabLink key={t.path} tab={t} />)}
+        {TABS_OPERACION.map((tab) => <TabLink key={tab.path} tab={tab} />)}
         <span style={{ width: 1, height: 22, background: 'var(--surface-border)', margin: '0 var(--s2)', flexShrink: 0 }} aria-hidden />
         <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
           Flujo IoT
         </span>
-        {TABS_IOT.map((t) => <TabLink key={t.path} tab={t} />)}
+        {TABS_IOT.map((tab) => <TabLink key={tab.path} tab={tab} />)}
       </nav>
 
       <Switch>

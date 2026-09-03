@@ -65,15 +65,15 @@ export function MotorView() {
 
         {/* Tabs por tipo de modelo */}
         <div role="tablist" aria-label="Tipo de modelo" style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
-          {TIPOS_MODELO.map((t) => {
-            const activo = t === tipo;
-            const tieneConfig = configs.some((c) => c.tipo_modelo === t);
+          {TIPOS_MODELO.map((tipo) => {
+            const activo = tipo === tipo;
+            const tieneConfig = configs.some((c) => c.tipo_modelo === tipo);
             return (
               <button
-                key={t}
+                key={tipo}
                 role="tab"
                 aria-selected={activo}
-                onClick={() => setTipo(t)}
+                onClick={() => setTipo(tipo)}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)',
                   padding: 'var(--s2) var(--s4)', borderRadius: 'var(--r-full)',
@@ -83,7 +83,7 @@ export function MotorView() {
                   fontSize: '13px', fontWeight: activo ? 700 : 600, cursor: 'pointer', minHeight: 38,
                 }}
               >
-                {TIPO_MODELO_LABEL[t]}
+                {TIPO_MODELO_LABEL[tipo]}
                 {tieneConfig && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)' }} aria-label="configurado" />}
               </button>
             );

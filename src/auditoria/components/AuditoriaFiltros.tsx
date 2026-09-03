@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
 import { Button } from '../../shared/design-system/Button';
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
+  const { t } = useT('auditoria');
   const [idUsuario, setIdUsuario] = useState('');
   const [tipoEvento, setTipoEvento] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
@@ -43,7 +45,7 @@ export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
     >
       <div style={{ flex: '1 1 130px' }}>
         <Input
-          label="ID de usuario"
+          label={t('auditoriafiltros.id_de_usuario')}
           type="number"
           placeholder="Ej. 42"
           value={idUsuario}
@@ -51,9 +53,7 @@ export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
         />
       </div>
       <div style={{ flex: '1 1 180px' }}>
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>
-          Tipo de evento
-        </label>
+        <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('auditoriafiltros.tipo_de_evento')}</label>
         <select
           value={tipoEvento}
           onChange={(e) => setTipoEvento(e.target.value)}
@@ -69,7 +69,7 @@ export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
             cursor: 'pointer',
           }}
         >
-          <option value="">Todos los tipos</option>
+          <option value="">{t('auditoriafiltros.todos_los_tipos')}</option>
           {tiposEvento.map((t) => (
             <option key={t.id_tipo_evento} value={String(t.id_tipo_evento)}>{t.nombre}</option>
           ))}
@@ -77,7 +77,7 @@ export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
       </div>
       <div style={{ flex: '1 1 160px' }}>
         <Input
-          label="Fecha desde"
+          label={t('auditoriafiltros.fecha_desde')}
           type="datetime-local"
           value={fechaDesde}
           onChange={(e) => setFechaDesde(e.target.value)}
@@ -85,7 +85,7 @@ export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
       </div>
       <div style={{ flex: '1 1 160px' }}>
         <Input
-          label="Fecha hasta"
+          label={t('auditoriafiltros.fecha_hasta')}
           type="datetime-local"
           value={fechaHasta}
           onChange={(e) => setFechaHasta(e.target.value)}
@@ -93,12 +93,8 @@ export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
       </div>
       <div style={{ display: 'flex', gap: 'var(--s2)' }}>
         <Button type="submit" variant="primary" size="md">
-          <Search size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-          Buscar
-        </Button>
-        <Button type="button" variant="secondary" size="md" onClick={limpiar}>
-          Limpiar
-        </Button>
+          <Search size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriafiltros.buscar')}</Button>
+        <Button type="button" variant="secondary" size="md" onClick={limpiar}>{t('auditoriafiltros.limpiar')}</Button>
       </div>
     </form>
   );

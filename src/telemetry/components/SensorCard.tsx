@@ -10,8 +10,8 @@ interface Props {
   onAbrir: (sensor: EstadoSensorSchema) => void;
 }
 
-function Tendencia({ t }: { t: string | null }) {
-  const up = (t ?? '').toUpperCase();
+function Tendencia({ tendencia }: { tendencia: string | null }) {
+  const up = (tendencia ?? '').toUpperCase();
   if (up.includes('SUB') || up.includes('ASC') || up === 'UP') {
     return <TrendingUp size={14} aria-label="Tendencia al alza" style={{ color: 'var(--sem-warning)' }} />;
   }
@@ -74,7 +74,7 @@ export function SensorCard({ sensor, onAbrir }: Props) {
           {sensor.calidad_senal_rssi != null ? `${sensor.calidad_senal_rssi} dBm` : '—'}
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)' }}>
-          <Tendencia t={sensor.tendencia} />
+          <Tendencia tendencia={sensor.tendencia} />
         </span>
       </div>
 

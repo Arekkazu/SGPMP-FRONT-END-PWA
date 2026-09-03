@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { LayoutGrid } from 'lucide-react';
 import { useAuth } from '../../shared/auth/useAuth';
 import { Alert } from '../../shared/design-system/Alert';
@@ -7,6 +8,7 @@ import { WidgetCard } from '../components/WidgetCard';
 import './DashboardPage.css';
 
 export function DashboardPage() {
+  const { t } = useT('dashboard');
   const { claims } = useAuth();
   // El layout que el usuario guardo en Configuracion → Personalizacion es el que
   // manda aca. Antes esta pagina era estatica y la configuracion no se aplicaba
@@ -21,15 +23,13 @@ export function DashboardPage() {
         <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
           Bienvenido{claims?.nombre ? `, ${claims.nombre}` : ''}
         </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          SGP Multiespecie — Sistema de Gestión Pecuaria
-        </p>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('dashboardpage.sgp_multiespecie_sistema_de_gestion_pecuaria')}</p>
       </div>
 
       {error && (
         <Alert
           variant="error"
-          title="No se pudo cargar el dashboard"
+          title={t('dashboardpage.no_se_pudo_cargar_el_dashboard')}
           description={error.message}
           style={{ marginBottom: 'var(--s5)' }}
         />

@@ -55,22 +55,22 @@ export function MovilView() {
 
         {/* Segmented control */}
         <div role="tablist" style={{ display: 'flex', gap: 'var(--s1)', background: 'var(--surface-hover)', borderRadius: 'var(--r-full)', padding: 3, marginBottom: 'var(--s4)' }}>
-          {TABS.filter((t) => t.show).map((t) => (
+          {TABS.filter((item) => item.show).map((item) => (
             <button
-              key={t.key}
+              key={item.key}
               role="tab"
-              aria-selected={tab === t.key}
-              onClick={() => setTab(t.key)}
+              aria-selected={tab === item.key}
+              onClick={() => setTab(item.key)}
               style={{
                 flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--s1)',
                 border: 'none', borderRadius: 'var(--r-full)', padding: 'var(--s2)', cursor: 'pointer', minHeight: 40,
-                background: tab === t.key ? 'var(--surface-card)' : 'transparent',
-                color: tab === t.key ? 'var(--brand-600)' : 'var(--text-secondary)',
-                fontWeight: tab === t.key ? 700 : 600, fontSize: '13px',
-                boxShadow: tab === t.key ? 'var(--shadow-sm)' : 'none',
+                background: tab === item.key ? 'var(--surface-card)' : 'transparent',
+                color: tab === item.key ? 'var(--brand-600)' : 'var(--text-secondary)',
+                fontWeight: tab === item.key ? 700 : 600, fontSize: '13px',
+                boxShadow: tab === item.key ? 'var(--shadow-sm)' : 'none',
               }}
             >
-              {t.icon}{t.label}
+              {item.icon}{item.label}
             </button>
           ))}
         </div>

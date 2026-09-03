@@ -134,14 +134,14 @@ export function AuditoriaView() {
 
         {/* Tabs */}
         <div role="tablist" aria-label="Vista de eventos" style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
-          {TABS.map((t) => {
-            const activo = t.id === tab;
+          {TABS.map((item) => {
+            const activo = item.id === tab;
             return (
               <button
-                key={t.id}
+                key={item.id}
                 role="tab"
                 aria-selected={activo}
-                onClick={() => setTab(t.id)}
+                onClick={() => setTab(item.id)}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)', padding: 'var(--s3) var(--s4)',
                   border: 'none', borderBottom: `2px solid ${activo ? 'var(--brand-500)' : 'transparent'}`,
@@ -149,9 +149,9 @@ export function AuditoriaView() {
                   fontSize: '13px', fontWeight: activo ? 700 : 600, cursor: 'pointer',
                 }}
               >
-                {t.label}
-                {t.badge != null && t.badge > 0 && (
-                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '0 var(--s2)', borderRadius: 'var(--r-full)', background: 'var(--sem-error-bg)', color: 'var(--sem-error)' }}>{t.badge}</span>
+                {item.label}
+                {item.badge != null && item.badge > 0 && (
+                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '0 var(--s2)', borderRadius: 'var(--r-full)', background: 'var(--sem-error-bg)', color: 'var(--sem-error)' }}>{item.badge}</span>
                 )}
               </button>
             );

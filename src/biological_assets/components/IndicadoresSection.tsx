@@ -86,7 +86,7 @@ export function IndicadoresSection({ idActivo }: Props) {
           <div>
             <label style={LABEL} htmlFor="ind-tipo">Tipo</label>
             <select id="ind-tipo" style={SELECT} value={tipo} onChange={(e) => setTipo(e.target.value as TipoIndicador)}>
-              {TIPOS.map((t) => <option key={t} value={t}>{t}</option>)}
+              {TIPOS.map((tipo) => <option key={tipo} value={tipo}>{tipo}</option>)}
             </select>
           </div>
           <div>

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Input } from '../../shared/design-system/Input';
 import { Button } from '../../shared/design-system/Button';
@@ -16,6 +17,7 @@ interface Props {
 const NAME_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 
 export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: Props) {
+  const { t } = useT('perfil');
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EditarPerfilDTO>({ mode: 'onBlur' });
 
   useEffect(() => {
@@ -45,13 +47,13 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
         />
       )}
       {saveSuccess && (
-        <Alert variant="success" title="Cambios guardados" description="Tu perfil ha sido actualizado exitosamente." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="success" title={t('perfilform.cambios_guardados')} description={t('perfilform.tu_perfil_ha_sido_actualizado_exitosamente')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
         <div>
           <Input
-            label="Nombres"
+            label={t('perfilform.nombres')}
             required
             error={errors.nombre?.message}
             {...register('nombre', {
@@ -62,7 +64,7 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
         </div>
         <div>
           <Input
-            label="Apellidos"
+            label={t('perfilform.apellidos')}
             required
             error={errors.apellidos?.message}
             {...register('apellidos', {
@@ -73,7 +75,7 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
         </div>
         <div>
           <Input
-            label="Teléfono"
+            label={t('perfilform.telefono')}
             type="tel"
             hint="Opcional, 7-15 dígitos"
             error={errors.telefono?.message}
@@ -84,17 +86,15 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
         </div>
         <div>
           <Input
-            label="Dirección"
-            placeholder="Calle, número, ciudad"
+            label={t('perfilform.direccion')}
+            placeholder={t('perfilform.calle_numero_ciudad')}
             {...register('direccion')}
           />
         </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button type="submit" variant="primary" size="md" loading={saving}>
-          Guardar cambios
-        </Button>
+        <Button type="submit" variant="primary" size="md" loading={saving}>{t('perfilform.guardar_cambios')}</Button>
       </div>
     </form>
   );

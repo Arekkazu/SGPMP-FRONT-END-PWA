@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ShieldCheck } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
@@ -46,6 +47,7 @@ function formatFecha(fecha: string): string {
 const HEADERS = ['#', 'Usuario', 'Tipo evento', 'Módulo', 'Descripción', 'Resultado', 'IP', 'Fecha/Hora', 'Integridad', 'Acción'];
 
 export function AuditoriaTable({ eventos, loading, onVerificar, tiposEvento }: Props) {
+  const { t } = useT('auditoria');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -59,9 +61,7 @@ export function AuditoriaTable({ eventos, loading, onVerificar, tiposEvento }: P
 
   if (eventos.length === 0) {
     return (
-      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0' }}>
-        No se encontraron eventos con los filtros aplicados.
-      </p>
+      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0' }}>{t('auditoriatable.no_se_encontraron_eventos_con_los_filtros')}</p>
     );
   }
 
@@ -134,9 +134,7 @@ export function AuditoriaTable({ eventos, loading, onVerificar, tiposEvento }: P
                   onClick={() => onVerificar(e)}
                   aria-label={`Verificar integridad del evento ${e.id_evento}`}
                 >
-                  <ShieldCheck size={14} aria-hidden style={{ marginRight: 4 }} />
-                  Verificar
-                </Button>
+                  <ShieldCheck size={14} aria-hidden style={{ marginRight: 4 }} />{t('auditoriatable.verificar')}</Button>
               </td>
             </tr>
           ))}

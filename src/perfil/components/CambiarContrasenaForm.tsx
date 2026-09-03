@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
@@ -17,6 +18,7 @@ interface Props {
 const PW_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!*])[A-Za-z\d@#$%^&+=!*]{8,}$/;
 
 export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Props) {
+  const { t } = useT('perfil');
   const [showActual, setShowActual] = useState(false);
   const [showNueva, setShowNueva] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -31,15 +33,15 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       {pwError && (
-        <Alert variant="error" title="Error al cambiar contraseña" description={pwError.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('cambiarcontrasenaform.error_al_cambiar_contrasena')} description={pwError.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {pwSuccess && (
-        <Alert variant="success" title="Contraseña actualizada" description="Tu contraseña ha sido cambiada exitosamente." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="success" title={t('cambiarcontrasenaform.contrasena_actualizada')} description={t('cambiarcontrasenaform.tu_contrasena_ha_sido_cambiada_exitosamente')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
         <Input
-          label="Contraseña actual"
+          label={t('cambiarcontrasenaform.contrasena_actual')}
           type={showActual ? 'text' : 'password'}
           required
           autoComplete="current-password"
@@ -50,7 +52,7 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
         />
 
         <Input
-          label="Nueva contraseña"
+          label={t('cambiarcontrasenaform.nueva_contrasena')}
           type={showNueva ? 'text' : 'password'}
           required
           autoComplete="new-password"
@@ -64,7 +66,7 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
         />
 
         <Input
-          label="Confirmar nueva contraseña"
+          label={t('cambiarcontrasenaform.confirmar_nueva_contrasena')}
           type={showConfirm ? 'text' : 'password'}
           required
           autoComplete="new-password"
@@ -79,9 +81,7 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button type="submit" variant="primary" size="md" loading={saving}>
-          Cambiar contraseña
-        </Button>
+        <Button type="submit" variant="primary" size="md" loading={saving}>{t('cambiarcontrasenaform.cambiar_contrasena')}</Button>
       </div>
     </form>
   );

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { RefreshCw, Download, Archive, X, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useAuditoria } from '../hooks/useAuditoria';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -18,6 +19,7 @@ interface ExportacionAviso {
 }
 
 export function AuditoriaPage() {
+  const { t } = useT('auditoria');
   const puedeVer = usePermission(6, 2);
   const {
     eventos,
@@ -45,7 +47,7 @@ export function AuditoriaPage() {
   if (!puedeVer) {
     return (
       <div style={{ padding: 'var(--s7)', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No tienes permiso para ver esta sección.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('auditoriapage.no_tienes_permiso_para_ver_esta_seccion')}</p>
       </div>
     );
   }
@@ -99,18 +101,14 @@ export function AuditoriaPage() {
     <div style={{ padding: 'var(--s6)', maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s5)', gap: 'var(--s3)', flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
-            Auditoría
-          </h1>
+          <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{t('auditoriapage.auditoria')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
             {loading ? 'Cargando…' : `${total} evento${total !== 1 ? 's' : ''} encontrado${total !== 1 ? 's' : ''}`}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
           <Button variant="secondary" size="sm" onClick={handleSimularArchivado} disabled={eventos.length === 0}>
-            <Archive size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Simular archivado
-          </Button>
+            <Archive size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriapage.simular_archivado')}</Button>
           <Button
             variant="secondary"
             size="sm"
@@ -118,23 +116,21 @@ export function AuditoriaPage() {
             loading={exportando}
             disabled={loading || exportando || total === 0}
           >
-            <Download size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Exportar CSV
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label="Recargar">
+            <Download size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriapage.exportar_csv')}</Button>
+          <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('auditoriapage.recargar')}>
             <RefreshCw size={16} aria-hidden />
           </Button>
         </div>
       </div>
 
       {error && (
-        <Alert variant="error" title="Error al cargar auditoría" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('auditoriapage.error_al_cargar_auditoria')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {exportError && (
         <Alert
           variant="error"
-          title="Error al exportar CSV"
+          title={t('auditoriapage.error_al_exportar_csv')}
           description={exportError.message}
           style={{ marginBottom: 'var(--s4)' }}
         />
@@ -143,7 +139,7 @@ export function AuditoriaPage() {
       {exportProgreso && (
         <Alert
           variant="info"
-          title="Exportación en curso"
+          title={t('auditoriapage.exportacion_en_curso')}
           description={exportProgreso}
           style={{ marginBottom: 'var(--s4)' }}
         />
@@ -163,7 +159,7 @@ export function AuditoriaPage() {
       {archivoMsg && (
         <Alert
           variant="info"
-          title="Simulación de archivado"
+          title={t('auditoriapage.simulacion_de_archivado')}
           description={archivoMsg}
           style={{ marginBottom: 'var(--s4)' }}
         />
@@ -180,9 +176,7 @@ export function AuditoriaPage() {
             size="sm"
             disabled={filtros.pagina <= 1}
             onClick={() => actualizarFiltros({ pagina: filtros.pagina - 1 })}
-          >
-            ← Anterior
-          </Button>
+          >{t('auditoriapage.anterior')}</Button>
           <span style={{ display: 'flex', alignItems: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>
             Página {filtros.pagina} de {totalPages}
           </span>
@@ -191,9 +185,7 @@ export function AuditoriaPage() {
             size="sm"
             disabled={filtros.pagina >= totalPages}
             onClick={() => actualizarFiltros({ pagina: filtros.pagina + 1 })}
-          >
-            Siguiente →
-          </Button>
+          >{t('auditoriapage.siguiente')}</Button>
         </div>
       )}
 
@@ -222,23 +214,18 @@ export function AuditoriaPage() {
             boxShadow: 'var(--shadow-lg)',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s4)' }}>
-              <h2 id="verificar-modal-title" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Verificación de integridad
-              </h2>
-              <Button variant="ghost" size="sm" onClick={() => setEventoVerificar(null)} aria-label="Cerrar">
+              <h2 id="verificar-modal-title" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{t('auditoriapage.verificacion_de_integridad')}</h2>
+              <Button variant="ghost" size="sm" onClick={() => setEventoVerificar(null)} aria-label={t('auditoriapage.cerrar')}>
                 <X size={18} aria-hidden />
               </Button>
             </div>
 
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>
-              Evento <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>#{eventoVerificar.id_evento}</strong>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>{t('auditoriapage.evento')}<strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>#{eventoVerificar.id_evento}</strong>
               {' · '}{tiposEvento.find((t) => t.id_tipo_evento === eventoVerificar.tipo_evento)?.nombre ?? eventoVerificar.tipo_evento}
             </p>
 
             <div style={{ marginBottom: 'var(--s5)' }}>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                Clasificación del backend
-              </p>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{t('auditoriapage.clasificacion_del_backend')}</p>
               <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--surface-hover)', padding: 'var(--s2) var(--s3)', borderRadius: 'var(--r-md)' }}>
                 {eventoVerificar.integridad}
               </p>
@@ -268,7 +255,7 @@ export function AuditoriaPage() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button variant="secondary" size="md" onClick={() => setEventoVerificar(null)}>Cerrar</Button>
+              <Button variant="secondary" size="md" onClick={() => setEventoVerificar(null)}>{t('auditoriapage.cerrar')}</Button>
             </div>
           </div>
         </div>

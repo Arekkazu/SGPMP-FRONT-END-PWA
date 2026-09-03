@@ -155,11 +155,11 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
       <div style={{ marginBottom: 'var(--s6)' }}>
         <span style={SECTION_TITLE}>Tipo de activo</span>
         <div style={{ display: 'flex', gap: 'var(--s3)', flexWrap: 'wrap' }}>
-          {(['INDIVIDUAL', 'POBLACIONAL'] as TipoActivo[]).map((t) => {
-            const activo = tipo === t;
+          {(['INDIVIDUAL', 'POBLACIONAL'] as TipoActivo[]).map((tipo) => {
+            const activo = tipo === tipo;
             return (
               <label
-                key={t}
+                key={tipo}
                 style={{
                   flex: 1,
                   minWidth: 200,
@@ -173,14 +173,14 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                   cursor: 'pointer',
                 }}
               >
-                <input type="radio" value={t} {...register('tipo_activo')} style={{ accentColor: 'var(--brand-500)' }} />
-                {t === 'POBLACIONAL' ? <Boxes size={18} aria-hidden /> : <User size={18} aria-hidden />}
+                <input type="radio" value={tipo} {...register('tipo_activo')} style={{ accentColor: 'var(--brand-500)' }} />
+                {tipo === 'POBLACIONAL' ? <Boxes size={18} aria-hidden /> : <User size={18} aria-hidden />}
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
-                    {t === 'POBLACIONAL' ? 'Poblacional (lote)' : 'Individual'}
+                    {tipo === 'POBLACIONAL' ? 'Poblacional (lote)' : 'Individual'}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {t === 'POBLACIONAL' ? 'Grupo con cantidad' : 'Un ejemplar identificado'}
+                    {tipo === 'POBLACIONAL' ? 'Grupo con cantidad' : 'Un ejemplar identificado'}
                   </div>
                 </div>
               </label>

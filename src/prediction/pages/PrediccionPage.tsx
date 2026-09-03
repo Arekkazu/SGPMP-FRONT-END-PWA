@@ -103,12 +103,12 @@ export function PrediccionPage() {
           overflowX: 'auto',
         }}
       >
-        {TABS_PRINCIPAL.map((t) => <TabLink key={t.path} tab={t} />)}
+        {TABS_PRINCIPAL.map((tab) => <TabLink key={tab.path} tab={tab} />)}
         <span style={{ width: 1, height: 22, background: 'var(--surface-border)', margin: '0 var(--s2)', flexShrink: 0 }} aria-hidden />
         <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
           Modelos IA
         </span>
-        {TABS_MODELOS.map((t) => <TabLink key={t.path} tab={t} />)}
+        {TABS_MODELOS.map((tab) => <TabLink key={tab.path} tab={tab} />)}
       </nav>
 
       <Switch>

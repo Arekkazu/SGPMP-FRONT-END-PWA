@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import type { RecursoResponse, AccionResponse, PermisoResponse } from '../types';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function PermisosMatrix({ recursos, acciones, permisos, onChange, readonly }: Props) {
+  const { t } = useT('roles');
   const tienePermiso = (idRecurso: number, idAccion: number) =>
     permisos.some((p) => p.id_recurso === idRecurso && p.id_accion === idAccion);
 
@@ -28,9 +30,7 @@ export function PermisosMatrix({ recursos, acciones, permisos, onChange, readonl
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
-            <th style={{ padding: 'var(--s2) var(--s3)', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)', minWidth: 160 }}>
-              Recurso
-            </th>
+            <th style={{ padding: 'var(--s2) var(--s3)', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)', minWidth: 160 }}>{t('permisosmatrix.recurso')}</th>
             {acciones.map((a) => (
               <th key={a.id_accion} style={{ padding: 'var(--s2) var(--s3)', textAlign: 'center', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                 {a.codigo}
