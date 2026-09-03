@@ -1,0 +1,59 @@
+name: Versionamiento automatizado
+
+# Mismo flujo ya validado en sgpmp-backend: dev publica release candidates
+# (1.x.y-rc.N), main publica la version final cuando Pruebas aprueba y se
+# mergea dev -> main. Ver docs-sgpmp/1-analisis/versionamiento/.
+#
+# Token: por ahora usa el automatico de Actions (secrets.GITHUB_TOKEN) --
+# en este repo "dev" NO tiene ruleset/branch protection todavia (verificado
+# via gh api repos/.../rules/branches/dev, vacio). Si en algun momento se
+# activa un ruleset con "PR obligatorio" (como paso en sgpmp-backend, error
+# GH013), el push de @semantic-release/git empieza a fallar sin importar
+# los permisos de este workflow -- ahi hace falta crear un PAT real de una
+# cuenta con bypass en el ruleset, guardarlo como secret GH_TOKEN, y
+# cambiar las dos referencias de abajo a secrets.GH_TOKEN.
+on:
+  push:
+    branches: [main, dev]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # persist-credentials debe quedar en true (default): semantic-
+          # release/git hace un "git push" real, no una llamada API --
+          # necesita que checkout deje el token configurado como
+          # credencial de git.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias de release
+        run: |
+          npm install --no-save \
+            semantic-release \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/changelog \
+            @semantic-release/exec \
+            @semantic-release/git \
+            @semantic-release/github \
+            conventional-changelog-conventionalcommits
+
+      - name: Ejecutar semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
+
+      - name: Confirmar publicación
+        run: echo "Versionamiento completado. Ver CHANGELOG.md y docs/trazabilidad/TRAZABILIDAD_CAMBIOS.md actualizados en este mismo commit."
