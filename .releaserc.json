@@ -20,7 +20,7 @@
     ["@semantic-release/release-notes-generator", { "preset": "conventionalcommits" }],
     ["@semantic-release/changelog", { "changelogFile": "CHANGELOG.md" }],
     ["@semantic-release/exec", {
-      "prepareCmd": "node scripts/append_trazabilidad.js ${nextRelease.version} ${nextRelease.gitTag} ${lastRelease.version}"
+      "prepareCmd": "node scripts/append_trazabilidad.cjs ${nextRelease.version} ${nextRelease.gitTag} ${lastRelease.version}"
     }],
     ["@semantic-release/git", {
       "assets": ["CHANGELOG.md", "docs/trazabilidad/TRAZABILIDAD_CAMBIOS.md"],
