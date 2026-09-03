@@ -4,30 +4,32 @@ import {
   LayoutDashboard, Users, Shield, ClipboardList,
   User, LogOut, Lock, Settings, Sprout, Activity, BrainCircuit
 } from 'lucide-react';
+import { useT } from '../i18n/useT';
 import { useAuth } from '../auth/useAuth';
 import { usePermission } from '../rbac/usePermission';
 import './Sidebar.css';
 
 interface NavItem {
-  label: string;
+  /** Clave del catálogo `nav`, no el texto: el rótulo se resuelve al render. */
+  claveLabel: string;
   path: string;
   icon: React.ReactNode;
   requirePermission?: [number, number];
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Panel principal', path: '/dashboard', icon: <LayoutDashboard size={16} aria-hidden /> },
-  { label: 'Activos biológicos', path: '/activos-biologicos', icon: <Sprout size={16} aria-hidden />, requirePermission: [29, 2] },
-  { label: 'Telemetría IoT', path: '/telemetria', icon: <Activity size={16} aria-hidden />, requirePermission: [33, 2] },
-  { label: 'Predicción IA', path: '/prediccion', icon: <BrainCircuit size={16} aria-hidden />, requirePermission: [18, 2] },
-  { label: 'Gestión de usuarios', path: '/usuarios', icon: <Users size={16} aria-hidden />, requirePermission: [1, 2] },
-  { label: 'Roles y permisos', path: '/roles', icon: <Shield size={16} aria-hidden />, requirePermission: [2, 2] },
-  { label: 'Auditoría', path: '/auditoria', icon: <ClipboardList size={16} aria-hidden />, requirePermission: [6, 2] },
-  { label: 'Configuración', path: '/configuracion', icon: <Settings size={16} aria-hidden />, requirePermission: [8, 2] },
+  { claveLabel: 'modulos.dashboard', path: '/dashboard', icon: <LayoutDashboard size={16} aria-hidden /> },
+  { claveLabel: 'modulos.activos_biologicos', path: '/activos-biologicos', icon: <Sprout size={16} aria-hidden />, requirePermission: [29, 2] },
+  { claveLabel: 'modulos.telemetria', path: '/telemetria', icon: <Activity size={16} aria-hidden />, requirePermission: [33, 2] },
+  { claveLabel: 'modulos.prediccion', path: '/prediccion', icon: <BrainCircuit size={16} aria-hidden />, requirePermission: [18, 2] },
+  { claveLabel: 'modulos.usuarios', path: '/usuarios', icon: <Users size={16} aria-hidden />, requirePermission: [1, 2] },
+  { claveLabel: 'modulos.roles', path: '/roles', icon: <Shield size={16} aria-hidden />, requirePermission: [2, 2] },
+  { claveLabel: 'modulos.auditoria', path: '/auditoria', icon: <ClipboardList size={16} aria-hidden />, requirePermission: [6, 2] },
+  { claveLabel: 'modulos.configuracion', path: '/configuracion', icon: <Settings size={16} aria-hidden />, requirePermission: [8, 2] },
 ];
 
 const MY_ITEMS: NavItem[] = [
-  { label: 'Mi perfil', path: '/perfil', icon: <User size={16} aria-hidden /> },
+  { claveLabel: 'modulos.perfil', path: '/perfil', icon: <User size={16} aria-hidden /> },
 ];
 
 interface SidebarProps {
@@ -36,6 +38,7 @@ interface SidebarProps {
 }
 
 function NavItemComponent({ item }: { item: NavItem }) {
+  const { t } = useT('nav');
   const history = useHistory();
   const { pathname } = useLocation();
   const hasPermission = usePermission(
@@ -45,6 +48,7 @@ function NavItemComponent({ item }: { item: NavItem }) {
 
   const locked = item.requirePermission ? !hasPermission : false;
   const active = pathname === item.path;
+  const label = t(item.claveLabel);
 
   return (
     <button
@@ -53,10 +57,10 @@ function NavItemComponent({ item }: { item: NavItem }) {
       onClick={() => { if (!locked) history.push(item.path); }}
       aria-current={active ? 'page' : undefined}
       aria-disabled={locked}
-      title={locked ? 'Sin permiso para esta sección' : item.label}
+      title={locked ? t('aria.sin_permiso') : label}
     >
       <span className="ds-sidebar__item-icon">{item.icon}</span>
-      <span className="ds-sidebar__item-label">{item.label}</span>
+      <span className="ds-sidebar__item-label">{label}</span>
       {locked && (
         <span className="ds-sidebar__item-lock" aria-hidden="true">
           <Lock size={11} />
@@ -67,6 +71,7 @@ function NavItemComponent({ item }: { item: NavItem }) {
 }
 
 export function Sidebar({ onLogout, open }: SidebarProps) {
+  const { t } = useT('nav');
   const { userInfo } = useAuth();
 
   const initials =
@@ -75,7 +80,7 @@ export function Sidebar({ onLogout, open }: SidebarProps) {
       : '??';
 
   return (
-    <nav className={`ds-sidebar${open ? ' ds-sidebar--open' : ''}`} aria-label="Navegación principal">
+    <nav className={`ds-sidebar${open ? ' ds-sidebar--open' : ''}`} aria-label={t('aria.navegacion_principal')}>
       <div className="ds-sidebar__logo">
         <div className="ds-sidebar__logo-mark" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
@@ -86,13 +91,13 @@ export function Sidebar({ onLogout, open }: SidebarProps) {
           </svg>
         </div>
         <div>
-          <div className="ds-sidebar__logo-text">SGP Multiespecie</div>
-          <div className="ds-sidebar__logo-sub">Sistema Pecuario</div>
+          <div className="ds-sidebar__logo-text">{t('marca.nombre')}</div>
+          <div className="ds-sidebar__logo-sub">{t('marca.descripcion')}</div>
         </div>
       </div>
 
       <div className="ds-sidebar__section">
-        <span className="ds-sidebar__section-label">Módulos</span>
+        <span className="ds-sidebar__section-label">{t('secciones.modulos')}</span>
         {NAV_ITEMS.map((item) => (
           <NavItemComponent key={item.path} item={item} />
         ))}
@@ -101,7 +106,7 @@ export function Sidebar({ onLogout, open }: SidebarProps) {
       <div className="ds-sidebar__divider" role="separator" />
 
       <div className="ds-sidebar__section">
-        <span className="ds-sidebar__section-label">Mi cuenta</span>
+        <span className="ds-sidebar__section-label">{t('secciones.mi_cuenta')}</span>
         {MY_ITEMS.map((item) => (
           <NavItemComponent key={item.path} item={item} />
         ))}
@@ -119,8 +124,8 @@ export function Sidebar({ onLogout, open }: SidebarProps) {
           type="button"
           className="ds-sidebar__logout"
           onClick={onLogout}
-          aria-label="Cerrar sesión"
-          title="Cerrar sesión"
+          aria-label={t('aria.cerrar_sesion')}
+          title={t('aria.cerrar_sesion')}
         >
           <LogOut size={16} aria-hidden />
         </button>
