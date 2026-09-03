@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Link2, RefreshCw } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -19,6 +20,7 @@ import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 type Accion = 'resolver' | 'corregir' | null;
 
 export function VinculacionesView() {
+  const { t } = useT('telemetry');
   const puedeVer = usePermission(RECURSO_VINCULACIONES, ACCION_R);
   const puedeGestionar = usePermission(RECURSO_VINCULACIONES, ACCION_U);
   const online = useOnlineStatus();
@@ -63,18 +65,16 @@ export function VinculacionesView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            <Link2 size={20} aria-hidden />
-            Vinculación de Lecturas con Activos
-          </h1>
+            <Link2 size={20} aria-hidden />{t('vinculacionesview.vinculacion_de_lecturas_con_activos')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : `${paginacion.totalRegistros} vinculación(es)`}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => cargar(build(paginacion.pagina))} aria-label="Recargar"><RefreshCw size={15} aria-hidden /></Button>
+        <Button variant="ghost" size="sm" onClick={() => cargar(build(paginacion.pagina))} aria-label={t('vinculacionesview.recargar')}><RefreshCw size={15} aria-hidden /></Button>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
-        {!online && <Alert variant="warning" title="Sin conexión" description="Resolver y corregir están deshabilitados." style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title={t('vinculacionesview.sin_conexion')} description={t('vinculacionesview.resolver_y_corregir_estan_deshabilitados')} style={{ marginBottom: 'var(--s4)' }} />}
         {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a vinculaciones' : 'Error al cargar vinculaciones'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <VinculacionesFiltros

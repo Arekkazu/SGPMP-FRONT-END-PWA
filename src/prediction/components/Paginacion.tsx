@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function Paginacion({ pagina, totalPaginas, totalRegistros, onCambiar }: Props) {
+  const { t } = useT('prediction');
   if (totalPaginas <= 1) {
     return totalRegistros != null ? (
       <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 'var(--s4)' }}>
@@ -26,12 +28,8 @@ export function Paginacion({ pagina, totalPaginas, totalRegistros, onCambiar }: 
       </span>
       <div style={{ display: 'flex', gap: 'var(--s2)' }}>
         <Button variant="secondary" size="sm" disabled={pagina <= 1} onClick={() => onCambiar(pagina - 1)}>
-          <ChevronLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-          Anterior
-        </Button>
-        <Button variant="secondary" size="sm" disabled={pagina >= totalPaginas} onClick={() => onCambiar(pagina + 1)}>
-          Siguiente
-          <ChevronRight size={15} aria-hidden style={{ marginLeft: 'var(--s1)' }} />
+          <ChevronLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('paginacion.anterior')}</Button>
+        <Button variant="secondary" size="sm" disabled={pagina >= totalPaginas} onClick={() => onCambiar(pagina + 1)}>{t('paginacion.siguiente')}<ChevronRight size={15} aria-hidden style={{ marginLeft: 'var(--s1)' }} />
         </Button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Eye, Pencil, Ban } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { EstadoActivoPill, TipoPatologiaPill } from './PatologiaPills';
@@ -17,19 +18,16 @@ interface Props {
 }
 
 export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesactivar, onVer, onEditar, onDesactivar }: Props) {
+  const { t } = useT('prediction');
   if (loading) {
     return (
-      <div style={{ padding: 'var(--s7)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-        Cargando patologías…
-      </div>
+      <div style={{ padding: 'var(--s7)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('patologiastable.cargando_patologias')}</div>
     );
   }
 
   if (patologias.length === 0) {
     return (
-      <div style={{ padding: 'var(--s8) var(--s4)', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
-        No hay patologías que coincidan con los filtros.
-      </div>
+      <div style={{ padding: 'var(--s8) var(--s4)', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>{t('patologiastable.no_hay_patologias_que_coincidan_con_los')}</div>
     );
   }
 
@@ -38,12 +36,12 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={THEAD_ROW}>
-            <th style={TH}>Nombre</th>
-            <th style={TH}>Especie</th>
-            <th style={TH}>Variables asociadas</th>
-            <th style={TH}>Tipo</th>
-            <th style={TH}>Estado</th>
-            <th style={{ ...TH, textAlign: 'right' }}>Acciones</th>
+            <th style={TH}>{t('patologiastable.nombre')}</th>
+            <th style={TH}>{t('patologiastable.especie')}</th>
+            <th style={TH}>{t('patologiastable.variables_asociadas')}</th>
+            <th style={TH}>{t('patologiastable.tipo')}</th>
+            <th style={TH}>{t('patologiastable.estado')}</th>
+            <th style={{ ...TH, textAlign: 'right' }}>{t('patologiastable.acciones')}</th>
           </tr>
         </thead>
         <tbody>
@@ -77,7 +75,7 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
                 <td style={TD}><TipoPatologiaPill esBase={p.es_base} /></td>
                 <td style={TD}><EstadoActivoPill activo={p.es_activo} /></td>
                 <td style={{ ...TD, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                  <Button variant="ghost" size="sm" onClick={() => onVer(p)} aria-label={`Ver ${p.nombre_patologia}`} title="Ver detalle">
+                  <Button variant="ghost" size="sm" onClick={() => onVer(p)} aria-label={`Ver ${p.nombre_patologia}`} title={t('patologiastable.ver_detalle')}>
                     <Eye size={16} aria-hidden />
                   </Button>
                   <Button

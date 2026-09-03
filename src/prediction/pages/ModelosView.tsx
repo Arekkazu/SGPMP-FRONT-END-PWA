@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Boxes, RefreshCw, Rocket, AlertTriangle } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -15,6 +16,7 @@ import { RECURSO_MODELOS, ACCION_R, ACCION_U, ACCION_E } from '../rbac';
 import type { ListarModelosFiltros, VersionModeloResponse } from '../types';
 
 export function ModelosView() {
+  const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_MODELOS, ACCION_R);
   const puedeEditar = usePermission(RECURSO_MODELOS, ACCION_U);
   const puedeEjecutar = usePermission(RECURSO_MODELOS, ACCION_E);
@@ -73,22 +75,20 @@ export function ModelosView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            <Boxes size={20} aria-hidden />
-            Gestión de Modelos de IA
-          </h1>
+            <Boxes size={20} aria-hidden />{t('modelosview.gestion_de_modelos_de_ia')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : `${paginacion.totalRegistros} versión(es)`}
             {fromCache && ' · desde caché'}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={aplicar} aria-label="Recargar">
+        <Button variant="ghost" size="sm" onClick={aplicar} aria-label={t('modelosview.recargar')}>
           <RefreshCw size={15} aria-hidden />
         </Button>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
-        {!online && <Alert variant="warning" title="Sin conexión" description="Mostrando versiones cacheadas. Las acciones están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />}
-        {fromCache && online && <Alert variant="info" title="Datos desde caché" description="No se pudo conectar; se muestran las últimas versiones disponibles." style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title={t('modelosview.sin_conexion')} description={t('modelosview.mostrando_versiones_cacheadas_las_acciones')} style={{ marginBottom: 'var(--s4)' }} />}
+        {fromCache && online && <Alert variant="info" title={t('modelosview.datos_desde_cache')} description="No se pudo conectar; se muestran las últimas versiones disponibles." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a los modelos' : 'Error al cargar versiones'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <ModelosFiltros value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} />
@@ -120,15 +120,14 @@ export function ModelosView() {
 
       {confirmarActivar && detalleSel && (
         <ModalShell
-          title="Confirmar activación en producción"
+          title={t('modelosview.confirmar_activacion_en_produccion')}
           onClose={() => setConfirmarActivar(false)}
           maxWidth={480}
           footer={
             <>
-              <Button variant="secondary" onClick={() => setConfirmarActivar(false)} disabled={saving}>Cancelar</Button>
+              <Button variant="secondary" onClick={() => setConfirmarActivar(false)} disabled={saving}>{t('modelosview.cancelar')}</Button>
               <Button variant="primary" onClick={onConfirmarActivar} loading={saving} disabled={!online}>
-                <Rocket size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Activar
-              </Button>
+                <Rocket size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelosview.activar')}</Button>
             </>
           }
         >
@@ -136,8 +135,7 @@ export function ModelosView() {
             <AlertTriangle size={20} aria-hidden style={{ color: 'var(--sem-warning)', flexShrink: 0, marginTop: 2 }} />
             <div>
               <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>
-                <strong>{detalleSel.nombre_version}</strong> pasará a producción y reemplazará la versión activa de su tipo de modelo. Esta acción es atómica y auditada.
-              </p>
+                <strong>{detalleSel.nombre_version}</strong>{t('modelosview.pasara_a_produccion_y_reemplazara_la')}</p>
               {saveError && <p role="alert" style={{ margin: 'var(--s3) 0 0', fontSize: '13px', color: 'var(--sem-error)' }}>{saveError.message}</p>}
             </div>
           </div>

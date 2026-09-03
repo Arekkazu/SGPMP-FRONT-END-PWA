@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Cpu, Info } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
@@ -23,6 +24,7 @@ const CARD: React.CSSProperties = {
 };
 
 export function SensoresSection({ idActivo, esPoblacional, idInfraestructura }: Props) {
+  const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeAsociar = usePermission(RECURSO_SENSOR_ACTIVO, ACCION_C);
   const { saving, saveError, asociar, setSaveError } = useSensorActivo(idActivo);
@@ -40,13 +42,9 @@ export function SensoresSection({ idActivo, esPoblacional, idInfraestructura }: 
     <div style={CARD}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--s3)', marginBottom: 'var(--s4)' }}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <Cpu size={16} aria-hidden />
-          Sensores IoT
-        </h3>
+          <Cpu size={16} aria-hidden />{t('sensoressection.sensores_iot')}</h3>
         {puedeAsociar && (
-          <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSaveError(null); setAbierto(true); }}>
-            Asociar sensor
-          </Button>
+          <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSaveError(null); setAbierto(true); }}>{t('sensoressection.asociar_sensor')}</Button>
         )}
       </div>
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import type { AplicacionPlantillaResponse } from '../types';
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function PlantillaHistorial({ historial, loading }: Props) {
+  const { t } = useT('configuration');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
@@ -19,9 +21,7 @@ export function PlantillaHistorial({ historial, loading }: Props) {
 
   if (historial.length === 0) {
     return (
-      <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: 'var(--s5) 0' }}>
-        No hay aplicaciones registradas aún.
-      </p>
+      <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: 'var(--s5) 0' }}>{t('plantillahistorial.no_hay_aplicaciones_registradas_aun')}</p>
     );
   }
 
@@ -67,7 +67,7 @@ export function PlantillaHistorial({ historial, loading }: Props) {
                       {diffCount} cambios
                     </span>
                   ) : (
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Sin cambios</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('plantillahistorial.sin_cambios')}</span>
                   )}
                 </td>
               </tr>

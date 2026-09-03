@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Check } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -139,6 +140,7 @@ function TemaPanel({
   saveError: ReturnType<typeof useTemaVisual>['saveError'];
   onSave: (mode: number) => Promise<void>;
 }) {
+  const { t } = useT('configuration');
   const [selected, setSelected] = useState(currentMode);
   const [saved, setSaved] = useState(false);
 
@@ -166,10 +168,10 @@ function TemaPanel({
       </div>
 
       {saveError && (
-        <Alert variant="error" title="Error al guardar" description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('temavisualsection.error_al_guardar')} description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {saved && !saveError && (
-        <Alert variant="success" title="Tema guardado" description="El tema se aplicó correctamente." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="success" title={t('temavisualsection.tema_guardado')} description={t('temavisualsection.el_tema_se_aplico_correctamente')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
@@ -190,15 +192,14 @@ function TemaPanel({
           loading={saving}
           disabled={!canSave || saving}
           onClick={handleSave}
-        >
-          Guardar tema
-        </Button>
+        >{t('temavisualsection.guardar_tema')}</Button>
       </div>
     </div>
   );
 }
 
 export function TemaVisualSection() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedePersonal = usePermission(24, 3);
   const puedeGlobal = usePermission(27, 3);
@@ -220,25 +221,21 @@ export function TemaVisualSection() {
   return (
     <div>
       <div style={{ marginBottom: 'var(--s5)' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Tema Visual
-        </h2>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          Selecciona el modo de color de la interfaz
-        </p>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('temavisualsection.tema_visual')}</h2>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('temavisualsection.selecciona_el_modo_de_color_de_la_interfaz')}</p>
       </div>
 
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="warning" title={t('temavisualsection.sin_conexion')} description={t('temavisualsection.las_acciones_de_escritura_estan')} style={{ marginBottom: 'var(--s5)' }} />
       )}
       {error && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="error" title={t('temavisualsection.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s5)' }} />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
         {personal && (
           <TemaPanel
-            title="Mi preferencia"
+            title={t('temavisualsection.mi_preferencia')}
             subtitle="Tema aplicado a tu cuenta de usuario"
             currentMode={personal.theme_mode}
             fuente={personal.fuente}
@@ -251,7 +248,7 @@ export function TemaVisualSection() {
 
         {global_ && puedeGlobal && (
           <TemaPanel
-            title="Tema global"
+            title={t('temavisualsection.tema_global')}
             subtitle="Aplicado a todos los usuarios que no tienen preferencia personal"
             currentMode={global_.theme_mode}
             fuente={global_.fuente}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Switch, Route, Redirect, useHistory, useLocation } from 'react-router-dom';
 import {
   Activity, ShieldAlert, Stethoscope, SlidersHorizontal, History, MessageSquareText,
@@ -89,10 +90,11 @@ function TabLink({ tab }: { tab: Tab }) {
  * porque son simuladas (ver do-it/prediction/TASKS.md § Pendientes).
  */
 export function PrediccionPage() {
+  const { t } = useT('prediction');
   return (
     <div style={{ minHeight: '100%', background: 'var(--surface-bg)' }}>
       <nav
-        aria-label="Secciones de predicción"
+        aria-label={t('prediccionpage.secciones_de_prediccion')}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -105,9 +107,7 @@ export function PrediccionPage() {
       >
         {TABS_PRINCIPAL.map((tab) => <TabLink key={tab.path} tab={tab} />)}
         <span style={{ width: 1, height: 22, background: 'var(--surface-border)', margin: '0 var(--s2)', flexShrink: 0 }} aria-hidden />
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
-          Modelos IA
-        </span>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>{t('prediccionpage.modelos_ia')}</span>
         {TABS_MODELOS.map((tab) => <TabLink key={tab.path} tab={tab} />)}
       </nav>
 

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ClipboardList, RefreshCw, Download, ListChecks, AlertOctagon, Layers } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -30,6 +31,7 @@ function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: n
 }
 
 export function AuditoriaView() {
+  const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_AUDITORIA, ACCION_R);
   const puedeExportar = usePermission(RECURSO_AUDITORIA, ACCION_E);
   const online = useOnlineStatus();
@@ -100,27 +102,24 @@ export function AuditoriaView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            <ClipboardList size={20} aria-hidden />
-            Bitácora de Auditoría
-          </h1>
+            <ClipboardList size={20} aria-hidden />{t('auditoriaview.bitacora_de_auditoria')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             Registro inmutable de eventos del módulo de predicción
             {fromCache && ' · desde caché'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <Button variant="ghost" size="sm" onClick={aplicar} aria-label="Recargar">
+          <Button variant="ghost" size="sm" onClick={aplicar} aria-label={t('auditoriaview.recargar')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           <Button variant="secondary" size="sm" disabled={!puedeExportar || !online} onClick={() => setExportOpen(true)}>
-            <Download size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Exportar
-          </Button>
+            <Download size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriaview.exportar')}</Button>
         </div>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
-        {!online && <Alert variant="warning" title="Sin conexión" description="Mostrando bitácora cacheada." style={{ marginBottom: 'var(--s4)' }} />}
-        {fromCache && online && <Alert variant="info" title="Datos desde caché" description="No se pudo conectar; se muestran los últimos eventos disponibles." style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title={t('auditoriaview.sin_conexion')} description={t('auditoriaview.mostrando_bitacora_cacheada')} style={{ marginBottom: 'var(--s4)' }} />}
+        {fromCache && online && <Alert variant="info" title={t('auditoriaview.datos_desde_cache')} description="No se pudo conectar; se muestran los últimos eventos disponibles." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Solo el administrador puede consultar la auditoría' : 'Error al cargar la bitácora'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
@@ -133,7 +132,7 @@ export function AuditoriaView() {
         <AuditoriaFiltros value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} />
 
         {/* Tabs */}
-        <div role="tablist" aria-label="Vista de eventos" style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
+        <div role="tablist" aria-label={t('auditoriaview.vista_de_eventos')} style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
           {TABS.map((item) => {
             const activo = item.id === tab;
             return (
@@ -160,7 +159,7 @@ export function AuditoriaView() {
 
         {tab === 'tipo' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-            {porTipo.length === 0 && <div style={{ padding: 'var(--s7)', textAlign: 'center', color: 'var(--text-muted)' }}>Sin eventos en esta página.</div>}
+            {porTipo.length === 0 && <div style={{ padding: 'var(--s7)', textAlign: 'center', color: 'var(--text-muted)' }}>{t('auditoriaview.sin_eventos_en_esta_pagina')}</div>}
             {porTipo.map(([tipo, count]) => (
               <div key={tipo} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--s3) var(--s4)', background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>

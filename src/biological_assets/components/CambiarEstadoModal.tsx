@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
@@ -63,6 +64,7 @@ function normalizar(estado: string | null | undefined): EstadoActivoNombre | nul
 }
 
 export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onConfirmar }: Props) {
+  const { t } = useT('biologicalAssets');
   const actual = normalizar(estadoActual);
   // CERRADO se gestiona por "Cerrar ciclo" (endpoint dedicado); se excluye aquí.
   const destinos = (actual ? TRANSICIONES_VALIDAS[actual] : []).filter((e) => e !== 'CERRADO');
@@ -83,40 +85,39 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
   };
 
   return (
-    <ModalShell title="Cambiar estado del activo" onClose={onClose}>
+    <ModalShell title={t('cambiarestadomodal.cambiar_estado_del_activo')} onClose={onClose}>
       {error && (
         <Alert
           variant={error.status >= 500 ? 'error' : 'warning'}
-          title="No se pudo cambiar el estado"
+          title={t('cambiarestadomodal.no_se_pudo_cambiar_el_estado')}
           description={error.status === 409 ? `Transición no permitida. ${error.message}` : error.message}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
-        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Estado actual:</span>
+        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('cambiarestadomodal.estado_actual')}</span>
         <EstadoPill estado={estadoActual} size="md" />
       </div>
 
       {destinos.length === 0 ? (
         <Alert
           variant="info"
-          title="Sin transiciones disponibles"
+          title={t('cambiarestadomodal.sin_transiciones_disponibles')}
           description={actual === 'BAJA' ? 'El estado BAJA es terminal.' : 'No hay cambios de estado manuales disponibles (usa «Cerrar ciclo» si aplica).'}
         />
       ) : (
         <form onSubmit={handleSubmit(submit)} noValidate>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="estado-nuevo">
-                Nuevo estado <span aria-hidden="true">*</span>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="estado-nuevo">{t('cambiarestadomodal.nuevo_estado')}<span aria-hidden="true">*</span>
               </label>
               <select
                 id="estado-nuevo"
                 style={SELECT}
                 {...register('estado_nuevo', { required: 'Selecciona el nuevo estado.' })}
               >
-                <option value="">Seleccionar…</option>
+                <option value="">{t('cambiarestadomodal.seleccionar')}</option>
                 {destinos.map((e) => (
                   <option key={e} value={e}>{ESTADO_LABEL[e]}</option>
                 ))}
@@ -129,7 +130,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
             </div>
 
             <Input
-              label="Fecha del cambio" required type="date" max={HOY}
+              label={t('cambiarestadomodal.fecha_del_cambio')} required type="date" max={HOY}
               error={errors.fecha_cambio_estado?.message}
               {...register('fecha_cambio_estado', {
                 required: 'La fecha es obligatoria.',
@@ -138,13 +139,12 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
             />
 
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-cambio">
-                Motivo del cambio <span aria-hidden="true">*</span>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-cambio">{t('cambiarestadomodal.motivo_del_cambio')}<span aria-hidden="true">*</span>
               </label>
               <textarea
                 id="motivo-cambio"
                 style={TEXTAREA}
-                placeholder="Describe la razón del cambio de estado…"
+                placeholder={t('cambiarestadomodal.describe_la_razon_del_cambio_de_estado')}
                 {...register('motivo_cambio', {
                   required: 'El motivo es obligatorio.',
                   validate: (val) => val.trim().length > 0 || 'El motivo no puede estar vacío.',
@@ -159,8 +159,8 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
-            <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Cancelar</Button>
-            <Button type="submit" variant="primary" size="md" loading={saving}>Cambiar estado</Button>
+            <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('cambiarestadomodal.cancelar')}</Button>
+            <Button type="submit" variant="primary" size="md" loading={saving}>{t('cambiarestadomodal.cambiar_estado')}</Button>
           </div>
         </form>
       )}

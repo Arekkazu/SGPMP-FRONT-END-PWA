@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { DownloadCloud, RefreshCw, Plus, CheckCircle2, XCircle, Clock, Package } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -26,6 +27,7 @@ function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: n
 }
 
 export function DistribucionOtaView() {
+  const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_OTA, ACCION_R);
   const online = useOnlineStatus();
 
@@ -71,20 +73,19 @@ export function DistribucionOtaView() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <Button variant="ghost" size="sm" onClick={() => cargar(build(), paginacion.pagina)} aria-label="Recargar">
+          <Button variant="ghost" size="sm" onClick={() => cargar(build(), paginacion.pagina)} aria-label={t('distribucionotaview.recargar')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           <Button variant="primary" size="sm" disabled title="La creación de despliegues es gestionada por el motor de distribución (equipo IoT/IA)">
-            <Plus size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Nuevo despliegue
-          </Button>
+            <Plus size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('distribucionotaview.nuevo_despliegue')}</Button>
         </div>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
         <DatosSimuladosBanner detalle="La creación de despliegues y el monitor en vivo son del motor de distribución OTA (equipo IoT/IA). Esta vista muestra el estado real de lectura; el asistente de creación no está disponible" />
 
-        {!online && <Alert variant="warning" title="Sin conexión" description="Mostrando despliegues cacheados." style={{ marginBottom: 'var(--s4)' }} />}
-        {fromCache && online && <Alert variant="info" title="Datos desde caché" description="No se pudo conectar; se muestran los últimos despliegues disponibles." style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title={t('distribucionotaview.sin_conexion')} description={t('distribucionotaview.mostrando_despliegues_cacheados')} style={{ marginBottom: 'var(--s4)' }} />}
+        {fromCache && online && <Alert variant="info" title={t('distribucionotaview.datos_desde_cache')} description="No se pudo conectar; se muestran los últimos despliegues disponibles." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a la distribución' : 'Error al cargar despliegues'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
@@ -97,25 +98,25 @@ export function DistribucionOtaView() {
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', marginBottom: 'var(--s5)' }}>
           <div style={FILTER_GRID}>
             <div>
-              <label style={LABEL} htmlFor="ota-tipo">Tipo de modelo</label>
+              <label style={LABEL} htmlFor="ota-tipo">{t('distribucionotaview.tipo_de_modelo')}</label>
               <select id="ota-tipo" style={INPUT} value={fTipo} onChange={(e) => setFTipo(e.target.value)}>
-                <option value="">Todos</option>
+                <option value="">{t('distribucionotaview.todos')}</option>
                 {TIPOS_MODELO.map((tipo) => <option key={tipo} value={tipo}>{TIPO_MODELO_LABEL[tipo]}</option>)}
               </select>
             </div>
             <div>
-              <label style={LABEL} htmlFor="ota-estado">Estado</label>
+              <label style={LABEL} htmlFor="ota-estado">{t('distribucionotaview.estado')}</label>
               <select id="ota-estado" style={INPUT} value={fEstado} onChange={(e) => setFEstado(e.target.value)}>
-                <option value="">Todos</option>
-                <option value="EXITOSO">Exitoso</option>
-                <option value="FALLIDO">Fallido</option>
-                <option value="PENDIENTE">Pendiente</option>
-                <option value="EN_PROCESO">En proceso</option>
-                <option value="SIN_CAMBIOS">Sin cambios</option>
+                <option value="">{t('distribucionotaview.todos')}</option>
+                <option value="EXITOSO">{t('distribucionotaview.exitoso')}</option>
+                <option value="FALLIDO">{t('distribucionotaview.fallido')}</option>
+                <option value="PENDIENTE">{t('distribucionotaview.pendiente')}</option>
+                <option value="EN_PROCESO">{t('distribucionotaview.en_proceso')}</option>
+                <option value="SIN_CAMBIOS">{t('distribucionotaview.sin_cambios')}</option>
               </select>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <Button variant="secondary" size="sm" onClick={() => cargar(build(), 1)}>Aplicar</Button>
+              <Button variant="secondary" size="sm" onClick={() => cargar(build(), 1)}>{t('distribucionotaview.aplicar')}</Button>
             </div>
           </div>
         </div>

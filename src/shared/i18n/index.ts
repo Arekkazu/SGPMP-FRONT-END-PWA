@@ -26,11 +26,32 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import esCommon from './locales/es-CO/common.json';
-import esNav from './locales/es-CO/nav.json';
+import esAuditoria from './locales/es-CO/auditoria.json';
+import esAuth from './locales/es-CO/auth.json';
+import esBiologicalAssets from './locales/es-CO/biologicalAssets.json';
 import esConfiguration from './locales/es-CO/configuration.json';
+import esDashboard from './locales/es-CO/dashboard.json';
+import esNav from './locales/es-CO/nav.json';
+import esNotificaciones from './locales/es-CO/notificaciones.json';
+import esPerfil from './locales/es-CO/perfil.json';
+import esPrediction from './locales/es-CO/prediction.json';
+import esRoles from './locales/es-CO/roles.json';
+import esTelemetry from './locales/es-CO/telemetry.json';
+import esUsuarios from './locales/es-CO/usuarios.json';
+
 import enCommon from './locales/en-US/common.json';
-import enNav from './locales/en-US/nav.json';
+import enAuditoria from './locales/en-US/auditoria.json';
+import enAuth from './locales/en-US/auth.json';
+import enBiologicalAssets from './locales/en-US/biologicalAssets.json';
 import enConfiguration from './locales/en-US/configuration.json';
+import enDashboard from './locales/en-US/dashboard.json';
+import enNav from './locales/en-US/nav.json';
+import enNotificaciones from './locales/en-US/notificaciones.json';
+import enPerfil from './locales/en-US/perfil.json';
+import enPrediction from './locales/en-US/prediction.json';
+import enRoles from './locales/en-US/roles.json';
+import enTelemetry from './locales/en-US/telemetry.json';
+import enUsuarios from './locales/en-US/usuarios.json';
 
 export const LOCALES = ['es-CO', 'en-US'] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -39,12 +60,12 @@ export const LOCALE_DEFAULT: Locale = 'es-CO';
 const CLAVE_STORAGE = 'sgpmp-locale';
 
 export const RECURSOS = {
-  'es-CO': { common: esCommon, nav: esNav, configuration: esConfiguration },
-  'en-US': { common: enCommon, nav: enNav, configuration: enConfiguration },
+  'es-CO': { common: esCommon, auditoria: esAuditoria, auth: esAuth, biologicalAssets: esBiologicalAssets, configuration: esConfiguration, dashboard: esDashboard, nav: esNav, notificaciones: esNotificaciones, perfil: esPerfil, prediction: esPrediction, roles: esRoles, telemetry: esTelemetry, usuarios: esUsuarios },
+  'en-US': { common: enCommon, auditoria: enAuditoria, auth: enAuth, biologicalAssets: enBiologicalAssets, configuration: enConfiguration, dashboard: enDashboard, nav: enNav, notificaciones: enNotificaciones, perfil: enPerfil, prediction: enPrediction, roles: enRoles, telemetry: enTelemetry, usuarios: enUsuarios },
 } as const;
 
 /** Namespaces cargados. Un modulo nuevo se agrega aqui y en `RECURSOS`. */
-export const NAMESPACES = ['common', 'nav', 'configuration'] as const;
+export const NAMESPACES = ['common', 'auditoria', 'auth', 'biologicalAssets', 'configuration', 'dashboard', 'nav', 'notificaciones', 'perfil', 'prediction', 'roles', 'telemetry', 'usuarios'] as const;
 
 export function esLocaleValido(valor: unknown): valor is Locale {
   return typeof valor === 'string' && (LOCALES as readonly string[]).includes(valor);

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -67,6 +68,7 @@ function PatologiaModal({
   onRegistrar: (dto: import('../types').RegistrarPatologiaDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarPatologiaDTO) => Promise<boolean>;
 }) {
+  const { t } = useT('configuration');
   const modoEditar = patologia !== null;
   const {
     register,
@@ -114,7 +116,7 @@ function PatologiaModal({
           <h2 id="patologia-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {modoEditar ? `Editar patología — ${patologia!.nombre}` : 'Nueva patología'}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('patologiassection.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
         </div>
@@ -131,10 +133,10 @@ function PatologiaModal({
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
             <Input
-              label="Nombre"
+              label={t('patologiassection.nombre')}
               required
               aria-required="true"
-              placeholder="Ej: Mastitis, Fiebre aftosa…"
+              placeholder={t('patologiassection.ej_mastitis_fiebre_aftosa')}
               error={errors.nombre?.message}
               {...register('nombre', {
                 required: 'El nombre es obligatorio.',
@@ -143,13 +145,11 @@ function PatologiaModal({
               })}
             />
             <div>
-              <label htmlFor="patologia-desc" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>
-                Descripción
-              </label>
+              <label htmlFor="patologia-desc" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('patologiassection.descripcion')}</label>
               <textarea
                 id="patologia-desc"
                 style={{ width: '100%', minHeight: 80, padding: 'var(--s3)', borderRadius: 'var(--r-md)', border: '1.5px solid var(--surface-border)', background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-sans)', resize: 'vertical', outline: 'none' }}
-                placeholder="Descripción opcional de la patología…"
+                placeholder={t('patologiassection.descripcion_opcional_de_la_patologia')}
                 {...register('descripcion', { maxLength: { value: 255, message: 'Máximo 255 caracteres.' } })}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--s1)' }}>
@@ -164,7 +164,7 @@ function PatologiaModal({
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
-            <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Cancelar</Button>
+            <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('patologiassection.cancelar')}</Button>
             <Button type="submit" variant="primary" size="md" loading={saving}>
               {modoEditar ? 'Guardar cambios' : 'Registrar patología'}
             </Button>
@@ -176,6 +176,7 @@ function PatologiaModal({
 }
 
 function ConfirmDesactivar({ patologia, saving, onCancel, onConfirm }: { patologia: PatologiaEspecieItemResponse; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const { t } = useT('configuration');
   return (
     <div
       role="dialog"
@@ -184,13 +185,13 @@ function ConfirmDesactivar({ patologia, saving, onCancel, onConfirm }: { patolog
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>Confirmar desactivación</h2>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('patologiassection.confirmar_desactivacion')}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>
           ¿Deseas desactivar la patología "{patologia.nombre}"? Los registros históricos permanecerán accesibles.
         </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>Cancelar</Button>
-          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>Desactivar</Button>
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('patologiassection.cancelar')}</Button>
+          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{t('patologiassection.desactivar')}</Button>
         </div>
       </div>
     </div>
@@ -198,6 +199,7 @@ function ConfirmDesactivar({ patologia, saving, onCancel, onConfirm }: { patolog
 }
 
 export function PatologiasSection({ idEspecie }: Props) {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear  = usePermission(18, 1);
   const puedeEditar = usePermission(18, 3);
@@ -224,7 +226,7 @@ export function PatologiasSection({ idEspecie }: Props) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <div>
-          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Patologías</h3>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('patologiassection.patologias')}</h3>
           {!loading && (
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0, fontFamily: 'var(--font-mono)' }}>
               {activas} activas · {patologias.length - activas} inactivas
@@ -232,26 +234,24 @@ export function PatologiasSection({ idEspecie }: Props) {
           )}
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <Button variant="ghost" size="sm" onClick={() => cargar(idEspecie)} aria-label="Recargar patologías">
+          <Button variant="ghost" size="sm" onClick={() => cargar(idEspecie)} aria-label={t('patologiassection.recargar_patologias')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           {puedeCrear && (
             <Button variant="primary" size="sm" onClick={() => setModal({ tipo: 'crear' })} disabled={!online}>
-              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Nueva patología
-            </Button>
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('patologiassection.nueva_patologia')}</Button>
           )}
         </div>
       </div>
 
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="warning" title={t('patologiassection.sin_conexion')} description={t('patologiassection.las_acciones_de_escritura_estan')} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {error && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('patologiassection.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {accionError && (
-        <Alert variant="error" title="Error" description={accionError} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('patologiassection.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {loading ? (
@@ -262,9 +262,7 @@ export function PatologiasSection({ idEspecie }: Props) {
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
       ) : patologias.length === 0 ? (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>
-          No hay patologías registradas para esta especie.
-        </p>
+        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('patologiassection.no_hay_patologias_registradas_para_esta')}</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>

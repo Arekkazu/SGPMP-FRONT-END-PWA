@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ModalShell } from './ModalShell';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
@@ -22,6 +23,7 @@ const TEXTAREA: React.CSSProperties = {
 };
 
 export function CorregirVinculacionModal({ vinc, saving, saveError, onConfirm, onClose }: Props) {
+  const { t } = useT('telemetry');
   const [idActivo, setIdActivo] = useState(vinc.id_activo_biologico != null ? String(vinc.id_activo_biologico) : '');
   const [modelo, setModelo] = useState(vinc.modelo_manejo ?? '');
   const [motivo, setMotivo] = useState('');
@@ -44,29 +46,29 @@ export function CorregirVinculacionModal({ vinc, saving, saveError, onConfirm, o
       maxWidth={480}
       footer={
         <>
-          <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button variant="danger" size="sm" loading={saving} disabled={saving} onClick={confirmar}>Confirmar corrección</Button>
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>{t('corregirvinculacionmodal.cancelar')}</Button>
+          <Button variant="danger" size="sm" loading={saving} disabled={saving} onClick={confirmar}>{t('corregirvinculacionmodal.confirmar_correccion')}</Button>
         </>
       }
     >
-      <Alert variant="warning" title="Esta acción crea una nueva vinculación" description="La vinculación actual pasará a estado SUPERADA (trazabilidad NIC 41)." style={{ marginBottom: 'var(--s4)' }} />
+      <Alert variant="warning" title={t('corregirvinculacionmodal.esta_accion_crea_una_nueva_vinculacion')} description="La vinculación actual pasará a estado SUPERADA (trazabilidad NIC 41)." style={{ marginBottom: 'var(--s4)' }} />
 
       <div style={{ marginBottom: 'var(--s4)' }}>
-        <label style={LABEL} htmlFor="cv-activo">Nuevo activo biológico correcto *</label>
+        <label style={LABEL} htmlFor="cv-activo">{t('corregirvinculacionmodal.nuevo_activo_biologico_correcto')}</label>
         <input id="cv-activo" type="number" style={{ ...INPUT, borderColor: touched && faltaActivo ? 'var(--sem-error)' : 'var(--surface-border)' }} value={idActivo} onChange={(e) => setIdActivo(e.target.value)} aria-required aria-invalid={touched && faltaActivo} />
-        {touched && faltaActivo && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>Ingresa un ID válido.</p>}
+        {touched && faltaActivo && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>{t('corregirvinculacionmodal.ingresa_un_id_valido')}</p>}
       </div>
 
       <div style={{ marginBottom: 'var(--s4)' }}>
-        <label style={LABEL} htmlFor="cv-modelo">Modelo de manejo *</label>
+        <label style={LABEL} htmlFor="cv-modelo">{t('corregirvinculacionmodal.modelo_de_manejo')}</label>
         <input id="cv-modelo" style={{ ...INPUT, borderColor: touched && faltaModelo ? 'var(--sem-error)' : 'var(--surface-border)' }} value={modelo} onChange={(e) => setModelo(e.target.value)} aria-required aria-invalid={touched && faltaModelo} />
-        {touched && faltaModelo && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>Este campo es obligatorio.</p>}
+        {touched && faltaModelo && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>{t('corregirvinculacionmodal.este_campo_es_obligatorio')}</p>}
       </div>
 
       <div>
         <label style={{ ...LABEL, textTransform: 'none' as const }} htmlFor="cv-motivo">Motivo de la corrección * (5–500 caracteres)</label>
         <textarea id="cv-motivo" style={{ ...TEXTAREA, borderColor: touched && motivoInvalido ? 'var(--sem-error)' : 'var(--surface-border)' }} value={motivo} maxLength={500} onChange={(e) => setMotivo(e.target.value)} aria-required aria-invalid={touched && motivoInvalido} />
-        {touched && motivoInvalido && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>Mínimo 5 caracteres.</p>}
+        {touched && motivoInvalido && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>{t('corregirvinculacionmodal.minimo_5_caracteres')}</p>}
       </div>
 
       {saveError && (

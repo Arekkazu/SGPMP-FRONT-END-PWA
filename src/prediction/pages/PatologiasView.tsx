@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Stethoscope, Plus, RefreshCw, AlertTriangle } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -15,6 +16,7 @@ import { RECURSO_PATOLOGIAS, ACCION_R, ACCION_C, ACCION_U, ACCION_D } from '../r
 import type { ListarPatologiasFiltros, PatologiaM04Response } from '../types';
 
 export function PatologiasView() {
+  const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_PATOLOGIAS, ACCION_R);
   const puedeCrear = usePermission(RECURSO_PATOLOGIAS, ACCION_C);
   const puedeEditar = usePermission(RECURSO_PATOLOGIAS, ACCION_U);
@@ -100,27 +102,24 @@ export function PatologiasView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            <Stethoscope size={20} aria-hidden />
-            Catálogo de Patologías
-          </h1>
+            <Stethoscope size={20} aria-hidden />{t('patologiasview.catalogo_de_patologias')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : `${total} patología(s)`}
             {fromCache && ' · desde caché'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <Button variant="ghost" size="sm" onClick={aplicar} aria-label="Recargar">
+          <Button variant="ghost" size="sm" onClick={aplicar} aria-label={t('patologiasview.recargar')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           <Button variant="primary" size="sm" disabled={!puedeCrear || !online} onClick={abrirCrear}>
-            <Plus size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Nueva patología
-          </Button>
+            <Plus size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('patologiasview.nueva_patologia')}</Button>
         </div>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
-        {!online && <Alert variant="warning" title="Sin conexión" description="Mostrando catálogo cacheado. La edición está deshabilitada." style={{ marginBottom: 'var(--s4)' }} />}
-        {fromCache && online && <Alert variant="info" title="Datos desde caché" description="No se pudo conectar; se muestra el último catálogo disponible." style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title={t('patologiasview.sin_conexion')} description={t('patologiasview.mostrando_catalogo_cacheado_la_edicion_esta')} style={{ marginBottom: 'var(--s4)' }} />}
+        {fromCache && online && <Alert variant="info" title={t('patologiasview.datos_desde_cache')} description="No se pudo conectar; se muestra el último catálogo disponible." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso al catálogo' : 'Error al cargar patologías'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <PatologiasFiltros value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} />
@@ -154,22 +153,20 @@ export function PatologiasView() {
 
       {aDesactivar && (
         <ModalShell
-          title="¿Inactivar patología?"
+          title={t('patologiasview.inactivar_patologia')}
           onClose={() => setADesactivar(null)}
           maxWidth={460}
           footer={
             <>
-              <Button variant="secondary" onClick={() => setADesactivar(null)} disabled={saving}>Cancelar</Button>
-              <Button variant="danger" onClick={confirmarDesactivar} loading={saving} disabled={!online}>Inactivar</Button>
+              <Button variant="secondary" onClick={() => setADesactivar(null)} disabled={saving}>{t('patologiasview.cancelar')}</Button>
+              <Button variant="danger" onClick={confirmarDesactivar} loading={saving} disabled={!online}>{t('patologiasview.inactivar')}</Button>
             </>
           }
         >
           <div style={{ display: 'flex', gap: 'var(--s3)', alignItems: 'flex-start' }}>
             <AlertTriangle size={20} aria-hidden style={{ color: 'var(--sem-warning)', flexShrink: 0, marginTop: 2 }} />
             <div>
-              <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>
-                Se inactivará <strong>{aDesactivar.nombre_patologia}</strong>. Dejará de estar disponible para nuevas inferencias del motor.
-              </p>
+              <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>{t('patologiasview.se_inactivara')}<strong>{aDesactivar.nombre_patologia}</strong>{t('patologiasview.dejara_de_estar_disponible_para_nuevas')}</p>
               {saveError && <p role="alert" style={{ margin: 'var(--s3) 0 0', fontSize: '13px', color: 'var(--sem-error)' }}>{saveError.message}</p>}
             </div>
           </div>

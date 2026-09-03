@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import {
   TrendingUp, Stethoscope, Baby, Package, ArrowDownCircle, Info,
 } from 'lucide-react';
@@ -62,6 +63,7 @@ function resumenEvento(ev: EventoActivoResponse): { icon: React.ReactNode; tipo:
 }
 
 export function EventosSection({ idActivo, tipo, estadoActual, onChanged }: Props) {
+  const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeCrear = usePermission(RECURSO_ACTIVOS, ACCION_C);
   const esPoblacional = String(tipo).toUpperCase() === 'POBLACIONAL';
@@ -101,7 +103,7 @@ export function EventosSection({ idActivo, tipo, estadoActual, onChanged }: Prop
       {/* Acciones de registro */}
       <div style={CARD}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--s3)' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Registrar evento</h3>
+          <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('eventossection.registrar_evento')}</h3>
           <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
             {puedeCrear && botones.map((b) => (
               <Button
@@ -123,15 +125,13 @@ export function EventosSection({ idActivo, tipo, estadoActual, onChanged }: Prop
           </p>
         )}
         {aviso && (
-          <Alert variant="success" title="Evento registrado" description={aviso} style={{ marginTop: 'var(--s4)' }} />
+          <Alert variant="success" title={t('eventossection.evento_registrado')} description={aviso} style={{ marginTop: 'var(--s4)' }} />
         )}
       </div>
 
       {/* Historial de eventos (solo POBLACIONAL) */}
       <div style={CARD}>
-        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-          Historial de eventos
-        </h3>
+        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('eventossection.historial_de_eventos')}</h3>
         {!esPoblacional ? (
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
             El historial de eventos en lote solo aplica a activos poblacionales. Para activos individuales,
@@ -142,9 +142,9 @@ export function EventosSection({ idActivo, tipo, estadoActual, onChanged }: Prop
             <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
           </div>
         ) : error && error.status !== 409 ? (
-          <Alert variant="error" title="Error al cargar eventos" description={error.message} />
+          <Alert variant="error" title={t('eventossection.error_al_cargar_eventos')} description={error.message} />
         ) : eventos.length === 0 ? (
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>Sin eventos registrados.</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('eventossection.sin_eventos_registrados')}</p>
         ) : (
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
             {eventos.map((ev) => {

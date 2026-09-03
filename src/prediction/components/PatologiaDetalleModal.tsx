@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Button } from '../../shared/design-system/Button';
 import { ModalShell } from './ModalShell';
 import { EstadoActivoPill, TipoPatologiaPill } from './PatologiaPills';
@@ -27,15 +28,16 @@ function fmt(dt: string | null): string {
 }
 
 export function PatologiaDetalleModal({ patologia, loading, onClose }: Props) {
+  const { t } = useT('prediction');
   return (
     <ModalShell
       title={patologia?.nombre_patologia ?? 'Detalle de patología'}
       onClose={onClose}
       maxWidth={640}
-      footer={<Button variant="secondary" onClick={onClose}>Cerrar</Button>}
+      footer={<Button variant="secondary" onClick={onClose}>{t('patologiadetallemodal.cerrar')}</Button>}
     >
       {loading || !patologia ? (
-        <div style={{ padding: 'var(--s6)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>Cargando…</div>
+        <div style={{ padding: 'var(--s6)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('patologiadetallemodal.cargando')}</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
           <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
@@ -44,20 +46,20 @@ export function PatologiaDetalleModal({ patologia, loading, onClose }: Props) {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--s4)' }}>
-            <Fila label="Especie aplicable">{nombreEspecie(patologia.especie_aplicable)}</Fila>
-            <Fila label="Versión de catálogo">v{patologia.version_catalogo}</Fila>
+            <Fila label={t('patologiadetallemodal.especie_aplicable')}>{nombreEspecie(patologia.especie_aplicable)}</Fila>
+            <Fila label={t('patologiadetallemodal.version_de_catalogo')}>v{patologia.version_catalogo}</Fila>
             <Fila label="ID">{patologia.id_patologia}</Fila>
           </div>
 
           <div>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Descripción clínica</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('patologiadetallemodal.descripcion_clinica')}</span>
             <p style={{ margin: 'var(--s1) 0 0', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.5 }}>
               {patologia.descripcion_clinica || '—'}
             </p>
           </div>
 
           <div>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Variables sensóricas asociadas</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('patologiadetallemodal.variables_sensoricas_asociadas')}</span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)', marginTop: 'var(--s2)' }}>
               {patologia.variables_sensoricas_asociadas.length === 0 && <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>—</span>}
               {patologia.variables_sensoricas_asociadas.map((v) => (
@@ -72,7 +74,7 @@ export function PatologiaDetalleModal({ patologia, loading, onClose }: Props) {
                   }}
                 >
                   {nombreVariable(v.id_variable_ambiental)}
-                  {v.es_variable_critica && <strong style={{ color: 'var(--sem-warning)' }} title="Variable crítica">★</strong>}
+                  {v.es_variable_critica && <strong style={{ color: 'var(--sem-warning)' }} title={t('patologiadetallemodal.variable_critica')}>★</strong>}
                   {v.peso_evidencia != null && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', opacity: 0.7 }}>{v.peso_evidencia}</span>}
                 </span>
               ))}
@@ -80,8 +82,8 @@ export function PatologiaDetalleModal({ patologia, loading, onClose }: Props) {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--s4)', borderTop: '1px solid var(--surface-border)', paddingTop: 'var(--s4)' }}>
-            <Fila label="Creación">{fmt(patologia.fecha_creacion_m04)}</Fila>
-            <Fila label="Última actualización">{fmt(patologia.fecha_actualizacion)}</Fila>
+            <Fila label={t('patologiadetallemodal.creacion')}>{fmt(patologia.fecha_creacion_m04)}</Fila>
+            <Fila label={t('patologiadetallemodal.ultima_actualizacion')}>{fmt(patologia.fecha_actualizacion)}</Fila>
           </div>
         </div>
       )}

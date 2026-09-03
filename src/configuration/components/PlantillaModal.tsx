@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { X, Check } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
@@ -56,6 +57,7 @@ interface Props {
 }
 
 export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Props) {
+  const { t } = useT('configuration');
   const { especies, cargar } = useEspecies();
   useEffect(() => { cargar(); }, [cargar]);
   const activas = especies.filter((e) => e.es_activo);
@@ -122,10 +124,8 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
           padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <h2 id="plantilla-modal-title" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Nueva Plantilla de Configuración
-          </h2>
-          <button type="button" onClick={onClose} style={{ background: 'var(--surface-hover)', border: 'none', borderRadius: 'var(--r-full)', width: 28, height: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }} aria-label="Cerrar">
+          <h2 id="plantilla-modal-title" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('plantillamodal.nueva_plantilla_de_configuracion')}</h2>
+          <button type="button" onClick={onClose} style={{ background: 'var(--surface-hover)', border: 'none', borderRadius: 'var(--r-full)', width: 28, height: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }} aria-label={t('plantillamodal.cerrar')}>
             <X size={14} />
           </button>
         </div>
@@ -134,20 +134,19 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
         <form onSubmit={handleSubmit}>
           <div style={{ padding: 'var(--s6)', display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
             {saveError && (
-              <Alert variant="error" title="Error al crear" description={saveError.message} />
+              <Alert variant="error" title={t('plantillamodal.error_al_crear')} description={saveError.message} />
             )}
 
             {/* Nombre */}
             <div>
-              <label htmlFor="tpl-nombre" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>
-                Nombre de la plantilla <span aria-hidden>*</span>
+              <label htmlFor="tpl-nombre" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('plantillamodal.nombre_de_la_plantilla')}<span aria-hidden>*</span>
               </label>
               <Input
                 id="tpl-nombre"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 onBlur={() => { if (!nombre.trim()) setNombreErr('El nombre es requerido.'); else setNombreErr(''); }}
-                placeholder="Ej. Config estándar pollos de engorde"
+                placeholder={t('plantillamodal.ej_config_estandar_pollos_de_engorde')}
                 maxLength={100}
                 aria-required="true"
                 error={nombreErr}
@@ -156,8 +155,7 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
 
             {/* Especie */}
             <div>
-              <label htmlFor="tpl-especie" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>
-                Especie base <span aria-hidden>*</span>
+              <label htmlFor="tpl-especie" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('plantillamodal.especie_base')}<span aria-hidden>*</span>
               </label>
               <select
                 id="tpl-especie"
@@ -172,7 +170,7 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
                   outline: 'none', cursor: 'pointer',
                 }}
               >
-                <option value="">Selecciona una especie…</option>
+                <option value="">{t('plantillamodal.selecciona_una_especie')}</option>
                 {activas.map((e) => (
                   <option key={e.id_especie} value={e.id_especie}>{e.nombre}</option>
                 ))}
@@ -182,8 +180,7 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
 
             {/* Params snapshot */}
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)' }}>
-                Parámetros a incluir en la plantilla <span aria-hidden>*</span>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)' }}>{t('plantillamodal.parametros_a_incluir_en_la_plantilla')}<span aria-hidden>*</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
                 {PARAM_GROUPS.map(({ grupo, icon, items }) => (
@@ -229,19 +226,15 @@ export function PlantillaModal({ saving, saveError, onClose, onRegistrar }: Prop
                 ))}
               </div>
               {selectedParams.size === 0 && (
-                <p style={{ fontSize: '11px', color: 'var(--sem-error)', marginTop: 'var(--s2)', fontWeight: 500 }}>
-                  Selecciona al menos un parámetro.
-                </p>
+                <p style={{ fontSize: '11px', color: 'var(--sem-error)', marginTop: 'var(--s2)', fontWeight: 500 }}>{t('plantillamodal.selecciona_al_menos_un_parametro')}</p>
               )}
             </div>
           </div>
 
           {/* Footer */}
           <div style={{ padding: 'var(--s4) var(--s6)', borderTop: '1px solid var(--surface-border)', background: 'var(--surface-hover)', display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-            <Button variant="secondary" size="md" onClick={onClose} disabled={saving}>Cancelar</Button>
-            <Button type="submit" variant="primary" size="md" loading={saving} disabled={saving || selectedParams.size === 0}>
-              Crear plantilla
-            </Button>
+            <Button variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('plantillamodal.cancelar')}</Button>
+            <Button type="submit" variant="primary" size="md" loading={saving} disabled={saving || selectedParams.size === 0}>{t('plantillamodal.crear_plantilla')}</Button>
           </div>
         </form>
       </div>

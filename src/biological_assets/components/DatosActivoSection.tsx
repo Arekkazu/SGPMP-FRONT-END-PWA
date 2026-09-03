@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Pencil } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -55,6 +56,7 @@ function Grid({ children }: { children: React.ReactNode }) {
 }
 
 export function DatosActivoSection({ activo, loading, saving, saveError, onGuardar, onChanged }: Props) {
+  const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeEditar = usePermission(RECURSO_ACTIVOS, ACCION_U);
   const [editando, setEditando] = useState(false);
@@ -84,49 +86,47 @@ export function DatosActivoSection({ activo, loading, saving, saveError, onGuard
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s4)' }}>
           <h3 style={{ ...CARD_TITLE, margin: 0 }}>{esIndividual ? 'Detalle individual' : 'Detalle poblacional'}</h3>
           {esIndividual && puedeEditar && (
-            <Button variant="ghost" size="sm" onClick={() => setEditando(true)} disabled={!online} aria-label="Editar activo">
-              <Pencil size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Editar
-            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setEditando(true)} disabled={!online} aria-label={t('datosactivosection.editar_activo')}>
+              <Pencil size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('datosactivosection.editar')}</Button>
           )}
         </div>
         {esIndividual && ind ? (
           <Grid>
-            <Dato label="Raza" value={ind.raza} />
-            <Dato label="Sexo" value={ind.sexo} />
-            <Dato label="Fecha de nacimiento" value={ind.fecha_nacimiento?.slice(0, 10)} />
-            <Dato label="Peso inicial" value={ind.peso_inicial} />
+            <Dato label={t('datosactivosection.raza')} value={ind.raza} />
+            <Dato label={t('datosactivosection.sexo')} value={ind.sexo} />
+            <Dato label={t('datosactivosection.fecha_de_nacimiento')} value={ind.fecha_nacimiento?.slice(0, 10)} />
+            <Dato label={t('datosactivosection.peso_inicial')} value={ind.peso_inicial} />
           </Grid>
         ) : pob ? (
           <Grid>
-            <Dato label="Cantidad inicial" value={pob.cantidad_inicial} />
-            <Dato label="Cantidad actual" value={pob.cantidad_actual} />
-            <Dato label="Peso promedio inicial" value={pob.peso_promedio_inicial} />
-            <Dato label="Peso promedio" value={pob.peso_promedio} />
-            <Dato label="Biomasa total" value={pob.biomasa_total} />
-            <Dato label="Densidad" value={pob.densidad} />
+            <Dato label={t('datosactivosection.cantidad_inicial')} value={pob.cantidad_inicial} />
+            <Dato label={t('datosactivosection.cantidad_actual')} value={pob.cantidad_actual} />
+            <Dato label={t('datosactivosection.peso_promedio_inicial')} value={pob.peso_promedio_inicial} />
+            <Dato label={t('datosactivosection.peso_promedio')} value={pob.peso_promedio} />
+            <Dato label={t('datosactivosection.biomasa_total')} value={pob.biomasa_total} />
+            <Dato label={t('datosactivosection.densidad')} value={pob.densidad} />
           </Grid>
         ) : (
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>Sin detalle disponible.</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('datosactivosection.sin_detalle_disponible')}</p>
         )}
       </div>
 
       {/* Datos generales / procedencia */}
       <div style={CARD}>
-        <h3 style={CARD_TITLE}>Origen y procedencia</h3>
+        <h3 style={CARD_TITLE}>{t('datosactivosection.origen_y_procedencia')}</h3>
         <Grid>
-          <Dato label="Origen financiero" value={activo.origen_financiero} />
-          <Dato label="Costo de adquisición" value={activo.costo_adquisicion} />
-          <Dato label="Soporte documental" value={activo.soporte_documental} />
-          <Dato label="Fecha de inicio de ciclo" value={activo.fecha_inicio_ciclo} />
-          <Dato label="Procedencia" value={activo.detalles_procedencia} />
+          <Dato label={t('datosactivosection.origen_financiero')} value={activo.origen_financiero} />
+          <Dato label={t('datosactivosection.costo_de_adquisicion')} value={activo.costo_adquisicion} />
+          <Dato label={t('datosactivosection.soporte_documental')} value={activo.soporte_documental} />
+          <Dato label={t('datosactivosection.fecha_de_inicio_de_ciclo')} value={activo.fecha_inicio_ciclo} />
+          <Dato label={t('datosactivosection.procedencia')} value={activo.detalles_procedencia} />
         </Grid>
       </div>
 
       {/* Atributos dinámicos */}
       {activo.atributos_dinamicos && Object.keys(activo.atributos_dinamicos).length > 0 && (
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>Atributos dinámicos</h3>
+          <h3 style={CARD_TITLE}>{t('datosactivosection.atributos_dinamicos')}</h3>
           <Grid>
             {Object.entries(activo.atributos_dinamicos).map(([k, v]) => (
               <Dato key={k} label={k} value={String(v)} />

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { MessageSquarePlus, Activity } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Pill } from './Pill';
@@ -17,11 +18,10 @@ interface Props {
 }
 
 export function HistorialTimeline({ eventos, puedeRetroalimentar, onRetroalimentar }: Props) {
+  const { t } = useT('prediction');
   if (eventos.length === 0) {
     return (
-      <div style={{ padding: 'var(--s8) var(--s4)', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
-        Sin eventos en el período consultado.
-      </div>
+      <div style={{ padding: 'var(--s8) var(--s4)', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>{t('historialtimeline.sin_eventos_en_el_periodo_consultado')}</div>
     );
   }
 
@@ -49,13 +49,12 @@ export function HistorialTimeline({ eventos, puedeRetroalimentar, onRetroaliment
                 </div>
                 {puedeRetroalimentar && e.id_resultado_inferencia && (
                   <Button variant="ghost" size="sm" onClick={() => onRetroalimentar(e)}>
-                    <MessageSquarePlus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Retroalimentar
-                  </Button>
+                    <MessageSquarePlus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('historialtimeline.retroalimentar')}</Button>
                 )}
               </div>
               {(patologia || confianza != null) && (
                 <div style={{ display: 'flex', gap: 'var(--s4)', marginTop: 'var(--s2)', fontSize: '13px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
-                  {patologia && <span><strong>Patología estimada:</strong> {patologia}</span>}
+                  {patologia && <span><strong>{t('historialtimeline.patologia_estimada')}</strong> {patologia}</span>}
                   {confianza != null && <span><strong>Confianza:</strong> {(confianza * 100).toFixed(0)}%</span>}
                 </div>
               )}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Pencil, PowerOff, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import type { EspecieResponse } from '../types';
@@ -48,6 +49,7 @@ export function EspeciesTable({
   onDesactivar,
   onReactivar,
 }: Props) {
+  const { t } = useT('configuration');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -69,9 +71,7 @@ export function EspeciesTable({
 
   if (especies.length === 0) {
     return (
-      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>
-        No hay especies registradas.
-      </p>
+      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('especiestable.no_hay_especies_registradas')}</p>
     );
   }
 

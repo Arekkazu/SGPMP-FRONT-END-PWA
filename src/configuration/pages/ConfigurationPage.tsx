@@ -67,6 +67,7 @@ type ModalState =
 
 // ── Catálogo tab ─────────────────────────────────────────────────────────────
 function CatalogoTab() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear  = usePermission(8, 1);
   const puedeEditar = usePermission(8, 3);
@@ -102,9 +103,7 @@ function CatalogoTab() {
       {/* Header de sección */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <div>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Catálogo de Especies
-          </h2>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('configurationpage.catalogo_de_especies')}</h2>
           {!loading && (
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0, fontFamily: 'var(--font-mono)' }}>
               {activas} activas · {inactivas} inactivas
@@ -113,7 +112,7 @@ function CatalogoTab() {
           )}
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label="Recargar especies">
+          <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('configurationpage.recargar_especies')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           {puedeCrear && (
@@ -123,9 +122,7 @@ function CatalogoTab() {
               onClick={() => setModal({ tipo: 'crear' })}
               disabled={!online}
             >
-              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Nueva especie
-            </Button>
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('configurationpage.nueva_especie')}</Button>
           )}
         </div>
       </div>
@@ -134,24 +131,24 @@ function CatalogoTab() {
       {!online && (
         <Alert
           variant="warning"
-          title="Sin conexión"
-          description="Mostrando datos cacheados. Las acciones de escritura están deshabilitadas."
+          title={t('configurationpage.sin_conexion')}
+          description={t('configurationpage.mostrando_datos_cacheados_las_acciones_de')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
       {fromCache && online && (
         <Alert
           variant="info"
-          title="Datos desde caché"
-          description="No se pudo conectar con el servidor. Se muestran los últimos datos disponibles."
+          title={t('configurationpage.datos_desde_cache')}
+          description={t('configurationpage.no_se_pudo_conectar_con_el_servidor_se')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
       {error && !fromCache && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('configurationpage.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {accionError && (
-        <Alert variant="error" title="Error" description={accionError} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('configurationpage.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {/* Tabla */}

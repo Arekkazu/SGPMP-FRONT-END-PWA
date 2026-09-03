@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Layers, Cpu, Database, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
 import { KpiCard } from '../components/KpiCard';
@@ -16,14 +17,13 @@ function estadoTono(e: string): Tono {
 }
 
 export function BufferView() {
+  const { t } = useT('telemetry');
   return (
     <div style={{ minHeight: '100%' }}>
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <Layers size={20} aria-hidden />
-          Buffer y Sincronización
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>RF-54 · Flujo C</p>
+          <Layers size={20} aria-hidden />{t('bufferview.buffer_y_sincronizacion')}</h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('bufferview.rf_54_flujo_c')}</p>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
@@ -42,8 +42,8 @@ export function BufferView() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s2)' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{d.id}</span>
                 {d.conexion === 'ONLINE'
-                  ? <Pill tono="success" icon={<Wifi size={11} aria-hidden />}>Online</Pill>
-                  : <Pill tono="info" icon={<WifiOff size={11} aria-hidden />}>Buffer</Pill>}
+                  ? <Pill tono="success" icon={<Wifi size={11} aria-hidden />}>{t('bufferview.online')}</Pill>
+                  : <Pill tono="info" icon={<WifiOff size={11} aria-hidden />}>{t('bufferview.buffer')}</Pill>}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Política: {d.politica}</div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Pendientes: <strong>{d.pendientes}</strong></div>

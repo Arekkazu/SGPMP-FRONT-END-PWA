@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Gauge, AlertTriangle } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { useIndicadores } from '../hooks/useIndicadores';
@@ -28,6 +29,7 @@ const LABEL: React.CSSProperties = {
 const TIPOS: TipoIndicador[] = ['TODOS', 'CRECIMIENTO', 'PRODUCCION', 'SANITARIO', 'EFICIENCIA'];
 
 function IndicadorCard({ ind }: { ind: IndicadorZootecnicoResponse }) {
+  const { t } = useT('biologicalAssets');
   return (
     <div
       style={{
@@ -49,7 +51,7 @@ function IndicadorCard({ ind }: { ind: IndicadorZootecnicoResponse }) {
           <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{ind.unidad}</span>
         </div>
       ) : (
-        <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: 'var(--s2)' }}>No disponible</div>
+        <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: 'var(--s2)' }}>{t('indicadoressection.no_disponible')}</div>
       )}
       {(ind.periodo_inicio || ind.periodo_fin) && (
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 'var(--s2)' }}>
@@ -61,6 +63,7 @@ function IndicadorCard({ ind }: { ind: IndicadorZootecnicoResponse }) {
 }
 
 export function IndicadoresSection({ idActivo }: Props) {
+  const { t } = useT('biologicalAssets');
   const { data, loading, error, cargar } = useIndicadores(idActivo);
   const [tipo, setTipo] = useState<TipoIndicador>('TODOS');
   const [fechaInicio, setFechaInicio] = useState('');
@@ -79,35 +82,31 @@ export function IndicadoresSection({ idActivo }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
       <div style={CARD}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-          <Gauge size={16} aria-hidden />
-          Indicadores zootécnicos
-        </h3>
+          <Gauge size={16} aria-hidden />{t('indicadoressection.indicadores_zootecnicos')}</h3>
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
-            <label style={LABEL} htmlFor="ind-tipo">Tipo</label>
+            <label style={LABEL} htmlFor="ind-tipo">{t('indicadoressection.tipo')}</label>
             <select id="ind-tipo" style={SELECT} value={tipo} onChange={(e) => setTipo(e.target.value as TipoIndicador)}>
               {TIPOS.map((tipo) => <option key={tipo} value={tipo}>{tipo}</option>)}
             </select>
           </div>
           <div>
-            <label style={LABEL} htmlFor="ind-desde">Desde</label>
+            <label style={LABEL} htmlFor="ind-desde">{t('indicadoressection.desde')}</label>
             <input id="ind-desde" type="date" style={{ ...SELECT, minWidth: 150 }} value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
           </div>
           <div>
-            <label style={LABEL} htmlFor="ind-hasta">Hasta</label>
+            <label style={LABEL} htmlFor="ind-hasta">{t('indicadoressection.hasta')}</label>
             <input id="ind-hasta" type="date" style={{ ...SELECT, minWidth: 150 }} value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
           </div>
         </div>
       </div>
 
-      {error && <Alert variant="error" title="Error al cargar indicadores" description={error.message} />}
+      {error && <Alert variant="error" title={t('indicadoressection.error_al_cargar_indicadores')} description={error.message} />}
 
       {data && data.advertencias.length > 0 && (
         <div style={{ background: 'var(--sem-warning-bg)', border: '1px solid var(--sem-warning-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', color: 'var(--sem-warning)', fontWeight: 600, fontSize: '13px', marginBottom: 'var(--s2)' }}>
-            <AlertTriangle size={15} aria-hidden />
-            Advertencias
-          </div>
+            <AlertTriangle size={15} aria-hidden />{t('indicadoressection.advertencias')}</div>
           <ul style={{ margin: 0, paddingLeft: 'var(--s5)', color: 'var(--text-secondary)', fontSize: '13px' }}>
             {data.advertencias.map((a, i) => <li key={i}>{a}</li>)}
           </ul>
@@ -122,7 +121,7 @@ export function IndicadoresSection({ idActivo }: Props) {
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
       ) : !data || data.indicadores.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay indicadores para los filtros seleccionados.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('indicadoressection.no_hay_indicadores_para_los_filtros')}</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--s4)' }}>
           {data.indicadores.map((ind, i) => <IndicadorCard key={i} ind={ind} />)}

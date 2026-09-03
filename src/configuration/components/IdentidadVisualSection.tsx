@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Upload, X } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -11,6 +12,7 @@ import type { FincaResponse } from '../types';
 
 // ── Finca selector ────────────────────────────────────────────────────────────
 function FincaSelectorIdent({ onSelect }: { onSelect: (f: FincaResponse) => void }) {
+  const { t } = useT('configuration');
   const { fincas, loading, cargar } = useFincas();
   useEffect(() => { cargar(); }, [cargar]);
   const activas = fincas.filter((f) => f.es_activo);
@@ -26,14 +28,12 @@ function FincaSelectorIdent({ onSelect }: { onSelect: (f: FincaResponse) => void
   }
 
   if (activas.length === 0) {
-    return <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay fincas activas disponibles.</p>;
+    return <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('identidadvisualsection.no_hay_fincas_activas_disponibles')}</p>;
   }
 
   return (
     <div>
-      <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
-        Selecciona la finca para configurar su identidad visual:
-      </p>
+      <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('identidadvisualsection.selecciona_la_finca_para_configurar_su')}</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 'var(--s4)' }}>
         {activas.map((f) => (
           <button
@@ -119,6 +119,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
 
 // ── Live preview ──────────────────────────────────────────────────────────────
 function LivePreview({ primary, secondary, orgName }: { primary: string; secondary: string; orgName: string }) {
+  const { t } = useT('configuration');
   return (
     <div
       style={{
@@ -129,9 +130,7 @@ function LivePreview({ primary, secondary, orgName }: { primary: string; seconda
         background: '#f8f9fa',
       }}
     >
-      <div style={{ padding: 'var(--s2)', background: '#eee', fontSize: '11px', color: '#888', textAlign: 'center' }}>
-        Vista previa
-      </div>
+      <div style={{ padding: 'var(--s2)', background: '#eee', fontSize: '11px', color: '#888', textAlign: 'center' }}>{t('identidadvisualsection.vista_previa')}</div>
       <div style={{ display: 'flex', height: 140 }}>
         {/* Mini sidebar */}
         <div style={{ width: 80, background: primary, padding: 'var(--s2)', display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
@@ -165,6 +164,7 @@ interface FormSectionProps {
 }
 
 function IdentidadForm({ finca, onBack }: FormSectionProps) {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeEditar = usePermission(23, 3);
   const puedeCrear = usePermission(23, 1);
@@ -252,27 +252,25 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
           type="button"
           onClick={onBack}
           style={{ background: 'none', border: 'none', color: 'var(--brand-600)', cursor: 'pointer', fontSize: '14px', padding: 0 }}
-        >
-          Fincas
-        </button>
+        >{t('identidadvisualsection.fincas')}</button>
         <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>›</span>
         <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 600 }}>{finca.nombre}</span>
       </div>
 
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="warning" title={t('identidadvisualsection.sin_conexion')} description={t('identidadvisualsection.las_acciones_de_escritura_estan')} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {conflicto412 && (
-        <Alert variant="error" title="Conflicto de concurrencia" description="Otro usuario modificó este registro. Recarga para ver los datos actuales antes de guardar." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('identidadvisualsection.conflicto_de_concurrencia')} description={t('identidadvisualsection.otro_usuario_modifico_este_registro_recarga')} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {error && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('identidadvisualsection.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {saveError && (
-        <Alert variant="error" title="Error al guardar" description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('identidadvisualsection.error_al_guardar')} description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {saved && (
-        <Alert variant="success" title="Guardado" description="Identidad visual actualizada correctamente." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="success" title={t('identidadvisualsection.guardado')} description={t('identidadvisualsection.identidad_visual_actualizada_correctamente')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s7)', alignItems: 'start' }}>
@@ -280,9 +278,7 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
           {/* Logo upload zone */}
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>
-              Logo de la organización
-            </label>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('identidadvisualsection.logo_de_la_organizacion')}</label>
             <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
@@ -308,7 +304,7 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
                 <div style={{ position: 'relative' }}>
                   <img
                     src={logoPreview}
-                    alt="Logo preview"
+                    alt={t('identidadvisualsection.logo_preview')}
                     style={{ maxHeight: 80, maxWidth: 160, objectFit: 'contain', borderRadius: 'var(--r-sm)' }}
                   />
                   <button
@@ -329,7 +325,7 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
                       cursor: 'pointer',
                       color: '#fff',
                     }}
-                    aria-label="Quitar logo"
+                    aria-label={t('identidadvisualsection.quitar_logo')}
                   >
                     <X size={12} />
                   </button>
@@ -337,10 +333,8 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
               ) : (
                 <>
                   <Upload size={24} style={{ color: 'var(--text-muted)' }} aria-hidden />
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                    Arrastra un logo o haz clic para seleccionar
-                  </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>PNG, JPG, SVG — máx. 2 MB</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('identidadvisualsection.arrastra_un_logo_o_haz_clic_para_seleccionar')}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('identidadvisualsection.png_jpg_svg_max_2_mb')}</span>
                 </>
               )}
             </div>
@@ -350,25 +344,24 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
               accept="image/*"
               style={{ display: 'none' }}
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-              aria-label="Seleccionar logo"
+              aria-label={t('identidadvisualsection.seleccionar_logo')}
             />
           </div>
 
           {/* Colors */}
-          <ColorField label="Color primario" value={primaryColor} onChange={setPrimaryColor} />
-          <ColorField label="Color secundario" value={secondaryColor} onChange={setSecondaryColor} />
+          <ColorField label={t('identidadvisualsection.color_primario')} value={primaryColor} onChange={setPrimaryColor} />
+          <ColorField label={t('identidadvisualsection.color_secundario')} value={secondaryColor} onChange={setSecondaryColor} />
 
           {/* Org name */}
           <div>
-            <label htmlFor="org-name" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>
-              Nombre de la organización <span aria-hidden>*</span>
+            <label htmlFor="org-name" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('identidadvisualsection.nombre_de_la_organizacion')}<span aria-hidden>*</span>
             </label>
             <Input
               id="org-name"
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               onBlur={() => { if (!orgName.trim()) setOrgNameErr('El nombre es requerido.'); else setOrgNameErr(''); }}
-              placeholder="Ej. Agropecuaria San José"
+              placeholder={t('identidadvisualsection.ej_agropecuaria_san_jose')}
               maxLength={100}
               aria-required="true"
               error={orgNameErr}
@@ -378,7 +371,7 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
 
         {/* Right: live preview */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
-          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Vista previa en vivo</div>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('identidadvisualsection.vista_previa_en_vivo')}</div>
           <LivePreview primary={primaryColor} secondary={secondaryColor} orgName={orgName} />
         </div>
       </div>
@@ -394,17 +387,14 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 export function IdentidadVisualSection() {
+  const { t } = useT('configuration');
   const [finca, setFinca] = useState<FincaResponse | null>(null);
 
   return (
     <div>
       <div style={{ marginBottom: 'var(--s5)' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Identidad Visual
-        </h2>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          Logo, colores de marca y nombre de la organización por finca
-        </p>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('identidadvisualsection.identidad_visual')}</h2>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('identidadvisualsection.logo_colores_de_marca_y_nombre_de_la')}</p>
       </div>
 
       {finca ? (

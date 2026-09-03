@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { RefreshCw, Clock, Activity, Globe } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -55,6 +56,7 @@ function ParamCard({
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export function ParametrosSection() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeLeer      = usePermission(21, 2);
   const puedeEditar    = usePermission(21, 3);
@@ -81,8 +83,8 @@ export function ParametrosSection() {
     return (
       <Alert
         variant="warning"
-        title="Sin acceso"
-        description="Solo los administradores pueden gestionar los parámetros operativos del sistema."
+        title={t('parametrossection.sin_acceso')}
+        description={t('parametrossection.solo_los_administradores_pueden_gestionar')}
       />
     );
   }
@@ -107,24 +109,20 @@ export function ParametrosSection() {
       {/* Header de sección */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s6)' }}>
         <div>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Parámetros Operativos del Sistema
-          </h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            Configuración global · Aplica a todos los dispositivos IoT
-          </p>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('parametrossection.parametros_operativos_del_sistema')}</h2>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('parametrossection.configuracion_global_aplica_a_todos_los')}</p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label="Recargar parámetros">
+        <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('parametrossection.recargar_parametros')}>
           <RefreshCw size={15} aria-hidden />
         </Button>
       </div>
 
       {/* Alertas */}
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="warning" title={t('parametrossection.sin_conexion')} description={t('parametrossection.las_acciones_de_escritura_estan')} style={{ marginBottom: 'var(--s5)' }} />
       )}
       {error && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="error" title={t('parametrossection.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s5)' }} />
       )}
 
       {/* Status banner */}
@@ -135,21 +133,17 @@ export function ParametrosSection() {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Configuración Global del Sistema</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '10px', fontWeight: 700, background: 'var(--surface-hover)', border: '1px solid var(--surface-border)', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                ALCANCE GLOBAL · TODOS LOS DISPOSITIVOS
-              </span>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('parametrossection.configuracion_global_del_sistema')}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '10px', fontWeight: 700, background: 'var(--surface-hover)', border: '1px solid var(--surface-border)', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{t('parametrossection.alcance_global_todos_los_dispositivos')}</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: 'var(--sem-success-bg)', border: '1px solid var(--sem-success-border)', color: 'var(--sem-success)' }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)' }} />
-                Configuración activa
-              </span>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)' }} />{t('parametrossection.configuracion_activa')}</span>
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: 2 }}>
               Última actualización por usuario #{config.id_usuario}
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Última actualización</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t('parametrossection.ultima_actualizacion')}</div>
             <div style={{ fontSize: '12px', fontWeight: 600, fontFamily: 'var(--font-mono)', marginTop: 2 }}>
               {formatFecha(config.fecha_actualizacion)}
             </div>
@@ -171,14 +165,14 @@ export function ParametrosSection() {
       {!loading && config && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)' }}>
           <ParamCard
-            label="Frecuencia de muestreo"
+            label={t('parametrossection.frecuencia_de_muestreo')}
             value={config.frecuencia_muestreo}
             unit="min"
             icon={<Clock size={20} aria-hidden />}
             accentColor="linear-gradient(90deg, var(--brand-400), var(--brand-600))"
             iconBg="var(--brand-50,#f0f7ee)"
             iconColor="var(--brand-600)"
-            description="Intervalo esperado de recepción de datos de dispositivos IoT."
+            description={t('parametrossection.intervalo_esperado_de_recepcion_de_datos_de')}
           />
           <ParamCard
             label="Tiempo máximo sin datos (Heartbeat)"
@@ -188,7 +182,7 @@ export function ParametrosSection() {
             accentColor="linear-gradient(90deg, #1a6abf, #3b82f6)"
             iconBg="var(--sem-info-bg,#eef4ff)"
             iconColor="var(--sem-info,#1a6abf)"
-            description="Tiempo máximo sin recepción antes de considerar interrupción."
+            description={t('parametrossection.tiempo_maximo_sin_recepcion_antes_de')}
           />
         </div>
       )}
@@ -197,8 +191,8 @@ export function ParametrosSection() {
       {!loading && !config && !error && (
         <Alert
           variant="info"
-          title="Sin configuración"
-          description="No existe una configuración operativa activa. Usa el formulario para crear la configuración inicial del sistema."
+          title={t('parametrossection.sin_configuracion')}
+          description={t('parametrossection.no_existe_una_configuracion_operativa')}
           style={{ marginBottom: 'var(--s5)' }}
         />
       )}
@@ -211,9 +205,7 @@ export function ParametrosSection() {
               {config ? 'ACTUALIZAR PARÁMETROS OPERATIVOS' : 'CREAR CONFIGURACIÓN INICIAL'}
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', fontSize: '10px', fontWeight: 600, color: 'var(--brand-600)', fontFamily: 'var(--font-mono)' }}>
-              <Globe size={10} aria-hidden />
-              Config. global única
-            </span>
+              <Globe size={10} aria-hidden />{t('parametrossection.config_global_unica')}</span>
           </div>
 
           <div style={{ padding: 'var(--s6)' }}>
@@ -246,9 +238,7 @@ export function ParametrosSection() {
                       validate: (v) => Number.isInteger(Number(v)) || 'Debe ser un entero positivo.',
                     })}
                   />
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>
-                    Entero positivo. Define cada cuántos minutos se espera recibir datos.
-                  </p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('parametrossection.entero_positivo_define_cada_cuantos_minutos')}</p>
                 </div>
 
                 <div>
@@ -269,9 +259,7 @@ export function ParametrosSection() {
                         'Debe ser mayor o igual a la frecuencia de muestreo.',
                     })}
                   />
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>
-                    Debe ser mayor o igual a la frecuencia de muestreo.
-                  </p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('parametrossection.debe_ser_mayor_o_igual_a_la_frecuencia_de')}</p>
                 </div>
               </div>
 
@@ -283,9 +271,7 @@ export function ParametrosSection() {
                     size="md"
                     onClick={() => reset({ frecuencia_muestreo: config.frecuencia_muestreo, heartbeat: config.heartbeat })}
                     disabled={saving || !isDirty}
-                  >
-                    Restablecer
-                  </Button>
+                  >{t('parametrossection.restablecer')}</Button>
                 )}
                 <Button
                   type="submit"

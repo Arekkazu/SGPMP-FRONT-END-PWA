@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { ShieldCheck, ChevronLeft, Check, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -70,6 +71,7 @@ function Stepper({ current }: { current: WizardStep }) {
 function DispSelector({ dispositivos, loading, onSelect }: {
   dispositivos: DispositivoIotResponse[]; loading: boolean; onSelect: (d: DispositivoIotResponse) => void;
 }) {
+  const { t } = useT('configuration');
   const activos = dispositivos.filter((d) => d.es_activo);
   if (loading) {
     return (
@@ -82,7 +84,7 @@ function DispSelector({ dispositivos, loading, onSelect }: {
     );
   }
   if (activos.length === 0) {
-    return <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s7) 0' }}>No hay dispositivos activos disponibles para calibrar.</p>;
+    return <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s7) 0' }}>{t('calibracionsection.no_hay_dispositivos_activos_disponibles')}</p>;
   }
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
@@ -99,7 +101,7 @@ function DispSelector({ dispositivos, loading, onSelect }: {
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{d.descripcion}</div>
             </div>
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--sem-success)', fontWeight: 600 }}>Solo dispositivos activos son calibrables</div>
+          <div style={{ fontSize: '11px', color: 'var(--sem-success)', fontWeight: 600 }}>{t('calibracionsection.solo_dispositivos_activos_son_calibrables')}</div>
         </button>
       ))}
     </div>
@@ -112,20 +114,20 @@ function SensorSelector({ sensores, loading, error, onSelect, onBack }: {
   sensores: SensorResponse[]; loading: boolean; error: { message: string } | null;
   onSelect: (s: SensorResponse) => void; onBack: () => void;
 }) {
+  const { t } = useT('configuration');
   const activos = sensores.filter((s) => s.es_activo);
   return (
     <div>
-      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s4)' }} aria-label="Cambiar dispositivo">
-        <ChevronLeft size={16} aria-hidden /> Cambiar dispositivo
-      </Button>
-      {error && <Alert variant="error" title="Error al cargar sensores" description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s4)' }} aria-label={t('calibracionsection.cambiar_dispositivo')}>
+        <ChevronLeft size={16} aria-hidden />{t('calibracionsection.cambiar_dispositivo')}</Button>
+      {error && <Alert variant="error" title={t('calibracionsection.error_al_cargar_sensores')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
       {loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 'var(--s4)' }}>
           {Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ height: 80, borderRadius: 'var(--r-xl)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }} />)}
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
       ) : activos.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s6) 0' }}>Este dispositivo no tiene sensores activos.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s6) 0' }}>{t('calibracionsection.este_dispositivo_no_tiene_sensores_activos')}</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 'var(--s4)' }}>
           {activos.map((s) => {
@@ -155,6 +157,7 @@ function SensorSelector({ sensores, loading, error, onSelect, onBack }: {
 // ── Calibration history ───────────────────────────────────────────────────────
 
 function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibraciones: CalibracionResponse[]; loading: boolean; sensor: SensorResponse }) {
+  const { t } = useT('configuration');
   if (loading) {
     return <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)', marginTop: 'var(--s4)' }}>{Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ height: 36, borderRadius: 'var(--r-md)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }} />)}<style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style></div>;
   }
@@ -167,7 +170,7 @@ function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibracio
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>{calibraciones.length} calibraciones</span>
       </div>
       {calibraciones.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: 'var(--s5) 0' }}>Sin calibraciones registradas para este sensor.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: 'var(--s5) 0' }}>{t('calibracionsection.sin_calibraciones_registradas_para_este')}</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
@@ -213,6 +216,7 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
   onSubmit: (dto: { valor_referencia: number; fecha_calibracion: string; observaciones?: string }) => void;
   onBack: () => void;
 }) {
+  const { t } = useT('configuration');
   const emoji = sensor.categoria ? (CATEGORIA_EMOJI[sensor.categoria] ?? '📡') : '📡';
   const now = new Date();
   const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -225,11 +229,10 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
 
   return (
     <div>
-      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s5)' }} aria-label="Cambiar sensor">
-        <ChevronLeft size={16} aria-hidden /> Cambiar sensor
-      </Button>
+      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s5)' }} aria-label={t('calibracionsection.cambiar_sensor')}>
+        <ChevronLeft size={16} aria-hidden />{t('calibracionsection.cambiar_sensor')}</Button>
 
-      {saveError && <Alert variant="error" title="Error al registrar calibración" description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />}
+      {saveError && <Alert variant="error" title={t('calibracionsection.error_al_registrar_calibracion')} description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />}
 
       {/* Context header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s4)', background: 'var(--surface-hover)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
@@ -241,24 +244,22 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
           </div>
         </div>
         {loadingAsoc ? (
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Verificando asociación…</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('calibracionsection.verificando_asociacion')}</span>
         ) : !asociacion ? (
-          <span style={{ fontSize: '11px', color: 'var(--sem-error)', fontWeight: 600 }}>⚠ Sin área asignada</span>
+          <span style={{ fontSize: '11px', color: 'var(--sem-error)', fontWeight: 600 }}>{t('calibracionsection.sin_area_asignada')}</span>
         ) : (
-          <span style={{ fontSize: '11px', color: 'var(--sem-success)', fontWeight: 600 }}>✓ Área asignada</span>
+          <span style={{ fontSize: '11px', color: 'var(--sem-success)', fontWeight: 600 }}>{t('calibracionsection.area_asignada')}</span>
         )}
       </div>
 
       {!asociacion && !loadingAsoc && (
-        <Alert variant="warning" title="Sensor sin área asignada" description="Este sensor debe estar asociado a un área productiva antes de poder calibrarlo. Usa la sección 'Asociación de Sensores'." style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="warning" title={t('calibracionsection.sensor_sin_area_asignada')} description={t('calibracionsection.este_sensor_debe_estar_asociado_a_un_area')} style={{ marginBottom: 'var(--s5)' }} />
       )}
 
       {/* Form */}
       <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-xl)', overflow: 'hidden', marginBottom: 'var(--s5)' }}>
         <div style={{ background: 'var(--surface-hover)', padding: 'var(--s3) var(--s5)', borderBottom: '1px solid var(--surface-border)' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Datos de calibración
-          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('calibracionsection.datos_de_calibracion')}</span>
         </div>
         <div style={{ padding: 'var(--s5)' }}>
           <form onSubmit={handleSubmit((d) => onSubmit({
@@ -269,8 +270,7 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s5)', marginBottom: 'var(--s5)' }}>
               {/* Valor de referencia */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>
-                  Valor de referencia <span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('calibracionsection.valor_de_referencia')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
                 </label>
                 <input
                   type="number"
@@ -285,13 +285,13 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
                   })}
                 />
                 {errors.valor_referencia && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)', margin: 0 }}>{errors.valor_referencia.message}</p>}
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>Hasta 4 decimales. Solo afecta mediciones futuras.</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('calibracionsection.hasta_4_decimales_solo_afecta_mediciones')}</p>
               </div>
 
               {/* Fecha calibración */}
               <div>
                 <Input
-                  label="Fecha y hora de calibración"
+                  label={t('calibracionsection.fecha_y_hora_de_calibracion')}
                   type="datetime-local"
                   required
                   aria-required="true"
@@ -303,13 +303,12 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
 
             {/* Observaciones */}
             <div style={{ marginBottom: 'var(--s5)' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>
-                Observaciones <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('calibracionsection.observaciones')}<span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <textarea
                   rows={3}
-                  placeholder="Condiciones de calibración, motivo, drift detectado…"
+                  placeholder={t('calibracionsection.condiciones_de_calibracion_motivo_drift')}
                   style={{ width: '100%', padding: 'var(--s3)', borderRadius: 'var(--r-md)', border: `1.5px solid ${errors.observaciones ? 'var(--sem-error)' : 'var(--surface-border)'}`, background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-sans)', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
                   {...register('observaciones', { maxLength: { value: 200, message: 'Máximo 200 caracteres.' } })}
                 />
@@ -322,9 +321,7 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
 
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Button type="submit" variant="primary" size="md" loading={saving} disabled={!asociacion && !loadingAsoc}>
-                <Check size={14} aria-hidden style={{ marginRight: 'var(--s2)' }} />
-                Registrar calibración
-              </Button>
+                <Check size={14} aria-hidden style={{ marginRight: 'var(--s2)' }} />{t('calibracionsection.registrar_calibracion')}</Button>
             </div>
           </form>
         </div>
@@ -338,6 +335,7 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
 // ── CalibracionSection ────────────────────────────────────────────────────────
 
 export function CalibracionSection() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCalibar = usePermission(12, 5);
 
@@ -389,20 +387,19 @@ export function CalibracionSection() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
           <ShieldCheck size={18} color="var(--brand-500)" aria-hidden />
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Calibración de Sensores IoT</h2>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>Ajuste del valor de referencia por sensor · Solo afecta mediciones futuras</p>
+            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('calibracionsection.calibracion_de_sensores_iot')}</h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>{t('calibracionsection.ajuste_del_valor_de_referencia_por_sensor')}</p>
           </div>
         </div>
         {step !== 'dispositivo' && (
           <Button variant="ghost" size="sm" onClick={() => { handleBackToDisp(); cargarDisp(); }}>
-            <RefreshCw size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Reiniciar
-          </Button>
+            <RefreshCw size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('calibracionsection.reiniciar')}</Button>
         )}
       </div>
 
-      {!online && <Alert variant="warning" title="Sin conexión" description="La calibración requiere conexión al servidor." style={{ marginBottom: 'var(--s4)' }} />}
-      {successMsg && <Alert variant="success" title="Calibración registrada" description={successMsg} style={{ marginBottom: 'var(--s4)' }} />}
-      {!puedeCalibar && <Alert variant="warning" title="Sin permiso" description="No tienes permiso para registrar calibraciones de sensores." style={{ marginBottom: 'var(--s4)' }} />}
+      {!online && <Alert variant="warning" title={t('calibracionsection.sin_conexion')} description={t('calibracionsection.la_calibracion_requiere_conexion_al_servidor')} style={{ marginBottom: 'var(--s4)' }} />}
+      {successMsg && <Alert variant="success" title={t('calibracionsection.calibracion_registrada')} description={successMsg} style={{ marginBottom: 'var(--s4)' }} />}
+      {!puedeCalibar && <Alert variant="warning" title={t('calibracionsection.sin_permiso')} description={t('calibracionsection.no_tienes_permiso_para_registrar')} style={{ marginBottom: 'var(--s4)' }} />}
 
       {puedeCalibar && online && (
         <>
@@ -410,16 +407,14 @@ export function CalibracionSection() {
 
           {step === 'dispositivo' && (
             <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>Selecciona el dispositivo que contiene el sensor a calibrar:</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('calibracionsection.selecciona_el_dispositivo_que_contiene_el')}</p>
               <DispSelector dispositivos={dispositivos} loading={loadingDisp} onSelect={handleSelectDisp} />
             </>
           )}
 
           {step === 'sensor' && dispositivo && (
             <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
-                Selecciona el sensor de <strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong> a calibrar:
-              </p>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('calibracionsection.selecciona_el_sensor_de')}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{t('calibracionsection.a_calibrar')}</p>
               <SensorSelector sensores={sensores} loading={loadingSensores} error={errorSensores} onSelect={handleSelectSensor} onBack={handleBackToDisp} />
             </>
           )}

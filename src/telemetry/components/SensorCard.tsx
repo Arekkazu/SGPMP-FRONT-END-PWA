@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { BatteryMedium, SignalHigh, TrendingUp, TrendingDown, Minus, BellRing } from 'lucide-react';
 import { Gauge } from '../../shared/design-system/Gauge';
 import { SemaforoPill } from './SemaforoPill';
@@ -11,17 +12,19 @@ interface Props {
 }
 
 function Tendencia({ tendencia }: { tendencia: string | null }) {
+  const { t } = useT('telemetry');
   const up = (tendencia ?? '').toUpperCase();
   if (up.includes('SUB') || up.includes('ASC') || up === 'UP') {
-    return <TrendingUp size={14} aria-label="Tendencia al alza" style={{ color: 'var(--sem-warning)' }} />;
+    return <TrendingUp size={14} aria-label={t('sensorcard.tendencia_al_alza')} style={{ color: 'var(--sem-warning)' }} />;
   }
   if (up.includes('BAJ') || up.includes('DESC') || up === 'DOWN') {
-    return <TrendingDown size={14} aria-label="Tendencia a la baja" style={{ color: 'var(--sem-info)' }} />;
+    return <TrendingDown size={14} aria-label={t('sensorcard.tendencia_a_la_baja')} style={{ color: 'var(--sem-info)' }} />;
   }
-  return <Minus size={14} aria-label="Tendencia estable" style={{ color: 'var(--text-muted)' }} />;
+  return <Minus size={14} aria-label={t('sensorcard.tendencia_estable')} style={{ color: 'var(--text-muted)' }} />;
 }
 
 export function SensorCard({ sensor, onAbrir }: Props) {
+  const { t } = useT('telemetry');
   const { min, max } = escalaNominal(sensor.tipo_variable);
   const status = semaforoToGauge(sensor.estado_semaforo);
 
@@ -52,7 +55,7 @@ export function SensorCard({ sensor, onAbrir }: Props) {
           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{sensor.tipo_variable}</div>
         </div>
         {sensor.id_alerta != null && (
-          <BellRing size={14} aria-label="Alerta activa asociada" style={{ color: 'var(--sem-error)', flexShrink: 0 }} />
+          <BellRing size={14} aria-label={t('sensorcard.alerta_activa_asociada')} style={{ color: 'var(--sem-error)', flexShrink: 0 }} />
         )}
       </div>
 

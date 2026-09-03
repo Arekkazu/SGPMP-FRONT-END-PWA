@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
@@ -33,6 +34,7 @@ const AXIS_STYLE = { fontSize: 11, fill: 'var(--text-muted)', fontFamily: 'var(-
  * Único punto que consume `recharts`; el resto del módulo no depende de la librería.
  */
 export function LineChartTelemetria({ data, xKey, series, height = 260, unit }: Props) {
+  const { t } = useT('telemetry');
   if (!data || data.length === 0) {
     return (
       <div
@@ -46,9 +48,7 @@ export function LineChartTelemetria({ data, xKey, series, height = 260, unit }: 
           border: '1px dashed var(--surface-border)',
           borderRadius: 'var(--r-lg)',
         }}
-      >
-        Sin datos para graficar en el período seleccionado.
-      </div>
+      >{t('linecharttelemetria.sin_datos_para_graficar_en_el_periodo')}</div>
     );
   }
 

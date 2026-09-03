@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ShieldCheck, RefreshCcw, CheckCircle2, AlertTriangle, XCircle, HelpCircle } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -28,6 +29,7 @@ function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: n
 }
 
 export function CalidadView() {
+  const { t } = useT('telemetry');
   const puedeVer = usePermission(RECURSO_CALIDAD, ACCION_R);
   const puedeEjecutar = usePermission(RECURSO_CALIDAD, ACCION_E);
   const online = useOnlineStatus();
@@ -71,23 +73,19 @@ export function CalidadView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            <ShieldCheck size={20} aria-hidden />
-            Calidad de Datos de Telemetría
-          </h1>
+            <ShieldCheck size={20} aria-hidden />{t('calidadview.calidad_de_datos_de_telemetria')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : `${paginacion.totalRegistros} evaluación(es)`}
           </p>
         </div>
         {puedeEjecutar && (
           <Button variant="secondary" size="sm" disabled={!online} onClick={() => setModalReeval(true)}>
-            <RefreshCcw size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Solicitar re-evaluación
-          </Button>
+            <RefreshCcw size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('calidadview.solicitar_re_evaluacion')}</Button>
         )}
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
-        {!online && <Alert variant="warning" title="Sin conexión" description="Evaluar y re-evaluar están deshabilitados." style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title={t('calidadview.sin_conexion')} description={t('calidadview.evaluar_y_re_evaluar_estan_deshabilitados')} style={{ marginBottom: 'var(--s4)' }} />}
         {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a calidad' : 'Error al cargar calidad'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>

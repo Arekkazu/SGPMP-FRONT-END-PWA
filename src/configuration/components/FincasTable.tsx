@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Plus, RefreshCw, Pencil, PowerOff, RotateCcw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
@@ -46,6 +47,7 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, o
   confirmVariant: 'danger' | 'primary'; saving: boolean;
   onCancel: () => void; onConfirm: () => void;
 }) {
+  const { t } = useT('configuration');
   return (
     <div
       role="dialog"
@@ -57,7 +59,7 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, o
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>Cancelar</Button>
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('fincastable.cancelar')}</Button>
           <Button variant={confirmVariant} size="md" loading={saving} onClick={onConfirm}>{confirmLabel}</Button>
         </div>
       </div>
@@ -66,6 +68,7 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, o
 }
 
 export function FincasTable() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear  = usePermission(9, 1);
   const puedeEditar = usePermission(9, 3);
@@ -105,7 +108,7 @@ export function FincasTable() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s5)', flexWrap: 'wrap', gap: 'var(--s3)' }}>
         <div>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Gestión de Fincas</h2>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('fincastable.gestion_de_fincas')}</h2>
           {!loading && (
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0, fontFamily: 'var(--font-mono)' }}>
               {activas} activas · {inactivas} inactivas{fromCache && ' · desde caché'}
@@ -117,31 +120,29 @@ export function FincasTable() {
           <div style={{ position: 'relative' }}>
             <input
               type="text"
-              placeholder="Buscar por nombre…"
+              placeholder={t('fincastable.buscar_por_nombre')}
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               style={{ padding: 'var(--s2) var(--s3)', paddingLeft: 'var(--s7)', borderRadius: 'var(--r-md)', border: '1.5px solid var(--surface-border)', background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '13px', fontFamily: 'var(--font-sans)', outline: 'none', width: 200 }}
-              aria-label="Buscar fincas"
+              aria-label={t('fincastable.buscar_fincas')}
             />
             <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label="Recargar fincas">
+          <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('fincastable.recargar_fincas')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           {puedeCrear && (
             <Button variant="primary" size="sm" onClick={() => setModal({ tipo: 'crear' })} disabled={!online}>
-              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Nueva finca
-            </Button>
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('fincastable.nueva_finca')}</Button>
           )}
         </div>
       </div>
 
       {/* Alertas */}
-      {!online && <Alert variant="warning" title="Sin conexión" description="Mostrando datos cacheados. Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />}
-      {fromCache && online && <Alert variant="info" title="Datos desde caché" description="No se pudo conectar con el servidor. Se muestran los últimos datos disponibles." style={{ marginBottom: 'var(--s4)' }} />}
-      {error && !fromCache && <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
-      {accionError && <Alert variant="error" title="Error" description={accionError} style={{ marginBottom: 'var(--s4)' }} />}
+      {!online && <Alert variant="warning" title={t('fincastable.sin_conexion')} description={t('fincastable.mostrando_datos_cacheados_las_acciones_de')} style={{ marginBottom: 'var(--s4)' }} />}
+      {fromCache && online && <Alert variant="info" title={t('fincastable.datos_desde_cache')} description={t('fincastable.no_se_pudo_conectar_con_el_servidor_se')} style={{ marginBottom: 'var(--s4)' }} />}
+      {error && !fromCache && <Alert variant="error" title={t('fincastable.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      {accionError && <Alert variant="error" title={t('fincastable.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />}
 
       {/* Tabla */}
       {loading ? (
@@ -158,7 +159,7 @@ export function FincasTable() {
       ) : (
         <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
           <div style={{ background: 'var(--surface-hover)', padding: 'var(--s2) var(--s4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--surface-border)' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>FINCAS REGISTRADAS</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>{t('fincastable.fincas_registradas')}</span>
             <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--brand-600)', fontFamily: 'var(--font-mono)' }}>
               {activas} activas · {inactivas} inactivas
             </span>

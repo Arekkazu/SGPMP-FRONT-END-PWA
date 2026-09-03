@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Plus, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -39,6 +40,7 @@ interface PlantillaCardProps {
 }
 
 function PlantillaCard({ plantilla, especieNombre, puedeAplicar, online, onAplicar }: PlantillaCardProps) {
+  const { t } = useT('configuration');
   return (
     <div style={{
       background: 'var(--surface-card)', border: '1px solid var(--surface-border)',
@@ -73,28 +75,25 @@ function PlantillaCard({ plantilla, especieNombre, puedeAplicar, online, onAplic
       </div>
 
       <div style={{ marginBottom: 'var(--s4)' }}>
-        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 'var(--s2)' }}>Parámetros incluidos:</div>
+        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 'var(--s2)' }}>{t('plantillastable.parametros_incluidos')}</div>
         <ParamsBadges snapshot={plantilla.params_snapshot} />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-          🔒 Inmutable
-        </span>
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t('plantillastable.inmutable')}</span>
         <Button
           variant="primary"
           size="sm"
           disabled={!puedeAplicar || !online}
           onClick={onAplicar}
-        >
-          Aplicar plantilla
-        </Button>
+        >{t('plantillastable.aplicar_plantilla')}</Button>
       </div>
     </div>
   );
 }
 
 export function PlantillasTable() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear = usePermission(28, 1);
   const puedeAplicar = usePermission(28, 5);
@@ -129,31 +128,25 @@ export function PlantillasTable() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s5)' }}>
         <div>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Plantillas de Configuración
-          </h2>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            Captura y aplica configuraciones completas entre especies
-          </p>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('plantillastable.plantillas_de_configuracion')}</h2>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('plantillastable.captura_y_aplica_configuraciones_completas')}</p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <Button variant="ghost" size="sm" onClick={() => listar()} aria-label="Recargar">
+          <Button variant="ghost" size="sm" onClick={() => listar()} aria-label={t('plantillastable.recargar')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           {puedeCrear && (
             <Button variant="primary" size="sm" disabled={!online} onClick={() => setShowModal(true)}>
-              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Nueva plantilla
-            </Button>
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('plantillastable.nueva_plantilla')}</Button>
           )}
         </div>
       </div>
 
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Mostrando datos cargados. Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="warning" title={t('plantillastable.sin_conexion')} description={t('plantillastable.mostrando_datos_cargados_las_acciones_de')} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {error && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('plantillastable.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {/* Cards grid */}
@@ -166,8 +159,8 @@ export function PlantillasTable() {
       ) : plantillas.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 'var(--s8) 0' }}>
           <div style={{ fontSize: '32px', marginBottom: 'var(--s3)' }}>📋</div>
-          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>Sin plantillas creadas</div>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Crea la primera plantilla para capturar una configuración base.</p>
+          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('plantillastable.sin_plantillas_creadas')}</div>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('plantillastable.crea_la_primera_plantilla_para_capturar_una')}</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)' }}>
@@ -195,9 +188,7 @@ export function PlantillasTable() {
       </button>
       {showHistorial && (
         <div style={{ marginTop: 'var(--s4)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
-          <div style={{ padding: 'var(--s3) var(--s5)', background: 'var(--surface-hover)', borderBottom: '1px solid var(--surface-border)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Aplicaciones recientes
-          </div>
+          <div style={{ padding: 'var(--s3) var(--s5)', background: 'var(--surface-hover)', borderBottom: '1px solid var(--surface-border)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('plantillastable.aplicaciones_recientes')}</div>
           <PlantillaHistorial historial={historial} loading={loadingHistorial} />
         </div>
       )}

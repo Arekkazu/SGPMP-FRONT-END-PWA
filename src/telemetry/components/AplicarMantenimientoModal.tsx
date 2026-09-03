@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Wrench, Power } from 'lucide-react';
 import { ModalShell } from './ModalShell';
 import { Button } from '../../shared/design-system/Button';
@@ -38,6 +39,7 @@ const TEXTAREA: React.CSSProperties = {
  * El backend solo acepta estos dos destinos; `motivo` es opcional (≤500).
  */
 export function AplicarMantenimientoModal({ idDispositivo, estadoActual, saving, saveError, onConfirm, onClose }: Props) {
+  const { t } = useT('telemetry');
   const enMantenimiento = (estadoActual ?? '').toUpperCase() === 'EN_MANTENIMIENTO';
   const destino: AplicarMantenimientoDTO['nuevo_estado'] = enMantenimiento ? 'ACTIVO' : 'EN_MANTENIMIENTO';
 
@@ -58,15 +60,14 @@ export function AplicarMantenimientoModal({ idDispositivo, estadoActual, saving,
       maxWidth={460}
       footer={
         <>
-          <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>{t('aplicarmantenimientomodal.cancelar')}</Button>
           <Button variant={enMantenimiento ? 'primary' : 'secondary'} size="sm" loading={saving} disabled={saving} onClick={confirmar}>
             {icono}{cta}
           </Button>
         </>
       }
     >
-      <p style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap', fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>
-        Dispositivo <strong>#{idDispositivo}</strong>
+      <p style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap', fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('aplicarmantenimientomodal.dispositivo')}<strong>#{idDispositivo}</strong>
         <EstadoDispositivoPill estado={estadoActual} />
         <span aria-hidden>→</span>
         <EstadoDispositivoPill estado={destino} />

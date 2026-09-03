@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { ModalShell } from './ModalShell';
 import { Button } from '../../shared/design-system/Button';
@@ -44,6 +45,7 @@ const ACCION_META: Record<NuevoEstadoAlerta, { label: string; variant: 'primary'
 };
 
 export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, online, onAccion, onClose }: Props) {
+  const { t } = useT('telemetry');
   const acciones = detalle ? accionesDisponibles(detalle.estado_alerta) : [];
 
   return (
@@ -80,7 +82,7 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, on
       )}
 
       {error && (
-        <Alert variant={error.status === 403 ? 'warning' : 'error'} title="No se pudo cargar el detalle" description={error.message} />
+        <Alert variant={error.status === 403 ? 'warning' : 'error'} title={t('alertadetallemodal.no_se_pudo_cargar_el_detalle')} description={error.message} />
       )}
 
       {detalle && !loading && (
@@ -91,23 +93,23 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, on
             <OrigenPill origen={detalle.origen_evento} />
           </div>
 
-          <Fila label="Variable">{detalle.tipo_variable}</Fila>
-          <Fila label="Valor">{detalle.valor != null ? `${detalle.valor}${detalle.unidad ? ` ${detalle.unidad}` : ''}` : '—'}</Fila>
-          <Fila label="Generada">{detalle.fecha_generacion?.slice(0, 10)} {horaCaptura(detalle.fecha_generacion)}</Fila>
-          <Fila label="Evento">{detalle.fecha_evento?.slice(0, 10)} {horaCaptura(detalle.fecha_evento)}</Fila>
-          {detalle.fecha_vencimiento && <Fila label="Vence">{detalle.fecha_vencimiento?.slice(0, 10)} {horaCaptura(detalle.fecha_vencimiento)}</Fila>}
-          <Fila label="Reglas activadas">{Array.isArray(detalle.reglas_activas) && detalle.reglas_activas.length > 0 ? detalle.reglas_activas.map(String).join(', ') : '—'}</Fila>
-          {detalle.accion_sugerida && <Fila label="Acción sugerida">{detalle.accion_sugerida}</Fila>}
-          {detalle.diagnostico && <Fila label="Diagnóstico">{detalle.diagnostico}</Fila>}
-          {detalle.motivo_descarte && <Fila label="Motivo de descarte">{detalle.motivo_descarte}</Fila>}
-          {detalle.id_sensor != null && <Fila label="Sensor">#{detalle.id_sensor}</Fila>}
-          {detalle.id_activo_biologico != null && <Fila label="Activo biológico">#{detalle.id_activo_biologico}</Fila>}
-          {detalle.id_infraestructura != null && <Fila label="Infraestructura">#{detalle.id_infraestructura}</Fila>}
+          <Fila label={t('alertadetallemodal.variable')}>{detalle.tipo_variable}</Fila>
+          <Fila label={t('alertadetallemodal.valor')}>{detalle.valor != null ? `${detalle.valor}${detalle.unidad ? ` ${detalle.unidad}` : ''}` : '—'}</Fila>
+          <Fila label={t('alertadetallemodal.generada')}>{detalle.fecha_generacion?.slice(0, 10)} {horaCaptura(detalle.fecha_generacion)}</Fila>
+          <Fila label={t('alertadetallemodal.evento')}>{detalle.fecha_evento?.slice(0, 10)} {horaCaptura(detalle.fecha_evento)}</Fila>
+          {detalle.fecha_vencimiento && <Fila label={t('alertadetallemodal.vence')}>{detalle.fecha_vencimiento?.slice(0, 10)} {horaCaptura(detalle.fecha_vencimiento)}</Fila>}
+          <Fila label={t('alertadetallemodal.reglas_activadas')}>{Array.isArray(detalle.reglas_activas) && detalle.reglas_activas.length > 0 ? detalle.reglas_activas.map(String).join(', ') : '—'}</Fila>
+          {detalle.accion_sugerida && <Fila label={t('alertadetallemodal.accion_sugerida')}>{detalle.accion_sugerida}</Fila>}
+          {detalle.diagnostico && <Fila label={t('alertadetallemodal.diagnostico')}>{detalle.diagnostico}</Fila>}
+          {detalle.motivo_descarte && <Fila label={t('alertadetallemodal.motivo_de_descarte')}>{detalle.motivo_descarte}</Fila>}
+          {detalle.id_sensor != null && <Fila label={t('alertadetallemodal.sensor')}>#{detalle.id_sensor}</Fila>}
+          {detalle.id_activo_biologico != null && <Fila label={t('alertadetallemodal.activo_biologico')}>#{detalle.id_activo_biologico}</Fila>}
+          {detalle.id_infraestructura != null && <Fila label={t('alertadetallemodal.infraestructura')}>#{detalle.id_infraestructura}</Fila>}
 
           <div style={{ marginTop: 'var(--s5)' }}>
-            <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>Histórico de estados</h3>
+            <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>{t('alertadetallemodal.historico_de_estados')}</h3>
             {detalle.historico_estados.length === 0 ? (
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Sin cambios de estado registrados.</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>{t('alertadetallemodal.sin_cambios_de_estado_registrados')}</p>
             ) : (
               <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
                 {detalle.historico_estados.map((h, i) => (

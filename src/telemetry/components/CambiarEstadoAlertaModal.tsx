@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ModalShell } from './ModalShell';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
@@ -44,6 +45,7 @@ const CONTROL: React.CSSProperties = {
 };
 
 export function CambiarEstadoAlertaModal({ alerta, estado, saving, saveError, onConfirm, onClose }: Props) {
+  const { t } = useT('telemetry');
   const meta = META[estado];
   const [motivo, setMotivo] = useState('');
   const [touched, setTouched] = useState(false);
@@ -63,13 +65,12 @@ export function CambiarEstadoAlertaModal({ alerta, estado, saving, saveError, on
       maxWidth={460}
       footer={
         <>
-          <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>{t('cambiarestadoalertamodal.cancelar')}</Button>
           <Button variant={meta.variant} size="sm" loading={saving} disabled={saving} onClick={confirmar}>{meta.cta}</Button>
         </>
       }
     >
-      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>
-        Alerta <strong>#{alerta.id_alerta}</strong> · {alerta.tipo_alerta} · {alerta.tipo_variable}
+      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('cambiarestadoalertamodal.alerta')}<strong>#{alerta.id_alerta}</strong> · {alerta.tipo_alerta} · {alerta.tipo_variable}
       </p>
 
       <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-alerta">
@@ -85,9 +86,7 @@ export function CambiarEstadoAlertaModal({ alerta, estado, saving, saveError, on
         aria-invalid={touched && faltaMotivo}
       />
       {touched && faltaMotivo && (
-        <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
-          Este campo es obligatorio.
-        </p>
+        <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>{t('cambiarestadoalertamodal.este_campo_es_obligatorio')}</p>
       )}
 
       {saveError && (

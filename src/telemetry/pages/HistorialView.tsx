@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { History } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { Alert } from '../../shared/design-system/Alert';
@@ -14,6 +15,7 @@ import { RECURSO_HISTORIAL, ACCION_R, ACCION_E } from '../rbac';
 import type { HistorialFiltros as HistorialFiltrosDTO, EstadoDato, OrigenDato, FormatoExportHistorial } from '../types';
 
 export function HistorialView() {
+  const { t } = useT('telemetry');
   const puedeVer = usePermission(RECURSO_HISTORIAL, ACCION_R);
   const puedeExportar = usePermission(RECURSO_HISTORIAL, ACCION_E);
 
@@ -57,9 +59,7 @@ export function HistorialView() {
     <div style={{ minHeight: '100%' }}>
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <History size={20} aria-hidden />
-          Historial de Lecturas
-        </h1>
+          <History size={20} aria-hidden />{t('historialview.historial_de_lecturas')}</h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
           {loading ? 'Cargando…' : `${paginacion.totalRegistros} lectura(s)`}
         </p>
