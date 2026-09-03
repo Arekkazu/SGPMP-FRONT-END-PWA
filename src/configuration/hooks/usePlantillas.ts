@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { plantillasApi } from '../api/plantillasApi';
-import type { PlantillaResponse, RegistrarPlantillaDTO, AplicarPlantillaDTO, AplicacionPlantillaResponse } from '../types';
+import type { PlantillaResponse, RegistrarPlantillaDTO, VersionarPlantillaDTO, AplicarPlantillaDTO, AplicacionPlantillaResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 export function usePlantillas() {
@@ -41,6 +41,23 @@ export function usePlantillas() {
     }
   }, []);
 
+  const versionar = useCallback(async (id: number, dto: VersionarPlantillaDTO): Promise<boolean> => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const nueva = await plantillasApi.versionar(id, dto);
+      // La versión anterior sigue en la lista: el RF exige que una actualización
+      // genere una versión nueva, no que sobreescriba la original.
+      setPlantillas((prev) => [nueva, ...prev]);
+      return true;
+    } catch (e) {
+      setSaveError(e as ApiError);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
   const aplicar = useCallback(async (id: number, dto: AplicarPlantillaDTO): Promise<AplicacionPlantillaResponse | null> => {
     setSaving(true);
     setSaveError(null);
@@ -68,5 +85,5 @@ export function usePlantillas() {
     }
   }, []);
 
-  return { plantillas, historial, loading, loadingHistorial, saving, error, saveError, listar, registrar, aplicar, cargarHistorial };
+  return { plantillas, historial, loading, loadingHistorial, saving, error, saveError, listar, registrar, versionar, aplicar, cargarHistorial };
 }

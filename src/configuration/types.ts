@@ -482,6 +482,44 @@ export interface WidgetDatosResponse {
 // =====================================================================
 // Plantillas de Configuración
 // =====================================================================
+
+/**
+ * Categorías que el RF-30 autoriza dentro de una plantilla. Los dispositivos
+ * IoT, la infraestructura, el dashboard y la identidad visual quedan fuera a
+ * propósito: dependen del contexto de cada unidad productiva y el backend
+ * rechaza el snapshot que las incluya.
+ */
+export const CATEGORIAS_PLANTILLA = [
+  'ciclos_biologicos',
+  'patologias',
+  'metricas_produccion',
+  'umbrales_ambientales',
+] as const;
+
+export type CategoriaPlantilla = (typeof CATEGORIAS_PLANTILLA)[number];
+
+/**
+ * Configuración real de una especie en la forma que espera `params_snapshot`.
+ * Sin ids propios de la especie origen: la plantilla se aplica sobre otra.
+ */
+export interface SnapshotEspecie {
+  ciclos_biologicos: { nombre: string; duracion_dias: number; descripcion: string | null }[];
+  patologias: { nombre: string; descripcion: string | null; es_activo: boolean }[];
+  metricas_produccion: {
+    nombre: string;
+    unidad_medida: string;
+    tipo_medicion: TipoMedicion;
+    aplica_a_tipo_activo: TipoActivo;
+  }[];
+  umbrales_ambientales: {
+    id_variable_ambiental: number;
+    unidad_medida: string;
+    valor_min: string;
+    valor_max: string;
+    niveles: { nivel: NivelAlerta; limite_inferior: string; limite_superior: string }[];
+  }[];
+}
+
 export interface PlantillaResponse {
   id_plantilla: number;
   id_especie: number;
@@ -495,6 +533,11 @@ export interface PlantillaResponse {
 export interface RegistrarPlantillaDTO {
   template_name: string;
   id_especie: number;
+  params_snapshot: Record<string, unknown>;
+}
+
+/** Versionar solo cambia los parámetros: nombre y especie los hereda la base. */
+export interface VersionarPlantillaDTO {
   params_snapshot: Record<string, unknown>;
 }
 

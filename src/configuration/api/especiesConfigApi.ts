@@ -4,6 +4,7 @@ import type {
   PatologiaEspecieItemResponse, RegistrarPatologiaDTO, EditarPatologiaDTO,
   MetricaProduccionResponse, RegistrarMetricaDTO, EditarMetricaDTO,
   UmbralAmbientalResponse, RegistrarUmbralDTO, EditarUmbralDTO,
+  SnapshotEspecie,
 } from '../types';
 
 export const ciclosApi = {
@@ -101,3 +102,54 @@ export const umbralesApi = {
     return res.data;
   },
 };
+
+// =====================================================================
+// Captura de configuración para plantillas (RF-31)
+// =====================================================================
+
+/**
+ * Lee la configuración real de una especie y la deja en la forma exacta que
+ * `POST /configuracion/plantillas` espera en `params_snapshot`.
+ *
+ * Cada categoría lleva solo los campos que el backend vuelve a escribir al
+ * aplicar la plantilla (RF-32, `*_desde_snapshot`): los ids no viajan porque la
+ * plantilla se aplica sobre otra especie, que tendrá ids propios.
+ */
+export async function capturarConfiguracionEspecie(idEspecie: number): Promise<SnapshotEspecie> {
+  const [ciclos, patologias, metricas, umbrales] = await Promise.all([
+    ciclosApi.listar(idEspecie, true),
+    patologiasApi.listar(idEspecie, true),
+    metricasApi.listar(idEspecie, true),
+    umbralesApi.listar(idEspecie, true),
+  ]);
+
+  return {
+    ciclos_biologicos: ciclos.map((c) => ({
+      nombre: c.nombre,
+      duracion_dias: c.duracion_dias,
+      descripcion: c.descripcion,
+    })),
+    patologias: patologias.map((p) => ({
+      nombre: p.nombre,
+      descripcion: p.descripcion,
+      es_activo: p.es_activo,
+    })),
+    metricas_produccion: metricas.map((m) => ({
+      nombre: m.nombre,
+      unidad_medida: m.unidad_medida,
+      tipo_medicion: m.tipo_medicion,
+      aplica_a_tipo_activo: m.aplica_a_tipo_activo,
+    })),
+    umbrales_ambientales: umbrales.map((u) => ({
+      id_variable_ambiental: u.id_variable_ambiental,
+      unidad_medida: u.unidad_medida,
+      valor_min: String(u.valor_min),
+      valor_max: String(u.valor_max),
+      niveles: u.niveles.map((n) => ({
+        nivel: n.nivel,
+        limite_inferior: String(n.limite_inferior),
+        limite_superior: String(n.limite_superior),
+      })),
+    })),
+  };
+}
