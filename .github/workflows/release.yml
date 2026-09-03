@@ -4,14 +4,12 @@ name: Versionamiento automatizado
 # (1.x.y-rc.N), main publica la version final cuando Pruebas aprueba y se
 # mergea dev -> main. Ver docs-sgpmp/1-analisis/versionamiento/.
 #
-# Token: por ahora usa el automatico de Actions (secrets.GITHUB_TOKEN) --
-# en este repo "dev" NO tiene ruleset/branch protection todavia (verificado
-# via gh api repos/.../rules/branches/dev, vacio). Si en algun momento se
-# activa un ruleset con "PR obligatorio" (como paso en sgpmp-backend, error
-# GH013), el push de @semantic-release/git empieza a fallar sin importar
-# los permisos de este workflow -- ahi hace falta crear un PAT real de una
-# cuenta con bypass en el ruleset, guardarlo como secret GH_TOKEN, y
-# cambiar las dos referencias de abajo a secrets.GH_TOKEN.
+# Token: dev tiene ruleset con PR obligatorio (igual que sgpmp-backend) --
+# el token automatico de Actions (github.token) actua como github-actions[bot],
+# que no esta en el bypass del ruleset, asi que su push siempre se rechaza
+# con GH013 sin importar los permisos de este workflow. Necesita un PAT real
+# de una cuenta que SI este en el bypass del ruleset, guardado como el
+# secret GH_TOKEN (Settings -> Secrets and variables -> Actions).
 on:
   push:
     branches: [main, dev]
@@ -32,7 +30,7 @@ jobs:
           # release/git hace un "git push" real, no una llamada API --
           # necesita que checkout deje el token configurado como
           # credencial de git.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
 
       - uses: actions/setup-node@v4
         with:
@@ -52,7 +50,7 @@ jobs:
 
       - name: Ejecutar semantic-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npx semantic-release
 
       - name: Confirmar publicación
