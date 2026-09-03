@@ -2,6 +2,16 @@
 
 ---
 
+## Convención de commits (obligatoria en `dev`)
+
+`dev` corre un pipeline de versionamiento automatizado que lee el historial
+de commits para calcular versión y `CHANGELOG.md`. **Todo commit generado
+en este repo — incluido por una IA — debe seguir el formato de
+`CONTRIBUTING.md`** (`tipo(scope): descripción`). Un commit sin ese formato
+es válido para Git pero invisible para el pipeline.
+
+---
+
 ## Qué cubre este documento
 
 - Stack y versiones instaladas
