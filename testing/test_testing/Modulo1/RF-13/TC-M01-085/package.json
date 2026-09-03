@@ -1,0 +1,14 @@
+{
+  "name": "tc-m01-085",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "newman run TC-M01-085_coleccion.json -e TC-M01-085_environment.json --reporters cli,json --reporter-json-export RESULTADOS/TC-M01-085_resultado.json",
+    "cy:run": "cypress run --spec 'tc-m01-085-perfil-jwt.cy.ts'",
+    "cy:open": "cypress open"
+  },
+  "devDependencies": {
+    "cypress": "^13.17.0",
+    "newman": "^6.2.2",
+    "typescript": "^5.3.3"
+  }
+}

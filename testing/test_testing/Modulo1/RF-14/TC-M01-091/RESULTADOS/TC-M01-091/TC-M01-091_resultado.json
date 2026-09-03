@@ -1,0 +1,26 @@
+{
+  "fecha": "2026-09-03",
+  "usuario": "ingeniero@pecuaria.co",
+  "id_usuario": 4,
+  "checkpoints": [
+    {
+      "request": "POST /sesiones/",
+      "esperado": "HTTP 200 + JWT válido",
+      "obtenido": "HTTP 200 + JWT recibido",
+      "estado": "OK"
+    },
+    {
+      "request": "GET /notificaciones",
+      "esperado": "HTTP 200 + evento CAMBIO_CONTRASENA visible",
+      "obtenido": "HTTP 200 + evento tipo 6 encontrado",
+      "estado": "OK"
+    },
+    {
+      "request": "Bandeja interna UI",
+      "esperado": "Mostrar Cambio de contraseña",
+      "obtenido": "La API contiene el evento, pero la bandeja muestra No tienes notificaciones",
+      "estado": "FALLA"
+    }
+  ],
+  "veredicto": "CON FALLAS"
+}

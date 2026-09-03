@@ -1,0 +1,2312 @@
+{
+  "collection": {
+    "_": {
+      "postman_id": "tc-m01-085-api"
+    },
+    "item": [
+      {
+        "id": "addfacf1-c96a-4918-b85b-f8d79ad4fb5b",
+        "name": "1. Login",
+        "request": {
+          "description": {
+            "content": "Endpoint real: POST /sesiones/.",
+            "type": "text/plain"
+          },
+          "url": {
+            "path": [
+              "sesiones",
+              ""
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"correo_electronico\": \"{{authenticated_email}}\",\n  \"contrasena\": \"Test1234!\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "8fbaea1f-0ea5-49d1-91d6-9124eea1b976",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status de login es 200', function () {",
+                "    pm.response.to.have.status(200);",
+                "});",
+                "const response = pm.response.json();",
+                "const token = response.token;",
+                "pm.test('La respuesta contiene un JWT', function () {",
+                "    pm.expect(token).to.be.a('string').and.not.empty;",
+                "    pm.expect(token.split('.')).to.have.lengthOf(3);",
+                "});",
+                "if (typeof token === 'string' && token.split('.').length === 3) {",
+                "    pm.collectionVariables.set('jwt_token', token);",
+                "    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));",
+                "    pm.expect(payload.sub, 'El JWT debe identificar al usuario').to.exist;",
+                "    pm.collectionVariables.set('authenticated_user_id', String(payload.sub));",
+                "}"
+              ],
+              "_lastExecutionId": "d6a72556-b5e0-461d-9557-f557a50eec1f"
+            }
+          }
+        ]
+      },
+      {
+        "id": "9a3b8ee1-2e83-4b44-b32e-5a6fa25764dd",
+        "name": "2. Consultar perfil",
+        "request": {
+          "description": {
+            "content": "Endpoint real: GET /usuarios/me.",
+            "type": "text/plain"
+          },
+          "url": {
+            "path": [
+              "usuarios",
+              "me"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{jwt_token}}"
+            }
+          ],
+          "method": "GET"
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "4265bebf-774b-40eb-be74-778a847f2da4",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status de consulta de perfil es 200', function () {",
+                "    pm.response.to.have.status(200);",
+                "});",
+                "const profile = pm.response.json();",
+                "pm.test('El correo corresponde al usuario esperado', function () {",
+                "    pm.expect(profile.correo_electronico).to.equal('supervisor.dev@gmail.com');",
+                "});",
+                "pm.test('Los datos corresponden al usuario autenticado', function () {",
+                "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
+                "    pm.expect(String(profile.id_usuario)).to.equal(pm.collectionVariables.get('authenticated_user_id'));",
+                "});"
+              ],
+              "_lastExecutionId": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+            }
+          }
+        ]
+      }
+    ],
+    "event": [],
+    "variable": [
+      {
+        "type": "string",
+        "value": "",
+        "key": "jwt_token"
+      },
+      {
+        "type": "string",
+        "value": "supervisor.dev@gmail.com",
+        "key": "authenticated_email"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "authenticated_user_id"
+      }
+    ],
+    "info": {
+      "_postman_id": "tc-m01-085-api",
+      "name": "TC-M01-085 - Consultar perfil propio con JWT",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "description": {
+        "content": "Prueba API de login y consulta del perfil propio para RF-13.",
+        "type": "text/plain"
+      }
+    }
+  },
+  "environment": {
+    "_": {
+      "postman_variable_scope": "environment",
+      "postman_exported_at": "2026-09-03T00:00:00.000Z",
+      "postman_exported_using": "Newman"
+    },
+    "id": "tc-m01-085-environment",
+    "name": "TC-M01-085 - Local API",
+    "values": [
+      {
+        "type": "any",
+        "value": "http://localhost:8000/api",
+        "key": "base_url"
+      }
+    ]
+  },
+  "globals": {
+    "id": "2061f97c-3d3f-43ac-8212-b2118891749a",
+    "values": []
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequests": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "tests": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 5,
+        "pending": 0,
+        "failed": 5
+      },
+      "testScripts": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequestScripts": {
+        "total": 0,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 543.5,
+      "responseMin": 198,
+      "responseMax": 889,
+      "responseSd": 345.5,
+      "dnsAverage": 0,
+      "dnsMin": 0,
+      "dnsMax": 0,
+      "dnsSd": 0,
+      "firstByteAverage": 0,
+      "firstByteMin": 0,
+      "firstByteMax": 0,
+      "firstByteSd": 0,
+      "started": 1788413461560,
+      "completed": 1788413462829
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 2,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "b59b4037-c0b2-40bd-befb-ac89b6a968b6",
+          "httpRequestId": "f740c53b-fab6-495a-acfb-96b67d0fd7df"
+        },
+        "item": {
+          "id": "addfacf1-c96a-4918-b85b-f8d79ad4fb5b",
+          "name": "1. Login",
+          "request": {
+            "description": {
+              "content": "Endpoint real: POST /sesiones/.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "sesiones",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo_electronico\": \"{{authenticated_email}}\",\n  \"contrasena\": \"Test1234!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "8fbaea1f-0ea5-49d1-91d6-9124eea1b976",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status de login es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "const token = response.token;",
+                  "pm.test('La respuesta contiene un JWT', function () {",
+                  "    pm.expect(token).to.be.a('string').and.not.empty;",
+                  "    pm.expect(token.split('.')).to.have.lengthOf(3);",
+                  "});",
+                  "if (typeof token === 'string' && token.split('.').length === 3) {",
+                  "    pm.collectionVariables.set('jwt_token', token);",
+                  "    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));",
+                  "    pm.expect(payload.sub, 'El JWT debe identificar al usuario').to.exist;",
+                  "    pm.collectionVariables.set('authenticated_user_id', String(payload.sub));",
+                  "}"
+                ],
+                "_lastExecutionId": "d6a72556-b5e0-461d-9557-f557a50eec1f"
+              }
+            }
+          ]
+        },
+        "request": {
+          "description": {
+            "content": "Endpoint real: POST /sesiones/.",
+            "type": "text/plain"
+          },
+          "url": {
+            "protocol": "http",
+            "port": "8000",
+            "path": [
+              "api",
+              "sesiones",
+              ""
+            ],
+            "host": [
+              "localhost"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "bd9bfe77-7ed2-4f37-a0f9-7d3e52fce653",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "localhost:8000",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "83",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"correo_electronico\": \"supervisor.dev@gmail.com\",\n  \"contrasena\": \"Test1234!\"\n}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
+          }
+        },
+        "response": {
+          "id": "4df37170-61ce-4897-907a-28fa6c55fb98",
+          "status": "Forbidden",
+          "code": 403,
+          "header": [
+            {
+              "key": "date",
+              "value": "Thu, 03 Sep 2026 05:31:00 GMT"
+            },
+            {
+              "key": "server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "content-length",
+              "value": "269"
+            },
+            {
+              "key": "content-type",
+              "value": "application/json"
+            },
+            {
+              "key": "x-request-id",
+              "value": "6ed1149e-02a8-48d2-9728-282f62ffaea4"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              95,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              34,
+              67,
+              85,
+              69,
+              78,
+              84,
+              65,
+              95,
+              68,
+              69,
+              83,
+              72,
+              65,
+              66,
+              73,
+              76,
+              73,
+              84,
+              65,
+              68,
+              65,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              65,
+              99,
+              99,
+              101,
+              115,
+              111,
+              32,
+              114,
+              101,
+              115,
+              116,
+              114,
+              105,
+              110,
+              103,
+              105,
+              100,
+              111,
+              46,
+              32,
+              83,
+              117,
+              32,
+              99,
+              117,
+              101,
+              110,
+              116,
+              97,
+              32,
+              104,
+              97,
+              32,
+              115,
+              105,
+              100,
+              111,
+              32,
+              100,
+              101,
+              115,
+              97,
+              99,
+              116,
+              105,
+              118,
+              97,
+              100,
+              97,
+              32,
+              112,
+              111,
+              114,
+              32,
+              112,
+              111,
+              108,
+              195,
+              173,
+              116,
+              105,
+              99,
+              97,
+              115,
+              32,
+              100,
+              101,
+              32,
+              115,
+              101,
+              103,
+              117,
+              114,
+              105,
+              100,
+              97,
+              100,
+              32,
+              111,
+              32,
+              97,
+              100,
+              109,
+              105,
+              110,
+              105,
+              115,
+              116,
+              114,
+              97,
+              99,
+              105,
+              195,
+              179,
+              110,
+              46,
+              32,
+              80,
+              111,
+              114,
+              32,
+              102,
+              97,
+              118,
+              111,
+              114,
+              44,
+              32,
+              99,
+              111,
+              110,
+              116,
+              97,
+              99,
+              116,
+              101,
+              32,
+              97,
+              108,
+              32,
+              115,
+              111,
+              112,
+              111,
+              114,
+              116,
+              101,
+              32,
+              116,
+              195,
+              169,
+              99,
+              110,
+              105,
+              99,
+              111,
+              32,
+              112,
+              97,
+              114,
+              97,
+              32,
+              109,
+              195,
+              161,
+              115,
+              32,
+              105,
+              110,
+              102,
+              111,
+              114,
+              109,
+              97,
+              99,
+              105,
+              195,
+              179,
+              110,
+              46,
+              34,
+              44,
+              34,
+              102,
+              105,
+              101,
+              108,
+              100,
+              115,
+              34,
+              58,
+              91,
+              93,
+              44,
+              34,
+              116,
+              105,
+              109,
+              101,
+              115,
+              116,
+              97,
+              109,
+              112,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              48,
+              51,
+              84,
+              48,
+              53,
+              58,
+              51,
+              49,
+              58,
+              48,
+              50,
+              46,
+              52,
+              56,
+              55,
+              50,
+              53,
+              57,
+              43,
+              48,
+              48,
+              58,
+              48,
+              48,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 889,
+          "responseSize": 269
+        },
+        "id": "addfacf1-c96a-4918-b85b-f8d79ad4fb5b",
+        "assertions": [
+          {
+            "assertion": "Status de login es 200",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 0,
+              "test": "Status de login es 200",
+              "message": "expected response to have status code 200 but got 403",
+              "stack": "AssertionError: expected response to have status code 200 but got 403\n   at Object.eval sandbox-script.js:1:1)"
+            }
+          },
+          {
+            "assertion": "La respuesta contiene un JWT",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 1,
+              "test": "La respuesta contiene un JWT",
+              "message": "expected undefined to be a string",
+              "stack": "AssertionError: expected undefined to be a string\n   at Object.eval sandbox-script.js:2:1)"
+            }
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "219cfa8c-8814-4474-b68a-53d3d17f1c60",
+          "length": 2,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "a11f0983-a82d-4d66-a57b-865b9bdae4d3"
+        },
+        "item": {
+          "id": "9a3b8ee1-2e83-4b44-b32e-5a6fa25764dd",
+          "name": "2. Consultar perfil",
+          "request": {
+            "description": {
+              "content": "Endpoint real: GET /usuarios/me.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "usuarios",
+                "me"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "4265bebf-774b-40eb-be74-778a847f2da4",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status de consulta de perfil es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const profile = pm.response.json();",
+                  "pm.test('El correo corresponde al usuario esperado', function () {",
+                  "    pm.expect(profile.correo_electronico).to.equal('supervisor.dev@gmail.com');",
+                  "});",
+                  "pm.test('Los datos corresponden al usuario autenticado', function () {",
+                  "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
+                  "    pm.expect(String(profile.id_usuario)).to.equal(pm.collectionVariables.get('authenticated_user_id'));",
+                  "});"
+                ],
+                "_lastExecutionId": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+              }
+            }
+          ]
+        },
+        "request": {
+          "description": {
+            "content": "Endpoint real: GET /usuarios/me.",
+            "type": "text/plain"
+          },
+          "url": {
+            "protocol": "http",
+            "port": "8000",
+            "path": [
+              "api",
+              "usuarios",
+              "me"
+            ],
+            "host": [
+              "localhost"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer "
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "cd94d8d8-66a1-48f9-b2d1-360bff061dbc",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "localhost:8000",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET"
+        },
+        "response": {
+          "id": "42517ccb-744c-47c9-94fe-2ef71b80be8c",
+          "status": "Unauthorized",
+          "code": 401,
+          "header": [
+            {
+              "key": "date",
+              "value": "Thu, 03 Sep 2026 05:31:01 GMT"
+            },
+            {
+              "key": "server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "content-length",
+              "value": "168"
+            },
+            {
+              "key": "content-type",
+              "value": "application/json"
+            },
+            {
+              "key": "x-request-id",
+              "value": "9b5ee115-20ed-4ae2-a8d2-2cbac214503e"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              95,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              34,
+              84,
+              79,
+              75,
+              69,
+              78,
+              95,
+              82,
+              69,
+              81,
+              85,
+              69,
+              82,
+              73,
+              68,
+              79,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              83,
+              101,
+              32,
+              114,
+              101,
+              113,
+              117,
+              105,
+              101,
+              114,
+              101,
+              32,
+              97,
+              117,
+              116,
+              101,
+              110,
+              116,
+              105,
+              99,
+              97,
+              99,
+              105,
+              195,
+              179,
+              110,
+              46,
+              32,
+              80,
+              114,
+              111,
+              112,
+              111,
+              114,
+              99,
+              105,
+              111,
+              110,
+              97,
+              32,
+              117,
+              110,
+              32,
+              116,
+              111,
+              107,
+              101,
+              110,
+              32,
+              66,
+              101,
+              97,
+              114,
+              101,
+              114,
+              32,
+              118,
+              195,
+              161,
+              108,
+              105,
+              100,
+              111,
+              46,
+              34,
+              44,
+              34,
+              102,
+              105,
+              101,
+              108,
+              100,
+              115,
+              34,
+              58,
+              91,
+              93,
+              44,
+              34,
+              116,
+              105,
+              109,
+              101,
+              115,
+              116,
+              97,
+              109,
+              112,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              48,
+              51,
+              84,
+              48,
+              53,
+              58,
+              51,
+              49,
+              58,
+              48,
+              50,
+              46,
+              55,
+              57,
+              50,
+              55,
+              53,
+              48,
+              43,
+              48,
+              48,
+              58,
+              48,
+              48,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 198,
+          "responseSize": 168
+        },
+        "id": "9a3b8ee1-2e83-4b44-b32e-5a6fa25764dd",
+        "assertions": [
+          {
+            "assertion": "Status de consulta de perfil es 200",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 0,
+              "test": "Status de consulta de perfil es 200",
+              "message": "expected response to have status code 200 but got 401",
+              "stack": "AssertionError: expected response to have status code 200 but got 401\n   at Object.eval sandbox-script.js:1:2)"
+            }
+          },
+          {
+            "assertion": "El correo corresponde al usuario esperado",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 1,
+              "test": "El correo corresponde al usuario esperado",
+              "message": "expected undefined to equal 'supervisor.dev@gmail.com'",
+              "stack": "AssertionError: expected undefined to equal 'supervisor.dev@gmail.com'\n   at Object.eval sandbox-script.js:2:2)"
+            }
+          },
+          {
+            "assertion": "Los datos corresponden al usuario autenticado",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 2,
+              "test": "Los datos corresponden al usuario autenticado",
+              "message": "expected undefined to equal 'supervisor.dev@gmail.com'",
+              "stack": "AssertionError: expected undefined to equal 'supervisor.dev@gmail.com'\n   at Object.eval sandbox-script.js:3:2)"
+            }
+          }
+        ]
+      }
+    ],
+    "transfers": {
+      "responseTotal": 437
+    },
+    "failures": [
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 0,
+          "test": "Status de login es 200",
+          "message": "expected response to have status code 200 but got 403",
+          "stack": "AssertionError: expected response to have status code 200 but got 403\n   at Object.eval sandbox-script.js:1:1)",
+          "checksum": "24aca1d76fc09ee06f977e56fccf86dc",
+          "id": "e09d86ef-b7f2-4e6d-8a07-b480e8045c9f",
+          "timestamp": 1788413462520,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 1,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 1,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:0 in test-script",
+        "source": {
+          "id": "addfacf1-c96a-4918-b85b-f8d79ad4fb5b",
+          "name": "1. Login",
+          "request": {
+            "description": {
+              "content": "Endpoint real: POST /sesiones/.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "sesiones",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo_electronico\": \"{{authenticated_email}}\",\n  \"contrasena\": \"Test1234!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "8fbaea1f-0ea5-49d1-91d6-9124eea1b976",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status de login es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "const token = response.token;",
+                  "pm.test('La respuesta contiene un JWT', function () {",
+                  "    pm.expect(token).to.be.a('string').and.not.empty;",
+                  "    pm.expect(token.split('.')).to.have.lengthOf(3);",
+                  "});",
+                  "if (typeof token === 'string' && token.split('.').length === 3) {",
+                  "    pm.collectionVariables.set('jwt_token', token);",
+                  "    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));",
+                  "    pm.expect(payload.sub, 'El JWT debe identificar al usuario').to.exist;",
+                  "    pm.collectionVariables.set('authenticated_user_id', String(payload.sub));",
+                  "}"
+                ],
+                "_lastExecutionId": "d6a72556-b5e0-461d-9557-f557a50eec1f"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "_": {
+            "postman_id": "tc-m01-085-api"
+          },
+          "item": [
+            {
+              "id": "addfacf1-c96a-4918-b85b-f8d79ad4fb5b",
+              "name": "1. Login",
+              "request": {
+                "description": {
+                  "content": "Endpoint real: POST /sesiones/.",
+                  "type": "text/plain"
+                },
+                "url": {
+                  "path": [
+                    "sesiones",
+                    ""
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"correo_electronico\": \"{{authenticated_email}}\",\n  \"contrasena\": \"Test1234!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "8fbaea1f-0ea5-49d1-91d6-9124eea1b976",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status de login es 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const response = pm.response.json();",
+                      "const token = response.token;",
+                      "pm.test('La respuesta contiene un JWT', function () {",
+                      "    pm.expect(token).to.be.a('string').and.not.empty;",
+                      "    pm.expect(token.split('.')).to.have.lengthOf(3);",
+                      "});",
+                      "if (typeof token === 'string' && token.split('.').length === 3) {",
+                      "    pm.collectionVariables.set('jwt_token', token);",
+                      "    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));",
+                      "    pm.expect(payload.sub, 'El JWT debe identificar al usuario').to.exist;",
+                      "    pm.collectionVariables.set('authenticated_user_id', String(payload.sub));",
+                      "}"
+                    ],
+                    "_lastExecutionId": "d6a72556-b5e0-461d-9557-f557a50eec1f"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "9a3b8ee1-2e83-4b44-b32e-5a6fa25764dd",
+              "name": "2. Consultar perfil",
+              "request": {
+                "description": {
+                  "content": "Endpoint real: GET /usuarios/me.",
+                  "type": "text/plain"
+                },
+                "url": {
+                  "path": [
+                    "usuarios",
+                    "me"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "4265bebf-774b-40eb-be74-778a847f2da4",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status de consulta de perfil es 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const profile = pm.response.json();",
+                      "pm.test('El correo corresponde al usuario esperado', function () {",
+                      "    pm.expect(profile.correo_electronico).to.equal('supervisor.dev@gmail.com');",
+                      "});",
+                      "pm.test('Los datos corresponden al usuario autenticado', function () {",
+                      "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
+                      "    pm.expect(String(profile.id_usuario)).to.equal(pm.collectionVariables.get('authenticated_user_id'));",
+                      "});"
+                    ],
+                    "_lastExecutionId": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+                  }
+                }
+              ]
+            }
+          ],
+          "event": [],
+          "variable": [
+            {
+              "type": "string",
+              "value": "",
+              "key": "jwt_token"
+            },
+            {
+              "type": "string",
+              "value": "supervisor.dev@gmail.com",
+              "key": "authenticated_email"
+            },
+            {
+              "type": "string",
+              "value": "",
+              "key": "authenticated_user_id"
+            }
+          ],
+          "info": {
+            "_postman_id": "tc-m01-085-api",
+            "name": "TC-M01-085 - Consultar perfil propio con JWT",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+            "description": {
+              "content": "Prueba API de login y consulta del perfil propio para RF-13.",
+              "type": "text/plain"
+            }
+          }
+        },
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 2,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "b59b4037-c0b2-40bd-befb-ac89b6a968b6",
+          "httpRequestId": "f740c53b-fab6-495a-acfb-96b67d0fd7df",
+          "scriptId": "8fbaea1f-0ea5-49d1-91d6-9124eea1b976",
+          "execution": "d6a72556-b5e0-461d-9557-f557a50eec1f"
+        }
+      },
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 1,
+          "test": "La respuesta contiene un JWT",
+          "message": "expected undefined to be a string",
+          "stack": "AssertionError: expected undefined to be a string\n   at Object.eval sandbox-script.js:2:1)",
+          "checksum": "3f90f69b2dd2d7bd6c04bb61d3b2e319",
+          "id": "9881bd80-35e3-47c4-a6cf-6df959e666d4",
+          "timestamp": 1788413462523,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 2,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 1,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:1 in test-script",
+        "source": {
+          "id": "addfacf1-c96a-4918-b85b-f8d79ad4fb5b",
+          "name": "1. Login",
+          "request": {
+            "description": {
+              "content": "Endpoint real: POST /sesiones/.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "sesiones",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo_electronico\": \"{{authenticated_email}}\",\n  \"contrasena\": \"Test1234!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "8fbaea1f-0ea5-49d1-91d6-9124eea1b976",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status de login es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const response = pm.response.json();",
+                  "const token = response.token;",
+                  "pm.test('La respuesta contiene un JWT', function () {",
+                  "    pm.expect(token).to.be.a('string').and.not.empty;",
+                  "    pm.expect(token.split('.')).to.have.lengthOf(3);",
+                  "});",
+                  "if (typeof token === 'string' && token.split('.').length === 3) {",
+                  "    pm.collectionVariables.set('jwt_token', token);",
+                  "    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));",
+                  "    pm.expect(payload.sub, 'El JWT debe identificar al usuario').to.exist;",
+                  "    pm.collectionVariables.set('authenticated_user_id', String(payload.sub));",
+                  "}"
+                ],
+                "_lastExecutionId": "d6a72556-b5e0-461d-9557-f557a50eec1f"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "_": {
+            "postman_id": "tc-m01-085-api"
+          },
+          "item": [
+            {
+              "id": "addfacf1-c96a-4918-b85b-f8d79ad4fb5b",
+              "name": "1. Login",
+              "request": {
+                "description": {
+                  "content": "Endpoint real: POST /sesiones/.",
+                  "type": "text/plain"
+                },
+                "url": {
+                  "path": [
+                    "sesiones",
+                    ""
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"correo_electronico\": \"{{authenticated_email}}\",\n  \"contrasena\": \"Test1234!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "8fbaea1f-0ea5-49d1-91d6-9124eea1b976",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status de login es 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const response = pm.response.json();",
+                      "const token = response.token;",
+                      "pm.test('La respuesta contiene un JWT', function () {",
+                      "    pm.expect(token).to.be.a('string').and.not.empty;",
+                      "    pm.expect(token.split('.')).to.have.lengthOf(3);",
+                      "});",
+                      "if (typeof token === 'string' && token.split('.').length === 3) {",
+                      "    pm.collectionVariables.set('jwt_token', token);",
+                      "    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));",
+                      "    pm.expect(payload.sub, 'El JWT debe identificar al usuario').to.exist;",
+                      "    pm.collectionVariables.set('authenticated_user_id', String(payload.sub));",
+                      "}"
+                    ],
+                    "_lastExecutionId": "d6a72556-b5e0-461d-9557-f557a50eec1f"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "9a3b8ee1-2e83-4b44-b32e-5a6fa25764dd",
+              "name": "2. Consultar perfil",
+              "request": {
+                "description": {
+                  "content": "Endpoint real: GET /usuarios/me.",
+                  "type": "text/plain"
+                },
+                "url": {
+                  "path": [
+                    "usuarios",
+                    "me"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "4265bebf-774b-40eb-be74-778a847f2da4",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status de consulta de perfil es 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const profile = pm.response.json();",
+                      "pm.test('El correo corresponde al usuario esperado', function () {",
+                      "    pm.expect(profile.correo_electronico).to.equal('supervisor.dev@gmail.com');",
+                      "});",
+                      "pm.test('Los datos corresponden al usuario autenticado', function () {",
+                      "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
+                      "    pm.expect(String(profile.id_usuario)).to.equal(pm.collectionVariables.get('authenticated_user_id'));",
+                      "});"
+                    ],
+                    "_lastExecutionId": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+                  }
+                }
+              ]
+            }
+          ],
+          "event": [],
+          "variable": [
+            {
+              "type": "string",
+              "value": "",
+              "key": "jwt_token"
+            },
+            {
+              "type": "string",
+              "value": "supervisor.dev@gmail.com",
+              "key": "authenticated_email"
+            },
+            {
+              "type": "string",
+              "value": "",
+              "key": "authenticated_user_id"
+            }
+          ],
+          "info": {
+            "_postman_id": "tc-m01-085-api",
+            "name": "TC-M01-085 - Consultar perfil propio con JWT",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+            "description": {
+              "content": "Prueba API de login y consulta del perfil propio para RF-13.",
+              "type": "text/plain"
+            }
+          }
+        },
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 2,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "b59b4037-c0b2-40bd-befb-ac89b6a968b6",
+          "httpRequestId": "f740c53b-fab6-495a-acfb-96b67d0fd7df",
+          "scriptId": "8fbaea1f-0ea5-49d1-91d6-9124eea1b976",
+          "execution": "d6a72556-b5e0-461d-9557-f557a50eec1f"
+        }
+      },
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 0,
+          "test": "Status de consulta de perfil es 200",
+          "message": "expected response to have status code 200 but got 401",
+          "stack": "AssertionError: expected response to have status code 200 but got 401\n   at Object.eval sandbox-script.js:1:2)",
+          "checksum": "ec1e010fc417ad3038919e8068d9ed57",
+          "id": "f5b59250-1e0c-4a57-b2d9-615a6dc2e787",
+          "timestamp": 1788413462803,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 1,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 2,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:0 in test-script",
+        "source": {
+          "id": "9a3b8ee1-2e83-4b44-b32e-5a6fa25764dd",
+          "name": "2. Consultar perfil",
+          "request": {
+            "description": {
+              "content": "Endpoint real: GET /usuarios/me.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "usuarios",
+                "me"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "4265bebf-774b-40eb-be74-778a847f2da4",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status de consulta de perfil es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const profile = pm.response.json();",
+                  "pm.test('El correo corresponde al usuario esperado', function () {",
+                  "    pm.expect(profile.correo_electronico).to.equal('supervisor.dev@gmail.com');",
+                  "});",
+                  "pm.test('Los datos corresponden al usuario autenticado', function () {",
+                  "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
+                  "    pm.expect(String(profile.id_usuario)).to.equal(pm.collectionVariables.get('authenticated_user_id'));",
+                  "});"
+                ],
+                "_lastExecutionId": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "_": {
+            "postman_id": "tc-m01-085-api"
+          },
+          "item": [
+            {
+              "id": "addfacf1-c96a-4918-b85b-f8d79ad4fb5b",
+              "name": "1. Login",
+              "request": {
+                "description": {
+                  "content": "Endpoint real: POST /sesiones/.",
+                  "type": "text/plain"
+                },
+                "url": {
+                  "path": [
+                    "sesiones",
+                    ""
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"correo_electronico\": \"{{authenticated_email}}\",\n  \"contrasena\": \"Test1234!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "8fbaea1f-0ea5-49d1-91d6-9124eea1b976",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status de login es 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const response = pm.response.json();",
+                      "const token = response.token;",
+                      "pm.test('La respuesta contiene un JWT', function () {",
+                      "    pm.expect(token).to.be.a('string').and.not.empty;",
+                      "    pm.expect(token.split('.')).to.have.lengthOf(3);",
+                      "});",
+                      "if (typeof token === 'string' && token.split('.').length === 3) {",
+                      "    pm.collectionVariables.set('jwt_token', token);",
+                      "    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));",
+                      "    pm.expect(payload.sub, 'El JWT debe identificar al usuario').to.exist;",
+                      "    pm.collectionVariables.set('authenticated_user_id', String(payload.sub));",
+                      "}"
+                    ],
+                    "_lastExecutionId": "d6a72556-b5e0-461d-9557-f557a50eec1f"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "9a3b8ee1-2e83-4b44-b32e-5a6fa25764dd",
+              "name": "2. Consultar perfil",
+              "request": {
+                "description": {
+                  "content": "Endpoint real: GET /usuarios/me.",
+                  "type": "text/plain"
+                },
+                "url": {
+                  "path": [
+                    "usuarios",
+                    "me"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "4265bebf-774b-40eb-be74-778a847f2da4",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status de consulta de perfil es 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const profile = pm.response.json();",
+                      "pm.test('El correo corresponde al usuario esperado', function () {",
+                      "    pm.expect(profile.correo_electronico).to.equal('supervisor.dev@gmail.com');",
+                      "});",
+                      "pm.test('Los datos corresponden al usuario autenticado', function () {",
+                      "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
+                      "    pm.expect(String(profile.id_usuario)).to.equal(pm.collectionVariables.get('authenticated_user_id'));",
+                      "});"
+                    ],
+                    "_lastExecutionId": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+                  }
+                }
+              ]
+            }
+          ],
+          "event": [],
+          "variable": [
+            {
+              "type": "string",
+              "value": "",
+              "key": "jwt_token"
+            },
+            {
+              "type": "string",
+              "value": "supervisor.dev@gmail.com",
+              "key": "authenticated_email"
+            },
+            {
+              "type": "string",
+              "value": "",
+              "key": "authenticated_user_id"
+            }
+          ],
+          "info": {
+            "_postman_id": "tc-m01-085-api",
+            "name": "TC-M01-085 - Consultar perfil propio con JWT",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+            "description": {
+              "content": "Prueba API de login y consulta del perfil propio para RF-13.",
+              "type": "text/plain"
+            }
+          }
+        },
+        "cursor": {
+          "ref": "219cfa8c-8814-4474-b68a-53d3d17f1c60",
+          "length": 2,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "a11f0983-a82d-4d66-a57b-865b9bdae4d3",
+          "scriptId": "4265bebf-774b-40eb-be74-778a847f2da4",
+          "execution": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+        }
+      },
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 1,
+          "test": "El correo corresponde al usuario esperado",
+          "message": "expected undefined to equal 'supervisor.dev@gmail.com'",
+          "stack": "AssertionError: expected undefined to equal 'supervisor.dev@gmail.com'\n   at Object.eval sandbox-script.js:2:2)",
+          "checksum": "81697b07a022fd29035d840a49bbf809",
+          "id": "4ebc5367-5bd0-48db-9fd7-68750175daf8",
+          "timestamp": 1788413462804,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 2,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 2,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:1 in test-script",
+        "source": {
+          "id": "9a3b8ee1-2e83-4b44-b32e-5a6fa25764dd",
+          "name": "2. Consultar perfil",
+          "request": {
+            "description": {
+              "content": "Endpoint real: GET /usuarios/me.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "usuarios",
+                "me"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "4265bebf-774b-40eb-be74-778a847f2da4",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status de consulta de perfil es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const profile = pm.response.json();",
+                  "pm.test('El correo corresponde al usuario esperado', function () {",
+                  "    pm.expect(profile.correo_electronico).to.equal('supervisor.dev@gmail.com');",
+                  "});",
+                  "pm.test('Los datos corresponden al usuario autenticado', function () {",
+                  "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
+                  "    pm.expect(String(profile.id_usuario)).to.equal(pm.collectionVariables.get('authenticated_user_id'));",
+                  "});"
+                ],
+                "_lastExecutionId": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "_": {
+            "postman_id": "tc-m01-085-api"
+          },
+          "item": [
+            {
+              "id": "addfacf1-c96a-4918-b85b-f8d79ad4fb5b",
+              "name": "1. Login",
+              "request": {
+                "description": {
+                  "content": "Endpoint real: POST /sesiones/.",
+                  "type": "text/plain"
+                },
+                "url": {
+                  "path": [
+                    "sesiones",
+                    ""
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"correo_electronico\": \"{{authenticated_email}}\",\n  \"contrasena\": \"Test1234!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "8fbaea1f-0ea5-49d1-91d6-9124eea1b976",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status de login es 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const response = pm.response.json();",
+                      "const token = response.token;",
+                      "pm.test('La respuesta contiene un JWT', function () {",
+                      "    pm.expect(token).to.be.a('string').and.not.empty;",
+                      "    pm.expect(token.split('.')).to.have.lengthOf(3);",
+                      "});",
+                      "if (typeof token === 'string' && token.split('.').length === 3) {",
+                      "    pm.collectionVariables.set('jwt_token', token);",
+                      "    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));",
+                      "    pm.expect(payload.sub, 'El JWT debe identificar al usuario').to.exist;",
+                      "    pm.collectionVariables.set('authenticated_user_id', String(payload.sub));",
+                      "}"
+                    ],
+                    "_lastExecutionId": "d6a72556-b5e0-461d-9557-f557a50eec1f"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "9a3b8ee1-2e83-4b44-b32e-5a6fa25764dd",
+              "name": "2. Consultar perfil",
+              "request": {
+                "description": {
+                  "content": "Endpoint real: GET /usuarios/me.",
+                  "type": "text/plain"
+                },
+                "url": {
+                  "path": [
+                    "usuarios",
+                    "me"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "4265bebf-774b-40eb-be74-778a847f2da4",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status de consulta de perfil es 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const profile = pm.response.json();",
+                      "pm.test('El correo corresponde al usuario esperado', function () {",
+                      "    pm.expect(profile.correo_electronico).to.equal('supervisor.dev@gmail.com');",
+                      "});",
+                      "pm.test('Los datos corresponden al usuario autenticado', function () {",
+                      "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
+                      "    pm.expect(String(profile.id_usuario)).to.equal(pm.collectionVariables.get('authenticated_user_id'));",
+                      "});"
+                    ],
+                    "_lastExecutionId": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+                  }
+                }
+              ]
+            }
+          ],
+          "event": [],
+          "variable": [
+            {
+              "type": "string",
+              "value": "",
+              "key": "jwt_token"
+            },
+            {
+              "type": "string",
+              "value": "supervisor.dev@gmail.com",
+              "key": "authenticated_email"
+            },
+            {
+              "type": "string",
+              "value": "",
+              "key": "authenticated_user_id"
+            }
+          ],
+          "info": {
+            "_postman_id": "tc-m01-085-api",
+            "name": "TC-M01-085 - Consultar perfil propio con JWT",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+            "description": {
+              "content": "Prueba API de login y consulta del perfil propio para RF-13.",
+              "type": "text/plain"
+            }
+          }
+        },
+        "cursor": {
+          "ref": "219cfa8c-8814-4474-b68a-53d3d17f1c60",
+          "length": 2,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "a11f0983-a82d-4d66-a57b-865b9bdae4d3",
+          "scriptId": "4265bebf-774b-40eb-be74-778a847f2da4",
+          "execution": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+        }
+      },
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 2,
+          "test": "Los datos corresponden al usuario autenticado",
+          "message": "expected undefined to equal 'supervisor.dev@gmail.com'",
+          "stack": "AssertionError: expected undefined to equal 'supervisor.dev@gmail.com'\n   at Object.eval sandbox-script.js:3:2)",
+          "checksum": "5a50ccdace39e4baf4bfa5745ad7a2e6",
+          "id": "c047c19b-0420-4b74-9261-01ca11fcbde8",
+          "timestamp": 1788413462805,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 3,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 2,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:2 in test-script",
+        "source": {
+          "id": "9a3b8ee1-2e83-4b44-b32e-5a6fa25764dd",
+          "name": "2. Consultar perfil",
+          "request": {
+            "description": {
+              "content": "Endpoint real: GET /usuarios/me.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "usuarios",
+                "me"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "4265bebf-774b-40eb-be74-778a847f2da4",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status de consulta de perfil es 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const profile = pm.response.json();",
+                  "pm.test('El correo corresponde al usuario esperado', function () {",
+                  "    pm.expect(profile.correo_electronico).to.equal('supervisor.dev@gmail.com');",
+                  "});",
+                  "pm.test('Los datos corresponden al usuario autenticado', function () {",
+                  "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
+                  "    pm.expect(String(profile.id_usuario)).to.equal(pm.collectionVariables.get('authenticated_user_id'));",
+                  "});"
+                ],
+                "_lastExecutionId": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "_": {
+            "postman_id": "tc-m01-085-api"
+          },
+          "item": [
+            {
+              "id": "addfacf1-c96a-4918-b85b-f8d79ad4fb5b",
+              "name": "1. Login",
+              "request": {
+                "description": {
+                  "content": "Endpoint real: POST /sesiones/.",
+                  "type": "text/plain"
+                },
+                "url": {
+                  "path": [
+                    "sesiones",
+                    ""
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"correo_electronico\": \"{{authenticated_email}}\",\n  \"contrasena\": \"Test1234!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "8fbaea1f-0ea5-49d1-91d6-9124eea1b976",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status de login es 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const response = pm.response.json();",
+                      "const token = response.token;",
+                      "pm.test('La respuesta contiene un JWT', function () {",
+                      "    pm.expect(token).to.be.a('string').and.not.empty;",
+                      "    pm.expect(token.split('.')).to.have.lengthOf(3);",
+                      "});",
+                      "if (typeof token === 'string' && token.split('.').length === 3) {",
+                      "    pm.collectionVariables.set('jwt_token', token);",
+                      "    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));",
+                      "    pm.expect(payload.sub, 'El JWT debe identificar al usuario').to.exist;",
+                      "    pm.collectionVariables.set('authenticated_user_id', String(payload.sub));",
+                      "}"
+                    ],
+                    "_lastExecutionId": "d6a72556-b5e0-461d-9557-f557a50eec1f"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "9a3b8ee1-2e83-4b44-b32e-5a6fa25764dd",
+              "name": "2. Consultar perfil",
+              "request": {
+                "description": {
+                  "content": "Endpoint real: GET /usuarios/me.",
+                  "type": "text/plain"
+                },
+                "url": {
+                  "path": [
+                    "usuarios",
+                    "me"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "4265bebf-774b-40eb-be74-778a847f2da4",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status de consulta de perfil es 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "const profile = pm.response.json();",
+                      "pm.test('El correo corresponde al usuario esperado', function () {",
+                      "    pm.expect(profile.correo_electronico).to.equal('supervisor.dev@gmail.com');",
+                      "});",
+                      "pm.test('Los datos corresponden al usuario autenticado', function () {",
+                      "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
+                      "    pm.expect(String(profile.id_usuario)).to.equal(pm.collectionVariables.get('authenticated_user_id'));",
+                      "});"
+                    ],
+                    "_lastExecutionId": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+                  }
+                }
+              ]
+            }
+          ],
+          "event": [],
+          "variable": [
+            {
+              "type": "string",
+              "value": "",
+              "key": "jwt_token"
+            },
+            {
+              "type": "string",
+              "value": "supervisor.dev@gmail.com",
+              "key": "authenticated_email"
+            },
+            {
+              "type": "string",
+              "value": "",
+              "key": "authenticated_user_id"
+            }
+          ],
+          "info": {
+            "_postman_id": "tc-m01-085-api",
+            "name": "TC-M01-085 - Consultar perfil propio con JWT",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+            "description": {
+              "content": "Prueba API de login y consulta del perfil propio para RF-13.",
+              "type": "text/plain"
+            }
+          }
+        },
+        "cursor": {
+          "ref": "219cfa8c-8814-4474-b68a-53d3d17f1c60",
+          "length": 2,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "a11f0983-a82d-4d66-a57b-865b9bdae4d3",
+          "scriptId": "4265bebf-774b-40eb-be74-778a847f2da4",
+          "execution": "d8b8c0b1-766c-4a73-a3eb-a90d1d3fc7d4"
+        }
+      }
+    ],
+    "error": null
+  }
+}
