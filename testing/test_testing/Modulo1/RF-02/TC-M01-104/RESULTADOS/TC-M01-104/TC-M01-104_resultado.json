@@ -1,0 +1,67 @@
+{
+  "caso": "TC-M01-104",
+  "titulo": "Pérdida de conexión a internet justo después de enviar credenciales de login",
+  "cu": "CU-Login - Inicio de Sesión",
+  "rf": "RF-02",
+  "tipo": "Pruebas Extremas / Resiliencia y Manejo de Red",
+  "severidad": "Media",
+  "responsable": "QA Team",
+  "testEmail": "admin@pecuaria.co",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-03T04:39:33.631Z",
+  "peticionInfo": "Submit POST /sesiones/ enviado y cortado con { forceNetworkError: true } -> Falla de red capturada en UI | Reintento Real POST /sesiones/ -> HTTP 200 (JWT emitido)",
+  "checkpoints": [
+    {
+      "paso": "CP-01: Verificación Inicial del Estado de Credenciales en BD TEST",
+      "esperado": "La cuenta de prueba responde HTTP 200 OK en login normal emitiendo un token JWT válido",
+      "obtenido": "Respuesta inicial del servidor: HTTP 200 OK (Token JWT presente)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02: Diligenciamiento de Credenciales en Formulario UI",
+      "esperado": "Credenciales cargadas en la página /login con formulario validado en cliente",
+      "obtenido": "Formulario de login listo para enviar con credenciales válidas",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03: Simulación de Corte de Red Post-Envío y Reacción UI (Fase 1)",
+      "esperado": "La UI captura la falla de red sin colgar la pantalla, reactiva el botón y conserva las credenciales",
+      "obtenido": "Corte de red capturado correctamente en UI (Pantalla no congelada, formulario disponible)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04: Verificación de Ausencia de Tokens Falsos en Cliente Post-Corte (Fase 1)",
+      "esperado": "El cliente NO almacenó ningún token JWT en localStorage tras la interrupción de red",
+      "obtenido": "Valor de token en localStorage tras el corte: null (Correcto)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05: Reintento de Login tras Restablecer Conexión (Fase 2)",
+      "esperado": "El servidor TEST responde HTTP 200 OK entregando un token JWT fresco y nuevo",
+      "obtenido": "Reintento exitoso (HTTP 200 OK, nuevo token JWT recibido)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06: Verificación por API de Sesión Activa Válida (Sin Sesión Fantasma)",
+      "esperado": "Respuesta exitosa HTTP 200 OK consumiendo GET /sesiones/me/permisos con el nuevo JWT emitido",
+      "obtenido": "Consumo de permisos exitoso (HTTP 200 OK - Sesión totalmente funcional)",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "hallazgos": [
+    "Cuenta de Prueba Validada: admin@pecuaria.co (Sustituto activo de ana.martinez.qa1@sgpmp-test.com por encontrarse en CUENTA_PENDIENTE)",
+    "Simulación de Interrupción de Red Post-Envío: Se aplicó { forceNetworkError: true } en POST **/sesiones/ a mitad del transporte TCP.",
+    "Reacción de la UI y Manejo de Errores: La interfaz capturó el error de transporte de red sin congelar la pantalla y preservó los campos.",
+    "Verificación de Almacenamiento Cliente: Se confirmó la ausencia de tokens fantasma o nulos en localStorage post-corte.",
+    "Verificación de No Sesión Fantasma en Servidor: El reintento de login emitió un token JWT fresco (HTTP 200 OK) con el que se consumió exitosamente GET /sesiones/me/permisos.",
+    "CP-01: Verificación Inicial del Estado de Credenciales en BD TEST -> Respuesta inicial del servidor: HTTP 200 OK (Token JWT presente) (OK)",
+    "CP-02: Diligenciamiento de Credenciales en Formulario UI -> Formulario de login listo para enviar con credenciales válidas (OK)",
+    "CP-03: Simulación de Corte de Red Post-Envío y Reacción UI (Fase 1) -> Corte de red capturado correctamente en UI (Pantalla no congelada, formulario disponible) (OK)",
+    "CP-04: Verificación de Ausencia de Tokens Falsos en Cliente Post-Corte (Fase 1) -> Valor de token en localStorage tras el corte: null (Correcto) (OK)",
+    "CP-05: Reintento de Login tras Restablecer Conexión (Fase 2) -> Reintento exitoso (HTTP 200 OK, nuevo token JWT recibido) (OK)",
+    "CP-06: Verificación por API de Sesión Activa Válida (Sin Sesión Fantasma) -> Consumo de permisos exitoso (HTTP 200 OK - Sesión totalmente funcional) (OK)"
+  ]
+}

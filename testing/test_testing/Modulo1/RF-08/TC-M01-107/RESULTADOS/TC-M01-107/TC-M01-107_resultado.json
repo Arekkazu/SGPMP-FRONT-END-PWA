@@ -1,0 +1,50 @@
+{
+  "caso": "TC-M01-107",
+  "titulo": "Pérdida de conexión simulada en la respuesta HTTP 202 (Recuperación de Contraseña)",
+  "cu": "CU-RecuperacionContrasena",
+  "rf": "RF-08",
+  "tipo": "Pruebas Extremas / Resiliencia y Red",
+  "severidad": "Media",
+  "responsable": "Sebastian",
+  "testEmail": "gestor.granja.test@pecuaria.co",
+  "idUsuario": 0,
+  "runnerIp": "200.118.145.38",
+  "intentosPrevios": 0,
+  "totalPreCp04": 1,
+  "esperadoCp04": "HTTP 202",
+  "obtenidoCp04": 422,
+  "codigoRespuestaCp04": "LIMITE_SOLICITUDES_EXCEDIDO",
+  "intentosConsumidosTest": 2,
+  "observacionRepetibilidad": "La prueba consumió 2 solicitud(es) de la cuota de 3/hora por IP (Total acumulado IP 200.118.145.38: 2).",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-03T05:52:54.789Z",
+  "veredicto": "CON FALLAS",
+  "checkpoints": [
+    {
+      "paso": "CP-01: Precondición de Cuenta",
+      "esperado": "Cuenta gestor.granja.test@pecuaria.co existente y activa (HTTP 200)",
+      "obtenido": "Cuenta encontrada ID: 0, Estado: Activo",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02: Interrupción de Red en Respuesta 202",
+      "esperado": "Solicitud enviada al backend real y respuesta interceptada con error de red en cliente",
+      "obtenido": "POST enviado exitosamente al backend; cliente recibió falla de red (forceNetworkError)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03: Auditoría Backend Post-Interrupción",
+      "esperado": "Evento de recuperación registrado en BD exigiendo coincidencia con gestor.granja.test@pecuaria.co",
+      "obtenido": "Evento ID 3661 registrado a las 2026-09-03T05:52:48.396853Z (IP: 200.118.145.38, Resultado: exitoso)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04: Reintento y Rate-Limit (N < 3)",
+      "esperado": "Con N=1 solicitudes previas en IP (< 3), la solicitud (N+1=2) EXIGE HTTP 202",
+      "obtenido": "HTTP 422 (LIMITE_SOLICITUDES_EXCEDIDO) — FALLA: El servidor penalizó el reintento prematuramente",
+      "estado": "FALLA"
+    }
+  ]
+}

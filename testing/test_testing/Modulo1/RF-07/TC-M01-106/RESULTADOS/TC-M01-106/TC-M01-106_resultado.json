@@ -1,0 +1,72 @@
+{
+  "caso": "TC-M01-106",
+  "titulo": "Cierre del navegador justo después de confirmar el cambio de contraseña",
+  "cu": "CU-CambioContrasena - Cambio de Contraseña",
+  "rf": "RF-07",
+  "tipo": "Pruebas Extremas / Resiliencia y Seguridad",
+  "severidad": "Alta",
+  "responsable": "QA Team",
+  "testEmail": "gestor.granja.test@pecuaria.co",
+  "currentPw": "Test1234!",
+  "newPw": "NuevaTest#2026",
+  "idUsuario": 30,
+  "restauracionExitosa": true,
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-03T05:01:13.151Z",
+  "peticionInfo": "Submit PUT /contrasena/usuarios/30 enviado y cortado con { forceNetworkError: true } -> Abandono simulado | Login API con NuevaTest#2026 -> HTTP 200 | Consumo GET /sesiones/me/permisos con tokenPrevia -> HTTP 401 | Restauración PUT /contrasena/usuarios/30 -> HTTP 200",
+  "checkpoints": [
+    {
+      "paso": "CP-01: Autenticación Inicial y Captura Dinámica de id_usuario y tokenPrevia",
+      "esperado": "Login inicial con Test1234! y obtención dinámica del id_usuario desde GET /usuarios/me",
+      "obtenido": "Token previa capturado. ID de usuario obtenido dinámicamente: 30",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02: Formulario de Cambio de Contraseña en UI (/perfil)",
+      "esperado": "Formulario en /perfil completado con contraseña actual (Test1234!) y nueva (NuevaTest#2026)",
+      "obtenido": "Formulario listo y validado en cliente para submit",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03: Simulación de Abandono Post-Envío (Fase 1 Interrupción)",
+      "esperado": "La UI captura la falla de transporte TCP sin congelar la ejecución del test",
+      "obtenido": "Abandono del cliente simulado correctamente a mitad del transporte HTTP",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04: Verificación por API de Contraseña Actualizada en Servidor (Fase 2)",
+      "esperado": "El backend procesó el cambio de clave y responde HTTP 200 OK entregando un token JWT nuevo",
+      "obtenido": "Login exitoso con nueva contraseña (HTTP 200 OK, tokenNuevo recibido)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05: Verificación por API de Invalidación de Sesión Anterior (Fase 2)",
+      "esperado": "Respuesta HTTP 401 Unauthorized confirmando que el tokenPrevia fue revocado tras el cambio de clave",
+      "obtenido": "Token previo rechazado correctamente por el servidor (HTTP 401 Unauthorized)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06: Restauración Final de Contraseña Original Autenticada (CP-06)",
+      "esperado": "Uso de un JWT fresco emitido con NuevaTest#2026 para revertir la contraseña a Test1234! vía API",
+      "obtenido": "Restauración exitosa (HTTP 200 OK, Login con Test1234! responde HTTP 200 OK)",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "hallazgos": [
+    "Cuenta de Prueba: gestor.granja.test@pecuaria.co",
+    "ID de Usuario Obtenido Dinámicamente: 30",
+    "Estado Final de Restauración de Contraseña: EXITOSA (Restaurada a Test1234!)",
+    "Simulación de Abandono del Cliente: Aplicado { forceNetworkError: true } sobre PUT **/contrasena/usuarios/**.",
+    "Verificación de Seguridad 1 (Contraseña Actualizada): Login exitoso por API con NuevaTest#2026 (HTTP 200 OK).",
+    "Verificación de Seguridad 2 (Invalidación de JWT Previo): GET /sesiones/me/permisos con tokenPrevia rechazado (HTTP 401 TOKEN_REVOCADO).",
+    "CP-01: Autenticación Inicial y Captura Dinámica de id_usuario y tokenPrevia -> Token previa capturado. ID de usuario obtenido dinámicamente: 30 (OK)",
+    "CP-02: Formulario de Cambio de Contraseña en UI (/perfil) -> Formulario listo y validado en cliente para submit (OK)",
+    "CP-03: Simulación de Abandono Post-Envío (Fase 1 Interrupción) -> Abandono del cliente simulado correctamente a mitad del transporte HTTP (OK)",
+    "CP-04: Verificación por API de Contraseña Actualizada en Servidor (Fase 2) -> Login exitoso con nueva contraseña (HTTP 200 OK, tokenNuevo recibido) (OK)",
+    "CP-05: Verificación por API de Invalidación de Sesión Anterior (Fase 2) -> Token previo rechazado correctamente por el servidor (HTTP 401 Unauthorized) (OK)",
+    "CP-06: Restauración Final de Contraseña Original Autenticada (CP-06) -> Restauración exitosa (HTTP 200 OK, Login con Test1234! responde HTTP 200 OK) (OK)"
+  ]
+}
