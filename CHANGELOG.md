@@ -1,3 +1,18 @@
+## [1.0.0-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2026-09-03)
+
+### Features
+
+* **i18n:** formatear fechas y numeros segun el idioma activo ([96f785b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/96f785bd4322c2f55fa571205d9cac8084d12498))
+* **i18n:** montar el motor de traduccion con fallback a espanol (RF-29) ([40e0c13](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/40e0c13f9d9190b6fc943b1f608fdc13b74e3314))
+* **i18n:** traducir la interfaz completa a es-CO y en-US (RF-29) ([9934361](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/99343614c36e3f736b0f3752a7865602e549d21b))
+* **i18n:** traducir los mensajes de validacion y de estado de los formularios ([d658ed0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d658ed0fba05012e7d123b3d49da19da989529b4))
+* **rf29:** aplicar el idioma resuelto de forma inmediata sin recargar ([9ff2a07](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9ff2a07715b5916fbd383f007f265dfe1d8b212a))
+
+### Bug Fixes
+
+* **i18n:** evitar desbordamiento de texto en etiquetas largas ([668bc91](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/668bc91ce0b29284cbbaf4e8926fa0087f5d9011))
+* **rf29:** enviar es-CO y en-US en vez de es y en al backend ([b00dc1a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b00dc1aec997743d8d9f6e13aaebcd09312244c4))
+
 ## 1.0.0-rc.1 (2026-09-03)
 
 ### Features
