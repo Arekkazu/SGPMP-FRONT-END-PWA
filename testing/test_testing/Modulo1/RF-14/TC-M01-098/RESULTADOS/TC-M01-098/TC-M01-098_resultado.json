@@ -1,0 +1,52 @@
+{
+  "caso": "TC-M01-098",
+  "titulo": "Verificar el orden descendente de las notificaciones por timestamp",
+  "cu": "CU08 - Notificar a Usuarios",
+  "rf": "RF-14",
+  "tipo": "Funcional / Ordenamiento",
+  "severidad": "Media",
+  "responsable": "Sebastian",
+  "adminUser": "admin@pecuaria.co",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-03T02:34:33.899Z",
+  "peticionInfo": "Disparador POST /sesiones/ -> GET https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/notificaciones -> HTTP 200 OK",
+  "checkpoints": [
+    {
+      "paso": "Checkpoint 3: Verificación de Polling (60s) y Despliegue de la Bandeja en UI",
+      "esperado": "Despliegue del panel NotificationTray en la interfaz del cliente",
+      "obtenido": "Bandeja de notificaciones abierta y desplegada en pantalla (Captura 03 registrada)",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 4: Veredicto Consolidado de Ordenamiento de Notificaciones (RF-14 / CU08)",
+      "esperado": "Notificaciones ordenadas correctamente de la más reciente a la más antigua (RF-14)",
+      "obtenido": "Confirmado: Notificaciones ordenadas correctamente por timestamp descendente en API y cliente",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 1: Generación de Notificación Real y Control de Eventos (POST /sesiones/ & /auditoria/exportaciones)",
+      "esperado": "Notificación de inicio de sesión generada en tiempo real (tipo_evento: 3) y confirmación de que la exportación de auditoría (tipo_evento: 26) no genera notificaciones falsas",
+      "obtenido": "OK - Notificación creada por el test capturada en la posición 0: ID 952 (fecha_envio: 2026-09-03T02:31:48.065723Z)",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 2: Verificación de Orden Descendente en la API (Newman / Postman & Cypress API)",
+      "esperado": "El arreglo items de GET /notificaciones debe venir ordenado de forma estrictamente descendente por fecha_envio (t_reciente >= t_antiguo)",
+      "obtenido": "OK - Confirmado: Array de 20 notificaciones ordenado de forma descendente (t_0 nueva: 2026-09-03T02:31:48.065723Z >= t_1 historial: 2026-09-03T02:26:04.667572Z)",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "hallazgos": [
+    "Inspección backend: Catálogo de 24 tipos de eventos verificado en GET /auditoria/catalogo/tipos-evento.",
+    "Notificación creada por el test: ID 952 | Evento: 3 | Timestamp: 2026-09-03T02:31:48.065723Z",
+    "Control de eventos sin notificación: POST /auditoria/exportaciones (tipo_evento: 26) verificado sin falsos positivos en bandeja.",
+    "Evidencia visual enriquecida: 4 capturas de pantalla secuenciales generadas (Interfaz post-login, AppBar campana, Bandeja desplegada y Gestión de Usuarios).",
+    "Checkpoint 3: Verificación de Polling (60s) y Despliegue de la Bandeja en UI -> Bandeja de notificaciones abierta y desplegada en pantalla (Captura 03 registrada) (OK)",
+    "Checkpoint 4: Veredicto Consolidado de Ordenamiento de Notificaciones (RF-14 / CU08) -> Confirmado: Notificaciones ordenadas correctamente por timestamp descendente en API y cliente (OK)",
+    "Checkpoint 1: Generación de Notificación Real y Control de Eventos (POST /sesiones/ & /auditoria/exportaciones) -> OK - Notificación creada por el test capturada en la posición 0: ID 952 (fecha_envio: 2026-09-03T02:31:48.065723Z) (OK)",
+    "Checkpoint 2: Verificación de Orden Descendente en la API (Newman / Postman & Cypress API) -> OK - Confirmado: Array de 20 notificaciones ordenado de forma descendente (t_0 nueva: 2026-09-03T02:31:48.065723Z >= t_1 historial: 2026-09-03T02:26:04.667572Z) (OK)"
+  ]
+}

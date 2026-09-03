@@ -2,7 +2,7 @@ const { defineConfig } = require('cypress');
 const { writeFileSync, mkdirSync } = require('fs');
 const { dirname, resolve } = require('path');
 
-// TC-M01-011 · Validación de rechazo de registro por CAPTCHA no resuelto en ambiente TEST (CU01 · RF-01 · Frontend & QA)
+// TC-M01-087 · Verificar que el perfil de usuario sea de solo lectura (CU07 · RF-13 · Frontend & QA)
 // Proyecto Cypress autocontenido. Spec + resultados viven en esta carpeta.
 
 module.exports = defineConfig({

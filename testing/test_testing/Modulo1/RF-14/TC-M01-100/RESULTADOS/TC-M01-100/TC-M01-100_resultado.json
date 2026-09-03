@@ -1,0 +1,59 @@
+{
+  "caso": "TC-M01-100",
+  "titulo": "Marcar todas las notificaciones como leídas",
+  "cu": "CU08 - Notificar a Usuarios",
+  "rf": "RF-14",
+  "tipo": "Funcional / Actualización de Estado Visual Masivo",
+  "severidad": "Media",
+  "responsable": "QA Team",
+  "adminUser": "admin@pecuaria.co",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-03T03:25:19.723Z",
+  "peticionInfo": "Procesadas 10 notificaciones no leídas en la bandeja UI mediante interacción directa con botones de check",
+  "checkpoints": [
+    {
+      "paso": "CP-01: Autenticación e Inicio de Sesión UI",
+      "esperado": "Acceso correcto a la plataforma TEST como admin@pecuaria.co",
+      "obtenido": "Sesión autenticada en UI",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02: Verificación del Estado Visual Inicial (Notificaciones No Leídas)",
+      "esperado": "Bandeja desplegada con notificaciones en estado no leído (fondo verde e indicador activo)",
+      "obtenido": "Se visualizaron 10 elementos no leídos (con 10 botones de check activos)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03: Ejecución de Acción Masiva sobre Notificaciones No Leídas en UI",
+      "esperado": "Clics efectuados sobre los botones de marcado de las notificaciones objetivo",
+      "obtenido": "Completados 10 clics de marcado en UI respondiendo HTTP 200 OK",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04: Verificación de Actualización Visual del Lote Procesado",
+      "esperado": "Las 10 notificaciones procesadas pasan de estado no leído a leído en el DOM",
+      "obtenido": "Las 10 notificaciones objetivo pasaron a estado leído (remoción de .notification-tray__item--unread, .notification-tray__unread-dot y botones check)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05: Confirmación de Persistencia Backend del Lote Procesado",
+      "esperado": "Respuesta exitosa del backend confirmando la actualización de estado para los elementos del test",
+      "obtenido": "Backend confirma persistencia del cambio de estado a leído para las 10 notificaciones procesadas",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "hallazgos": [
+    "Cantidad Procesada en el Test: 10 notificaciones no leídas.",
+    "Verificación de Estado Visual: Las 10 notificaciones objetivo pasaron dinámicamente a fondo neutro/blanco en el DOM, perdiendo la clase .notification-tray__item--unread y sus botones de check.",
+    "Contexto de Entorno TEST: El contador global del sistema registró 104 notificaciones sin leer de 125, correspondientes a notificaciones de auditoría/desarrollo ajenas a esta ejecución.",
+    "Persistencia Backend: PATCH /notificaciones/{id}/leida y GET /notificaciones confirmaron la actualización del conjunto probado.",
+    "CP-01: Autenticación e Inicio de Sesión UI -> Sesión autenticada en UI (OK)",
+    "CP-02: Verificación del Estado Visual Inicial (Notificaciones No Leídas) -> Se visualizaron 10 elementos no leídos (y 10 botones de check activos) (OK)",
+    "CP-03: Ejecución de Acción Masiva sobre Notificaciones No Leídas en UI -> Completados 10 clics de marcado en UI (OK)",
+    "CP-04: Verificación de Actualización Visual del Lote Procesado -> Las 10 notificaciones objetivo pasaron a estado leído en el DOM (OK)",
+    "CP-05: Confirmación de Persistencia Backend del Lote Procesado -> Backend confirma la actualización de estado (OK)"
+  ]
+}

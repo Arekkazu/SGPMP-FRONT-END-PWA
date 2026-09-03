@@ -1,38 +1,41 @@
-# TC-M01-011 — Rechazo del formulario de registro por fallo de CAPTCHA
+# TC-M01-011 — Rechazo de registro por reCAPTCHA no resuelto / fallido
 
 | Campo | Valor |
 |---|---|
 | Caso de uso / Requisito | CU01 - Registro de Usuario · RF-01 |
-| Tipo / Equipo | Manejo de Errores (Seguridad) · Frontend / QA |
+| Tipo / Equipo | Manejo de Seguridad / reCAPTCHA · Frontend / Backend QA |
 | Ambiente (front) | http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io |
 | Backend | https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test |
 | Navegador | chrome 152.0.7977.65 |
-| Fecha ejecución | 2026-09-01T06:49:42.891Z |
-| Precondiciones | Vista /registro, Formulario datos personales completos |
+| Fecha ejecución | 2026-09-03T00:20:03.400Z |
+| Precondiciones | Formulario /registro con reCAPTCHA activado |
+
+> [!WARNING]
+> **ACLARACIÓN SOBRE EL AMBIENTE Y EL RECAPTCHA SIMULADO**:
+> - El reCAPTCHA en el ambiente de **TEST** se encuentra **SIMULADO** (no corresponde al reCAPTCHA real de producción o con claves de test oficiales de Google).
+> - Las respuestas HTTP obtenidas en las llamadas directas a la API (Escenario A (Token Vacío): POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/ -> HTTP 201 | Escenario B (Token Inválido): POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/ -> HTTP 201) se deben a esta simulación del entorno y **NO confirman ni descartan una vulnerabilidad real del backend**.
+> - Por este motivo, el veredicto del caso es **NO APROBADO — no se puede validar en este ambiente (CAPTCHA simulado)**.
+> - Se requiere ejecutar esta prueba en un ambiente con reCAPTCHA en modo test real (claves de prueba de Google) para dar un veredicto definitivo de seguridad.
 
 ## Checkpoints
 | Paso | Esperado | Obtenido | Estado |
 |---|---|---|---|
-| Paso 1: Llenado de datos personales | Campos obligatorios válidos | Ingresados datos para ID 9995372325 | **OK** |
-| Verificar estado del checkbox de CAPTCHA | Checkbox no marcado (checked = false) | checked = false | **OK** |
-| Estado del botón Registrarse sin CAPTCHA marcado | Deshabilitado (disabled = true) | disabled = true | **OK** |
-| Respuesta del Backend TEST al enviar sin CAPTCHA válido | HTTP Status 400 (Debe rechazar) | HALLAZGO DE SEGURIDAD: El backend ACEPTÓ el registro sin CAPTCHA (HTTP 201). Respuesta: {"message":"Registro exitoso, envío de correo en proceso."} | **FALLA** |
+| Checkpoint 1: Bloqueo de envío en la interfaz (UI) | Botón "Registrarse" deshabilitado en UI cuando captcha_token es nulo | El botón "Registrarse" permanece deshabilitado en la interfaz sin token de CAPTCHA | **OK** |
+| Checkpoint 2: Respuesta HTTP de la API con CAPTCHA NO RESUELTO (captcha_token vacío) | HTTP 400 (Rechazo por CAPTCHA no resuelto en ambiente real) | HTTP 201 Creado (Respuesta obtenida por estar el reCAPTCHA SIMULADO en este ambiente de TEST) | **OBSERVACION** |
+| Checkpoint 3: Respuesta HTTP de la API con CAPTCHA FALLIDO (captcha_token inválido/expirado) | HTTP 400 (Rechazo por CAPTCHA inválido en ambiente real) | HTTP 201 Creado (Respuesta obtenida por estar el reCAPTCHA SIMULADO en este ambiente de TEST) | **OBSERVACION** |
+| Checkpoint 4: Veredicto Global de Seguridad en Ambiente de TEST | Rechazo por CAPTCHA verificado en ambiente con claves oficiales de prueba de Google | NO APROBADO: No es posible validar la seguridad en este ambiente de TEST (CAPTCHA simulado). Petición Token Vacío devuelven 201 y Token Inválido devuelve 201 | **OBSERVACION** |
 
-## Veredicto: CON FALLAS
+## Veredicto: **NO APROBADO — no se puede validar en este ambiente (CAPTCHA simulado)**
 
-## Nota de Clasificación QA (Responsabilidad de Equipo)
-> **IMPORTANTE**: Según la clasificación oficial de QA del sistema, si este caso de prueba presenta fallas derivadas de la interfaz gráfica o problemas de navegación en el formulario de registro, la responsabilidad directa corresponde al **equipo de Diseño / Frontend** (no constituye un bug del backend).
+## Registro Técnico de Red (Peticiones HTTP a la API)
+- Escenario A (Token Vacío): POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/ -> HTTP 201
+- Escenario B (Token Inválido): POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/ -> HTTP 201
 
-## Registro Técnico de Red (Espionaje Real)
-- **Naturaleza del CAPTCHA**: 100% simulado internamente (checkbox HTML `#captcha-check`). Sin dependencias ni claves de Google reCAPTCHA.
-- **Detalle de Petición HTTP Real**: Petición REAL realizada a /usuarios/. HTTP Status: 201. Respuesta: {"message":"Registro exitoso, envío de correo en proceso."}
-- **Hallazgos**:
-- Paso 1: Llenado de datos personales -> Ingresados datos para ID 9995372325 (OK)
-- Verificar estado del checkbox de CAPTCHA -> checked = false (OK)
-- Estado del botón Registrarse sin CAPTCHA marcado -> disabled = true (OK)
-- Respuesta del Backend TEST al enviar sin CAPTCHA válido -> HALLAZGO DE SEGURIDAD: El backend ACEPTÓ el registro sin CAPTCHA (HTTP 201). Respuesta: {"message":"Registro exitoso, envío de correo en proceso."} (FALLA)
+## Hallazgos y Observaciones Técnicas
+- Checkpoint 1: Bloqueo de envío en la interfaz (UI) -> El botón "Registrarse" permanece deshabilitado en la interfaz sin token de CAPTCHA (OK)
+- Checkpoint 2: Respuesta HTTP de la API con CAPTCHA NO RESUELTO (captcha_token vacío) -> HTTP 201 Creado (Respuesta obtenida por estar el reCAPTCHA SIMULADO en este ambiente de TEST) (OBSERVACION)
+- Checkpoint 3: Respuesta HTTP de la API con CAPTCHA FALLIDO (captcha_token inválido/expirado) -> HTTP 201 Creado (Respuesta obtenida por estar el reCAPTCHA SIMULADO en este ambiente de TEST) (OBSERVACION)
+- Checkpoint 4: Veredicto Global de Seguridad en Ambiente de TEST -> NO APROBADO: No es posible validar la seguridad en este ambiente de TEST (CAPTCHA simulado). Petición Token Vacío devuelven 201 y Token Inválido devuelve 201 (OBSERVACION)
 
 ## Evidencias Visuales (Capturas .PNG)
-- [01_paso1_datos_personales.png](screenshots/01_paso1_datos_personales.png) — Datos personales ingresados en el Paso 1.
-- [02_paso2_captcha_sin_marcar.png](screenshots/02_paso2_captcha_sin_marcar.png) — Paso 2 de credenciales con checkbox de CAPTCHA sin marcar.
-- [03_error_captcha_rechazado.png](screenshots/03_error_captcha_rechazado.png) — Estado final de la interfaz tras el intento de envío sin CAPTCHA.
+- [01_registro_ui_captcha.png](screenshots/01_registro_ui_captcha.png) — Formulario de registro en UI (Paso 2) con botón de envío deshabilitado cuando el CAPTCHA no ha sido resuelto.

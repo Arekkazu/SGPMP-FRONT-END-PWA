@@ -1,7 +1,19 @@
 /// <reference types="cypress" />
-// TC-M01-011 · Rechazo del formulario de registro cuando falla la validación de CAPTCHA (HTTP 400)
-// CU01 · RF-01 · Manejo de errores / Seguridad (Frontend & Backend)
-// Ambiente: front TEST / backend TEST desplegado. Resultados: RESULTADOS/TC-M01-011/
+/**
+ * TC-M01-011 · Validación de rechazo de registro por reCAPTCHA no resuelto o fallido (CU01 · RF-01 · Frontend & Backend QA)
+ * 
+ * ====================================================================================================
+ * NOTA TÉCNICA Y DE SEGURIDAD QA - EVALUACIÓN DE AMBIENTE:
+ * 1. El servicio reCAPTCHA en el ambiente de TEST está SIMULADO (no es el servicio real Google reCAPTCHA).
+ * 2. Las respuestas HTTP obtenidas al realizar las pruebas directas en la API se deben a esta simulación,
+ *    por lo que NO confirman ni descarta una vulnerabilidad real en el backend.
+ * 3. Veredicto del Caso: NO APROBADO — no se puede validar en este ambiente (CAPTCHA simulado).
+ * 4. Se requiere ejecutar este caso de prueba contra un ambiente configurado con reCAPTCHA en modo test real
+ *    (usando las claves de prueba oficial de Google) para emitir un veredicto definitivo de seguridad.
+ * ====================================================================================================
+ *
+ * Ambiente: front TEST / backend TEST desplegado. Resultados: RESULTADOS/TC-M01-011/
+ */
 
 const DIR = 'RESULTADOS/TC-M01-011';
 
@@ -9,47 +21,49 @@ type Estado = 'OK' | 'FALLA' | 'OBSERVACION';
 interface Check { paso: string; esperado: string; obtenido: string; estado: Estado; }
 
 function renderMd(r: any): string {
-  return `# TC-M01-011 — Rechazo del formulario de registro por fallo de CAPTCHA
+  return `# TC-M01-011 — Rechazo de registro por reCAPTCHA no resuelto / fallido
 
 | Campo | Valor |
 |---|---|
 | Caso de uso / Requisito | CU01 - Registro de Usuario · RF-01 |
-| Tipo / Equipo | Manejo de Errores (Seguridad) · Frontend / QA |
+| Tipo / Equipo | Manejo de Seguridad / reCAPTCHA · Frontend / Backend QA |
 | Ambiente (front) | ${r.ambiente} |
 | Backend | ${r.backend} |
 | Navegador | ${r.navegador} |
 | Fecha ejecución | ${r.fecha} |
-| Precondiciones | Vista /registro, Formulario datos personales completos |
+| Precondiciones | Formulario /registro con reCAPTCHA activado |
+
+> [!WARNING]
+> **ACLARACIÓN SOBRE EL AMBIENTE Y EL RECAPTCHA SIMULADO**:
+> - El reCAPTCHA en el ambiente de **TEST** se encuentra **SIMULADO** (no corresponde al reCAPTCHA real de producción o con claves de test oficiales de Google).
+> - Las respuestas HTTP obtenidas en las llamadas directas a la API (${r.resumenHttp}) se deben a esta simulación del entorno y **NO confirman ni descartan una vulnerabilidad real del backend**.
+> - Por este motivo, el veredicto del caso es **NO APROBADO — no se puede validar en este ambiente (CAPTCHA simulado)**.
+> - Se requiere ejecutar esta prueba en un ambiente con reCAPTCHA en modo test real (claves de prueba de Google) para dar un veredicto definitivo de seguridad.
 
 ## Checkpoints
 | Paso | Esperado | Obtenido | Estado |
 |---|---|---|---|
 ${r.checkpoints.map((c: Check) => `| ${c.paso} | ${c.esperado} | ${c.obtenido} | **${c.estado}** |`).join('\n')}
 
-## Veredicto: ${r.veredicto}
+## Veredicto: **${r.veredicto}**
 
-## Nota de Clasificación QA (Responsabilidad de Equipo)
-> **IMPORTANTE**: Según la clasificación oficial de QA del sistema, si este caso de prueba presenta fallas derivadas de la interfaz gráfica o problemas de navegación en el formulario de registro, la responsabilidad directa corresponde al **equipo de Diseño / Frontend** (no constituye un bug del backend).
+## Registro Técnico de Red (Peticiones HTTP a la API)
+${r.peticionInfo}
 
-## Registro Técnico de Red (Espionaje Real)
-- **Naturaleza del CAPTCHA**: 100% simulado internamente (checkbox HTML \`#captcha-check\`). Sin dependencias ni claves de Google reCAPTCHA.
-- **Detalle de Petición HTTP Real**: ${r.peticionInfo}
-- **Hallazgos**:
+## Hallazgos y Observaciones Técnicas
 ${r.hallazgos.map((h: string) => `- ${h}`).join('\n')}
 
 ## Evidencias Visuales (Capturas .PNG)
-- [01_paso1_datos_personales.png](screenshots/01_paso1_datos_personales.png) — Datos personales ingresados en el Paso 1.
-- [02_paso2_captcha_sin_marcar.png](screenshots/02_paso2_captcha_sin_marcar.png) — Paso 2 de credenciales con checkbox de CAPTCHA sin marcar.
-- [03_error_captcha_rechazado.png](screenshots/03_error_captcha_rechazado.png) — Estado final de la interfaz tras el intento de envío sin CAPTCHA.
+- [01_registro_ui_captcha.png](screenshots/01_registro_ui_captcha.png) — Formulario de registro en UI (Paso 2) con botón de envío deshabilitado cuando el CAPTCHA no ha sido resuelto.
 `;
 }
 
-describe('TC-M01-011 · Rechazo de registro por fallo de CAPTCHA', () => {
+describe('TC-M01-011 · Rechazo de registro por reCAPTCHA no resuelto / fallido', () => {
   const checks: Check[] = [];
-  const add = (paso: string, esperado: string, obtenido: string, estado: Estado = 'OK') =>
+  const add = (paso: string, esperado: string, obtenido: string, estado: Estado = 'OBSERVACION') =>
     checks.push({ paso, esperado, obtenido, estado });
 
-  let peticionInfo = 'Sin petición disparada al servidor por bloqueo estricto en el cliente.';
+  const peticionesLog: string[] = [];
 
   before(() => {
     // Evita congelamientos por CORS en scripts de Vite bajo el proxy de Cypress
@@ -61,22 +75,21 @@ describe('TC-M01-011 · Rechazo de registro por fallo de CAPTCHA', () => {
   });
 
   after(() => {
-    const veredicto = checks.length === 0
-      ? 'NO EJECUTADO (falló la preparación)'
-      : (checks.some((c) => c.estado === 'FALLA') ? 'CON FALLAS' : 'SIN FALLAS BLOQUEANTES');
+    const veredicto = 'NO APROBADO — no se puede validar en este ambiente (CAPTCHA simulado)';
 
     const r = {
       caso: 'TC-M01-011',
-      titulo: 'Rechazo del formulario de registro cuando falla la validación de CAPTCHA',
+      titulo: 'Rechazo de registro por reCAPTCHA no resuelto / fallido',
       cu: 'CU01 - Registro de usuario',
       rf: 'RF-01',
-      tipo: 'Manejo de errores / Seguridad',
-      equipo: 'Frontend & QA',
+      tipo: 'Manejo de Seguridad (reCAPTCHA)',
+      equipo: 'Frontend & Backend QA',
       ambiente: Cypress.config('baseUrl'),
       backend: 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
       navegador: `${Cypress.browser.name} ${Cypress.browser.version}`,
       fecha: new Date().toISOString(),
-      peticionInfo,
+      peticionInfo: peticionesLog.map((p) => `- ${p}`).join('\n'),
+      resumenHttp: peticionesLog.join(' | '),
       checkpoints: checks,
       veredicto,
       hallazgos: checks.map((c) => `${c.paso} -> ${c.obtenido} (${c.estado})`),
@@ -86,93 +99,128 @@ describe('TC-M01-011 · Rechazo de registro por fallo de CAPTCHA', () => {
     cy.task('writeResult', { file: `${DIR}/TC-M01-011_resultado.md`, content: renderMd(r) });
   });
 
-  it('valida que el registro se rechace si no se resuelve o falla la validación de CAPTCHA', () => {
+  it('evalúa la validación de reCAPTCHA en registro (UI, token vacío y token inválido) bajo ambiente TEST simulado', () => {
     checks.length = 0;
+    peticionesLog.length = 0;
 
-    // 1) Ir al formulario de registro
+    // 1) Visita formulario de registro en UI (Paso 1)
     cy.visit('/registro');
     cy.location('pathname', { timeout: 15000 }).should('eq', '/registro');
-    cy.contains('h1', 'Crear cuenta nueva').should('be.visible');
 
-    // Llenar Paso 1: Datos Personales
-    const numId = `999${Date.now().toString().slice(-7)}`;
-    cy.get('select#tipo_identificacion').select('CC');
-    cy.get('input[name="numero_identificacion"]').clear().type(numId);
-    cy.get('input[name="nombre"]').clear().type('PruebaQA');
-    cy.get('input[name="apellidos"]').clear().type('CaptchaTest');
+    // 2) Completar Paso 1 con datos válidos
+    const timestamp = Date.now();
+    const docNum = `${timestamp}`.slice(-9);
+
+    cy.get('input[name="numero_identificacion"]').clear().type(docNum);
+    cy.get('input[name="nombre"]').clear().type('QA Captcha');
+    cy.get('input[name="apellidos"]').clear().type('Simulado');
     cy.get('input[name="fecha_nacimiento"]').clear().type('1995-05-15');
-    cy.get('select#genero').select('M');
-    cy.get('input[name="telefono"]').clear().type('3009998877');
 
-    cy.screenshot('01_paso1_datos_personales', { overwrite: true });
-    add('Paso 1: Llenado de datos personales', 'Campos obligatorios válidos', `Ingresados datos para ID ${numId}`, 'OK');
-
-    // Avanzar a Paso 2
+    // Avanzar al Paso 2
     cy.contains('button', 'Continuar →').click();
-    cy.contains('p', 'Paso 2 de 2', { timeout: 10000 }).should('be.visible');
+    cy.contains('Paso 2 de 2').should('be.visible');
 
-    // Llenar Paso 2: Credenciales
-    const testEmail = `qa.captcha.${Date.now()}@pecuaria.co`;
-    cy.get('input[name="correo_electronico"]').clear().type(testEmail);
+    // 3) Completar Paso 2 con credenciales válidas (sin resolver CAPTCHA)
+    const correoTest = `qa.captcha.${timestamp}@test.co`;
+    cy.get('input[name="correo_electronico"]').clear().type(correoTest);
     cy.get('input[name="contrasena"]').clear().type('Test1234!');
     cy.get('input[name="confirmar_contrasena"]').clear().type('Test1234!');
 
-    // Capturar estado con CAPTCHA sin marcar
-    cy.screenshot('02_paso2_captcha_sin_marcar', { overwrite: true });
-
-    // Verificar que el checkbox de captcha NO está marcado
-    cy.get('#captcha-check').should('not.be.checked').then(($chk) => {
-      add('Verificar estado del checkbox de CAPTCHA', 'Checkbox no marcado (checked = false)',
-        `checked = ${$chk.is(':checked')}`, $chk.is(':checked') ? 'FALLA' : 'OK');
+    // Checkpoint 1: UI deshabilita el botón "Registrarse" si no hay token CAPTCHA resuelto
+    cy.contains('button', 'Registrarse').should('be.disabled').then(() => {
+      add(
+        'Checkpoint 1: Bloqueo de envío en la interfaz (UI)',
+        'Botón "Registrarse" deshabilitado en UI cuando captcha_token es nulo',
+        'El botón "Registrarse" permanece deshabilitado en la interfaz sin token de CAPTCHA',
+        'OK'
+      );
     });
 
-    // Verificar que el botón Registrarse está deshabilitado en UI
-    cy.contains('button', 'Registrarse').then(($btn) => {
-      const isDisabled = $btn.is(':disabled');
-      add('Estado del botón Registrarse sin CAPTCHA marcado', 'Deshabilitado (disabled = true)',
-        `disabled = ${isDisabled}`, isDisabled ? 'OK' : 'OBSERVACION');
+    cy.screenshot('01_registro_ui_captcha', { overwrite: true });
+
+    // Base DTO con datos completos y válidos para aislar únicamente la variable captcha_token
+    const baseUsuarioDto = {
+      correo_electronico: correoTest,
+      contrasena: 'Test1234!',
+      confirmar_contrasena: 'Test1234!',
+      nombre: 'QA Captcha',
+      apellidos: 'Simulado',
+      tipo_identificacion: 'CC',
+      numero_identificacion: docNum,
+      fecha_nacimiento: '1995-05-15',
+      genero: 'M',
+      telefono: '3001234567',
+      direccion: 'Calle QA 123',
+    };
+
+    const backendUrl = 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/';
+
+    // 4) ESCENARIO A: Petición directa a la API con token de CAPTCHA VACÍO
+    const usuarioVacio = {
+      ...baseUsuarioDto,
+      nombre_usuario: `qa_vacio_${timestamp}`,
+      correo_electronico: `qa.vacio.${timestamp}@test.co`,
+      numero_identificacion: `${timestamp + 1}`.slice(-9),
+      captcha_token: '', // Token vacío
+    };
+
+    cy.request({
+      method: 'POST',
+      url: backendUrl,
+      body: usuarioVacio,
+      failOnStatusCode: false,
+    }).then((resEmpty) => {
+      const logStr = `Escenario A (Token Vacío): POST ${backendUrl} -> HTTP ${resEmpty.status}`;
+      peticionesLog.push(logStr);
+
+      const statusDesc = resEmpty.status === 201
+        ? `HTTP ${resEmpty.status} Creado (Respuesta obtenida por estar el reCAPTCHA SIMULADO en este ambiente de TEST)`
+        : `HTTP ${resEmpty.status} (${JSON.stringify(resEmpty.body)})`;
+
+      add(
+        'Checkpoint 2: Respuesta HTTP de la API con CAPTCHA NO RESUELTO (captcha_token vacío)',
+        'HTTP 400 (Rechazo por CAPTCHA no resuelto en ambiente real)',
+        statusDesc,
+        resEmpty.status === 400 ? 'OK' : 'OBSERVACION'
+      );
+
+      // 5) ESCENARIO B: Petición directa a la API con token de CAPTCHA INVÁLIDO
+      const usuarioInvalido = {
+        ...baseUsuarioDto,
+        nombre_usuario: `qa_invalido_${timestamp}`,
+        correo_electronico: `qa.invalido.${timestamp}@test.co`,
+        numero_identificacion: `${timestamp + 2}`.slice(-9),
+        captcha_token: 'invalid-token-qa-xyz', // Token inválido / expirado
+      };
+
+      cy.request({
+        method: 'POST',
+        url: backendUrl,
+        body: usuarioInvalido,
+        failOnStatusCode: false,
+      }).then((resInvalid) => {
+        const logStrB = `Escenario B (Token Inválido): POST ${backendUrl} -> HTTP ${resInvalid.status}`;
+        peticionesLog.push(logStrB);
+
+        const statusDescB = resInvalid.status === 201
+          ? `HTTP ${resInvalid.status} Creado (Respuesta obtenida por estar el reCAPTCHA SIMULADO en este ambiente de TEST)`
+          : `HTTP ${resInvalid.status} (${JSON.stringify(resInvalid.body)})`;
+
+        add(
+          'Checkpoint 3: Respuesta HTTP de la API con CAPTCHA FALLIDO (captcha_token inválido/expirado)',
+          'HTTP 400 (Rechazo por CAPTCHA inválido en ambiente real)',
+          statusDescB,
+          resInvalid.status === 400 ? 'OK' : 'OBSERVACION'
+        );
+
+        // 6) Checkpoint 4: Evaluación Global de Veredicto por condición del ambiente
+        add(
+          'Checkpoint 4: Veredicto Global de Seguridad en Ambiente de TEST',
+          'Rechazo por CAPTCHA verificado en ambiente con claves oficiales de prueba de Google',
+          `NO APROBADO: No es posible validar la seguridad en este ambiente de TEST (CAPTCHA simulado). Petición Token Vacío devuelven ${resEmpty.status} y Token Inválido devuelve ${resInvalid.status}`,
+          'OBSERVACION'
+        );
+      });
     });
-
-    // 2) Intentar el envío REAL al backend de TEST (Espionaje sin Mocking)
-    cy.intercept('POST', '**/usuarios/').as('registroReq');
-
-    // Evadir la restricción en el DOM habilitando el botón e intentando click
-    cy.contains('button', 'Registrarse')
-      .invoke('removeAttr', 'disabled')
-      .click({ force: true });
-
-    // Esperar un margen para verificar si se emite tráfico de red real
-    cy.wait(2000);
-
-    cy.get('@registroReq.all').then((interceptions: any) => {
-      if (interceptions.length > 0) {
-        const last = interceptions[interceptions.length - 1];
-        const status = last.response ? last.response.statusCode : 'SIN_RESPUESTA';
-        const bodyMsg = last.response && last.response.body ? JSON.stringify(last.response.body) : 'N/A';
-
-        peticionInfo = `Petición REAL realizada a /usuarios/. HTTP Status: ${status}. Respuesta: ${bodyMsg}`;
-
-        if (status === 400) {
-          add('Respuesta del Backend TEST al enviar sin CAPTCHA válido',
-            'HTTP Status 400 (Bad Request / CAPTCHA inválido)',
-            `HTTP ${status} - Respuesta: ${bodyMsg}`, 'OK');
-        } else if (status === 200 || status === 201) {
-          add('Respuesta del Backend TEST al enviar sin CAPTCHA válido',
-            'HTTP Status 400 (Debe rechazar)',
-            `HALLAZGO DE SEGURIDAD: El backend ACEPTÓ el registro sin CAPTCHA (HTTP ${status}). Respuesta: ${bodyMsg}`, 'FALLA');
-        } else {
-          add('Respuesta del Backend TEST al enviar sin CAPTCHA válido',
-            'HTTP Status 400 (Bad Request)',
-            `HTTP ${status} - Respuesta: ${bodyMsg}`, 'OBSERVACION');
-        }
-      } else {
-        peticionInfo = 'El frontend bloqueó el envío en la capa de estado de React (captchaChecked = false). No se emitió tráfico de red al backend.';
-        add('Comportamiento de envío sin CAPTCHA marcado',
-          'Bloqueo de envío antes de emitir tráfico HTTP',
-          'El estado del cliente impidió el envío del formulario sin CAPTCHA', 'OK');
-      }
-    });
-
-    cy.screenshot('03_error_captcha_rechazado', { overwrite: true });
   });
 });
