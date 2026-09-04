@@ -25,6 +25,10 @@ import './shared/design-system/tokens.css';
 import { AuthProvider } from './shared/auth/AuthContext';
 import { useAuth } from './shared/auth/useAuth';
 import { useIdiomaSesion } from './shared/i18n/useIdiomaSesion';
+import { useTemaSesion } from './shared/tema/useTemaSesion';
+import { ContextoProvider } from './shared/contexto/ContextoProvider';
+import { useContexto } from './shared/contexto/useContexto';
+import { BienvenidaSinFinca } from './shared/contexto/BienvenidaSinFinca';
 
 /* Design system components */
 import { Sidebar } from './shared/design-system/Sidebar';
@@ -65,12 +69,21 @@ function SessionManager() {
   return <SessionExpirationWarning remainingSeconds={remainingSeconds} />;
 }
 
-function AppShell({ children }: { children: React.ReactNode }) {
+// Rutas que siguen accesibles sin finca vinculada: el RF pide mostrar "unicamente el
+// modulo de soporte o perfil", asi que tapar tambien el perfil dejaria al usuario sin
+// ninguna pantalla util mientras espera que un administrador lo vincule.
+const RUTAS_SIN_FINCA = ['/perfil'];
+
+function AppShell({ children, operativa = true }: { children: React.ReactNode; operativa?: boolean }) {
   const logout = useLogout();
   const { claims, userInfo, token } = useAuth();
   // RF-29: aplicar la preferencia guardada en el backend, no solo la de
   // localStorage, para que el idioma viaje entre navegadores y dispositivos.
   useIdiomaSesion(token);
+  // RF-26/RF-27: mismo motivo para el tema, y de paso pinta la marca institucional de la
+  // finca activa con la variante que cumple contraste en el tema resultante.
+  useTemaSesion(token);
+  const { sinFinca } = useContexto();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -141,7 +154,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
             overflowY: 'auto',
           }}
         >
-          {children}
+          {/* RF-25, flujo alterno "Usuario sin finca asociada": se ocultan los paneles
+              operativos y queda visible solo el perfil, sin devolver ningun error. */}
+          {sinFinca && operativa ? <BienvenidaSinFinca /> : children}
         </main>
       </div>
     </div>
@@ -158,7 +173,13 @@ function PrivateRoute({ path, component: Component }: { path: string; component:
         if (!token) return <Redirect to="/login" />;
         if (perfilIncompleto === null) return null;
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
-        return <AppShell><Component /></AppShell>;
+        return (
+          <ContextoProvider>
+            <AppShell operativa={!RUTAS_SIN_FINCA.includes(path)}>
+              <Component />
+            </AppShell>
+          </ContextoProvider>
+        );
       }}
     />
   );
