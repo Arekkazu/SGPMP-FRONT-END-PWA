@@ -5,12 +5,12 @@ const BASE = '/configuracion/tipos-area';
 
 export const tipoAreaApi = {
   async listar(soloActivos = false): Promise<TipoAreaResponse[]> {
-    const res = await http.get<TipoAreaResponse[]>(`${BASE}/`, { params: { solo_activos: soloActivos } });
+    const res = await http.get<TipoAreaResponse[]>(BASE, { params: { solo_activos: soloActivos } });
     return res.data;
   },
 
   async registrar(dto: RegistrarTipoAreaDTO): Promise<TipoAreaResponse> {
-    const res = await http.post<TipoAreaResponse>(`${BASE}/`, dto);
+    const res = await http.post<TipoAreaResponse>(BASE, dto);
     return res.data;
   },
 
