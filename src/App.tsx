@@ -69,10 +69,12 @@ function SessionManager() {
   return <SessionExpirationWarning remainingSeconds={remainingSeconds} />;
 }
 
-// Rutas que siguen accesibles sin finca vinculada: el RF pide mostrar "unicamente el
-// modulo de soporte o perfil", asi que tapar tambien el perfil dejaria al usuario sin
-// ninguna pantalla util mientras espera que un administrador lo vincule.
-const RUTAS_SIN_FINCA = ['/perfil'];
+// Unica ruta que bloquea con la bienvenida de "sin finca" (RF-25). El resto de rutas
+// privadas (incluida configuracion, usuarios, roles, auditoria) no dependen de una
+// finca vinculada para funcionar: sus listados ya salen vacios sin necesidad de tapar
+// la pantalla, y tapar admin/roles ademas dejaba a un Administrador sin poder vincular
+// fincas a otros usuarios ni gestionar el sistema.
+const RUTAS_CON_BLOQUEO_SIN_FINCA = ['/dashboard'];
 
 function AppShell({ children, operativa = true }: { children: React.ReactNode; operativa?: boolean }) {
   const logout = useLogout();
@@ -175,7 +177,7 @@ function PrivateRoute({ path, component: Component }: { path: string; component:
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
         return (
           <ContextoProvider>
-            <AppShell operativa={!RUTAS_SIN_FINCA.includes(path)}>
+            <AppShell operativa={RUTAS_CON_BLOQUEO_SIN_FINCA.includes(path)}>
               <Component />
             </AppShell>
           </ContextoProvider>
