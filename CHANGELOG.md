@@ -1,3 +1,15 @@
+## [1.0.0-rc.4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.3...v1.0.0-rc.4) (2026-09-04)
+
+### Features
+
+* **configuration:** adaptar la interfaz al rol, la finca activa y las especies (RF-25) ([9f10e76](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9f10e76363b7115a31f7a8bda44b0a0224d67427))
+* **configuration:** aplicar la identidad visual institucional a la interfaz (RF-26, RF-25) ([d4236f6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d4236f608aec2b2299f17f31e8642f3a99065380))
+* **configuration:** vista previa real con descarte sobre la interfaz (RF-26) ([21c2705](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/21c27057199d4a5a0200a05150c249a7b64da3b5))
+
+### Bug Fixes
+
+* **configuration:** alinear theme_mode del selector con el contrato del backend (RF-27) ([5e5cda5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5e5cda5108169803abbb0e906b2bc5a3cb8ef092))
+
 ## [1.0.0-rc.3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.2...v1.0.0-rc.3) (2026-09-03)
 
 ### Features
