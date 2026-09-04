@@ -39,10 +39,10 @@ const UMBRAL = {
 function respuestasPorRuta() {
   getMock.mockImplementation((url: string) => {
     const datos: Record<string, unknown[]> = {
-      '/configuracion/ciclos/': [CICLO],
-      '/configuracion/patologias/': [PATOLOGIA],
-      '/configuracion/metricas/': [METRICA],
-      '/configuracion/umbrales/': [UMBRAL],
+      '/configuracion/ciclos': [CICLO],
+      '/configuracion/patologias': [PATOLOGIA],
+      '/configuracion/metricas': [METRICA],
+      '/configuracion/umbrales': [UMBRAL],
     };
     return Promise.resolve({ data: datos[url] ?? [] }) as never;
   });
@@ -59,10 +59,10 @@ describe('capturarConfiguracionEspecie', () => {
 
     const rutas = getMock.mock.calls.map(([url]) => url);
     expect(rutas).toEqual([
-      '/configuracion/ciclos/',
-      '/configuracion/patologias/',
-      '/configuracion/metricas/',
-      '/configuracion/umbrales/',
+      '/configuracion/ciclos',
+      '/configuracion/patologias',
+      '/configuracion/metricas',
+      '/configuracion/umbrales',
     ]);
     for (const [, config] of getMock.mock.calls) {
       expect((config as { params: unknown }).params).toEqual({

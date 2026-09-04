@@ -56,7 +56,7 @@ function mapConfiguracion(raw: ConfiguracionMotorIARaw): ConfiguracionMotorIARes
 
 export const motorApi = {
   async listar(): Promise<ConfiguracionMotorIAListResponse> {
-    const res = await http.get<{ total: number; items: ConfiguracionMotorIARaw[] }>(`${BASE}/`);
+    const res = await http.get<{ total: number; items: ConfiguracionMotorIARaw[] }>(BASE);
     return { total: res.data.total, items: res.data.items.map(mapConfiguracion) };
   },
 
@@ -68,7 +68,7 @@ export const motorApi = {
 
   /** Upsert por `tipo_modelo`: 201 si crea, 200 si actualiza (ambos éxito). */
   async configurar(dto: ConfigurarMotorDTO): Promise<ConfiguracionMotorIAResponse> {
-    const res = await http.post<ConfiguracionMotorIARaw>(`${BASE}/`, dto);
+    const res = await http.post<ConfiguracionMotorIARaw>(BASE, dto);
     return mapConfiguracion(res.data);
   },
 };

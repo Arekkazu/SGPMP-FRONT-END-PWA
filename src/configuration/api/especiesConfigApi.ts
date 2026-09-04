@@ -10,14 +10,14 @@ import type {
 
 export const ciclosApi = {
   async listar(idEspecie: number, soloActivas = false): Promise<CicloBiologicoResponse[]> {
-    const res = await http.get<CicloBiologicoResponse[]>('/configuracion/ciclos/', {
+    const res = await http.get<CicloBiologicoResponse[]>('/configuracion/ciclos', {
       params: { id_especie: idEspecie, solo_activas: soloActivas },
     });
     return res.data;
   },
 
   async registrar(dto: RegistrarCicloDTO): Promise<CicloBiologicoResponse> {
-    const res = await http.post<CicloBiologicoResponse>('/configuracion/ciclos/', dto);
+    const res = await http.post<CicloBiologicoResponse>('/configuracion/ciclos', dto);
     return res.data;
   },
 
@@ -34,14 +34,14 @@ export const ciclosApi = {
 
 export const patologiasApi = {
   async listar(idEspecie: number, soloActivas = false): Promise<PatologiaEspecieItemResponse[]> {
-    const res = await http.get<PatologiaEspecieItemResponse[]>('/configuracion/patologias/', {
+    const res = await http.get<PatologiaEspecieItemResponse[]>('/configuracion/patologias', {
       params: { id_especie: idEspecie, solo_activas: soloActivas },
     });
     return res.data;
   },
 
   async registrar(dto: RegistrarPatologiaDTO): Promise<PatologiaEspecieItemResponse> {
-    const res = await http.post<PatologiaEspecieItemResponse>('/configuracion/patologias/', dto);
+    const res = await http.post<PatologiaEspecieItemResponse>('/configuracion/patologias', dto);
     return res.data;
   },
 
@@ -58,14 +58,14 @@ export const patologiasApi = {
 
 export const metricasApi = {
   async listar(idEspecie: number, soloActivas = false): Promise<MetricaProduccionResponse[]> {
-    const res = await http.get<MetricaProduccionResponse[]>('/configuracion/metricas/', {
+    const res = await http.get<MetricaProduccionResponse[]>('/configuracion/metricas', {
       params: { id_especie: idEspecie, solo_activas: soloActivas },
     });
     return res.data;
   },
 
   async registrar(dto: RegistrarMetricaDTO): Promise<MetricaProduccionResponse> {
-    const res = await http.post<MetricaProduccionResponse>('/configuracion/metricas/', dto);
+    const res = await http.post<MetricaProduccionResponse>('/configuracion/metricas', dto);
     return res.data;
   },
 
@@ -82,14 +82,14 @@ export const metricasApi = {
 
 export const umbralesApi = {
   async listar(idEspecie: number, soloActivas = false): Promise<UmbralAmbientalResponse[]> {
-    const res = await http.get<UmbralAmbientalResponse[]>('/configuracion/umbrales/', {
+    const res = await http.get<UmbralAmbientalResponse[]>('/configuracion/umbrales', {
       params: { id_especie: idEspecie, solo_activas: soloActivas },
     });
     return res.data;
   },
 
   async registrar(dto: RegistrarUmbralDTO): Promise<UmbralAmbientalResponse> {
-    const res = await http.post<UmbralAmbientalResponse>('/configuracion/umbrales/', dto);
+    const res = await http.post<UmbralAmbientalResponse>('/configuracion/umbrales', dto);
     return res.data;
   },
 

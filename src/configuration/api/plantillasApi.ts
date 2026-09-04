@@ -8,7 +8,7 @@ const BASE = '/configuracion/plantillas';
 
 export const plantillasApi = {
   async listar(): Promise<PlantillaResponse[]> {
-    const res = await http.get<PlantillaResponse[]>(`${BASE}/`);
+    const res = await http.get<PlantillaResponse[]>(BASE);
     return res.data;
   },
 
@@ -18,7 +18,7 @@ export const plantillasApi = {
   },
 
   async registrar(dto: RegistrarPlantillaDTO): Promise<PlantillaResponse> {
-    const res = await http.post<PlantillaResponse>(`${BASE}/`, dto);
+    const res = await http.post<PlantillaResponse>(BASE, dto);
     return res.data;
   },
 
