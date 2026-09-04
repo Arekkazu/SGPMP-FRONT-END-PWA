@@ -13,6 +13,10 @@ import { temaActivo } from '../../shared/tema/useTemaSesion';
 import { useContexto } from '../../shared/contexto/useContexto';
 import type { FincaResponse } from '../types';
 
+// RF-26: espeja src/shared/almacen_logos.py (FORMATOS_PERMITIDOS, TAMANO_MAX) del backend.
+const LOGO_TIPOS_PERMITIDOS = ['image/png', 'image/jpeg', 'image/svg+xml'];
+const LOGO_TAMANO_MAX = 2 * 1024 * 1024;
+
 // ── Finca selector ────────────────────────────────────────────────────────────
 function FincaSelectorIdent({ onSelect }: { onSelect: (f: FincaResponse) => void }) {
   const { t } = useT('configuration');
@@ -180,6 +184,7 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
   const [orgNameErr, setOrgNameErr] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoErr, setLogoErr] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const [saved, setSaved] = useState(false);
   // RF-26, pasos 6-8: la vista previa aplica los cambios "de forma temporal en la
@@ -234,16 +239,25 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
       setSecondaryColor(identidad.secondary_color ?? '#4caf50');
       setOrgName(identidad.org_display_name ?? '');
       setLogoFile(null);
+      setLogoErr('');
       setLogoPreview(resolverLogoUrl(identidad.logo_path));
     }
   }, [identidad]);
 
   const handleFile = useCallback((file: File) => {
-    if (!file.type.startsWith('image/')) return;
+    if (!LOGO_TIPOS_PERMITIDOS.includes(file.type)) {
+      setLogoErr(t('identidadvisualsection.formato_no_permitido'));
+      return;
+    }
+    if (file.size > LOGO_TAMANO_MAX) {
+      setLogoErr(t('identidadvisualsection.archivo_supera_2_mb'));
+      return;
+    }
+    setLogoErr('');
     setLogoFile(file);
     const url = URL.createObjectURL(file);
     setLogoPreview(url);
-  }, []);
+  }, [t]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -368,7 +382,14 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
                   />
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); setLogoFile(null); setLogoPreview(null); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLogoFile(null);
+                      setLogoErr('');
+                      // Descarta una seleccion sin guardar volviendo al logo persistido; si no
+                      // habia una seleccion nueva, simplemente quita el logo guardado.
+                      setLogoPreview(logoFile ? resolverLogoUrl(identidad?.logo_path ?? null) : null);
+                    }}
                     style={{
                       position: 'absolute',
                       top: -8,
@@ -384,7 +405,7 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
                       cursor: 'pointer',
                       color: '#fff',
                     }}
-                    aria-label={t('identidadvisualsection.quitar_logo')}
+                    aria-label={logoFile ? t('identidadvisualsection.descartar_logo') : t('identidadvisualsection.quitar_logo')}
                   >
                     <X size={12} />
                   </button>
@@ -400,11 +421,16 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg,image/svg+xml"
               style={{ display: 'none' }}
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
               aria-label={t('identidadvisualsection.seleccionar_logo')}
             />
+            {logoErr && (
+              <span role="alert" style={{ display: 'block', fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s2)' }}>
+                {logoErr}
+              </span>
+            )}
           </div>
 
           {/* Colors */}
