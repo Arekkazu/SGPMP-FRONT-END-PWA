@@ -1,0 +1,42 @@
+{
+  "info": {
+    "_postman_id": "tc-m09-g01-especie-collection-id",
+    "name": "TC-M09-G01 · RF-15 - Crear Especie Productiva",
+    "description": "Colección de pruebas Postman / Newman para TC-M09-G01 (CU-01 / RF-15).\n\nINCIDENTE ACTIVO: INC-M09-01-G01 (Fecha de detección: 03/09/2026) - Bloqueo por Mixed Content HTTPS -> HTTP.\n\nTODO: confirmar endpoint real de creación de especie (RF-15) y rol/cuenta de ejecución antes de correr este caso — actualmente sin verificar contra el backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "POST /especies - Registro de Especie Productiva (RF-15)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "description": "TODO: confirmar rol y token de cuenta habilitada"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Bovino\",\n  \"descripcion\": \"Especie bovina productiva\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/especies",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "especies"
+          ]
+        },
+        "description": "Crea una nueva especie productiva en el catálogo (RF-15).\n\nTODO: confirmar endpoint real de creación de especie (RF-15) y rol/cuenta de ejecución antes de correr este caso — actualmente sin verificar contra el backend."
+      },
+      "response": []
+    }
+  ]
+}
