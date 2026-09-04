@@ -245,6 +245,18 @@ export interface EditarPatologiaDTO {
 export type TipoMedicion = 'PESO' | 'VOLUMEN' | 'LONGITUD' | 'CONTEO' | 'OTRO';
 export type TipoActivo = 'INDIVIDUAL' | 'LOTE' | 'AMBOS';
 
+/**
+ * Unidades válidas por tipo de medición (RF-16) — espejo exacto de
+ * `_UNIDADES_POR_TIPO` en `registrar_metrica_use_case.py` del backend.
+ * `OTRO` no restringe: se deja como texto libre en el formulario.
+ */
+export const UNIDADES_POR_TIPO_MEDICION: Record<Exclude<TipoMedicion, 'OTRO'>, string[]> = {
+  PESO: ['kg', 'g', 'lb'],
+  VOLUMEN: ['litros', 'l', 'ml'],
+  LONGITUD: ['cm', 'm'],
+  CONTEO: ['unidades'],
+};
+
 export interface MetricaProduccionResponse {
   id_metrica_produccion: number;
   nombre: string;
