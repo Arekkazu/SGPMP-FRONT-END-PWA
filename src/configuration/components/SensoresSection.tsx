@@ -13,6 +13,7 @@ import { useSensores } from '../hooks/useSensores';
 import { useFincas } from '../hooks/useFincas';
 import { useInfraestructuras } from '../hooks/useInfraestructuras';
 import type { DispositivoIotResponse, SensorResponse, FincaResponse, InfraestructuraResponse } from '../types';
+import type { ApiError } from '../../shared/api/errors';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -294,7 +295,7 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
   finca: FincaResponse;
   area: InfraestructuraResponse;
   saving: boolean;
-  saveError: { message: string } | null;
+  saveError: ApiError | null;
   onBack: () => void;
   onConfirm: (punto: string) => void;
 }) {
@@ -308,7 +309,7 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
       <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s5)' }} aria-label={t('sensoressection.cambiar_area')}>
         <ChevronLeft size={16} aria-hidden />{t('sensoressection.cambiar_area')}</Button>
 
-      {saveError && (
+      {saveError && saveError.code !== 'REASIGNACION_REQUIERE_CONFIRMACION' && (
         <Alert variant="error" title={t('sensoressection.error_al_asociar')} description={saveError.message} style={{ marginBottom: 'var(--s5)' }} />
       )}
 
@@ -366,6 +367,34 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
   );
 }
 
+// ── Reasignación: confirmación (RF-22 FA "Conflicto de reasignación") ──────────
+
+function ConfirmReasignarModal({ mensaje, saving, onCancel, onConfirm }: {
+  mensaje: string; saving: boolean; onCancel: () => void; onConfirm: () => void;
+}) {
+  const { t } = useT('configuration');
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reasignar-modal-title"
+      style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 'var(--s4)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 420, boxShadow: 'var(--shadow-lg)' }}>
+        <h2 id="reasignar-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
+          {t('sensoressection.confirmar_reasignacion_titulo')}
+        </h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('sensoressection.cancelar')}</Button>
+          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{t('sensoressection.reasignar')}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── SensoresSection ───────────────────────────────────────────────────────────
 
 export function SensoresSection() {
@@ -384,8 +413,16 @@ export function SensoresSection() {
   const [finca, setFinca]             = useState<FincaResponse | null>(null);
   const [area, setArea]               = useState<InfraestructuraResponse | null>(null);
   const [successMsg, setSuccessMsg]   = useState<string | null>(null);
+  const [pendingPunto, setPendingPunto] = useState<string | null>(null);
+  const [showReasignarConfirm, setShowReasignarConfirm] = useState(false);
 
   useEffect(() => { cargarDisp(); cargarFincas(); }, [cargarDisp, cargarFincas]);
+
+  // El wizard ya envió la petición al llegar aquí (ese es el primer intento, sin
+  // `confirmar`); un 409 con este codigo especifico pide reasignar, no es un error final.
+  useEffect(() => {
+    if (saveError?.code === 'REASIGNACION_REQUIERE_CONFIRMACION') setShowReasignarConfirm(true);
+  }, [saveError]);
 
   const handleSelectDisp = (d: DispositivoIotResponse) => {
     setDispositivo(d);
@@ -415,8 +452,19 @@ export function SensoresSection() {
     setStep('confirmar');
   };
 
+  const resetWizard = () => {
+    setStep('dispositivo');
+    setDispositivo(null);
+    setSensor(null);
+    setFinca(null);
+    setArea(null);
+    setPendingPunto(null);
+    setShowReasignarConfirm(false);
+  };
+
   const handleConfirm = async (punto: string) => {
     if (!sensor || !dispositivo || !area) return;
+    setPendingPunto(punto);
     const ok = await asociar(sensor.id_sensores, {
       id_dispositivo_iot: dispositivo.id_dispositivo_iot,
       id_infraestructura: area.id_infraestructura,
@@ -424,32 +472,44 @@ export function SensoresSection() {
     });
     if (ok) {
       setSuccessMsg(`Sensor "${sensor.nombre}" asociado a "${area.nombre_infraestructura}" correctamente.`);
-      // reset wizard
-      setStep('dispositivo');
-      setDispositivo(null);
-      setSensor(null);
-      setFinca(null);
-      setArea(null);
+      resetWizard();
     }
   };
 
+  const handleConfirmarReasignacion = async () => {
+    if (!sensor || !dispositivo || !area || pendingPunto === null) return;
+    const ok = await asociar(sensor.id_sensores, {
+      id_dispositivo_iot: dispositivo.id_dispositivo_iot,
+      id_infraestructura: area.id_infraestructura,
+      punto_instalacion: pendingPunto,
+      confirmar: true,
+    });
+    setShowReasignarConfirm(false);
+    if (ok) {
+      setSuccessMsg(`Sensor "${sensor.nombre}" reasignado a "${area.nombre_infraestructura}" correctamente.`);
+      resetWizard();
+    }
+  };
+
+  const handleCancelarReasignacion = () => setShowReasignarConfirm(false);
+
   const handleBackToDisp = () => {
-    setStep('dispositivo');
-    setDispositivo(null);
-    setSensor(null);
-    setFinca(null);
-    setArea(null);
+    resetWizard();
   };
 
   const handleBackToSensor = () => {
     setSensor(null);
     setFinca(null);
     setArea(null);
+    setPendingPunto(null);
+    setShowReasignarConfirm(false);
     setStep('sensor');
   };
 
   const handleBackToArea = () => {
     setArea(null);
+    setPendingPunto(null);
+    setShowReasignarConfirm(false);
     setStep('area');
   };
 
@@ -527,6 +587,15 @@ export function SensoresSection() {
               saveError={saveError}
               onBack={handleBackToArea}
               onConfirm={handleConfirm}
+            />
+          )}
+
+          {showReasignarConfirm && saveError && (
+            <ConfirmReasignarModal
+              mensaje={saveError.message}
+              saving={saving}
+              onCancel={handleCancelarReasignacion}
+              onConfirm={handleConfirmarReasignacion}
             />
           )}
         </>

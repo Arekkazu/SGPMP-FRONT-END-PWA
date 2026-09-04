@@ -163,6 +163,8 @@ export interface AsociarSensorAreaDTO {
   id_dispositivo_iot: number;
   id_infraestructura: number;
   punto_instalacion: string;
+  /** RF-22 FA "Conflicto de reasignación": reenviar en true tras confirmar. */
+  confirmar?: boolean;
 }
 
 // =====================================================================
