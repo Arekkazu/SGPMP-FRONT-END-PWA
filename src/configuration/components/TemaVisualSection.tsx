@@ -6,42 +6,48 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useTemaVisual } from '../hooks/useTemaVisual';
+import { THEME_MODE } from '../../shared/tema/tema';
 
-// theme_mode: 0=Light, 1=Dark, 2=Auto
+// theme_mode segun RF-27 y el backend: 1=Claro, 2=Oscuro, 3=Sistema. Los valores salen
+// de `shared/tema/tema.ts` y no se escriben aqui: esta lista los tenia como 0/1/2, asi
+// que guardar "Claro" enviaba 0 y el backend respondia 422, y "Oscuro" se persistia como
+// Claro. Los colores de la miniatura replican las superficies reales de `tokens.css`.
 const TEMAS = [
   {
-    mode: 0,
+    mode: THEME_MODE.CLARO,
     label: 'Claro',
     emoji: '☀️',
     desc: 'Interfaz con fondo blanco',
-    preview: { bg: '#ffffff', text: '#1a1a1a', sidebar: '#f0f0f0' },
+    preview: { bg: '#ffffff', text: '#252820', sidebar: '#f0f1ee' },
   },
   {
-    mode: 1,
+    mode: THEME_MODE.OSCURO,
     label: 'Oscuro',
     emoji: '🌙',
     desc: 'Interfaz con fondo oscuro',
-    preview: { bg: '#1e1e2e', text: '#cdd6f4', sidebar: '#181825' },
+    preview: { bg: '#171a15', text: '#d4e0ce', sidebar: '#0f110e' },
   },
   {
-    mode: 2,
+    mode: THEME_MODE.SISTEMA,
     label: 'Automático',
     emoji: '⚙️',
     desc: 'Sigue la preferencia del sistema',
-    preview: { bg: 'linear-gradient(135deg,#ffffff 50%,#1e1e2e 50%)', text: '#666', sidebar: '#e8e8f0' },
+    preview: { bg: 'linear-gradient(135deg,#ffffff 50%,#171a15 50%)', text: '#585e53', sidebar: '#e2e4de' },
   },
 ] as const;
 
-function FuenteBadge({ fuente }: { fuente: 'personal' | 'global' | 'default' }) {
+function FuenteBadge({ fuente }: { fuente: 'personal' | 'global' | 'defecto' }) {
+  // El backend emite 'defecto' (obtener_tema_resuelto_use_case.py); con la clave
+  // 'default' el badge se quedaba sin color y sin rotulo.
   const colors: Record<string, string> = {
     personal: 'var(--brand-500)',
     global: '#7c3aed',
-    default: 'var(--text-muted)',
+    defecto: 'var(--text-muted)',
   };
   const labels: Record<string, string> = {
     personal: 'Personal',
     global: 'Global',
-    default: 'Por defecto',
+    defecto: 'Por defecto',
   };
   return (
     <span style={{
@@ -134,7 +140,7 @@ function TemaPanel({
   title: string;
   subtitle: string;
   currentMode: number;
-  fuente: 'personal' | 'global' | 'default';
+  fuente: 'personal' | 'global' | 'defecto';
   canSave: boolean;
   saving: boolean;
   saveError: ReturnType<typeof useTemaVisual>['saveError'];
