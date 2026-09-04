@@ -322,6 +322,15 @@ export interface EditarUmbralDTO {
   fecha_actualizacion?: string;
 }
 
+/** Catálogo de variables ambientales (`GET /configuracion/variables-ambientales`). */
+export interface VariableAmbientalCatalogo {
+  id_variable_ambiental: number;
+  nombre: string;
+  unidad: string;
+  valor_fisico_min: number;
+  valor_fisico_max: number;
+}
+
 // =====================================================================
 // Parámetros Globales
 // =====================================================================

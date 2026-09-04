@@ -1,3 +1,9 @@
+## [1.0.0-rc.6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.5...v1.0.0-rc.6) (2026-09-04)
+
+### Bug Fixes
+
+* **configuration:** [#1648](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1648) usar accion crear en vez de ejecutar para habilitar calibracion (RF-24) ([60b90cf](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/60b90cfa880dc0db6879a670526e644706971521))
+
 ## [1.0.0-rc.5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.4...v1.0.0-rc.5) (2026-09-04)
 
 ### Bug Fixes

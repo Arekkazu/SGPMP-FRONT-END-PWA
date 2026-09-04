@@ -4,6 +4,7 @@ import type {
   PatologiaEspecieItemResponse, RegistrarPatologiaDTO, EditarPatologiaDTO,
   MetricaProduccionResponse, RegistrarMetricaDTO, EditarMetricaDTO,
   UmbralAmbientalResponse, RegistrarUmbralDTO, EditarUmbralDTO,
+  VariableAmbientalCatalogo,
   SnapshotEspecie,
 } from '../types';
 
@@ -100,6 +101,15 @@ export const umbralesApi = {
   async desactivar(id: number): Promise<UmbralAmbientalResponse> {
     const res = await http.patch<UmbralAmbientalResponse>(`/configuracion/umbrales/${id}/desactivar`);
     return res.data;
+  },
+};
+
+export const variablesAmbientalesApi = {
+  async listar(): Promise<VariableAmbientalCatalogo[]> {
+    const res = await http.get<{ total: number; items: VariableAmbientalCatalogo[] }>(
+      '/configuracion/variables-ambientales'
+    );
+    return res.data.items;
   },
 };
 
