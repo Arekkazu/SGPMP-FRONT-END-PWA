@@ -1,3 +1,9 @@
+## [1.0.0-rc.8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.7...v1.0.0-rc.8) (2026-09-04)
+
+### Features
+
+* **configuration:** [#1666](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1666) restringir unidad_medida segun tipo_medicion en metricas (RF-16) ([ad121f6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ad121f6ec6f9ef9d84a2eba0d9b314807d3314c6))
+
 ## [1.0.0-rc.7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.6...v1.0.0-rc.7) (2026-09-04)
 
 ### Features
