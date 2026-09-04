@@ -9,6 +9,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useMetricasProduccion } from '../hooks/useMetricasProduccion';
+import { UNIDADES_POR_TIPO_MEDICION } from '../types';
 import type { MetricaProduccionResponse, TipoMedicion, TipoActivo } from '../types';
 
 interface Props {
@@ -104,8 +105,15 @@ function MetricaModal({
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
+
+  // RF-16: unidad_medida coherente con tipo_medicion — mismo patron que
+  // UNIDADES_POR_MEDICION en EventoCrecimientoForm. OTRO no restringe (backend
+  // tampoco lo hace), asi que se deja como texto libre.
+  const tipo = watch('tipo_medicion');
+  const unidades = tipo === 'OTRO' ? null : UNIDADES_POR_TIPO_MEDICION[tipo];
 
   useEffect(() => {
     if (metrica) {
@@ -184,19 +192,6 @@ function MetricaModal({
               })}
             />
 
-            <Input
-              label={t('metricassection.unidad_de_medida')}
-              required
-              aria-required="true"
-              placeholder={t('metricassection.ej_kg_l_cm_unidades')}
-              error={errors.unidad_medida?.message}
-              {...register('unidad_medida', {
-                required: t('metricassection.la_unidad_es_obligatoria'),
-                minLength: { value: 1, message: 'Campo obligatorio.' },
-                maxLength: { value: 20, message: t('metricassection.maximo_20_caracteres') },
-              })}
-            />
-
             <div>
               <label htmlFor="tipo-medicion" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('metricassection.tipo_de_medicion')}<span style={{ color: 'var(--sem-error)' }}>*</span>
               </label>
@@ -216,6 +211,40 @@ function MetricaModal({
                 </p>
               )}
             </div>
+
+            {unidades ? (
+              <div>
+                <label htmlFor="unidad-medida" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('metricassection.unidad_de_medida')}<span style={{ color: 'var(--sem-error)' }}>*</span>
+                </label>
+                <select
+                  id="unidad-medida"
+                  style={SELECT_STYLE}
+                  aria-required="true"
+                  {...register('unidad_medida', { required: t('metricassection.la_unidad_es_obligatoria') })}
+                >
+                  <option value="">{t('metricassection.seleccionar')}</option>
+                  {unidades.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+                {errors.unidad_medida && (
+                  <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
+                    {errors.unidad_medida.message}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <Input
+                label={t('metricassection.unidad_de_medida')}
+                required
+                aria-required="true"
+                placeholder={t('metricassection.ej_kg_l_cm_unidades')}
+                error={errors.unidad_medida?.message}
+                {...register('unidad_medida', {
+                  required: t('metricassection.la_unidad_es_obligatoria'),
+                  minLength: { value: 1, message: 'Campo obligatorio.' },
+                  maxLength: { value: 20, message: t('metricassection.maximo_20_caracteres') },
+                })}
+              />
+            )}
 
             <div>
               <label htmlFor="aplica-tipo-activo" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('metricassection.aplica_a_tipo_de_activo')}<span style={{ color: 'var(--sem-error)' }}>*</span>
