@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
 import { usePermission } from '../../shared/rbac/usePermission';
+import { useAuth } from '../../shared/auth/useAuth';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
@@ -26,14 +27,19 @@ import type { EspecieResponse } from '../types';
 // ── Tabs ────────────────────────────────────────────────────────────────────
 type TabId = 'catalogo' | 'por-especie' | 'fincas' | 'iot' | 'sistema' | 'personalizacion' | 'plantillas';
 
-const TABS: { id: TabId; claveLabel: string }[] = [
-  { id: 'catalogo', claveLabel: 'tabs.catalogo' },
-  { id: 'por-especie', claveLabel: 'tabs.por_especie' },
-  { id: 'fincas', claveLabel: 'tabs.fincas' },
-  { id: 'iot', claveLabel: 'tabs.iot' },
-  { id: 'sistema', claveLabel: 'tabs.sistema' },
-  { id: 'personalizacion', claveLabel: 'tabs.personalizacion' },
-  { id: 'plantillas', claveLabel: 'tabs.plantillas' },
+// RF-25: "el sistema impide visualizar modulos no autorizados". Las siete pestanas se
+// renderizaban para todos los roles, asi que un Contador veia la pestana de dispositivos
+// IoT y solo descubria que no podia al recibir el 403 de cada peticion de adentro.
+// El recurso de lectura de cada pestana gobierna si aparece; el 403 del backend sigue
+// siendo la autoridad, esto solo evita ofrecer lo que no se puede usar.
+const TABS: { id: TabId; claveLabel: string; recurso: number }[] = [
+  { id: 'catalogo', claveLabel: 'tabs.catalogo', recurso: 8 },            // especies
+  { id: 'por-especie', claveLabel: 'tabs.por_especie', recurso: 17 },     // ciclos_biologicos
+  { id: 'fincas', claveLabel: 'tabs.fincas', recurso: 9 },                // fincas
+  { id: 'iot', claveLabel: 'tabs.iot', recurso: 11 },                     // dispositivos_iot
+  { id: 'sistema', claveLabel: 'tabs.sistema', recurso: 21 },             // configuraciones_globales
+  { id: 'personalizacion', claveLabel: 'tabs.personalizacion', recurso: 24 }, // tema_visual
+  { id: 'plantillas', claveLabel: 'tabs.plantillas', recurso: 28 },       // plantillas
 ];
 
 const TAB_BTN: React.CSSProperties = {
@@ -266,7 +272,24 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, o
 // ── ConfigurationPage ────────────────────────────────────────────────────────
 export function ConfigurationPage() {
   const { t } = useT('configuration');
+  const { permisos } = useAuth();
+  // `permisos` es null mientras la sesion arranca: hasta que llegue no se oculta nada,
+  // para que la pagina no parpadee mostrando una sola pestana.
+  const visibles = permisos === null
+    ? TABS
+    : TABS.filter((tab) => permisos.some(
+        (p) => p.id_recurso === tab.recurso && p.id_accion === 2,
+      ));
+
   const [activeTab, setActiveTab] = useState<TabId>('catalogo');
+
+  // Si la pestana activa no esta permitida (o deja de estarlo tras un cambio de rol), se
+  // cae a la primera visible en vez de dejar el panel en blanco.
+  useEffect(() => {
+    if (visibles.length > 0 && !visibles.some((tab) => tab.id === activeTab)) {
+      setActiveTab(visibles[0].id);
+    }
+  }, [visibles, activeTab]);
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--surface-bg)' }}>
@@ -285,7 +308,7 @@ export function ConfigurationPage() {
         style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', padding: '0 var(--s7)', overflowX: 'auto' }}
         aria-label={t('pagina.aria_secciones')}
       >
-        {TABS.map((tab) => (
+        {visibles.map((tab) => (
           <button
             key={tab.id}
             type="button"
