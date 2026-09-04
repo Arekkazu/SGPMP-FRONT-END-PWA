@@ -4,6 +4,7 @@ import { LayoutGrid } from 'lucide-react';
 import { useAuth } from '../../shared/auth/useAuth';
 import { Alert } from '../../shared/design-system/Alert';
 import { useDashboardLayout } from '../../configuration/hooks/useDashboardLayout';
+import { useContexto } from '../../shared/contexto/useContexto';
 import { WidgetCard } from '../components/WidgetCard';
 import './DashboardPage.css';
 
@@ -14,6 +15,9 @@ export function DashboardPage() {
   // manda aca. Antes esta pagina era estatica y la configuracion no se aplicaba
   // en ningun lado.
   const { datos, loading, error, cargarDatos } = useDashboardLayout();
+  // RF-25, flujo alterno "Finca sin especies productivas configuradas": el aviso
+  // reemplaza a los indicadores, que sin especies no tendrian nada que mostrar.
+  const { contexto, sinEspecies } = useContexto();
 
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
 
@@ -23,7 +27,11 @@ export function DashboardPage() {
         <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
           Bienvenido{claims?.nombre ? `, ${claims.nombre}` : ''}
         </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('dashboardpage.sgp_multiespecie_sistema_de_gestion_pecuaria')}</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+          {contexto?.finca_activa
+            ? `${contexto.finca_activa}${contexto.departamento ? ` · ${contexto.departamento}` : ''}`
+            : t('dashboardpage.sgp_multiespecie_sistema_de_gestion_pecuaria')}
+        </p>
       </div>
 
       {error && (
@@ -31,6 +39,15 @@ export function DashboardPage() {
           variant="error"
           title={t('dashboardpage.no_se_pudo_cargar_el_dashboard')}
           description={error.message}
+          style={{ marginBottom: 'var(--s5)' }}
+        />
+      )}
+
+      {sinEspecies && (
+        <Alert
+          variant="info"
+          title={t('dashboardpage.finca_sin_configuracion')}
+          description={t('dashboardpage.configure_especies_y_areas')}
           style={{ marginBottom: 'var(--s5)' }}
         />
       )}

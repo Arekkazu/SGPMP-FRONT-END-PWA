@@ -334,8 +334,44 @@ export interface ActualizarConfiguracionGlobalDTO {
 }
 
 // =====================================================================
+// Accesibilidad de la identidad visual (RF-26 + RF-27)
+// =====================================================================
+// El backend evalua el contraste WCAG 2.1 AA del color institucional contra los dos
+// temas y devuelve, por tema, la relacion obtenida y la variante que si cumple. Viajan
+// las dos porque con `theme_mode = 3` (Sistema) el tema efectivo cambia en el cliente
+// sin que haya una peticion nueva de por medio.
+export interface ContrasteTema {
+  fondo: string;
+  ratio: number;
+  cumple_aa: boolean;
+  /** Igual al color guardado cuando ya cumple: usable sin condicionales. */
+  color_ajustado: string;
+  /** Texto del flujo alterno de RF-27; `null` cuando el tema cumple. */
+  aviso: string | null;
+}
+
+export interface ContrasteColor {
+  claro: ContrasteTema;
+  oscuro: ContrasteTema;
+}
+
+export interface AccesibilidadResponse {
+  minimo_aa: number;
+  primary_color: ContrasteColor | null;
+  secondary_color: ContrasteColor | null;
+}
+
+// =====================================================================
 // Contexto de Interfaz
 // =====================================================================
+/** Marca institucional de la finca activa, tal como la entrega el contexto de RF-25. */
+export interface IdentidadVisualContexto {
+  logo_path: string | null;
+  primary_color: string | null;
+  secondary_color: string | null;
+  org_display_name: string | null;
+}
+
 export interface ContextoInterfazResponse {
   id_usuario: number;
   nombre_completo: string;
@@ -346,6 +382,9 @@ export interface ContextoInterfazResponse {
   departamento: string | null;
   especies_configuradas: string[];
   modulos_autorizados: string[];
+  /** `null` sin finca asignada o sin identidad configurada para esa finca. */
+  identidad_visual: IdentidadVisualContexto | null;
+  accesibilidad: AccesibilidadResponse | null;
 }
 
 // =====================================================================
@@ -356,11 +395,13 @@ export interface IdentidadVisualResponse {
   id_finca: number;
   id_usuario: number;
   logo_path: string | null;
-  primary_color: string;
-  secondary_color: string;
-  org_display_name: string;
+  // Nullable en modulo9.identidad_visuales: una identidad puede tener solo logotipo.
+  primary_color: string | null;
+  secondary_color: string | null;
+  org_display_name: string | null;
   version: number | null;
   fecha_creacion: string | null;
+  accesibilidad: AccesibilidadResponse | null;
 }
 
 export interface GuardarIdentidadVisualDTO {
@@ -382,7 +423,8 @@ export interface ActualizarIdentidadVisualDTO {
 // =====================================================================
 export interface TemaResueltoResponse {
   theme_mode: number;
-  fuente: 'personal' | 'global' | 'default';
+  // El backend emite 'defecto', no 'default' (obtener_tema_resuelto_use_case.py).
+  fuente: 'personal' | 'global' | 'defecto';
   id_tema_visual: number | null;
 }
 

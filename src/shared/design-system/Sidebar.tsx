@@ -7,6 +7,8 @@ import {
 import { useT } from '../i18n/useT';
 import { useAuth } from '../auth/useAuth';
 import { usePermission } from '../rbac/usePermission';
+import { useContexto } from '../contexto/useContexto';
+import { resolverLogoUrl } from '../identidad/identidad';
 import './Sidebar.css';
 
 interface NavItem {
@@ -73,6 +75,13 @@ function NavItemComponent({ item }: { item: NavItem }) {
 export function Sidebar({ onLogout, open }: SidebarProps) {
   const { t } = useT('nav');
   const { userInfo } = useAuth();
+  // RF-26: la marca de la finca activa sustituye a la del producto cuando existe.
+  // Sin identidad configurada se conserva la de SGP, que es el comportamiento previo.
+  const { contexto } = useContexto();
+  const identidad = contexto?.identidad_visual ?? null;
+  const logoUrl = resolverLogoUrl(identidad?.logo_path);
+  const nombreOrg = identidad?.org_display_name || t('marca.nombre');
+  const subtitulo = contexto?.finca_activa || t('marca.descripcion');
 
   const initials =
     userInfo?.nombre && userInfo?.apellidos
@@ -82,17 +91,25 @@ export function Sidebar({ onLogout, open }: SidebarProps) {
   return (
     <nav className={`ds-sidebar${open ? ' ds-sidebar--open' : ''}`} aria-label={t('aria.navegacion_principal')}>
       <div className="ds-sidebar__logo">
-        <div className="ds-sidebar__logo-mark" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-            <path d="M8 22C8 16 12 11 16 11C20 11 24 16 24 22" stroke="white" strokeWidth="2"/>
-            <circle cx="12" cy="17" r="2" fill="white" opacity=".8"/>
-            <circle cx="20" cy="17" r="2" fill="white" opacity=".8"/>
-            <path d="M13 21C13 19.5 14.3 18.5 16 18.5C17.7 18.5 19 19.5 19 21" stroke="white" strokeWidth="1.5"/>
-          </svg>
+        <div className="ds-sidebar__logo-mark" aria-hidden={logoUrl ? undefined : 'true'}>
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={nombreOrg}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+              <path d="M8 22C8 16 12 11 16 11C20 11 24 16 24 22" stroke="white" strokeWidth="2"/>
+              <circle cx="12" cy="17" r="2" fill="white" opacity=".8"/>
+              <circle cx="20" cy="17" r="2" fill="white" opacity=".8"/>
+              <path d="M13 21C13 19.5 14.3 18.5 16 18.5C17.7 18.5 19 19.5 19 21" stroke="white" strokeWidth="1.5"/>
+            </svg>
+          )}
         </div>
         <div>
-          <div className="ds-sidebar__logo-text">{t('marca.nombre')}</div>
-          <div className="ds-sidebar__logo-sub">{t('marca.descripcion')}</div>
+          <div className="ds-sidebar__logo-text">{nombreOrg}</div>
+          <div className="ds-sidebar__logo-sub">{subtitulo}</div>
         </div>
       </div>
 

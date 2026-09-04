@@ -8,6 +8,9 @@ import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { useIdentidadVisual } from '../hooks/useIdentidadVisual';
 import { useFincas } from '../hooks/useFincas';
+import { aplicarIdentidad, limpiarIdentidad, resolverLogoUrl } from '../../shared/identidad/identidad';
+import { temaActivo } from '../../shared/tema/useTemaSesion';
+import { useContexto } from '../../shared/contexto/useContexto';
 import type { FincaResponse } from '../types';
 
 // ── Finca selector ────────────────────────────────────────────────────────────
@@ -179,19 +182,59 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [saved, setSaved] = useState(false);
+  // RF-26, pasos 6-8: la vista previa aplica los cambios "de forma temporal en la
+  // interfaz" y el descarte los restaura "sin realizar ninguna peticion de
+  // actualizacion". Es estado de cliente: el backend no participa.
+  const [previsualizando, setPrevisualizando] = useState(false);
 
+  const { recargar: recargarContexto } = useContexto();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { cargar(finca.id_finca); }, [cargar, finca.id_finca]);
 
   useEffect(() => {
     if (identidad) {
-      setPrimaryColor(identidad.primary_color);
-      setSecondaryColor(identidad.secondary_color);
-      setOrgName(identidad.org_display_name);
-      if (identidad.logo_path) {
-        setLogoPreview(identidad.logo_path);
-      }
+      // Las tres columnas son nullable en BD: una identidad puede tener solo logotipo.
+      if (identidad.primary_color) setPrimaryColor(identidad.primary_color);
+      if (identidad.secondary_color) setSecondaryColor(identidad.secondary_color);
+      setOrgName(identidad.org_display_name ?? '');
+      const url = resolverLogoUrl(identidad.logo_path);
+      if (url) setLogoPreview(url);
+    }
+  }, [identidad]);
+
+  // Mientras dura la vista previa, la interfaz real lleva los colores del formulario.
+  // Sin `accesibilidad` calculada para valores aun no guardados se usa el color crudo:
+  // es exactamente lo que el administrador esta evaluando.
+  useEffect(() => {
+    if (!previsualizando) return undefined;
+    aplicarIdentidad(
+      {
+        identidad: {
+          logo_path: null,
+          primary_color: primaryColor,
+          secondary_color: secondaryColor,
+          org_display_name: orgName,
+        },
+        accesibilidad: null,
+      },
+      temaActivo(),
+    );
+    // Salir de la pestana con una vista previa activa no puede dejar la interfaz pintada
+    // con algo que nadie guardo.
+    return () => limpiarIdentidad();
+  }, [previsualizando, primaryColor, secondaryColor, orgName]);
+
+  const descartar = useCallback(() => {
+    // Restaura lo que hay en base de datos, sin llamar al backend.
+    setPrevisualizando(false);
+    limpiarIdentidad();
+    if (identidad) {
+      setPrimaryColor(identidad.primary_color ?? '#1e6b4a');
+      setSecondaryColor(identidad.secondary_color ?? '#4caf50');
+      setOrgName(identidad.org_display_name ?? '');
+      setLogoFile(null);
+      setLogoPreview(resolverLogoUrl(identidad.logo_path));
     }
   }, [identidad]);
 
@@ -229,8 +272,24 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
         logoFile ?? undefined,
       );
     }
-    if (ok) setSaved(true);
+    if (ok) {
+      setSaved(true);
+      setPrevisualizando(false);
+      limpiarIdentidad();
+      // La marca vigente cambio: el shell tiene que repintarse con la variante accesible
+      // que el backend acaba de calcular, no con el color crudo de la vista previa.
+      void recargarContexto();
+    }
   };
+
+  // Avisos WCAG que el backend calculo para la identidad guardada (RF-27). Se muestran
+  // tal cual: el texto es el del flujo alterno del RF, no uno redactado aqui.
+  const avisos = [
+    identidad?.accesibilidad?.primary_color,
+    identidad?.accesibilidad?.secondary_color,
+  ]
+    .flatMap((color) => [color?.claro.aviso, color?.oscuro.aviso])
+    .filter((aviso): aviso is string => Boolean(aviso));
 
   const canSave = online && (identidad ? puedeEditar : puedeCrear);
 
@@ -373,8 +432,32 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
           <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('identidadvisualsection.vista_previa_en_vivo')}</div>
           <LivePreview primary={primaryColor} secondary={secondaryColor} orgName={orgName} />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => (previsualizando ? descartar() : setPrevisualizando(true))}
+          >
+            {previsualizando
+              ? t('identidadvisualsection.descartar_vista_previa')
+              : t('identidadvisualsection.aplicar_vista_previa')}
+          </Button>
+          {previsualizando && (
+            <span role="status" style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-muted)' }}>
+              {t('identidadvisualsection.vista_previa_activa')}
+            </span>
+          )}
         </div>
       </div>
+
+      {avisos.length > 0 && (
+        <Alert
+          variant="warning"
+          title={t('identidadvisualsection.aviso_de_accesibilidad')}
+          description={avisos.join(' ')}
+          style={{ marginTop: 'var(--s5)' }}
+        />
+      )}
 
       <div style={{ marginTop: 'var(--s6)', display: 'flex', justifyContent: 'flex-end' }}>
         <Button type="submit" variant="primary" size="md" loading={saving} disabled={!canSave || saving}>
