@@ -11,12 +11,16 @@
 //    timeout de pageLoadTimeout en loginUI(). Este era el fix pendiente que ya estaba
 //    documentado como comentario en cypress.config.ts pero nunca se había implementado
 //    en el spec.
-// 2) El hook after() ahora usa cy.task('writeResult', ...) en vez de cy.writeFile(...).
-//    cy.writeFile() no se puede invocar de forma confiable dentro de un hook after()
-//    (Cypress arroja "cy.writeFile() must only be invoked from the spec file or support
-//    file" cuando la cola de comandos del hook anterior fue abortada). Por eso ya
-//    existía la tarea `writeResult` en setupNodeEvents (cypress.config.ts) pensada
-//    exactamente para este caso, pero el spec no la estaba usando.
+// 2) La escritura del resultado (antes en un hook after()/afterEach()) se movió AL
+//    FINAL DEL PROPIO it(), como comandos normales de la cola -- no en ningún hook.
+//    Se probaron ambas variantes (after() y afterEach()) y las dos revientan igual con
+//    "cy.task() must only be invoked from the spec file or support file": no era un
+//    problema de cy.writeFile() vs cy.task() (el fix anterior cambió el síntoma, no la
+//    causa), sino que Cypress no garantiza que los comandos cy encolados en un hook de
+//    la ÚLTIMA (o única) prueba de la spec queden asociados a un test "actualmente
+//    corriendo" -- la limitación aplica a after() y afterEach() por igual cuando no
+//    queda ninguna prueba más. Encolar cy.writeFile() como parte del propio it() evita
+//    el problema de raíz.
 
 const CABECERA_CSV = 'ID,Usuario,Tipo evento,Módulo,Descripción,Resultado,IP,Fecha/Hora,Hash';
 const DIR = 'RESULTADOS/TC-M01-074';
@@ -57,39 +61,36 @@ describe('TC-M01-074 · Exportar auditoría sin conexión', () => {
     cy.contains('button', 'Exportar CSV', { timeout: 15000 }).should('not.be.disabled');
   });
 
-  after(() => {
-    // Restaurar la red SIEMPRE aquí (no solo al final del it()): si el test falla
-    // a mitad de camino estando offline, los comandos que quedan después dentro del
-    // it() nunca se ejecutan, y este hook es lo único garantizado que corre. Se le
-    // da una pausa después para que el canal navegador<->Node de Cypress (que usa
-    // cy.task) tenga tiempo de asentarse antes de escribir el resultado.
+  const escribirResultado = () => {
+    // Encolado como parte del it() -- no de un hook -- para que cy.writeFile()
+    // siempre corra dentro de un test "activo" (ver nota de cabecera).
     cy.setNetwork(false);
-    cy.wait(1500);
 
-    const veredicto = checks.length === 0
-      ? 'NO EJECUTADO (falló la preparación / login)'
-      : (checks.some((c) => c.estado === 'FALLA') ? 'CON FALLAS' : 'SIN FALLAS BLOQUEANTES');
+    cy.then(() => {
+      const veredicto = checks.length === 0
+        ? 'NO EJECUTADO (falló la preparación / login)'
+        : (checks.some((c) => c.estado === 'FALLA') ? 'CON FALLAS' : 'SIN FALLAS BLOQUEANTES');
 
-    const r = {
-      caso: 'TC-M01-074', titulo: 'Intentar exportar auditoría sin conexión',
-      cu: 'CU07 - Consultar Historial y Auditoría', rf: 'RF-10',
-      tipo: 'Negativa / Offline', equipo: 'Frontend',
-      ambiente: Cypress.config('baseUrl'),
-      backend: 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
-      navegador: `${Cypress.browser.name} ${Cypress.browser.version}`,
-      fecha: new Date().toISOString(),
-      precondiciones: { cuenta: 'admin@pecuaria.co', vista: '/auditoria', eventosCargados },
-      checkpoints: checks,
-      veredicto,
-      // Generado a partir de los checkpoints reales de esta ejecución (no texto
-      // precargado): cada hallazgo es literalmente "paso -> lo que se obtuvo".
-      hallazgos: checks.map((c) => `${c.paso} -> ${c.obtenido} (${c.estado})`),
-    };
+      const r = {
+        caso: 'TC-M01-074', titulo: 'Intentar exportar auditoría sin conexión',
+        cu: 'CU07 - Consultar Historial y Auditoría', rf: 'RF-10',
+        tipo: 'Negativa / Offline', equipo: 'Frontend',
+        ambiente: Cypress.config('baseUrl'),
+        backend: 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
+        navegador: `${Cypress.browser.name} ${Cypress.browser.version}`,
+        fecha: new Date().toISOString(),
+        precondiciones: { cuenta: 'admin@pecuaria.co', vista: '/auditoria', eventosCargados },
+        checkpoints: checks,
+        veredicto,
+        // Generado a partir de los checkpoints reales de esta ejecución (no texto
+        // precargado): cada hallazgo es literalmente "paso -> lo que se obtuvo".
+        hallazgos: checks.map((c) => `${c.paso} -> ${c.obtenido} (${c.estado})`),
+      };
 
-    // Fix 2: cy.task en vez de cy.writeFile dentro de after().
-    cy.task('writeResult', { file: `${DIR}/TC-M01-074_resultado.json`, content: JSON.stringify(r, null, 2) });
-    cy.task('writeResult', { file: `${DIR}/TC-M01-074_resultado.md`, content: renderMd(r) });
-  });
+      cy.writeFile(`${DIR}/TC-M01-074_resultado.json`, JSON.stringify(r, null, 2));
+      cy.writeFile(`${DIR}/TC-M01-074_resultado.md`, renderMd(r));
+    });
+  };
 
   it('registra el comportamiento del botón "Exportar CSV" estando offline', () => {
     let blob: Blob | null = null;
@@ -97,7 +98,7 @@ describe('TC-M01-074 · Exportar auditoría sin conexión', () => {
     // anterior encima de los nuevos.
     checks.length = 0;
 
-    // 1) Cortar la red (DevTools > Network > Offline vía CDP)
+    // 1) Simular sin conexión (a nivel de app -- ver nota en commands.ts)
     cy.setNetwork(true);
     cy.window().its('navigator.onLine').then((online) => {
       add('Activar modo offline', 'navigator.onLine = false',
@@ -150,7 +151,24 @@ describe('TC-M01-074 · Exportar auditoría sin conexión', () => {
       });
 
       // 3) Intentar exportar
-      cy.get('@exportar').click();
+      // scrollIntoView() + click() normal seguía fallando ("hidden from view"): la
+      // barra de acciones desborda el viewport de 1280px y el botón queda cubierto
+      ///fuera de alcance de un clic real de Cypress incluso tras hacer scroll -- esto
+      // en sí es una observación válida (posible problema de layout responsive en esta
+      // vista), pero no es el objeto de este caso. Se deja registrado como checkpoint
+      // aparte y se fuerza el clic para poder seguir observando el comportamiento de
+      // exportación offline, que es lo que este TC pide documentar.
+      cy.get('@exportar').then(($b) => {
+        const rect = ($b[0] as HTMLElement).getBoundingClientRect();
+        const fueraDeViewport = rect.right > Cypress.config('viewportWidth') || rect.left < 0;
+        add('¿El botón "Exportar CSV" es alcanzable con un clic real (sin forzar)?',
+          'Dentro del viewport, sin overlap',
+          fueraDeViewport
+            ? `Se sale del viewport (right=${Math.round(rect.right)}, viewportWidth=${Cypress.config('viewportWidth')})`
+            : 'Dentro del viewport pero cubierto por otro elemento',
+          'FALLA');
+      });
+      cy.get('@exportar').click({ force: true });
 
       // 4) Registrar qué pasó
       cy.get('@createObjectURL').then((s: any) =>
@@ -178,7 +196,7 @@ describe('TC-M01-074 · Exportar auditoría sin conexión', () => {
             'No se encontró un botón con aria-label="Recargar"', 'OBSERVACION');
           return;
         }
-        cy.get('button[aria-label="Recargar"]').click();
+        cy.get('button[aria-label="Recargar"]').scrollIntoView().click({ force: true });
         cy.get('body', { timeout: 10000 }).then(($body3) => {
           const err = /Error al cargar auditoría/i.test($body3.text());
           add('Recargar datos estando offline (botón ↻)', 'Alerta de error de red visible',
@@ -201,6 +219,11 @@ describe('TC-M01-074 · Exportar auditoría sin conexión', () => {
         cy.screenshot('02_offline_recargar_error', { overwrite: true });
       });
     });
+
+    // Encolado al final, fuera de cualquier hook: corre pase lo que pase en las
+    // ramas de arriba (ambas terminan sin lanzar excepción, solo con distintos
+    // checkpoints acumulados).
+    escribirResultado();
   });
 });
 

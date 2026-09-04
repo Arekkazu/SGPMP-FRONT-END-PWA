@@ -43,7 +43,15 @@ module.exports = defineConfig({
     // intercept que agrega Access-Control-Allow-Origin a /assets/**.
     pageLoadTimeout: 180000,
     modifyObstructiveCode: false,
-    retries: { runMode: 1, openMode: 0 },
+    // CORREGIDO: retries: 1 hacía que, ante cualquier fallo en el intento 1, Cypress
+    // reseteara la página a about:blank antes del intento 2 (parte de su mecanismo de
+    // test isolation entre reintentos) -- antes de reintentar el propio it(). Como
+    // before() no se repite por retry, el intento 2 corría contra una página en blanco
+    // y esta prueba (que ya maneja sus propios fallos sin lanzar excepciones, para no
+    // perder evidencia) terminaba reportando el estado de esa página en blanco como si
+    // fuera el comportamiento real de la app offline. Para un negativo exploratorio
+    // como este, un solo intento real vale más que un retry que puede enmascararlo.
+    retries: { runMode: 0, openMode: 0 },
 
     // Ruido de terceros que puede colgar peticiones (no se usa en esta prueba)
     blockHosts: ['*.googleapis.com', '*.gstatic.com', '*.firebaseio.com'],
