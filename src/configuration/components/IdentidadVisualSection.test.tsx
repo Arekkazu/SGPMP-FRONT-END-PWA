@@ -163,6 +163,71 @@ describe('vista previa de la identidad visual', () => {
   });
 });
 
+describe('validacion de logo (RF-26)', () => {
+  function archivo(nombre: string, type: string, size: number): File {
+    const file = new File(['x'], nombre, { type });
+    Object.defineProperty(file, 'size', { value: size });
+    return file;
+  }
+
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => 'blob:logo-nuevo');
+  });
+
+  // abrirFormulario() solo espera a que se *llame* la API, no a que su promesa resuelva
+  // y el `useEffect([identidad])` aplique el logo guardado. Si un test elige un archivo
+  // antes de eso, ese efecto tardio pisa la vista previa recien elegida con la guardada
+  // — de ahi que haya que esperar explicitamente el logo inicial antes de interactuar.
+  async function abrirConLogoCargado() {
+    await abrirFormulario();
+    await waitFor(() => expect((screen.getByAltText('Logo preview') as HTMLImageElement).src).toContain('remanso.png'));
+  }
+
+  it('rechaza un formato no permitido sin tocar la vista previa', async () => {
+    await abrirConLogoCargado();
+    const input = screen.getByLabelText('Seleccionar logo') as HTMLInputElement;
+
+    fireEvent.change(input, { target: { files: [archivo('logo.gif', 'image/gif', 1024)] } });
+
+    expect(await screen.findByText('Formato no permitido. Usa PNG, JPG o SVG.')).toBeInTheDocument();
+    expect((screen.getByAltText('Logo preview') as HTMLImageElement).src).not.toContain('blob:');
+  });
+
+  it('rechaza un archivo que supera 2 MB sin tocar la vista previa', async () => {
+    await abrirConLogoCargado();
+    const input = screen.getByLabelText('Seleccionar logo') as HTMLInputElement;
+
+    fireEvent.change(input, { target: { files: [archivo('logo.png', 'image/png', 3 * 1024 * 1024)] } });
+
+    expect(await screen.findByText('El archivo supera el límite de 2 MB.')).toBeInTheDocument();
+    expect((screen.getByAltText('Logo preview') as HTMLImageElement).src).not.toContain('blob:');
+  });
+
+  it('acepta un archivo valido y limpia cualquier error previo', async () => {
+    await abrirConLogoCargado();
+    const input = screen.getByLabelText('Seleccionar logo') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [archivo('logo.gif', 'image/gif', 1024)] } });
+    await screen.findByText('Formato no permitido. Usa PNG, JPG o SVG.');
+
+    fireEvent.change(input, { target: { files: [archivo('logo.png', 'image/png', 1024)] } });
+
+    await waitFor(() => expect((screen.getByAltText('Logo preview') as HTMLImageElement).src).toBe('blob:logo-nuevo'));
+    expect(screen.queryByText('Formato no permitido. Usa PNG, JPG o SVG.')).not.toBeInTheDocument();
+  });
+
+  it('descartar una seleccion nueva restaura el logo guardado, sin recargar', async () => {
+    await abrirConLogoCargado();
+    const input = screen.getByLabelText('Seleccionar logo') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [archivo('logo.png', 'image/png', 1024)] } });
+    await waitFor(() => expect((screen.getByAltText('Logo preview') as HTMLImageElement).src).toBe('blob:logo-nuevo'));
+
+    fireEvent.click(screen.getByLabelText('Descartar logo nuevo'));
+
+    await waitFor(() => expect((screen.getByAltText('Logo preview') as HTMLImageElement).src).not.toBe('blob:logo-nuevo'));
+    expect((screen.getByAltText('Logo preview') as HTMLImageElement).src).toContain('remanso.png');
+  });
+});
+
 describe('aviso de accesibilidad (RF-27)', () => {
   it('muestra el aviso que el backend calculo para el color guardado', async () => {
     await abrirFormulario();
