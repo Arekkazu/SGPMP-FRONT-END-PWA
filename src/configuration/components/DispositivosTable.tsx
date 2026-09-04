@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { Cpu, RefreshCw, Plus, PowerOff, ChevronLeft, Warehouse } from 'lucide-react';
+import { Cpu, RefreshCw, Plus, PowerOff, ChevronLeft, Warehouse, Radio } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -9,8 +9,10 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
 import { useInfraestructuras } from '../hooks/useInfraestructuras';
 import { useDispositivosIot } from '../hooks/useDispositivosIot';
+import { useSensores } from '../hooks/useSensores';
 import { DispositivoModal } from './DispositivoModal';
-import type { FincaResponse, InfraestructuraResponse } from '../types';
+import { SensorModal } from './SensorModal';
+import type { FincaResponse, InfraestructuraResponse, DispositivoIotResponse } from '../types';
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
@@ -156,7 +158,11 @@ function AreaSelector({ infras, loading, onSelect, onBack }: {
 // ── DispositivosTable ─────────────────────────────────────────────────────────
 
 type Step = 'finca' | 'area' | 'dispositivos';
-type ModalState = { tipo: 'ninguno' } | { tipo: 'crear' } | { tipo: 'desactivar'; id: number; serial: string };
+type ModalState =
+  | { tipo: 'ninguno' }
+  | { tipo: 'crear' }
+  | { tipo: 'desactivar'; id: number; serial: string }
+  | { tipo: 'sensor'; dispositivo: DispositivoIotResponse };
 
 export function DispositivosTable() {
   const { t } = useT('configuration');
@@ -167,6 +173,7 @@ export function DispositivosTable() {
   const { fincas, loading: loadingFincas, cargar: cargarFincas } = useFincas();
   const { infraestructuras, loading: loadingInfras, cargar: cargarInfras } = useInfraestructuras();
   const { dispositivos, loading, saving, error, saveError, cargar, registrar, desactivar } = useDispositivosIot();
+  const { saving: savingSensor, saveError: saveErrorSensor, registrar: registrarSensor } = useSensores();
 
   const [step, setStep] = useState<Step>('finca');
   const [finca, setFinca] = useState<FincaResponse | null>(null);
@@ -350,7 +357,17 @@ export function DispositivosTable() {
                         <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                           {formatFecha(d.fecha_creacion)}
                         </td>
-                        <td style={TD}>
+                        <td style={{ ...TD, display: 'flex', gap: 'var(--s1)' }}>
+                          {puedeCrear && d.es_activo && online && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setModal({ tipo: 'sensor', dispositivo: d })}
+                              aria-label={`${t('dispositivostable.registrar_sensor')} ${d.serial}`}
+                            >
+                              <Radio size={15} aria-hidden style={{ color: 'var(--brand-500)' }} />
+                            </Button>
+                          )}
                           {puedeDesact && d.es_activo && online && (
                             <Button
                               variant="ghost"
@@ -387,6 +404,15 @@ export function DispositivosTable() {
               saving={saving}
               onCancel={cerrar}
               onConfirm={() => handleDesactivar(modal.id)}
+            />
+          )}
+          {modal.tipo === 'sensor' && (
+            <SensorModal
+              dispositivo={modal.dispositivo}
+              saving={savingSensor}
+              saveError={saveErrorSensor}
+              onClose={cerrar}
+              onRegistrar={registrarSensor}
             />
           )}
         </>
