@@ -9,13 +9,17 @@ import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useUmbralesAmbientales } from '../hooks/useUmbralesAmbientales';
-import type { UmbralAmbientalResponse, NivelAlertaDTO } from '../types';
+import { useVariablesAmbientales } from '../hooks/useVariablesAmbientales';
+import { validarUmbral } from '../lib/validarUmbral';
+import type { UmbralAmbientalResponse, NivelAlertaDTO, VariableAmbientalCatalogo } from '../types';
 
 interface Props {
   idEspecie: number;
 }
 
-// ── Variables ambientales catálogo (hardcoded, no hay endpoint de listado) ────
+// ── Variables ambientales: catálogo real via GET /configuracion/variables-ambientales ──
+// (antes hardcodeado acá con IDs que no coincidían con `modulo9.variables_ambientales`
+// en el backend — un umbral creado quedaba asociado a la variable equivocada).
 interface VarAmbiental {
   id: number;
   nombre: string;
@@ -23,18 +27,13 @@ interface VarAmbiental {
   emoji: string;
 }
 
-const VARIABLES_AMBIENTALES: VarAmbiental[] = [
-  { id: 1, nombre: 'Temperatura', unidad: '°C', emoji: '🌡️' },
-  { id: 2, nombre: 'Humedad Relativa', unidad: '%', emoji: '💧' },
-  { id: 3, nombre: 'pH del Agua', unidad: 'pH', emoji: '⚗️' },
-  { id: 4, nombre: 'Oxígeno Disuelto', unidad: 'mg/L', emoji: '💨' },
-  { id: 5, nombre: 'Amoníaco', unidad: 'ppm', emoji: '☁️' },
-  { id: 6, nombre: 'Salinidad', unidad: 'ppt', emoji: '🧂' },
-  { id: 7, nombre: 'Luminosidad', unidad: 'lux', emoji: '☀️' },
-];
+const EMOJI_VARIABLE = '📊';
 
-function getVar(id: number): VarAmbiental {
-  return VARIABLES_AMBIENTALES.find((v) => v.id === id) ?? { id, nombre: `Variable #${id}`, unidad: '', emoji: '📊' };
+function getVar(variables: VariableAmbientalCatalogo[], id: number): VarAmbiental {
+  const v = variables.find((x) => x.id_variable_ambiental === id);
+  return v
+    ? { id: v.id_variable_ambiental, nombre: v.nombre, unidad: v.unidad, emoji: EMOJI_VARIABLE }
+    : { id, nombre: `Variable #${id}`, unidad: '', emoji: EMOJI_VARIABLE };
 }
 
 // ── Modal state ───────────────────────────────────────────────────────────────
@@ -153,6 +152,8 @@ function NivelCard({ nivel, unidad, register, errors }: NivelCardProps) {
 function UmbralModal({
   umbral,
   idEspecie,
+  variables,
+  umbralesExistentes,
   saving,
   saveError,
   onClose,
@@ -161,6 +162,8 @@ function UmbralModal({
 }: {
   umbral: UmbralAmbientalResponse | null;
   idEspecie: number;
+  variables: VariableAmbientalCatalogo[];
+  umbralesExistentes: UmbralAmbientalResponse[];
   saving: boolean;
   saveError: import('../../shared/api/errors').ApiError | null;
   onClose: () => void;
@@ -176,9 +179,16 @@ function UmbralModal({
     watch,
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
+  const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
 
   const varSelId = watch('id_variable_ambiental');
-  const varSel = getVar(Number(varSelId));
+  const varSel = getVar(variables, Number(varSelId));
+
+  // FA-02 (RF-17): aviso proactivo antes de intentar enviar — el backend sigue
+  // siendo la autoridad final (409 UMBRAL_DUPLICADO) si de todos modos hay carrera.
+  const duplicadoSeleccionado =
+    !modoEditar &&
+    umbralesExistentes.some((u) => u.es_activo && u.id_variable_ambiental === Number(varSelId));
 
   useEffect(() => {
     if (umbral) {
@@ -196,7 +206,7 @@ function UmbralModal({
       });
     } else {
       reset({
-        id_variable_ambiental: VARIABLES_AMBIENTALES[0].id,
+        id_variable_ambiental: variables[0]?.id_variable_ambiental ?? 0,
         valor_min: 0,
         valor_max: 100,
         normal_inf: 0,
@@ -207,7 +217,7 @@ function UmbralModal({
         critico_sup: 0,
       });
     }
-  }, [umbral, reset]);
+  }, [umbral, reset, variables]);
 
   const buildNiveles = (data: FormValues): NivelAlertaDTO[] => [
     { nivel: 'normal',    limite_inferior: Number(data.normal_inf),    limite_superior: Number(data.normal_sup) },
@@ -217,6 +227,21 @@ function UmbralModal({
 
   const onSubmit = async (data: FormValues) => {
     const niveles = buildNiveles(data);
+
+    const error = validarUmbral({
+      valorMin: Number(data.valor_min),
+      valorMax: Number(data.valor_max),
+      niveles,
+      variable: variables.find((v) => v.id_variable_ambiental === Number(data.id_variable_ambiental)),
+      idVariableAmbiental: Number(data.id_variable_ambiental),
+      umbralesExistentes: modoEditar ? [] : umbralesExistentes,
+    });
+    if (error) {
+      setErrorValidacion(error.mensaje);
+      return;
+    }
+    setErrorValidacion(null);
+
     let ok: boolean;
     if (modoEditar && umbral) {
       ok = await onEditar(umbral.id_umbral_ambiental, {
@@ -255,7 +280,7 @@ function UmbralModal({
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)' }}>
           <h2 id="umbral-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            {modoEditar ? `Editar umbral — ${getVar(umbral!.id_variable_ambiental).nombre}` : 'Nuevo umbral ambiental'}
+            {modoEditar ? `Editar umbral — ${getVar(variables, umbral!.id_variable_ambiental).nombre}` : 'Nuevo umbral ambiental'}
           </h2>
           <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('umbralessection.cerrar')}>
             <X size={18} aria-hidden />
@@ -271,6 +296,15 @@ function UmbralModal({
               style={{ marginBottom: 'var(--s5)' }}
             />
           )}
+          {errorValidacion && (
+            <Alert
+              variant="error"
+              title={t('umbralessection.error_de_validacion')}
+              description={errorValidacion}
+              onDismiss={() => setErrorValidacion(null)}
+              style={{ marginBottom: 'var(--s5)' }}
+            />
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
@@ -281,19 +315,26 @@ function UmbralModal({
                   <label htmlFor="var-ambiental" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('umbralessection.variable_ambiental')}<span style={{ color: 'var(--sem-error)' }}>*</span>
                   </label>
                   <select id="var-ambiental" style={SELECT_STYLE} {...register('id_variable_ambiental', { required: true, valueAsNumber: true })}>
-                    {VARIABLES_AMBIENTALES.map((v) => (
-                      <option key={v.id} value={v.id}>{v.emoji} {v.nombre} ({v.unidad})</option>
+                    {variables.map((v) => (
+                      <option key={v.id_variable_ambiental} value={v.id_variable_ambiental}>
+                        {EMOJI_VARIABLE} {v.nombre} ({v.unidad})
+                      </option>
                     ))}
                   </select>
+                  {duplicadoSeleccionado && (
+                    <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
+                      {t('umbralessection.ya_existe_un_umbral_activo_para')}
+                    </p>
+                  )}
                 </div>
               )}
 
               {/* Unidad de referencia */}
               {modoEditar && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)' }}>
-                  <span style={{ fontSize: '18px' }}>{getVar(umbral!.id_variable_ambiental).emoji}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{getVar(umbral!.id_variable_ambiental).nombre}</span>
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>({getVar(umbral!.id_variable_ambiental).unidad})</span>
+                  <span style={{ fontSize: '18px' }}>{getVar(variables, umbral!.id_variable_ambiental).emoji}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{getVar(variables, umbral!.id_variable_ambiental).nombre}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>({getVar(variables, umbral!.id_variable_ambiental).unidad})</span>
                 </div>
               )}
 
@@ -355,7 +396,7 @@ function UmbralModal({
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
               <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('umbralessection.cancelar')}</Button>
-              <Button type="submit" variant="primary" size="md" loading={saving}>
+              <Button type="submit" variant="primary" size="md" loading={saving} disabled={duplicadoSeleccionado}>
                 {modoEditar ? 'Guardar cambios' : 'Registrar umbral'}
               </Button>
             </div>
@@ -367,9 +408,9 @@ function UmbralModal({
 }
 
 // ── Confirm desactivar ────────────────────────────────────────────────────────
-function ConfirmDesactivar({ umbral, saving, onCancel, onConfirm }: { umbral: UmbralAmbientalResponse; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
+function ConfirmDesactivar({ umbral, variables, saving, onCancel, onConfirm }: { umbral: UmbralAmbientalResponse; variables: VariableAmbientalCatalogo[]; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
   const { t } = useT('configuration');
-  const v = getVar(umbral.id_variable_ambiental);
+  const v = getVar(variables, umbral.id_variable_ambiental);
   return (
     <div
       role="dialog"
@@ -439,10 +480,12 @@ export function UmbralesSection({ idEspecie }: Props) {
   const puedeDesact = usePermission(20, 4);
 
   const { umbrales, loading, saving, error, saveError, cargar, registrar, editar, desactivar } = useUmbralesAmbientales();
+  const { variables, cargar: cargarVariables } = useVariablesAmbientales();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
 
   useEffect(() => { cargar(idEspecie); }, [cargar, idEspecie]);
+  useEffect(() => { cargarVariables(); }, [cargarVariables]);
 
   const cerrar = () => setModal({ tipo: 'ninguno' });
 
@@ -502,7 +545,7 @@ export function UmbralesSection({ idEspecie }: Props) {
             </thead>
             <tbody>
               {umbrales.map((u) => {
-                const v = getVar(u.id_variable_ambiental);
+                const v = getVar(variables, u.id_variable_ambiental);
                 return (
                   <tr key={u.id_umbral_ambiental} style={{ background: 'var(--surface-card)' }}>
                     <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>#{u.id_umbral_ambiental}</td>
@@ -557,6 +600,8 @@ export function UmbralesSection({ idEspecie }: Props) {
         <UmbralModal
           umbral={modal.tipo === 'editar' ? modal.umbral : null}
           idEspecie={idEspecie}
+          variables={variables}
+          umbralesExistentes={umbrales}
           saving={saving}
           saveError={saveError}
           onClose={cerrar}
@@ -567,6 +612,7 @@ export function UmbralesSection({ idEspecie }: Props) {
       {modal.tipo === 'desactivar' && (
         <ConfirmDesactivar
           umbral={modal.umbral}
+          variables={variables}
           saving={saving}
           onCancel={cerrar}
           onConfirm={() => handleDesactivar(modal.umbral)}
