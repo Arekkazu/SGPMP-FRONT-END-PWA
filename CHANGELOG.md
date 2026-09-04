@@ -1,3 +1,13 @@
+## [1.0.0-rc.7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.6...v1.0.0-rc.7) (2026-09-04)
+
+### Features
+
+* **app:** [#1664](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1664) completar flujos alternos de contexto operativo (RF-25) ([ac509bd](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ac509bdf3c9c930d76e8aadae26c37e3eb47297f))
+
+### Bug Fixes
+
+* **configuration:** [#1667](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1667) validar niveles de alerta y catalogo real de variables (RF-17) ([030fc11](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/030fc11c2ac876c4826e560738c892de437395f2))
+
 ## [1.0.0-rc.6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.5...v1.0.0-rc.6) (2026-09-04)
 
 ### Bug Fixes
