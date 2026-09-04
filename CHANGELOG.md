@@ -1,3 +1,9 @@
+## [1.0.0-rc.10](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.9...v1.0.0-rc.10) (2026-09-04)
+
+### Bug Fixes
+
+* **biological-assets:** excluir BAJA del cambio manual de estado (RF-44) ([7f8fdc9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7f8fdc9c95908e541503be01d7d1ddc46ffe034b))
+
 ## [1.0.0-rc.9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.8...v1.0.0-rc.9) (2026-09-04)
 
 ### Features
