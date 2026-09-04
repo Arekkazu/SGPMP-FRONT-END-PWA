@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
@@ -29,10 +29,13 @@ import { useTemaSesion } from './shared/tema/useTemaSesion';
 import { ContextoProvider } from './shared/contexto/ContextoProvider';
 import { useContexto } from './shared/contexto/useContexto';
 import { BienvenidaSinFinca } from './shared/contexto/BienvenidaSinFinca';
+import { SinEspeciesEmptyState } from './shared/contexto/SinEspeciesEmptyState';
 
 /* Design system components */
 import { Sidebar } from './shared/design-system/Sidebar';
 import { AppBar } from './shared/design-system/AppBar';
+import { Alert } from './shared/design-system/Alert';
+import { useT } from './shared/i18n/useT';
 import { NotificationTray } from './notificaciones/components/NotificationTray';
 import { useNotificaciones } from './notificaciones/hooks/useNotificaciones';
 import { usePushNotifications } from './notificaciones/hooks/usePushNotifications';
@@ -78,16 +81,24 @@ const RUTAS_CON_BLOQUEO_SIN_FINCA = ['/dashboard'];
 
 function AppShell({ children, operativa = true }: { children: React.ReactNode; operativa?: boolean }) {
   const logout = useLogout();
-  const { claims, userInfo, token } = useAuth();
+  const { claims, userInfo, token, permisosActualizadosEn } = useAuth();
+  const { t } = useT('nav');
   // RF-29: aplicar la preferencia guardada en el backend, no solo la de
   // localStorage, para que el idioma viaje entre navegadores y dispositivos.
   useIdiomaSesion(token);
   // RF-26/RF-27: mismo motivo para el tema, y de paso pinta la marca institucional de la
   // finca activa con la variante que cumple contraste en el tema resultante.
   useTemaSesion(token);
-  const { sinFinca } = useContexto();
+  const { sinFinca, sinEspecies } = useContexto();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  // RF-25, flujo alterno "cambio de permisos en sesion activa": AuthContext ya
+  // detecto que `permisos` cambio de verdad (no solo un 403 sin motivo); esto solo
+  // decide cuanto tiempo mostrar el aviso.
+  const [avisoPermisos, setAvisoPermisos] = useState(false);
+  useEffect(() => {
+    if (permisosActualizadosEn !== null) setAvisoPermisos(true);
+  }, [permisosActualizadosEn]);
 
   const idDesdeClaims = Number(claims?.sub);
   const idUsuario = userInfo?.id_usuario
@@ -156,9 +167,27 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
             overflowY: 'auto',
           }}
         >
+          {avisoPermisos && (
+            <Alert
+              key={permisosActualizadosEn}
+              variant="info"
+              title={t('permisos_actualizados.titulo')}
+              description={t('permisos_actualizados.mensaje')}
+              onDismiss={() => setAvisoPermisos(false)}
+              style={{ margin: 'var(--s4) var(--s4) 0' }}
+            />
+          )}
           {/* RF-25, flujo alterno "Usuario sin finca asociada": se ocultan los paneles
               operativos y queda visible solo el perfil, sin devolver ningun error. */}
-          {sinFinca && operativa ? <BienvenidaSinFinca /> : children}
+          {/* RF-25, flujo alterno "Finca sin especies configuradas": hay finca pero no
+              hay indicadores que mostrar todavia. */}
+          {sinFinca && operativa ? (
+            <BienvenidaSinFinca />
+          ) : sinEspecies && operativa ? (
+            <SinEspeciesEmptyState />
+          ) : (
+            children
+          )}
         </main>
       </div>
     </div>
