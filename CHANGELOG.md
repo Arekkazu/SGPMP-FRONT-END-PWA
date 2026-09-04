@@ -1,3 +1,17 @@
+## [1.0.0-rc.9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.8...v1.0.0-rc.9) (2026-09-04)
+
+### Features
+
+* **configuration:** [#1668](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1668) gestionar tipos de área desde catálogo y usarlo en el formulario de infraestructura (RF-20) ([579d7da](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/579d7da156da366b957673967e12075f01a0bbd4))
+* **configuration:** [#1669](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1669) registrar sensores desde la tabla de dispositivos IoT (RF-21) ([4185d1b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4185d1b4de7d68317f6ffa2c689b536a7ed2abaa))
+
+### Bug Fixes
+
+* **api:** eliminar barra final en endpoints base para evitar el 307 detras de proxy con prefijo ([56c4303](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/56c430306688791cb7c47e7dc91cf3e64008385a))
+* **configuration:** [#1671](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1671) avisar y confirmar la reasignacion en el wizard de sensores (RF-22) ([6209e9c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6209e9cfbd7b37649990a76cb6decbc09dcd9203))
+* **configuration:** [#1672](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1672) validar formato/tamaño de logo y permitir descartar la vista previa (RF-26) ([1753e95](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1753e9592dffe547e9bf72b73b9a21dfb512361a))
+* **configuration:** eliminar barra final en tipoAreaApi para evitar el mismo 307 del incidente TEST ([19b0eec](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/19b0eecab01fd9984096bf5c216087daa4301379))
+
 ## [1.0.0-rc.8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.7...v1.0.0-rc.8) (2026-09-04)
 
 ### Features
