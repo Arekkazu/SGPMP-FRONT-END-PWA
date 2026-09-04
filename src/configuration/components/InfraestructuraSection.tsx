@@ -10,15 +10,15 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
 import { useInfraestructuras } from '../hooks/useInfraestructuras';
+import { useTiposArea } from '../hooks/useTiposArea';
 import type { FincaResponse, InfraestructuraResponse, RegistrarInfraestructuraDTO, EditarInfraestructuraDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const TIPOS_AREA = ['Galpón', 'Corral', 'Potrero', 'Estanque', 'Invernadero'] as const;
-type TipoArea = typeof TIPOS_AREA[number];
-
-const TIPO_EMOJI: Record<TipoArea, string> = {
+// Mapeo best-effort para los 5 tipos por defecto; un tipo agregado por el
+// Administrador desde el catálogo (RF-20) no tiene emoji y usa el fallback.
+const TIPO_EMOJI: Record<string, string> = {
   'Galpón': '🏚️',
   'Corral': '🐄',
   'Potrero': '🌿',
@@ -96,7 +96,7 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, saving, onCancel, onConfi
 // ── Infraestructura modal ─────────────────────────────────────────────────────
 
 interface FormValues {
-  tipo_area: TipoArea;
+  tipo_area: string;
   nombre_infraestructura: string;
   superficie: number;
   descripcion_infraestructura: string;
@@ -120,18 +120,21 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({ mode: 'onBlur' });
   const desc = watch('descripcion_infraestructura', '');
 
+  const { tipos, cargar: cargarTipos } = useTiposArea();
+  useEffect(() => { cargarTipos(true); }, [cargarTipos]);
+
   useEffect(() => {
     if (infra) {
       reset({
-        tipo_area: infra.tipo_area as TipoArea,
+        tipo_area: infra.tipo_area,
         nombre_infraestructura: infra.nombre_infraestructura,
         superficie: infra.superficie,
         descripcion_infraestructura: infra.descripcion_infraestructura ?? '',
       });
     } else {
-      reset({ tipo_area: 'Galpón', nombre_infraestructura: '', superficie: 0, descripcion_infraestructura: '' });
+      reset({ tipo_area: tipos[0]?.nombre ?? '', nombre_infraestructura: '', superficie: 0, descripcion_infraestructura: '' });
     }
-  }, [infra, reset]);
+  }, [infra, reset, tipos]);
 
   const onSubmit = async (data: FormValues) => {
     const payload = {
@@ -200,8 +203,8 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
                 style={SELECT_STYLE}
                 {...register('tipo_area', { required: t('infraestructurasection.selecciona_un_tipo_de_area') })}
               >
-                {TIPOS_AREA.map((tipo) => (
-                  <option key={tipo} value={tipo}>{TIPO_EMOJI[tipo]} {tipo}</option>
+                {tipos.map((tipo) => (
+                  <option key={tipo.id_tipo_area} value={tipo.nombre}>{TIPO_EMOJI[tipo.nombre] ?? '🏗️'} {tipo.nombre}</option>
                 ))}
               </select>
               {errors.tipo_area && (
@@ -500,7 +503,7 @@ export function InfraestructuraSection() {
                         </td>
                         <td style={TD}>
                           <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                            {TIPO_EMOJI[infra.tipo_area as TipoArea] ?? '🏗️'} {infra.tipo_area}
+                            {TIPO_EMOJI[infra.tipo_area] ?? '🏗️'} {infra.tipo_area}
                           </span>
                         </td>
                         <td style={TD}>

@@ -12,6 +12,9 @@ import { EspeciesModal } from '../components/EspeciesModal';
 import { PorEspeciePage } from '../components/PorEspeciePage';
 import { ParametrosSection } from '../components/ParametrosSection';
 import { FincasTable } from '../components/FincasTable';
+import { useTiposArea } from '../hooks/useTiposArea';
+import { TipoAreaTable } from '../components/TipoAreaTable';
+import { TipoAreaModal } from '../components/TipoAreaModal';
 import { InfraestructuraSection } from '../components/InfraestructuraSection';
 import { DispositivosTable } from '../components/DispositivosTable';
 import { SensoresSection } from '../components/SensoresSection';
@@ -22,7 +25,7 @@ import { TemaVisualSection } from '../components/TemaVisualSection';
 import { IdiomaSection } from '../components/IdiomaSection';
 import { DashboardLayoutSection } from '../components/DashboardLayoutSection';
 import { PlantillasTable } from '../components/PlantillasTable';
-import type { EspecieResponse } from '../types';
+import type { EspecieResponse, TipoAreaResponse } from '../types';
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
 type TabId = 'catalogo' | 'por-especie' | 'fincas' | 'iot' | 'sistema' | 'personalizacion' | 'plantillas';
@@ -209,6 +212,74 @@ function CatalogoTab() {
   );
 }
 
+// ── Tipos de área (RF-20) ────────────────────────────────────────────────────
+type TipoAreaModalState = { tipo: 'ninguno' } | { tipo: 'crear' } | { tipo: 'desactivar'; item: TipoAreaResponse };
+
+function TiposAreaSubSection() {
+  const { t } = useT('configuration');
+  const online = useOnlineStatus();
+  const puedeCrear = usePermission(58, 1);
+  const puedeDesact = usePermission(58, 4);
+
+  const { tipos, loading, saving, error, saveError, cargar, registrar, desactivar } = useTiposArea();
+  const [modal, setModal] = useState<TipoAreaModalState>({ tipo: 'ninguno' });
+  const [accionError, setAccionError] = useState<string | null>(null);
+
+  useEffect(() => { cargar(); }, [cargar]);
+
+  const cerrar = () => setModal({ tipo: 'ninguno' });
+
+  const handleDesactivar = async (item: TipoAreaResponse) => {
+    setAccionError(null);
+    const ok = await desactivar(item.id_tipo_area);
+    if (!ok) setAccionError(saveError?.message ?? 'Error al desactivar.');
+    else cerrar();
+  };
+
+  return (
+    <div style={{ marginTop: 'var(--s7)', borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('configurationpage.tipos_de_area')}</h2>
+        <div style={{ display: 'flex', gap: 'var(--s2)' }}>
+          <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('configurationpage.recargar_tipos_de_area')}>
+            <RefreshCw size={15} aria-hidden />
+          </Button>
+          {puedeCrear && (
+            <Button variant="primary" size="sm" onClick={() => setModal({ tipo: 'crear' })} disabled={!online}>
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('configurationpage.nuevo_tipo_de_area')}</Button>
+          )}
+        </div>
+      </div>
+
+      {error && <Alert variant="error" title={t('configurationpage.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      {accionError && <Alert variant="error" title={t('configurationpage.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />}
+
+      <TipoAreaTable
+        tipos={tipos}
+        loading={loading}
+        puedeDesactivar={puedeDesact && online}
+        onDesactivar={(item) => setModal({ tipo: 'desactivar', item })}
+      />
+
+      {modal.tipo === 'crear' && (
+        <TipoAreaModal saving={saving} saveError={saveError} onClose={cerrar} onRegistrar={registrar} />
+      )}
+
+      {modal.tipo === 'desactivar' && (
+        <ConfirmModal
+          titulo="Confirmar desactivación"
+          mensaje={`¿Deseas desactivar el tipo de área "${modal.item.nombre}"? Dejará de ofrecerse al registrar nuevas áreas productivas.`}
+          confirmLabel="Desactivar"
+          confirmVariant="danger"
+          saving={saving}
+          onCancel={cerrar}
+          onConfirm={() => handleDesactivar(modal.item)}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Confirm modal genérico ───────────────────────────────────────────────────
 interface ConfirmProps {
   titulo: string;
@@ -328,6 +399,7 @@ export function ConfigurationPage() {
         {activeTab === 'fincas' && (
           <>
             <FincasTable />
+            <TiposAreaSubSection />
             <InfraestructuraSection />
           </>
         )}
