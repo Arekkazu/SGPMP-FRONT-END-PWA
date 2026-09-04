@@ -55,6 +55,21 @@ export interface EditarFincaDTO extends RegistrarFincaDTO {
 }
 
 // =====================================================================
+// Tipos de Área (RF-20)
+// =====================================================================
+export interface TipoAreaResponse {
+  id_tipo_area: number;
+  nombre: string;
+  es_activo: boolean;
+  fecha_creacion: string;
+  fecha_actualizacion: string | null;
+}
+
+export interface RegistrarTipoAreaDTO {
+  nombre: string;
+}
+
+// =====================================================================
 // Infraestructuras
 // =====================================================================
 export interface InfraestructuraResponse {
