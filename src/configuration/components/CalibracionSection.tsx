@@ -338,7 +338,7 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
 export function CalibracionSection() {
   const { t } = useT('configuration');
   const online = useOnlineStatus();
-  const puedeCalibar = usePermission(12, 5);
+  const puedeCalibar = usePermission(12, 1);
 
   const { dispositivos, loading: loadingDisp, cargar: cargarDisp } = useDispositivosIot();
   const { sensores, loading: loadingSensores, error: errorSensores, cargar: cargarSensores } = useSensores();
