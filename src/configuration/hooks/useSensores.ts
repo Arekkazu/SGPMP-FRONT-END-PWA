@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { sensoresDispositivoApi, sensorAreaApi } from '../api/iotApi';
-import type { SensorResponse, AsociarSensorAreaDTO } from '../types';
+import type { SensorResponse, AsociarSensorAreaDTO, RegistrarSensorDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 export function useSensores() {
@@ -38,5 +38,20 @@ export function useSensores() {
     }
   }, []);
 
-  return { sensores, loading, saving, error, saveError, cargar, asociar };
+  const registrar = useCallback(async (idDispositivo: number, dto: RegistrarSensorDTO): Promise<boolean> => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const nuevo = await sensoresDispositivoApi.registrar(idDispositivo, dto);
+      setSensores((prev) => [...prev, nuevo]);
+      return true;
+    } catch (e) {
+      setSaveError(e as ApiError);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  return { sensores, loading, saving, error, saveError, cargar, asociar, registrar };
 }

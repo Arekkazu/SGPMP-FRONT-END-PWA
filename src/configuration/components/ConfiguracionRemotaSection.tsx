@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Settings2, ChevronLeft, RefreshCw, Send } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -31,7 +33,7 @@ const TD: React.CSSProperties = {
 
 function formatTs(iso: string | null | undefined): string {
   if (!iso) return '—';
-  try { return new Date(iso).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+  try { return formatearFechaHora(iso, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); }
   catch { return iso; }
 }
 
@@ -54,6 +56,7 @@ function EstadoCfgBadge({ estado }: { estado: string }) {
 function DispSelector({ dispositivos, loading, onSelect }: {
   dispositivos: DispositivoIotResponse[]; loading: boolean; onSelect: (d: DispositivoIotResponse) => void;
 }) {
+  const { t } = useT('configuration');
   const activos = dispositivos.filter((d) => d.es_activo);
   if (loading) {
     return (
@@ -66,7 +69,7 @@ function DispSelector({ dispositivos, loading, onSelect }: {
     );
   }
   if (activos.length === 0) {
-    return <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s7) 0' }}>No hay dispositivos activos. Regístralos en la sección "Dispositivos IoT".</p>;
+    return <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s7) 0' }}>{t('configuracionremotasection.no_hay_dispositivos_activos_registralos_en')}</p>;
   }
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
@@ -87,8 +90,7 @@ function DispSelector({ dispositivos, loading, onSelect }: {
             </div>
           </div>
           <div style={{ fontSize: '11px', color: 'var(--sem-success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 'var(--s1)' }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)', display: 'inline-block' }} /> Activo
-          </div>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)', display: 'inline-block' }} />{t('configuracionremotasection.activo')}</div>
         </button>
       ))}
     </div>
@@ -98,6 +100,7 @@ function DispSelector({ dispositivos, loading, onSelect }: {
 // ── History table ─────────────────────────────────────────────────────────────
 
 function Historial({ historial, loading }: { historial: ConfiguracionRemotaResponse[]; loading: boolean }) {
+  const { t } = useT('configuration');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)', marginTop: 'var(--s4)' }}>
@@ -109,14 +112,14 @@ function Historial({ historial, loading }: { historial: ConfiguracionRemotaRespo
     );
   }
   if (historial.length === 0) {
-    return <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: 'var(--s5) 0' }}>Sin historial de configuraciones.</p>;
+    return <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: 'var(--s5) 0' }}>{t('configuracionremotasection.sin_historial_de_configuraciones')}</p>;
   }
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ background: 'var(--surface-hover)' }}>
-            {['Fecha/Hora', 'Frec. captura', 'Interv. transmisión', 'Estado cfg.', 'Mensaje'].map((h) => (
+            {['Fecha/Hora', 'Frec. captura', t('configuracionremotasection.interv_transmision'), t('configuracionremotasection.estado_cfg'), 'Mensaje'].map((h) => (
               <th key={h} style={TH}>{h}</th>
             ))}
           </tr>
@@ -153,6 +156,7 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
   onSubmit: (dto: { frecuencia_captura: number; intervalo_transmision: number }) => void;
   onReload: () => void;
 }) {
+  const { t } = useT('configuration');
   const { register, handleSubmit, getValues, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
     defaultValues: {
@@ -165,12 +169,11 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--s5)', flexWrap: 'wrap', gap: 'var(--s3)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
-          <Button variant="ghost" size="sm" onClick={onBack} aria-label="Cambiar dispositivo">
-            <ChevronLeft size={16} aria-hidden /> Cambiar dispositivo
-          </Button>
+          <Button variant="ghost" size="sm" onClick={onBack} aria-label={t('configuracionremotasection.cambiar_dispositivo')}>
+            <ChevronLeft size={16} aria-hidden />{t('configuracionremotasection.cambiar_dispositivo')}</Button>
           <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</span>
         </div>
-        <Button variant="ghost" size="sm" onClick={onReload} aria-label="Recargar historial">
+        <Button variant="ghost" size="sm" onClick={onReload} aria-label={t('configuracionremotasection.recargar_historial')}>
           <RefreshCw size={14} aria-hidden />
         </Button>
       </div>
@@ -178,13 +181,13 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
       {encolada && (
         <Alert
           variant="info"
-          title="Configuración encolada"
-          description="El dispositivo no está disponible en este momento. La configuración se aplicará automáticamente en cuanto recupere la conectividad."
+          title={t('configuracionremotasection.configuracion_encolada')}
+          description={t('configuracionremotasection.el_dispositivo_no_esta_disponible_en_este')}
           style={{ marginBottom: 'var(--s5)' }}
         />
       )}
       {saveError && (
-        <Alert variant="error" title="Error al configurar" description={saveError.message} style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="error" title={t('configuracionremotasection.error_al_configurar')} description={saveError.message} style={{ marginBottom: 'var(--s5)' }} />
       )}
 
       {/* Current stats */}
@@ -206,17 +209,14 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
       {/* Form */}
       <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-xl)', overflow: 'hidden', marginBottom: 'var(--s6)' }}>
         <div style={{ background: 'var(--surface-hover)', padding: 'var(--s3) var(--s5)', borderBottom: '1px solid var(--surface-border)' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Programar configuración del dispositivo
-          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('configuracionremotasection.programar_configuracion_del_dispositivo')}</span>
         </div>
         <div style={{ padding: 'var(--s5)' }}>
           <form onSubmit={handleSubmit((d) => onSubmit({ frecuencia_captura: Number(d.frecuencia_captura), intervalo_transmision: Number(d.intervalo_transmision) }))} noValidate>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 'var(--s5)', marginBottom: 'var(--s5)' }}>
               {/* Frecuencia captura */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>
-                  Frecuencia de captura <span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('configuracionremotasection.frecuencia_de_captura')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -233,19 +233,18 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
                     {...register('frecuencia_captura', {
                       required: 'Obligatorio.',
                       valueAsNumber: true,
-                      min: { value: 1, message: 'Mínimo 1 minuto.' },
+                      min: { value: 1, message: t('configuracionremotasection.minimo_1_minuto') },
                     })}
                   />
                   <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', pointerEvents: 'none' }}>min</span>
                 </div>
                 {errors.frecuencia_captura && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)', margin: 0 }}>{errors.frecuencia_captura.message}</p>}
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>Cada cuántos minutos el dispositivo captura datos.</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('configuracionremotasection.cada_cuantos_minutos_el_dispositivo_captura')}</p>
               </div>
 
               {/* Intervalo transmision */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>
-                  Intervalo de transmisión <span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('configuracionremotasection.intervalo_de_transmision')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -262,7 +261,7 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
                     {...register('intervalo_transmision', {
                       required: 'Obligatorio.',
                       valueAsNumber: true,
-                      min: { value: 1, message: 'Mínimo 1 minuto.' },
+                      min: { value: 1, message: t('configuracionremotasection.minimo_1_minuto') },
                       validate: (v) =>
                         v >= getValues('frecuencia_captura') ||
                         'Debe ser mayor o igual a la frecuencia de captura.',
@@ -271,15 +270,13 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
                   <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', pointerEvents: 'none' }}>min</span>
                 </div>
                 {errors.intervalo_transmision && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)', margin: 0 }}>{errors.intervalo_transmision.message}</p>}
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>Cada cuántos minutos transmite datos al servidor.</p>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('configuracionremotasection.cada_cuantos_minutos_transmite_datos_al')}</p>
               </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Button type="submit" variant="primary" size="md" loading={saving}>
-                <Send size={14} aria-hidden style={{ marginRight: 'var(--s2)' }} />
-                Enviar configuración
-              </Button>
+                <Send size={14} aria-hidden style={{ marginRight: 'var(--s2)' }} />{t('configuracionremotasection.enviar_configuracion')}</Button>
             </div>
           </form>
         </div>
@@ -301,6 +298,7 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
 // ── ConfiguracionRemotaSection ────────────────────────────────────────────────
 
 export function ConfiguracionRemotaSection() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeConfigurar = usePermission(11, 3);
 
@@ -329,20 +327,18 @@ export function ConfiguracionRemotaSection() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
         <Settings2 size={18} color="var(--brand-500)" aria-hidden />
         <div>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Configuración Remota IoT</h2>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>Frecuencia de captura e intervalo de transmisión por dispositivo</p>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('configuracionremotasection.configuracion_remota_iot')}</h2>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>{t('configuracionremotasection.frecuencia_de_captura_e_intervalo_de')}</p>
         </div>
       </div>
 
-      {!online && <Alert variant="warning" title="Sin conexión" description="La configuración remota requiere conexión." style={{ marginBottom: 'var(--s4)' }} />}
-      {!puedeConfigurar && <Alert variant="warning" title="Sin permiso" description="No tienes permiso para configurar dispositivos IoT remotamente." style={{ marginBottom: 'var(--s4)' }} />}
+      {!online && <Alert variant="warning" title={t('configuracionremotasection.sin_conexion')} description={t('configuracionremotasection.la_configuracion_remota_requiere_conexion')} style={{ marginBottom: 'var(--s4)' }} />}
+      {!puedeConfigurar && <Alert variant="warning" title={t('configuracionremotasection.sin_permiso')} description={t('configuracionremotasection.no_tienes_permiso_para_configurar')} style={{ marginBottom: 'var(--s4)' }} />}
 
       {puedeConfigurar && (
         !dispositivo ? (
           <>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
-              Selecciona el dispositivo a configurar:
-            </p>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('configuracionremotasection.selecciona_el_dispositivo_a_configurar')}</p>
             <DispSelector dispositivos={dispositivos} loading={loadingDisp} onSelect={handleSelect} />
           </>
         ) : (

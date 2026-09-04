@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { History } from 'lucide-react';
 import { SemaforoPill } from './SemaforoPill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
@@ -8,6 +9,7 @@ import type { LecturaHistoricaSchema } from '../types';
 const COLS = ['Capturado', 'Sensor', 'Variable', 'Valor', 'Ajustado', 'Semáforo', 'Estado', 'Origen', 'Alerta'];
 
 export function HistorialTable({ items, loading }: { items: LecturaHistoricaSchema[]; loading: boolean }) {
+  const { t } = useT('telemetry');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -23,7 +25,7 @@ export function HistorialTable({ items, loading }: { items: LecturaHistoricaSche
     return (
       <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s8) var(--s4)', fontSize: '14px', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
         <History size={32} aria-hidden style={{ opacity: 0.5, marginBottom: 'var(--s3)' }} />
-        <p style={{ margin: 0 }}>Sin lecturas para el rango y filtros seleccionados.</p>
+        <p style={{ margin: 0 }}>{t('historialtable.sin_lecturas_para_el_rango_y_filtros')}</p>
       </div>
     );
   }

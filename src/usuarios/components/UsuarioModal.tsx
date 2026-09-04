@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
@@ -50,6 +52,7 @@ const ROL_OPTIONS = [
 ];
 
 export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props) {
+  const { t } = useT('usuarios');
   const { detalle, loading, saving, error, saveError, cargar, editar } = useUsuarioDetalle();
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EditarPerfilAdminDTO>({ mode: 'onBlur' });
@@ -105,10 +108,8 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
-          <h2 id="usuario-modal-title" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-            Detalle de usuario
-          </h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
+          <h2 id="usuario-modal-title" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{t('usuariomodal.detalle_de_usuario')}</h2>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('usuariomodal.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
         </div>
@@ -122,11 +123,11 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
         )}
 
         {error && !loading && (
-          <Alert variant="error" title="Error al cargar" description={error.message} />
+          <Alert variant="error" title={t('usuariomodal.error_al_cargar')} description={error.message} />
         )}
 
         {saveError && (
-          <Alert variant="error" title="Error al guardar" description={saveError.message} className="mb" />
+          <Alert variant="error" title={t('usuariomodal.error_al_guardar')} description={saveError.message} className="mb" />
         )}
 
         {detalle && !loading && (
@@ -142,52 +143,52 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
                   <div>
                     <Input
-                      label="Nombres"
+                      label={t('usuariomodal.nombres')}
                       required
                       error={errors.nombre?.message}
                       {...register('nombre', {
                         required: 'Obligatorio.',
-                        pattern: { value: NAME_REGEX, message: 'Solo letras y espacios.' },
+                        pattern: { value: NAME_REGEX, message: t('usuariomodal.solo_letras_y_espacios') },
                       })}
                     />
                   </div>
                   <div>
                     <Input
-                      label="Apellidos"
+                      label={t('usuariomodal.apellidos')}
                       required
                       error={errors.apellidos?.message}
                       {...register('apellidos', {
                         required: 'Obligatorio.',
-                        pattern: { value: NAME_REGEX, message: 'Solo letras y espacios.' },
+                        pattern: { value: NAME_REGEX, message: t('usuariomodal.solo_letras_y_espacios') },
                       })}
                     />
                   </div>
                   <div>
                     <Input
-                      label="Correo electrónico"
+                      label={t('usuariomodal.correo_electronico')}
                       type="email"
                       error={errors.correo_electronico?.message}
                       {...register('correo_electronico', {
-                        pattern: { value: /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/, message: 'Formato inválido.' },
+                        pattern: { value: /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/, message: t('usuariomodal.formato_invalido') },
                       })}
                     />
                   </div>
                   <div>
                     <Input
-                      label="Teléfono"
+                      label={t('usuariomodal.telefono')}
                       type="tel"
                       hint="Opcional, 7-15 dígitos"
                       error={errors.telefono?.message}
                       {...register('telefono', {
-                        pattern: { value: /^[0-9]{7,15}$/, message: 'Solo números, 7-15 dígitos.' },
+                        pattern: { value: /^[0-9]{7,15}$/, message: t('usuariomodal.solo_numeros_7_15_digitos') },
                       })}
                     />
                   </div>
                   <div style={{ gridColumn: 'span 2' }}>
-                    <Input label="Dirección" {...register('direccion')} />
+                    <Input label={t('usuariomodal.direccion')} {...register('direccion')} />
                   </div>
                   <div>
-                    <label style={LABEL_STYLE}>Rol</label>
+                    <label style={LABEL_STYLE}>{t('usuariomodal.rol')}</label>
                     <select style={SELECT_STYLE} {...register('id_rol', { valueAsNumber: true })}>
                       {ROL_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
@@ -196,8 +197,8 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-                  <Button type="button" variant="secondary" size="md" onClick={onClose}>Cancelar</Button>
-                  <Button type="submit" variant="primary" size="md" loading={saving}>Guardar</Button>
+                  <Button type="button" variant="secondary" size="md" onClick={onClose}>{t('usuariomodal.cancelar')}</Button>
+                  <Button type="submit" variant="primary" size="md" loading={saving}>{t('usuariomodal.guardar')}</Button>
                 </div>
               </form>
             ) : (
@@ -208,7 +209,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                   ['Correo', detalle.correo_electronico],
                   ['Identificación', `${detalle.tipo_identificacion}: ${mascararId(detalle.numero_identificacion)}`],
                   ['Fecha de nacimiento', detalle.fecha_nacimiento],
-                  ['Fecha de registro', new Date(detalle.fecha_registro).toLocaleDateString('es-CO')],
+                  ['Fecha de registro', formatearFecha(detalle.fecha_registro)],
                   ['Teléfono', detalle.telefono ?? '—'],
                   ['Dirección', detalle.direccion ?? '—'],
                 ].map(([label, value]) => (
@@ -218,7 +219,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                   </div>
                 ))}
                 <div style={{ gridColumn: 'span 2', textAlign: 'right' }}>
-                  <Button type="button" variant="secondary" size="md" onClick={onClose}>Cerrar</Button>
+                  <Button type="button" variant="secondary" size="md" onClick={onClose}>{t('usuariomodal.cerrar')}</Button>
                 </div>
               </div>
             )}

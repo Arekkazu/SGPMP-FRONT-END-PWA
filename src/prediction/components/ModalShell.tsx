@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ModalShell({ title, onClose, children, footer, maxWidth = 520 }: Props) {
+  const { t } = useT('prediction');
   return (
     <div
       role="dialog"
@@ -45,7 +47,7 @@ export function ModalShell({ title, onClose, children, footer, maxWidth = 520 }:
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {title}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('modalshell.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
         </div>

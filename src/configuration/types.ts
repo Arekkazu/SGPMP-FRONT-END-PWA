@@ -55,6 +55,21 @@ export interface EditarFincaDTO extends RegistrarFincaDTO {
 }
 
 // =====================================================================
+// Tipos de Área (RF-20)
+// =====================================================================
+export interface TipoAreaResponse {
+  id_tipo_area: number;
+  nombre: string;
+  es_activo: boolean;
+  fecha_creacion: string;
+  fecha_actualizacion: string | null;
+}
+
+export interface RegistrarTipoAreaDTO {
+  nombre: string;
+}
+
+// =====================================================================
 // Infraestructuras
 // =====================================================================
 export interface InfraestructuraResponse {
@@ -163,6 +178,8 @@ export interface AsociarSensorAreaDTO {
   id_dispositivo_iot: number;
   id_infraestructura: number;
   punto_instalacion: string;
+  /** RF-22 FA "Conflicto de reasignación": reenviar en true tras confirmar. */
+  confirmar?: boolean;
 }
 
 // =====================================================================
@@ -245,6 +262,18 @@ export interface EditarPatologiaDTO {
 export type TipoMedicion = 'PESO' | 'VOLUMEN' | 'LONGITUD' | 'CONTEO' | 'OTRO';
 export type TipoActivo = 'INDIVIDUAL' | 'LOTE' | 'AMBOS';
 
+/**
+ * Unidades válidas por tipo de medición (RF-16) — espejo exacto de
+ * `_UNIDADES_POR_TIPO` en `registrar_metrica_use_case.py` del backend.
+ * `OTRO` no restringe: se deja como texto libre en el formulario.
+ */
+export const UNIDADES_POR_TIPO_MEDICION: Record<Exclude<TipoMedicion, 'OTRO'>, string[]> = {
+  PESO: ['kg', 'g', 'lb'],
+  VOLUMEN: ['litros', 'l', 'ml'],
+  LONGITUD: ['cm', 'm'],
+  CONTEO: ['unidades'],
+};
+
 export interface MetricaProduccionResponse {
   id_metrica_produccion: number;
   nombre: string;
@@ -310,6 +339,15 @@ export interface EditarUmbralDTO {
   fecha_actualizacion?: string;
 }
 
+/** Catálogo de variables ambientales (`GET /configuracion/variables-ambientales`). */
+export interface VariableAmbientalCatalogo {
+  id_variable_ambiental: number;
+  nombre: string;
+  unidad: string;
+  valor_fisico_min: number;
+  valor_fisico_max: number;
+}
+
 // =====================================================================
 // Parámetros Globales
 // =====================================================================
@@ -334,8 +372,44 @@ export interface ActualizarConfiguracionGlobalDTO {
 }
 
 // =====================================================================
+// Accesibilidad de la identidad visual (RF-26 + RF-27)
+// =====================================================================
+// El backend evalua el contraste WCAG 2.1 AA del color institucional contra los dos
+// temas y devuelve, por tema, la relacion obtenida y la variante que si cumple. Viajan
+// las dos porque con `theme_mode = 3` (Sistema) el tema efectivo cambia en el cliente
+// sin que haya una peticion nueva de por medio.
+export interface ContrasteTema {
+  fondo: string;
+  ratio: number;
+  cumple_aa: boolean;
+  /** Igual al color guardado cuando ya cumple: usable sin condicionales. */
+  color_ajustado: string;
+  /** Texto del flujo alterno de RF-27; `null` cuando el tema cumple. */
+  aviso: string | null;
+}
+
+export interface ContrasteColor {
+  claro: ContrasteTema;
+  oscuro: ContrasteTema;
+}
+
+export interface AccesibilidadResponse {
+  minimo_aa: number;
+  primary_color: ContrasteColor | null;
+  secondary_color: ContrasteColor | null;
+}
+
+// =====================================================================
 // Contexto de Interfaz
 // =====================================================================
+/** Marca institucional de la finca activa, tal como la entrega el contexto de RF-25. */
+export interface IdentidadVisualContexto {
+  logo_path: string | null;
+  primary_color: string | null;
+  secondary_color: string | null;
+  org_display_name: string | null;
+}
+
 export interface ContextoInterfazResponse {
   id_usuario: number;
   nombre_completo: string;
@@ -346,6 +420,9 @@ export interface ContextoInterfazResponse {
   departamento: string | null;
   especies_configuradas: string[];
   modulos_autorizados: string[];
+  /** `null` sin finca asignada o sin identidad configurada para esa finca. */
+  identidad_visual: IdentidadVisualContexto | null;
+  accesibilidad: AccesibilidadResponse | null;
 }
 
 // =====================================================================
@@ -356,11 +433,13 @@ export interface IdentidadVisualResponse {
   id_finca: number;
   id_usuario: number;
   logo_path: string | null;
-  primary_color: string;
-  secondary_color: string;
-  org_display_name: string;
+  // Nullable en modulo9.identidad_visuales: una identidad puede tener solo logotipo.
+  primary_color: string | null;
+  secondary_color: string | null;
+  org_display_name: string | null;
   version: number | null;
   fecha_creacion: string | null;
+  accesibilidad: AccesibilidadResponse | null;
 }
 
 export interface GuardarIdentidadVisualDTO {
@@ -382,7 +461,8 @@ export interface ActualizarIdentidadVisualDTO {
 // =====================================================================
 export interface TemaResueltoResponse {
   theme_mode: number;
-  fuente: 'personal' | 'global' | 'default';
+  // El backend emite 'defecto', no 'default' (obtener_tema_resuelto_use_case.py).
+  fuente: 'personal' | 'global' | 'defecto';
   id_tema_visual: number | null;
 }
 
@@ -402,9 +482,13 @@ export interface GuardarTemaDTO {
 // Idioma
 // =====================================================================
 export interface IdiomaResueltoResponse {
+  /** Siempre 'es-CO' o 'en-US'. El backend rechaza 'es'/'en' con 400. */
   locale_code: string;
-  fuente: 'personal' | 'global' | 'default';
+  /** El backend responde 'defecto', no 'default'. */
+  fuente: 'personal' | 'global' | 'defecto';
   id_preferencia_idioma: number | null;
+  /** Se reenvía en el PATCH para detectar el conflicto de perfil (409). */
+  version_perfil?: number | null;
 }
 
 export interface PreferenciaIdiomaResponse {
@@ -413,10 +497,13 @@ export interface PreferenciaIdiomaResponse {
   locale_code: string;
   es_por_defecto: boolean;
   fecha_actualizacion: string | null;
+  version_perfil?: number | null;
 }
 
 export interface GuardarIdiomaDTO {
   locale_code: string;
+  /** Opcional: omitirla salta la comprobación de concurrencia en el backend. */
+  version_perfil?: number | null;
 }
 
 // =====================================================================
@@ -437,16 +524,82 @@ export interface DashboardLayoutResponse {
   grid: WidgetConfigDTO[];
   active_widget: string[];
   fecha_actualizacion: string | null;
+  // Se reenvia en el PATCH para que el backend detecte que el perfil cambio
+  // mientras el usuario editaba (RF-28, conflicto de concurrencia).
+  version_perfil: number | null;
 }
 
 export interface GuardarDashboardDTO {
   layout_config: WidgetConfigDTO[];
   active_widget: string[];
+  version_perfil?: number | null;
+}
+
+// El catalogo lo define el backend (modulo9.widgets) y viene filtrado por el rol
+// del usuario: cada widget se habilita con el permiso de lectura de su propio
+// recurso, no con el del dashboard.
+export interface WidgetCatalogoItem {
+  id_widget: number;
+  clave: string;
+  nombre: string;
+  grupo: string;
+  span_predeterminado: 1 | 2;
+}
+
+export interface WidgetDatosResponse {
+  id_widget: number;
+  clave: string;
+  nombre: string;
+  posicion_fila: number;
+  posicion_columna: number;
+  span_columnas: number;
+  orden: number;
+  sin_datos: boolean;
+  mensaje: string | null;
+  datos: Record<string, unknown>[];
 }
 
 // =====================================================================
 // Plantillas de Configuración
 // =====================================================================
+
+/**
+ * Categorías que el RF-30 autoriza dentro de una plantilla. Los dispositivos
+ * IoT, la infraestructura, el dashboard y la identidad visual quedan fuera a
+ * propósito: dependen del contexto de cada unidad productiva y el backend
+ * rechaza el snapshot que las incluya.
+ */
+export const CATEGORIAS_PLANTILLA = [
+  'ciclos_biologicos',
+  'patologias',
+  'metricas_produccion',
+  'umbrales_ambientales',
+] as const;
+
+export type CategoriaPlantilla = (typeof CATEGORIAS_PLANTILLA)[number];
+
+/**
+ * Configuración real de una especie en la forma que espera `params_snapshot`.
+ * Sin ids propios de la especie origen: la plantilla se aplica sobre otra.
+ */
+export interface SnapshotEspecie {
+  ciclos_biologicos: { nombre: string; duracion_dias: number; descripcion: string | null }[];
+  patologias: { nombre: string; descripcion: string | null; es_activo: boolean }[];
+  metricas_produccion: {
+    nombre: string;
+    unidad_medida: string;
+    tipo_medicion: TipoMedicion;
+    aplica_a_tipo_activo: TipoActivo;
+  }[];
+  umbrales_ambientales: {
+    id_variable_ambiental: number;
+    unidad_medida: string;
+    valor_min: string;
+    valor_max: string;
+    niveles: { nivel: NivelAlerta; limite_inferior: string; limite_superior: string }[];
+  }[];
+}
+
 export interface PlantillaResponse {
   id_plantilla: number;
   id_especie: number;
@@ -460,6 +613,11 @@ export interface PlantillaResponse {
 export interface RegistrarPlantillaDTO {
   template_name: string;
   id_especie: number;
+  params_snapshot: Record<string, unknown>;
+}
+
+/** Versionar solo cambia los parámetros: nombre y especie los hereda la base. */
+export interface VersionarPlantillaDTO {
   params_snapshot: Record<string, unknown>;
 }
 

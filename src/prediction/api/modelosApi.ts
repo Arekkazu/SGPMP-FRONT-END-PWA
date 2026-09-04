@@ -10,7 +10,7 @@ const BASE = '/prediccion/modelos';
 
 export const modelosApi = {
   async listar(filtros: ListarModelosFiltros = {}): Promise<VersionModeloListResponse> {
-    const res = await http.get<VersionModeloListResponse>(`${BASE}/`, { params: filtros });
+    const res = await http.get<VersionModeloListResponse>(BASE, { params: filtros });
     return res.data;
   },
 

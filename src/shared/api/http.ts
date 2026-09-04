@@ -29,6 +29,8 @@ http.interceptors.request.use((config) => {
 
 const PUBLIC_AUTH_ENDPOINTS = ['/sesiones/', '/sesiones/sso', '/sesiones/refresh'];
 
+export const PERMISOS_POSIBLEMENTE_DESACTUALIZADOS = 'sgpmp:permisos-posiblemente-desactualizados';
+
 // Refrescos concurrentes (varias peticiones 401 a la vez) comparten esta misma
 // promesa: el backend rota el refresh token en cada uso, así que dos llamadas
 // reales a /sesiones/refresh en paralelo harían que la segunda reutilice un
@@ -79,6 +81,17 @@ http.interceptors.response.use(
       tokenStore.clear();
       window.location.replace('/login');
     }
+
+    // RF-25, flujo alterno "cambio de permisos en sesion activa": el backend siempre
+    // reevalua permisos en vivo (nunca confia en el JWT), asi que un 403 inesperado
+    // puede significar que el rol/permisos cambiaron desde que se cargo `permisos` en
+    // AuthContext. No hay forma de distinguirlo de un 403 "normal" por el codigo de
+    // error (ambos son ACCESO_DENEGADO), asi que se dispara un evento y quien escucha
+    // decide si de verdad cambio algo antes de avisar al usuario.
+    if (error.response?.status === 403) {
+      window.dispatchEvent(new CustomEvent(PERMISOS_POSIBLEMENTE_DESACTUALIZADOS));
+    }
+
     return Promise.reject(mapToApiError(error));
   }
 );

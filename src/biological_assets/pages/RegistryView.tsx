@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useHistory } from 'react-router-dom';
 import { Plus, RefreshCw, ClipboardList } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -13,6 +14,7 @@ import type { ListarActivosFiltros } from '../types';
 import { RECURSO_ACTIVOS, RECURSO_AUDITORIA_M02, ACCION_C, ACCION_R } from '../rbac';
 
 export function RegistryView() {
+  const { t } = useT('biologicalAssets');
   const history = useHistory();
   const online = useOnlineStatus();
   const puedeCrear = usePermission(RECURSO_ACTIVOS, ACCION_C);
@@ -62,16 +64,14 @@ export function RegistryView() {
         }}
       >
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Gestión de Activos Biológicos
-          </h1>
+          <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('registryview.gestion_de_activos_biologicos')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : `${paginacion.totalRegistros} activo(s)`}
             {fromCache && ' · desde caché'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center' }}>
-          <Button variant="ghost" size="sm" onClick={recargar} aria-label="Recargar lista">
+          <Button variant="ghost" size="sm" onClick={recargar} aria-label={t('registryview.recargar_lista')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           {puedeVerAuditoria && (
@@ -80,9 +80,7 @@ export function RegistryView() {
               size="sm"
               onClick={() => history.push('/activos-biologicos/auditoria')}
             >
-              <ClipboardList size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Auditoría
-            </Button>
+              <ClipboardList size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('registryview.auditoria')}</Button>
           )}
           {puedeCrear && (
             <Button
@@ -91,9 +89,7 @@ export function RegistryView() {
               disabled={!online}
               onClick={() => history.push('/activos-biologicos/nuevo')}
             >
-              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Registrar activo
-            </Button>
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('registryview.registrar_activo')}</Button>
           )}
         </div>
       </div>
@@ -103,23 +99,23 @@ export function RegistryView() {
         {!online && (
           <Alert
             variant="warning"
-            title="Sin conexión"
-            description="Mostrando datos cacheados. El registro está deshabilitado."
+            title={t('registryview.sin_conexion')}
+            description={t('registryview.mostrando_datos_cacheados_el_registro_esta')}
             style={{ marginBottom: 'var(--s4)' }}
           />
         )}
         {fromCache && online && (
           <Alert
             variant="info"
-            title="Datos desde caché"
-            description="No se pudo conectar con el servidor. Se muestran los últimos datos disponibles."
+            title={t('registryview.datos_desde_cache')}
+            description={t('registryview.no_se_pudo_conectar_con_el_servidor_se')}
             style={{ marginBottom: 'var(--s4)' }}
           />
         )}
         {error && !fromCache && (
           <Alert
             variant="error"
-            title="Error al cargar activos"
+            title={t('registryview.error_al_cargar_activos')}
             description={`${error.message}${error.status === 404 ? ' (verificar el endpoint de listado — ver TASKS.md)' : ''}`}
             style={{ marginBottom: 'var(--s4)' }}
           />

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Radio, BellRing, Smartphone, BatteryMedium, SignalHigh } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -18,6 +19,7 @@ import type { AlertaSchema, NuevoEstadoAlerta } from '../types';
 type Tab = 'monitoreo' | 'alertas';
 
 export function MovilView() {
+  const { t } = useT('telemetry');
   const puedeMonitoreo = usePermission(RECURSO_MONITOREO, ACCION_R);
   const puedeAlertas = usePermission(RECURSO_ALERTAS, ACCION_R);
   const puedeGestionar = usePermission(RECURSO_ALERTAS, ACCION_U);
@@ -49,38 +51,37 @@ export function MovilView() {
     <div style={{ minHeight: '100%', maxWidth: 520, margin: '0 auto' }}>
       <div style={{ padding: 'var(--s5) var(--s5) 0' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <Smartphone size={18} aria-hidden /> SGP Campo
-        </h1>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s1) 0 var(--s4)' }}>Monitoreo y alertas · Módulo 03</p>
+          <Smartphone size={18} aria-hidden />{t('movilview.sgp_campo')}</h1>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s1) 0 var(--s4)' }}>{t('movilview.monitoreo_y_alertas_modulo_03')}</p>
 
         {/* Segmented control */}
         <div role="tablist" style={{ display: 'flex', gap: 'var(--s1)', background: 'var(--surface-hover)', borderRadius: 'var(--r-full)', padding: 3, marginBottom: 'var(--s4)' }}>
-          {TABS.filter((t) => t.show).map((t) => (
+          {TABS.filter((item) => item.show).map((item) => (
             <button
-              key={t.key}
+              key={item.key}
               role="tab"
-              aria-selected={tab === t.key}
-              onClick={() => setTab(t.key)}
+              aria-selected={tab === item.key}
+              onClick={() => setTab(item.key)}
               style={{
                 flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--s1)',
                 border: 'none', borderRadius: 'var(--r-full)', padding: 'var(--s2)', cursor: 'pointer', minHeight: 40,
-                background: tab === t.key ? 'var(--surface-card)' : 'transparent',
-                color: tab === t.key ? 'var(--brand-600)' : 'var(--text-secondary)',
-                fontWeight: tab === t.key ? 700 : 600, fontSize: '13px',
-                boxShadow: tab === t.key ? 'var(--shadow-sm)' : 'none',
+                background: tab === item.key ? 'var(--surface-card)' : 'transparent',
+                color: tab === item.key ? 'var(--brand-600)' : 'var(--text-secondary)',
+                fontWeight: tab === item.key ? 700 : 600, fontSize: '13px',
+                boxShadow: tab === item.key ? 'var(--shadow-sm)' : 'none',
               }}
             >
-              {t.icon}{t.label}
+              {item.icon}{item.label}
             </button>
           ))}
         </div>
       </div>
 
       <div style={{ padding: '0 var(--s5) var(--s7)' }}>
-        {!online && <Alert variant="warning" title="Sin conexión" description="Datos cacheados. La gestión está deshabilitada." style={{ marginBottom: 'var(--s3)' }} />}
+        {!online && <Alert variant="warning" title={t('movilview.sin_conexion')} description={t('movilview.datos_cacheados_la_gestion_esta')} style={{ marginBottom: 'var(--s3)' }} />}
 
         {tab === 'monitoreo' && (
-          monitoreo.loading ? <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Cargando…</p> :
+          monitoreo.loading ? <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{t('movilview.cargando')}</p> :
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
             {monitoreo.sensores.map((s) => (
               <div key={s.id_sensor} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s3)', background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s3) var(--s4)' }}>
@@ -100,12 +101,12 @@ export function MovilView() {
                 </div>
               </div>
             ))}
-            {monitoreo.sensores.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Sin sensores.</p>}
+            {monitoreo.sensores.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{t('movilview.sin_sensores')}</p>}
           </div>
         )}
 
         {tab === 'alertas' && (
-          alertas.loading ? <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Cargando…</p> :
+          alertas.loading ? <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{t('movilview.cargando')}</p> :
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
             {alertas.alertas.map((a) => (
               <div key={a.id_alerta} style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
@@ -120,15 +121,15 @@ export function MovilView() {
                   <EstadoAlertaPill estado={a.estado_alerta} />
                   {puedeGestionar && (
                     <div style={{ display: 'flex', gap: 'var(--s1)' }}>
-                      <Button variant="secondary" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('EN_ATENCION'); }}>Tomar</Button>
-                      <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('RESUELTA'); }}>Resolver</Button>
-                      <Button variant="danger" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('DESCARTADA'); }}>Descartar</Button>
+                      <Button variant="secondary" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('EN_ATENCION'); }}>{t('movilview.tomar')}</Button>
+                      <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('RESUELTA'); }}>{t('movilview.resolver')}</Button>
+                      <Button variant="danger" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('DESCARTADA'); }}>{t('movilview.descartar')}</Button>
                     </div>
                   )}
                 </div>
               </div>
             ))}
-            {alertas.alertas.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Sin alertas activas.</p>}
+            {alertas.alertas.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{t('movilview.sin_alertas_activas')}</p>}
           </div>
         )}
       </div>

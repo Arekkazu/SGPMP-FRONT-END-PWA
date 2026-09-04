@@ -5,12 +5,12 @@ const BASE = '/configuracion/especies';
 
 export const especiesApi = {
   async listar(soloActivas = false): Promise<EspecieResponse[]> {
-    const res = await http.get<EspecieResponse[]>(`${BASE}/`, { params: { solo_activas: soloActivas } });
+    const res = await http.get<EspecieResponse[]>(BASE, { params: { solo_activas: soloActivas } });
     return res.data;
   },
 
   async registrar(dto: RegistrarEspecieDTO): Promise<EspecieResponse> {
-    const res = await http.post<EspecieResponse>(`${BASE}/`, dto);
+    const res = await http.post<EspecieResponse>(BASE, dto);
     return res.data;
   },
 

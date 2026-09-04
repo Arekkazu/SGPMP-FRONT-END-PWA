@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { History } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { useHistorial } from '../hooks/useHistorial';
@@ -47,6 +48,7 @@ const CATEGORIAS: CategoriaHistorial[] = [
 ];
 
 export function HistorialSection({ idActivo }: Props) {
+  const { t } = useT('biologicalAssets');
   const { registros, paginacion, loading, error, cargar } = useHistorial(idActivo);
   const [categoria, setCategoria] = useState<'' | CategoriaHistorial>('');
   const [fechaInicio, setFechaInicio] = useState('');
@@ -68,37 +70,35 @@ export function HistorialSection({ idActivo }: Props) {
   return (
     <div style={CARD}>
       <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-        <History size={16} aria-hidden />
-        Historial consolidado
-      </h3>
+        <History size={16} aria-hidden />{t('historialsection.historial_consolidado')}</h3>
 
       {/* Filtros */}
       <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 'var(--s5)' }}>
         <div>
-          <label style={LABEL} htmlFor="hist-cat">Categoría</label>
+          <label style={LABEL} htmlFor="hist-cat">{t('historialsection.categoria')}</label>
           <select id="hist-cat" style={SELECT} value={categoria} onChange={(e) => setCategoria(e.target.value as '' | CategoriaHistorial)}>
-            <option value="">Todas</option>
+            <option value="">{t('historialsection.todas')}</option>
             {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div>
-          <label style={LABEL} htmlFor="hist-desde">Desde</label>
+          <label style={LABEL} htmlFor="hist-desde">{t('historialsection.desde')}</label>
           <input id="hist-desde" type="date" style={INPUT_DATE} value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
         </div>
         <div>
-          <label style={LABEL} htmlFor="hist-hasta">Hasta</label>
+          <label style={LABEL} htmlFor="hist-hasta">{t('historialsection.hasta')}</label>
           <input id="hist-hasta" type="date" style={INPUT_DATE} value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
         </div>
       </div>
 
-      {error && <Alert variant="error" title="Error al cargar el historial" description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      {error && <Alert variant="error" title={t('historialsection.error_al_cargar_el_historial')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
       {loading ? (
         <div style={{ height: 120, borderRadius: 'var(--r-md)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }}>
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
       ) : registros.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>Sin registros para los filtros seleccionados.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('historialsection.sin_registros_para_los_filtros_seleccionados')}</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>

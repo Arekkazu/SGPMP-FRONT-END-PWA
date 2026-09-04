@@ -1,4 +1,5 @@
 import React, { forwardRef } from 'react';
+import { useT } from '../i18n/useT';
 import './Input.css';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -26,6 +27,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   },
   ref
 ) {
+  const { t } = useT('common');
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
 
   return (
@@ -69,7 +71,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             className="ds-field__icon ds-field__icon--trail"
             onClick={onTrailingClick}
             tabIndex={-1}
-            aria-label="Acción del campo"
+            aria-label={t('input.accion_del_campo')}
           >
             {trailingIcon}
           </button>

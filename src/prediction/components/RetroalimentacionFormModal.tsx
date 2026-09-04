@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Check } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
@@ -40,6 +41,7 @@ const FUENTES: { valor: FuenteDiagnostico; label: string }[] = [
 ];
 
 export function RetroalimentacionFormModal({ contexto, patologiasOpciones, saving, saveError, online, onSubmit, onClose }: Props) {
+  const { t } = useT('prediction');
   const [estado, setEstado] = useState<EstadoRetro | ''>('');
   const [diagnosticos, setDiagnosticos] = useState<number[]>([]);
   const [fuente, setFuente] = useState<FuenteDiagnostico | ''>('');
@@ -72,32 +74,31 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
 
   return (
     <ModalShell
-      title="Retroalimentación clínica"
+      title={t('retroalimentacionformmodal.retroalimentacion_clinica')}
       onClose={onClose}
       maxWidth={640}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>{t('retroalimentacionformmodal.cancelar')}</Button>
           <Button variant="primary" onClick={submit} loading={saving} disabled={!online}>
-            <Check size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Registrar evaluación
-          </Button>
+            <Check size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('retroalimentacionformmodal.registrar_evaluacion')}</Button>
         </>
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
-        {!online && <Alert variant="warning" title="Sin conexión" description="No se puede registrar sin conexión." />}
-        {saveError && <Alert variant={saveError.status === 403 ? 'warning' : 'error'} title="No se pudo registrar" description={saveError.message} />}
+        {!online && <Alert variant="warning" title={t('retroalimentacionformmodal.sin_conexion')} description={t('retroalimentacionformmodal.no_se_puede_registrar_sin_conexion')} />}
+        {saveError && <Alert variant={saveError.status === 403 ? 'warning' : 'error'} title={t('retroalimentacionformmodal.no_se_pudo_registrar')} description={saveError.message} />}
 
         {/* Contexto de la inferencia */}
         <div style={{ background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s3)', fontSize: '12px', color: 'var(--text-secondary)' }}>
-          <div><strong>Activo biológico:</strong> {contexto.id_activo_biologico}</div>
+          <div><strong>{t('retroalimentacionformmodal.activo_biologico')}</strong> {contexto.id_activo_biologico}</div>
           <div style={{ fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}><strong style={{ fontFamily: 'var(--font-sans, inherit)' }}>Inferencia:</strong> {contexto.id_resultado_inferencia}</div>
           {contexto.resumen && <div style={{ marginTop: 'var(--s1)' }}>{contexto.resumen}</div>}
         </div>
 
         {/* Calificación */}
         <div>
-          <label style={LABEL}>¿Cómo califica la predicción del sistema? <span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></label>
+          <label style={LABEL}>{t('retroalimentacionformmodal.como_califica_la_prediccion_del_sistema')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></label>
           <div role="radiogroup" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s2)' }}>
             {ESTADOS.map((op) => {
               const activo = estado === op.valor;
@@ -126,9 +127,9 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
         {/* Diagnósticos reales */}
         {requiereDiagnostico && (
           <div>
-            <label style={LABEL}>Patología del diagnóstico real <span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span> <span style={{ fontWeight: 400, textTransform: 'none' }}>(máx. 3)</span></label>
+            <label style={LABEL}>{t('retroalimentacionformmodal.patologia_del_diagnostico_real')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span> <span style={{ fontWeight: 400, textTransform: 'none' }}>(máx. 3)</span></label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)' }}>
-              {patologiasOpciones.length === 0 && <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>No hay patologías disponibles.</span>}
+              {patologiasOpciones.length === 0 && <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('retroalimentacionformmodal.no_hay_patologias_disponibles')}</span>}
               {patologiasOpciones.map((p) => {
                 const activo = diagnosticos.includes(p.id);
                 return (
@@ -156,21 +157,21 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
 
         {/* Fuente */}
         <div>
-          <label style={LABEL} htmlFor="retro-fuente">Origen del diagnóstico</label>
+          <label style={LABEL} htmlFor="retro-fuente">{t('retroalimentacionformmodal.origen_del_diagnostico')}</label>
           <select id="retro-fuente" style={INPUT} value={fuente} onChange={(e) => setFuente(e.target.value as FuenteDiagnostico | '')}>
-            <option value="">— Sin especificar —</option>
+            <option value="">{t('retroalimentacionformmodal.sin_especificar')}</option>
             {FUENTES.map((f) => <option key={f.valor} value={f.valor}>{f.label}</option>)}
           </select>
         </div>
 
         {/* Observaciones */}
         <div>
-          <label style={LABEL} htmlFor="retro-obs">Observaciones clínicas</label>
+          <label style={LABEL} htmlFor="retro-obs">{t('retroalimentacionformmodal.observaciones_clinicas')}</label>
           <textarea
             id="retro-obs"
             value={observaciones}
             onChange={(e) => setObservaciones(e.target.value)}
-            placeholder="Notas adicionales sobre el caso…"
+            placeholder={t('retroalimentacionformmodal.notas_adicionales_sobre_el_caso')}
             style={{ ...INPUT, height: 90, paddingTop: 'var(--s2)', resize: 'vertical', fontFamily: 'inherit' }}
           />
         </div>

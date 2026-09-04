@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Loader2, UserCog } from 'lucide-react';
 import { useCompletarPerfilSso } from '../hooks/useCompletarPerfilSso';
@@ -19,6 +20,7 @@ interface Fields {
 }
 
 export function CompletarPerfilSsoPage() {
+  const { t } = useT('auth');
   const { perfil, loading, loadError, saving, saveError, completar, recargar } = useCompletarPerfilSso();
   const initializedRef = useRef(false);
 
@@ -61,7 +63,7 @@ export function CompletarPerfilSsoPage() {
           <div className="auth-success-icon" style={{ background: 'var(--sem-info-bg)' }} aria-hidden="true">
             <Loader2 size={28} color="var(--sem-info)" className="spin" />
           </div>
-          <h1 className="auth-title">Cargando tu perfil…</h1>
+          <h1 className="auth-title">{t('completarperfilssopage.cargando_tu_perfil')}</h1>
         </div>
         <style>{'.spin{animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}'}</style>
       </div>
@@ -74,13 +76,11 @@ export function CompletarPerfilSsoPage() {
         <div className="auth-card auth-center">
           <Alert
             variant="error"
-            title="No se pudo cargar tu perfil"
-            description={loadError?.message || 'Ocurrió un error inesperado.'}
+            title={t('completarperfilssopage.no_se_pudo_cargar_tu_perfil')}
+            description={loadError?.message || t('completarperfilssopage.ocurrio_un_error_inesperado')}
             className="auth-alert"
           />
-          <Button variant="secondary" size="md" onClick={() => recargar()}>
-            Reintentar
-          </Button>
+          <Button variant="secondary" size="md" onClick={() => recargar()}>{t('completarperfilssopage.reintentar')}</Button>
         </div>
       </div>
     );
@@ -92,15 +92,13 @@ export function CompletarPerfilSsoPage() {
         <div className="auth-logo" aria-hidden="true">
           <UserCog size={26} color="white" strokeWidth={1.5} />
         </div>
-        <h1 className="auth-title">Completa tu perfil</h1>
-        <p className="auth-sub">
-          Estás ingresando por primera vez desde AgroFusion. Completa estos datos para continuar.
-        </p>
+        <h1 className="auth-title">{t('completarperfilssopage.completa_tu_perfil')}</h1>
+        <p className="auth-sub">{t('completarperfilssopage.estas_ingresando_por_primera_vez_desde')}</p>
 
         {saveError && saveError.status !== 409 && (
           <Alert
             variant="error"
-            title={saveError.status === 412 ? 'Los datos cambiaron' : 'Error al guardar'}
+            title={saveError.status === 412 ? t('completarperfilssopage.los_datos_cambiaron') : t('completarperfilssopage.error_al_guardar')}
             description={saveError.message}
             className="auth-alert"
           />
@@ -110,63 +108,62 @@ export function CompletarPerfilSsoPage() {
           <div className="auth-form-grid">
             <div className="auth-field">
               <Input
-                label="Nombres"
+                label={t('completarperfilssopage.nombres')}
                 required
                 error={errors.nombre?.message}
                 {...register('nombre', {
-                  required: 'El nombre es obligatorio.',
-                  pattern: { value: NAME_REGEX, message: 'Solo letras, espacios y caracteres españoles.' },
+                  required: t('completarperfilssopage.el_nombre_es_obligatorio'),
+                  pattern: { value: NAME_REGEX, message: t('completarperfilssopage.solo_letras_espacios_y_caracteres_espanoles') },
                 })}
               />
             </div>
 
             <div className="auth-field">
               <Input
-                label="Apellidos"
+                label={t('completarperfilssopage.apellidos')}
                 required
                 error={errors.apellidos?.message}
                 {...register('apellidos', {
-                  required: 'Los apellidos son obligatorios.',
-                  pattern: { value: NAME_REGEX, message: 'Solo letras, espacios y caracteres españoles.' },
+                  required: t('completarperfilssopage.los_apellidos_son_obligatorios'),
+                  pattern: { value: NAME_REGEX, message: t('completarperfilssopage.solo_letras_espacios_y_caracteres_espanoles') },
                 })}
               />
             </div>
 
             <div className="auth-field">
-              <label className="ds-field__label" htmlFor="tipo_identificacion">
-                Tipo de identificación <span className="ds-field__req">*</span>
+              <label className="ds-field__label" htmlFor="tipo_identificacion">{t('completarperfilssopage.tipo_de_identificacion')}<span className="ds-field__req">*</span>
               </label>
               <select
                 id="tipo_identificacion"
                 className="ds-field__input"
                 {...register('tipo_identificacion', { required: true })}
               >
-                <option value="CC">Cédula de ciudadanía (CC)</option>
-                <option value="CE">Cédula de extranjería (CE)</option>
-                <option value="Pasaporte">Pasaporte</option>
+                <option value="CC">{t('completarperfilssopage.cedula_de_ciudadania_cc')}</option>
+                <option value="CE">{t('completarperfilssopage.cedula_de_extranjeria_ce')}</option>
+                <option value="Pasaporte">{t('completarperfilssopage.pasaporte')}</option>
               </select>
             </div>
 
             <div className="auth-field">
               <Input
-                label="Número de identificación"
+                label={t('completarperfilssopage.numero_de_identificacion')}
                 required
                 maxLength={20}
                 error={errors.numero_identificacion?.message}
                 {...register('numero_identificacion', {
-                  required: 'El número de identificación es obligatorio.',
+                  required: t('completarperfilssopage.el_numero_de_identificacion_es_obligatorio'),
                 })}
               />
             </div>
 
             <div className="auth-field">
               <Input
-                label="Fecha de nacimiento"
+                label={t('completarperfilssopage.fecha_de_nacimiento')}
                 type="date"
                 required
                 error={errors.fecha_nacimiento?.message}
                 {...register('fecha_nacimiento', {
-                  required: 'La fecha de nacimiento es obligatoria.',
+                  required: t('completarperfilssopage.la_fecha_de_nacimiento_es_obligatoria'),
                   validate: (v) => {
                     const birth = new Date(v);
                     const today = new Date();
@@ -180,21 +177,18 @@ export function CompletarPerfilSsoPage() {
             </div>
 
             <div className="auth-field">
-              <label className="ds-field__label" htmlFor="genero">
-                Género <span className="ds-field__req">*</span>
+              <label className="ds-field__label" htmlFor="genero">{t('completarperfilssopage.genero')}<span className="ds-field__req">*</span>
               </label>
               <select id="genero" className="ds-field__input" {...register('genero', { required: true })}>
-                <option value="M">Masculino (M)</option>
-                <option value="F">Femenino (F)</option>
-                <option value="X">No binario (X)</option>
-                <option value="T">Trans (T)</option>
+                <option value="M">{t('completarperfilssopage.masculino_m')}</option>
+                <option value="F">{t('completarperfilssopage.femenino_f')}</option>
+                <option value="X">{t('completarperfilssopage.no_binario_x')}</option>
+                <option value="T">{t('completarperfilssopage.trans_t')}</option>
               </select>
             </div>
           </div>
 
-          <Button type="submit" variant="primary" size="lg" fullWidth loading={saving}>
-            Guardar y continuar
-          </Button>
+          <Button type="submit" variant="primary" size="lg" fullWidth loading={saving}>{t('completarperfilssopage.guardar_y_continuar')}</Button>
         </form>
       </div>
     </div>

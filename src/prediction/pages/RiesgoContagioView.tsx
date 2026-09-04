@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ShieldAlert, Activity, AlertTriangle, Database } from 'lucide-react';
 import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
 import { LineChartPrediccion } from '../components/LineChartPrediccion';
@@ -11,6 +12,7 @@ import { CONTAGIO_MOTOR, LOTES_CONTAGIO, type LoteContagio } from '../mocks/cont
 const NIVEL_TONO: Record<string, Tono> = { ALTO: 'error', MEDIO: 'warning', BAJO: 'success' };
 
 function LoteDetalle({ lote, onClose }: { lote: LoteContagio; onClose: () => void }) {
+  const { t } = useT('prediction');
   const m = CONTAGIO_MOTOR;
   const chartData = lote.historial.map((h) => ({ hora: h.hora, prob: Number((h.probabilidad * 100).toFixed(0)) }));
   return (
@@ -28,8 +30,7 @@ function LoteDetalle({ lote, onClose }: { lote: LoteContagio; onClose: () => voi
 
         {lote.pesos_recalculados && (
           <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center', padding: 'var(--s3)', background: 'var(--sem-warning-bg)', border: '1px solid var(--sem-warning-border)', borderRadius: 'var(--r-md)', color: 'var(--sem-warning)', fontSize: '13px' }}>
-            <AlertTriangle size={16} aria-hidden /> Pesos recalculados por datos faltantes.
-          </div>
+            <AlertTriangle size={16} aria-hidden />{t('riesgocontagioview.pesos_recalculados_por_datos_faltantes')}</div>
         )}
 
         {/* Fórmula ponderada */}
@@ -39,7 +40,7 @@ function LoteDetalle({ lote, onClose }: { lote: LoteContagio; onClose: () => voi
 
         {/* Factores del cálculo */}
         <div>
-          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>Factores del cálculo</h3>
+          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>{t('riesgocontagioview.factores_del_calculo')}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
             <ProbBar label="Factor sanitario (Fs)" valor={lote.factor_sanitario} color="var(--sem-error)" />
             <ProbBar label="Factor ambiental (Fa)" valor={lote.factor_ambiental} color="var(--sem-warning)" />
@@ -49,7 +50,7 @@ function LoteDetalle({ lote, onClose }: { lote: LoteContagio; onClose: () => voi
 
         {/* Tendencia */}
         <div>
-          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>Tendencia de contagio</h3>
+          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>{t('riesgocontagioview.tendencia_de_contagio')}</h3>
           <LineChartPrediccion
             data={chartData}
             xKey="hora"
@@ -62,14 +63,14 @@ function LoteDetalle({ lote, onClose }: { lote: LoteContagio; onClose: () => voi
 
         {/* Historial del lote */}
         <div>
-          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>Historial del lote</h3>
+          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>{t('riesgocontagioview.historial_del_lote')}</h3>
           <div style={TABLE_WRAP}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={THEAD_ROW}>
-                  <th style={TH}>Hora</th><th style={{ ...TH, textAlign: 'right' }}>Prob.</th><th style={TH}>Nivel</th>
+                  <th style={TH}>{t('riesgocontagioview.hora')}</th><th style={{ ...TH, textAlign: 'right' }}>{t('riesgocontagioview.prob')}</th><th style={TH}>{t('riesgocontagioview.nivel')}</th>
                   <th style={{ ...TH, textAlign: 'right' }}>Fs</th><th style={{ ...TH, textAlign: 'right' }}>Fa</th><th style={{ ...TH, textAlign: 'right' }}>Fd</th>
-                  <th style={{ ...TH, textAlign: 'right' }}>Confianza</th>
+                  <th style={{ ...TH, textAlign: 'right' }}>{t('riesgocontagioview.confianza')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -94,6 +95,7 @@ function LoteDetalle({ lote, onClose }: { lote: LoteContagio; onClose: () => voi
 }
 
 export function RiesgoContagioView() {
+  const { t } = useT('prediction');
   const [sel, setSel] = useState<LoteContagio | null>(null);
   const m = CONTAGIO_MOTOR;
 
@@ -108,19 +110,15 @@ export function RiesgoContagioView() {
     <div style={{ minHeight: '100%' }}>
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <ShieldAlert size={20} aria-hidden />
-          Riesgo de Contagio
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          Estimación de propagación sanitaria por lote en tiempo real
-        </p>
+          <ShieldAlert size={20} aria-hidden />{t('riesgocontagioview.riesgo_de_contagio')}</h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('riesgocontagioview.estimacion_de_propagacion_sanitaria_por')}</p>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
         <DatosSimuladosBanner detalle="El modelo de contagio es del equipo IoT/IA y aún no expone endpoints; esta vista usa datos de ejemplo" />
 
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', marginBottom: 'var(--s6)', display: 'flex', gap: 'var(--s4)', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Pesos del cálculo:</span>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('riesgocontagioview.pesos_del_calculo')}</span>
           <Pill tono="error">W<sub>fs</sub> {m.w_fs}</Pill>
           <Pill tono="warning">W<sub>fa</sub> {m.w_fa}</Pill>
           <Pill tono="info">W<sub>fd</sub> {m.w_fd}</Pill>
@@ -135,7 +133,7 @@ export function RiesgoContagioView() {
           ))}
         </div>
 
-        <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>Lotes monitoreados</h2>
+        <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('riesgocontagioview.lotes_monitoreados')}</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--s4)' }}>
           {LOTES_CONTAGIO.map((l) => (
             <button key={l.id} onClick={() => setSel(l)} style={{ textAlign: 'left', background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', cursor: 'pointer' }}>
@@ -147,7 +145,7 @@ export function RiesgoContagioView() {
               <div style={{ fontSize: '32px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: `var(--sem-${NIVEL_TONO[l.nivel]})`, marginBottom: 'var(--s2)' }}>
                 {(l.probabilidad * 100).toFixed(0)}%
               </div>
-              <ProbBar label="Contagio" valor={l.probabilidad} color={`var(--sem-${NIVEL_TONO[l.nivel]})`} />
+              <ProbBar label={t('riesgocontagioview.contagio')} valor={l.probabilidad} color={`var(--sem-${NIVEL_TONO[l.nivel]})`} />
             </button>
           ))}
         </div>

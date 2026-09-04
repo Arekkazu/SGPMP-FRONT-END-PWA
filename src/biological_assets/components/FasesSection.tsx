@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { GitBranch, CheckCircle2, CircleDot } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
@@ -37,6 +38,7 @@ const TEXTAREA: React.CSSProperties = {
 };
 
 function FaseItem({ fase, ultimo }: { fase: GestionFaseResponse; ultimo: boolean }) {
+  const { t } = useT('biologicalAssets');
   const activa = fase.es_activa;
   return (
     <li style={{ display: 'flex', gap: 'var(--s3)' }}>
@@ -52,9 +54,7 @@ function FaseItem({ fase, ultimo }: { fase: GestionFaseResponse; ultimo: boolean
             {fase.nombre_ciclo}
           </span>
           {activa && (
-            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--brand-600)', background: 'var(--brand-50)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)' }}>
-              ACTIVA
-            </span>
+            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--brand-600)', background: 'var(--brand-50)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)' }}>{t('fasessection.activa')}</span>
           )}
         </div>
         {fase.nombre_fase_actual && (
@@ -91,6 +91,7 @@ function CambiarFaseModal({
   onClose: () => void;
   onConfirmar: (dto: CambiarFaseDTO) => Promise<boolean>;
 }) {
+  const { t } = useT('biologicalAssets');
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
     defaultValues: { id_ciclo_productiva: '', motivo_cambio: '', fecha_inicio: '' },
@@ -106,11 +107,11 @@ function CambiarFaseModal({
   };
 
   return (
-    <ModalShell title="Cambiar / avanzar fase" onClose={onClose}>
+    <ModalShell title={t('fasessection.cambiar_avanzar_fase')} onClose={onClose}>
       {saveError && (
         <Alert
           variant={saveError.status >= 500 ? 'error' : 'warning'}
-          title="No se pudo cambiar la fase"
+          title={t('fasessection.no_se_pudo_cambiar_la_fase')}
           description={saveError.message}
           style={{ marginBottom: 'var(--s4)' }}
         />
@@ -118,26 +119,24 @@ function CambiarFaseModal({
       <form onSubmit={handleSubmit(submit)} noValidate>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
           <Input
-            label="ID del ciclo productivo" required type="number" min={1}
+            label={t('fasessection.id_del_ciclo_productivo')} required type="number" min={1}
             placeholder="Ej: 3"
             hint="ID de la fase/ciclo destino del catálogo"
             error={errors.id_ciclo_productiva?.message}
             {...register('id_ciclo_productiva', {
-              required: 'El ciclo productivo es obligatorio.',
-              min: { value: 1, message: 'ID inválido.' },
+              required: t('fasessection.el_ciclo_productivo_es_obligatorio'),
+              min: { value: 1, message: t('fasessection.id_invalido') },
             })}
           />
-          <Input label="Fecha de inicio" type="date" {...register('fecha_inicio')} />
+          <Input label={t('fasessection.fecha_de_inicio')} type="date" {...register('fecha_inicio')} />
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-fase">
-              Motivo del cambio
-            </label>
-            <textarea id="motivo-fase" style={TEXTAREA} placeholder="Opcional" {...register('motivo_cambio')} />
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-fase">{t('fasessection.motivo_del_cambio')}</label>
+            <textarea id="motivo-fase" style={TEXTAREA} placeholder={t('fasessection.opcional')} {...register('motivo_cambio')} />
           </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
-          <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button type="submit" variant="primary" size="md" loading={saving}>Cambiar fase</Button>
+          <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('fasessection.cancelar')}</Button>
+          <Button type="submit" variant="primary" size="md" loading={saving}>{t('fasessection.cambiar_fase')}</Button>
         </div>
       </form>
     </ModalShell>
@@ -145,6 +144,7 @@ function CambiarFaseModal({
 }
 
 export function FasesSection({ idActivo, onChanged }: Props) {
+  const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeCambiar = usePermission(RECURSO_ACTIVOS, ACCION_E);
   const { fases, loading, saving, error, saveError, cargar, cambiarFase, setSaveError } = useFases(idActivo);
@@ -162,24 +162,20 @@ export function FasesSection({ idActivo, onChanged }: Props) {
     <div style={CARD}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <GitBranch size={16} aria-hidden />
-          Secuencia de fases
-        </h3>
+          <GitBranch size={16} aria-hidden />{t('fasessection.secuencia_de_fases')}</h3>
         {puedeCambiar && (
-          <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSaveError(null); setAbierto(true); }}>
-            Cambiar fase
-          </Button>
+          <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSaveError(null); setAbierto(true); }}>{t('fasessection.cambiar_fase')}</Button>
         )}
       </div>
 
-      {error && <Alert variant="error" title="Error al cargar fases" description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      {error && <Alert variant="error" title={t('fasessection.error_al_cargar_fases')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
       {loading ? (
         <div style={{ height: 120, borderRadius: 'var(--r-md)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }}>
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
       ) : fases.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>Este activo no tiene fases registradas.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('fasessection.este_activo_no_tiene_fases_registradas')}</p>
       ) : (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
           {fases.map((f, i) => (

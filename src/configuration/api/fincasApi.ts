@@ -6,7 +6,7 @@ import type {
 
 export const fincasApi = {
   async listar(soloActivas = false): Promise<FincaResponse[]> {
-    const res = await http.get<FincaResponse[]>('/configuracion/fincas/', { params: { solo_activas: soloActivas } });
+    const res = await http.get<FincaResponse[]>('/configuracion/fincas', { params: { solo_activas: soloActivas } });
     return res.data;
   },
 
@@ -16,7 +16,7 @@ export const fincasApi = {
   },
 
   async registrar(dto: RegistrarFincaDTO): Promise<FincaResponse> {
-    const res = await http.post<FincaResponse>('/configuracion/fincas/', dto);
+    const res = await http.post<FincaResponse>('/configuracion/fincas', dto);
     return res.data;
   },
 
@@ -38,7 +38,7 @@ export const fincasApi = {
 
 export const infraestructurasApi = {
   async listarPorFinca(fincaId: number, soloActivas = false): Promise<InfraestructuraResponse[]> {
-    const res = await http.get<InfraestructuraResponse[]>('/configuracion/infraestructuras/', {
+    const res = await http.get<InfraestructuraResponse[]>('/configuracion/infraestructuras', {
       params: { finca_id: fincaId, solo_activas: soloActivas },
     });
     return res.data;
@@ -50,7 +50,7 @@ export const infraestructurasApi = {
   },
 
   async registrar(dto: RegistrarInfraestructuraDTO): Promise<InfraestructuraResponse> {
-    const res = await http.post<InfraestructuraResponse>('/configuracion/infraestructuras/', dto);
+    const res = await http.post<InfraestructuraResponse>('/configuracion/infraestructuras', dto);
     return res.data;
   },
 

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { Activity, Cpu, Gauge as GaugeIcon, Clock, Layers } from 'lucide-react';
 import { Gauge } from '../../shared/design-system/Gauge';
 import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
@@ -12,9 +14,10 @@ import { MONITOR_MOTOR, MONITOR_KPIS, ACTIVOS_MONITOREADOS, type ActivoMonitorea
 type TabId = 'activos' | 'feed';
 
 function EstadoMotor() {
+  const { t } = useT('prediction');
   const m = MONITOR_MOTOR;
   const stats = [
-    { label: 'Paquetes hoy', valor: m.paquetes_hoy.toLocaleString('es-CO') },
+    { label: 'Paquetes hoy', valor: formatearFechaHora(m.paquetes_hoy) },
     { label: 'Latencia P95', valor: `${m.latencia_p95_ms} ms` },
     { label: 'Cola', valor: String(m.cola) },
     { label: 'Uptime', valor: m.uptime },
@@ -23,9 +26,7 @@ function EstadoMotor() {
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)', marginBottom: 'var(--s6)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', flexWrap: 'wrap' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--sem-success)', boxShadow: '0 0 0 4px var(--sem-success-bg)' }} aria-hidden />
-          Motor activo
-        </span>
+          <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--sem-success)', boxShadow: '0 0 0 4px var(--sem-success-bg)' }} aria-hidden />{t('monitorinferenciaview.motor_activo')}</span>
         <Pill tono="info" icon={<Cpu size={12} aria-hidden />}>{MONITOR_MOTOR.version}</Pill>
         <Pill tono="neutral">{MONITOR_MOTOR.modo}</Pill>
       </div>
@@ -42,11 +43,12 @@ function EstadoMotor() {
 }
 
 function ActivoDetalle({ activo, onClose }: { activo: ActivoMonitoreado; onClose: () => void }) {
+  const { t } = useT('prediction');
   return (
     <ModalShell title={`${activo.identificador} · ${activo.especie}`} onClose={onClose} maxWidth={640} footer={null}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
         <div style={{ display: 'flex', gap: 'var(--s5)', alignItems: 'center', flexWrap: 'wrap' }}>
-          <Gauge value={activo.confianza * 100} unit="%" status={activo.nivel_riesgo >= 3 ? 'critical' : activo.nivel_riesgo === 2 ? 'warning' : 'ok'} label="Confianza" size={120} />
+          <Gauge value={activo.confianza * 100} unit="%" status={activo.nivel_riesgo >= 3 ? 'critical' : activo.nivel_riesgo === 2 ? 'warning' : 'ok'} label={t('monitorinferenciaview.confianza')} size={120} />
           <div>
             <div style={{ marginBottom: 'var(--s2)' }}><Pill tono={nivelRiesgoTono(activo.nivel_riesgo)}>{NIVEL_RIESGO_LABEL[activo.nivel_riesgo]}</Pill></div>
             <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{activo.enfermedad_estimada}</div>
@@ -55,23 +57,23 @@ function ActivoDetalle({ activo, onClose }: { activo: ActivoMonitoreado; onClose
         </div>
 
         <div>
-          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>Distribución de probabilidades — Niveles de riesgo</h3>
+          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>{t('monitorinferenciaview.distribucion_de_probabilidades_niveles_de')}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
             {activo.dist_riesgo.map((d) => <ProbBar key={d.nivel} label={d.nivel} valor={d.prob} color={d.nivel === 'Alto' ? 'var(--sem-error)' : d.nivel === 'Moderado' ? 'var(--sem-warning)' : 'var(--brand-500)'} />)}
           </div>
         </div>
 
         <div>
-          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>Patologías detectadas</h3>
+          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>{t('monitorinferenciaview.patologias_detectadas')}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
             {activo.dist_patologias.map((d) => <ProbBar key={d.nombre} label={d.nombre} valor={d.prob} />)}
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', borderTop: '1px solid var(--surface-border)', paddingTop: 'var(--s4)' }}>
-          <div><span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Variables recibidas</span><div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{activo.variables_recibidas}/{activo.variables_esperadas}</div></div>
+          <div><span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('monitorinferenciaview.variables_recibidas')}</span><div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{activo.variables_recibidas}/{activo.variables_esperadas}</div></div>
           {activo.variables_faltantes.length > 0 && (
-            <div><span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Faltantes</span><div style={{ fontSize: '13px', color: 'var(--sem-warning)' }}>{activo.variables_faltantes.join(', ')}</div></div>
+            <div><span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('monitorinferenciaview.faltantes')}</span><div style={{ fontSize: '13px', color: 'var(--sem-warning)' }}>{activo.variables_faltantes.join(', ')}</div></div>
           )}
         </div>
       </div>
@@ -80,6 +82,7 @@ function ActivoDetalle({ activo, onClose }: { activo: ActivoMonitoreado; onClose
 }
 
 export function MonitorInferenciaView() {
+  const { t } = useT('prediction');
   const [tab, setTab] = useState<TabId>('activos');
   const [sel, setSel] = useState<ActivoMonitoreado | null>(null);
 
@@ -87,12 +90,8 @@ export function MonitorInferenciaView() {
     <div style={{ minHeight: '100%' }}>
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <Activity size={20} aria-hidden />
-          Monitoreo de Inferencia
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          Estado del motor de predicción sanitaria por lote y especie
-        </p>
+          <Activity size={20} aria-hidden />{t('monitorinferenciaview.monitoreo_de_inferencia')}</h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('monitorinferenciaview.estado_del_motor_de_prediccion_sanitaria')}</p>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
@@ -109,7 +108,7 @@ export function MonitorInferenciaView() {
           ))}
         </div>
 
-        <div role="tablist" aria-label="Vista de monitoreo" style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
+        <div role="tablist" aria-label={t('monitorinferenciaview.vista_de_monitoreo')} style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
           {([['activos', 'Activos monitoreados', <GaugeIcon size={15} aria-hidden key="a" />], ['feed', 'Feed de inferencias', <Layers size={15} aria-hidden key="f" />]] as const).map(([id, label, icon]) => {
             const activo = id === tab;
             return (
@@ -145,13 +144,13 @@ export function MonitorInferenciaView() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={THEAD_ROW}>
-                  <th style={TH}>Activo / Finca</th>
-                  <th style={TH}>Especie</th>
-                  <th style={TH}>Nivel</th>
-                  <th style={TH}>Enfermedad estimada</th>
-                  <th style={{ ...TH, textAlign: 'right' }}>Confianza</th>
-                  <th style={{ ...TH, textAlign: 'right' }}>Latencia</th>
-                  <th style={TH}>Hora</th>
+                  <th style={TH}>{t('monitorinferenciaview.activo_finca')}</th>
+                  <th style={TH}>{t('monitorinferenciaview.especie')}</th>
+                  <th style={TH}>{t('monitorinferenciaview.nivel')}</th>
+                  <th style={TH}>{t('monitorinferenciaview.enfermedad_estimada')}</th>
+                  <th style={{ ...TH, textAlign: 'right' }}>{t('monitorinferenciaview.confianza')}</th>
+                  <th style={{ ...TH, textAlign: 'right' }}>{t('monitorinferenciaview.latencia')}</th>
+                  <th style={TH}>{t('monitorinferenciaview.hora')}</th>
                 </tr>
               </thead>
               <tbody>

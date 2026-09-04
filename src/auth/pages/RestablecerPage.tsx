@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -29,6 +30,7 @@ function passwordStrength(pw: string): { score: number; label: string; color: st
 }
 
 export function RestablecerPage() {
+  const { t } = useT('auth');
   const { search } = useLocation();
   const token = new URLSearchParams(search).get('token');
   const [showPw, setShowPw] = useState(false);
@@ -62,11 +64,9 @@ export function RestablecerPage() {
           <div className="auth-success-icon" style={{ background: 'var(--sem-warning-bg)' }}>
             <AlertTriangle size={28} color="var(--sem-warning)" aria-hidden />
           </div>
-          <h1 className="auth-title">Enlace inválido</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>
-            El enlace de restablecimiento no es válido. Usa el enlace enviado a tu correo.
-          </p>
-          <Link to="/recuperar-contrasena" className="auth-link">Solicitar nuevo enlace</Link>
+          <h1 className="auth-title">{t('restablecerpage.enlace_invalido')}</h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>{t('restablecerpage.el_enlace_de_restablecimiento_no_es_valido')}</p>
+          <Link to="/recuperar-contrasena" className="auth-link">{t('restablecerpage.solicitar_nuevo_enlace')}</Link>
         </div>
       </div>
     );
@@ -79,11 +79,9 @@ export function RestablecerPage() {
           <div className="auth-success-icon">
             <CheckCircle size={28} color="var(--sem-success)" aria-hidden />
           </div>
-          <h1 className="auth-title">¡Contraseña restablecida!</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>
-            Tu contraseña ha sido actualizada exitosamente. Serás redirigido al inicio de sesión en unos segundos.
-          </p>
-          <Link to="/login" className="auth-link">Ir a iniciar sesión →</Link>
+          <h1 className="auth-title">{t('restablecerpage.contrasena_restablecida')}</h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>{t('restablecerpage.tu_contrasena_ha_sido_actualizada')}</p>
+          <Link to="/login" className="auth-link">{t('restablecerpage.ir_a_iniciar_sesion')}</Link>
         </div>
       </div>
     );
@@ -100,13 +98,13 @@ export function RestablecerPage() {
             <path d="M13 21C13 19.5 14.3 18.5 16 18.5C17.7 18.5 19 19.5 19 21" stroke="white" strokeWidth="1.5"/>
           </svg>
         </div>
-        <h1 className="auth-title">Nueva contraseña</h1>
-        <p className="auth-sub">Elige una contraseña segura para tu cuenta.</p>
+        <h1 className="auth-title">{t('restablecerpage.nueva_contrasena')}</h1>
+        <p className="auth-sub">{t('restablecerpage.elige_una_contrasena_segura_para_tu_cuenta')}</p>
 
         {error && (
           <Alert
             variant="error"
-            title="Error al restablecer"
+            title={t('restablecerpage.error_al_restablecer')}
             description={error.message}
             className="auth-alert"
           />
@@ -115,15 +113,15 @@ export function RestablecerPage() {
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="auth-field">
             <Input
-              label="Nueva contraseña"
+              label={t('restablecerpage.nueva_contrasena')}
               type={showPw ? 'text' : 'password'}
               required
               error={errors.nueva_contrasena?.message}
               trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               onTrailingClick={() => setShowPw((v) => !v)}
               {...register('nueva_contrasena', {
-                required: 'La contraseña es obligatoria.',
-                pattern: { value: PW_REGEX, message: 'La contraseña no cumple los requisitos de seguridad.' },
+                required: t('restablecerpage.la_contrasena_es_obligatoria'),
+                pattern: { value: PW_REGEX, message: t('restablecerpage.la_contrasena_no_cumple_los_requisitos_de') },
               })}
             />
             <div className="pw-rules">
@@ -156,29 +154,25 @@ export function RestablecerPage() {
 
           <div className="auth-field">
             <Input
-              label="Confirmar nueva contraseña"
+              label={t('restablecerpage.confirmar_nueva_contrasena')}
               type={showConfirmPw ? 'text' : 'password'}
               required
               error={errors.confirmar_contrasena?.message}
               trailingIcon={showConfirmPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               onTrailingClick={() => setShowConfirmPw((v) => !v)}
               {...register('confirmar_contrasena', {
-                required: 'Confirma tu contraseña.',
+                required: t('restablecerpage.confirma_tu_contrasena'),
                 validate: (v) => v === getValues('nueva_contrasena') || 'Las contraseñas no coinciden.',
               })}
             />
           </div>
 
-          <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
-            Restablecer contraseña
-          </Button>
+          <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>{t('restablecerpage.restablecer_contrasena')}</Button>
         </form>
 
         <hr className="auth-sep" />
         <div style={{ textAlign: 'center' }}>
-          <Link to="/login" className="auth-link" style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-            Volver al inicio de sesión
-          </Link>
+          <Link to="/login" className="auth-link" style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{t('restablecerpage.volver_al_inicio_de_sesion')}</Link>
         </div>
       </div>
     </div>
