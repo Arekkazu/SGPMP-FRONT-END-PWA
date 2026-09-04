@@ -11,7 +11,7 @@ const BASE = '/prediccion/patologias';
 
 export const patologiasApi = {
   async listar(filtros: ListarPatologiasFiltros = {}): Promise<PatologiaM04ListResponse> {
-    const res = await http.get<PatologiaM04ListResponse>(`${BASE}/`, { params: filtros });
+    const res = await http.get<PatologiaM04ListResponse>(BASE, { params: filtros });
     return res.data;
   },
 
@@ -21,7 +21,7 @@ export const patologiasApi = {
   },
 
   async registrar(dto: RegistrarPatologiaDTO): Promise<PatologiaM04Response> {
-    const res = await http.post<PatologiaM04Response>(`${BASE}/`, dto);
+    const res = await http.post<PatologiaM04Response>(BASE, dto);
     return res.data;
   },
 

@@ -26,7 +26,7 @@ export function useIdiomaSesion(token: string | null): void {
 
     void (async () => {
       try {
-        const res = await http.get<IdiomaResuelto>('/configuracion/personalizacion/idioma/');
+        const res = await http.get<IdiomaResuelto>('/configuracion/personalizacion/idioma');
         if (!cancelado) aplicarLocale(res.data.locale_code);
       } catch {
         // Sin permiso (26, R), sin red o sin fila: se queda el locale de

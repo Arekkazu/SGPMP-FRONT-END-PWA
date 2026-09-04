@@ -27,7 +27,7 @@ export const identidadVisualApi = {
     form.append('secondary_color', dto.secondary_color);
     form.append('org_display_name', dto.org_display_name);
     if (logo) form.append('logo', logo);
-    const res = await http.post<IdentidadVisualResponse>('/configuracion/identidad-visual/', form);
+    const res = await http.post<IdentidadVisualResponse>('/configuracion/identidad-visual', form);
     return res.data;
   },
 
@@ -45,12 +45,12 @@ export const identidadVisualApi = {
 
 export const temaVisualApi = {
   async obtener(): Promise<TemaResueltoResponse> {
-    const res = await http.get<TemaResueltoResponse>('/configuracion/personalizacion/tema/');
+    const res = await http.get<TemaResueltoResponse>('/configuracion/personalizacion/tema');
     return res.data;
   },
 
   async guardar(dto: GuardarTemaDTO): Promise<TemaVisualResponse> {
-    const res = await http.patch<TemaVisualResponse>('/configuracion/personalizacion/tema/', dto);
+    const res = await http.patch<TemaVisualResponse>('/configuracion/personalizacion/tema', dto);
     return res.data;
   },
 
@@ -67,12 +67,12 @@ export const temaVisualApi = {
 
 export const idiomaApi = {
   async obtener(): Promise<IdiomaResueltoResponse> {
-    const res = await http.get<IdiomaResueltoResponse>('/configuracion/personalizacion/idioma/');
+    const res = await http.get<IdiomaResueltoResponse>('/configuracion/personalizacion/idioma');
     return res.data;
   },
 
   async guardar(dto: GuardarIdiomaDTO): Promise<PreferenciaIdiomaResponse> {
-    const res = await http.patch<PreferenciaIdiomaResponse>('/configuracion/personalizacion/idioma/', dto);
+    const res = await http.patch<PreferenciaIdiomaResponse>('/configuracion/personalizacion/idioma', dto);
     return res.data;
   },
 
@@ -91,12 +91,12 @@ export const idiomaApi = {
 
 export const dashboardLayoutApi = {
   async obtener(): Promise<DashboardLayoutResponse> {
-    const res = await http.get<DashboardLayoutResponse>('/configuracion/personalizacion/dashboard/');
+    const res = await http.get<DashboardLayoutResponse>('/configuracion/personalizacion/dashboard');
     return res.data;
   },
 
   async guardar(dto: GuardarDashboardDTO): Promise<DashboardLayoutResponse> {
-    const res = await http.patch<DashboardLayoutResponse>('/configuracion/personalizacion/dashboard/', dto);
+    const res = await http.patch<DashboardLayoutResponse>('/configuracion/personalizacion/dashboard', dto);
     return res.data;
   },
 

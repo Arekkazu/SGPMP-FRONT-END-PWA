@@ -52,6 +52,6 @@ describe('plantillasApi.versionar', () => {
       template_name: 'Otra', id_especie: 3, params_snapshot: SNAPSHOT,
     });
 
-    expect(postMock.mock.calls[0][0]).toBe('/configuracion/plantillas/');
+    expect(postMock.mock.calls[0][0]).toBe('/configuracion/plantillas');
   });
 });

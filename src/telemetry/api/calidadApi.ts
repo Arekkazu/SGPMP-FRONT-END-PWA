@@ -12,7 +12,7 @@ const BASE = '/iot/calidad';
 export const calidadApi = {
   /** Listar evaluaciones de calidad (RF-62). Recurso 38 (R). */
   async listar(filtros: CalidadFiltros = {}): Promise<ListaCalidadSchema> {
-    const res = await http.get<ListaCalidadSchema>(`${BASE}/`, { params: filtros });
+    const res = await http.get<ListaCalidadSchema>(BASE, { params: filtros });
     return res.data;
   },
 
