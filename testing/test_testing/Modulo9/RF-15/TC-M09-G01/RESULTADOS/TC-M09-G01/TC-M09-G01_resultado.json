@@ -1,14 +1,39 @@
 {
   "caso": "TC-M09-G01",
-  "titulo": "CU-01 – Gestionar Catálogo de Especies Productivas (RF-15)",
-  "cu": "CU-01 - Gestionar Catálogo de Especies Productivas",
+  "titulo": "CU-01 - Gestionar Catalogo de Especies Productivas (RF-15)",
+  "cu": "CU-01 - Gestionar Catalogo de Especies Productivas",
   "rf": "RF-15",
-  "tipo": "Funcional (UI & API)",
-  "equipo": "Frontend & QA",
+  "tipo": "Funcional (UI y API)",
+  "equipo": "Frontend y QA",
   "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
-  "backend": "http://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
-  "incidente": "INC-M09-01-G01 (03/09/2026)",
-  "estado": "NO EJECUTADO",
-  "veredicto": "NO EJECUTADO — Bloqueado por incidente de infraestructura INC-M09-01-G01 (Mixed Content HTTPS→HTTP), detectado 03/09/2026",
-  "detalles": "El caso de prueba está 100% redactado con lógica real en Cypress y Newman/Postman, a la espera de la corrección del incidente de infraestructura INC-M09-01-G01 y la confirmación final de la ruta del endpoint (TODO: confirmar endpoint real de creación de especie RF-15 y rol/cuenta de ejecución)."
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.76",
+  "fecha": "2026-09-04T20:57:23.719Z",
+  "peticionInfo": "POST /configuracion/especies -> HTTP 500. Body: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-04T20:57:23.512972+00:00\"}",
+  "checkpoints": [
+    {
+      "paso": "Checkpoint 1: diligenciamiento de la especie en UI",
+      "esperado": "Ingresar nombre \"Bovino\" y descripcion \"Especie bovina productiva\"",
+      "obtenido": "Formulario diligenciado con los datos definidos por el caso.",
+      "estado": "OK"
+    },
+    {
+      "paso": "Precondicion: disponibilidad del dato de prueba",
+      "esperado": "No debe existir una especie llamada \"Bovino\" antes de crearla",
+      "obtenido": "\"Bovino\" no existe en el catalogo TEST.",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 2: contrato de creacion en API REST",
+      "esperado": "HTTP 201/200 con id_especie, nombre, descripcion, es_activo=true y fecha_creacion",
+      "obtenido": "Respuesta no conforme. HTTP 500. Body: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-04T20:57:23.512972+00:00\"}",
+      "estado": "FALLA"
+    }
+  ],
+  "veredicto": "CON FALLAS",
+  "hallazgos": [
+    "Checkpoint 1: diligenciamiento de la especie en UI -> Formulario diligenciado con los datos definidos por el caso. (OK)",
+    "Precondicion: disponibilidad del dato de prueba -> \"Bovino\" no existe en el catalogo TEST. (OK)",
+    "Checkpoint 2: contrato de creacion en API REST -> Respuesta no conforme. HTTP 500. Body: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-04T20:57:23.512972+00:00\"} (FALLA)"
+  ]
 }

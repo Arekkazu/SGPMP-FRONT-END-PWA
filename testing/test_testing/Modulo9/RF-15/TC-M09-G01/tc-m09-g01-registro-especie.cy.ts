@@ -1,20 +1,9 @@
 /// <reference types="cypress" />
-// TC-M09-G01 · CU-01 – Gestionar Catálogo de Especies Productivas (RF-15 · Frontend & Backend QA)
-// Incidente de infraestructura de red activo: INC-M09-01-G01 (Fecha de detección: 03/09/2026).
-// Motivo de no ejecución: El frontend TEST opera bajo HTTPS mientras que el backend TEST responde en HTTP plano,
-// provocando un bloqueo de seguridad del navegador por "Mixed Content" en todas las peticiones XHR/API de Módulo9.
-//
-// TODO: confirmar endpoint real de creación de especie (RF-15) y rol/cuenta de ejecución antes de correr este caso — actualmente sin verificar contra el backend.
 
 const DIR = 'RESULTADOS/TC-M09-G01';
-
-// Variables configurables para la ejecución real
-// TODO: confirmar endpoint real de creación de especie (RF-15) y rol/cuenta de ejecución antes de correr este caso
-const ENDPOINT_ESPECIES = '/especies'; // TODO: confirmar ruta real POST /especies vs otra
-const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'admin@pecuaria.co'; // TODO: confirmar rol/cuenta de ejecución
+const ENDPOINT_ESPECIES = '/configuracion/especies';
+const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'admin@pecuaria.co';
 const CUENTA_EJECUCION_PASSWORD = Cypress.env('ADMIN_PASSWORD') || 'Test1234!';
-
-// Datos de prueba definidos en RF-15 / CU-01 (valor límite: 3 a 50 caracteres para el nombre)
 const DATO_NOMBRE = 'Bovino';
 const DATO_DESCRIPCION = 'Especie bovina productiva';
 
@@ -22,42 +11,43 @@ type Estado = 'OK' | 'FALLA' | 'OBSERVACION';
 interface Check { paso: string; esperado: string; obtenido: string; estado: Estado; }
 
 function renderMd(r: any): string {
-  return `# TC-M09-G01 — Registro de Especie Productiva (RF-15 · Módulo9)
+  return `# TC-M09-G01 - Registro de Especie Productiva (RF-15 - Modulo 9)
 
 | Campo | Valor |
 |---|---|
-| Caso de uso / Requisito | CU-01 - Gestionar Catálogo de Especies Productivas · RF-15 |
-| Tipo / Equipo | Funcional (UI & API) · Frontend / QA |
+| Caso de uso / Requisito | CU-01 - Gestionar Catalogo de Especies Productivas - RF-15 |
+| Tipo / Equipo | Funcional (UI y API) - Frontend / QA |
 | Ambiente (front) | ${r.ambiente} |
 | Backend | ${r.backend} |
 | Navegador | ${r.navegador} |
-| Fecha ejecución | ${r.fecha} |
-| Dato de prueba | Nombre: \`${DATO_NOMBRE}\` (límite 3-50 chars), Descripción: \`${DATO_DESCRIPCION}\` |
+| Fecha ejecucion | ${r.fecha} |
+| Dato de prueba | Nombre: \`${DATO_NOMBRE}\` (limite 3-50), Descripcion: \`${DATO_DESCRIPCION}\` |
 
 ## Checkpoints
+
 | Paso | Esperado | Obtenido | Estado |
 |---|---|---|---|
 ${r.checkpoints.map((c: Check) => `| ${c.paso} | ${c.esperado} | ${c.obtenido} | **${c.estado}** |`).join('\n')}
 
 ## Veredicto: ${r.veredicto}
 
-## Registro Técnico de Red
-- **Detalle de Petición HTTP Real**: ${r.peticionInfo}
-- **Hallazgos**:
-${r.hallazgos.map((h: string) => `- ${h}`).join('\n')}
+## Registro tecnico de red
 
-## Evidencias Visuales (Capturas .PNG)
-- [01_formulario_especie_ui.png](screenshots/01_formulario_especie_ui.png) — Diligenciamiento del formulario de especie productiva.
-- [02_confirmacion_registro_ui.png](screenshots/02_confirmacion_registro_ui.png) — Confirmación de registro exitoso e ID generado en pantalla.
+- Detalle de la peticion HTTP real: ${r.peticionInfo}
+
+## Evidencias visuales
+
+- [01_formulario_especie_ui.png](screenshots/01_formulario_especie_ui.png): formulario diligenciado antes del envio.
+- [02_confirmacion_registro_ui.png](screenshots/02_confirmacion_registro_ui.png): registro visible en la tabla despues de la respuesta API.
 `;
 }
 
-describe('TC-M09-G01 · Registro de Especie Productiva (RF-15)', () => {
+describe('TC-M09-G01 - Registro de Especie Productiva (RF-15)', () => {
   const checks: Check[] = [];
   const add = (paso: string, esperado: string, obtenido: string, estado: Estado = 'OK') =>
     checks.push({ paso, esperado, obtenido, estado });
 
-  let peticionInfo = 'Petición directa HTTP realizada durante el test.';
+  let peticionInfo = 'Peticion POST capturada durante el registro por UI.';
 
   before(() => {
     cy.intercept({ url: '**/assets/**' }, (req) => {
@@ -69,18 +59,18 @@ describe('TC-M09-G01 · Registro de Especie Productiva (RF-15)', () => {
 
   after(() => {
     const veredicto = checks.length === 0
-      ? 'NO EJECUTADO (falló la preparación)'
+      ? 'NO EJECUTADO (fallo la preparacion)'
       : (checks.some((c) => c.estado === 'FALLA') ? 'CON FALLAS' : 'SIN FALLAS BLOQUEANTES');
 
     const r = {
       caso: 'TC-M09-G01',
-      titulo: 'CU-01 – Gestionar Catálogo de Especies Productivas (RF-15)',
-      cu: 'CU-01 - Gestionar Catálogo de Especies Productivas',
+      titulo: 'CU-01 - Gestionar Catalogo de Especies Productivas (RF-15)',
+      cu: 'CU-01 - Gestionar Catalogo de Especies Productivas',
       rf: 'RF-15',
-      tipo: 'Funcional (UI & API)',
-      equipo: 'Frontend & QA',
+      tipo: 'Funcional (UI y API)',
+      equipo: 'Frontend y QA',
       ambiente: Cypress.config('baseUrl'),
-      backend: 'http://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
+      backend: Cypress.env('API_BASE_URL'),
       navegador: `${Cypress.browser.name} ${Cypress.browser.version}`,
       fecha: new Date().toISOString(),
       peticionInfo,
@@ -93,78 +83,99 @@ describe('TC-M09-G01 · Registro de Especie Productiva (RF-15)', () => {
     cy.task('writeResult', { file: `${DIR}/TC-M09-G01_resultado.md`, content: renderMd(r) });
   });
 
-  it('valida el registro exitoso de una especie productiva en UI y Backend (RF-15)', () => {
+  it('registra una especie productiva y confirma sus atributos en UI y API', () => {
     checks.length = 0;
 
-    // Interceptar la solicitud de creación de especie en el backend
+    if (!CUENTA_EJECUCION_EMAIL || !CUENTA_EJECUCION_PASSWORD) {
+      throw new Error('Faltan CYPRESS_ADMIN_EMAIL o CYPRESS_ADMIN_PASSWORD para ejecutar TC-M09-G01.');
+    }
+
+    cy.intercept('GET', `**${ENDPOINT_ESPECIES}*`).as('listarEspecies');
     cy.intercept('POST', `**${ENDPOINT_ESPECIES}`).as('crearEspecie');
 
-    // 1) Iniciar sesión con la cuenta de ejecución confirmada
     cy.loginUI(CUENTA_EJECUCION_EMAIL, CUENTA_EJECUCION_PASSWORD);
+    cy.location('pathname', { timeout: 15000 }).should('eq', '/dashboard');
 
-    // 2) Navegar al formulario de gestión de especies
-    cy.visit('/especies');
-    cy.location('pathname', { timeout: 15000 }).should('include', '/especies');
+    // Navegar mediante SPA (Sidebar) para preservar el token JWT en memoria
+    cy.contains('.ds-sidebar__item', 'Configuración', { timeout: 15000 })
+      .should('be.visible')
+      .click({ force: true });
 
-    // Abrir modal o sección de creación de especie si aplica
+    cy.location('pathname', { timeout: 15000 }).should('eq', '/configuracion');
+    cy.wait('@listarEspecies', { timeout: 15000 }).its('response.statusCode').should('eq', 200);
+    cy.contains('h2', 'Catálogo de Especies').should('be.visible');
+
     cy.get('body').then(($body) => {
-      if ($body.find('button:contains("Nueva Especie"), button:contains("Crear Especie")').length > 0) {
-        cy.contains('button', /Nueva Especie|Crear Especie/i).click();
+      const yaExiste = $body.find('tbody tr').toArray().some((row) => {
+        const celdas = Array.from(row.querySelectorAll('td'));
+        return celdas.some((cell) => cell.textContent?.trim() === DATO_NOMBRE);
+      });
+
+      if (yaExiste) {
+        add(
+          'Precondicion: disponibilidad del dato de prueba',
+          `No debe existir una especie llamada "${DATO_NOMBRE}" antes de crearla`,
+          `Ya existe "${DATO_NOMBRE}" en el catalogo TEST; no se creo un duplicado.`,
+          'FALLA',
+        );
+        throw new Error(`Precondicion no satisfecha: ya existe la especie "${DATO_NOMBRE}".`);
       }
+
+      add(
+        'Precondicion: disponibilidad del dato de prueba',
+        `No debe existir una especie llamada "${DATO_NOMBRE}" antes de crearla`,
+        `"${DATO_NOMBRE}" no existe en el catalogo TEST.`,
+      );
     });
 
-    // 3) Checkpoint 1: Diligenciamiento del formulario en el cliente (UI)
-    cy.get('input[name="nombre"], input[placeholder*="nombre" i]').clear().type(DATO_NOMBRE);
-    cy.get('textarea[name="descripcion"], input[name="descripcion"]').clear().type(DATO_DESCRIPCION);
+    cy.contains('button', 'Nueva especie').should('be.visible').click();
+    cy.get('[role="dialog"]').should('be.visible');
+    cy.get('input[name="nombre"]').clear().type(DATO_NOMBRE);
+    cy.get('textarea#especie-desc').clear().type(DATO_DESCRIPCION);
 
     add(
-      'Checkpoint 1: Diligenciamiento de datos de la especie en el cliente (UI)',
-      `Ingresar nombre "${DATO_NOMBRE}" (3-50 chars) y descripción "${DATO_DESCRIPCION}"`,
-      `Formulario diligenciado con nombre: "${DATO_NOMBRE}", descripción: "${DATO_DESCRIPCION}"`,
-      'OK'
+      'Checkpoint 1: diligenciamiento de la especie en UI',
+      `Ingresar nombre "${DATO_NOMBRE}" y descripcion "${DATO_DESCRIPCION}"`,
+      'Formulario diligenciado con los datos definidos por el caso.',
     );
-
     cy.screenshot('01_formulario_especie_ui', { overwrite: true });
 
-    // 4) Enviar formulario (Submit)
-    cy.contains('button', /Guardar|Registrar|Crear/i).click();
+    cy.contains('button', 'Registrar especie').click();
 
-    // 5) Checkpoint 2: Verificación de la respuesta de red / API (cy.wait)
     cy.wait('@crearEspecie', { timeout: 15000 }).then((interception) => {
-      const res = interception.response;
-      const status = res?.statusCode || 0;
-      const body = res?.body || {};
+      const status = interception.response?.statusCode || 0;
+      const body = interception.response?.body || {};
+      peticionInfo = `POST ${ENDPOINT_ESPECIES} -> HTTP ${status}. Body: ${JSON.stringify(body)}`;
 
-      peticionInfo = `POST ${ENDPOINT_ESPECIES} -> Status: ${status}. Body: ${JSON.stringify(body)}`;
+      const esRespuestaValida =
+        (status === 201 || status === 200) &&
+        typeof body.id_especie === 'number' && body.id_especie > 0 &&
+        body.nombre === DATO_NOMBRE &&
+        body.descripcion === DATO_DESCRIPCION &&
+        body.es_activo === true &&
+        typeof body.fecha_creacion === 'string' && body.fecha_creacion.length > 0;
 
-      if (status === 201 || status === 200) {
-        const idGenerado = body.id || body.id_especie || 'Generado';
-        const estadoActivo = body.activo !== undefined ? body.activo : true;
-        const tieneFecha = body.fecha_registro || body.created_at || body.fecha_creacion;
+      add(
+        'Checkpoint 2: contrato de creacion en API REST',
+        'HTTP 201/200 con id_especie, nombre, descripcion, es_activo=true y fecha_creacion',
+        esRespuestaValida
+          ? `HTTP ${status} OK - ID: ${body.id_especie}, Activo: ${body.es_activo}, Fecha: ${body.fecha_creacion}`
+          : `Respuesta no conforme. HTTP ${status}. Body: ${JSON.stringify(body)}`,
+        esRespuestaValida ? 'OK' : 'FALLA',
+      );
 
-        if (idGenerado && estadoActivo && tieneFecha) {
-          add(
-            'Checkpoint 2: Confirmación de creación y atributos de dominio en API REST',
-            'Respuesta HTTP 201/200 OK con ID generado, estado activo por defecto y fecha de registro',
-            `HTTP ${status} OK - ID: ${idGenerado}, Estado Activo: ${estadoActivo}, Fecha Registro: ${tieneFecha}`,
-            'OK'
-          );
-        } else {
-          add(
-            'Checkpoint 2: Confirmación de creación y atributos de dominio en API REST',
-            'Respuesta HTTP 201/200 OK con ID, estado activo y fecha de registro',
-            `HTTP ${status} OK pero faltan atributos de dominio esperados. Body: ${JSON.stringify(body)}`,
-            'OBSERVACION'
-          );
-        }
-      } else {
-        add(
-          'Checkpoint 2: Confirmación de creación y atributos de dominio en API REST',
-          'Respuesta HTTP 201/200 OK',
-          `HALLAZGO: Error en backend al crear especie. HTTP Status ${status}. Body: ${JSON.stringify(body)}`,
-          'FALLA'
-        );
-      }
+      expect(esRespuestaValida, 'contrato de creacion de especie').to.eq(true);
+
+      cy.contains('tbody tr', DATO_NOMBRE)
+        .should('contain.text', DATO_DESCRIPCION)
+        .and('contain.text', 'Activo')
+        .and('contain.text', `#${body.id_especie}`);
+
+      add(
+        'Checkpoint 3: confirmacion visual en el catalogo',
+        'La tabla muestra la especie creada, su ID y estado Activo',
+        `La tabla muestra ${DATO_NOMBRE} con ID #${body.id_especie} y estado Activo.`,
+      );
     });
 
     cy.screenshot('02_confirmacion_registro_ui', { overwrite: true });

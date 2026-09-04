@@ -1,7 +1,6 @@
 /// <reference types="cypress" />
 // Comandos personalizados para TC-M09-G01 (loginUI, setNetwork).
 // Se cargan vía "supportFile" en cypress.config.js (proyecto autocontenido).
-// TODO: confirmar endpoint real de creación de especie (RF-15) y rol/cuenta de ejecución antes de correr este caso — actualmente sin verificar contra el backend.
 
 declare global {
   namespace Cypress {
