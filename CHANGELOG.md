@@ -1,3 +1,9 @@
+## [1.0.0-rc.5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.4...v1.0.0-rc.5) (2026-09-04)
+
+### Bug Fixes
+
+* **app:** limitar el bloqueo de "sin finca" al dashboard ([9bb4847](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9bb48479dd850db1541e5e09827e7a866e12da93))
+
 ## [1.0.0-rc.4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.3...v1.0.0-rc.4) (2026-09-04)
 
 ### Features
