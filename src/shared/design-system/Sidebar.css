@@ -209,10 +209,17 @@
   }
 }
 
-/* Main content wrapper — pushes right of sidebar on desktop, full-width on mobile */
+/* Main content wrapper — pushes right of sidebar on desktop, full-width on mobile.
+   El sidebar es position:fixed (fuera del flujo), así que el flex:1 de este
+   elemento se calcula contra un contenedor que no reserva su espacio: sin el
+   width explícito, este wrapper mide el 100% del viewport y el margin-left
+   solo lo desplaza, desbordando exactamente --sidebar-w px por la derecha
+   (INC-M01-22-074 / #107 — reproducido en /auditoria a 1280px, pero afecta
+   a cualquier página de escritorio con contenido que llegue al borde). */
 .ds-app-content {
   flex: 1;
   margin-left: var(--sidebar-w);
+  width: calc(100% - var(--sidebar-w));
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -221,5 +228,6 @@
 @media (max-width: 1023px) {
   .ds-app-content {
     margin-left: 0;
+    width: 100%;
   }
 }
