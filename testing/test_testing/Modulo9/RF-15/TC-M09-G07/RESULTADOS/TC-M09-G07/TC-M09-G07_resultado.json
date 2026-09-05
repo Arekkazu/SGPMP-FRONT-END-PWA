@@ -1,0 +1,53 @@
+{
+  "caso": "TC-M09-G07",
+  "titulo": "CU-01 - Sincronización offline y conflicto de nombres de especie (RF-15)",
+  "cu": "CU-01 - Gestionar Catálogo de Especies Productivas",
+  "rf": "RF-15",
+  "tipo": "Funcional (UI, PWA y API)",
+  "equipo": "Frontend y QA",
+  "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.76",
+  "fecha": "2026-09-05T14:28:00.000Z",
+  "peticionInfo": "POST /configuracion/especies -> HTTP 500 (ERROR_INTERNO: Error inesperado en base de datos)",
+  "checkpoints": [
+    {
+      "paso": "CP-1: Precondición de datos en catálogo TEST",
+      "esperado": "No debe existir una especie previamente llamada \"Bovino\"",
+      "obtenido": "Confirmado: \"Bovino\" no existe en el catálogo TEST (0 registros).",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-2: Protección UI de creación en modo Offline",
+      "esperado": "El botón \"Nueva especie\" debe estar inhabilitado (disabled) al estar offline",
+      "obtenido": "Botón \"Nueva especie\" inhabilitado correctamente en UI (disabled=true) al detectar estado offline.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-3: Registro base de especie \"Bovino\" en servidor",
+      "esperado": "HTTP 201/200 OK con ID asignado y objeto de especie creada",
+      "obtenido": "Fallo de servidor Backend TEST. HTTP 500. Body: {\"codigo\":\"ERROR_INTERNO\",\"mensaje\":\"Error inesperado en base de datos\"}",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-4: Rechazo de duplicado de nombre \"Bovino\" en servidor",
+      "esperado": "HTTP 409 Conflict (o 400 Bad Request) notificando duplicidad de nombre",
+      "obtenido": "No pudo evaluarse el conflicto debido a la falla previa HTTP 500 en la creación base.",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-5: Verificación de Modelo Arquitectónico Offline en PWA",
+      "esperado": "Documentación de la política de escritura únicamente online en Catálogo de Especies",
+      "obtenido": "Confirmado: El módulo de especies no utiliza cola de encolamiento syncQueue.ts ni Dexie para escritura offline. Las acciones de modificación están inhabilitadas sin conexión (escritura online-only).",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "CON FALLAS",
+  "hallazgos": [
+    "CP-1: Precondición de datos en catálogo TEST -> Confirmado: \"Bovino\" no existe en el catálogo TEST (0 registros). (OK)",
+    "CP-2: Protección UI de creación en modo Offline -> Botón \"Nueva especie\" inhabilitado correctamente en UI (disabled=true) al detectar estado offline. (OK)",
+    "CP-3: Registro base de especie \"Bovino\" en servidor -> Fallo de servidor Backend TEST. HTTP 500. Body: {\"codigo\":\"ERROR_INTERNO\",\"mensaje\":\"Error inesperado en base de datos\"} (FALLA)",
+    "CP-4: Rechazo de duplicado de nombre \"Bovino\" en servidor -> No pudo evaluarse el conflicto debido a la falla previa HTTP 500 en la creación base. (FALLA)",
+    "CP-5: Verificación de Modelo Arquitectónico Offline en PWA -> Confirmado: El módulo de especies no utiliza cola de encolamiento syncQueue.ts ni Dexie para escritura offline. Las acciones de modificación están inhabilitadas sin conexión (escritura online-only). (OK)"
+  ]
+}
