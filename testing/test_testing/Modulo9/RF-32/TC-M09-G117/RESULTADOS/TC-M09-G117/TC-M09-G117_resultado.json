@@ -1,0 +1,39 @@
+{
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.77",
+  "fecha": "2026-09-05T08:31:03.100Z",
+  "checkpoints": [
+    {
+      "paso": "TC-M09-225: mostrar dialogo de confirmacion antes de reemplazar",
+      "esperado": "Antes de reemplazar la configuracion de \"Camarón Blanco\" (que ya tiene configuracion existente), el asistente debe mostrar un paso de previsualizacion con un aviso explicito de confirmacion",
+      "obtenido": "Se mostro el paso \"Previsualizar\" con el aviso \"Esta acción es irreversible\" y el detalle de que se reemplazara la especie destino elegida",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-225: no reemplazar la configuracion sin confirmacion explicita",
+      "esperado": "La configuracion de \"Camarón Blanco\" debe permanecer intacta mientras el usuario no confirme explicitamente (boton \"Aplicar plantilla\")",
+      "obtenido": "La configuracion de ciclos biologicos de la especie destino es identica antes y despues de llegar al paso de previsualizacion: no hubo ningun cambio sin confirmacion",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-226: cancelar la aplicacion cuando el usuario rechaza el reemplazo",
+      "esperado": "Al rechazar el reemplazo desde el paso de previsualizacion (cerrar en vez de confirmar), el asistente debe cerrarse sin aplicar ningun cambio",
+      "obtenido": "El asistente se cerro correctamente al rechazar; no quedo ningun dialogo abierto ni mensaje de error en pantalla",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-226: la configuracion destino permanece sin cambios tras cancelar",
+      "esperado": "La configuracion de \"Camarón Blanco\" no debe modificarse en absoluto al cancelar antes de confirmar",
+      "obtenido": "La configuracion de ciclos biologicos de la especie destino es identica antes y despues de cancelar",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-226: no debe crearse un snapshot de aplicacion efectiva",
+      "esperado": "El historial de aplicaciones de plantillas no debe registrar ninguna aplicacion nueva cuando el usuario cancela antes de confirmar",
+      "obtenido": "El historial de aplicaciones es identico antes y despues de cancelar: no se registro ninguna aplicacion nueva",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES"
+}
