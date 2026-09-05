@@ -8,19 +8,19 @@
   "responsable": "Sebastian",
   "testEmail": "gestor.granja.test@pecuaria.co",
   "idUsuario": 0,
-  "runnerIp": "200.118.145.38",
+  "runnerIp": "181.59.67.25",
   "intentosPrevios": 0,
   "totalPreCp04": 1,
   "esperadoCp04": "HTTP 202",
-  "obtenidoCp04": 422,
-  "codigoRespuestaCp04": "LIMITE_SOLICITUDES_EXCEDIDO",
+  "obtenidoCp04": 202,
+  "codigoRespuestaCp04": "EXITOSO",
   "intentosConsumidosTest": 2,
-  "observacionRepetibilidad": "La prueba consumió 2 solicitud(es) de la cuota de 3/hora por IP (Total acumulado IP 200.118.145.38: 2).",
+  "observacionRepetibilidad": "La prueba consumió 2 solicitud(es) de la cuota de 3/hora por IP (Total acumulado IP 181.59.67.25: 2).",
   "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
   "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
-  "navegador": "chrome 152.0.7977.65",
-  "fecha": "2026-09-03T05:52:54.789Z",
-  "veredicto": "CON FALLAS",
+  "navegador": "chrome 152.0.7977.76",
+  "fecha": "2026-09-05T01:58:57.439Z",
+  "veredicto": "SIN FALLAS BLOQUEANTES",
   "checkpoints": [
     {
       "paso": "CP-01: Precondición de Cuenta",
@@ -37,14 +37,14 @@
     {
       "paso": "CP-03: Auditoría Backend Post-Interrupción",
       "esperado": "Evento de recuperación registrado en BD exigiendo coincidencia con gestor.granja.test@pecuaria.co",
-      "obtenido": "Evento ID 3661 registrado a las 2026-09-03T05:52:48.396853Z (IP: 200.118.145.38, Resultado: exitoso)",
+      "obtenido": "Evento ID 4518 registrado a las 2026-09-05T01:58:45.181877Z (IP: 181.59.67.25, Resultado: exitoso)",
       "estado": "OK"
     },
     {
       "paso": "CP-04: Reintento y Rate-Limit (N < 3)",
       "esperado": "Con N=1 solicitudes previas en IP (< 3), la solicitud (N+1=2) EXIGE HTTP 202",
-      "obtenido": "HTTP 422 (LIMITE_SOLICITUDES_EXCEDIDO) — FALLA: El servidor penalizó el reintento prematuramente",
-      "estado": "FALLA"
+      "obtenido": "HTTP 202 OK — El reintento fue aceptado sin penalización prematura",
+      "estado": "OK"
     }
   ]
 }
