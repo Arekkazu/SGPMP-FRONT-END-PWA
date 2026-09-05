@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, CheckCircle } from 'lucide-react';
@@ -6,6 +7,8 @@ import { useRegistro } from '../hooks/useRegistro';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
+import { RecaptchaField } from '../components/RecaptchaField';
+import { recaptchaConfigured, recaptchaSiteKey } from '../config/recaptcha';
 import type { UsuarioCreateDTO } from '../types';
 import './AuthPages.css';
 
@@ -43,13 +46,16 @@ function passwordStrength(pw: string): { score: number; label: string; color: st
 }
 
 export function RegistroPage() {
+  const { t } = useT('auth');
   const [step, setStep] = useState<1 | 2>(1);
   const [step1Data, setStep1Data] = useState<Step1Fields | null>(null);
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [pwValue, setPwValue] = useState('');
-  const [captchaChecked, setCaptchaChecked] = useState(false);
-  const { registrar, loading, error, success } = useRegistro();
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const { registrar, loading, error, success, online } = useRegistro();
 
   const form1 = useForm<Step1Fields>({ mode: 'onBlur' });
   const form2 = useForm<Step2Fields>({ mode: 'onBlur' });
@@ -61,15 +67,22 @@ export function RegistroPage() {
     setStep1Data(data);
     setStep(2);
     setPwValue('');
-    setCaptchaChecked(false);
+    setCaptchaToken(null);
+    setCaptchaError(null);
+    setCaptchaResetKey((key) => key + 1);
     form2.reset();
   };
 
   const onStep2Submit = async (data: Step2Fields) => {
     if (!step1Data) return;
+    if (!captchaToken) {
+      setCaptchaError('Completa la verificación de seguridad antes de registrarte.');
+      return;
+    }
     const dto: UsuarioCreateDTO = {
       correo_electronico: data.correo_electronico,
       contrasena: data.contrasena,
+      confirmar_contrasena: data.confirmar_contrasena,
       nombre: step1Data.nombre,
       apellidos: step1Data.apellidos,
       tipo_identificacion: step1Data.tipo_identificacion,
@@ -78,8 +91,19 @@ export function RegistroPage() {
       genero: step1Data.genero,
       telefono: step1Data.telefono || undefined,
       direccion: step1Data.direccion || undefined,
+      captcha_token: captchaToken,
     };
-    await registrar(dto);
+    const registrado = await registrar(dto);
+    if (!registrado) {
+      setCaptchaToken(null);
+      setCaptchaError('Completa nuevamente la verificación antes de reintentar.');
+      setCaptchaResetKey((key) => key + 1);
+    }
+  };
+
+  const handleCaptchaChange = (token: string | null) => {
+    setCaptchaToken(token);
+    if (token) setCaptchaError(null);
   };
 
   if (success) {
@@ -89,16 +113,16 @@ export function RegistroPage() {
           <div className="auth-success-icon">
             <CheckCircle size={28} color="var(--sem-success)" aria-hidden />
           </div>
-          <h1 className="auth-title">¡Cuenta creada!</h1>
+          <h1 className="auth-title">{t('registropage.cuenta_creada')}</h1>
           <Alert
             variant="success"
-            title="Revisa tu correo"
-            description="Hemos enviado un enlace de activación a tu correo electrónico. Revisa tu bandeja de entrada (y la carpeta de spam)."
+            title={t('registropage.revisa_tu_correo')}
+            description={t('registropage.hemos_enviado_un_enlace_de_activacion_a_tu')}
             className="auth-alert"
           />
           <div style={{ display: 'flex', gap: 'var(--s3)', justifyContent: 'center', marginTop: 'var(--s4)' }}>
-            <Link to="/login" className="auth-link">Ir a iniciar sesión</Link>
-            <Link to="/reenviar-activacion" className="auth-link">Reenviar correo de activación</Link>
+            <Link to="/login" className="auth-link">{t('registropage.ir_a_iniciar_sesion')}</Link>
+            <Link to="/reenviar-activacion" className="auth-link">{t('registropage.reenviar_correo_de_activacion')}</Link>
           </div>
         </div>
       </div>
@@ -116,21 +140,21 @@ export function RegistroPage() {
             <path d="M13 21C13 19.5 14.3 18.5 16 18.5C17.7 18.5 19 19.5 19 21" stroke="white" strokeWidth="1.5"/>
           </svg>
         </div>
-        <h1 className="auth-title">Crear cuenta nueva</h1>
+        <h1 className="auth-title">{t('registropage.crear_cuenta_nueva')}</h1>
         <p className="auth-sub">
           {step === 1 ? 'Paso 1 de 2 — Información personal' : 'Paso 2 de 2 — Credenciales de acceso'}
         </p>
 
         {/* Stepper */}
-        <div className="auth-stepper" aria-label="Progreso de registro">
+        <div className="auth-stepper" aria-label={t('registropage.progreso_de_registro')}>
           <div className={`auth-step ${step === 1 ? 'auth-step--active' : 'auth-step--done'}`}>
             <div className="auth-step__circle">{step === 1 ? '1' : '✓'}</div>
-            <span className="auth-step__label">Datos personales</span>
+            <span className="auth-step__label">{t('registropage.datos_personales')}</span>
           </div>
           <div className="auth-step-line" role="presentation" />
           <div className={`auth-step ${step === 2 ? 'auth-step--active' : ''}`}>
             <div className="auth-step__circle">2</div>
-            <span className="auth-step__label">Credenciales</span>
+            <span className="auth-step__label">{t('registropage.credenciales')}</span>
           </div>
         </div>
 
@@ -139,67 +163,66 @@ export function RegistroPage() {
           <form onSubmit={form1.handleSubmit(onStep1Submit)} noValidate>
             <div className="auth-form-grid">
               <div className="auth-field">
-                <label className="ds-field__label" htmlFor="tipo_identificacion">
-                  Tipo de identificación <span className="ds-field__req">*</span>
+                <label className="ds-field__label" htmlFor="tipo_identificacion">{t('registropage.tipo_de_identificacion')}<span className="ds-field__req">*</span>
                 </label>
                 <select
                   id="tipo_identificacion"
                   className="ds-field__input"
                   {...form1.register('tipo_identificacion', { required: true })}
                 >
-                  <option value="CC">Cédula de ciudadanía (CC)</option>
-                  <option value="CE">Cédula de extranjería (CE)</option>
-                  <option value="PAS">Pasaporte</option>
+                  <option value="CC">{t('registropage.cedula_de_ciudadania_cc')}</option>
+                  <option value="CE">{t('registropage.cedula_de_extranjeria_ce')}</option>
+                  <option value="Pasaporte">{t('registropage.pasaporte')}</option>
                 </select>
               </div>
 
               <div className="auth-field">
                 <Input
-                  label="Número de identificación"
+                  label={t('registropage.numero_de_identificacion')}
                   required
                   placeholder="Ej. 1234567890"
                   maxLength={20}
                   error={form1.formState.errors.numero_identificacion?.message}
                   {...form1.register('numero_identificacion', {
-                    required: 'El número de identificación es obligatorio.',
+                    required: t('registropage.el_numero_de_identificacion_es_obligatorio'),
                   })}
                 />
               </div>
 
               <div className="auth-field">
                 <Input
-                  label="Nombres"
+                  label={t('registropage.nombres')}
                   required
-                  placeholder="Solo letras y ñ"
+                  placeholder={t('registropage.solo_letras_y_n')}
                   error={form1.formState.errors.nombre?.message}
                   {...form1.register('nombre', {
-                    required: 'El nombre es obligatorio.',
-                    pattern: { value: NAME_REGEX, message: 'Solo letras, espacios y caracteres españoles.' },
+                    required: t('registropage.el_nombre_es_obligatorio'),
+                    pattern: { value: NAME_REGEX, message: t('registropage.solo_letras_espacios_y_caracteres_espanoles') },
                   })}
                 />
               </div>
 
               <div className="auth-field">
                 <Input
-                  label="Apellidos"
+                  label={t('registropage.apellidos')}
                   required
-                  placeholder="Solo letras y ñ"
+                  placeholder={t('registropage.solo_letras_y_n')}
                   error={form1.formState.errors.apellidos?.message}
                   {...form1.register('apellidos', {
-                    required: 'Los apellidos son obligatorios.',
-                    pattern: { value: NAME_REGEX, message: 'Solo letras, espacios y caracteres españoles.' },
+                    required: t('registropage.los_apellidos_son_obligatorios'),
+                    pattern: { value: NAME_REGEX, message: t('registropage.solo_letras_espacios_y_caracteres_espanoles') },
                   })}
                 />
               </div>
 
               <div className="auth-field">
                 <Input
-                  label="Fecha de nacimiento"
+                  label={t('registropage.fecha_de_nacimiento')}
                   type="date"
                   required
                   error={form1.formState.errors.fecha_nacimiento?.message}
                   {...form1.register('fecha_nacimiento', {
-                    required: 'La fecha de nacimiento es obligatoria.',
+                    required: t('registropage.la_fecha_de_nacimiento_es_obligatoria'),
                     validate: (v) => {
                       const birth = new Date(v);
                       const today = new Date();
@@ -213,39 +236,38 @@ export function RegistroPage() {
               </div>
 
               <div className="auth-field">
-                <label className="ds-field__label" htmlFor="genero">
-                  Género <span className="ds-field__req">*</span>
+                <label className="ds-field__label" htmlFor="genero">{t('registropage.genero')}<span className="ds-field__req">*</span>
                 </label>
                 <select
                   id="genero"
                   className="ds-field__input"
                   {...form1.register('genero', { required: true })}
                 >
-                  <option value="M">Masculino (M)</option>
-                  <option value="F">Femenino (F)</option>
-                  <option value="X">No binario (X)</option>
-                  <option value="T">Trans (T)</option>
+                  <option value="M">{t('registropage.masculino_m')}</option>
+                  <option value="F">{t('registropage.femenino_f')}</option>
+                  <option value="X">{t('registropage.no_binario_x')}</option>
+                  <option value="T">{t('registropage.trans_t')}</option>
                 </select>
               </div>
 
               <div className="auth-field">
                 <Input
-                  label="Teléfono"
+                  label={t('registropage.telefono')}
                   type="tel"
                   placeholder="Ej. 3001234567"
                   maxLength={15}
                   hint="Opcional, solo números, 7-15 dígitos"
                   error={form1.formState.errors.telefono?.message}
                   {...form1.register('telefono', {
-                    pattern: { value: /^[0-9]{7,15}$/, message: 'Teléfono inválido. Solo números, 7-15 dígitos.' },
+                    pattern: { value: /^[0-9]{7,15}$/, message: t('registropage.telefono_invalido_solo_numeros_7_15_digitos') },
                   })}
                 />
               </div>
 
               <div className="auth-field auth-col-full">
                 <Input
-                  label="Dirección"
-                  placeholder="Calle, número, ciudad"
+                  label={t('registropage.direccion')}
+                  placeholder={t('registropage.calle_numero_ciudad')}
                   maxLength={150}
                   {...form1.register('direccion')}
                 />
@@ -254,9 +276,9 @@ export function RegistroPage() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--s3)' }}>
               <Link to="/login" style={{ textDecoration: 'none' }}>
-                <Button type="button" variant="secondary" size="md">¿Ya tienes cuenta?</Button>
+                <Button type="button" variant="secondary" size="md">{t('registropage.ya_tienes_cuenta')}</Button>
               </Link>
-              <Button type="submit" variant="primary" size="md">Continuar →</Button>
+              <Button type="submit" variant="primary" size="md">{t('registropage.continuar')}</Button>
             </div>
           </form>
         )}
@@ -267,37 +289,45 @@ export function RegistroPage() {
             {error && (
               <Alert
                 variant="error"
-                title="Error al registrar"
+                title={t('registropage.error_al_registrar')}
                 description={error.message}
+                className="auth-alert"
+              />
+            )}
+            {!online && (
+              <Alert
+                variant="warning"
+                title={t('registropage.sin_conexion')}
+                description={t('registropage.el_registro_y_la_verificacion_captcha')}
                 className="auth-alert"
               />
             )}
 
             <div className="auth-field">
               <Input
-                label="Correo electrónico"
+                label={t('registropage.correo_electronico')}
                 type="email"
                 required
                 placeholder="usuario@dominio.com"
                 error={form2.formState.errors.correo_electronico?.message}
                 {...form2.register('correo_electronico', {
-                  required: 'El correo es obligatorio.',
-                  pattern: { value: /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/, message: 'Formato de correo inválido.' },
+                  required: t('registropage.el_correo_es_obligatorio'),
+                  pattern: { value: /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/, message: t('registropage.formato_de_correo_invalido') },
                 })}
               />
             </div>
 
             <div className="auth-field">
               <Input
-                label="Contraseña"
+                label={t('registropage.contrasena')}
                 type={showPw ? 'text' : 'password'}
                 required
                 error={form2.formState.errors.contrasena?.message}
                 trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
                 onTrailingClick={() => setShowPw((v) => !v)}
                 {...form2.register('contrasena', {
-                  required: 'La contraseña es obligatoria.',
-                  pattern: { value: PW_REGEX, message: 'La contraseña no cumple los requisitos de seguridad.' },
+                  required: t('registropage.la_contrasena_es_obligatoria'),
+                  pattern: { value: PW_REGEX, message: t('registropage.la_contrasena_no_cumple_los_requisitos_de') },
                   onChange: (e) => setPwValue(e.target.value),
                 })}
               />
@@ -331,40 +361,47 @@ export function RegistroPage() {
 
             <div className="auth-field">
               <Input
-                label="Confirmar contraseña"
+                label={t('registropage.confirmar_contrasena')}
                 type={showConfirmPw ? 'text' : 'password'}
                 required
                 error={form2.formState.errors.confirmar_contrasena?.message}
                 trailingIcon={showConfirmPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
                 onTrailingClick={() => setShowConfirmPw((v) => !v)}
                 {...form2.register('confirmar_contrasena', {
-                  required: 'Confirma tu contraseña.',
+                  required: t('registropage.confirma_tu_contrasena'),
                   validate: (v) => v === form2.getValues('contrasena') || 'Las contraseñas no coinciden.',
                 })}
               />
             </div>
 
-            <div className="auth-captcha-row">
-              <input
-                type="checkbox"
-                id="captcha-check"
-                checked={captchaChecked}
-                onChange={(e) => setCaptchaChecked(e.target.checked)}
+            {online && (
+              <RecaptchaField
+                key={captchaResetKey}
+                siteKey={recaptchaSiteKey}
+                error={captchaError}
+                onTokenChange={handleCaptchaChange}
+                onExpired={() => {
+                  setCaptchaToken(null);
+                  setCaptchaError('La verificación expiró. Complétala nuevamente.');
+                }}
+                onErrored={() => {
+                  setCaptchaToken(null);
+                  setCaptchaError('No fue posible cargar reCAPTCHA. Revisa tu conexión e intenta nuevamente.');
+                }}
               />
-              <label htmlFor="captcha-check">No soy un robot (simulación)</label>
-            </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--s3)' }}>
-              <Button type="button" variant="secondary" size="md" onClick={() => setStep(1)}>
-                ← Anterior
-              </Button>
-              <Button type="submit" variant="primary" size="md" loading={loading} disabled={!captchaChecked}>
-                Registrarse
-              </Button>
+              <Button type="button" variant="secondary" size="md" onClick={() => setStep(1)}>{t('registropage.anterior')}</Button>
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                loading={loading}
+                disabled={!online || !recaptchaConfigured || !captchaToken}
+              >{t('registropage.registrarse')}</Button>
             </div>
-            <p style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s3)' }}>
-              Al registrarte aceptas nuestros términos y condiciones.
-            </p>
+            <p style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s3)' }}>{t('registropage.al_registrarte_aceptas_nuestros_terminos_y')}</p>
           </form>
         )}
       </div>

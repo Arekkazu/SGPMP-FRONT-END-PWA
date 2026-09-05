@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { FileText, FileSpreadsheet } from 'lucide-react';
 import { ModalShell } from './ModalShell';
 import { Button } from '../../shared/design-system/Button';
@@ -14,34 +15,29 @@ interface Props {
 }
 
 export function ExportarModal({ exportando, exportError, onExportar, onClose }: Props) {
+  const { t } = useT('telemetry');
   const es503 = exportError?.status === 503;
   return (
     <ModalShell
-      title="Exportar historial de lecturas"
+      title={t('exportarmodal.exportar_historial_de_lecturas')}
       onClose={onClose}
       maxWidth={440}
-      footer={<Button variant="ghost" size="sm" onClick={onClose} disabled={exportando}>Cerrar</Button>}
+      footer={<Button variant="ghost" size="sm" onClick={onClose} disabled={exportando}>{t('exportarmodal.cerrar')}</Button>}
     >
-      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>
-        Elige el formato de exportación del historial con los filtros actuales.
-      </p>
+      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('exportarmodal.elige_el_formato_de_exportacion_del')}</p>
 
       <div style={{ display: 'flex', gap: 'var(--s3)' }}>
         <Button variant="secondary" size="md" fullWidth loading={exportando} disabled={exportando} onClick={() => onExportar('PDF')}>
-          <FileText size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-          PDF
-        </Button>
+          <FileText size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('exportarmodal.pdf')}</Button>
         <Button variant="secondary" size="md" fullWidth loading={exportando} disabled={exportando} onClick={() => onExportar('EXCEL')}>
-          <FileSpreadsheet size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-          Excel
-        </Button>
+          <FileSpreadsheet size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('exportarmodal.excel')}</Button>
       </div>
 
       {exportError && (
         <Alert
           variant={es503 ? 'warning' : 'error'}
-          title={es503 ? 'Exportación no disponible por ahora' : 'No se pudo exportar'}
-          description={es503 ? 'La exportación depende del módulo de reportes (M08), aún no disponible. Inténtalo más adelante.' : exportError.message}
+          title={es503 ? t('exportarmodal.exportacion_no_disponible_por_ahora') : t('exportarmodal.no_se_pudo_exportar')}
+          description={es503 ? t('exportarmodal.la_exportacion_depende_del_modulo_de') : exportError.message}
           style={{ marginTop: 'var(--s4)' }}
         />
       )}

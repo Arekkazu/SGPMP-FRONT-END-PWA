@@ -1,0 +1,58 @@
+{
+  "caso": "TC-M01-109",
+  "titulo": "Interrupción de red intermitente en login y cambio de contraseña (RF-02 & RF-07)",
+  "cus": "CU-InicioSesion & CU-CambioContrasena",
+  "rfs": "RF-02 & RF-07",
+  "tipo": "Pruebas Extremas / Resiliencia e Interrupción Intermitente",
+  "severidad": "Media",
+  "responsable": "Sebastian",
+  "testEmail": "gestor.granja.test@pecuaria.co",
+  "currentPw": "Test1234!",
+  "newPw": "NuevaTest#2029",
+  "idUsuario": 30,
+  "fallasPrevias": 0,
+  "restauracionExitosa": true,
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-03T07:31:10.067Z",
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "checkpoints": [
+    {
+      "paso": "CP-01: Precondición de Cuenta Sujeto",
+      "esperado": "Cuenta gestor.granja.test@pecuaria.co existente y activa (HTTP 200)",
+      "obtenido": "Cuenta encontrada ID: 30, Estado: Activo",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02: RF-02 Login UI Interrumpido + Captura Token A",
+      "esperado": "POST /sesiones/ procesado por backend (Token A emitido); cliente recibe Network Error",
+      "obtenido": "Token A capturado en proxy (eyJhbGciOiJIUzI...); cliente experimentó falla de red",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03: RF-02 Verificación de Sesión Única",
+      "esperado": "Token A EXIGE HTTP 401 (TOKEN_REVOCADO) y Token B responde HTTP 200 OK",
+      "obtenido": "Token A rechazado (HTTP 401); Token B activo (HTTP 200 OK) — Sesión única garantizada",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04: RF-07 Cambio de Clave Interrumpido",
+      "esperado": "PUT procesado en backend (clave actualizada a NuevaTest#2029); cliente recibe Network Error",
+      "obtenido": "Falla de red capturada por el cliente tras envío de cambio de clave",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05: RF-07 Reintento Manual con Clave Obsoleta",
+      "esperado": "EXIGE STRICTAMENTE HTTP 401 Unauthorized conteniendo \"Intento 1 de 5\"",
+      "obtenido": "HTTP 401 (CONTRASENA_ACTUAL_INCORRECTA) — Contador incrementado a Intento 1 de 5 (bloqueo a 30 min). Hallazgo de QA verificado",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06: Restauración de Contraseña Original",
+      "esperado": "Reversión exitosa a Test1234! (HTTP 200 OK) y verificación de login",
+      "obtenido": "Contraseña restaurada satisfactoriamente a Test1234!. Login final respondió HTTP 200 OK",
+      "estado": "OK"
+    }
+  ]
+}

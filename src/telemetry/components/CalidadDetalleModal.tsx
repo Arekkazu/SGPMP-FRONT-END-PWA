@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { RefreshCcw } from 'lucide-react';
 import { ModalShell } from './ModalShell';
 import { Button } from '../../shared/design-system/Button';
@@ -44,6 +45,7 @@ function Params({ dict }: { dict: Record<string, unknown> | null | undefined }) 
 }
 
 export function CalidadDetalleModal({ item, puedeEjecutar, online, saving, saveError, onEvaluar, onClose }: Props) {
+  const { t } = useT('telemetry');
   const disabled = !puedeEjecutar || !online || saving;
   return (
     <ModalShell
@@ -52,10 +54,9 @@ export function CalidadDetalleModal({ item, puedeEjecutar, online, saving, saveE
       maxWidth={560}
       footer={
         <>
-          <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cerrar</Button>
-          <Button variant="secondary" size="sm" loading={saving} disabled={disabled} title={!puedeEjecutar ? 'Sin permiso (E)' : !online ? 'Sin conexión' : 'Re-evaluar esta lectura'} onClick={() => onEvaluar(item.id_telemetria)}>
-            <RefreshCcw size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />Evaluar de nuevo
-          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>{t('calidaddetallemodal.cerrar')}</Button>
+          <Button variant="secondary" size="sm" loading={saving} disabled={disabled} title={!puedeEjecutar ? t('calidaddetallemodal.sin_permiso_e') : !online ? t('calidaddetallemodal.sin_conexion') : t('calidaddetallemodal.re_evaluar_esta_lectura')} onClick={() => onEvaluar(item.id_telemetria)}>
+            <RefreshCcw size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('calidaddetallemodal.evaluar_de_nuevo')}</Button>
         </>
       }
     >
@@ -66,29 +67,29 @@ export function CalidadDetalleModal({ item, puedeEjecutar, online, saving, saveE
         )}
       </div>
 
-      <Fila label="Sensor">#{item.id_sensor}</Fila>
-      <Fila label="Evaluada">{item.timestamp_evaluacion?.slice(0, 10)} {horaCaptura(item.timestamp_evaluacion)}</Fila>
-      <Fila label="Apto para IA">{item.apto_para_ia ? 'Sí' : 'No'}</Fila>
-      <Fila label="Apto para NIC 41">{item.apto_para_nic41 ? 'Sí' : 'No'}</Fila>
-      <Fila label="Estado">{item.estado_evaluacion}</Fila>
-      {item.version_evaluacion != null && <Fila label="Versión">{item.version_evaluacion}</Fila>}
-      {item.motivo_reevaluacion && <Fila label="Motivo reevaluación">{item.motivo_reevaluacion}</Fila>}
-      {item.id_evaluacion_superada && <Fila label="Evaluación superada">{item.id_evaluacion_superada.slice(0, 8)}…</Fila>}
+      <Fila label={t('calidaddetallemodal.sensor')}>#{item.id_sensor}</Fila>
+      <Fila label={t('calidaddetallemodal.evaluada')}>{item.timestamp_evaluacion?.slice(0, 10)} {horaCaptura(item.timestamp_evaluacion)}</Fila>
+      <Fila label={t('calidaddetallemodal.apto_para_ia')}>{item.apto_para_ia ? 'Sí' : 'No'}</Fila>
+      <Fila label={t('calidaddetallemodal.apto_para_nic_41')}>{item.apto_para_nic41 ? 'Sí' : 'No'}</Fila>
+      <Fila label={t('calidaddetallemodal.estado')}>{item.estado_evaluacion}</Fila>
+      {item.version_evaluacion != null && <Fila label={t('calidaddetallemodal.version')}>{item.version_evaluacion}</Fila>}
+      {item.motivo_reevaluacion && <Fila label={t('calidaddetallemodal.motivo_reevaluacion')}>{item.motivo_reevaluacion}</Fila>}
+      {item.id_evaluacion_superada && <Fila label={t('calidaddetallemodal.evaluacion_superada')}>{item.id_evaluacion_superada.slice(0, 8)}…</Fila>}
 
       <div style={{ marginTop: 'var(--s4)' }}>
-        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--s2)' }}>Flags detectados</div>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--s2)' }}>{t('calidaddetallemodal.flags_detectados')}</div>
         <FlagChips flags={item.flags_detectados} />
       </div>
 
       <div style={{ marginTop: 'var(--s4)' }}>
-        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Parámetros aplicados</div>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('calidaddetallemodal.parametros_aplicados')}</div>
         <Params dict={item.parametros_aplicados} />
       </div>
 
       {saveError && (
         <Alert
           variant={saveError.status === 403 ? 'warning' : 'error'}
-          title={saveError.status === 403 ? 'Sin permiso para evaluar' : 'No se pudo evaluar la lectura'}
+          title={saveError.status === 403 ? t('calidaddetallemodal.sin_permiso_para_evaluar') : t('calidaddetallemodal.no_se_pudo_evaluar_la_lectura')}
           description={saveError.message}
           style={{ marginTop: 'var(--s4)' }}
         />

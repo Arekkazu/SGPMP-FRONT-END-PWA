@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { ArrowRight } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
@@ -8,6 +9,7 @@ import { ModalShell } from './ModalShell';
 import { FormSelect, FormTextArea, FORM_COL } from './formControls';
 import { useTransferencias } from '../hooks/useTransferencias';
 import type { RegistrarTransferenciaDTO } from '../types';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   infraestructura_destino_id: string;
@@ -23,9 +25,10 @@ interface Props {
   onDone: () => void;
 }
 
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = hoyLocal();
 
 export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose, onDone }: Props) {
+  const { t } = useT('biologicalAssets');
   const { disponibles, loadingDisponibles, errorDisponibles, saving, saveError, cargarDisponibles, registrar } = useTransferencias(idActivo);
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
@@ -47,19 +50,19 @@ export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose,
   };
 
   return (
-    <ModalShell title="Transferencia interna" onClose={onClose} maxWidth={520}>
+    <ModalShell title={t('transferenciawizard.transferencia_interna')} onClose={onClose} maxWidth={520}>
       {origenId == null && (
         <Alert
           variant="warning"
-          title="Sin infraestructura de origen"
-          description="No se pudo determinar la infraestructura actual del activo. Recarga la asociación e intenta de nuevo."
+          title={t('transferenciawizard.sin_infraestructura_de_origen')}
+          description={t('transferenciawizard.no_se_pudo_determinar_la_infraestructura')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
       {saveError && (
         <Alert
           variant={saveError.status >= 500 ? 'error' : 'warning'}
-          title="No se pudo transferir"
+          title={t('transferenciawizard.no_se_pudo_transferir')}
           description={saveError.status === 403 ? `Sin permiso de transferencia. ${saveError.message}` : saveError.message}
           style={{ marginBottom: 'var(--s4)' }}
         />
@@ -71,17 +74,15 @@ export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose,
           {origenNombre ?? (origenId != null ? `Infra #${origenId}` : '—')}
         </div>
         <ArrowRight size={16} aria-hidden style={{ color: 'var(--text-muted)' }} />
-        <div style={{ padding: 'var(--s2) var(--s3)', background: 'var(--brand-50)', borderRadius: 'var(--r-md)', fontSize: '13px', color: 'var(--brand-600)', fontWeight: 600 }}>
-          Destino
-        </div>
+        <div style={{ padding: 'var(--s2) var(--s3)', background: 'var(--brand-50)', borderRadius: 'var(--r-md)', fontSize: '13px', color: 'var(--brand-600)', fontWeight: 600 }}>{t('transferenciawizard.destino')}</div>
       </div>
 
       <form onSubmit={handleSubmit(submit)} noValidate>
         <div style={FORM_COL}>
           <FormSelect
-            label="Infraestructura destino" required error={errors.infraestructura_destino_id?.message}
+            label={t('transferenciawizard.infraestructura_destino')} required error={errors.infraestructura_destino_id?.message}
             disabled={loadingDisponibles}
-            {...register('infraestructura_destino_id', { required: 'Selecciona el destino.' })}
+            {...register('infraestructura_destino_id', { required: t('transferenciawizard.selecciona_el_destino') })}
           >
             <option value="">
               {loadingDisponibles ? 'Cargando…' : 'Seleccionar destino…'}
@@ -94,38 +95,34 @@ export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose,
           </FormSelect>
 
           {errorDisponibles && (
-            <Alert variant="warning" title="No se pudieron cargar los destinos" description={errorDisponibles.message} />
+            <Alert variant="warning" title={t('transferenciawizard.no_se_pudieron_cargar_los_destinos')} description={errorDisponibles.message} />
           )}
           {!loadingDisponibles && !errorDisponibles && disponibles.length === 0 && (
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
-              No hay infraestructuras destino compatibles disponibles.
-            </p>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('transferenciawizard.no_hay_infraestructuras_destino_compatibles')}</p>
           )}
 
           <Input
-            label="Fecha de transferencia" required type="date" max={HOY}
+            label={t('transferenciawizard.fecha_de_transferencia')} required type="date" max={HOY}
             error={errors.fecha_transferencia?.message}
             {...register('fecha_transferencia', {
-              required: 'La fecha es obligatoria.',
+              required: t('transferenciawizard.la_fecha_es_obligatoria'),
               validate: (val) => val <= HOY || 'No puede ser posterior a hoy.',
             })}
           />
 
           <FormTextArea
-            label="Motivo de la transferencia" required error={errors.motivo_transferencia?.message}
-            placeholder="Describe el motivo…"
+            label={t('transferenciawizard.motivo_de_la_transferencia')} required error={errors.motivo_transferencia?.message}
+            placeholder={t('transferenciawizard.describe_el_motivo')}
             {...register('motivo_transferencia', {
-              required: 'El motivo es obligatorio.',
+              required: t('transferenciawizard.el_motivo_es_obligatorio'),
               validate: (v) => v.trim().length > 0 || 'El motivo no puede estar vacío.',
             })}
           />
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
-          <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button type="submit" variant="primary" size="md" loading={saving} disabled={origenId == null}>
-            Transferir
-          </Button>
+          <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('transferenciawizard.cancelar')}</Button>
+          <Button type="submit" variant="primary" size="md" loading={saving} disabled={origenId == null}>{t('transferenciawizard.transferir')}</Button>
         </div>
       </form>
     </ModalShell>

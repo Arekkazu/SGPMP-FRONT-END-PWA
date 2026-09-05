@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { FlaskConical } from 'lucide-react';
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
  * (No se usa `Alert` porque la variante info se auto-oculta a los 6 s.)
  */
 export function DatosSimuladosBanner({ detalle }: Props) {
+  const { t } = useT('prediction');
   return (
     <div
       role="note"
@@ -31,7 +33,7 @@ export function DatosSimuladosBanner({ detalle }: Props) {
     >
       <FlaskConical size={16} aria-hidden />
       <span>
-        <strong>Datos simulados.</strong>{' '}
+        <strong>{t('datossimuladosbanner.datos_simulados')}</strong>{' '}
         {detalle ?? 'Esta vista usa datos de ejemplo'} hasta que el equipo IoT/IA exponga los
         endpoints correspondientes.
       </span>

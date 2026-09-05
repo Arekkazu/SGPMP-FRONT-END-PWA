@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ClipboardList, FileJson, FileText, ShieldCheck } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { Alert } from '../../shared/design-system/Alert';
@@ -12,8 +13,10 @@ import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_BITACORA, ACCION_R, ACCION_E } from '../rbac';
 import type { AuditoriaFiltros as AuditoriaFiltrosDTO, EventoAuditoriaIotSchema } from '../types';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 export function BitacoraView() {
+  const { t } = useT('telemetry');
   const puedeVer = usePermission(RECURSO_BITACORA, ACCION_R);
   const puedeEjecutar = usePermission(RECURSO_BITACORA, ACCION_E);
 
@@ -30,8 +33,8 @@ export function BitacoraView() {
       if (filtros.clasificacion_registro) f.clasificacion_registro = filtros.clasificacion_registro;
       if (filtros.resultado) f.resultado = filtros.resultado;
       if (filtros.entidad_afectada_id) f.entidad_afectada_id = filtros.entidad_afectada_id.trim();
-      if (filtros.fecha_desde) f.fecha_desde = `${filtros.fecha_desde}T00:00:00Z`;
-      if (filtros.fecha_hasta) f.fecha_hasta = `${filtros.fecha_hasta}T23:59:59Z`;
+      if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
+      if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
       return f;
     },
     [filtros]
@@ -48,9 +51,7 @@ export function BitacoraView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            <ClipboardList size={20} aria-hidden />
-            Bitácora de Auditoría IoT
-          </h1>
+            <ClipboardList size={20} aria-hidden />{t('bitacoraview.bitacora_de_auditoria_iot')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : `${paginacion.totalRegistros} evento(s)`}
           </p>
@@ -58,21 +59,18 @@ export function BitacoraView() {
         {puedeEjecutar && (
           <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
             <Button variant="secondary" size="sm" loading={exportando} disabled={exportando} onClick={() => exportar(build(1), 'csv')}>
-              <FileText size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />CSV
-            </Button>
+              <FileText size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('bitacoraview.csv')}</Button>
             <Button variant="secondary" size="sm" loading={exportando} disabled={exportando} onClick={() => exportar(build(1), 'json')}>
-              <FileJson size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />JSON
-            </Button>
+              <FileJson size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('bitacoraview.json')}</Button>
             <Button variant="primary" size="sm" onClick={abrirVerificar}>
-              <ShieldCheck size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />Verificar integridad
-            </Button>
+              <ShieldCheck size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('bitacoraview.verificar_integridad')}</Button>
           </div>
         )}
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
-        {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a la bitácora' : 'Error al cargar la bitácora'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
-        {exportError && <Alert variant="error" title="No se pudo exportar" description={exportError.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('bitacoraview.sin_acceso_a_la_bitacora') : t('bitacoraview.error_al_cargar_la_bitacora')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {exportError && <Alert variant="error" title={t('bitacoraview.no_se_pudo_exportar')} description={exportError.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <BitacoraFiltros
           value={filtros}

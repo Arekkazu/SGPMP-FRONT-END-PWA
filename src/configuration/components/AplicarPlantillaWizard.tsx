@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { X, Check } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
@@ -70,13 +72,14 @@ function JsonViewer({ data, label }: { data: Record<string, unknown>; label: str
 
 // ── Diff table ────────────────────────────────────────────────────────────────
 function DiffTable({ before, after }: { before: Record<string, unknown> | null; after: Record<string, unknown> | null }) {
+  const { t } = useT('configuration');
   const allKeys = Array.from(new Set([
     ...Object.keys(before ?? {}),
     ...Object.keys(after ?? {}),
   ]));
 
   if (allKeys.length === 0) {
-    return <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Sin diferencias registradas.</p>;
+    return <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('aplicarplantillawizard.sin_diferencias_registradas')}</p>;
   }
 
   return (
@@ -124,6 +127,7 @@ interface Props {
 }
 
 export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, onAplicar }: Props) {
+  const { t } = useT('configuration');
   const { especies, cargar } = useEspecies();
   useEffect(() => { cargar(); }, [cargar]);
   const activas = especies.filter((e) => e.es_activo);
@@ -167,13 +171,11 @@ export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, 
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div>
-            <h2 id="wizard-modal-title" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Aplicar Plantilla
-            </h2>
+            <h2 id="wizard-modal-title" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('aplicarplantillawizard.aplicar_plantilla')}</h2>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>{plantilla.template_name}</p>
           </div>
           {step !== 2 && (
-            <button type="button" onClick={onClose} style={{ background: 'var(--surface-hover)', border: 'none', borderRadius: 'var(--r-full)', width: 28, height: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }} aria-label="Cerrar">
+            <button type="button" onClick={onClose} style={{ background: 'var(--surface-hover)', border: 'none', borderRadius: 'var(--r-full)', width: 28, height: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }} aria-label={t('aplicarplantillawizard.cerrar')}>
               <X size={14} />
             </button>
           )}
@@ -184,20 +186,19 @@ export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, 
           <Stepper current={step} />
 
           {saveError && (
-            <Alert variant="error" title="Error al aplicar" description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
+            <Alert variant="error" title={t('aplicarplantillawizard.error_al_aplicar')} description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
           )}
 
           {/* Step 0: Seleccionar especie */}
           {step === 0 && (
             <div>
               <div style={{ marginBottom: 'var(--s4)' }}>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s1)' }}>Especie origen</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s1)' }}>{t('aplicarplantillawizard.especie_origen')}</div>
                 <div style={{ fontSize: '14px', color: 'var(--text-primary)', padding: 'var(--s3) var(--s4)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', border: '1px solid var(--surface-border)' }}>
                   {especieOrigen?.nombre ?? `ID ${plantilla.id_especie}`}
                 </div>
               </div>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)' }}>
-                Selecciona la especie destino <span aria-hidden>*</span>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)' }}>{t('aplicarplantillawizard.selecciona_la_especie_destino')}<span aria-hidden>*</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--s3)' }}>
                 {activas.map((e) => {
@@ -234,21 +235,21 @@ export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
               <Alert
                 variant="info"
-                title="Previsualización"
+                title={t('aplicarplantillawizard.previsualizacion')}
                 description={`Se aplicará la plantilla "${plantilla.template_name}" a la especie "${targetEspecie.nombre}". Los parámetros incluidos se muestran a continuación.`}
               />
-              <JsonViewer data={plantilla.params_snapshot} label="Parámetros de la plantilla" />
+              <JsonViewer data={plantilla.params_snapshot} label={t('aplicarplantillawizard.parametros_de_la_plantilla')} />
               <div style={{ padding: 'var(--s4)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', border: '1px solid var(--surface-border)' }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s1)' }}>Especie destino</div>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s1)' }}>{t('aplicarplantillawizard.especie_destino')}</div>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{targetEspecie.nombre}</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-                  ID {targetEspecie.id_especie} · Creada {new Date(targetEspecie.fecha_creacion).toLocaleDateString('es-CO')}
+                  ID {targetEspecie.id_especie} · Creada {formatearFecha(targetEspecie.fecha_creacion)}
                 </div>
               </div>
               <Alert
                 variant="warning"
-                title="Esta acción es irreversible"
-                description="Confirma que deseas aplicar estos parámetros. Se guardará un historial con el estado anterior."
+                title={t('aplicarplantillawizard.esta_accion_es_irreversible')}
+                description={t('aplicarplantillawizard.confirma_que_deseas_aplicar_estos')}
               />
             </div>
           )}
@@ -257,23 +258,17 @@ export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, 
           {step === 2 && (
             <div style={{ textAlign: 'center', padding: 'var(--s7) 0' }}>
               <div style={{ fontSize: '32px', marginBottom: 'var(--s4)' }}>⚙️</div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s2)' }}>
-                Aplicando plantilla…
-              </div>
-              <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                Esto puede tomar unos segundos.
-              </div>
+              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s2)' }}>{t('aplicarplantillawizard.aplicando_plantilla')}</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('aplicarplantillawizard.esto_puede_tomar_unos_segundos')}</div>
             </div>
           )}
 
           {/* Step 3: Resultado */}
           {step === 3 && resultado && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
-              <Alert variant="success" title="Plantilla aplicada correctamente" description="Los parámetros de configuración han sido actualizados." />
+              <Alert variant="success" title={t('aplicarplantillawizard.plantilla_aplicada_correctamente')} description={t('aplicarplantillawizard.los_parametros_de_configuracion_han_sido')} />
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s3)' }}>
-                  Diferencias registradas
-                </div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s3)' }}>{t('aplicarplantillawizard.diferencias_registradas')}</div>
                 <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
                   <DiffTable before={resultado.before_snapshot ?? {}} after={resultado.after_snapshot ?? {}} />
                 </div>
@@ -286,25 +281,21 @@ export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, 
         <div style={{ padding: 'var(--s4) var(--s6)', borderTop: '1px solid var(--surface-border)', background: 'var(--surface-hover)', display: 'flex', justifyContent: 'space-between', gap: 'var(--s3)' }}>
           <div>
             {step === 0 && (
-              <Button variant="secondary" size="md" onClick={onClose}>Cancelar</Button>
+              <Button variant="secondary" size="md" onClick={onClose}>{t('aplicarplantillawizard.cancelar')}</Button>
             )}
             {step === 1 && (
-              <Button variant="secondary" size="md" onClick={() => setStep(0)}>Atrás</Button>
+              <Button variant="secondary" size="md" onClick={() => setStep(0)}>{t('aplicarplantillawizard.atras')}</Button>
             )}
             {step === 3 && (
-              <Button variant="secondary" size="md" onClick={onClose}>Cerrar</Button>
+              <Button variant="secondary" size="md" onClick={onClose}>{t('aplicarplantillawizard.cerrar')}</Button>
             )}
           </div>
           <div>
             {step === 0 && (
-              <Button variant="primary" size="md" disabled={!targetEspecie} onClick={() => setStep(1)}>
-                Siguiente
-              </Button>
+              <Button variant="primary" size="md" disabled={!targetEspecie} onClick={() => setStep(1)}>{t('aplicarplantillawizard.siguiente')}</Button>
             )}
             {step === 1 && (
-              <Button variant="danger" size="md" loading={saving} onClick={() => { setStep(2); handleAplicar(); }}>
-                Aplicar plantilla
-              </Button>
+              <Button variant="danger" size="md" loading={saving} onClick={() => { setStep(2); handleAplicar(); }}>{t('aplicarplantillawizard.aplicar_plantilla_2')}</Button>
             )}
           </div>
         </div>

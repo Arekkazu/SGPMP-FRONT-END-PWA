@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { useEspecies } from '../hooks/useEspecies';
@@ -46,6 +47,7 @@ const TAB_BTN_DISABLED: React.CSSProperties = {
 };
 
 export function PorEspeciePage() {
+  const { t } = useT('configuration');
   const { especies, loading, cargar } = useEspecies();
   const [especieSeleccionada, setEspecieSeleccionada] = useState<EspecieResponse | null>(null);
   const [subTab, setSubTab] = useState<SubTabId>('ciclos');
@@ -64,9 +66,7 @@ export function PorEspeciePage() {
   if (!especieSeleccionada) {
     return (
       <div>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s2)' }}>
-          Configuración por Especie
-        </h2>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s2)' }}>{t('porespeciepage.configuracion_por_especie')}</h2>
         <EspecieSelector especies={especies} loading={loading} onSelect={handleSeleccionar} />
       </div>
     );
@@ -76,11 +76,11 @@ export function PorEspeciePage() {
     <div>
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
-        <Button variant="ghost" size="sm" onClick={handleVolver} aria-label="Volver al selector de especies">
+        <Button variant="ghost" size="sm" onClick={handleVolver} aria-label={t('porespeciepage.volver_al_selector_de_especies')}>
           <ChevronLeft size={16} aria-hidden />
         </Button>
         <div>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Configuración por Especie</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>{t('porespeciepage.configuracion_por_especie')}</p>
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {especieSeleccionada.nombre}
           </h2>
@@ -90,7 +90,7 @@ export function PorEspeciePage() {
       {/* Sub-tabs */}
       <nav
         style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s6)', overflowX: 'auto' }}
-        aria-label="Secciones de la especie"
+        aria-label={t('porespeciepage.secciones_de_la_especie')}
       >
         {SUB_TABS.map((tab) => (
           <button
@@ -106,7 +106,7 @@ export function PorEspeciePage() {
             onClick={() => { if (tab.disponible) setSubTab(tab.id); }}
             disabled={!tab.disponible}
             aria-current={subTab === tab.id ? 'page' : undefined}
-            title={!tab.disponible ? 'Disponible próximamente' : undefined}
+            title={!tab.disponible ? t('porespeciepage.disponible_proximamente') : undefined}
           >
             {tab.label}
             {!tab.disponible && (

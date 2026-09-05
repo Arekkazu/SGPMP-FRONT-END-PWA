@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Boxes, User } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
@@ -6,6 +7,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarActivoDTO, TipoActivo, OrigenFinanciero } from '../types';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   tipo_activo: TipoActivo;
@@ -93,9 +95,10 @@ function FieldError({ msg }: { msg?: string }) {
   );
 }
 
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = hoyLocal();
 
 export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: Props) {
+  const { t } = useT('biologicalAssets');
   const {
     register, handleSubmit, watch, formState: { errors },
   } = useForm<FormValues>({
@@ -144,7 +147,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
       {saveError && (
         <Alert
           variant={saveError.status >= 500 ? 'error' : 'warning'}
-          title="No se pudo registrar el activo"
+          title={t('registraractivoform.no_se_pudo_registrar_el_activo')}
           description={saveError.message}
           style={{ marginBottom: 'var(--s5)' }}
         />
@@ -152,13 +155,13 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
 
       {/* Tipo de activo */}
       <div style={{ marginBottom: 'var(--s6)' }}>
-        <span style={SECTION_TITLE}>Tipo de activo</span>
+        <span style={SECTION_TITLE}>{t('registraractivoform.tipo_de_activo')}</span>
         <div style={{ display: 'flex', gap: 'var(--s3)', flexWrap: 'wrap' }}>
-          {(['INDIVIDUAL', 'POBLACIONAL'] as TipoActivo[]).map((t) => {
-            const activo = tipo === t;
+          {(['INDIVIDUAL', 'POBLACIONAL'] as TipoActivo[]).map((tipo) => {
+            const activo = tipo === tipo;
             return (
               <label
-                key={t}
+                key={tipo}
                 style={{
                   flex: 1,
                   minWidth: 200,
@@ -172,14 +175,14 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                   cursor: 'pointer',
                 }}
               >
-                <input type="radio" value={t} {...register('tipo_activo')} style={{ accentColor: 'var(--brand-500)' }} />
-                {t === 'POBLACIONAL' ? <Boxes size={18} aria-hidden /> : <User size={18} aria-hidden />}
+                <input type="radio" value={tipo} {...register('tipo_activo')} style={{ accentColor: 'var(--brand-500)' }} />
+                {tipo === 'POBLACIONAL' ? <Boxes size={18} aria-hidden /> : <User size={18} aria-hidden />}
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
-                    {t === 'POBLACIONAL' ? 'Poblacional (lote)' : 'Individual'}
+                    {tipo === 'POBLACIONAL' ? 'Poblacional (lote)' : 'Individual'}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {t === 'POBLACIONAL' ? 'Grupo con cantidad' : 'Un ejemplar identificado'}
+                    {tipo === 'POBLACIONAL' ? 'Grupo con cantidad' : 'Un ejemplar identificado'}
                   </div>
                 </div>
               </label>
@@ -190,36 +193,36 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
 
       {/* Datos generales */}
       <div style={{ marginBottom: 'var(--s6)' }}>
-        <span style={SECTION_TITLE}>Datos generales</span>
+        <span style={SECTION_TITLE}>{t('registraractivoform.datos_generales')}</span>
         <div style={GRID}>
           <Input
-            label="ID de especie" required type="number" min={1}
+            label={t('registraractivoform.id_de_especie')} required type="number" min={1}
             placeholder="Ej: 1"
             hint="ID numérico de la especie del catálogo"
             error={errors.id_especie?.message}
             {...register('id_especie', {
-              required: 'La especie es obligatoria.',
-              min: { value: 1, message: 'ID inválido.' },
+              required: t('registraractivoform.la_especie_es_obligatoria'),
+              min: { value: 1, message: t('registraractivoform.id_invalido') },
             })}
           />
           <Input
-            label="ID de infraestructura" required type="number" min={1}
+            label={t('registraractivoform.id_de_infraestructura')} required type="number" min={1}
             placeholder="Ej: 4"
             hint="ID de la infraestructura donde se ubica"
             error={errors.id_infraestructura?.message}
             {...register('id_infraestructura', {
-              required: 'La infraestructura es obligatoria.',
-              min: { value: 1, message: 'ID inválido.' },
+              required: t('registraractivoform.la_infraestructura_es_obligatoria'),
+              min: { value: 1, message: t('registraractivoform.id_invalido') },
             })}
           />
           <Input
-            label="Fecha de inicio de ciclo" required type="date" max={HOY}
+            label={t('registraractivoform.fecha_de_inicio_de_ciclo')} required type="date" max={HOY}
             error={errors.fecha_inicio_ciclo?.message}
             {...register('fecha_inicio_ciclo', {
-              required: 'La fecha de inicio es obligatoria.',
+              required: t('registraractivoform.la_fecha_de_inicio_es_obligatoria'),
               validate: (val) => {
-                if (val > HOY) return 'No puede ser una fecha futura.';
-                if (val < '1970-01-01') return 'No puede ser anterior a 1970.';
+                if (val > HOY) return t('registraractivoform.no_puede_ser_una_fecha_futura');
+                if (val < '1970-01-01') return t('registraractivoform.no_puede_ser_anterior_a_1970');
                 return true;
               },
             })}
@@ -229,49 +232,47 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
 
       {/* Origen financiero */}
       <div style={{ marginBottom: 'var(--s6)' }}>
-        <span style={SECTION_TITLE}>Origen financiero</span>
+        <span style={SECTION_TITLE}>{t('registraractivoform.origen_financiero')}</span>
         <div style={GRID}>
           <div>
-            <label style={FIELD_LABEL} htmlFor="origen_financiero">Origen <span aria-hidden="true">*</span></label>
+            <label style={FIELD_LABEL} htmlFor="origen_financiero">{t('registraractivoform.origen')}<span aria-hidden="true">*</span></label>
             <select id="origen_financiero" style={SELECT} {...register('origen_financiero')}>
-              <option value="compra">Compra</option>
-              <option value="nacimiento">Nacimiento</option>
-              <option value="donacion">Donación</option>
-              <option value="transferencia_interna">Transferencia interna</option>
+              <option value="compra">{t('registraractivoform.compra')}</option>
+              <option value="nacimiento">{t('registraractivoform.nacimiento')}</option>
+              <option value="donacion">{t('registraractivoform.donacion')}</option>
+              <option value="transferencia_interna">{t('registraractivoform.transferencia_interna')}</option>
             </select>
           </div>
 
           {requiereSoporte && (
             <>
               <Input
-                label="Costo de adquisición" required type="number" min={0} step="0.01"
+                label={t('registraractivoform.costo_de_adquisicion')} required type="number" min={0} step="0.01"
                 placeholder="Ej: 1500000"
                 error={errors.costo_adquisicion?.message}
                 {...register('costo_adquisicion', {
-                  required: requiereSoporte ? 'El costo es obligatorio para compra/donación.' : false,
+                  required: requiereSoporte ? t('registraractivoform.el_costo_es_obligatorio_para_compra_donacion') : false,
                   validate: (val) =>
                     !requiereSoporte || Number(val) > 0 || 'El costo debe ser mayor a 0.',
                 })}
               />
               <Input
-                label="Soporte documental" required
-                placeholder="Ej: Factura N.º 00123"
+                label={t('registraractivoform.soporte_documental')} required
+                placeholder={t('registraractivoform.ej_factura_n_o_00123')}
                 error={errors.soporte_documental?.message}
                 {...register('soporte_documental', {
-                  required: requiereSoporte ? 'El soporte documental es obligatorio.' : false,
+                  required: requiereSoporte ? t('registraractivoform.el_soporte_documental_es_obligatorio') : false,
                 })}
               />
             </>
           )}
         </div>
         {esNacimiento && (
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s2) 0 0' }}>
-            En nacimiento no se registra costo ni soporte documental.
-          </p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s2) 0 0' }}>{t('registraractivoform.en_nacimiento_no_se_registra_costo_ni')}</p>
         )}
 
         <div style={{ marginTop: 'var(--s4)' }}>
-          <label style={FIELD_LABEL} htmlFor="detalles_procedencia">Detalles de procedencia</label>
+          <label style={FIELD_LABEL} htmlFor="detalles_procedencia">{t('registraractivoform.detalles_de_procedencia')}</label>
           <textarea
             id="detalles_procedencia" style={TEXTAREA}
             placeholder="Origen, proveedor, notas… (opcional)"
@@ -283,60 +284,60 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
       {/* Detalle según tipo */}
       {esIndividual ? (
         <div style={{ marginBottom: 'var(--s6)' }}>
-          <span style={SECTION_TITLE}>Detalle individual</span>
+          <span style={SECTION_TITLE}>{t('registraractivoform.detalle_individual')}</span>
           <div style={GRID}>
             <Input
-              label="Identificador" required
-              placeholder="Ej: BOV-2024-001"
+              label={t('registraractivoform.identificador')} required
+              placeholder={t('registraractivoform.ej_bov_2024_001')}
               error={errors.identificador?.message}
-              {...register('identificador', { required: 'El identificador es obligatorio para activos individuales.' })}
+              {...register('identificador', { required: t('registraractivoform.el_identificador_es_obligatorio_para') })}
             />
             <Input
-              label="Raza" required
-              placeholder="Ej: Holstein"
+              label={t('registraractivoform.raza')} required
+              placeholder={t('registraractivoform.ej_holstein')}
               error={errors.raza?.message}
-              {...register('raza', { required: 'La raza es obligatoria.' })}
+              {...register('raza', { required: t('registraractivoform.la_raza_es_obligatoria') })}
             />
             <div>
-              <label style={FIELD_LABEL} htmlFor="sexo">Sexo <span aria-hidden="true">*</span></label>
+              <label style={FIELD_LABEL} htmlFor="sexo">{t('registraractivoform.sexo')}<span aria-hidden="true">*</span></label>
               <select id="sexo" style={SELECT} {...register('sexo', { required: 'El sexo es obligatorio.' })}>
-                <option value="">Seleccionar…</option>
-                <option value="MACHO">Macho</option>
-                <option value="HEMBRA">Hembra</option>
+                <option value="">{t('registraractivoform.seleccionar')}</option>
+                <option value="MACHO">{t('registraractivoform.macho')}</option>
+                <option value="HEMBRA">{t('registraractivoform.hembra')}</option>
               </select>
               <FieldError msg={errors.sexo?.message} />
             </div>
             <Input
-              label="Fecha de nacimiento" required type="date" max={HOY}
+              label={t('registraractivoform.fecha_de_nacimiento')} required type="date" max={HOY}
               error={errors.fecha_nacimiento?.message}
               {...register('fecha_nacimiento', {
-                required: 'La fecha de nacimiento es obligatoria.',
+                required: t('registraractivoform.la_fecha_de_nacimiento_es_obligatoria'),
                 validate: (val) => val <= HOY || 'No puede ser una fecha futura.',
               })}
             />
             <Input
               label="Peso inicial (kg)" type="number" min={0} step="0.01"
-              placeholder="Opcional"
+              placeholder={t('registraractivoform.opcional')}
               {...register('peso_inicial')}
             />
           </div>
         </div>
       ) : (
         <div style={{ marginBottom: 'var(--s6)' }}>
-          <span style={SECTION_TITLE}>Detalle poblacional</span>
+          <span style={SECTION_TITLE}>{t('registraractivoform.detalle_poblacional')}</span>
           <div style={GRID}>
             <Input
-              label="Cantidad inicial" required type="number" min={1}
+              label={t('registraractivoform.cantidad_inicial')} required type="number" min={1}
               placeholder="Ej: 1800"
               error={errors.cantidad_inicial?.message}
               {...register('cantidad_inicial', {
-                required: 'La cantidad inicial es obligatoria para lotes.',
-                min: { value: 1, message: 'Debe ser mayor a 0.' },
+                required: t('registraractivoform.la_cantidad_inicial_es_obligatoria_para'),
+                min: { value: 1, message: t('registraractivoform.debe_ser_mayor_a_0') },
               })}
             />
             <Input
               label="Peso promedio inicial (kg)" type="number" min={0} step="0.001"
-              placeholder="Opcional"
+              placeholder={t('registraractivoform.opcional')}
               {...register('peso_promedio_inicial')}
             />
           </div>
@@ -344,12 +345,8 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
       )}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
-        <Button type="button" variant="secondary" size="md" onClick={onCancel} disabled={saving}>
-          Cancelar
-        </Button>
-        <Button type="submit" variant="primary" size="md" loading={saving}>
-          Registrar activo
-        </Button>
+        <Button type="button" variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('registraractivoform.cancelar')}</Button>
+        <Button type="submit" variant="primary" size="md" loading={saving}>{t('registraractivoform.registrar_activo')}</Button>
       </div>
     </form>
   );

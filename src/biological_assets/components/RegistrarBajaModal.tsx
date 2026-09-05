@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
@@ -7,6 +8,7 @@ import { ModalShell } from './ModalShell';
 import { FormSelect, FormTextArea, FORM_COL } from './formControls';
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarEventoBajaDTO, TipoBaja } from '../types';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   tipo_baja: TipoBaja;
@@ -23,9 +25,10 @@ interface Props {
   onConfirmar: (dto: RegistrarEventoBajaDTO) => Promise<boolean>;
 }
 
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = hoyLocal();
 
 export function RegistrarBajaModal({ esPoblacional, saving, saveError, onClose, onConfirmar }: Props) {
+  const { t } = useT('biologicalAssets');
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
     defaultValues: { tipo_baja: 'muerte', fecha_baja: HOY },
@@ -45,10 +48,10 @@ export function RegistrarBajaModal({ esPoblacional, saving, saveError, onClose, 
   };
 
   return (
-    <ModalShell title="Registrar baja" onClose={onClose} maxWidth={480}>
+    <ModalShell title={t('registrarbajamodal.registrar_baja')} onClose={onClose} maxWidth={480}>
       <Alert
         variant="warning"
-        title="Registro de baja"
+        title={t('registrarbajamodal.registro_de_baja')}
         description={esPoblacional
           ? 'Deja la cantidad vacía para una baja total del lote, o indica la cantidad para una baja parcial.'
           : 'La baja de un activo individual es total.'}
@@ -57,48 +60,48 @@ export function RegistrarBajaModal({ esPoblacional, saving, saveError, onClose, 
       {saveError && (
         <Alert
           variant={saveError.status >= 500 ? 'error' : 'warning'}
-          title="No se pudo registrar la baja"
+          title={t('registrarbajamodal.no_se_pudo_registrar_la_baja')}
           description={saveError.message}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
       <form onSubmit={handleSubmit(submit)} noValidate>
         <div style={FORM_COL}>
-          <FormSelect label="Tipo de baja" required {...register('tipo_baja')}>
-            <option value="muerte">Muerte</option>
-            <option value="venta">Venta</option>
-            <option value="sacrificio">Sacrificio</option>
-            <option value="perdida">Pérdida</option>
-            <option value="descarte_sanitario">Descarte sanitario</option>
+          <FormSelect label={t('registrarbajamodal.tipo_de_baja')} required {...register('tipo_baja')}>
+            <option value="muerte">{t('registrarbajamodal.muerte')}</option>
+            <option value="venta">{t('registrarbajamodal.venta')}</option>
+            <option value="sacrificio">{t('registrarbajamodal.sacrificio')}</option>
+            <option value="perdida">{t('registrarbajamodal.perdida')}</option>
+            <option value="descarte_sanitario">{t('registrarbajamodal.descarte_sanitario')}</option>
           </FormSelect>
 
           <Input
-            label="Fecha de baja" required type="date" max={HOY}
+            label={t('registrarbajamodal.fecha_de_baja')} required type="date" max={HOY}
             error={errors.fecha_baja?.message}
-            {...register('fecha_baja', { required: 'La fecha es obligatoria.' })}
+            {...register('fecha_baja', { required: t('registrarbajamodal.la_fecha_es_obligatoria') })}
           />
 
           {esPoblacional && (
             <Input
-              label="Cantidad afectada" type="number" min={1}
+              label={t('registrarbajamodal.cantidad_afectada')} type="number" min={1}
               placeholder="Vacío = baja total del lote"
               {...register('cantidad_afectada')}
             />
           )}
 
           <FormTextArea
-            label="Motivo de la baja" required error={errors.motivo_baja?.message}
-            placeholder="Describe el motivo…"
+            label={t('registrarbajamodal.motivo_de_la_baja')} required error={errors.motivo_baja?.message}
+            placeholder={t('registrarbajamodal.describe_el_motivo')}
             {...register('motivo_baja', {
-              required: 'El motivo es obligatorio.',
+              required: t('registrarbajamodal.el_motivo_es_obligatorio'),
               validate: (v) => v.trim().length > 0 || 'El motivo no puede estar vacío.',
             })}
           />
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
-          <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button type="submit" variant="danger" size="md" loading={saving}>Registrar baja</Button>
+          <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('registrarbajamodal.cancelar')}</Button>
+          <Button type="submit" variant="danger" size="md" loading={saving}>{t('registrarbajamodal.registrar_baja')}</Button>
         </div>
       </form>
     </ModalShell>

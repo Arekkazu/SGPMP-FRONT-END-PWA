@@ -13,6 +13,7 @@ export interface LoginResponse {
 export interface UsuarioCreateDTO {
   correo_electronico: string;
   contrasena: string;
+  confirmar_contrasena: string;
   nombre: string;
   apellidos: string;
   tipo_identificacion: string;
@@ -21,6 +22,7 @@ export interface UsuarioCreateDTO {
   genero: string;
   telefono?: string;
   direccion?: string;
+  captcha_token: string;
 }
 
 export interface MessageResponse {

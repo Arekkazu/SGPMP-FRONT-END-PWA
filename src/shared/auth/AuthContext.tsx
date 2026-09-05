@@ -1,6 +1,7 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react';
 import { tokenStore } from './tokenStore';
-import { http, refreshAccessToken } from '../api/http';
+import { http, refreshAccessToken, PERMISOS_POSIBLEMENTE_DESACTUALIZADOS } from '../api/http';
+import { sonPermisosIguales } from './compararPermisos';
 
 export interface JwtClaims {
   sub: string;
@@ -33,6 +34,8 @@ interface AuthContextValue {
   permisos: PermisoUsuario[] | null;
   perfilIncompleto: boolean | null;
   isBootstrapping: boolean;
+  /** Timestamp de la ultima vez que se detecto un cambio real de permisos en sesion (RF-25). */
+  permisosActualizadosEn: number | null;
   setSession: (token: string) => void;
   clearSession: () => void;
   refreshUserInfo: () => Promise<void>;
@@ -45,6 +48,7 @@ export const AuthContext = createContext<AuthContextValue>({
   permisos: null,
   perfilIncompleto: null,
   isBootstrapping: true,
+  permisosActualizadosEn: null,
   setSession: () => {},
   clearSession: () => {},
   refreshUserInfo: async () => {},
@@ -65,6 +69,24 @@ function isTokenValid(claims: JwtClaims | null): boolean {
   return claims.exp > Date.now() / 1000;
 }
 
+// Rutas públicas (ver AppRoutes en App.tsx): ninguna lee `token`/`isBootstrapping`
+// de este contexto, así que un restauro de sesión ahí no tiene efecto útil —
+// y si el usuario cae en /login con una cookie de refresco vieja (pestaña
+// anterior, sesión previa) todavía vigente, ese refresh silencioso compite
+// sin coordinación con el login explícito que está a punto de enviar. El
+// backend solo permite una sesión activa por cuenta: quien "pierda" esa
+// carrera puede terminar con el JWT/cookie de una sesión que el otro flujo
+// ya invalidó, y la siguiente petición autenticada cae en 401 (bug #1827).
+const RUTAS_PUBLICAS = [
+  '/login',
+  '/registro',
+  '/activar',
+  '/reenviar-activacion',
+  '/recuperar-contrasena',
+  '/restablecer-contrasena',
+  '/sso/callback',
+];
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const storedToken = tokenStore.get();
   const storedClaims = storedToken ? decodeJwtPayload(storedToken) : null;
@@ -77,19 +99,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [permisos, setPermisos] = useState<PermisoUsuario[] | null>(null);
   const [perfilIncompleto, setPerfilIncompleto] = useState<boolean | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(!validStored);
+  const [permisosActualizadosEn, setPermisosActualizadosEn] = useState<number | null>(null);
+
+  // Mantiene el contexto sincronizado cuando el interceptor renueva o limpia
+  // el JWT fuera de los hooks de login/logout.
+  useEffect(() => tokenStore.subscribe((nextToken) => {
+    const nextClaims = nextToken ? decodeJwtPayload(nextToken) : null;
+    if (nextToken && !isTokenValid(nextClaims)) {
+      tokenStore.clear();
+      return;
+    }
+    setToken(nextToken);
+    setClaims(nextClaims);
+  }), []);
 
   // Recarga de página (F5, pestaña nueva): el JWT solo vive en memoria
   // (tokenStore) por diseño (R-12), así que se pierde. Antes de decidir "no
   // autenticado", intenta un refresh silencioso con la cookie httpOnly.
   useEffect(() => {
     if (validStored) return;
+    if (RUTAS_PUBLICAS.includes(window.location.pathname)) {
+      setIsBootstrapping(false);
+      return;
+    }
+    // `refreshAccessToken` guarda el token en tokenStore; el listener de arriba
+    // sincroniza el contexto.
     refreshAccessToken()
-      .then((newToken) => {
-        setToken(newToken);
-        setClaims(decodeJwtPayload(newToken));
-      })
       .catch(() => {
-        // Sin sesión que recuperar — comportamiento normal en /login, /registro, etc.
+        // Sin sesión que recuperar — comportamiento normal en rutas protegidas
+        // sin cookie vigente.
       })
       .finally(() => setIsBootstrapping(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -118,10 +156,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => setPermisos([]));
   }, [token, fetchUserInfo]);
 
+  // RF-25, flujo alterno "cambio de permisos en sesion activa": el interceptor de
+  // http.ts dispara este evento en cualquier 403. Se reconsulta `permisos` y solo se
+  // avisa si de verdad cambio, para no mostrar un aviso enganoso en un 403 normal de
+  // un usuario que nunca tuvo ese permiso.
+  useEffect(() => {
+    if (!token) return;
+    const handler = () => {
+      http.get<{ permisos: PermisoUsuario[] }>('/sesiones/me/permisos')
+        .then((res) => {
+          if (!sonPermisosIguales(permisos, res.data.permisos)) {
+            setPermisos(res.data.permisos);
+            setPermisosActualizadosEn(Date.now());
+          }
+        })
+        .catch(() => {
+          // Fallar en silencio: si el token ya no es valido, el propio 401 del
+          // interceptor se encarga de cerrar la sesion.
+        });
+    };
+    window.addEventListener(PERMISOS_POSIBLEMENTE_DESACTUALIZADOS, handler);
+    return () => window.removeEventListener(PERMISOS_POSIBLEMENTE_DESACTUALIZADOS, handler);
+  }, [token, permisos]);
+
   const setSession = useCallback((newToken: string) => {
     tokenStore.set(newToken);
-    setToken(newToken);
-    setClaims(decodeJwtPayload(newToken));
   }, []);
 
   const clearSession = useCallback(() => {
@@ -142,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         permisos,
         perfilIncompleto,
         isBootstrapping,
+        permisosActualizadosEn,
         setSession,
         clearSession,
         refreshUserInfo: fetchUserInfo,

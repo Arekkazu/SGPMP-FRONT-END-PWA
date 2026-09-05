@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bell, Sun, Moon, Menu } from 'lucide-react';
+import { useT } from '../i18n/useT';
 import { useAuth } from '../auth/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import './AppBar.css';
@@ -7,10 +8,19 @@ import './AppBar.css';
 interface AppBarProps {
   onToggleSidebar?: () => void;
   notificationCount?: number;
+  notificationsOpen?: boolean;
+  onNotificationsClick?: () => void;
   pageTitle?: string;
 }
 
-export function AppBar({ onToggleSidebar, notificationCount = 0, pageTitle }: AppBarProps) {
+export function AppBar({
+  onToggleSidebar,
+  notificationCount = 0,
+  notificationsOpen = false,
+  onNotificationsClick,
+  pageTitle,
+}: AppBarProps) {
+  const { t } = useT('nav');
   const { userInfo } = useAuth();
   const { dark, toggle } = useTheme();
 
@@ -27,7 +37,7 @@ export function AppBar({ onToggleSidebar, notificationCount = 0, pageTitle }: Ap
             type="button"
             className="ds-appbar__icon-btn ds-appbar__menu-btn"
             onClick={onToggleSidebar}
-            aria-label="Alternar menú lateral"
+            aria-label={t('aria.alternar_menu')}
           >
             <Menu size={20} aria-hidden />
           </button>
@@ -42,7 +52,7 @@ export function AppBar({ onToggleSidebar, notificationCount = 0, pageTitle }: Ap
           type="button"
           className="ds-appbar__icon-btn"
           onClick={toggle}
-          aria-label={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          aria-label={dark ? t('aria.modo_claro') : t('aria.modo_oscuro')}
         >
           {dark ? <Sun size={18} aria-hidden /> : <Moon size={18} aria-hidden />}
         </button>
@@ -50,17 +60,26 @@ export function AppBar({ onToggleSidebar, notificationCount = 0, pageTitle }: Ap
         <button
           type="button"
           className="ds-appbar__icon-btn"
-          aria-label={`Notificaciones${notificationCount > 0 ? ` (${notificationCount} sin leer)` : ''}`}
+          onClick={onNotificationsClick}
+          aria-label={
+            notificationCount > 0
+              ? t('aria.notificaciones_sin_leer', { count: notificationCount })
+              : t('aria.notificaciones')
+          }
+          aria-expanded={notificationsOpen}
+          aria-haspopup="dialog"
         >
           <Bell size={18} aria-hidden />
           {notificationCount > 0 && (
-            <span className="ds-appbar__notif-dot" aria-hidden="true" />
+            <span className="ds-appbar__notif-badge" aria-hidden="true">
+              {notificationCount > 99 ? '99+' : notificationCount}
+            </span>
           )}
         </button>
 
         <div
           className="ds-appbar__avatar"
-          aria-label={`Usuario: ${userInfo?.nombre ?? ''} ${userInfo?.apellidos ?? ''}`}
+          aria-label={t('aria.usuario', { nombre: `${userInfo?.nombre ?? ''} ${userInfo?.apellidos ?? ''}`.trim() })}
           title={userInfo ? `${userInfo.nombre} ${userInfo.apellidos}` : ''}
         >
           {initials}

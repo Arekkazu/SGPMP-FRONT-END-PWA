@@ -115,7 +115,18 @@
   justify-content: center;
 }
 
-.ds-sidebar__item-label { flex: 1; }
+/* RF-29 — RNF de accesibilidad: en ingles varios rotulos son mas largos que
+   en espanol ("Roles and permissions" vs "Roles y permisos"). `min-width: 0`
+   permite que el hijo flex se encoja por debajo de su ancho de contenido, que
+   es lo que habilita la elipsis; sin el, el texto empuja el contenedor y
+   desborda la barra. El `title` del boton conserva el rotulo completo. */
+.ds-sidebar__item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .ds-sidebar__item-lock {
   margin-left: auto;

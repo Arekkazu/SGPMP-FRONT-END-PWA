@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Filter, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
@@ -47,15 +48,16 @@ interface Props {
 }
 
 export function AuditoriaFiltros({ value, onChange, onAplicar, onLimpiar }: Props) {
+  const { t } = useT('prediction');
   const set = <K extends keyof AuditoriaFiltrosState>(k: K, v: AuditoriaFiltrosState[K]) => onChange({ ...value, [k]: v });
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', marginBottom: 'var(--s5)' }}>
       <div style={FILTER_GRID}>
         <div>
-          <label style={LABEL} htmlFor="aud-tipo">Tipo de evento</label>
+          <label style={LABEL} htmlFor="aud-tipo">{t('auditoriafiltros.tipo_de_evento')}</label>
           <select id="aud-tipo" style={INPUT} value={value.tipo_evento} onChange={(e) => set('tipo_evento', e.target.value)}>
-            <option value="">Todos</option>
+            <option value="">{t('auditoriafiltros.todos')}</option>
             {Object.entries(TIPOS_EVENTO).map(([grupo, items]) => (
               <optgroup key={grupo} label={grupo}>
                 {items.map((it) => <option key={it.value} value={it.value}>{it.label}</option>)}
@@ -65,39 +67,37 @@ export function AuditoriaFiltros({ value, onChange, onAplicar, onLimpiar }: Prop
         </div>
 
         <div>
-          <label style={LABEL} htmlFor="aud-sev">Severidad</label>
+          <label style={LABEL} htmlFor="aud-sev">{t('auditoriafiltros.severidad')}</label>
           <select id="aud-sev" style={INPUT} value={value.severidad} onChange={(e) => set('severidad', e.target.value)}>
-            <option value="">Todas</option>
-            <option value="INFO">Info</option>
-            <option value="WARNING">Warning</option>
-            <option value="ERROR">Error</option>
-            <option value="CRITICAL">Crítico</option>
+            <option value="">{t('auditoriafiltros.todas')}</option>
+            <option value="INFO">{t('auditoriafiltros.info')}</option>
+            <option value="WARNING">{t('auditoriafiltros.warning')}</option>
+            <option value="ERROR">{t('auditoriafiltros.error')}</option>
+            <option value="CRITICAL">{t('auditoriafiltros.critico')}</option>
           </select>
         </div>
 
         <div>
-          <label style={LABEL} htmlFor="aud-ref">ID de referencia</label>
-          <input id="aud-ref" style={INPUT} placeholder="Entidad referenciada…" value={value.id_referencia} onChange={(e) => set('id_referencia', e.target.value)} />
+          <label style={LABEL} htmlFor="aud-ref">{t('auditoriafiltros.id_de_referencia')}</label>
+          <input id="aud-ref" style={INPUT} placeholder={t('auditoriafiltros.entidad_referenciada')} value={value.id_referencia} onChange={(e) => set('id_referencia', e.target.value)} />
         </div>
 
         <div>
-          <label style={LABEL} htmlFor="aud-desde">Desde</label>
+          <label style={LABEL} htmlFor="aud-desde">{t('auditoriafiltros.desde')}</label>
           <input id="aud-desde" type="date" style={INPUT} value={value.fecha_desde} onChange={(e) => set('fecha_desde', e.target.value)} />
         </div>
 
         <div>
-          <label style={LABEL} htmlFor="aud-hasta">Hasta</label>
+          <label style={LABEL} htmlFor="aud-hasta">{t('auditoriafiltros.hasta')}</label>
           <input id="aud-hasta" type="date" style={INPUT} value={value.fecha_hasta} onChange={(e) => set('fecha_hasta', e.target.value)} />
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--s2)', justifyContent: 'flex-end' }}>
         <Button variant="ghost" size="sm" onClick={onLimpiar}>
-          <X size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Limpiar
-        </Button>
+          <X size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriafiltros.limpiar')}</Button>
         <Button variant="secondary" size="sm" onClick={onAplicar}>
-          <Filter size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Aplicar
-        </Button>
+          <Filter size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriafiltros.aplicar')}</Button>
       </div>
     </div>
   );

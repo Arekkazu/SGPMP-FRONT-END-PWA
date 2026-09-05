@@ -1,0 +1,58 @@
+{
+  "caso": "TC-M01-099",
+  "titulo": "Marcar una notificación individual como leída",
+  "cu": "CU08 - Notificar a Usuarios",
+  "rf": "RF-14",
+  "tipo": "Funcional / Actualización de Estado Visual",
+  "severidad": "Media",
+  "responsable": "QA Team",
+  "adminUser": "admin@pecuaria.co",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-03T03:01:24.518Z",
+  "peticionInfo": "PATCH /notificaciones/944/leida -> HTTP 200 OK (es_leido: true)",
+  "checkpoints": [
+    {
+      "paso": "CP-01: Autenticación API y Obtención de Notificación No Leída",
+      "esperado": "Token JWT obtenido y notificación no leída encontrada",
+      "obtenido": "Notificación objetivo ID: 944 (es_leido: false)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02: Verificación del Estado Visual Inicial (No Leída)",
+      "esperado": "Bandeja muestra ítems con resaltado .notification-tray__item--unread e indicador .notification-tray__unread-dot",
+      "obtenido": "Se detectaron 16 notificaciones en estado no leído",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03: Ejecución de Acción Marcar como Leída y Solicitud HTTP",
+      "esperado": "Respuesta HTTP 200 OK desde el Backend con es_leido: true",
+      "obtenido": "Respuesta HTTP 200 OK | es_leido: true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04: Verificación de Actualización de Estado Visual Final",
+      "esperado": "El estado visual se actualiza en el DOM removiendo indicadores de no leída",
+      "obtenido": "Actualización visual completada correctamente (botones restantes de marcar leída: 15)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05: Confirmación de Persistencia Backend (GET Post-Actualización)",
+      "esperado": "GET /notificaciones confirma es_leido: true para la notificación procesada",
+      "obtenido": "Backend confirma es_leido: true para ID: 944",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "hallazgos": [
+    "Identificador de Notificación Probado: 944",
+    "Verificación de Estado Visual: La UI respondió dinámicamente eliminando las clases de resaltado (.notification-tray__item--unread) y removiendo el punto indicador (.notification-tray__unread-dot).",
+    "Persistencia en API: PATCH /notificaciones/{id}/leida confirmó HTTP 200 OK y la consulta POST verificó es_leido === true en el Backend TEST.",
+    "CP-01: Autenticación API y Obtención de Notificación No Leída -> Notificación objetivo ID: 944 (es_leido: false) (OK)",
+    "CP-02: Verificación del Estado Visual Inicial (No Leída) -> Se detectaron 16 notificaciones en estado no leído (OK)",
+    "CP-03: Ejecución de Acción Marcar como Leída y Solicitud HTTP -> Respuesta HTTP 200 OK | es_leido: true (OK)",
+    "CP-04: Verificación de Actualización de Estado Visual Final -> Actualización visual completada correctamente (botones restantes de marcar leída: 15) (OK)",
+    "CP-05: Confirmación de Persistencia Backend (GET Post-Actualización) -> Backend confirma es_leido: true para ID: 944 (OK)"
+  ]
+}

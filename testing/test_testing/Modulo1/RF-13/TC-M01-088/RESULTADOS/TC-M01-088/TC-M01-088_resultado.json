@@ -1,0 +1,21 @@
+{
+  "caso": "TC-M01-088",
+  "titulo": "Verificar que el perfil no exponga el ID del usuario en la URL",
+  "rf": "RF-13",
+  "fecha": "2026-09-03T05:37:48.787Z",
+  "ambiente": "http://localhost:5174",
+  "navegador": "electron 118.0.5993.159",
+  "checkpoints": [
+    {
+      "paso": "Login",
+      "esperado": "HTTP 200 y JWT válido para iniciar la navegación autenticada",
+      "obtenido": "POST http://localhost:8000/api/sesiones/ -> HTTP 403",
+      "estado": "FALLA"
+    }
+  ],
+  "veredicto": "CON FALLAS",
+  "origenDatos": "No determinado",
+  "loginStatus": "403",
+  "profileRequestUrl": "No ejecutada",
+  "profileStatus": "No ejecutado"
+}

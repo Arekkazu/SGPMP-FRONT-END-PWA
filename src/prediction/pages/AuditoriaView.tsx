@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ClipboardList, RefreshCw, Download, ListChecks, AlertOctagon, Layers } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -13,6 +14,7 @@ import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_AUDITORIA, ACCION_R, ACCION_E } from '../rbac';
 import type { ListarAuditoriaFiltros, EventoAuditoriaM04Response } from '../types';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 type TabId = 'todos' | 'criticos' | 'tipo';
 
@@ -29,6 +31,7 @@ function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: n
 }
 
 export function AuditoriaView() {
+  const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_AUDITORIA, ACCION_R);
   const puedeExportar = usePermission(RECURSO_AUDITORIA, ACCION_E);
   const online = useOnlineStatus();
@@ -46,8 +49,8 @@ export function AuditoriaView() {
     if (f.tipo_evento) api.tipo_evento = f.tipo_evento;
     if (f.severidad) api.severidad_evento = f.severidad;
     if (f.id_referencia.trim()) api.id_referencia = f.id_referencia.trim();
-    if (f.fecha_desde) api.fecha_desde = `${f.fecha_desde}T00:00:00Z`;
-    if (f.fecha_hasta) api.fecha_hasta = `${f.fecha_hasta}T23:59:59Z`;
+    if (f.fecha_desde) api.fecha_desde = inicioDelDiaUtc(f.fecha_desde);
+    if (f.fecha_hasta) api.fecha_hasta = finDelDiaUtc(f.fecha_hasta);
     return api;
   }, []);
 
@@ -89,9 +92,9 @@ export function AuditoriaView() {
   if (!puedeVer) return <PermissionDenied seccion="Bitácora de auditoría" />;
 
   const TABS: { id: TabId; label: string; badge?: number }[] = [
-    { id: 'todos', label: 'Todos los eventos' },
-    { id: 'criticos', label: 'Eventos críticos', badge: criticosCount },
-    { id: 'tipo', label: 'Por tipo de evento' },
+    { id: 'todos', label: t('auditoriaview.todos_los_eventos') },
+    { id: 'criticos', label: t('auditoriaview.eventos_criticos'), badge: criticosCount },
+    { id: 'tipo', label: t('auditoriaview.por_tipo_de_evento') },
   ];
 
   return (
@@ -99,28 +102,25 @@ export function AuditoriaView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            <ClipboardList size={20} aria-hidden />
-            Bitácora de Auditoría
-          </h1>
+            <ClipboardList size={20} aria-hidden />{t('auditoriaview.bitacora_de_auditoria')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             Registro inmutable de eventos del módulo de predicción
             {fromCache && ' · desde caché'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <Button variant="ghost" size="sm" onClick={aplicar} aria-label="Recargar">
+          <Button variant="ghost" size="sm" onClick={aplicar} aria-label={t('auditoriaview.recargar')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           <Button variant="secondary" size="sm" disabled={!puedeExportar || !online} onClick={() => setExportOpen(true)}>
-            <Download size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Exportar
-          </Button>
+            <Download size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriaview.exportar')}</Button>
         </div>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
-        {!online && <Alert variant="warning" title="Sin conexión" description="Mostrando bitácora cacheada." style={{ marginBottom: 'var(--s4)' }} />}
-        {fromCache && online && <Alert variant="info" title="Datos desde caché" description="No se pudo conectar; se muestran los últimos eventos disponibles." style={{ marginBottom: 'var(--s4)' }} />}
-        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Solo el administrador puede consultar la auditoría' : 'Error al cargar la bitácora'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title={t('auditoriaview.sin_conexion')} description={t('auditoriaview.mostrando_bitacora_cacheada')} style={{ marginBottom: 'var(--s4)' }} />}
+        {fromCache && online && <Alert variant="info" title={t('auditoriaview.datos_desde_cache')} description="No se pudo conectar; se muestran los últimos eventos disponibles." style={{ marginBottom: 'var(--s4)' }} />}
+        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('auditoriaview.solo_el_administrador_puede_consultar_la') : t('auditoriaview.error_al_cargar_la_bitacora')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
           <Kpi icon={<ListChecks size={18} aria-hidden />} valor={resumen?.total ?? null} etiqueta="Eventos totales" color="var(--brand-500)" />
@@ -132,15 +132,15 @@ export function AuditoriaView() {
         <AuditoriaFiltros value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} />
 
         {/* Tabs */}
-        <div role="tablist" aria-label="Vista de eventos" style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
-          {TABS.map((t) => {
-            const activo = t.id === tab;
+        <div role="tablist" aria-label={t('auditoriaview.vista_de_eventos')} style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
+          {TABS.map((item) => {
+            const activo = item.id === tab;
             return (
               <button
-                key={t.id}
+                key={item.id}
                 role="tab"
                 aria-selected={activo}
-                onClick={() => setTab(t.id)}
+                onClick={() => setTab(item.id)}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)', padding: 'var(--s3) var(--s4)',
                   border: 'none', borderBottom: `2px solid ${activo ? 'var(--brand-500)' : 'transparent'}`,
@@ -148,9 +148,9 @@ export function AuditoriaView() {
                   fontSize: '13px', fontWeight: activo ? 700 : 600, cursor: 'pointer',
                 }}
               >
-                {t.label}
-                {t.badge != null && t.badge > 0 && (
-                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '0 var(--s2)', borderRadius: 'var(--r-full)', background: 'var(--sem-error-bg)', color: 'var(--sem-error)' }}>{t.badge}</span>
+                {item.label}
+                {item.badge != null && item.badge > 0 && (
+                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '0 var(--s2)', borderRadius: 'var(--r-full)', background: 'var(--sem-error-bg)', color: 'var(--sem-error)' }}>{item.badge}</span>
                 )}
               </button>
             );
@@ -159,7 +159,7 @@ export function AuditoriaView() {
 
         {tab === 'tipo' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-            {porTipo.length === 0 && <div style={{ padding: 'var(--s7)', textAlign: 'center', color: 'var(--text-muted)' }}>Sin eventos en esta página.</div>}
+            {porTipo.length === 0 && <div style={{ padding: 'var(--s7)', textAlign: 'center', color: 'var(--text-muted)' }}>{t('auditoriaview.sin_eventos_en_esta_pagina')}</div>}
             {porTipo.map(([tipo, count]) => (
               <div key={tipo} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--s3) var(--s4)', background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>

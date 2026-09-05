@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { LineChartTelemetria, type SerieChart } from './LineChartTelemetria';
 import { horaCaptura } from '../lib/sensorEscala';
 import type { LecturaHistoricaSchema } from '../types';
@@ -26,10 +27,11 @@ function buildChart(items: LecturaHistoricaSchema[]): { data: Array<Record<strin
 }
 
 export function HistorialChart({ items, unidad }: { items: LecturaHistoricaSchema[]; unidad?: string }) {
+  const { t } = useT('telemetry');
   const { data, series } = useMemo(() => buildChart(items), [items]);
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)', marginBottom: 'var(--s6)' }}>
-      <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>Evolución de lecturas</h3>
+      <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('historialchart.evolucion_de_lecturas')}</h3>
       <LineChartTelemetria data={data} xKey="x" series={series} unit={unidad} height={280} />
     </div>
   );

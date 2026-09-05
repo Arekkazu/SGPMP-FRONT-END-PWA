@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Plus, Search } from 'lucide-react';
 import { useRoles } from '../hooks/useRoles';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -17,12 +18,13 @@ type ModalState =
   | { tipo: 'confirmar-eliminar'; rol: RolConPermisosResponse };
 
 export function RolesPage() {
+  const { t } = useT('roles');
   const puedeVer = usePermission(2, 2);
   const puedeCrear = usePermission(2, 1);
   const puedeEditar = usePermission(2, 3);
   const puedeEliminar = usePermission(2, 4);
   const online = useOnlineStatus();
-  const { roles, recursos, acciones, loading, error, cargar, crearRol, editarRol, eliminarRol, asignarPermiso, retirarPermiso } = useRoles();
+  const { roles, recursos, acciones, loading, error, cargar, crearRol, editarRol, eliminarRol, asignarPermiso, retirarPermiso, limpiarError } = useRoles();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<import('../../shared/api/errors').ApiError | null>(null);
@@ -36,10 +38,8 @@ export function RolesPage() {
   if (!puedeVer) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
-        <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.375rem' }}>Acceso restringido</p>
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: 320 }}>
-          La gestión de roles requiere permiso de lectura sobre el recurso Roles y Permisos.
-        </p>
+        <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.375rem' }}>{t('rolespage.acceso_restringido')}</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: 320 }}>{t('rolespage.la_gestion_de_roles_requiere_permiso_de')}</p>
       </div>
     );
   }
@@ -84,42 +84,36 @@ export function RolesPage() {
       {/* Encabezado */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s5)', flexWrap: 'wrap', gap: 'var(--s3)' }}>
         <div>
-          <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
-            Gestión de roles y permisos
-          </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Roles del sistema bajo el modelo RBAC
-          </p>
+          <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{t('rolespage.gestion_de_roles_y_permisos')}</h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('rolespage.roles_del_sistema_bajo_el_modelo_rbac')}</p>
         </div>
         {puedeCrear && online && (
           <Button variant="primary" size="md" onClick={() => setModal({ tipo: 'crear' })}>
-            <Plus size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Crear nuevo rol
-          </Button>
+            <Plus size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('rolespage.crear_nuevo_rol')}</Button>
         )}
       </div>
 
       {/* Alert de seguridad crítica */}
       <Alert
         variant="warning"
-        title="Módulo de seguridad crítica"
+        title={t('rolespage.modulo_de_seguridad_critica')}
         description="Los cambios de roles afectan a todos los usuarios asignados. Toda modificación queda registrada en el registro de auditoría. Los roles con usuarios asignados no pueden eliminarse; primero reasigna a los usuarios."
         style={{ marginBottom: 'var(--s5)' }}
       />
 
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Las acciones están deshabilitadas en modo offline." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="warning" title={t('rolespage.sin_conexion')} description={t('rolespage.las_acciones_estan_deshabilitadas_en_modo')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {error && (
-        <Alert variant="error" title="Error al cargar roles" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('rolespage.error_al_cargar_roles')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {/* Barra de búsqueda */}
       <div style={{ marginBottom: 'var(--s5)', maxWidth: 320 }}>
         <Input
           label=""
-          placeholder="Filtrar por nombre de rol…"
+          placeholder={t('rolespage.filtrar_por_nombre_de_rol')}
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           leadingIcon={<Search size={14} aria-hidden />}
@@ -129,7 +123,7 @@ export function RolesPage() {
       {/* Card con tabla */}
       <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--surface-border)', boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ padding: 'var(--s4) var(--s5)', borderBottom: '1px solid var(--surface-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Listado de roles</span>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('rolespage.listado_de_roles')}</span>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '11px', fontWeight: 600,
             padding: '3px 9px', borderRadius: 'var(--r-full)', border: '1px solid var(--surface-border)',
@@ -145,7 +139,7 @@ export function RolesPage() {
           puedeEditar={puedeEditar && online}
           puedeEliminar={puedeEliminar && online}
           onEditar={(rol) => setModal({ tipo: 'editar', rol })}
-          onEliminar={(rol) => setModal({ tipo: 'confirmar-eliminar', rol })}
+          onEliminar={(rol) => { limpiarError(); setModal({ tipo: 'confirmar-eliminar', rol }); }}
         />
       </div>
 
@@ -181,15 +175,14 @@ export function RolesPage() {
           onClick={(e) => { if (e.target === e.currentTarget) setModal({ tipo: 'ninguno' }); }}
         >
           <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', maxWidth: 400, width: '100%', boxShadow: 'var(--shadow-lg)' }}>
-            <h2 id="eliminar-rol-title" style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 'var(--s3)', color: 'var(--text-primary)' }}>
-              Eliminar rol
-            </h2>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>
-              ¿Confirmas que deseas eliminar el rol <strong>{modal.rol.nombre_rol}</strong>? Esta acción no se puede deshacer.
-            </p>
+            <h2 id="eliminar-rol-title" style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 'var(--s3)', color: 'var(--text-primary)' }}>{t('rolespage.eliminar_rol')}</h2>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>{t('rolespage.confirmas_que_deseas_eliminar_el_rol')}<strong>{modal.rol.nombre_rol}</strong>{t('rolespage.esta_accion_no_se_puede_deshacer')}</p>
+            {error && (
+              <Alert variant="error" title={t('rolespage.no_se_pudo_eliminar_el_rol')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+            )}
             <div style={{ display: 'flex', gap: 'var(--s3)', justifyContent: 'flex-end' }}>
-              <Button variant="secondary" size="md" onClick={() => setModal({ tipo: 'ninguno' })}>Cancelar</Button>
-              <Button variant="danger" size="md" loading={eliminando} onClick={() => handleEliminar(modal.rol)}>Eliminar</Button>
+              <Button variant="secondary" size="md" onClick={() => setModal({ tipo: 'ninguno' })}>{t('rolespage.cancelar')}</Button>
+              <Button variant="danger" size="md" loading={eliminando} onClick={() => handleEliminar(modal.rol)}>{t('rolespage.eliminar')}</Button>
             </div>
           </div>
         </div>

@@ -1,0 +1,47 @@
+{
+  "caso": "TC-M01-011",
+  "titulo": "Rechazo de registro por reCAPTCHA no resuelto / fallido",
+  "cu": "CU01 - Registro de usuario",
+  "rf": "RF-01",
+  "tipo": "Manejo de Seguridad (reCAPTCHA)",
+  "equipo": "Frontend & Backend QA",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-03T00:20:03.400Z",
+  "peticionInfo": "- Escenario A (Token Vacío): POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/ -> HTTP 201\n- Escenario B (Token Inválido): POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/ -> HTTP 201",
+  "resumenHttp": "Escenario A (Token Vacío): POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/ -> HTTP 201 | Escenario B (Token Inválido): POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/ -> HTTP 201",
+  "checkpoints": [
+    {
+      "paso": "Checkpoint 1: Bloqueo de envío en la interfaz (UI)",
+      "esperado": "Botón \"Registrarse\" deshabilitado en UI cuando captcha_token es nulo",
+      "obtenido": "El botón \"Registrarse\" permanece deshabilitado en la interfaz sin token de CAPTCHA",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 2: Respuesta HTTP de la API con CAPTCHA NO RESUELTO (captcha_token vacío)",
+      "esperado": "HTTP 400 (Rechazo por CAPTCHA no resuelto en ambiente real)",
+      "obtenido": "HTTP 201 Creado (Respuesta obtenida por estar el reCAPTCHA SIMULADO en este ambiente de TEST)",
+      "estado": "OBSERVACION"
+    },
+    {
+      "paso": "Checkpoint 3: Respuesta HTTP de la API con CAPTCHA FALLIDO (captcha_token inválido/expirado)",
+      "esperado": "HTTP 400 (Rechazo por CAPTCHA inválido en ambiente real)",
+      "obtenido": "HTTP 201 Creado (Respuesta obtenida por estar el reCAPTCHA SIMULADO en este ambiente de TEST)",
+      "estado": "OBSERVACION"
+    },
+    {
+      "paso": "Checkpoint 4: Veredicto Global de Seguridad en Ambiente de TEST",
+      "esperado": "Rechazo por CAPTCHA verificado en ambiente con claves oficiales de prueba de Google",
+      "obtenido": "NO APROBADO: No es posible validar la seguridad en este ambiente de TEST (CAPTCHA simulado). Petición Token Vacío devuelven 201 y Token Inválido devuelve 201",
+      "estado": "OBSERVACION"
+    }
+  ],
+  "veredicto": "NO APROBADO — no se puede validar en este ambiente (CAPTCHA simulado)",
+  "hallazgos": [
+    "Checkpoint 1: Bloqueo de envío en la interfaz (UI) -> El botón \"Registrarse\" permanece deshabilitado en la interfaz sin token de CAPTCHA (OK)",
+    "Checkpoint 2: Respuesta HTTP de la API con CAPTCHA NO RESUELTO (captcha_token vacío) -> HTTP 201 Creado (Respuesta obtenida por estar el reCAPTCHA SIMULADO en este ambiente de TEST) (OBSERVACION)",
+    "Checkpoint 3: Respuesta HTTP de la API con CAPTCHA FALLIDO (captcha_token inválido/expirado) -> HTTP 201 Creado (Respuesta obtenida por estar el reCAPTCHA SIMULADO en este ambiente de TEST) (OBSERVACION)",
+    "Checkpoint 4: Veredicto Global de Seguridad en Ambiente de TEST -> NO APROBADO: No es posible validar la seguridad en este ambiente de TEST (CAPTCHA simulado). Petición Token Vacío devuelven 201 y Token Inválido devuelve 201 (OBSERVACION)"
+  ]
+}

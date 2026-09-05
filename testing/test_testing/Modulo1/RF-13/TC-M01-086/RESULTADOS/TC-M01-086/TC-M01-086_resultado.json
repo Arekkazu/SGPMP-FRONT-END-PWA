@@ -1,0 +1,32 @@
+{
+  "caso": "TC-M01-086",
+  "titulo": "Acceso a /perfil con JWT inválido o expirado",
+  "cu": "CU13 - Consultar Perfil",
+  "rf": "RF-13",
+  "tipo": "Pruebas de Seguridad (JWT)",
+  "equipo": "Frontend & QA",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.65",
+  "fecha": "2026-09-01T17:55:57.904Z",
+  "peticionInfo": "Llamada directa GET https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/me con Bearer token manipulado -> Status: 401. Respuesta: {\"error_code\":\"TOKEN_INVALIDO\",\"message\":\"El token es inválido o ha expirado.\",\"fields\":[],\"timestamp\":\"2026-09-01T17:55:56.838830+00:00\"}",
+  "checkpoints": [
+    {
+      "paso": "Checkpoint 1: Protección de ruta en la UI (SPA)",
+      "esperado": "Impidió el acceso a /perfil y redirigió a /login",
+      "obtenido": "Acceso bloqueado en el cliente; redirección exitosa a /login",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 2: Respuesta del Backend TEST a JWT inválido/expirado (cy.request / API)",
+      "esperado": "HTTP Status 401 Unauthorized",
+      "obtenido": "HTTP 401 - Respuesta del servidor: {\"error_code\":\"TOKEN_INVALIDO\",\"message\":\"El token es inválido o ha expirado.\",\"fields\":[],\"timestamp\":\"2026-09-01T17:55:56.838830+00:00\"}",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "hallazgos": [
+    "Checkpoint 1: Protección de ruta en la UI (SPA) -> Acceso bloqueado en el cliente; redirección exitosa a /login (OK)",
+    "Checkpoint 2: Respuesta del Backend TEST a JWT inválido/expirado (cy.request / API) -> HTTP 401 - Respuesta del servidor: {\"error_code\":\"TOKEN_INVALIDO\",\"message\":\"El token es inválido o ha expirado.\",\"fields\":[],\"timestamp\":\"2026-09-01T17:55:56.838830+00:00\"} (OK)"
+  ]
+}

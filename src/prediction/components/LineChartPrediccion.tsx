@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine,
 } from 'recharts';
@@ -29,11 +30,10 @@ const AXIS_STYLE = { fontSize: 11, fill: 'var(--text-muted)', fontFamily: 'var(-
  * Único punto que consume `recharts` aquí; el resto del módulo no depende de la librería.
  */
 export function LineChartPrediccion({ data, xKey, series, height = 260, unit, referencias, yDomain }: Props) {
+  const { t } = useT('prediction');
   if (!data || data.length === 0) {
     return (
-      <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
-        Sin datos para graficar en el período seleccionado.
-      </div>
+      <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>{t('linechartprediccion.sin_datos_para_graficar_en_el_periodo')}</div>
     );
   }
 

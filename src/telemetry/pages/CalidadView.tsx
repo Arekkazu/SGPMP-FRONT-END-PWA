@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ShieldCheck, RefreshCcw, CheckCircle2, AlertTriangle, XCircle, HelpCircle } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -13,6 +14,7 @@ import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_CALIDAD, ACCION_R, ACCION_E } from '../rbac';
 import type { CalidadFiltros as CalidadFiltrosDTO, TelemetriaCalidadSchema } from '../types';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: number | null; etiqueta: string; color: string }) {
   return (
@@ -27,6 +29,7 @@ function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: n
 }
 
 export function CalidadView() {
+  const { t } = useT('telemetry');
   const puedeVer = usePermission(RECURSO_CALIDAD, ACCION_R);
   const puedeEjecutar = usePermission(RECURSO_CALIDAD, ACCION_E);
   const online = useOnlineStatus();
@@ -42,8 +45,8 @@ export function CalidadView() {
       if (filtros.id_sensor) f.id_sensor = Number(filtros.id_sensor);
       if (filtros.clasificacion) f.clasificacion = filtros.clasificacion;
       if (filtros.estado_evaluacion) f.estado_evaluacion = filtros.estado_evaluacion.trim();
-      if (filtros.fecha_desde) f.fecha_desde = `${filtros.fecha_desde}T00:00:00Z`;
-      if (filtros.fecha_hasta) f.fecha_hasta = `${filtros.fecha_hasta}T23:59:59Z`;
+      if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
+      if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
       return f;
     },
     [filtros]
@@ -70,24 +73,20 @@ export function CalidadView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            <ShieldCheck size={20} aria-hidden />
-            Calidad de Datos de Telemetría
-          </h1>
+            <ShieldCheck size={20} aria-hidden />{t('calidadview.calidad_de_datos_de_telemetria')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : `${paginacion.totalRegistros} evaluación(es)`}
           </p>
         </div>
         {puedeEjecutar && (
           <Button variant="secondary" size="sm" disabled={!online} onClick={() => setModalReeval(true)}>
-            <RefreshCcw size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Solicitar re-evaluación
-          </Button>
+            <RefreshCcw size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('calidadview.solicitar_re_evaluacion')}</Button>
         )}
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
-        {!online && <Alert variant="warning" title="Sin conexión" description="Evaluar y re-evaluar están deshabilitados." style={{ marginBottom: 'var(--s4)' }} />}
-        {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a calidad' : 'Error al cargar calidad'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title={t('calidadview.sin_conexion')} description={t('calidadview.evaluar_y_re_evaluar_estan_deshabilitados')} style={{ marginBottom: 'var(--s4)' }} />}
+        {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('calidadview.sin_acceso_a_calidad') : t('calidadview.error_al_cargar_calidad')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
           <Kpi icon={<CheckCircle2 size={18} aria-hidden />} valor={resumen?.apto ?? null} etiqueta="Aptas" color="var(--sem-success)" />

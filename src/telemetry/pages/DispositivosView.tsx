@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Cpu, Search, Wrench, AlertTriangle } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -17,8 +18,10 @@ import { PermissionDenied } from '../components/PermissionDenied';
 import { INPUT, LABEL } from '../components/tableStyles';
 import { RECURSO_INFRAESTRUCTURA, RECURSO_ALERTAS_TECNICAS, ACCION_R, ACCION_U } from '../rbac';
 import type { ListarAlertasFiltros, NuevoEstadoAlerta } from '../types';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 export function DispositivosView() {
+  const { t } = useT('telemetry');
   const puedeVerInfra = usePermission(RECURSO_INFRAESTRUCTURA, ACCION_R);
   const puedeMantenimiento = usePermission(RECURSO_INFRAESTRUCTURA, ACCION_U);
   const puedeVerTecnicas = usePermission(RECURSO_ALERTAS_TECNICAS, ACCION_R);
@@ -41,8 +44,8 @@ export function DispositivosView() {
       if (filtros.severidad) f.severidad = filtros.severidad;
       if (filtros.origen_evento) f.origen_evento = filtros.origen_evento;
       if (filtros.id_sensor) f.id_sensor = Number(filtros.id_sensor);
-      if (filtros.fecha_desde) f.fecha_desde = `${filtros.fecha_desde}T00:00:00Z`;
-      if (filtros.fecha_hasta) f.fecha_hasta = `${filtros.fecha_hasta}T23:59:59Z`;
+      if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
+      if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
       return f;
     },
     [filtros]
@@ -84,12 +87,8 @@ export function DispositivosView() {
     <div style={{ minHeight: '100%' }}>
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <Cpu size={20} aria-hidden />
-          Estado de Dispositivos IoT
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          Consulta el estado y las transiciones de un dispositivo, y gestiona las alertas técnicas.
-        </p>
+          <Cpu size={20} aria-hidden />{t('dispositivosview.estado_de_dispositivos_iot')}</h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('dispositivosview.consulta_el_estado_y_las_transiciones_de_un')}</p>
       </div>
 
       <div style={{ padding: 'var(--s7)', display: 'flex', flexDirection: 'column', gap: 'var(--s7)' }}>
@@ -97,7 +96,7 @@ export function DispositivosView() {
         <section>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--s3)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
             <div style={{ maxWidth: 220 }}>
-              <label style={LABEL} htmlFor="disp-id">ID de dispositivo</label>
+              <label style={LABEL} htmlFor="disp-id">{t('dispositivosview.id_de_dispositivo')}</label>
               <input
                 id="disp-id"
                 type="number"
@@ -109,9 +108,7 @@ export function DispositivosView() {
               />
             </div>
             <Button variant="primary" size="sm" onClick={consultar} disabled={!idInput.trim()}>
-              <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Consultar
-            </Button>
+              <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('dispositivosview.consultar')}</Button>
           </div>
 
           <DispositivoEstadoPanel
@@ -134,9 +131,7 @@ export function DispositivosView() {
                 {enMantenimiento ? 'Reactivar dispositivo' : 'Poner en mantenimiento'}
               </Button>
               {!online && (
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Requiere conexión.
-                </span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('dispositivosview.requiere_conexion')}</span>
               )}
             </div>
           )}
@@ -145,16 +140,14 @@ export function DispositivosView() {
         {/* Alertas técnicas */}
         <section>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-            <AlertTriangle size={18} aria-hidden />
-            Alertas técnicas
-          </h2>
+            <AlertTriangle size={18} aria-hidden />{t('dispositivosview.alertas_tecnicas')}</h2>
 
           {!puedeVerTecnicas ? (
-            <Alert variant="warning" title="Acceso restringido" description="Las alertas técnicas solo están disponibles para Administrador e Ingeniero de Campo." />
+            <Alert variant="warning" title={t('dispositivosview.acceso_restringido')} description={t('dispositivosview.las_alertas_tecnicas_solo_estan_disponibles')} />
           ) : (
             <>
-              {!online && <Alert variant="warning" title="Sin conexión" description="La gestión de alertas técnicas está deshabilitada." style={{ marginBottom: 'var(--s4)' }} />}
-              {tecnicas.error && <Alert variant={tecnicas.error.status === 403 ? 'warning' : 'error'} title="Error al cargar alertas técnicas" description={tecnicas.error.message} style={{ marginBottom: 'var(--s4)' }} />}
+              {!online && <Alert variant="warning" title={t('dispositivosview.sin_conexion')} description={t('dispositivosview.la_gestion_de_alertas_tecnicas_esta')} style={{ marginBottom: 'var(--s4)' }} />}
+              {tecnicas.error && <Alert variant={tecnicas.error.status === 403 ? 'warning' : 'error'} title={t('dispositivosview.error_al_cargar_alertas_tecnicas')} description={tecnicas.error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
               <AlertasFiltros
                 value={filtros}

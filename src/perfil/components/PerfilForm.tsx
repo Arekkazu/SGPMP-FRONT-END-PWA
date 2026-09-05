@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Input } from '../../shared/design-system/Input';
 import { Button } from '../../shared/design-system/Button';
@@ -16,6 +17,7 @@ interface Props {
 const NAME_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 
 export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: Props) {
+  const { t } = useT('perfil');
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EditarPerfilDTO>({ mode: 'onBlur' });
 
   useEffect(() => {
@@ -39,62 +41,60 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
       {saveError && (
         <Alert
           variant="error"
-          title={saveError.status === 412 ? 'Conflicto de datos' : 'Error al guardar'}
-          description={saveError.status === 412 ? 'Los datos han cambiado. Recarga la página para ver la versión más reciente.' : saveError.message}
+          title={saveError.status === 412 ? t('perfilform.conflicto_de_datos') : t('perfilform.error_al_guardar')}
+          description={saveError.status === 412 ? t('perfilform.los_datos_han_cambiado_recarga_la_pagina') : saveError.message}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
       {saveSuccess && (
-        <Alert variant="success" title="Cambios guardados" description="Tu perfil ha sido actualizado exitosamente." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="success" title={t('perfilform.cambios_guardados')} description={t('perfilform.tu_perfil_ha_sido_actualizado_exitosamente')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
         <div>
           <Input
-            label="Nombres"
+            label={t('perfilform.nombres')}
             required
             error={errors.nombre?.message}
             {...register('nombre', {
-              required: 'El nombre es obligatorio.',
-              pattern: { value: NAME_REGEX, message: 'Solo letras y espacios.' },
+              required: t('perfilform.el_nombre_es_obligatorio'),
+              pattern: { value: NAME_REGEX, message: t('perfilform.solo_letras_y_espacios') },
             })}
           />
         </div>
         <div>
           <Input
-            label="Apellidos"
+            label={t('perfilform.apellidos')}
             required
             error={errors.apellidos?.message}
             {...register('apellidos', {
-              required: 'Los apellidos son obligatorios.',
-              pattern: { value: NAME_REGEX, message: 'Solo letras y espacios.' },
+              required: t('perfilform.los_apellidos_son_obligatorios'),
+              pattern: { value: NAME_REGEX, message: t('perfilform.solo_letras_y_espacios') },
             })}
           />
         </div>
         <div>
           <Input
-            label="Teléfono"
+            label={t('perfilform.telefono')}
             type="tel"
             hint="Opcional, 7-15 dígitos"
             error={errors.telefono?.message}
             {...register('telefono', {
-              pattern: { value: /^[0-9]{7,15}$/, message: 'Solo números, 7-15 dígitos.' },
+              pattern: { value: /^[0-9]{7,15}$/, message: t('perfilform.solo_numeros_7_15_digitos') },
             })}
           />
         </div>
         <div>
           <Input
-            label="Dirección"
-            placeholder="Calle, número, ciudad"
+            label={t('perfilform.direccion')}
+            placeholder={t('perfilform.calle_numero_ciudad')}
             {...register('direccion')}
           />
         </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button type="submit" variant="primary" size="md" loading={saving}>
-          Guardar cambios
-        </Button>
+        <Button type="submit" variant="primary" size="md" loading={saving}>{t('perfilform.guardar_cambios')}</Button>
       </div>
     </form>
   );

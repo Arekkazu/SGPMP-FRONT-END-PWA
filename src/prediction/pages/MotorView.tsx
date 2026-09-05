@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { SlidersHorizontal, RefreshCw, Cpu } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -21,6 +22,7 @@ const NODOS_EDGE_MOCK = [
 ];
 
 export function MotorView() {
+  const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_MOTOR, ACCION_R);
   const puedeEditar = usePermission(RECURSO_MOTOR, ACCION_C);
   const online = useOnlineStatus();
@@ -44,36 +46,34 @@ export function MotorView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            <SlidersHorizontal size={20} aria-hidden />
-            Configuración del Motor de Predicción
-          </h1>
+            <SlidersHorizontal size={20} aria-hidden />{t('motorview.configuracion_del_motor_de_prediccion')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             Umbrales, ventana de análisis y modo por tipo de modelo
             {fromCache && ' · desde caché'}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => { limpiarSaveError(); cargar(); }} aria-label="Recargar">
+        <Button variant="ghost" size="sm" onClick={() => { limpiarSaveError(); cargar(); }} aria-label={t('motorview.recargar')}>
           <RefreshCw size={15} aria-hidden />
         </Button>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
-        {!online && <Alert variant="warning" title="Sin conexión" description="Mostrando configuración cacheada. Los cambios están deshabilitados." style={{ marginBottom: 'var(--s4)' }} />}
-        {fromCache && online && <Alert variant="info" title="Datos desde caché" description="No se pudo conectar; se muestra la última configuración disponible." style={{ marginBottom: 'var(--s4)' }} />}
-        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a la configuración' : 'Error al cargar la configuración'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
-        {!puedeEditar && !error && <Alert variant="info" title="Solo lectura" description="Tu rol puede consultar la configuración pero no modificarla." style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title={t('motorview.sin_conexion')} description={t('motorview.mostrando_configuracion_cacheada_los')} style={{ marginBottom: 'var(--s4)' }} />}
+        {fromCache && online && <Alert variant="info" title={t('motorview.datos_desde_cache')} description="No se pudo conectar; se muestra la última configuración disponible." style={{ marginBottom: 'var(--s4)' }} />}
+        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('motorview.sin_acceso_a_la_configuracion') : t('motorview.error_al_cargar_la_configuracion')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {!puedeEditar && !error && <Alert variant="info" title={t('motorview.solo_lectura')} description={t('motorview.tu_rol_puede_consultar_la_configuracion')} style={{ marginBottom: 'var(--s4)' }} />}
 
         {/* Tabs por tipo de modelo */}
-        <div role="tablist" aria-label="Tipo de modelo" style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
-          {TIPOS_MODELO.map((t) => {
-            const activo = t === tipo;
-            const tieneConfig = configs.some((c) => c.tipo_modelo === t);
+        <div role="tablist" aria-label={t('motorview.tipo_de_modelo')} style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
+          {TIPOS_MODELO.map((tipo) => {
+            const activo = tipo === tipo;
+            const tieneConfig = configs.some((c) => c.tipo_modelo === tipo);
             return (
               <button
-                key={t}
+                key={tipo}
                 role="tab"
                 aria-selected={activo}
-                onClick={() => setTipo(t)}
+                onClick={() => setTipo(tipo)}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)',
                   padding: 'var(--s2) var(--s4)', borderRadius: 'var(--r-full)',
@@ -83,7 +83,7 @@ export function MotorView() {
                   fontSize: '13px', fontWeight: activo ? 700 : 600, cursor: 'pointer', minHeight: 38,
                 }}
               >
-                {TIPO_MODELO_LABEL[t]}
+                {TIPO_MODELO_LABEL[tipo]}
                 {tieneConfig && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)' }} aria-label="configurado" />}
               </button>
             );
@@ -91,11 +91,11 @@ export function MotorView() {
         </div>
 
         {loading ? (
-          <div style={{ padding: 'var(--s8)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>Cargando configuración…</div>
+          <div style={{ padding: 'var(--s8)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('motorview.cargando_configuracion')}</div>
         ) : (
           <>
             {!configActual && (
-              <Alert variant="info" title="Sin configuración" description={`No hay una configuración guardada para "${TIPO_MODELO_LABEL[tipo]}". Ajusta los valores por defecto y guarda para crearla.`} style={{ marginBottom: 'var(--s4)' }} />
+              <Alert variant="info" title={t('motorview.sin_configuracion')} description={`No hay una configuración guardada para "${TIPO_MODELO_LABEL[tipo]}". Ajusta los valores por defecto y guarda para crearla.`} style={{ marginBottom: 'var(--s4)' }} />
             )}
             <MotorConfigForm
               key={tipo}
@@ -114,17 +114,16 @@ export function MotorView() {
         {/* Panel de nodos Edge — simulado */}
         <section style={{ marginTop: 'var(--s7)' }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-            <Cpu size={18} aria-hidden /> Sincronización de nodos Edge
-          </h2>
+            <Cpu size={18} aria-hidden />{t('motorview.sincronizacion_de_nodos_edge')}</h2>
           <DatosSimuladosBanner detalle="La sincronización de nodos Edge se muestra con datos de ejemplo" />
           <div style={TABLE_WRAP}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={THEAD_ROW}>
-                  <th style={TH}>Dispositivo</th>
-                  <th style={TH}>Ubicación</th>
-                  <th style={TH}>Última sincronización</th>
-                  <th style={TH}>Estado</th>
+                  <th style={TH}>{t('motorview.dispositivo')}</th>
+                  <th style={TH}>{t('motorview.ubicacion')}</th>
+                  <th style={TH}>{t('motorview.ultima_sincronizacion')}</th>
+                  <th style={TH}>{t('motorview.estado')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -135,8 +134,8 @@ export function MotorView() {
                     <td style={TD}>{n.sync}</td>
                     <td style={TD}>
                       {n.estado === 'SINCRONIZADO'
-                        ? <Pill tono="success">Sincronizado</Pill>
-                        : <Pill tono="warning">Pendiente</Pill>}
+                        ? <Pill tono="success">{t('motorview.sincronizado')}</Pill>
+                        : <Pill tono="warning">{t('motorview.pendiente')}</Pill>}
                     </td>
                   </tr>
                 ))}

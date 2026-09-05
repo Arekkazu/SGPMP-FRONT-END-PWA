@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, BellRing } from 'lucide-react';
 import { SeveridadBadge } from './SeveridadBadge';
 import { EstadoAlertaPill } from './EstadoAlertaPill';
@@ -16,6 +17,7 @@ interface Props {
 const COLS = ['Tipo de alerta', 'Variable', 'Valor', 'Severidad', 'Reglas', 'Origen', 'Estado', 'Generada', ''];
 
 export function AlertasTable({ alertas, loading, onAbrir }: Props) {
+  const { t } = useT('telemetry');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -31,7 +33,7 @@ export function AlertasTable({ alertas, loading, onAbrir }: Props) {
     return (
       <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s8) var(--s4)', fontSize: '14px', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
         <BellRing size={32} aria-hidden style={{ opacity: 0.5, marginBottom: 'var(--s3)' }} />
-        <p style={{ margin: 0 }}>No hay alertas que coincidan con los filtros.</p>
+        <p style={{ margin: 0 }}>{t('alertastable.no_hay_alertas_que_coincidan_con_los_filtros')}</p>
       </div>
     );
   }

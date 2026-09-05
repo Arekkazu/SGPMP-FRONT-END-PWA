@@ -1,16 +1,25 @@
-import React from 'react';
-import { Users, Shield, Activity, User } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { useT } from '../../shared/i18n/useT';
+import { LayoutGrid } from 'lucide-react';
 import { useAuth } from '../../shared/auth/useAuth';
-
-const KPI_CARDS = [
-  { icon: Users, label: 'Usuarios activos', value: '—', color: 'var(--brand-500)' },
-  { icon: Shield, label: 'Roles configurados', value: '—', color: 'var(--sem-info)' },
-  { icon: Activity, label: 'Eventos de auditoría hoy', value: '—', color: 'var(--sem-warning)' },
-  { icon: User, label: 'Mi último acceso', value: '—', color: 'var(--sem-success)' },
-];
+import { Alert } from '../../shared/design-system/Alert';
+import { useDashboardLayout } from '../../configuration/hooks/useDashboardLayout';
+import { useContexto } from '../../shared/contexto/useContexto';
+import { WidgetCard } from '../components/WidgetCard';
+import './DashboardPage.css';
 
 export function DashboardPage() {
+  const { t } = useT('dashboard');
   const { claims } = useAuth();
+  // El layout que el usuario guardo en Configuracion → Personalizacion es el que
+  // manda aca. Antes esta pagina era estatica y la configuracion no se aplicaba
+  // en ningun lado.
+  const { datos, loading, error, cargarDatos } = useDashboardLayout();
+  // RF-25, flujo alterno "Finca sin especies productivas configuradas": el aviso
+  // reemplaza a los indicadores, que sin especies no tendrian nada que mostrar.
+  const { contexto, sinEspecies } = useContexto();
+
+  useEffect(() => { cargarDatos(); }, [cargarDatos]);
 
   return (
     <div style={{ padding: 'var(--s6)', maxWidth: 1100, margin: '0 auto' }}>
@@ -19,61 +28,69 @@ export function DashboardPage() {
           Bienvenido{claims?.nombre ? `, ${claims.nombre}` : ''}
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          SGP Multiespecie — Sistema de Gestión Pecuaria
+          {contexto?.finca_activa
+            ? `${contexto.finca_activa}${contexto.departamento ? ` · ${contexto.departamento}` : ''}`
+            : t('dashboardpage.sgp_multiespecie_sistema_de_gestion_pecuaria')}
         </p>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-          gap: 'var(--s5)',
-        }}
-      >
-        {KPI_CARDS.map(({ icon: Icon, label, value, color }) => (
-          <div
-            key={label}
-            style={{
-              background: 'var(--surface-card)',
-              border: '1px solid var(--surface-border)',
-              borderRadius: 'var(--r-xl)',
-              padding: 'var(--s5)',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s4)' }}>
-              <div
-                style={{
-                  width: 40, height: 40,
-                  borderRadius: 'var(--r-md)',
-                  background: `${color}1a`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-                aria-hidden
-              >
-                <Icon size={20} color={color} />
-              </div>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{label}</span>
-            </div>
-            <p style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)' }}>{value}</p>
-          </div>
-        ))}
-      </div>
+      {error && (
+        <Alert
+          variant="error"
+          title={t('dashboardpage.no_se_pudo_cargar_el_dashboard')}
+          description={error.message}
+          style={{ marginBottom: 'var(--s5)' }}
+        />
+      )}
 
-      <div
-        style={{
-          marginTop: 'var(--s7)',
-          padding: 'var(--s5)',
-          background: 'var(--surface-card)',
-          border: '1px solid var(--surface-border)',
-          borderRadius: 'var(--r-xl)',
-          textAlign: 'center',
-          color: 'var(--text-muted)',
-          fontSize: '14px',
-        }}
-      >
-        Los indicadores del dashboard estarán disponibles en próximas versiones.
-      </div>
+      {sinEspecies && (
+        <Alert
+          variant="info"
+          title={t('dashboardpage.finca_sin_configuracion')}
+          description={t('dashboardpage.configure_especies_y_areas')}
+          style={{ marginBottom: 'var(--s5)' }}
+        />
+      )}
+
+      {loading ? (
+        <div className="dashboard-grid" aria-busy="true">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              style={{
+                height: 150,
+                borderRadius: 'var(--r-xl)',
+                background: 'var(--surface-hover)',
+                animation: 'pulse 1.4s infinite',
+              }}
+            />
+          ))}
+        </div>
+      ) : datos.length > 0 ? (
+        <div className="dashboard-grid">
+          {datos.map((w) => <WidgetCard key={w.id_widget} widget={w} />)}
+        </div>
+      ) : (
+        <div
+          style={{
+            padding: 'var(--s6)',
+            background: 'var(--surface-card)',
+            border: '1px solid var(--surface-border)',
+            borderRadius: 'var(--r-xl)',
+            textAlign: 'center',
+            color: 'var(--text-muted)',
+            fontSize: '14px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 'var(--s3)',
+          }}
+        >
+          <LayoutGrid size={24} aria-hidden />
+          Tu dashboard no tiene widgets configurados. Agrégalos desde
+          Configuración → Personalización.
+        </div>
+      )}
     </div>
   );
 }

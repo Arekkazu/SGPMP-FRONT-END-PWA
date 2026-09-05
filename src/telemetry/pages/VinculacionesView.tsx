@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Link2, RefreshCw } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -14,10 +15,12 @@ import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_VINCULACIONES, ACCION_R, ACCION_U } from '../rbac';
 import type { VinculacionesFiltros as VincFiltrosDTO, VinculacionLecturaSchema } from '../types';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 type Accion = 'resolver' | 'corregir' | null;
 
 export function VinculacionesView() {
+  const { t } = useT('telemetry');
   const puedeVer = usePermission(RECURSO_VINCULACIONES, ACCION_R);
   const puedeGestionar = usePermission(RECURSO_VINCULACIONES, ACCION_U);
   const online = useOnlineStatus();
@@ -34,8 +37,8 @@ export function VinculacionesView() {
       if (filtros.mecanismo_vinculacion) f.mecanismo_vinculacion = filtros.mecanismo_vinculacion;
       if (filtros.id_telemetria) f.id_telemetria = Number(filtros.id_telemetria);
       if (filtros.id_infraestructura) f.id_infraestructura = Number(filtros.id_infraestructura);
-      if (filtros.fecha_desde) f.fecha_desde = `${filtros.fecha_desde}T00:00:00Z`;
-      if (filtros.fecha_hasta) f.fecha_hasta = `${filtros.fecha_hasta}T23:59:59Z`;
+      if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
+      if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
       return f;
     },
     [filtros]
@@ -62,19 +65,17 @@ export function VinculacionesView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            <Link2 size={20} aria-hidden />
-            Vinculación de Lecturas con Activos
-          </h1>
+            <Link2 size={20} aria-hidden />{t('vinculacionesview.vinculacion_de_lecturas_con_activos')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : `${paginacion.totalRegistros} vinculación(es)`}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => cargar(build(paginacion.pagina))} aria-label="Recargar"><RefreshCw size={15} aria-hidden /></Button>
+        <Button variant="ghost" size="sm" onClick={() => cargar(build(paginacion.pagina))} aria-label={t('vinculacionesview.recargar')}><RefreshCw size={15} aria-hidden /></Button>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
-        {!online && <Alert variant="warning" title="Sin conexión" description="Resolver y corregir están deshabilitados." style={{ marginBottom: 'var(--s4)' }} />}
-        {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso a vinculaciones' : 'Error al cargar vinculaciones'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title={t('vinculacionesview.sin_conexion')} description={t('vinculacionesview.resolver_y_corregir_estan_deshabilitados')} style={{ marginBottom: 'var(--s4)' }} />}
+        {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('vinculacionesview.sin_acceso_a_vinculaciones') : t('vinculacionesview.error_al_cargar_vinculaciones')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <VinculacionesFiltros
           value={filtros}

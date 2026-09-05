@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { DownloadCloud, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
 import { KpiCard } from '../components/KpiCard';
@@ -15,14 +16,13 @@ function calidadTono(c: string): Tono {
 }
 
 export function IngestaView() {
+  const { t } = useT('telemetry');
   return (
     <div style={{ minHeight: '100%' }}>
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <DownloadCloud size={20} aria-hidden />
-          Monitor de Ingesta de Telemetría
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>RF-53 · Flujo A/B</p>
+          <DownloadCloud size={20} aria-hidden />{t('ingestaview.monitor_de_ingesta_de_telemetria')}</h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('ingestaview.rf_53_flujo_a_b')}</p>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>

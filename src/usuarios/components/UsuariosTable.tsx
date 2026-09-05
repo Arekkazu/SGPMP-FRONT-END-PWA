@@ -1,4 +1,6 @@
 import React from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { Eye, Settings } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
@@ -26,13 +28,14 @@ function estadoVariant(estado: string): 'activo' | 'inactivo' | 'bloqueado' | 'p
 function formatUltimoAcceso(fecha?: string): string {
   if (!fecha) return '—';
   try {
-    return new Date(fecha).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
+    return formatearFechaHora(fecha, { dateStyle: 'short', timeStyle: 'short' });
   } catch {
     return fecha;
   }
 }
 
 export function UsuariosTable({ usuarios, loading, onVerDetalle, onGestionar, puedeGestionar }: Props) {
+  const { t } = useT('usuarios');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -54,9 +57,7 @@ export function UsuariosTable({ usuarios, loading, onVerDetalle, onGestionar, pu
 
   if (usuarios.length === 0) {
     return (
-      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0' }}>
-        No se encontraron usuarios con los filtros aplicados.
-      </p>
+      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0' }}>{t('usuariostable.no_se_encontraron_usuarios_con_los_filtros')}</p>
     );
   }
 
