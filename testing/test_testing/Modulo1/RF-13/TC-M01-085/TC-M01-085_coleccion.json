@@ -7,7 +7,7 @@
   },
   "variable": [
     { "key": "jwt_token", "value": "", "type": "string" },
-    { "key": "authenticated_email", "value": "supervisor.dev@gmail.com", "type": "string" },
+    { "key": "authenticated_email", "value": "gestor.granja.test@pecuaria.co", "type": "string" },
     { "key": "authenticated_user_id", "value": "", "type": "string" }
   ],
   "item": [
@@ -74,7 +74,7 @@
             "});",
             "const profile = pm.response.json();",
             "pm.test('El correo corresponde al usuario esperado', function () {",
-            "    pm.expect(profile.correo_electronico).to.equal('supervisor.dev@gmail.com');",
+            "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
             "});",
             "pm.test('Los datos corresponden al usuario autenticado', function () {",
             "    pm.expect(profile.correo_electronico).to.equal(pm.collectionVariables.get('authenticated_email'));",
