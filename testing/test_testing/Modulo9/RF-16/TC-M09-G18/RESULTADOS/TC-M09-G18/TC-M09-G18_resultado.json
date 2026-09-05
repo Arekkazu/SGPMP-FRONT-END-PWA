@@ -1,0 +1,73 @@
+{
+  "caso": "TC-M09-G18",
+  "fecha": "2026-09-05T01:07:20.204Z",
+  "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome v152.0.7977.76",
+  "idActivoEvaluado": 74,
+  "activoCreadoTemporal": true,
+  "teardownInfo": "Respuesta HTTP 500 al intentar desactivar activo #74: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-05T01:07:19.794228+00:00\"}",
+  "checkpoints": [
+    {
+      "paso": "CP-06c: Inspección UI Configuración (/configuracion)",
+      "esperado": "Gestión de parámetros inactivos en la interfaz",
+      "obtenido": "OBSERVACIÓN USABILIDAD: La interfaz de configuración muestra badges de estado \"Inactivo\" para parámetros desactivados, pero no ofrece botón de reactivación en la UI",
+      "estado": "OBSERVACION"
+    },
+    {
+      "paso": "CP-06d: Usabilidad Menú Lateral (Sidebar.tsx)",
+      "esperado": "Feedback visual durante la carga de permisos",
+      "obtenido": "OBSERVACIÓN USABILIDAD: Cuando un ítem del sidebar está bloqueado por permisos aún en carga, el clic del usuario se ignora silenciosamente sin ningún indicador visual (spinner, estado disabled, tooltip)",
+      "estado": "OBSERVACION"
+    },
+    {
+      "paso": "CP-01: Autenticación Productor API",
+      "esperado": "Obtención de Bearer Token válido en TEST",
+      "obtenido": "Autenticado con éxito como productor@pecuaria.co",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02: Contrato API Backend (solo_activas=true)",
+      "esperado": "Backend excluye parámetros inactivos (Ciclo #14 Engorde, Patología #11 Mastitis, Métrica #15 Peso)",
+      "obtenido": "API excluye correctamente entidades inactivas cuando solo_activas=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03: Precondición de Activo Biológico (Cachama Blanca)",
+      "esperado": "Creación exitosa de activo biológico temporal de prueba",
+      "obtenido": "Activo poblacional temporal creado con ID #74",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04: Evaluación EventoSanitarioForm (RF-39)",
+      "esperado": "Formulario consume catálogo dinámico de patologías por especie (RF-16)",
+      "obtenido": "ALTO IMPACTO: El formulario utiliza un textarea libre (\"diagnostico\") y no consume el catálogo dinámico de patologías de la especie",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-05: Evaluación EventoCrecimientoForm (RF-40)",
+      "esperado": "Formulario consume catálogo dinámico de métricas por especie (RF-16)",
+      "obtenido": "ALTO IMPACTO: El formulario utiliza un selector estático hardcodeado (PESO, TALLA, BIOMASA) y no lista las métricas configuradas por especie",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-06a: Evaluación EventoProductivoForm (RF-43)",
+      "esperado": "Formulario gestiona tipo de producto y unidades",
+      "obtenido": "OBSERVACIÓN ABIERTA: El formulario utiliza entradas de texto libre (\"tipo_producto\" y \"unidad_medida\"). Se requiere definir si debe consumir un catálogo dinámico cerrado o mantener entrada abierta",
+      "estado": "OBSERVACION"
+    },
+    {
+      "paso": "CP-06b: Evaluación CambiarFaseModal (RF-16 / Etapas)",
+      "esperado": "Modal desglosa selector dinámico de ciclos biológicos de la especie",
+      "obtenido": "ALTO IMPACTO: Exige digitación manual del ID numérico del ciclo (\"id_ciclo_productiva\") mediante <input type=\"number\"> en lugar de presentar un selector dinámico con los ciclos biológicos de la especie",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-07: Teardown Seguro y Limpieza",
+      "esperado": "Desactivación lógica (baja) de activo temporal",
+      "obtenido": "Respuesta HTTP 500 al intentar desactivar activo #74: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-05T01:07:19.794228+00:00\"}",
+      "estado": "OBSERVACION"
+    }
+  ],
+  "veredicto": "⚠️ CON FALLAS (GAP DE INTEGRACIÓN UI: FORMULARIOS DE EVENTOS NO CONSUMEN CATÁLOGOS DINÁMICOS DE RF-16)"
+}
