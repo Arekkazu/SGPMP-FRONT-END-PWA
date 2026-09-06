@@ -48,7 +48,7 @@
 .ds-sidebar__logo-sub {
   font-family: var(--font-mono);
   font-size: 9px;
-  color: #3a5035;
+  color: #7d9a75;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -62,7 +62,7 @@
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #4a6445;
+  color: #7d9a75;
   padding: var(--s2) var(--s5) var(--s1);
   display: block;
 }
@@ -74,7 +74,7 @@
   padding: 9px var(--s5);
   font-size: 12.5px;
   font-weight: 500;
-  color: #8aaa80;
+  color: #a3c49a;
   cursor: pointer;
   border: none;
   background: none;
@@ -90,6 +90,11 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
+.ds-sidebar__item:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
 .ds-sidebar__item--active {
   color: #ffffff;
   border-left-color: var(--brand-400);
@@ -103,7 +108,7 @@
 }
 
 .ds-sidebar__item--locked:hover {
-  color: #8aaa80;
+  color: #a3c49a;
   background: none;
 }
 
@@ -180,7 +185,7 @@
 
 .ds-sidebar__user-role {
   font-size: 10px;
-  color: #4a6445;
+  color: #7d9a75;
   display: block;
 }
 
@@ -188,7 +193,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #4a6445;
+  color: #7d9a75;
   transition: color 0.12s;
   flex-shrink: 0;
   display: flex;
@@ -198,6 +203,10 @@
 }
 
 .ds-sidebar__logout:hover { color: #d4e0ce; }
+.ds-sidebar__logout:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
 
 /* Mobile: hide sidebar */
 @media (max-width: 1023px) {
@@ -206,6 +215,9 @@
   }
   .ds-sidebar--open {
     transform: translateX(0);
+    /* Por encima de la AppBar (z-100) y del overlay (z-140): sin esto la
+       barra superior tapa el logo del drawer abierto (QA TC-DIS-21/25/30/32). */
+    z-index: 150;
   }
 }
 
