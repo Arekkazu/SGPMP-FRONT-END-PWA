@@ -1,3 +1,11 @@
+## [1.0.0-rc.14](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.13...v1.0.0-rc.14) (2026-09-06)
+
+### Bug Fixes
+
+* **biological_assets:** ocultar "Cambiar fase" en estados terminales ([6475d1e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6475d1e7a02a49b1a30919e5e34c0b0659aab5ef))
+* **rf26:** aplicar la identidad guardada a la sesion del Administrador ([66ac846](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/66ac8467032d801f686cba0f55f2179f967a2ec6))
+* **rf26:** no forzar Content-Type json por defecto en axios ([31a2492](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/31a2492dc0df3a15a16cb4128b45651d3ba83230))
+
 ## [1.0.0-rc.13](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.12...v1.0.0-rc.13) (2026-09-06)
 
 ### Features
