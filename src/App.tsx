@@ -26,6 +26,7 @@ import { AuthProvider } from './shared/auth/AuthContext';
 import { useAuth } from './shared/auth/useAuth';
 import { useIdiomaSesion } from './shared/i18n/useIdiomaSesion';
 import { useTemaSesion } from './shared/tema/useTemaSesion';
+import { useSyncOnReconnect } from './shared/sync/useSyncOnReconnect';
 import { ContextoProvider } from './shared/contexto/ContextoProvider';
 import { useContexto } from './shared/contexto/useContexto';
 import { BienvenidaSinFinca } from './shared/contexto/BienvenidaSinFinca';
@@ -89,6 +90,9 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   // RF-26/RF-27: mismo motivo para el tema, y de paso pinta la marca institucional de la
   // finca activa con la variante que cumple contraste en el tema resultante.
   useTemaSesion(token);
+  // Sin service worker con Background Sync en este proyecto: la cola de escrituras
+  // offline se reintenta aquí en cuanto vuelve el evento `online` del navegador.
+  useSyncOnReconnect();
   const { sinFinca, sinEspecies } = useContexto();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
