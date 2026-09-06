@@ -10,11 +10,18 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFases } from '../hooks/useFases';
 import { ModalShell } from './ModalShell';
 import { RECURSO_ACTIVOS, ACCION_E } from '../rbac';
-import type { CambiarFaseDTO, GestionFaseResponse } from '../types';
+import { ESTADOS_TERMINALES } from '../types';
+import type { CambiarFaseDTO, EstadoActivoNombre, GestionFaseResponse } from '../types';
 
 interface Props {
   idActivo: number;
+  estadoActual: string | null;
   onChanged: () => void;
+}
+
+function estadoEsTerminal(estado: string | null): boolean {
+  const up = (estado ?? '').toUpperCase().replace(/\s+/g, '_');
+  return ESTADOS_TERMINALES.includes(up as EstadoActivoNombre);
 }
 
 const CARD: React.CSSProperties = {
@@ -143,10 +150,11 @@ function CambiarFaseModal({
   );
 }
 
-export function FasesSection({ idActivo, onChanged }: Props) {
+export function FasesSection({ idActivo, estadoActual, onChanged }: Props) {
   const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeCambiar = usePermission(RECURSO_ACTIVOS, ACCION_E);
+  const terminal = estadoEsTerminal(estadoActual);
   const { fases, loading, saving, error, saveError, cargar, cambiarFase, setSaveError } = useFases(idActivo);
   const [abierto, setAbierto] = useState(false);
 
@@ -163,10 +171,16 @@ export function FasesSection({ idActivo, onChanged }: Props) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
           <GitBranch size={16} aria-hidden />{t('fasessection.secuencia_de_fases')}</h3>
-        {puedeCambiar && (
+        {puedeCambiar && !terminal && (
           <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSaveError(null); setAbierto(true); }}>{t('fasessection.cambiar_fase')}</Button>
         )}
       </div>
+
+      {terminal && (
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 var(--s4)' }}>
+          El activo está en estado «{estadoActual}». No se pueden cambiar fases en estados terminales (CERRADO, BAJA).
+        </p>
+      )}
 
       {error && <Alert variant="error" title={t('fasessection.error_al_cargar_fases')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 

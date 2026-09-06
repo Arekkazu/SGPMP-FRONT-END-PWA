@@ -159,7 +159,7 @@ export function ActivoDetallePage() {
             onChanged={refrescar}
           />
         )}
-        {tab === 'fases' && <FasesSection idActivo={idActivo} onChanged={refrescar} />}
+        {tab === 'fases' && <FasesSection idActivo={idActivo} estadoActual={estado} onChanged={refrescar} />}
         {tab === 'eventos' && (
           <EventosSection
             idActivo={idActivo}
