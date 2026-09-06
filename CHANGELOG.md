@@ -1,3 +1,10 @@
+## [1.0.0-rc.12](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.11...v1.0.0-rc.12) (2026-09-06)
+
+### Bug Fixes
+
+* **biological_assets:** resolver conflicto de merge en EventoReproductivoForm ([72e3387](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/72e3387b141faf8026e7c6437af488750b36e517))
+* **biological_assets:** restringir categoria de evento reproductivo a nacimiento en LOTE ([5be0048](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5be0048868dcee889e64ae8825c7fc8b5f388a5d))
+
 ## [1.0.0-rc.11](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.10...v1.0.0-rc.11) (2026-09-06)
 
 ### Bug Fixes
