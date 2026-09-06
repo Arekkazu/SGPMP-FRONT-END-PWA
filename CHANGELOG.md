@@ -1,3 +1,10 @@
+## [1.0.0-rc.11](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.10...v1.0.0-rc.11) (2026-09-06)
+
+### Bug Fixes
+
+* **biological_assets:** propagar error de useFichaIntegral a la vista ([642bccf](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/642bccf7cca2e5025386aa783b0cbfe5cd2423bb))
+* **rf10:** corregir desborde del contenido cuando el sidebar es fixed ([ff78265](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ff782656c0b2a0fe237484d54970828d35840a40)), closes [#107](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/107) [#107](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/107)
+
 ## [1.0.0-rc.10](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.9...v1.0.0-rc.10) (2026-09-04)
 
 ### Bug Fixes
