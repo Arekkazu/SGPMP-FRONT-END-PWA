@@ -77,7 +77,7 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
           <Input
             label={t('perfilform.telefono')}
             type="tel"
-            hint="Opcional, 7-15 dígitos"
+            hint={t('validacion.telefono_opcional', { ns: 'common' })}
             error={errors.telefono?.message}
             {...register('telefono', {
               pattern: { value: /^[0-9]{7,15}$/, message: t('perfilform.solo_numeros_7_15_digitos') },
