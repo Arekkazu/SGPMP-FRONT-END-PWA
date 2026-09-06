@@ -214,6 +214,9 @@ export interface CicloBiologicoResponse {
   id_especie: number;
   es_activo: boolean;
   fecha_actualizacion: string | null;
+  /** #54 (RF-16): solo en cliente — true mientras la escritura offline que lo creó/tocó
+   *  sigue en syncQueue. No lo emite el backend. */
+  pendienteSync?: boolean;
 }
 
 export interface RegistrarCicloDTO {
