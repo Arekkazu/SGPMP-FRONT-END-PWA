@@ -63,7 +63,7 @@ export function ActivoDetallePage() {
   const idValido = Number.isFinite(idActivo) && idActivo > 0;
 
   const { activo, loading, saving, error, saveError, cargar, actualizarIndividual } = useActivoDetalle(idActivo);
-  const { ficha, loading: fichaLoading, cargar: cargarFicha } = useFichaIntegral(idActivo);
+  const { ficha, loading: fichaLoading, error: fichaError, cargar: cargarFicha } = useFichaIntegral(idActivo);
   const [tab, setTab] = useState<TabId>('ficha');
 
   const refrescar = useCallback(() => {
@@ -140,7 +140,7 @@ export function ActivoDetallePage() {
 
       {/* Contenido */}
       <div style={{ padding: 'var(--s7)' }}>
-        {tab === 'ficha' && <FichaIntegralView ficha={ficha} loading={fichaLoading || loading} />}
+        {tab === 'ficha' && <FichaIntegralView ficha={ficha} loading={fichaLoading || loading} error={fichaError} />}
         {tab === 'datos' && (
           <DatosActivoSection
             activo={activo}
