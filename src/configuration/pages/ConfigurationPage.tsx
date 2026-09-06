@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, RefreshCw } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Plus, RefreshCw, Search } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useAuth } from '../../shared/auth/useAuth';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { Input } from '../../shared/design-system/Input';
 import { useEspecies } from '../hooks/useEspecies';
 import { EspeciesTable } from '../components/EspeciesTable';
+import { Paginacion } from '../components/Paginacion';
 import { EspeciesModal } from '../components/EspeciesModal';
 import { PorEspeciePage } from '../components/PorEspeciePage';
 import { ParametrosSection } from '../components/ParametrosSection';
@@ -74,8 +76,15 @@ type ModalState =
   | { tipo: 'desactivar'; especie: EspecieResponse }
   | { tipo: 'reactivar'; especie: EspecieResponse };
 
+// #53 (RF-15): CU-01 exige búsqueda por nombre y paginación en el catálogo. Ambas
+// son client-side — la lista ya llega completa en un solo GET — así que basta con
+// filtrar/paginar el arreglo que trae `useEspecies`, sin tocar la capa API.
+const ESPECIES_POR_PAGINA = 50;
+
 // ── Catálogo tab ─────────────────────────────────────────────────────────────
-function CatalogoTab() {
+// Exportado para poder testear la búsqueda/paginación (#53, RF-15) sin montar
+// toda la página ni su lógica de tabs por permiso.
+export function CatalogoTab() {
   const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear  = usePermission(8, 1);
@@ -85,8 +94,18 @@ function CatalogoTab() {
   const { especies, loading, saving, error, saveError, fromCache, cargar, registrar, editar, desactivar, reactivar } = useEspecies();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [pagina, setPagina] = useState(1);
 
   useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { setPagina(1); }, [busqueda]);
+
+  const filtradas = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return q ? especies.filter((e) => e.nombre.toLowerCase().includes(q)) : especies;
+  }, [especies, busqueda]);
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ESPECIES_POR_PAGINA));
+  const enPagina = filtradas.slice((pagina - 1) * ESPECIES_POR_PAGINA, pagina * ESPECIES_POR_PAGINA);
 
   const cerrar = () => setModal({ tipo: 'ninguno' });
 
@@ -160,16 +179,31 @@ function CatalogoTab() {
         <Alert variant="error" title={t('configurationpage.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
+      {/* Búsqueda por nombre */}
+      <div style={{ maxWidth: 320, marginBottom: 'var(--s4)' }}>
+        <Input
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder={t('configurationpage.buscar_por_nombre')}
+          aria-label={t('configurationpage.buscar_especies_por_nombre')}
+          leadingIcon={<Search size={16} />}
+        />
+      </div>
+
       {/* Tabla */}
       <EspeciesTable
-        especies={especies}
+        especies={enPagina}
         loading={loading}
         puedeEditar={puedeEditar && online}
         puedeDesactivar={puedeDesact && online}
+        busquedaActiva={busqueda.trim().length > 0}
         onEditar={(e) => setModal({ tipo: 'editar', especie: e })}
         onDesactivar={(e) => setModal({ tipo: 'desactivar', especie: e })}
         onReactivar={(e) => setModal({ tipo: 'reactivar', especie: e })}
       />
+      {!loading && (
+        <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={filtradas.length} onCambiar={setPagina} />
+      )}
 
       {/* Modal crear/editar */}
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (
