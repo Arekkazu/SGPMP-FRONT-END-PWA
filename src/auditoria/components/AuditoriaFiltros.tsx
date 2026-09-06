@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
 import { Button } from '../../shared/design-system/Button';
 import type { FiltrosAuditoria, TipoEvento } from '../types';
 
@@ -53,27 +54,19 @@ export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
         />
       </div>
       <div style={{ flex: '1 1 180px' }}>
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('auditoriafiltros.tipo_de_evento')}</label>
-        <select
+        <Select
+          label={t('auditoriafiltros.tipo_de_evento')}
           value={tipoEvento}
           onChange={(e) => setTipoEvento(e.target.value)}
-          style={{
-            width: '100%',
-            height: 40,
-            padding: '0 var(--s3)',
-            borderRadius: 'var(--r-md)',
-            border: '1.5px solid var(--surface-border)',
-            background: 'var(--surface-card)',
-            color: 'var(--text-primary)',
-            fontSize: '13px',
-            cursor: 'pointer',
-          }}
+          // QA TC-DIS-29: Enter sobre el selector dispara la búsqueda, igual
+          // que en el resto del formulario.
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); buscar(); } }}
         >
           <option value="">{t('auditoriafiltros.todos_los_tipos')}</option>
           {tiposEvento.map((t) => (
             <option key={t.id_tipo_evento} value={String(t.id_tipo_evento)}>{t.nombre}</option>
           ))}
-        </select>
+        </Select>
       </div>
       <div style={{ flex: '1 1 160px' }}>
         <Input
