@@ -110,14 +110,14 @@ function NivelCard({ nivel, unidad, register, errors }: NivelCardProps) {
   const supKey = `${nivel}_sup` as keyof FormValues;
 
   return (
-    <div style={{ borderRadius: 'var(--r-lg)', padding: 'var(--s4)', border: `1.5px solid ${cfg.border}`, background: cfg.bg }}>
+    <div style={{ minWidth: 0, borderRadius: 'var(--r-lg)', padding: 'var(--s4)', border: `1.5px solid ${cfg.border}`, background: cfg.bg }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
         <span style={{ width: 10, height: 10, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
         <span style={{ fontSize: '12px', fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
       </div>
       <p style={{ fontSize: '11px', color: cfg.color, marginBottom: 'var(--s3)', lineHeight: 1.4 }}>{cfg.desc}</p>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s2)' }}>
-        <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 'var(--s2)' }}>
+        <div style={{ minWidth: 0 }}>
           <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('umbralessection.limite_inferior')}</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <input
@@ -130,7 +130,7 @@ function NivelCard({ nivel, unidad, register, errors }: NivelCardProps) {
           </div>
           {errors[infKey] && <p role="alert" style={{ fontSize: '10px', color: 'var(--sem-error)', marginTop: 2 }}>{String(errors[infKey]?.message)}</p>}
         </div>
-        <div>
+        <div style={{ minWidth: 0 }}>
           <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('umbralessection.limite_superior')}</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <input
@@ -385,7 +385,12 @@ function UmbralModal({
                 </div>
                 <div style={{ padding: 'var(--s5)' }}>
                   <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('umbralessection.define_tres_zonas_de_alerta_dentro_del')}</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 'var(--s3)' }}>
+                  {/* #55 (RF-17): `auto-fill, minmax(160px, 1fr)` calculaba mal la cantidad de
+                      columnas al filo de 512-560px (ancho real del modal) y las tarjetas, sin
+                      `min-width:0`, no encogían a la pista calculada — el contenido de "normal"
+                      desbordaba sobre "precaución", pintada después en el DOM y por eso encima.
+                      Tres columnas fijas que sí pueden encoger a 0 evitan la ambigüedad. */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 'var(--s3)' }}>
                     <NivelCard nivel="normal"     unidad={varSel.unidad} register={register} errors={errors} />
                     <NivelCard nivel="precaucion" unidad={varSel.unidad} register={register} errors={errors} />
                     <NivelCard nivel="critico"    unidad={varSel.unidad} register={register} errors={errors} />
