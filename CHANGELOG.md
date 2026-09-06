@@ -1,3 +1,15 @@
+## [1.0.0-rc.13](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.12...v1.0.0-rc.13) (2026-09-06)
+
+### Features
+
+* **rf15:** [#53](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/53) agregar busqueda por nombre y paginacion al catalogo de especies ([a21016d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a21016d6f75468bf9b4b32f70d49911564234645))
+* **rf16:** [#54](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/54) permitir escritura offline en Ciclos Biologicos con sincronizacion diferida ([88ca728](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/88ca728c2b5d0b64aee177c6bbb58e076c824f8b))
+
+### Bug Fixes
+
+* **rf17:** [#55](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/55) evitar que los niveles de alerta se superpongan en el modal de umbrales ([f4b2d6c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f4b2d6c907f7e1276b6c9e336b16f15cf3406a52))
+* **rf31:** [#52](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/52) no bloquear la lectura de configuracion cuando falla una sola categoria ([699c75a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/699c75a171d50f09ad31bb1e55561db411badc71))
+
 ## [1.0.0-rc.12](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.11...v1.0.0-rc.12) (2026-09-06)
 
 ### Bug Fixes
