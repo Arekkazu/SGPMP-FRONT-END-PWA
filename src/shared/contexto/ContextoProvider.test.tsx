@@ -131,4 +131,41 @@ describe('ContextoProvider', () => {
 
     expect(api.obtener).toHaveBeenCalledTimes(2);
   });
+
+  it('aplicarIdentidadPrevia repinta la sesion aunque el contexto nunca traiga finca', async () => {
+    // Un Administrador que edita la identidad de una finca ajena nunca tiene finca activa
+    // propia: su contexto real siempre trae `identidad_visual: null`. Sin este overlay,
+    // guardar con exito no cambiaba nada visible en su propia sesion (RF-26 "aplicacion
+    // inmediata sin cerrar sesion").
+    api.obtener.mockResolvedValue({ ...CONTEXTO, id_finca: null, identidad_visual: null });
+    const { result } = renderHook(() => useContexto(), { wrapper: envoltorio });
+    await waitFor(() => expect(result.current.contexto).not.toBeNull());
+    expect(result.current.contexto?.identidad_visual).toBeNull();
+
+    const identidadGuardada = {
+      logo_path: '/uploads/logos/nueva.png',
+      primary_color: '#FF0000',
+      secondary_color: '#00FF00',
+      org_display_name: 'Nueva Organizacion',
+    };
+    act(() => { result.current.aplicarIdentidadPrevia(identidadGuardada, null); });
+
+    expect(result.current.contexto?.identidad_visual).toEqual(identidadGuardada);
+    // El resto del contexto (id_finca, especies, etc.) no se toca, solo la marca.
+    expect(result.current.contexto?.id_finca).toBeNull();
+  });
+
+  it('el overlay de identidad se pierde al cerrar sesion', async () => {
+    const { result, rerender } = renderHook(() => useContexto(), { wrapper: envoltorio });
+    await waitFor(() => expect(result.current.contexto).not.toBeNull());
+    act(() => { result.current.aplicarIdentidadPrevia({
+      logo_path: null, primary_color: '#000000', secondary_color: '#FFFFFF', org_display_name: 'X',
+    }, null); });
+    expect(result.current.contexto?.identidad_visual?.org_display_name).toBe('X');
+
+    tokenActual = null;
+    rerender();
+
+    await waitFor(() => expect(result.current.contexto).toBeNull());
+  });
 });
