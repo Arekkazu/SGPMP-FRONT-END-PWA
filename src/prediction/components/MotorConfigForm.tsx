@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Save } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
@@ -49,6 +50,7 @@ function RangoCampo({
 }
 
 export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveError, online, puedeEditar, onGuardar }: Props) {
+  const { t } = useT('prediction');
   const [riesgoAlto, setRiesgoAlto] = useState(0.7);
   const [alertaCritica, setAlertaCritica] = useState(0.85);
   const [ventana, setVentana] = useState(10);
@@ -92,32 +94,32 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s6)' }}>
-      {saveError && <Alert variant={saveError.status === 403 ? 'warning' : 'error'} title="No se pudo guardar" description={saveError.message} style={{ marginBottom: 'var(--s5)' }} />}
+      {saveError && <Alert variant={saveError.status === 403 ? 'warning' : 'error'} title={t('motorconfigform.no_se_pudo_guardar')} description={saveError.message} style={{ marginBottom: 'var(--s5)' }} />}
 
       <section style={{ marginBottom: 'var(--s6)' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>Umbrales de riesgo</h3>
+        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('motorconfigform.umbrales_de_riesgo')}</h3>
         <div style={{ display: 'grid', gap: 'var(--s5)' }}>
-          <RangoCampo label="Umbral de riesgo alto" valor={riesgoAlto} min={0.5} max={0.95} step={0.01} disabled={!puedeEditar} onChange={setRiesgoAlto} />
-          <RangoCampo label="Umbral de alerta crítica" valor={alertaCritica} min={0.5} max={0.99} step={0.01} disabled={!puedeEditar} onChange={setAlertaCritica} />
+          <RangoCampo label={t('motorconfigform.umbral_de_riesgo_alto')} valor={riesgoAlto} min={0.5} max={0.95} step={0.01} disabled={!puedeEditar} onChange={setRiesgoAlto} />
+          <RangoCampo label={t('motorconfigform.umbral_de_alerta_critica')} valor={alertaCritica} min={0.5} max={0.99} step={0.01} disabled={!puedeEditar} onChange={setAlertaCritica} />
           <ThresholdStrip riesgoAlto={riesgoAlto} alertaCritica={alertaCritica} />
           {errUmbral && <span role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)' }}>{errUmbral}</span>}
-          <RangoCampo label="Ventana de análisis" valor={ventana} min={5} max={15} step={1} unidad="min" disabled={!puedeEditar} onChange={setVentana} />
+          <RangoCampo label={t('motorconfigform.ventana_de_analisis')} valor={ventana} min={5} max={15} step={1} unidad="min" disabled={!puedeEditar} onChange={setVentana} />
         </div>
       </section>
 
       <section style={{ marginBottom: 'var(--s6)', borderTop: '1px solid var(--surface-border)', paddingTop: 'var(--s5)' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>Ejecución y versión</h3>
+        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('motorconfigform.ejecucion_y_version')}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--s4)' }}>
           <div>
-            <label style={LABEL} htmlFor="motor-modo">Modo de ejecución</label>
+            <label style={LABEL} htmlFor="motor-modo">{t('motorconfigform.modo_de_ejecucion')}</label>
             <select id="motor-modo" style={INPUT} value={modo} disabled={!puedeEditar} onChange={(e) => setModo(e.target.value as ModoEjecucion)}>
               {MODOS.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label style={LABEL} htmlFor="motor-version">Versión del modelo activo</label>
+            <label style={LABEL} htmlFor="motor-version">{t('motorconfigform.version_del_modelo_activo')}</label>
             <select id="motor-version" style={INPUT} value={version} disabled={!puedeEditar} onChange={(e) => setVersion(e.target.value === '' ? '' : Number(e.target.value))}>
-              <option value="">— Sin asignar —</option>
+              <option value="">{t('motorconfigform.sin_asignar')}</option>
               {versionesTipo.map((v) => (
                 <option key={v.id_version_modelo} value={v.id_version_modelo}>
                   {v.nombre_version} · {v.estado_version}
@@ -129,24 +131,20 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
       </section>
 
       <section style={{ marginBottom: 'var(--s6)', borderTop: '1px solid var(--surface-border)', paddingTop: 'var(--s5)' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-          Pesos del cálculo de riesgo
-        </h3>
+        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('motorconfigform.pesos_del_calculo_de_riesgo')}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s4)' }}>
-          <RangoCampo label="Factor sanitario" valor={wSan} min={0} max={1} step={0.05} disabled={!puedeEditar} onChange={setWSan} />
-          <RangoCampo label="Factor ambiental" valor={wAmb} min={0} max={1} step={0.05} disabled={!puedeEditar} onChange={setWAmb} />
-          <RangoCampo label="Factor densidad" valor={wDen} min={0} max={1} step={0.05} disabled={!puedeEditar} onChange={setWDen} />
+          <RangoCampo label={t('motorconfigform.factor_sanitario')} valor={wSan} min={0} max={1} step={0.05} disabled={!puedeEditar} onChange={setWSan} />
+          <RangoCampo label={t('motorconfigform.factor_ambiental')} valor={wAmb} min={0} max={1} step={0.05} disabled={!puedeEditar} onChange={setWAmb} />
+          <RangoCampo label={t('motorconfigform.factor_densidad')} valor={wDen} min={0} max={1} step={0.05} disabled={!puedeEditar} onChange={setWDen} />
         </div>
-        <p style={{ fontSize: '12px', color: pesosOk ? 'var(--text-muted)' : 'var(--sem-warning)', marginTop: 'var(--s3)' }}>
-          Suma de pesos: <strong style={{ fontFamily: 'var(--font-mono)' }}>{sumaPesos.toFixed(2)}</strong>
+        <p style={{ fontSize: '12px', color: pesosOk ? 'var(--text-muted)' : 'var(--sem-warning)', marginTop: 'var(--s3)' }}>{t('motorconfigform.suma_de_pesos')}<strong style={{ fontFamily: 'var(--font-mono)' }}>{sumaPesos.toFixed(2)}</strong>
           {!pesosOk && ' — se recomienda que sumen 1.00'}
         </p>
       </section>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <Button variant="primary" onClick={guardar} loading={saving} disabled={!puedeEditar || !online || !!errUmbral}>
-          <Save size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Guardar configuración
-        </Button>
+          <Save size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('motorconfigform.guardar_configuracion')}</Button>
       </div>
     </div>
   );

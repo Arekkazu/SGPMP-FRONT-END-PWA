@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { BarChart3 } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { useDatosConsolidados } from '../hooks/useDatosConsolidados';
@@ -49,6 +50,7 @@ function DictList({ items, vacio }: { items: Record<string, unknown>[]; vacio: s
 }
 
 export function DatosAnaliticosSection({ idActivo }: Props) {
+  const { t } = useT('biologicalAssets');
   const { data, loading, error, cargar } = useDatosConsolidados(idActivo);
   const [tipoDato, setTipoDato] = useState<TipoDato>('todos');
   const [fechaInicio, setFechaInicio] = useState('');
@@ -73,46 +75,44 @@ export function DatosAnaliticosSection({ idActivo }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
       <div style={CARD}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-          <BarChart3 size={16} aria-hidden />
-          Datos consolidados
-        </h3>
+          <BarChart3 size={16} aria-hidden />{t('datosanaliticossection.datos_consolidados')}</h3>
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
-            <label style={LABEL} htmlFor="dc-tipo">Tipo de dato</label>
+            <label style={LABEL} htmlFor="dc-tipo">{t('datosanaliticossection.tipo_de_dato')}</label>
             <select id="dc-tipo" style={SELECT} value={tipoDato} onChange={(e) => setTipoDato(e.target.value as TipoDato)}>
-              <option value="todos">Todos</option>
-              <option value="eventos">Eventos</option>
-              <option value="fases">Fases</option>
-              <option value="estado">Estado</option>
-              <option value="metricas">Métricas</option>
+              <option value="todos">{t('datosanaliticossection.todos')}</option>
+              <option value="eventos">{t('datosanaliticossection.eventos')}</option>
+              <option value="fases">{t('datosanaliticossection.fases')}</option>
+              <option value="estado">{t('datosanaliticossection.estado')}</option>
+              <option value="metricas">{t('datosanaliticossection.metricas')}</option>
             </select>
           </div>
           <div>
-            <label style={LABEL} htmlFor="dc-desde">Desde</label>
+            <label style={LABEL} htmlFor="dc-desde">{t('datosanaliticossection.desde')}</label>
             <input id="dc-desde" type="date" style={{ ...SELECT, minWidth: 150 }} value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
           </div>
           <div>
-            <label style={LABEL} htmlFor="dc-hasta">Hasta</label>
+            <label style={LABEL} htmlFor="dc-hasta">{t('datosanaliticossection.hasta')}</label>
             <input id="dc-hasta" type="date" style={{ ...SELECT, minWidth: 150 }} value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
           </div>
         </div>
       </div>
 
-      {error && <Alert variant="error" title="Error al cargar datos consolidados" description={error.message} />}
+      {error && <Alert variant="error" title={t('datosanaliticossection.error_al_cargar_datos_consolidados')} description={error.message} />}
 
       {loading ? (
         <div style={{ height: 160, borderRadius: 'var(--r-lg)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }}>
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
       ) : !data ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Sin datos.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('datosanaliticossection.sin_datos')}</p>
       ) : (
         <>
           {mostrar('metricas') && (
             <div style={CARD}>
-              <h4 style={CARD_TITLE}>Métricas actuales</h4>
+              <h4 style={CARD_TITLE}>{t('datosanaliticossection.metricas_actuales')}</h4>
               {Object.keys(data.metricas_actuales ?? {}).length === 0 ? (
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>Sin métricas.</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('datosanaliticossection.sin_metricas')}</p>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s4)' }}>
                   {Object.entries(data.metricas_actuales).map(([k, v]) => (
@@ -128,19 +128,19 @@ export function DatosAnaliticosSection({ idActivo }: Props) {
 
           {mostrar('eventos') && (
             <div style={CARD}>
-              <h4 style={CARD_TITLE}>Historial de eventos</h4>
+              <h4 style={CARD_TITLE}>{t('datosanaliticossection.historial_de_eventos')}</h4>
               <DictList items={data.historial_eventos} vacio="Sin eventos." />
             </div>
           )}
           {mostrar('fases') && (
             <div style={CARD}>
-              <h4 style={CARD_TITLE}>Historial de fases</h4>
+              <h4 style={CARD_TITLE}>{t('datosanaliticossection.historial_de_fases')}</h4>
               <DictList items={data.historial_fases} vacio="Sin fases." />
             </div>
           )}
           {mostrar('estado') && (
             <div style={CARD}>
-              <h4 style={CARD_TITLE}>Histórico de estados</h4>
+              <h4 style={CARD_TITLE}>{t('datosanaliticossection.historico_de_estados')}</h4>
               <DictList items={data.historico_estados} vacio="Sin cambios de estado." />
             </div>
           )}

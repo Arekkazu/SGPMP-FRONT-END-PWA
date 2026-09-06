@@ -13,7 +13,7 @@ export const retroApi = {
    * Nota: el backend aún no expone GET de lista (ver TASKS.md § Pendientes).
    */
   async registrar(dto: RegistrarRetroalimentacionDTO): Promise<RetroalimentacionClinicaResponse> {
-    const res = await http.post<RetroalimentacionClinicaResponse>(`${BASE}/`, dto);
+    const res = await http.post<RetroalimentacionClinicaResponse>(BASE, dto);
     return res.data;
   },
 };

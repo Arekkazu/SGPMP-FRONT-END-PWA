@@ -13,7 +13,7 @@ const BASE_TECNICAS = '/iot/alertas-tecnicas';
 export const alertasApi = {
   // ── Alertas operativas (recurso 32) ────────────────────────────────
   async listar(filtros: ListarAlertasFiltros = {}): Promise<ListaAlertasSchema> {
-    const res = await http.get<ListaAlertasSchema>(`${BASE}/`, { params: filtros });
+    const res = await http.get<ListaAlertasSchema>(BASE, { params: filtros });
     return res.data;
   },
 

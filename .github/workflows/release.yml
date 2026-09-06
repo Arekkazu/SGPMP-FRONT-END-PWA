@@ -1,0 +1,57 @@
+name: Versionamiento automatizado
+
+# Mismo flujo ya validado en sgpmp-backend: dev publica release candidates
+# (1.x.y-rc.N), main publica la version final cuando Pruebas aprueba y se
+# mergea dev -> main. Ver docs-sgpmp/1-analisis/versionamiento/.
+#
+# Token: dev tiene ruleset con PR obligatorio (igual que sgpmp-backend) --
+# el token automatico de Actions (github.token) actua como github-actions[bot],
+# que no esta en el bypass del ruleset, asi que su push siempre se rechaza
+# con GH013 sin importar los permisos de este workflow. Necesita un PAT real
+# de una cuenta que SI este en el bypass del ruleset, guardado como el
+# secret GH_TOKEN (Settings -> Secrets and variables -> Actions).
+on:
+  push:
+    branches: [main, dev]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # persist-credentials debe quedar en true (default): semantic-
+          # release/git hace un "git push" real, no una llamada API --
+          # necesita que checkout deje el token configurado como
+          # credencial de git.
+          token: ${{ secrets.GH_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias de release
+        run: |
+          npm install --no-save \
+            semantic-release \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/changelog \
+            @semantic-release/exec \
+            @semantic-release/git \
+            @semantic-release/github \
+            conventional-changelog-conventionalcommits
+
+      - name: Ejecutar semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npx semantic-release
+
+      - name: Confirmar publicación
+        run: echo "Versionamiento completado. Ver CHANGELOG.md y docs/trazabilidad/TRAZABILIDAD_CAMBIOS.md actualizados en este mismo commit."

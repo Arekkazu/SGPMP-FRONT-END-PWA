@@ -10,7 +10,7 @@ const BASE = '/prediccion/auditoria';
 
 export const auditoriaApi = {
   async listar(filtros: ListarAuditoriaFiltros = {}): Promise<AuditoriaM04ListResponse> {
-    const res = await http.get<AuditoriaM04ListResponse>(`${BASE}/`, { params: filtros });
+    const res = await http.get<AuditoriaM04ListResponse>(BASE, { params: filtros });
     return res.data;
   },
 

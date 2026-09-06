@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Cpu, History } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { EstadoDispositivoPill } from './EstadoDispositivoPill';
@@ -29,11 +30,10 @@ function fechaHora(iso: string | null | undefined): string {
 }
 
 export function DispositivoEstadoPanel({ idConsultado, estado, historial, loading, error }: Props) {
+  const { t } = useT('telemetry');
   if (idConsultado == null) {
     return (
-      <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
-        Ingresa el ID de un dispositivo para consultar su estado e historial de transiciones.
-      </p>
+      <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('dispositivoestadopanel.ingresa_el_id_de_un_dispositivo_para')}</p>
     );
   }
 
@@ -49,7 +49,7 @@ export function DispositivoEstadoPanel({ idConsultado, estado, historial, loadin
     return (
       <Alert
         variant={error.status === 403 ? 'warning' : error.status === 404 ? 'info' : 'error'}
-        title={error.status === 404 ? 'Dispositivo no encontrado' : error.status === 403 ? 'Sin acceso al estado del dispositivo' : 'Error al consultar el dispositivo'}
+        title={error.status === 404 ? t('dispositivoestadopanel.dispositivo_no_encontrado') : error.status === 403 ? t('dispositivoestadopanel.sin_acceso_al_estado_del_dispositivo') : t('dispositivoestadopanel.error_al_consultar_el_dispositivo')}
         description={error.message}
       />
     );
@@ -66,19 +66,18 @@ export function DispositivoEstadoPanel({ idConsultado, estado, historial, loadin
           </h3>
           <EstadoDispositivoPill estado={estado.estado_actual} />
         </div>
-        <Fila label="Último contacto">{fechaHora(estado.fecha_ultimo_contacto)}</Fila>
-        <Fila label="Tiempo sin contacto">{estado.tiempo_sin_contacto ?? '—'}</Fila>
-        <Fila label="Causa primaria">{estado.causa_primaria ?? '—'}</Fila>
-        <Fila label="Último heartbeat">{estado.id_ultimo_heartbeat != null ? `#${estado.id_ultimo_heartbeat}` : '—'}</Fila>
-        <Fila label="Actualizado">{fechaHora(estado.fecha_ultima_actualizacion)}</Fila>
+        <Fila label={t('dispositivoestadopanel.ultimo_contacto')}>{fechaHora(estado.fecha_ultimo_contacto)}</Fila>
+        <Fila label={t('dispositivoestadopanel.tiempo_sin_contacto')}>{estado.tiempo_sin_contacto ?? '—'}</Fila>
+        <Fila label={t('dispositivoestadopanel.causa_primaria')}>{estado.causa_primaria ?? '—'}</Fila>
+        <Fila label={t('dispositivoestadopanel.ultimo_heartbeat')}>{estado.id_ultimo_heartbeat != null ? `#${estado.id_ultimo_heartbeat}` : '—'}</Fila>
+        <Fila label={t('dispositivoestadopanel.actualizado')}>{fechaHora(estado.fecha_ultima_actualizacion)}</Fila>
       </div>
 
       <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)' }}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>
-          <History size={16} aria-hidden /> Transiciones de estado
-        </h3>
+          <History size={16} aria-hidden />{t('dispositivoestadopanel.transiciones_de_estado')}</h3>
         {historial.length === 0 ? (
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Sin transiciones registradas.</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>{t('dispositivoestadopanel.sin_transiciones_registradas')}</p>
         ) : (
           <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
             {historial.map((t, i) => (

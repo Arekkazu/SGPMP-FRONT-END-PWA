@@ -1,46 +1,53 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Check } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useTemaVisual } from '../hooks/useTemaVisual';
+import { THEME_MODE } from '../../shared/tema/tema';
 
-// theme_mode: 0=Light, 1=Dark, 2=Auto
+// theme_mode segun RF-27 y el backend: 1=Claro, 2=Oscuro, 3=Sistema. Los valores salen
+// de `shared/tema/tema.ts` y no se escriben aqui: esta lista los tenia como 0/1/2, asi
+// que guardar "Claro" enviaba 0 y el backend respondia 422, y "Oscuro" se persistia como
+// Claro. Los colores de la miniatura replican las superficies reales de `tokens.css`.
 const TEMAS = [
   {
-    mode: 0,
+    mode: THEME_MODE.CLARO,
     label: 'Claro',
     emoji: '☀️',
     desc: 'Interfaz con fondo blanco',
-    preview: { bg: '#ffffff', text: '#1a1a1a', sidebar: '#f0f0f0' },
+    preview: { bg: '#ffffff', text: '#252820', sidebar: '#f0f1ee' },
   },
   {
-    mode: 1,
+    mode: THEME_MODE.OSCURO,
     label: 'Oscuro',
     emoji: '🌙',
     desc: 'Interfaz con fondo oscuro',
-    preview: { bg: '#1e1e2e', text: '#cdd6f4', sidebar: '#181825' },
+    preview: { bg: '#171a15', text: '#d4e0ce', sidebar: '#0f110e' },
   },
   {
-    mode: 2,
+    mode: THEME_MODE.SISTEMA,
     label: 'Automático',
     emoji: '⚙️',
     desc: 'Sigue la preferencia del sistema',
-    preview: { bg: 'linear-gradient(135deg,#ffffff 50%,#1e1e2e 50%)', text: '#666', sidebar: '#e8e8f0' },
+    preview: { bg: 'linear-gradient(135deg,#ffffff 50%,#171a15 50%)', text: '#585e53', sidebar: '#e2e4de' },
   },
 ] as const;
 
-function FuenteBadge({ fuente }: { fuente: 'personal' | 'global' | 'default' }) {
+function FuenteBadge({ fuente }: { fuente: 'personal' | 'global' | 'defecto' }) {
+  // El backend emite 'defecto' (obtener_tema_resuelto_use_case.py); con la clave
+  // 'default' el badge se quedaba sin color y sin rotulo.
   const colors: Record<string, string> = {
     personal: 'var(--brand-500)',
     global: '#7c3aed',
-    default: 'var(--text-muted)',
+    defecto: 'var(--text-muted)',
   };
   const labels: Record<string, string> = {
     personal: 'Personal',
     global: 'Global',
-    default: 'Por defecto',
+    defecto: 'Por defecto',
   };
   return (
     <span style={{
@@ -133,12 +140,13 @@ function TemaPanel({
   title: string;
   subtitle: string;
   currentMode: number;
-  fuente: 'personal' | 'global' | 'default';
+  fuente: 'personal' | 'global' | 'defecto';
   canSave: boolean;
   saving: boolean;
   saveError: ReturnType<typeof useTemaVisual>['saveError'];
   onSave: (mode: number) => Promise<void>;
 }) {
+  const { t } = useT('configuration');
   const [selected, setSelected] = useState(currentMode);
   const [saved, setSaved] = useState(false);
 
@@ -166,19 +174,19 @@ function TemaPanel({
       </div>
 
       {saveError && (
-        <Alert variant="error" title="Error al guardar" description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('temavisualsection.error_al_guardar')} description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {saved && !saveError && (
-        <Alert variant="success" title="Tema guardado" description="El tema se aplicó correctamente." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="success" title={t('temavisualsection.tema_guardado')} description={t('temavisualsection.el_tema_se_aplico_correctamente')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
-        {TEMAS.map((t) => (
+        {TEMAS.map((tema) => (
           <TemaCard
-            key={t.mode}
-            {...t}
-            selected={selected === t.mode}
-            onClick={() => { setSelected(t.mode); setSaved(false); }}
+            key={tema.mode}
+            {...tema}
+            selected={selected === tema.mode}
+            onClick={() => { setSelected(tema.mode); setSaved(false); }}
           />
         ))}
       </div>
@@ -190,15 +198,14 @@ function TemaPanel({
           loading={saving}
           disabled={!canSave || saving}
           onClick={handleSave}
-        >
-          Guardar tema
-        </Button>
+        >{t('temavisualsection.guardar_tema')}</Button>
       </div>
     </div>
   );
 }
 
 export function TemaVisualSection() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedePersonal = usePermission(24, 3);
   const puedeGlobal = usePermission(27, 3);
@@ -220,25 +227,21 @@ export function TemaVisualSection() {
   return (
     <div>
       <div style={{ marginBottom: 'var(--s5)' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Tema Visual
-        </h2>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          Selecciona el modo de color de la interfaz
-        </p>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('temavisualsection.tema_visual')}</h2>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('temavisualsection.selecciona_el_modo_de_color_de_la_interfaz')}</p>
       </div>
 
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="warning" title={t('temavisualsection.sin_conexion')} description={t('temavisualsection.las_acciones_de_escritura_estan')} style={{ marginBottom: 'var(--s5)' }} />
       )}
       {error && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="error" title={t('temavisualsection.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s5)' }} />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
         {personal && (
           <TemaPanel
-            title="Mi preferencia"
+            title={t('temavisualsection.mi_preferencia')}
             subtitle="Tema aplicado a tu cuenta de usuario"
             currentMode={personal.theme_mode}
             fuente={personal.fuente}
@@ -251,7 +254,7 @@ export function TemaVisualSection() {
 
         {global_ && puedeGlobal && (
           <TemaPanel
-            title="Tema global"
+            title={t('temavisualsection.tema_global')}
             subtitle="Aplicado a todos los usuarios que no tienen preferencia personal"
             currentMode={global_.theme_mode}
             fuente={global_.fuente}

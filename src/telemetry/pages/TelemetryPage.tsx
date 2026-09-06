@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Switch, Route, Redirect, useHistory, useLocation } from 'react-router-dom';
 import {
   Activity, BellRing, Cpu, History, Link2, ShieldCheck, ClipboardList,
@@ -91,10 +92,11 @@ function TabLink({ tab }: { tab: Tab }) {
  * Sub-navegación por tabs (gateadas por permiso) + rutas anidadas.
  */
 export function TelemetryPage() {
+  const { t } = useT('telemetry');
   return (
     <div style={{ minHeight: '100%', background: 'var(--surface-bg)' }}>
       <nav
-        aria-label="Secciones de telemetría"
+        aria-label={t('telemetrypage.secciones_de_telemetria')}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -105,12 +107,10 @@ export function TelemetryPage() {
           overflowX: 'auto',
         }}
       >
-        {TABS_OPERACION.map((t) => <TabLink key={t.path} tab={t} />)}
+        {TABS_OPERACION.map((tab) => <TabLink key={tab.path} tab={tab} />)}
         <span style={{ width: 1, height: 22, background: 'var(--surface-border)', margin: '0 var(--s2)', flexShrink: 0 }} aria-hidden />
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
-          Flujo IoT
-        </span>
-        {TABS_IOT.map((t) => <TabLink key={t.path} tab={t} />)}
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>{t('telemetrypage.flujo_iot')}</span>
+        {TABS_IOT.map((tab) => <TabLink key={tab.path} tab={tab} />)}
       </nav>
 
       <Switch>

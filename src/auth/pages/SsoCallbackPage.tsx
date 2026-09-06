@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useLocation, Link } from 'react-router-dom';
 import { AlertTriangle, Lock, Loader2, XCircle } from 'lucide-react';
 import { useSsoCallback } from '../hooks/useSsoCallback';
@@ -14,6 +15,7 @@ function resolverTipoError(code: string, status: number): TipoError {
 }
 
 export function SsoCallbackPage() {
+  const { t } = useT('auth');
   const { search } = useLocation();
   const token = new URLSearchParams(search).get('token');
   const { estado, error } = useSsoCallback(token);
@@ -25,10 +27,8 @@ export function SsoCallbackPage() {
           <div className="auth-success-icon" style={{ background: 'var(--sem-info-bg)' }} aria-hidden="true">
             <Loader2 size={28} color="var(--sem-info)" className="spin" />
           </div>
-          <h1 className="auth-title">Verificando tu sesión con AgroFusion…</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Por favor espera, esto solo toma un momento.
-          </p>
+          <h1 className="auth-title">{t('ssocallbackpage.verificando_tu_sesion_con_agrofusion')}</h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('ssocallbackpage.por_favor_espera_esto_solo_toma_un_momento')}</p>
         </div>
         <style>{'.spin{animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}'}</style>
       </div>
@@ -75,7 +75,7 @@ export function SsoCallbackPage() {
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>
           {descMap[tipo]}
         </p>
-        <Link to="/login" className="auth-link">Volver al inicio de sesión</Link>
+        <Link to="/login" className="auth-link">{t('ssocallbackpage.volver_al_inicio_de_sesion')}</Link>
       </div>
     </div>
   );

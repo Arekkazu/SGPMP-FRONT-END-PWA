@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { MapPin, ArrowLeftRight } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
@@ -39,6 +40,7 @@ const TAB_ACTIVE: React.CSSProperties = {
 };
 
 function AsociacionCard({ a, activa }: { a: AsociacionInfraestructuraResponse; activa?: boolean }) {
+  const { t } = useT('biologicalAssets');
   return (
     <div
       style={{
@@ -60,13 +62,14 @@ function AsociacionCard({ a, activa }: { a: AsociacionInfraestructuraResponse; a
         </div>
       </div>
       {activa && (
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--brand-600)' }}>ACTUAL</span>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--brand-600)' }}>{t('infraestructurasection.actual')}</span>
       )}
     </div>
   );
 }
 
 export function InfraestructuraSection({ idActivo, onChanged }: Props) {
+  const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeTransferir = usePermission(RECURSO_ACTIVOS, ACCION_E);
   const { data, loading, error, cargar } = useInfraestructuraActivo(idActivo);
@@ -89,22 +92,16 @@ export function InfraestructuraSection({ idActivo, onChanged }: Props) {
     <div style={CARD}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--s3)', marginBottom: 'var(--s4)' }}>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <button type="button" style={view === 'ACTIVA' ? TAB_ACTIVE : TAB} onClick={() => setView('ACTIVA')}>
-            Ubicación actual
-          </button>
-          <button type="button" style={view === 'HISTORIAL' ? TAB_ACTIVE : TAB} onClick={() => setView('HISTORIAL')}>
-            Historial de ubicaciones
-          </button>
+          <button type="button" style={view === 'ACTIVA' ? TAB_ACTIVE : TAB} onClick={() => setView('ACTIVA')}>{t('infraestructurasection.ubicacion_actual')}</button>
+          <button type="button" style={view === 'HISTORIAL' ? TAB_ACTIVE : TAB} onClick={() => setView('HISTORIAL')}>{t('infraestructurasection.historial_de_ubicaciones')}</button>
         </div>
         {puedeTransferir && (
           <Button variant="primary" size="sm" disabled={!online} onClick={() => setTransferir(true)}>
-            <ArrowLeftRight size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Transferir
-          </Button>
+            <ArrowLeftRight size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('infraestructurasection.transferir')}</Button>
         )}
       </div>
 
-      {error && <Alert variant="error" title="Error al cargar la asociación" description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      {error && <Alert variant="error" title={t('infraestructurasection.error_al_cargar_la_asociacion')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
       {loading ? (
         <div style={{ height: 80, borderRadius: 'var(--r-md)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }}>
@@ -114,7 +111,7 @@ export function InfraestructuraSection({ idActivo, onChanged }: Props) {
         data?.asociacion_activa ? (
           <AsociacionCard a={data.asociacion_activa} activa />
         ) : (
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>Sin infraestructura asociada actualmente.</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('infraestructurasection.sin_infraestructura_asociada_actualmente')}</p>
         )
       ) : (
         (data?.historial && data.historial.length > 0) ? (
@@ -124,7 +121,7 @@ export function InfraestructuraSection({ idActivo, onChanged }: Props) {
             ))}
           </div>
         ) : (
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>Sin historial de ubicaciones.</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('infraestructurasection.sin_historial_de_ubicaciones')}</p>
         )
       )}
 

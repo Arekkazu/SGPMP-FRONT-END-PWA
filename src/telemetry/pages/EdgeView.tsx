@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Cpu, Sliders, AlertTriangle, Database, CheckCircle2 } from 'lucide-react';
 import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
 import { KpiCard } from '../components/KpiCard';
@@ -16,14 +17,13 @@ const CLASIF_TONO: Record<string, Tono> = {
 };
 
 export function EdgeView() {
+  const { t } = useT('telemetry');
   return (
     <div style={{ minHeight: '100%' }}>
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <Cpu size={20} aria-hidden />
-          Detección de Desviaciones en Campo
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>RF-55 · Procesamiento Edge</p>
+          <Cpu size={20} aria-hidden />{t('edgeview.deteccion_de_desviaciones_en_campo')}</h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('edgeview.rf_55_procesamiento_edge')}</p>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>

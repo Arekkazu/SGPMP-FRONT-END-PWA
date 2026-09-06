@@ -16,12 +16,12 @@ export const activosApi = {
    * Se asume GET /activos-biologicos/ con filtros + paginación estilo /historial.
    */
   async listar(filtros: ListarActivosFiltros = {}): Promise<PaginaActivos> {
-    const res = await http.get<PaginaActivos>(`${BASE}/`, { params: filtros });
+    const res = await http.get<PaginaActivos>(BASE, { params: filtros });
     return res.data;
   },
 
   async registrar(dto: RegistrarActivoDTO): Promise<ActivoBiologicoResponse> {
-    const res = await http.post<ActivoBiologicoResponse>(`${BASE}/`, dto);
+    const res = await http.post<ActivoBiologicoResponse>(BASE, dto);
     return res.data;
   },
 

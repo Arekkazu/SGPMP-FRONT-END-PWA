@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ModalShell } from './ModalShell';
 import { SemaforoPill } from './SemaforoPill';
 import { SeveridadBadge } from './SeveridadBadge';
@@ -21,6 +22,7 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
 }
 
 export function SensorDetalleModal({ sensor, onClose }: Props) {
+  const { t } = useT('telemetry');
   return (
     <ModalShell title={`Detalle del sensor · ${sensor.nombre_sensor}`} onClose={onClose} maxWidth={520}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
@@ -32,20 +34,20 @@ export function SensorDetalleModal({ sensor, onClose }: Props) {
       </div>
 
       <div>
-        <Fila label="Variable medida">{sensor.tipo_variable}</Fila>
-        <Fila label="Categoría">{sensor.categoria_variable}</Fila>
-        <Fila label="Estado de calidad">{sensor.estado_calidad || '—'}</Fila>
-        <Fila label="Estado de desviación">{sensor.estado_desviacion || '—'}</Fila>
-        <Fila label="Conectividad">{sensor.estado_conectividad || '—'}</Fila>
-        <Fila label="Batería">{sensor.nivel_bateria_pct != null ? `${sensor.nivel_bateria_pct}%` : '—'}</Fila>
+        <Fila label={t('sensordetallemodal.variable_medida')}>{sensor.tipo_variable}</Fila>
+        <Fila label={t('sensordetallemodal.categoria')}>{sensor.categoria_variable}</Fila>
+        <Fila label={t('sensordetallemodal.estado_de_calidad')}>{sensor.estado_calidad || '—'}</Fila>
+        <Fila label={t('sensordetallemodal.estado_de_desviacion')}>{sensor.estado_desviacion || '—'}</Fila>
+        <Fila label={t('sensordetallemodal.conectividad')}>{sensor.estado_conectividad || '—'}</Fila>
+        <Fila label={t('sensordetallemodal.bateria')}>{sensor.nivel_bateria_pct != null ? `${sensor.nivel_bateria_pct}%` : '—'}</Fila>
         <Fila label="Señal LoRaWAN (RSSI)">{sensor.calidad_senal_rssi != null ? `${sensor.calidad_senal_rssi} dBm` : '—'}</Fila>
-        <Fila label="SNR">{sensor.calidad_senal_snr != null ? `${sensor.calidad_senal_snr} dB` : '—'}</Fila>
-        <Fila label="Tendencia">{sensor.tendencia ?? '—'}</Fila>
-        <Fila label="Última lectura">{horaCaptura(sensor.ultimo_timestamp_captura)}</Fila>
-        <Fila label="Sin reporte">{sinReporte(sensor.tiempo_sin_reporte_min)}</Fila>
-        <Fila label="Unidad productiva">{sensor.nombre_infraestructura}</Fila>
-        <Fila label="Finca">{sensor.nombre_finca}</Fila>
-        <Fila label="Alerta activa asociada">
+        <Fila label={t('sensordetallemodal.snr')}>{sensor.calidad_senal_snr != null ? `${sensor.calidad_senal_snr} dB` : '—'}</Fila>
+        <Fila label={t('sensordetallemodal.tendencia')}>{sensor.tendencia ?? '—'}</Fila>
+        <Fila label={t('sensordetallemodal.ultima_lectura')}>{horaCaptura(sensor.ultimo_timestamp_captura)}</Fila>
+        <Fila label={t('sensordetallemodal.sin_reporte')}>{sinReporte(sensor.tiempo_sin_reporte_min)}</Fila>
+        <Fila label={t('sensordetallemodal.unidad_productiva')}>{sensor.nombre_infraestructura}</Fila>
+        <Fila label={t('sensordetallemodal.finca')}>{sensor.nombre_finca}</Fila>
+        <Fila label={t('sensordetallemodal.alerta_activa_asociada')}>
           {sensor.id_alerta != null ? (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)' }}>
               <Pill tono="error">#{sensor.id_alerta}</Pill>
@@ -53,7 +55,7 @@ export function SensorDetalleModal({ sensor, onClose }: Props) {
             </span>
           ) : '—'}
         </Fila>
-        <Fila label="Dispositivo IoT">#{sensor.id_dispositivo_iot}</Fila>
+        <Fila label={t('sensordetallemodal.dispositivo_iot')}>#{sensor.id_dispositivo_iot}</Fila>
       </div>
     </ModalShell>
   );

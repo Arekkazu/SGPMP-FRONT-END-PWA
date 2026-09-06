@@ -1,14 +1,14 @@
 import { http } from '../../shared/api/http';
 import type {
   PlantillaResponse, RegistrarPlantillaDTO,
-  AplicarPlantillaDTO, AplicacionPlantillaResponse,
+  AplicarPlantillaDTO, AplicacionPlantillaResponse, VersionarPlantillaDTO,
 } from '../types';
 
 const BASE = '/configuracion/plantillas';
 
 export const plantillasApi = {
   async listar(): Promise<PlantillaResponse[]> {
-    const res = await http.get<PlantillaResponse[]>(`${BASE}/`);
+    const res = await http.get<PlantillaResponse[]>(BASE);
     return res.data;
   },
 
@@ -18,7 +18,18 @@ export const plantillasApi = {
   },
 
   async registrar(dto: RegistrarPlantillaDTO): Promise<PlantillaResponse> {
-    const res = await http.post<PlantillaResponse>(`${BASE}/`, dto);
+    const res = await http.post<PlantillaResponse>(BASE, dto);
+    return res.data;
+  },
+
+  /**
+   * Genera la versión siguiente de una plantilla. Es una operación distinta de
+   * `registrar`: el backend rechaza con 409 crear una plantilla con un nombre
+   * que ya existe, justo para que versionar sea explícito y no un efecto
+   * secundario de repetir el nombre.
+   */
+  async versionar(id: number, dto: VersionarPlantillaDTO): Promise<PlantillaResponse> {
+    const res = await http.post<PlantillaResponse>(`${BASE}/${id}/versiones`, dto);
     return res.data;
   },
 

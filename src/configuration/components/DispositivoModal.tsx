@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X, Cpu } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
@@ -23,6 +25,7 @@ interface Props {
 const SERIAL_REGEX = /^[A-Za-z0-9_\-]+$/;
 
 export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar }: Props) {
+  const { t } = useT('configuration');
   const {
     register,
     handleSubmit,
@@ -37,7 +40,7 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
 
   useEffect(() => {
     if (saveError?.status === 409) {
-      setError('serial', { message: 'Ya existe un dispositivo con este serial.' });
+      setError('serial', { message: t('dispositivomodal.ya_existe_un_dispositivo_con_este_serial') });
     }
   }, [saveError, setError]);
 
@@ -72,11 +75,9 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
             <Cpu size={18} color="var(--brand-500)" aria-hidden />
-            <h2 id="disp-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Registrar dispositivo IoT
-            </h2>
+            <h2 id="disp-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('dispositivomodal.registrar_dispositivo_iot')}</h2>
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('dispositivomodal.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
         </div>
@@ -85,7 +86,7 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
           {saveError && saveError.status !== 409 && (
             <Alert
               variant="error"
-              title="Error al registrar"
+              title={t('dispositivomodal.error_al_registrar')}
               description={saveError.message}
               style={{ marginBottom: 'var(--s5)' }}
             />
@@ -97,27 +98,24 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
             borderRadius: 'var(--r-md)', marginBottom: 'var(--s5)',
             border: '1px solid var(--surface-border)',
           }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>
-              Área productiva asignada
-            </div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>{t('dispositivomodal.area_productiva_asignada')}</div>
             <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>
               {area.tipo_area} — {area.nombre_infraestructura}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-              #{area.id_infraestructura} · {area.superficie.toLocaleString('es-CO')} m²
+              #{area.id_infraestructura} · {formatearFechaHora(area.superficie)} m²
             </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             {/* Serial */}
             <div style={{ marginBottom: 'var(--s4)' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>
-                Serial físico del dispositivo <span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivomodal.serial_fisico_del_dispositivo')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
               </label>
               <input
                 type="text"
                 aria-required="true"
-                placeholder="Ej: SN-ESP32-2024-001"
+                placeholder={t('dispositivomodal.ej_sn_esp32_2024_001')}
                 maxLength={50}
                 style={{
                   width: '100%',
@@ -133,10 +131,10 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
                   boxSizing: 'border-box',
                 }}
                 {...register('serial', {
-                  required: 'El serial del dispositivo es obligatorio.',
-                  minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                  maxLength: { value: 50, message: 'Máximo 50 caracteres.' },
-                  pattern: { value: SERIAL_REGEX, message: 'Solo letras, números, guiones y guiones bajos.' },
+                  required: t('dispositivomodal.el_serial_del_dispositivo_es_obligatorio'),
+                  minLength: { value: 3, message: t('dispositivomodal.minimo_3_caracteres') },
+                  maxLength: { value: 50, message: t('dispositivomodal.maximo_50_caracteres') },
+                  pattern: { value: SERIAL_REGEX, message: t('dispositivomodal.solo_letras_numeros_guiones_y_guiones_bajos') },
                 })}
               />
               {errors.serial && (
@@ -144,32 +142,28 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
                   {errors.serial.message}
                 </p>
               )}
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-                Se guardará en mayúsculas. Debe ser único en el sistema.
-              </p>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('dispositivomodal.se_guardara_en_mayusculas_debe_ser_unico_en')}</p>
             </div>
 
             {/* Descripción */}
             <div style={{ marginBottom: 'var(--s5)' }}>
               <Input
-                label="Descripción — tipo, modelo o referencia"
+                label={t('dispositivomodal.descripcion_tipo_modelo_o_referencia')}
                 required
                 aria-required="true"
-                placeholder="Ej: Sensor ESP32 temperatura/humedad modelo DHT22"
+                placeholder={t('dispositivomodal.ej_sensor_esp32_temperatura_humedad_modelo')}
                 error={errors.descripcion?.message}
                 {...register('descripcion', {
-                  required: 'La descripción es obligatoria.',
-                  minLength: { value: 5, message: 'Mínimo 5 caracteres.' },
-                  maxLength: { value: 100, message: 'Máximo 100 caracteres.' },
+                  required: t('dispositivomodal.la_descripcion_es_obligatoria'),
+                  minLength: { value: 5, message: t('dispositivomodal.minimo_5_caracteres') },
+                  maxLength: { value: 100, message: t('dispositivomodal.maximo_100_caracteres') },
                 })}
               />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-              <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Cancelar</Button>
-              <Button type="submit" variant="primary" size="md" loading={saving}>
-                Registrar dispositivo
-              </Button>
+              <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('dispositivomodal.cancelar')}</Button>
+              <Button type="submit" variant="primary" size="md" loading={saving}>{t('dispositivomodal.registrar_dispositivo')}</Button>
             </div>
           </form>
         </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, Boxes, User } from 'lucide-react';
 import { EstadoPill } from './EstadoPill';
 import type { ActivoListItem } from '../types';
@@ -27,6 +28,7 @@ const TD: React.CSSProperties = {
 };
 
 export function ActivosTable({ activos, loading, onAbrir }: Props) {
+  const { t } = useT('biologicalAssets');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -59,7 +61,7 @@ export function ActivosTable({ activos, loading, onAbrir }: Props) {
         }}
       >
         <Boxes size={32} aria-hidden style={{ opacity: 0.5, marginBottom: 'var(--s3)' }} />
-        <p style={{ margin: 0 }}>No hay activos biológicos que coincidan con los filtros.</p>
+        <p style={{ margin: 0 }}>{t('activostable.no_hay_activos_biologicos_que_coincidan_con')}</p>
       </div>
     );
   }

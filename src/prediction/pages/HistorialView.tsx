@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { History, ShieldCheck, Download, Clock, TrendingUp } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -19,6 +21,7 @@ import type { ConsultarHistorialFiltros, EventoHistorialResponse } from '../type
 type TabId = 'timeline' | 'tendencia';
 
 export function HistorialView() {
+  const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_HISTORIAL, ACCION_R);
   const puedeRetroalimentar = usePermission(RECURSO_RETRO, ACCION_C);
   const online = useOnlineStatus();
@@ -59,7 +62,7 @@ export function HistorialView() {
     return [...eventos]
       .sort((a, b) => a.fecha_evento.localeCompare(b.fecha_evento))
       .map((e) => ({
-        fecha: new Date(e.fecha_evento).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' }),
+        fecha: formatearFecha(e.fecha_evento, { day: '2-digit', month: '2-digit' }),
         nivel: extraerNivelRiesgo(e.payload),
       }))
       .filter((d) => d.nivel != null);
@@ -86,21 +89,17 @@ export function HistorialView() {
     <div style={{ minHeight: '100%' }}>
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <History size={20} aria-hidden />
-          Historial Diagnóstico
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          Evolución del riesgo sanitario y diagnósticos estimados por activo biológico
-        </p>
+          <History size={20} aria-hidden />{t('historialview.historial_diagnostico')}</h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('historialview.evolucion_del_riesgo_sanitario_y')}</p>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>
-        <Alert variant="info" title="Registro inmutable (NIC-41)" description="Los resultados de inferencia no se modifican. La retroalimentación clínica se registra como un evento separado con trazabilidad." style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="info" title="Registro inmutable (NIC-41)" description={t('historialview.los_resultados_de_inferencia_no_se')} style={{ marginBottom: 'var(--s5)' }} />
 
-        {retroOk && <Alert variant="success" title="Retroalimentación registrada" description="Gracias, la evaluación clínica quedó registrada." style={{ marginBottom: 'var(--s4)' }} />}
-        {!online && <Alert variant="warning" title="Sin conexión" description="Mostrando historial cacheado del último activo consultado." style={{ marginBottom: 'var(--s4)' }} />}
-        {fromCache && online && <Alert variant="info" title="Datos desde caché" description="No se pudo conectar; se muestra el último historial disponible." style={{ marginBottom: 'var(--s4)' }} />}
-        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? 'Sin acceso al historial' : 'Error al consultar'} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {retroOk && <Alert variant="success" title={t('historialview.retroalimentacion_registrada')} description={t('historialview.gracias_la_evaluacion_clinica_quedo')} style={{ marginBottom: 'var(--s4)' }} />}
+        {!online && <Alert variant="warning" title={t('historialview.sin_conexion')} description={t('historialview.mostrando_historial_cacheado_del_ultimo')} style={{ marginBottom: 'var(--s4)' }} />}
+        {fromCache && online && <Alert variant="info" title={t('historialview.datos_desde_cache')} description="No se pudo conectar; se muestra el último historial disponible." style={{ marginBottom: 'var(--s4)' }} />}
+        {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('historialview.sin_acceso_al_historial') : t('historialview.error_al_consultar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <HistorialFiltros
           value={filtros}
@@ -114,7 +113,7 @@ export function HistorialView() {
         />
 
         {/* Tabs */}
-        <div role="tablist" aria-label="Vista de historial" style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
+        <div role="tablist" aria-label={t('historialview.vista_de_historial')} style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
           {([['timeline', 'Línea de tiempo', <Clock size={15} aria-hidden key="i" />], ['tendencia', 'Tendencia de riesgo', <TrendingUp size={15} aria-hidden key="j" />]] as const).map(([id, label, icon]) => {
             const activo = id === tab;
             return (
@@ -127,26 +126,25 @@ export function HistorialView() {
           <span style={{ flex: 1 }} />
           <Button variant="ghost" size="sm" disabled={eventos.length === 0} onClick={exportarLocal} title="Exportación local (el backend aún no expone exportación de historial)">
             <ShieldCheck size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            <Download size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} /> Exportar
-          </Button>
+            <Download size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('historialview.exportar')}</Button>
         </div>
 
         {tab === 'timeline' ? (
           <>
             {loading ? (
-              <div style={{ padding: 'var(--s8)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>Consultando historial…</div>
+              <div style={{ padding: 'var(--s8)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('historialview.consultando_historial')}</div>
             ) : (
               <HistorialTimeline eventos={eventos} puedeRetroalimentar={puedeRetroalimentar && online} onRetroalimentar={setRetroEvento} />
             )}
             {cursor && (
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--s5)' }}>
-                <Button variant="secondary" size="sm" loading={loadingMas} onClick={cargarMas}>Cargar más</Button>
+                <Button variant="secondary" size="sm" loading={loadingMas} onClick={cargarMas}>{t('historialview.cargar_mas')}</Button>
               </div>
             )}
           </>
         ) : (
           <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>Evolución del nivel de riesgo sanitario</h3>
+            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('historialview.evolucion_del_nivel_de_riesgo_sanitario')}</h3>
             <LineChartPrediccion
               data={chartData}
               xKey="fecha"

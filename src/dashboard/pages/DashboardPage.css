@@ -1,0 +1,27 @@
+/* La grilla del RF-28 es de 4 columnas, pero la personalizacion tiene que
+   adaptarse a la resolucion sin perder lo que el usuario guardo: los widgets se
+   reordenan proporcionalmente porque el backend los devuelve por `orden`, y el
+   `span` se recorta cuando ya no cabe. */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s5);
+}
+
+/* Tableta: 768–1023px */
+@media (max-width: 1023px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Movil: <768px — una columna, ningun widget puede abarcar dos. */
+@media (max-width: 767px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-grid > * {
+    grid-column: span 1 !important;
+  }
+}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, Link2 } from 'lucide-react';
 import { EstadoVinculacionPill } from './EstadoVinculacionPill';
 import { MecanismoPill } from './MecanismoPill';
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function VinculacionesTable({ items, loading, onAbrir }: Props) {
+  const { t } = useT('telemetry');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -29,7 +31,7 @@ export function VinculacionesTable({ items, loading, onAbrir }: Props) {
     return (
       <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s8) var(--s4)', fontSize: '14px', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
         <Link2 size={32} aria-hidden style={{ opacity: 0.5, marginBottom: 'var(--s3)' }} />
-        <p style={{ margin: 0 }}>No hay vinculaciones que coincidan con los filtros.</p>
+        <p style={{ margin: 0 }}>{t('vinculacionestable.no_hay_vinculaciones_que_coincidan_con_los')}</p>
       </div>
     );
   }

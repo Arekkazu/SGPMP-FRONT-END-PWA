@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Lock } from 'lucide-react';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
  * el servidor es la autoridad; la UI solo informa (ver CLAUDE.md § RBAC).
  */
 export function PermissionDenied({ seccion }: Props) {
+  const { t } = useT('prediction');
   return (
     <div
       role="status"
@@ -29,9 +31,7 @@ export function PermissionDenied({ seccion }: Props) {
     >
       <Lock size={28} aria-hidden />
       <div>
-        <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-          Sin permiso para esta sección
-        </p>
+        <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('permissiondenied.sin_permiso_para_esta_seccion')}</p>
         <p style={{ margin: 'var(--s1) 0 0', fontSize: '13px' }}>
           Tu rol no tiene acceso {seccion ? `a "${seccion}"` : 'a esta vista'}. Consulta con un administrador.
         </p>

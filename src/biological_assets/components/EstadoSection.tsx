@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { RefreshCw, Archive } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -30,6 +31,7 @@ function esTerminalOCerrado(estado: string | null): boolean {
 }
 
 export function EstadoSection({ idActivo, estadoActual, identificador, onChanged }: Props) {
+  const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeCambiar = usePermission(RECURSO_ACTIVOS, ACCION_E);
   const puedeCerrar = usePermission(RECURSO_ACTIVOS, ACCION_D);
@@ -58,21 +60,17 @@ export function EstadoSection({ idActivo, estadoActual, identificador, onChanged
     <div style={CARD}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--s4)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Estado actual</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('estadosection.estado_actual')}</span>
           <EstadoPill estado={estadoActual} size="md" />
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
           {puedeCambiar && (
             <Button variant="secondary" size="sm" disabled={!online} onClick={() => abrir('cambiar')}>
-              <RefreshCw size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Cambiar estado
-            </Button>
+              <RefreshCw size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('estadosection.cambiar_estado')}</Button>
           )}
           {puedeCerrar && !bloqueado && (
             <Button variant="danger" size="sm" disabled={!online} onClick={() => abrir('cerrar')}>
-              <Archive size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              Cerrar ciclo
-            </Button>
+              <Archive size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('estadosection.cerrar_ciclo')}</Button>
           )}
         </div>
       </div>

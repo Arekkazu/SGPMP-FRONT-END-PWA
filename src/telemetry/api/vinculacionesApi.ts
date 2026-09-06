@@ -12,7 +12,7 @@ const BASE = '/iot/vinculaciones';
 export const vinculacionesApi = {
   /** Listar vinculaciones (RF-61). Recurso 37 (R). */
   async listar(filtros: VinculacionesFiltros = {}): Promise<ListaVinculacionesSchema> {
-    const res = await http.get<ListaVinculacionesSchema>(`${BASE}/`, { params: filtros });
+    const res = await http.get<ListaVinculacionesSchema>(BASE, { params: filtros });
     return res.data;
   },
 

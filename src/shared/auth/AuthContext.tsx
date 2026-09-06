@@ -1,6 +1,7 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react';
 import { tokenStore } from './tokenStore';
-import { http, refreshAccessToken } from '../api/http';
+import { http, refreshAccessToken, PERMISOS_POSIBLEMENTE_DESACTUALIZADOS } from '../api/http';
+import { sonPermisosIguales } from './compararPermisos';
 
 export interface JwtClaims {
   sub: string;
@@ -33,6 +34,8 @@ interface AuthContextValue {
   permisos: PermisoUsuario[] | null;
   perfilIncompleto: boolean | null;
   isBootstrapping: boolean;
+  /** Timestamp de la ultima vez que se detecto un cambio real de permisos en sesion (RF-25). */
+  permisosActualizadosEn: number | null;
   setSession: (token: string) => void;
   clearSession: () => void;
   refreshUserInfo: () => Promise<void>;
@@ -45,6 +48,7 @@ export const AuthContext = createContext<AuthContextValue>({
   permisos: null,
   perfilIncompleto: null,
   isBootstrapping: true,
+  permisosActualizadosEn: null,
   setSession: () => {},
   clearSession: () => {},
   refreshUserInfo: async () => {},
@@ -95,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [permisos, setPermisos] = useState<PermisoUsuario[] | null>(null);
   const [perfilIncompleto, setPerfilIncompleto] = useState<boolean | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(!validStored);
+  const [permisosActualizadosEn, setPermisosActualizadosEn] = useState<number | null>(null);
 
   // Mantiene el contexto sincronizado cuando el interceptor renueva o limpia
   // el JWT fuera de los hooks de login/logout.
@@ -151,6 +156,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => setPermisos([]));
   }, [token, fetchUserInfo]);
 
+  // RF-25, flujo alterno "cambio de permisos en sesion activa": el interceptor de
+  // http.ts dispara este evento en cualquier 403. Se reconsulta `permisos` y solo se
+  // avisa si de verdad cambio, para no mostrar un aviso enganoso en un 403 normal de
+  // un usuario que nunca tuvo ese permiso.
+  useEffect(() => {
+    if (!token) return;
+    const handler = () => {
+      http.get<{ permisos: PermisoUsuario[] }>('/sesiones/me/permisos')
+        .then((res) => {
+          if (!sonPermisosIguales(permisos, res.data.permisos)) {
+            setPermisos(res.data.permisos);
+            setPermisosActualizadosEn(Date.now());
+          }
+        })
+        .catch(() => {
+          // Fallar en silencio: si el token ya no es valido, el propio 401 del
+          // interceptor se encarga de cerrar la sesion.
+        });
+    };
+    window.addEventListener(PERMISOS_POSIBLEMENTE_DESACTUALIZADOS, handler);
+    return () => window.removeEventListener(PERMISOS_POSIBLEMENTE_DESACTUALIZADOS, handler);
+  }, [token, permisos]);
+
   const setSession = useCallback((newToken: string) => {
     tokenStore.set(newToken);
   }, []);
@@ -173,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         permisos,
         perfilIncompleto,
         isBootstrapping,
+        permisosActualizadosEn,
         setSession,
         clearSession,
         refreshUserInfo: fetchUserInfo,

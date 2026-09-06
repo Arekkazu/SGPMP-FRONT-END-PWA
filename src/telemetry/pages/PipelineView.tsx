@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Workflow, Send, Clock, XCircle, AlertTriangle } from 'lucide-react';
 import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
 import { KpiCard } from '../components/KpiCard';
@@ -17,14 +18,13 @@ function estadoTono(e: string): Tono {
 }
 
 export function PipelineView() {
+  const { t } = useT('telemetry');
   return (
     <div style={{ minHeight: '100%' }}>
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <Workflow size={20} aria-hidden />
-          Pipeline de Inferencia
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>RF-56 · Consolidación y envío al motor</p>
+          <Workflow size={20} aria-hidden />{t('pipelineview.pipeline_de_inferencia')}</h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('pipelineview.rf_56_consolidacion_y_envio_al_motor')}</p>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>

@@ -12,7 +12,7 @@ const BASE = '/iot/auditoria';
 export const auditoriaApi = {
   /** Listar eventos de auditoría IoT (RF-63). Recurso 39 (R). */
   async listar(filtros: AuditoriaFiltros = {}): Promise<ListaAuditoriaIotSchema> {
-    const res = await http.get<ListaAuditoriaIotSchema>(`${BASE}/`, { params: filtros });
+    const res = await http.get<ListaAuditoriaIotSchema>(BASE, { params: filtros });
     return res.data;
   },
 

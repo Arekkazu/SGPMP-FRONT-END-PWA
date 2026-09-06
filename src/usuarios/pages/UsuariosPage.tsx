@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Search, RefreshCw } from 'lucide-react';
 import { useUsuarios } from '../hooks/useUsuarios';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -54,6 +55,7 @@ const ROL_OPTIONS = [
 ];
 
 export function UsuariosPage() {
+  const { t } = useT('usuarios');
   const puedeVer = usePermission(1, 2);
   const puedeGestionar = usePermission(4, 3);
   const puedeEditar = usePermission(1, 3);
@@ -72,9 +74,7 @@ export function UsuariosPage() {
   if (!puedeVer) {
     return (
       <div style={{ padding: 'var(--s7)', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          No tienes permiso para ver esta sección.
-        </p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('usuariospage.no_tienes_permiso_para_ver_esta_seccion')}</p>
       </div>
     );
   }
@@ -104,15 +104,13 @@ export function UsuariosPage() {
     <div style={{ padding: 'var(--s6)', maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <div>
-          <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
-            Usuarios
-          </h1>
+          <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{t('usuariospage.usuarios')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
             {loading ? 'Cargando…' : `${total} usuario${total !== 1 ? 's' : ''}`}
             {fromCache && ' · datos desde caché'}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label="Recargar">
+        <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('usuariospage.recargar')}>
           <RefreshCw size={16} aria-hidden />
         </Button>
       </div>
@@ -120,8 +118,8 @@ export function UsuariosPage() {
       {!online && (
         <Alert
           variant="warning"
-          title="Sin conexión"
-          description="Mostrando datos cacheados. Las acciones de escritura están deshabilitadas."
+          title={t('usuariospage.sin_conexion')}
+          description={t('usuariospage.mostrando_datos_cacheados_las_acciones_de')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
@@ -129,22 +127,22 @@ export function UsuariosPage() {
       {fromCache && online && (
         <Alert
           variant="info"
-          title="Datos desde caché"
-          description="No se pudo conectar con el servidor. Se muestran los últimos datos disponibles."
+          title={t('usuariospage.datos_desde_cache')}
+          description={t('usuariospage.no_se_pudo_conectar_con_el_servidor_se')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
 
       {error && !fromCache && (
-        <Alert variant="error" title="Error al cargar usuarios" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('usuariospage.error_al_cargar_usuarios')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {/* Filtros */}
       <div style={{ display: 'flex', gap: 'var(--s3)', marginBottom: 'var(--s5)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ flex: 1, minWidth: 150 }}>
           <Input
-            label="Nombre"
-            placeholder="Buscar por nombre"
+            label={t('usuariospage.nombre')}
+            placeholder={t('usuariospage.buscar_por_nombre')}
             value={busquedaNombre}
             onChange={(e) => setBusquedaNombre(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && buscar()}
@@ -152,31 +150,29 @@ export function UsuariosPage() {
         </div>
         <div style={{ flex: 1, minWidth: 150 }}>
           <Input
-            label="Correo"
+            label={t('usuariospage.correo')}
             type="email"
-            placeholder="Buscar por correo"
+            placeholder={t('usuariospage.buscar_por_correo')}
             value={busquedaCorreo}
             onChange={(e) => setBusquedaCorreo(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && buscar()}
           />
         </div>
         <div style={{ flex: '0 1 150px' }}>
-          <label style={LABEL_STYLE}>Rol</label>
+          <label style={LABEL_STYLE}>{t('usuariospage.rol')}</label>
           <select value={busquedaRol} onChange={(e) => setBusquedaRol(e.target.value)} style={SELECT_STYLE}>
             {ROL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
         <div style={{ flex: '0 1 150px' }}>
-          <label style={LABEL_STYLE}>Estado</label>
+          <label style={LABEL_STYLE}>{t('usuariospage.estado')}</label>
           <select value={busquedaEstado} onChange={(e) => setBusquedaEstado(e.target.value)} style={SELECT_STYLE}>
             {ESTADO_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
         <div>
           <Button variant="primary" size="md" onClick={buscar}>
-            <Search size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Buscar
-          </Button>
+            <Search size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('usuariospage.buscar')}</Button>
         </div>
       </div>
 
@@ -196,9 +192,7 @@ export function UsuariosPage() {
             size="sm"
             disabled={filtros.pagina <= 1}
             onClick={() => actualizarFiltros({ pagina: filtros.pagina - 1 })}
-          >
-            ← Anterior
-          </Button>
+          >{t('usuariospage.anterior')}</Button>
           <span style={{ display: 'flex', alignItems: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>
             Página {filtros.pagina} de {totalPages}
           </span>
@@ -207,9 +201,7 @@ export function UsuariosPage() {
             size="sm"
             disabled={filtros.pagina >= totalPages}
             onClick={() => actualizarFiltros({ pagina: filtros.pagina + 1 })}
-          >
-            Siguiente →
-          </Button>
+          >{t('usuariospage.siguiente')}</Button>
         </div>
       )}
 

@@ -12,7 +12,7 @@ const SENS = '/configuracion/sensores';
 
 export const dispositivosApi = {
   async listar(soloActivos = false): Promise<DispositivoIotResponse[]> {
-    const res = await http.get<DispositivoIotResponse[]>(`${DISP}/`, { params: { solo_activos: soloActivos } });
+    const res = await http.get<DispositivoIotResponse[]>(DISP, { params: { solo_activos: soloActivos } });
     return res.data;
   },
 
@@ -22,7 +22,7 @@ export const dispositivosApi = {
   },
 
   async registrar(dto: RegistrarDispositivoIotDTO): Promise<DispositivoIotResponse> {
-    const res = await http.post<DispositivoIotResponse>(`${DISP}/`, dto);
+    const res = await http.post<DispositivoIotResponse>(DISP, dto);
     return res.data;
   },
 

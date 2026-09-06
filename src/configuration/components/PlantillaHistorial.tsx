@@ -1,4 +1,6 @@
 import React from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import type { AplicacionPlantillaResponse } from '../types';
 
 interface Props {
@@ -7,6 +9,7 @@ interface Props {
 }
 
 export function PlantillaHistorial({ historial, loading }: Props) {
+  const { t } = useT('configuration');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
@@ -19,9 +22,7 @@ export function PlantillaHistorial({ historial, loading }: Props) {
 
   if (historial.length === 0) {
     return (
-      <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: 'var(--s5) 0' }}>
-        No hay aplicaciones registradas aún.
-      </p>
+      <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: 'var(--s5) 0' }}>{t('plantillahistorial.no_hay_aplicaciones_registradas_aun')}</p>
     );
   }
 
@@ -50,7 +51,7 @@ export function PlantillaHistorial({ historial, loading }: Props) {
                 </td>
                 <td style={{ padding: '11px 14px', color: 'var(--text-secondary)', fontSize: '12px' }}>
                   {h.fecha_aplicacion
-                    ? new Date(h.fecha_aplicacion).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
+                    ? formatearFechaHora(h.fecha_aplicacion, { dateStyle: 'short', timeStyle: 'short' })
                     : '—'}
                 </td>
                 <td style={{ padding: '11px 14px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--brand-600)' }}>
@@ -67,7 +68,7 @@ export function PlantillaHistorial({ historial, loading }: Props) {
                       {diffCount} cambios
                     </span>
                   ) : (
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Sin cambios</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('plantillahistorial.sin_cambios')}</span>
                   )}
                 </td>
               </tr>

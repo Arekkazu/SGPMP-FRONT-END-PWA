@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import type { ResumenEstadisticoSchema } from '../types';
 
 function fmt(n: number | null | undefined): string {
@@ -16,6 +17,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 }
 
 export function EstadisticasCards({ estadisticas }: { estadisticas: ResumenEstadisticoSchema[] }) {
+  const { t } = useT('telemetry');
   if (estadisticas.length === 0) return null;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)' }}>
@@ -23,12 +25,12 @@ export function EstadisticasCards({ estadisticas }: { estadisticas: ResumenEstad
         <div key={e.tipo_variable} style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
           <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s3)' }}>{e.tipo_variable}</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--s3)' }}>
-            <Metric label="Mínimo" value={fmt(e.valor_minimo)} />
-            <Metric label="Máximo" value={fmt(e.valor_maximo)} />
-            <Metric label="Promedio" value={fmt(e.valor_promedio)} />
-            <Metric label="Lecturas" value={fmt(e.total_lecturas)} />
-            <Metric label="% en rango" value={e.pct_dentro_rango != null ? `${fmt(e.pct_dentro_rango)}%` : '—'} />
-            <Metric label="Alertas" value={fmt(e.total_alertas_en_periodo)} />
+            <Metric label={t('estadisticascards.minimo')} value={fmt(e.valor_minimo)} />
+            <Metric label={t('estadisticascards.maximo')} value={fmt(e.valor_maximo)} />
+            <Metric label={t('estadisticascards.promedio')} value={fmt(e.valor_promedio)} />
+            <Metric label={t('estadisticascards.lecturas')} value={fmt(e.total_lecturas)} />
+            <Metric label={t('estadisticascards.en_rango')} value={e.pct_dentro_rango != null ? `${fmt(e.pct_dentro_rango)}%` : '—'} />
+            <Metric label={t('estadisticascards.alertas')} value={fmt(e.total_alertas_en_periodo)} />
           </div>
         </div>
       ))}

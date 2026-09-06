@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { FlaskConical } from 'lucide-react';
 
 /**
@@ -7,6 +8,7 @@ import { FlaskConical } from 'lucide-react';
  * (No se usa `Alert` porque la variante info se auto-oculta a los 6 s.)
  */
 export function DatosSimuladosBanner() {
+  const { t } = useT('telemetry');
   return (
     <div
       role="note"
@@ -25,7 +27,7 @@ export function DatosSimuladosBanner() {
     >
       <FlaskConical size={16} aria-hidden />
       <span>
-        <strong>Datos simulados.</strong> Módulo IoT en integración — esta vista usa datos de ejemplo
+        <strong>{t('datossimuladosbanner.datos_simulados')}</strong> Módulo IoT en integración — esta vista usa datos de ejemplo
         hasta que el equipo AIOT exponga los endpoints de lectura.
       </span>
     </div>

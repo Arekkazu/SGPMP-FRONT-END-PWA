@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
 import type { TipoActivo, EstadoActivoNombre } from '../types';
@@ -47,6 +48,7 @@ const ESTADO_LABEL: Record<EstadoActivoNombre, string> = {
 };
 
 export function ActivosFiltros({ value, onChange }: Props) {
+  const { t } = useT('biologicalAssets');
   return (
     <div
       style={{
@@ -58,28 +60,28 @@ export function ActivosFiltros({ value, onChange }: Props) {
       }}
     >
       <div>
-        <label style={LABEL} htmlFor="filtro-tipo">Tipo</label>
+        <label style={LABEL} htmlFor="filtro-tipo">{t('activosfiltros.tipo')}</label>
         <select
           id="filtro-tipo"
           style={SELECT}
           value={value.tipo}
           onChange={(e) => onChange({ ...value, tipo: e.target.value as FiltrosState['tipo'] })}
         >
-          <option value="">Todos</option>
-          <option value="INDIVIDUAL">Individual</option>
-          <option value="POBLACIONAL">Poblacional</option>
+          <option value="">{t('activosfiltros.todos')}</option>
+          <option value="INDIVIDUAL">{t('activosfiltros.individual')}</option>
+          <option value="POBLACIONAL">{t('activosfiltros.poblacional')}</option>
         </select>
       </div>
 
       <div>
-        <label style={LABEL} htmlFor="filtro-estado">Estado</label>
+        <label style={LABEL} htmlFor="filtro-estado">{t('activosfiltros.estado')}</label>
         <select
           id="filtro-estado"
           style={SELECT}
           value={value.estado}
           onChange={(e) => onChange({ ...value, estado: e.target.value as FiltrosState['estado'] })}
         >
-          <option value="">Todos</option>
+          <option value="">{t('activosfiltros.todos')}</option>
           {ESTADOS.map((e) => (
             <option key={e} value={e}>{ESTADO_LABEL[e]}</option>
           ))}
@@ -87,10 +89,10 @@ export function ActivosFiltros({ value, onChange }: Props) {
       </div>
 
       <div style={{ flex: 1, minWidth: 220 }}>
-        <label style={LABEL} htmlFor="filtro-busqueda">Buscar</label>
+        <label style={LABEL} htmlFor="filtro-busqueda">{t('activosfiltros.buscar')}</label>
         <Input
           id="filtro-busqueda"
-          placeholder="Identificador o especie…"
+          placeholder={t('activosfiltros.identificador_o_especie')}
           leadingIcon={<Search size={16} aria-hidden />}
           value={value.busqueda}
           onChange={(e) => onChange({ ...value, busqueda: e.target.value })}

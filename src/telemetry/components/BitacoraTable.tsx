@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ClipboardList } from 'lucide-react';
 import { SeveridadLogPill } from './SeveridadLogPill';
 import { Pill, type Tono } from './Pill';
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export function BitacoraTable({ items, loading, onAbrir }: Props) {
+  const { t } = useT('telemetry');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -45,7 +47,7 @@ export function BitacoraTable({ items, loading, onAbrir }: Props) {
     return (
       <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s8) var(--s4)', fontSize: '14px', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
         <ClipboardList size={32} aria-hidden style={{ opacity: 0.5, marginBottom: 'var(--s3)' }} />
-        <p style={{ margin: 0 }}>Sin eventos de auditoría para los filtros seleccionados.</p>
+        <p style={{ margin: 0 }}>{t('bitacoratable.sin_eventos_de_auditoria_para_los_filtros')}</p>
       </div>
     );
   }

@@ -2,6 +2,16 @@
 
 ---
 
+## Convención de commits (obligatoria en `dev`)
+
+`dev` corre un pipeline de versionamiento automatizado que lee el historial
+de commits para calcular versión y `CHANGELOG.md`. **Todo commit generado
+en este repo — incluido por una IA — debe seguir el formato de
+`CONTRIBUTING.md`** (`tipo(scope): descripción`). Un commit sin ese formato
+es válido para Git pero invisible para el pipeline.
+
+---
+
 ## Qué cubre este documento
 
 - Stack y versiones instaladas
@@ -13,6 +23,7 @@
 - Control de acceso (RBAC) en el cliente
 - Convenciones de la capa API (Axios)
 - Convenciones de componentes y formularios
+- Internacionalización (i18n)
 - Testing
 - Variables de entorno requeridas
 
@@ -478,6 +489,79 @@ interface ApiError {
 - El botón de envío se deshabilita durante la petición y muestra spinner
 - Al recibir error 400/409 del backend, mapear el campo `field` de `ApiError` al error del campo en `react-hook-form`
 - Requeridos: asterisco (*) + `aria-required="true"` en el input
+
+---
+
+## Internacionalización (i18n) — RF-29
+
+Dos idiomas: **`es-CO`** (predeterminado) y **`en-US`**. Son los mismos códigos que
+acepta `locale_code` en el backend; enviar `'es'` o `'en'` produce un
+`400 IDIOMA_NO_DISPONIBLE`.
+
+```
+src/shared/i18n/
+├── index.ts            # init de i18next + aplicarLocale + persistencia
+├── useT.ts             # punto de entrada unico para los componentes
+├── useIdiomaSesion.ts  # aplica la preferencia del backend al arrancar la sesion
+├── formato.ts          # fecha y numero segun el idioma activo
+└── locales/{es-CO,en-US}/<namespace>.json
+```
+
+### Reglas
+
+- **Un namespace por módulo**, con el nombre del módulo (`telemetry`,
+  `biologicalAssets`…) más `common` y `nav`. Agregar una pantalla es agregar
+  claves; agregar un idioma es agregar una carpeta bajo `locales/` y una entrada
+  en `RECURSOS` de `index.ts`. Ningún cambio estructural.
+- **Los componentes importan de `shared/i18n/useT`**, nunca de `react-i18next`
+  directo: si cambia el motor, el cambio queda contenido en `shared/i18n/`.
+- **`fallbackLng` es `es-CO`.** Una clave sin traducir se renderiza en español y
+  avisa por consola solo en DEV (`missingKeyHandler`). Nunca se le muestra un
+  error al usuario ni la clave cruda.
+- **Nunca traducir datos de dominio.** Los valores que viajan al backend
+  (`tipo_area: 'Galpón'`, estados, categorías de sensor) son datos, no rótulos:
+  se traduce la *etiqueta* que se muestra, jamás el valor que se envía. El RF lo
+  exige explícitamente.
+- **Fechas y números por `shared/i18n/formato.ts`**, nunca
+  `toLocaleDateString('es-CO')` a mano. `shared/lib/fecha.ts` es otra cosa:
+  normaliza valores de `<input>` antes de enviarlos al backend.
+- **Los errores del backend se traducen por `error_code`**, con el `message` en
+  español del backend como `defaultValue` (`shared/api/errors.ts`). El backend no
+  traduce nada y no le hace falta.
+- **Longitud variable**: el inglés y el español no miden igual. Un rótulo dentro
+  de un contenedor flex necesita `min-width: 0` para que la elipsis funcione, y
+  el `title` debe conservar el texto completo.
+- **El nombre de cada idioma en el selector no se traduce** (Español / English):
+  es la convención de todo selector de idioma.
+
+### Uso
+
+```tsx
+import { useT } from '../../shared/i18n/useT';
+
+export function MiPantalla() {
+  const { t } = useT('miModulo');
+  return <h1>{t('pantalla.titulo')}</h1>;
+}
+```
+
+Para una clave de otro namespace: `t('acciones.guardar', { ns: 'common' })`.
+
+### Cambio de idioma
+
+`aplicarLocale(locale)` llama a `i18n.changeLanguage`, actualiza
+`document.documentElement.lang` y persiste en `localStorage`. El re-render es
+inmediato: **el RF prohíbe recargar la sesión activa**. La fuente de verdad es
+`modulo9.preferencias_idiomas` en el backend; `localStorage` solo evita el
+parpadeo en el primer render y cubre las pantallas previas al login, donde
+todavía no hay JWT para consultar la preferencia.
+
+### Pruebas obligatorias
+
+`src/shared/i18n/i18n.test.ts` verifica la paridad de claves entre los dos
+idiomas en ambos sentidos. **Si agregas una clave a `es-CO` y olvidas `en-US`, el
+CI falla nombrando la clave.** Es el control de consistencia que exige el RNF de
+mantenibilidad del RF-29.
 
 ---
 

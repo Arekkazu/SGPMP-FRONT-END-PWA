@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
@@ -38,6 +39,7 @@ const TEXTAREA: React.CSSProperties = {
 const HOY = hoyLocal();
 
 export function CerrarCicloModal({ identificador, saving, error, onClose, onConfirmar }: Props) {
+  const { t } = useT('biologicalAssets');
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
     defaultValues: { fecha_cierre: HOY, motivo_cierre: '', descripcion_cierre: '' },
@@ -56,14 +58,14 @@ export function CerrarCicloModal({ identificador, saving, error, onClose, onConf
     <ModalShell title={`Cerrar ciclo — ${identificador ?? 'activo'}`} onClose={onClose}>
       <Alert
         variant="warning"
-        title="Acción difícilmente reversible"
-        description="El cierre marca el activo como CERRADO y finaliza su ciclo productivo. Desde CERRADO solo se puede pasar a BAJA."
+        title={t('cerrarciclomodal.accion_dificilmente_reversible')}
+        description={t('cerrarciclomodal.el_cierre_marca_el_activo_como_cerrado_y')}
         style={{ marginBottom: 'var(--s4)' }}
       />
       {error && (
         <Alert
           variant={error.status >= 500 ? 'error' : 'warning'}
-          title="No se pudo cerrar el ciclo"
+          title={t('cerrarciclomodal.no_se_pudo_cerrar_el_ciclo')}
           description={error.message}
           style={{ marginBottom: 'var(--s4)' }}
         />
@@ -72,22 +74,21 @@ export function CerrarCicloModal({ identificador, saving, error, onClose, onConf
       <form onSubmit={handleSubmit(submit)} noValidate>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
           <Input
-            label="Fecha de cierre" required type="date" max={HOY}
+            label={t('cerrarciclomodal.fecha_de_cierre')} required type="date" max={HOY}
             error={errors.fecha_cierre?.message}
             {...register('fecha_cierre', {
-              required: 'La fecha de cierre es obligatoria.',
+              required: t('cerrarciclomodal.la_fecha_de_cierre_es_obligatoria'),
               validate: (val) => val <= HOY || 'No puede ser una fecha futura.',
             })}
           />
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-cierre">
-              Motivo del cierre <span aria-hidden="true">*</span>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-cierre">{t('cerrarciclomodal.motivo_del_cierre')}<span aria-hidden="true">*</span>
             </label>
             <textarea
               id="motivo-cierre" style={TEXTAREA}
-              placeholder="Ej: Venta, fin de ciclo productivo…"
+              placeholder={t('cerrarciclomodal.ej_venta_fin_de_ciclo_productivo')}
               {...register('motivo_cierre', {
-                required: 'El motivo es obligatorio.',
+                required: t('cerrarciclomodal.el_motivo_es_obligatorio'),
                 validate: (val) => val.trim().length > 0 || 'El motivo no puede estar vacío.',
               })}
             />
@@ -98,16 +99,14 @@ export function CerrarCicloModal({ identificador, saving, error, onClose, onConf
             )}
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="descripcion-cierre">
-              Descripción adicional
-            </label>
-            <textarea id="descripcion-cierre" style={TEXTAREA} placeholder="Opcional" {...register('descripcion_cierre')} />
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="descripcion-cierre">{t('cerrarciclomodal.descripcion_adicional')}</label>
+            <textarea id="descripcion-cierre" style={TEXTAREA} placeholder={t('cerrarciclomodal.opcional')} {...register('descripcion_cierre')} />
           </div>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
-          <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button type="submit" variant="danger" size="md" loading={saving}>Cerrar ciclo</Button>
+          <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('cerrarciclomodal.cancelar')}</Button>
+          <Button type="submit" variant="danger" size="md" loading={saving}>{t('cerrarciclomodal.cerrar_ciclo')}</Button>
         </div>
       </form>
     </ModalShell>

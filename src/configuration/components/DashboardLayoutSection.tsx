@@ -1,13 +1,18 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { RotateCcw, Save } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useDashboardLayout } from '../hooks/useDashboardLayout';
-import type { WidgetConfigDTO } from '../types';
+import type { WidgetCatalogoItem, WidgetConfigDTO } from '../types';
 
 // ── Widget catalog ────────────────────────────────────────────────────────────
+// El catalogo lo define el backend (modulo9.widgets) y llega ya filtrado por el
+// rol del usuario. Tenerlo quemado aca hacia que la UI ofreciera widgets que el
+// guardado rechazaba con 403. Lo unico que queda del lado del cliente es el
+// icono, que es presentacion pura y no tiene por que vivir en la base.
 interface WidgetDef {
   id: number;
   key: string;
@@ -17,25 +22,30 @@ interface WidgetDef {
   defaultSpan: 1 | 2;
 }
 
-const WIDGET_CATALOG: WidgetDef[] = [
-  { id: 1,  key: 'temp_galpon',   nombre: 'Temperatura Galpón',       grupo: 'Ambiental',        icon: '🌡️', defaultSpan: 1 },
-  { id: 2,  key: 'hum_galpon',    nombre: 'Humedad Galpón',           grupo: 'Ambiental',        icon: '💧', defaultSpan: 1 },
-  { id: 3,  key: 'ph_estanque',   nombre: 'pH Estanque',              grupo: 'Ambiental',        icon: '⚗️', defaultSpan: 1 },
-  { id: 4,  key: 'co2_galpon',    nombre: 'CO₂ Ambiente',             grupo: 'Ambiental',        icon: '💨', defaultSpan: 1 },
-  { id: 5,  key: 'temp_corral',   nombre: 'Temperatura Corral',       grupo: 'Ambiental',        icon: '🌡️', defaultSpan: 1 },
-  { id: 6,  key: 'estado_iot',    nombre: 'Estado Dispositivos IoT',  grupo: 'IoT',              icon: '📡', defaultSpan: 2 },
-  { id: 7,  key: 'cal_sensores',  nombre: 'Calibraciones Recientes',  grupo: 'IoT',              icon: '🔧', defaultSpan: 1 },
-  { id: 8,  key: 'alertas',       nombre: 'Alertas Ambientales',      grupo: 'Alertas',          icon: '⚠️', defaultSpan: 1 },
-  { id: 9,  key: 'alertas_crit',  nombre: 'Alertas Críticas',         grupo: 'Alertas',          icon: '🔴', defaultSpan: 1 },
-  { id: 10, key: 'hist_temp',     nombre: 'Histórico Temperatura',    grupo: 'Histórico',        icon: '📈', defaultSpan: 2 },
-  { id: 11, key: 'hist_hum',      nombre: 'Histórico Humedad',        grupo: 'Histórico',        icon: '📊', defaultSpan: 2 },
-  { id: 12, key: 'prod_aves',     nombre: 'Indicadores Avicultura',   grupo: 'Producción',       icon: '🐔', defaultSpan: 1 },
-  { id: 13, key: 'prod_bovinos',  nombre: 'Indicadores Bovinos',      grupo: 'Producción',       icon: '🐄', defaultSpan: 1 },
-  { id: 14, key: 'fincas_estado', nombre: 'Estado de Fincas',         grupo: 'Infraestructura',  icon: '🏡', defaultSpan: 2 },
-  { id: 15, key: 'cfg_pendiente', nombre: 'Config. IoT Pendientes',   grupo: 'Infraestructura',  icon: '⏳', defaultSpan: 1 },
-];
+const ICONOS: Record<string, string> = {
+  temp_galpon: '🌡️', hum_galpon: '💧', ph_estanque: '⚗️', co2_galpon: '💨',
+  temp_corral: '🌡️', estado_iot: '📡', cal_sensores: '🔧', alertas: '⚠️',
+  alertas_crit: '🔴', hist_temp: '📈', hist_hum: '📊', prod_aves: '🐔',
+  prod_bovinos: '🐄', fincas_estado: '🏡', cfg_pendiente: '⏳',
+};
 
-const GRUPOS = ['Ambiental', 'IoT', 'Alertas', 'Histórico', 'Producción', 'Infraestructura'];
+const ICONO_POR_DEFECTO = '📦';
+
+function aWidgetDef(w: WidgetCatalogoItem): WidgetDef {
+  return {
+    id: w.id_widget,
+    key: w.clave,
+    nombre: w.nombre,
+    grupo: w.grupo,
+    icon: ICONOS[w.clave] ?? ICONO_POR_DEFECTO,
+    defaultSpan: w.span_predeterminado,
+  };
+}
+
+// Tope de la grilla 4x3. La matriz local ya lo impone estructuralmente, pero el
+// usuario merece el mensaje del RF en vez de un clic que no hace nada.
+const MAX_WIDGETS = 12;
+
 
 // ── Grid cell type ────────────────────────────────────────────────────────────
 // idWidget === -1 means "covered by the span of the widget to the left"
@@ -45,14 +55,24 @@ function initGrid(): GridCell[][] {
   return Array.from({ length: 3 }, () => Array<GridCell>(4).fill(null));
 }
 
-function gridFromLayout(grid: WidgetConfigDTO[]): GridCell[][] {
+function contarColocados(grid: GridCell[][]): number {
+  let total = 0;
+  for (const fila of grid) {
+    for (const cell of fila) {
+      if (cell && cell.idWidget !== -1) total += 1;
+    }
+  }
+  return total;
+}
+
+function gridFromLayout(grid: WidgetConfigDTO[], catalogo: WidgetDef[]): GridCell[][] {
   const local = initGrid();
   for (const w of grid) {
     if (!w.visible) continue;
     const f = w.posicion_fila - 1;
     const c = w.posicion_columna - 1;
     if (f < 0 || f > 2 || c < 0 || c > 3) continue;
-    const cat = WIDGET_CATALOG.find((x) => x.id === w.id_widget);
+    const cat = catalogo.find((x) => x.id === w.id_widget);
     if (!cat) continue;
     local[f][c] = { idWidget: w.id_widget, key: cat.key, span: w.span_columnas };
     for (let s = 1; s < w.span_columnas && c + s < 4; s++) {
@@ -64,6 +84,7 @@ function gridFromLayout(grid: WidgetConfigDTO[]): GridCell[][] {
 
 // ── Confirm modal ─────────────────────────────────────────────────────────────
 function ConfirmModal({ onConfirm, onCancel, saving }: { onConfirm: () => void; onCancel: () => void; saving: boolean }) {
+  const { t } = useT('configuration');
   return (
     <div
       role="dialog"
@@ -81,15 +102,11 @@ function ConfirmModal({ onConfirm, onCancel, saving }: { onConfirm: () => void; 
         border: '1px solid var(--surface-border)', padding: 'var(--s6)',
         width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)',
       }}>
-        <h2 id="restore-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-          Restaurar configuración predeterminada
-        </h2>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>
-          Se cargará el layout predeterminado para tu rol. Los cambios actuales se perderán.
-        </p>
+        <h2 id="restore-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('dashboardlayoutsection.restaurar_configuracion_predeterminada')}</h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{t('dashboardlayoutsection.se_cargara_el_layout_predeterminado_para_tu')}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
-          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>Cancelar</Button>
-          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>Restaurar</Button>
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('dashboardlayoutsection.cancelar')}</Button>
+          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{t('dashboardlayoutsection.restaurar')}</Button>
         </div>
       </div>
     </div>
@@ -98,24 +115,32 @@ function ConfirmModal({ onConfirm, onCancel, saving }: { onConfirm: () => void; 
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function DashboardLayoutSection() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeEditar = usePermission(25, 3);
 
-  const { layout, loading, saving, error, saveError, cargar, guardar, restaurar } = useDashboardLayout();
+  const { layout, catalogo, loading, saving, error, saveError, cargar, guardar, restaurar } =
+    useDashboardLayout();
+  const widgets = useMemo(() => catalogo.map(aWidgetDef), [catalogo]);
+  const grupos = useMemo(
+    () => Array.from(new Set(widgets.map((w) => w.grupo))),
+    [widgets],
+  );
 
   const [localGrid, setLocalGrid] = useState<GridCell[][]>(initGrid());
   const [activeWidgets, setActiveWidgets] = useState<string[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [limiteAviso, setLimiteAviso] = useState(false);
 
   useEffect(() => { cargar(); }, [cargar]);
 
   useEffect(() => {
     if (!layout) return;
-    setLocalGrid(gridFromLayout(layout.grid));
+    setLocalGrid(gridFromLayout(layout.grid, widgets));
     setActiveWidgets(layout.active_widget);
-  }, [layout]);
+  }, [layout, widgets]);
 
   // Check if a widget key is currently in the grid
   const isInGrid = useCallback((key: string) => {
@@ -145,6 +170,7 @@ export function DashboardLayoutSection() {
       }
       setLocalGrid(newGrid);
       setActiveWidgets((prev) => prev.filter((k) => k !== cell.key));
+      setLimiteAviso(false);
       return;
     }
 
@@ -153,8 +179,17 @@ export function DashboardLayoutSection() {
     if (!selectedKey) return; // empty cell, nothing selected
 
     // Place the selected widget
-    const def = WIDGET_CATALOG.find((w) => w.key === selectedKey);
+    const def = widgets.find((w) => w.key === selectedKey);
     if (!def) return;
+
+    // El RF pide informar cuando se alcanza el maximo, no ignorar el clic en
+    // silencio. La matriz 4x3 ya impide pasar de 12, pero sin este aviso el
+    // usuario no sabe por que dejo de poder agregar.
+    if (contarColocados(localGrid) >= MAX_WIDGETS) {
+      setLimiteAviso(true);
+      return;
+    }
+    setLimiteAviso(false);
 
     const span = def.defaultSpan;
     // Validate: span must fit in row and not collide
@@ -191,7 +226,13 @@ export function DashboardLayoutSection() {
         }
       }
     }
-    return { layout_config: layoutConfig, active_widget: activeWidgets };
+    // Devolver la version leida deja que el backend detecte que un admin
+    // cambio el perfil del usuario mientras editaba.
+    return {
+      layout_config: layoutConfig,
+      active_widget: activeWidgets,
+      version_perfil: layout?.version_perfil ?? null,
+    };
   };
 
   const handleGuardar = async () => {
@@ -222,12 +263,8 @@ export function DashboardLayoutSection() {
       {/* Section header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s5)' }}>
         <div>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            Dashboard Personalizable
-          </h2>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            Organiza los widgets en la grilla 4×3. Selecciona un widget del catálogo y haz clic en una celda vacía para colocarlo.
-          </p>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('dashboardlayoutsection.dashboard_personalizable')}</h2>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('dashboardlayoutsection.organiza_los_widgets_en_la_grilla_43')}</p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s3)', flexShrink: 0 }}>
           <Button
@@ -236,9 +273,7 @@ export function DashboardLayoutSection() {
             disabled={!canAct || saving}
             onClick={() => setConfirmRestore(true)}
           >
-            <RotateCcw size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Restaurar predeterminado
-          </Button>
+            <RotateCcw size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('dashboardlayoutsection.restaurar_predeterminado')}</Button>
           <Button
             variant="primary"
             size="sm"
@@ -246,31 +281,42 @@ export function DashboardLayoutSection() {
             disabled={!canAct || saving}
             onClick={handleGuardar}
           >
-            <Save size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Guardar configuración
-          </Button>
+            <Save size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('dashboardlayoutsection.guardar_configuracion')}</Button>
         </div>
       </div>
 
       {/* Alerts */}
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="warning" title={t('dashboardlayoutsection.sin_conexion')} description={t('dashboardlayoutsection.las_acciones_de_escritura_estan')} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {error && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('dashboardlayoutsection.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {saveError && (
-        <Alert variant="error" title="Error al guardar" description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert
+          variant="error"
+          title={saveError.code === 'CONFLICTO_PERFIL_MODIFICADO' ? t('dashboardlayoutsection.configuracion_desactualizada') : t('dashboardlayoutsection.error_al_guardar')}
+          description={saveError.message}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
+      )}
+      {limiteAviso && (
+        <Alert
+          variant="warning"
+          title={t('dashboardlayoutsection.limite_de_widgets_alcanzado')}
+          description={`El dashboard permite un máximo de ${MAX_WIDGETS} elementos activos simultáneamente. Por favor, desactive un widget antes de agregar uno nuevo.`}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
       )}
       {saved && (
-        <Alert variant="success" title="Guardado" description="El layout del dashboard se actualizó correctamente." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="success" title={t('dashboardlayoutsection.guardado')} description={t('dashboardlayoutsection.el_layout_del_dashboard_se_actualizo')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {selectedKey && (
         <Alert
           variant="info"
-          title={`Widget seleccionado: ${WIDGET_CATALOG.find((w) => w.key === selectedKey)?.nombre}`}
-          description="Haz clic en una celda vacía de la grilla para colocarlo. Haz clic en el widget del catálogo nuevamente para deseleccionar."
+          title={`Widget seleccionado: ${widgets.find((w) => w.key === selectedKey)?.nombre}`}
+          description={t('dashboardlayoutsection.haz_clic_en_una_celda_vacia_de_la_grilla')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
@@ -297,7 +343,7 @@ export function DashboardLayoutSection() {
                   if (cell && cell.idWidget === -1) return null;
 
                   const span = cell ? cell.span : 1;
-                  const def = cell ? WIDGET_CATALOG.find((w) => w.id === cell.idWidget) : null;
+                  const def = cell ? widgets.find((w) => w.id === cell.idWidget) : null;
                   const isEmpty = !cell;
                   const isTarget = isEmpty && !!selectedKey;
 
@@ -372,20 +418,18 @@ export function DashboardLayoutSection() {
           overflow: 'hidden',
         }}>
           <div style={{ padding: 'var(--s3) var(--s4)', borderBottom: '1px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Catálogo de Widgets
-            </div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('dashboardlayoutsection.catalogo_de_widgets')}</div>
           </div>
           <div style={{ padding: 'var(--s3)', maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
-            {GRUPOS.map((grupo) => {
-              const widgets = WIDGET_CATALOG.filter((w) => w.grupo === grupo);
+            {grupos.map((grupo) => {
+              const delGrupo = widgets.filter((w) => w.grupo === grupo);
               return (
                 <div key={grupo}>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s2)' }}>
                     {grupo}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-                    {widgets.map((w) => {
+                    {delGrupo.map((w) => {
                       const inGrid = isInGrid(w.key);
                       const isSelected = selectedKey === w.key;
                       return (

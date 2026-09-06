@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Edit2, Trash2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Badge } from '../../shared/design-system/Badge';
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function RolesTable({ roles, loading, puedeEditar, puedeEliminar, onEditar, onEliminar }: Props) {
+  const { t } = useT('roles');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -27,9 +29,7 @@ export function RolesTable({ roles, loading, puedeEditar, puedeEliminar, onEdita
 
   if (roles.length === 0) {
     return (
-      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0' }}>
-        No hay roles configurados.
-      </p>
+      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0' }}>{t('rolestable.no_hay_roles_configurados')}</p>
     );
   }
 
@@ -74,7 +74,7 @@ export function RolesTable({ roles, loading, puedeEditar, puedeEliminar, onEdita
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{r.nombre_rol}</span>
                     {r.es_protegido && (
-                      <Badge variant="pendiente">Protegido</Badge>
+                      <Badge variant="pendiente">{t('rolestable.protegido')}</Badge>
                     )}
                   </div>
                 </td>
@@ -102,11 +102,9 @@ export function RolesTable({ roles, loading, puedeEditar, puedeEliminar, onEdita
                         onClick={() => onEditar(r)}
                         disabled={r.es_protegido}
                         aria-label={`Editar ${r.nombre_rol}`}
-                        title={r.es_protegido ? 'El rol Administrador no puede modificarse.' : undefined}
+                        title={r.es_protegido ? t('rolestable.el_rol_administrador_no_puede_modificarse') : undefined}
                       >
-                        <Edit2 size={13} aria-hidden style={{ marginRight: 4 }} />
-                        Editar
-                      </Button>
+                        <Edit2 size={13} aria-hidden style={{ marginRight: 4 }} />{t('rolestable.editar')}</Button>
                     )}
                     {puedeEliminar && (
                       <Button
@@ -117,9 +115,7 @@ export function RolesTable({ roles, loading, puedeEditar, puedeEliminar, onEdita
                         aria-label={`Eliminar ${r.nombre_rol}`}
                         title={tooltipEliminar}
                       >
-                        <Trash2 size={13} aria-hidden style={{ marginRight: 4 }} />
-                        Eliminar
-                      </Button>
+                        <Trash2 size={13} aria-hidden style={{ marginRight: 4 }} />{t('rolestable.eliminar')}</Button>
                     )}
                   </div>
                 </td>

@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
@@ -38,6 +40,7 @@ const TEXTAREA: React.CSSProperties = {
 const NOMBRE_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 
 export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar, onEditar }: Props) {
+  const { t } = useT('configuration');
   const modoEditar = especie !== null;
   const titulo = modoEditar ? `Editar especie — ${especie.nombre}` : 'Nueva especie';
 
@@ -108,7 +111,7 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
           <h2 id="especie-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {titulo}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('especiesmodal.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
         </div>
@@ -116,7 +119,7 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
         {saveError && (
           <Alert
             variant={saveError.status === 412 ? 'error' : 'error'}
-            title={saveError.status === 412 ? 'Conflicto de edición' : 'Error al guardar'}
+            title={saveError.status === 412 ? t('especiesmodal.conflicto_de_edicion') : t('especiesmodal.error_al_guardar')}
             description={saveError.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
@@ -125,16 +128,16 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
             <Input
-              label="Nombre"
+              label={t('especiesmodal.nombre')}
               required
               aria-required="true"
-              placeholder="Ej: Bovino, Avícola, Porcino…"
+              placeholder={t('especiesmodal.ej_bovino_avicola_porcino')}
               error={errors.nombre?.message}
               {...register('nombre', {
-                required: 'El nombre es obligatorio.',
-                minLength: { value: 3, message: 'Mínimo 3 caracteres.' },
-                maxLength: { value: 50, message: 'Máximo 50 caracteres.' },
-                pattern: { value: NOMBRE_REGEX, message: 'Solo letras y espacios.' },
+                required: t('especiesmodal.el_nombre_es_obligatorio'),
+                minLength: { value: 3, message: t('especiesmodal.minimo_3_caracteres') },
+                maxLength: { value: 50, message: t('especiesmodal.maximo_50_caracteres') },
+                pattern: { value: NOMBRE_REGEX, message: t('especiesmodal.solo_letras_y_espacios') },
               })}
             />
 
@@ -142,15 +145,13 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
               <label
                 htmlFor="especie-desc"
                 style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}
-              >
-                Descripción
-              </label>
+              >{t('especiesmodal.descripcion')}</label>
               <textarea
                 id="especie-desc"
                 style={TEXTAREA}
-                placeholder="Descripción opcional de la especie…"
+                placeholder={t('especiesmodal.descripcion_opcional_de_la_especie')}
                 {...register('descripcion', {
-                  maxLength: { value: 255, message: 'Máximo 255 caracteres.' },
+                  maxLength: { value: 255, message: t('especiesmodal.maximo_255_caracteres') },
                 })}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--s1)' }}>
@@ -169,18 +170,16 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
 
             {modoEditar && especie && (
               <div style={{ padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                Creado: {especie.fecha_creacion ? new Date(especie.fecha_creacion).toLocaleDateString('es-CO') : '—'}
+                Creado: {especie.fecha_creacion ? formatearFecha(especie.fecha_creacion) : '—'}
                 {especie.fecha_actualizacion && (
-                  <span> · Actualizado: {new Date(especie.fecha_actualizacion).toLocaleDateString('es-CO')}</span>
+                  <span> · Actualizado: {formatearFecha(especie.fecha_actualizacion)}</span>
                 )}
               </div>
             )}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
-            <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>
-              Cancelar
-            </Button>
+            <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('especiesmodal.cancelar')}</Button>
             <Button type="submit" variant="primary" size="md" loading={saving}>
               {modoEditar ? 'Guardar cambios' : 'Registrar especie'}
             </Button>

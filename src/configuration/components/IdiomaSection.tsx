@@ -5,17 +5,26 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useIdioma } from '../hooks/useIdioma';
+import { useT } from '../../shared/i18n/useT';
 
+// Los códigos son los que acepta `locale_code` en el backend. Enviar 'es' o
+// 'en' devuelve 400 IDIOMA_NO_DISPONIBLE, que es lo que ocurría antes de este
+// cambio: guardar siempre fallaba y ninguna tarjeta se marcaba como activa,
+// porque 'es-CO' nunca igualaba a 'es'.
+//
+// El nombre de cada idioma va en su propio idioma a propósito (Español /
+// English), no traducido: es la convención de todo selector de idioma, para que
+// alguien que no entiende la interfaz actual reconozca la opción que busca.
 const IDIOMAS = [
   {
-    code: 'es',
+    code: 'es-CO',
     label: 'Español',
     region: 'Colombia',
     flag: '🇨🇴',
     sample: 'Bienvenido al sistema',
   },
   {
-    code: 'en',
+    code: 'en-US',
     label: 'English',
     region: 'United States',
     flag: '🇺🇸',
@@ -23,16 +32,19 @@ const IDIOMAS = [
   },
 ] as const;
 
-function FuenteBadge({ fuente }: { fuente: 'personal' | 'global' | 'default' }) {
+// El backend responde 'defecto', no 'default': con la clave equivocada este
+// badge renderizaba `undefined`.
+function FuenteBadge({ fuente }: { fuente: 'personal' | 'global' | 'defecto' }) {
+  const { t } = useT('configuration');
   const colors: Record<string, string> = {
     personal: 'var(--brand-500)',
     global: '#7c3aed',
-    default: 'var(--text-muted)',
+    defecto: 'var(--text-muted)',
   };
   const labels: Record<string, string> = {
-    personal: 'Personal',
-    global: 'Global',
-    default: 'Por defecto',
+    personal: t('idioma.fuente.personal'),
+    global: t('idioma.fuente.global'),
+    defecto: t('idioma.fuente.defecto'),
   };
   return (
     <span style={{
@@ -112,12 +124,13 @@ function IdiomaPanel({
   title: string;
   subtitle: string;
   currentCode: string;
-  fuente: 'personal' | 'global' | 'default';
+  fuente: 'personal' | 'global' | 'defecto';
   canSave: boolean;
   saving: boolean;
   saveError: ReturnType<typeof useIdioma>['saveError'];
-  onSave: (code: string) => Promise<void>;
+  onSave: (code: string) => Promise<boolean>;
 }) {
+  const { t } = useT('configuration');
   const [selected, setSelected] = useState(currentCode);
   const [saved, setSaved] = useState(false);
 
@@ -125,8 +138,10 @@ function IdiomaPanel({
 
   const handleSave = async () => {
     setSaved(false);
-    await onSave(selected);
-    setSaved(true);
+    const ok = await onSave(selected);
+    // Antes se marcaba "guardado" pasara lo que pasara, así que un 400 mostraba
+    // el error y la confirmación de éxito al mismo tiempo.
+    setSaved(ok);
   };
 
   return (
@@ -145,10 +160,10 @@ function IdiomaPanel({
       </div>
 
       {saveError && (
-        <Alert variant="error" title="Error al guardar" description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('errores.titulo_guardar', { ns: 'common' })} description={saveError.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {saved && !saveError && (
-        <Alert variant="success" title="Idioma guardado" description="La preferencia de idioma se actualizó." style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="success" title={t('idioma.guardado_titulo')} description={t('idioma.guardado_detalle')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
@@ -170,7 +185,7 @@ function IdiomaPanel({
           disabled={!canSave || saving}
           onClick={handleSave}
         >
-          Guardar idioma
+          {t('idioma.guardar')}
         </Button>
       </div>
     </div>
@@ -178,6 +193,7 @@ function IdiomaPanel({
 }
 
 export function IdiomaSection() {
+  const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedePersonal = usePermission(26, 3);
   const puedeGlobal = usePermission(27, 3);
@@ -200,44 +216,44 @@ export function IdiomaSection() {
     <div>
       <div style={{ marginBottom: 'var(--s5)' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Idioma
+          {t('idioma.titulo')}
         </h2>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          Selecciona el idioma de la interfaz
+          {t('idioma.subtitulo')}
         </p>
       </div>
 
       {!online && (
-        <Alert variant="warning" title="Sin conexión" description="Las acciones de escritura están deshabilitadas." style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="warning" title={t('estados.sin_conexion', { ns: 'common' })} description={t('estados.sin_conexion_detalle', { ns: 'common' })} style={{ marginBottom: 'var(--s5)' }} />
       )}
       {error && (
-        <Alert variant="error" title="Error al cargar" description={error.message} style={{ marginBottom: 'var(--s5)' }} />
+        <Alert variant="error" title={t('errores.titulo_cargar', { ns: 'common' })} description={error.message} style={{ marginBottom: 'var(--s5)' }} />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
         {personal && (
           <IdiomaPanel
-            title="Mi preferencia"
-            subtitle="Idioma aplicado a tu cuenta de usuario"
+            title={t('idioma.personal_titulo')}
+            subtitle={t('idioma.personal_subtitulo')}
             currentCode={personal.locale_code}
             fuente={personal.fuente}
             canSave={online && puedePersonal}
             saving={saving}
             saveError={saveError}
-            onSave={async (code) => { await guardar({ locale_code: code }); }}
+            onSave={(code) => guardar({ locale_code: code, version_perfil: personal.version_perfil })}
           />
         )}
 
         {global_ && puedeGlobal && (
           <IdiomaPanel
-            title="Idioma global"
-            subtitle="Aplicado a todos los usuarios que no tienen preferencia personal"
+            title={t('idioma.global_titulo')}
+            subtitle={t('idioma.global_subtitulo')}
             currentCode={global_.locale_code}
-            fuente={global_.fuente}
+            fuente="global"
             canSave={online && puedeGlobal}
             saving={saving}
             saveError={saveError}
-            onSave={async (code) => { await guardarGlobal({ locale_code: code }); }}
+            onSave={(code) => guardarGlobal({ locale_code: code, version_perfil: personal?.version_perfil })}
           />
         )}
       </div>

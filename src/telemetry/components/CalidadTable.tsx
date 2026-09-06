@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, ShieldCheck, Check, X } from 'lucide-react';
 import { ClasificacionCalidadPill } from './ClasificacionCalidadPill';
 import { FlagChips } from './FlagChips';
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function CalidadTable({ items, loading, onAbrir }: Props) {
+  const { t } = useT('telemetry');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -36,7 +38,7 @@ export function CalidadTable({ items, loading, onAbrir }: Props) {
     return (
       <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s8) var(--s4)', fontSize: '14px', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
         <ShieldCheck size={32} aria-hidden style={{ opacity: 0.5, marginBottom: 'var(--s3)' }} />
-        <p style={{ margin: 0 }}>No hay evaluaciones de calidad que coincidan con los filtros.</p>
+        <p style={{ margin: 0 }}>{t('calidadtable.no_hay_evaluaciones_de_calidad_que')}</p>
       </div>
     );
   }

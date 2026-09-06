@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Fingerprint } from 'lucide-react';
 import { ModalShell } from './ModalShell';
 import { SeveridadLogPill } from './SeveridadLogPill';
@@ -16,6 +17,7 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
 }
 
 export function EventoAuditoriaModal({ evento, onClose }: { evento: EventoAuditoriaIotSchema; onClose: () => void }) {
+  const { t } = useT('telemetry');
   const detalle = evento.accion_detallada ? JSON.stringify(evento.accion_detallada, null, 2) : null;
   return (
     <ModalShell title={`Evento de auditoría · ${evento.tipo_evento}`} onClose={onClose} maxWidth={600}>
@@ -24,19 +26,19 @@ export function EventoAuditoriaModal({ evento, onClose }: { evento: EventoAudito
         <Pill tono={evento.clasificacion_registro?.toUpperCase().includes('NIC') ? 'info' : 'neutral'}>
           {evento.clasificacion_registro} · {evento.retencion_aplicable} año(s)
         </Pill>
-        {evento.registro_incompleto && <Pill tono="warning">Registro incompleto</Pill>}
+        {evento.registro_incompleto && <Pill tono="warning">{t('eventoauditoriamodal.registro_incompleto')}</Pill>}
       </div>
 
-      <Fila label="Módulo">{evento.modulo}</Fila>
-      <Fila label="Resultado">{evento.resultado}</Fila>
-      <Fila label="Fecha / hora">{evento.fecha_hora?.slice(0, 10)} {horaCaptura(evento.fecha_hora)}</Fila>
-      <Fila label="Usuario">{evento.nombre_usuario ?? (evento.id_usuario != null ? `#${evento.id_usuario}` : '—')}</Fila>
-      {evento.descripcion && <Fila label="Descripción">{evento.descripcion}</Fila>}
+      <Fila label={t('eventoauditoriamodal.modulo')}>{evento.modulo}</Fila>
+      <Fila label={t('eventoauditoriamodal.resultado')}>{evento.resultado}</Fila>
+      <Fila label={t('eventoauditoriamodal.fecha_hora')}>{evento.fecha_hora?.slice(0, 10)} {horaCaptura(evento.fecha_hora)}</Fila>
+      <Fila label={t('eventoauditoriamodal.usuario')}>{evento.nombre_usuario ?? (evento.id_usuario != null ? `#${evento.id_usuario}` : '—')}</Fila>
+      {evento.descripcion && <Fila label={t('eventoauditoriamodal.descripcion')}>{evento.descripcion}</Fila>}
       {(evento.entidad_afectada_tipo || evento.entidad_afectada_id) && (
-        <Fila label="Entidad afectada">{evento.entidad_afectada_tipo ?? ''} {evento.entidad_afectada_id ? `#${evento.entidad_afectada_id}` : ''}</Fila>
+        <Fila label={t('eventoauditoriamodal.entidad_afectada')}>{evento.entidad_afectada_tipo ?? ''} {evento.entidad_afectada_id ? `#${evento.entidad_afectada_id}` : ''}</Fila>
       )}
-      {evento.direccion_ip && <Fila label="Dirección IP">{evento.direccion_ip}</Fila>}
-      {evento.id_sesion && <Fila label="Sesión">{evento.id_sesion.slice(0, 8)}…</Fila>}
+      {evento.direccion_ip && <Fila label={t('eventoauditoriamodal.direccion_ip')}>{evento.direccion_ip}</Fila>}
+      {evento.id_sesion && <Fila label={t('eventoauditoriamodal.sesion')}>{evento.id_sesion.slice(0, 8)}…</Fila>}
 
       <div style={{ marginTop: 'var(--s5)' }}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s2)' }}>
@@ -52,7 +54,7 @@ export function EventoAuditoriaModal({ evento, onClose }: { evento: EventoAudito
 
       {detalle && (
         <div style={{ marginTop: 'var(--s4)' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--s1)' }}>Acción detallada</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--s1)' }}>{t('eventoauditoriamodal.accion_detallada')}</div>
           <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-secondary)', background: 'var(--surface-hover)', padding: 'var(--s3)', borderRadius: 'var(--r-md)', overflowX: 'auto', maxHeight: 200 }}>
             {detalle}
           </pre>

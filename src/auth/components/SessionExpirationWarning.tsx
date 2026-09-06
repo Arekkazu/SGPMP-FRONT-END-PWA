@@ -1,4 +1,5 @@
 import { Alert } from '../../shared/design-system/Alert';
+import { useT } from '../../shared/i18n/useT';
 import './SessionExpirationWarning.css';
 
 function formatCountdown(remainingSeconds: number): string {
@@ -8,13 +9,14 @@ function formatCountdown(remainingSeconds: number): string {
 }
 
 export function SessionExpirationWarning({ remainingSeconds }: { remainingSeconds: number }) {
+  const { t } = useT('auth');
   const minutes = Math.ceil(remainingSeconds / 60);
 
   return (
     <div className="session-expiration-warning">
       <Alert
         variant="warning"
-        title="Tu sesión se cerrará por inactividad"
+        title={t('sessionexpirationwarning.tu_sesion_se_cerrara_por_inactividad')}
         // El texto anunciado cambia una vez por minuto: `Alert` es `role="alert"`,
         // y una cuenta regresiva al segundo la repetiría entera en cada tick de
         // un lector de pantalla.

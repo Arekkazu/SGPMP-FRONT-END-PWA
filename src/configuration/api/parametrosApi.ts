@@ -9,12 +9,12 @@ const BASE = '/configuracion/parametros';
 
 export const parametrosApi = {
   async obtener(): Promise<ConfiguracionGlobalResponse | null> {
-    const res = await http.get<ConfiguracionGlobalResponse | null>(`${BASE}/`);
+    const res = await http.get<ConfiguracionGlobalResponse | null>(BASE);
     return res.data;
   },
 
   async crear(dto: CrearConfiguracionGlobalDTO): Promise<ConfiguracionGlobalResponse> {
-    const res = await http.post<ConfiguracionGlobalResponse>(`${BASE}/`, dto);
+    const res = await http.post<ConfiguracionGlobalResponse>(BASE, dto);
     return res.data;
   },
 

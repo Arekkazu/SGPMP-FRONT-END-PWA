@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useHistory } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -7,6 +8,7 @@ import { RegistrarActivoForm } from '../components/RegistrarActivoForm';
 import type { RegistrarActivoDTO } from '../types';
 
 export function RegistrarActivoPage() {
+  const { t } = useT('biologicalAssets');
   const history = useHistory();
   const { saving, saveError, registrar } = useActivos();
 
@@ -28,15 +30,9 @@ export function RegistrarActivoPage() {
           onClick={() => history.push('/activos-biologicos')}
           style={{ marginBottom: 'var(--s3)' }}
         >
-          <ArrowLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-          Volver a la lista
-        </Button>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Registrar activo biológico
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          Alta de un ejemplar individual o de un lote poblacional
-        </p>
+          <ArrowLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('registraractivopage.volver_a_la_lista')}</Button>
+        <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('registraractivopage.registrar_activo_biologico')}</h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('registraractivopage.alta_de_un_ejemplar_individual_o_de_un_lote')}</p>
       </div>
 
       <div style={{ padding: 'var(--s7)' }}>

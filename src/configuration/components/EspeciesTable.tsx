@@ -1,4 +1,6 @@
 import React from 'react';
+import { formatearFecha } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 import { Pencil, PowerOff, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import type { EspecieResponse } from '../types';
@@ -33,7 +35,7 @@ const TD: React.CSSProperties = {
 function formatFecha(iso: string | null): string {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    return formatearFecha(iso, { day: '2-digit', month: '2-digit', year: '2-digit' });
   } catch {
     return iso;
   }
@@ -48,6 +50,7 @@ export function EspeciesTable({
   onDesactivar,
   onReactivar,
 }: Props) {
+  const { t } = useT('configuration');
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -69,9 +72,7 @@ export function EspeciesTable({
 
   if (especies.length === 0) {
     return (
-      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>
-        No hay especies registradas.
-      </p>
+      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('especiestable.no_hay_especies_registradas')}</p>
     );
   }
 
