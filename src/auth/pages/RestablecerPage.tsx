@@ -6,6 +6,7 @@ import { Eye, EyeOff, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useRestablecer } from '../hooks/useRestablecer';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
+import { PasswordStrength } from '../../shared/design-system/PasswordStrength';
 import { Alert } from '../../shared/design-system/Alert';
 import './AuthPages.css';
 
@@ -14,19 +15,6 @@ const PW_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!*])[A-Za-z\d@#$%^&+=!*]{8,}
 interface FormFields {
   nueva_contrasena: string;
   confirmar_contrasena: string;
-}
-
-function passwordStrength(pw: string): { score: number; label: string; color: string } {
-  const rules = [
-    pw.length >= 8,
-    /[A-Z]/.test(pw),
-    /[0-9]/.test(pw),
-    /[@#$%^&+=!*]/.test(pw),
-  ];
-  const score = rules.filter(Boolean).length;
-  const labels = ['', 'Débil', 'Media', 'Buena', 'Alta'];
-  const colors = ['', '#c0280a', '#c07a00', '#c07a00', '#2e8634'];
-  return { score, label: labels[score] ?? '', color: colors[score] ?? '' };
 }
 
 export function RestablecerPage() {
@@ -46,7 +34,6 @@ export function RestablecerPage() {
   } = useForm<FormFields>({ mode: 'onBlur' });
 
   const pw = watch('nueva_contrasena', '');
-  const strength = passwordStrength(pw);
 
   const onSubmit = (data: FormFields) => {
     if (!token) return;
@@ -116,6 +103,7 @@ export function RestablecerPage() {
               label={t('restablecerpage.nueva_contrasena')}
               type={showPw ? 'text' : 'password'}
               required
+              ariaDescribedBy="restablecer-contrasena-fortaleza"
               error={errors.nueva_contrasena?.message}
               trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               onTrailingClick={() => setShowPw((v) => !v)}
@@ -124,32 +112,7 @@ export function RestablecerPage() {
                 pattern: { value: PW_REGEX, message: t('restablecerpage.la_contrasena_no_cumple_los_requisitos_de') },
               })}
             />
-            <div className="pw-rules">
-              {[
-                [pw.length >= 8, 'Mínimo 8 caracteres'],
-                [/[A-Z]/.test(pw), 'Una mayúscula'],
-                [/[0-9]/.test(pw), 'Un número'],
-                [/[@#$%^&+=!*]/.test(pw), 'Un símbolo (@ # $ % ^ & + = ! *)'],
-                [pw.length > 0 && /^[A-Za-z\d@#$%^&+=!*]+$/.test(pw), 'Solo caracteres permitidos'],
-              ].map(([met, label]) => (
-                <span key={label as string} className={`pw-rule ${met ? 'pw-rule--met' : ''}`}>
-                  {met ? '✓' : '○'} {label}
-                </span>
-              ))}
-            </div>
-            {pw && (
-              <>
-                <div className="pw-strength-bar">
-                  <div
-                    className="pw-strength-fill"
-                    style={{ width: `${strength.score * 25}%`, background: strength.color }}
-                  />
-                </div>
-                <span className="pw-strength-label">
-                  Fortaleza: <strong style={{ color: strength.color }}>{strength.label}</strong>
-                </span>
-              </>
-            )}
+            <PasswordStrength id="restablecer-contrasena-fortaleza" valor={pw} />
           </div>
 
           <div className="auth-field">
@@ -162,7 +125,7 @@ export function RestablecerPage() {
               onTrailingClick={() => setShowConfirmPw((v) => !v)}
               {...register('confirmar_contrasena', {
                 required: t('restablecerpage.confirma_tu_contrasena'),
-                validate: (v) => v === getValues('nueva_contrasena') || 'Las contraseñas no coinciden.',
+                validate: (v) => v === getValues('nueva_contrasena') || t('validacion.las_contrasenas_no_coinciden', { ns: 'common' }),
               })}
             />
           </div>
