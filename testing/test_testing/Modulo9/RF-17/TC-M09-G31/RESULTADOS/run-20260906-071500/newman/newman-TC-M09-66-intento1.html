@@ -1,0 +1,2815 @@
+<!DOCTYPE html>
+<html lang="en" style="overflow-y: scroll;">
+<head>
+  <meta charset="UTF-8">
+  <title>Newman Summary Report</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/styles/default.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/v/bs4/dt-1.10.18/datatables.min.css"/>
+
+<style>
+code.renderMarkdown table, code.renderMarkdown th, code.renderMarkdown td {
+    border: 1px solid black;
+    width: max-content;
+    padding: .75rem;
+}
+
+.theme-dark {
+    --background-color: #222;
+    --bg-card-deck: #444444;
+    --text-color: #ccd2d8;
+    --tab-border: solid 1px #444;
+    --success: #3c9372;
+    --failure: #c24a3f;
+    --warning: #d28c23;
+    --info: #4083b6;
+    --badge-outline: #3c9372;
+    --badge-bg: #cdd3db;
+    --badge-text: #ccd2d9;
+    --failure-row: #c24a3f;
+    --warning-row: #d28c23;
+    --card-bg: #444;
+    --card-footer: #4f5758;
+    --form-input: #ececb5;
+    --hov-text: #d2dae5;
+    --h4-text: #ccd1d9;
+}
+
+.theme-light {
+    --tab-border: solid 1px #fff;
+    --text-color: #000000;
+    --success: #42a745;
+    --failure: #dc3544;
+    --warning: #f4c10b;
+    --info: #49a1b8;
+    --badge-outline: #040411;
+    --badge-bg: #f8f9fa;
+    --badge-text: #fff;
+    --failure-row: #f5c6cb;
+    --warning-row: #ffeeba;
+    --card-bg: #f7f7f7;
+    --hov-text: #fff;
+    --h4-text: #ffffff;
+}
+
+body {
+  padding-top:30px;
+  background-color: var(--background-color)!important;
+  color: var(--text-color);
+}
+
+#execution-data {
+  padding: 10px;
+  border: var(--tab-border);
+  border-top: none;
+}
+
+.nav-tabs {
+  padding-top: 10px;
+  height: 105px;
+  overflow-y: auto;
+}
+
+body.theme-dark .card-header {
+    background-color: #444;
+}
+
+body.theme-light .card-header {
+    background-color: #f7f7f7;
+}
+
+.card-footer {
+    padding: .75rem 1.25rem;
+    background-color: var(--card-footer);
+}
+
+.card-deck {
+    background-color: var(--bg-card-deck)!important;
+}
+.form-control {
+    background: var(--form-input);
+}
+
+.custom-tab {
+  padding: 10px 15px;
+  margin-right: 0px;
+  height: 47px;
+  width: 69px;
+  text-align: center;
+  border: var(--tab-border);
+  border-bottom: none;
+  cursor:pointer;
+}
+
+body.theme-dark .text-white {
+    color: #ccd2d9!important;
+}
+h4 {
+    color: var(--h4-text);
+}
+
+body.theme-dark h1 {
+    color: #ccd2da;
+}
+
+body.theme-dark .bg-light>td {
+    background: #4f5858!important;
+}
+
+body.theme-dark .hljs {
+    background: #0a0a0ab0!important;
+    color: #8d8787!important;
+}
+
+.bg-info {
+    background-color: var(--info)!important;
+}
+.bg-success {
+    background-color: var(--success)!important;
+}
+
+.alert-success {
+    background-color: var(--success)!important;
+}
+
+.alert-warning {
+    background-color: var(--warning)!important;
+}
+
+.alert-info {
+    background-color: var(--info)!important;
+}
+
+.bg-warning {
+    background-color: var(--warning)!important;
+}
+
+.badge-warning {
+    color: var(--badge-text)!important;
+    background-color: var(--warning)!important;
+}
+
+.table-warning>td {
+    background-color: var(--warning-row);
+}
+
+.alert-danger {
+    background-color: var(--failure)!important;
+}
+
+body.theme-dark .alert-dark {
+    background-color: #636467!important;
+}
+
+body.theme-dark .text-dark {
+    color: #d1dae4!important;
+}
+
+body.theme-dark .badge-light {
+    color: #212529;
+    background-color: #cdd3db;
+}
+
+body.theme-light .badge-light {
+    color: #212529;
+    background-color: #f8f9fa;
+}
+body.theme-light .bg-danger {
+    background-color: var(--failure)!important;
+}
+
+body.theme-dark .bg-danger {
+    background-color: var(--failure)!important;
+}
+
+.table-danger>td {
+    background-color: var(--failure-row);
+}
+
+body.theme-dark .table .thead-light th {
+    background-color: #4f5858!important;
+    border-color: #dee2e6!important;
+    color: #ccd2d8!important;
+}
+
+.itPassed {
+  background: var(--success);
+  color: white;
+}
+.itFailed {
+  background: var(--failure);
+  color: white;
+}
+
+.resultsInfoPass {
+  color: var(--success);
+  padding-top: 4px;
+}
+
+.resultsInfoFail {
+  color: var(--failure);
+  padding-top: 4px;
+}
+
+.badge-outline-success {
+  color: var(--success);
+  border: 1px solid var(--success);
+  background-color: transparent;
+}
+
+.badge-outline {
+  color: var(--badge-outline);
+  border: 1px solid var(--badge-outline);
+  background-color: transparent;
+}
+
+.btn-outline-success {
+    color: var(--success)!important;
+    border-color: var(--success)!important;
+}
+
+.backToTop:hover {
+  background-color: var(--success);
+  border-color: var(--success);
+  color: var(--hov-text)!important;
+}
+
+.btn-outline-success:hover {
+  background-color: var(--success);
+  border-color: var(--success);
+  color: var(--hov-text)!important;
+}
+
+.btn-outline-secondary {
+  background-color: var(--success)!important;
+  color: var(--hov-text)!important;
+}
+
+body.theme-dark .env-heading {
+    color: #ccd2d9!important;
+}
+
+body, html {
+  height:100%;
+}
+
+.card {
+  overflow:hidden;
+}
+
+body.theme-dark .card-body {
+    background-color: #444;
+}
+
+body.theme-light .card-body {
+    background-color: #f7f7f7;
+}
+
+body.theme-dark .card-body .bg-danger {
+    background-color: var(--failure)!important;
+}
+
+body.theme-light .card-body .bg-danger {
+    background-color: var(--failure)!important;
+}
+
+.card-body .rotate {
+  z-index: 8;
+  float: right;
+  height: 100%;
+}
+
+.card-body .rotate i {
+  color: #14141426;
+  position: absolute;
+  left: 0;
+  left: auto;
+  right: -10px;
+  bottom: 0;
+  display: block;
+  -webkit-transform: rotate(-44deg);
+  -moz-transform: rotate(-44deg);
+  -o-transform: rotate(-44deg);
+  -ms-transform: rotate(-44deg);
+  transform: rotate(-44deg);
+}
+
+.dyn-height {
+  max-height:350px;
+  overflow-y:auto;
+}
+
+.nav-pills .nav-link.active {
+  background-color: transparent!important;
+}
+
+.backToTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 20px;
+  z-index: 99;
+  font-size: 15px;
+  outline: none;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 4px;
+}
+
+.card-header .fa {
+  transition: .3s transform ease-in-out;
+}
+.card-header .collapsed .fa {
+  transform: rotate(90deg);
+}
+
+.single-line-tabs {
+  padding-top: 10px;
+  height: 60px;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 20px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 0px;
+  bottom: 4px;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+  box-shadow: 0 0px 15px #2020203d;
+  background: white;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+input:checked + .slider {
+  background-color: #4083b6;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #4083b6;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(24px);
+  -ms-transform: translateX(24px);
+  transform: translateX(24px);
+  background: white;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+table.dataTable td, table.dataTable tr {
+    vertical-align: middle;
+}
+
+body.theme-dark code {
+    color: #ccd2d8!important;
+}
+
+body.theme-light code {
+    color: #000000!important;
+}
+
+.text-wrap {
+    word-wrap: break-word; 
+    min-width: 600px; 
+    max-width: 600px; 
+    white-space: normal;
+}
+
+</style>
+</head>
+<body class="theme-dark">
+<script>
+    function setTheme(themeName) {
+        localStorage.setItem('theme', themeName);
+        document.body.className = themeName;
+    }
+
+    function toggleTheme() {
+        if (localStorage.getItem('theme') === 'theme-light') {
+            setTheme('theme-dark');
+        } else {
+            setTheme('theme-light');
+        }
+    }
+</script>
+  <div class="container">
+        <div class="container">
+            <label>Light</label>
+            <label id="switch" class="switch">
+                <input type="checkbox" onchange="toggleTheme()" id="slider">
+                <span class="slider round"></span>
+            </label>
+            <label>Dark</label>
+        </div>
+        <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-pills mb-3 nav-justified" id="pills-tab" role="tablist">
+            <li class="nav-item bg-info active" data-toggle="tooltip" title="Click to view the Summary">
+                <a class="nav-link text-white" id="pills-summary-tab" data-toggle="pill" href="#pills-summary" role="tab" aria-controls="pills-summary" aria-selected="true">Summary</a>
+            </li>
+            <li class="nav-item bg-success" data-toggle="tooltip" title="Click to view the Requests">
+                <a class="nav-link text-white" id="pills-requests-tab" data-toggle="pill" href="#pills-requests" role="tab" aria-controls="pills-requests" aria-selected="false">Total Requests <span class="badge badge-light">8</span></a>
+            </li>
+            <li class="nav-item bg-danger" data-toggle="tooltip" title="Click to view the Failed Tests">
+                <a class="nav-link text-white" id="pills-failed-tab" data-toggle="pill" href="#pills-failed" role="tab" aria-controls="pills-failed" aria-selected="false">Failed Tests <span class="badge badge-light">0</span></a>
+            </li>
+            <li class="nav-item bg-warning" data-toggle="tooltip" title="Click to view the Skipped Tests">
+                <a class="nav-link text-white" id="pills-skipped-tab" data-toggle="pill" href="#pills-skipped" role="tab" aria-controls="pills-skipped" aria-selected="false">Skipped Tests <span class="badge badge-light">0</span></a>
+            </li>
+            </ul>
+        <div class="tab-content" id="pills-tabContent">
+            <div class="tab-pane fade show active" id="pills-summary" role="tabcard" aria-labelledby="pills-summary-tab">
+<div class="row">
+  <div class="col-md-9 col-lg-12 main">
+   <h1 class="display-2 text-center">Newman Run Dashboard</h1>
+   <h5 class="text-center">Sunday, 06 September 2026 02:14:03</h5>
+   <div class="row">
+    <div class="col-lg-3 col-md-6">
+     <div class="card text-white card-success">
+      <div class="card-body bg-success">
+       <div class="rotate">
+        <i class="fa fa-retweet fa-5x"></i>
+       </div>
+       <h6 class="text-uppercase">Total Iterations</h6>
+       <h1 class="display-1">1</h1>
+      </div>
+     </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+     <div class="card text-white card-danger">
+      <div class="card-body bg-success">
+       <div class="rotate">
+        <i class="fa fa-list fa-4x"></i>
+       </div>
+       <h6 class="text-uppercase">Total Assertions</h6>
+       <h1 class="display-1">9</h1>
+      </div>
+     </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+     <div class="card text-white card-info">
+      <div class="card-body bg-success">
+       <div class="rotate">
+        <i class="fa fa-plus-circle fa-5x"></i>
+       </div>
+       <h6 class="text-uppercase">Total Failed Tests</h6>
+       <h1 class="display-1">0</h1>
+      </div>
+     </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+     <div class="card text-white card-warning">
+      <div class="card-body bg-success">
+       <div class="rotate">
+        <i class="fa fa-share fa-5x"></i>
+       </div>
+       <h6 class="text-uppercase">Total Skipped Tests</h6>
+       <h1 class="display-1">0</h1>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr>
+    <div class="row">
+    <div class="col">
+        <div class="row">
+        <div class="col-sm-12 mb-3">
+            <div class="card border-info">
+                <div class="card-body">
+                <h5 class="card-title text-uppercase text-white text-center bg-info">File Information</h5>
+                <span><i class="fas fa-file-code"></i></span><strong> Collection:</strong> TC-M09-G31 - Discovery de configuracion semaforica<br>
+                
+                
+                </div>
+            </div>
+        </div>
+        </div>
+        <div class="row">
+        <div class="col-sm-12 mb-3">
+            <div class="card border-info">
+                <div class="card-body">
+                <h5 class="card-title text-uppercase text-white text-center bg-info">Timings and Data</h5>
+                <span><i class="fas fa-stopwatch"></i></span><strong> Total run duration:</strong> 2.2s<br>
+                <span><i class="fas fa-database"></i></span><strong> Total data received:</strong> 9.6KB<br>
+                <span><i class="fas fa-stopwatch"></i></span><strong> Average response time:</strong> 193ms<br>
+                </div>
+            </div>
+        </div>
+        </div>
+        <div class="row">
+        <div class="col-sm-12 mb-3">
+            <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="thead-inverse">
+                    <tr class="text-center">
+                        <th class="text-uppercase">Summary Item</th>
+                        <th class="text-uppercase">Total</th>
+                        <th class="text-uppercase">Failed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Requests</td>
+                        <td class="text-center">8</td>
+                        <td class="text-center">0</td>
+                    </tr>
+                    <tr>
+                        <td>Prerequest Scripts</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center">0</td>
+                    </tr>
+                    <tr>
+                        <td>Test Scripts</td>
+                        <td class="text-center">8</td>
+                        <td class="text-center">0</td>
+                    </tr>
+                    <tr class="">
+                        <td>Assertions</td>
+                        <td class="text-center">9</td>
+                        <td class="text-center">0</td>
+                    </tr>
+                    <tr class="">
+                        <td>Skipped Tests</td>
+                        <td class="text-center">0</td>
+                        <td class="text-center">-</td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+        </div>
+    <hr>
+   </div>
+   </div>
+  </div>
+ </div>
+        </div>
+            <div class="tab-pane fade" id="pills-failed" role="tabcard" aria-labelledby="pills-failed-tab">
+                <button id="topOfFailuresScreen" class="btn btn-outline-success btn-sm backToTop" onclick="topFunction()">Go To Top</button>
+
+                <div class="alert alert-success text-uppercase text-center">
+                     <br><br><h1 class="text-center">There are no failed tests <span><i class="far fa-thumbs-up"></i></span></h1><br><br>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pills-skipped" role="tabcard" aria-labelledby="pills-skipped-tab">
+                <button id="topOfSkippedScreen" class="btn btn-outline-success btn-sm backToTop" onclick="topFunction()">Go To Top</button>
+
+                <div class="alert alert-success text-uppercase text-center">
+                    <br><br><h1 class="text-center">There are no skipped tests <span><i class="far fa-thumbs-up"></i></span></h1><br><br>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="pills-requests" role="tabcard" aria-labelledby="pills-requests-tab">
+
+            <button id="topOfRequestsScreen" class="btn btn-outline-success btn-sm backToTop" onclick="topFunction()">Go To Top</button>
+
+            <div class="btn-group float-right" role="group" aria-label="Button Group">
+                <button id="openAll" class="btn btn-outline-success btn-sm float-right" style="text-align: center; width: 140px;">Expand Folders</button>
+                <button id="openAllRequests" class="btn btn-outline-success btn-sm float-right" style="text-align: center; width: 140px;">Expand Requests</button>
+            </div>
+
+    <div class="text-uppercase" id="execution-menu">
+        <h5>1 Iteration available to view</h5>
+        
+        <nav class="table-responsive">
+        <ul class="nav single-line-tabs" id="iterationList">
+        </ul>
+        </nav>
+    </div>
+    <h6 class="text-uppercase text-muted" id="iterationSelected" style="padding-top: 10px;"></h6>
+	<div class="tab-content" id="execution-data">
+            <div id="folder-7695e25e-b75e-4478-9bf2-9e829a197d96" class="card-deck iteration-0">
+            <div class="row iteration-0">
+                <div class="col-sm-12 mb-3 iteration-0">
+                <div class="card iteration-0">
+                    <div class="card-header  bg-success iteration-0">
+                        <a data-toggle="collapse" href="#" data-target="#collapse-7695e25e-b75e-4478-9bf2-9e829a197d96" aria-expanded="false" aria-controls="collapse" id="requests-7695e25e-b75e-4478-9bf2-9e829a197d96" class="collapsed text-white z-block">
+                    Iteration: 1 - Login Administrador <i class="float-lg-right fa fa-chevron-down" style="padding-top: 5px;"></i>
+                </a>
+                    </div>
+                    <div id="collapse-7695e25e-b75e-4478-9bf2-9e829a197d96" class="collapse" aria-labelledby="requests-7695e25e-b75e-4478-9bf2-9e829a197d96">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Request Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request Method:</strong> <span class="badge-outline-success badge badge-success"> POST</span><br>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request URL:</strong> <a href="https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/sesiones/" target="_blank">https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/sesiones/</a><br>
+                                    </div>
+                                </div>
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Response Code:</strong> <span class="float-right badge-outline badge badge-success"> 200 - OK</span><br>
+                                    <span><i class="fas fa-stopwatch"></i></span><strong> Mean time per request:</strong> <span class="float-right badge-outline badge badge-success"> 646ms</span><br>
+                                    <span><i class="fas fa-database"></i></span><strong> Mean size per request:</strong> <span class="float-right badge-outline badge badge-success"> 404B</span><br>
+                                    <hr>
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Test Pass Percentage</h5>
+                                    <div>
+                                        <div class="progress" style="height: 40px;">
+                                            <div class="progress-bar  bg-success" style="width: 100%" role="progressbar">
+                                            <h5 style="padding-top:5px;"><strong>100 %</strong></h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-uppercase text-white text-center bg-info">Request Headers</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                            <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-nowrap">Content-Type</td>
+                                                        <td class="text-wrap">application/json</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">User-Agent</td>
+                                                        <td class="text-wrap">PostmanRuntime/7.39.1</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept</td>
+                                                        <td class="text-wrap">*/*</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Cache-Control</td>
+                                                        <td class="text-wrap">no-cache</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Postman-Token</td>
+                                                        <td class="text-wrap">912f823d-859e-4f95-8bf6-0c7c8674afab</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Host</td>
+                                                        <td class="text-wrap">sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept-Encoding</td>
+                                                        <td class="text-wrap">gzip, deflate, br</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Connection</td>
+                                                        <td class="text-wrap">keep-alive</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Content-Length</td>
+                                                        <td class="text-wrap">76</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Request Body</h5>
+                                        <div class="dyn-height">
+                                            <pre><code id="copyReqText-0" class="prettyPrint">{
+          &quot;correo_electronico&quot;: &quot;admin@pecuaria.co&quot;,
+          &quot;contrasena&quot;: &quot;[REDACTED]&quot;
+        }</code></pre>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button class="btn btn-outline-secondary btn-sm copyButton" type="button" data-clipboard-action="copy" data-clipboard-target="#copyReqText-0">Copy to Clipboard</button>
+                                        </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Headers</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                        <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="text-nowrap">Alt-Svc</td>
+                                                    <td class="text-wrap">h3&#x3D;&quot;:443&quot;; ma&#x3D;2592000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Length</td>
+                                                    <td class="text-wrap">404</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Type</td>
+                                                    <td class="text-wrap">application/json</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Date</td>
+                                                    <td class="text-wrap">Sun, 06 Sep 2026 07:14:01 GMT</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Server</td>
+                                                    <td class="text-wrap">uvicorn</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Set-[REDACTED]</td>
+                                                    <td class="text-wrap">[REDACTED]&#x3D;XNcOfYaLQUPtlxn9fNPQppJkBa1muB3pOZxl3_mT2b8; HttpOnly; Max-Age&#x3D;604799; Path&#x3D;/; SameSite&#x3D;none; Secure</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">X-Request-Id</td>
+                                                    <td class="text-wrap">e36e126e-8373-47f2-902b-6bb31f9229f7</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Body</h5>
+                                        <div class="dyn-height">
+                                                <pre><code id="copyText-1ea95a51-79c6-484c-ba28-0196b2852007" class="prettyPrint">{&quot;token&quot;:&quot;[REDACTED]&quot;,&quot;tipo&quot;:&quot;[REDACTED_HEADER]&quot;,&quot;expira_en&quot;:28799,&quot;message&quot;:&quot;Sesión iniciada exitosamente. Se ha cerrado automáticamente la sesión activa en otros dispositivos por políticas de seguridad de sesión única.&quot;,&quot;perfil_incompleto&quot;:false}</code></pre>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button class="btn btn-outline-secondary btn-sm copyButton" type="button" data-clipboard-action="copy" data-clipboard-target="#copyText-1ea95a51-79c6-484c-ba28-0196b2852007">Copy to Clipboard</button>
+                                        </div>
+                                </div>
+                            </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                <h5 class="card-title text-uppercase text-white text-center bg-info">Test Information</h5>
+                                    <div class="table-responsive text-nowrap">
+                                        <table class="datatable table table-hover">
+                                        <thead><tr class="text-center"><th>Name</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr></thead>
+                                            <tbody>
+                                                <tr >
+                                                    <td >Login Administrador responde 200</td>
+                                                    <td class="text-center bg-success">1</td>
+                                                    <td class="text-center ">0</td>
+                                                    <td class="text-center ">0</td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="bg-light">
+                                                    <td><strong>Total</strong></td>
+                                                    <td class="text-center">1</td>
+                                                    <td class="text-center">0</td>
+                                                    <td class="text-center">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div class="row d-none">
+                                    <div class="col-sm-12 mb-3">
+                                        <div class="card-deck">
+                                        <div class="card border-danger" style="width: 50rem;">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-uppercase text-white text-center bg-danger">Test Failure</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                    <thead><tr class="text-nowrap"><th>Test Name</th><th>Assertion Error</th></tr></thead>
+                                                        <tbody>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div id="folder-35718de3-4cc1-4e32-957a-ae5a0df9081d" class="card-deck iteration-0">
+            <div class="row iteration-0">
+                <div class="col-sm-12 mb-3 iteration-0">
+                <div class="card iteration-0">
+                    <div class="card-header  bg-success iteration-0">
+                        <a data-toggle="collapse" href="#" data-target="#collapse-35718de3-4cc1-4e32-957a-ae5a0df9081d" aria-expanded="false" aria-controls="collapse" id="requests-35718de3-4cc1-4e32-957a-ae5a0df9081d" class="collapsed text-white z-block">
+                    Iteration: 1 - Especies activas <i class="float-lg-right fa fa-chevron-down" style="padding-top: 5px;"></i>
+                </a>
+                    </div>
+                    <div id="collapse-35718de3-4cc1-4e32-957a-ae5a0df9081d" class="collapse" aria-labelledby="requests-35718de3-4cc1-4e32-957a-ae5a0df9081d">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Request Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request Method:</strong> <span class="badge-outline-success badge badge-success"> GET</span><br>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request URL:</strong> <a href="https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/especies?solo_activas&#x3D;true" target="_blank">https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/especies?solo_activas&#x3D;true</a><br>
+                                    </div>
+                                </div>
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Response Code:</strong> <span class="float-right badge-outline badge badge-success"> 200 - OK</span><br>
+                                    <span><i class="fas fa-stopwatch"></i></span><strong> Mean time per request:</strong> <span class="float-right badge-outline badge badge-success"> 125ms</span><br>
+                                    <span><i class="fas fa-database"></i></span><strong> Mean size per request:</strong> <span class="float-right badge-outline badge badge-success"> 1.21KB</span><br>
+                                    <hr>
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Test Pass Percentage</h5>
+                                    <div>
+                                        <div class="progress" style="height: 40px;">
+                                            <div class="progress-bar  bg-success" style="width: 100%" role="progressbar">
+                                            <h5 style="padding-top:5px;"><strong>100 %</strong></h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-uppercase text-white text-center bg-info">Request Headers</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                            <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED_HEADER]</td>
+                                                        <td class="text-wrap">[REDACTED_HEADER]</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">User-Agent</td>
+                                                        <td class="text-wrap">PostmanRuntime/7.39.1</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept</td>
+                                                        <td class="text-wrap">*/*</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Cache-Control</td>
+                                                        <td class="text-wrap">no-cache</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Postman-Token</td>
+                                                        <td class="text-wrap">077c626e-e733-48df-963b-db7a02600481</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Host</td>
+                                                        <td class="text-wrap">sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept-Encoding</td>
+                                                        <td class="text-wrap">gzip, deflate, br</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Connection</td>
+                                                        <td class="text-wrap">keep-alive</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED]</td>
+                                                        <td class="text-wrap">[REDACTED]&#x3D;XNcOfYaLQUPtlxn9fNPQppJkBa1muB3pOZxl3_mT2b8</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Headers</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                        <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="text-nowrap">Alt-Svc</td>
+                                                    <td class="text-wrap">h3&#x3D;&quot;:443&quot;; ma&#x3D;2592000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Length</td>
+                                                    <td class="text-wrap">1237</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Type</td>
+                                                    <td class="text-wrap">application/json</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Date</td>
+                                                    <td class="text-wrap">Sun, 06 Sep 2026 07:14:01 GMT</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Server</td>
+                                                    <td class="text-wrap">uvicorn</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">X-Request-Id</td>
+                                                    <td class="text-wrap">de13ed4a-efc8-4cf5-97cb-7857d6efa35d</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Body</h5>
+                                        <div class="dyn-height">
+                                                <pre><code id="copyText-75159835-f77a-4ed1-b588-0b418446e7e8" class="prettyPrint">{&quot;total&quot;:5,&quot;items&quot;:[{&quot;id_especie&quot;:4,&quot;nombre&quot;:&quot;Cachama Blanca&quot;,&quot;descripcion&quot;:&quot;Pez de agua dulce tropical con alta adaptabilidad a sistemas extensivos e intensivos.&quot;,&quot;es_activo&quot;:true,&quot;fecha_creacion&quot;:&quot;2026-04-28T14:42:28.213141Z&quot;,&quot;fecha_actualizacion&quot;:&quot;2026-04-28T14:42:28.213141Z&quot;},{&quot;id_especie&quot;:3,&quot;nombre&quot;:&quot;Camarón Blanco&quot;,&quot;descripcion&quot;:&quot;Crustáceo marino de alto valor comercial cultivado en estanques costeros.&quot;,&quot;es_activo&quot;:true,&quot;fecha_creacion&quot;:&quot;2026-04-28T14:42:28.213141Z&quot;,&quot;fecha_actualizacion&quot;:&quot;2026-04-28T14:42:28.213141Z&quot;},{&quot;id_especie&quot;:5,&quot;nombre&quot;:&quot;Mojarra Plateada&quot;,&quot;descripcion&quot;:&quot;Especie de ciclo corto utilizada en policultivos y sistemas de pequeña escala.&quot;,&quot;es_activo&quot;:true,&quot;fecha_creacion&quot;:&quot;2026-04-28T14:42:28.213141Z&quot;,&quot;fecha_actualizacion&quot;:&quot;2026-04-28T14:42:28.213141Z&quot;},{&quot;id_especie&quot;:10,&quot;nombre&quot;:&quot;Tilapia&quot;,&quot;descripcion&quot;:&quot;Especie de agua dulce ampliamente cultivada&quot;,&quot;es_activo&quot;:true,&quot;fecha_creacion&quot;:&quot;2026-04-28T15:15:29.439925Z&quot;,&quot;fecha_actualizacion&quot;:null},{&quot;id_especie&quot;:2,&quot;nombre&quot;:&quot;Trucha Arcoíris&quot;,&quot;descripcion&quot;:&quot;Especie de agua fría cultivada en estanques de alta montaña y ríos oxigenados.&quot;,&quot;es_activo&quot;:true,&quot;fecha_creacion&quot;:&quot;2026-04-28T14:42:28.213141Z&quot;,&quot;fecha_actualizacion&quot;:&quot;2026-04-28T14:42:28.213141Z&quot;}]}</code></pre>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button class="btn btn-outline-secondary btn-sm copyButton" type="button" data-clipboard-action="copy" data-clipboard-target="#copyText-75159835-f77a-4ed1-b588-0b418446e7e8">Copy to Clipboard</button>
+                                        </div>
+                                </div>
+                            </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                <h5 class="card-title text-uppercase text-white text-center bg-info">Test Information</h5>
+                                    <div class="table-responsive text-nowrap">
+                                        <table class="datatable table table-hover">
+                                        <thead><tr class="text-center"><th>Name</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr></thead>
+                                            <tbody>
+                                                <tr >
+                                                    <td >Especies activas responde 200</td>
+                                                    <td class="text-center bg-success">1</td>
+                                                    <td class="text-center ">0</td>
+                                                    <td class="text-center ">0</td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="bg-light">
+                                                    <td><strong>Total</strong></td>
+                                                    <td class="text-center">1</td>
+                                                    <td class="text-center">0</td>
+                                                    <td class="text-center">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div class="row d-none">
+                                    <div class="col-sm-12 mb-3">
+                                        <div class="card-deck">
+                                        <div class="card border-danger" style="width: 50rem;">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-uppercase text-white text-center bg-danger">Test Failure</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                    <thead><tr class="text-nowrap"><th>Test Name</th><th>Assertion Error</th></tr></thead>
+                                                        <tbody>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div id="folder-d27fda42-bca2-4a35-8459-b491815cb3ef" class="card-deck iteration-0">
+            <div class="row iteration-0">
+                <div class="col-sm-12 mb-3 iteration-0">
+                <div class="card iteration-0">
+                    <div class="card-header  bg-success iteration-0">
+                        <a data-toggle="collapse" href="#" data-target="#collapse-d27fda42-bca2-4a35-8459-b491815cb3ef" aria-expanded="false" aria-controls="collapse" id="requests-d27fda42-bca2-4a35-8459-b491815cb3ef" class="collapsed text-white z-block">
+                    Iteration: 1 - Umbrales activos especie 4 <i class="float-lg-right fa fa-chevron-down" style="padding-top: 5px;"></i>
+                </a>
+                    </div>
+                    <div id="collapse-d27fda42-bca2-4a35-8459-b491815cb3ef" class="collapse" aria-labelledby="requests-d27fda42-bca2-4a35-8459-b491815cb3ef">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Request Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request Method:</strong> <span class="badge-outline-success badge badge-success"> GET</span><br>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request URL:</strong> <a href="https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/umbrales?id_especie&#x3D;4&amp;solo_activas&#x3D;true" target="_blank">https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/umbrales?id_especie&#x3D;4&amp;solo_activas&#x3D;true</a><br>
+                                    </div>
+                                </div>
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Response Code:</strong> <span class="float-right badge-outline badge badge-success"> 200 - OK</span><br>
+                                    <span><i class="fas fa-stopwatch"></i></span><strong> Mean time per request:</strong> <span class="float-right badge-outline badge badge-success"> 147ms</span><br>
+                                    <span><i class="fas fa-database"></i></span><strong> Mean size per request:</strong> <span class="float-right badge-outline badge badge-success"> 824B</span><br>
+                                    <hr>
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Test Pass Percentage</h5>
+                                    <div>
+                                        <div class="progress" style="height: 40px;">
+                                            <div class="progress-bar  bg-success" style="width: 100%" role="progressbar">
+                                            <h5 style="padding-top:5px;"><strong>100 %</strong></h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-uppercase text-white text-center bg-info">Request Headers</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                            <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED_HEADER]</td>
+                                                        <td class="text-wrap">[REDACTED_HEADER]</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">User-Agent</td>
+                                                        <td class="text-wrap">PostmanRuntime/7.39.1</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept</td>
+                                                        <td class="text-wrap">*/*</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Cache-Control</td>
+                                                        <td class="text-wrap">no-cache</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Postman-Token</td>
+                                                        <td class="text-wrap">69fb9c20-859e-4dc2-9e58-7e7c3eb442f2</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Host</td>
+                                                        <td class="text-wrap">sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept-Encoding</td>
+                                                        <td class="text-wrap">gzip, deflate, br</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Connection</td>
+                                                        <td class="text-wrap">keep-alive</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED]</td>
+                                                        <td class="text-wrap">[REDACTED]&#x3D;XNcOfYaLQUPtlxn9fNPQppJkBa1muB3pOZxl3_mT2b8</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Headers</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                        <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="text-nowrap">Alt-Svc</td>
+                                                    <td class="text-wrap">h3&#x3D;&quot;:443&quot;; ma&#x3D;2592000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Length</td>
+                                                    <td class="text-wrap">824</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Type</td>
+                                                    <td class="text-wrap">application/json</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Date</td>
+                                                    <td class="text-wrap">Sun, 06 Sep 2026 07:14:01 GMT</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Server</td>
+                                                    <td class="text-wrap">uvicorn</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">X-Request-Id</td>
+                                                    <td class="text-wrap">e8275596-475d-43ca-baaf-eb35606fe050</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Body</h5>
+                                        <div class="dyn-height">
+                                                <pre><code id="copyText-87fade37-fc69-4444-9916-b6418317c994" class="prettyPrint">{&quot;total&quot;:2,&quot;items&quot;:[{&quot;id_umbral_ambiental&quot;:10,&quot;id_especie&quot;:4,&quot;id_variable_ambiental&quot;:1,&quot;unidad_medida&quot;:&quot;°C&quot;,&quot;valor_min&quot;:&quot;0.00&quot;,&quot;valor_max&quot;:&quot;100.00&quot;,&quot;es_activo&quot;:true,&quot;fecha_actualizacion&quot;:null,&quot;niveles&quot;:[{&quot;nivel&quot;:&quot;normal&quot;,&quot;limite_inferior&quot;:&quot;26.00&quot;,&quot;limite_superior&quot;:&quot;32.00&quot;},{&quot;nivel&quot;:&quot;precaucion&quot;,&quot;limite_inferior&quot;:&quot;22.00&quot;,&quot;limite_superior&quot;:&quot;26.00&quot;},{&quot;nivel&quot;:&quot;critico&quot;,&quot;limite_inferior&quot;:&quot;0.00&quot;,&quot;limite_superior&quot;:&quot;22.00&quot;}]},{&quot;id_umbral_ambiental&quot;:11,&quot;id_especie&quot;:4,&quot;id_variable_ambiental&quot;:3,&quot;unidad_medida&quot;:&quot;mg/L&quot;,&quot;valor_min&quot;:&quot;0.00&quot;,&quot;valor_max&quot;:&quot;100.00&quot;,&quot;es_activo&quot;:true,&quot;fecha_actualizacion&quot;:null,&quot;niveles&quot;:[{&quot;nivel&quot;:&quot;normal&quot;,&quot;limite_inferior&quot;:&quot;4.00&quot;,&quot;limite_superior&quot;:&quot;12.00&quot;},{&quot;nivel&quot;:&quot;precaucion&quot;,&quot;limite_inferior&quot;:&quot;2.00&quot;,&quot;limite_superior&quot;:&quot;4.00&quot;},{&quot;nivel&quot;:&quot;critico&quot;,&quot;limite_inferior&quot;:&quot;0.00&quot;,&quot;limite_superior&quot;:&quot;2.00&quot;}]}]}</code></pre>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button class="btn btn-outline-secondary btn-sm copyButton" type="button" data-clipboard-action="copy" data-clipboard-target="#copyText-87fade37-fc69-4444-9916-b6418317c994">Copy to Clipboard</button>
+                                        </div>
+                                </div>
+                            </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                <h5 class="card-title text-uppercase text-white text-center bg-info">Test Information</h5>
+                                    <div class="table-responsive text-nowrap">
+                                        <table class="datatable table table-hover">
+                                        <thead><tr class="text-center"><th>Name</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr></thead>
+                                            <tbody>
+                                                <tr >
+                                                    <td >Umbrales activos especie 4 responde 200</td>
+                                                    <td class="text-center bg-success">1</td>
+                                                    <td class="text-center ">0</td>
+                                                    <td class="text-center ">0</td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="bg-light">
+                                                    <td><strong>Total</strong></td>
+                                                    <td class="text-center">1</td>
+                                                    <td class="text-center">0</td>
+                                                    <td class="text-center">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div class="row d-none">
+                                    <div class="col-sm-12 mb-3">
+                                        <div class="card-deck">
+                                        <div class="card border-danger" style="width: 50rem;">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-uppercase text-white text-center bg-danger">Test Failure</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                    <thead><tr class="text-nowrap"><th>Test Name</th><th>Assertion Error</th></tr></thead>
+                                                        <tbody>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div id="folder-85f4516b-fb55-482b-ad43-62aa42a3dec5" class="card-deck iteration-0">
+            <div class="row iteration-0">
+                <div class="col-sm-12 mb-3 iteration-0">
+                <div class="card iteration-0">
+                    <div class="card-header  bg-success iteration-0">
+                        <a data-toggle="collapse" href="#" data-target="#collapse-85f4516b-fb55-482b-ad43-62aa42a3dec5" aria-expanded="false" aria-controls="collapse" id="requests-85f4516b-fb55-482b-ad43-62aa42a3dec5" class="collapsed text-white z-block">
+                    Iteration: 1 - Umbrales activos especie 3 <i class="float-lg-right fa fa-chevron-down" style="padding-top: 5px;"></i>
+                </a>
+                    </div>
+                    <div id="collapse-85f4516b-fb55-482b-ad43-62aa42a3dec5" class="collapse" aria-labelledby="requests-85f4516b-fb55-482b-ad43-62aa42a3dec5">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Request Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request Method:</strong> <span class="badge-outline-success badge badge-success"> GET</span><br>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request URL:</strong> <a href="https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/umbrales?id_especie&#x3D;3&amp;solo_activas&#x3D;true" target="_blank">https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/umbrales?id_especie&#x3D;3&amp;solo_activas&#x3D;true</a><br>
+                                    </div>
+                                </div>
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Response Code:</strong> <span class="float-right badge-outline badge badge-success"> 200 - OK</span><br>
+                                    <span><i class="fas fa-stopwatch"></i></span><strong> Mean time per request:</strong> <span class="float-right badge-outline badge badge-success"> 119ms</span><br>
+                                    <span><i class="fas fa-database"></i></span><strong> Mean size per request:</strong> <span class="float-right badge-outline badge badge-success"> 1.19KB</span><br>
+                                    <hr>
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Test Pass Percentage</h5>
+                                    <div>
+                                        <div class="progress" style="height: 40px;">
+                                            <div class="progress-bar  bg-success" style="width: 100%" role="progressbar">
+                                            <h5 style="padding-top:5px;"><strong>100 %</strong></h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-uppercase text-white text-center bg-info">Request Headers</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                            <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED_HEADER]</td>
+                                                        <td class="text-wrap">[REDACTED_HEADER]</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">User-Agent</td>
+                                                        <td class="text-wrap">PostmanRuntime/7.39.1</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept</td>
+                                                        <td class="text-wrap">*/*</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Cache-Control</td>
+                                                        <td class="text-wrap">no-cache</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Postman-Token</td>
+                                                        <td class="text-wrap">d188672f-e358-44b9-ab9c-76000c926356</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Host</td>
+                                                        <td class="text-wrap">sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept-Encoding</td>
+                                                        <td class="text-wrap">gzip, deflate, br</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Connection</td>
+                                                        <td class="text-wrap">keep-alive</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED]</td>
+                                                        <td class="text-wrap">[REDACTED]&#x3D;XNcOfYaLQUPtlxn9fNPQppJkBa1muB3pOZxl3_mT2b8</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Headers</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                        <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="text-nowrap">Alt-Svc</td>
+                                                    <td class="text-wrap">h3&#x3D;&quot;:443&quot;; ma&#x3D;2592000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Length</td>
+                                                    <td class="text-wrap">1222</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Type</td>
+                                                    <td class="text-wrap">application/json</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Date</td>
+                                                    <td class="text-wrap">Sun, 06 Sep 2026 07:14:02 GMT</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Server</td>
+                                                    <td class="text-wrap">uvicorn</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">X-Request-Id</td>
+                                                    <td class="text-wrap">63c5a2f0-1b55-4433-a776-a19972b168e0</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Body</h5>
+                                        <div class="dyn-height">
+                                                <pre><code id="copyText-e38283a7-0e45-44e8-9281-2c3d443069e0" class="prettyPrint">{&quot;total&quot;:3,&quot;items&quot;:[{&quot;id_umbral_ambiental&quot;:7,&quot;id_especie&quot;:3,&quot;id_variable_ambiental&quot;:1,&quot;unidad_medida&quot;:&quot;°C&quot;,&quot;valor_min&quot;:&quot;0.00&quot;,&quot;valor_max&quot;:&quot;100.00&quot;,&quot;es_activo&quot;:true,&quot;fecha_actualizacion&quot;:null,&quot;niveles&quot;:[{&quot;nivel&quot;:&quot;normal&quot;,&quot;limite_inferior&quot;:&quot;23.00&quot;,&quot;limite_superior&quot;:&quot;30.00&quot;},{&quot;nivel&quot;:&quot;precaucion&quot;,&quot;limite_inferior&quot;:&quot;20.00&quot;,&quot;limite_superior&quot;:&quot;23.00&quot;},{&quot;nivel&quot;:&quot;critico&quot;,&quot;limite_inferior&quot;:&quot;0.00&quot;,&quot;limite_superior&quot;:&quot;20.00&quot;}]},{&quot;id_umbral_ambiental&quot;:9,&quot;id_especie&quot;:3,&quot;id_variable_ambiental&quot;:4,&quot;unidad_medida&quot;:&quot;mg/L&quot;,&quot;valor_min&quot;:&quot;0.00&quot;,&quot;valor_max&quot;:&quot;100.00&quot;,&quot;es_activo&quot;:true,&quot;fecha_actualizacion&quot;:null,&quot;niveles&quot;:[{&quot;nivel&quot;:&quot;normal&quot;,&quot;limite_inferior&quot;:&quot;0.00&quot;,&quot;limite_superior&quot;:&quot;1.00&quot;},{&quot;nivel&quot;:&quot;precaucion&quot;,&quot;limite_inferior&quot;:&quot;1.00&quot;,&quot;limite_superior&quot;:&quot;2.00&quot;},{&quot;nivel&quot;:&quot;critico&quot;,&quot;limite_inferior&quot;:&quot;2.00&quot;,&quot;limite_superior&quot;:&quot;10.00&quot;}]},{&quot;id_umbral_ambiental&quot;:8,&quot;id_especie&quot;:3,&quot;id_variable_ambiental&quot;:6,&quot;unidad_medida&quot;:&quot;ppt&quot;,&quot;valor_min&quot;:&quot;0.00&quot;,&quot;valor_max&quot;:&quot;100.00&quot;,&quot;es_activo&quot;:true,&quot;fecha_actualizacion&quot;:null,&quot;niveles&quot;:[{&quot;nivel&quot;:&quot;normal&quot;,&quot;limite_inferior&quot;:&quot;10.00&quot;,&quot;limite_superior&quot;:&quot;25.00&quot;},{&quot;nivel&quot;:&quot;precaucion&quot;,&quot;limite_inferior&quot;:&quot;5.00&quot;,&quot;limite_superior&quot;:&quot;10.00&quot;},{&quot;nivel&quot;:&quot;critico&quot;,&quot;limite_inferior&quot;:&quot;0.00&quot;,&quot;limite_superior&quot;:&quot;5.00&quot;}]}]}</code></pre>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button class="btn btn-outline-secondary btn-sm copyButton" type="button" data-clipboard-action="copy" data-clipboard-target="#copyText-e38283a7-0e45-44e8-9281-2c3d443069e0">Copy to Clipboard</button>
+                                        </div>
+                                </div>
+                            </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                <h5 class="card-title text-uppercase text-white text-center bg-info">Test Information</h5>
+                                    <div class="table-responsive text-nowrap">
+                                        <table class="datatable table table-hover">
+                                        <thead><tr class="text-center"><th>Name</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr></thead>
+                                            <tbody>
+                                                <tr >
+                                                    <td >Umbrales activos especie 3 responde 200</td>
+                                                    <td class="text-center bg-success">1</td>
+                                                    <td class="text-center ">0</td>
+                                                    <td class="text-center ">0</td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="bg-light">
+                                                    <td><strong>Total</strong></td>
+                                                    <td class="text-center">1</td>
+                                                    <td class="text-center">0</td>
+                                                    <td class="text-center">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div class="row d-none">
+                                    <div class="col-sm-12 mb-3">
+                                        <div class="card-deck">
+                                        <div class="card border-danger" style="width: 50rem;">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-uppercase text-white text-center bg-danger">Test Failure</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                    <thead><tr class="text-nowrap"><th>Test Name</th><th>Assertion Error</th></tr></thead>
+                                                        <tbody>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div id="folder-83845cce-982b-4eb9-80a3-d9bad3dea541" class="card-deck iteration-0">
+            <div class="row iteration-0">
+                <div class="col-sm-12 mb-3 iteration-0">
+                <div class="card iteration-0">
+                    <div class="card-header  bg-success iteration-0">
+                        <a data-toggle="collapse" href="#" data-target="#collapse-83845cce-982b-4eb9-80a3-d9bad3dea541" aria-expanded="false" aria-controls="collapse" id="requests-83845cce-982b-4eb9-80a3-d9bad3dea541" class="collapsed text-white z-block">
+                    Iteration: 1 - Umbrales activos especie 5 <i class="float-lg-right fa fa-chevron-down" style="padding-top: 5px;"></i>
+                </a>
+                    </div>
+                    <div id="collapse-83845cce-982b-4eb9-80a3-d9bad3dea541" class="collapse" aria-labelledby="requests-83845cce-982b-4eb9-80a3-d9bad3dea541">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Request Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request Method:</strong> <span class="badge-outline-success badge badge-success"> GET</span><br>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request URL:</strong> <a href="https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/umbrales?id_especie&#x3D;5&amp;solo_activas&#x3D;true" target="_blank">https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/umbrales?id_especie&#x3D;5&amp;solo_activas&#x3D;true</a><br>
+                                    </div>
+                                </div>
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Response Code:</strong> <span class="float-right badge-outline badge badge-success"> 200 - OK</span><br>
+                                    <span><i class="fas fa-stopwatch"></i></span><strong> Mean time per request:</strong> <span class="float-right badge-outline badge badge-success"> 126ms</span><br>
+                                    <span><i class="fas fa-database"></i></span><strong> Mean size per request:</strong> <span class="float-right badge-outline badge badge-success"> 821B</span><br>
+                                    <hr>
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Test Pass Percentage</h5>
+                                    <div>
+                                        <div class="progress" style="height: 40px;">
+                                            <div class="progress-bar  bg-success" style="width: 100%" role="progressbar">
+                                            <h5 style="padding-top:5px;"><strong>100 %</strong></h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-uppercase text-white text-center bg-info">Request Headers</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                            <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED_HEADER]</td>
+                                                        <td class="text-wrap">[REDACTED_HEADER]</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">User-Agent</td>
+                                                        <td class="text-wrap">PostmanRuntime/7.39.1</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept</td>
+                                                        <td class="text-wrap">*/*</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Cache-Control</td>
+                                                        <td class="text-wrap">no-cache</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Postman-Token</td>
+                                                        <td class="text-wrap">6956ede3-6be0-40d7-9a8b-253183e996e1</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Host</td>
+                                                        <td class="text-wrap">sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept-Encoding</td>
+                                                        <td class="text-wrap">gzip, deflate, br</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Connection</td>
+                                                        <td class="text-wrap">keep-alive</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED]</td>
+                                                        <td class="text-wrap">[REDACTED]&#x3D;XNcOfYaLQUPtlxn9fNPQppJkBa1muB3pOZxl3_mT2b8</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Headers</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                        <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="text-nowrap">Alt-Svc</td>
+                                                    <td class="text-wrap">h3&#x3D;&quot;:443&quot;; ma&#x3D;2592000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Length</td>
+                                                    <td class="text-wrap">821</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Type</td>
+                                                    <td class="text-wrap">application/json</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Date</td>
+                                                    <td class="text-wrap">Sun, 06 Sep 2026 07:14:02 GMT</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Server</td>
+                                                    <td class="text-wrap">uvicorn</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">X-Request-Id</td>
+                                                    <td class="text-wrap">cc103aba-ce88-4602-aec9-272e6053e0d5</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Body</h5>
+                                        <div class="dyn-height">
+                                                <pre><code id="copyText-0afdd190-0634-4bc3-9e85-0ddbf419a420" class="prettyPrint">{&quot;total&quot;:2,&quot;items&quot;:[{&quot;id_umbral_ambiental&quot;:12,&quot;id_especie&quot;:5,&quot;id_variable_ambiental&quot;:1,&quot;unidad_medida&quot;:&quot;°C&quot;,&quot;valor_min&quot;:&quot;0.00&quot;,&quot;valor_max&quot;:&quot;100.00&quot;,&quot;es_activo&quot;:true,&quot;fecha_actualizacion&quot;:null,&quot;niveles&quot;:[{&quot;nivel&quot;:&quot;normal&quot;,&quot;limite_inferior&quot;:&quot;24.00&quot;,&quot;limite_superior&quot;:&quot;30.00&quot;},{&quot;nivel&quot;:&quot;precaucion&quot;,&quot;limite_inferior&quot;:&quot;20.00&quot;,&quot;limite_superior&quot;:&quot;24.00&quot;},{&quot;nivel&quot;:&quot;critico&quot;,&quot;limite_inferior&quot;:&quot;0.00&quot;,&quot;limite_superior&quot;:&quot;20.00&quot;}]},{&quot;id_umbral_ambiental&quot;:13,&quot;id_especie&quot;:5,&quot;id_variable_ambiental&quot;:2,&quot;unidad_medida&quot;:&quot;pH&quot;,&quot;valor_min&quot;:&quot;0.00&quot;,&quot;valor_max&quot;:&quot;100.00&quot;,&quot;es_activo&quot;:true,&quot;fecha_actualizacion&quot;:null,&quot;niveles&quot;:[{&quot;nivel&quot;:&quot;normal&quot;,&quot;limite_inferior&quot;:&quot;6.00&quot;,&quot;limite_superior&quot;:&quot;9.00&quot;},{&quot;nivel&quot;:&quot;precaucion&quot;,&quot;limite_inferior&quot;:&quot;5.00&quot;,&quot;limite_superior&quot;:&quot;6.00&quot;},{&quot;nivel&quot;:&quot;critico&quot;,&quot;limite_inferior&quot;:&quot;0.00&quot;,&quot;limite_superior&quot;:&quot;5.00&quot;}]}]}</code></pre>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button class="btn btn-outline-secondary btn-sm copyButton" type="button" data-clipboard-action="copy" data-clipboard-target="#copyText-0afdd190-0634-4bc3-9e85-0ddbf419a420">Copy to Clipboard</button>
+                                        </div>
+                                </div>
+                            </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                <h5 class="card-title text-uppercase text-white text-center bg-info">Test Information</h5>
+                                    <div class="table-responsive text-nowrap">
+                                        <table class="datatable table table-hover">
+                                        <thead><tr class="text-center"><th>Name</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr></thead>
+                                            <tbody>
+                                                <tr >
+                                                    <td >Umbrales activos especie 5 responde 200</td>
+                                                    <td class="text-center bg-success">1</td>
+                                                    <td class="text-center ">0</td>
+                                                    <td class="text-center ">0</td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="bg-light">
+                                                    <td><strong>Total</strong></td>
+                                                    <td class="text-center">1</td>
+                                                    <td class="text-center">0</td>
+                                                    <td class="text-center">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div class="row d-none">
+                                    <div class="col-sm-12 mb-3">
+                                        <div class="card-deck">
+                                        <div class="card border-danger" style="width: 50rem;">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-uppercase text-white text-center bg-danger">Test Failure</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                    <thead><tr class="text-nowrap"><th>Test Name</th><th>Assertion Error</th></tr></thead>
+                                                        <tbody>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div id="folder-dc1f96cd-3b5b-424a-a967-da57a83e7cd1" class="card-deck iteration-0">
+            <div class="row iteration-0">
+                <div class="col-sm-12 mb-3 iteration-0">
+                <div class="card iteration-0">
+                    <div class="card-header  bg-success iteration-0">
+                        <a data-toggle="collapse" href="#" data-target="#collapse-dc1f96cd-3b5b-424a-a967-da57a83e7cd1" aria-expanded="false" aria-controls="collapse" id="requests-dc1f96cd-3b5b-424a-a967-da57a83e7cd1" class="collapsed text-white z-block">
+                    Iteration: 1 - Umbrales activos especie 10 <i class="float-lg-right fa fa-chevron-down" style="padding-top: 5px;"></i>
+                </a>
+                    </div>
+                    <div id="collapse-dc1f96cd-3b5b-424a-a967-da57a83e7cd1" class="collapse" aria-labelledby="requests-dc1f96cd-3b5b-424a-a967-da57a83e7cd1">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Request Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request Method:</strong> <span class="badge-outline-success badge badge-success"> GET</span><br>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request URL:</strong> <a href="https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/umbrales?id_especie&#x3D;10&amp;solo_activas&#x3D;true" target="_blank">https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/umbrales?id_especie&#x3D;10&amp;solo_activas&#x3D;true</a><br>
+                                    </div>
+                                </div>
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Response Code:</strong> <span class="float-right badge-outline badge badge-success"> 200 - OK</span><br>
+                                    <span><i class="fas fa-stopwatch"></i></span><strong> Mean time per request:</strong> <span class="float-right badge-outline badge badge-success"> 120ms</span><br>
+                                    <span><i class="fas fa-database"></i></span><strong> Mean size per request:</strong> <span class="float-right badge-outline badge badge-success"> 22B</span><br>
+                                    <hr>
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Test Pass Percentage</h5>
+                                    <div>
+                                        <div class="progress" style="height: 40px;">
+                                            <div class="progress-bar  bg-success" style="width: 100%" role="progressbar">
+                                            <h5 style="padding-top:5px;"><strong>100 %</strong></h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-uppercase text-white text-center bg-info">Request Headers</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                            <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED_HEADER]</td>
+                                                        <td class="text-wrap">[REDACTED_HEADER]</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">User-Agent</td>
+                                                        <td class="text-wrap">PostmanRuntime/7.39.1</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept</td>
+                                                        <td class="text-wrap">*/*</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Cache-Control</td>
+                                                        <td class="text-wrap">no-cache</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Postman-Token</td>
+                                                        <td class="text-wrap">417e0973-7986-4cee-b58a-6b2e12a3dad4</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Host</td>
+                                                        <td class="text-wrap">sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept-Encoding</td>
+                                                        <td class="text-wrap">gzip, deflate, br</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Connection</td>
+                                                        <td class="text-wrap">keep-alive</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED]</td>
+                                                        <td class="text-wrap">[REDACTED]&#x3D;XNcOfYaLQUPtlxn9fNPQppJkBa1muB3pOZxl3_mT2b8</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Headers</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                        <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="text-nowrap">Alt-Svc</td>
+                                                    <td class="text-wrap">h3&#x3D;&quot;:443&quot;; ma&#x3D;2592000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Length</td>
+                                                    <td class="text-wrap">22</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Type</td>
+                                                    <td class="text-wrap">application/json</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Date</td>
+                                                    <td class="text-wrap">Sun, 06 Sep 2026 07:14:02 GMT</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Server</td>
+                                                    <td class="text-wrap">uvicorn</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">X-Request-Id</td>
+                                                    <td class="text-wrap">43f5804f-882e-4ca2-b5f4-b4ad28707b2d</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Body</h5>
+                                        <div class="dyn-height">
+                                                <pre><code id="copyText-af422f18-01a1-4f05-bbf2-6b658c507a64" class="prettyPrint">{&quot;total&quot;:0,&quot;items&quot;:[]}</code></pre>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button class="btn btn-outline-secondary btn-sm copyButton" type="button" data-clipboard-action="copy" data-clipboard-target="#copyText-af422f18-01a1-4f05-bbf2-6b658c507a64">Copy to Clipboard</button>
+                                        </div>
+                                </div>
+                            </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                <h5 class="card-title text-uppercase text-white text-center bg-info">Test Information</h5>
+                                    <div class="table-responsive text-nowrap">
+                                        <table class="datatable table table-hover">
+                                        <thead><tr class="text-center"><th>Name</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr></thead>
+                                            <tbody>
+                                                <tr >
+                                                    <td >Umbrales activos especie 10 responde 200</td>
+                                                    <td class="text-center bg-success">1</td>
+                                                    <td class="text-center ">0</td>
+                                                    <td class="text-center ">0</td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="bg-light">
+                                                    <td><strong>Total</strong></td>
+                                                    <td class="text-center">1</td>
+                                                    <td class="text-center">0</td>
+                                                    <td class="text-center">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div class="row d-none">
+                                    <div class="col-sm-12 mb-3">
+                                        <div class="card-deck">
+                                        <div class="card border-danger" style="width: 50rem;">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-uppercase text-white text-center bg-danger">Test Failure</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                    <thead><tr class="text-nowrap"><th>Test Name</th><th>Assertion Error</th></tr></thead>
+                                                        <tbody>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div id="folder-3d580a81-77d2-457b-adc2-9331266c882e" class="card-deck iteration-0">
+            <div class="row iteration-0">
+                <div class="col-sm-12 mb-3 iteration-0">
+                <div class="card iteration-0">
+                    <div class="card-header  bg-success iteration-0">
+                        <a data-toggle="collapse" href="#" data-target="#collapse-3d580a81-77d2-457b-adc2-9331266c882e" aria-expanded="false" aria-controls="collapse" id="requests-3d580a81-77d2-457b-adc2-9331266c882e" class="collapsed text-white z-block">
+                    Iteration: 1 - Umbrales activos especie 2 <i class="float-lg-right fa fa-chevron-down" style="padding-top: 5px;"></i>
+                </a>
+                    </div>
+                    <div id="collapse-3d580a81-77d2-457b-adc2-9331266c882e" class="collapse" aria-labelledby="requests-3d580a81-77d2-457b-adc2-9331266c882e">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Request Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request Method:</strong> <span class="badge-outline-success badge badge-success"> GET</span><br>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request URL:</strong> <a href="https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/umbrales?id_especie&#x3D;2&amp;solo_activas&#x3D;true" target="_blank">https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/umbrales?id_especie&#x3D;2&amp;solo_activas&#x3D;true</a><br>
+                                    </div>
+                                </div>
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Response Code:</strong> <span class="float-right badge-outline badge badge-success"> 200 - OK</span><br>
+                                    <span><i class="fas fa-stopwatch"></i></span><strong> Mean time per request:</strong> <span class="float-right badge-outline badge badge-success"> 121ms</span><br>
+                                    <span><i class="fas fa-database"></i></span><strong> Mean size per request:</strong> <span class="float-right badge-outline badge badge-success"> 1.19KB</span><br>
+                                    <hr>
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Test Pass Percentage</h5>
+                                    <div>
+                                        <div class="progress" style="height: 40px;">
+                                            <div class="progress-bar  bg-success" style="width: 100%" role="progressbar">
+                                            <h5 style="padding-top:5px;"><strong>100 %</strong></h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-uppercase text-white text-center bg-info">Request Headers</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                            <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED_HEADER]</td>
+                                                        <td class="text-wrap">[REDACTED_HEADER]</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">User-Agent</td>
+                                                        <td class="text-wrap">PostmanRuntime/7.39.1</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept</td>
+                                                        <td class="text-wrap">*/*</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Cache-Control</td>
+                                                        <td class="text-wrap">no-cache</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Postman-Token</td>
+                                                        <td class="text-wrap">e70794aa-56b3-411a-9e67-1f7f3add1e06</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Host</td>
+                                                        <td class="text-wrap">sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept-Encoding</td>
+                                                        <td class="text-wrap">gzip, deflate, br</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Connection</td>
+                                                        <td class="text-wrap">keep-alive</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED]</td>
+                                                        <td class="text-wrap">[REDACTED]&#x3D;XNcOfYaLQUPtlxn9fNPQppJkBa1muB3pOZxl3_mT2b8</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Headers</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                        <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="text-nowrap">Alt-Svc</td>
+                                                    <td class="text-wrap">h3&#x3D;&quot;:443&quot;; ma&#x3D;2592000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Length</td>
+                                                    <td class="text-wrap">1218</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Type</td>
+                                                    <td class="text-wrap">application/json</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Date</td>
+                                                    <td class="text-wrap">Sun, 06 Sep 2026 07:14:02 GMT</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Server</td>
+                                                    <td class="text-wrap">uvicorn</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">X-Request-Id</td>
+                                                    <td class="text-wrap">437f925d-b8e1-4005-8687-5856b5702cbb</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Body</h5>
+                                        <div class="dyn-height">
+                                                <pre><code id="copyText-05d7d928-fccf-4d13-b430-fd30ca8e2872" class="prettyPrint">{&quot;total&quot;:3,&quot;items&quot;:[{&quot;id_umbral_ambiental&quot;:4,&quot;id_especie&quot;:2,&quot;id_variable_ambiental&quot;:1,&quot;unidad_medida&quot;:&quot;°C&quot;,&quot;valor_min&quot;:&quot;0.00&quot;,&quot;valor_max&quot;:&quot;100.00&quot;,&quot;es_activo&quot;:true,&quot;fecha_actualizacion&quot;:null,&quot;niveles&quot;:[{&quot;nivel&quot;:&quot;normal&quot;,&quot;limite_inferior&quot;:&quot;12.00&quot;,&quot;limite_superior&quot;:&quot;18.00&quot;},{&quot;nivel&quot;:&quot;precaucion&quot;,&quot;limite_inferior&quot;:&quot;8.00&quot;,&quot;limite_superior&quot;:&quot;12.00&quot;},{&quot;nivel&quot;:&quot;critico&quot;,&quot;limite_inferior&quot;:&quot;18.00&quot;,&quot;limite_superior&quot;:&quot;25.00&quot;}]},{&quot;id_umbral_ambiental&quot;:5,&quot;id_especie&quot;:2,&quot;id_variable_ambiental&quot;:2,&quot;unidad_medida&quot;:&quot;pH&quot;,&quot;valor_min&quot;:&quot;0.00&quot;,&quot;valor_max&quot;:&quot;100.00&quot;,&quot;es_activo&quot;:true,&quot;fecha_actualizacion&quot;:null,&quot;niveles&quot;:[{&quot;nivel&quot;:&quot;normal&quot;,&quot;limite_inferior&quot;:&quot;6.00&quot;,&quot;limite_superior&quot;:&quot;8.00&quot;},{&quot;nivel&quot;:&quot;precaucion&quot;,&quot;limite_inferior&quot;:&quot;5.00&quot;,&quot;limite_superior&quot;:&quot;6.00&quot;},{&quot;nivel&quot;:&quot;critico&quot;,&quot;limite_inferior&quot;:&quot;0.00&quot;,&quot;limite_superior&quot;:&quot;5.00&quot;}]},{&quot;id_umbral_ambiental&quot;:6,&quot;id_especie&quot;:2,&quot;id_variable_ambiental&quot;:3,&quot;unidad_medida&quot;:&quot;mg/L&quot;,&quot;valor_min&quot;:&quot;0.00&quot;,&quot;valor_max&quot;:&quot;100.00&quot;,&quot;es_activo&quot;:true,&quot;fecha_actualizacion&quot;:null,&quot;niveles&quot;:[{&quot;nivel&quot;:&quot;normal&quot;,&quot;limite_inferior&quot;:&quot;8.00&quot;,&quot;limite_superior&quot;:&quot;14.00&quot;},{&quot;nivel&quot;:&quot;precaucion&quot;,&quot;limite_inferior&quot;:&quot;6.00&quot;,&quot;limite_superior&quot;:&quot;8.00&quot;},{&quot;nivel&quot;:&quot;critico&quot;,&quot;limite_inferior&quot;:&quot;0.00&quot;,&quot;limite_superior&quot;:&quot;6.00&quot;}]}]}</code></pre>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button class="btn btn-outline-secondary btn-sm copyButton" type="button" data-clipboard-action="copy" data-clipboard-target="#copyText-05d7d928-fccf-4d13-b430-fd30ca8e2872">Copy to Clipboard</button>
+                                        </div>
+                                </div>
+                            </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                <h5 class="card-title text-uppercase text-white text-center bg-info">Test Information</h5>
+                                    <div class="table-responsive text-nowrap">
+                                        <table class="datatable table table-hover">
+                                        <thead><tr class="text-center"><th>Name</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr></thead>
+                                            <tbody>
+                                                <tr >
+                                                    <td >Umbrales activos especie 2 responde 200</td>
+                                                    <td class="text-center bg-success">1</td>
+                                                    <td class="text-center ">0</td>
+                                                    <td class="text-center ">0</td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="bg-light">
+                                                    <td><strong>Total</strong></td>
+                                                    <td class="text-center">1</td>
+                                                    <td class="text-center">0</td>
+                                                    <td class="text-center">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div class="row d-none">
+                                    <div class="col-sm-12 mb-3">
+                                        <div class="card-deck">
+                                        <div class="card border-danger" style="width: 50rem;">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-uppercase text-white text-center bg-danger">Test Failure</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                    <thead><tr class="text-nowrap"><th>Test Name</th><th>Assertion Error</th></tr></thead>
+                                                        <tbody>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div id="folder-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0" class="card-deck iteration-0">
+            <div class="row iteration-0">
+                <div class="col-sm-12 mb-3 iteration-0">
+                <div class="card iteration-0">
+                    <div class="card-header  bg-success iteration-0">
+                        <a data-toggle="collapse" href="#" data-target="#collapse-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0" aria-expanded="false" aria-controls="collapse" id="requests-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0" class="collapsed text-white z-block">
+                    Iteration: 1 - Dashboard de monitoreo <i class="float-lg-right fa fa-chevron-down" style="padding-top: 5px;"></i>
+                </a>
+                    </div>
+                    <div id="collapse-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0" class="collapse" aria-labelledby="requests-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Request Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request Method:</strong> <span class="badge-outline-success badge badge-success"> GET</span><br>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Request URL:</strong> <a href="https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/iot/monitoreo/dashboard?pagina&#x3D;1&amp;por_pagina&#x3D;50" target="_blank">https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/iot/monitoreo/dashboard?pagina&#x3D;1&amp;por_pagina&#x3D;50</a><br>
+                                    </div>
+                                </div>
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Information</h5>
+                                    <span><i class="fas fa-info-circle"></i></span><strong> Response Code:</strong> <span class="float-right badge-outline badge badge-success"> 200 - OK</span><br>
+                                    <span><i class="fas fa-stopwatch"></i></span><strong> Mean time per request:</strong> <span class="float-right badge-outline badge badge-success"> 140ms</span><br>
+                                    <span><i class="fas fa-database"></i></span><strong> Mean size per request:</strong> <span class="float-right badge-outline badge badge-success"> 3.98KB</span><br>
+                                    <hr>
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Test Pass Percentage</h5>
+                                    <div>
+                                        <div class="progress" style="height: 40px;">
+                                            <div class="progress-bar  bg-success" style="width: 100%" role="progressbar">
+                                            <h5 style="padding-top:5px;"><strong>100 %</strong></h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 mb-3">
+                                <div class="card-deck">
+                                <div class="card border-info" style="width: 50rem;">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-uppercase text-white text-center bg-info">Request Headers</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                            <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED_HEADER]</td>
+                                                        <td class="text-wrap">[REDACTED_HEADER]</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">User-Agent</td>
+                                                        <td class="text-wrap">PostmanRuntime/7.39.1</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept</td>
+                                                        <td class="text-wrap">*/*</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Cache-Control</td>
+                                                        <td class="text-wrap">no-cache</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Postman-Token</td>
+                                                        <td class="text-wrap">3e4e474b-18a3-4b87-a88a-36a4b1eb2d0f</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Host</td>
+                                                        <td class="text-wrap">sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Accept-Encoding</td>
+                                                        <td class="text-wrap">gzip, deflate, br</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">Connection</td>
+                                                        <td class="text-wrap">keep-alive</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-nowrap">[REDACTED]</td>
+                                                        <td class="text-wrap">[REDACTED]&#x3D;XNcOfYaLQUPtlxn9fNPQppJkBa1muB3pOZxl3_mT2b8</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Headers</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                        <thead class="thead-light text-center"><tr><th>Header Name</th><th>Header Value</th></tr></thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="text-nowrap">Alt-Svc</td>
+                                                    <td class="text-wrap">h3&#x3D;&quot;:443&quot;; ma&#x3D;2592000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Length</td>
+                                                    <td class="text-wrap">4079</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Content-Type</td>
+                                                    <td class="text-wrap">application/json</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Date</td>
+                                                    <td class="text-wrap">Sun, 06 Sep 2026 07:14:02 GMT</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">Server</td>
+                                                    <td class="text-wrap">uvicorn</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-nowrap">X-Request-Id</td>
+                                                    <td class="text-wrap">f33b1537-c118-4bd9-a703-6ae1158c07f1</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-sm-12 mb-3">
+                            <div class="card-deck">
+                            <div class="card border-info" style="width: 50rem;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-uppercase text-white text-center bg-info">Response Body</h5>
+                                        <div class="dyn-height">
+                                                <pre><code id="copyText-46b81513-f602-4e07-b23d-2b622e9575d8" class="prettyPrint">{&quot;total&quot;:5,&quot;pagina&quot;:1,&quot;por_pagina&quot;:50,&quot;resumen_unidades&quot;:[{&quot;id_infraestructura&quot;:1,&quot;nombre_infraestructura&quot;:&quot;Estanque-01&quot;,&quot;id_finca&quot;:1,&quot;nombre_finca&quot;:&quot;Finca Acuícola El Remanso&quot;,&quot;total_sensores&quot;:3,&quot;sensores_online&quot;:0,&quot;sensores_sin_senal&quot;:3,&quot;sensores_con_error&quot;:0,&quot;estado_general&quot;:&quot;GRIS&quot;,&quot;alertas_activas_count&quot;:0,&quot;ultimo_dato_recibido&quot;:&quot;2026-09-06T01:40:17.091000Z&quot;},{&quot;id_infraestructura&quot;:2,&quot;nombre_infraestructura&quot;:&quot;Estanque-02&quot;,&quot;id_finca&quot;:1,&quot;nombre_finca&quot;:&quot;Finca Acuícola El Remanso&quot;,&quot;total_sensores&quot;:2,&quot;sensores_online&quot;:0,&quot;sensores_sin_senal&quot;:2,&quot;sensores_con_error&quot;:0,&quot;estado_general&quot;:&quot;GRIS&quot;,&quot;alertas_activas_count&quot;:0,&quot;ultimo_dato_recibido&quot;:&quot;2024-06-01T08:20:00Z&quot;}],&quot;sensores&quot;:[{&quot;id_sensor&quot;:1,&quot;id_dispositivo_iot&quot;:1,&quot;nombre_sensor&quot;:&quot;Sensor temperatura estanque-01&quot;,&quot;tipo_variable&quot;:&quot;Temperatura del agua&quot;,&quot;categoria_variable&quot;:&quot;ANIMAL&quot;,&quot;ultimo_valor&quot;:&quot;48.5000&quot;,&quot;ultima_unidad&quot;:&quot;mg/L&quot;,&quot;ultimo_timestamp_captura&quot;:&quot;2026-05-12T10:00:00Z&quot;,&quot;estado_semaforo&quot;:&quot;GRIS&quot;,&quot;estado_calidad&quot;:&quot;LECTURA_VALIDA&quot;,&quot;estado_desviacion&quot;:null,&quot;estado_conectividad&quot;:&quot;SIN_SEÑAL&quot;,&quot;tiempo_sin_reporte_min&quot;:0,&quot;dato_desactualizado&quot;:true,&quot;id_alerta&quot;:null,&quot;severidad_alerta&quot;:null,&quot;tendencia&quot;:null,&quot;id_infraestructura&quot;:1,&quot;nombre_infraestructura&quot;:&quot;Estanque-01&quot;,&quot;id_finca&quot;:1,&quot;nombre_finca&quot;:&quot;Finca Acuícola El Remanso&quot;,&quot;nivel_bateria_pct&quot;:null,&quot;calidad_senal_rssi&quot;:null,&quot;calidad_senal_snr&quot;:null},{&quot;id_sensor&quot;:2,&quot;id_dispositivo_iot&quot;:1,&quot;nombre_sensor&quot;:&quot;Sensor pH estanque-01&quot;,&quot;tipo_variable&quot;:&quot;pH del agua&quot;,&quot;categoria_variable&quot;:&quot;HIDRICA&quot;,&quot;ultimo_valor&quot;:&quot;62.1000&quot;,&quot;ultima_unidad&quot;:&quot;%&quot;,&quot;ultimo_timestamp_captura&quot;:&quot;2024-06-01T08:05:00Z&quot;,&quot;estado_semaforo&quot;:&quot;GRIS&quot;,&quot;estado_calidad&quot;:&quot;LECTURA_VALIDA&quot;,&quot;estado_desviacion&quot;:null,&quot;estado_conectividad&quot;:&quot;SIN_SEÑAL&quot;,&quot;tiempo_sin_reporte_min&quot;:0,&quot;dato_desactualizado&quot;:true,&quot;id_alerta&quot;:null,&quot;severidad_alerta&quot;:null,&quot;tendencia&quot;:null,&quot;id_infraestructura&quot;:1,&quot;nombre_infraestructura&quot;:&quot;Estanque-01&quot;,&quot;id_finca&quot;:1,&quot;nombre_finca&quot;:&quot;Finca Acuícola El Remanso&quot;,&quot;nivel_bateria_pct&quot;:&quot;85.50&quot;,&quot;calidad_senal_rssi&quot;:&quot;-72.00&quot;,&quot;calidad_senal_snr&quot;:&quot;9.50&quot;},{&quot;id_sensor&quot;:3,&quot;id_dispositivo_iot&quot;:1,&quot;nombre_sensor&quot;:&quot;Sensor oxígeno disuelto estanque-01&quot;,&quot;tipo_variable&quot;:&quot;Oxígeno disuelto&quot;,&quot;categoria_variable&quot;:&quot;HIDRICA&quot;,&quot;ultimo_valor&quot;:&quot;16.5000&quot;,&quot;ultima_unidad&quot;:&quot;mg/L&quot;,&quot;ultimo_timestamp_captura&quot;:&quot;2026-09-06T01:40:17.091000Z&quot;,&quot;estado_semaforo&quot;:&quot;GRIS&quot;,&quot;estado_calidad&quot;:&quot;LECTURA_VALIDA&quot;,&quot;estado_desviacion&quot;:null,&quot;estado_conectividad&quot;:&quot;SIN_SEÑAL&quot;,&quot;tiempo_sin_reporte_min&quot;:0,&quot;dato_desactualizado&quot;:true,&quot;id_alerta&quot;:null,&quot;severidad_alerta&quot;:null,&quot;tendencia&quot;:null,&quot;id_infraestructura&quot;:1,&quot;nombre_infraestructura&quot;:&quot;Estanque-01&quot;,&quot;id_finca&quot;:1,&quot;nombre_finca&quot;:&quot;Finca Acuícola El Remanso&quot;,&quot;nivel_bateria_pct&quot;:null,&quot;calidad_senal_rssi&quot;:null,&quot;calidad_senal_snr&quot;:null},{&quot;id_sensor&quot;:4,&quot;id_dispositivo_iot&quot;:2,&quot;nombre_sensor&quot;:&quot;Sensor temperatura estanque-02&quot;,&quot;tipo_variable&quot;:&quot;Amoniaco total&quot;,&quot;categoria_variable&quot;:&quot;AMBIENTAL&quot;,&quot;ultimo_valor&quot;:&quot;1248.5000&quot;,&quot;ultima_unidad&quot;:&quot;ppm&quot;,&quot;ultimo_timestamp_captura&quot;:&quot;2024-06-01T08:15:00Z&quot;,&quot;estado_semaforo&quot;:&quot;GRIS&quot;,&quot;estado_calidad&quot;:&quot;LECTURA_VALIDA&quot;,&quot;estado_desviacion&quot;:null,&quot;estado_conectividad&quot;:&quot;INACTIVO&quot;,&quot;tiempo_sin_reporte_min&quot;:0,&quot;dato_desactualizado&quot;:true,&quot;id_alerta&quot;:null,&quot;severidad_alerta&quot;:null,&quot;tendencia&quot;:null,&quot;id_infraestructura&quot;:2,&quot;nombre_infraestructura&quot;:&quot;Estanque-02&quot;,&quot;id_finca&quot;:1,&quot;nombre_finca&quot;:&quot;Finca Acuícola El Remanso&quot;,&quot;nivel_bateria_pct&quot;:&quot;78.20&quot;,&quot;calidad_senal_rssi&quot;:&quot;-68.50&quot;,&quot;calidad_senal_snr&quot;:&quot;8.20&quot;},{&quot;id_sensor&quot;:5,&quot;id_dispositivo_iot&quot;:3,&quot;nombre_sensor&quot;:&quot;Sensor pH estanque-02&quot;,&quot;tipo_variable&quot;:&quot;Nitrito&quot;,&quot;categoria_variable&quot;:&quot;HIDRICA&quot;,&quot;ultimo_valor&quot;:&quot;18.4700&quot;,&quot;ultima_unidad&quot;:&quot;%&quot;,&quot;ultimo_timestamp_captura&quot;:&quot;2024-06-01T08:20:00Z&quot;,&quot;estado_semaforo&quot;:&quot;GRIS&quot;,&quot;estado_calidad&quot;:&quot;LECTURA_VALIDA&quot;,&quot;estado_desviacion&quot;:null,&quot;estado_conectividad&quot;:&quot;SIN_SEÑAL&quot;,&quot;tiempo_sin_reporte_min&quot;:0,&quot;dato_desactualizado&quot;:false,&quot;id_alerta&quot;:null,&quot;severidad_alerta&quot;:null,&quot;tendencia&quot;:null,&quot;id_infraestructura&quot;:2,&quot;nombre_infraestructura&quot;:&quot;Estanque-02&quot;,&quot;id_finca&quot;:1,&quot;nombre_finca&quot;:&quot;Finca Acuícola El Remanso&quot;,&quot;nivel_bateria_pct&quot;:&quot;22.30&quot;,&quot;calidad_senal_rssi&quot;:&quot;-85.00&quot;,&quot;calidad_senal_snr&quot;:&quot;5.10&quot;}]}</code></pre>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button class="btn btn-outline-secondary btn-sm copyButton" type="button" data-clipboard-action="copy" data-clipboard-target="#copyText-46b81513-f602-4e07-b23d-2b622e9575d8">Copy to Clipboard</button>
+                                        </div>
+                                </div>
+                            </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                <h5 class="card-title text-uppercase text-white text-center bg-info">Test Information</h5>
+                                    <div class="table-responsive text-nowrap">
+                                        <table class="datatable table table-hover">
+                                        <thead><tr class="text-center"><th>Name</th><th>Passed</th><th>Failed</th><th>Skipped</th></tr></thead>
+                                            <tbody>
+                                                <tr >
+                                                    <td >Dashboard responde 200</td>
+                                                    <td class="text-center bg-success">1</td>
+                                                    <td class="text-center ">0</td>
+                                                    <td class="text-center ">0</td>
+                                                </tr>
+                                                <tr >
+                                                    <td >No existe configuracion semaforica utilizable</td>
+                                                    <td class="text-center bg-success">1</td>
+                                                    <td class="text-center ">0</td>
+                                                    <td class="text-center ">0</td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="bg-light">
+                                                    <td><strong>Total</strong></td>
+                                                    <td class="text-center">2</td>
+                                                    <td class="text-center">0</td>
+                                                    <td class="text-center">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div class="row d-none">
+                                    <div class="col-sm-12 mb-3">
+                                        <div class="card-deck">
+                                        <div class="card border-danger" style="width: 50rem;">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-uppercase text-white text-center bg-danger">Test Failure</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                    <thead><tr class="text-nowrap"><th>Test Name</th><th>Assertion Error</th></tr></thead>
+                                                        <tbody>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.2.1/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/v/bs4/dt-1.10.18/datatables.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/remarkable/1.7.1/remarkable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<!-- Set slider initial position depending on the localstorage state -->
+
+<script>
+(function () {
+  var sliderChecked = true;
+  if (localStorage.getItem('theme') === 'theme-light') {
+    setTheme('theme-light');
+    sliderChecked = false;
+  } else {
+    setTheme('theme-dark');
+    sliderChecked = true;
+  }
+  $(document).ready( function () {
+    document.getElementById('slider').checked = sliderChecked;
+  });
+})();
+</script>
+
+<!-- Data Table Configuration -->
+
+<script>
+$(document).ready( function () {
+    $('.datatable').DataTable({
+        "retrieve": true,
+        "paging": false,
+        "info": false,
+        "fixedColumns":   {
+            "heightMatch": 'none'
+        }
+    });
+});
+</script>
+
+<!-- Tooltip Configuration -->
+
+<script>
+$(document).ready(function() {
+    $('[data-toggle="tooltip"]').tooltip({
+        trigger : 'hover'
+    })
+})
+</script>
+
+<!-- Show/Hide The Folders -->
+
+<script>
+$('#openAll').on('click', function(e) {
+let clickCount = $(this).data("clickCount") || 1
+switch (clickCount){
+    case 1:
+            $('#folder-tc-m09-g31-discovery-template-iteration-0').removeClass('collapsed')
+            $('#folder-collapse-tc-m09-g31-discovery-template-iteration-0').addClass('show')
+        $('#openAll').html("Collapse Folders");
+        break;
+    case 2:
+            $('#folder-tc-m09-g31-discovery-template-iteration-0').addClass('collapsed')
+            $('#folder-collapse-tc-m09-g31-discovery-template-iteration-0').removeClass('show')
+        $('#openAll').html("Expand Folders");
+        break;
+}
+clickCount = clickCount > 1 ? 1 : ++clickCount;
+$(this).data("clickCount", clickCount)
+})
+</script>
+
+<!-- Show/Hide The Requests -->
+
+<script>
+$('#openAllRequests').on('click', function(e) {
+let clickCount = $(this).data("clickCount") || 1
+switch (clickCount){
+    case 1:
+            $('#requests-7695e25e-b75e-4478-9bf2-9e829a197d96').removeClass('collapsed')
+            $('#collapse-7695e25e-b75e-4478-9bf2-9e829a197d96').removeClass('collapsed')
+            $('#requests-7695e25e-b75e-4478-9bf2-9e829a197d96').addClass('show')
+            $('#collapse-7695e25e-b75e-4478-9bf2-9e829a197d96').addClass('show')
+            $('#requests-35718de3-4cc1-4e32-957a-ae5a0df9081d').removeClass('collapsed')
+            $('#collapse-35718de3-4cc1-4e32-957a-ae5a0df9081d').removeClass('collapsed')
+            $('#requests-35718de3-4cc1-4e32-957a-ae5a0df9081d').addClass('show')
+            $('#collapse-35718de3-4cc1-4e32-957a-ae5a0df9081d').addClass('show')
+            $('#requests-d27fda42-bca2-4a35-8459-b491815cb3ef').removeClass('collapsed')
+            $('#collapse-d27fda42-bca2-4a35-8459-b491815cb3ef').removeClass('collapsed')
+            $('#requests-d27fda42-bca2-4a35-8459-b491815cb3ef').addClass('show')
+            $('#collapse-d27fda42-bca2-4a35-8459-b491815cb3ef').addClass('show')
+            $('#requests-85f4516b-fb55-482b-ad43-62aa42a3dec5').removeClass('collapsed')
+            $('#collapse-85f4516b-fb55-482b-ad43-62aa42a3dec5').removeClass('collapsed')
+            $('#requests-85f4516b-fb55-482b-ad43-62aa42a3dec5').addClass('show')
+            $('#collapse-85f4516b-fb55-482b-ad43-62aa42a3dec5').addClass('show')
+            $('#requests-83845cce-982b-4eb9-80a3-d9bad3dea541').removeClass('collapsed')
+            $('#collapse-83845cce-982b-4eb9-80a3-d9bad3dea541').removeClass('collapsed')
+            $('#requests-83845cce-982b-4eb9-80a3-d9bad3dea541').addClass('show')
+            $('#collapse-83845cce-982b-4eb9-80a3-d9bad3dea541').addClass('show')
+            $('#requests-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').removeClass('collapsed')
+            $('#collapse-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').removeClass('collapsed')
+            $('#requests-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').addClass('show')
+            $('#collapse-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').addClass('show')
+            $('#requests-3d580a81-77d2-457b-adc2-9331266c882e').removeClass('collapsed')
+            $('#collapse-3d580a81-77d2-457b-adc2-9331266c882e').removeClass('collapsed')
+            $('#requests-3d580a81-77d2-457b-adc2-9331266c882e').addClass('show')
+            $('#collapse-3d580a81-77d2-457b-adc2-9331266c882e').addClass('show')
+            $('#requests-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').removeClass('collapsed')
+            $('#collapse-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').removeClass('collapsed')
+            $('#requests-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').addClass('show')
+            $('#collapse-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').addClass('show')
+        $('#openAllRequests').html("Collapse Requests");
+        break;
+    case 2:
+            $('#requests-7695e25e-b75e-4478-9bf2-9e829a197d96').addClass('collapsed')
+            $('#collapse-7695e25e-b75e-4478-9bf2-9e829a197d96').addClass('collapsed')
+            $('#requests-7695e25e-b75e-4478-9bf2-9e829a197d96').removeClass('show')
+            $('#collapse-7695e25e-b75e-4478-9bf2-9e829a197d96').removeClass('show')
+            $('#requests-35718de3-4cc1-4e32-957a-ae5a0df9081d').addClass('collapsed')
+            $('#collapse-35718de3-4cc1-4e32-957a-ae5a0df9081d').addClass('collapsed')
+            $('#requests-35718de3-4cc1-4e32-957a-ae5a0df9081d').removeClass('show')
+            $('#collapse-35718de3-4cc1-4e32-957a-ae5a0df9081d').removeClass('show')
+            $('#requests-d27fda42-bca2-4a35-8459-b491815cb3ef').addClass('collapsed')
+            $('#collapse-d27fda42-bca2-4a35-8459-b491815cb3ef').addClass('collapsed')
+            $('#requests-d27fda42-bca2-4a35-8459-b491815cb3ef').removeClass('show')
+            $('#collapse-d27fda42-bca2-4a35-8459-b491815cb3ef').removeClass('show')
+            $('#requests-85f4516b-fb55-482b-ad43-62aa42a3dec5').addClass('collapsed')
+            $('#collapse-85f4516b-fb55-482b-ad43-62aa42a3dec5').addClass('collapsed')
+            $('#requests-85f4516b-fb55-482b-ad43-62aa42a3dec5').removeClass('show')
+            $('#collapse-85f4516b-fb55-482b-ad43-62aa42a3dec5').removeClass('show')
+            $('#requests-83845cce-982b-4eb9-80a3-d9bad3dea541').addClass('collapsed')
+            $('#collapse-83845cce-982b-4eb9-80a3-d9bad3dea541').addClass('collapsed')
+            $('#requests-83845cce-982b-4eb9-80a3-d9bad3dea541').removeClass('show')
+            $('#collapse-83845cce-982b-4eb9-80a3-d9bad3dea541').removeClass('show')
+            $('#requests-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').addClass('collapsed')
+            $('#collapse-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').addClass('collapsed')
+            $('#requests-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').removeClass('show')
+            $('#collapse-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').removeClass('show')
+            $('#requests-3d580a81-77d2-457b-adc2-9331266c882e').addClass('collapsed')
+            $('#collapse-3d580a81-77d2-457b-adc2-9331266c882e').addClass('collapsed')
+            $('#requests-3d580a81-77d2-457b-adc2-9331266c882e').removeClass('show')
+            $('#collapse-3d580a81-77d2-457b-adc2-9331266c882e').removeClass('show')
+            $('#requests-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').addClass('collapsed')
+            $('#collapse-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').addClass('collapsed')
+            $('#requests-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').removeClass('show')
+            $('#collapse-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').removeClass('show')
+        $('#openAllRequests').html("Expand Requests");
+        break;
+}
+clickCount = clickCount > 1 ? 1 : ++clickCount;
+$(this).data("clickCount", clickCount)
+})
+</script>
+
+<!-- Show/Hide The Skipped Tests -->
+
+<script>
+$('#openAllSkipped').on('click', function(e) {
+let clickCount = $(this).data("clickCount") || 1
+switch (clickCount){
+    case 1:
+            $('#skipped-7695e25e-b75e-4478-9bf2-9e829a197d96').removeClass('collapsed')
+            $('#skipped-collapse-7695e25e-b75e-4478-9bf2-9e829a197d96').removeClass('collapsed')
+            $('#skipped-7695e25e-b75e-4478-9bf2-9e829a197d96').addClass('show')
+            $('#skipped-collapse-7695e25e-b75e-4478-9bf2-9e829a197d96').addClass('show')
+            $('#skipped-35718de3-4cc1-4e32-957a-ae5a0df9081d').removeClass('collapsed')
+            $('#skipped-collapse-35718de3-4cc1-4e32-957a-ae5a0df9081d').removeClass('collapsed')
+            $('#skipped-35718de3-4cc1-4e32-957a-ae5a0df9081d').addClass('show')
+            $('#skipped-collapse-35718de3-4cc1-4e32-957a-ae5a0df9081d').addClass('show')
+            $('#skipped-d27fda42-bca2-4a35-8459-b491815cb3ef').removeClass('collapsed')
+            $('#skipped-collapse-d27fda42-bca2-4a35-8459-b491815cb3ef').removeClass('collapsed')
+            $('#skipped-d27fda42-bca2-4a35-8459-b491815cb3ef').addClass('show')
+            $('#skipped-collapse-d27fda42-bca2-4a35-8459-b491815cb3ef').addClass('show')
+            $('#skipped-85f4516b-fb55-482b-ad43-62aa42a3dec5').removeClass('collapsed')
+            $('#skipped-collapse-85f4516b-fb55-482b-ad43-62aa42a3dec5').removeClass('collapsed')
+            $('#skipped-85f4516b-fb55-482b-ad43-62aa42a3dec5').addClass('show')
+            $('#skipped-collapse-85f4516b-fb55-482b-ad43-62aa42a3dec5').addClass('show')
+            $('#skipped-83845cce-982b-4eb9-80a3-d9bad3dea541').removeClass('collapsed')
+            $('#skipped-collapse-83845cce-982b-4eb9-80a3-d9bad3dea541').removeClass('collapsed')
+            $('#skipped-83845cce-982b-4eb9-80a3-d9bad3dea541').addClass('show')
+            $('#skipped-collapse-83845cce-982b-4eb9-80a3-d9bad3dea541').addClass('show')
+            $('#skipped-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').removeClass('collapsed')
+            $('#skipped-collapse-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').removeClass('collapsed')
+            $('#skipped-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').addClass('show')
+            $('#skipped-collapse-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').addClass('show')
+            $('#skipped-3d580a81-77d2-457b-adc2-9331266c882e').removeClass('collapsed')
+            $('#skipped-collapse-3d580a81-77d2-457b-adc2-9331266c882e').removeClass('collapsed')
+            $('#skipped-3d580a81-77d2-457b-adc2-9331266c882e').addClass('show')
+            $('#skipped-collapse-3d580a81-77d2-457b-adc2-9331266c882e').addClass('show')
+            $('#skipped-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').removeClass('collapsed')
+            $('#skipped-collapse-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').removeClass('collapsed')
+            $('#skipped-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').addClass('show')
+            $('#skipped-collapse-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').addClass('show')
+        $('#openAllSkipped').html("Collapse All Skipped Tests");
+        break;
+    case 2:
+            $('#skipped-7695e25e-b75e-4478-9bf2-9e829a197d96').addClass('collapsed')
+            $('#skipped-collapse-7695e25e-b75e-4478-9bf2-9e829a197d96').addClass('collapsed')
+            $('#skipped-7695e25e-b75e-4478-9bf2-9e829a197d96').removeClass('show')
+            $('#skipped-collapse-7695e25e-b75e-4478-9bf2-9e829a197d96').removeClass('show')
+            $('#skipped-35718de3-4cc1-4e32-957a-ae5a0df9081d').addClass('collapsed')
+            $('#skipped-collapse-35718de3-4cc1-4e32-957a-ae5a0df9081d').addClass('collapsed')
+            $('#skipped-35718de3-4cc1-4e32-957a-ae5a0df9081d').removeClass('show')
+            $('#skipped-collapse-35718de3-4cc1-4e32-957a-ae5a0df9081d').removeClass('show')
+            $('#skipped-d27fda42-bca2-4a35-8459-b491815cb3ef').addClass('collapsed')
+            $('#skipped-collapse-d27fda42-bca2-4a35-8459-b491815cb3ef').addClass('collapsed')
+            $('#skipped-d27fda42-bca2-4a35-8459-b491815cb3ef').removeClass('show')
+            $('#skipped-collapse-d27fda42-bca2-4a35-8459-b491815cb3ef').removeClass('show')
+            $('#skipped-85f4516b-fb55-482b-ad43-62aa42a3dec5').addClass('collapsed')
+            $('#skipped-collapse-85f4516b-fb55-482b-ad43-62aa42a3dec5').addClass('collapsed')
+            $('#skipped-85f4516b-fb55-482b-ad43-62aa42a3dec5').removeClass('show')
+            $('#skipped-collapse-85f4516b-fb55-482b-ad43-62aa42a3dec5').removeClass('show')
+            $('#skipped-83845cce-982b-4eb9-80a3-d9bad3dea541').addClass('collapsed')
+            $('#skipped-collapse-83845cce-982b-4eb9-80a3-d9bad3dea541').addClass('collapsed')
+            $('#skipped-83845cce-982b-4eb9-80a3-d9bad3dea541').removeClass('show')
+            $('#skipped-collapse-83845cce-982b-4eb9-80a3-d9bad3dea541').removeClass('show')
+            $('#skipped-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').addClass('collapsed')
+            $('#skipped-collapse-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').addClass('collapsed')
+            $('#skipped-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').removeClass('show')
+            $('#skipped-collapse-dc1f96cd-3b5b-424a-a967-da57a83e7cd1').removeClass('show')
+            $('#skipped-3d580a81-77d2-457b-adc2-9331266c882e').addClass('collapsed')
+            $('#skipped-collapse-3d580a81-77d2-457b-adc2-9331266c882e').addClass('collapsed')
+            $('#skipped-3d580a81-77d2-457b-adc2-9331266c882e').removeClass('show')
+            $('#skipped-collapse-3d580a81-77d2-457b-adc2-9331266c882e').removeClass('show')
+            $('#skipped-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').addClass('collapsed')
+            $('#skipped-collapse-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').addClass('collapsed')
+            $('#skipped-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').removeClass('show')
+            $('#skipped-collapse-271bc6a2-a6e6-4a02-a9b5-7d83e5b796b0').removeClass('show')
+        $('#openAllSkipped').html("Expand All Skipped Tests");
+        break;
+}
+clickCount = clickCount > 1 ? 1 : ++clickCount;
+$(this).data("clickCount", clickCount)
+})
+</script>
+
+<!-- Show/Hide The Failures -->
+
+<script>
+$('#openAllFailed').on('click', function(e) {
+let clickCount = $(this).data("clickCount") || 1
+let failedItemContent
+let failedItemHeading
+switch (clickCount){
+    case 1:
+        $('#openAllFailed').html("Collapse All Failed Tests");
+        break;
+    case 2:
+        $('#openAllFailed').html("Expand All Failed Tests");
+        break;
+}
+clickCount = clickCount > 1 ? 1 : ++clickCount;
+$(this).data("clickCount", clickCount)
+})
+</script>
+
+<!-- Pretty Print the Response Body-->
+
+<script>
+function isJSON(data)
+{
+    var ret = true;
+    try {
+            JSON.parse(data);
+    }catch(e) {
+            ret = false;
+    }
+    return ret;
+}
+
+function isXML(data)
+{
+    return (data.length > 0 && data[0] === '<');
+}
+
+// see https://gist.github.com/sente/1083506/d2834134cd070dbcc08bf42ee27dabb746a1c54d#gistcomment-2254622
+function formatXML(data) {
+    const PADDING = ' '.repeat(2); // set desired indent size here
+    const reg = /(>)(<)(\/*)/g;
+    let pad = 0;
+    xml = data.replace(reg, '$1\r\n$2$3');
+
+    return xml.split('\r\n').map((node, index) => {
+        let indent = 0;
+        if (node.match(/.+<\/\w[^>]*>$/)) {
+            indent = 0;
+        } else if (node.match(/^<\/\w/) && pad > 0) {
+            pad -= 1;
+        } else if (node.match(/^<\w[^>]*[^\/]>.*$/)) {
+            indent = 1;
+        } else {
+            indent = 0;
+        }
+
+        pad += indent;
+        return PADDING.repeat(pad - indent) + node;
+    }).join('\r\n');
+}
+
+$(".prettyPrint").each(function () {
+        var data = $(this).text();
+        // Verify whether data is JSON
+        if(isJSON(data))
+        {
+                obj = JSON.parse(data);
+                data = JSON.stringify(obj, null, 2);
+        }
+        else if(isXML(data)) {
+            data = formatXML(data);
+        }
+        $(this).text(data);
+});
+</script>
+
+
+<!-- Copy Response Body To Clipboard -->
+
+<script>
+    var clipboard = new ClipboardJS('.copyButton');
+
+    clipboard.on('success', function(e) {
+        e.clearSelection();
+        $(".copyButton").addClass("bg-success text-white")
+        e.trigger.textContent = '✔ Copied!';
+        window.setTimeout(function() {
+            $(".copyButton").removeClass("bg-success text-white")
+            e.trigger.textContent = 'Copy to Clipboard';
+        }, 2000);
+    });
+    clipboard.on('error', function(e) {
+        e.clearSelection();
+        $(".copyButton").addClass("bg-danger text-white")
+        e.trigger.textContent = '✗ Not Copied';
+        window.setTimeout(function() {
+            $(".copyButton").removeClass("bg-danger text-white")
+            e.trigger.textContent = 'Copy to Clipboard';
+        }, 2000);
+    });
+
+</script>
+
+<!-- Render the Description Markdown and link in the test failures -->
+
+<script>
+    const remarkable = new Remarkable();
+
+    const descriptions = document.querySelectorAll(".renderMarkdown");
+    descriptions.forEach(description => {
+        description.innerHTML = renderHtmlFromMarkdown(description.textContent);
+    });
+    function renderHtmlFromMarkdown(markdown) {
+        return remarkable.render(trim(markdown));
+    }
+    function trim(string) {
+        return string ? string.replace(/^ +| +$/gm, "") : string;
+    }
+</script>
+
+<!-- Show/Hide The Toggles When Scrolling The Page -->
+
+<script>
+window.onscroll = function() {scrollFunction()};
+
+function scrollFunction() {
+  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+    document.getElementById("topOfRequestsScreen").style.display = "block";
+    document.getElementById("topOfFailuresScreen").style.display = "block";
+    document.getElementById("topOfSkippedScreen").style.display = "block";
+    document.getElementById("openAll").style.display = "none";
+    document.getElementById("openAllRequests").style.display = "none";
+
+
+  } else {
+    document.getElementById("topOfRequestsScreen").style.display = "none";
+    document.getElementById("topOfFailuresScreen").style.display = "none";
+    document.getElementById("topOfSkippedScreen").style.display = "none";
+    document.getElementById("openAll").style.display = "block";
+    document.getElementById("openAllRequests").style.display = "block";
+
+  }
+}
+
+function topFunction() {
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+}
+</script>
+
+<!-- Creates The Iteration Tabs -->
+
+<script type="text/javascript">
+    "use strict";
+
+window.onload = function () {
+
+  // set display for all blocks of response
+  var allItems = document.querySelectorAll('[class*=iteration-]');
+  allItems.forEach(function(elem){
+    elem.style.display = 'block';
+  });
+
+   
+  let totalIterations = 1;
+   
+
+  let menu = document.querySelector('#execution-menu .nav');
+
+  for(var i = 0; i < totalIterations; i++)
+  {
+    let li = document.createElement('li');
+    li.appendChild(document.createTextNode((i + 1)));
+    li.setAttribute('id', 'iteration-' + i);
+    li.classList.add("custom-tab");
+    li.classList.add("itPassed");
+
+    li.addEventListener('click', function() {
+      //set display to none for all except row
+      let allItems = document.querySelectorAll('[class*=iteration-]:not(.row)');
+      allItems.forEach(function(elem) {
+        elem.style.display = 'none';
+      })
+
+      let allMenus = document.querySelectorAll('[id*=iteration-]');
+      allMenus.forEach(function(elem){
+        elem.style.borderBottom = 'none';
+      })
+
+      this.style.borderBottom = 'solid 3px #032a33';
+
+      let items = document.querySelectorAll("." + this.id + ':not(.row)');
+      items.forEach(function(elem) {
+        elem.style.display = elem.style.display == 'block' ? 'none' : 'block';
+      })
+    });
+    menu.appendChild(li);
+  }
+
+  //shows first tab data
+  document.getElementById('iteration-0').click();
+  document.getElementById('iterationSelected').innerHTML = `Iteration ${document.getElementById('iteration-0').innerHTML} selected`
+
+}
+</script>
+
+<!-- Create the Selected Iteration Label -->
+
+<script>
+$(document).ready(function(){
+    $(function() {
+        $("#iterationList li").click(function() {
+            document.getElementById('iterationSelected').innerHTML = "Iteration " + this.innerHTML + " selected"
+        });
+    });
+});
+</script>
+
+<!-- Filter Action for the Iterations -->
+
+<script>
+$("#filterInput").on("input paste", function() {
+    var value = $(this).val();
+    $("#iterationList li").filter(function() {
+	    $("#showOnlyFailures").data("clickCount") ? $("#showOnlyFailures").click():null;
+        $(this).toggle($(this).text().indexOf(value) > -1)
+    });
+});
+</script>
+
+<!-- Showing the Failed Interations -->
+
+<script>
+$('#showOnlyFailures').on('click', function(e) {
+    let clickCount = $(this).data("clickCount") || 1
+	$("#filterInput").val()!="" && clickCount==1 ? $("#filterInput").val('').trigger('input'): null;
+    let selectedIteration = $('#iterationList li').filter(function () {
+        return $(this).css('border-bottom').indexOf("solid") > -1 && $(this).hasClass('itFailed');
+    });
+    selectedIteration.length || clickCount > 1 ? null : $("#iterationList li.itFailed")[0].click()
+    $("#iterationList li.itPassed").toggle()
+    $("div.bg-success [id*=requests]").parents('[class^="row iteration-"]').toggle();
+    clickCount = clickCount > 1 ? 1 : ++clickCount;
+    clickCount > 1 ? $("#showOnlyFailures").html("Show All Iterations") : $("#showOnlyFailures").html("Show Failed Iterations");
+    $(this).data("clickCount", clickCount)
+})
+</script>
+</body>
+</html>
