@@ -1,3 +1,16 @@
+## [1.0.0-rc.15](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.14...v1.0.0-rc.15) (2026-09-07)
+
+### Bug Fixes
+
+* **auditoria:** filtro con Select y Enter, tabla scope y modal de integridad accesible ([b6ba750](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b6ba7504ed20d8a346002b3cb7389b3da224e87b))
+* **auth:** medidor de fortaleza compartido, selects etiquetados e i18n ([9cced7d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9cced7d880ff00f9baa5843c1b282e020830ec98))
+* **design-system:** contraste AA en tokens, foco visible y Select/PasswordStrength ([b3c62fb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b3c62fb45d1ff5b59104276862c522e746bb0bbe))
+* **perfil:** tipografia por tokens, botones del sistema y enmascarado unificado ([1e6ef09](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1e6ef098c3c36436cfb6249525e3b058e7673f22))
+* **roles:** tabla y matriz con scope, modales accesibles e i18n ([f9a3913](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f9a3913fbc98a7310eefb5892af58e08fbf9b888))
+* **sesiones:** intentar refresh silencioso ante cualquier 401 antes de redirigir ([1110c0d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1110c0d56df60f86ece9ef50dca9ba3f0628c376))
+* **shell:** drawer movil por encima de la AppBar, Escape y velo por token ([d7a1124](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d7a112454d67f1b105d6e73193c50916bc6c921a))
+* **usuarios:** tablas accesibles, modales con Esc/foco y enmascarado corregido ([67f3515](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/67f3515f6712762bfef71ae6a12c73477416889a))
+
 ## [1.0.0-rc.14](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.13...v1.0.0-rc.14) (2026-09-06)
 
 ### Bug Fixes
