@@ -53,9 +53,26 @@
 
 .ds-btn:disabled,
 .ds-btn--loading {
-  opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* QA TC-DIS-15: deshabilitado sin opacity (rompe contraste). Colores
+   explicitos con ratio >= 4.5:1 sobre las superficies del tema activo. */
+.ds-btn:disabled,
+.ds-btn--loading {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  border-color: var(--surface-border);
+}
+
+.ds-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.ds-btn--primary:focus-visible {
+  outline-color: var(--brand-600);
 }
 
 .ds-btn__spinner {

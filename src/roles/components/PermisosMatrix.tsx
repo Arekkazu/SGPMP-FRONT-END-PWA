@@ -27,15 +27,15 @@ export function PermisosMatrix({ recursos, acciones, permisos, onChange, readonl
 
   return (
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
-            <th style={{ padding: 'var(--s2) var(--s3)', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)', minWidth: 160 }}>{t('permisosmatrix.recurso')}</th>
+            <th scope="col" style={{ padding: 'var(--s2) var(--s3)', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)', minWidth: 160 }}>{t('permisosmatrix.recurso')}</th>
             {acciones.map((a) => (
-              <th key={a.id_accion} style={{ padding: 'var(--s2) var(--s3)', textAlign: 'center', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+              <th key={a.id_accion} scope="col" style={{ padding: 'var(--s2) var(--s3)', textAlign: 'center', fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                 {a.codigo}
                 {a.descripcion && (
-                  <span style={{ display: 'block', fontSize: '10px', fontWeight: 400, color: 'var(--text-muted)' }}>{a.descripcion}</span>
+                  <span style={{ display: 'block', fontSize: 'var(--fs-label-sm)', fontWeight: 400, color: 'var(--text-secondary)' }}>{a.descripcion}</span>
                 )}
               </th>
             ))}
@@ -47,7 +47,7 @@ export function PermisosMatrix({ recursos, acciones, permisos, onChange, readonl
               <td style={{ padding: 'var(--s2) var(--s3)', color: 'var(--text-primary)', fontWeight: 500 }}>
                 {r.nombre_recurso}
                 {r.descripcion && (
-                  <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>{r.descripcion}</span>
+                  <span style={{ display: 'block', fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)', fontWeight: 400 }}>{r.descripcion}</span>
                 )}
               </td>
               {acciones.map((a) => {

@@ -6,6 +6,7 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { RolesTable } from '../components/RolesTable';
 import { RolModal } from '../components/RolModal';
+import { ConfirmarEliminarRolModal } from '../components/ConfirmarEliminarRolModal';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
@@ -97,7 +98,7 @@ export function RolesPage() {
       <Alert
         variant="warning"
         title={t('rolespage.modulo_de_seguridad_critica')}
-        description="Los cambios de roles afectan a todos los usuarios asignados. Toda modificación queda registrada en el registro de auditoría. Los roles con usuarios asignados no pueden eliminarse; primero reasigna a los usuarios."
+        description={t('rolespage.los_cambios_de_roles_afectan_a_todos_los')}
         style={{ marginBottom: 'var(--s5)' }}
       />
 
@@ -161,31 +162,13 @@ export function RolesPage() {
 
       {/* Modal confirmar eliminar */}
       {modal.tipo === 'confirmar-eliminar' && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="eliminar-rol-title"
-          style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(0,0,0,0.45)',
-            backdropFilter: 'blur(3px)',
-            padding: 'var(--s4)',
-          }}
-          onClick={(e) => { if (e.target === e.currentTarget) setModal({ tipo: 'ninguno' }); }}
-        >
-          <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', maxWidth: 400, width: '100%', boxShadow: 'var(--shadow-lg)' }}>
-            <h2 id="eliminar-rol-title" style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 'var(--s3)', color: 'var(--text-primary)' }}>{t('rolespage.eliminar_rol')}</h2>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>{t('rolespage.confirmas_que_deseas_eliminar_el_rol')}<strong>{modal.rol.nombre_rol}</strong>{t('rolespage.esta_accion_no_se_puede_deshacer')}</p>
-            {error && (
-              <Alert variant="error" title={t('rolespage.no_se_pudo_eliminar_el_rol')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
-            )}
-            <div style={{ display: 'flex', gap: 'var(--s3)', justifyContent: 'flex-end' }}>
-              <Button variant="secondary" size="md" onClick={() => setModal({ tipo: 'ninguno' })}>{t('rolespage.cancelar')}</Button>
-              <Button variant="danger" size="md" loading={eliminando} onClick={() => handleEliminar(modal.rol)}>{t('rolespage.eliminar')}</Button>
-            </div>
-          </div>
-        </div>
+        <ConfirmarEliminarRolModal
+          rol={modal.rol}
+          eliminando={eliminando}
+          error={error}
+          onCancelar={() => setModal({ tipo: 'ninguno' })}
+          onConfirmar={() => handleEliminar(modal.rol)}
+        />
       )}
     </div>
   );

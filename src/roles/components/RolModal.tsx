@@ -6,6 +6,7 @@ import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { PermisosMatrix } from './PermisosMatrix';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 import type { RolConPermisosResponse, RecursoResponse, AccionResponse, PermisoResponse, CrearRolDTO, EditarRolDTO } from '../types';
 
 interface Props {
@@ -28,6 +29,7 @@ interface FormFields {
 
 export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave, onAsignarPermiso, onRetirarPermiso, onClose }: Props) {
   const { t } = useT('roles');
+  const panelRef = useModalA11y(onClose);
   const [permisos, setPermisos] = useState<PermisoResponse[]>(rol?.permisos ?? []);
   const { register, handleSubmit, formState: { errors } } = useForm<FormFields>({
     mode: 'onBlur',
@@ -100,6 +102,7 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
+        ref={panelRef}
         style={{
           background: 'var(--surface-card)',
           borderRadius: 'var(--r-xl)',
@@ -113,8 +116,8 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
-          <h2 id="rol-modal-title" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-            {modo === 'crear' ? 'Crear rol' : 'Editar rol'}
+          <h2 id="rol-modal-title" style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 700, color: 'var(--text-primary)' }}>
+            {modo === 'crear' ? t('rolmodal.crear_rol') : t('rolmodal.editar_rol')}
           </h2>
           <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('rolmodal.cerrar')}>
             <X size={18} aria-hidden />
@@ -146,8 +149,8 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
           </div>
 
           <div style={{ marginBottom: 'var(--s5)' }}>
-            <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s3)' }}>
-              Permisos
+            <p style={{ fontSize: 'var(--fs-label-md)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s3)' }}>
+              {t('rolmodal.permisos')}
               {permisos.length === 0 && (
                 <span style={{ color: 'var(--sem-error)', fontWeight: 400, marginLeft: 'var(--s2)' }}>{t('rolmodal.selecciona_al_menos_un_permiso')}</span>
               )}
@@ -170,7 +173,7 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
               loading={saving}
               disabled={permisos.length === 0}
             >
-              {modo === 'crear' ? 'Crear rol' : 'Guardar'}
+              {modo === 'crear' ? t('rolmodal.crear_rol') : t('rolmodal.guardar')}
             </Button>
           </div>
         </form>

@@ -86,10 +86,10 @@ export function LoginPage() {
 
         {failedAttempts > 0 && (
           <div style={{ marginBottom: 'var(--s4)' }}>
-            <p style={{ fontSize: '11px', color: 'var(--sem-error)', fontWeight: 700, marginBottom: 6, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Intentos fallidos ({failedAttempts} de 5)
+            <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--sem-error)', fontWeight: 700, marginBottom: 6 }}>
+              {t('loginpage.intentos_fallidos', { count: failedAttempts })}
             </p>
-            <div className="auth-attempts-bar" role="img" aria-label={`${failedAttempts} de 5 intentos fallidos`}>
+            <div className="auth-attempts-bar" role="img" aria-label={t('loginpage.intentos_fallidos', { count: failedAttempts })}>
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className={`auth-att-dot ${i <= failedAttempts ? 'auth-att-dot--used' : ''}`} />
               ))}

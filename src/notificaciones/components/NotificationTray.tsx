@@ -116,6 +116,7 @@ export function NotificationTray({
   return (
     <div className="notification-tray__overlay" onMouseDown={onClose}>
       <section
+        id="notification-tray"
         className="notification-tray"
         role="dialog"
         aria-modal="false"

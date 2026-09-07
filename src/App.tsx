@@ -96,6 +96,15 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   const { sinFinca, sinEspecies } = useContexto();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  // QA TC-DIS-21/25/30/32: el drawer movil tambien se cierra con Escape.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const cerrarConEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    };
+    document.addEventListener('keydown', cerrarConEscape);
+    return () => document.removeEventListener('keydown', cerrarConEscape);
+  }, [sidebarOpen]);
   // RF-25, flujo alterno "cambio de permisos en sesion activa": AuthContext ya
   // detecto que `permisos` cambio de verdad (no solo un 403 sin motivo); esto solo
   // decide cuanto tiempo mostrar el aviso.
@@ -126,11 +135,14 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', overflowX: 'hidden' }}>
       <Sidebar open={sidebarOpen} onLogout={handleLogout} />
       {sidebarOpen && (
         <div
-          style={{ position: 'fixed', inset: 0, zIndex: 98, background: 'rgba(0,0,0,0.4)' }}
+          // Por encima de la AppBar (z-100) y por debajo del drawer (z-150):
+          // al abrir el drawer todo el contenido queda tras el velo y el
+          // toque en cualquier punto lo cierra.
+          style={{ position: 'fixed', inset: 0, zIndex: 140, background: 'var(--overlay)' }}
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />

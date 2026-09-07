@@ -3,6 +3,7 @@ import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
+import { PasswordStrength } from '../../shared/design-system/PasswordStrength';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import type { CambiarContrasenaDTO } from '../types';
@@ -23,7 +24,9 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
   const [showNueva, setShowNueva] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const { register, handleSubmit, getValues, reset, formState: { errors } } = useForm<CambiarContrasenaDTO>({ mode: 'onBlur' });
+  const { register, handleSubmit, getValues, reset, watch, formState: { errors } } = useForm<CambiarContrasenaDTO>({ mode: 'onBlur' });
+
+  const nuevaPw = watch('nueva_contrasena', '');
 
   const onSubmit = (data: CambiarContrasenaDTO) => {
     onSave(data);
@@ -56,6 +59,7 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
           type={showNueva ? 'text' : 'password'}
           required
           autoComplete="new-password"
+          ariaDescribedBy="cambiar-contrasena-fortaleza"
           error={errors.nueva_contrasena?.message}
           trailingIcon={showNueva ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
           onTrailingClick={() => setShowNueva((v) => !v)}
@@ -64,6 +68,7 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
             pattern: { value: PW_REGEX, message: t('cambiarcontrasenaform.minimo_8_caracteres_una_mayuscula_un_numero') },
           })}
         />
+        <PasswordStrength id="cambiar-contrasena-fortaleza" valor={nuevaPw} />
 
         <Input
           label={t('cambiarcontrasenaform.confirmar_nueva_contrasena')}
@@ -75,7 +80,7 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
           onTrailingClick={() => setShowConfirm((v) => !v)}
           {...register('confirmar_nueva_contrasena', {
             required: t('cambiarcontrasenaform.confirma_tu_nueva_contrasena'),
-            validate: (v) => v === getValues('nueva_contrasena') || 'Las contraseñas no coinciden.',
+            validate: (v) => v === getValues('nueva_contrasena') || t('validacion.las_contrasenas_no_coinciden', { ns: 'common' }),
           })}
         />
       </div>
