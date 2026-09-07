@@ -1,0 +1,39 @@
+{
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.77",
+  "fecha": "2026-09-05T08:00:21.057Z",
+  "checkpoints": [
+    {
+      "paso": "TC-M09-224: abrir el asistente de aplicacion de plantilla",
+      "esperado": "Debe abrirse el asistente (AplicarPlantillaWizard) para la plantilla elegida",
+      "obtenido": "Se abrio el asistente para \"Config Bovino 1788592941328\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-224: elegir una especie destino valida y distinta de la especie origen",
+      "esperado": "La especie origen de la plantilla es \"ID 4\"; se debe poder elegir otra especie activa como destino",
+      "obtenido": "Se eligio \"Cachama Blanca\" como especie destino",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-224: previsualizar los parametros antes de aplicar",
+      "esperado": "Debe mostrarse una previsualizacion indicando que se aplicara \"Config Bovino 1788592941328\" sobre \"Cachama Blanca\", con aviso de que la accion es irreversible",
+      "obtenido": "Se mostro la previsualizacion con el aviso de accion irreversible y la especie destino elegida",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-224: registrar la aplicacion de la plantilla sobre el destino",
+      "esperado": "La API debe responder 200 al aplicar \"Config Bovino 1788592941328\" sobre \"Cachama Blanca\", registrando la configuracion actualizada",
+      "obtenido": "HTTP 500, cuerpo: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-05T08:00:19.899550+00:00\"}",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "TC-M09-224: el asistente informa el error y permite salir de el",
+      "esperado": "Ante un error, el asistente debe mostrar el mensaje de error y ofrecer alguna forma de cerrarlo o volver atras",
+      "obtenido": "El asistente muestra el mensaje de error, pero se queda en la pantalla \"Aplicando...\" sin boton de cerrar ni de volver: el unico paso con footer vacio y sin boton \"X\" de cierre es justamente este (step===2 en AplicarPlantillaWizard.tsx), dejando al usuario sin forma de salir del dialogo salvo recargando la pagina.",
+      "estado": "FALLA"
+    }
+  ],
+  "veredicto": "CON FALLAS"
+}

@@ -1,0 +1,21 @@
+{
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.77",
+  "fecha": "2026-09-05T07:16:02.526Z",
+  "checkpoints": [
+    {
+      "paso": "TC-M09-210: abrir el formulario de creacion de plantilla",
+      "esperado": "Debe abrirse el dialogo de creacion (PlantillaModal)",
+      "obtenido": "Se abrio el dialogo de creacion de plantilla",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-210: leer la configuracion real de la especie para construir el snapshot de la plantilla",
+      "esperado": "Al elegir cualquier especie activa, el formulario debe mostrar sus parametros configurables (ciclos, patologias, metricas, umbrales) para poder crear la plantilla",
+      "obtenido": "Con 2 especie(s) distinta(s) probada(s) (Cachama Blanca, Camarón Blanco), en todas aparecio el mismo error: \"No se pudo leer la configuración de la especie. Reintenta o elige otra.\". El boton \"Crear plantilla\" queda deshabilitado de forma permanente. Revisando el codigo fuente: capturarConfiguracionEspecie() (especiesConfigApi.ts) llama .map() directamente sobre el resultado de ciclosApi/patologiasApi/metricasApi/umbralesApi.listar(), pero esos 4 endpoints (GET /configuracion/ciclos|patologias|metricas|umbrales) responden {total, items}, no un arreglo -- a diferencia de otros puntos de la app (especiesApi, plantillasApi) que si desenvuelven ese formato antes de usarlo. Eso hace que la lectura falle siempre, para cualquier especie, bloqueando por completo la creacion de plantillas desde la UI.",
+      "estado": "FALLA"
+    }
+  ],
+  "veredicto": "CON FALLAS"
+}
