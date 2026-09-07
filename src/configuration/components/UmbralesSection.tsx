@@ -116,7 +116,7 @@ function NivelCard({ nivel, unidad, register, errors }: NivelCardProps) {
         <span style={{ fontSize: '12px', fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
       </div>
       <p style={{ fontSize: '11px', color: cfg.color, marginBottom: 'var(--s3)', lineHeight: 1.4 }}>{cfg.desc}</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 'var(--s2)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
         <div style={{ minWidth: 0 }}>
           <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('umbralessection.limite_inferior')}</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -276,7 +276,7 @@ function UmbralModal({
       style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', padding: 'var(--s6) var(--s4)', overflowY: 'auto' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', width: '100%', maxWidth: 560, boxShadow: 'var(--shadow-lg)', marginBottom: 'var(--s6)' }}>
+      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', width: '100%', maxWidth: 720, boxShadow: 'var(--shadow-lg)', marginBottom: 'var(--s6)' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)' }}>
           <h2 id="umbral-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
@@ -385,12 +385,13 @@ function UmbralModal({
                 </div>
                 <div style={{ padding: 'var(--s5)' }}>
                   <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('umbralessection.define_tres_zonas_de_alerta_dentro_del')}</p>
-                  {/* #55 (RF-17): `auto-fill, minmax(160px, 1fr)` calculaba mal la cantidad de
-                      columnas al filo de 512-560px (ancho real del modal) y las tarjetas, sin
-                      `min-width:0`, no encogían a la pista calculada — el contenido de "normal"
-                      desbordaba sobre "precaución", pintada después en el DOM y por eso encima.
-                      Tres columnas fijas que sí pueden encoger a 0 evitan la ambigüedad. */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 'var(--s3)' }}>
+                  {/* INC-M09 (visual): `repeat(3, minmax(0,1fr))` apretaba las tres tarjetas
+                      del semáforo a ~170px en un modal de 560px y, dentro de cada una, los dos
+                      inputs quedaban diminutos e inservibles. `auto-fit` con pista mínima de
+                      200px mantiene las tres columnas en escritorio y las apila a una sola en
+                      pantallas estrechas, sin el bug de `auto-fill` de #55 (que dejaba pistas
+                      vacías y desbordaba al filo de 512-560px). */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--s3)' }}>
                     <NivelCard nivel="normal"     unidad={varSel.unidad} register={register} errors={errors} />
                     <NivelCard nivel="precaucion" unidad={varSel.unidad} register={register} errors={errors} />
                     <NivelCard nivel="critico"    unidad={varSel.unidad} register={register} errors={errors} />
