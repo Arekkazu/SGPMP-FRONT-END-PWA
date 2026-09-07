@@ -1,0 +1,55 @@
+{
+  "caso": "TC-M09-G03",
+  "titulo": "CU-01 - Gestionar Catálogo de Especies Productivas (RF-15)",
+  "cu": "CU-01 - Gestionar Catálogo de Especies Productivas",
+  "rf": "RF-15",
+  "tipo": "Funcional Híbrida (UI y API)",
+  "equipo": "Frontend y QA",
+  "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.76",
+  "fecha": "2026-09-04T22:26:07.338Z",
+  "idEspecie": 4,
+  "peticionInfo": "PATCH /configuracion/especies/4 -> HTTP 500. Body: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-04T22:26:06.346048+00:00\"}",
+  "teardownInfo": "PATCH /configuracion/especies/4 -> HTTP 500. Body: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-04T22:26:07.327808+00:00\"}",
+  "checkpoints": [
+    {
+      "paso": "CP-1: Autenticación y Navegación SPA",
+      "esperado": "Inicio de sesión exitoso como Admin y navegación a /configuracion",
+      "obtenido": "Sesión autenticada como admin@pecuaria.co y catálogo cargado por GET /configuracion/especies.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-3: Diligenciamiento de Edición UI",
+      "esperado": "Ingresar nombre \"Cachama\" y descripción \"Especie de uso pecuario general.\"",
+      "obtenido": "Campos de nombre y descripción actualizados con datos de prueba válidos.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-2: Localización de registro \"Cachama Blanca\"",
+      "esperado": "Ubicar en la tabla la especie activa \"Cachama Blanca\" y capturar su ID",
+      "obtenido": "Registro activo localizado exitosamente en UI. Especie ID #4 (\"Cachama Blanca\").",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-4: Contrato API PATCH de Edición",
+      "esperado": "Respuesta HTTP 200/201 con objeto actualizado (nombre=\"Cachama\")",
+      "obtenido": "Respuesta no conforme. HTTP 500. Body: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-04T22:26:06.346048+00:00\"}",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-6: Restauración Teardown (Reversión a \"Cachama Blanca\")",
+      "esperado": "Registro de especie restaurado exitosamente a \"Cachama Blanca\" con su descripción original",
+      "obtenido": "Fallo en restauración. HTTP 500. Body: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-04T22:26:07.327808+00:00\"}",
+      "estado": "FALLA"
+    }
+  ],
+  "veredicto": "CON FALLAS",
+  "hallazgos": [
+    "CP-1: Autenticación y Navegación SPA -> Sesión autenticada como admin@pecuaria.co y catálogo cargado por GET /configuracion/especies. (OK)",
+    "CP-3: Diligenciamiento de Edición UI -> Campos de nombre y descripción actualizados con datos de prueba válidos. (OK)",
+    "CP-2: Localización de registro \"Cachama Blanca\" -> Registro activo localizado exitosamente en UI. Especie ID #4 (\"Cachama Blanca\"). (OK)",
+    "CP-4: Contrato API PATCH de Edición -> Respuesta no conforme. HTTP 500. Body: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-04T22:26:06.346048+00:00\"} (FALLA)",
+    "CP-6: Restauración Teardown (Reversión a \"Cachama Blanca\") -> Fallo en restauración. HTTP 500. Body: {\"error_code\":\"ERROR_INTERNO\",\"message\":\"Error inesperado en base de datos\",\"fields\":[],\"timestamp\":\"2026-09-04T22:26:07.327808+00:00\"} (FALLA)"
+  ]
+}

@@ -1,33 +1,40 @@
 {
   "caso": "TC-M01-109",
-  "titulo": "Interrupción de red intermitente en login y cambio de contraseña (RF-02 & RF-07)",
-  "cus": "CU-InicioSesion & CU-CambioContrasena",
-  "rfs": "RF-02 & RF-07",
+  "titulo": "Pérdida de conexión intermitente en flujos de identidad (RF-01, RF-02, RF-07, RF-08, RF-09)",
+  "cus": "CU-InicioSesion, CU-CambioContrasena, CU-RecuperarContrasena",
+  "rfs": "RF-01, RF-02, RF-07, RF-08, RF-09",
   "tipo": "Pruebas Extremas / Resiliencia e Interrupción Intermitente",
+  "modo": "Fase B (Punto 2) — 2 Caídas Simuladas + Verificación de Recuperación de Contraseña",
   "severidad": "Media",
   "responsable": "Sebastian",
-  "testEmail": "gestor.granja.test@pecuaria.co",
+  "testEmailAuth": "jusebas73@gmail.com",
+  "testEmailRecovery": "jusebas73@gmail.com",
   "currentPw": "Test1234!",
-  "newPw": "NuevaTest#2029",
-  "idUsuario": 30,
+  "newPw": "Reset#2029",
+  "idUsuario": 93,
   "fallasPrevias": 0,
   "restauracionExitosa": true,
+  "simulatedDropsCount": 2,
+  "peticionesRealesRecuperacion": 1,
   "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
   "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
-  "navegador": "chrome 152.0.7977.65",
-  "fecha": "2026-09-03T07:31:10.067Z",
+  "navegador": "chrome 152.0.7977.76",
+  "fecha": "2026-09-06T00:12:15.709Z",
   "veredicto": "SIN FALLAS BLOQUEANTES",
+  "observaciones": [
+    "El usuario comprobó que solo llegó un token válido de restablecimiento de contraseña."
+  ],
   "checkpoints": [
     {
-      "paso": "CP-01: Precondición de Cuenta Sujeto",
-      "esperado": "Cuenta gestor.granja.test@pecuaria.co existente y activa (HTTP 200)",
-      "obtenido": "Cuenta encontrada ID: 30, Estado: Activo",
+      "paso": "CP-01: Precondición Cuenta Sujeto Auth",
+      "esperado": "Cuenta jusebas73@gmail.com existente y activa (HTTP 200)",
+      "obtenido": "Cuenta encontrada ID: 93, Estado: Activo",
       "estado": "OK"
     },
     {
       "paso": "CP-02: RF-02 Login UI Interrumpido + Captura Token A",
       "esperado": "POST /sesiones/ procesado por backend (Token A emitido); cliente recibe Network Error",
-      "obtenido": "Token A capturado en proxy (eyJhbGciOiJIUzI...); cliente experimentó falla de red",
+      "obtenido": "Token A capturado (eyJhbGciOiJIUzI...); cliente experimentó caída de red",
       "estado": "OK"
     },
     {
@@ -38,8 +45,8 @@
     },
     {
       "paso": "CP-04: RF-07 Cambio de Clave Interrumpido",
-      "esperado": "PUT procesado en backend (clave actualizada a NuevaTest#2029); cliente recibe Network Error",
-      "obtenido": "Falla de red capturada por el cliente tras envío de cambio de clave",
+      "esperado": "PUT procesado en backend (clave actualizada a Reset#2029); cliente recibe Network Error",
+      "obtenido": "Caída de red simulada en respuesta recibida por el cliente",
       "estado": "OK"
     },
     {
@@ -49,9 +56,15 @@
       "estado": "OK"
     },
     {
-      "paso": "CP-06: Restauración de Contraseña Original",
+      "paso": "CP-06: RF-08/RF-09 Recuperación Intermitente",
+      "esperado": "Verificación de generación de token de recuperación sin duplicidad",
+      "obtenido": "El usuario comprobó que solo llegó un token válido de restablecimiento de contraseña.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07: Restauración de Contraseña Original",
       "esperado": "Reversión exitosa a Test1234! (HTTP 200 OK) y verificación de login",
-      "obtenido": "Contraseña restaurada satisfactoriamente a Test1234!. Login final respondió HTTP 200 OK",
+      "obtenido": "Contraseña de jusebas73@gmail.com restaurada a Test1234!. Login final HTTP 200 OK",
       "estado": "OK"
     }
   ]
