@@ -1,3 +1,13 @@
+## [1.0.0-rc.16](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.15...v1.0.0-rc.16) (2026-09-07)
+
+### Features
+
+* **rf17:** inputs de niveles de alerta usables y responsivos en umbrales ([3246ad7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3246ad7302bf8da0bf07611180cc09fa4d7c7703))
+
+### Bug Fixes
+
+* **rf26:** aplicar la identidad visual por completo, no solo los acentos ([1a86f82](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1a86f82eb02fed829027439076ed525090315657))
+
 ## [1.0.0-rc.15](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.14...v1.0.0-rc.15) (2026-09-07)
 
 ### Bug Fixes
