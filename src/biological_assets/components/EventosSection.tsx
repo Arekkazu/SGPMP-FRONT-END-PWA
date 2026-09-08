@@ -16,11 +16,13 @@ import { RegistrarBajaModal } from './RegistrarBajaModal';
 import { RECURSO_ACTIVOS, ACCION_C } from '../rbac';
 import { ESTADOS_PERMITEN_EVENTOS } from '../types';
 import type { EstadoActivoNombre, EventoActivoResponse } from '../types';
+import { metricasApi, patologiasApi } from '../../configuration/api/especiesConfigApi';
 
 type ModalTipo = 'ninguno' | 'crecimiento' | 'sanitario' | 'reproductivo' | 'productivo' | 'baja';
 
 interface Props {
   idActivo: number;
+  idEspecie?: number | null;
   tipo: string;
   estadoActual: string | null;
   onChanged: () => void;
@@ -62,7 +64,7 @@ function resumenEvento(ev: EventoActivoResponse): { icon: React.ReactNode; tipo:
   return { icon: <Info size={15} aria-hidden />, tipo: 'Evento', detalle: ev.descripcion ?? '—' };
 }
 
-export function EventosSection({ idActivo, tipo, estadoActual, onChanged }: Props) {
+export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, onChanged }: Props) {
   const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeCrear = usePermission(RECURSO_ACTIVOS, ACCION_C);
@@ -77,10 +79,28 @@ export function EventosSection({ idActivo, tipo, estadoActual, onChanged }: Prop
 
   const [modal, setModal] = useState<ModalTipo>('ninguno');
   const [aviso, setAviso] = useState<string | null>(null);
-
+  const [configLoading, setConfigLoading] = useState(false);
+  const [patologias, setPatologias] = useState<{ id_patologia: number; nombre: string }[]>([]);
+  const [metricas, setMetricas] = useState<{ id_metrica_produccion: number; nombre: string; tipo_medicion: string; unidad_medida: string }[]>([]);
   useEffect(() => {
     if (esPoblacional) cargar();
   }, [esPoblacional, cargar]);
+  useEffect(() => {
+    if (idEspecie == null || modal === 'ninguno') return;
+    setConfigLoading(true);
+    Promise.all([
+      patologiasApi.listar(idEspecie, true),
+      metricasApi.listar(idEspecie, true),
+    ]).then(([patologiasData, metricasData]) => {
+      setPatologias(patologiasData.map((p) => ({ id_patologia: p.id_patologia, nombre: p.nombre })));
+      setMetricas(metricasData.map((m) => ({
+        id_metrica_produccion: m.id_metrica_produccion,
+        nombre: m.nombre,
+        tipo_medicion: m.tipo_medicion,
+        unidad_medida: m.unidad_medida,
+      })));
+    }).finally(() => setConfigLoading(false));
+  }, [idEspecie, modal]);
 
   const refrescar = useCallback(async () => {
     if (esPoblacional) await cargar();
@@ -172,6 +192,8 @@ export function EventosSection({ idActivo, tipo, estadoActual, onChanged }: Prop
       {/* Modales */}
       {modal === 'crecimiento' && (
         <EventoCrecimientoForm
+          metricas={metricas}
+          metricasLoading={configLoading}
           esPoblacional={esPoblacional}
           saving={saving}
           saveError={saveError}
@@ -185,6 +207,8 @@ export function EventosSection({ idActivo, tipo, estadoActual, onChanged }: Prop
       )}
       {modal === 'sanitario' && (
         <EventoSanitarioForm
+          patologias={patologias}
+          patologiasLoading={configLoading}
           saving={saving}
           saveError={saveError}
           onClose={cerrar}

@@ -11,7 +11,7 @@ import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarEventoCrecimientoDTO, TipoMedicionCrecimiento } from '../types';
 
 interface FormValues {
-  tipo_medicion: TipoMedicionCrecimiento;
+  tipo_medicion: TipoMedicionCrecimiento | '';
   valor_medicion: string;
   unidad_medida: string;
   tipo_agregacion: string;
@@ -23,6 +23,8 @@ interface FormValues {
 }
 
 interface Props {
+  metricas: { id_metrica_produccion: number; nombre: string; tipo_medicion: string; unidad_medida: string }[];
+  metricasLoading: boolean;
   esPoblacional: boolean;
   saving: boolean;
   saveError: ApiError | null;
@@ -30,17 +32,21 @@ interface Props {
   onConfirmar: (dto: RegistrarEventoCrecimientoDTO) => Promise<boolean>;
 }
 
-export function EventoCrecimientoForm({ esPoblacional, saving, saveError, onClose, onConfirmar }: Props) {
+export function EventoCrecimientoForm({ metricas, metricasLoading, esPoblacional, saving, saveError, onClose, onConfirmar }: Props) {
   const { t } = useT('biologicalAssets');
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { tipo_medicion: 'PESO', unidad_medida: '' },
+    defaultValues: { tipo_medicion: '', unidad_medida: '' },
   });
 
   const tipo = watch('tipo_medicion');
-  const unidades = UNIDADES_POR_MEDICION[tipo] ?? [];
+  const metricaSeleccionada = metricas.find((metrica) => metrica.tipo_medicion === tipo);
+  const unidades = metricaSeleccionada
+    ? [metricaSeleccionada.unidad_medida]
+    : tipo ? UNIDADES_POR_MEDICION[tipo] ?? [] : [];
 
   const submit = async (v: FormValues) => {
+    if (!v.tipo_medicion) return;
     const dto: RegistrarEventoCrecimientoDTO = {
       tipo_medicion: v.tipo_medicion,
       valor_medicion: Number(v.valor_medicion),
@@ -74,9 +80,14 @@ export function EventoCrecimientoForm({ esPoblacional, saving, saveError, onClos
             label={t('eventocrecimientoform.tipo_de_medicion')} required error={errors.tipo_medicion?.message}
             {...register('tipo_medicion', { required: t('eventocrecimientoform.selecciona_el_tipo') })}
           >
-            <option value="PESO">{t('eventocrecimientoform.peso')}</option>
-            <option value="TALLA">{t('eventocrecimientoform.talla')}</option>
-            <option value="BIOMASA">{t('eventocrecimientoform.biomasa')}</option>
+            <option value="">
+              {metricasLoading ? 'Cargando métricas…' : metricas.length ? 'Seleccionar métrica' : 'No hay métricas configuradas'}
+            </option>
+            {metricas.map((metrica) => (
+              <option key={metrica.id_metrica_produccion} value={metrica.tipo_medicion}>
+                {metrica.nombre} ({metrica.tipo_medicion})
+              </option>
+            ))}
           </FormSelect>
 
           <Input

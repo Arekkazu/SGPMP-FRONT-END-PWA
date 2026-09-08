@@ -24,13 +24,15 @@ interface FormValues {
 }
 
 interface Props {
+  patologias: { id_patologia: number; nombre: string }[];
+  patologiasLoading: boolean;
   saving: boolean;
   saveError: ApiError | null;
   onClose: () => void;
   onConfirmar: (dto: RegistrarEventoSanitarioDTO) => Promise<boolean>;
 }
 
-export function EventoSanitarioForm({ saving, saveError, onClose, onConfirmar }: Props) {
+export function EventoSanitarioForm({ patologias, patologiasLoading, saving, saveError, onClose, onConfirmar }: Props) {
   const { t } = useT('biologicalAssets');
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
@@ -87,11 +89,24 @@ export function EventoSanitarioForm({ saving, saveError, onClose, onConfirmar }:
           </FormSelect>
 
           {esDiagnostico && (
-            <FormTextArea
-              label={t('eventosanitarioform.diagnostico')} required error={errors.diagnostico?.message}
-              placeholder={t('eventosanitarioform.describe_el_diagnostico')}
-              {...register('diagnostico', { required: t('eventosanitarioform.el_diagnostico_es_obligatorio') })}
-            />
+            <FormSelect
+              label={t('eventosanitarioform.diagnostico')}
+              required
+              error={errors.diagnostico?.message}
+              disabled={patologiasLoading || patologias.length === 0}
+              {...register('diagnostico', {
+                required: t('eventosanitarioform.el_diagnostico_es_obligatorio'),
+              })}
+            >
+              <option value="">
+                {patologiasLoading ? 'Cargando patologías…' : patologias.length ? 'Seleccionar patología' : 'No hay patologías configuradas'}
+              </option>
+              {patologias.map((patologia) => (
+                <option key={patologia.id_patologia} value={patologia.nombre}>
+                  {patologia.nombre}
+                </option>
+              ))}
+            </FormSelect>
           )}
 
           {requiereMedicamento && (
