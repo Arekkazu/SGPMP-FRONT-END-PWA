@@ -1,0 +1,5275 @@
+{
+  "collection": {
+    "_": {
+      "postman_id": "tc-m02-g24-collection-id"
+    },
+    "item": [
+      {
+        "id": "59efb017-a5ff-4d29-b16e-886307245522",
+        "name": "Paso 0.1 — Login Admin",
+        "request": {
+          "url": {
+            "path": [
+              "sesiones",
+              ""
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"correo_electronico\": \"{{admin_email}}\",\n  \"contrasena\": \"{{admin_password}}\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "b3477e3f-ea57-475e-a9ab-9d08f7f0eaf1",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Login exitoso HTTP 200', function () {",
+                "    pm.response.to.have.status(200);",
+                "    var jsonData = pm.response.json();",
+                "    pm.expect(jsonData.token).to.be.a('string');",
+                "    pm.collectionVariables.set('token', jsonData.token);",
+                "});"
+              ],
+              "_lastExecutionId": "e4db5e52-ee25-4fb1-9971-3d9900b121a1"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ffe46728-e13e-47b5-bbc5-43f244a87866",
+        "name": "Paso 0.2 — Crear Ciclo Biológico Propio (RF-16)",
+        "request": {
+          "url": {
+            "path": [
+              "configuracion",
+              "ciclos"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"id_especie\": 4,\n  \"nombre\": \"{{ciclo_nombre}}\",\n  \"duracion_dias\": 90,\n  \"descripcion\": \"Ciclo autocontenido para suite Postman G24\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "1ad5fc82-d6c9-4317-8b0f-8f102df01c0e",
+              "type": "text/javascript",
+              "exec": [
+                "pm.collectionVariables.set('ciclo_nombre', 'Ciclo G24 Postman ' + Date.now());"
+              ],
+              "_lastExecutionId": "b13a9669-e460-4edb-8b1f-1c53bcc301be"
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "955f3450-68cf-47eb-8003-b6315a36946e",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Creación de Ciclo Biológico HTTP 201', function () {",
+                "    pm.response.to.have.status(201);",
+                "    var jsonData = pm.response.json();",
+                "    pm.expect(jsonData.id_ciclo_biologico).to.be.a('number');",
+                "    pm.collectionVariables.set('ciclo_id', jsonData.id_ciclo_biologico);",
+                "});"
+              ],
+              "_lastExecutionId": "287ae415-e2c4-4b7f-9b5e-d4ad096d5f19"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ad66ac9c-1c09-4388-a2db-c1e56ccf39f0",
+        "name": "Paso 0.3 — Crear Lote Poblacional Propio (RF-33)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-08\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "9cc433f2-86cd-4cca-a419-1bbced29e544",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Creación de Lote Poblacional HTTP 201', function () {",
+                "    pm.response.to.have.status(201);",
+                "    var jsonData = pm.response.json();",
+                "    pm.expect(jsonData.id_activo_biologico).to.be.a('number');",
+                "    pm.collectionVariables.set('lote_id', jsonData.id_activo_biologico);",
+                "});"
+              ],
+              "_lastExecutionId": "20df00e7-2667-4d86-8d3f-e9b9de9ff3f0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "457aa806-9537-49ae-b71a-e69cd8b00bd9",
+        "name": "Paso 0.4 — Intentar Asignar Fase Productiva (RF-37)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}",
+              "fases"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"id_ciclo_productiva\": {{ciclo_id}},\n  \"fecha_inicio\": \"2026-09-08\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "978cc375-0744-4518-9768-a11b926495ab",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Evaluación de Asignación de Fase RF-37', function () {",
+                "    if (pm.response.code === 200 || pm.response.code === 201) {",
+                "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                "    } else {",
+                "        pm.expect(pm.response.code).to.eq(400);",
+                "        var jsonData = pm.response.json();",
+                "        pm.expect(jsonData.error_code).to.be.oneOf(['CICLO_INVALIDO', 'VAL_ENTRADA']);",
+                "    }",
+                "});"
+              ],
+              "_lastExecutionId": "eb3405b8-8c4d-422c-a665-db3ff9654d31"
+            }
+          }
+        ]
+      },
+      {
+        "id": "d4f44477-14db-4290-97c9-4075ae34c695",
+        "name": "TC-M02-049 — Evento CRECIMIENTO (RF-39)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}",
+              "eventos",
+              "crecimiento"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"fecha_evento\": \"2026-09-08\",\n  \"valor_medicion\": 12.5,\n  \"tipo_agregacion\": \"PROMEDIO\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "5e07363f-b3e2-4988-ba38-97a52702da96",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Registro Evento CRECIMIENTO (RF-39)', function () {",
+                "    if (pm.response.code === 200 || pm.response.code === 201) {",
+                "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                "    } else {",
+                "        pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                "    }",
+                "});"
+              ],
+              "_lastExecutionId": "d18fbdc9-e2f1-4d27-ba2e-384257cd78cc"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ecc9113c-0fe9-42a3-bbe8-b7848940558f",
+        "name": "TC-M02-050 — Evento BAJA (RF-39)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}",
+              "eventos",
+              "baja"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"tipo_baja\": \"muerte\",\n  \"fecha_baja\": \"2026-09-08\",\n  \"motivo_baja\": \"Mortalidad de prueba Postman G24\",\n  \"cantidad_afectada\": 10\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "91664912-6efe-4a61-be7f-c152d85e4268",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Registro Evento BAJA (RF-39)', function () {",
+                "    if (pm.response.code === 200 || pm.response.code === 201) {",
+                "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                "    } else {",
+                "        pm.expect(pm.response.code).to.be.oneOf([400, 422, 500]);",
+                "    }",
+                "});"
+              ],
+              "_lastExecutionId": "6a3e634b-6582-4199-ab6f-1230cd622536"
+            }
+          }
+        ]
+      },
+      {
+        "id": "450e64ac-81f8-41f9-b6ae-57cec86bce47",
+        "name": "TC-M02-056 — Validar Inmutabilidad Registro Original (RF-33)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "GET"
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "ed06b834-b0ca-4dfc-a8d9-78203037b238",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Inmutabilidad de datos originales de registro (RF-33)', function () {",
+                "    pm.response.to.have.status(200);",
+                "    var jsonData = pm.response.json();",
+                "    var det = jsonData.detalle_poblacional;",
+                "    pm.expect(det.cantidad_inicial).to.eq(100);",
+                "    pm.expect(Number(det.peso_promedio_inicial)).to.eq(10.0);",
+                "});"
+              ],
+              "_lastExecutionId": "f954ea90-c744-406b-b6f2-7de132255c07"
+            }
+          }
+        ]
+      },
+      {
+        "id": "cb5b3df3-0cfd-43f3-b16d-905d915a888e",
+        "name": "Teardown Lote (RF-44)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}",
+              "estado"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "PATCH",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"estado_nuevo\": \"BAJA\",\n  \"fecha_cambio_estado\": \"2026-09-08\",\n  \"motivo_cambio\": \"Teardown de prueba Postman G24\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "1f25d500-4018-4f1f-8532-6412142c90d3",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Teardown Lote HTTP 200 OK', function () {",
+                "    pm.response.to.have.status(200);",
+                "});"
+              ],
+              "_lastExecutionId": "0c7307cd-751b-4671-93d8-c5a53122b0d0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "47c956b4-b83b-42d7-a546-de50969452d3",
+        "name": "Teardown Ciclo (RF-16)",
+        "request": {
+          "url": {
+            "path": [
+              "configuracion",
+              "ciclos",
+              "{{ciclo_id}}",
+              "desactivar"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "PATCH"
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "6f7b91f7-a7a1-44dd-9847-fab66ab0ffab",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Teardown Ciclo HTTP 200 OK', function () {",
+                "    pm.response.to.have.status(200);",
+                "});"
+              ],
+              "_lastExecutionId": "1b4bf675-c9da-4423-9e07-b1a8b832d40a"
+            }
+          }
+        ]
+      }
+    ],
+    "event": [],
+    "variable": [
+      {
+        "type": "any",
+        "value": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+        "key": "base_url"
+      },
+      {
+        "type": "any",
+        "value": "admin@pecuaria.co",
+        "key": "admin_email"
+      },
+      {
+        "type": "any",
+        "value": "Test1234!",
+        "key": "admin_password"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "token"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "ciclo_id"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "ciclo_nombre"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "lote_id"
+      }
+    ],
+    "info": {
+      "_postman_id": "tc-m02-g24-collection-id",
+      "name": "TC-M02-G24 — Gestión Poblacional RF-36 / RF-33 / RF-37 / RF-39",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "description": {
+        "content": "Colección de Postman autocontenida para la suite de integración de lotes poblacionales",
+        "type": "text/plain"
+      }
+    }
+  },
+  "environment": {
+    "id": "fff28295-493e-4127-80a2-3c9b0cedfe86",
+    "values": []
+  },
+  "globals": {
+    "id": "7be174e3-c381-46f4-839e-25c91ad409e4",
+    "values": []
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 9,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 10,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequests": {
+        "total": 9,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 9,
+        "pending": 0,
+        "failed": 0
+      },
+      "tests": {
+        "total": 9,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 9,
+        "pending": 0,
+        "failed": 0
+      },
+      "testScripts": {
+        "total": 9,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequestScripts": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 261.44444444444446,
+      "responseMin": 110,
+      "responseMax": 1182,
+      "responseSd": 327.63194495962193,
+      "dnsAverage": 0,
+      "dnsMin": 0,
+      "dnsMax": 0,
+      "dnsSd": 0,
+      "firstByteAverage": 0,
+      "firstByteMin": 0,
+      "firstByteMax": 0,
+      "firstByteSd": 0,
+      "started": 1788854972267,
+      "completed": 1788854975393
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 9,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "b3fffc4c-6c25-4fd4-a72d-0af3b44fd5b1",
+          "httpRequestId": "9f4b9448-223a-4243-84ee-59460fbd7727"
+        },
+        "item": {
+          "id": "59efb017-a5ff-4d29-b16e-886307245522",
+          "name": "Paso 0.1 — Login Admin",
+          "request": {
+            "url": {
+              "path": [
+                "sesiones",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo_electronico\": \"{{admin_email}}\",\n  \"contrasena\": \"{{admin_password}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "b3477e3f-ea57-475e-a9ab-9d08f7f0eaf1",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login exitoso HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.token).to.be.a('string');",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "});"
+                ],
+                "_lastExecutionId": "e4db5e52-ee25-4fb1-9971-3d9900b121a1"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "sesiones",
+              ""
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "51cd8606-455e-4df4-8efd-fa3a404895fa",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "76",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"correo_electronico\": \"admin@pecuaria.co\",\n  \"contrasena\": \"Test1234!\"\n}"
+          }
+        },
+        "response": {
+          "id": "1512335c-ea6d-406e-97ee-a775555101b3",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "404"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 08 Sep 2026 08:09:31 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "Set-Cookie",
+              "value": "refresh_token=XXuhIguJiLR4DZCpsj4pfCK_mxUi8119HbnXXfm03KA; HttpOnly; Max-Age=604799; Path=/; SameSite=none; Secure"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "01dc2b50-158d-4a6b-88ce-988278e4a1cd"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              116,
+              111,
+              107,
+              101,
+              110,
+              34,
+              58,
+              34,
+              101,
+              121,
+              74,
+              104,
+              98,
+              71,
+              99,
+              105,
+              79,
+              105,
+              74,
+              73,
+              85,
+              122,
+              73,
+              49,
+              78,
+              105,
+              73,
+              115,
+              73,
+              110,
+              82,
+              53,
+              99,
+              67,
+              73,
+              54,
+              73,
+              107,
+              112,
+              88,
+              86,
+              67,
+              74,
+              57,
+              46,
+              101,
+              121,
+              74,
+              122,
+              100,
+              87,
+              73,
+              105,
+              79,
+              105,
+              73,
+              120,
+              73,
+              105,
+              119,
+              105,
+              97,
+              110,
+              82,
+              112,
+              73,
+              106,
+              111,
+              105,
+              77,
+              84,
+              81,
+              48,
+              78,
+              68,
+              89,
+              105,
+              76,
+              67,
+              74,
+              121,
+              98,
+              50,
+              119,
+              105,
+              79,
+              106,
+              69,
+              115,
+              73,
+              109,
+              86,
+              52,
+              99,
+              67,
+              73,
+              54,
+              77,
+              84,
+              99,
+              52,
+              79,
+              68,
+              103,
+              52,
+              77,
+              122,
+              99,
+              51,
+              77,
+              83,
+              119,
+              105,
+              97,
+              87,
+              70,
+              48,
+              73,
+              106,
+              111,
+              120,
+              78,
+              122,
+              103,
+              52,
+              79,
+              68,
+              85,
+              48,
+              79,
+              84,
+              99,
+              120,
+              102,
+              81,
+              46,
+              67,
+              52,
+              99,
+              79,
+              79,
+              77,
+              82,
+              90,
+              122,
+              77,
+              85,
+              110,
+              72,
+              110,
+              118,
+              99,
+              89,
+              66,
+              73,
+              117,
+              118,
+              109,
+              104,
+              78,
+              110,
+              79,
+              98,
+              104,
+              57,
+              114,
+              81,
+              57,
+              65,
+              81,
+              95,
+              57,
+              115,
+              66,
+              97,
+              102,
+              51,
+              57,
+              73,
+              34,
+              44,
+              34,
+              116,
+              105,
+              112,
+              111,
+              34,
+              58,
+              34,
+              66,
+              101,
+              97,
+              114,
+              101,
+              114,
+              34,
+              44,
+              34,
+              101,
+              120,
+              112,
+              105,
+              114,
+              97,
+              95,
+              101,
+              110,
+              34,
+              58,
+              50,
+              56,
+              55,
+              57,
+              57,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              83,
+              101,
+              115,
+              105,
+              195,
+              179,
+              110,
+              32,
+              105,
+              110,
+              105,
+              99,
+              105,
+              97,
+              100,
+              97,
+              32,
+              101,
+              120,
+              105,
+              116,
+              111,
+              115,
+              97,
+              109,
+              101,
+              110,
+              116,
+              101,
+              46,
+              32,
+              83,
+              101,
+              32,
+              104,
+              97,
+              32,
+              99,
+              101,
+              114,
+              114,
+              97,
+              100,
+              111,
+              32,
+              97,
+              117,
+              116,
+              111,
+              109,
+              195,
+              161,
+              116,
+              105,
+              99,
+              97,
+              109,
+              101,
+              110,
+              116,
+              101,
+              32,
+              108,
+              97,
+              32,
+              115,
+              101,
+              115,
+              105,
+              195,
+              179,
+              110,
+              32,
+              97,
+              99,
+              116,
+              105,
+              118,
+              97,
+              32,
+              101,
+              110,
+              32,
+              111,
+              116,
+              114,
+              111,
+              115,
+              32,
+              100,
+              105,
+              115,
+              112,
+              111,
+              115,
+              105,
+              116,
+              105,
+              118,
+              111,
+              115,
+              32,
+              112,
+              111,
+              114,
+              32,
+              112,
+              111,
+              108,
+              195,
+              173,
+              116,
+              105,
+              99,
+              97,
+              115,
+              32,
+              100,
+              101,
+              32,
+              115,
+              101,
+              103,
+              117,
+              114,
+              105,
+              100,
+              97,
+              100,
+              32,
+              100,
+              101,
+              32,
+              115,
+              101,
+              115,
+              105,
+              195,
+              179,
+              110,
+              32,
+              195,
+              186,
+              110,
+              105,
+              99,
+              97,
+              46,
+              34,
+              44,
+              34,
+              112,
+              101,
+              114,
+              102,
+              105,
+              108,
+              95,
+              105,
+              110,
+              99,
+              111,
+              109,
+              112,
+              108,
+              101,
+              116,
+              111,
+              34,
+              58,
+              102,
+              97,
+              108,
+              115,
+              101,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 1182,
+          "responseSize": 404
+        },
+        "id": "59efb017-a5ff-4d29-b16e-886307245522",
+        "assertions": [
+          {
+            "assertion": "Login exitoso HTTP 200",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "96b816f1-671f-44b9-a291-9f47b6c8b934",
+          "length": 9,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "b0be20b1-863a-4cd4-87d0-3ec11e5380c2"
+        },
+        "item": {
+          "id": "ffe46728-e13e-47b5-bbc5-43f244a87866",
+          "name": "Paso 0.2 — Crear Ciclo Biológico Propio (RF-16)",
+          "request": {
+            "url": {
+              "path": [
+                "configuracion",
+                "ciclos"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especie\": 4,\n  \"nombre\": \"{{ciclo_nombre}}\",\n  \"duracion_dias\": 90,\n  \"descripcion\": \"Ciclo autocontenido para suite Postman G24\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "1ad5fc82-d6c9-4317-8b0f-8f102df01c0e",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('ciclo_nombre', 'Ciclo G24 Postman ' + Date.now());"
+                ],
+                "_lastExecutionId": "b13a9669-e460-4edb-8b1f-1c53bcc301be"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "955f3450-68cf-47eb-8003-b6315a36946e",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Creación de Ciclo Biológico HTTP 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id_ciclo_biologico).to.be.a('number');",
+                  "    pm.collectionVariables.set('ciclo_id', jsonData.id_ciclo_biologico);",
+                  "});"
+                ],
+                "_lastExecutionId": "287ae415-e2c4-4b7f-9b5e-d4ad096d5f19"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "configuracion",
+              "ciclos"
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwianRpIjoiMTQ0NDYiLCJyb2wiOjEsImV4cCI6MTc4ODg4Mzc3MSwiaWF0IjoxNzg4ODU0OTcxfQ.C4cOOMRZzMUnHnvcYBIuvmhNnObh9rQ9AQ_9sBaf39I"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "6f15e9a9-9589-4a53-a9fe-ae4ebf56265b",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "154",
+              "system": true
+            },
+            {
+              "key": "Cookie",
+              "value": "refresh_token=XXuhIguJiLR4DZCpsj4pfCK_mxUi8119HbnXXfm03KA",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"id_especie\": 4,\n  \"nombre\": \"Ciclo G24 Postman 1788854973551\",\n  \"duracion_dias\": 90,\n  \"descripcion\": \"Ciclo autocontenido para suite Postman G24\"\n}"
+          }
+        },
+        "response": {
+          "id": "7e3c830c-e5d8-43e3-b09b-053beb2b5549",
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "205"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 08 Sep 2026 08:09:31 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "54e817d7-bc3e-4c54-b21a-5fa959bc2faa"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              100,
+              95,
+              99,
+              105,
+              99,
+              108,
+              111,
+              95,
+              98,
+              105,
+              111,
+              108,
+              111,
+              103,
+              105,
+              99,
+              111,
+              34,
+              58,
+              50,
+              53,
+              44,
+              34,
+              110,
+              111,
+              109,
+              98,
+              114,
+              101,
+              34,
+              58,
+              34,
+              67,
+              105,
+              99,
+              108,
+              111,
+              32,
+              71,
+              50,
+              52,
+              32,
+              80,
+              111,
+              115,
+              116,
+              109,
+              97,
+              110,
+              32,
+              49,
+              55,
+              56,
+              56,
+              56,
+              53,
+              52,
+              57,
+              55,
+              51,
+              53,
+              53,
+              49,
+              34,
+              44,
+              34,
+              100,
+              101,
+              115,
+              99,
+              114,
+              105,
+              112,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              34,
+              67,
+              105,
+              99,
+              108,
+              111,
+              32,
+              97,
+              117,
+              116,
+              111,
+              99,
+              111,
+              110,
+              116,
+              101,
+              110,
+              105,
+              100,
+              111,
+              32,
+              112,
+              97,
+              114,
+              97,
+              32,
+              115,
+              117,
+              105,
+              116,
+              101,
+              32,
+              80,
+              111,
+              115,
+              116,
+              109,
+              97,
+              110,
+              32,
+              71,
+              50,
+              52,
+              34,
+              44,
+              34,
+              100,
+              117,
+              114,
+              97,
+              99,
+              105,
+              111,
+              110,
+              95,
+              100,
+              105,
+              97,
+              115,
+              34,
+              58,
+              57,
+              48,
+              44,
+              34,
+              105,
+              100,
+              95,
+              101,
+              115,
+              112,
+              101,
+              99,
+              105,
+              101,
+              34,
+              58,
+              52,
+              44,
+              34,
+              101,
+              115,
+              95,
+              97,
+              99,
+              116,
+              105,
+              118,
+              111,
+              34,
+              58,
+              116,
+              114,
+              117,
+              101,
+              44,
+              34,
+              102,
+              101,
+              99,
+              104,
+              97,
+              95,
+              97,
+              99,
+              116,
+              117,
+              97,
+              108,
+              105,
+              122,
+              97,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 206,
+          "responseSize": 205
+        },
+        "id": "ffe46728-e13e-47b5-bbc5-43f244a87866",
+        "assertions": [
+          {
+            "assertion": "Creación de Ciclo Biológico HTTP 201",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "a207daad-d5f3-41db-9d35-9db9c9a15b44",
+          "length": 9,
+          "cycles": 1,
+          "position": 2,
+          "iteration": 0,
+          "httpRequestId": "087a7ebf-0ae2-4fcd-9eee-b94d13d13487"
+        },
+        "item": {
+          "id": "ad66ac9c-1c09-4388-a2db-c1e56ccf39f0",
+          "name": "Paso 0.3 — Crear Lote Poblacional Propio (RF-33)",
+          "request": {
+            "url": {
+              "path": [
+                "activos-biologicos"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-08\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "9cc433f2-86cd-4cca-a419-1bbced29e544",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Creación de Lote Poblacional HTTP 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id_activo_biologico).to.be.a('number');",
+                  "    pm.collectionVariables.set('lote_id', jsonData.id_activo_biologico);",
+                  "});"
+                ],
+                "_lastExecutionId": "20df00e7-2667-4d86-8d3f-e9b9de9ff3f0"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "activos-biologicos"
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwianRpIjoiMTQ0NDYiLCJyb2wiOjEsImV4cCI6MTc4ODg4Mzc3MSwiaWF0IjoxNzg4ODU0OTcxfQ.C4cOOMRZzMUnHnvcYBIuvmhNnObh9rQ9AQ_9sBaf39I"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "52d9e0db-f313-4a14-a3ad-48b53bbc7cd0",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "288",
+              "system": true
+            },
+            {
+              "key": "Cookie",
+              "value": "refresh_token=XXuhIguJiLR4DZCpsj4pfCK_mxUi8119HbnXXfm03KA",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-08\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+          }
+        },
+        "response": {
+          "id": "c1ddac6b-6fbf-4d9c-864e-39a4f549c5e6",
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "624"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 08 Sep 2026 08:09:31 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "6ff2c424-4391-4cb5-9e29-7f452531ac61"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              100,
+              95,
+              97,
+              99,
+              116,
+              105,
+              118,
+              111,
+              95,
+              98,
+              105,
+              111,
+              108,
+              111,
+              103,
+              105,
+              99,
+              111,
+              34,
+              58,
+              49,
+              48,
+              51,
+              44,
+              34,
+              105,
+              100,
+              95,
+              101,
+              115,
+              112,
+              101,
+              99,
+              105,
+              101,
+              34,
+              58,
+              52,
+              44,
+              34,
+              116,
+              105,
+              112,
+              111,
+              34,
+              58,
+              34,
+              80,
+              79,
+              66,
+              76,
+              65,
+              67,
+              73,
+              79,
+              78,
+              65,
+              76,
+              34,
+              44,
+              34,
+              105,
+              100,
+              101,
+              110,
+              116,
+              105,
+              102,
+              105,
+              99,
+              97,
+              100,
+              111,
+              114,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              102,
+              101,
+              99,
+              104,
+              97,
+              95,
+              105,
+              110,
+              105,
+              99,
+              105,
+              111,
+              95,
+              99,
+              105,
+              99,
+              108,
+              111,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              48,
+              56,
+              34,
+              44,
+              34,
+              100,
+              101,
+              116,
+              97,
+              108,
+              108,
+              101,
+              115,
+              95,
+              112,
+              114,
+              111,
+              99,
+              101,
+              100,
+              101,
+              110,
+              99,
+              105,
+              97,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              111,
+              114,
+              105,
+              103,
+              101,
+              110,
+              95,
+              102,
+              105,
+              110,
+              97,
+              110,
+              99,
+              105,
+              101,
+              114,
+              111,
+              34,
+              58,
+              34,
+              99,
+              111,
+              109,
+              112,
+              114,
+              97,
+              34,
+              44,
+              34,
+              99,
+              111,
+              115,
+              116,
+              111,
+              95,
+              97,
+              100,
+              113,
+              117,
+              105,
+              115,
+              105,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              34,
+              53,
+              48,
+              48,
+              48,
+              48,
+              46,
+              48,
+              48,
+              48,
+              48,
+              34,
+              44,
+              34,
+              115,
+              111,
+              112,
+              111,
+              114,
+              116,
+              101,
+              95,
+              100,
+              111,
+              99,
+              117,
+              109,
+              101,
+              110,
+              116,
+              97,
+              108,
+              34,
+              58,
+              34,
+              70,
+              97,
+              99,
+              116,
+              117,
+              114,
+              97,
+              45,
+              80,
+              111,
+              115,
+              116,
+              109,
+              97,
+              110,
+              45,
+              71,
+              50,
+              52,
+              34,
+              44,
+              34,
+              100,
+              101,
+              115,
+              99,
+              114,
+              105,
+              112,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              105,
+              100,
+              95,
+              105,
+              110,
+              102,
+              114,
+              97,
+              101,
+              115,
+              116,
+              114,
+              117,
+              99,
+              116,
+              117,
+              114,
+              97,
+              34,
+              58,
+              51,
+              44,
+              34,
+              97,
+              116,
+              114,
+              105,
+              98,
+              117,
+              116,
+              111,
+              115,
+              95,
+              100,
+              105,
+              110,
+              97,
+              109,
+              105,
+              99,
+              111,
+              115,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              105,
+              100,
+              95,
+              101,
+              115,
+              116,
+              97,
+              100,
+              111,
+              34,
+              58,
+              49,
+              44,
+              34,
+              110,
+              111,
+              109,
+              98,
+              114,
+              101,
+              95,
+              101,
+              115,
+              116,
+              97,
+              100,
+              111,
+              34,
+              58,
+              34,
+              65,
+              67,
+              84,
+              73,
+              86,
+              79,
+              34,
+              44,
+              34,
+              105,
+              100,
+              95,
+              117,
+              115,
+              117,
+              97,
+              114,
+              105,
+              111,
+              34,
+              58,
+              49,
+              44,
+              34,
+              102,
+              101,
+              99,
+              104,
+              97,
+              95,
+              99,
+              114,
+              101,
+              97,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              48,
+              56,
+              84,
+              48,
+              56,
+              58,
+              48,
+              57,
+              58,
+              51,
+              49,
+              46,
+              57,
+              57,
+              54,
+              49,
+              48,
+              51,
+              90,
+              34,
+              44,
+              34,
+              100,
+              101,
+              116,
+              97,
+              108,
+              108,
+              101,
+              95,
+              105,
+              110,
+              100,
+              105,
+              118,
+              105,
+              100,
+              117,
+              97,
+              108,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              100,
+              101,
+              116,
+              97,
+              108,
+              108,
+              101,
+              95,
+              112,
+              111,
+              98,
+              108,
+              97,
+              99,
+              105,
+              111,
+              110,
+              97,
+              108,
+              34,
+              58,
+              123,
+              34,
+              105,
+              100,
+              95,
+              100,
+              101,
+              116,
+              97,
+              108,
+              108,
+              101,
+              34,
+              58,
+              53,
+              53,
+              44,
+              34,
+              99,
+              97,
+              110,
+              116,
+              105,
+              100,
+              97,
+              100,
+              95,
+              105,
+              110,
+              105,
+              99,
+              105,
+              97,
+              108,
+              34,
+              58,
+              49,
+              48,
+              48,
+              44,
+              34,
+              99,
+              97,
+              110,
+              116,
+              105,
+              100,
+              97,
+              100,
+              95,
+              97,
+              99,
+              116,
+              117,
+              97,
+              108,
+              34,
+              58,
+              49,
+              48,
+              48,
+              44,
+              34,
+              112,
+              101,
+              115,
+              111,
+              95,
+              112,
+              114,
+              111,
+              109,
+              101,
+              100,
+              105,
+              111,
+              95,
+              105,
+              110,
+              105,
+              99,
+              105,
+              97,
+              108,
+              34,
+              58,
+              34,
+              49,
+              48,
+              46,
+              48,
+              48,
+              48,
+              48,
+              34,
+              44,
+              34,
+              112,
+              101,
+              115,
+              111,
+              95,
+              112,
+              114,
+              111,
+              109,
+              101,
+              100,
+              105,
+              111,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              98,
+              105,
+              111,
+              109,
+              97,
+              115,
+              97,
+              95,
+              116,
+              111,
+              116,
+              97,
+              108,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              100,
+              101,
+              110,
+              115,
+              105,
+              100,
+              97,
+              100,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              125,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 221,
+          "responseSize": 624
+        },
+        "id": "ad66ac9c-1c09-4388-a2db-c1e56ccf39f0",
+        "assertions": [
+          {
+            "assertion": "Creación de Lote Poblacional HTTP 201",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "412b711d-7fe6-407e-ad65-343d9732e91d",
+          "length": 9,
+          "cycles": 1,
+          "position": 3,
+          "iteration": 0,
+          "httpRequestId": "4b44adb1-ce23-4cf2-b67a-66c33a3c231a"
+        },
+        "item": {
+          "id": "457aa806-9537-49ae-b71a-e69cd8b00bd9",
+          "name": "Paso 0.4 — Intentar Asignar Fase Productiva (RF-37)",
+          "request": {
+            "url": {
+              "path": [
+                "activos-biologicos",
+                "{{lote_id}}",
+                "fases"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_ciclo_productiva\": {{ciclo_id}},\n  \"fecha_inicio\": \"2026-09-08\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "978cc375-0744-4518-9768-a11b926495ab",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Evaluación de Asignación de Fase RF-37', function () {",
+                  "    if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "    } else {",
+                  "        pm.expect(pm.response.code).to.eq(400);",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.error_code).to.be.oneOf(['CICLO_INVALIDO', 'VAL_ENTRADA']);",
+                  "    }",
+                  "});"
+                ],
+                "_lastExecutionId": "eb3405b8-8c4d-422c-a665-db3ff9654d31"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "activos-biologicos",
+              "103",
+              "fases"
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwianRpIjoiMTQ0NDYiLCJyb2wiOjEsImV4cCI6MTc4ODg4Mzc3MSwiaWF0IjoxNzg4ODU0OTcxfQ.C4cOOMRZzMUnHnvcYBIuvmhNnObh9rQ9AQ_9sBaf39I"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "c28d4a72-7bd8-45d6-9959-62bf91983fdd",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "63",
+              "system": true
+            },
+            {
+              "key": "Cookie",
+              "value": "refresh_token=XXuhIguJiLR4DZCpsj4pfCK_mxUi8119HbnXXfm03KA",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"id_ciclo_productiva\": 25,\n  \"fecha_inicio\": \"2026-09-08\"\n}"
+          }
+        },
+        "response": {
+          "id": "0b00e0d8-ffa6-4b3c-8116-ae1fcad89c7d",
+          "status": "Bad Request",
+          "code": 400,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "227"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 08 Sep 2026 08:09:32 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "548d1e7d-8e1d-4187-8cba-ddaa4a13f439"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              95,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              34,
+              67,
+              73,
+              67,
+              76,
+              79,
+              95,
+              73,
+              78,
+              86,
+              65,
+              76,
+              73,
+              68,
+              79,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              69,
+              108,
+              32,
+              99,
+              105,
+              99,
+              108,
+              111,
+              32,
+              112,
+              114,
+              111,
+              100,
+              117,
+              99,
+              116,
+              105,
+              118,
+              111,
+              32,
+              99,
+              111,
+              110,
+              32,
+              73,
+              68,
+              32,
+              50,
+              53,
+              32,
+              110,
+              111,
+              32,
+              101,
+              120,
+              105,
+              115,
+              116,
+              101,
+              46,
+              34,
+              44,
+              34,
+              102,
+              105,
+              101,
+              108,
+              100,
+              115,
+              34,
+              58,
+              91,
+              123,
+              34,
+              102,
+              105,
+              101,
+              108,
+              100,
+              34,
+              58,
+              34,
+              105,
+              100,
+              95,
+              99,
+              105,
+              99,
+              108,
+              111,
+              95,
+              112,
+              114,
+              111,
+              100,
+              117,
+              99,
+              116,
+              105,
+              118,
+              97,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              69,
+              108,
+              32,
+              99,
+              105,
+              99,
+              108,
+              111,
+              32,
+              112,
+              114,
+              111,
+              100,
+              117,
+              99,
+              116,
+              105,
+              118,
+              111,
+              32,
+              99,
+              111,
+              110,
+              32,
+              73,
+              68,
+              32,
+              50,
+              53,
+              32,
+              110,
+              111,
+              32,
+              101,
+              120,
+              105,
+              115,
+              116,
+              101,
+              46,
+              34,
+              125,
+              93,
+              44,
+              34,
+              116,
+              105,
+              109,
+              101,
+              115,
+              116,
+              97,
+              109,
+              112,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              48,
+              56,
+              84,
+              48,
+              56,
+              58,
+              48,
+              57,
+              58,
+              51,
+              50,
+              46,
+              51,
+              48,
+              56,
+              53,
+              55,
+              54,
+              43,
+              48,
+              48,
+              58,
+              48,
+              48,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 129,
+          "responseSize": 227
+        },
+        "id": "457aa806-9537-49ae-b71a-e69cd8b00bd9",
+        "assertions": [
+          {
+            "assertion": "Evaluación de Asignación de Fase RF-37",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "e13ae5e9-a150-4de1-ac36-881f6b8e0287",
+          "length": 9,
+          "cycles": 1,
+          "position": 4,
+          "iteration": 0,
+          "httpRequestId": "789e586b-ff10-4bd2-ab62-e4a24bbcd643"
+        },
+        "item": {
+          "id": "d4f44477-14db-4290-97c9-4075ae34c695",
+          "name": "TC-M02-049 — Evento CRECIMIENTO (RF-39)",
+          "request": {
+            "url": {
+              "path": [
+                "activos-biologicos",
+                "{{lote_id}}",
+                "eventos",
+                "crecimiento"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fecha_evento\": \"2026-09-08\",\n  \"valor_medicion\": 12.5,\n  \"tipo_agregacion\": \"PROMEDIO\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "5e07363f-b3e2-4988-ba38-97a52702da96",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Registro Evento CRECIMIENTO (RF-39)', function () {",
+                  "    if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "    } else {",
+                  "        pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "    }",
+                  "});"
+                ],
+                "_lastExecutionId": "d18fbdc9-e2f1-4d27-ba2e-384257cd78cc"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "activos-biologicos",
+              "103",
+              "eventos",
+              "crecimiento"
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwianRpIjoiMTQ0NDYiLCJyb2wiOjEsImV4cCI6MTc4ODg4Mzc3MSwiaWF0IjoxNzg4ODU0OTcxfQ.C4cOOMRZzMUnHnvcYBIuvmhNnObh9rQ9AQ_9sBaf39I"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "f34e411e-24e8-4ed6-b8e5-bf4c49385df2",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "93",
+              "system": true
+            },
+            {
+              "key": "Cookie",
+              "value": "refresh_token=XXuhIguJiLR4DZCpsj4pfCK_mxUi8119HbnXXfm03KA",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"fecha_evento\": \"2026-09-08\",\n  \"valor_medicion\": 12.5,\n  \"tipo_agregacion\": \"PROMEDIO\"\n}"
+          }
+        },
+        "response": {
+          "id": "a2cc8d77-67b8-4adc-beb9-2c9049f8286c",
+          "status": "Bad Request",
+          "code": 400,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "242"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 08 Sep 2026 08:09:32 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "0c5fd31e-7299-462c-9d06-cf4e940666cb"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              95,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              34,
+              86,
+              65,
+              76,
+              95,
+              69,
+              78,
+              84,
+              82,
+              65,
+              68,
+              65,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              69,
+              114,
+              114,
+              111,
+              114,
+              101,
+              115,
+              32,
+              100,
+              101,
+              32,
+              118,
+              97,
+              108,
+              105,
+              100,
+              97,
+              99,
+              105,
+              111,
+              110,
+              32,
+              101,
+              110,
+              32,
+              108,
+              97,
+              32,
+              115,
+              111,
+              108,
+              105,
+              99,
+              105,
+              116,
+              117,
+              100,
+              34,
+              44,
+              34,
+              102,
+              105,
+              101,
+              108,
+              100,
+              115,
+              34,
+              58,
+              91,
+              123,
+              34,
+              102,
+              105,
+              101,
+              108,
+              100,
+              34,
+              58,
+              34,
+              116,
+              105,
+              112,
+              111,
+              95,
+              109,
+              101,
+              100,
+              105,
+              99,
+              105,
+              111,
+              110,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              70,
+              105,
+              101,
+              108,
+              100,
+              32,
+              114,
+              101,
+              113,
+              117,
+              105,
+              114,
+              101,
+              100,
+              34,
+              125,
+              44,
+              123,
+              34,
+              102,
+              105,
+              101,
+              108,
+              100,
+              34,
+              58,
+              34,
+              117,
+              110,
+              105,
+              100,
+              97,
+              100,
+              95,
+              109,
+              101,
+              100,
+              105,
+              100,
+              97,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              70,
+              105,
+              101,
+              108,
+              100,
+              32,
+              114,
+              101,
+              113,
+              117,
+              105,
+              114,
+              101,
+              100,
+              34,
+              125,
+              93,
+              44,
+              34,
+              116,
+              105,
+              109,
+              101,
+              115,
+              116,
+              97,
+              109,
+              112,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              48,
+              56,
+              84,
+              48,
+              56,
+              58,
+              48,
+              57,
+              58,
+              51,
+              50,
+              46,
+              52,
+              57,
+              55,
+              57,
+              49,
+              49,
+              43,
+              48,
+              48,
+              58,
+              48,
+              48,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 110,
+          "responseSize": 242
+        },
+        "id": "d4f44477-14db-4290-97c9-4075ae34c695",
+        "assertions": [
+          {
+            "assertion": "Registro Evento CRECIMIENTO (RF-39)",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "9b4b4691-52a7-4573-819d-e7d145a2ff7d",
+          "length": 9,
+          "cycles": 1,
+          "position": 5,
+          "iteration": 0,
+          "httpRequestId": "fccc18fe-4dae-430d-b52b-c9f8ff52368f"
+        },
+        "item": {
+          "id": "ecc9113c-0fe9-42a3-bbe8-b7848940558f",
+          "name": "TC-M02-050 — Evento BAJA (RF-39)",
+          "request": {
+            "url": {
+              "path": [
+                "activos-biologicos",
+                "{{lote_id}}",
+                "eventos",
+                "baja"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_baja\": \"muerte\",\n  \"fecha_baja\": \"2026-09-08\",\n  \"motivo_baja\": \"Mortalidad de prueba Postman G24\",\n  \"cantidad_afectada\": 10\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "91664912-6efe-4a61-be7f-c152d85e4268",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Registro Evento BAJA (RF-39)', function () {",
+                  "    if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "    } else {",
+                  "        pm.expect(pm.response.code).to.be.oneOf([400, 422, 500]);",
+                  "    }",
+                  "});"
+                ],
+                "_lastExecutionId": "6a3e634b-6582-4199-ab6f-1230cd622536"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "activos-biologicos",
+              "103",
+              "eventos",
+              "baja"
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwianRpIjoiMTQ0NDYiLCJyb2wiOjEsImV4cCI6MTc4ODg4Mzc3MSwiaWF0IjoxNzg4ODU0OTcxfQ.C4cOOMRZzMUnHnvcYBIuvmhNnObh9rQ9AQ_9sBaf39I"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "61282244-4c3a-4029-8cce-eef4f5270b5e",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "137",
+              "system": true
+            },
+            {
+              "key": "Cookie",
+              "value": "refresh_token=XXuhIguJiLR4DZCpsj4pfCK_mxUi8119HbnXXfm03KA",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"tipo_baja\": \"muerte\",\n  \"fecha_baja\": \"2026-09-08\",\n  \"motivo_baja\": \"Mortalidad de prueba Postman G24\",\n  \"cantidad_afectada\": 10\n}"
+          }
+        },
+        "response": {
+          "id": "82c8d2c9-3e97-40ca-a62c-656184d3b92a",
+          "status": "Internal Server Error",
+          "code": 500,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "135"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 08 Sep 2026 08:09:32 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "968aa352-6406-4ddf-9079-7e4f02beab79"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              95,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              34,
+              69,
+              82,
+              82,
+              79,
+              82,
+              95,
+              73,
+              78,
+              84,
+              69,
+              82,
+              78,
+              79,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              69,
+              114,
+              114,
+              111,
+              114,
+              32,
+              105,
+              110,
+              101,
+              115,
+              112,
+              101,
+              114,
+              97,
+              100,
+              111,
+              32,
+              101,
+              110,
+              32,
+              98,
+              97,
+              115,
+              101,
+              32,
+              100,
+              101,
+              32,
+              100,
+              97,
+              116,
+              111,
+              115,
+              34,
+              44,
+              34,
+              102,
+              105,
+              101,
+              108,
+              100,
+              115,
+              34,
+              58,
+              91,
+              93,
+              44,
+              34,
+              116,
+              105,
+              109,
+              101,
+              115,
+              116,
+              97,
+              109,
+              112,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              48,
+              56,
+              84,
+              48,
+              56,
+              58,
+              48,
+              57,
+              58,
+              51,
+              50,
+              46,
+              55,
+              50,
+              56,
+              56,
+              54,
+              56,
+              43,
+              48,
+              48,
+              58,
+              48,
+              48,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 141,
+          "responseSize": 135
+        },
+        "id": "ecc9113c-0fe9-42a3-bbe8-b7848940558f",
+        "assertions": [
+          {
+            "assertion": "Registro Evento BAJA (RF-39)",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "e5b3e1cb-4ed1-4f74-b0bb-2dd264e7b8ca",
+          "length": 9,
+          "cycles": 1,
+          "position": 6,
+          "iteration": 0,
+          "httpRequestId": "058763d9-0764-4e25-8f63-5ae0795eaa34"
+        },
+        "item": {
+          "id": "450e64ac-81f8-41f9-b6ae-57cec86bce47",
+          "name": "TC-M02-056 — Validar Inmutabilidad Registro Original (RF-33)",
+          "request": {
+            "url": {
+              "path": [
+                "activos-biologicos",
+                "{{lote_id}}"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "ed06b834-b0ca-4dfc-a8d9-78203037b238",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Inmutabilidad de datos originales de registro (RF-33)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    var det = jsonData.detalle_poblacional;",
+                  "    pm.expect(det.cantidad_inicial).to.eq(100);",
+                  "    pm.expect(Number(det.peso_promedio_inicial)).to.eq(10.0);",
+                  "});"
+                ],
+                "_lastExecutionId": "f954ea90-c744-406b-b6f2-7de132255c07"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "activos-biologicos",
+              "103"
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwianRpIjoiMTQ0NDYiLCJyb2wiOjEsImV4cCI6MTc4ODg4Mzc3MSwiaWF0IjoxNzg4ODU0OTcxfQ.C4cOOMRZzMUnHnvcYBIuvmhNnObh9rQ9AQ_9sBaf39I"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "eff5bf74-a7c9-4d0c-a36f-07495906eb79",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Cookie",
+              "value": "refresh_token=XXuhIguJiLR4DZCpsj4pfCK_mxUi8119HbnXXfm03KA",
+              "system": true
+            }
+          ],
+          "method": "GET"
+        },
+        "response": {
+          "id": "11fe8430-28c1-492a-bbe5-6a330f257ac9",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "624"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 08 Sep 2026 08:09:32 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "3bac9c38-8e52-4ed2-b692-af204190fb3c"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              100,
+              95,
+              97,
+              99,
+              116,
+              105,
+              118,
+              111,
+              95,
+              98,
+              105,
+              111,
+              108,
+              111,
+              103,
+              105,
+              99,
+              111,
+              34,
+              58,
+              49,
+              48,
+              51,
+              44,
+              34,
+              105,
+              100,
+              95,
+              101,
+              115,
+              112,
+              101,
+              99,
+              105,
+              101,
+              34,
+              58,
+              52,
+              44,
+              34,
+              116,
+              105,
+              112,
+              111,
+              34,
+              58,
+              34,
+              80,
+              79,
+              66,
+              76,
+              65,
+              67,
+              73,
+              79,
+              78,
+              65,
+              76,
+              34,
+              44,
+              34,
+              105,
+              100,
+              101,
+              110,
+              116,
+              105,
+              102,
+              105,
+              99,
+              97,
+              100,
+              111,
+              114,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              102,
+              101,
+              99,
+              104,
+              97,
+              95,
+              105,
+              110,
+              105,
+              99,
+              105,
+              111,
+              95,
+              99,
+              105,
+              99,
+              108,
+              111,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              48,
+              56,
+              34,
+              44,
+              34,
+              100,
+              101,
+              116,
+              97,
+              108,
+              108,
+              101,
+              115,
+              95,
+              112,
+              114,
+              111,
+              99,
+              101,
+              100,
+              101,
+              110,
+              99,
+              105,
+              97,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              111,
+              114,
+              105,
+              103,
+              101,
+              110,
+              95,
+              102,
+              105,
+              110,
+              97,
+              110,
+              99,
+              105,
+              101,
+              114,
+              111,
+              34,
+              58,
+              34,
+              99,
+              111,
+              109,
+              112,
+              114,
+              97,
+              34,
+              44,
+              34,
+              99,
+              111,
+              115,
+              116,
+              111,
+              95,
+              97,
+              100,
+              113,
+              117,
+              105,
+              115,
+              105,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              34,
+              53,
+              48,
+              48,
+              48,
+              48,
+              46,
+              48,
+              48,
+              48,
+              48,
+              34,
+              44,
+              34,
+              115,
+              111,
+              112,
+              111,
+              114,
+              116,
+              101,
+              95,
+              100,
+              111,
+              99,
+              117,
+              109,
+              101,
+              110,
+              116,
+              97,
+              108,
+              34,
+              58,
+              34,
+              70,
+              97,
+              99,
+              116,
+              117,
+              114,
+              97,
+              45,
+              80,
+              111,
+              115,
+              116,
+              109,
+              97,
+              110,
+              45,
+              71,
+              50,
+              52,
+              34,
+              44,
+              34,
+              100,
+              101,
+              115,
+              99,
+              114,
+              105,
+              112,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              105,
+              100,
+              95,
+              105,
+              110,
+              102,
+              114,
+              97,
+              101,
+              115,
+              116,
+              114,
+              117,
+              99,
+              116,
+              117,
+              114,
+              97,
+              34,
+              58,
+              51,
+              44,
+              34,
+              97,
+              116,
+              114,
+              105,
+              98,
+              117,
+              116,
+              111,
+              115,
+              95,
+              100,
+              105,
+              110,
+              97,
+              109,
+              105,
+              99,
+              111,
+              115,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              105,
+              100,
+              95,
+              101,
+              115,
+              116,
+              97,
+              100,
+              111,
+              34,
+              58,
+              49,
+              44,
+              34,
+              110,
+              111,
+              109,
+              98,
+              114,
+              101,
+              95,
+              101,
+              115,
+              116,
+              97,
+              100,
+              111,
+              34,
+              58,
+              34,
+              65,
+              67,
+              84,
+              73,
+              86,
+              79,
+              34,
+              44,
+              34,
+              105,
+              100,
+              95,
+              117,
+              115,
+              117,
+              97,
+              114,
+              105,
+              111,
+              34,
+              58,
+              49,
+              44,
+              34,
+              102,
+              101,
+              99,
+              104,
+              97,
+              95,
+              99,
+              114,
+              101,
+              97,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              48,
+              56,
+              84,
+              48,
+              56,
+              58,
+              48,
+              57,
+              58,
+              51,
+              49,
+              46,
+              57,
+              57,
+              54,
+              49,
+              48,
+              51,
+              90,
+              34,
+              44,
+              34,
+              100,
+              101,
+              116,
+              97,
+              108,
+              108,
+              101,
+              95,
+              105,
+              110,
+              100,
+              105,
+              118,
+              105,
+              100,
+              117,
+              97,
+              108,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              100,
+              101,
+              116,
+              97,
+              108,
+              108,
+              101,
+              95,
+              112,
+              111,
+              98,
+              108,
+              97,
+              99,
+              105,
+              111,
+              110,
+              97,
+              108,
+              34,
+              58,
+              123,
+              34,
+              105,
+              100,
+              95,
+              100,
+              101,
+              116,
+              97,
+              108,
+              108,
+              101,
+              34,
+              58,
+              53,
+              53,
+              44,
+              34,
+              99,
+              97,
+              110,
+              116,
+              105,
+              100,
+              97,
+              100,
+              95,
+              105,
+              110,
+              105,
+              99,
+              105,
+              97,
+              108,
+              34,
+              58,
+              49,
+              48,
+              48,
+              44,
+              34,
+              99,
+              97,
+              110,
+              116,
+              105,
+              100,
+              97,
+              100,
+              95,
+              97,
+              99,
+              116,
+              117,
+              97,
+              108,
+              34,
+              58,
+              49,
+              48,
+              48,
+              44,
+              34,
+              112,
+              101,
+              115,
+              111,
+              95,
+              112,
+              114,
+              111,
+              109,
+              101,
+              100,
+              105,
+              111,
+              95,
+              105,
+              110,
+              105,
+              99,
+              105,
+              97,
+              108,
+              34,
+              58,
+              34,
+              49,
+              48,
+              46,
+              48,
+              48,
+              48,
+              48,
+              34,
+              44,
+              34,
+              112,
+              101,
+              115,
+              111,
+              95,
+              112,
+              114,
+              111,
+              109,
+              101,
+              100,
+              105,
+              111,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              98,
+              105,
+              111,
+              109,
+              97,
+              115,
+              97,
+              95,
+              116,
+              111,
+              116,
+              97,
+              108,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              100,
+              101,
+              110,
+              115,
+              105,
+              100,
+              97,
+              100,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              125,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 116,
+          "responseSize": 624
+        },
+        "id": "450e64ac-81f8-41f9-b6ae-57cec86bce47",
+        "assertions": [
+          {
+            "assertion": "Inmutabilidad de datos originales de registro (RF-33)",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "f4158681-07ba-4939-a271-ce2b58df5857",
+          "length": 9,
+          "cycles": 1,
+          "position": 7,
+          "iteration": 0,
+          "httpRequestId": "7b556c90-5bd2-4215-bc4b-e81acbf9e169"
+        },
+        "item": {
+          "id": "cb5b3df3-0cfd-43f3-b16d-905d915a888e",
+          "name": "Teardown Lote (RF-44)",
+          "request": {
+            "url": {
+              "path": [
+                "activos-biologicos",
+                "{{lote_id}}",
+                "estado"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado_nuevo\": \"BAJA\",\n  \"fecha_cambio_estado\": \"2026-09-08\",\n  \"motivo_cambio\": \"Teardown de prueba Postman G24\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "1f25d500-4018-4f1f-8532-6412142c90d3",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Teardown Lote HTTP 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "_lastExecutionId": "0c7307cd-751b-4671-93d8-c5a53122b0d0"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "activos-biologicos",
+              "103",
+              "estado"
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwianRpIjoiMTQ0NDYiLCJyb2wiOjEsImV4cCI6MTc4ODg4Mzc3MSwiaWF0IjoxNzg4ODU0OTcxfQ.C4cOOMRZzMUnHnvcYBIuvmhNnObh9rQ9AQ_9sBaf39I"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "a0adf42f-c29b-4634-aa60-bdad92eb28a6",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "120",
+              "system": true
+            },
+            {
+              "key": "Cookie",
+              "value": "refresh_token=XXuhIguJiLR4DZCpsj4pfCK_mxUi8119HbnXXfm03KA",
+              "system": true
+            }
+          ],
+          "method": "PATCH",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"estado_nuevo\": \"BAJA\",\n  \"fecha_cambio_estado\": \"2026-09-08\",\n  \"motivo_cambio\": \"Teardown de prueba Postman G24\"\n}"
+          }
+        },
+        "response": {
+          "id": "cf43daf8-895e-484d-9951-2ace3f44b23a",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "351"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 08 Sep 2026 08:09:33 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "ac934cbd-29d8-454a-b1ab-ecc1d907b75d"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              100,
+              95,
+              97,
+              99,
+              116,
+              105,
+              118,
+              111,
+              95,
+              98,
+              105,
+              111,
+              108,
+              111,
+              103,
+              105,
+              99,
+              111,
+              34,
+              58,
+              49,
+              48,
+              51,
+              44,
+              34,
+              101,
+              115,
+              116,
+              97,
+              100,
+              111,
+              95,
+              97,
+              110,
+              116,
+              101,
+              114,
+              105,
+              111,
+              114,
+              34,
+              58,
+              49,
+              44,
+              34,
+              101,
+              115,
+              116,
+              97,
+              100,
+              111,
+              95,
+              110,
+              117,
+              101,
+              118,
+              111,
+              34,
+              58,
+              54,
+              44,
+              34,
+              104,
+              105,
+              115,
+              116,
+              111,
+              114,
+              105,
+              97,
+              108,
+              34,
+              58,
+              123,
+              34,
+              105,
+              100,
+              95,
+              104,
+              105,
+              115,
+              116,
+              111,
+              114,
+              105,
+              99,
+              111,
+              34,
+              58,
+              49,
+              50,
+              49,
+              44,
+              34,
+              105,
+              100,
+              95,
+              97,
+              99,
+              116,
+              105,
+              118,
+              111,
+              95,
+              98,
+              105,
+              111,
+              108,
+              111,
+              103,
+              105,
+              99,
+              111,
+              34,
+              58,
+              49,
+              48,
+              51,
+              44,
+              34,
+              105,
+              100,
+              95,
+              101,
+              115,
+              116,
+              97,
+              100,
+              111,
+              95,
+              97,
+              110,
+              116,
+              101,
+              114,
+              105,
+              111,
+              114,
+              34,
+              58,
+              49,
+              44,
+              34,
+              110,
+              111,
+              109,
+              98,
+              114,
+              101,
+              95,
+              101,
+              115,
+              116,
+              97,
+              100,
+              111,
+              95,
+              97,
+              110,
+              116,
+              101,
+              114,
+              105,
+              111,
+              114,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              105,
+              100,
+              95,
+              101,
+              115,
+              116,
+              97,
+              100,
+              111,
+              95,
+              110,
+              117,
+              101,
+              118,
+              111,
+              34,
+              58,
+              54,
+              44,
+              34,
+              110,
+              111,
+              109,
+              98,
+              114,
+              101,
+              95,
+              101,
+              115,
+              116,
+              97,
+              100,
+              111,
+              95,
+              110,
+              117,
+              101,
+              118,
+              111,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              102,
+              101,
+              99,
+              104,
+              97,
+              95,
+              99,
+              97,
+              109,
+              98,
+              105,
+              111,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              48,
+              56,
+              84,
+              48,
+              48,
+              58,
+              48,
+              48,
+              58,
+              48,
+              48,
+              90,
+              34,
+              44,
+              34,
+              109,
+              111,
+              116,
+              105,
+              118,
+              111,
+              95,
+              99,
+              97,
+              109,
+              98,
+              105,
+              111,
+              34,
+              58,
+              34,
+              84,
+              101,
+              97,
+              114,
+              100,
+              111,
+              119,
+              110,
+              32,
+              100,
+              101,
+              32,
+              112,
+              114,
+              117,
+              101,
+              98,
+              97,
+              32,
+              80,
+              111,
+              115,
+              116,
+              109,
+              97,
+              110,
+              32,
+              71,
+              50,
+              52,
+              34,
+              44,
+              34,
+              109,
+              111,
+              100,
+              117,
+              108,
+              111,
+              95,
+              111,
+              114,
+              105,
+              103,
+              101,
+              110,
+              34,
+              58,
+              34,
+              109,
+              111,
+              100,
+              117,
+              108,
+              111,
+              50,
+              34,
+              44,
+              34,
+              105,
+              100,
+              95,
+              117,
+              115,
+              117,
+              97,
+              114,
+              105,
+              111,
+              34,
+              58,
+              49,
+              125,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 120,
+          "responseSize": 351
+        },
+        "id": "cb5b3df3-0cfd-43f3-b16d-905d915a888e",
+        "assertions": [
+          {
+            "assertion": "Teardown Lote HTTP 200 OK",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "daf5df86-2722-4be8-94e8-89b1582da01d",
+          "length": 9,
+          "cycles": 1,
+          "position": 8,
+          "iteration": 0,
+          "httpRequestId": "24b81052-dc14-429b-b01e-8b6157afed3c"
+        },
+        "item": {
+          "id": "47c956b4-b83b-42d7-a546-de50969452d3",
+          "name": "Teardown Ciclo (RF-16)",
+          "request": {
+            "url": {
+              "path": [
+                "configuracion",
+                "ciclos",
+                "{{ciclo_id}}",
+                "desactivar"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "PATCH"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "6f7b91f7-a7a1-44dd-9847-fab66ab0ffab",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Teardown Ciclo HTTP 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "_lastExecutionId": "1b4bf675-c9da-4423-9e07-b1a8b832d40a"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "configuracion",
+              "ciclos",
+              "25",
+              "desactivar"
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwianRpIjoiMTQ0NDYiLCJyb2wiOjEsImV4cCI6MTc4ODg4Mzc3MSwiaWF0IjoxNzg4ODU0OTcxfQ.C4cOOMRZzMUnHnvcYBIuvmhNnObh9rQ9AQ_9sBaf39I"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "63195db7-77b1-4ced-9a0b-5510fcbefd76",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Cookie",
+              "value": "refresh_token=XXuhIguJiLR4DZCpsj4pfCK_mxUi8119HbnXXfm03KA",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "0",
+              "system": true
+            }
+          ],
+          "method": "PATCH"
+        },
+        "response": {
+          "id": "0452c405-3b3f-4524-b426-b8c5cce2fbb0",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "231"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 08 Sep 2026 08:09:33 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "9d019286-c8bd-4a5f-a313-f8fdca5dec26"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              100,
+              95,
+              99,
+              105,
+              99,
+              108,
+              111,
+              95,
+              98,
+              105,
+              111,
+              108,
+              111,
+              103,
+              105,
+              99,
+              111,
+              34,
+              58,
+              50,
+              53,
+              44,
+              34,
+              110,
+              111,
+              109,
+              98,
+              114,
+              101,
+              34,
+              58,
+              34,
+              67,
+              105,
+              99,
+              108,
+              111,
+              32,
+              71,
+              50,
+              52,
+              32,
+              80,
+              111,
+              115,
+              116,
+              109,
+              97,
+              110,
+              32,
+              49,
+              55,
+              56,
+              56,
+              56,
+              53,
+              52,
+              57,
+              55,
+              51,
+              53,
+              53,
+              49,
+              34,
+              44,
+              34,
+              100,
+              101,
+              115,
+              99,
+              114,
+              105,
+              112,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              34,
+              67,
+              105,
+              99,
+              108,
+              111,
+              32,
+              97,
+              117,
+              116,
+              111,
+              99,
+              111,
+              110,
+              116,
+              101,
+              110,
+              105,
+              100,
+              111,
+              32,
+              112,
+              97,
+              114,
+              97,
+              32,
+              115,
+              117,
+              105,
+              116,
+              101,
+              32,
+              80,
+              111,
+              115,
+              116,
+              109,
+              97,
+              110,
+              32,
+              71,
+              50,
+              52,
+              34,
+              44,
+              34,
+              100,
+              117,
+              114,
+              97,
+              99,
+              105,
+              111,
+              110,
+              95,
+              100,
+              105,
+              97,
+              115,
+              34,
+              58,
+              57,
+              48,
+              44,
+              34,
+              105,
+              100,
+              95,
+              101,
+              115,
+              112,
+              101,
+              99,
+              105,
+              101,
+              34,
+              58,
+              52,
+              44,
+              34,
+              101,
+              115,
+              95,
+              97,
+              99,
+              116,
+              105,
+              118,
+              111,
+              34,
+              58,
+              102,
+              97,
+              108,
+              115,
+              101,
+              44,
+              34,
+              102,
+              101,
+              99,
+              104,
+              97,
+              95,
+              97,
+              99,
+              116,
+              117,
+              97,
+              108,
+              105,
+              122,
+              97,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              48,
+              56,
+              84,
+              48,
+              56,
+              58,
+              48,
+              57,
+              58,
+              51,
+              51,
+              46,
+              51,
+              52,
+              55,
+              55,
+              52,
+              54,
+              90,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 128,
+          "responseSize": 231
+        },
+        "id": "47c956b4-b83b-42d7-a546-de50969452d3",
+        "assertions": [
+          {
+            "assertion": "Teardown Ciclo HTTP 200 OK",
+            "skipped": false
+          }
+        ]
+      }
+    ],
+    "transfers": {
+      "responseTotal": 3043
+    },
+    "failures": [],
+    "error": null
+  }
+}
