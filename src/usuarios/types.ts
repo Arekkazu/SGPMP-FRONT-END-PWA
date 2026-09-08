@@ -14,6 +14,11 @@ export interface UsuarioListadoPaginadoResponse {
   items: UsuarioListadoResponse[];
 }
 
+export interface FincaAsignada {
+  id_finca: number;
+  nombre: string;
+}
+
 export interface UsuarioDetalleResponse {
   id_usuario: number;
   nombre: string;
@@ -30,6 +35,7 @@ export interface UsuarioDetalleResponse {
   telefono?: string;
   direccion?: string;
   version: number;
+  fincas?: FincaAsignada[];
 }
 
 export interface FiltrosUsuarios {
@@ -56,4 +62,8 @@ export type AccionCuenta = 'activar' | 'inactivar' | 'bloquear' | 'eliminar';
 export interface GestionarCuentaDTO {
   accion_cuenta: AccionCuenta;
   motivo_accion?: string;
+}
+
+export interface AsignarFincasDTO {
+  ids_fincas: number[];
 }
