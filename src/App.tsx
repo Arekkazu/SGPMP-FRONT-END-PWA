@@ -221,11 +221,9 @@ function PrivateRoute({ path, component: Component }: { path: string; component:
         if (perfilIncompleto === null) return null;
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
         return (
-          <ContextoProvider>
-            <AppShell operativa={RUTAS_CON_BLOQUEO_SIN_FINCA.includes(path)}>
-              <Component />
-            </AppShell>
-          </ContextoProvider>
+          <AppShell operativa={RUTAS_CON_BLOQUEO_SIN_FINCA.includes(path)}>
+            <Component />
+          </AppShell>
         );
       }}
     />
@@ -292,9 +290,11 @@ const App: React.FC = () => (
   <IonApp>
     <AuthProvider>
       <SessionManager />
-      <IonReactRouter>
-        <AppRoutes />
-      </IonReactRouter>
+      <ContextoProvider>
+        <IonReactRouter>
+          <AppRoutes />
+        </IonReactRouter>
+      </ContextoProvider>
     </AuthProvider>
   </IonApp>
 );
