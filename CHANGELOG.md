@@ -1,3 +1,14 @@
+## [1.0.0-rc.18](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.17...v1.0.0-rc.18) (2026-09-08)
+
+### Features
+
+* **rf10:** exportacion CSV de auditoria offline desde cache ([4745ebe](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4745ebe25991edf098112b0940940dd9ae60e38e))
+
+### Bug Fixes
+
+* **rf01:** limpiar token captcha al perder conexion ([610798d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/610798deda1a3e38e14a20c626f3a0481887baf0))
+* **rf13:** alinear campo ultima_modificacion en listado de usuarios ([b0972a6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b0972a64b4b3e479058cbb7447fa9edea02d6e76))
+
 ## [1.0.0-rc.17](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.16...v1.0.0-rc.17) (2026-09-08)
 
 ### Bug Fixes

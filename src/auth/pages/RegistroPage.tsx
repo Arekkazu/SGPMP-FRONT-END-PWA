@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -91,6 +91,18 @@ export function RegistroPage() {
     setCaptchaToken(token);
     if (token) setCaptchaError(null);
   };
+
+  // INC-M01-13 / TC-M01-102: al perder la conexión el widget de reCAPTCHA se
+  // desmonta pero el token ya emitido queda vivo. Los tokens de reCAPTCHA v2 son
+  // de un solo uso y expiran, así que al reconectar se reenviaba un token
+  // obsoleto y el backend respondía CAPTCHA_INVALIDO. Limpiarlo aquí obliga a
+  // re-resolver el CAPTCHA tras reconectar en vez de enviar el token viejo.
+  useEffect(() => {
+    if (!online) {
+      setCaptchaToken(null);
+      setCaptchaError(null);
+    }
+  }, [online]);
 
   if (success) {
     return (
