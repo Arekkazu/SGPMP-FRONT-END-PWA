@@ -5,6 +5,7 @@ import type {
   FiltrosUsuarios,
   EditarPerfilAdminDTO,
   GestionarCuentaDTO,
+  AsignarFincasDTO,
 } from '../types';
 import type { MessageResponse } from '../../auth/types';
 
@@ -34,6 +35,11 @@ export const usuariosApi = {
 
   async gestionar(id: number, dto: GestionarCuentaDTO): Promise<MessageResponse> {
     const res = await http.post<MessageResponse>(`/usuarios/${id}/gestionar`, dto);
+    return res.data;
+  },
+
+  async asignarFincas(id: number, dto: AsignarFincasDTO): Promise<MessageResponse> {
+    const res = await http.put<MessageResponse>(`/usuarios/${id}/fincas`, dto);
     return res.data;
   },
 };
