@@ -1,3 +1,9 @@
+## [1.0.0-rc.17](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.16...v1.0.0-rc.17) (2026-09-08)
+
+### Bug Fixes
+
+* **rf26:** conservar identidad visual al navegar ([9c75ba3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9c75ba343e739b7ddc1b99bf2e6e7bf3f1768a35))
+
 ## [1.0.0-rc.16](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.15...v1.0.0-rc.16) (2026-09-07)
 
 ### Features
