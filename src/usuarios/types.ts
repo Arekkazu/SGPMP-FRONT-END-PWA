@@ -4,7 +4,7 @@ export interface UsuarioListadoResponse {
   correo_electronico: string;
   nombre_rol: string;
   estado_cuenta: string;
-  ultimo_acceso?: string;
+  ultima_modificacion?: string;
 }
 
 export interface UsuarioListadoPaginadoResponse {
