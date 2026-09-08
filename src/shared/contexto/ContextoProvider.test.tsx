@@ -11,7 +11,7 @@
  * regla de que un fallo de carga no puede dejar sin interfaz a un usuario autenticado.
  */
 import React from 'react';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { contextoApi } from '../../configuration/api/personalizacionApi';
@@ -167,5 +167,41 @@ describe('ContextoProvider', () => {
     rerender();
 
     await waitFor(() => expect(result.current.contexto).toBeNull());
+  });
+
+  it('conserva la identidad al reemplazar la vista dentro de la sesion', async () => {
+    function NavegacionSimulada() {
+      const [vista, setVista] = React.useState('configuracion');
+      const { contexto, aplicarIdentidadPrevia } = useContexto();
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => aplicarIdentidadPrevia({
+              logo_path: null,
+              primary_color: '#123456',
+              secondary_color: '#654321',
+              org_display_name: 'Marca Persistente',
+            }, null)}
+          >
+            guardar identidad
+          </button>
+          <button type="button" onClick={() => setVista('dashboard')}>cambiar vista</button>
+          <span>{`${vista}:${contexto?.identidad_visual?.org_display_name ?? ''}`}</span>
+        </>
+      );
+    }
+
+    render(
+      <ContextoProvider>
+        <NavegacionSimulada />
+      </ContextoProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText('configuracion:')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'guardar identidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'cambiar vista' }));
+
+    expect(screen.getByText('dashboard:Marca Persistente')).toBeInTheDocument();
   });
 });
