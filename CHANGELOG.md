@@ -1,3 +1,9 @@
+## [1.0.0-rc.19](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.18...v1.0.0-rc.19) (2026-09-08)
+
+### Bug Fixes
+
+* **rf16:** consumir catalogos de especie en activos ([951b76b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/951b76bcd0789763a1b39d0b877ecac552cd0733))
+
 ## [1.0.0-rc.18](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.17...v1.0.0-rc.18) (2026-09-08)
 
 ### Features
