@@ -13,6 +13,7 @@ import { useModalA11y } from '../../shared/hooks/useModalA11y';
 import { mascararId } from '../../shared/lib/mascararId';
 import { varianteRol, varianteEstado } from '../../shared/lib/varianteBadge';
 import { fincasApi } from '../../configuration/api/fincasApi';
+import { rolesApi } from '../../roles/api/rolesApi';
 import type { FincaResponse } from '../../configuration/types';
 import type { EditarPerfilAdminDTO } from '../types';
 
@@ -33,20 +34,21 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
   const [fincas, setFincas] = useState<FincaResponse[]>([]);
   const [fincasLoading, setFincasLoading] = useState(false);
   const [idsFincas, setIdsFincas] = useState<Set<number>>(new Set());
-
-  const rolOptions = [
-    { value: 1, label: t('usuariospage.roles_admin') },
-    { value: 2, label: t('usuariospage.roles_productor') },
-    { value: 3, label: t('usuariospage.roles_veterinario') },
-    { value: 4, label: t('usuariospage.roles_contador') },
-    { value: 5, label: t('usuariospage.roles_ingeniero') },
-  ];
+  const [rolOptions, setRolOptions] = useState<{ value: number; label: string }[]>([]);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EditarPerfilAdminDTO>({ mode: 'onBlur' });
 
   useEffect(() => {
     cargar(idUsuario);
   }, [idUsuario, cargar]);
+
+  useEffect(() => {
+    if (!puedeEditar) return;
+    rolesApi
+      .listar()
+      .then((roles) => setRolOptions(roles.map((r) => ({ value: r.id_rol, label: r.nombre_rol }))))
+      .catch(() => setRolOptions([]));
+  }, [puedeEditar]);
 
   useEffect(() => {
     if (detalle) {
