@@ -26,6 +26,7 @@ import { AuthProvider } from './shared/auth/AuthContext';
 import { useAuth } from './shared/auth/useAuth';
 import { useIdiomaSesion } from './shared/i18n/useIdiomaSesion';
 import { useTemaSesion } from './shared/tema/useTemaSesion';
+import { useSyncOnReconnect } from './shared/sync/useSyncOnReconnect';
 import { ContextoProvider } from './shared/contexto/ContextoProvider';
 import { useContexto } from './shared/contexto/useContexto';
 import { BienvenidaSinFinca } from './shared/contexto/BienvenidaSinFinca';
@@ -89,9 +90,21 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   // RF-26/RF-27: mismo motivo para el tema, y de paso pinta la marca institucional de la
   // finca activa con la variante que cumple contraste en el tema resultante.
   useTemaSesion(token);
+  // Sin service worker con Background Sync en este proyecto: la cola de escrituras
+  // offline se reintenta aquí en cuanto vuelve el evento `online` del navegador.
+  useSyncOnReconnect();
   const { sinFinca, sinEspecies } = useContexto();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  // QA TC-DIS-21/25/30/32: el drawer movil tambien se cierra con Escape.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const cerrarConEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    };
+    document.addEventListener('keydown', cerrarConEscape);
+    return () => document.removeEventListener('keydown', cerrarConEscape);
+  }, [sidebarOpen]);
   // RF-25, flujo alterno "cambio de permisos en sesion activa": AuthContext ya
   // detecto que `permisos` cambio de verdad (no solo un 403 sin motivo); esto solo
   // decide cuanto tiempo mostrar el aviso.
@@ -122,11 +135,14 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', overflowX: 'hidden' }}>
       <Sidebar open={sidebarOpen} onLogout={handleLogout} />
       {sidebarOpen && (
         <div
-          style={{ position: 'fixed', inset: 0, zIndex: 98, background: 'rgba(0,0,0,0.4)' }}
+          // Por encima de la AppBar (z-100) y por debajo del drawer (z-150):
+          // al abrir el drawer todo el contenido queda tras el velo y el
+          // toque en cualquier punto lo cierra.
+          style={{ position: 'fixed', inset: 0, zIndex: 140, background: 'var(--overlay)' }}
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -205,11 +221,9 @@ function PrivateRoute({ path, component: Component }: { path: string; component:
         if (perfilIncompleto === null) return null;
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
         return (
-          <ContextoProvider>
-            <AppShell operativa={RUTAS_CON_BLOQUEO_SIN_FINCA.includes(path)}>
-              <Component />
-            </AppShell>
-          </ContextoProvider>
+          <AppShell operativa={RUTAS_CON_BLOQUEO_SIN_FINCA.includes(path)}>
+            <Component />
+          </AppShell>
         );
       }}
     />
@@ -276,9 +290,11 @@ const App: React.FC = () => (
   <IonApp>
     <AuthProvider>
       <SessionManager />
-      <IonReactRouter>
-        <AppRoutes />
-      </IonReactRouter>
+      <ContextoProvider>
+        <IonReactRouter>
+          <AppRoutes />
+        </IonReactRouter>
+      </ContextoProvider>
     </AuthProvider>
   </IonApp>
 );

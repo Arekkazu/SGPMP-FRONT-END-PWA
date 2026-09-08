@@ -11,7 +11,7 @@
  * regla de que un fallo de carga no puede dejar sin interfaz a un usuario autenticado.
  */
 import React from 'react';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { contextoApi } from '../../configuration/api/personalizacionApi';
@@ -130,5 +130,78 @@ describe('ContextoProvider', () => {
     await act(async () => { await result.current.recargar(); });
 
     expect(api.obtener).toHaveBeenCalledTimes(2);
+  });
+
+  it('aplicarIdentidadPrevia repinta la sesion aunque el contexto nunca traiga finca', async () => {
+    // Un Administrador que edita la identidad de una finca ajena nunca tiene finca activa
+    // propia: su contexto real siempre trae `identidad_visual: null`. Sin este overlay,
+    // guardar con exito no cambiaba nada visible en su propia sesion (RF-26 "aplicacion
+    // inmediata sin cerrar sesion").
+    api.obtener.mockResolvedValue({ ...CONTEXTO, id_finca: null, identidad_visual: null });
+    const { result } = renderHook(() => useContexto(), { wrapper: envoltorio });
+    await waitFor(() => expect(result.current.contexto).not.toBeNull());
+    expect(result.current.contexto?.identidad_visual).toBeNull();
+
+    const identidadGuardada = {
+      logo_path: '/uploads/logos/nueva.png',
+      primary_color: '#FF0000',
+      secondary_color: '#00FF00',
+      org_display_name: 'Nueva Organizacion',
+    };
+    act(() => { result.current.aplicarIdentidadPrevia(identidadGuardada, null); });
+
+    expect(result.current.contexto?.identidad_visual).toEqual(identidadGuardada);
+    // El resto del contexto (id_finca, especies, etc.) no se toca, solo la marca.
+    expect(result.current.contexto?.id_finca).toBeNull();
+  });
+
+  it('el overlay de identidad se pierde al cerrar sesion', async () => {
+    const { result, rerender } = renderHook(() => useContexto(), { wrapper: envoltorio });
+    await waitFor(() => expect(result.current.contexto).not.toBeNull());
+    act(() => { result.current.aplicarIdentidadPrevia({
+      logo_path: null, primary_color: '#000000', secondary_color: '#FFFFFF', org_display_name: 'X',
+    }, null); });
+    expect(result.current.contexto?.identidad_visual?.org_display_name).toBe('X');
+
+    tokenActual = null;
+    rerender();
+
+    await waitFor(() => expect(result.current.contexto).toBeNull());
+  });
+
+  it('conserva la identidad al reemplazar la vista dentro de la sesion', async () => {
+    function NavegacionSimulada() {
+      const [vista, setVista] = React.useState('configuracion');
+      const { contexto, aplicarIdentidadPrevia } = useContexto();
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => aplicarIdentidadPrevia({
+              logo_path: null,
+              primary_color: '#123456',
+              secondary_color: '#654321',
+              org_display_name: 'Marca Persistente',
+            }, null)}
+          >
+            guardar identidad
+          </button>
+          <button type="button" onClick={() => setVista('dashboard')}>cambiar vista</button>
+          <span>{`${vista}:${contexto?.identidad_visual?.org_display_name ?? ''}`}</span>
+        </>
+      );
+    }
+
+    render(
+      <ContextoProvider>
+        <NavegacionSimulada />
+      </ContextoProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText('configuracion:')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'guardar identidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'cambiar vista' }));
+
+    expect(screen.getByText('dashboard:Marca Persistente')).toBeInTheDocument();
   });
 });

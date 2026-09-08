@@ -6,6 +6,8 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
+  /** Ids extra para aria-describedby (ej. medidor de fortaleza de contrasena). */
+  ariaDescribedBy?: string;
   leadingIcon?: React.ReactNode;
   trailingIcon?: React.ReactNode;
   onTrailingClick?: () => void;
@@ -17,6 +19,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     label,
     error,
     hint,
+    ariaDescribedBy,
     leadingIcon,
     trailingIcon,
     onTrailingClick,
@@ -59,7 +62,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           aria-required={required}
           aria-invalid={!!error}
           aria-describedby={
-            [error ? `${inputId}-err` : '', hint ? `${inputId}-hint` : '']
+            [error ? `${inputId}-err` : '', hint ? `${inputId}-hint` : '', ariaDescribedBy ?? '']
               .filter(Boolean)
               .join(' ') || undefined
           }
@@ -70,7 +73,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             type="button"
             className="ds-field__icon ds-field__icon--trail"
             onClick={onTrailingClick}
-            tabIndex={-1}
             aria-label={t('input.accion_del_campo')}
           >
             {trailingIcon}

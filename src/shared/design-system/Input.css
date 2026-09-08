@@ -39,12 +39,23 @@
 
 .ds-field__input:focus {
   border-color: var(--brand-400);
-  box-shadow: 0 0 0 3px rgba(46, 134, 52, 0.12);
+}
+
+/* QA TC-DIS-04: foco visible solo para teclado (:focus-visible), no en click
+   de mouse. */
+.ds-field__input:focus-visible {
+  border-color: var(--brand-400);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
 }
 
 .ds-field__input--err {
   border-color: var(--sem-error) !important;
   box-shadow: 0 0 0 3px rgba(192, 40, 10, 0.08) !important;
+}
+
+.ds-field__input--err:focus-visible {
+  outline-color: var(--sem-error);
 }
 
 .ds-field__input:disabled {
@@ -84,6 +95,12 @@
   color: var(--text-primary);
 }
 
+.ds-field__icon--trail:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+  border-radius: var(--r-sm);
+}
+
 .ds-field__error {
   font-size: 11px;
   color: var(--sem-error);
@@ -109,7 +126,7 @@ textarea.ds-field__input {
 select.ds-field__input {
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0a89a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23585e53' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;

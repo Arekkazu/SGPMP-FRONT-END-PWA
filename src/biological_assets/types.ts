@@ -44,6 +44,9 @@ export const TRANSICIONES_VALIDAS: Record<EstadoActivoNombre, EstadoActivoNombre
 /** Estados en los que se pueden registrar eventos biológicos. */
 export const ESTADOS_PERMITEN_EVENTOS: EstadoActivoNombre[] = ['ACTIVO', 'EN_TRATAMIENTO', 'AISLADO'];
 
+/** Estados terminales: no admiten cambio de fase ni otras transiciones operativas. */
+export const ESTADOS_TERMINALES: EstadoActivoNombre[] = ['CERRADO', 'BAJA'];
+
 // ── Activo biológico — detalle ───────────────────────────────────────
 export interface DetalleIndividualResponse {
   id_detalle: number | null;

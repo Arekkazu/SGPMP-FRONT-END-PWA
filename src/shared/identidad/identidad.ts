@@ -27,8 +27,24 @@ import type { TemaAplicado } from '../tema/tema';
 const VAR_PRIMARIO = '--brand-500';
 const VAR_PRIMARIO_FUERTE = '--brand-600';
 const VAR_SECUNDARIO = '--brand-400';
+const VAR_NAV = '--brand-nav';
 
-const VARIABLES = [VAR_PRIMARIO, VAR_PRIMARIO_FUERTE, VAR_SECUNDARIO];
+const VARIABLES = [VAR_PRIMARIO, VAR_PRIMARIO_FUERTE, VAR_SECUNDARIO, VAR_NAV];
+
+/**
+ * Variante oscura del color institucional para pintar la barra de navegación.
+ *
+ * RF-26 pide aplicar el color primario a las "barras de navegación", pero el
+ * `Sidebar` tiene texto e iconos claros: pintarlo con el primario crudo dejaría
+ * ilegible una marca clara (amarillo, celeste). Se oscurece un 55% para conservar
+ * el matiz de la marca sin romper el contraste del texto blanco.
+ */
+export function oscurecerParaNav(hex: string): string {
+  const limpio = hex.replace('#', '');
+  const canales = [0, 2, 4].map((i) => parseInt(limpio.slice(i, i + 2), 16));
+  const oscurecido = canales.map((c) => Math.round(c * 0.45));
+  return `#${oscurecido.map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
 
 export interface MarcaAplicable {
   identidad: IdentidadVisualContexto | null;
@@ -62,9 +78,11 @@ export function aplicarIdentidad(marca: MarcaAplicable, tema: TemaAplicado): voi
   if (primario) {
     estilo.setProperty(VAR_PRIMARIO, primario);
     estilo.setProperty(VAR_PRIMARIO_FUERTE, primario);
+    estilo.setProperty(VAR_NAV, oscurecerParaNav(primario));
   } else {
     estilo.removeProperty(VAR_PRIMARIO);
     estilo.removeProperty(VAR_PRIMARIO_FUERTE);
+    estilo.removeProperty(VAR_NAV);
   }
 
   if (secundario) estilo.setProperty(VAR_SECUNDARIO, secundario);

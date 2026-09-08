@@ -61,6 +61,7 @@ export function AppBar({
           type="button"
           className="ds-appbar__icon-btn"
           onClick={onNotificationsClick}
+          aria-controls="notification-tray"
           aria-label={
             notificationCount > 0
               ? t('aria.notificaciones_sin_leer', { count: notificationCount })

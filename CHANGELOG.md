@@ -1,3 +1,72 @@
+## [1.0.0-rc.17](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.16...v1.0.0-rc.17) (2026-09-08)
+
+### Bug Fixes
+
+* **rf26:** conservar identidad visual al navegar ([9c75ba3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9c75ba343e739b7ddc1b99bf2e6e7bf3f1768a35))
+
+## [1.0.0-rc.16](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.15...v1.0.0-rc.16) (2026-09-07)
+
+### Features
+
+* **rf17:** inputs de niveles de alerta usables y responsivos en umbrales ([3246ad7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3246ad7302bf8da0bf07611180cc09fa4d7c7703))
+
+### Bug Fixes
+
+* **rf26:** aplicar la identidad visual por completo, no solo los acentos ([1a86f82](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1a86f82eb02fed829027439076ed525090315657))
+
+## [1.0.0-rc.15](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.14...v1.0.0-rc.15) (2026-09-07)
+
+### Bug Fixes
+
+* **auditoria:** filtro con Select y Enter, tabla scope y modal de integridad accesible ([b6ba750](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b6ba7504ed20d8a346002b3cb7389b3da224e87b))
+* **auth:** medidor de fortaleza compartido, selects etiquetados e i18n ([9cced7d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9cced7d880ff00f9baa5843c1b282e020830ec98))
+* **design-system:** contraste AA en tokens, foco visible y Select/PasswordStrength ([b3c62fb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b3c62fb45d1ff5b59104276862c522e746bb0bbe))
+* **perfil:** tipografia por tokens, botones del sistema y enmascarado unificado ([1e6ef09](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1e6ef098c3c36436cfb6249525e3b058e7673f22))
+* **roles:** tabla y matriz con scope, modales accesibles e i18n ([f9a3913](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f9a3913fbc98a7310eefb5892af58e08fbf9b888))
+* **sesiones:** intentar refresh silencioso ante cualquier 401 antes de redirigir ([1110c0d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1110c0d56df60f86ece9ef50dca9ba3f0628c376))
+* **shell:** drawer movil por encima de la AppBar, Escape y velo por token ([d7a1124](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d7a112454d67f1b105d6e73193c50916bc6c921a))
+* **usuarios:** tablas accesibles, modales con Esc/foco y enmascarado corregido ([67f3515](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/67f3515f6712762bfef71ae6a12c73477416889a))
+
+## [1.0.0-rc.14](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.13...v1.0.0-rc.14) (2026-09-06)
+
+### Bug Fixes
+
+* **biological_assets:** ocultar "Cambiar fase" en estados terminales ([6475d1e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6475d1e7a02a49b1a30919e5e34c0b0659aab5ef))
+* **rf26:** aplicar la identidad guardada a la sesion del Administrador ([66ac846](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/66ac8467032d801f686cba0f55f2179f967a2ec6))
+* **rf26:** no forzar Content-Type json por defecto en axios ([31a2492](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/31a2492dc0df3a15a16cb4128b45651d3ba83230))
+
+## [1.0.0-rc.13](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.12...v1.0.0-rc.13) (2026-09-06)
+
+### Features
+
+* **rf15:** [#53](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/53) agregar busqueda por nombre y paginacion al catalogo de especies ([a21016d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a21016d6f75468bf9b4b32f70d49911564234645))
+* **rf16:** [#54](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/54) permitir escritura offline en Ciclos Biologicos con sincronizacion diferida ([88ca728](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/88ca728c2b5d0b64aee177c6bbb58e076c824f8b))
+
+### Bug Fixes
+
+* **rf17:** [#55](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/55) evitar que los niveles de alerta se superpongan en el modal de umbrales ([f4b2d6c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f4b2d6c907f7e1276b6c9e336b16f15cf3406a52))
+* **rf31:** [#52](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/52) no bloquear la lectura de configuracion cuando falla una sola categoria ([699c75a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/699c75a171d50f09ad31bb1e55561db411badc71))
+
+## [1.0.0-rc.12](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.11...v1.0.0-rc.12) (2026-09-06)
+
+### Bug Fixes
+
+* **biological_assets:** resolver conflicto de merge en EventoReproductivoForm ([72e3387](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/72e3387b141faf8026e7c6437af488750b36e517))
+* **biological_assets:** restringir categoria de evento reproductivo a nacimiento en LOTE ([5be0048](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5be0048868dcee889e64ae8825c7fc8b5f388a5d))
+
+## [1.0.0-rc.11](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.10...v1.0.0-rc.11) (2026-09-06)
+
+### Bug Fixes
+
+* **biological_assets:** propagar error de useFichaIntegral a la vista ([642bccf](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/642bccf7cca2e5025386aa783b0cbfe5cd2423bb))
+* **rf10:** corregir desborde del contenido cuando el sidebar es fixed ([ff78265](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ff782656c0b2a0fe237484d54970828d35840a40)), closes [#107](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/107) [#107](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/107)
+
+## [1.0.0-rc.10](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.9...v1.0.0-rc.10) (2026-09-04)
+
+### Bug Fixes
+
+* **biological-assets:** excluir BAJA del cambio manual de estado (RF-44) ([7f8fdc9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7f8fdc9c95908e541503be01d7d1ddc46ffe034b))
+
 ## [1.0.0-rc.9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.8...v1.0.0-rc.9) (2026-09-04)
 
 ### Features

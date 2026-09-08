@@ -218,7 +218,7 @@ export function CiclosSection({ idEspecie }: Props) {
   const puedeEditar = usePermission(17, 3);
   const puedeDesact = usePermission(17, 4);
 
-  const { ciclos, loading, saving, error, saveError, cargar, registrar, editar, desactivar } = useCiclosBiologicos();
+  const { ciclos, loading, saving, error, saveError, fromCache, cargar, registrar, editar, desactivar } = useCiclosBiologicos();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
 
@@ -243,6 +243,7 @@ export function CiclosSection({ idEspecie }: Props) {
           {!loading && (
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0, fontFamily: 'var(--font-mono)' }}>
               {activos} activos · {ciclos.length - activos} inactivos
+              {fromCache && ` · ${t('ciclossection.datos_desde_cache')}`}
             </p>
           )}
         </div>
@@ -251,14 +252,17 @@ export function CiclosSection({ idEspecie }: Props) {
             <RefreshCw size={15} aria-hidden />
           </Button>
           {puedeCrear && (
-            <Button variant="primary" size="sm" onClick={() => setModal({ tipo: 'crear' })} disabled={!online}>
+            <Button variant="primary" size="sm" onClick={() => setModal({ tipo: 'crear' })}>
               <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('ciclossection.nuevo_ciclo')}</Button>
           )}
         </div>
       </div>
 
+      {/* #54 (RF-16): la escritura ya no depende de estar online — el hook encola en
+          syncQueue/Dexie y sincroniza al reconectar (useSyncOnReconnect). Este aviso ya
+          no dice que las acciones están deshabilitadas: dice que quedan pendientes. */}
       {!online && (
-        <Alert variant="warning" title={t('ciclossection.sin_conexion')} description={t('ciclossection.las_acciones_de_escritura_estan')} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="warning" title={t('ciclossection.sin_conexion')} description={t('ciclossection.los_cambios_se_guardaran_localmente')} style={{ marginBottom: 'var(--s4)' }} />
       )}
       {error && (
         <Alert variant="error" title={t('ciclossection.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
@@ -300,20 +304,27 @@ export function CiclosSection({ idEspecie }: Props) {
                     {c.duracion_dias} días
                   </td>
                   <td style={TD}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: c.es_activo ? 'var(--sem-success-bg)' : 'var(--surface-hover)', color: c.es_activo ? 'var(--sem-success)' : 'var(--text-muted)', border: `1px solid ${c.es_activo ? 'var(--sem-success-border)' : 'var(--surface-border)'}` }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: c.es_activo ? 'var(--sem-success)' : 'var(--text-muted)' }} />
-                      {c.es_activo ? 'Activo' : 'Inactivo'}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: c.es_activo ? 'var(--sem-success-bg)' : 'var(--surface-hover)', color: c.es_activo ? 'var(--sem-success)' : 'var(--text-muted)', border: `1px solid ${c.es_activo ? 'var(--sem-success-border)' : 'var(--surface-border)'}` }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: c.es_activo ? 'var(--sem-success)' : 'var(--text-muted)' }} />
+                        {c.es_activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                      {c.pendienteSync && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: 'var(--sem-warning-bg, #fff8e6)', color: '#b06000', border: '1px solid #e8c840' }}>
+                          {t('ciclossection.pendiente_de_sincronizacion')}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatFecha(c.fecha_actualizacion)}</td>
                   <td style={TD}>
                     <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center' }}>
-                      {puedeEditar && (
+                      {puedeEditar && !c.pendienteSync && (
                         <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'editar', ciclo: c })} aria-label={`Editar ${c.nombre}`}>
                           <Pencil size={15} aria-hidden />
                         </Button>
                       )}
-                      {puedeDesact && c.es_activo && online && (
+                      {puedeDesact && c.es_activo && !c.pendienteSync && (
                         <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'desactivar', ciclo: c })} aria-label={`Desactivar ${c.nombre}`}>
                           <PowerOff size={15} aria-hidden style={{ color: 'var(--sem-error)' }} />
                         </Button>

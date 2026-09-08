@@ -11,7 +11,7 @@ import { useFincas } from '../hooks/useFincas';
 import { aplicarIdentidad, limpiarIdentidad, resolverLogoUrl } from '../../shared/identidad/identidad';
 import { temaActivo } from '../../shared/tema/useTemaSesion';
 import { useContexto } from '../../shared/contexto/useContexto';
-import type { FincaResponse } from '../types';
+import type { FincaResponse, IdentidadVisualResponse } from '../types';
 
 // RF-26: espeja src/shared/almacen_logos.py (FORMATOS_PERMITIDOS, TAMANO_MAX) del backend.
 const LOGO_TIPOS_PERMITIDOS = ['image/png', 'image/jpeg', 'image/svg+xml'];
@@ -192,7 +192,7 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
   // actualizacion". Es estado de cliente: el backend no participa.
   const [previsualizando, setPrevisualizando] = useState(false);
 
-  const { recargar: recargarContexto } = useContexto();
+  const { recargar: recargarContexto, aplicarIdentidadPrevia } = useContexto();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { cargar(finca.id_finca); }, [cargar, finca.id_finca]);
@@ -272,26 +272,36 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
     if (!orgName.trim()) { setOrgNameErr('El nombre es requerido.'); return; }
     setOrgNameErr('');
 
-    let ok: boolean;
+    let guardado: IdentidadVisualResponse | null;
     if (identidad) {
       const version = identidad.version ?? 0;
-      ok = await actualizar(
+      guardado = await actualizar(
         finca.id_finca,
         { primary_color: primaryColor, secondary_color: secondaryColor, org_display_name: orgName.trim(), version },
         logoFile ?? undefined,
       );
     } else {
-      ok = await guardar(
+      guardado = await guardar(
         { id_finca: finca.id_finca, primary_color: primaryColor, secondary_color: secondaryColor, org_display_name: orgName.trim() },
         logoFile ?? undefined,
       );
     }
-    if (ok) {
+    if (guardado) {
       setSaved(true);
       setPrevisualizando(false);
-      limpiarIdentidad();
       // La marca vigente cambio: el shell tiene que repintarse con la variante accesible
-      // que el backend acaba de calcular, no con el color crudo de la vista previa.
+      // que el backend acaba de calcular. `recargarContexto()` no alcanza para un
+      // Administrador (nunca tiene finca activa propia, asi que su contexto nunca trae
+      // identidad_visual) — se aplica directo lo que el backend acaba de guardar.
+      aplicarIdentidadPrevia(
+        {
+          logo_path: guardado.logo_path,
+          primary_color: guardado.primary_color,
+          secondary_color: guardado.secondary_color,
+          org_display_name: guardado.org_display_name,
+        },
+        guardado.accesibilidad,
+      );
       void recargarContexto();
     }
   };
