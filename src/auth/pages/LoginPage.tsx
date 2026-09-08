@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, Building2 } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useLogin } from '../hooks/useLogin';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
@@ -10,17 +10,11 @@ import { Alert } from '../../shared/design-system/Alert';
 import type { LoginDTO } from '../types';
 import './AuthPages.css';
 
-const AGROFUSION_LOGIN_URL = import.meta.env.VITE_AGROFUSION_LOGIN_URL as string | undefined;
-
 export function LoginPage() {
   const { t } = useT('auth');
   const { login, loading, error, online } = useLogin();
   const [showPw, setShowPw] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
-
-  const handleAgroFusionLogin = () => {
-    if (AGROFUSION_LOGIN_URL) window.location.href = AGROFUSION_LOGIN_URL;
-  };
 
   const {
     register,
@@ -138,21 +132,6 @@ export function LoginPage() {
             disabled={!online}
           >{t('loginpage.ingresar')}</Button>
         </form>
-
-        <div className="auth-divider" role="presentation">o</div>
-
-        <Button
-          type="button"
-          variant="secondary"
-          size="lg"
-          fullWidth
-          disabled={!AGROFUSION_LOGIN_URL}
-          onClick={handleAgroFusionLogin}
-        >
-          <Building2 size={18} aria-hidden />{t('loginpage.continuar_con_agrofusion')}</Button>
-        {!AGROFUSION_LOGIN_URL && (
-          <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', marginTop: 'var(--s2)' }}>{t('loginpage.configuracion_pendiente')}</p>
-        )}
 
         <hr className="auth-sep" />
         <div className="auth-links">

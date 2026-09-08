@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -12,6 +12,9 @@ import { useUsuarioDetalle } from '../hooks/useUsuarioDetalle';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 import { mascararId } from '../../shared/lib/mascararId';
 import { varianteRol, varianteEstado } from '../../shared/lib/varianteBadge';
+import { fincasApi } from '../../configuration/api/fincasApi';
+import { rolesApi } from '../../roles/api/rolesApi';
+import type { FincaResponse } from '../../configuration/types';
 import type { EditarPerfilAdminDTO } from '../types';
 
 interface Props {
@@ -26,21 +29,26 @@ const NAME_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props) {
   const { t } = useT('usuarios');
   const panelRef = useModalA11y(onClose);
-  const { detalle, loading, saving, error, saveError, cargar, editar } = useUsuarioDetalle();
+  const { detalle, loading, saving, error, saveError, cargar, editar, asignarFincas } = useUsuarioDetalle();
 
-  const rolOptions = [
-    { value: 1, label: t('usuariospage.roles_admin') },
-    { value: 2, label: t('usuariospage.roles_productor') },
-    { value: 3, label: t('usuariospage.roles_veterinario') },
-    { value: 4, label: t('usuariospage.roles_contador') },
-    { value: 5, label: t('usuariospage.roles_ingeniero') },
-  ];
+  const [fincas, setFincas] = useState<FincaResponse[]>([]);
+  const [fincasLoading, setFincasLoading] = useState(false);
+  const [idsFincas, setIdsFincas] = useState<Set<number>>(new Set());
+  const [rolOptions, setRolOptions] = useState<{ value: number; label: string }[]>([]);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EditarPerfilAdminDTO>({ mode: 'onBlur' });
 
   useEffect(() => {
     cargar(idUsuario);
   }, [idUsuario, cargar]);
+
+  useEffect(() => {
+    if (!puedeEditar) return;
+    rolesApi
+      .listar()
+      .then((roles) => setRolOptions(roles.map((r) => ({ value: r.id_rol, label: r.nombre_rol }))))
+      .catch(() => setRolOptions([]));
+  }, [puedeEditar]);
 
   useEffect(() => {
     if (detalle) {
@@ -53,13 +61,39 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
         version: detalle.version,
         id_rol: detalle.id_rol,
       });
+      setIdsFincas(new Set((detalle.fincas ?? []).map((f) => f.id_finca)));
     }
   }, [detalle, reset]);
+
+  useEffect(() => {
+    if (!puedeEditar) return;
+    setFincasLoading(true);
+    fincasApi
+      .listar()
+      .then((raw) => {
+        const data: FincaResponse[] = Array.isArray(raw) ? raw : (raw as unknown as { items?: FincaResponse[] })?.items ?? [];
+        setFincas(data);
+      })
+      .catch(() => setFincas([]))
+      .finally(() => setFincasLoading(false));
+  }, [puedeEditar]);
 
   const onSubmit = async (data: EditarPerfilAdminDTO) => {
     if (!detalle) return;
     const ok = await editar(idUsuario, { ...data, version: detalle.version });
-    if (ok) onSaved();
+    if (!ok) return;
+    const okFincas = await asignarFincas(idUsuario, { ids_fincas: Array.from(idsFincas) });
+    if (okFincas) onSaved();
+  };
+
+  const toggleFinca = (id: number, ownerId: number | null) => {
+    if (ownerId !== null && ownerId !== idUsuario) return;
+    setIdsFincas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   return (
@@ -175,6 +209,52 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </Select>
+                  </div>
+                </div>
+                <div style={{ marginBottom: 'var(--s4)' }}>
+                  <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {t('usuariomodal.fincas_asignadas')}
+                  </p>
+                  {fincasLoading && (
+                    <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-muted)' }}>{t('usuariomodal.cargando_fincas')}</p>
+                  )}
+                  {!fincasLoading && fincas.length === 0 && (
+                    <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-muted)' }}>{t('usuariomodal.sin_fincas')}</p>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
+                    {fincas.map((f) => {
+                      const ajeno = f.id_usuario !== null && f.id_usuario !== idUsuario;
+                      const checked = idsFincas.has(f.id_finca);
+                      return (
+                        <label
+                          key={f.id_finca}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--s3)',
+                            padding: 'var(--s2) var(--s3)',
+                            borderRadius: 'var(--r-md)',
+                            border: `1px solid ${ajeno ? 'var(--surface-border)' : checked ? 'var(--brand-400)' : 'var(--surface-border)'}`,
+                            background: ajeno ? 'var(--surface-hover)' : checked ? 'var(--brand-50)' : 'var(--surface-card)',
+                            cursor: ajeno ? 'not-allowed' : 'pointer',
+                            opacity: ajeno ? 0.6 : 1,
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={ajeno}
+                            onChange={() => toggleFinca(f.id_finca, f.id_usuario)}
+                          />
+                          <span style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-primary)' }}>{f.nombre}</span>
+                          {ajeno && (
+                            <span style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-muted)' }}>
+                              {t('usuariomodal.finca_ajena')}
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
