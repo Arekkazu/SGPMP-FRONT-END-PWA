@@ -8,6 +8,7 @@ import { Button } from '../../shared/design-system/Button';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFases } from '../hooks/useFases';
+import { ciclosApi } from '../../configuration/api/especiesConfigApi';
 import { ModalShell } from './ModalShell';
 import { RECURSO_ACTIVOS, ACCION_E } from '../rbac';
 import { ESTADOS_TERMINALES } from '../types';
@@ -91,8 +92,12 @@ interface FormValues {
 }
 
 function CambiarFaseModal({
+  ciclos,
+  ciclosLoading,
   saving, saveError, onClose, onConfirmar,
 }: {
+  ciclos: { id_ciclo_biologico: number; nombre: string }[];
+  ciclosLoading: boolean;
   saving: boolean;
   saveError: ReturnType<typeof useFases>['saveError'];
   onClose: () => void;
@@ -125,16 +130,23 @@ function CambiarFaseModal({
       )}
       <form onSubmit={handleSubmit(submit)} noValidate>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
-          <Input
-            label={t('fasessection.id_del_ciclo_productivo')} required type="number" min={1}
-            placeholder="Ej: 3"
-            hint="ID de la fase/ciclo destino del catálogo"
-            error={errors.id_ciclo_productiva?.message}
+          <select
+            aria-label={t('fasessection.id_del_ciclo_productivo')}
+            disabled={ciclosLoading || ciclos.length === 0}
+            style={{ width: '100%', padding: 'var(--s3)', borderRadius: 'var(--r-md)', border: '1.5px solid var(--surface-border)', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
             {...register('id_ciclo_productiva', {
               required: t('fasessection.el_ciclo_productivo_es_obligatorio'),
-              min: { value: 1, message: t('fasessection.id_invalido') },
             })}
-          />
+          >
+            <option value="">
+              {ciclosLoading ? 'Cargando ciclos…' : ciclos.length ? 'Seleccionar ciclo productivo' : 'No hay ciclos configurados'}
+            </option>
+            {ciclos.map((ciclo) => (
+              <option key={ciclo.id_ciclo_biologico} value={ciclo.id_ciclo_biologico}>
+                {ciclo.nombre}
+              </option>
+            ))}
+          </select>
           <Input label={t('fasessection.fecha_de_inicio')} type="date" {...register('fecha_inicio')} />
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-fase">{t('fasessection.motivo_del_cambio')}</label>
@@ -150,15 +162,24 @@ function CambiarFaseModal({
   );
 }
 
-export function FasesSection({ idActivo, estadoActual, onChanged }: Props) {
+export function FasesSection({ idActivo, idEspecie = null, estadoActual, onChanged }: Props & { idEspecie?: number | null }) {
   const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeCambiar = usePermission(RECURSO_ACTIVOS, ACCION_E);
   const terminal = estadoEsTerminal(estadoActual);
   const { fases, loading, saving, error, saveError, cargar, cambiarFase, setSaveError } = useFases(idActivo);
+  const [ciclos, setCiclos] = useState<{ id_ciclo_biologico: number; nombre: string }[]>([]);
+  const [ciclosLoading, setCiclosLoading] = useState(false);
   const [abierto, setAbierto] = useState(false);
 
   useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    if (!abierto || idEspecie == null) return;
+    setCiclosLoading(true);
+    ciclosApi.listar(idEspecie, true)
+      .then((items) => setCiclos(items.map((item) => ({ id_ciclo_biologico: item.id_ciclo_biologico, nombre: item.nombre }))))
+      .finally(() => setCiclosLoading(false));
+  }, [abierto, idEspecie]);
 
   const handleConfirmar = async (dto: CambiarFaseDTO): Promise<boolean> => {
     const ok = await cambiarFase(dto);
@@ -200,6 +221,8 @@ export function FasesSection({ idActivo, estadoActual, onChanged }: Props) {
 
       {abierto && (
         <CambiarFaseModal
+          ciclos={ciclos}
+          ciclosLoading={ciclosLoading}
           saving={saving}
           saveError={saveError}
           onClose={() => setAbierto(false)}
