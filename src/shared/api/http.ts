@@ -5,7 +5,6 @@ import { mapToApiError } from './errors';
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000',
   timeout: 15000,
-  headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });
 
@@ -57,14 +56,13 @@ http.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const isPublicAuthEndpoint = PUBLIC_AUTH_ENDPOINTS.includes(originalRequest?.url ?? '');
-    const errorCode = error.response?.data?.error_code;
 
-    if (
-      error.response?.status === 401 &&
-      errorCode === 'TOKEN_EXPIRADO' &&
-      !isPublicAuthEndpoint &&
-      !originalRequest?._retry
-    ) {
+    // QA TC-DIS-22/24/27: ante CUALQUIER 401 no-público se intenta el refresh
+    // silencioso una vez antes de decidir. Antes solo se refrescaba con
+    // TOKEN_EXPIRADO: otros códigos legítimos (SESION_EXPIRADA_INACTIVIDAD,
+    // TOKEN_REVOCADO…) forzaban redirección inmediata a /login. Si el refresh
+    // falla es porque la sesión de verdad murió — ahí sí se limpia y redirige.
+    if (error.response?.status === 401 && !isPublicAuthEndpoint && !originalRequest?._retry) {
       originalRequest._retry = true;
       try {
         const newToken = await refreshAccessToken();

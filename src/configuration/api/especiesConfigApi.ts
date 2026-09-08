@@ -117,6 +117,16 @@ export const variablesAmbientalesApi = {
 // Captura de configuración para plantillas (RF-31)
 // =====================================================================
 
+/** `[]` en vez de propagar: una categoría sin permiso de lectura o con un error puntual
+ *  del backend no debe tumbar la lectura de las otras tres (#52, RF-31). */
+async function listarOVacio<T>(promesa: Promise<T[]>): Promise<T[]> {
+  try {
+    return await promesa;
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Lee la configuración real de una especie y la deja en la forma exacta que
  * `POST /configuracion/plantillas` espera en `params_snapshot`.
@@ -127,10 +137,10 @@ export const variablesAmbientalesApi = {
  */
 export async function capturarConfiguracionEspecie(idEspecie: number): Promise<SnapshotEspecie> {
   const [ciclos, patologias, metricas, umbrales] = await Promise.all([
-    ciclosApi.listar(idEspecie, true),
-    patologiasApi.listar(idEspecie, true),
-    metricasApi.listar(idEspecie, true),
-    umbralesApi.listar(idEspecie, true),
+    listarOVacio(ciclosApi.listar(idEspecie, true)),
+    listarOVacio(patologiasApi.listar(idEspecie, true)),
+    listarOVacio(metricasApi.listar(idEspecie, true)),
+    listarOVacio(umbralesApi.listar(idEspecie, true)),
   ]);
 
   return {

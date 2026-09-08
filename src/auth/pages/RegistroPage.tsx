@@ -6,6 +6,8 @@ import { Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { useRegistro } from '../hooks/useRegistro';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
+import { PasswordStrength } from '../../shared/design-system/PasswordStrength';
 import { Alert } from '../../shared/design-system/Alert';
 import { RecaptchaField } from '../components/RecaptchaField';
 import { recaptchaConfigured, recaptchaSiteKey } from '../config/recaptcha';
@@ -32,26 +34,12 @@ interface Step2Fields {
   confirmar_contrasena: string;
 }
 
-function passwordStrength(pw: string): { score: number; label: string; color: string } {
-  const rules = [
-    pw.length >= 8,
-    /[A-Z]/.test(pw),
-    /[0-9]/.test(pw),
-    /[@#$%^&+=!*]/.test(pw),
-  ];
-  const score = rules.filter(Boolean).length;
-  const labels = ['', 'Débil', 'Media', 'Buena', 'Alta'];
-  const colors = ['', '#c0280a', '#c07a00', '#c07a00', '#2e8634'];
-  return { score, label: labels[score] ?? '', color: colors[score] ?? '' };
-}
-
 export function RegistroPage() {
   const { t } = useT('auth');
   const [step, setStep] = useState<1 | 2>(1);
   const [step1Data, setStep1Data] = useState<Step1Fields | null>(null);
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
-  const [pwValue, setPwValue] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
@@ -61,12 +49,10 @@ export function RegistroPage() {
   const form2 = useForm<Step2Fields>({ mode: 'onBlur' });
 
   const pw = form2.watch('contrasena', '');
-  const strength = passwordStrength(pw);
 
   const onStep1Submit = (data: Step1Fields) => {
     setStep1Data(data);
     setStep(2);
-    setPwValue('');
     setCaptchaToken(null);
     setCaptchaError(null);
     setCaptchaResetKey((key) => key + 1);
@@ -76,7 +62,7 @@ export function RegistroPage() {
   const onStep2Submit = async (data: Step2Fields) => {
     if (!step1Data) return;
     if (!captchaToken) {
-      setCaptchaError('Completa la verificación de seguridad antes de registrarte.');
+      setCaptchaError(t('registropage.completa_la_verificacion'));
       return;
     }
     const dto: UsuarioCreateDTO = {
@@ -96,7 +82,7 @@ export function RegistroPage() {
     const registrado = await registrar(dto);
     if (!registrado) {
       setCaptchaToken(null);
-      setCaptchaError('Completa nuevamente la verificación antes de reintentar.');
+      setCaptchaError(t('registropage.completa_nuevamente_la_verificacion'));
       setCaptchaResetKey((key) => key + 1);
     }
   };
@@ -142,7 +128,7 @@ export function RegistroPage() {
         </div>
         <h1 className="auth-title">{t('registropage.crear_cuenta_nueva')}</h1>
         <p className="auth-sub">
-          {step === 1 ? 'Paso 1 de 2 — Información personal' : 'Paso 2 de 2 — Credenciales de acceso'}
+          {step === 1 ? t('registropage.paso_1_de_2') : t('registropage.paso_2_de_2')}
         </p>
 
         {/* Stepper */}
@@ -163,17 +149,20 @@ export function RegistroPage() {
           <form onSubmit={form1.handleSubmit(onStep1Submit)} noValidate>
             <div className="auth-form-grid">
               <div className="auth-field">
-                <label className="ds-field__label" htmlFor="tipo_identificacion">{t('registropage.tipo_de_identificacion')}<span className="ds-field__req">*</span>
-                </label>
-                <select
-                  id="tipo_identificacion"
-                  className="ds-field__input"
+                <Select
+                  label={t('registropage.tipo_de_identificacion')}
+                  required
+                  error={
+                    form1.formState.errors.tipo_identificacion
+                      ? t('registropage.selecciona_el_tipo_de_identificacion')
+                      : undefined
+                  }
                   {...form1.register('tipo_identificacion', { required: true })}
                 >
                   <option value="CC">{t('registropage.cedula_de_ciudadania_cc')}</option>
                   <option value="CE">{t('registropage.cedula_de_extranjeria_ce')}</option>
                   <option value="Pasaporte">{t('registropage.pasaporte')}</option>
-                </select>
+                </Select>
               </div>
 
               <div className="auth-field">
@@ -229,25 +218,28 @@ export function RegistroPage() {
                       let age = today.getFullYear() - birth.getFullYear();
                       const m = today.getMonth() - birth.getMonth();
                       if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-                      return age >= 18 || 'Debes ser mayor de 18 años.';
+                      return age >= 18 || t('validacion.debes_ser_mayor_de_18', { ns: 'common' });
                     },
                   })}
                 />
               </div>
 
               <div className="auth-field">
-                <label className="ds-field__label" htmlFor="genero">{t('registropage.genero')}<span className="ds-field__req">*</span>
-                </label>
-                <select
-                  id="genero"
-                  className="ds-field__input"
+                <Select
+                  label={t('registropage.genero')}
+                  required
+                  error={
+                    form1.formState.errors.genero
+                      ? t('registropage.selecciona_el_genero')
+                      : undefined
+                  }
                   {...form1.register('genero', { required: true })}
                 >
                   <option value="M">{t('registropage.masculino_m')}</option>
                   <option value="F">{t('registropage.femenino_f')}</option>
                   <option value="X">{t('registropage.no_binario_x')}</option>
                   <option value="T">{t('registropage.trans_t')}</option>
-                </select>
+                </Select>
               </div>
 
               <div className="auth-field">
@@ -256,7 +248,7 @@ export function RegistroPage() {
                   type="tel"
                   placeholder="Ej. 3001234567"
                   maxLength={15}
-                  hint="Opcional, solo números, 7-15 dígitos"
+                  hint={t('validacion.telefono_opcional', { ns: 'common' })}
                   error={form1.formState.errors.telefono?.message}
                   {...form1.register('telefono', {
                     pattern: { value: /^[0-9]{7,15}$/, message: t('registropage.telefono_invalido_solo_numeros_7_15_digitos') },
@@ -322,41 +314,16 @@ export function RegistroPage() {
                 label={t('registropage.contrasena')}
                 type={showPw ? 'text' : 'password'}
                 required
+                ariaDescribedBy="registro-contrasena-fortaleza"
                 error={form2.formState.errors.contrasena?.message}
                 trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
                 onTrailingClick={() => setShowPw((v) => !v)}
                 {...form2.register('contrasena', {
                   required: t('registropage.la_contrasena_es_obligatoria'),
                   pattern: { value: PW_REGEX, message: t('registropage.la_contrasena_no_cumple_los_requisitos_de') },
-                  onChange: (e) => setPwValue(e.target.value),
                 })}
               />
-              <div className="pw-rules">
-                {[
-                  [pw.length >= 8, 'Mínimo 8 caracteres'],
-                  [/[A-Z]/.test(pw), 'Una mayúscula'],
-                  [/[0-9]/.test(pw), 'Un número'],
-                  [/[@#$%^&+=!*]/.test(pw), 'Un símbolo (@ # $ % ^ & + = ! *)'],
-                  [pw.length > 0 && /^[A-Za-z\d@#$%^&+=!*]+$/.test(pw), 'Solo caracteres permitidos'],
-                ].map(([met, label]) => (
-                  <span key={label as string} className={`pw-rule ${met ? 'pw-rule--met' : ''}`}>
-                    {met ? '✓' : '○'} {label}
-                  </span>
-                ))}
-              </div>
-              {pw && (
-                <>
-                  <div className="pw-strength-bar">
-                    <div
-                      className="pw-strength-fill"
-                      style={{ width: `${strength.score * 25}%`, background: strength.color }}
-                    />
-                  </div>
-                  <span className="pw-strength-label">
-                    Fortaleza: <strong style={{ color: strength.color }}>{strength.label}</strong>
-                  </span>
-                </>
-              )}
+              <PasswordStrength id="registro-contrasena-fortaleza" valor={pw} />
             </div>
 
             <div className="auth-field">
@@ -369,7 +336,7 @@ export function RegistroPage() {
                 onTrailingClick={() => setShowConfirmPw((v) => !v)}
                 {...form2.register('confirmar_contrasena', {
                   required: t('registropage.confirma_tu_contrasena'),
-                  validate: (v) => v === form2.getValues('contrasena') || 'Las contraseñas no coinciden.',
+                  validate: (v) => v === form2.getValues('contrasena') || t('validacion.las_contrasenas_no_coinciden', { ns: 'common' }),
                 })}
               />
             </div>
@@ -382,11 +349,11 @@ export function RegistroPage() {
                 onTokenChange={handleCaptchaChange}
                 onExpired={() => {
                   setCaptchaToken(null);
-                  setCaptchaError('La verificación expiró. Complétala nuevamente.');
+                  setCaptchaError(t('registropage.verificacion_expiro'));
                 }}
                 onErrored={() => {
                   setCaptchaToken(null);
-                  setCaptchaError('No fue posible cargar reCAPTCHA. Revisa tu conexión e intenta nuevamente.');
+                  setCaptchaError(t('registropage.error_cargando_recaptcha'));
                 }}
               />
             )}

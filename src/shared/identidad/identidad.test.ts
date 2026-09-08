@@ -13,7 +13,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { AccesibilidadResponse, IdentidadVisualContexto } from '../../configuration/types';
-import { aplicarIdentidad, colorParaTema, limpiarIdentidad, resolverLogoUrl } from './identidad';
+import { aplicarIdentidad, colorParaTema, limpiarIdentidad, oscurecerParaNav, resolverLogoUrl } from './identidad';
 
 const IDENTIDAD: IdentidadVisualContexto = {
   logo_path: '/uploads/logos/remanso.png',
@@ -80,6 +80,15 @@ describe('aplicarIdentidad', () => {
     expect(varCss('--brand-400')).toBe('#A8D5B5');
   });
 
+  it('el color primario tambien pinta la barra de navegacion, oscurecido', () => {
+    aplicarIdentidad({ identidad: IDENTIDAD, accesibilidad: ACCESIBILIDAD }, 'light');
+
+    // En claro el ajustado es el propio color (#1A6B3C); la barra debe llevar una
+    // variante mas oscura para conservar el texto claro legible.
+    expect(varCss('--brand-nav')).toBe(oscurecerParaNav('#1A6B3C'));
+    expect(varCss('--brand-nav')).not.toBe('#1A6B3C');
+  });
+
   it('sin evaluacion de contraste usa el color crudo', () => {
     // Caso de la vista previa: valores que el usuario acaba de escribir y que el backend
     // todavia no ha evaluado.
@@ -117,6 +126,7 @@ describe('aplicarIdentidad', () => {
     expect(varCss('--brand-500')).toBe('');
     expect(varCss('--brand-600')).toBe('');
     expect(varCss('--brand-400')).toBe('');
+    expect(varCss('--brand-nav')).toBe('');
   });
 });
 
@@ -129,6 +139,21 @@ describe('colorParaTema', () => {
     // El backend hace que `color_ajustado` sea identico al original cuando cumple, para
     // que el cliente pueda usarlo sin condicionales.
     expect(colorParaTema(ACCESIBILIDAD, 'primary_color', 'light', '#000000')).toBe('#1A6B3C');
+  });
+});
+
+describe('oscurecerParaNav', () => {
+  it('conserva el formato hexadecimal de 6 digitos', () => {
+    expect(oscurecerParaNav('#1A6B3C')).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  });
+
+  it('oscurece cada canal sin perder el matiz', () => {
+    const resultado = oscurecerParaNav('#1A6B3C');
+    const canales = [1, 3, 5].map((i) => parseInt(resultado.slice(i, i + 2), 16));
+    // 0x1A * 0.45 ≈ 12 (0x0C); 0x6B * 0.45 ≈ 48 (0x30); 0x3C * 0.45 ≈ 27 (0x1B)
+    expect(canales[0]).toBeLessThan(0x1a);
+    expect(canales[1]).toBeLessThan(0x6b);
+    expect(canales[2]).toBeLessThan(0x3c);
   });
 });
 

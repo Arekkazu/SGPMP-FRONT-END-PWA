@@ -6,6 +6,7 @@ import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { useUsuarioDetalle } from '../hooks/useUsuarioDetalle';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 import type { AccionCuenta } from '../types';
 
 interface Props {
@@ -22,8 +23,10 @@ interface FormFields {
 
 interface OpcionAccion {
   value: AccionCuenta;
-  label: string;
-  descripcion: string;
+  /** Clave i18n del rótulo de la acción. */
+  claveLabel: string;
+  /** Clave i18n de la descripción de la acción. */
+  claveDescripcion: string;
   variante: 'primary' | 'danger' | 'secondary';
   icon: React.ReactNode;
   requiresMotivo: boolean;
@@ -38,8 +41,8 @@ function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
   if (['INACTIVO', 'BLOQUEADO', 'PENDIENTE'].includes(estado)) {
     acciones.push({
       value: 'activar',
-      label: 'Activar',
-      descripcion: 'El usuario podrá acceder al sistema nuevamente.',
+      claveLabel: 'gestionarmodal.activar',
+      claveDescripcion: 'gestionarmodal.activar_desc',
       variante: 'primary',
       icon: <CheckCircle size={14} aria-hidden />,
       requiresMotivo: false,
@@ -49,16 +52,16 @@ function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
   if (estado === 'ACTIVO') {
     acciones.push({
       value: 'inactivar',
-      label: 'Inactivar',
-      descripcion: 'El usuario perderá acceso inmediatamente. Las sesiones activas se cerrarán.',
+      claveLabel: 'gestionarmodal.inactivar',
+      claveDescripcion: 'gestionarmodal.inactivar_desc',
       variante: 'secondary',
       icon: <Lock size={14} aria-hidden />,
       requiresMotivo: true,
     });
     acciones.push({
       value: 'bloquear',
-      label: 'Bloquear',
-      descripcion: 'El usuario no podrá acceder. Sus sesiones activas se cerrarán.',
+      claveLabel: 'gestionarmodal.bloquear',
+      claveDescripcion: 'gestionarmodal.bloquear_desc',
       variante: 'secondary',
       icon: <Lock size={14} aria-hidden />,
       requiresMotivo: true,
@@ -67,8 +70,8 @@ function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
 
   acciones.push({
     value: 'eliminar',
-    label: 'Eliminar',
-    descripcion: 'El usuario quedará marcado como ELIMINADO. Esta acción es irreversible.',
+    claveLabel: 'gestionarmodal.eliminar',
+    claveDescripcion: 'gestionarmodal.eliminar_desc',
     variante: 'danger',
     icon: <Trash2 size={14} aria-hidden />,
     requiresMotivo: true,
@@ -79,6 +82,7 @@ function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
 
 export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose, onDone }: Props) {
   const { t } = useT('usuarios');
+  const panelRef = useModalA11y(onClose);
   const [accionSeleccionada, setAccionSeleccionada] = useState<AccionCuenta | null>(null);
   const { saving, saveError, gestionar } = useUsuarioDetalle();
 
@@ -122,6 +126,7 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
+        ref={panelRef}
         style={{
           background: 'var(--surface-card)',
           borderRadius: 'var(--r-xl)',
@@ -133,14 +138,14 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s4)' }}>
-          <h2 id="gestionar-modal-title" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{t('gestionarmodal.gestionar_cuenta')}</h2>
+          <h2 id="gestionar-modal-title" style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{t('gestionarmodal.gestionar_cuenta')}</h2>
           <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('gestionarmodal.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
         </div>
 
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>
-          Usuario: <strong style={{ color: 'var(--text-primary)' }}>{nombreUsuario}</strong>
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>
+          {t('gestionarmodal.usuario')} <strong style={{ color: 'var(--text-primary)' }}>{nombreUsuario}</strong>
         </p>
 
         {saveError && (
@@ -151,7 +156,7 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
           <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('gestionarmodal.selecciona_la_accion')}</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
-            {acciones.map(({ value, label, descripcion, variante, icon }) => {
+            {acciones.map(({ value, claveLabel, claveDescripcion, variante, icon }) => {
               const seleccionado = accionSeleccionada === value;
               return (
                 <button
@@ -181,10 +186,10 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
                     {icon}
                   </span>
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: variante === 'danger' ? 'var(--sem-error)' : 'var(--text-primary)', marginBottom: 2 }}>
-                      {label}
+                    <div style={{ fontSize: 'var(--fs-label-md)', fontWeight: 700, color: variante === 'danger' ? 'var(--sem-error)' : 'var(--text-primary)', marginBottom: 2 }}>
+                      {t(claveLabel)}
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{descripcion}</div>
+                    <div style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-secondary)' }}>{t(claveDescripcion)}</div>
                   </div>
                 </button>
               );
@@ -220,8 +225,8 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
               disabled={!accionSeleccionada}
             >
               {accionSeleccionada
-                ? `Confirmar ${acciones.find((a) => a.value === accionSeleccionada)?.label ?? ''}`
-                : 'Confirmar'}
+                ? t('gestionarmodal.confirmar_accion', { accion: t(acciones.find((a) => a.value === accionSeleccionada)?.claveLabel ?? '') })
+                : t('gestionarmodal.confirmar')}
             </Button>
           </div>
         </form>

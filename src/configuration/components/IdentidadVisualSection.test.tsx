@@ -26,6 +26,7 @@ vi.mock('../api/personalizacionApi', () => ({
 }));
 
 const recargarContexto = vi.fn();
+const aplicarIdentidadPrevia = vi.fn();
 vi.mock('../../shared/contexto/useContexto', () => ({
   useContexto: () => ({
     contexto: null,
@@ -33,6 +34,7 @@ vi.mock('../../shared/contexto/useContexto', () => ({
     sinFinca: false,
     sinEspecies: false,
     recargar: recargarContexto,
+    aplicarIdentidadPrevia,
   }),
 }));
 
@@ -148,9 +150,12 @@ describe('vista previa de la identidad visual', () => {
     expect(varCss('--brand-500')).toBe('');
   });
 
-  it('guardar cierra la vista previa y recarga la marca vigente', async () => {
-    // Tras guardar, el shell debe repintarse con la variante accesible que el backend
-    // acaba de calcular, no quedarse con el color crudo de la vista previa.
+  it('guardar cierra la vista previa y aplica lo recien guardado al contexto de sesion', async () => {
+    // Un Administrador nunca tiene finca activa propia, asi que su contexto nunca trae
+    // identidad_visual: `recargarContexto()` solo no alcanza para repintar el shell. El
+    // overlay de `aplicarIdentidadPrevia` es lo que aplica lo recien guardado (con la
+    // `accesibilidad` que el backend acaba de calcular) sin depender de que el contexto
+    // la traiga.
     await abrirFormulario();
     fireEvent.click(await screen.findByText('Aplicar vista previa'));
     await waitFor(() => expect(varCss('--brand-500')).toBe('#1A6B3C'));
@@ -158,8 +163,16 @@ describe('vista previa de la identidad visual', () => {
     fireEvent.click(screen.getByText('Actualizar identidad'));
 
     await waitFor(() => expect(api.actualizar).toHaveBeenCalled());
-    await waitFor(() => expect(recargarContexto).toHaveBeenCalled());
-    expect(varCss('--brand-500')).toBe('');
+    await waitFor(() => expect(aplicarIdentidadPrevia).toHaveBeenCalledWith(
+      {
+        logo_path: IDENTIDAD.logo_path,
+        primary_color: IDENTIDAD.primary_color,
+        secondary_color: IDENTIDAD.secondary_color,
+        org_display_name: IDENTIDAD.org_display_name,
+      },
+      IDENTIDAD.accesibilidad,
+    ));
+    expect(recargarContexto).toHaveBeenCalled();
   });
 });
 

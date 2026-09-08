@@ -17,7 +17,7 @@
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { contextoApi } from '../../configuration/api/personalizacionApi';
-import type { ContextoInterfazResponse } from '../../configuration/types';
+import type { AccesibilidadResponse, ContextoInterfazResponse, IdentidadVisualContexto } from '../../configuration/types';
 import { useAuth } from '../auth/useAuth';
 
 export interface ContextoValue {
@@ -28,6 +28,16 @@ export interface ContextoValue {
   /** La finca existe pero no hay especies productivas configuradas. */
   sinEspecies: boolean;
   recargar: () => Promise<void>;
+  /**
+   * Overlay de sesión para la identidad visual recién guardada (RF-26 "aplicación
+   * inmediata sin cerrar sesión"). Un Administrador que edita la identidad de una
+   * finca no tiene finca activa propia (`contexto.id_finca` es siempre `null` para
+   * ese rol), así que su contexto nunca trae `identidad_visual`: sin este overlay,
+   * guardar con éxito no cambiaba nada visible en su propia interfaz. Vive solo en
+   * memoria del cliente — se pierde al recargar la página o cerrar sesión, que es
+   * exactamente el alcance que pide el RF.
+   */
+  aplicarIdentidadPrevia: (identidad: IdentidadVisualContexto, accesibilidad: AccesibilidadResponse | null) => void;
 }
 
 export const ContextoContext = createContext<ContextoValue>({
@@ -36,12 +46,17 @@ export const ContextoContext = createContext<ContextoValue>({
   sinFinca: false,
   sinEspecies: false,
   recargar: async () => {},
+  aplicarIdentidadPrevia: () => {},
 });
 
 export function ContextoProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
   const [contexto, setContexto] = useState<ContextoInterfazResponse | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [identidadPrevia, setIdentidadPrevia] = useState<{
+    identidad_visual: IdentidadVisualContexto;
+    accesibilidad: AccesibilidadResponse | null;
+  } | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -58,13 +73,26 @@ export function ContextoProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!token) {
       setContexto(null);
+      setIdentidadPrevia(null);
       return;
     }
     void cargar();
   }, [token, cargar]);
 
+  const aplicarIdentidadPrevia = useCallback(
+    (identidad: IdentidadVisualContexto, accesibilidad: AccesibilidadResponse | null) => {
+      setIdentidadPrevia({ identidad_visual: identidad, accesibilidad });
+    },
+    [],
+  );
+
+  const contextoConOverlay = useMemo(() => {
+    if (!contexto || !identidadPrevia) return contexto;
+    return { ...contexto, ...identidadPrevia };
+  }, [contexto, identidadPrevia]);
+
   const valor = useMemo<ContextoValue>(() => ({
-    contexto,
+    contexto: contextoConOverlay,
     cargando,
     // Solo se afirma "sin finca" con un contexto cargado: mientras no haya respuesta, un
     // fallo de red mostraría la bienvenida a un productor que sí tiene finca.
@@ -72,7 +100,8 @@ export function ContextoProvider({ children }: { children: React.ReactNode }) {
     sinEspecies: contexto !== null && contexto.id_finca !== null
       && contexto.especies_configuradas.length === 0,
     recargar: cargar,
-  }), [contexto, cargando, cargar]);
+    aplicarIdentidadPrevia,
+  }), [contextoConOverlay, contexto, cargando, cargar, aplicarIdentidadPrevia]);
 
   return <ContextoContext.Provider value={valor}>{children}</ContextoContext.Provider>;
 }

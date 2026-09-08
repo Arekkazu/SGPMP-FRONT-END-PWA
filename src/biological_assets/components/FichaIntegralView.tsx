@@ -1,11 +1,14 @@
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { AlertTriangle } from 'lucide-react';
+import { Alert } from '../../shared/design-system/Alert';
 import type { FichaIntegralResponse } from '../types';
+import type { ApiError } from '../../shared/api/errors';
 
 interface Props {
   ficha: FichaIntegralResponse | null;
   loading: boolean;
+  error?: ApiError | null;
 }
 
 const CARD: React.CSSProperties = {
@@ -74,7 +77,7 @@ function DictList({ items, vacio }: { items: Record<string, unknown>[]; vacio: s
   );
 }
 
-export function FichaIntegralView({ ficha, loading }: Props) {
+export function FichaIntegralView({ ficha, loading, error }: Props) {
   const { t } = useT('biologicalAssets');
   if (loading) {
     return (
@@ -88,13 +91,33 @@ export function FichaIntegralView({ ficha, loading }: Props) {
   }
 
   if (!ficha) {
-    return <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('fichaintegralview.no_hay_ficha_disponible_para_este_activo')}</p>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
+        {error && (
+          <Alert
+            variant={error.status >= 500 ? 'error' : 'warning'}
+            title={t('fichaintegralview.error_al_cargar_la_ficha_integral')}
+            description={error.message}
+          />
+        )}
+        {!error && (
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('fichaintegralview.no_hay_ficha_disponible_para_este_activo')}</p>
+        )}
+      </div>
+    );
   }
 
   const esPoblacional = String(ficha.tipo).toUpperCase() === 'POBLACIONAL';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
+      {error && (
+        <Alert
+          variant={error.status >= 500 ? 'error' : 'warning'}
+          title={t('fichaintegralview.error_al_cargar_la_ficha_integral')}
+          description={error.message}
+        />
+      )}
       {ficha.advertencias.length > 0 && (
         <div
           style={{

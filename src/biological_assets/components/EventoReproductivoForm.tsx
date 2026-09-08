@@ -20,17 +20,18 @@ interface FormValues {
 }
 
 interface Props {
+  esPoblacional: boolean;
   saving: boolean;
   saveError: ApiError | null;
   onClose: () => void;
   onConfirmar: (dto: RegistrarEventoReproductivoDTO) => Promise<boolean>;
 }
 
-export function EventoReproductivoForm({ saving, saveError, onClose, onConfirmar }: Props) {
+export function EventoReproductivoForm({ esPoblacional, saving, saveError, onClose, onConfirmar }: Props) {
   const { t } = useT('biologicalAssets');
   const { register, handleSubmit } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { categoria: 'inseminacion', resultado: 'exitoso', numero_crias: '0' },
+    defaultValues: { categoria: esPoblacional ? 'nacimiento' : 'inseminacion', resultado: 'exitoso', numero_crias: '0' },
   });
 
   const submit = async (v: FormValues) => {
@@ -59,13 +60,19 @@ export function EventoReproductivoForm({ saving, saveError, onClose, onConfirmar
       )}
       <form onSubmit={handleSubmit(submit)} noValidate>
         <div style={FORM_COL}>
-          <FormSelect label={t('eventoreproductivoform.categoria')} required {...register('categoria')}>
-            <option value="servicio">{t('eventoreproductivoform.servicio')}</option>
-            <option value="inseminacion">{t('eventoreproductivoform.inseminacion')}</option>
-            <option value="diagnostico">{t('eventoreproductivoform.diagnostico')}</option>
-            <option value="parto">{t('eventoreproductivoform.parto')}</option>
-            <option value="aborto">{t('eventoreproductivoform.aborto')}</option>
-            <option value="nacimiento">{t('eventoreproductivoform.nacimiento')}</option>
+          <FormSelect label={t('eventoreproductivoform.categoria')} required disabled={esPoblacional} {...register('categoria')}>
+            {esPoblacional ? (
+              <option value="nacimiento">{t('eventoreproductivoform.nacimiento')}</option>
+            ) : (
+              <>
+                <option value="servicio">{t('eventoreproductivoform.servicio')}</option>
+                <option value="inseminacion">{t('eventoreproductivoform.inseminacion')}</option>
+                <option value="diagnostico">{t('eventoreproductivoform.diagnostico')}</option>
+                <option value="parto">{t('eventoreproductivoform.parto')}</option>
+                <option value="aborto">{t('eventoreproductivoform.aborto')}</option>
+                <option value="nacimiento">{t('eventoreproductivoform.nacimiento')}</option>
+              </>
+            )}
           </FormSelect>
 
           <FormSelect label={t('eventoreproductivoform.resultado')} required {...register('resultado')}>

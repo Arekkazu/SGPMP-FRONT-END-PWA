@@ -10,6 +10,8 @@ interface Props {
   loading: boolean;
   puedeEditar: boolean;
   puedeDesactivar: boolean;
+  /** Distingue "sin resultados de búsqueda" de "catálogo vacío" en el estado vacío. */
+  busquedaActiva?: boolean;
   onEditar: (especie: EspecieResponse) => void;
   onDesactivar: (especie: EspecieResponse) => void;
   onReactivar: (especie: EspecieResponse) => void;
@@ -46,6 +48,7 @@ export function EspeciesTable({
   loading,
   puedeEditar,
   puedeDesactivar,
+  busquedaActiva,
   onEditar,
   onDesactivar,
   onReactivar,
@@ -72,7 +75,9 @@ export function EspeciesTable({
 
   if (especies.length === 0) {
     return (
-      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('especiestable.no_hay_especies_registradas')}</p>
+      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>
+        {busquedaActiva ? t('especiestable.sin_resultados_de_busqueda') : t('especiestable.no_hay_especies_registradas')}
+      </p>
     );
   }
 

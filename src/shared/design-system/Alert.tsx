@@ -45,6 +45,7 @@ export function Alert({ variant, title, description, onDismiss, className = '', 
   return (
     <div
       role="alert"
+      aria-live="assertive"
       className={['ds-alert', `ds-alert--${variant}`, className].filter(Boolean).join(' ')}
       style={style}
     >
