@@ -29,11 +29,11 @@ const CABECERAS = [
   { clave: 'usuariospage.correo', id: 'correo' },
   { clave: 'usuariospage.rol', id: 'rol' },
   { clave: 'usuariospage.estado', id: 'estado' },
-  { clave: 'usuariostable.ultimo_acceso', id: 'ultimo-acceso' },
+  { clave: 'usuariostable.ultima_modificacion', id: 'ultima-modificacion' },
   { clave: 'usuariostable.acciones', id: 'acciones' },
 ];
 
-function formatUltimoAcceso(fecha?: string): string {
+function formatUltimaModificacion(fecha?: string): string {
   if (!fecha) return '—';
   try {
     return formatearFechaHora(fecha, { dateStyle: 'short', timeStyle: 'short' });
@@ -104,8 +104,8 @@ export function UsuariosTable({ usuarios, loading, onVerDetalle, onGestionar, pu
               <td headers="th-estado" style={{ padding: 'var(--s3) var(--s4)' }}>
                 <Badge variant={varianteEstado(u.estado_cuenta)}>{u.estado_cuenta}</Badge>
               </td>
-              <td headers="th-ultimo-acceso" style={{ padding: 'var(--s3) var(--s4)', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)' }}>
-                {formatUltimoAcceso(u.ultimo_acceso)}
+              <td headers="th-ultima-modificacion" style={{ padding: 'var(--s3) var(--s4)', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)' }}>
+                {formatUltimaModificacion(u.ultima_modificacion)}
               </td>
               <td headers="th-acciones" style={{ padding: 'var(--s3) var(--s4)' }}>
                 <div style={{ display: 'flex', gap: 'var(--s2)' }}>
