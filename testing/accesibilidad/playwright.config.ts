@@ -10,7 +10,7 @@ export default defineConfig({
 
   /* Configuración global */
   use: {
-    baseURL: 'http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/',
+    baseURL: 'https://sigab-frontenddev-pbw0py-757e2f-158-69-200-27.sslip.io/configuracion',
     trace: 'on-first-retry',
   },
 

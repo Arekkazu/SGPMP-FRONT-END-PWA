@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { auditoriaApi } from '../api/auditoriaApi';
+import { cachearEventos, obtenerEventosCache } from '../db/auditoriaTable';
+import { construirCsvAuditoria } from '../lib/csv';
 import type {
   AuditoriaExportacion,
   AuditoriaItemResponse,
@@ -29,6 +31,7 @@ export function useAuditoria() {
   const exportandoRef = useRef(false);
   const [filtros, setFiltros] = useState<FiltrosAuditoria>(DEFAULT_FILTROS);
   const [tiposEvento, setTiposEvento] = useState<TipoEvento[]>([]);
+  const [fromCache, setFromCache] = useState(false);
 
   const cargar = useCallback(async (f: FiltrosAuditoria = filtros) => {
     setLoading(true);
@@ -37,8 +40,27 @@ export function useAuditoria() {
       const res = await auditoriaApi.consultar(f);
       setEventos(res.items);
       setTotal(res.total);
+      setFromCache(false);
+      try {
+        await cachearEventos(res.items);
+      } catch {
+        // La caché offline no debe impedir mostrar una respuesta remota válida.
+      }
     } catch (e) {
-      setError(e as ApiError);
+      // Sin conexión: rehidratar la tabla desde la caché IndexedDB para que la
+      // exportación offline tenga de dónde sacar el CSV.
+      try {
+        const cache = await obtenerEventosCache();
+        if (cache.length > 0) {
+          setEventos(cache);
+          setTotal(cache.length);
+          setFromCache(true);
+        } else {
+          setError(e as ApiError);
+        }
+      } catch {
+        setError(e as ApiError);
+      }
     } finally {
       setLoading(false);
     }
@@ -93,6 +115,18 @@ export function useAuditoria() {
     } as ApiError;
   }, [filtros]);
 
+  /** Arma el CSV local desde la caché, con el mismo formato que el backend. */
+  const exportarCsvDesdeCache = useCallback(async (): Promise<AuditoriaExportacion> => {
+    const items = await obtenerEventosCache();
+    const csv = construirCsvAuditoria(items, tiposEvento);
+    return {
+      csv,
+      total: items.length,
+      exportados: items.length,
+      truncado: false,
+    };
+  }, [tiposEvento]);
+
   const exportarTodos = useCallback(async (): Promise<AuditoriaExportacion | null> => {
     if (exportandoRef.current) return null;
     exportandoRef.current = true;
@@ -101,6 +135,10 @@ export function useAuditoria() {
     setExportProgreso(null);
 
     try {
+      // TC-M01-074: offline, el botón sigue generando el archivo desde la caché.
+      if (!navigator.onLine) {
+        return await exportarCsvDesdeCache();
+      }
       return await auditoriaApi.exportar(filtros);
     } catch (e) {
       const apiError = e as ApiError;
@@ -114,6 +152,17 @@ export function useAuditoria() {
           return null;
         }
       }
+      // `status === 0` es un fallo de transporte (sin respuesta del servidor):
+      // caída de red que `navigator.onLine` no alcanzó a reportar. Degradar a la
+      // caché en lugar de negar la descarga.
+      if (apiError?.status === 0) {
+        try {
+          return await exportarCsvDesdeCache();
+        } catch (eCache) {
+          setExportError(eCache as ApiError);
+          return null;
+        }
+      }
       setExportError(apiError);
       return null;
     } finally {
@@ -121,7 +170,7 @@ export function useAuditoria() {
       setExportando(false);
       setExportProgreso(null);
     }
-  }, [filtros, exportarPorCola]);
+  }, [filtros, exportarPorCola, exportarCsvDesdeCache]);
 
   return {
     eventos,
@@ -130,6 +179,7 @@ export function useAuditoria() {
     error,
     filtros,
     tiposEvento,
+    fromCache,
     cargar,
     actualizarFiltros,
     resetFiltros,

@@ -1,3 +1,31 @@
+## [1.0.0-rc.20](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.19...v1.0.0-rc.20) (2026-09-08)
+
+### Features
+
+* **rf25:** cargar roles dinámicos en el modal de usuario en vez de quemados ([16d4fec](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/16d4fec05a90aaef10192352cf6b2fe65df25298))
+* **rf25:** selección de fincas asignadas en el detalle de usuario (RF-25) ([3295a89](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3295a896a72a6d7519483e6defa63eab92b22f76))
+
+### Bug Fixes
+
+* **auth:** ocultar el login SSO de AgroFusion ([b0bbc81](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b0bbc819782e390a3608c3e831bfc7535bceec47))
+
+## [1.0.0-rc.19](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.18...v1.0.0-rc.19) (2026-09-08)
+
+### Bug Fixes
+
+* **rf16:** consumir catalogos de especie en activos ([951b76b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/951b76bcd0789763a1b39d0b877ecac552cd0733))
+
+## [1.0.0-rc.18](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.17...v1.0.0-rc.18) (2026-09-08)
+
+### Features
+
+* **rf10:** exportacion CSV de auditoria offline desde cache ([4745ebe](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4745ebe25991edf098112b0940940dd9ae60e38e))
+
+### Bug Fixes
+
+* **rf01:** limpiar token captcha al perder conexion ([610798d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/610798deda1a3e38e14a20c626f3a0481887baf0))
+* **rf13:** alinear campo ultima_modificacion en listado de usuarios ([b0972a6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b0972a64b4b3e479058cbb7447fa9edea02d6e76))
+
 ## [1.0.0-rc.17](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.16...v1.0.0-rc.17) (2026-09-08)
 
 ### Bug Fixes

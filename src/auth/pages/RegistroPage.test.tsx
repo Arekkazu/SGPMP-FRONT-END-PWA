@@ -112,3 +112,44 @@ test('invalida el token después de un envío rechazado', async () => {
   await screen.findByText('Completa nuevamente la verificación antes de reintentar.');
   expect(screen.getByRole('button', { name: 'Registrarse' })).toBeDisabled();
 });
+
+test('limpia el token CAPTCHA al perder la conexión para no reenviarlo obsoleto', async () => {
+  let online = true;
+  useRegistroMock.mockImplementation(() => ({
+    registrar: registrarMock,
+    loading: false,
+    error: null,
+    success: false,
+    online,
+  }));
+
+  const { rerender } = render(
+    <MemoryRouter>
+      <RegistroPage />
+    </MemoryRouter>,
+  );
+  await completarPasoPersonal();
+  completarCredenciales();
+  fireEvent.click(screen.getByRole('button', { name: 'Resolver CAPTCHA' }));
+  expect(screen.getByRole('button', { name: 'Registrarse' })).toBeEnabled();
+
+  // Se pierde la conexión: el widget se desmonta y el token debe limpiarse.
+  online = false;
+  rerender(
+    <MemoryRouter>
+      <RegistroPage />
+    </MemoryRouter>,
+  );
+  expect(screen.getByRole('button', { name: 'Registrarse' })).toBeDisabled();
+
+  // Al reconectar, el widget vuelve pero el token sigue vacío: obliga a
+  // re-resolver el CAPTCHA en vez de enviar el token viejo (INC-M01-13).
+  online = true;
+  rerender(
+    <MemoryRouter>
+      <RegistroPage />
+    </MemoryRouter>,
+  );
+  expect(screen.getByRole('button', { name: 'Registrarse' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Resolver CAPTCHA' })).toBeInTheDocument();
+});
