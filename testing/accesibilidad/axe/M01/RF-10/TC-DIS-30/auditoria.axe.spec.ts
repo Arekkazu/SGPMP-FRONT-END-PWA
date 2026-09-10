@@ -10,15 +10,18 @@ async function loginComoAdmin(page: Page) {
   await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar' }).click();
   await page.waitForURL(/dashboard/);
-  await page.waitForTimeout(3000);
 
+  // IMPORTANTE: el JWT vive solo en memoria (no localStorage, ver README del repo).
+  // Por eso NUNCA usamos page.goto() para navegar después de loguearnos —
+  // eso recarga la página y borra la sesión. Navegamos como lo haría un usuario real:
+  // haciendo clic en el link del sidebar.
+  // En viewports chicos (movil/tablet) el sidebar vive detrás de un botón
+  // hamburguesa ("Alternar menú lateral"); en escritorio no existe/no hace falta.
   const menuToggle = page.getByRole('button', { name: /alternar menú lateral/i });
   if (await menuToggle.isVisible().catch(() => false)) {
     await menuToggle.click();
   }
-  const btnAuditoria = page.getByRole('button', { name: /auditoría/i });
-  await expect(btnAuditoria).toBeEnabled({ timeout: 10000 });
-  await btnAuditoria.click();
+  await page.getByRole('button', { name: /auditoría/i }).click();
 }
 
 test.describe('TC-DIS-30 - Accesibilidad WCAG 2.1 AA - Auditoría (RF-10)', () => {
@@ -35,13 +38,14 @@ test.describe('TC-DIS-30 - Accesibilidad WCAG 2.1 AA - Auditoría (RF-10)', () =
   });
 
   test('filtro por tipo de evento con Enter ejecuta la consulta', async ({ page }) => {
+    // <option> confirmado en AuditoriaFiltros.tsx: "Todos los tipos" + opciones dinámicas
     await page.getByRole('combobox', { name: /tipo/i }).selectOption({ index: 1 });
     await page.keyboard.press('Enter');
     await expect(page.getByRole('table')).toBeVisible();
   });
 
   test('filtro sin resultados - mensaje anunciado vía aria-live', async ({ page }) => {
-    await page.getByPlaceholder(/ej\. 42/i).fill('999999999');
+    await page.getByPlaceholder(/ej\. 42/i).fill('999999999'); // id de usuario inexistente
     await page.keyboard.press('Enter');
     await expect(page.getByText(/sin resultados|no se encontraron/i)).toBeVisible();
   });
