@@ -58,7 +58,7 @@ async function loginComoAdmin(page: Page) {
   // en memoria, NUNCA en localStorage. Por eso después de loguearse no se
   // usa page.goto() para navegar — eso recarga la página y borra la sesión.
   // Se navega como lo haría un usuario real: clic en el sidebar.
-  const menuToggle = page.getByRole('button', { name: /alternar menú lateral/i });
+  const menuToggle = page.getByRole('button', { name: /alternar menú lateral|toggle side menu/i });
   if (await menuToggle.isVisible().catch(() => false)) {
     await menuToggle.click();
   }
