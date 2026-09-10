@@ -3,7 +3,7 @@ import { expect, test, Page } from '@playwright/test';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? '';
-const USUARIO_PRUEBA = 'Sara Gonzalez'; // confirmado real en tabla /usuarios
+const USUARIO_PRUEBA = 'PENDIENTE_DEFINIR'; // nombre_usuario de un usuario ACTIVO, no el propio admin
 
 async function loginComoAdmin(page: Page) {
   await page.goto('/login');
@@ -11,11 +11,6 @@ async function loginComoAdmin(page: Page) {
   await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar' }).click();
   await page.waitForURL(/dashboard/);
-  // Pausa deliberada: navegar inmediatamente tras el login causaba una
-  // condicion de carrera (401 en sesiones/refresh + clic perdido). Confirmado
-  // con script de diagnostico que 3s de espera lo evita.
-  await page.waitForTimeout(3000);
-
 
   // IMPORTANTE: el JWT vive solo en memoria (no localStorage, ver README del repo).
   // Por eso NUNCA usamos page.goto() para navegar después de loguearnos —
@@ -27,11 +22,7 @@ async function loginComoAdmin(page: Page) {
   if (await menuToggle.isVisible().catch(() => false)) {
     await menuToggle.click();
   }
-  const btnUsuarios = page.getByRole('button', { name: /gestión de usuarios/i });
-  // CORRECCIÓN (aplicando fix de Camila en TC-DIS-22): esperar a que el
-  // ítem del sidebar se habilite tras cargar permisos asíncronos.
-  await expect(btnUsuarios).toBeEnabled({ timeout: 10000 });
-  await btnUsuarios.click();
+  await page.getByRole('button', { name: /gestión de usuarios/i }).click();
 }
 
 test.describe('TC-DIS-28 - Accesibilidad WCAG 2.1 AA - Gestionar Cuenta de Usuario (RF-06)', () => {
