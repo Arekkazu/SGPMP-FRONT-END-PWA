@@ -64,6 +64,8 @@ describe('TC-M01-011 · Rechazo de registro por reCAPTCHA no resuelto / fallido'
     checks.push({ paso, esperado, obtenido, estado });
 
   const peticionesLog: string[] = [];
+  let resEmpty = { status: 0 };
+  let resInvalid = { status: 0 };
 
   before(() => {
     // Evita congelamientos por CORS en scripts de Vite bajo el proxy de Cypress
@@ -75,7 +77,9 @@ describe('TC-M01-011 · Rechazo de registro por reCAPTCHA no resuelto / fallido'
   });
 
   after(() => {
-    const veredicto = 'NO APROBADO — no se puede validar en este ambiente (CAPTCHA simulado)';
+    const veredicto = (resEmpty.status === 400 && resInvalid.status === 400)
+      ? 'APROBADO'
+      : 'NO APROBADO — la API no está validando correctamente el reCAPTCHA';
 
     const r = {
       caso: 'TC-M01-011',
@@ -169,7 +173,8 @@ describe('TC-M01-011 · Rechazo de registro por reCAPTCHA no resuelto / fallido'
       url: backendUrl,
       body: usuarioVacio,
       failOnStatusCode: false,
-    }).then((resEmpty) => {
+    }).then((resEmptyResp) => {
+      resEmpty = resEmptyResp;
       const logStr = `Escenario A (Token Vacío): POST ${backendUrl} -> HTTP ${resEmpty.status}`;
       peticionesLog.push(logStr);
 
@@ -198,7 +203,8 @@ describe('TC-M01-011 · Rechazo de registro por reCAPTCHA no resuelto / fallido'
         url: backendUrl,
         body: usuarioInvalido,
         failOnStatusCode: false,
-      }).then((resInvalid) => {
+      }).then((resInvalidResp) => {
+        resInvalid = resInvalidResp;
         const logStrB = `Escenario B (Token Inválido): POST ${backendUrl} -> HTTP ${resInvalid.status}`;
         peticionesLog.push(logStrB);
 
@@ -214,11 +220,14 @@ describe('TC-M01-011 · Rechazo de registro por reCAPTCHA no resuelto / fallido'
         );
 
         // 6) Checkpoint 4: Evaluación Global de Veredicto por condición del ambiente
+        const esAprobado = resEmpty.status === 400 && resInvalid.status === 400;
         add(
           'Checkpoint 4: Veredicto Global de Seguridad en Ambiente de TEST',
           'Rechazo por CAPTCHA verificado en ambiente con claves oficiales de prueba de Google',
-          `NO APROBADO: No es posible validar la seguridad en este ambiente de TEST (CAPTCHA simulado). Petición Token Vacío devuelven ${resEmpty.status} y Token Inválido devuelve ${resInvalid.status}`,
-          'OBSERVACION'
+          esAprobado
+            ? `APROBADO: Rechazo por CAPTCHA verificado correctamente en la API (Token Vacío: HTTP ${resEmpty.status}, Token Inválido: HTTP ${resInvalid.status})`
+            : `NO APROBADO: La API no está validando correctamente el reCAPTCHA (Token Vacío: HTTP ${resEmpty.status}, Token Inválido: HTTP ${resInvalid.status})`,
+          esAprobado ? 'OK' : 'OBSERVACION'
         );
       });
     });

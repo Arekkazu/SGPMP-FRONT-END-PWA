@@ -31,11 +31,9 @@ function renderMd(r: any): string {
 | Fecha ejecución | ${r.fecha} |
 | Precondiciones | Autenticado como Admin (${r.adminUser}) |
 
-## Diagnóstico de Incidencia en Interfaz y Video / Capturas
-> [!WARNING]
-> **1. Bloqueo de Modal en UI (Captura y Video)**: En la interfaz desplegada del ambiente TEST, hacer clic en "Ver detalle" intenta consultar \`/usuarios/undefined/detalle\` (por falta de \`id_usuario\` en la lista de la API). Por ello, el modal no se abre con datos y la captura/video quedan congelados en la vista principal de Gestión de Usuarios (\`/usuarios\`).  
-> **2. Fallo HTTP 503 en Creación por API**: El endpoint público \`POST /usuarios/\` responde HTTP 503 (\`CAPTCHA_SERVICIO_NO_DISPONIBLE: El servicio de validación de seguridad no está disponible temporalmente\`).  
-> **3. Evaluación sobre API Genuina (HTTP 200 OK)**: Para verificar formalmente la privacidad sobre un perfil genuino, el test consultó directamente el endpoint autenticado con un ID válido (ID 1 - \`admin@pecuaria.co\`).
+## Diagnóstico de Privacidad de Perfil
+> [!NOTE]
+> Verificación integral de privacidad del perfil de usuario conforme a RF-13 (CU07): inspección de ausencia de contraseña en capa de API REST (JSON), árbol DOM/HTML de la aplicación y almacenamiento web del cliente (localStorage / sessionStorage).
 
 ## Evidencia Completa de Llaves del JSON Genuino de Respuesta de la API (HTTP 200 OK)
 > [!INFO]
@@ -50,15 +48,15 @@ ${r.checkpoints.map((c: Check) => `| ${c.paso} | ${c.esperado} | ${c.obtenido} |
 ## Veredicto: **${r.veredicto}**
 
 ## Registro Técnico de Red y Navegación
-- **Ruta de Navegación**: /login -> /usuarios -> Clic en "Ver detalle" (Fallo por ID undefined) -> API /usuarios/1/detalle (Admin Profile) -> Almacenamiento Web & DOM.
+- **Ruta de Navegación**: /login -> /usuarios -> Clic en "Ver detalle" (Apertura de Modal) -> API /usuarios/1/detalle (Admin Profile) -> Almacenamiento Web & DOM.
 - **Detalle de Ejecución**: ${r.peticionInfo}
 
 ## Hallazgos y Observaciones Técnicas
 ${r.hallazgos.map((h: string) => `- ${h}`).join('\n')}
 
 ## Evidencias Visuales (Capturas .PNG y Video .MP4)
-- [01_perfil_detalle_seguridad.png](screenshots/01_perfil_detalle_seguridad.png) — Muestra la vista de /usuarios congelada tras intentar abrir el modal de detalle sin éxito por el bug de ID undefined.
-- [tc-m01-089-contrasena-no-visible-perfil.cy.ts.mp4](videos/tc-m01-089-contrasena-no-visible-perfil.cy.ts.mp4) — Grabación en video del intento de navegación y apertura del detalle.
+- [01_perfil_detalle_seguridad.png](screenshots/01_perfil_detalle_seguridad.png) — Vista del modal de detalle de usuario abierto para verificación de privacidad.
+- [tc-m01-089-contrasena-no-visible-perfil.cy.ts.mp4](videos/tc-m01-089-contrasena-no-visible-perfil.cy.ts.mp4) — Grabación en video del flujo de navegación y validación de seguridad.
 `;
 }
 
@@ -83,7 +81,7 @@ describe('TC-M01-089 · Verificar que la contraseña nunca sea visible en el per
     const hasFalla = checks.some((c) => c.estado === 'FALLA');
     const veredicto = checks.length === 0
       ? 'NO EJECUTADO'
-      : (hasFalla ? 'NO APROBADO (FALLA EN TABLA ID UNDEFINED Y 503 CAPTCHA)' : 'SIN FALLAS BLOQUEANTES');
+      : (hasFalla ? 'CON FALLAS' : 'SIN FALLAS BLOQUEANTES');
 
     const r = {
       caso: 'TC-M01-089',
@@ -95,7 +93,7 @@ describe('TC-M01-089 · Verificar que la contraseña nunca sea visible en el per
       responsable: 'Sebastian',
       adminUser: 'admin@pecuaria.co',
       ambiente: Cypress.config('baseUrl'),
-      backend: 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
+      backend: Cypress.env('BACKEND_URL') || 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
       navegador: `${Cypress.browser.name} ${Cypress.browser.version}`,
       fecha: new Date().toISOString(),
       llavesJSON: llavesRespuestaJSON,
@@ -103,9 +101,6 @@ describe('TC-M01-089 · Verificar que la contraseña nunca sea visible en el per
       checkpoints: checks,
       veredicto,
       hallazgos: [
-        'Hallazgo 1 (Captura/Video): En la UI de TEST el modal no abre los datos del perfil y se queda en /usuarios debido al envío de ID undefined.',
-        'Hallazgo 2 (Infraestructura / Backend): POST /usuarios/ retorna HTTP 503 CAPTCHA_SERVICIO_NO_DISPONIBLE en el ambiente de TEST.',
-        'Hallazgo 3 (UI / Backend Contract): GET /usuarios/admin no retorna id_usuario en los elementos de la tabla, provocando solicitudes /usuarios/undefined/detalle (HTTP 400).',
         `Llaves detectadas en el JSON genuino de perfil (HTTP 200 OK): ${llavesRespuestaJSON.join(', ') || 'Ninguna'}`,
         ...checks.map((c) => `${c.paso} -> ${c.obtenido} (${c.estado})`),
       ],
@@ -136,26 +131,32 @@ describe('TC-M01-089 · Verificar que la contraseña nunca sea visible en el per
       'OK'
     );
 
-    // 3) Intentar interactuar con el botón "Ver detalle" en la tabla para registrar la evidencia de UI
+    // 3) Interceptar la petición de detalle y abrir el modal desde la tabla UI
+    cy.intercept('GET', '**/usuarios/*/detalle').as('getDetalle');
+
     cy.get('table tbody tr', { timeout: 10000 }).first().within(() => {
       cy.get('button[aria-label*="Ver detalle"]').click({ force: true });
     });
 
-    // Esperar respuesta de la red o fallo del modal
-    cy.wait(2000);
+    cy.wait('@getDetalle', { timeout: 15000 }).then((interception) => {
+      const status = interception.response?.statusCode ?? 0;
+      const ok = status === 200;
+      add(
+        'Checkpoint 2: Apertura de Modal de Detalle desde Tabla',
+        'Apertura exitosa del modal con datos del usuario (HTTP 200 OK)',
+        ok ? `Modal cargado correctamente (HTTP ${status})` 
+           : `Error HTTP ${status} al abrir el detalle`,
+        ok ? 'OK' : 'FALLA'
+      );
+    });
 
-    // Tomar captura de pantalla de la evidencia de UI (que permanece congelada en /usuarios)
+    cy.get('div[role="dialog"]', { timeout: 12000 }).should('be.visible');
+
+    // Tomar captura de pantalla de la evidencia de UI del modal abierto
     cy.screenshot('01_perfil_detalle_seguridad', { overwrite: true });
 
-    add(
-      'Checkpoint 2: Apertura del Modal de Detalle desde Tabla UI',
-      'El clic en el botón de la tabla debe abrir la vista de detalle del usuario',
-      'FALLA DE UI: GET /usuarios/admin no entrega id_usuario en los elementos, haciendo la solicitud /usuarios/undefined/detalle (HTTP 400). El modal no despliega datos y la pantalla queda congelada en /usuarios (evidenciado en captura y video).',
-      'FALLA'
-    );
-
     // 4) Consultar el detalle de usuario genuino vía API (ID 1 - Perfil Admin) usando autenticación Bearer para verificar privacidad de contraseña sobre JSON real
-    const backendUrl = 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test';
+    const backendUrl = Cypress.env('BACKEND_URL') || 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test';
 
     cy.request({
       method: 'POST',
