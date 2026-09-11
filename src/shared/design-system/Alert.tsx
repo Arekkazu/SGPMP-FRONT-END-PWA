@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../i18n/useT';
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 import './Alert.css';
 
@@ -26,6 +27,7 @@ interface AlertProps {
 }
 
 export function Alert({ variant, title, description, onDismiss, className = '', style }: AlertProps) {
+  const { t } = useT('common');
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export function Alert({ variant, title, description, onDismiss, className = '', 
   return (
     <div
       role="alert"
+      aria-live="assertive"
       className={['ds-alert', `ds-alert--${variant}`, className].filter(Boolean).join(' ')}
       style={style}
     >
@@ -56,7 +59,7 @@ export function Alert({ variant, title, description, onDismiss, className = '', 
           type="button"
           className="ds-alert__close"
           onClick={() => { setVisible(false); onDismiss(); }}
-          aria-label="Cerrar alerta"
+          aria-label={t('alert.cerrar_alerta')}
         >
           <X size={14} aria-hidden />
         </button>

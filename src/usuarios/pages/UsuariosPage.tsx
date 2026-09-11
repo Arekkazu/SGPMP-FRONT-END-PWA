@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { Search, RefreshCw } from 'lucide-react';
 import { useUsuarios } from '../hooks/useUsuarios';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -9,51 +10,15 @@ import { GestionarModal } from '../components/GestionarModal';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
 
 type ModalState =
   | { tipo: 'ninguno' }
   | { tipo: 'detalle'; idUsuario: number }
   | { tipo: 'gestionar'; idUsuario: number; nombre: string; estadoActual: string };
 
-const SELECT_STYLE: React.CSSProperties = {
-  width: '100%',
-  height: 40,
-  padding: '0 var(--s3)',
-  borderRadius: 'var(--r-md)',
-  border: '1.5px solid var(--surface-border)',
-  background: 'var(--surface-card)',
-  color: 'var(--text-primary)',
-  fontSize: '13px',
-  cursor: 'pointer',
-};
-
-const LABEL_STYLE: React.CSSProperties = {
-  display: 'block',
-  fontSize: '13px',
-  fontWeight: 600,
-  color: 'var(--text-primary)',
-  marginBottom: 'var(--s1)',
-};
-
-const ESTADO_OPTIONS = [
-  { value: '', label: 'Todos los estados' },
-  { value: '1', label: 'Activo' },
-  { value: '2', label: 'Inactivo' },
-  { value: '3', label: 'Bloqueado' },
-  { value: '4', label: 'Pendiente' },
-  { value: '5', label: 'Eliminado' },
-];
-
-const ROL_OPTIONS = [
-  { value: '', label: 'Todos los roles' },
-  { value: '1', label: 'Administrador' },
-  { value: '2', label: 'Productor' },
-  { value: '3', label: 'Veterinario' },
-  { value: '4', label: 'Contador' },
-  { value: '5', label: 'Ingeniero Agrónomo' },
-];
-
 export function UsuariosPage() {
+  const { t } = useT('usuarios');
   const puedeVer = usePermission(1, 2);
   const puedeGestionar = usePermission(4, 3);
   const puedeEditar = usePermission(1, 3);
@@ -65,6 +30,24 @@ export function UsuariosPage() {
   const [busquedaRol, setBusquedaRol] = useState('');
   const [busquedaEstado, setBusquedaEstado] = useState('');
 
+  const estadoOptions = [
+    { value: '', label: t('usuariospage.todos_los_estados') },
+    { value: '1', label: t('estados.activo', { ns: 'common' }) },
+    { value: '2', label: t('estados.inactivo', { ns: 'common' }) },
+    { value: '3', label: t('estados.bloqueado', { ns: 'common' }) },
+    { value: '4', label: t('estados.pendiente', { ns: 'common' }) },
+    { value: '5', label: t('estados.eliminado', { ns: 'common' }) },
+  ];
+
+  const rolOptions = [
+    { value: '', label: t('usuariospage.todos_los_roles') },
+    { value: '1', label: t('usuariospage.roles_admin') },
+    { value: '2', label: t('usuariospage.roles_productor') },
+    { value: '3', label: t('usuariospage.roles_veterinario') },
+    { value: '4', label: t('usuariospage.roles_contador') },
+    { value: '5', label: t('usuariospage.roles_ingeniero') },
+  ];
+
   useEffect(() => {
     if (puedeVer) cargar();
   }, [puedeVer, cargar]);
@@ -72,9 +55,7 @@ export function UsuariosPage() {
   if (!puedeVer) {
     return (
       <div style={{ padding: 'var(--s7)', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          No tienes permiso para ver esta sección.
-        </p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('usuariospage.no_tienes_permiso_para_ver_esta_seccion')}</p>
       </div>
     );
   }
@@ -104,15 +85,13 @@ export function UsuariosPage() {
     <div style={{ padding: 'var(--s6)', maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <div>
-          <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
-            Usuarios
-          </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-            {loading ? 'Cargando…' : `${total} usuario${total !== 1 ? 's' : ''}`}
-            {fromCache && ' · datos desde caché'}
+          <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{t('usuariospage.usuarios')}</h1>
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)' }}>
+            {loading ? t('estados.cargando', { ns: 'common' }) : t('usuariospage.usuarios_count', { count: total })}
+            {fromCache && ` · ${t('usuariospage.datos_desde_cache')}`}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label="Recargar">
+        <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('usuariospage.recargar')}>
           <RefreshCw size={16} aria-hidden />
         </Button>
       </div>
@@ -120,8 +99,8 @@ export function UsuariosPage() {
       {!online && (
         <Alert
           variant="warning"
-          title="Sin conexión"
-          description="Mostrando datos cacheados. Las acciones de escritura están deshabilitadas."
+          title={t('usuariospage.sin_conexion')}
+          description={t('usuariospage.mostrando_datos_cacheados_las_acciones_de')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
@@ -129,22 +108,22 @@ export function UsuariosPage() {
       {fromCache && online && (
         <Alert
           variant="info"
-          title="Datos desde caché"
-          description="No se pudo conectar con el servidor. Se muestran los últimos datos disponibles."
+          title={t('usuariospage.datos_desde_cache')}
+          description={t('usuariospage.no_se_pudo_conectar_con_el_servidor_se')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
 
       {error && !fromCache && (
-        <Alert variant="error" title="Error al cargar usuarios" description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+        <Alert variant="error" title={t('usuariospage.error_al_cargar_usuarios')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
       {/* Filtros */}
       <div style={{ display: 'flex', gap: 'var(--s3)', marginBottom: 'var(--s5)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ flex: 1, minWidth: 150 }}>
           <Input
-            label="Nombre"
-            placeholder="Buscar por nombre"
+            label={t('usuariospage.nombre')}
+            placeholder={t('usuariospage.buscar_por_nombre')}
             value={busquedaNombre}
             onChange={(e) => setBusquedaNombre(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && buscar()}
@@ -152,31 +131,37 @@ export function UsuariosPage() {
         </div>
         <div style={{ flex: 1, minWidth: 150 }}>
           <Input
-            label="Correo"
+            label={t('usuariospage.correo')}
             type="email"
-            placeholder="Buscar por correo"
+            placeholder={t('usuariospage.buscar_por_correo')}
             value={busquedaCorreo}
             onChange={(e) => setBusquedaCorreo(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && buscar()}
           />
         </div>
         <div style={{ flex: '0 1 150px' }}>
-          <label style={LABEL_STYLE}>Rol</label>
-          <select value={busquedaRol} onChange={(e) => setBusquedaRol(e.target.value)} style={SELECT_STYLE}>
-            {ROL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <Select
+            label={t('usuariospage.rol')}
+            value={busquedaRol}
+            onChange={(e) => setBusquedaRol(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); buscar(); } }}
+          >
+            {rolOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </Select>
         </div>
         <div style={{ flex: '0 1 150px' }}>
-          <label style={LABEL_STYLE}>Estado</label>
-          <select value={busquedaEstado} onChange={(e) => setBusquedaEstado(e.target.value)} style={SELECT_STYLE}>
-            {ESTADO_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <Select
+            label={t('usuariospage.estado')}
+            value={busquedaEstado}
+            onChange={(e) => setBusquedaEstado(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); buscar(); } }}
+          >
+            {estadoOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </Select>
         </div>
         <div>
           <Button variant="primary" size="md" onClick={buscar}>
-            <Search size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-            Buscar
-          </Button>
+            <Search size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('usuariospage.buscar')}</Button>
         </div>
       </div>
 
@@ -196,20 +181,16 @@ export function UsuariosPage() {
             size="sm"
             disabled={filtros.pagina <= 1}
             onClick={() => actualizarFiltros({ pagina: filtros.pagina - 1 })}
-          >
-            ← Anterior
-          </Button>
-          <span style={{ display: 'flex', alignItems: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Página {filtros.pagina} de {totalPages}
+          >{t('usuariospage.anterior')}</Button>
+          <span style={{ display: 'flex', alignItems: 'center', fontSize: 'var(--fs-label-md)', color: 'var(--text-secondary)' }}>
+            {t('usuariospage.pagina_x_de_y', { pagina: filtros.pagina, total: totalPages })}
           </span>
           <Button
             variant="secondary"
             size="sm"
             disabled={filtros.pagina >= totalPages}
             onClick={() => actualizarFiltros({ pagina: filtros.pagina + 1 })}
-          >
-            Siguiente →
-          </Button>
+          >{t('usuariospage.siguiente')}</Button>
         </div>
       )}
 

@@ -4,7 +4,7 @@
   left: 0;
   width: var(--sidebar-w);
   height: 100vh;
-  background: var(--neutral-900);
+  background: var(--brand-nav);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -14,7 +14,7 @@
 }
 
 [data-theme="dark"] .ds-sidebar {
-  background: #0a0c09;
+  background: var(--brand-nav);
   border-right: 1px solid #1a2018;
 }
 
@@ -48,7 +48,7 @@
 .ds-sidebar__logo-sub {
   font-family: var(--font-mono);
   font-size: 9px;
-  color: #3a5035;
+  color: #7d9a75;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -62,7 +62,7 @@
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #4a6445;
+  color: #7d9a75;
   padding: var(--s2) var(--s5) var(--s1);
   display: block;
 }
@@ -74,7 +74,7 @@
   padding: 9px var(--s5);
   font-size: 12.5px;
   font-weight: 500;
-  color: #8aaa80;
+  color: #a3c49a;
   cursor: pointer;
   border: none;
   background: none;
@@ -90,6 +90,11 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
+.ds-sidebar__item:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
 .ds-sidebar__item--active {
   color: #ffffff;
   border-left-color: var(--brand-400);
@@ -103,7 +108,7 @@
 }
 
 .ds-sidebar__item--locked:hover {
-  color: #8aaa80;
+  color: #a3c49a;
   background: none;
 }
 
@@ -115,7 +120,18 @@
   justify-content: center;
 }
 
-.ds-sidebar__item-label { flex: 1; }
+/* RF-29 — RNF de accesibilidad: en ingles varios rotulos son mas largos que
+   en espanol ("Roles and permissions" vs "Roles y permisos"). `min-width: 0`
+   permite que el hijo flex se encoja por debajo de su ancho de contenido, que
+   es lo que habilita la elipsis; sin el, el texto empuja el contenedor y
+   desborda la barra. El `title` del boton conserva el rotulo completo. */
+.ds-sidebar__item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .ds-sidebar__item-lock {
   margin-left: auto;
@@ -169,7 +185,7 @@
 
 .ds-sidebar__user-role {
   font-size: 10px;
-  color: #4a6445;
+  color: #7d9a75;
   display: block;
 }
 
@@ -177,7 +193,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #4a6445;
+  color: #7d9a75;
   transition: color 0.12s;
   flex-shrink: 0;
   display: flex;
@@ -187,6 +203,10 @@
 }
 
 .ds-sidebar__logout:hover { color: #d4e0ce; }
+.ds-sidebar__logout:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
 
 /* Mobile: hide sidebar */
 @media (max-width: 1023px) {
@@ -195,13 +215,23 @@
   }
   .ds-sidebar--open {
     transform: translateX(0);
+    /* Por encima de la AppBar (z-100) y del overlay (z-140): sin esto la
+       barra superior tapa el logo del drawer abierto (QA TC-DIS-21/25/30/32). */
+    z-index: 150;
   }
 }
 
-/* Main content wrapper — pushes right of sidebar on desktop, full-width on mobile */
+/* Main content wrapper — pushes right of sidebar on desktop, full-width on mobile.
+   El sidebar es position:fixed (fuera del flujo), así que el flex:1 de este
+   elemento se calcula contra un contenedor que no reserva su espacio: sin el
+   width explícito, este wrapper mide el 100% del viewport y el margin-left
+   solo lo desplaza, desbordando exactamente --sidebar-w px por la derecha
+   (INC-M01-22-074 / #107 — reproducido en /auditoria a 1280px, pero afecta
+   a cualquier página de escritorio con contenido que llegue al borde). */
 .ds-app-content {
   flex: 1;
   margin-left: var(--sidebar-w);
+  width: calc(100% - var(--sidebar-w));
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -210,5 +240,6 @@
 @media (max-width: 1023px) {
   .ds-app-content {
     margin-left: 0;
+    width: 100%;
   }
 }

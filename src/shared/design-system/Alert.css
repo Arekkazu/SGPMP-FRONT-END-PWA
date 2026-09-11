@@ -32,14 +32,17 @@
   border: none;
   cursor: pointer;
   color: inherit;
-  opacity: 0.6;
   padding: 2px;
   border-radius: var(--r-sm);
   display: flex;
   align-items: center;
-  transition: opacity 0.12s;
+  transition: background 0.12s;
 }
-.ds-alert__close:hover { opacity: 1; }
+.ds-alert__close:hover { background: var(--surface-hover); }
+.ds-alert__close:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
 
 .ds-alert--success {
   background: var(--sem-success-bg);

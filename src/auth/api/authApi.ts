@@ -11,6 +11,12 @@ export const authApi = {
     await http.delete('/sesiones/');
   },
 
+  // Keepalive del timeout de inactividad: cualquier endpoint autenticado
+  // actualiza `cuenta.ultimo_acceso` en el backend. Este es el más barato.
+  async mantenerSesion(): Promise<void> {
+    await http.get('/sesiones/me/permisos');
+  },
+
   async crearUsuario(dto: UsuarioCreateDTO): Promise<MessageResponse> {
     const res = await http.post<MessageResponse>('/usuarios/', dto);
     return res.data;

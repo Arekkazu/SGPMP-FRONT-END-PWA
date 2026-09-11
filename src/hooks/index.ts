@@ -1,2 +1,2 @@
 export { usePushNotifications } from "./usePushNotifications";
-export type { PushNotificationState } from "./usePushNotifications";
+export type { PushNotificationState, PushPermission } from "./usePushNotifications";

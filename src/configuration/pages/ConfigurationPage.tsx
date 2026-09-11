@@ -1,0 +1,475 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Plus, RefreshCw, Search } from 'lucide-react';
+import { useT } from '../../shared/i18n/useT';
+import { usePermission } from '../../shared/rbac/usePermission';
+import { useAuth } from '../../shared/auth/useAuth';
+import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
+import { Alert } from '../../shared/design-system/Alert';
+import { Button } from '../../shared/design-system/Button';
+import { Input } from '../../shared/design-system/Input';
+import { useEspecies } from '../hooks/useEspecies';
+import { EspeciesTable } from '../components/EspeciesTable';
+import { Paginacion } from '../components/Paginacion';
+import { EspeciesModal } from '../components/EspeciesModal';
+import { PorEspeciePage } from '../components/PorEspeciePage';
+import { ParametrosSection } from '../components/ParametrosSection';
+import { FincasTable } from '../components/FincasTable';
+import { useTiposArea } from '../hooks/useTiposArea';
+import { TipoAreaTable } from '../components/TipoAreaTable';
+import { TipoAreaModal } from '../components/TipoAreaModal';
+import { InfraestructuraSection } from '../components/InfraestructuraSection';
+import { DispositivosTable } from '../components/DispositivosTable';
+import { SensoresSection } from '../components/SensoresSection';
+import { ConfiguracionRemotaSection } from '../components/ConfiguracionRemotaSection';
+import { CalibracionSection } from '../components/CalibracionSection';
+import { IdentidadVisualSection } from '../components/IdentidadVisualSection';
+import { TemaVisualSection } from '../components/TemaVisualSection';
+import { IdiomaSection } from '../components/IdiomaSection';
+import { DashboardLayoutSection } from '../components/DashboardLayoutSection';
+import { PlantillasTable } from '../components/PlantillasTable';
+import type { EspecieResponse, TipoAreaResponse } from '../types';
+
+// ── Tabs ────────────────────────────────────────────────────────────────────
+type TabId = 'catalogo' | 'por-especie' | 'fincas' | 'iot' | 'sistema' | 'personalizacion' | 'plantillas';
+
+// RF-25: "el sistema impide visualizar modulos no autorizados". Las siete pestanas se
+// renderizaban para todos los roles, asi que un Contador veia la pestana de dispositivos
+// IoT y solo descubria que no podia al recibir el 403 de cada peticion de adentro.
+// El recurso de lectura de cada pestana gobierna si aparece; el 403 del backend sigue
+// siendo la autoridad, esto solo evita ofrecer lo que no se puede usar.
+const TABS: { id: TabId; claveLabel: string; recurso: number }[] = [
+  { id: 'catalogo', claveLabel: 'tabs.catalogo', recurso: 8 },            // especies
+  { id: 'por-especie', claveLabel: 'tabs.por_especie', recurso: 17 },     // ciclos_biologicos
+  { id: 'fincas', claveLabel: 'tabs.fincas', recurso: 9 },                // fincas
+  { id: 'iot', claveLabel: 'tabs.iot', recurso: 11 },                     // dispositivos_iot
+  { id: 'sistema', claveLabel: 'tabs.sistema', recurso: 21 },             // configuraciones_globales
+  { id: 'personalizacion', claveLabel: 'tabs.personalizacion', recurso: 24 }, // tema_visual
+  { id: 'plantillas', claveLabel: 'tabs.plantillas', recurso: 28 },       // plantillas
+];
+
+// QA M09 (hallazgo #3): con solo padding vertical el boton medía ~40px, por
+// debajo del touch target minimo de 48px (--s9) del sistema de diseño, y en
+// viewport movil (nav con overflow-x) los flex items sin flex-shrink:0 podian
+// encogerse por debajo de su contenido en vez de forzar el scroll horizontal.
+const TAB_BTN: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: 'var(--s9)',
+  flexShrink: 0,
+  padding: '0 var(--s4)',
+  background: 'none',
+  border: 'none',
+  borderBottom: '2px solid transparent',
+  color: 'var(--text-secondary)',
+  fontWeight: 400,
+  fontSize: '14px',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  marginBottom: -1,
+  transition: 'color 0.15s',
+};
+
+const TAB_BTN_ACTIVE: React.CSSProperties = {
+  ...TAB_BTN,
+  borderBottomColor: 'var(--brand-500)',
+  color: 'var(--brand-600)',
+  fontWeight: 600,
+};
+
+// ── Modal state ──────────────────────────────────────────────────────────────
+type ModalState =
+  | { tipo: 'ninguno' }
+  | { tipo: 'crear' }
+  | { tipo: 'editar'; especie: EspecieResponse }
+  | { tipo: 'desactivar'; especie: EspecieResponse }
+  | { tipo: 'reactivar'; especie: EspecieResponse };
+
+// #53 (RF-15): CU-01 exige búsqueda por nombre y paginación en el catálogo. Ambas
+// son client-side — la lista ya llega completa en un solo GET — así que basta con
+// filtrar/paginar el arreglo que trae `useEspecies`, sin tocar la capa API.
+const ESPECIES_POR_PAGINA = 50;
+
+// ── Catálogo tab ─────────────────────────────────────────────────────────────
+// Exportado para poder testear la búsqueda/paginación (#53, RF-15) sin montar
+// toda la página ni su lógica de tabs por permiso.
+export function CatalogoTab() {
+  const { t } = useT('configuration');
+  const online = useOnlineStatus();
+  const puedeCrear  = usePermission(8, 1);
+  const puedeEditar = usePermission(8, 3);
+  const puedeDesact = usePermission(8, 4);
+
+  const { especies, loading, saving, error, saveError, fromCache, cargar, registrar, editar, desactivar, reactivar } = useEspecies();
+  const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
+  const [accionError, setAccionError] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [pagina, setPagina] = useState(1);
+
+  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { setPagina(1); }, [busqueda]);
+
+  const filtradas = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return q ? especies.filter((e) => e.nombre.toLowerCase().includes(q)) : especies;
+  }, [especies, busqueda]);
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ESPECIES_POR_PAGINA));
+  const enPagina = filtradas.slice((pagina - 1) * ESPECIES_POR_PAGINA, pagina * ESPECIES_POR_PAGINA);
+
+  const cerrar = () => setModal({ tipo: 'ninguno' });
+
+  const handleDesactivar = async (especie: EspecieResponse) => {
+    setAccionError(null);
+    const ok = await desactivar(especie.id_especie);
+    if (!ok) setAccionError(saveError?.message ?? 'Error al desactivar.');
+    else cerrar();
+  };
+
+  const handleReactivar = async (especie: EspecieResponse) => {
+    setAccionError(null);
+    const ok = await reactivar(especie.id_especie);
+    if (!ok) setAccionError(saveError?.message ?? 'Error al reactivar.');
+    else cerrar();
+  };
+
+  const activas = especies.filter((e) => e.es_activo).length;
+  const inactivas = especies.filter((e) => !e.es_activo).length;
+
+  return (
+    <div>
+      {/* Header de sección */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
+        <div>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('configurationpage.catalogo_de_especies')}</h2>
+          {!loading && (
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0, fontFamily: 'var(--font-mono)' }}>
+              {activas} activas · {inactivas} inactivas
+              {fromCache && ' · desde caché'}
+            </p>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 'var(--s2)' }}>
+          <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('configurationpage.recargar_especies')}>
+            <RefreshCw size={15} aria-hidden />
+          </Button>
+          {puedeCrear && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setModal({ tipo: 'crear' })}
+              disabled={!online}
+            >
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('configurationpage.nueva_especie')}</Button>
+          )}
+        </div>
+      </div>
+
+      {/* Alertas de estado */}
+      {!online && (
+        <Alert
+          variant="warning"
+          title={t('configurationpage.sin_conexion')}
+          description={t('configurationpage.mostrando_datos_cacheados_las_acciones_de')}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
+      )}
+      {fromCache && online && (
+        <Alert
+          variant="info"
+          title={t('configurationpage.datos_desde_cache')}
+          description={t('configurationpage.no_se_pudo_conectar_con_el_servidor_se')}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
+      )}
+      {error && !fromCache && (
+        <Alert variant="error" title={t('configurationpage.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+      )}
+      {accionError && (
+        <Alert variant="error" title={t('configurationpage.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />
+      )}
+
+      {/* Búsqueda por nombre */}
+      <div style={{ maxWidth: 320, marginBottom: 'var(--s4)' }}>
+        <Input
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder={t('configurationpage.buscar_por_nombre')}
+          aria-label={t('configurationpage.buscar_especies_por_nombre')}
+          leadingIcon={<Search size={16} />}
+        />
+      </div>
+
+      {/* Tabla */}
+      <EspeciesTable
+        especies={enPagina}
+        loading={loading}
+        puedeEditar={puedeEditar && online}
+        puedeDesactivar={puedeDesact && online}
+        busquedaActiva={busqueda.trim().length > 0}
+        onEditar={(e) => setModal({ tipo: 'editar', especie: e })}
+        onDesactivar={(e) => setModal({ tipo: 'desactivar', especie: e })}
+        onReactivar={(e) => setModal({ tipo: 'reactivar', especie: e })}
+      />
+      {!loading && (
+        <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={filtradas.length} onCambiar={setPagina} />
+      )}
+
+      {/* Modal crear/editar */}
+      {(modal.tipo === 'crear' || modal.tipo === 'editar') && (
+        <EspeciesModal
+          especie={modal.tipo === 'editar' ? modal.especie : null}
+          saving={saving}
+          saveError={saveError}
+          onClose={cerrar}
+          onRegistrar={registrar}
+          onEditar={(id, dto) => editar(id, dto)}
+        />
+      )}
+
+      {/* Confirmación desactivar */}
+      {modal.tipo === 'desactivar' && (
+        <ConfirmModal
+          titulo="Confirmar desactivación"
+          mensaje={`¿Deseas desactivar la especie "${modal.especie.nombre}"? Los datos históricos permanecerán accesibles, pero no estará disponible para nuevos registros.`}
+          confirmLabel="Desactivar"
+          confirmVariant="danger"
+          saving={saving}
+          onCancel={cerrar}
+          onConfirm={() => handleDesactivar(modal.especie)}
+        />
+      )}
+
+      {/* Confirmación reactivar */}
+      {modal.tipo === 'reactivar' && (
+        <ConfirmModal
+          titulo="Reactivar especie"
+          mensaje={`¿Confirmas la reactivación de "${modal.especie.nombre}"? Volverá a estar disponible en todos los módulos.`}
+          confirmLabel="Reactivar"
+          confirmVariant="primary"
+          saving={saving}
+          onCancel={cerrar}
+          onConfirm={() => handleReactivar(modal.especie)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Tipos de área (RF-20) ────────────────────────────────────────────────────
+type TipoAreaModalState = { tipo: 'ninguno' } | { tipo: 'crear' } | { tipo: 'desactivar'; item: TipoAreaResponse };
+
+function TiposAreaSubSection() {
+  const { t } = useT('configuration');
+  const online = useOnlineStatus();
+  const puedeCrear = usePermission(58, 1);
+  const puedeDesact = usePermission(58, 4);
+
+  const { tipos, loading, saving, error, saveError, cargar, registrar, desactivar } = useTiposArea();
+  const [modal, setModal] = useState<TipoAreaModalState>({ tipo: 'ninguno' });
+  const [accionError, setAccionError] = useState<string | null>(null);
+
+  useEffect(() => { cargar(); }, [cargar]);
+
+  const cerrar = () => setModal({ tipo: 'ninguno' });
+
+  const handleDesactivar = async (item: TipoAreaResponse) => {
+    setAccionError(null);
+    const ok = await desactivar(item.id_tipo_area);
+    if (!ok) setAccionError(saveError?.message ?? 'Error al desactivar.');
+    else cerrar();
+  };
+
+  return (
+    <div style={{ marginTop: 'var(--s7)', borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('configurationpage.tipos_de_area')}</h2>
+        <div style={{ display: 'flex', gap: 'var(--s2)' }}>
+          <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('configurationpage.recargar_tipos_de_area')}>
+            <RefreshCw size={15} aria-hidden />
+          </Button>
+          {puedeCrear && (
+            <Button variant="primary" size="sm" onClick={() => setModal({ tipo: 'crear' })} disabled={!online}>
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('configurationpage.nuevo_tipo_de_area')}</Button>
+          )}
+        </div>
+      </div>
+
+      {error && <Alert variant="error" title={t('configurationpage.error_al_cargar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      {accionError && <Alert variant="error" title={t('configurationpage.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />}
+
+      <TipoAreaTable
+        tipos={tipos}
+        loading={loading}
+        puedeDesactivar={puedeDesact && online}
+        onDesactivar={(item) => setModal({ tipo: 'desactivar', item })}
+      />
+
+      {modal.tipo === 'crear' && (
+        <TipoAreaModal saving={saving} saveError={saveError} onClose={cerrar} onRegistrar={registrar} />
+      )}
+
+      {modal.tipo === 'desactivar' && (
+        <ConfirmModal
+          titulo="Confirmar desactivación"
+          mensaje={`¿Deseas desactivar el tipo de área "${modal.item.nombre}"? Dejará de ofrecerse al registrar nuevas áreas productivas.`}
+          confirmLabel="Desactivar"
+          confirmVariant="danger"
+          saving={saving}
+          onCancel={cerrar}
+          onConfirm={() => handleDesactivar(modal.item)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Confirm modal genérico ───────────────────────────────────────────────────
+interface ConfirmProps {
+  titulo: string;
+  mensaje: string;
+  confirmLabel: string;
+  confirmVariant: 'primary' | 'danger';
+  saving: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, onCancel, onConfirm }: ConfirmProps) {
+  const { t } = useT('common');
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-modal-title"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0,0,0,0.4)',
+        padding: 'var(--s4)',
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div
+        style={{
+          background: 'var(--surface-card)',
+          borderRadius: 'var(--r-xl)',
+          border: '1px solid var(--surface-border)',
+          padding: 'var(--s6)',
+          width: '100%',
+          maxWidth: 400,
+          boxShadow: 'var(--shadow-lg)',
+        }}
+      >
+        <h2 id="confirm-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
+          {titulo}
+        </h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>
+          {mensaje}
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>
+            {t('acciones.cancelar', { ns: 'common' })}
+          </Button>
+          <Button variant={confirmVariant} size="md" loading={saving} onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ConfigurationPage ────────────────────────────────────────────────────────
+export function ConfigurationPage() {
+  const { t } = useT('configuration');
+  const { permisos } = useAuth();
+  // `permisos` es null mientras la sesion arranca: hasta que llegue no se oculta nada,
+  // para que la pagina no parpadee mostrando una sola pestana.
+  const visibles = permisos === null
+    ? TABS
+    : TABS.filter((tab) => permisos.some(
+        (p) => p.id_recurso === tab.recurso && p.id_accion === 2,
+      ));
+
+  const [activeTab, setActiveTab] = useState<TabId>('catalogo');
+
+  // Si la pestana activa no esta permitida (o deja de estarlo tras un cambio de rol), se
+  // cae a la primera visible en vez de dejar el panel en blanco.
+  useEffect(() => {
+    if (visibles.length > 0 && !visibles.some((tab) => tab.id === activeTab)) {
+      setActiveTab(visibles[0].id);
+    }
+  }, [visibles, activeTab]);
+
+  return (
+    <div style={{ minHeight: '100%', background: 'var(--surface-bg)' }}>
+      {/* Header */}
+      <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+          {t('pagina.titulo')}
+        </h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
+          {t('pagina.subtitulo')}
+        </p>
+      </div>
+
+      {/* Tab bar */}
+      <nav
+        style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', padding: '0 var(--s7)', overflowX: 'auto' }}
+        aria-label={t('pagina.aria_secciones')}
+      >
+        {visibles.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            style={activeTab === tab.id ? TAB_BTN_ACTIVE : TAB_BTN}
+            onClick={() => setActiveTab(tab.id)}
+            aria-current={activeTab === tab.id ? 'page' : undefined}
+          >
+            {t(tab.claveLabel)}
+          </button>
+        ))}
+      </nav>
+
+      {/* Content */}
+      <div style={{ padding: 'var(--s7)' }}>
+        {activeTab === 'catalogo' && <CatalogoTab />}
+        {activeTab === 'por-especie' && <PorEspeciePage />}
+        {activeTab === 'fincas' && (
+          <>
+            <FincasTable />
+            <TiposAreaSubSection />
+            <InfraestructuraSection />
+          </>
+        )}
+        {activeTab === 'iot' && (
+          <>
+            <DispositivosTable />
+            <SensoresSection />
+            <ConfiguracionRemotaSection />
+            <CalibracionSection />
+          </>
+        )}
+        {activeTab === 'sistema' && <ParametrosSection />}
+        {activeTab === 'personalizacion' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s8)' }}>
+            <IdentidadVisualSection />
+            <div style={{ borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
+              <TemaVisualSection />
+            </div>
+            <div style={{ borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
+              <IdiomaSection />
+            </div>
+            <div style={{ borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
+              <DashboardLayoutSection />
+            </div>
+          </div>
+        )}
+        {activeTab === 'plantillas' && <PlantillasTable />}
+      </div>
+    </div>
+  );
+}

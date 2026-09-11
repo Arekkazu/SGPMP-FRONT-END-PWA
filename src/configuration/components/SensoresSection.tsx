@@ -1,0 +1,605 @@
+import React, { useEffect, useState } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
+import { useForm } from 'react-hook-form';
+import { Radio, ChevronLeft, Check, RefreshCw } from 'lucide-react';
+import { Button } from '../../shared/design-system/Button';
+import { Input } from '../../shared/design-system/Input';
+import { Alert } from '../../shared/design-system/Alert';
+import { usePermission } from '../../shared/rbac/usePermission';
+import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
+import { useDispositivosIot } from '../hooks/useDispositivosIot';
+import { useSensores } from '../hooks/useSensores';
+import { useFincas } from '../hooks/useFincas';
+import { useInfraestructuras } from '../hooks/useInfraestructuras';
+import type { DispositivoIotResponse, SensorResponse, FincaResponse, InfraestructuraResponse } from '../types';
+import type { ApiError } from '../../shared/api/errors';
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const CATEGORIA_EMOJI: Record<string, string> = {
+  TEMPERATURA: '🌡️',
+  HUMEDAD: '💧',
+  OXIGENO: '💨',
+  PH: '⚗️',
+  AMONIACO: '☁️',
+  SALINIDAD: '🧂',
+  LUMINOSIDAD: '☀️',
+};
+
+const TIPO_EMOJI: Record<string, string> = {
+  'Galpón': '🏚️',
+  'Corral': '🐄',
+  'Potrero': '🌿',
+  'Estanque': '🐟',
+  'Invernadero': '🌱',
+};
+
+// ── Step indicator ────────────────────────────────────────────────────────────
+
+type WizardStep = 'dispositivo' | 'sensor' | 'area' | 'confirmar';
+
+const STEPS: { id: WizardStep; label: string }[] = [
+  { id: 'dispositivo', label: 'Dispositivo' },
+  { id: 'sensor',      label: 'Sensor' },
+  { id: 'area',        label: 'Área destino' },
+  { id: 'confirmar',   label: 'Confirmar' },
+];
+
+function Stepper({ current }: { current: WizardStep }) {
+  const idx = STEPS.findIndex((s) => s.id === current);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--s6)', flexWrap: 'wrap', gap: 'var(--s2)' }}>
+      {STEPS.map((s, i) => {
+        const done    = i < idx;
+        const active  = i === idx;
+        const pending = i > idx;
+        return (
+          <React.Fragment key={s.id}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '11px', fontWeight: 700, flexShrink: 0,
+                background: done ? 'var(--sem-success)' : active ? 'var(--brand-500)' : 'var(--surface-hover)',
+                color: done || active ? '#fff' : 'var(--text-muted)',
+                border: pending ? '2px solid var(--surface-border)' : 'none',
+              }}>
+                {done ? <Check size={12} aria-hidden /> : i + 1}
+              </div>
+              <span style={{
+                fontSize: '12px', fontWeight: active ? 700 : 500,
+                color: done ? 'var(--sem-success)' : active ? 'var(--brand-600)' : 'var(--text-muted)',
+                whiteSpace: 'nowrap',
+              }}>
+                {s.label}
+              </span>
+            </div>
+            {i < STEPS.length - 1 && (
+              <div style={{ flex: '1 1 16px', height: 2, background: done ? 'var(--sem-success)' : 'var(--surface-border)', minWidth: 12 }} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Step 1: Dispositivo selector ──────────────────────────────────────────────
+
+function DispSelector({ dispositivos, loading, onSelect }: {
+  dispositivos: DispositivoIotResponse[]; loading: boolean; onSelect: (d: DispositivoIotResponse) => void;
+}) {
+  const { t } = useT('configuration');
+  const activos = dispositivos.filter((d) => d.es_activo);
+  if (loading) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} style={{ height: 90, borderRadius: 'var(--r-lg)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }} />
+        ))}
+        <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
+      </div>
+    );
+  }
+  if (activos.length === 0) {
+    return <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s7) 0' }}>{t('sensoressection.no_hay_dispositivos_iot_activos_registralos')}</p>;
+  }
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
+      {activos.map((d) => (
+        <button
+          key={d.id_dispositivo_iot}
+          type="button"
+          onClick={() => onSelect(d)}
+          style={{ background: 'var(--surface-card)', border: '1.5px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none'; }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s3)' }}>
+            <span style={{ fontSize: 22 }}>📡</span>
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: 'var(--brand-600)' }}>{d.serial}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{d.descripcion}</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '11px', color: 'var(--sem-success)', fontWeight: 600 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)', display: 'inline-block' }} />
+            Activo · #{d.id_dispositivo_iot}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Step 2: Sensor selector ───────────────────────────────────────────────────
+
+function SensorSelector({ sensores, loading, error, onSelect, onBack }: {
+  sensores: SensorResponse[]; loading: boolean; error: { message: string } | null;
+  onSelect: (s: SensorResponse) => void; onBack: () => void;
+}) {
+  const { t } = useT('configuration');
+  const activos = sensores.filter((s) => s.es_activo);
+  return (
+    <div>
+      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s4)' }} aria-label={t('sensoressection.cambiar_dispositivo')}>
+        <ChevronLeft size={16} aria-hidden />{t('sensoressection.cambiar_dispositivo')}</Button>
+      {error && <Alert variant="error" title={t('sensoressection.error_al_cargar_sensores')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      {loading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} style={{ height: 100, borderRadius: 'var(--r-xl)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }} />
+          ))}
+          <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
+        </div>
+      ) : activos.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s6) 0' }}>{t('sensoressection.este_dispositivo_no_tiene_sensores_activos')}</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
+          {activos.map((s) => {
+            const emoji = s.categoria ? (CATEGORIA_EMOJI[s.categoria] ?? '📡') : '📡';
+            return (
+              <button
+                key={s.id_sensores}
+                type="button"
+                onClick={() => onSelect(s)}
+                style={{ background: 'var(--surface-card)', border: '2px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s' }}
+                onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = 'var(--brand-400)'; b.style.background = 'var(--brand-50)'; b.style.transform = 'translateY(-2px)'; b.style.boxShadow = 'var(--shadow-md)'; }}
+                onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = 'var(--surface-border)'; b.style.background = 'var(--surface-card)'; b.style.transform = 'none'; b.style.boxShadow = 'none'; }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s2)' }}>
+                  <span style={{ fontSize: 26, flexShrink: 0 }}>{emoji}</span>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{s.nombre}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
+                      {s.categoria ?? 'Sin categoría'} · #{s.id_sensores}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Step 3: Area selector ─────────────────────────────────────────────────────
+
+function AreaDestSelector({ fincas, infraestructuras, loadingFincas, loadingInfras, fincaSeleccionada, onSelectFinca, onSelectArea, onBack }: {
+  fincas: FincaResponse[];
+  infraestructuras: InfraestructuraResponse[];
+  loadingFincas: boolean;
+  loadingInfras: boolean;
+  fincaSeleccionada: FincaResponse | null;
+  onSelectFinca: (f: FincaResponse) => void;
+  onSelectArea: (i: InfraestructuraResponse) => void;
+  onBack: () => void;
+}) {
+  const { t } = useT('configuration');
+  const activas = infraestructuras.filter((i) => i.es_activo);
+
+  return (
+    <div>
+      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s4)' }} aria-label={t('sensoressection.cambiar_sensor')}>
+        <ChevronLeft size={16} aria-hidden />{t('sensoressection.cambiar_sensor')}</Button>
+
+      {/* Finca filter pills */}
+      <div style={{ marginBottom: 'var(--s4)' }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s3)' }}>
+          {fincaSeleccionada ? `Áreas de ${fincaSeleccionada.nombre}:` : 'Selecciona la finca:'}
+        </p>
+        {loadingFincas ? (
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('sensoressection.cargando_fincas')}</p>
+        ) : (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)' }}>
+            {fincas.filter((f) => f.es_activo).map((f) => (
+              <button
+                key={f.id_finca}
+                type="button"
+                onClick={() => onSelectFinca(f)}
+                style={{
+                  padding: 'var(--s2) var(--s3)',
+                  borderRadius: 'var(--r-full)',
+                  border: `1.5px solid ${fincaSeleccionada?.id_finca === f.id_finca ? 'var(--brand-500)' : 'var(--surface-border)'}`,
+                  background: fincaSeleccionada?.id_finca === f.id_finca ? 'var(--brand-50)' : 'var(--surface-card)',
+                  color: fincaSeleccionada?.id_finca === f.id_finca ? 'var(--brand-700)' : 'var(--text-secondary)',
+                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {f.nombre}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Areas grid */}
+      {fincaSeleccionada && (
+        loadingInfras ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 'var(--s4)' }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} style={{ height: 100, borderRadius: 'var(--r-xl)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }} />
+            ))}
+            <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
+          </div>
+        ) : activas.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s5) 0' }}>{t('sensoressection.esta_finca_no_tiene_areas_productivas')}</p>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 'var(--s4)' }}>
+            {activas.map((infra) => {
+              const emoji = TIPO_EMOJI[infra.tipo_area] ?? '🏗️';
+              return (
+                <button
+                  key={infra.id_infraestructura}
+                  type="button"
+                  onClick={() => onSelectArea(infra)}
+                  style={{ background: 'var(--surface-card)', border: '2px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', position: 'relative', overflow: 'hidden', transition: 'all 0.15s' }}
+                  onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = 'var(--brand-500)'; b.style.background = 'var(--brand-50)'; b.style.transform = 'translateY(-2px)'; b.style.boxShadow = 'var(--shadow-md)'; }}
+                  onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = 'var(--surface-border)'; b.style.background = 'var(--surface-card)'; b.style.transform = 'none'; b.style.boxShadow = 'none'; }}
+                >
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'var(--brand-500)', borderRadius: 'var(--r-xl) var(--r-xl) 0 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--s3)', marginTop: 'var(--s2)' }}>
+                    <span style={{ fontSize: 24, flexShrink: 0 }}>{emoji}</span>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{infra.nombre_infraestructura}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
+                        {infra.tipo_area} · {fincaSeleccionada.nombre}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>
+                        {formatearFechaHora(infra.superficie)} m²
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+// ── Step 4: Confirm ───────────────────────────────────────────────────────────
+
+interface ConfirmFormValues {
+  punto_instalacion: string;
+}
+
+function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBack, onConfirm }: {
+  dispositivo: DispositivoIotResponse;
+  sensor: SensorResponse;
+  finca: FincaResponse;
+  area: InfraestructuraResponse;
+  saving: boolean;
+  saveError: ApiError | null;
+  onBack: () => void;
+  onConfirm: (punto: string) => void;
+}) {
+  const { t } = useT('configuration');
+  const { register, handleSubmit, formState: { errors } } = useForm<ConfirmFormValues>({ mode: 'onBlur' });
+  const emoji = sensor.categoria ? (CATEGORIA_EMOJI[sensor.categoria] ?? '📡') : '📡';
+  const areaEmoji = TIPO_EMOJI[area.tipo_area] ?? '🏗️';
+
+  return (
+    <div>
+      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s5)' }} aria-label={t('sensoressection.cambiar_area')}>
+        <ChevronLeft size={16} aria-hidden />{t('sensoressection.cambiar_area')}</Button>
+
+      {saveError && saveError.code !== 'REASIGNACION_REQUIERE_CONFIRMACION' && (
+        <Alert variant="error" title={t('sensoressection.error_al_asociar')} description={saveError.message} style={{ marginBottom: 'var(--s5)' }} />
+      )}
+
+      {/* Summary cards */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
+        {/* Sensor node */}
+        <div style={{ flex: 1, minWidth: 160, background: 'var(--brand-50)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'center' }}>
+          <div style={{ fontSize: 28, marginBottom: 'var(--s2)' }}>{emoji}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>{t('sensoressection.sensor')}</div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{sensor.nombre}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</div>
+        </div>
+
+        {/* Arrow */}
+        <div style={{ fontSize: 20, color: 'var(--brand-500)', fontWeight: 700 }}>→</div>
+
+        {/* Area node */}
+        <div style={{ flex: 1, minWidth: 160, background: 'var(--sem-success-bg)', border: '1px solid var(--sem-success-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'center' }}>
+          <div style={{ fontSize: 28, marginBottom: 'var(--s2)' }}>{areaEmoji}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>{t('sensoressection.area_productiva')}</div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--brand-700)' }}>{area.nombre_infraestructura}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{finca.nombre}</div>
+        </div>
+      </div>
+
+      {/* Punto instalacion form */}
+      <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-xl)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface-hover)', padding: 'var(--s3) var(--s5)', borderBottom: '1px solid var(--surface-border)' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('sensoressection.datos_de_la_asociacion')}</span>
+        </div>
+        <div style={{ padding: 'var(--s5)' }}>
+          <form onSubmit={handleSubmit((d) => onConfirm(d.punto_instalacion))} noValidate>
+            <Input
+              label={t('sensoressection.punto_de_instalacion_fisica')}
+              required
+              aria-required="true"
+              placeholder={t('sensoressection.ej_centro_del_galpon_cerca_al_bebedero')}
+              error={errors.punto_instalacion?.message}
+              {...register('punto_instalacion', {
+                required: t('sensoressection.indica_el_punto_de_instalacion_del_sensor'),
+                minLength: { value: 5, message: t('sensoressection.minimo_5_caracteres') },
+                maxLength: { value: 100, message: t('sensoressection.maximo_100_caracteres') },
+              })}
+            />
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s2)', marginBottom: 'var(--s5)' }}>{t('sensoressection.describe_la_ubicacion_fisica_exacta_del')}</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
+              <Button type="button" variant="secondary" size="md" onClick={onBack} disabled={saving}>{t('sensoressection.atras')}</Button>
+              <Button type="submit" variant="primary" size="md" loading={saving}>
+                <Check size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('sensoressection.confirmar_asociacion')}</Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Reasignación: confirmación (RF-22 FA "Conflicto de reasignación") ──────────
+
+function ConfirmReasignarModal({ mensaje, saving, onCancel, onConfirm }: {
+  mensaje: string; saving: boolean; onCancel: () => void; onConfirm: () => void;
+}) {
+  const { t } = useT('configuration');
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reasignar-modal-title"
+      style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 'var(--s4)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 420, boxShadow: 'var(--shadow-lg)' }}>
+        <h2 id="reasignar-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
+          {t('sensoressection.confirmar_reasignacion_titulo')}
+        </h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
+          <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('sensoressection.cancelar')}</Button>
+          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{t('sensoressection.reasignar')}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── SensoresSection ───────────────────────────────────────────────────────────
+
+export function SensoresSection() {
+  const { t } = useT('configuration');
+  const online = useOnlineStatus();
+  const puedeAsociar = usePermission(12, 1);
+
+  const { dispositivos, loading: loadingDisp, cargar: cargarDisp } = useDispositivosIot();
+  const { sensores, loading: loadingSensores, error: errorSensores, saving, saveError, cargar: cargarSensores, asociar } = useSensores();
+  const { fincas, loading: loadingFincas, cargar: cargarFincas } = useFincas();
+  const { infraestructuras, loading: loadingInfras, cargar: cargarInfras } = useInfraestructuras();
+
+  const [step, setStep] = useState<WizardStep>('dispositivo');
+  const [dispositivo, setDispositivo] = useState<DispositivoIotResponse | null>(null);
+  const [sensor, setSensor]           = useState<SensorResponse | null>(null);
+  const [finca, setFinca]             = useState<FincaResponse | null>(null);
+  const [area, setArea]               = useState<InfraestructuraResponse | null>(null);
+  const [successMsg, setSuccessMsg]   = useState<string | null>(null);
+  const [pendingPunto, setPendingPunto] = useState<string | null>(null);
+  const [showReasignarConfirm, setShowReasignarConfirm] = useState(false);
+
+  useEffect(() => { cargarDisp(); cargarFincas(); }, [cargarDisp, cargarFincas]);
+
+  // El wizard ya envió la petición al llegar aquí (ese es el primer intento, sin
+  // `confirmar`); un 409 con este codigo especifico pide reasignar, no es un error final.
+  useEffect(() => {
+    if (saveError?.code === 'REASIGNACION_REQUIERE_CONFIRMACION') setShowReasignarConfirm(true);
+  }, [saveError]);
+
+  const handleSelectDisp = (d: DispositivoIotResponse) => {
+    setDispositivo(d);
+    setSensor(null);
+    setFinca(null);
+    setArea(null);
+    setSuccessMsg(null);
+    setStep('sensor');
+    cargarSensores(d.id_dispositivo_iot);
+  };
+
+  const handleSelectSensor = (s: SensorResponse) => {
+    setSensor(s);
+    setFinca(null);
+    setArea(null);
+    setStep('area');
+  };
+
+  const handleSelectFinca = (f: FincaResponse) => {
+    setFinca(f);
+    setArea(null);
+    cargarInfras(f.id_finca);
+  };
+
+  const handleSelectArea = (i: InfraestructuraResponse) => {
+    setArea(i);
+    setStep('confirmar');
+  };
+
+  const resetWizard = () => {
+    setStep('dispositivo');
+    setDispositivo(null);
+    setSensor(null);
+    setFinca(null);
+    setArea(null);
+    setPendingPunto(null);
+    setShowReasignarConfirm(false);
+  };
+
+  const handleConfirm = async (punto: string) => {
+    if (!sensor || !dispositivo || !area) return;
+    setPendingPunto(punto);
+    const ok = await asociar(sensor.id_sensores, {
+      id_dispositivo_iot: dispositivo.id_dispositivo_iot,
+      id_infraestructura: area.id_infraestructura,
+      punto_instalacion: punto,
+    });
+    if (ok) {
+      setSuccessMsg(`Sensor "${sensor.nombre}" asociado a "${area.nombre_infraestructura}" correctamente.`);
+      resetWizard();
+    }
+  };
+
+  const handleConfirmarReasignacion = async () => {
+    if (!sensor || !dispositivo || !area || pendingPunto === null) return;
+    const ok = await asociar(sensor.id_sensores, {
+      id_dispositivo_iot: dispositivo.id_dispositivo_iot,
+      id_infraestructura: area.id_infraestructura,
+      punto_instalacion: pendingPunto,
+      confirmar: true,
+    });
+    setShowReasignarConfirm(false);
+    if (ok) {
+      setSuccessMsg(`Sensor "${sensor.nombre}" reasignado a "${area.nombre_infraestructura}" correctamente.`);
+      resetWizard();
+    }
+  };
+
+  const handleCancelarReasignacion = () => setShowReasignarConfirm(false);
+
+  const handleBackToDisp = () => {
+    resetWizard();
+  };
+
+  const handleBackToSensor = () => {
+    setSensor(null);
+    setFinca(null);
+    setArea(null);
+    setPendingPunto(null);
+    setShowReasignarConfirm(false);
+    setStep('sensor');
+  };
+
+  const handleBackToArea = () => {
+    setArea(null);
+    setPendingPunto(null);
+    setShowReasignarConfirm(false);
+    setStep('area');
+  };
+
+  return (
+    <div style={{ marginTop: 'var(--s7)', borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--s5)', flexWrap: 'wrap', gap: 'var(--s3)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
+          <Radio size={18} color="var(--brand-500)" aria-hidden />
+          <div>
+            <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('sensoressection.asociacion_de_sensores_a_areas')}</h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, marginTop: 2 }}>{t('sensoressection.vincula_cada_sensor_a_la_zona_fisica_de_la')}</p>
+          </div>
+        </div>
+        {step !== 'dispositivo' && (
+          <Button variant="ghost" size="sm" onClick={() => { handleBackToDisp(); cargarDisp(); }}>
+            <RefreshCw size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('sensoressection.reiniciar')}</Button>
+        )}
+      </div>
+
+      {/* Alerts */}
+      {!online && <Alert variant="warning" title={t('sensoressection.sin_conexion')} description={t('sensoressection.la_asociacion_de_sensores_requiere_conexion')} style={{ marginBottom: 'var(--s4)' }} />}
+      {successMsg && <Alert variant="success" title={t('sensoressection.asociacion_registrada')} description={successMsg} style={{ marginBottom: 'var(--s4)' }} />}
+
+      {!puedeAsociar ? (
+        <Alert variant="warning" title={t('sensoressection.sin_permiso')} description={t('sensoressection.no_tienes_permiso_para_asociar_sensores_a')} />
+      ) : !online ? null : (
+        <>
+          <Stepper current={step} />
+
+          {step === 'dispositivo' && (
+            <>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_1_elige_el_dispositivo_que_contiene_el')}</p>
+              <DispSelector dispositivos={dispositivos} loading={loadingDisp} onSelect={handleSelectDisp} />
+            </>
+          )}
+
+          {step === 'sensor' && dispositivo && (
+            <>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_2_elige_el_sensor_de')}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{t('sensoressection.a_asociar')}</p>
+              <SensorSelector
+                sensores={sensores}
+                loading={loadingSensores}
+                error={errorSensores}
+                onSelect={handleSelectSensor}
+                onBack={handleBackToDisp}
+              />
+            </>
+          )}
+
+          {step === 'area' && dispositivo && sensor && (
+            <>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_3_elige_el_area_productiva_destino_para')}<strong>{sensor.nombre}</strong>:
+              </p>
+              <AreaDestSelector
+                fincas={fincas}
+                infraestructuras={infraestructuras}
+                loadingFincas={loadingFincas}
+                loadingInfras={loadingInfras}
+                fincaSeleccionada={finca}
+                onSelectFinca={handleSelectFinca}
+                onSelectArea={handleSelectArea}
+                onBack={handleBackToSensor}
+              />
+            </>
+          )}
+
+          {step === 'confirmar' && dispositivo && sensor && finca && area && (
+            <ConfirmStep
+              dispositivo={dispositivo}
+              sensor={sensor}
+              finca={finca}
+              area={area}
+              saving={saving}
+              saveError={saveError}
+              onBack={handleBackToArea}
+              onConfirm={handleConfirm}
+            />
+          )}
+
+          {showReasignarConfirm && saveError && (
+            <ConfirmReasignarModal
+              mensaje={saveError.message}
+              saving={saving}
+              onCancel={handleCancelarReasignacion}
+              onConfirm={handleConfirmarReasignacion}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+}

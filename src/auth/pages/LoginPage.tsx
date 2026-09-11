@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -6,17 +7,23 @@ import { useLogin } from '../hooks/useLogin';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
+import { consumirAvisoSesionCerrada } from '../../shared/api/http';
 import type { LoginDTO } from '../types';
 import './AuthPages.css';
 
 export function LoginPage() {
+  const { t } = useT('auth');
   const { login, loading, error, online } = useLogin();
   const [showPw, setShowPw] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
+  // El interceptor de http.ts deja esta bandera antes de un `location.replace`
+  // a /login, asi que se lee una sola vez, al montar tras esa recarga completa.
+  const [sesionCerrada] = useState(() => consumirAvisoSesionCerrada());
 
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm<LoginDTO>({ mode: 'onBlur' });
 
@@ -39,33 +46,57 @@ export function LoginPage() {
             <path d="M10 11L8 8M22 11L24 8" stroke="#a8d8a8" strokeWidth="1.5"/>
           </svg>
         </div>
-        <h1 className="auth-title">Iniciar sesión</h1>
-        <p className="auth-sub">SGP Multiespecie — Sistema de Gestión Pecuaria</p>
+        <h1 className="auth-title">{t('loginpage.iniciar_sesion')}</h1>
+        <p className="auth-sub">{t('loginpage.sgp_multiespecie_sistema_de_gestion_pecuaria')}</p>
+
+        {sesionCerrada && (
+          <Alert
+            variant="warning"
+            title={t('loginpage.sesion_cerrada')}
+            description={t('loginpage.sesion_cerrada_descripcion')}
+            className="auth-alert"
+          />
+        )}
 
         {!online && (
           <Alert
             variant="warning"
-            title="Sin conexión"
-            description="El inicio de sesión requiere conexión a internet."
+            title={t('loginpage.sin_conexion')}
+            description={t('loginpage.el_inicio_de_sesion_requiere_conexion_a')}
             className="auth-alert"
           />
         )}
 
         {error && error.code !== 'OFFLINE' && (
-          <Alert
-            variant="error"
-            title="Error al iniciar sesión"
-            description={error.message}
-            className="auth-alert"
-          />
+          <>
+            <Alert
+              variant="error"
+              title={t('loginpage.error_al_iniciar_sesion')}
+              description={error.message}
+              className="auth-alert"
+            />
+            {error.code === 'CUENTA_PENDIENTE' && (
+              // El mensaje del backend remite a "re-enviar token de activación";
+              // el correo ya tecleado prellena el formulario de destino.
+              <p style={{ textAlign: 'center', marginBottom: 'var(--s4)' }}>
+                <Link
+                  to={{
+                    pathname: '/reenviar-activacion',
+                    state: { correo: getValues('correo_electronico') },
+                  }}
+                  className="auth-link"
+                >{t('loginpage.reenviar_correo_de_activacion')}</Link>
+              </p>
+            )}
+          </>
         )}
 
         {failedAttempts > 0 && (
           <div style={{ marginBottom: 'var(--s4)' }}>
-            <p style={{ fontSize: '11px', color: 'var(--sem-error)', fontWeight: 700, marginBottom: 6, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Intentos fallidos ({failedAttempts} de 5)
+            <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--sem-error)', fontWeight: 700, marginBottom: 6 }}>
+              {t('loginpage.intentos_fallidos', { count: failedAttempts })}
             </p>
-            <div className="auth-attempts-bar" role="img" aria-label={`${failedAttempts} de 5 intentos fallidos`}>
+            <div className="auth-attempts-bar" role="img" aria-label={t('loginpage.intentos_fallidos', { count: failedAttempts })}>
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className={`auth-att-dot ${i <= failedAttempts ? 'auth-att-dot--used' : ''}`} />
               ))}
@@ -76,17 +107,17 @@ export function LoginPage() {
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="auth-field">
             <Input
-              label="Correo electrónico"
+              label={t('loginpage.correo_electronico')}
               type="email"
               placeholder="usuario@dominio.com"
               autoComplete="email"
               required
               error={errors.correo_electronico?.message}
               {...register('correo_electronico', {
-                required: 'El correo es obligatorio.',
+                required: t('loginpage.el_correo_es_obligatorio'),
                 pattern: {
                   value: /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/,
-                  message: 'El formato del correo electrónico no es válido.',
+                  message: t('loginpage.el_formato_del_correo_electronico_no_es'),
                 },
               })}
             />
@@ -94,14 +125,14 @@ export function LoginPage() {
 
           <div className="auth-field">
             <Input
-              label="Contraseña"
+              label={t('loginpage.contrasena')}
               type={showPw ? 'text' : 'password'}
               autoComplete="current-password"
               required
               error={errors.contrasena?.message}
               trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               onTrailingClick={() => setShowPw((v) => !v)}
-              {...register('contrasena', { required: 'La contraseña es obligatoria.' })}
+              {...register('contrasena', { required: t('loginpage.la_contrasena_es_obligatoria') })}
             />
           </div>
 
@@ -112,19 +143,13 @@ export function LoginPage() {
             fullWidth
             loading={loading}
             disabled={!online}
-          >
-            Ingresar
-          </Button>
+          >{t('loginpage.ingresar')}</Button>
         </form>
 
         <hr className="auth-sep" />
         <div className="auth-links">
-          <Link to="/recuperar-contrasena" className="auth-link">
-            ¿Olvidaste tu contraseña?
-          </Link>
-          <Link to="/registro" className="auth-link">
-            Crear cuenta nueva
-          </Link>
+          <Link to="/recuperar-contrasena" className="auth-link">{t('loginpage.olvidaste_tu_contrasena')}</Link>
+          <Link to="/registro" className="auth-link">{t('loginpage.crear_cuenta_nueva')}</Link>
         </div>
       </div>
     </div>

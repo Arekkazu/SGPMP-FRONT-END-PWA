@@ -8,8 +8,8 @@ export const perfilApi = {
     return res.data;
   },
 
-  async editar(id: number, dto: EditarPerfilDTO): Promise<PerfilResponse> {
-    const res = await http.patch<PerfilResponse>(`/usuarios/${id}`, dto);
+  async editar(dto: EditarPerfilDTO): Promise<PerfilResponse> {
+    const res = await http.patch<PerfilResponse>('/usuarios/me', dto);
     return res.data;
   },
 

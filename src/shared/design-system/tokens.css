@@ -46,9 +46,13 @@
 
   /* Text */
   --text-primary: var(--neutral-800);
-  --text-secondary: var(--neutral-600);
-  --text-muted: var(--neutral-400);
+  --text-secondary: var(--neutral-700);
+  --text-muted: var(--neutral-600);
   --text-inverse: #ffffff;
+
+  /* Foco visible (WCAG 2.4.7): anillo compartido por todos los componentes
+     interactivos via :focus-visible. */
+  --focus-ring: var(--brand-500);
 
   /* Spacing (4px grid) */
   --s1: 4px;
@@ -80,9 +84,40 @@
   --font-sans: 'Plus Jakarta Sans', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
+  /* Tamanos de la escala tipografica de CLAUDE.md. Solo estan los que ya
+     consume algun componente; anadir el resto al migrar cada hoja. */
+  --fs-display-lg: 26px;
+  --fs-heading-md: 20px;
+  --fs-heading-sm: 17px;
+  --fs-body-lg: 15px;
+  --fs-body-md: 14px;
+  --fs-label-md: 13px;
+  --fs-body-sm: 12px;
+  --fs-label-sm: 11px;
+  --fs-mono-md: 12px;
+
+  /* Velo de los paneles flotantes (bandeja, drawer) */
+  --overlay: rgba(20, 22, 16, 0.18);
+
   /* Layout */
   --sidebar-w: 240px;
   --topbar-h: 64px;
+
+  /* Navegación institucional (RF-26): el color primario de la finca pinta la
+     barra lateral. Por defecto es el neutro oscuro del producto; al aplicar la
+     identidad visual, `aplicarIdentidad` lo sobreescribe con la variante
+     oscurecida del primario. */
+  --brand-nav: var(--neutral-900);
+}
+
+/* La escala se reduce en movil (columna "Movil" de la tabla de tipografia). */
+@media (max-width: 767px) {
+  :root {
+    --fs-display-lg: 20px;
+    --fs-heading-md: 17px;
+    --fs-heading-sm: 15px;
+    --fs-mono-md: 11px;
+  }
 }
 
 [data-theme="dark"] {
@@ -96,6 +131,8 @@
   --brand-700: #b2d8b5;
   --brand-800: #d8ecda;
   --brand-900: #f0f7ee;
+
+  --brand-nav: #0a0c09;
 
   --sem-success-bg: #0d2a10;
   --sem-success-border: #1e5020;
@@ -112,8 +149,14 @@
   --surface-hover: #1f241d;
 
   --text-primary: #d4e0ce;
-  --text-secondary: #8aaa80;
-  --text-muted: #4a6445;
+  --text-secondary: #a3c49a;
+  --text-muted: #7d9a75;
+
+  /* --focus-ring: var(--brand-500) ya apunta al verde claro invertido de la
+     rampa dark, visible sobre superficies oscuras. Sin override. */
+
+  /* Un velo oscuro al 18% desaparece sobre --surface-bg #0f110e */
+  --overlay: rgba(0, 0, 0, 0.45);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
