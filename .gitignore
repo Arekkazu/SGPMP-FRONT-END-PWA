@@ -13,10 +13,13 @@ android/
 ios/
 
 # Variables de entorno
+# Regla general: se ignora cualquier .env.<ambiente> con valores reales y se
+# reexcluyen las plantillas .example, que si van versionadas. La doble negacion
+# es necesaria porque `.env.*` tambien captura `.env.example`.
 .env
-.env.local
-.env.*.local
-.env.production
+.env.*
+!.env.example
+!.env.*.example
 
 # Logs
 npm-debug.log*
