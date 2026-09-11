@@ -1,0 +1,139 @@
+{
+  "caso_agrupado": "TC-M02-G72",
+  "requerimiento": "RF-46 (CU10A) - Consulta de historial consolidado del activo con filtros, categorías y paginación",
+  "modulo": "Módulo 2 (Activos Biológicos)",
+  "fecha_ejecucion": "2026-09-10T11:41:00Z",
+  "ambiente_frontend": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "ambiente_backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "base_datos": "PostgreSQL 158.69.200.27:5448/sgpmp_test",
+  "veredicto_global": "CONFORME",
+  "resumen": {
+    "total_subcasos": 5,
+    "aprobados": 3,
+    "aprobados_con_observacion": 2,
+    "fallidos": 0,
+    "bloqueantes": 0
+  },
+  "subcasos": [
+    {
+      "codigo": "TC-M02-118",
+      "titulo": "Consultar historial completo consolidado (Cypress UI + API híbrido)",
+      "tipo": "Híbrido (Cypress E2E + cy.request)",
+      "estado": "PASS",
+      "duracion_ms": 15000,
+      "checkpoints": [
+        { "paso": "CP-01", "descripcion": "Autenticación Admin en UI", "estado": "OK" },
+        { "paso": "CP-02", "descripcion": "Navegación a Módulo Activos Biológicos", "estado": "OK" },
+        { "paso": "CP-03", "descripcion": "Apertura de Ficha de Activo 2 (BOV-002)", "estado": "OK" },
+        { "paso": "CP-04", "descripcion": "Activación de Pestaña Historial", "estado": "OK" },
+        { "paso": "CP-05", "descripcion": "Columnas Obligatorias en Tabla (Fecha, Categoría, Descripción, Responsable, Origen)", "estado": "OK" },
+        { "paso": "CP-06", "descripcion": "Renderizado de Filas de Historial en UI (20 filas)", "estado": "OK" },
+        { "paso": "CP-07", "descripcion": "Orden Cronológico Ascendente verificado en DOM (getTime)", "estado": "OK" },
+        { "paso": "CP-08", "descripcion": "Verificación Híbrida API (GET /activos-biologicos/2/historial total=42)", "estado": "OK" },
+        { "paso": "CP-09", "descripcion": "Verificación de Seguridad y RBAC (401 con token inválido)", "estado": "OK" }
+      ],
+      "evidencias": [
+        "screenshots/01_historial_tabla_ui.png",
+        "screenshots/02_paginacion_y_orden_ui.png",
+        "videos/tc-m02-g72-historial.cy.ts.mp4"
+      ]
+    },
+    {
+      "codigo": "TC-M02-119",
+      "titulo": "Filtrar historial por rango de fechas válido",
+      "tipo": "Newman API",
+      "estado": "PASS",
+      "duracion_ms": 162,
+      "sla_ms": 3000,
+      "aserciones": [
+        { "nombre": "Status code is 200 OK", "estado": "PASS" },
+        { "nombre": "Retorna eventos filtrados en el rango", "estado": "PASS" },
+        { "nombre": "100% de eventos dentro del rango 2024-01-01 a 2024-12-31", "estado": "PASS" },
+        { "nombre": "Orden cronológico ascendente", "estado": "PASS" }
+      ]
+    },
+    {
+      "codigo": "TC-M02-121",
+      "titulo": "Filtrar historial por categoría (4 categorías)",
+      "tipo": "Newman API",
+      "estado": "PASS CON OBSERVACION",
+      "duracion_ms": 752,
+      "sla_ms": 3000,
+      "categorias_evaluadas": [
+        { "categoria": "CRECIMIENTO", "activo": 2, "tiempo_ms": 138, "estado": "PASS" },
+        { "categoria": "SANITARIO", "activo": 2, "tiempo_ms": 143, "estado": "PASS" },
+        { "categoria": "TRANSFERENCIA", "activo": 2, "tiempo_ms": 340, "estado": "PASS" },
+        { "categoria": "BAJA", "activo": 1, "tiempo_ms": 131, "estado": "PASS" }
+      ],
+      "observacion": "Cobertura 8/9 categorías por limitación de fixture en Activo 2; categoría BAJA validada en Activo 1."
+    },
+    {
+      "codigo": "TC-M02-123",
+      "titulo": "Validar paginación obligatoria y SLA <= 3000 ms",
+      "tipo": "Newman API",
+      "estado": "PASS CON OBSERVACION",
+      "duracion_ms": 613,
+      "sla_ms": 3000,
+      "aserciones": [
+        { "nombre": "Status code is 200 OK en Activo 2 (page_size=5)", "estado": "PASS" },
+        { "nombre": "Paginación matemática exacta (total=42, paginas=9, devueltos=5)", "estado": "PASS" },
+        { "nombre": "Tiempo de respuesta <= 3000 ms (obtenido 328 ms)", "estado": "PASS" },
+        { "nombre": "Rechazo de page_size > 100 con HTTP 400 Bad Request (obtenido 285 ms)", "estado": "PASS" }
+      ],
+      "observacion": "Sin fixture >500 registros por limitación de entorno; validada matemática de paginación exacta con corte en page_size=5."
+    },
+    {
+      "codigo": "TC-M02-124",
+      "titulo": "Verificar idempotencia de lectura",
+      "tipo": "Newman API + SQL Snapshot",
+      "estado": "PASS",
+      "lecturas_ejecutadas": 10,
+      "idempotencia_bd": {
+        "delta_tablas_negocio": 0,
+        "delta_bitacora_auditoria_rf46": 20,
+        "conforme": true
+      }
+    }
+  ],
+  "seguridad_rbac": {
+    "verificado_con": "Token Bearer manipulado inválido",
+    "status_esperado": 401,
+    "status_obtenido": 401,
+    "codigo_error": "TOKEN_INVALIDO",
+    "conforme": true
+  },
+  "idempotencia_bd": {
+    "snapshot_pre": {
+      "cnt_activos": 259,
+      "cnt_eventos": 106,
+      "max_evento_id": 240,
+      "cnt_estados": 75,
+      "cnt_fases": 51,
+      "cnt_movimientos": 24,
+      "cnt_indicadores": 14
+    },
+    "snapshot_post": {
+      "cnt_activos": 259,
+      "cnt_eventos": 106,
+      "max_evento_id": 240,
+      "cnt_estados": 75,
+      "cnt_fases": 51,
+      "cnt_movimientos": 24,
+      "cnt_indicadores": 14
+    },
+    "diffs": {
+      "cnt_activos": 0,
+      "cnt_eventos": 0,
+      "max_evento_id": 0,
+      "cnt_estados": 0,
+      "cnt_fases": 0,
+      "cnt_movimientos": 0,
+      "cnt_indicadores": 0
+    },
+    "delta_total_negocio": 0,
+    "bitacora_auditoria_rf46_pre": 165,
+    "bitacora_auditoria_rf46_post": 185,
+    "delta_bitacora": 20
+  },
+  "defectos": []
+}

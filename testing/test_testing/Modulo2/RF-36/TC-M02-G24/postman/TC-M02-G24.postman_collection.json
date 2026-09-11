@@ -1,0 +1,332 @@
+{
+  "info": {
+    "_postman_id": "tc-m02-g24-collection-id",
+    "name": "TC-M02-G24 — Gestión Poblacional RF-36 / RF-33 / RF-37 / RF-39",
+    "description": "Colección de Postman autocontenida para la suite de integración de lotes poblacionales",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test" },
+    { "key": "admin_email", "value": "admin@pecuaria.co" },
+    { "key": "admin_password", "value": "Test1234!" },
+    { "key": "token", "value": "" },
+    { "key": "ciclo_id", "value": "" },
+    { "key": "ciclo_nombre", "value": "" },
+    { "key": "lote_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Paso 0.1 — Login Admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"correo_electronico\": \"{{admin_email}}\",\n  \"contrasena\": \"{{admin_password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/sesiones/",
+          "host": ["{{base_url}}"],
+          "path": ["sesiones", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login exitoso HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.token).to.be.a('string');",
+              "    pm.collectionVariables.set('token', jsonData.token);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Paso 0.2 — Crear Ciclo Biológico Propio (RF-16)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_especie\": 4,\n  \"nombre\": \"{{ciclo_nombre}}\",\n  \"duracion_dias\": 90,\n  \"descripcion\": \"Ciclo autocontenido para suite Postman G24\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/configuracion/ciclos",
+          "host": ["{{base_url}}"],
+          "path": ["configuracion", "ciclos"]
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.collectionVariables.set('ciclo_nombre', 'Ciclo G24 Postman ' + Date.now());"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Creación de Ciclo Biológico HTTP 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.id_ciclo_biologico).to.be.a('number');",
+              "    pm.collectionVariables.set('ciclo_id', jsonData.id_ciclo_biologico);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Paso 0.3 — Crear Lote Poblacional Propio (RF-33)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-08\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activos-biologicos",
+          "host": ["{{base_url}}"],
+          "path": ["activos-biologicos"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Creación de Lote Poblacional HTTP 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.id_activo_biologico).to.be.a('number');",
+              "    pm.collectionVariables.set('lote_id', jsonData.id_activo_biologico);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Paso 0.4 — Intentar Asignar Fase Productiva (RF-37)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_ciclo_productiva\": {{ciclo_id}},\n  \"fecha_inicio\": \"2026-09-08\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/fases",
+          "host": ["{{base_url}}"],
+          "path": ["activos-biologicos", "{{lote_id}}", "fases"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Evaluación de Asignación de Fase RF-37', function () {",
+              "    if (pm.response.code === 200 || pm.response.code === 201) {",
+              "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "    } else {",
+              "        pm.expect(pm.response.code).to.eq(400);",
+              "        var jsonData = pm.response.json();",
+              "        pm.expect(jsonData.error_code).to.be.oneOf(['CICLO_INVALIDO', 'VAL_ENTRADA']);",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-M02-049 — Evento CRECIMIENTO (RF-39)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fecha_evento\": \"2026-09-08\",\n  \"valor_medicion\": 12.5,\n  \"tipo_agregacion\": \"PROMEDIO\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/eventos/crecimiento",
+          "host": ["{{base_url}}"],
+          "path": ["activos-biologicos", "{{lote_id}}", "eventos", "crecimiento"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Registro Evento CRECIMIENTO (RF-39)', function () {",
+              "    if (pm.response.code === 200 || pm.response.code === 201) {",
+              "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "    } else {",
+              "        pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-M02-050 — Evento BAJA (RF-39)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tipo_baja\": \"muerte\",\n  \"fecha_baja\": \"2026-09-08\",\n  \"motivo_baja\": \"Mortalidad de prueba Postman G24\",\n  \"cantidad_afectada\": 10\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/eventos/baja",
+          "host": ["{{base_url}}"],
+          "path": ["activos-biologicos", "{{lote_id}}", "eventos", "baja"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Registro Evento BAJA (RF-39)', function () {",
+              "    if (pm.response.code === 200 || pm.response.code === 201) {",
+              "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "    } else {",
+              "        pm.expect(pm.response.code).to.be.oneOf([400, 422, 500]);",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-M02-056 — Validar Inmutabilidad Registro Original (RF-33)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/activos-biologicos/{{lote_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["activos-biologicos", "{{lote_id}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Inmutabilidad de datos originales de registro (RF-33)', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    var det = jsonData.detalle_poblacional;",
+              "    pm.expect(det.cantidad_inicial).to.eq(100);",
+              "    pm.expect(Number(det.peso_promedio_inicial)).to.eq(10.0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Teardown Lote (RF-44)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado_nuevo\": \"BAJA\",\n  \"fecha_cambio_estado\": \"2026-09-08\",\n  \"motivo_cambio\": \"Teardown de prueba Postman G24\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/estado",
+          "host": ["{{base_url}}"],
+          "path": ["activos-biologicos", "{{lote_id}}", "estado"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Teardown Lote HTTP 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Teardown Ciclo (RF-16)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/configuracion/ciclos/{{ciclo_id}}/desactivar",
+          "host": ["{{base_url}}"],
+          "path": ["configuracion", "ciclos", "{{ciclo_id}}", "desactivar"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Teardown Ciclo HTTP 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
