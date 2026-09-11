@@ -30,3 +30,20 @@ test('no ofrece el reenvío para otros errores de login', () => {
 
   expect(screen.queryByRole('link', { name: ENLACE })).toBeNull();
 });
+
+test('avisa cuando el interceptor cerró la sesión antes de llegar a /login', () => {
+  sessionStorage.setItem('sgpmp:sesion-cerrada', '1');
+
+  renderConError(null);
+
+  expect(screen.getByText(/sesión cerrada/i)).toBeInTheDocument();
+  expect(sessionStorage.getItem('sgpmp:sesion-cerrada')).toBeNull();
+});
+
+test('no muestra el aviso de sesión cerrada en un login normal', () => {
+  sessionStorage.clear();
+
+  renderConError(null);
+
+  expect(screen.queryByText(/sesión cerrada/i)).toBeNull();
+});

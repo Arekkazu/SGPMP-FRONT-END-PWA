@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { http, refreshAccessToken } from './http';
+import { http, refreshAccessToken, consumirAvisoSesionCerrada } from './http';
 import { tokenStore } from '../auth/tokenStore';
 
 function onRejected() {
@@ -58,6 +58,7 @@ describe('interceptor 401', () => {
 
   afterEach(() => {
     tokenStore.clear();
+    sessionStorage.clear();
     vi.restoreAllMocks();
   });
 
@@ -76,6 +77,9 @@ describe('interceptor 401', () => {
     expect(postSpy).toHaveBeenCalledWith('/sesiones/refresh');
     expect(replaceSpy).toHaveBeenCalledWith('/login');
     expect(tokenStore.get()).toBeNull();
+    // QA M09 (hallazgo #2): la redirección forzada debe dejar una bandera para
+    // que LoginPage explique por qué se cerró la sesión.
+    expect(consumirAvisoSesionCerrada()).toBe(true);
   });
 
   it('no intenta refresh ni limpia el token en endpoints publicos de auth', async () => {
