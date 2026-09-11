@@ -7,6 +7,7 @@ import { useLogin } from '../hooks/useLogin';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
+import { consumirAvisoSesionCerrada } from '../../shared/api/http';
 import type { LoginDTO } from '../types';
 import './AuthPages.css';
 
@@ -15,6 +16,9 @@ export function LoginPage() {
   const { login, loading, error, online } = useLogin();
   const [showPw, setShowPw] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
+  // El interceptor de http.ts deja esta bandera antes de un `location.replace`
+  // a /login, asi que se lee una sola vez, al montar tras esa recarga completa.
+  const [sesionCerrada] = useState(() => consumirAvisoSesionCerrada());
 
   const {
     register,
@@ -44,6 +48,15 @@ export function LoginPage() {
         </div>
         <h1 className="auth-title">{t('loginpage.iniciar_sesion')}</h1>
         <p className="auth-sub">{t('loginpage.sgp_multiespecie_sistema_de_gestion_pecuaria')}</p>
+
+        {sesionCerrada && (
+          <Alert
+            variant="warning"
+            title={t('loginpage.sesion_cerrada')}
+            description={t('loginpage.sesion_cerrada_descripcion')}
+            className="auth-alert"
+          />
+        )}
 
         {!online && (
           <Alert
