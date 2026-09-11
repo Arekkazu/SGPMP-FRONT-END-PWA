@@ -34,7 +34,7 @@ test.describe('TC-DIS-25 - Accesibilidad WCAG 2.1 AA - Matriz de Permisos del Ro
     // TODO: confirmar cómo se abre la matriz (¿editar un rol la muestra dentro del RolModal,
     // o es una vista separada?) — ajustar navegación real cuando se confirme.
     const filaRol = page.getByRole('row', { name: /veterinario|productor/i }).first();
-    await filaRol.getByRole('button', { name: /editar/i }).click();
+    await filaRol.getByRole('button', { name: /editar|edit/i }).click();
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -45,7 +45,7 @@ test.describe('TC-DIS-25 - Accesibilidad WCAG 2.1 AA - Matriz de Permisos del Ro
 
   test('marcar un permiso duplicado - error HTTP 409 anunciado', async ({ page }) => {
     const filaRol = page.getByRole('row', { name: /veterinario|productor/i }).first();
-    await filaRol.getByRole('button', { name: /editar/i }).click();
+    await filaRol.getByRole('button', { name: /editar|edit/i }).click();
 
     // Los checkboxes tienen aria-label real: "{codigo} para {recurso}", ej. "C para Usuarios"
     const checkboxYaMarcado = page.getByRole('checkbox', { name: /C para/i }).first();
@@ -57,8 +57,9 @@ test.describe('TC-DIS-25 - Accesibilidad WCAG 2.1 AA - Matriz de Permisos del Ro
 
   test('retirar el último permiso del rol - error HTTP 422 anunciado', async ({ page }) => {
     // Requiere un rol de prueba con un solo permiso asignado (ver Precondiciones del caso)
+    await page.getByPlaceholder(/filter by role name|filtrar por nombre de rol/i).fill('Rol de prueba');
     const filaRol = page.getByRole('row', { name: /rol de prueba/i });
-    await filaRol.getByRole('button', { name: /editar/i }).click();
+    await filaRol.getByRole('button', { name: /editar|edit/i }).click();
 
     const unicoPermiso = page.getByRole('checkbox', { checked: true }).first();
     await unicoPermiso.uncheck();
