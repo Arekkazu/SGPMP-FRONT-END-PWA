@@ -30,6 +30,24 @@ const PUBLIC_AUTH_ENDPOINTS = ['/sesiones/', '/sesiones/sso', '/sesiones/refresh
 
 export const PERMISOS_POSIBLEMENTE_DESACTUALIZADOS = 'sgpmp:permisos-posiblemente-desactualizados';
 
+// QA M09 (hallazgo #2): un 401 no recuperable redirigia a /login sin dejar
+// ningun rastro de por que se cerro la sesion (p.ej. el backend solo permite
+// una sesion activa por cuenta, asi que un segundo login en otro dispositivo
+// invalida esta). LoginPage lee esta bandera una sola vez para explicarlo.
+const SESION_CERRADA_KEY = 'sgpmp:sesion-cerrada';
+
+export function consumirAvisoSesionCerrada(): boolean {
+  const avisar = sessionStorage.getItem(SESION_CERRADA_KEY) === '1';
+  if (avisar) sessionStorage.removeItem(SESION_CERRADA_KEY);
+  return avisar;
+}
+
+function forzarLogout(): void {
+  sessionStorage.setItem(SESION_CERRADA_KEY, '1');
+  tokenStore.clear();
+  window.location.replace('/login');
+}
+
 // Refrescos concurrentes (varias peticiones 401 a la vez) comparten esta misma
 // promesa: el backend rota el refresh token en cada uso, así que dos llamadas
 // reales a /sesiones/refresh en paralelo harían que la segunda reutilice un
@@ -69,15 +87,13 @@ http.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return http(originalRequest);
       } catch {
-        tokenStore.clear();
-        window.location.replace('/login');
+        forzarLogout();
         return Promise.reject(mapToApiError(error));
       }
     }
 
     if (error.response?.status === 401 && !isPublicAuthEndpoint) {
-      tokenStore.clear();
-      window.location.replace('/login');
+      forzarLogout();
     }
 
     // RF-25, flujo alterno "cambio de permisos en sesion activa": el backend siempre
