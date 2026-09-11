@@ -39,7 +39,7 @@ test.describe('TC-DIS-07 - Accesibilidad WCAG 2.1 AA - Editar Perfil (vista Admi
   test('modal Gestionar cuenta de un tercero - 0 violaciones axe A/AA', async ({ page }) => {
     await iniciarSesionAdmin(page);
 
-    const filaUsuario = page.getByRole('row', { name: /sara gonzalez/i });
+    const filaUsuario = page.getByRole('row', { name: /jorge castro luna/i });
     await filaUsuario.getByRole('button').last().click();
 
     const modalTitulo = page.getByRole('heading', { name: /gestionar cuenta/i });
@@ -55,7 +55,7 @@ test.describe('TC-DIS-07 - Accesibilidad WCAG 2.1 AA - Editar Perfil (vista Admi
   test('modal Gestionar cuenta - opciones son operables con teclado', async ({ page }) => {
     await iniciarSesionAdmin(page);
 
-    const filaUsuario = page.getByRole('row', { name: /sara gonzalez/i });
+    const filaUsuario = page.getByRole('row', { name: /jorge castro luna/i });
     await filaUsuario.getByRole('button').last().click();
 
     await page.getByRole('heading', { name: /gestionar cuenta/i }).waitFor({ state: 'visible' });
