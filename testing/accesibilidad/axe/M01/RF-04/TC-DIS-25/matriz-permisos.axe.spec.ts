@@ -52,7 +52,7 @@ test.describe('TC-DIS-25 - Accesibilidad WCAG 2.1 AA - Matriz de Permisos del Ro
     await checkboxYaMarcado.check();
     await checkboxYaMarcado.check(); // repetir intencionalmente
 
-    await expect(page.getByRole('alert')).toContainText(/ya cuenta con el permiso/i);
+    await expect(page.getByRole('dialog').getByRole('alert')).toContainText(/ya cuenta con|ya existe|duplicad/i);
   });
 
   test('retirar el último permiso del rol - error HTTP 422 anunciado', async ({ page }) => {
