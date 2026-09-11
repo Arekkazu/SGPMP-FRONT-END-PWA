@@ -17,7 +17,6 @@ async function iniciarSesion(page) {
   const botonMenu = page.getByRole('button', { name: /alternar menú lateral/i });
   if (await botonMenu.isVisible().catch(() => false)) {
     await botonMenu.click();
-    // Esperar a que termine la animación de apertura del menú
     await page.waitForTimeout(500);
   }
 
@@ -28,18 +27,18 @@ async function iniciarSesion(page) {
   await page.waitForURL('**/perfil');
 }
 
-async function abrirModalCambiarContrasena(page) {
+async function abrirPanelCambiarContrasena(page) {
   await page.getByRole('button', { name: /cambiar contraseña/i }).click();
-  const modal = page.getByRole('dialog');
-  await modal.waitFor({ state: 'visible' });
-  return modal;
+  const encabezado = page.getByRole('heading', { name: /cambiar contraseña/i, level: 2 });
+  await encabezado.waitFor({ state: 'visible' });
+  return page;
 }
 
 test.describe('TC-DIS-10 - Accesibilidad WCAG 2.1 AA - Cambio de Contraseña', () => {
 
   test('formulario de Cambio de Contraseña - estado inicial - 0 violaciones axe A/AA', async ({ page }) => {
     await iniciarSesion(page);
-    await abrirModalCambiarContrasena(page);
+    await abrirPanelCambiarContrasena(page);
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -50,13 +49,13 @@ test.describe('TC-DIS-10 - Accesibilidad WCAG 2.1 AA - Cambio de Contraseña', (
 
   test('formulario de Cambio de Contraseña - contraseña actual incorrecta - 0 violaciones axe A/AA', async ({ page }) => {
     await iniciarSesion(page);
-    const modal = await abrirModalCambiarContrasena(page);
+    await abrirPanelCambiarContrasena(page);
 
-    await modal.getByLabel(/contraseña actual/i).fill('ClaveActualIncorrecta1!');
-    await modal.getByLabel(/^nueva contraseña/i).fill('NuevaClaveTemporal2!');
-    await modal.getByLabel(/confirmar nueva contraseña/i).fill('NuevaClaveTemporal2!');
+    await page.getByLabel(/contraseña actual/i).fill('ClaveActualIncorrecta1!');
+    await page.getByLabel(/^nueva contraseña/i).fill('NuevaClaveTemporal2!');
+    await page.getByLabel(/confirmar nueva contraseña/i).fill('NuevaClaveTemporal2!');
 
-    await modal.getByRole('button', { name: /cambiar contraseña/i }).click();
+    await page.getByRole('button', { name: /cambiar contraseña/i }).last().click();
     await page.getByRole('alert').first().waitFor({ state: 'visible' });
 
     const results = await new AxeBuilder({ page })
@@ -68,9 +67,9 @@ test.describe('TC-DIS-10 - Accesibilidad WCAG 2.1 AA - Cambio de Contraseña', (
 
   test('mostrar/ocultar contraseña - aria-pressed presente', async ({ page }) => {
     await iniciarSesion(page);
-    const modal = await abrirModalCambiarContrasena(page);
+    await abrirPanelCambiarContrasena(page);
 
-    const botonMostrarOcultar = modal.getByRole('button', { name: /acción del campo|mostrar|ocultar/i }).first();
+    const botonMostrarOcultar = page.getByRole('button', { name: /acción del campo|mostrar|ocultar/i }).first();
     await expect(botonMostrarOcultar).toHaveAttribute('aria-pressed', /true|false/);
   });
 
