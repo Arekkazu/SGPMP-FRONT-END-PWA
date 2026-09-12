@@ -1,0 +1,100 @@
+# =============================================================================
+# SGPMP - Frontend - Ambiente PROD
+# =============================================================================
+# Dokploy construye este stack directamente desde la rama `main`: no hay
+# registro de imagenes, por eso se usa `build:` y nunca `image:`.
+#
+# IMPORTANTE - las nueve variables de abajo son BUILD ARGS, no variables de
+# ejecucion. Vite las incrusta en el bundle al compilar, asi que cambiar un
+# valor exige reconstruir la imagen; reiniciar el contenedor no tiene ningun
+# efecto. Ver .env.prod.example para el detalle y las consecuencias.
+#
+# Uso:
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+# =============================================================================
+
+name: sgpmp-frontend-prod
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # El Dockerfile es multi-etapa: `build` compila con Node 22 y `prod`
+      # sirve el resultado con nginx:1.27-alpine. Solo se publica `prod`.
+      target: prod
+      args:
+        # Los nueve son obligatorios en PROD (`:?`), a diferencia de TEST donde
+        # las siete de Firebase quedaron opcionales con `:-`. Motivo: un bundle
+        # de produccion compilado sin configuracion de Firebase deja las
+        # notificaciones push rotas SIN NINGUN AVISO — no hay error de
+        # construccion ni de arranque, simplemente no llegan notificaciones.
+        # Un fallo silencioso en produccion es peor que un `config` que no pasa.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?VITE_API_BASE_URL requerido en PROD - URL HTTPS del backend, sin barra final}
+        VITE_RECAPTCHA_SITE_KEY: ${VITE_RECAPTCHA_SITE_KEY:?VITE_RECAPTCHA_SITE_KEY requerido en PROD - site key publica de reCAPTCHA v2 (RF-01)}
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:?VITE_FIREBASE_API_KEY requerido en PROD - sin el, las notificaciones push fallan en silencio}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:?VITE_FIREBASE_AUTH_DOMAIN requerido en PROD - sin el, las notificaciones push fallan en silencio}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:?VITE_FIREBASE_PROJECT_ID requerido en PROD - sin el, las notificaciones push fallan en silencio}
+        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET:?VITE_FIREBASE_STORAGE_BUCKET requerido en PROD - sin el, las notificaciones push fallan en silencio}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID:?VITE_FIREBASE_MESSAGING_SENDER_ID requerido en PROD - sin el, las notificaciones push fallan en silencio}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:?VITE_FIREBASE_APP_ID requerido en PROD - sin el, las notificaciones push fallan en silencio}
+        VITE_VAPID_KEY: ${VITE_VAPID_KEY:?VITE_VAPID_KEY requerido en PROD - sin el, el navegador no puede suscribirse a push}
+
+    # Sin `ports`: Traefik enruta por dominio hacia el puerto 80 interno.
+    # Publicar un puerto del host aqui expondria el frontend saltandose el
+    # proxy, sin TLS. Para validar en local se usa un override aparte, fuera
+    # del repositorio.
+    expose:
+      - "80"
+
+    # `always` y no `unless-stopped`: tras un reboot del servidor,
+    # `unless-stopped` no relevanta un contenedor que habia quedado detenido
+    # manualmente. En PROD eso significa quedarse abajo sin que nadie lo note.
+    restart: always
+
+    # Nginx sirviendo estaticos: responder la raiz es prueba suficiente de que
+    # el sitio esta arriba. `wget` de BusyBox viene en la imagen Alpine.
+    #
+    # Se usa `-O /dev/null` y no `--spider` porque el codigo de salida de
+    # `--spider` varia entre versiones de BusyBox.
+    #
+    # Se usa 127.0.0.1 y NO `localhost`: dentro del contenedor `localhost`
+    # resuelve primero a `::1` (asi esta el /etc/hosts de la imagen), pero
+    # `nginx.conf` declara `listen 80;`, que escucha solo en IPv4 (0.0.0.0:80).
+    # Con `localhost` el healthcheck falla con "Connection refused" y marca el
+    # contenedor `unhealthy` aunque el sitio se sirva perfectamente. Verificado
+    # en el contenedor, no asumido.
+    #
+    # `start_period` breve: Nginx arranca en menos de un segundo, a diferencia
+    # del backend, que espera a la base de datos.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+    # Compose V2 honra estos limites fuera de Swarm. Nginx sirviendo archivos
+    # estaticos no necesita mas; el pico de consumo ocurre en la etapa `build`,
+    # que no es este contenedor.
+    # No se declara `deploy.restart_policy`: solo aplica en Swarm, se ignora
+    # aqui y duplicaria la intencion de `restart`.
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256m
+
+    # Sin rotacion, los logs de acceso de Nginx llenan el disco del servidor.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# NO se declara ninguna red: el frontend NO se conecta a `sgpmp-network`, y es
+# deliberado. Nginx solo entrega archivos estaticos al navegador; las llamadas
+# a la API las hace el navegador del usuario contra el dominio publico del
+# backend, no este contenedor contra otro contenedor. Conectarlo a la red
+# compartida agregaria superficie de ataque sin ninguna funcion.
+# Si alguien va a agregarla por simetria con el backend: no hace falta.
