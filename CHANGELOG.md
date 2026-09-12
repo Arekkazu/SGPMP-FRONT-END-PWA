@@ -1,3 +1,14 @@
+## [1.1.0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0...v1.1.0) (2026-09-12)
+
+### Features
+
+* **prod:** agregar .env.prod.example con el catalogo de variables de PROD ([dcbadac](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/dcbadac27fd49395fd0f075131e99d82b308ff44))
+* **prod:** agregar docker-compose.prod.yml del frontend ([f1174d7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f1174d7c8fb7dbe14552ad6d28760f8f1dccbb97))
+
+### Bug Fixes
+
+* **docker:** documentar y silenciar DL3064 de Hadolint en los build args de Vite ([b50c60a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b50c60a0b86f93ed75c26e7d11b96aaf950b2871))
+
 ## 1.0.0 (2026-09-11)
 
 ### Features
