@@ -33,7 +33,7 @@ test.describe('TC-DIS-08 - Consistencia visual - Editar Perfil (vista Administra
   test('modal Gestionar cuenta de un tercero', async ({ page }) => {
     await iniciarSesionAdmin(page);
 
-    const filaUsuario = page.getByRole('row', { name: /sara gonzalez/i });
+    const filaUsuario = page.getByRole('row', { name: /jorge castro luna/i });
     await filaUsuario.getByRole('button').last().click();
 
     await page.getByRole('heading', { name: /gestionar cuenta/i }).waitFor({ state: 'visible' });
