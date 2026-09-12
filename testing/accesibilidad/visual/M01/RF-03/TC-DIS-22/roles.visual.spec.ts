@@ -30,7 +30,9 @@ test.describe('TC-DIS-22 - Consistencia visual - Gestión de Roles (RF-03)', () 
   });
 
   test('editar rol Administrador (protegido)', async ({ page }) => {
-    const botonEditar = page.getByRole('button', { name: 'Editar Administrador' });
+    // exact:true: hay un rol de prueba "ADministrador de piso" cuyo botón
+    // "Editar ADministrador de piso" matchea como substring de "Editar Administrador".
+    const botonEditar = page.getByRole('button', { name: 'Editar Administrador', exact: true });
     await expect(botonEditar).toBeDisabled();
     await expect(page).toHaveScreenshot('roles-editar-admin-protegido.png', { fullPage: true });
   });

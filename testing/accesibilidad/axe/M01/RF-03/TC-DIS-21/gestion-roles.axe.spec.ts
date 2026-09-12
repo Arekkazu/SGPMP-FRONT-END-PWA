@@ -38,15 +38,18 @@ test.describe('TC-DIS-21 - Accesibilidad WCAG 2.1 AA - Gestión de Roles (RF-03)
     expect(results.violations).toEqual([]);
   });
 
-  test('crear rol sin permisos - error HTTP 400 anunciado - 0 violaciones axe A/AA', async ({ page }) => {
+  test('crear rol sin permisos - envío bloqueado en cliente - 0 violaciones axe A/AA', async ({ page }) => {
     // Texto real confirmado en RolesPage.tsx: "Crear nuevo rol"
     await page.getByRole('button', { name: 'Crear nuevo rol' }).click();
 
     await page.getByLabel(/nombre/i).fill('Rol de prueba QA');
-    // Se deja sin seleccionar ningún permiso a propósito
-    await page.getByRole('button', { name: /guardar|crear/i }).click();
-
-    await expect(page.getByRole('alert')).toContainText(/al menos un permiso/i);
+    // Se deja sin seleccionar ningún permiso a propósito.
+    // RolModal.tsx:174 deshabilita el submit mientras permisos.length === 0 (no
+    // llega a viajar al backend, por lo que no hay error 400/alert que esperar).
+    // El aviso real es el texto inline junto a "Permisos" (RolModal.tsx:155).
+    const botonSubmit = page.getByRole('dialog').getByRole('button', { name: /guardar|crear/i });
+    await expect(botonSubmit).toBeDisabled();
+    await expect(page.getByText(/selecciona al menos un permiso/i)).toBeVisible();
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -56,11 +59,14 @@ test.describe('TC-DIS-21 - Accesibilidad WCAG 2.1 AA - Gestión de Roles (RF-03)
   });
 
   test('intentar editar el rol Administrador - protegido/inmutable', async ({ page }) => {
-    // Selector real confirmado en RolesTable.tsx: aria-label={`Editar ${nombre_rol}`}
-    await page.getByRole('button', { name: 'Editar Administrador' }).click();
-
-    // TODO: confirmar cómo se comunica realmente la protección al guardar (backend 403)
-    await expect(page.getByRole('alert').or(page.getByText(/protegido|no se puede editar/i))).toBeVisible();
+    // Selector real confirmado en RolesTable.tsx: aria-label={`Editar ${nombre_rol}`}.
+    // La protección se aplica en el cliente deshabilitando el botón (disabled={r.es_protegido})
+    // con un title explicativo — nunca llega a intentarse la edición ni un 403 del backend.
+    // exact:true porque hay datos de prueba con un rol "ADministrador de piso", cuyo
+    // "Editar ADministrador de piso" matchea como substring de "Editar Administrador".
+    const botonEditarAdmin = page.getByRole('button', { name: 'Editar Administrador', exact: true });
+    await expect(botonEditarAdmin).toBeDisabled({ timeout: 10000 });
+    await expect(botonEditarAdmin).toHaveAttribute('title', /no puede modificarse/i);
   });
 
 });

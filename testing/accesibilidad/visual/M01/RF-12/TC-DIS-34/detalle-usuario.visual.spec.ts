@@ -37,7 +37,12 @@ test.describe('TC-DIS-34 - Consistencia visual - Detalle de Usuario (RF-12)', ()
     await expect(btnVerDetalle).toBeVisible({ timeout: 10000 });
     await btnVerDetalle.click();
 
-    await expect(page.getByRole('dialog')).toBeVisible();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    // Esperar a que carguen los datos reales: el modal muestra primero
+    // skeletons (placeholders grises) mientras llega la respuesta del detalle.
+    await expect(dialog.getByLabel(/nombres/i)).toBeVisible({ timeout: 10000 });
+
     await expect(page).toHaveScreenshot('detalle-usuario.png', { fullPage: true });
   });
 

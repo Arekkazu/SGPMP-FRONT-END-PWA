@@ -54,7 +54,10 @@ test.describe('TC-DIS-31 - Accesibilidad WCAG 2.1 AA - Listado de Usuarios (RF-1
     await primerBoton.focus();
     await page.keyboard.press('Enter');
 
-    await expect(page.getByRole('dialog').or(page.getByRole('heading', { level: 1 }))).toBeVisible();
+    // Confirmado (RF-12): "Ver detalle de X" abre un modal, nunca navega de página;
+    // el .or() con el <h1> de la propia página de Listado producía un falso
+    // positivo por strict mode (el h1 "Usuarios" sigue montado detrás del modal).
+    await expect(page.getByRole('dialog')).toBeVisible();
   });
 
 });

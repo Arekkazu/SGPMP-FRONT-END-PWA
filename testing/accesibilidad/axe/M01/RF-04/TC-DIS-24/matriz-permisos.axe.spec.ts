@@ -43,28 +43,29 @@ test.describe('TC-DIS-24 - Accesibilidad WCAG 2.1 AA - Matriz de Permisos del Ro
     expect(results.violations).toEqual([]);
   });
 
-  test('marcar un permiso duplicado - error HTTP 409 anunciado', async ({ page }) => {
-    const filaRol = page.getByRole('row', { name: /veterinario|productor/i }).first();
-    await filaRol.getByRole('button', { name: /editar|edit/i }).click();
-
-    // Los checkboxes tienen aria-label real: "{codigo} para {recurso}", ej. "C para Usuarios"
-    const checkboxYaMarcado = page.getByRole('checkbox', { name: /C para/i }).first();
-    await checkboxYaMarcado.check();
-    await checkboxYaMarcado.check(); // repetir intencionalmente
-
-    await expect(page.getByRole('dialog').getByRole('alert')).toContainText(/ya cuenta con|ya existe|duplicad/i);
+  test.skip('marcar un permiso duplicado - error HTTP 409 anunciado', async () => {
+    // No reproducible desde la UI: page.check() en Playwright es idempotente
+    // (no hace clic si el checkbox ya está marcado), así que "marcarlo dos veces"
+    // nunca dispara una segunda petición al backend. Un checkbox HTML tampoco
+    // admite "doble marcado" por click real de usuario — la única forma de
+    // llegar a un 409 aquí sería una condición de carrera (dos clientes
+    // asignando el mismo permiso casi simultáneamente), no un flujo de UI
+    // secuencial. Pendiente confirmar con backend/QA cómo se reproduce en
+    // la práctica antes de reescribir este caso.
   });
 
-  test('retirar el último permiso del rol - error HTTP 422 anunciado', async ({ page }) => {
+  test('retirar el último permiso del rol - bloqueado en cliente', async ({ page }) => {
     // Requiere un rol de prueba con un solo permiso asignado (ver Precondiciones del caso)
     await page.getByPlaceholder(/filter by role name|filtrar por nombre de rol/i).fill('Rol de prueba');
     const filaRol = page.getByRole('row', { name: /rol de prueba/i });
     await filaRol.getByRole('button', { name: /editar|edit/i }).click();
 
+    // PermisosMatrix.tsx deshabilita el checkbox del último permiso restante
+    // (esUltimoPermiso = permisos.length <= 1) con title="Mínimo un permiso
+    // requerido" — el intento nunca llega al backend, por lo que no hay 422/alert.
     const unicoPermiso = page.getByRole('checkbox', { checked: true }).first();
-    await unicoPermiso.uncheck();
-
-    await expect(page.getByRole('alert')).toContainText(/al menos una capacidad activa/i);
+    await expect(unicoPermiso).toBeDisabled();
+    await expect(unicoPermiso).toHaveAttribute('title', /m[ií]nimo un permiso requerido/i);
   });
 
 });

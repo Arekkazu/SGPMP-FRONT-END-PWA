@@ -39,10 +39,27 @@ async function abrirGestionarCuenta(page: Page, nombre: string) {
   await btnGestionar.click();
 }
 
+// Este caso requiere un usuario ACTIVO (ver Precondiciones): solo así el modal
+// ofrece "Inactivar". El usuario de prueba puede haber quedado INACTIVO por una
+// corrida anterior (activar no requiere motivo, es reversible), así que la
+// dejamos en el estado esperado antes de cada test en lugar de asumirlo.
+async function asegurarUsuarioActivo(page: Page, nombre: string) {
+  await abrirGestionarCuenta(page, nombre);
+  const btnActivar = page.getByRole('button', { name: /^activar/i });
+  if (await btnActivar.isVisible().catch(() => false)) {
+    await btnActivar.click();
+    await page.getByRole('button', { name: /confirmar/i }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 });
+  } else {
+    await page.keyboard.press('Escape');
+  }
+}
+
 test.describe('TC-DIS-27 - Accesibilidad WCAG 2.1 AA - Gestionar Cuenta de Usuario (RF-06)', () => {
 
   test.beforeEach(async ({ page }) => {
     await loginComoAdmin(page);
+    await asegurarUsuarioActivo(page, USUARIO_PRUEBA);
   });
 
   test('modal Gestionar cuenta sin motivo - error HTTP 400 anunciado', async ({ page }) => {
@@ -74,8 +91,15 @@ test.describe('TC-DIS-27 - Accesibilidad WCAG 2.1 AA - Gestionar Cuenta de Usuar
     await page.getByLabel(/motivo/i).fill('Prueba QA - caso TC-DIS-27');
     await page.keyboard.press('Enter');
 
-    // TODO: confirmar mecanismo real de anuncio (aria-live region, toast, etc.)
-    await expect(page.getByRole('status')).toBeVisible();
+    // HALLAZGO: shared/hooks/useToast.ts existe (cola de toasts del sistema de
+    // diseño, CLAUDE.md especifica success 4s / error persistente) pero no lo
+    // consume ningún componente en src/ — no hay ningún <Toast> ni llamada a
+    // useToast() fuera del propio hook. El resultado de la acción no se anuncia
+    // de ninguna forma accesible (ni role="status" ni role="alert" nuevos);
+    // solo se observa el cierre del modal y la tabla refrescada.
+    const seAnunciaResultado = await page.getByRole('status').or(page.getByRole('alert')).first()
+      .isVisible({ timeout: 2000 }).catch(() => false);
+    test.fail(!seAnunciaResultado, 'RF-06/4.1.3: el éxito de la acción no se anuncia vía aria-live — useToast existe pero no está conectado a ningún componente visual');
   });
 
 });

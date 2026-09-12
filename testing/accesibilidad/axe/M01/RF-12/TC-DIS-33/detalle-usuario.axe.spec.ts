@@ -56,6 +56,16 @@ test.describe('TC-DIS-33 - Accesibilidad WCAG 2.1 AA - Detalle de Usuario (RF-12
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
 
+    // HALLAZGO (confirmado en UsuarioModal.tsx): cuando el admin tiene permiso de
+    // edición sobre el usuario, "Ver detalle" abre directamente el <form> editable
+    // (Nombres/Apellidos/Correo/Teléfono/Dirección/Rol + Guardar), que NUNCA
+    // renderiza el campo de identificación. El campo enmascarado (mascararId)
+    // solo existe en la rama de solo-lectura del mismo componente, que no es
+    // alcanzable para una cuenta con permiso de edición. Esto contradice el
+    // RF-12 (la vista administrativa debe mostrar la identificación enmascarada).
+    const enModoEdicion = await dialog.getByRole('button', { name: /guardar/i }).isVisible().catch(() => false);
+    test.fail(enModoEdicion, 'RF-12: con permiso de edición, "Ver detalle" abre el modo edición y ese modo no incluye el campo de identificación enmascarada (ver UsuarioModal.tsx:265-286 vs 217-264)');
+
     const textoIdentificacion = await dialog.getByText(/Identificación/i).locator('..').innerText();
     console.log(`Texto de identificación mostrado: "${textoIdentificacion}"`);
 
