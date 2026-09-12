@@ -3,11 +3,16 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
 export default defineConfig({
-  testDir: '.',
+  testDir: '.', // <--- Permite buscar dentro de accesibilidad/axe/ y visual/
+  testMatch: /.*\.(visual|axe)\.spec\.ts$/, // <--- Corre axe y visual; ignora node_modules
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Fijo en 1 siempre (no solo en CI): la mayoría de specs inician sesión con
+  // la MISMA cuenta de prueba (TEST_USER_EMAIL). Con más de un worker, varios
+  // logins concurrentes contra esa cuenta disparan el bloqueo por seguridad
+  // del backend ("múltiples intentos fallidos"), tumbando la corrida entera.
+  workers: 1,
   reporter: 'html',
 
   use: {

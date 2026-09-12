@@ -8,15 +8,26 @@ async function loginComoAdmin(page: Page) {
   await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
   await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar' }).click();
-  await page.waitForURL(/dashboard/);
 
+  // Esperar a salir de login (evita colgarse esperando evento 'load' estricto en SPAs)
+  await page.waitForURL((url) => !url.pathname.includes('/login'), {
+    waitUntil: 'domcontentloaded',
+    timeout: 15000,
+  });
+
+  // Si el menú móvil/tablet está colapsado, desplegarlo
   const menuToggle = page.getByRole('button', { name: /alternar menú lateral/i });
   if (await menuToggle.isVisible().catch(() => false)) {
     await menuToggle.click();
   }
-  const btnRoles = page.getByRole('button', { name: /roles y permisos/i });
-  await expect(btnRoles).toBeEnabled({ timeout: 10000 });
-  await btnRoles.click();
+
+  // Corregido: En el sidebar los ítems son enlaces (<a>), no botones (<button>)
+  const linkRoles = page.getByRole('link', { name: /roles y permisos/i });
+  await expect(linkRoles).toBeVisible({ timeout: 10000 });
+  await linkRoles.click();
+
+  // Asegurar navegación a la vista de roles antes de ejecutar los tests
+  await page.waitForURL(/roles/);
 }
 
 test.describe('TC-DIS-22 - Consistencia visual - Gestión de Roles (RF-03)', () => {
@@ -26,13 +37,15 @@ test.describe('TC-DIS-22 - Consistencia visual - Gestión de Roles (RF-03)', () 
   });
 
   test('listado de roles', async ({ page }) => {
+    // Esperar a que la tabla cargue elementos dinámicos antes de la captura
+    await expect(page.getByRole('table')).toBeVisible();
     await expect(page).toHaveScreenshot('roles-listado.png', { fullPage: true });
   });
 
   test('editar rol Administrador (protegido)', async ({ page }) => {
-    // exact:true: hay un rol de prueba "ADministrador de piso" cuyo botón
-    // "Editar ADministrador de piso" matchea como substring de "Editar Administrador".
+    // exact: true evita coincidir con "Editar Administrador de piso"
     const botonEditar = page.getByRole('button', { name: 'Editar Administrador', exact: true });
+    
     await expect(botonEditar).toBeDisabled();
     await expect(page).toHaveScreenshot('roles-editar-admin-protegido.png', { fullPage: true });
   });
