@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, Page } from '@playwright/test';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? '';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? '';
+const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL!;
+const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD!;
 
 async function loginComoAdmin(page: Page) {
   await page.goto('/login');
@@ -24,7 +24,7 @@ async function loginComoAdmin(page: Page) {
   await page.getByRole('button', { name: /roles y permisos/i }).click();
 }
 
-test.describe('TC-DIS-25 - Accesibilidad WCAG 2.1 AA - Matriz de Permisos del Rol (RF-04)', () => {
+test.describe('TC-DIS-24 - Accesibilidad WCAG 2.1 AA - Matriz de Permisos del Rol (RF-04)', () => {
 
   test.beforeEach(async ({ page }) => {
     await loginComoAdmin(page);
