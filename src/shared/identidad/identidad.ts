@@ -23,13 +23,19 @@ import type { TemaAplicado } from '../tema/tema';
  * `--brand-600` en 50). No se recalcula la rampa completa 50-900: eso convertiría cada
  * cambio de marca en un problema de diseño de paleta, y el RF limita el alcance a color
  * primario y secundario.
+ *
+ * `--brand-cta` (QA M01 2.4) también recibe el primario: es el relleno del boton
+ * primario con texto blanco, y sin este setProperty una finca con marca propia perdia
+ * su color de marca en ese boton (quedaba pintado con el verde por defecto).
  */
 const VAR_PRIMARIO = '--brand-500';
 const VAR_PRIMARIO_FUERTE = '--brand-600';
+const VAR_CTA = '--brand-cta';
+const VAR_CTA_HOVER = '--brand-cta-hover';
 const VAR_SECUNDARIO = '--brand-400';
 const VAR_NAV = '--brand-nav';
 
-const VARIABLES = [VAR_PRIMARIO, VAR_PRIMARIO_FUERTE, VAR_SECUNDARIO, VAR_NAV];
+const VARIABLES = [VAR_PRIMARIO, VAR_PRIMARIO_FUERTE, VAR_CTA, VAR_CTA_HOVER, VAR_SECUNDARIO, VAR_NAV];
 
 /**
  * Variante oscura del color institucional para pintar la barra de navegación.
@@ -78,10 +84,14 @@ export function aplicarIdentidad(marca: MarcaAplicable, tema: TemaAplicado): voi
   if (primario) {
     estilo.setProperty(VAR_PRIMARIO, primario);
     estilo.setProperty(VAR_PRIMARIO_FUERTE, primario);
+    estilo.setProperty(VAR_CTA, primario);
+    estilo.setProperty(VAR_CTA_HOVER, primario);
     estilo.setProperty(VAR_NAV, oscurecerParaNav(primario));
   } else {
     estilo.removeProperty(VAR_PRIMARIO);
     estilo.removeProperty(VAR_PRIMARIO_FUERTE);
+    estilo.removeProperty(VAR_CTA);
+    estilo.removeProperty(VAR_CTA_HOVER);
     estilo.removeProperty(VAR_NAV);
   }
 
