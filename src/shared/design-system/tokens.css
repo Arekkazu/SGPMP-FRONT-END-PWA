@@ -38,6 +38,12 @@
   --sem-info-bg: #eef4ff;
   --sem-info-border: #b0c8f0;
 
+  /* QA M01 2.4: relleno solido para superficies de peligro (boton danger,
+     badge de notificaciones, punto de intento agotado) con texto/icono blanco
+     encima. Fijo en ambos temas: >=4.5:1 con #fff, a diferencia de --sem-error
+     que en dark se aclara para servir de texto/icono sobre superficie oscura. */
+  --sem-error-solid: #c0280a;
+
   /* Surfaces */
   --surface-bg: var(--neutral-50);
   --surface-card: var(--neutral-0);
@@ -108,6 +114,12 @@
      identidad visual, `aplicarIdentidad` lo sobreescribe con la variante
      oscurecida del primario. */
   --brand-nav: var(--neutral-900);
+
+  /* QA M01 2.4: relleno solido de boton primario con texto blanco. Fijo en
+     ambos temas (no sigue la rampa --brand-500/600, que se invierte en dark y
+     baja el contraste a 3.21:1) — siempre >=4.5:1 con #fff. */
+  --brand-cta: #226a28;
+  --brand-cta-hover: #1a521f;
 }
 
 /* La escala se reduce en movil (columna "Movil" de la tabla de tipografia). */
@@ -142,6 +154,11 @@
   --sem-error-border: #601000;
   --sem-info-bg: #081a38;
   --sem-info-border: #1a3870;
+
+  /* QA M01 2.4: #c0280a (heredado del tema claro) da solo 2.96:1 como texto
+     sobre --surface-card oscuro (#171a15). Solo se aclara el rol de
+     texto/icono; --sem-error-solid (fondos) no cambia. */
+  --sem-error: #ff6b52;
 
   --surface-bg: #0f110e;
   --surface-card: #171a15;

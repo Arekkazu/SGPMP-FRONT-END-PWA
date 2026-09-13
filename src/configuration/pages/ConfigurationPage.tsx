@@ -47,8 +47,16 @@ const TABS: { id: TabId; claveLabel: string; recurso: number }[] = [
   { id: 'plantillas', claveLabel: 'tabs.plantillas', recurso: 28 },       // plantillas
 ];
 
+// QA M09 (hallazgo #3): con solo padding vertical el boton medía ~40px, por
+// debajo del touch target minimo de 48px (--s9) del sistema de diseño, y en
+// viewport movil (nav con overflow-x) los flex items sin flex-shrink:0 podian
+// encogerse por debajo de su contenido en vez de forzar el scroll horizontal.
 const TAB_BTN: React.CSSProperties = {
-  padding: 'var(--s3) var(--s4)',
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: 'var(--s9)',
+  flexShrink: 0,
+  padding: '0 var(--s4)',
   background: 'none',
   border: 'none',
   borderBottom: '2px solid transparent',
