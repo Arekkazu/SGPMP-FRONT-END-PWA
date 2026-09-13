@@ -1,3 +1,9 @@
+## [1.0.0-rc.23](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.22...v1.0.0-rc.23) (2026-09-13)
+
+### Bug Fixes
+
+* **deps:** [#108](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/108) resolver vulnerabilidades de npm audit en dependencias ([b5be4e5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b5be4e5888083dc38fed4e693095539b8a243af6))
+
 ## [1.0.0-rc.22](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.21...v1.0.0-rc.22) (2026-09-13)
 
 ### Bug Fixes
