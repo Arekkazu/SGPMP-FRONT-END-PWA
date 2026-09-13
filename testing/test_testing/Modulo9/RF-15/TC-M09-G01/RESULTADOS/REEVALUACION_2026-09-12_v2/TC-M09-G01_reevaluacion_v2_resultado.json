@@ -1,0 +1,63 @@
+{
+  "caso": "TC-M09-G01",
+  "titulo": "Reevaluación v2 Definitiva: CU-01 - Gestionar Catálogo de Especies Productivas (RF-15)",
+  "cu": "CU-01 - Gestionar Catálogo de Especies Productivas",
+  "rf": "RF-15",
+  "tipo": "Funcional (UI y API) - Reevaluación Controlada con Datos Limpios",
+  "equipo": "Frontend y QA",
+  "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.83 (headless)",
+  "fecha": "2026-09-12T14:29:21.426Z",
+  "cuentaEjecucion": "admin.dev@gmail.com",
+  "datoPrueba": {
+    "nombre": "Equino Test QA",
+    "descripcion": "grupo de mamíferos herbívoros ungulados que incluye a los caballos, las cebras y los asnos"
+  },
+  "peticionInfo": "POST /configuracion/especies -> HTTP 201 Created. Body: {\"id_especie\":44,\"nombre\":\"Equino Test Qa\",\"descripcion\":\"grupo de mamíferos herbívoros ungulados que incluye a los caballos, las cebras y los asnos\",\"es_activo\":true,\"fecha_creacion\":\"2026-09-12T14:29:22.119140Z\",\"fecha_actualizacion\":null}",
+  "checkpoints": [
+    {
+      "paso": "Paso 1 & 2: Aislamiento curl/API de login",
+      "esperado": "POST /sesiones/ con admin.dev@gmail.com responde HTTP 200 OK emitiendo Bearer Token",
+      "obtenido": "HTTP 200 OK con access_token JWT y cookie refresh_token. Confirma que el falso 500 se debió al uso de admin@pecuaria.co.",
+      "estado": "OK"
+    },
+    {
+      "paso": "Precondición de dato de prueba",
+      "esperado": "'Equino Test QA' no debe existir en catálogo antes de la creación",
+      "obtenido": "Confirmado por API y DOM: 'Equino Test QA' no existía previamente en la BD de TEST.",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 1: Diligenciamiento en UI",
+      "esperado": "Formulario modal cargado y completado con nombre y descripción autorizados",
+      "obtenido": "Input y textarea completados conforme a límites (14 y 86 chars). Captura 01_formulario_especie_ui.png almacenada.",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 2: Contrato API REST (POST /configuracion/especies)",
+      "esperado": "HTTP 201 Created con id_especie generado, nombre, descripción, es_activo=true y fecha_creacion",
+      "obtenido": "HTTP 201 Created exitoso con ID #44, es_activo: true y fecha_creacion. El backend no generó HTTP 500. Se observó normalización a Title Case ('Equino Test Qa').",
+      "estado": "OK"
+    },
+    {
+      "paso": "Checkpoint 3: Persistencia y confirmación en BD",
+      "esperado": "Registro persistido y consultable en catálogo de TEST",
+      "obtenido": "Registro ID #44 persistido exitosamente en PostgreSQL de TEST.",
+      "estado": "OK"
+    },
+    {
+      "paso": "Verificación Newman de Contrato API",
+      "esperado": "POST exitoso contra endpoint de catálogo",
+      "obtenido": "HTTP 404 Not Found contra /especies (confirma discrepancia de ruta vs /configuracion/especies).",
+      "estado": "OBSERVACION"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "trazabilidadIncidente": {
+    "codigo": "INC-M09-01-G01",
+    "defectoOriginal": "HTTP 500 ERROR_INTERNO: Error inesperado en base de datos al crear/editar especies",
+    "estado": "RESUELTO / Candidato a cierre",
+    "justificacion": "El backend TEST procesó y persistió la especie sin ningún error interno de servidor, retornando HTTP 201 Created con ID #44 generado. El defecto 500 queda superado."
+  }
+}

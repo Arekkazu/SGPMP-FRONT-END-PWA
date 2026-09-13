@@ -2,13 +2,13 @@
 
 const DIR = 'RESULTADOS/TC-M09-G03';
 const ENDPOINT_ESPECIES = '/configuracion/especies';
-const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'admin@pecuaria.co';
+const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'admin.dev@gmail.com';
 const CUENTA_EJECUCION_PASSWORD = Cypress.env('ADMIN_PASSWORD') || 'Test1234!';
 
-const DATO_BUSQUEDA_ORIGINAL = 'Cachama Blanca';
-const DATO_DESCRIPCION_ORIGINAL = 'Pez de agua dulce tropical con alta adaptabilidad a sistemas extensivos e intensivos.';
-const DATO_NOMBRE_NUEVO = 'Cachama';
-const DATO_DESCRIPCION_NUEVA = 'Especie de uso pecuario general.';
+const DATO_BUSQUEDA_ORIGINAL = 'Equino';
+const DATO_DESCRIPCION_ORIGINAL = 'prueba';
+const DATO_NOMBRE_NUEVO = 'Equino Editado';
+const DATO_DESCRIPCION_NUEVA = 'Especie editada en prueba de reevaluación QA';
 
 type Estado = 'OK' | 'FALLA' | 'OBSERVACION';
 interface Check { paso: string; esperado: string; obtenido: string; estado: Estado; }
@@ -66,7 +66,7 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
   });
 
   after(() => {
-    // Teardown garantizado en after(): Restaura el registro a "Cachama Blanca" usando GET fresco para evitar HTTP 412
+    // Teardown garantizado en after(): Restaura el registro a "Equino" usando GET fresco para evitar HTTP 412
     const backendUrl = Cypress.env('API_BASE_URL') || 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test';
 
     const escribirResultados = () => {
@@ -115,8 +115,8 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
       if (!token) {
         teardownInfo = 'No se pudo obtener token de autenticación API para el teardown.';
         add(
-          'CP-6: Restauración Teardown (Reversión a "Cachama Blanca")',
-          'Obtener GET fresco y restaurar registro a "Cachama Blanca" vía PATCH',
+          'CP-6: Restauración Teardown (Reversión a "Equino")',
+          'Obtener GET fresco y restaurar registro a "Equino" vía PATCH',
           'Fallo de autenticación API en teardown.',
           'FALLA'
         );
@@ -136,7 +136,7 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
 
         const fechaFresca = especieActual?.fecha_actualizacion ?? new Date().toISOString();
 
-        // 3. Enviar PATCH de reversión a "Cachama Blanca" y descripción original
+        // 3. Enviar PATCH de reversión a "Equino" y descripción original
         cy.request({
           method: 'PATCH',
           url: `${backendUrl}${ENDPOINT_ESPECIES}/${idEspecieEditar}`,
@@ -153,15 +153,15 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
 
           if (st === 200 || st === 201) {
             add(
-              'CP-6: Restauración Teardown (Reversión a "Cachama Blanca")',
-              'Registro de especie restaurado exitosamente a "Cachama Blanca" con su descripción original',
+              'CP-6: Restauración Teardown (Reversión a "Equino")',
+              'Registro de especie restaurado exitosamente a "Equino" con su descripción original',
               `Restauración exitosa (HTTP ${st}). Registro #${idEspecieEditar} restaurado a "${DATO_BUSQUEDA_ORIGINAL}".`,
               'OK'
             );
           } else {
             add(
-              'CP-6: Restauración Teardown (Reversión a "Cachama Blanca")',
-              'Registro de especie restaurado exitosamente a "Cachama Blanca" con su descripción original',
+              'CP-6: Restauración Teardown (Reversión a "Equino")',
+              'Registro de especie restaurado exitosamente a "Equino" con su descripción original',
               `Fallo en restauración. HTTP ${st}. Body: ${JSON.stringify(resPatch.body)}`,
               'FALLA'
             );
@@ -177,7 +177,7 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
 
     const backendUrl = Cypress.env('API_BASE_URL') || 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test';
 
-    // 0. Verificación previa por API REST de que "Cachama Blanca" está ACTIVA antes de iniciar UI
+    // 0. Verificación previa por API REST de que "Equino" está ACTIVA antes de iniciar UI
     cy.request({
       method: 'POST',
       url: `${backendUrl}/sesiones/`,
@@ -195,7 +195,7 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
 
         if (!especiePrevia) {
           add(
-            'CP-2: Localización de registro "Cachama Blanca"',
+            'CP-2: Localización de registro "Equino"',
             `Confirmar presencia de "${DATO_BUSQUEDA_ORIGINAL}" activa en la API`,
             `Especie "${DATO_BUSQUEDA_ORIGINAL}" no encontrada en la API TEST.`,
             'FALLA'
@@ -205,7 +205,7 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
 
         if (!especiePrevia.es_activo) {
           add(
-            'CP-2: Localización de registro "Cachama Blanca"',
+            'CP-2: Localización de registro "Equino"',
             `Confirmar es_activo: true para "${DATO_BUSQUEDA_ORIGINAL}"`,
             `Prueba abortada: la especie "${DATO_BUSQUEDA_ORIGINAL}" (ID #${especiePrevia.id_especie}) se encuentra inactiva (es_activo: false).`,
             'FALLA'
@@ -235,7 +235,7 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
         add(
           'CP-1: Autenticación y Navegación SPA',
           'Inicio de sesión exitoso como Admin y navegación a /configuracion',
-          'Sesión autenticada como admin@pecuaria.co y catálogo cargado por GET /configuracion/especies.',
+          'Sesión autenticada como admin.dev@gmail.com y catálogo cargado por GET /configuracion/especies.',
           'OK'
         );
 
@@ -246,7 +246,7 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
           .should('be.visible')
           .then(($row) => {
             add(
-              'CP-2: Localización de registro "Cachama Blanca"',
+              'CP-2: Localización de registro "Equino"',
               `Ubicar en la tabla la especie activa "${DATO_BUSQUEDA_ORIGINAL}" y capturar su ID`,
               `Registro activo localizado exitosamente en UI. Especie ID #${idEspecieEditar} ("${DATO_BUSQUEDA_ORIGINAL}").`,
               'OK'
@@ -287,7 +287,7 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
 
           add(
             'CP-4: Contrato API PATCH de Edición',
-            'Respuesta HTTP 200/201 con objeto actualizado (nombre="Cachama")',
+            `Respuesta HTTP 200/201 con objeto actualizado (nombre="${DATO_NOMBRE_NUEVO}")`,
             esExitosa
               ? `HTTP ${status} OK - ID: ${body.id_especie}, Nombre: "${body.nombre}", Descripcion: "${body.descripcion}"`
               : `Respuesta no conforme. HTTP ${status}. Body: ${JSON.stringify(body)}`,
@@ -321,3 +321,4 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
     });
   });
 });
+

@@ -57,9 +57,9 @@ ${checks
 
 ## Evidencias Visuales (4 Capturas Reales + Video)
 - Captura 01 (Online Inicial en Sección de Especie): \`RESULTADOS/screenshots/01_ui_ciclos_cachama_online.png\`
-- Captura 02 (Offline Bloqueo en Sección de Especie): \`RESULTADOS/screenshots/02_ui_ciclos_cachama_offline.png\`
+- Captura 02 (Creación Offline y Badge Pendiente): \`RESULTADOS/screenshots/02_ui_ciclos_cachama_offline.png\`
 - Captura 03 (Online Restablecido): \`RESULTADOS/screenshots/03_ui_ciclos_cachama_online_restablecido.png\`
-- Captura 04 (Registro de Ciclo): \`RESULTADOS/screenshots/04_registro_ciclo_alevinaje_resultado.png\`
+- Captura 04 (Registro de Ciclo Sincronizado): \`RESULTADOS/screenshots/04_registro_ciclo_alevinaje_resultado.png\`
 - Grabación de Video: \`RESULTADOS/videos/tc-m09-g19-sincronizacion-offline-parametros.cy.ts.mp4\`
 
 ## Verificación de Teardown de Datos de Prueba
@@ -69,12 +69,13 @@ ${checks
 - Estado Teardown: **${teardownVerificado ? 'CONFIRMADO (idempotente)' : 'PENDIENTE / NO APLICA'}**
 
 ## Conclusión Técnica
-La arquitectura de la PWA deshabilita las acciones de escritura en UI (botón 'Nuevo ciclo' deshabilitado y alerta 'Sin conexión' visible en la sección de Ciclos Biológicos de Cachama Blanca) cuando la app está sin conectividad (\`online === false\`). No existe una cola local (\`syncQueue.ts\` o IndexedDB) para encolar o sincronizar diferidamente los parámetros de ciclos biológicos. El backend TEST administra y valida correctamente las reglas de negocio en modo online y confirma la desactivación lógica en el teardown.
+La arquitectura de la PWA cuenta con soporte de sincronización offline para ciclos biológicos (commit 88ca728, PR #60). Cuando no hay red, el botón 'Nuevo ciclo' permanece habilitado, los registros creados se encolan en Dexie (syncQueue) mostrando el estado 'Pendiente de sincronización' con ID temporal, y al reconectarse se sincronizan automáticamente con el backend asignándoles su ID real definitivo. El backend TEST administra y valida correctamente las reglas de negocio y confirma la desactivación lógica en el teardown.
 `;
 }
 
 describe('TC-M09-G19 · Sincronización offline de parámetros de ciclo biológico por especie', () => {
   before(() => {
+    Cypress.on('uncaught:exception', () => false);
     cy.intercept({ url: '**/assets/**' }, (req) => {
       req.continue((res) => {
         res.headers['access-control-allow-origin'] = '*';
@@ -86,7 +87,7 @@ describe('TC-M09-G19 · Sincronización offline de parámetros de ciclo biológi
     const apiBase = Cypress.env('API_BASE_URL');
 
     // Teardown: deshabilitar/desactivar ciclo creado y confirmar estado inactivo con GET posterior
-    if (createdCicloId && authToken) {
+    if (createdCicloId && createdCicloId > 0 && authToken) {
       cy.request({
         method: 'PATCH',
         url: `${apiBase}/configuracion/ciclos/${createdCicloId}/desactivar`,
@@ -115,6 +116,9 @@ describe('TC-M09-G19 · Sincronización offline de parámetros de ciclo biológi
         });
       });
     } else {
+      if (createdCicloId && createdCicloId < 0) {
+        estadoFinalCiclo = `Ciclo no sincronizado con backend (permaneció con ID temporal ${createdCicloId})`;
+      }
       escribirReporteFinal();
     }
   });
@@ -162,7 +166,7 @@ describe('TC-M09-G19 · Sincronización offline de parámetros de ciclo biológi
   it('Ejecuta autenticación online, navegación a Cachama Blanca, simulación offline/online y teardown verificado', () => {
     checks.length = 0;
     const apiBase = Cypress.env('API_BASE_URL');
-    const adminEmail = Cypress.env('ADMIN_EMAIL') || 'admin@pecuaria.co';
+    const adminEmail = Cypress.env('ADMIN_EMAIL') || 'admin.dev@gmail.com';
     const adminPassword = Cypress.env('ADMIN_PASSWORD') || 'Test1234!';
 
     // Interceptar la respuesta del login para capturar el token sin hacer llamadas duplicadas
@@ -230,81 +234,102 @@ describe('TC-M09-G19 · Sincronización offline de parámetros de ciclo biológi
 
     // Paso 4: CP-2 - Simulación OFFLINE sobre la vista de Ciclos Biológicos cargada
     cy.window().then((win) => {
+      if (win.navigator.serviceWorker) {
+        try {
+          Object.defineProperty(win.navigator.serviceWorker, 'ready', {
+            configurable: true,
+            value: Promise.resolve({
+              sync: { register: () => Promise.resolve() },
+            }),
+          });
+        } catch {}
+      }
       Object.defineProperty(win.navigator, 'onLine', { configurable: true, value: false });
       win.dispatchEvent(new win.Event('offline'));
     });
 
     cy.wait(1000);
 
-    // Verificar que el botón "Nuevo ciclo" está deshabilitado en UI
-    cy.contains('button', 'Nuevo ciclo').should('exist').then(($btn) => {
-      const isDisabled = $btn.is(':disabled') || $btn.attr('disabled') !== undefined;
+    // Verificar alerta "Sin conexión" y que el botón "Nuevo ciclo" permanece habilitado
+    cy.contains('Sin conexión').should('be.visible');
+    cy.contains('button', 'Nuevo ciclo').should('be.visible').and('not.be.disabled');
 
-      // Captura 02: Estado OFFLINE en la sección de Ciclos Biológicos con botón deshabilitado y alerta
-      cy.screenshot('02_ui_ciclos_cachama_offline', { overwrite: true }).then(() => {
-        checks.push({
-          id: 'CP-2',
-          nombre: 'Protección UI Offline en Sección Ciclos Biológicos de Cachama Blanca',
-          tipo: 'CHECK',
-          esperado: 'Botón "Nuevo ciclo" deshabilitado (disabled=true) y alerta "Sin conexión" visible en sección de especie',
-          obtenido: isDisabled
-            ? 'Botón "Nuevo ciclo" deshabilitado en UI (disabled=true) al estar offline en sección de Cachama Blanca'
-            : 'El botón "Nuevo ciclo" permaneció habilitado en modo offline',
-          resultado: isDisabled ? 'OK' : 'FALLA',
-          detalles: 'Captura 02_ui_ciclos_cachama_offline.png confirma el bloqueo UI directamente en la vista de la especie.',
-        });
+    const nombreCicloOffline = `Fase Alevinaje Offline ${Date.now()}`;
+
+    // Abrir modal y registrar ciclo en modo OFFLINE
+    cy.contains('button', 'Nuevo ciclo').click();
+    cy.get('#ciclo-modal-title', { timeout: 10000 }).should('be.visible');
+
+    cy.get('input[name="nombre"]').type(nombreCicloOffline);
+    cy.get('input[name="duracion_dias"]').clear().type('45');
+    cy.get('#ciclo-desc').type('Prueba E2E RF-16 TC-M09-G19 Offline');
+
+    cy.contains('button', 'Registrar ciclo').click();
+
+    // Validar que aparece en la tabla con badge "Pendiente de sincronización" e ID temporal negativo
+    cy.contains('tr', nombreCicloOffline, { timeout: 10000 }).scrollIntoView().should('be.visible').within(() => {
+      cy.contains('Pendiente de sincronización').should('be.visible');
+      cy.get('td').first().invoke('text').should('match', /#-\d+/);
+    });
+
+    // Captura 02: Estado OFFLINE con nuevo ciclo encolado y badge pendienteSync
+    cy.screenshot('02_ui_ciclos_cachama_offline', { overwrite: true }).then(() => {
+      checks.push({
+        id: 'CP-2',
+        nombre: 'Soporte y Creación UI Offline en Sección Ciclos Biológicos de Cachama Blanca',
+        tipo: 'CHECK',
+        esperado: 'Botón "Nuevo ciclo" habilitado, alerta "Sin conexión" visible y ciclo creado localmente con badge "Pendiente de sincronización"',
+        obtenido: 'Botón "Nuevo ciclo" habilitado en offline, alerta visible, registro añadido a Dexie con ID temporal y badge pendienteSync',
+        resultado: 'OK',
+        detalles: `Registro "${nombreCicloOffline}" encolado exitosamente con ID temporal en modo offline.`,
       });
     });
 
-    // Paso 5: Restablecer conexión ONLINE en la ventana
+    // Paso 5: Restablecer conexión ONLINE y verificar sincronización diferida automática
+    cy.intercept('POST', '**/configuracion/ciclos').as('syncPost');
+
     cy.window().then((win) => {
       Object.defineProperty(win.navigator, 'onLine', { configurable: true, value: true });
       win.dispatchEvent(new win.Event('online'));
     });
 
-    cy.wait(1000);
+    // Esperar sincronización automática disparada por useSyncOnReconnect
+    cy.wait('@syncPost', { timeout: 15000 }).then((interception) => {
+      const resp = interception.response;
+      const exito = !!resp && (resp.statusCode === 200 || resp.statusCode === 201);
+      if (exito && resp?.body && resp.body.id_ciclo_biologico) {
+        createdCicloId = resp.body.id_ciclo_biologico;
+      }
 
-    // Captura 03: Estado ONLINE restablecido en la misma vista
-    cy.screenshot('03_ui_ciclos_cachama_online_restablecido', { overwrite: true });
+      // Recargar la tabla para reflejar el estado sincronizado con el backend
+      cy.get('button[aria-label="Recargar ciclos"]').click();
 
-    // Paso 6: CP-3 - Registro Base de Parámetros de Ciclo Biológico (Online)
-    cy.then(() => {
-      const payloadCiclo = {
-        id_especie: 4,
-        nombre: `Fase Alevinaje Test ${Date.now()}`,
-        duracion_dias: 45,
-        descripcion: 'Prueba E2E RF-16 TC-M09-G19',
-      };
-
-      cy.request({
-        method: 'POST',
-        url: `${apiBase}/configuracion/ciclos`,
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-        body: payloadCiclo,
-        failOnStatusCode: false,
-      }).then((resp) => {
-        const exito = resp.status === 201 || resp.status === 200;
-        if (exito && resp.body && resp.body.id_ciclo_biologico) {
-          createdCicloId = resp.body.id_ciclo_biologico;
+      // Verificar que el ciclo ahora muestra el ID definitivo del backend y ya no tiene badge pendiente
+      cy.contains('tr', nombreCicloOffline, { timeout: 10000 }).scrollIntoView().should('be.visible').within(() => {
+        cy.contains('Pendiente de sincronización').should('not.exist');
+        if (createdCicloId) {
+          cy.get('td').first().invoke('text').should('eq', `#${createdCicloId}`);
         }
-
-        // Captura 04: Confirmación del ciclo de prueba creado (HTTP 201)
-        cy.screenshot('04_registro_ciclo_alevinaje_resultado', { overwrite: true });
-
-        checks.push({
-          id: 'CP-3',
-          nombre: 'Registro Base de Parámetros de Ciclo Biológico (Online)',
-          tipo: 'CHECK',
-          esperado: 'HTTP 201/200 con objeto de ciclo biológico creado',
-          obtenido: `HTTP ${resp.status} - ${JSON.stringify(resp.body)}`,
-          resultado: exito ? 'OK' : 'FALLA',
-          detalles: exito
-            ? `Ciclo creado exitosamente con ID #${createdCicloId}`
-            : `Error al registrar ciclo biológico: ${resp.status}`,
-        });
-
-        expect(exito, 'Registro de ciclo biológico debe retornar 201/200').to.be.true;
       });
+
+      // Captura 03: Estado ONLINE restablecido
+      cy.screenshot('03_ui_ciclos_cachama_online_restablecido', { overwrite: true });
+      // Captura 04: Registro de ciclo sincronizado definitivamente
+      cy.screenshot('04_registro_ciclo_alevinaje_resultado', { overwrite: true });
+
+      checks.push({
+        id: 'CP-3',
+        nombre: 'Sincronización Diferida Automática al Recuperar Conectividad',
+        tipo: 'CHECK',
+        esperado: 'Disparo de replay() por useSyncOnReconnect, HTTP 201/200 del backend y remoción del badge pendienteSync',
+        obtenido: exito
+          ? `HTTP ${resp?.statusCode} - Ciclo sincronizado exitosamente con ID definitivo #${createdCicloId}`
+          : `Fallo en respuesta de sincronización: HTTP ${resp?.statusCode}`,
+        resultado: exito ? 'OK' : 'FALLA',
+        detalles: `El ciclo local se sincronizó automáticamente con el backend recibiendo el ID #${createdCicloId}.`,
+      });
+
+      expect(exito, 'Sincronización del ciclo debe retornar 201/200').to.be.true;
     });
 
     // Paso 7: CP-4 & CP-5 Checkpoints
@@ -322,11 +347,11 @@ describe('TC-M09-G19 · Sincronización offline de parámetros de ciclo biológi
       checks.push({
         id: 'CP-5',
         nombre: 'Verificación de Modelo de Sincronización Offline (PWA)',
-        tipo: 'OBSERVACION',
-        esperado: 'Cola de sincronización offline (syncQueue) para parámetros de ciclos biológicos',
-        obtenido: 'La PWA implementa modelo Online-Only para configuración de ciclos (botón deshabilitado offline en sección de la especie)',
-        resultado: 'OBSERVACION',
-        detalles: 'Se documenta como hallazgo de arquitectura. La PWA previene inconsistencias deshabilitando la escritura sin red.',
+        tipo: 'CHECK',
+        esperado: 'Cola de sincronización offline (syncQueue/Dexie) con sincronización diferida al reconectar',
+        obtenido: 'Arquitectura offline-first confirmada: creación offline encolada y sincronizada exitosamente al reconectar (commit 88ca728, PR #60)',
+        resultado: 'OK',
+        detalles: `Ciclo #${createdCicloId} persistido localmente sin red y sincronizado con el backend al reconectar.`,
       });
     });
   });

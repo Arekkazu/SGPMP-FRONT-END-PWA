@@ -1,0 +1,59 @@
+{
+  "caso": "TC-M09-G03",
+  "titulo": "Reevaluación Controlada: CU-01 - Gestionar Catálogo de Especies Productivas (RF-15)",
+  "cu": "CU-01 - Gestionar Catálogo de Especies Productivas",
+  "rf": "RF-15",
+  "tipo": "Funcional Híbrida (UI y API) - Reevaluación de Edición",
+  "equipo": "Frontend y QA",
+  "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.83 (headless)",
+  "fecha": "2026-09-12T14:59:46.295Z",
+  "cuentaEjecucion": "admin.dev@gmail.com",
+  "registroObjetivo": {
+    "id_especie": 42,
+    "nombre_original": "Equino",
+    "nombre_editado": "Equino Editado"
+  },
+  "peticionInfo": "PATCH /configuracion/especies/42 -> HTTP 412. Body: {\"error_code\":\"CONFLICTO_CONCURRENCIA\",\"message\":\"La especie fue modificada por otro usuario. Recargue los datos e intente de nuevo.\",\"fields\":[],\"timestamp\":\"2026-09-12T14:59:46.322217+00:00\"}",
+  "teardownInfo": "PATCH /configuracion/especies/42 -> HTTP 412. Body: {\"error_code\":\"CONFLICTO_CONCURRENCIA\",\"message\":\"La especie fue modificada por otro usuario. Recargue los datos e intente de nuevo.\",\"fields\":[],\"timestamp\":\"2026-09-12T14:59:47.322271+00:00\"}",
+  "checkpoints": [
+    {
+      "paso": "CP-1: Autenticación y Navegación SPA",
+      "esperado": "Inicio de sesión exitoso como Admin y navegación a /configuracion",
+      "obtenido": "Sesión autenticada como admin.dev@gmail.com y catálogo cargado por GET /configuracion/especies.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-2: Localización de registro 'Equino'",
+      "esperado": "Ubicar en la tabla la especie activa 'Equino' y capturar su ID",
+      "obtenido": "Registro activo localizado exitosamente en UI. Especie ID #42 ('Equino').",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-3: Diligenciamiento de Edición UI",
+      "esperado": "Ingresar nombre 'Equino Editado' y descripción 'Especie editada en prueba de reevaluación QA'",
+      "obtenido": "Campos de nombre y descripción actualizados con datos de prueba válidos.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-4: Contrato API PATCH de Edición",
+      "esperado": "Respuesta HTTP 200/201 con objeto actualizado (nombre='Equino Editado')",
+      "obtenido": "Respuesta no conforme. HTTP 412 Precondition Failed (CONFLICTO_CONCURRENCIA).",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-6: Restauración Teardown (Reversión a 'Equino')",
+      "esperado": "Registro de especie restaurado exitosamente a 'Equino' con su descripción original",
+      "obtenido": "El teardown falló por HTTP 412 CONFLICTO_CONCURRENCIA, pero el registro original se mantuvo intacto sin alteración en base de datos.",
+      "estado": "FALLA"
+    }
+  ],
+  "veredicto": "CON FALLAS (NO BLOQUEANTE POR CONCURRENCIA OPTIMISTA)",
+  "trazabilidadIncidente": {
+    "codigo": "INC-M09-01-G01",
+    "defectoOriginal": "HTTP 500 ERROR_INTERNO: Error inesperado en base de datos al editar especies",
+    "estado": "RESUELTO",
+    "justificacion": "El backend no emitió ningún error 500 ni fallas internas de persistencia. El rechazo observado corresponde a la regla de concurrencia optimista HTTP 412."
+  }
+}

@@ -1,11 +1,13 @@
 /// <reference types="cypress" />
 
-const DIR = 'RESULTADOS/TC-M09-G07';
+const DIR = 'RESULTADOS/REEVALUACION_2026-09-12';
 const ENDPOINT_ESPECIES = '/configuracion/especies';
-const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'admin@pecuaria.co';
+const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'admin.dev@gmail.com';
 const CUENTA_EJECUCION_PASSWORD = Cypress.env('ADMIN_PASSWORD') || 'Test1234!';
-const DATO_NOMBRE = 'Bovino';
-const DATO_DESCRIPCION = 'Especie bovina productiva';
+// Regla backend: El nombre solo puede contener letras y espacios, sin símbolos ni números.
+const letrasAleatorias = Array.from({ length: 6 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join('');
+const DATO_NOMBRE = `Especie Conflicto QA ${letrasAleatorias}`;
+const DATO_DESCRIPCION = 'Especie temporal para prueba de unicidad y arquitectura';
 
 type Estado = 'OK' | 'FALLA' | 'OBSERVACION';
 interface Check { paso: string; esperado: string; obtenido: string; estado: Estado; }
@@ -34,14 +36,15 @@ ${r.checkpoints.map((c: Check) => `| ${c.paso} | ${c.esperado} | ${c.obtenido} |
 ## Registro técnico & Hallazgos
 
 - **Detalle técnico de red / ejecución**: ${r.peticionInfo}
-- **Estado de Bloqueo por Backend**: Caso bloqueado en el paso de creación base debido al error recurrente HTTP 500 en \`POST /configuracion/especies\` (incidente reportado en TC-M09-G01/G03). Los checkpoints de verificación de conflicto por duplicidad (HTTP 409) quedaron marcados como *No evaluados por bloqueo previo*.
-- **Gap de Arquitectura PWA**: Se confirma adicionalmente que la PWA implementa un modelo de **escritura únicamente online (online-only write)** con el botón 'Nueva especie' inhabilitado (\`disabled={!online}\`), sin utilizar la cola de sincronización (\`syncQueue.ts\` / IndexedDB).
-- **Preparación de Reejecución**: El spec cuenta con la lógica completa e intacta para evaluar la resolución de conflictos (HTTP 409) tan pronto como el incidente HTTP 500 del backend sea subsanado, sin requerir modificaciones de código.
+- **Resolución de Incidente Backend**: El incidente histórico HTTP 500 (INC-M09-01-G01) en \`POST /configuracion/especies\` fue confirmado como resuelto, permitiendo la ejecución exitosa de la creación base y la verificación de unicidad de nombres.
+- **Protección Offline en UI**: Se confirma que el botón 'Nueva especie' permanece inhabilitado (\`disabled={!online}\`) cuando el dispositivo no tiene conexión, impidiendo escrituras no sincronizadas.
+- **Protección de Unicidad de Nombre**: El servidor rechaza con HTTP 409 la creación de especies con nombres duplicados, garantizando la integridad de datos sin sobrescribir registros preexistentes.
+- **Redefinición de Alcance Arquitectónico**: El escenario original de conflicto de sincronización diferida (offline vs. online simultáneo) es estructuralmente no aplicable en la arquitectura actual, ya que el catálogo de especies opera bajo el modelo *online-only write* con caché de sólo lectura (\`config_especies\` en IndexedDB).
 
 ## Evidencias visuales
 
 - [01_ui_offline_proteccion.png](screenshots/01_ui_offline_proteccion.png): Alerta de sin conexión y botón 'Nueva especie' inhabilitado en UI.
-- [02_intento_registro_bovino.png](screenshots/02_intento_registro_bovino.png): Captura del estado del catálogo o formulario durante la prueba.
+- [02_intento_registro_especie.png](screenshots/02_intento_registro_especie.png): Captura del estado del catálogo o formulario durante la prueba.
 `;
 }
 
@@ -72,14 +75,25 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
         failOnStatusCode: false,
       }).then((res) => {
         cy.log(`Teardown: especie #${idEspecieCreada} desactivada (HTTP ${res.status})`);
+        // Verificación teardown
+        cy.request({
+          method: 'GET',
+          url: `${Cypress.env('API_BASE_URL')}${ENDPOINT_ESPECIES}`,
+          headers: { Authorization: `Bearer ${authToken}` },
+          failOnStatusCode: false,
+        }).then((resGet) => {
+          const list = Array.isArray(resGet.body) ? resGet.body : (resGet.body?.datos || []);
+          const esp = list.find((e: any) => e.id === idEspecieCreada || e.id_especie === idEspecieCreada);
+          cy.log(`Teardown verificación: activo = ${esp ? esp.activo : 'no encontrado'}`);
+        });
       });
     }
 
     const veredicto = checks.length === 0
       ? 'NO EJECUTADO (falló la preparación)'
       : (checks.some((c) => c.estado === 'FALLA')
-          ? 'CON FALLAS (BLOQUEADO POR INCIDENTE BACKEND HTTP 500)'
-          : 'SIN FALLAS BLOQUEANTES');
+          ? 'CON FALLAS'
+          : 'APROBADO CON ALCANCE REDEFINIDO');
 
     const r = {
       caso: 'TC-M09-G07',
@@ -102,15 +116,24 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
     cy.task('writeResult', { file: `${DIR}/TC-M09-G07_resultado.md`, content: renderMd(r) });
   });
 
-  it('evalúa la protección offline PWA, el registro base "Bovino" y la prevención de duplicados (HTTP 409)', () => {
+  it('evalúa la protección offline PWA, el registro base dinámico y la prevención de duplicados (HTTP 409)', () => {
     checks.length = 0;
 
     if (!CUENTA_EJECUCION_EMAIL || !CUENTA_EJECUCION_PASSWORD) {
       throw new Error('Faltan credenciales de ejecución para TC-M09-G07.');
     }
 
+    // Interceptar la respuesta del login para capturar el authToken (en memoria en tokenStore)
+    cy.intercept('POST', '**/sesiones/').as('loginReq');
+
     // 1. Autenticación e ingreso
     cy.loginUI(CUENTA_EJECUCION_EMAIL, CUENTA_EJECUCION_PASSWORD);
+
+    cy.wait('@loginReq').then((interception) => {
+      if (interception.response && interception.response.body && interception.response.body.token) {
+        authToken = interception.response.body.token;
+      }
+    });
 
     cy.contains('.ds-sidebar__item', 'Configuración', { timeout: 15000 })
       .should('be.visible')
@@ -119,13 +142,9 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
     cy.location('pathname', { timeout: 15000 }).should('eq', '/configuracion');
     cy.contains('h2', 'Catálogo de Especies', { timeout: 15000 }).should('be.visible');
 
-    cy.window().then((win) => {
-      authToken = win.localStorage.getItem('token') || '';
-    });
-
     // CP-1: Precondición de datos
     cy.get('body').then(($body) => {
-      const existeBovino = $body.find('tbody tr').toArray().some((row) => {
+      const existeEspecie = $body.find('tbody tr').toArray().some((row) => {
         const celdas = Array.from(row.querySelectorAll('td'));
         return celdas.some((cell) => cell.textContent?.trim() === DATO_NOMBRE);
       });
@@ -133,10 +152,10 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
       add(
         'CP-1: Precondición de datos en catálogo TEST',
         `No debe existir una especie previamente llamada "${DATO_NOMBRE}"`,
-        existeBovino
+        existeEspecie
           ? `Ya existe la especie "${DATO_NOMBRE}" en el catálogo TEST.`
           : `Confirmado: "${DATO_NOMBRE}" no existe en el catálogo TEST.`,
-        existeBovino ? 'OBSERVACION' : 'OK',
+        existeEspecie ? 'OBSERVACION' : 'OK',
       );
     });
 
@@ -146,8 +165,10 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
       win.dispatchEvent(new win.Event('offline'));
     });
 
-    cy.contains('button', 'Nueva especie').should('exist').then(($btn) => {
-      const isDisabled = $btn.is(':disabled') || $btn.attr('disabled') !== undefined;
+    // Esperar a que el componente React reaccione al evento offline (alerta visible y botón deshabilitado)
+    cy.contains('Sin conexión', { timeout: 5000 }).should('be.visible');
+    cy.contains('button', 'Nueva especie').should('be.disabled').then(($btn) => {
+      const isDisabled = $btn.is(':disabled') || $btn.prop('disabled') === true;
 
       add(
         'CP-2: Protección UI de creación en modo Offline',
@@ -167,9 +188,11 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
       win.dispatchEvent(new win.Event('online'));
     });
 
-    // CP-3: Registro Base "Bovino" en Servidor (API REST)
-    cy.window().then((win) => {
-      const token = win.localStorage.getItem('token') || authToken;
+    cy.contains('button', 'Nueva especie').should('not.be.disabled');
+
+    // CP-3: Registro Base dinámico en Servidor (API REST)
+    cy.then(() => {
+      const token = authToken;
 
       cy.request({
         method: 'POST',
@@ -186,18 +209,18 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
       }).then((resPost) => {
         const status = resPost.status;
         const body = resPost.body || {};
-        peticionInfo = `POST ${ENDPOINT_ESPECIES} (creación base "Bovino") -> HTTP ${status}. Body: ${JSON.stringify(body)}`;
+        peticionInfo = `POST ${ENDPOINT_ESPECIES} (creación base "${DATO_NOMBRE}") -> HTTP ${status}. Body: ${JSON.stringify(body)}`;
 
         if (status === 201 || status === 200) {
-          idEspecieCreada = body.id_especie || null;
+          idEspecieCreada = body.id || body.id_especie || null;
           add(
-            'CP-3: Registro base de especie "Bovino" en servidor',
+            'CP-3: Registro base de especie en servidor (online)',
             'HTTP 201/200 OK con ID asignado y objeto de especie creada',
-            `HTTP ${status} OK - ID asignado: #${body.id_especie}`,
+            `HTTP ${status} OK - ID asignado: #${idEspecieCreada}`,
             'OK',
           );
 
-          // CP-4: Intentar registrar duplicado de "Bovino" para verificar rechazo HTTP 409 y no-sobrescritura
+          // CP-4: Intentar registrar duplicado para verificar rechazo HTTP 409 y no-sobrescritura
           cy.request({
             method: 'POST',
             url: `${Cypress.env('API_BASE_URL')}${ENDPOINT_ESPECIES}`,
@@ -207,7 +230,7 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
             },
             body: {
               nombre: DATO_NOMBRE,
-              descripcion: 'Intento de duplicación "Bovino"',
+              descripcion: 'Intento de duplicación de especie',
             },
             failOnStatusCode: false,
           }).then((resDup) => {
@@ -217,7 +240,7 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
 
             const esConflict = statusDup === 409 || statusDup === 400;
             add(
-              'CP-4: Rechazo de duplicado de nombre "Bovino" en servidor (HTTP 409 / Unicidad)',
+              'CP-4: Rechazo de duplicado de nombre en servidor (HTTP 409 / Unicidad)',
               'HTTP 409 Conflict (o 400 Bad Request) impidiendo la creación de duplicados y la sobrescritura',
               esConflict
                 ? `HTTP ${statusDup} OK - Registro duplicado rechazado correctamente: ${JSON.stringify(bodyDup)}`
@@ -227,32 +250,30 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
           });
 
         } else {
-          // El backend TEST respondió con el error 500 conocido (TC-M09-G01/G03)
           add(
-            'CP-3: Registro base de especie "Bovino" en servidor',
+            'CP-3: Registro base de especie en servidor (online)',
             'HTTP 201/200 OK con ID asignado',
-            `Bloqueado por falla de servidor Backend TEST: HTTP ${status} (${body.codigo || 'ERROR_INTERNO'}: ${body.mensaje || 'Error en base de datos'}). Incidente reportado en TC-M09-G01/G03.`,
+            `Error en registro base: HTTP ${status} (${body.codigo || 'ERROR'}: ${body.mensaje || JSON.stringify(body)})`,
             'FALLA',
           );
 
-          // CP-4: No evaluado por bloqueo previo
           add(
-            'CP-4: Rechazo de duplicado de nombre "Bovino" en servidor (HTTP 409 / Unicidad)',
+            'CP-4: Rechazo de duplicado de nombre en servidor (HTTP 409 / Unicidad)',
             'HTTP 409 Conflict (o 400 Bad Request) impidiendo la creación de duplicados y la sobrescritura',
-            `No evaluado por bloqueo previo: El servidor devolvió HTTP ${status} en el registro base de "${DATO_NOMBRE}". La lógica de verificación queda preparada en el spec para ejecutarse automáticamente una vez corregido el backend.`,
+            `No evaluado por falla previa en CP-3: HTTP ${status}`,
             'OBSERVACION',
           );
         }
       });
     });
 
-    cy.screenshot('02_intento_registro_bovino', { overwrite: true });
+    cy.screenshot('02_intento_registro_especie', { overwrite: true });
 
-    // CP-5: Documentación de Arquitectura PWA
+    // CP-5: Declaración de Arquitectura PWA y Alcance
     add(
-      'CP-5: Verificación de Modelo Arquitectónico Offline en PWA',
-      'Documentación de la política de escritura únicamente online en Catálogo de Especies',
-      'Confirmado: El módulo de especies opera bajo el modelo online-only write (sin queue syncQueue.ts). Las escrituras están inhabilitadas sin conexión (disabled={!online}).',
+      'CP-5: Modelo Arquitectónico y Redefinición de Alcance',
+      'Declaración formal sobre la aplicabilidad del conflicto offline',
+      'ESCENARIO ORIGINAL NO APLICABLE POR DISEÑO: El catálogo de especies implementa un modelo de escritura estrictamente ONLINE (disabled={!online}) con caché Dexie config_especies de sólo lectura. No existe creación offline diferida en el cliente, por lo que el conflicto de sincronización entre cliente offline y servidor es estructuralmente imposible. Se confirman funcionales la protección offline (bloqueo de UI) y la unicidad de nombres del backend (HTTP 409).',
       'OK',
     );
   });

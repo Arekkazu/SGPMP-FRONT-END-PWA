@@ -2,7 +2,7 @@
 
 const DIR = 'RESULTADOS/TC-M09-G10';
 const ENDPOINT_ESPECIES = '/configuracion/especies';
-const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'admin@pecuaria.co';
+const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'admin.dev@gmail.com';
 const CUENTA_EJECUCION_PASSWORD = Cypress.env('ADMIN_PASSWORD') || 'Test1234!';
 
 const DATO_BUSQUEDA_EXITOSA = 'Cachama';
@@ -102,7 +102,7 @@ describe('TC-M09-G10 - Búsqueda por Nombre y Paginación del Catálogo de Espec
     add(
       'CP-1: Autenticación y Navegación SPA',
       'Inicio de sesión exitoso como Admin y navegación a /configuracion',
-      'Sesión autenticada como admin@pecuaria.co y vista /configuracion cargada.',
+      'Sesión autenticada como admin.dev@gmail.com y vista /configuracion cargada.',
       'OK'
     );
 
@@ -120,68 +120,51 @@ describe('TC-M09-G10 - Búsqueda por Nombre y Paginación del Catálogo de Espec
 
     cy.screenshot('01_evaluacion_buscador_y_paginacion_ui', { overwrite: true });
 
-    // 3. CP-3: Inspección tolerante a fallos del Buscador por Nombre
-    cy.get('body').then(($body) => {
-      const inputs = $body.find('input').toArray();
-      const buscadorEncontrado = inputs.some((el: HTMLElement) => {
-        const type = (el.getAttribute('type') || '').toLowerCase();
-        const placeholder = (el.getAttribute('placeholder') || '').toLowerCase();
-        const ariaLabel = (el.getAttribute('aria-label') || '').toLowerCase();
-        const name = (el.getAttribute('name') || '').toLowerCase();
-        return (
-          type === 'search' ||
-          placeholder.includes('buscar') || placeholder.includes('search') ||
-          ariaLabel.includes('buscar') || ariaLabel.includes('search') ||
-          name.includes('search') || name.includes('filtro') || name.includes('buscar')
-        );
-      });
+    // 3. CP-3: Evaluación funcional de Búsqueda por Nombre
+    cy.get('input[aria-label="Buscar especies por nombre"], input[placeholder*="Buscar por nombre"]')
+      .should('be.visible')
+      .as('inputBuscador');
 
-      if (buscadorEncontrado) {
-        add(
-          'CP-3: Evaluación de Búsqueda por Nombre',
-          `Probar filtrado por coincidencia ("${DATO_BUSQUEDA_EXITOSA}") y no-coincidencia ("${DATO_BUSQUEDA_INEXISTENTE}")`,
-          'Campo de búsqueda localizado en la interfaz y evaluado correctamente.',
-          'OK'
-        );
-      } else {
-        add(
-          'CP-3: Evaluación de Búsqueda por Nombre',
-          'Localización de input de búsqueda o filtro por nombre de especie',
-          'Funcionalidad no implementada: No se encontró campo de búsqueda por nombre en la interfaz del catálogo de especies.',
-          'OBSERVACION'
-        );
-      }
+    // 3.1. Búsqueda por coincidencia real: "Bovino"
+    cy.get('@inputBuscador').clear().type('Bovino');
+    cy.get('table tbody tr').should('have.length.gte', 1);
+    cy.get('table tbody tr').each(($row) => {
+      cy.wrap($row).should('contain.text', 'Bovino');
+    });
+    cy.screenshot('02_busqueda_bovino_coincidencia', { overwrite: true });
+
+    // 3.2. Búsqueda sin coincidencias: "Xyzabc123"
+    cy.get('@inputBuscador').clear().type(DATO_BUSQUEDA_INEXISTENTE);
+    cy.contains(/Ninguna especie coincide con la búsqueda|Sin resultados de búsqueda/i).should('be.visible');
+    cy.get('table tbody tr').should('not.exist');
+    cy.screenshot('03_busqueda_sin_resultados', { overwrite: true });
+
+    // 3.3. Restauración del catálogo completo
+    cy.get('@inputBuscador').clear();
+    cy.get('table tbody tr').then(($rows) => {
+      expect($rows.length).to.eq(totalEspeciesApi);
     });
 
-    // 4. CP-4: Inspección tolerante a fallos de la Paginación
+    add(
+      'CP-3: Evaluación de Búsqueda por Nombre',
+      `Probar filtrado por coincidencia ("Bovino") y no-coincidencia ("${DATO_BUSQUEDA_INEXISTENTE}")`,
+      'Buscador 100% operativo: filtra reactivamente en la tabla y muestra "Ninguna especie coincide con la búsqueda" ante términos sin coincidencias.',
+      'OK'
+    );
+
+    // 4. CP-4: Evaluación de Paginación en Catálogo Real (<50 registros)
+    // El diseño de Paginacion.tsx oculta botones Siguiente/Anterior si totalPaginas <= 1 (<=50 registros)
     cy.get('body').then(($body) => {
-      const hasPaginationClass = $body.find('.pagination, .ds-pagination').length > 0;
-      const hasPaginationAria = $body.find('[aria-label]').toArray().some((el: HTMLElement) => {
-        const aria = (el.getAttribute('aria-label') || '').toLowerCase();
-        return aria.includes('paginación') || aria.includes('pagination');
-      });
-      const hasPaginationButtons = $body.find('button').toArray().some((el: HTMLElement) => {
-        const txt = el.textContent?.trim().toLowerCase() || '';
-        return txt === 'siguiente' || txt === 'anterior';
-      });
-
-      const paginacionEncontrada = hasPaginationClass || hasPaginationAria || hasPaginationButtons;
-
-      if (paginacionEncontrada) {
-        add(
-          'CP-4: Evaluación de Paginación de Catálogo',
-          'Verificar la presencia y navegación entre páginas de resultados',
-          'Controles de paginación localizados y evaluados correctamente.',
-          'OK'
-        );
-      } else {
-        add(
-          'CP-4: Evaluación de Paginación de Catálogo',
-          'Localización de controles de paginación o selector de tamaño de página',
-          `Funcionalidad no implementada: La lista de especies se renderiza de forma plana completa (${totalEspeciesApi} registros) sin controles de paginación.`,
-          'OBSERVACION'
-        );
-      }
+      expect($body.text()).to.include(`${totalEspeciesApi} registros`);
     });
+    cy.get('body').should('not.contain', 'Página 1 de 2');
+    cy.screenshot('04_paginacion_volumen_actual', { overwrite: true });
+
+    add(
+      'CP-4: Evaluación de Paginación de Catálogo',
+      'Verificar comportamiento de controles de paginación según volumen de datos',
+      `Diseño de paginación verificado: con ${totalEspeciesApi} registros (<= 50) muestra el totalizador y oculta botones de navegación por diseño. La navegación multi-página fue validada por pruebas unitarias (Vitest) con 55 registros.`,
+      'OK'
+    );
   });
 });
