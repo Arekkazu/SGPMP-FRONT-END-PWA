@@ -1,0 +1,77 @@
+name: Dashboard de Pruebas DIU/UX
+
+on:
+  push:
+    branches: [ test ]
+    paths:
+      - 'testing/accesibilidad/axe/**'
+      - 'testing/visual/**'
+      - 'testing/accesibilidad/playwright.config.ts'
+      - 'scripts/generate-dashboard.mjs'
+      - '.github/workflows/dashboard.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # --- Accesibilidad ---
+      - name: Instalar dependencias (accesibilidad)
+        working-directory: testing/accesibilidad
+        run: npm ci
+
+      - name: Instalar navegadores de Playwright (accesibilidad)
+        working-directory: testing/accesibilidad
+        run: npx playwright install --with-deps chromium
+
+      - name: Correr pruebas de accesibilidad y generar reporte JSON
+        working-directory: testing/accesibilidad
+        run: npx playwright test --reporter=json > axe-results.json
+        continue-on-error: true
+
+      # --- Visual ---
+      - name: Instalar dependencias (visual)
+        working-directory: testing/visual
+        run: npm ci
+
+      - name: Instalar navegadores de Playwright (visual)
+        working-directory: testing/visual
+        run: npx playwright install --with-deps chromium
+
+      - name: Correr pruebas visuales y generar reporte JSON
+        working-directory: testing/visual
+        run: npx playwright test --reporter=json > visual-results.json
+        continue-on-error: true
+
+      # --- Generar el dashboard ---
+      - name: Generar dashboard.html
+        run: node scripts/generate-dashboard.mjs
+
+      - name: Preparar artefacto de GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dashboard
+
+  deploy:
+    needs: build-dashboard
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,3 +1,18 @@
+## [1.0.0-rc.22](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.21...v1.0.0-rc.22) (2026-09-13)
+
+### Bug Fixes
+
+* **a11y:** habilitar zoom en toda la app quitando restricciones del viewport ([56c46ca](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/56c46ca495b87d9bf554e87fbc29e7466085b109))
+* **design-system:** contraste AA en boton primario y accion de peligro en dark ([95edc36](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/95edc360ec8f7c96fbae165d5c04f58793d5ef0b))
+* **perfil:** agregar encabezado en los estados de carga y error de Mi Perfil ([497436b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/497436bab857535756d439374b4ea5637946006d))
+
+## [1.0.0-rc.21](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.20...v1.0.0-rc.21) (2026-09-11)
+
+### Bug Fixes
+
+* **auth:** avisar en login cuando el interceptor cierra la sesion sin mensaje ([c532a11](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c532a11ab98498c11084a386c3bb429230b005f6)), closes [#2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/2)
+* **configuration:** cumplir touch target de 48px en pestanas de configuracion ([c07d30b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c07d30b0dde527c0dd8ecc548c50af251b85b298)), closes [#3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/3)
+
 ## [1.0.0-rc.20](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.19...v1.0.0-rc.20) (2026-09-08)
 
 ### Features
