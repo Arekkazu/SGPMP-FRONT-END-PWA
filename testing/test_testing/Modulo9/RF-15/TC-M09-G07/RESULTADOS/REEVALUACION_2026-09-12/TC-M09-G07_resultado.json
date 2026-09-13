@@ -8,46 +8,46 @@
   "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
   "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
   "navegador": "chrome 152.0.7977.83",
-  "fecha": "2026-09-13T02:46:16.177Z",
-  "peticionInfo": "POST /configuracion/especies (creación base \"Especie Conflicto QA VONTSB\") -> HTTP 201. Body: {\"id_especie\":45,\"nombre\":\"Especie Conflicto Qa Vontsb\",\"descripcion\":\"Especie temporal para prueba de unicidad y arquitectura\",\"es_activo\":true,\"fecha_creacion\":\"2026-09-13T02:46:16.199121Z\",\"fecha_actualizacion\":null} | POST duplicado -> HTTP 409. Body: {\"error_code\":\"ESPECIE_DUPLICADA\",\"message\":\"La especie 'Especie Conflicto QA VONTSB' ya se encuentra registrada en el catálogo.\",\"fields\":[{\"field\":\"nombre\",\"message\":\"La especie 'Especie Conflicto QA VONTSB' ya se encuentra registrada en el catálogo.\"}],\"timestamp\":\"2026-09-13T02:46:16.341821+00:00\"}",
+  "fecha": "2026-09-13T03:04:44.100Z",
+  "peticionInfo": "POST /configuracion/especies (creación base \"Especie Conflicto QA FGXPLU\") -> HTTP 201. Body: {\"id_especie\":46,\"nombre\":\"Especie Conflicto Qa Fgxplu\",\"descripcion\":\"Especie temporal para prueba de unicidad y arquitectura\",\"es_activo\":true,\"fecha_creacion\":\"2026-09-13T03:04:44.033979Z\",\"fecha_actualizacion\":null} | POST duplicado -> HTTP 409. Body: {\"error_code\":\"ESPECIE_DUPLICADA\",\"message\":\"La especie 'Especie Conflicto QA FGXPLU' ya se encuentra registrada en el catálogo.\",\"fields\":[{\"field\":\"nombre\",\"message\":\"La especie 'Especie Conflicto QA FGXPLU' ya se encuentra registrada en el catálogo.\"}],\"timestamp\":\"2026-09-13T03:04:44.180767+00:00\"}",
   "checkpoints": [
     {
-      "paso": "CP-5: Modelo Arquitectónico y Redefinición de Alcance",
-      "esperado": "Declaración formal sobre la aplicabilidad del conflicto offline",
-      "obtenido": "ESCENARIO ORIGINAL NO APLICABLE POR DISEÑO: El catálogo de especies implementa un modelo de escritura estrictamente ONLINE (disabled={!online}) con caché Dexie config_especies de sólo lectura. No existe creación offline diferida en el cliente, por lo que el conflicto de sincronización entre cliente offline y servidor es estructuralmente imposible. Se confirman funcionales la protección offline (bloqueo de UI) y la unicidad de nombres del backend (HTTP 409).",
-      "estado": "OK"
+      "paso": "CP-5: Verificación de Flujo de Conflicto Offline y Registro de Defecto DEF-M09-02",
+      "esperado": "El sistema debe implementar el flujo alterno de conflicto diferido con mensaje específico ante colisión en servidor",
+      "obtenido": "NO IMPLEMENTADO (BLOQUEADO POR DEF-M09-02): Al no soportar creación offline de especies, el flujo de detección de conflicto al reconectar y notificación al usuario (\"Fallo de sincronización...\") no existe en el frontend. Se documenta formalmente como DEF-M09-02.",
+      "estado": "FALLA"
     },
     {
       "paso": "CP-1: Precondición de datos en catálogo TEST",
-      "esperado": "No debe existir una especie previamente llamada \"Especie Conflicto QA VONTSB\"",
-      "obtenido": "Confirmado: \"Especie Conflicto QA VONTSB\" no existe en el catálogo TEST.",
+      "esperado": "No debe existir una especie previamente llamada \"Especie Conflicto QA FGXPLU\"",
+      "obtenido": "Confirmado: \"Especie Conflicto QA FGXPLU\" no existe en el catálogo TEST.",
       "estado": "OK"
     },
     {
-      "paso": "CP-2: Protección UI de creación en modo Offline",
-      "esperado": "El botón \"Nueva especie\" debe estar inhabilitado (disabled) al estar offline",
-      "obtenido": "Botón \"Nueva especie\" inhabilitado correctamente en UI (disabled=true) al detectar estado offline.",
-      "estado": "OK"
+      "paso": "CP-2: Soporte de Creación Offline con Sincronización Diferida (RF-15)",
+      "esperado": "El sistema debe permitir registrar especies localmente en modo offline para sincronización diferida (botón habilitado con guardado en IndexedDB / syncQueue)",
+      "obtenido": "INCUMPLIMIENTO CONFIRMADO: El botón \"Nueva especie\" permanece inhabilitado (disabled={!online}) y la UI muestra \"Las acciones de escritura están deshabilitadas\". No existe alternativa de creación diferida en Dexie ni integración con syncQueue.ts.",
+      "estado": "FALLA"
     },
     {
       "paso": "CP-3: Registro base de especie en servidor (online)",
       "esperado": "HTTP 201/200 OK con ID asignado y objeto de especie creada",
-      "obtenido": "HTTP 201 OK - ID asignado: #45",
+      "obtenido": "HTTP 201 OK - ID asignado: #46",
       "estado": "OK"
     },
     {
       "paso": "CP-4: Rechazo de duplicado de nombre en servidor (HTTP 409 / Unicidad)",
       "esperado": "HTTP 409 Conflict (o 400 Bad Request) impidiendo la creación de duplicados y la sobrescritura",
-      "obtenido": "HTTP 409 OK - Registro duplicado rechazado correctamente: {\"error_code\":\"ESPECIE_DUPLICADA\",\"message\":\"La especie 'Especie Conflicto QA VONTSB' ya se encuentra registrada en el catálogo.\",\"fields\":[{\"field\":\"nombre\",\"message\":\"La especie 'Especie Conflicto QA VONTSB' ya se encuentra registrada en el catálogo.\"}],\"timestamp\":\"2026-09-13T02:46:16.341821+00:00\"}",
+      "obtenido": "HTTP 409 OK - Registro duplicado rechazado correctamente por el servidor: {\"error_code\":\"ESPECIE_DUPLICADA\",\"message\":\"La especie 'Especie Conflicto QA FGXPLU' ya se encuentra registrada en el catálogo.\",\"fields\":[{\"field\":\"nombre\",\"message\":\"La especie 'Especie Conflicto QA FGXPLU' ya se encuentra registrada en el catálogo.\"}],\"timestamp\":\"2026-09-13T03:04:44.180767+00:00\"}",
       "estado": "OK"
     }
   ],
-  "veredicto": "APROBADO CON ALCANCE REDEFINIDO",
+  "veredicto": "CON FALLAS (RECHAZADO) — INCUMPLIMIENTO DE RF-15",
   "hallazgos": [
-    "CP-5: Modelo Arquitectónico y Redefinición de Alcance -> ESCENARIO ORIGINAL NO APLICABLE POR DISEÑO: El catálogo de especies implementa un modelo de escritura estrictamente ONLINE (disabled={!online}) con caché Dexie config_especies de sólo lectura. No existe creación offline diferida en el cliente, por lo que el conflicto de sincronización entre cliente offline y servidor es estructuralmente imposible. Se confirman funcionales la protección offline (bloqueo de UI) y la unicidad de nombres del backend (HTTP 409). (OK)",
-    "CP-1: Precondición de datos en catálogo TEST -> Confirmado: \"Especie Conflicto QA VONTSB\" no existe en el catálogo TEST. (OK)",
-    "CP-2: Protección UI de creación en modo Offline -> Botón \"Nueva especie\" inhabilitado correctamente en UI (disabled=true) al detectar estado offline. (OK)",
-    "CP-3: Registro base de especie en servidor (online) -> HTTP 201 OK - ID asignado: #45 (OK)",
-    "CP-4: Rechazo de duplicado de nombre en servidor (HTTP 409 / Unicidad) -> HTTP 409 OK - Registro duplicado rechazado correctamente: {\"error_code\":\"ESPECIE_DUPLICADA\",\"message\":\"La especie 'Especie Conflicto QA VONTSB' ya se encuentra registrada en el catálogo.\",\"fields\":[{\"field\":\"nombre\",\"message\":\"La especie 'Especie Conflicto QA VONTSB' ya se encuentra registrada en el catálogo.\"}],\"timestamp\":\"2026-09-13T02:46:16.341821+00:00\"} (OK)"
+    "CP-5: Verificación de Flujo de Conflicto Offline y Registro de Defecto DEF-M09-02 -> NO IMPLEMENTADO (BLOQUEADO POR DEF-M09-02): Al no soportar creación offline de especies, el flujo de detección de conflicto al reconectar y notificación al usuario (\"Fallo de sincronización...\") no existe en el frontend. Se documenta formalmente como DEF-M09-02. (FALLA)",
+    "CP-1: Precondición de datos en catálogo TEST -> Confirmado: \"Especie Conflicto QA FGXPLU\" no existe en el catálogo TEST. (OK)",
+    "CP-2: Soporte de Creación Offline con Sincronización Diferida (RF-15) -> INCUMPLIMIENTO CONFIRMADO: El botón \"Nueva especie\" permanece inhabilitado (disabled={!online}) y la UI muestra \"Las acciones de escritura están deshabilitadas\". No existe alternativa de creación diferida en Dexie ni integración con syncQueue.ts. (FALLA)",
+    "CP-3: Registro base de especie en servidor (online) -> HTTP 201 OK - ID asignado: #46 (OK)",
+    "CP-4: Rechazo de duplicado de nombre en servidor (HTTP 409 / Unicidad) -> HTTP 409 OK - Registro duplicado rechazado correctamente por el servidor: {\"error_code\":\"ESPECIE_DUPLICADA\",\"message\":\"La especie 'Especie Conflicto QA FGXPLU' ya se encuentra registrada en el catálogo.\",\"fields\":[{\"field\":\"nombre\",\"message\":\"La especie 'Especie Conflicto QA FGXPLU' ya se encuentra registrada en el catálogo.\"}],\"timestamp\":\"2026-09-13T03:04:44.180767+00:00\"} (OK)"
   ]
 }

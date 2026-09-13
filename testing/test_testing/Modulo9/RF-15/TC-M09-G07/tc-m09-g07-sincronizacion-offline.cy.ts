@@ -37,14 +37,16 @@ ${r.checkpoints.map((c: Check) => `| ${c.paso} | ${c.esperado} | ${c.obtenido} |
 
 - **Detalle técnico de red / ejecución**: ${r.peticionInfo}
 - **Resolución de Incidente Backend**: El incidente histórico HTTP 500 (INC-M09-01-G01) en \`POST /configuracion/especies\` fue confirmado como resuelto, permitiendo la ejecución exitosa de la creación base y la verificación de unicidad de nombres.
-- **Protección Offline en UI**: Se confirma que el botón 'Nueva especie' permanece inhabilitado (\`disabled={!online}\`) cuando el dispositivo no tiene conexión, impidiendo escrituras no sincronizadas.
-- **Protección de Unicidad de Nombre**: El servidor rechaza con HTTP 409 la creación de especies con nombres duplicados, garantizando la integridad de datos sin sobrescribir registros preexistentes.
-- **Redefinición de Alcance Arquitectónico**: El escenario original de conflicto de sincronización diferida (offline vs. online simultáneo) es estructuralmente no aplicable en la arquitectura actual, ya que el catálogo de especies opera bajo el modelo *online-only write* con caché de sólo lectura (\`config_especies\` en IndexedDB).
+- **Protección de Unicidad de Nombre (Online)**: El servidor rechaza con HTTP 409 la creación de especies con nombres duplicados, garantizando la integridad de datos sin sobrescribir registros preexistentes.
+- **DEFECTO REGISTRADO [DEF-M09-02] - INCUMPLIMIENTO DE RF-15**:
+  - **Requisito Oficial RF-15**: La ficha técnica exige: (1) *"Modo offline: Si no hay conexión, las operaciones se almacenan localmente. Se sincronizan automáticamente al restablecer conexión."*, (2) Flujo alterno de conflicto: *"El sistema intenta sincronizar una nueva especie creada localmente, pero al llegar al servidor, el nombre ya fue tomado por otro usuario... El sistema marca el registro local con error y notifica al usuario en la próxima conexión."* con mensaje *"Fallo de sincronización. La especie creada en modo offline '[NOMBRE_ESPECIE]' ya existe en el servidor. Por favor, resuelva el conflicto manualmente."*, (3) Criterios de aceptación: *"En modo offline: El sistema permite registrar cambios localmente. Los cambios se sincronizan automáticamente al recuperar conexión."*
+  - **Comportamiento Actual del Software**: En \`ConfigurationPage.tsx\` (línea 159), el botón "Nueva especie" tiene \`disabled={!online}\` y el hook \`useEspecies.ts\` carece de integración con \`syncQueue.ts\`. La tabla Dexie \`config_especies\` solo opera como caché de lectura.
+  - **Severidad**: Alta. **Módulo afectado**: Módulo 9 (Catálogo de Especies). **Patrón de referencia de solución**: Módulo de Ciclos Biológicos (RF-16, commit \`88ca728\`).
 
 ## Evidencias visuales
 
-- [01_ui_offline_proteccion.png](screenshots/01_ui_offline_proteccion.png): Alerta de sin conexión y botón 'Nueva especie' inhabilitado en UI.
-- [02_intento_registro_especie.png](screenshots/02_intento_registro_especie.png): Captura del estado del catálogo o formulario durante la prueba.
+- [01_ui_offline_bloqueo_incumplimiento.png](screenshots/01_ui_offline_bloqueo_incumplimiento.png): Botón 'Nueva especie' inhabilitado y alerta de datos cacheados que evidencia la ausencia de creación offline requerida por RF-15.
+- [02_intento_registro_especie.png](screenshots/02_intento_registro_especie.png): Captura del estado del catálogo o formulario durante la prueba online.
 `;
 }
 
@@ -92,8 +94,8 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
     const veredicto = checks.length === 0
       ? 'NO EJECUTADO (falló la preparación)'
       : (checks.some((c) => c.estado === 'FALLA')
-          ? 'CON FALLAS'
-          : 'APROBADO CON ALCANCE REDEFINIDO');
+          ? 'CON FALLAS (RECHAZADO) — INCUMPLIMIENTO DE RF-15'
+          : 'SIN FALLAS BLOQUEANTES');
 
     const r = {
       caso: 'TC-M09-G07',
@@ -159,28 +161,30 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
       );
     });
 
-    // CP-2: Protección UI Offline
+    // CP-2: Evaluación de Soporte de Escritura Offline (RF-15)
     cy.window().then((win) => {
       Object.defineProperty(win.navigator, 'onLine', { configurable: true, value: false });
       win.dispatchEvent(new win.Event('offline'));
     });
 
-    // Esperar a que el componente React reaccione al evento offline (alerta visible y botón deshabilitado)
+    // Esperar a que el componente React reaccione al evento offline
     cy.contains('Sin conexión', { timeout: 5000 }).should('be.visible');
     cy.contains('button', 'Nueva especie').should('be.disabled').then(($btn) => {
       const isDisabled = $btn.is(':disabled') || $btn.prop('disabled') === true;
 
+      // Según RF-15, en modo offline el sistema DEBE permitir registrar cambios localmente para sincronización diferida.
+      // Que el botón esté disabled es el síntoma directo del INCUMPLIMIENTO.
       add(
-        'CP-2: Protección UI de creación en modo Offline',
-        'El botón "Nueva especie" debe estar inhabilitado (disabled) al estar offline',
+        'CP-2: Soporte de Creación Offline con Sincronización Diferida (RF-15)',
+        'El sistema debe permitir registrar especies localmente en modo offline para sincronización diferida (botón habilitado con guardado en IndexedDB / syncQueue)',
         isDisabled
-          ? 'Botón "Nueva especie" inhabilitado correctamente en UI (disabled=true) al detectar estado offline.'
-          : 'El botón "Nueva especie" permaneció habilitado durante estado offline.',
-        isDisabled ? 'OK' : 'FALLA',
+          ? 'INCUMPLIMIENTO CONFIRMADO: El botón "Nueva especie" permanece inhabilitado (disabled={!online}) y la UI muestra "Las acciones de escritura están deshabilitadas". No existe alternativa de creación diferida en Dexie ni integración con syncQueue.ts.'
+          : 'Botón "Nueva especie" habilitado para creación offline diferida.',
+        isDisabled ? 'FALLA' : 'OK',
       );
     });
 
-    cy.screenshot('01_ui_offline_proteccion', { overwrite: true });
+    cy.screenshot('01_ui_offline_bloqueo_incumplimiento', { overwrite: true });
 
     // Restablecer estado Online en ventana
     cy.window().then((win) => {
@@ -243,7 +247,7 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
               'CP-4: Rechazo de duplicado de nombre en servidor (HTTP 409 / Unicidad)',
               'HTTP 409 Conflict (o 400 Bad Request) impidiendo la creación de duplicados y la sobrescritura',
               esConflict
-                ? `HTTP ${statusDup} OK - Registro duplicado rechazado correctamente: ${JSON.stringify(bodyDup)}`
+                ? `HTTP ${statusDup} OK - Registro duplicado rechazado correctamente por el servidor: ${JSON.stringify(bodyDup)}`
                 : `Respuesta no conforme al intentar registrar duplicado. HTTP ${statusDup}. Body: ${JSON.stringify(bodyDup)}`,
               esConflict ? 'OK' : 'FALLA',
             );
@@ -269,12 +273,12 @@ describe('TC-M09-G07 - Sincronización Offline y Conflicto de Nombres de Especie
 
     cy.screenshot('02_intento_registro_especie', { overwrite: true });
 
-    // CP-5: Declaración de Arquitectura PWA y Alcance
+    // CP-5: Registro Formal del Defecto Arquitectónico contra RF-15
     add(
-      'CP-5: Modelo Arquitectónico y Redefinición de Alcance',
-      'Declaración formal sobre la aplicabilidad del conflicto offline',
-      'ESCENARIO ORIGINAL NO APLICABLE POR DISEÑO: El catálogo de especies implementa un modelo de escritura estrictamente ONLINE (disabled={!online}) con caché Dexie config_especies de sólo lectura. No existe creación offline diferida en el cliente, por lo que el conflicto de sincronización entre cliente offline y servidor es estructuralmente imposible. Se confirman funcionales la protección offline (bloqueo de UI) y la unicidad de nombres del backend (HTTP 409).',
-      'OK',
+      'CP-5: Verificación de Flujo de Conflicto Offline y Registro de Defecto DEF-M09-02',
+      'El sistema debe implementar el flujo alterno de conflicto diferido con mensaje específico ante colisión en servidor',
+      'NO IMPLEMENTADO (BLOQUEADO POR DEF-M09-02): Al no soportar creación offline de especies, el flujo de detección de conflicto al reconectar y notificación al usuario ("Fallo de sincronización...") no existe en el frontend. Se documenta formalmente como DEF-M09-02.',
+      'FALLA',
     );
   });
 });
