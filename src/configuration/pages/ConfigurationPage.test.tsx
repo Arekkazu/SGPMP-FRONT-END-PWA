@@ -35,11 +35,13 @@ function mockEspecies(especies: EspecieResponse[]) {
     error: null,
     saveError: null,
     fromCache: false,
+    conflictos: [],
     cargar: vi.fn(),
     registrar: vi.fn(),
     editar: vi.fn(),
     desactivar: vi.fn(),
     reactivar: vi.fn(),
+    resolverConflicto: vi.fn(),
   } as ReturnType<typeof useEspecies>);
 }
 

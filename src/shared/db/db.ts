@@ -221,6 +221,9 @@ export interface SyncOperation {
   payload: unknown;
   intentos: number;
   creadoEn: number;
+  /** #115 (RF-15): el backend rechazó esta operación en firme (4xx) al reintentarla — ver `syncQueue.replay`. */
+  conflicto?: boolean;
+  error?: string;
 }
 
 export class AppDB extends Dexie {
