@@ -1,3 +1,9 @@
+## [1.0.0-rc.24](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.23...v1.0.0-rc.24) (2026-09-14)
+
+### Bug Fixes
+
+* **biological_assets:** [#98](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/98) renderizar paginacion en el listado de activos ([f11b73e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f11b73e9c7dd651132b9864be1a9fa7e6ac529f3))
+
 ## [1.0.0-rc.23](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.22...v1.0.0-rc.23) (2026-09-13)
 
 ### Bug Fixes
