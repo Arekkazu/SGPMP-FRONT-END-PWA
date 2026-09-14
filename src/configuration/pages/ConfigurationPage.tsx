@@ -99,7 +99,7 @@ export function CatalogoTab() {
   const puedeEditar = usePermission(8, 3);
   const puedeDesact = usePermission(8, 4);
 
-  const { especies, loading, saving, error, saveError, fromCache, cargar, registrar, editar, desactivar, reactivar } = useEspecies();
+  const { especies, loading, saving, error, saveError, fromCache, conflictos, cargar, registrar, editar, desactivar, reactivar, resolverConflicto } = useEspecies();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
@@ -156,7 +156,6 @@ export function CatalogoTab() {
               variant="primary"
               size="sm"
               onClick={() => setModal({ tipo: 'crear' })}
-              disabled={!online}
             >
               <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('configurationpage.nueva_especie')}</Button>
           )}
@@ -164,11 +163,14 @@ export function CatalogoTab() {
       </div>
 
       {/* Alertas de estado */}
+      {/* #115 (RF-15): la creación ya no depende de estar online — el hook encola en
+          syncQueue/Dexie y sincroniza al reconectar (useSyncOnReconnect). Este aviso ya
+          no dice que las acciones están deshabilitadas: dice que quedan pendientes. */}
       {!online && (
         <Alert
           variant="warning"
           title={t('configurationpage.sin_conexion')}
-          description={t('configurationpage.mostrando_datos_cacheados_las_acciones_de')}
+          description={t('configurationpage.los_cambios_se_guardaran_localmente')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
@@ -186,6 +188,20 @@ export function CatalogoTab() {
       {accionError && (
         <Alert variant="error" title={t('configurationpage.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />
       )}
+      {conflictos.map((op) => (
+        <div key={op.id} style={{ marginBottom: 'var(--s4)' }}>
+          <Alert
+            variant="error"
+            title={t('configurationpage.conflicto_de_sincronizacion')}
+            description={op.error ?? t('configurationpage.no_se_pudo_sincronizar_esta_especie')}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--s2)' }}>
+            <Button variant="secondary" size="sm" onClick={() => resolverConflicto(op)}>
+              {t('configurationpage.descartar')}
+            </Button>
+          </div>
+        </div>
+      ))}
 
       {/* Búsqueda por nombre */}
       <div style={{ maxWidth: 320, marginBottom: 'var(--s4)' }}>
