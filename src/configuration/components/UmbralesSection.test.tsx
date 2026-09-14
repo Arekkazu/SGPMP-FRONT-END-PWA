@@ -80,6 +80,29 @@ beforeEach(() => {
   variablesApi.listar.mockReset().mockResolvedValue([TEMPERATURA, PH]);
 });
 
+describe('UmbralesSection — contraste de la columna Rango general (#116, INC-M09-102-G22)', () => {
+  it('el rango general se renderiza con un color de texto explícito, no heredado', async () => {
+    umbrales.listar.mockResolvedValue([
+      {
+        id_umbral_ambiental: 9, id_especie: 3, id_variable_ambiental: 1,
+        unidad_medida: '°C', valor_min: 10, valor_max: 30, es_activo: true,
+        fecha_actualizacion: null,
+        // Límites del nivel distintos del rango general para que solo la celda
+        // "Rango general" contenga "10" y "30" a la vez (el badge de nivel muestra
+        // 15–22, no 10/30).
+        niveles: [{ nivel: 'normal', limite_inferior: 15, limite_superior: 22 }],
+      },
+    ]);
+    render(<UmbralesSection idEspecie={3} />);
+
+    // La columna "Semaforización" también muestra 10 y 30 como etiquetas de la
+    // barra, así que el match tiene que ser el texto exacto "10 – 30" (con el
+    // guion en medio) que solo produce la celda "Rango general".
+    const celda = await screen.findByText((_, el) => el?.tagName === 'TD' && (el.textContent ?? '').includes('10 – 30'));
+    expect(celda).toHaveStyle({ color: 'var(--text-primary)' });
+  });
+});
+
 describe('UmbralesSection — validación cruzada RF-17', () => {
   it('rechaza en el cliente niveles con un hueco y no llama a la API', async () => {
     const user = userEvent.setup();
