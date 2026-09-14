@@ -9,6 +9,7 @@ import { Button } from '../../shared/design-system/Button';
 import { useActivos } from '../hooks/useActivos';
 import { ActivosFiltros, type FiltrosState } from '../components/ActivosFiltros';
 import { ActivosTable } from '../components/ActivosTable';
+import { Paginacion } from '../components/Paginacion';
 import { ESTADO_ID } from '../types';
 import type { ListarActivosFiltros } from '../types';
 import { RECURSO_ACTIVOS, RECURSO_AUDITORIA_M02, ACCION_C, ACCION_R } from '../rbac';
@@ -22,14 +23,22 @@ export function RegistryView() {
 
   const { activos, paginacion, loading, error, fromCache, cargar } = useActivos();
   const [filtros, setFiltros] = useState<FiltrosState>({ tipo: '', estado: '', busqueda: '' });
+  const [pagina, setPagina] = useState(1);
 
-  // Filtros de servidor (tipo, estado) — recargan al backend.
+  // Cambiar un filtro de servidor invalida la página actual: la 2 del filtro
+  // anterior puede no existir en el nuevo conjunto de resultados.
+  const cambiarFiltros = (next: FiltrosState) => {
+    setPagina(1);
+    setFiltros(next);
+  };
+
+  // Filtros de servidor (tipo, estado, página) — recargan al backend.
   useEffect(() => {
-    const params: ListarActivosFiltros = {};
+    const params: ListarActivosFiltros = { pagina };
     if (filtros.tipo) params.tipo = filtros.tipo;
     if (filtros.estado) params.id_estado = ESTADO_ID[filtros.estado];
     cargar(params);
-  }, [filtros.tipo, filtros.estado, cargar]);
+  }, [filtros.tipo, filtros.estado, pagina, cargar]);
 
   // Búsqueda cliente-side (identificador / especie).
   const visibles = useMemo(() => {
@@ -43,7 +52,7 @@ export function RegistryView() {
   }, [activos, filtros.busqueda]);
 
   const recargar = () => {
-    const params: ListarActivosFiltros = {};
+    const params: ListarActivosFiltros = { pagina };
     if (filtros.tipo) params.tipo = filtros.tipo;
     if (filtros.estado) params.id_estado = ESTADO_ID[filtros.estado];
     cargar(params);
@@ -121,12 +130,19 @@ export function RegistryView() {
           />
         )}
 
-        <ActivosFiltros value={filtros} onChange={setFiltros} />
+        <ActivosFiltros value={filtros} onChange={cambiarFiltros} />
 
         <ActivosTable
           activos={visibles}
           loading={loading}
           onAbrir={(id) => history.push(`/activos-biologicos/${id}`)}
+        />
+
+        <Paginacion
+          pagina={paginacion.pagina}
+          totalPaginas={paginacion.totalPaginas}
+          totalRegistros={paginacion.totalRegistros}
+          onCambiar={setPagina}
         />
       </div>
     </div>
