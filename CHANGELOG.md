@@ -1,3 +1,13 @@
+## [1.0.0-rc.25](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.24...v1.0.0-rc.25) (2026-09-14)
+
+### Features
+
+* **rf15:** [#115](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/115) permitir creacion offline en el catalogo de especies con sincronizacion diferida ([47306a3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/47306a345d7fdd3d90cc4a73af12a030c6160f71))
+
+### Bug Fixes
+
+* **rf17:** [#116](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/116) corregir contraste invisible en Rango general de Umbrales Ambientales ([bb2c5a0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/bb2c5a0b0ac6cd3c680bc4a601b3e10382bbbbc7))
+
 ## [1.0.0-rc.24](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.23...v1.0.0-rc.24) (2026-09-14)
 
 ### Bug Fixes
