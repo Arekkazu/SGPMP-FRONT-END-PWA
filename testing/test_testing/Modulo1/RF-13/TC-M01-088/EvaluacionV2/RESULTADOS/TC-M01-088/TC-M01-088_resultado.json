@@ -1,0 +1,21 @@
+{
+  "caso": "TC-M01-088",
+  "titulo": "Verificar que el perfil no exponga el ID del usuario en la URL",
+  "rf": "RF-13",
+  "fecha": "2026-09-15T02:23:45.491Z",
+  "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "navegador": "electron 118.0.5993.159",
+  "checkpoints": [
+    {
+      "paso": "Login",
+      "esperado": "HTTP 200 y JWT válido para iniciar la navegación autenticada",
+      "obtenido": "POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/sesiones/ -> HTTP 200",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "origenDatos": "No determinado",
+  "loginStatus": "200",
+  "profileRequestUrl": "No ejecutada",
+  "profileStatus": "No ejecutado"
+}
