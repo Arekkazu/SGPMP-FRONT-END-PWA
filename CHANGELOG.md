@@ -1,3 +1,11 @@
+## [1.1.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.1.0...v1.1.1) (2026-09-15)
+
+### Bug Fixes
+
+* **a11y:** habilitar zoom en toda la app quitando restricciones del viewport ([b2aeadc](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b2aeadca4ecf30387640cc0134c5bd32261c1a51))
+* **design-system:** contraste AA en boton primario y accion de peligro en dark ([f96a2dd](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f96a2ddf4911c9993cec5674bf78395bc8f49514))
+* **perfil:** agregar encabezado en los estados de carga y error de Mi Perfil ([20de531](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/20de531707f350042adf18c07b57386d401de325))
+
 ## [1.1.0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0...v1.1.0) (2026-09-12)
 
 ### Features
