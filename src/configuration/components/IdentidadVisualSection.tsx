@@ -404,7 +404,7 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
                       position: 'absolute',
                       top: -8,
                       right: -8,
-                      background: 'var(--sem-error)',
+                      background: 'var(--sem-error-solid)',
                       border: 'none',
                       borderRadius: 'var(--r-full)',
                       width: 20,

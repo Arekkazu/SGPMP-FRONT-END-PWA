@@ -45,6 +45,7 @@ export function PerfilPage() {
   if (loading) {
     return (
       <div style={{ padding: 'var(--s6)', maxWidth: 800, margin: '0 auto' }}>
+        <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--s5)' }}>{t('perfilpage.mi_perfil')}</h1>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
           {[1, 2, 3].map((i) => (
             <div key={i} style={{ height: 80, borderRadius: 'var(--r-lg)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }} />
@@ -58,6 +59,7 @@ export function PerfilPage() {
   if (error) {
     return (
       <div style={{ padding: 'var(--s6)' }}>
+        <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--s5)' }}>{t('perfilpage.mi_perfil')}</h1>
         <Alert variant="error" title={t('perfilpage.error_al_cargar_perfil')} description={error.message} />
       </div>
     );
