@@ -1,0 +1,4203 @@
+{
+  "collection": {
+    "_": {
+      "postman_id": "tc-m02-g24-collection-id"
+    },
+    "item": [
+      {
+        "id": "97a7f663-1a5c-422d-9c58-ca36b0cce5b3",
+        "name": "Paso 0.1 — Login Admin",
+        "request": {
+          "url": {
+            "path": [
+              "sesiones",
+              ""
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"correo_electronico\": \"{{admin_email}}\",\n  \"contrasena\": \"{{admin_password}}\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "7a719867-cdac-47e7-bd7c-3c652a8a6fea",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Login exitoso HTTP 200', function () {",
+                "    pm.response.to.have.status(200);",
+                "    var jsonData = pm.response.json();",
+                "    pm.expect(jsonData.token, 'Token de autenticación string').to.be.a('string');",
+                "    pm.collectionVariables.set('token', jsonData.token);",
+                "});"
+              ],
+              "_lastExecutionId": "f7079aae-076b-44ff-83f4-bd6214c234ce"
+            }
+          }
+        ]
+      },
+      {
+        "id": "1f355aa3-0730-4d51-bc0b-6714640217f3",
+        "name": "Paso 0.2 — Crear Ciclo Biológico Propio (RF-16)",
+        "request": {
+          "url": {
+            "path": [
+              "configuracion",
+              "ciclos"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"id_especie\": 4,\n  \"nombre\": \"{{ciclo_nombre}}\",\n  \"duracion_dias\": 90,\n  \"descripcion\": \"Ciclo autocontenido para suite Postman G24\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "2e843715-ad0c-4288-be59-1278bd98e02a",
+              "type": "text/javascript",
+              "exec": [
+                "pm.collectionVariables.set('ciclo_nombre', 'Ciclo G24 Postman ' + Date.now());"
+              ],
+              "_lastExecutionId": "f3e58de8-b1e6-4251-9270-efdc980bc547"
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "792537fc-f968-4a1a-abaf-33271f214807",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Creación de Ciclo Biológico HTTP 201', function () {",
+                "    pm.response.to.have.status(201);",
+                "    var jsonData = pm.response.json();",
+                "    pm.expect(jsonData.id_ciclo_biologico, 'id_ciclo_biologico numérico').to.be.a('number');",
+                "    pm.collectionVariables.set('ciclo_id', jsonData.id_ciclo_biologico);",
+                "});"
+              ],
+              "_lastExecutionId": "800b1d15-c0f9-4655-91c6-befb01c641af"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ade0d45d-16ec-48e5-b5d4-3d3e9219ce9a",
+        "name": "Paso 0.3 — Crear Lote Poblacional Propio (RF-33)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-14\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "db4f43cd-cb63-48fe-8d9b-51cac6e6dbf2",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Creación de Lote Poblacional HTTP 201', function () {",
+                "    pm.response.to.have.status(201);",
+                "    var jsonData = pm.response.json();",
+                "    pm.expect(jsonData.id_activo_biologico, 'id_activo_biologico numérico').to.be.a('number');",
+                "    pm.collectionVariables.set('lote_id', jsonData.id_activo_biologico);",
+                "});"
+              ],
+              "_lastExecutionId": "13d13e01-0159-43d7-88e2-360dd6af4297"
+            }
+          }
+        ]
+      },
+      {
+        "id": "7d0ff395-2d5f-4b25-8345-aa2b38f0494e",
+        "name": "Paso 0.4 — Asignar Fase Productiva (RF-37)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}",
+              "fases"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"id_ciclo_productiva\": {{ciclo_id}},\n  \"fecha_inicio\": \"2026-09-14\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "731c5d7f-39aa-4a38-bd79-70fa0d953d4d",
+              "type": "text/javascript",
+              "exec": [
+                "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                "    postman.setNextRequest(null);",
+                "}"
+              ],
+              "_lastExecutionId": "faafa8a3-c62c-4634-85f1-c0b3ef5fdbe1"
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "0ac50f15-d552-4f9d-9ac1-6e0d75128079",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Asignación de Fase RF-37 exitosa (HTTP 200 o 201)', function () {",
+                "    pm.expect(pm.response.code, 'HTTP Status de asignación de fase').to.be.oneOf([200, 201]);",
+                "});"
+              ],
+              "_lastExecutionId": "53db80d3-5cf3-4dce-a983-5d22fcda3560"
+            }
+          }
+        ]
+      },
+      {
+        "id": "0a1da4cb-b896-4c70-9f25-da36034c0b4c",
+        "name": "TC-M02-048 — Validar Métricas Solo Lectura C1 (RF-36)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "PATCH",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"cantidad_actual\": 999,\n  \"biomasa_total\": 9999.0,\n  \"densidad\": \"1.99\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "86318863-effc-41e1-b926-a1007e9071ba",
+              "type": "text/javascript",
+              "exec": [
+                "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                "    postman.setNextRequest(null);",
+                "}"
+              ]
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "4e4e6008-167f-4bab-b546-e12c260756fd",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('C1 (API): PATCH a métricas calculadas debe ser rechazado (HTTP 400 o 422)', function () {",
+                "    pm.expect(pm.response.code, 'Rechazo de modificación directa de métricas').to.be.oneOf([400, 422]);",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "7acba34c-c6c4-4deb-8e0d-7b6037feda74",
+        "name": "TC-M02-049 — Evento CRECIMIENTO (RF-39)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}",
+              "eventos",
+              "crecimiento"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"fecha_evento\": \"2026-09-14\",\n  \"valor_medicion\": 12.5,\n  \"tipo_agregacion\": \"PROMEDIO\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "5c80339a-13e3-4737-849c-ccf26f21857e",
+              "type": "text/javascript",
+              "exec": [
+                "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                "    postman.setNextRequest(null);",
+                "}"
+              ]
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "148327c2-cde1-4457-aaec-53efbdb85852",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Registro Evento CRECIMIENTO HTTP 201', function () {",
+                "    pm.response.to.have.status(201);",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "5a5862a6-eeea-4499-9f37-9cfad142ca5e",
+        "name": "TC-M02-049.1 — Verificación Post-Crecimiento C2 (RF-36 / RF-39)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "GET"
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "6d3ee939-f051-4512-ac8d-9656611ba51f",
+              "type": "text/javascript",
+              "exec": [
+                "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                "    postman.setNextRequest(null);",
+                "}"
+              ]
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "b304a6b5-a6d3-4e89-99bb-7f7ceeff628d",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('C2: Verificación Post-Crecimiento y Fórmula Biomasa', function () {",
+                "    pm.response.to.have.status(200);",
+                "    var jsonData = pm.response.json();",
+                "    var det = jsonData.detalle_poblacional;",
+                "    pm.expect(det, 'detalle_poblacional presente').to.exist;",
+                "    pm.expect(Number(det.peso_promedio), 'peso_promedio actualizado a 12.5').to.eq(12.5);",
+                "    var biomasaCalc = parseFloat(det.biomasa_total);",
+                "    var biomasaEsperada = Number(det.cantidad_actual) * 12.5;",
+                "    pm.expect(biomasaCalc, 'biomasa_total == cantidad_actual * 12.5').to.be.closeTo(biomasaEsperada, 0.01);",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "1d56e69b-b649-4000-b3af-a419877fdde9",
+        "name": "TC-M02-050 — Evento BAJA (RF-39)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}",
+              "eventos",
+              "baja"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"tipo_baja\": \"muerte\",\n  \"fecha_baja\": \"2026-09-14\",\n  \"motivo_baja\": \"Mortalidad de prueba Postman G24\",\n  \"cantidad_afectada\": 10\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "5823509b-9a1f-4f0f-b3f6-0157ff7ab94d",
+              "type": "text/javascript",
+              "exec": [
+                "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                "    postman.setNextRequest(null);",
+                "}"
+              ]
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "d08d6d8c-c2d5-4e5e-91fd-4e0b386e1d33",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Registro Evento BAJA HTTP 201', function () {",
+                "    pm.response.to.have.status(201);",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "26f642c9-8133-4ab8-bf45-0509db07c5b2",
+        "name": "TC-M02-050.1 — Verificación Post-Baja C3 (RF-36 / RF-39)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "GET"
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "9a2fc501-0602-4499-a8e0-d2a1311f9046",
+              "type": "text/javascript",
+              "exec": [
+                "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                "    postman.setNextRequest(null);",
+                "}"
+              ]
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "97acf15f-7590-42fa-9a35-f20b42afe89d",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('C3: Descuento de cantidad_actual a 90 y Recálculo de Métricas', function () {",
+                "    pm.response.to.have.status(200);",
+                "    var jsonData = pm.response.json();",
+                "    var det = jsonData.detalle_poblacional;",
+                "    pm.expect(det, 'detalle_poblacional presente').to.exist;",
+                "    pm.expect(Number(det.cantidad_actual), 'cantidad_actual descontada a 90').to.eq(90);",
+                "    var pesoProm = Number(det.peso_promedio);",
+                "    var biomasaCalc = parseFloat(det.biomasa_total);",
+                "    pm.expect(biomasaCalc, 'biomasa_total recalculada tras baja (90 * peso)').to.be.closeTo(90 * pesoProm, 0.01);",
+                "    if (det.densidad !== null && det.densidad !== undefined) {",
+                "        var densCalc = parseFloat(det.densidad);",
+                "        pm.expect(densCalc, 'densidad recalculada tras baja (90 / 500 m²)').to.be.closeTo(0.18, 0.001);",
+                "    }",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "a42920cf-30e0-4216-a476-3dd9c05a78ff",
+        "name": "TC-M02-056 — Validar Inmutabilidad Registro Original C4 (RF-33)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "GET"
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "7203063c-b64b-4c7f-a722-522de21c024a",
+              "type": "text/javascript",
+              "exec": [
+                "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                "    postman.setNextRequest(null);",
+                "}"
+              ]
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "f40c1b3c-f2a9-4c2a-ba13-c0bbed1a201e",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('C4: Inmutabilidad de datos originales de registro (RF-33)', function () {",
+                "    pm.response.to.have.status(200);",
+                "    var jsonData = pm.response.json();",
+                "    var det = jsonData.detalle_poblacional;",
+                "    pm.expect(det.cantidad_inicial, 'cantidad_inicial inmutable en 100').to.eq(100);",
+                "    pm.expect(Number(det.peso_promedio_inicial), 'peso_promedio_inicial inmutable en 10.0').to.eq(10.0);",
+                "    pm.expect(Number(det.cantidad_actual), 'Confirmar que eventos mutaron lote (actual != 100)').to.not.eq(100);",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "dc29a24f-856f-4ccd-b60c-44431b324017",
+        "name": "Teardown Lote (RF-44)",
+        "request": {
+          "url": {
+            "path": [
+              "activos-biologicos",
+              "{{lote_id}}",
+              "estado"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "PATCH",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"estado_nuevo\": \"BAJA\",\n  \"fecha_cambio_estado\": \"2026-09-14\",\n  \"motivo_cambio\": \"Teardown de prueba Postman G24\"\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "c1332e56-1fea-437c-b3ce-bec42758d074",
+              "type": "text/javascript",
+              "exec": [
+                "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                "    postman.setNextRequest(null);",
+                "}"
+              ]
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "09a8c687-41f3-44a4-8023-fee91b2f8bc0",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Teardown Lote HTTP 200 OK', function () {",
+                "    pm.response.to.have.status(200);",
+                "});"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "3195304e-b012-4336-a181-a792c5f7e7cd",
+        "name": "Teardown Ciclo (RF-16)",
+        "request": {
+          "url": {
+            "path": [
+              "configuracion",
+              "ciclos",
+              "{{ciclo_id}}",
+              "desactivar"
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "method": "PATCH"
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "6831c905-69e5-4250-9b7d-0ab790d27546",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Teardown Ciclo HTTP 200 OK', function () {",
+                "    pm.response.to.have.status(200);",
+                "});"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "event": [],
+    "variable": [
+      {
+        "type": "any",
+        "value": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+        "key": "base_url"
+      },
+      {
+        "type": "any",
+        "value": "administador.dev@gmail.com",
+        "key": "admin_email"
+      },
+      {
+        "type": "any",
+        "value": "Test1234!",
+        "key": "admin_password"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "token"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "ciclo_id"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "ciclo_nombre"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "lote_id"
+      }
+    ],
+    "info": {
+      "_postman_id": "tc-m02-g24-collection-id",
+      "name": "TC-M02-G24 — Gestión Poblacional RF-36 / RF-33 / RF-37 / RF-39",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "description": {
+        "content": "Colección de Postman rediseñada rigurosamente para verificar C1, C2, C3 y C4 sin ramas permisivas",
+        "type": "text/plain"
+      }
+    }
+  },
+  "environment": {
+    "id": "5a47f02d-4268-40ef-8d1c-d7d4b9bad5c0",
+    "values": [
+      {
+        "type": "any",
+        "value": "administador.dev@gmail.com",
+        "key": "admin_email"
+      },
+      {
+        "type": "any",
+        "value": "Test1234!",
+        "key": "admin_password"
+      }
+    ]
+  },
+  "globals": {
+    "id": "be2e32a1-156e-4490-a7df-19a7441a2943",
+    "values": []
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 6,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequests": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "tests": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 4,
+        "pending": 0,
+        "failed": 2
+      },
+      "testScripts": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequestScripts": {
+        "total": 2,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 486.25,
+      "responseMin": 177,
+      "responseMax": 1327,
+      "responseSd": 485.778434576917,
+      "dnsAverage": 0,
+      "dnsMin": 0,
+      "dnsMax": 0,
+      "dnsSd": 0,
+      "firstByteAverage": 0,
+      "firstByteMin": 0,
+      "firstByteMax": 0,
+      "firstByteSd": 0,
+      "started": 1789436710349,
+      "completed": 1789436712616
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 12,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "b2bb3804-7c63-410d-aeb2-ccd85d7aabc9",
+          "httpRequestId": "25a186a5-5b5f-4223-8e15-9d3c59a75e0a"
+        },
+        "item": {
+          "id": "97a7f663-1a5c-422d-9c58-ca36b0cce5b3",
+          "name": "Paso 0.1 — Login Admin",
+          "request": {
+            "url": {
+              "path": [
+                "sesiones",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo_electronico\": \"{{admin_email}}\",\n  \"contrasena\": \"{{admin_password}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "7a719867-cdac-47e7-bd7c-3c652a8a6fea",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login exitoso HTTP 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.token, 'Token de autenticación string').to.be.a('string');",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "});"
+                ],
+                "_lastExecutionId": "f7079aae-076b-44ff-83f4-bd6214c234ce"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "sesiones",
+              ""
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "c4ab482f-374e-43e5-a99d-bec9bb6a3dad",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "85",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"correo_electronico\": \"administador.dev@gmail.com\",\n  \"contrasena\": \"Test1234!\"\n}"
+          }
+        },
+        "response": {
+          "id": "21da1fec-4c42-4a07-a382-cbf66c8ceff3",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "406"
+            },
+            {
+              "key": "Content-Security-Policy",
+              "value": "default-src 'none'"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 15 Sep 2026 01:45:08 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "Set-Cookie",
+              "value": "refresh_token=9MGyy-sSdqwSueF6qSwGPACaj9iQeJnbydrykNjUXPw; HttpOnly; Max-Age=604799; Path=/; SameSite=lax; Secure"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=63072000; includeSubDomains"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "e5c96afd-4f62-43e6-ba69-403e9b97730c"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              116,
+              111,
+              107,
+              101,
+              110,
+              34,
+              58,
+              34,
+              101,
+              121,
+              74,
+              104,
+              98,
+              71,
+              99,
+              105,
+              79,
+              105,
+              74,
+              73,
+              85,
+              122,
+              73,
+              49,
+              78,
+              105,
+              73,
+              115,
+              73,
+              110,
+              82,
+              53,
+              99,
+              67,
+              73,
+              54,
+              73,
+              107,
+              112,
+              88,
+              86,
+              67,
+              74,
+              57,
+              46,
+              101,
+              121,
+              74,
+              122,
+              100,
+              87,
+              73,
+              105,
+              79,
+              105,
+              73,
+              120,
+              77,
+              68,
+              81,
+              105,
+              76,
+              67,
+              74,
+              113,
+              100,
+              71,
+              107,
+              105,
+              79,
+              105,
+              73,
+              120,
+              78,
+              122,
+              81,
+              52,
+              79,
+              67,
+              73,
+              115,
+              73,
+              110,
+              74,
+              118,
+              98,
+              67,
+              73,
+              54,
+              77,
+              83,
+              119,
+              105,
+              90,
+              88,
+              104,
+              119,
+              73,
+              106,
+              111,
+              120,
+              78,
+              122,
+              103,
+              53,
+              78,
+              68,
+              89,
+              49,
+              78,
+              84,
+              65,
+              53,
+              76,
+              67,
+              74,
+              112,
+              89,
+              88,
+              81,
+              105,
+              79,
+              106,
+              69,
+              51,
+              79,
+              68,
+              107,
+              48,
+              77,
+              122,
+              89,
+              51,
+              77,
+              68,
+              108,
+              57,
+              46,
+              81,
+              77,
+              117,
+              102,
+              86,
+              84,
+              111,
+              48,
+              65,
+              69,
+              82,
+              55,
+              83,
+              100,
+              121,
+              45,
+              53,
+              51,
+              105,
+              73,
+              116,
+              102,
+              67,
+              78,
+              77,
+              118,
+              98,
+              48,
+              118,
+              104,
+              49,
+              66,
+              71,
+              80,
+              53,
+              88,
+              111,
+              88,
+              77,
+              69,
+              70,
+              55,
+              115,
+              34,
+              44,
+              34,
+              116,
+              105,
+              112,
+              111,
+              34,
+              58,
+              34,
+              66,
+              101,
+              97,
+              114,
+              101,
+              114,
+              34,
+              44,
+              34,
+              101,
+              120,
+              112,
+              105,
+              114,
+              97,
+              95,
+              101,
+              110,
+              34,
+              58,
+              50,
+              56,
+              55,
+              57,
+              57,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              83,
+              101,
+              115,
+              105,
+              195,
+              179,
+              110,
+              32,
+              105,
+              110,
+              105,
+              99,
+              105,
+              97,
+              100,
+              97,
+              32,
+              101,
+              120,
+              105,
+              116,
+              111,
+              115,
+              97,
+              109,
+              101,
+              110,
+              116,
+              101,
+              46,
+              32,
+              83,
+              101,
+              32,
+              104,
+              97,
+              32,
+              99,
+              101,
+              114,
+              114,
+              97,
+              100,
+              111,
+              32,
+              97,
+              117,
+              116,
+              111,
+              109,
+              195,
+              161,
+              116,
+              105,
+              99,
+              97,
+              109,
+              101,
+              110,
+              116,
+              101,
+              32,
+              108,
+              97,
+              32,
+              115,
+              101,
+              115,
+              105,
+              195,
+              179,
+              110,
+              32,
+              97,
+              99,
+              116,
+              105,
+              118,
+              97,
+              32,
+              101,
+              110,
+              32,
+              111,
+              116,
+              114,
+              111,
+              115,
+              32,
+              100,
+              105,
+              115,
+              112,
+              111,
+              115,
+              105,
+              116,
+              105,
+              118,
+              111,
+              115,
+              32,
+              112,
+              111,
+              114,
+              32,
+              112,
+              111,
+              108,
+              195,
+              173,
+              116,
+              105,
+              99,
+              97,
+              115,
+              32,
+              100,
+              101,
+              32,
+              115,
+              101,
+              103,
+              117,
+              114,
+              105,
+              100,
+              97,
+              100,
+              32,
+              100,
+              101,
+              32,
+              115,
+              101,
+              115,
+              105,
+              195,
+              179,
+              110,
+              32,
+              195,
+              186,
+              110,
+              105,
+              99,
+              97,
+              46,
+              34,
+              44,
+              34,
+              112,
+              101,
+              114,
+              102,
+              105,
+              108,
+              95,
+              105,
+              110,
+              99,
+              111,
+              109,
+              112,
+              108,
+              101,
+              116,
+              111,
+              34,
+              58,
+              102,
+              97,
+              108,
+              115,
+              101,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 1327,
+          "responseSize": 406
+        },
+        "id": "97a7f663-1a5c-422d-9c58-ca36b0cce5b3",
+        "assertions": [
+          {
+            "assertion": "Login exitoso HTTP 200",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "59f07b13-6037-4e15-b056-3cd8e5da71ac",
+          "length": 12,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "1b962a36-f766-4102-82d0-f7cf1834cbfc"
+        },
+        "item": {
+          "id": "1f355aa3-0730-4d51-bc0b-6714640217f3",
+          "name": "Paso 0.2 — Crear Ciclo Biológico Propio (RF-16)",
+          "request": {
+            "url": {
+              "path": [
+                "configuracion",
+                "ciclos"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_especie\": 4,\n  \"nombre\": \"{{ciclo_nombre}}\",\n  \"duracion_dias\": 90,\n  \"descripcion\": \"Ciclo autocontenido para suite Postman G24\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "2e843715-ad0c-4288-be59-1278bd98e02a",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('ciclo_nombre', 'Ciclo G24 Postman ' + Date.now());"
+                ],
+                "_lastExecutionId": "f3e58de8-b1e6-4251-9270-efdc980bc547"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "792537fc-f968-4a1a-abaf-33271f214807",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Creación de Ciclo Biológico HTTP 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id_ciclo_biologico, 'id_ciclo_biologico numérico').to.be.a('number');",
+                  "    pm.collectionVariables.set('ciclo_id', jsonData.id_ciclo_biologico);",
+                  "});"
+                ],
+                "_lastExecutionId": "800b1d15-c0f9-4655-91c6-befb01c641af"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "configuracion",
+              "ciclos"
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMDQiLCJqdGkiOiIxNzQ4OCIsInJvbCI6MSwiZXhwIjoxNzg5NDY1NTA5LCJpYXQiOjE3ODk0MzY3MDl9.QMufVTo0AER7Sdy-53iItfCNMvb0vh1BGP5XoXMEF7s"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "9d54f822-5e4e-4294-aa6e-72ea1fd541c5",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "154",
+              "system": true
+            },
+            {
+              "key": "Cookie",
+              "value": "refresh_token=9MGyy-sSdqwSueF6qSwGPACaj9iQeJnbydrykNjUXPw",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"id_especie\": 4,\n  \"nombre\": \"Ciclo G24 Postman 1789436711768\",\n  \"duracion_dias\": 90,\n  \"descripcion\": \"Ciclo autocontenido para suite Postman G24\"\n}"
+          }
+        },
+        "response": {
+          "id": "7e43fda3-3a7e-4d9f-848a-b9f1c6c29f4f",
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "205"
+            },
+            {
+              "key": "Content-Security-Policy",
+              "value": "default-src 'none'"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 15 Sep 2026 01:45:09 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=63072000; includeSubDomains"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "52f0ec36-a3d9-4eb5-9a13-edf1c0e21c9f"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              100,
+              95,
+              99,
+              105,
+              99,
+              108,
+              111,
+              95,
+              98,
+              105,
+              111,
+              108,
+              111,
+              103,
+              105,
+              99,
+              111,
+              34,
+              58,
+              52,
+              48,
+              44,
+              34,
+              110,
+              111,
+              109,
+              98,
+              114,
+              101,
+              34,
+              58,
+              34,
+              67,
+              105,
+              99,
+              108,
+              111,
+              32,
+              71,
+              50,
+              52,
+              32,
+              80,
+              111,
+              115,
+              116,
+              109,
+              97,
+              110,
+              32,
+              49,
+              55,
+              56,
+              57,
+              52,
+              51,
+              54,
+              55,
+              49,
+              49,
+              55,
+              54,
+              56,
+              34,
+              44,
+              34,
+              100,
+              101,
+              115,
+              99,
+              114,
+              105,
+              112,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              34,
+              67,
+              105,
+              99,
+              108,
+              111,
+              32,
+              97,
+              117,
+              116,
+              111,
+              99,
+              111,
+              110,
+              116,
+              101,
+              110,
+              105,
+              100,
+              111,
+              32,
+              112,
+              97,
+              114,
+              97,
+              32,
+              115,
+              117,
+              105,
+              116,
+              101,
+              32,
+              80,
+              111,
+              115,
+              116,
+              109,
+              97,
+              110,
+              32,
+              71,
+              50,
+              52,
+              34,
+              44,
+              34,
+              100,
+              117,
+              114,
+              97,
+              99,
+              105,
+              111,
+              110,
+              95,
+              100,
+              105,
+              97,
+              115,
+              34,
+              58,
+              57,
+              48,
+              44,
+              34,
+              105,
+              100,
+              95,
+              101,
+              115,
+              112,
+              101,
+              99,
+              105,
+              101,
+              34,
+              58,
+              52,
+              44,
+              34,
+              101,
+              115,
+              95,
+              97,
+              99,
+              116,
+              105,
+              118,
+              111,
+              34,
+              58,
+              116,
+              114,
+              117,
+              101,
+              44,
+              34,
+              102,
+              101,
+              99,
+              104,
+              97,
+              95,
+              97,
+              99,
+              116,
+              117,
+              97,
+              108,
+              105,
+              122,
+              97,
+              99,
+              105,
+              111,
+              110,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 177,
+          "responseSize": 205
+        },
+        "id": "1f355aa3-0730-4d51-bc0b-6714640217f3",
+        "assertions": [
+          {
+            "assertion": "Creación de Ciclo Biológico HTTP 201",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "2af02fe4-afff-4710-8b7b-f8764e66e431",
+          "length": 12,
+          "cycles": 1,
+          "position": 2,
+          "iteration": 0,
+          "httpRequestId": "a8b4c8e4-2f43-44a6-a165-fabeea4a1da4"
+        },
+        "item": {
+          "id": "ade0d45d-16ec-48e5-b5d4-3d3e9219ce9a",
+          "name": "Paso 0.3 — Crear Lote Poblacional Propio (RF-33)",
+          "request": {
+            "url": {
+              "path": [
+                "activos-biologicos"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-14\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "db4f43cd-cb63-48fe-8d9b-51cac6e6dbf2",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Creación de Lote Poblacional HTTP 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id_activo_biologico, 'id_activo_biologico numérico').to.be.a('number');",
+                  "    pm.collectionVariables.set('lote_id', jsonData.id_activo_biologico);",
+                  "});"
+                ],
+                "_lastExecutionId": "13d13e01-0159-43d7-88e2-360dd6af4297"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "activos-biologicos"
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMDQiLCJqdGkiOiIxNzQ4OCIsInJvbCI6MSwiZXhwIjoxNzg5NDY1NTA5LCJpYXQiOjE3ODk0MzY3MDl9.QMufVTo0AER7Sdy-53iItfCNMvb0vh1BGP5XoXMEF7s"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "cfab29ad-8c16-48d4-8ae3-be339f5f6644",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "288",
+              "system": true
+            },
+            {
+              "key": "Cookie",
+              "value": "refresh_token=9MGyy-sSdqwSueF6qSwGPACaj9iQeJnbydrykNjUXPw",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-14\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+          }
+        },
+        "response": {
+          "id": "cddb6874-0fce-47d9-a6e3-9f02e76ff2c1",
+          "status": "Internal Server Error",
+          "code": 500,
+          "header": [
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "202"
+            },
+            {
+              "key": "Content-Security-Policy",
+              "value": "default-src 'none'"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 15 Sep 2026 01:45:09 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=63072000; includeSubDomains"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "a391ce66-0885-4603-b129-f99588a1d39b"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              95,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              34,
+              69,
+              82,
+              82,
+              79,
+              82,
+              95,
+              73,
+              78,
+              84,
+              69,
+              82,
+              78,
+              79,
+              34,
+              44,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              79,
+              99,
+              117,
+              114,
+              114,
+              105,
+              195,
+              179,
+              32,
+              117,
+              110,
+              32,
+              101,
+              114,
+              114,
+              111,
+              114,
+              32,
+              105,
+              110,
+              116,
+              101,
+              114,
+              110,
+              111,
+              46,
+              32,
+              73,
+              110,
+              116,
+              101,
+              110,
+              116,
+              97,
+              32,
+              100,
+              101,
+              32,
+              110,
+              117,
+              101,
+              118,
+              111,
+              59,
+              32,
+              115,
+              105,
+              32,
+              101,
+              108,
+              32,
+              112,
+              114,
+              111,
+              98,
+              108,
+              101,
+              109,
+              97,
+              32,
+              112,
+              101,
+              114,
+              115,
+              105,
+              115,
+              116,
+              101,
+              44,
+              32,
+              99,
+              111,
+              110,
+              116,
+              97,
+              99,
+              116,
+              97,
+              32,
+              97,
+              108,
+              32,
+              101,
+              113,
+              117,
+              105,
+              112,
+              111,
+              32,
+              100,
+              101,
+              32,
+              115,
+              111,
+              112,
+              111,
+              114,
+              116,
+              101,
+              46,
+              34,
+              44,
+              34,
+              102,
+              105,
+              101,
+              108,
+              100,
+              115,
+              34,
+              58,
+              91,
+              93,
+              44,
+              34,
+              116,
+              105,
+              109,
+              101,
+              115,
+              116,
+              97,
+              109,
+              112,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              54,
+              45,
+              48,
+              57,
+              45,
+              49,
+              53,
+              84,
+              48,
+              49,
+              58,
+              52,
+              53,
+              58,
+              49,
+              48,
+              46,
+              53,
+              55,
+              49,
+              49,
+              53,
+              49,
+              43,
+              48,
+              48,
+              58,
+              48,
+              48,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 211,
+          "responseSize": 202
+        },
+        "id": "ade0d45d-16ec-48e5-b5d4-3d3e9219ce9a",
+        "assertions": [
+          {
+            "assertion": "Creación de Lote Poblacional HTTP 201",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 0,
+              "test": "Creación de Lote Poblacional HTTP 201",
+              "message": "expected response to have status code 201 but got 500",
+              "stack": "AssertionError: expected response to have status code 201 but got 500\n   at Object.eval sandbox-script.js:1:3)"
+            }
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "1279ce17-b5ad-44d7-8f56-4da56daacdc8",
+          "length": 12,
+          "cycles": 1,
+          "position": 3,
+          "iteration": 0,
+          "httpRequestId": "ccc520fc-fa05-45a7-91cd-d5e8c4657f22"
+        },
+        "item": {
+          "id": "7d0ff395-2d5f-4b25-8345-aa2b38f0494e",
+          "name": "Paso 0.4 — Asignar Fase Productiva (RF-37)",
+          "request": {
+            "url": {
+              "path": [
+                "activos-biologicos",
+                "{{lote_id}}",
+                "fases"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_ciclo_productiva\": {{ciclo_id}},\n  \"fecha_inicio\": \"2026-09-14\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "731c5d7f-39aa-4a38-bd79-70fa0d953d4d",
+                "type": "text/javascript",
+                "exec": [
+                  "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                  "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                  "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                  "    postman.setNextRequest(null);",
+                  "}"
+                ],
+                "_lastExecutionId": "faafa8a3-c62c-4634-85f1-c0b3ef5fdbe1"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "0ac50f15-d552-4f9d-9ac1-6e0d75128079",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Asignación de Fase RF-37 exitosa (HTTP 200 o 201)', function () {",
+                  "    pm.expect(pm.response.code, 'HTTP Status de asignación de fase').to.be.oneOf([200, 201]);",
+                  "});"
+                ],
+                "_lastExecutionId": "53db80d3-5cf3-4dce-a983-5d22fcda3560"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "path": [
+              "api-sgpmp-test",
+              "activos-biologicos",
+              "",
+              "fases"
+            ],
+            "host": [
+              "sigab-backendtest-389pcb-a48238-158-69-200-27",
+              "sslip",
+              "io"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMDQiLCJqdGkiOiIxNzQ4OCIsInJvbCI6MSwiZXhwIjoxNzg5NDY1NTA5LCJpYXQiOjE3ODk0MzY3MDl9.QMufVTo0AER7Sdy-53iItfCNMvb0vh1BGP5XoXMEF7s"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "994564c9-af37-499d-bf3d-ce9a19b507ae",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "63",
+              "system": true
+            },
+            {
+              "key": "Cookie",
+              "value": "refresh_token=9MGyy-sSdqwSueF6qSwGPACaj9iQeJnbydrykNjUXPw",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"id_ciclo_productiva\": 40,\n  \"fecha_inicio\": \"2026-09-14\"\n}"
+          }
+        },
+        "response": {
+          "id": "ffacbafa-9ce1-486b-a494-e32f9cf223a7",
+          "status": "Method Not Allowed",
+          "code": 405,
+          "header": [
+            {
+              "key": "Allow",
+              "value": "GET"
+            },
+            {
+              "key": "Alt-Svc",
+              "value": "h3=\":443\"; ma=2592000"
+            },
+            {
+              "key": "Content-Length",
+              "value": "31"
+            },
+            {
+              "key": "Content-Security-Policy",
+              "value": "default-src 'none'"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 15 Sep 2026 01:45:10 GMT"
+            },
+            {
+              "key": "Server",
+              "value": "uvicorn"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=63072000; includeSubDomains"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-Request-Id",
+              "value": "2b83b815-50b3-4c57-9516-51621e452dd6"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              100,
+              101,
+              116,
+              97,
+              105,
+              108,
+              34,
+              58,
+              34,
+              77,
+              101,
+              116,
+              104,
+              111,
+              100,
+              32,
+              78,
+              111,
+              116,
+              32,
+              65,
+              108,
+              108,
+              111,
+              119,
+              101,
+              100,
+              34,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 230,
+          "responseSize": 31
+        },
+        "id": "7d0ff395-2d5f-4b25-8345-aa2b38f0494e",
+        "assertions": [
+          {
+            "assertion": "Asignación de Fase RF-37 exitosa (HTTP 200 o 201)",
+            "skipped": false,
+            "error": {
+              "name": "AssertionError",
+              "index": 0,
+              "test": "Asignación de Fase RF-37 exitosa (HTTP 200 o 201)",
+              "message": "HTTP Status de asignación de fase: expected 405 to be one of [ 200, 201 ]",
+              "stack": "AssertionError: HTTP Status de asignación de fase: expected 405 to be one of [ 200, 201 ]\n   at Object.eval sandbox-script.js:1:4)"
+            }
+          }
+        ]
+      }
+    ],
+    "transfers": {
+      "responseTotal": 844
+    },
+    "failures": [
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 0,
+          "test": "Creación de Lote Poblacional HTTP 201",
+          "message": "expected response to have status code 201 but got 500",
+          "stack": "AssertionError: expected response to have status code 201 but got 500\n   at Object.eval sandbox-script.js:1:3)",
+          "checksum": "3bcf55f8fcbf222539fba8fe5fb87bdb",
+          "id": "e3bdd2af-a460-45a8-862a-c777ba6ca5db",
+          "timestamp": 1789436712287,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 1,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 3,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:0 in test-script",
+        "source": {
+          "id": "ade0d45d-16ec-48e5-b5d4-3d3e9219ce9a",
+          "name": "Paso 0.3 — Crear Lote Poblacional Propio (RF-33)",
+          "request": {
+            "url": {
+              "path": [
+                "activos-biologicos"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-14\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "db4f43cd-cb63-48fe-8d9b-51cac6e6dbf2",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Creación de Lote Poblacional HTTP 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id_activo_biologico, 'id_activo_biologico numérico').to.be.a('number');",
+                  "    pm.collectionVariables.set('lote_id', jsonData.id_activo_biologico);",
+                  "});"
+                ],
+                "_lastExecutionId": "13d13e01-0159-43d7-88e2-360dd6af4297"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "_": {
+            "postman_id": "tc-m02-g24-collection-id"
+          },
+          "item": [
+            {
+              "id": "97a7f663-1a5c-422d-9c58-ca36b0cce5b3",
+              "name": "Paso 0.1 — Login Admin",
+              "request": {
+                "url": {
+                  "path": [
+                    "sesiones",
+                    ""
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"correo_electronico\": \"{{admin_email}}\",\n  \"contrasena\": \"{{admin_password}}\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "7a719867-cdac-47e7-bd7c-3c652a8a6fea",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Login exitoso HTTP 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.token, 'Token de autenticación string').to.be.a('string');",
+                      "    pm.collectionVariables.set('token', jsonData.token);",
+                      "});"
+                    ],
+                    "_lastExecutionId": "f7079aae-076b-44ff-83f4-bd6214c234ce"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "1f355aa3-0730-4d51-bc0b-6714640217f3",
+              "name": "Paso 0.2 — Crear Ciclo Biológico Propio (RF-16)",
+              "request": {
+                "url": {
+                  "path": [
+                    "configuracion",
+                    "ciclos"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id_especie\": 4,\n  \"nombre\": \"{{ciclo_nombre}}\",\n  \"duracion_dias\": 90,\n  \"descripcion\": \"Ciclo autocontenido para suite Postman G24\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "2e843715-ad0c-4288-be59-1278bd98e02a",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set('ciclo_nombre', 'Ciclo G24 Postman ' + Date.now());"
+                    ],
+                    "_lastExecutionId": "f3e58de8-b1e6-4251-9270-efdc980bc547"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "792537fc-f968-4a1a-abaf-33271f214807",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Creación de Ciclo Biológico HTTP 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.id_ciclo_biologico, 'id_ciclo_biologico numérico').to.be.a('number');",
+                      "    pm.collectionVariables.set('ciclo_id', jsonData.id_ciclo_biologico);",
+                      "});"
+                    ],
+                    "_lastExecutionId": "800b1d15-c0f9-4655-91c6-befb01c641af"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "ade0d45d-16ec-48e5-b5d4-3d3e9219ce9a",
+              "name": "Paso 0.3 — Crear Lote Poblacional Propio (RF-33)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-14\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "db4f43cd-cb63-48fe-8d9b-51cac6e6dbf2",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Creación de Lote Poblacional HTTP 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.id_activo_biologico, 'id_activo_biologico numérico').to.be.a('number');",
+                      "    pm.collectionVariables.set('lote_id', jsonData.id_activo_biologico);",
+                      "});"
+                    ],
+                    "_lastExecutionId": "13d13e01-0159-43d7-88e2-360dd6af4297"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "7d0ff395-2d5f-4b25-8345-aa2b38f0494e",
+              "name": "Paso 0.4 — Asignar Fase Productiva (RF-37)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}",
+                    "fases"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id_ciclo_productiva\": {{ciclo_id}},\n  \"fecha_inicio\": \"2026-09-14\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "731c5d7f-39aa-4a38-bd79-70fa0d953d4d",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ],
+                    "_lastExecutionId": "faafa8a3-c62c-4634-85f1-c0b3ef5fdbe1"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "0ac50f15-d552-4f9d-9ac1-6e0d75128079",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Asignación de Fase RF-37 exitosa (HTTP 200 o 201)', function () {",
+                      "    pm.expect(pm.response.code, 'HTTP Status de asignación de fase').to.be.oneOf([200, 201]);",
+                      "});"
+                    ],
+                    "_lastExecutionId": "53db80d3-5cf3-4dce-a983-5d22fcda3560"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "0a1da4cb-b896-4c70-9f25-da36034c0b4c",
+              "name": "TC-M02-048 — Validar Métricas Solo Lectura C1 (RF-36)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cantidad_actual\": 999,\n  \"biomasa_total\": 9999.0,\n  \"densidad\": \"1.99\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "86318863-effc-41e1-b926-a1007e9071ba",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "4e4e6008-167f-4bab-b546-e12c260756fd",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('C1 (API): PATCH a métricas calculadas debe ser rechazado (HTTP 400 o 422)', function () {",
+                      "    pm.expect(pm.response.code, 'Rechazo de modificación directa de métricas').to.be.oneOf([400, 422]);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "7acba34c-c6c4-4deb-8e0d-7b6037feda74",
+              "name": "TC-M02-049 — Evento CRECIMIENTO (RF-39)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}",
+                    "eventos",
+                    "crecimiento"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fecha_evento\": \"2026-09-14\",\n  \"valor_medicion\": 12.5,\n  \"tipo_agregacion\": \"PROMEDIO\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "5c80339a-13e3-4737-849c-ccf26f21857e",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "148327c2-cde1-4457-aaec-53efbdb85852",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Registro Evento CRECIMIENTO HTTP 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "5a5862a6-eeea-4499-9f37-9cfad142ca5e",
+              "name": "TC-M02-049.1 — Verificación Post-Crecimiento C2 (RF-36 / RF-39)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "6d3ee939-f051-4512-ac8d-9656611ba51f",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "b304a6b5-a6d3-4e89-99bb-7f7ceeff628d",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('C2: Verificación Post-Crecimiento y Fórmula Biomasa', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    var jsonData = pm.response.json();",
+                      "    var det = jsonData.detalle_poblacional;",
+                      "    pm.expect(det, 'detalle_poblacional presente').to.exist;",
+                      "    pm.expect(Number(det.peso_promedio), 'peso_promedio actualizado a 12.5').to.eq(12.5);",
+                      "    var biomasaCalc = parseFloat(det.biomasa_total);",
+                      "    var biomasaEsperada = Number(det.cantidad_actual) * 12.5;",
+                      "    pm.expect(biomasaCalc, 'biomasa_total == cantidad_actual * 12.5').to.be.closeTo(biomasaEsperada, 0.01);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "1d56e69b-b649-4000-b3af-a419877fdde9",
+              "name": "TC-M02-050 — Evento BAJA (RF-39)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}",
+                    "eventos",
+                    "baja"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tipo_baja\": \"muerte\",\n  \"fecha_baja\": \"2026-09-14\",\n  \"motivo_baja\": \"Mortalidad de prueba Postman G24\",\n  \"cantidad_afectada\": 10\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "5823509b-9a1f-4f0f-b3f6-0157ff7ab94d",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "d08d6d8c-c2d5-4e5e-91fd-4e0b386e1d33",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Registro Evento BAJA HTTP 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "26f642c9-8133-4ab8-bf45-0509db07c5b2",
+              "name": "TC-M02-050.1 — Verificación Post-Baja C3 (RF-36 / RF-39)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "9a2fc501-0602-4499-a8e0-d2a1311f9046",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "97acf15f-7590-42fa-9a35-f20b42afe89d",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('C3: Descuento de cantidad_actual a 90 y Recálculo de Métricas', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    var jsonData = pm.response.json();",
+                      "    var det = jsonData.detalle_poblacional;",
+                      "    pm.expect(det, 'detalle_poblacional presente').to.exist;",
+                      "    pm.expect(Number(det.cantidad_actual), 'cantidad_actual descontada a 90').to.eq(90);",
+                      "    var pesoProm = Number(det.peso_promedio);",
+                      "    var biomasaCalc = parseFloat(det.biomasa_total);",
+                      "    pm.expect(biomasaCalc, 'biomasa_total recalculada tras baja (90 * peso)').to.be.closeTo(90 * pesoProm, 0.01);",
+                      "    if (det.densidad !== null && det.densidad !== undefined) {",
+                      "        var densCalc = parseFloat(det.densidad);",
+                      "        pm.expect(densCalc, 'densidad recalculada tras baja (90 / 500 m²)').to.be.closeTo(0.18, 0.001);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "a42920cf-30e0-4216-a476-3dd9c05a78ff",
+              "name": "TC-M02-056 — Validar Inmutabilidad Registro Original C4 (RF-33)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "7203063c-b64b-4c7f-a722-522de21c024a",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "f40c1b3c-f2a9-4c2a-ba13-c0bbed1a201e",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('C4: Inmutabilidad de datos originales de registro (RF-33)', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    var jsonData = pm.response.json();",
+                      "    var det = jsonData.detalle_poblacional;",
+                      "    pm.expect(det.cantidad_inicial, 'cantidad_inicial inmutable en 100').to.eq(100);",
+                      "    pm.expect(Number(det.peso_promedio_inicial), 'peso_promedio_inicial inmutable en 10.0').to.eq(10.0);",
+                      "    pm.expect(Number(det.cantidad_actual), 'Confirmar que eventos mutaron lote (actual != 100)').to.not.eq(100);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "dc29a24f-856f-4ccd-b60c-44431b324017",
+              "name": "Teardown Lote (RF-44)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}",
+                    "estado"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"estado_nuevo\": \"BAJA\",\n  \"fecha_cambio_estado\": \"2026-09-14\",\n  \"motivo_cambio\": \"Teardown de prueba Postman G24\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "c1332e56-1fea-437c-b3ce-bec42758d074",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "09a8c687-41f3-44a4-8023-fee91b2f8bc0",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Teardown Lote HTTP 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "3195304e-b012-4336-a181-a792c5f7e7cd",
+              "name": "Teardown Ciclo (RF-16)",
+              "request": {
+                "url": {
+                  "path": [
+                    "configuracion",
+                    "ciclos",
+                    "{{ciclo_id}}",
+                    "desactivar"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "PATCH"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "6831c905-69e5-4250-9b7d-0ab790d27546",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Teardown Ciclo HTTP 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "event": [],
+          "variable": [
+            {
+              "type": "any",
+              "value": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+              "key": "base_url"
+            },
+            {
+              "type": "any",
+              "value": "administador.dev@gmail.com",
+              "key": "admin_email"
+            },
+            {
+              "type": "any",
+              "value": "Test1234!",
+              "key": "admin_password"
+            },
+            {
+              "type": "any",
+              "value": "",
+              "key": "token"
+            },
+            {
+              "type": "any",
+              "value": "",
+              "key": "ciclo_id"
+            },
+            {
+              "type": "any",
+              "value": "",
+              "key": "ciclo_nombre"
+            },
+            {
+              "type": "any",
+              "value": "",
+              "key": "lote_id"
+            }
+          ],
+          "info": {
+            "_postman_id": "tc-m02-g24-collection-id",
+            "name": "TC-M02-G24 — Gestión Poblacional RF-36 / RF-33 / RF-37 / RF-39",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+            "description": {
+              "content": "Colección de Postman rediseñada rigurosamente para verificar C1, C2, C3 y C4 sin ramas permisivas",
+              "type": "text/plain"
+            }
+          }
+        },
+        "cursor": {
+          "ref": "2af02fe4-afff-4710-8b7b-f8764e66e431",
+          "length": 12,
+          "cycles": 1,
+          "position": 2,
+          "iteration": 0,
+          "httpRequestId": "a8b4c8e4-2f43-44a6-a165-fabeea4a1da4",
+          "scriptId": "db4f43cd-cb63-48fe-8d9b-51cac6e6dbf2",
+          "execution": "13d13e01-0159-43d7-88e2-360dd6af4297"
+        }
+      },
+      {
+        "error": {
+          "name": "AssertionError",
+          "index": 0,
+          "test": "Asignación de Fase RF-37 exitosa (HTTP 200 o 201)",
+          "message": "HTTP Status de asignación de fase: expected 405 to be one of [ 200, 201 ]",
+          "stack": "AssertionError: HTTP Status de asignación de fase: expected 405 to be one of [ 200, 201 ]\n   at Object.eval sandbox-script.js:1:4)",
+          "checksum": "90cc8d6cf26ec7186b7139112cea74ca",
+          "id": "7c0a694a-c2fd-4363-a936-5488facfdc2a",
+          "timestamp": 1789436712590,
+          "stacktrace": [
+            {
+              "fileName": "sandbox-script.js",
+              "lineNumber": 1,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 4,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:0 in test-script",
+        "source": {
+          "id": "7d0ff395-2d5f-4b25-8345-aa2b38f0494e",
+          "name": "Paso 0.4 — Asignar Fase Productiva (RF-37)",
+          "request": {
+            "url": {
+              "path": [
+                "activos-biologicos",
+                "{{lote_id}}",
+                "fases"
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_ciclo_productiva\": {{ciclo_id}},\n  \"fecha_inicio\": \"2026-09-14\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "731c5d7f-39aa-4a38-bd79-70fa0d953d4d",
+                "type": "text/javascript",
+                "exec": [
+                  "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                  "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                  "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                  "    postman.setNextRequest(null);",
+                  "}"
+                ],
+                "_lastExecutionId": "faafa8a3-c62c-4634-85f1-c0b3ef5fdbe1"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "0ac50f15-d552-4f9d-9ac1-6e0d75128079",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Asignación de Fase RF-37 exitosa (HTTP 200 o 201)', function () {",
+                  "    pm.expect(pm.response.code, 'HTTP Status de asignación de fase').to.be.oneOf([200, 201]);",
+                  "});"
+                ],
+                "_lastExecutionId": "53db80d3-5cf3-4dce-a983-5d22fcda3560"
+              }
+            }
+          ]
+        },
+        "parent": {
+          "_": {
+            "postman_id": "tc-m02-g24-collection-id"
+          },
+          "item": [
+            {
+              "id": "97a7f663-1a5c-422d-9c58-ca36b0cce5b3",
+              "name": "Paso 0.1 — Login Admin",
+              "request": {
+                "url": {
+                  "path": [
+                    "sesiones",
+                    ""
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"correo_electronico\": \"{{admin_email}}\",\n  \"contrasena\": \"{{admin_password}}\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "7a719867-cdac-47e7-bd7c-3c652a8a6fea",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Login exitoso HTTP 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.token, 'Token de autenticación string').to.be.a('string');",
+                      "    pm.collectionVariables.set('token', jsonData.token);",
+                      "});"
+                    ],
+                    "_lastExecutionId": "f7079aae-076b-44ff-83f4-bd6214c234ce"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "1f355aa3-0730-4d51-bc0b-6714640217f3",
+              "name": "Paso 0.2 — Crear Ciclo Biológico Propio (RF-16)",
+              "request": {
+                "url": {
+                  "path": [
+                    "configuracion",
+                    "ciclos"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id_especie\": 4,\n  \"nombre\": \"{{ciclo_nombre}}\",\n  \"duracion_dias\": 90,\n  \"descripcion\": \"Ciclo autocontenido para suite Postman G24\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "2e843715-ad0c-4288-be59-1278bd98e02a",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set('ciclo_nombre', 'Ciclo G24 Postman ' + Date.now());"
+                    ],
+                    "_lastExecutionId": "f3e58de8-b1e6-4251-9270-efdc980bc547"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "792537fc-f968-4a1a-abaf-33271f214807",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Creación de Ciclo Biológico HTTP 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.id_ciclo_biologico, 'id_ciclo_biologico numérico').to.be.a('number');",
+                      "    pm.collectionVariables.set('ciclo_id', jsonData.id_ciclo_biologico);",
+                      "});"
+                    ],
+                    "_lastExecutionId": "800b1d15-c0f9-4655-91c6-befb01c641af"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "ade0d45d-16ec-48e5-b5d4-3d3e9219ce9a",
+              "name": "Paso 0.3 — Crear Lote Poblacional Propio (RF-33)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-14\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "db4f43cd-cb63-48fe-8d9b-51cac6e6dbf2",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Creación de Lote Poblacional HTTP 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.id_activo_biologico, 'id_activo_biologico numérico').to.be.a('number');",
+                      "    pm.collectionVariables.set('lote_id', jsonData.id_activo_biologico);",
+                      "});"
+                    ],
+                    "_lastExecutionId": "13d13e01-0159-43d7-88e2-360dd6af4297"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "7d0ff395-2d5f-4b25-8345-aa2b38f0494e",
+              "name": "Paso 0.4 — Asignar Fase Productiva (RF-37)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}",
+                    "fases"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id_ciclo_productiva\": {{ciclo_id}},\n  \"fecha_inicio\": \"2026-09-14\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "731c5d7f-39aa-4a38-bd79-70fa0d953d4d",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ],
+                    "_lastExecutionId": "faafa8a3-c62c-4634-85f1-c0b3ef5fdbe1"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "0ac50f15-d552-4f9d-9ac1-6e0d75128079",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Asignación de Fase RF-37 exitosa (HTTP 200 o 201)', function () {",
+                      "    pm.expect(pm.response.code, 'HTTP Status de asignación de fase').to.be.oneOf([200, 201]);",
+                      "});"
+                    ],
+                    "_lastExecutionId": "53db80d3-5cf3-4dce-a983-5d22fcda3560"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "0a1da4cb-b896-4c70-9f25-da36034c0b4c",
+              "name": "TC-M02-048 — Validar Métricas Solo Lectura C1 (RF-36)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cantidad_actual\": 999,\n  \"biomasa_total\": 9999.0,\n  \"densidad\": \"1.99\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "86318863-effc-41e1-b926-a1007e9071ba",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "4e4e6008-167f-4bab-b546-e12c260756fd",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('C1 (API): PATCH a métricas calculadas debe ser rechazado (HTTP 400 o 422)', function () {",
+                      "    pm.expect(pm.response.code, 'Rechazo de modificación directa de métricas').to.be.oneOf([400, 422]);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "7acba34c-c6c4-4deb-8e0d-7b6037feda74",
+              "name": "TC-M02-049 — Evento CRECIMIENTO (RF-39)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}",
+                    "eventos",
+                    "crecimiento"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fecha_evento\": \"2026-09-14\",\n  \"valor_medicion\": 12.5,\n  \"tipo_agregacion\": \"PROMEDIO\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "5c80339a-13e3-4737-849c-ccf26f21857e",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "148327c2-cde1-4457-aaec-53efbdb85852",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Registro Evento CRECIMIENTO HTTP 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "5a5862a6-eeea-4499-9f37-9cfad142ca5e",
+              "name": "TC-M02-049.1 — Verificación Post-Crecimiento C2 (RF-36 / RF-39)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "6d3ee939-f051-4512-ac8d-9656611ba51f",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "b304a6b5-a6d3-4e89-99bb-7f7ceeff628d",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('C2: Verificación Post-Crecimiento y Fórmula Biomasa', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    var jsonData = pm.response.json();",
+                      "    var det = jsonData.detalle_poblacional;",
+                      "    pm.expect(det, 'detalle_poblacional presente').to.exist;",
+                      "    pm.expect(Number(det.peso_promedio), 'peso_promedio actualizado a 12.5').to.eq(12.5);",
+                      "    var biomasaCalc = parseFloat(det.biomasa_total);",
+                      "    var biomasaEsperada = Number(det.cantidad_actual) * 12.5;",
+                      "    pm.expect(biomasaCalc, 'biomasa_total == cantidad_actual * 12.5').to.be.closeTo(biomasaEsperada, 0.01);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "1d56e69b-b649-4000-b3af-a419877fdde9",
+              "name": "TC-M02-050 — Evento BAJA (RF-39)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}",
+                    "eventos",
+                    "baja"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tipo_baja\": \"muerte\",\n  \"fecha_baja\": \"2026-09-14\",\n  \"motivo_baja\": \"Mortalidad de prueba Postman G24\",\n  \"cantidad_afectada\": 10\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "5823509b-9a1f-4f0f-b3f6-0157ff7ab94d",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "d08d6d8c-c2d5-4e5e-91fd-4e0b386e1d33",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Registro Evento BAJA HTTP 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "26f642c9-8133-4ab8-bf45-0509db07c5b2",
+              "name": "TC-M02-050.1 — Verificación Post-Baja C3 (RF-36 / RF-39)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "9a2fc501-0602-4499-a8e0-d2a1311f9046",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "97acf15f-7590-42fa-9a35-f20b42afe89d",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('C3: Descuento de cantidad_actual a 90 y Recálculo de Métricas', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    var jsonData = pm.response.json();",
+                      "    var det = jsonData.detalle_poblacional;",
+                      "    pm.expect(det, 'detalle_poblacional presente').to.exist;",
+                      "    pm.expect(Number(det.cantidad_actual), 'cantidad_actual descontada a 90').to.eq(90);",
+                      "    var pesoProm = Number(det.peso_promedio);",
+                      "    var biomasaCalc = parseFloat(det.biomasa_total);",
+                      "    pm.expect(biomasaCalc, 'biomasa_total recalculada tras baja (90 * peso)').to.be.closeTo(90 * pesoProm, 0.01);",
+                      "    if (det.densidad !== null && det.densidad !== undefined) {",
+                      "        var densCalc = parseFloat(det.densidad);",
+                      "        pm.expect(densCalc, 'densidad recalculada tras baja (90 / 500 m²)').to.be.closeTo(0.18, 0.001);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "a42920cf-30e0-4216-a476-3dd9c05a78ff",
+              "name": "TC-M02-056 — Validar Inmutabilidad Registro Original C4 (RF-33)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "GET"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "7203063c-b64b-4c7f-a722-522de21c024a",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "f40c1b3c-f2a9-4c2a-ba13-c0bbed1a201e",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('C4: Inmutabilidad de datos originales de registro (RF-33)', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    var jsonData = pm.response.json();",
+                      "    var det = jsonData.detalle_poblacional;",
+                      "    pm.expect(det.cantidad_inicial, 'cantidad_inicial inmutable en 100').to.eq(100);",
+                      "    pm.expect(Number(det.peso_promedio_inicial), 'peso_promedio_inicial inmutable en 10.0').to.eq(10.0);",
+                      "    pm.expect(Number(det.cantidad_actual), 'Confirmar que eventos mutaron lote (actual != 100)').to.not.eq(100);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "dc29a24f-856f-4ccd-b60c-44431b324017",
+              "name": "Teardown Lote (RF-44)",
+              "request": {
+                "url": {
+                  "path": [
+                    "activos-biologicos",
+                    "{{lote_id}}",
+                    "estado"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"estado_nuevo\": \"BAJA\",\n  \"fecha_cambio_estado\": \"2026-09-14\",\n  \"motivo_cambio\": \"Teardown de prueba Postman G24\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "id": "c1332e56-1fea-437c-b3ce-bec42758d074",
+                    "type": "text/javascript",
+                    "exec": [
+                      "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+                      "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+                      "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+                      "    postman.setNextRequest(null);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "09a8c687-41f3-44a4-8023-fee91b2f8bc0",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Teardown Lote HTTP 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "3195304e-b012-4336-a181-a792c5f7e7cd",
+              "name": "Teardown Ciclo (RF-16)",
+              "request": {
+                "url": {
+                  "path": [
+                    "configuracion",
+                    "ciclos",
+                    "{{ciclo_id}}",
+                    "desactivar"
+                  ],
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "method": "PATCH"
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "id": "6831c905-69e5-4250-9b7d-0ab790d27546",
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Teardown Ciclo HTTP 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "event": [],
+          "variable": [
+            {
+              "type": "any",
+              "value": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+              "key": "base_url"
+            },
+            {
+              "type": "any",
+              "value": "administador.dev@gmail.com",
+              "key": "admin_email"
+            },
+            {
+              "type": "any",
+              "value": "Test1234!",
+              "key": "admin_password"
+            },
+            {
+              "type": "any",
+              "value": "",
+              "key": "token"
+            },
+            {
+              "type": "any",
+              "value": "",
+              "key": "ciclo_id"
+            },
+            {
+              "type": "any",
+              "value": "",
+              "key": "ciclo_nombre"
+            },
+            {
+              "type": "any",
+              "value": "",
+              "key": "lote_id"
+            }
+          ],
+          "info": {
+            "_postman_id": "tc-m02-g24-collection-id",
+            "name": "TC-M02-G24 — Gestión Poblacional RF-36 / RF-33 / RF-37 / RF-39",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+            "description": {
+              "content": "Colección de Postman rediseñada rigurosamente para verificar C1, C2, C3 y C4 sin ramas permisivas",
+              "type": "text/plain"
+            }
+          }
+        },
+        "cursor": {
+          "ref": "1279ce17-b5ad-44d7-8f56-4da56daacdc8",
+          "length": 12,
+          "cycles": 1,
+          "position": 3,
+          "iteration": 0,
+          "httpRequestId": "ccc520fc-fa05-45a7-91cd-d5e8c4657f22",
+          "scriptId": "0ac50f15-d552-4f9d-9ac1-6e0d75128079",
+          "execution": "53db80d3-5cf3-4dce-a983-5d22fcda3560"
+        }
+      }
+    ],
+    "error": null
+  }
+}
