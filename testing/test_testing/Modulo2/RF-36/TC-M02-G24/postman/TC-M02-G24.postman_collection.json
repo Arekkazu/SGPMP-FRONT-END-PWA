@@ -2,17 +2,38 @@
   "info": {
     "_postman_id": "tc-m02-g24-collection-id",
     "name": "TC-M02-G24 — Gestión Poblacional RF-36 / RF-33 / RF-37 / RF-39",
-    "description": "Colección de Postman autocontenida para la suite de integración de lotes poblacionales",
+    "description": "Colección de Postman rediseñada rigurosamente para verificar C1, C2, C3 y C4 sin ramas permisivas",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test" },
-    { "key": "admin_email", "value": "admin@pecuaria.co" },
-    { "key": "admin_password", "value": "Test1234!" },
-    { "key": "token", "value": "" },
-    { "key": "ciclo_id", "value": "" },
-    { "key": "ciclo_nombre", "value": "" },
-    { "key": "lote_id", "value": "" }
+    {
+      "key": "base_url",
+      "value": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test"
+    },
+    {
+      "key": "admin_email",
+      "value": "administador.dev@gmail.com"
+    },
+    {
+      "key": "admin_password",
+      "value": "Test1234!"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "ciclo_id",
+      "value": ""
+    },
+    {
+      "key": "ciclo_nombre",
+      "value": ""
+    },
+    {
+      "key": "lote_id",
+      "value": ""
+    }
   ],
   "item": [
     {
@@ -20,7 +41,10 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -28,8 +52,13 @@
         },
         "url": {
           "raw": "{{base_url}}/sesiones/",
-          "host": ["{{base_url}}"],
-          "path": ["sesiones", ""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "sesiones",
+            ""
+          ]
         }
       },
       "event": [
@@ -40,7 +69,7 @@
               "pm.test('Login exitoso HTTP 200', function () {",
               "    pm.response.to.have.status(200);",
               "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.token).to.be.a('string');",
+              "    pm.expect(jsonData.token, 'Token de autenticación string').to.be.a('string');",
               "    pm.collectionVariables.set('token', jsonData.token);",
               "});"
             ],
@@ -54,8 +83,14 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -63,8 +98,13 @@
         },
         "url": {
           "raw": "{{base_url}}/configuracion/ciclos",
-          "host": ["{{base_url}}"],
-          "path": ["configuracion", "ciclos"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "configuracion",
+            "ciclos"
+          ]
         }
       },
       "event": [
@@ -84,7 +124,7 @@
               "pm.test('Creación de Ciclo Biológico HTTP 201', function () {",
               "    pm.response.to.have.status(201);",
               "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.id_ciclo_biologico).to.be.a('number');",
+              "    pm.expect(jsonData.id_ciclo_biologico, 'id_ciclo_biologico numérico').to.be.a('number');",
               "    pm.collectionVariables.set('ciclo_id', jsonData.id_ciclo_biologico);",
               "});"
             ],
@@ -98,17 +138,27 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-08\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+          "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-14\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
         },
         "url": {
           "raw": "{{base_url}}/activos-biologicos",
-          "host": ["{{base_url}}"],
-          "path": ["activos-biologicos"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activos-biologicos"
+          ]
         }
       },
       "event": [
@@ -119,7 +169,7 @@
               "pm.test('Creación de Lote Poblacional HTTP 201', function () {",
               "    pm.response.to.have.status(201);",
               "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.id_activo_biologico).to.be.a('number');",
+              "    pm.expect(jsonData.id_activo_biologico, 'id_activo_biologico numérico').to.be.a('number');",
               "    pm.collectionVariables.set('lote_id', jsonData.id_activo_biologico);",
               "});"
             ],
@@ -129,36 +179,111 @@
       ]
     },
     {
-      "name": "Paso 0.4 — Intentar Asignar Fase Productiva (RF-37)",
+      "name": "Paso 0.4 — Asignar Fase Productiva (RF-37)",
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"id_ciclo_productiva\": {{ciclo_id}},\n  \"fecha_inicio\": \"2026-09-08\"\n}"
+          "raw": "{\n  \"id_ciclo_productiva\": {{ciclo_id}},\n  \"fecha_inicio\": \"2026-09-14\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/fases",
-          "host": ["{{base_url}}"],
-          "path": ["activos-biologicos", "{{lote_id}}", "fases"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activos-biologicos",
+            "{{lote_id}}",
+            "fases"
+          ]
         }
       },
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+              "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+              "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('Evaluación de Asignación de Fase RF-37', function () {",
-              "    if (pm.response.code === 200 || pm.response.code === 201) {",
-              "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-              "    } else {",
-              "        pm.expect(pm.response.code).to.eq(400);",
-              "        var jsonData = pm.response.json();",
-              "        pm.expect(jsonData.error_code).to.be.oneOf(['CICLO_INVALIDO', 'VAL_ENTRADA']);",
-              "    }",
+              "pm.test('Asignación de Fase RF-37 exitosa (HTTP 200 o 201)', function () {",
+              "    pm.expect(pm.response.code, 'HTTP Status de asignación de fase').to.be.oneOf([200, 201]);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-M02-048 — Validar Métricas Solo Lectura C1 (RF-36)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cantidad_actual\": 999,\n  \"biomasa_total\": 9999.0,\n  \"densidad\": \"1.99\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/activos-biologicos/{{lote_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activos-biologicos",
+            "{{lote_id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+              "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+              "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('C1 (API): PATCH a métricas calculadas debe ser rechazado (HTTP 400 o 422)', function () {",
+              "    pm.expect(pm.response.code, 'Rechazo de modificación directa de métricas').to.be.oneOf([400, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -171,30 +296,107 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"fecha_evento\": \"2026-09-08\",\n  \"valor_medicion\": 12.5,\n  \"tipo_agregacion\": \"PROMEDIO\"\n}"
+          "raw": "{\n  \"fecha_evento\": \"2026-09-14\",\n  \"valor_medicion\": 12.5,\n  \"tipo_agregacion\": \"PROMEDIO\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/eventos/crecimiento",
-          "host": ["{{base_url}}"],
-          "path": ["activos-biologicos", "{{lote_id}}", "eventos", "crecimiento"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activos-biologicos",
+            "{{lote_id}}",
+            "eventos",
+            "crecimiento"
+          ]
         }
       },
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+              "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+              "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('Registro Evento CRECIMIENTO (RF-39)', function () {",
-              "    if (pm.response.code === 200 || pm.response.code === 201) {",
-              "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-              "    } else {",
-              "        pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
-              "    }",
+              "pm.test('Registro Evento CRECIMIENTO HTTP 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-M02-049.1 — Verificación Post-Crecimiento C2 (RF-36 / RF-39)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/activos-biologicos/{{lote_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activos-biologicos",
+            "{{lote_id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+              "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+              "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('C2: Verificación Post-Crecimiento y Fórmula Biomasa', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    var det = jsonData.detalle_poblacional;",
+              "    pm.expect(det, 'detalle_poblacional presente').to.exist;",
+              "    pm.expect(Number(det.peso_promedio), 'peso_promedio actualizado a 12.5').to.eq(12.5);",
+              "    var biomasaCalc = parseFloat(det.biomasa_total);",
+              "    var biomasaEsperada = Number(det.cantidad_actual) * 12.5;",
+              "    pm.expect(biomasaCalc, 'biomasa_total == cantidad_actual * 12.5').to.be.closeTo(biomasaEsperada, 0.01);",
               "});"
             ],
             "type": "text/javascript"
@@ -207,29 +409,110 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"tipo_baja\": \"muerte\",\n  \"fecha_baja\": \"2026-09-08\",\n  \"motivo_baja\": \"Mortalidad de prueba Postman G24\",\n  \"cantidad_afectada\": 10\n}"
+          "raw": "{\n  \"tipo_baja\": \"muerte\",\n  \"fecha_baja\": \"2026-09-14\",\n  \"motivo_baja\": \"Mortalidad de prueba Postman G24\",\n  \"cantidad_afectada\": 10\n}"
         },
         "url": {
           "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/eventos/baja",
-          "host": ["{{base_url}}"],
-          "path": ["activos-biologicos", "{{lote_id}}", "eventos", "baja"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activos-biologicos",
+            "{{lote_id}}",
+            "eventos",
+            "baja"
+          ]
         }
       },
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+              "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+              "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('Registro Evento BAJA (RF-39)', function () {",
-              "    if (pm.response.code === 200 || pm.response.code === 201) {",
-              "        pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-              "    } else {",
-              "        pm.expect(pm.response.code).to.be.oneOf([400, 422, 500]);",
+              "pm.test('Registro Evento BAJA HTTP 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-M02-050.1 — Verificación Post-Baja C3 (RF-36 / RF-39)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/activos-biologicos/{{lote_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activos-biologicos",
+            "{{lote_id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+              "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+              "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('C3: Descuento de cantidad_actual a 90 y Recálculo de Métricas', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    var det = jsonData.detalle_poblacional;",
+              "    pm.expect(det, 'detalle_poblacional presente').to.exist;",
+              "    pm.expect(Number(det.cantidad_actual), 'cantidad_actual descontada a 90').to.eq(90);",
+              "    var pesoProm = Number(det.peso_promedio);",
+              "    var biomasaCalc = parseFloat(det.biomasa_total);",
+              "    pm.expect(biomasaCalc, 'biomasa_total recalculada tras baja (90 * peso)').to.be.closeTo(90 * pesoProm, 0.01);",
+              "    if (det.densidad !== null && det.densidad !== undefined) {",
+              "        var densCalc = parseFloat(det.densidad);",
+              "        pm.expect(densCalc, 'densidad recalculada tras baja (90 / 500 m²)').to.be.closeTo(0.18, 0.001);",
               "    }",
               "});"
             ],
@@ -239,29 +522,51 @@
       ]
     },
     {
-      "name": "TC-M02-056 — Validar Inmutabilidad Registro Original (RF-33)",
+      "name": "TC-M02-056 — Validar Inmutabilidad Registro Original C4 (RF-33)",
       "request": {
         "method": "GET",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
         ],
         "url": {
           "raw": "{{base_url}}/activos-biologicos/{{lote_id}}",
-          "host": ["{{base_url}}"],
-          "path": ["activos-biologicos", "{{lote_id}}"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activos-biologicos",
+            "{{lote_id}}"
+          ]
         }
       },
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+              "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+              "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('Inmutabilidad de datos originales de registro (RF-33)', function () {",
+              "pm.test('C4: Inmutabilidad de datos originales de registro (RF-33)', function () {",
               "    pm.response.to.have.status(200);",
               "    var jsonData = pm.response.json();",
               "    var det = jsonData.detalle_poblacional;",
-              "    pm.expect(det.cantidad_inicial).to.eq(100);",
-              "    pm.expect(Number(det.peso_promedio_inicial)).to.eq(10.0);",
+              "    pm.expect(det.cantidad_inicial, 'cantidad_inicial inmutable en 100').to.eq(100);",
+              "    pm.expect(Number(det.peso_promedio_inicial), 'peso_promedio_inicial inmutable en 10.0').to.eq(10.0);",
+              "    pm.expect(Number(det.cantidad_actual), 'Confirmar que eventos mutaron lote (actual != 100)').to.not.eq(100);",
               "});"
             ],
             "type": "text/javascript"
@@ -274,20 +579,45 @@
       "request": {
         "method": "PATCH",
         "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{token}}" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"estado_nuevo\": \"BAJA\",\n  \"fecha_cambio_estado\": \"2026-09-08\",\n  \"motivo_cambio\": \"Teardown de prueba Postman G24\"\n}"
+          "raw": "{\n  \"estado_nuevo\": \"BAJA\",\n  \"fecha_cambio_estado\": \"2026-09-14\",\n  \"motivo_cambio\": \"Teardown de prueba Postman G24\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/estado",
-          "host": ["{{base_url}}"],
-          "path": ["activos-biologicos", "{{lote_id}}", "estado"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "activos-biologicos",
+            "{{lote_id}}",
+            "estado"
+          ]
         }
       },
       "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var loteId = pm.variables.get('lote_id') || pm.collectionVariables.get('lote_id');",
+              "if (!loteId || loteId === '' || loteId === 'null' || loteId === undefined) {",
+              "    console.warn('[GUARD CLAUSE] lote_id no disponible. Abortando flujo.');",
+              "    postman.setNextRequest(null);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
         {
           "listen": "test",
           "script": {
@@ -306,12 +636,22 @@
       "request": {
         "method": "PATCH",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
         ],
         "url": {
           "raw": "{{base_url}}/configuracion/ciclos/{{ciclo_id}}/desactivar",
-          "host": ["{{base_url}}"],
-          "path": ["configuracion", "ciclos", "{{ciclo_id}}", "desactivar"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "configuracion",
+            "ciclos",
+            "{{ciclo_id}}",
+            "desactivar"
+          ]
         }
       },
       "event": [

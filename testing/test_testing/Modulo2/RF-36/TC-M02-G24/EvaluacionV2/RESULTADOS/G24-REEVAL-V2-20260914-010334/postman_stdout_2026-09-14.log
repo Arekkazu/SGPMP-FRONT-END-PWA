@@ -1,0 +1,54 @@
+newman
+
+TC-M02-G24 — Gestión Poblacional RF-36 / RF-33 / RF-37 / RF-39
+
+→ Paso 0.1 — Login Admin
+  POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/sesiones/ [200 OK, 908B, 1327ms]
+  √  Login exitoso HTTP 200
+
+→ Paso 0.2 — Crear Ciclo Biológico Propio (RF-16)
+  POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/configuracion/ciclos [201 Created, 585B, 177ms]
+  √  Creación de Ciclo Biológico HTTP 201
+
+→ Paso 0.3 — Crear Lote Poblacional Propio (RF-33)
+  POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/activos-biologicos [500 Internal Server Error, 596B, 211ms]
+  1. Creación de Lote Poblacional HTTP 201
+
+→ Paso 0.4 — Asignar Fase Productiva (RF-37)
+  ┌
+  │ '[GUARD CLAUSE] lote_id no disponible. Abortando flujo.'
+  └
+  POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/activos-biologicos//fases [405 Method Not Allowed, 433B, 230ms]
+  2. Asignación de Fase RF-37 exitosa (HTTP 200 o 201)
+
+┌─────────────────────────┬─────────────────────┬─────────────────────┐
+│                         │            executed │              failed │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│              iterations │                   1 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│                requests │                   4 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│            test-scripts │                   4 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│      prerequest-scripts │                   2 │                   0 │
+├─────────────────────────┼─────────────────────┼─────────────────────┤
+│              assertions │                   4 │                   2 │
+├─────────────────────────┴─────────────────────┴─────────────────────┤
+│ total run duration: 2.2s                                            │
+├─────────────────────────────────────────────────────────────────────┤
+│ total data received: 844B (approx)                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│ average response time: 486ms [min: 177ms, max: 1327ms, s.d.: 485ms] │
+└─────────────────────────────────────────────────────────────────────┘
+
+  #  failure         detail                                                                    
+                                                                                               
+ 1.  AssertionError  Creación de Lote Poblacional HTTP 201                                     
+                     expected response to have status code 201 but got 500                     
+                     at assertion:0 in test-script                                             
+                     inside "Paso 0.3 — Crear Lote Poblacional Propio (RF-33)"                 
+                                                                                               
+ 2.  AssertionError  Asignación de Fase RF-37 exitosa (HTTP 200 o 201)                         
+                     HTTP Status de asignación de fase: expected 405 to be one of [ 200, 201 ] 
+                     at assertion:0 in test-script                                             
+                     inside "Paso 0.4 — Asignar Fase Productiva (RF-37)"                       
