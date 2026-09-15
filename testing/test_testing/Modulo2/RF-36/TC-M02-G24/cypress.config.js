@@ -14,9 +14,10 @@ export default defineConfig({
     pageLoadTimeout: 180000,
     modifyObstructiveCode: false,
     retries: { runMode: 0, openMode: 0 },
-    video: true,
-    videosFolder: 'RESULTADOS/TC-M02-G24/videos',
-    screenshotsFolder: 'RESULTADOS/TC-M02-G24/screenshots',
+    // Al crear EvaluacionV<n+1>, actualizar estas rutas a la nueva carpeta 
+    // con su RUN_ID correspondiente.
+    videosFolder: 'EvaluacionV2/RESULTADOS/G24-REEVAL-V2-20260914-010334/cypress_video',
+    screenshotsFolder: 'EvaluacionV2/RESULTADOS/G24-REEVAL-V2-20260914-010334/cypress_screenshots',
     trashAssetsBeforeRuns: false,
     setupNodeEvents(on, config) {
       on('task', {

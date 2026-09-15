@@ -1,3 +1,10 @@
+---
+VERSIÓN: V2
+RUN_ID: G24-REEVAL-V2-20260914-010334
+REFERENCIA V1: RESULTADOS/run-20260908/
+CAUSA DE REEVALUACIÓN: Corrección de falso positivo (aserciones permisivas en el test original) + verificación de defecto real (regresión HTTP 500 en POST /activos-biologicos).
+---
+
 # Reevaluación Técnica — TC-M02-G24 · RF-36 · Módulo 02
 ## Gestión y Consulta de Ficha Técnica de Lotes Poblacionales
 
@@ -85,12 +92,12 @@ FROM modulo2.activos_biologicos ORDER BY fecha_creacion DESC LIMIT 3;
 | `TC-M02-056 (C4): Inmutabilidad` | Error Precondición | ❌ FAIL (Bloqueado) | `Precondición no satisfecha: lote no disponible.` |
 
 ### Artefactos Generados por Cypress
-- **Video:** `RESULTADOS/TC-M02-G24/videos/TC-M02-048_ficha_lote_ui.cy.ts.mp4`
-- **Screenshots:**
-  - `screenshots/TC-M02-048_ficha_lote_ui.cy.ts/TC-M02-G24 ... TC-M02-048 (C1) ... (failed).png`
-  - `screenshots/TC-M02-048_ficha_lote_ui.cy.ts/TC-M02-G24 ... TC-M02-049 (C2) ... (failed).png`
-  - `screenshots/TC-M02-048_ficha_lote_ui.cy.ts/TC-M02-G24 ... TC-M02-050 (C3) ... (failed).png`
-  - `screenshots/TC-M02-048_ficha_lote_ui.cy.ts/TC-M02-G24 ... TC-M02-056 (C4) ... (failed).png`
+- **Video:** `EvaluacionV2/RESULTADOS/G24-REEVAL-V2-20260914-010334/cypress_video/TC-M02-048_ficha_lote_ui.cy.ts.mp4`
+- **Screenshots:** `EvaluacionV2/RESULTADOS/G24-REEVAL-V2-20260914-010334/cypress_screenshots/`
+  - `cypress_screenshots/TC-M02-G24 — Suite E2E de Gestión Poblacional ... TC-M02-048 (C1) ... (failed).png`
+  - `cypress_screenshots/TC-M02-G24 — Suite E2E de Gestión Poblacional ... TC-M02-049 (C2) ... (failed).png`
+  - `cypress_screenshots/TC-M02-G24 — Suite E2E de Gestión Poblacional ... TC-M02-050 (C3) ... (failed).png`
+  - `cypress_screenshots/TC-M02-G24 — Suite E2E de Gestión Poblacional ... TC-M02-056 (C4) ... (failed).png`
 
 ---
 
@@ -102,7 +109,7 @@ FROM modulo2.activos_biologicos ORDER BY fecha_creacion DESC LIMIT 3;
     --env-var "admin_email=administador.dev@gmail.com" \
     --env-var "admin_password=Test1234!" \
     --reporters cli,json \
-    --reporter-json-export "RESULTADOS/2026-09-14_reevaluacion/TC-M02-G24_postman_resultado_2026-09-14.json" \
+    --reporter-json-export "EvaluacionV2/RESULTADOS/G24-REEVAL-V2-20260914-010334/TC-M02-G24_postman_resultado_V2.json" \
     --timeout-request 15000
   ```
 - **Duración:** 2.2 segundos. **Exit Code:** 1.
