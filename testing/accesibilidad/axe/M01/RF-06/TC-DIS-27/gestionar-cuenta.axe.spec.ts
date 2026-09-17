@@ -91,15 +91,9 @@ test.describe('TC-DIS-27 - Accesibilidad WCAG 2.1 AA - Gestionar Cuenta de Usuar
     await page.getByLabel(/motivo/i).fill('Prueba QA - caso TC-DIS-27');
     await page.keyboard.press('Enter');
 
-    // HALLAZGO: shared/hooks/useToast.ts existe (cola de toasts del sistema de
-    // diseño, CLAUDE.md especifica success 4s / error persistente) pero no lo
-    // consume ningún componente en src/ — no hay ningún <Toast> ni llamada a
-    // useToast() fuera del propio hook. El resultado de la acción no se anuncia
-    // de ninguna forma accesible (ni role="status" ni role="alert" nuevos);
-    // solo se observa el cierre del modal y la tabla refrescada.
-    const seAnunciaResultado = await page.getByRole('status').or(page.getByRole('alert')).first()
-      .isVisible({ timeout: 2000 }).catch(() => false);
-    test.fail(!seAnunciaResultado, 'RF-06/4.1.3: el éxito de la acción no se anuncia vía aria-live — useToast existe pero no está conectado a ningún componente visual');
+    // Se verifica que la acción notifique el resultado de forma accesible (role="status" o role="alert")
+    const anuncioResultado = page.getByRole('status').or(page.getByRole('alert')).first();
+    await expect(anuncioResultado).toBeVisible({ timeout: 5000 });
   });
 
 });
