@@ -1,3 +1,37 @@
+## [1.0.0-rc.27](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.26...v1.0.0-rc.27) (2026-09-18)
+
+### Bug Fixes
+
+* **rf49:** corregir mensaje de error 403 al asociar sensor ([2e0b462](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2e0b462fc58700f268bcaa780762a856bdf0b967)), closes [#349](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/349)
+
+## [1.0.0-rc.26](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.25...v1.0.0-rc.26) (2026-09-18)
+
+### Bug Fixes
+
+* **rf49:** [#351](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/351) quitar AMBIENTAL del modal de asociar sensor a un activo ([cbcb318](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cbcb318c58071572b3019b8d9161e675c6287bf3))
+
+## [1.0.0-rc.25](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.24...v1.0.0-rc.25) (2026-09-14)
+
+### Features
+
+* **rf15:** [#115](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/115) permitir creacion offline en el catalogo de especies con sincronizacion diferida ([47306a3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/47306a345d7fdd3d90cc4a73af12a030c6160f71))
+
+### Bug Fixes
+
+* **rf17:** [#116](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/116) corregir contraste invisible en Rango general de Umbrales Ambientales ([bb2c5a0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/bb2c5a0b0ac6cd3c680bc4a601b3e10382bbbbc7))
+
+## [1.0.0-rc.24](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.23...v1.0.0-rc.24) (2026-09-14)
+
+### Bug Fixes
+
+* **biological_assets:** [#98](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/98) renderizar paginacion en el listado de activos ([f11b73e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f11b73e9c7dd651132b9864be1a9fa7e6ac529f3))
+
+## [1.0.0-rc.23](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.22...v1.0.0-rc.23) (2026-09-13)
+
+### Bug Fixes
+
+* **deps:** [#108](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/108) resolver vulnerabilidades de npm audit en dependencias ([b5be4e5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b5be4e5888083dc38fed4e693095539b8a243af6))
+
 ## [1.0.0-rc.22](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.21...v1.0.0-rc.22) (2026-09-13)
 
 ### Bug Fixes

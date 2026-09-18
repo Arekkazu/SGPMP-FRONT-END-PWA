@@ -564,7 +564,7 @@ export function UmbralesSection({ idEspecie }: Props) {
                         </div>
                       </div>
                     </td>
-                    <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                    <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                       {u.valor_min} – {u.valor_max} <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{v.unidad}</span>
                     </td>
                     <td style={{ ...TD, minWidth: 160 }}>

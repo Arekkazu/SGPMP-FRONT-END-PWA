@@ -452,7 +452,10 @@ export interface TransferenciaResponse {
 // ── Sensores IoT (recurso 30) ────────────────────────────────────────
 export interface AsociarSensorActivoDTO {
   tipo_activo: 'INDIVIDUAL' | 'LOTE';
-  tipo_asociacion: 'DIRECTA' | 'AMBIENTAL' | 'POBLACIONAL';
+  // AMBIENTAL no se soporta desde este DTO (issue #351 backend): una
+  // asociación ambiental se ancla a la infraestructura, no a un activo
+  // puntual. El backend la rechaza con 400 si se envía aquí.
+  tipo_asociacion: 'DIRECTA' | 'POBLACIONAL';
   dispositivo_iot_id: number;
   sensor_id: number;
   id_infraestructura: number;
