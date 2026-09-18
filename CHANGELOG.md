@@ -1,3 +1,9 @@
+## [1.0.0-rc.26](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.25...v1.0.0-rc.26) (2026-09-18)
+
+### Bug Fixes
+
+* **rf49:** [#351](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/351) quitar AMBIENTAL del modal de asociar sensor a un activo ([cbcb318](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cbcb318c58071572b3019b8d9161e675c6287bf3))
+
 ## [1.0.0-rc.25](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.24...v1.0.0-rc.25) (2026-09-14)
 
 ### Features
