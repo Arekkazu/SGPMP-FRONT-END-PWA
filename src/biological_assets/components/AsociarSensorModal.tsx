@@ -11,7 +11,7 @@ import type { AsociarSensorActivoDTO } from '../types';
 
 interface FormValues {
   tipo_activo: 'INDIVIDUAL' | 'LOTE';
-  tipo_asociacion: 'DIRECTA' | 'AMBIENTAL' | 'POBLACIONAL';
+  tipo_asociacion: 'DIRECTA' | 'POBLACIONAL';
   dispositivo_iot_id: string;
   sensor_id: string;
   id_infraestructura: string;
@@ -72,7 +72,6 @@ export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, s
 
           <FormSelect label={t('asociarsensormodal.tipo_de_asociacion')} required {...register('tipo_asociacion')}>
             <option value="DIRECTA">{t('asociarsensormodal.directa')}</option>
-            <option value="AMBIENTAL">{t('asociarsensormodal.ambiental')}</option>
             <option value="POBLACIONAL">{t('asociarsensormodal.poblacional')}</option>
           </FormSelect>
 
