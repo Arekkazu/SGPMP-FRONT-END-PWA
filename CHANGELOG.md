@@ -1,3 +1,9 @@
+## [1.0.0-rc.27](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.26...v1.0.0-rc.27) (2026-09-18)
+
+### Bug Fixes
+
+* **rf49:** corregir mensaje de error 403 al asociar sensor ([2e0b462](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2e0b462fc58700f268bcaa780762a856bdf0b967)), closes [#349](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/349)
+
 ## [1.0.0-rc.26](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.25...v1.0.0-rc.26) (2026-09-18)
 
 ### Bug Fixes
