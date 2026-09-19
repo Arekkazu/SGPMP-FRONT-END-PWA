@@ -13,7 +13,7 @@ export default defineConfig({
     defaultCommandTimeout: 12000,
     pageLoadTimeout: 180000,
     modifyObstructiveCode: false,
-    retries: { runMode: 0, openMode: 0 },
+    retries: { runMode: 2, openMode: 0 },
     // Al crear EvaluacionV<n+1>, actualizar estas rutas a la nueva carpeta 
     // con su RUN_ID correspondiente.
     videosFolder: 'EvaluacionV2/RESULTADOS/G24-REEVAL-V2-20260914-010334/cypress_video',

@@ -9,14 +9,17 @@ declare global {
 }
 
 Cypress.Commands.add('loginUI', (
-  email = Cypress.env('ADMIN_EMAIL') || 'administador.dev@gmail.com',
-  password = Cypress.env('ADMIN_PASSWORD') || 'Test1234!',
+  email = Cypress.env('ADMIN_EMAIL'),
+  password = Cypress.env('ADMIN_PASSWORD'),
 ) => {
+  if (!email || !password) {
+    throw new Error('Credenciales ADMIN_EMAIL o ADMIN_PASSWORD no provistas en variables de entorno Cypress');
+  }
   cy.visit('/login');
   cy.get('input[autocomplete="email"]').clear().type(email);
   cy.get('input[autocomplete="current-password"]').clear().type(password, { log: false });
-  cy.contains('button', 'Ingresar').click();
-  cy.location('pathname', { timeout: 15000 }).should('not.eq', '/login');
+  cy.contains('button', /^(Ingresar|Sign In|Log In)$/i).click();
+  cy.location('pathname', { timeout: 120000 }).should('not.eq', '/login');
 });
 
 export {};

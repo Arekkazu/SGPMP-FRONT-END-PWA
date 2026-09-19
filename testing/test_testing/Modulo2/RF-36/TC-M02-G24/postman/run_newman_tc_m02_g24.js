@@ -7,6 +7,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const collectionPath = path.join(__dirname, 'TC-M02-G24.postman_collection.json');
+// NOTA NORMATIVA V3: Newman ejecuta la validación rápida de contrato API y genera
+// su reporte intermedio. La suite Cypress es la responsable exclusiva de generar y escribir
+// el archivo computable oficial en 'resultados/resultado_TC-M02-G24_reintento2.json' para evitar colisiones.
 const resultadosDir = path.join(__dirname, '..', 'RESULTADOS', 'TC-M02-G24');
 
 if (!fs.existsSync(resultadosDir)) {

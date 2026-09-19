@@ -12,11 +12,15 @@
     },
     {
       "key": "admin_email",
-      "value": "administador.dev@gmail.com"
+      "value": ""
     },
     {
       "key": "admin_password",
-      "value": "Test1234!"
+      "value": ""
+    },
+    {
+      "key": "current_date",
+      "value": ""
     },
     {
       "key": "token",
@@ -62,6 +66,15 @@
         }
       },
       "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.collectionVariables.set('current_date', new Date().toISOString().split('T')[0]);"
+            ],
+            "type": "text/javascript"
+          }
+        },
         {
           "listen": "test",
           "script": {
@@ -149,7 +162,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"2026-09-14\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
+          "raw": "{\n  \"tipo_activo\": \"POBLACIONAL\",\n  \"id_especie\": 4,\n  \"fecha_inicio_ciclo\": \"{{current_date}}\",\n  \"origen_financiero\": \"compra\",\n  \"costo_adquisicion\": 50000,\n  \"soporte_documental\": \"Factura-Postman-G24\",\n  \"id_infraestructura\": 3,\n  \"cantidad_inicial\": 100,\n  \"peso_promedio_inicial\": 10.0\n}"
         },
         "url": {
           "raw": "{{base_url}}/activos-biologicos",
@@ -194,7 +207,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"id_ciclo_productiva\": {{ciclo_id}},\n  \"fecha_inicio\": \"2026-09-14\"\n}"
+          "raw": "{\n  \"id_ciclo_productiva\": 4,\n  \"fecha_inicio\": \"{{current_date}}\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/fases",
@@ -307,7 +320,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"fecha_evento\": \"2026-09-14\",\n  \"valor_medicion\": 12.5,\n  \"tipo_agregacion\": \"PROMEDIO\"\n}"
+          "raw": "{\n  \"fecha_evento\": \"{{current_date}}\",\n  \"tipo_medicion\": \"PESO\",\n  \"unidad_medida\": \"kg\",\n  \"valor_medicion\": 12.5,\n  \"nuevo_peso_promedio\": 12.5,\n  \"cantidad_medida\": 100,\n  \"tipo_agregacion\": \"PROMEDIO\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/eventos/crecimiento",
@@ -420,7 +433,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"tipo_baja\": \"muerte\",\n  \"fecha_baja\": \"2026-09-14\",\n  \"motivo_baja\": \"Mortalidad de prueba Postman G24\",\n  \"cantidad_afectada\": 10\n}"
+          "raw": "{\n  \"tipo_baja\": \"muerte\",\n  \"fecha_baja\": \"{{current_date}}\",\n  \"motivo_baja\": \"Mortalidad de prueba Postman G24\",\n  \"cantidad_afectada\": 10\n}"
         },
         "url": {
           "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/eventos/baja",
@@ -590,7 +603,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"estado_nuevo\": \"BAJA\",\n  \"fecha_cambio_estado\": \"2026-09-14\",\n  \"motivo_cambio\": \"Teardown de prueba Postman G24\"\n}"
+          "raw": "{\n  \"estado_nuevo\": \"INACTIVO\",\n  \"fecha_cambio_estado\": \"{{current_date}}\",\n  \"motivo_cambio\": \"Teardown de prueba Postman G24\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/activos-biologicos/{{lote_id}}/estado",

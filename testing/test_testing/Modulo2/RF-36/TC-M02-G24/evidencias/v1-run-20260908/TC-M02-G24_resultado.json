@@ -1,0 +1,91 @@
+{
+  "caso": "TC-M02-G24",
+  "titulo": "Gestión Poblacional de Activos Biológicos (Ficha UI, Crecimiento, Baja e Inmutabilidad)",
+  "cu": "CU03",
+  "rf": "RF-36 / RF-33 / RF-37 / RF-39 / RF-44 / RF-16",
+  "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.76 (Headless UI) / Newman CLI 6.2.2 (API)",
+  "fecha": "2026-09-08T03:09:35.000Z",
+  "peticionInfo": "Login admin@pecuaria.co -> HTTP 200 OK\nPOST /configuracion/ciclos (Ciclo ID #25) -> HTTP 201 Created\nPOST /activos-biologicos (Lote ID #103) -> HTTP 201 Created\nPOST /activos-biologicos/103/fases (ciclo 25) -> HTTP 400 CICLO_INVALIDO\nPOST /activos-biologicos/103/eventos/crecimiento -> HTTP 400 (SIN_FASE_ACTIVA)\nPOST /activos-biologicos/103/eventos/baja -> HTTP 500 ERROR_INTERNO\nGET /activos-biologicos/103 (inmutabilidad) -> HTTP 200 OK (cantidad_inicial=100, peso_inicial=10.0)\nPATCH /activos-biologicos/103/estado (Teardown RF-44) -> HTTP 200 OK\nPATCH /configuracion/ciclos/25/desactivar (Teardown RF-16) -> HTTP 200 OK",
+  "checkpoints": [
+    {
+      "paso": "Fase 0 — Asignar Fase Productiva (RF-37)",
+      "esperado": "HTTP 200/201 (fase activa asignada síncrona o vía POST /fases)",
+      "obtenido": "HTTP 400: CICLO_INVALIDO — El ciclo productivo con ID 25 no existe.",
+      "estado": "FALLA",
+      "clasificacion": "Bloqueo Backend (Brecha id_ciclo_biologico vs id_ciclo_productiva)"
+    },
+    {
+      "paso": "TC-M02-048 — UI Ficha `cantidad_inicial` [RF-33]",
+      "esperado": "100 (inmutable / histórico)",
+      "obtenido": "100",
+      "estado": "OK",
+      "clasificacion": "Conforme RF-33"
+    },
+    {
+      "paso": "TC-M02-048 — UI Ficha `peso_promedio_inicial` [RF-33]",
+      "esperado": "10.0 (inmutable / histórico)",
+      "obtenido": "10.0",
+      "estado": "OK",
+      "clasificacion": "Conforme RF-33"
+    },
+    {
+      "paso": "TC-M02-048 — UI Ficha `cantidad_actual` [RF-36]",
+      "esperado": "100",
+      "obtenido": "100",
+      "estado": "OK",
+      "clasificacion": "Conforme RF-36"
+    },
+    {
+      "paso": "TC-M02-048 — UI Ficha `densidad` [RF-36]",
+      "esperado": "0.2000 (cantidad_actual / superficie = 100 / 500.00)",
+      "obtenido": "null",
+      "estado": "FALLA",
+      "clasificacion": "Defecto Backend (Cálculo supeditado a fase activa)"
+    },
+    {
+      "paso": "TC-M02-049 — Evento CRECIMIENTO [RF-39]",
+      "esperado": "HTTP 200/201 con evento registrado y biomasa_total recalculada",
+      "obtenido": "HTTP 400: VAL_ENTRADA / SIN_FASE_ACTIVA",
+      "estado": "FALLA",
+      "clasificacion": "Bloqueo Backend (Consecuencia de falla en RF-37)"
+    },
+    {
+      "paso": "TC-M02-050 — Evento BAJA [RF-39]",
+      "esperado": "HTTP 200/201 con cantidad_actual reducida en 10",
+      "obtenido": "HTTP 500: ERROR_INTERNO — Error inesperado en base de datos",
+      "estado": "FALLA",
+      "clasificacion": "Bloqueo Backend / Defecto de Persistencia"
+    },
+    {
+      "paso": "TC-M02-056 — Inmutabilidad `cantidad_inicial` [RF-33]",
+      "esperado": "100 (sin alteración tras eventos)",
+      "obtenido": "100",
+      "estado": "OK",
+      "clasificacion": "Conforme RF-33"
+    },
+    {
+      "paso": "TC-M02-056 — Inmutabilidad `peso_promedio_inicial` [RF-33]",
+      "esperado": "10.0 (sin alteración tras eventos)",
+      "obtenido": "10.0",
+      "estado": "OK",
+      "clasificacion": "Conforme RF-33"
+    },
+    {
+      "paso": "Teardown Lote (RF-44)",
+      "esperado": "HTTP 200 OK (estado_nuevo: 6 BAJA)",
+      "obtenido": "HTTP 200 OK (estado_nuevo: 6)",
+      "estado": "OK",
+      "clasificacion": "Conforme RF-44"
+    },
+    {
+      "paso": "Teardown Ciclo (RF-16)",
+      "esperado": "HTTP 200 OK (es_activo: false)",
+      "obtenido": "HTTP 200 OK (es_activo: false)",
+      "estado": "OK",
+      "clasificacion": "Conforme RF-16"
+    }
+  ],
+  "veredicto": "⚠️ CON FALLAS (Bloqueo de Backend por desalineación de entidades de ciclo/fase y error 500 en BAJA)"
+}
