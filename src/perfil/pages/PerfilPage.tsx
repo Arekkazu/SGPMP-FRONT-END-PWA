@@ -65,7 +65,16 @@ export function PerfilPage() {
     );
   }
 
-  if (!perfil) return null;
+  // #136: este estado (sin loading, sin error, aun sin `perfil`) es el que se
+  // observa justo al montar, antes de que `cargar()` resuelva — `return null`
+  // dejaba la vista sin ningun encabezado durante esa ventana.
+  if (!perfil) {
+    return (
+      <div style={{ padding: 'var(--s6)', maxWidth: 800, margin: '0 auto' }}>
+        <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--s5)' }}>{t('perfilpage.mi_perfil')}</h1>
+      </div>
+    );
+  }
 
   const iniciales = (perfil.nombre[0] ?? '') + (perfil.apellidos[0] ?? '');
 

@@ -11,6 +11,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
+import type { AccionCuenta } from '../types';
 
 type ModalState =
   | { tipo: 'ninguno' }
@@ -25,6 +26,7 @@ export function UsuariosPage() {
   const online = useOnlineStatus();
   const { usuarios, total, loading, error, filtros, fromCache, cargar, actualizarFiltros } = useUsuarios();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
+  const [accionConfirmada, setAccionConfirmada] = useState<{ accion: AccionCuenta; nombre: string } | null>(null);
   const [busquedaNombre, setBusquedaNombre] = useState('');
   const [busquedaCorreo, setBusquedaCorreo] = useState('');
   const [busquedaRol, setBusquedaRol] = useState('');
@@ -118,6 +120,19 @@ export function UsuariosPage() {
         <Alert variant="error" title={t('usuariospage.error_al_cargar_usuarios')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
+      {accionConfirmada && (
+        <Alert
+          key={`${accionConfirmada.accion}-${accionConfirmada.nombre}`}
+          variant="success"
+          title={t('gestionarmodal.accion_realizada', {
+            accion: t(`gestionarmodal.${accionConfirmada.accion}`),
+            usuario: accionConfirmada.nombre,
+          })}
+          onDismiss={() => setAccionConfirmada(null)}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
+      )}
+
       {/* Filtros */}
       <div style={{ display: 'flex', gap: 'var(--s3)', marginBottom: 'var(--s5)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ flex: 1, minWidth: 150 }}>
@@ -209,7 +224,11 @@ export function UsuariosPage() {
           nombreUsuario={modal.nombre}
           estadoActual={modal.estadoActual}
           onClose={cerrarModal}
-          onDone={() => { cerrarModal(); cargar(); }}
+          onDone={(accion) => {
+            setAccionConfirmada({ accion, nombre: modal.nombre });
+            cerrarModal();
+            cargar();
+          }}
         />
       )}
     </div>

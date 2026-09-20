@@ -14,7 +14,7 @@ interface Props {
   nombreUsuario: string;
   estadoActual: string;
   onClose: () => void;
-  onDone: () => void;
+  onDone: (accion: AccionCuenta) => void;
 }
 
 interface FormFields {
@@ -108,7 +108,7 @@ export function GestionarModal({ idUsuario, nombreUsuario, estadoActual, onClose
       accion_cuenta: accionSeleccionada,
       motivo_accion: data.motivo_accion || undefined,
     });
-    if (ok) onDone();
+    if (ok) onDone(accionSeleccionada);
   };
 
   return (

@@ -136,7 +136,7 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', overflowX: 'hidden' }}>
-      <Sidebar open={sidebarOpen} onLogout={handleLogout} />
+      <Sidebar open={sidebarOpen} onLogout={handleLogout} onNavigate={() => setSidebarOpen(false)} />
       {sidebarOpen && (
         <div
           // Por encima de la AppBar (z-100) y por debajo del drawer (z-150):

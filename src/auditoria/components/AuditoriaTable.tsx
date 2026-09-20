@@ -73,7 +73,7 @@ export function AuditoriaTable({ eventos, loading, onVerificar, tiposEvento }: P
 
   if (eventos.length === 0) {
     return (
-      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 'var(--s7) 0' }}>{t('auditoriatable.no_se_encontraron_eventos_con_los_filtros')}</p>
+      <p role="status" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 'var(--s7) 0' }}>{t('auditoriatable.no_se_encontraron_eventos_con_los_filtros')}</p>
     );
   }
 
