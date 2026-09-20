@@ -1,3 +1,9 @@
+## [1.0.0-rc.28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.27...v1.0.0-rc.28) (2026-09-20)
+
+### Bug Fixes
+
+* **auditoria:** [#288](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/288) deshabilitar exportar cuando no hay conexion ([c08a21d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c08a21ddc26b7ea12b94f51663e711a6deb5515a))
+
 ## [1.0.0-rc.27](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.26...v1.0.0-rc.27) (2026-09-18)
 
 ### Bug Fixes
