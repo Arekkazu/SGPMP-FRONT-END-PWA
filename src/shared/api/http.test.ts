@@ -95,4 +95,22 @@ describe('interceptor 401', () => {
     expect(postSpy).not.toHaveBeenCalled();
     expect(tokenStore.get()).toBe('access-vigente');
   });
+
+  it('#133: CONTRASENA_ACTUAL_INCORRECTA no cierra la sesion (es un error de negocio, no de token)', async () => {
+    tokenStore.set('access-vigente');
+    const postSpy = vi.spyOn(http, 'post');
+
+    const error = {
+      config: { url: '/contrasena/usuarios/7', headers: {} },
+      response: {
+        status: 401,
+        data: { error_code: 'CONTRASENA_ACTUAL_INCORRECTA', message: 'La contraseña actual es incorrecta.' },
+      },
+    };
+
+    await expect(onRejected()(error)).rejects.toMatchObject({ code: 'CONTRASENA_ACTUAL_INCORRECTA' });
+    expect(postSpy).not.toHaveBeenCalled();
+    expect(replaceSpy).not.toHaveBeenCalled();
+    expect(tokenStore.get()).toBe('access-vigente');
+  });
 });
