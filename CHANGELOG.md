@@ -1,3 +1,15 @@
+## [1.0.0-rc.30](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.29...v1.0.0-rc.30) (2026-09-20)
+
+### Features
+
+* **design-system:** alinear tokens y componentes con el Design System v2.0 ([d5d07a7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d5d07a708b42e2b9c02a69a6f07812babc027467)), closes [#2e8634](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/2e8634) [#226a28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/226a28) [#7a4a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/7a4a00) [#986000](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/986000) [#7a4a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/7a4a00)
+* **design-system:** alinear tokens y componentes con el Design System v2.0 ([1f2cd4c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1f2cd4ca846916da8f26cf9a63ca03a0871a9a7a)), closes [#2e8634](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/2e8634) [#226a28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/226a28) [#7a4a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/7a4a00) [#986000](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/986000) [#7a4a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/7a4a00)
+
+### Bug Fixes
+
+* **auth:** #TC-DIS-05 restituir el acceso SSO a AgroFusion en el login ([01b63e8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/01b63e81432106eea5470de8f9516f10070d1d21)), closes [#TC-DIS-05](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/TC-DIS-05) [#132](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/132) [#136](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/136)
+* **design-system:** colapsar las rejillas de contenido en movil ([cbf2e28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cbf2e2874fa073029e0905652b4eb8faf001f33b))
+
 ## [1.0.0-rc.29](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.28...v1.0.0-rc.29) (2026-09-20)
 
 ### Bug Fixes
