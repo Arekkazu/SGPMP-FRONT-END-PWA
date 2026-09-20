@@ -1,3 +1,14 @@
+## [1.0.0-rc.29](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.28...v1.0.0-rc.29) (2026-09-20)
+
+### Bug Fixes
+
+* **auditoria:** [#135](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/135) anunciar el estado sin resultados con role=status ([28ea93d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/28ea93d89027404af05ebba99e99727a7523c0d6))
+* **design-system:** [#134](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/134) subir contraste del badge de advertencia y el enlace de perfil ([562c848](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/562c848c09a5323872ba845c9974d383f7e4309d)), closes [#c07a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/c07a00) [#fff8e6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/fff8e6) [#7a4a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/7a4a00)
+* **perfil:** [#133](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/133) no cerrar sesion cuando la contrasena actual es incorrecta ([c4bda1a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c4bda1a0a7d8edda5f219354c5c0f2b40a49710f))
+* **perfil:** [#136](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/136) mostrar el encabezado "Mi Perfil" tambien sin datos cargados ([e0f8290](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e0f8290f75fdb1405b07ebbb561455166b425264))
+* **sidebar:** [#132](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/132) marcar items como enlaces y evitar drawer inalcanzable en movil ([2787738](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2787738f706563a5600c335b8da964a66c7e6ba9))
+* **usuarios:** [#135](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/135) anunciar el resultado de "gestionar cuenta" con un alert accesible ([b8860ee](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b8860ee0be8b95fde2fc46f2948fe527ccb526fe))
+
 ## [1.0.0-rc.28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.27...v1.0.0-rc.28) (2026-09-20)
 
 ### Bug Fixes
