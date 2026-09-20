@@ -81,7 +81,7 @@ export function RolesPage() {
   };
 
   return (
-    <div style={{ padding: 'var(--s6)', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ padding: 'var(--page-pad)', maxWidth: 960, margin: '0 auto' }}>
       {/* Encabezado */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s5)', flexWrap: 'wrap', gap: 'var(--s3)' }}>
         <div>

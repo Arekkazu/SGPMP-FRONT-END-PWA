@@ -44,7 +44,7 @@ export function PerfilPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 'var(--s6)', maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ padding: 'var(--page-pad)', maxWidth: 800, margin: '0 auto' }}>
         <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--s5)' }}>{t('perfilpage.mi_perfil')}</h1>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
           {[1, 2, 3].map((i) => (
@@ -58,7 +58,7 @@ export function PerfilPage() {
 
   if (error) {
     return (
-      <div style={{ padding: 'var(--s6)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--s5)' }}>{t('perfilpage.mi_perfil')}</h1>
         <Alert variant="error" title={t('perfilpage.error_al_cargar_perfil')} description={error.message} />
       </div>
@@ -70,7 +70,7 @@ export function PerfilPage() {
   // dejaba la vista sin ningun encabezado durante esa ventana.
   if (!perfil) {
     return (
-      <div style={{ padding: 'var(--s6)', maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ padding: 'var(--page-pad)', maxWidth: 800, margin: '0 auto' }}>
         <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--s5)' }}>{t('perfilpage.mi_perfil')}</h1>
       </div>
     );
@@ -79,7 +79,7 @@ export function PerfilPage() {
   const iniciales = (perfil.nombre[0] ?? '') + (perfil.apellidos[0] ?? '');
 
   return (
-    <div style={{ padding: 'var(--s6)', maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ padding: 'var(--page-pad)', maxWidth: 800, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--s5)' }}>
         <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{t('perfilpage.mi_perfil')}</h1>
         <p style={{ fontSize: 'var(--fs-body-lg)', color: 'var(--text-secondary)' }}>{t('perfilpage.consulta_y_gestion_de_tu_informacion')}</p>
@@ -158,7 +158,7 @@ export function PerfilPage() {
       </div>
 
       {/* Info cards grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--s4)', marginBottom: 'var(--s5)' }}>
+      <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s5)' }}>
 
         {/* Información personal */}
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
@@ -195,7 +195,7 @@ export function PerfilPage() {
               <p style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)', marginBottom: 4 }}>{t('perfilpage.correo_electronico')}</p>
               <p style={{ fontSize: 'var(--fs-body-md)', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{perfil.correo_electronico}</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s3)' }}>
+            <div className="ds-fg2" style={{ gap: 'var(--s3)' }}>
               <div>
                 <p style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)', marginBottom: 6 }}>{t('perfilpage.estado_de_cuenta')}</p>
                 <Badge variant={varianteEstado(perfil.estado_cuenta)}>{perfil.estado_cuenta}</Badge>
@@ -253,7 +253,7 @@ export function PerfilPage() {
 function InfoGrid({ items }: { items: [string, string, boolean?][] }) {
   const { t } = useT('perfil');
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+    <div className="ds-fg2" style={{ gap: 0 }}>
       {items.map(([claveLabel, value, mono], i) => (
         <div
           key={claveLabel}

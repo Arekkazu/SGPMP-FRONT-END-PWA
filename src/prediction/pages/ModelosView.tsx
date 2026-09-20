@@ -86,7 +86,7 @@ export function ModelosView() {
         </Button>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {!online && <Alert variant="warning" title={t('modelosview.sin_conexion')} description={t('modelosview.mostrando_versiones_cacheadas_las_acciones')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('modelosview.datos_desde_cache')} description="No se pudo conectar; se muestran las últimas versiones disponibles." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('modelosview.sin_acceso_a_los_modelos') : t('modelosview.error_al_cargar_versiones')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
