@@ -56,7 +56,7 @@ export function UsuariosPage() {
 
   if (!puedeVer) {
     return (
-      <div style={{ padding: 'var(--s7)', textAlign: 'center' }}>
+      <div style={{ padding: 'var(--page-pad)', textAlign: 'center' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('usuariospage.no_tienes_permiso_para_ver_esta_seccion')}</p>
       </div>
     );
@@ -84,7 +84,7 @@ export function UsuariosPage() {
   const totalPages = Math.ceil(total / filtros.tamano);
 
   return (
-    <div style={{ padding: 'var(--s6)', maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: 'var(--page-pad)', maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <div>
           <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{t('usuariospage.usuarios')}</h1>

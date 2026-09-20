@@ -99,7 +99,7 @@ function ConfigModal({ onClose }: { onClose: () => void }) {
             <option value="ESPECIES_MEDIANAS">{t('reentrenamientoview.especies_medianas')}</option>
           </select>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)' }}>
+        <div className="ds-fg2" style={{ gap: 'var(--s4)' }}>
           <div><label style={LABEL} htmlFor="re-desde">{t('reentrenamientoview.datos_desde')}</label><input id="re-desde" type="date" style={INPUT} disabled /></div>
           <div><label style={LABEL} htmlFor="re-hasta">{t('reentrenamientoview.datos_hasta')}</label><input id="re-hasta" type="date" style={INPUT} disabled /></div>
         </div>
@@ -140,7 +140,7 @@ export function ReentrenamientoView() {
           <Play size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('reentrenamientoview.nuevo_reentrenamiento')}</Button>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         <DatosSimuladosBanner detalle="El reentrenamiento lo ejecuta el pipeline del equipo IoT/IA (RF-71); esta vista usa datos de ejemplo" />
 
         <Alert

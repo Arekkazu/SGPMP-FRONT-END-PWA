@@ -156,7 +156,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
             {puedeEditar ? (
               <form onSubmit={handleSubmit(onSubmit)} noValidate>
                 <input type="hidden" {...register('version')} />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
+                <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
                   <div>
                     <Input
                       label={t('usuariomodal.nombres')}
@@ -263,7 +263,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                 </div>
               </form>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s3)' }}>
+              <div className="ds-fg2" style={{ gap: 'var(--s3)' }}>
                 {[
                   [t('usuariomodal.nombres'), detalle.nombre],
                   [t('usuariomodal.apellidos'), detalle.apellidos],

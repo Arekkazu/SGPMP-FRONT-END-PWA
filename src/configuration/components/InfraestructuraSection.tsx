@@ -284,7 +284,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
             </div>
 
             {modoEditar && infra && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s5)', padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s5)', padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 <div>
                   <div style={{ fontWeight: 600, marginBottom: 2 }}>{t('infraestructurasection.actualizado')}</div>
                   <div>{infra.fecha_actualizacion ? formatearFechaHora(infra.fecha_actualizacion) : '—'}</div>

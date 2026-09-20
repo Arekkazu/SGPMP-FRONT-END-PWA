@@ -20,6 +20,7 @@ import '@ionic/react/css/display.css';
 
 /* Design system tokens */
 import './shared/design-system/tokens.css';
+import './shared/design-system/Layout.css';
 
 /* Auth provider */
 import { AuthProvider } from './shared/auth/AuthContext';

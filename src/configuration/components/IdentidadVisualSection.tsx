@@ -356,7 +356,7 @@ function IdentidadForm({ finca, onBack }: FormSectionProps) {
         <Alert variant="success" title={t('identidadvisualsection.guardado')} description={t('identidadvisualsection.identidad_visual_actualizada_correctamente')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s7)', alignItems: 'start' }}>
+      <div className="ds-fg2" style={{ gap: 'var(--s7)', alignItems: 'start' }}>
         {/* Left: inputs */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
           {/* Logo upload zone */}
