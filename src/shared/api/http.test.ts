@@ -47,6 +47,7 @@ describe('refreshAccessToken', () => {
 
 describe('interceptor 401', () => {
   let replaceSpy: ReturnType<typeof vi.fn>;
+  const adapterOriginal = http.defaults.adapter;
 
   beforeEach(() => {
     replaceSpy = vi.fn();
@@ -59,27 +60,64 @@ describe('interceptor 401', () => {
   afterEach(() => {
     tokenStore.clear();
     sessionStorage.clear();
+    http.defaults.adapter = adapterOriginal;
     vi.restoreAllMocks();
   });
 
-  it('intenta refresh ante cualquier 401 (no solo TOKEN_EXPIRADO) antes de redirigir', async () => {
+  it('intenta refresh ante cualquier 401 (no solo TOKEN_EXPIRADO) y reintenta con el token nuevo', async () => {
     tokenStore.set('access-viejo');
     const postSpy = vi.spyOn(http, 'post').mockResolvedValue({ data: { token: 'access-nuevo' } });
+
+    // El reintento sale por el adapter, no por `http.post`. Sin mockearlo,
+    // jsdom lo rechaza con un error de red y la prueba terminaba midiendo esa
+    // falla del entorno en vez del contrato del interceptor.
+    const adapter = vi.fn().mockResolvedValue({ status: 200, data: { ok: true }, headers: {}, config: {} });
+    http.defaults.adapter = adapter;
 
     const error = {
       config: { url: '/usuarios/admin', headers: {} },
       response: { status: 401, data: { error_code: 'TOKEN_REVOCADO' } },
     };
 
-    // El refresh funciona, pero el reintento falla (sin adapter real en jsdom):
-    // el interceptor debe entonces limpiar la sesión y redirigir.
-    await expect(onRejected()(error)).rejects.toBeTruthy();
+    await expect(onRejected()(error)).resolves.toMatchObject({ data: { ok: true } });
     expect(postSpy).toHaveBeenCalledWith('/sesiones/refresh');
+    expect(adapter.mock.calls[0][0].headers.Authorization).toBe('Bearer access-nuevo');
+    // El refresh arreglo la sesion: no se cierra nada.
+    expect(replaceSpy).not.toHaveBeenCalled();
+    expect(tokenStore.get()).toBe('access-nuevo');
+  });
+
+  it('si el refresh falla, cierra la sesion y deja el aviso para LoginPage', async () => {
+    tokenStore.set('access-viejo');
+    vi.spyOn(http, 'post').mockRejectedValue(new Error('refresh token rotado o invalido'));
+
+    const error = {
+      config: { url: '/usuarios/admin', headers: {} },
+      response: { status: 401, data: { error_code: 'TOKEN_REVOCADO' } },
+    };
+
+    await expect(onRejected()(error)).rejects.toBeTruthy();
     expect(replaceSpy).toHaveBeenCalledWith('/login');
     expect(tokenStore.get()).toBeNull();
     // QA M09 (hallazgo #2): la redirección forzada debe dejar una bandera para
     // que LoginPage explique por qué se cerró la sesión.
     expect(consumirAvisoSesionCerrada()).toBe(true);
+  });
+
+  it('si el reintento vuelve a dar 401, cierra la sesion en vez de refrescar en bucle', async () => {
+    tokenStore.set('access-nuevo');
+    const postSpy = vi.spyOn(http, 'post');
+
+    // `_retry` ya en true es el 401 del reintento volviendo al interceptor.
+    const error = {
+      config: { url: '/usuarios/admin', headers: {}, _retry: true },
+      response: { status: 401, data: { error_code: 'TOKEN_REVOCADO' } },
+    };
+
+    await expect(onRejected()(error)).rejects.toBeTruthy();
+    expect(postSpy).not.toHaveBeenCalled();
+    expect(replaceSpy).toHaveBeenCalledWith('/login');
+    expect(tokenStore.get()).toBeNull();
   });
 
   it('no intenta refresh ni limpia el token en endpoints publicos de auth', async () => {
