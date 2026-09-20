@@ -77,7 +77,7 @@ export function ActivoDetallePage() {
 
   if (!idValido) {
     return (
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         <Alert variant="error" title={t('activodetallepage.activo_invalido')} description={t('activodetallepage.el_identificador_de_la_ruta_no_es_valido')} />
       </div>
     );
@@ -139,7 +139,7 @@ export function ActivoDetallePage() {
       </nav>
 
       {/* Contenido */}
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {tab === 'ficha' && <FichaIntegralView ficha={ficha} loading={fichaLoading || loading} error={fichaError} />}
         {tab === 'datos' && (
           <DatosActivoSection

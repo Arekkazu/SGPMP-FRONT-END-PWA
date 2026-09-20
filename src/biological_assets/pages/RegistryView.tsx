@@ -104,7 +104,7 @@ export function RegistryView() {
       </div>
 
       {/* Content */}
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {!online && (
           <Alert
             variant="warning"

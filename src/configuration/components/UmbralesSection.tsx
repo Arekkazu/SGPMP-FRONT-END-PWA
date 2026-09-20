@@ -346,7 +346,7 @@ function UmbralModal({
                 </div>
                 <div style={{ padding: 'var(--s5)' }}>
                   <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('umbralessection.define_el_rango_de_valores_aceptables_el')}</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', maxWidth: 380 }}>
+                  <div className="ds-fg2" style={{ gap: 'var(--s4)', maxWidth: 380 }}>
                     <Input
                       label={`Valor mínimo (${varSel.unidad})`}
                       type="number"

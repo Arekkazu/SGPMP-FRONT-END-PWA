@@ -65,6 +65,7 @@ src/
 │   ├── design-system/             # Tokens CSS + componentes base
 │   │   ├── tokens.css             # CSS custom properties del sistema de diseño
 │   │   ├── tokens.contraste.test.ts  # Calcula el contraste WCAG de tokens.css
+│   │   ├── Layout.css             # Rejillas responsive (.ds-fg2 / .ds-fg3)
 │   │   ├── Button.tsx
 │   │   ├── Input.tsx
 │   │   ├── Select.tsx
@@ -313,6 +314,32 @@ Cuatro rangos, mobile-first. Todo componente debe funcionar desde 320px.
 
 CSS no admite `var()` dentro de `@media`, así que las media queries repiten el
 número; los tokens `--bp-*` son la referencia contra la cual se revisan.
+
+**Rejillas de contenido (`shared/design-system/Layout.css`)**
+
+| Clase | xs (<480) | sm (480–767) | md+ (≥768) |
+|---|---|---|---|
+| `.ds-fg2` | 1 columna | 2 columnas | 2 columnas |
+| `.ds-fg3` | 1 columna | 2 columnas | 3 columnas |
+| `.ds-split-aside` | apilado | apilado | contenido + panel de 280px |
+
+Una rejilla escrita como `style={{ gridTemplateColumns: '1fr 1fr' }}` **no puede
+llevar media query** y se queda en dos columnas a cualquier ancho: en un
+teléfono de 390px eso deja cada campo de formulario en ~147px dentro de un
+modal. Usa la clase. Lo verifica `Layout.responsive.test.ts`, que lee el código
+fuente y nombra el archivo y la línea — el fallo es invisible en escritorio, así
+que reaparece solo si nadie lo vigila.
+
+La única excepción registrada es la grilla del editor de dashboard
+(`repeat(4, 1fr)`): representa el tablero real de 4×3 que el usuario está
+editando, y colapsarla mostraría una disposición que no es la suya.
+
+**Padding de página**
+
+El contenedor de cada página usa `var(--page-pad)`, que ya vale 18/24/40 según
+el ancho. No pongas `--s6` ni `--s7` fijos ahí: 32px por lado sobre un teléfono
+de 320px se lleva el 20% de la pantalla. Los paddings *internos* de tarjetas y
+modales sí son fijos.
 
 **Divergencia conocida:** el sidebar pasa a drawer en **1024px**, no en el
 `--bp-md` de 768px que sugiere el DS. A 768–1023px el sidebar fijo de 240px

@@ -157,6 +157,12 @@
   --sidebar-w: 240px;
   --topbar-h: 64px;
 
+  /* Padding horizontal de pagina, por breakpoint (DS v2.0: 18 / 24 / 40).
+     Las paginas lo aplicaban con --s6 o --s7 fijos: 32px por lado sobre un
+     telefono de 320px se lleva el 20% del ancho. El 18px de xs/sm es el unico
+     valor del sistema fuera de la rejilla de 4px, y viene asi del DS. */
+  --page-pad: var(--s8);
+
   /* Navegación institucional (RF-26): el color primario de la finca pinta la
      barra lateral. Por defecto es el neutro oscuro del producto; al aplicar la
      identidad visual, `aplicarIdentidad` lo sobreescribe con la variante
@@ -174,10 +180,17 @@
 /* Escalado responsive del DS v2.0 ("Tipografia > Escalado responsive por
    breakpoint"). Solo bajan display-lg y heading-lg; body-md se queda en 14px
    en todos los anchos porque es el minimo legible en movil. */
+@media (max-width: 1199px) {
+  :root {
+    --page-pad: var(--s6);
+  }
+}
+
 @media (max-width: 767px) {
   :root {
     --fs-display-lg: 26px;
     --fs-heading-md: 19px;
+    --page-pad: 18px;
   }
 }
 

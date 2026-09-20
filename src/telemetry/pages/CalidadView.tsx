@@ -84,7 +84,7 @@ export function CalidadView() {
         )}
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {!online && <Alert variant="warning" title={t('calidadview.sin_conexion')} description={t('calidadview.evaluar_y_re_evaluar_estan_deshabilitados')} style={{ marginBottom: 'var(--s4)' }} />}
         {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('calidadview.sin_acceso_a_calidad') : t('calidadview.error_al_cargar_calidad')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 

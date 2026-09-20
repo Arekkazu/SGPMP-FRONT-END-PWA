@@ -451,7 +451,7 @@ export function ConfigurationPage() {
       </nav>
 
       {/* Content */}
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {activeTab === 'catalogo' && <CatalogoTab />}
         {activeTab === 'por-especie' && <PorEspeciePage />}
         {activeTab === 'fincas' && (

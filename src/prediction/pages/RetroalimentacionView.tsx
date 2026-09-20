@@ -85,7 +85,7 @@ export function RetroalimentacionView() {
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('retroalimentacionview.evaluacion_de_las_predicciones_del_motor')}</p>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         <DatosSimuladosBanner detalle="La lista de inferencias pendientes es de ejemplo (el backend solo expone el registro, no la consulta). El envío de la evaluación sí usa el endpoint real" />
 
         {okFlash && <Alert variant="success" title={t('retroalimentacionview.evaluacion_registrada')} description={t('retroalimentacionview.la_retroalimentacion_clinica_quedo')} style={{ marginBottom: 'var(--s4)' }} />}

@@ -129,7 +129,7 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s5)' }}>
+          <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s5)' }}>
             <div>
               <Input
                 label={t('rolmodal.nombre_del_rol')}
