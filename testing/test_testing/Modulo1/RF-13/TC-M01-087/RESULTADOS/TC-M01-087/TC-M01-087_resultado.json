@@ -5,47 +5,46 @@
   "rf": "RF-13",
   "tipo": "Funcional / Seguridad (Solo Lectura)",
   "equipo": "Frontend & QA",
-  "adminUser": "admin@pecuaria.co",
+  "testUser": "pruebaas0608@gmail.com",
   "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
   "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
-  "navegador": "chrome 152.0.7977.65",
-  "fecha": "2026-09-03T00:55:42.400Z",
+  "navegador": "chrome 153.0.8010.48",
+  "fecha": "2026-09-21T02:40:44.435Z",
   "precondicionNota": "El usuario no existía previamente en TEST y fue creado por el propio test como precondición para poder ejecutar la validación de solo lectura.",
-  "notaHallazgoError": "Al intentar abrir el modal de detalle del usuario, el sistema emite la petición HTTP GET /usuarios/undefined/detalle, generando un error de respuesta HTTP 400 Bad Request (\"Input should be a valid integer, unable to parse string as an integer\") y desplegando la alerta \"Error al cargar\" en la interfaz.",
-  "peticionInfo": "El usuario no existía previamente en TEST y fue creado por el propio test como precondición para poder ejecutar la validación de solo lectura (POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/ -> HTTP 201).",
+  "notaHallazgoError": "Carga de detalle exitosa (HTTP 200) y verificación satisfactoria de 0 campos editables para el rol Productor.",
+  "peticionInfo": "El usuario no existía previamente en TEST y fue creado por el propio test como precondición para poder ejecutar la validación de solo lectura (POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/usuarios/ -> HTTP 400).",
   "checkpoints": [
     {
       "paso": "Checkpoint 1: Autenticación y Navegación al Módulo de Usuarios",
-      "esperado": "Inicio de sesión exitoso como admin y navegación a /usuarios mediante la barra lateral SPA",
+      "esperado": "Inicio de sesión exitoso como Productor y navegación a /usuarios mediante la barra lateral SPA",
       "obtenido": "Navegación completada exitosamente a la vista /usuarios",
       "estado": "OK"
     },
     {
       "paso": "Checkpoint 2: Carga de Información de Detalle del Perfil",
       "esperado": "Carga exitosa de los datos del usuario en la pantalla de detalle (HTTP 200 OK)",
-      "obtenido": "Error de servidor HTTP 400 Bad Request (\"Input should be a valid integer\") al realizar la solicitud /usuarios/undefined/detalle",
-      "estado": "FALLA"
+      "obtenido": "Carga exitosa: El backend respondió HTTP 200 OK con los datos del usuario",
+      "estado": "OK"
     },
     {
       "paso": "Checkpoint 3: Verificación de Entradas de Formulario Editables",
       "esperado": "0 campos de entrada editables en la pantalla (inputs, selects, textareas)",
-      "obtenido": "No fue posible verificar por falla de carga de datos en el modal de detalle",
-      "estado": "FALLA"
+      "obtenido": "Verificado: 0 campos editables encontrados en el modal de detalle (0 inputs/selects/textareas detectados)",
+      "estado": "OK"
     },
     {
       "paso": "Checkpoint 4: Veredicto de Solo Lectura de la Pantalla de Perfil (RF-13)",
       "esperado": "Pantalla 100% solo lectura (0 elementos editables en total)",
-      "obtenido": "FALLA: La consulta de detalle falla con HTTP 400 por enviar ID undefined al backend",
-      "estado": "FALLA"
+      "obtenido": "APROBADO: El modal de detalle del usuario es 100% de solo lectura (0 campos editables)",
+      "estado": "OK"
     }
   ],
-  "veredicto": "CON FALLAS (ERROR EN CONSULTA DE DETALLE)",
+  "veredicto": "SIN FALLAS BLOQUEANTES",
   "hallazgos": [
     "El usuario no existía previamente en TEST y fue creado por el propio test como precondición para poder ejecutar la validación de solo lectura.",
-    "Al intentar abrir el modal de detalle del usuario, el sistema emite la petición HTTP GET /usuarios/undefined/detalle, generando un error de respuesta HTTP 400 Bad Request (\"Input should be a valid integer, unable to parse string as an integer\") y desplegando la alerta \"Error al cargar\" en la interfaz.",
     "Checkpoint 1: Autenticación y Navegación al Módulo de Usuarios -> Navegación completada exitosamente a la vista /usuarios (OK)",
-    "Checkpoint 2: Carga de Información de Detalle del Perfil -> Error de servidor HTTP 400 Bad Request (\"Input should be a valid integer\") al realizar la solicitud /usuarios/undefined/detalle (FALLA)",
-    "Checkpoint 3: Verificación de Entradas de Formulario Editables -> No fue posible verificar por falla de carga de datos en el modal de detalle (FALLA)",
-    "Checkpoint 4: Veredicto de Solo Lectura de la Pantalla de Perfil (RF-13) -> FALLA: La consulta de detalle falla con HTTP 400 por enviar ID undefined al backend (FALLA)"
+    "Checkpoint 2: Carga de Información de Detalle del Perfil -> Carga exitosa: El backend respondió HTTP 200 OK con los datos del usuario (OK)",
+    "Checkpoint 3: Verificación de Entradas de Formulario Editables -> Verificado: 0 campos editables encontrados en el modal de detalle (0 inputs/selects/textareas detectados) (OK)",
+    "Checkpoint 4: Veredicto de Solo Lectura de la Pantalla de Perfil (RF-13) -> APROBADO: El modal de detalle del usuario es 100% de solo lectura (0 campos editables) (OK)"
   ]
 }
