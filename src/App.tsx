@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Redirect, Route } from 'react-router-dom';
+import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { useLogout } from './auth/hooks/useLogout';
@@ -37,6 +37,7 @@ import { SinEspeciesEmptyState } from './shared/contexto/SinEspeciesEmptyState';
 import { Sidebar } from './shared/design-system/Sidebar';
 import { AppBar } from './shared/design-system/AppBar';
 import { Alert } from './shared/design-system/Alert';
+import { Button } from './shared/design-system/Button';
 import { useT } from './shared/i18n/useT';
 import { NotificationTray } from './notificaciones/components/NotificationTray';
 import { useNotificaciones } from './notificaciones/hooks/useNotificaciones';
@@ -44,6 +45,7 @@ import { usePushNotifications } from './notificaciones/hooks/usePushNotification
 
 /* Auth pages */
 import { LoginPage } from './auth/pages/LoginPage';
+import './auth/pages/AuthPages.css';
 import { RegistroPage } from './auth/pages/RegistroPage';
 import { ActivacionPage } from './auth/pages/ActivacionPage';
 import { ReenviarPage } from './auth/pages/ReenviarPage';
@@ -211,13 +213,39 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   );
 }
 
+// INC-M02-51-G44: el refresh al recargar fallo por el servidor o la red. La
+// cookie sigue vigente, asi que mandar al login sin decir nada perderia la sesion.
+function SesionNoRestaurada() {
+  const { reintentarRestaurarSesion } = useAuth();
+  const { t } = useT('auth');
+  return (
+    <div className="auth-bg">
+      <div className="auth-card">
+        <Alert
+          variant="error"
+          title={t('sesion_no_restaurada.titulo')}
+          description={t('sesion_no_restaurada.descripcion')}
+          className="auth-alert"
+        />
+        <Button type="button" variant="primary" size="lg" fullWidth onClick={reintentarRestaurarSesion}>
+          {t('sesion_no_restaurada.reintentar')}
+        </Button>
+        <div className="auth-links">
+          <Link to="/login" className="auth-link">{t('sesion_no_restaurada.ir_al_login')}</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PrivateRoute({ path, component: Component }: { path: string; component: React.ComponentType }) {
-  const { token, perfilIncompleto, isBootstrapping } = useAuth();
+  const { token, perfilIncompleto, isBootstrapping, errorRestaurandoSesion } = useAuth();
   return (
     <Route
       path={path}
       render={() => {
         if (isBootstrapping) return null;
+        if (!token && errorRestaurandoSesion) return <SesionNoRestaurada />;
         if (!token) return <Redirect to="/login" />;
         if (perfilIncompleto === null) return null;
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
@@ -240,13 +268,14 @@ function AuthedRoute({
   exact?: boolean;
   component: React.ComponentType;
 }) {
-  const { token, isBootstrapping } = useAuth();
+  const { token, isBootstrapping, errorRestaurandoSesion } = useAuth();
   return (
     <Route
       path={path}
       exact={exact}
       render={() => {
         if (isBootstrapping) return null;
+        if (!token && errorRestaurandoSesion) return <SesionNoRestaurada />;
         return token ? <Component /> : <Redirect to="/login" />;
       }}
     />

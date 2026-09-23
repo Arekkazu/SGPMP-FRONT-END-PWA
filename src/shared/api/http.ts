@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosError } from 'axios';
 import { tokenStore } from '../auth/tokenStore';
 import { mapToApiError } from './errors';
 
@@ -57,6 +57,14 @@ export function consumirAvisoSesionCerrada(): boolean {
   return avisar;
 }
 
+// INC-M02-51-G44: solo un 401/410 del refresh significa que la sesion murio.
+// Ante un 5xx o un fallo de red el backend hace rollback y la cookie sigue
+// vigente: cerrar la sesion ahi la pierde sin motivo.
+export function refrescoRechazoLaSesion(error: unknown): boolean {
+  const status = (error as AxiosError | undefined)?.response?.status;
+  return status === 401 || status === 410;
+}
+
 function forzarLogout(): void {
   sessionStorage.setItem(SESION_CERRADA_KEY, '1');
   tokenStore.clear();
@@ -94,7 +102,8 @@ http.interceptors.response.use(
     // silencioso una vez antes de decidir. Antes solo se refrescaba con
     // TOKEN_EXPIRADO: otros códigos legítimos (SESION_EXPIRADA_INACTIVIDAD,
     // TOKEN_REVOCADO…) forzaban redirección inmediata a /login. Si el refresh
-    // falla es porque la sesión de verdad murió — ahí sí se limpia y redirige.
+    // rechaza la sesión (401/410) es porque de verdad murió — ahí sí se limpia
+    // y redirige; un 5xx o un fallo de red solo hace fallar esta petición.
     if (
       error.response?.status === 401 &&
       !isPublicAuthEndpoint &&
@@ -106,7 +115,10 @@ http.interceptors.response.use(
         const newToken = await refreshAccessToken();
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return http(originalRequest);
-      } catch {
+      } catch (refreshError) {
+        if (!refrescoRechazoLaSesion(refreshError)) {
+          return Promise.reject(mapToApiError(refreshError as AxiosError));
+        }
         forzarLogout();
         return Promise.reject(mapToApiError(error));
       }
