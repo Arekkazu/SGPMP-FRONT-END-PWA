@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { User, Lock, Edit2 } from 'lucide-react';
+import { User, Lock, Edit2, X } from 'lucide-react';
 import { usePerfil } from '../hooks/usePerfil';
 import { PerfilForm } from '../components/PerfilForm';
 import { CambiarContrasenaForm } from '../components/CambiarContrasenaForm';
 import { Alert } from '../../shared/design-system/Alert';
 import { Badge } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 import { mascararId } from '../../shared/lib/mascararId';
 import { varianteRol, varianteEstado } from '../../shared/lib/varianteBadge';
 
@@ -38,9 +39,7 @@ export function PerfilPage() {
     cargar();
   }, [cargar]);
 
-  const toggleSeccion = (seccion: 'editar' | 'contrasena') => {
-    setSeccionAbierta((prev) => prev === seccion ? 'ninguna' : seccion);
-  };
+  const cerrarSeccion = () => setSeccionAbierta('ninguna');
 
   if (loading) {
     return (
@@ -139,8 +138,8 @@ export function PerfilPage() {
               type="button"
               variant="secondary"
               size="md"
-              onClick={() => toggleSeccion('editar')}
-              aria-pressed={seccionAbierta === 'editar'}
+              onClick={() => setSeccionAbierta('editar')}
+              aria-haspopup="dialog"
             >
               <Edit2 size={14} aria-hidden />{t('perfilpage.editar_perfil')}
             </Button>
@@ -148,8 +147,8 @@ export function PerfilPage() {
               type="button"
               variant="primary"
               size="md"
-              onClick={() => toggleSeccion('contrasena')}
-              aria-pressed={seccionAbierta === 'contrasena'}
+              onClick={() => setSeccionAbierta('contrasena')}
+              aria-haspopup="dialog"
             >
               <Lock size={14} aria-hidden />{t('perfilpage.cambiar_contrasena')}
             </Button>
@@ -213,13 +212,13 @@ export function PerfilPage() {
         </div>
       </div>
 
-      {/* Panel editar datos personales */}
       {seccionAbierta === 'editar' && (
-        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s5)', marginBottom: 'var(--s5)', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
-            <Edit2 size={16} color="var(--brand-600)" aria-hidden />
-            <h2 style={{ fontSize: 'var(--fs-heading-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>{t('perfilpage.editar_datos_personales')}</h2>
-          </div>
+        <PerfilModal
+          tituloId="perfil-editar-titulo"
+          icono={<Edit2 size={16} color="var(--brand-600)" aria-hidden />}
+          titulo={t('perfilpage.editar_datos_personales')}
+          onClose={cerrarSeccion}
+        >
           <PerfilForm
             perfil={perfil}
             saving={saving}
@@ -227,16 +226,16 @@ export function PerfilPage() {
             saveSuccess={saveSuccess}
             onSave={editar}
           />
-        </div>
+        </PerfilModal>
       )}
 
-      {/* Panel cambiar contraseña */}
       {seccionAbierta === 'contrasena' && (
-        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s5)', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
-            <Lock size={16} color="var(--brand-600)" aria-hidden />
-            <h2 style={{ fontSize: 'var(--fs-heading-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>{t('perfilpage.cambiar_contrasena')}</h2>
-          </div>
+        <PerfilModal
+          tituloId="perfil-contrasena-titulo"
+          icono={<Lock size={16} color="var(--brand-600)" aria-hidden />}
+          titulo={t('perfilpage.cambiar_contrasena')}
+          onClose={cerrarSeccion}
+        >
           <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('perfilpage.al_cambiar_tu_contrasena_se_cerraran_todas')}</p>
           <CambiarContrasenaForm
             saving={saving}
@@ -244,8 +243,62 @@ export function PerfilPage() {
             pwSuccess={pwSuccess}
             onSave={cambiarContrasena}
           />
-        </div>
+        </PerfilModal>
       )}
+    </div>
+  );
+}
+
+// Editar perfil y cambiar contraseña se superponen a la página: como paneles al
+// final quedaban debajo de las tarjetas, fuera de la vista de quien los abría.
+function PerfilModal({ tituloId, icono, titulo, onClose, children }: {
+  tituloId: string;
+  icono: React.ReactNode;
+  titulo: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const { t } = useT('perfil');
+  const panelRef = useModalA11y(onClose);
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={tituloId}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.45)',
+        backdropFilter: 'blur(3px)',
+        padding: 'var(--s4)',
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        ref={panelRef}
+        style={{
+          background: 'var(--surface-card)',
+          borderRadius: 'var(--r-xl)',
+          border: '1px solid var(--surface-border)',
+          padding: 'var(--s5)',
+          width: '100%',
+          maxWidth: 560,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          boxShadow: 'var(--shadow-lg)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
+            {icono}
+            <h2 id={tituloId} style={{ fontSize: 'var(--fs-heading-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>{titulo}</h2>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('acciones.cerrar', { ns: 'common' })}>
+            <X size={18} aria-hidden />
+          </Button>
+        </div>
+        {children}
+      </div>
     </div>
   );
 }

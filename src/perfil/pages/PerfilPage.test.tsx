@@ -6,9 +6,11 @@
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { PerfilPage } from './PerfilPage';
 import { usePerfil } from '../hooks/usePerfil';
+import type { PerfilResponse } from '../types';
 
 vi.mock('../hooks/usePerfil');
 
@@ -54,5 +56,50 @@ describe('PerfilPage — #136 encabezado "Mi Perfil" siempre presente', () => {
     render(<PerfilPage />);
 
     expect(screen.getByRole('heading', { name: /^mi perfil$/i })).toBeVisible();
+  });
+});
+
+const PERFIL: PerfilResponse = {
+  id_usuario: 1,
+  nombre: 'Ana',
+  apellidos: 'Gomez',
+  correo_electronico: 'ana@example.com',
+  tipo_identificacion: 'CC',
+  numero_identificacion: '1234567890',
+  fecha_nacimiento: '1990-01-01',
+  fecha_registro: '2026-01-01',
+  nombre_rol: 'Productor',
+  estado_cuenta: 'Activo',
+  genero: 'F',
+  version: 1,
+};
+
+describe('PerfilPage — editar perfil y cambiar contraseña se abren como modal', () => {
+  it.each([
+    [/editar perfil/i, /editar datos personales/i],
+    [/cambiar contraseña/i, /cambiar contraseña/i],
+  ])('el boton %s abre un dialogo encima de la pagina y Escape lo cierra', async (boton, titulo) => {
+    mockUsePerfil({ perfil: PERFIL });
+    const user = userEvent.setup();
+    render(<PerfilPage />);
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: boton }));
+
+    expect(screen.getByRole('dialog', { name: titulo })).toBeVisible();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('el boton cerrar del modal lo cierra', async () => {
+    mockUsePerfil({ perfil: PERFIL });
+    const user = userEvent.setup();
+    render(<PerfilPage />);
+
+    await user.click(screen.getByRole('button', { name: /editar perfil/i }));
+    await user.click(screen.getByRole('button', { name: /^cerrar$/i }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
