@@ -14,8 +14,7 @@ export function useUmbralesAmbientales() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await umbralesApi.listar(idEspecie, soloActivos);
-      const data: UmbralAmbientalResponse[] = Array.isArray(raw) ? raw : (raw as any)?.items ?? [];
+      const data = await umbralesApi.listar(idEspecie, soloActivos);
       setUmbrales(data);
     } catch (e) {
       setError(e as ApiError);

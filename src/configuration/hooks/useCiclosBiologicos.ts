@@ -37,8 +37,7 @@ export function useCiclosBiologicos() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await ciclosApi.listar(idEspecie, soloActivos);
-      const data: CicloBiologicoResponse[] = Array.isArray(raw) ? raw : (raw as any)?.items ?? [];
+      const data = await ciclosApi.listar(idEspecie, soloActivos);
       setCiclos(data);
       setFromCache(false);
       const now = Date.now();
