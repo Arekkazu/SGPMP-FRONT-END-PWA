@@ -86,8 +86,9 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
     if (okFincas) onSaved();
   };
 
-  const toggleFinca = (id: number, ownerId: number | null) => {
-    if (ownerId !== null && ownerId !== idUsuario) return;
+  // INC-M02-61-G52 (#97): el acceso a fincas es M:N. Una finca con otro dueño
+  // también se asigna: el Veterinario atiende fincas que no son suyas.
+  const toggleFinca = (id: number) => {
     setIdsFincas((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -223,7 +224,6 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
                     {fincas.map((f) => {
-                      const ajeno = f.id_usuario !== null && f.id_usuario !== idUsuario;
                       const checked = idsFincas.has(f.id_finca);
                       return (
                         <label
@@ -234,24 +234,17 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                             gap: 'var(--s3)',
                             padding: 'var(--s2) var(--s3)',
                             borderRadius: 'var(--r-md)',
-                            border: `1px solid ${ajeno ? 'var(--surface-border)' : checked ? 'var(--brand-400)' : 'var(--surface-border)'}`,
-                            background: ajeno ? 'var(--surface-hover)' : checked ? 'var(--brand-50)' : 'var(--surface-card)',
-                            cursor: ajeno ? 'not-allowed' : 'pointer',
-                            opacity: ajeno ? 0.6 : 1,
+                            border: `1px solid ${checked ? 'var(--brand-400)' : 'var(--surface-border)'}`,
+                            background: checked ? 'var(--brand-50)' : 'var(--surface-card)',
+                            cursor: 'pointer',
                           }}
                         >
                           <input
                             type="checkbox"
                             checked={checked}
-                            disabled={ajeno}
-                            onChange={() => toggleFinca(f.id_finca, f.id_usuario)}
+                            onChange={() => toggleFinca(f.id_finca)}
                           />
                           <span style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-primary)' }}>{f.nombre}</span>
-                          {ajeno && (
-                            <span style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-muted)' }}>
-                              {t('usuariomodal.finca_ajena')}
-                            </span>
-                          )}
                         </label>
                       );
                     })}
