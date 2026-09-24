@@ -1,3 +1,9 @@
+## [1.0.0-rc.33](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.32...v1.0.0-rc.33) (2026-09-24)
+
+### Bug Fixes
+
+* **ci:** corregir redireccion de reporte de texto en workflow de Bearer ([336dcc3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/336dcc33b043858e5736bad1b364b4679c67a559))
+
 ## [1.0.0-rc.32](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.31...v1.0.0-rc.32) (2026-09-24)
 
 ### Bug Fixes
