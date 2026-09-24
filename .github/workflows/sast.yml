@@ -43,8 +43,7 @@ jobs:
           echo "Ejecutando análisis estático y de flujo de datos con Bearer sobre src/..."
           bearer scan src \
             --config-file bearer.yml \
-            --format text \
-            --output bearer-report.txt || true
+            --no-color > bearer-report.txt || true
           cat bearer-report.txt
 
       - name: Control de Bloqueo Bearer (Severidad Crítica y Alta)
