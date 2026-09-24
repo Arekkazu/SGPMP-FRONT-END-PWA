@@ -87,9 +87,11 @@ describe('interceptor 401', () => {
     expect(tokenStore.get()).toBe('access-nuevo');
   });
 
-  it('si el refresh falla, cierra la sesion y deja el aviso para LoginPage', async () => {
+  it('si el refresh rechaza la sesion, la cierra y deja el aviso para LoginPage', async () => {
     tokenStore.set('access-viejo');
-    vi.spyOn(http, 'post').mockRejectedValue(new Error('refresh token rotado o invalido'));
+    vi.spyOn(http, 'post').mockRejectedValue({
+      response: { status: 401, data: { error_code: 'REFRESH_TOKEN_REUTILIZADO' } },
+    });
 
     const error = {
       config: { url: '/usuarios/admin', headers: {} },
@@ -102,6 +104,27 @@ describe('interceptor 401', () => {
     // QA M09 (hallazgo #2): la redirección forzada debe dejar una bandera para
     // que LoginPage explique por qué se cerró la sesión.
     expect(consumirAvisoSesionCerrada()).toBe(true);
+  });
+
+  it('INC-M02-51-G44: un 5xx o un fallo de red en el refresh no cierra la sesion', async () => {
+    const error = {
+      config: { url: '/usuarios/admin', headers: {} },
+      response: { status: 401, data: { error_code: 'TOKEN_EXPIRADO' } },
+    };
+    const fallos = [
+      { response: { status: 500, data: { error_code: 'AUDITORIA_OBLIGATORIA_FALLIDA' } } },
+      new Error('Network Error'),
+    ];
+
+    for (const fallo of fallos) {
+      tokenStore.set('access-viejo');
+      vi.spyOn(http, 'post').mockRejectedValueOnce(fallo);
+
+      await expect(onRejected()({ ...error, config: { ...error.config } })).rejects.toBeTruthy();
+      expect(replaceSpy).not.toHaveBeenCalled();
+      expect(tokenStore.get()).toBe('access-viejo');
+      expect(consumirAvisoSesionCerrada()).toBe(false);
+    }
   });
 
   it('si el reintento vuelve a dar 401, cierra la sesion en vez de refrescar en bucle', async () => {
