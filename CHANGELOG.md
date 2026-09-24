@@ -1,3 +1,14 @@
+## [1.0.0-rc.32](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.31...v1.0.0-rc.32) (2026-09-24)
+
+### Bug Fixes
+
+* **nginx:** [#113](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/113) emitir encabezados de seguridad en el frontend ([ce0a3a4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ce0a3a4997273ee808f88f0f1ad41e60c3dd86b4))
+* **rf25:** contexto de interfaz 204 sin cuerpo como finca sin catalogo ([d86f820](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d86f820cc9fa2f1196b4154c8116296593a1772a)), closes [Arekkazu/sgpmp-backend#410](https://github.com/Arekkazu/sgpmp-backend/issues/410)
+* **rf31:** [#125](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/125) leer items de los listados por especie de configuracion ([9c2ceb1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9c2ceb19b4d5b98e01721e5fda91389844f08d96))
+* **rf35:** reenviar fecha_actualizacion en el patch de activo individual (INC-M02-G22) ([f808ebb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f808ebb68d27408183e364db44ed67bb85d20aca))
+* **rf45:** [#130](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/130) enviar el dia utc cuando la baja es de hoy ([8726fa2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8726fa2b62b7f4018cc2093ebff2f6ffff394146))
+* **usuarios:** [#97](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/97) permitir asignar fincas que ya tienen dueno ([948b226](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/948b226da5fe38e6821c43a7353523fbac771e55)), closes [Arekkazu/sgpmp-backend#445](https://github.com/Arekkazu/sgpmp-backend/issues/445)
+
 ## [1.0.0-rc.31](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.30...v1.0.0-rc.31) (2026-09-24)
 
 ### Bug Fixes
