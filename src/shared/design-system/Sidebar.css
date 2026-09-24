@@ -4,6 +4,12 @@
   left: 0;
   width: var(--sidebar-w);
   height: 100vh;
+  /* #132: en móviles el navegador resta la barra de direcciones a la altura
+     visible real, pero `100vh` mide el viewport de layout (con la barra
+     colapsada) — el sobrante quedaba fuera del área tocable y era
+     inalcanzable aunque el contenedor tuviera overflow-y:auto. `dvh` sigue el
+     viewport visual real; se declara despues como mejora progresiva. */
+  height: 100dvh;
   background: var(--brand-nav);
   display: flex;
   flex-direction: column;
@@ -80,6 +86,7 @@
   background: none;
   width: 100%;
   text-align: left;
+  text-decoration: none;
   border-left: 2px solid transparent;
   transition: color 0.12s, background 0.12s, border-color 0.12s;
   font-family: var(--font-sans);

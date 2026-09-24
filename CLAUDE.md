@@ -64,12 +64,14 @@ src/
 ├── shared/                        # Utilidades transversales a todos los módulos
 │   ├── design-system/             # Tokens CSS + componentes base
 │   │   ├── tokens.css             # CSS custom properties del sistema de diseño
+│   │   ├── tokens.contraste.test.ts  # Calcula el contraste WCAG de tokens.css
+│   │   ├── Layout.css             # Rejillas responsive (.ds-fg2 / .ds-fg3)
 │   │   ├── Button.tsx
 │   │   ├── Input.tsx
+│   │   ├── Select.tsx
 │   │   ├── Badge.tsx
 │   │   ├── Alert.tsx
-│   │   ├── Switch.tsx
-│   │   ├── Table.tsx
+│   │   ├── PasswordStrength.tsx
 │   │   ├── Gauge.tsx
 │   │   ├── Sidebar.tsx
 │   │   └── AppBar.tsx
@@ -178,6 +180,11 @@ Componentes base con estilos de tokens y atributos ARIA completos. Son los únic
 
 ## Sistema de diseño
 
+Referencia normativa: **Design System v2.0**
+(`docs/design-system/design-system-v2.0.html`, ábrelo en el navegador). Cuando
+el documento y este archivo se contradigan, manda el documento — salvo donde
+acá se diga explícitamente que el repo es más estricto y por qué.
+
 ### Tokens CSS (`shared/design-system/tokens.css`)
 
 Todos los valores visuales son variables CSS definidas en `:root` y sobreescritas en `[data-theme="dark"]`. Nunca usar valores fijos en los componentes.
@@ -187,14 +194,26 @@ Todos los valores visuales son variables CSS definidas en `:root` y sobreescrita
 | Grupo     | Variables                                     | Uso                                    |
 |-----------|-----------------------------------------------|----------------------------------------|
 | Brand     | `--brand-50` … `--brand-900`                  | Acciones primarias, foco               |
-| Neutral   | `--neutral-0` … `--neutral-900`               | Texto, fondos, bordes                  |
-| Semántico | `--sem-success/warning/error/info`            | Indicadores de estado                  |
+| Brand CTA | `--brand-cta`, `--brand-cta-hover`, `--brand-cta-active` | Relleno sólido del botón primario con texto blanco |
+| Neutral   | `--neutral-0` … `--neutral-900` (incluye `450` y `550`) | Texto, fondos, bordes        |
+| Semántico | `--sem-success/warning/error/info`            | Rol de **texto e icono** de estado      |
+| Sem sólido| `--sem-error-solid`                           | Rol de **relleno** con texto blanco encima |
 | Sem BG    | `--sem-success-bg` … `--sem-info-bg`          | Fondo de alertas y badges              |
 | Sem Borde | `--sem-success-border` … `--sem-info-border`  | Borde de alertas y badges              |
 | Superficie| `--surface-bg`, `--surface-card`              | Página y tarjetas                      |
 | Superficie| `--surface-border`, `--surface-hover`         | Divisores y hover                      |
 | Texto     | `--text-primary`, `--text-secondary`          | Texto principal y secundario           |
 | Texto     | `--text-muted`, `--text-inverse`              | Ayuda/deshabilitado y texto sobre oscuro|
+
+El par **texto vs. relleno** no es redundancia: un token de texto se aclara en
+modo oscuro para seguir siendo legible sobre superficie oscura, y esa misma
+aclaración lo vuelve inservible como fondo sólido bajo texto blanco. Por eso
+`--sem-error` (texto) y `--sem-error-solid` (relleno) existen por separado, y
+el botón primario usa `--brand-cta` y no `--brand-500`.
+
+`--neutral-450` y `--neutral-550` son pasos intermedios que agrega v2.0: ningún
+paso de la rampa original servía como `--text-muted` con ≥4.5:1 (el 400 da
+2.4:1 sobre blanco, el 500 da 4.4:1).
 
 **Espaciado (múltiplos de 4px)**
 
@@ -221,38 +240,57 @@ Todos los valores visuales son variables CSS definidas en `:root` y sobreescrita
 
 **Tipografía**
 
-| Token           | Desktop | Móvil  | Peso    | Uso                     |
-|-----------------|---------|--------|---------|-------------------------|
-| `display-xl`    | 32px    | 24px   | 800     | Splash / Error 404      |
-| `display-lg`    | 26px    | 20px   | 800     | Encabezado de sección   |
-| `heading-md`    | 20px    | 17px   | 700     | Título de tarjeta/modal |
-| `heading-sm`    | 17px    | 15px   | 700     | Encabezado de tabla     |
-| `body-lg`       | 15px    | 15px   | 400/500 | Texto largo, etiquetas  |
-| `body-md`       | 14px    | 14px   | 400     | Texto UI por defecto    |
-| `body-sm`       | 12px    | 12px   | 400     | Texto de ayuda          |
-| `label-md`      | 13px    | 13px   | 600     | Labels de formulario    |
-| `label-sm`      | 11px    | 11px   | 600/700 | Badges, microcopia      |
-| `mono-md`       | 12px    | 11px   | 400/500 | Código, tokens, IDs     |
+Escala del DS v2.0. Los nombres `--fs-*` son los que consumen los componentes;
+la columna «DS v2.0» es cómo se llama la misma fila en el documento.
+
+| Token CSS          | DS v2.0      | md+ (≥768) | sm (480–767) | xs (<480) | Peso    | Uso                     |
+|--------------------|--------------|------------|--------------|-----------|---------|-------------------------|
+| `--fs-display-lg`  | `display-lg` | 28px       | 26px         | 24px      | 800     | H1 de pantalla, login   |
+| `--fs-heading-md`  | `heading-lg` | 20px       | 19px         | 18px      | 800     | H1 de sección           |
+| `--fs-heading-sm`  | `heading-md` | 16px       | 16px         | 16px      | 700     | H2 / título de tarjeta  |
+| `--fs-body-lg`     | —            | 15px       | 15px         | 15px      | 400/500 | Texto de lectura larga  |
+| `--fs-body-md`     | `body-md`    | 14px       | 14px         | 14px      | 400     | Texto UI por defecto    |
+| `--fs-label-md`    | `label`      | 12px       | 12px         | 12px      | 600     | Labels de formulario    |
+| `--fs-body-sm`     | —            | 12px       | 12px         | 12px      | 400     | Texto de ayuda          |
+| `--fs-label-sm`    | `caption`    | 11px       | 11px         | 11px      | 400/600 | Badges, microcopia      |
+| `--fs-mono-md`     | `mono-sm`    | 12px       | 12px         | 12px      | 400/500 | Código, tokens, IDs     |
+
+`body-md` no baja de 14px en ningún ancho: es el mínimo legible en móvil que
+fija el DS.
+
+**Line-height y letter-spacing**
+
+`--lh-tight` 1.1 · `--lh-snug` 1.3 · `--lh-base` 1.5 · `--lh-relaxed` 1.65 · `--lh-loose` 1.8
+
+`--ls-tight` −0.02em · `--ls-normal` 0 · `--ls-wide` 0.02em · `--ls-wider` 0.06em · `--ls-widest` 0.12em
 
 ### Componentes del sistema de diseño
 
-| Componente | Variantes / Estados                                                     |
-|------------|-------------------------------------------------------------------------|
-| `Button`   | primary · secondary · danger · ghost; sm · md · lg; hover/focus/active/disabled |
-| `Input`    | default · focus · error · success · disabled; icono leading/trailing; toggle contraseña |
-| `Badge`    | Rol: admin/productor/vet/contador/ingeniero; Estado: activo/inactivo/bloqueado/pendiente/eliminado |
-| `Alert`    | error (persistente) · warning (persistente) · success (4s) · info (6s) |
-| `Switch`   | checked/unchecked, 40×22px, animación 0.2s                             |
-| `Table`    | sticky header, paginación 50 filas/página, collapse responsive          |
-| `Gauge`    | ok · warning · critical · placeholder                                   |
-| `Sidebar`  | 240px fixed (lg+) · collapsible icons (md) · drawer overlay (xs/sm)   |
-| `AppBar`   | 64px mínimo; logo, toggle de tema, badge de notificaciones              |
+Lo que existe hoy en `shared/design-system/`. El DS v2.0 documenta además
+`Switch`, `Table`, `Gauge` de umbral, tarjeta de sensor y tarjeta de predicción;
+de esos solo `Gauge` está implementado — los demás siguen siendo especificación.
+
+| Componente         | Variantes / Estados                                                     |
+|--------------------|-------------------------------------------------------------------------|
+| `Button`           | primary · secondary · danger · ghost; sm · md · lg; los 5 estados (default/hover/focus/active/disabled) |
+| `Input`            | default · hover · focus · error · disabled; icono leading/trailing; toggle contraseña |
+| `Select`           | mismo `.ds-field__input` con flecha propia                              |
+| `Badge`            | Rol: admin/productor/vet/contador/ingeniero; Estado: success/warning/error/info/neutral |
+| `Alert`            | success · warning · error · info; color de texto desde el token semántico |
+| `PasswordStrength` | medidor de fortaleza (única validación que corre en `onChange`)          |
+| `Gauge`            | ok · warning · critical · placeholder                                   |
+| `Sidebar`          | 240px fixed en ≥1024px · drawer off-canvas por debajo                   |
+| `AppBar`           | 64px mínimo; logo, toggle de tema, badge de notificaciones              |
 
 ### Reglas no negociables del sistema de diseño
 
 | Regla | Por qué |
 |-------|---------|
 | Nunca valores de color/espaciado hardcodeados en componentes | Un único punto de cambio de tema; los tokens garantizan coherencia en light/dark |
+| `--brand-500` nunca como color de texto o enlace en tamaño normal sobre fondo claro — usar `--brand-600` | Da entre 4.2:1 y 4.6:1 sobre los tres fondos claros del sistema (blanco, `--neutral-50`, `--brand-50`). Es el bug del enlace «Ir a mi perfil» de M01. `--brand-500` sirve para rellenos sólidos y gráficos, no para texto |
+| Ningún token de color se declara conforme sin calcular el ratio | Estimar a ojo produjo los 7 hallazgos del registro de corrección de v2.0. Lo calcula `tokens.contraste.test.ts` sobre el `tokens.css` real, en ambos temas |
+| Un token de color de texto necesita override propio en `[data-theme="dark"]` | Sin override hereda en silencio el hex del tema claro sobre fondo oscuro; así `--sem-warning` quedó en 2.35:1 (ilegible) hasta v2.0 |
+| Nunca `opacity` sobre texto o sobre un SVG con color de estado | La opacidad mezcla el color con el fondo: el contraste real cae y ninguna auditoría del hex nominal lo detecta. Para atenuar, usar un token de color más claro, no `opacity` |
 | Nunca `<button>` crudo ni `<IonButton>` directamente en módulos | Los estados de foco, activo y disabled del sistema requieren la lógica del componente `Button` |
 | Iconos: Lucide React exclusivamente, 20px UI / 24px navegación | Biblioteca acordada por diseño; stroke 1.5px; nunca usar la biblioteca de iconos de Ionic |
 | Todo icono interactivo lleva `aria-label` | WCAG 2.1 SC 1.1.1 — los lectores de pantalla no interpretan iconos SVG sin texto alternativo |
@@ -265,15 +303,54 @@ Todos los valores visuales son variables CSS definidas en `:root` y sobreescrita
 
 ### Grid y breakpoints
 
-| Breakpoint | Rango         | Columnas | Gutter  |
-|------------|---------------|----------|---------|
-| xs         | 0 – 639px     | 4        | 16px    |
-| sm         | 640 – 767px   | 8        | 16px    |
-| md         | 768 – 1023px  | 8        | 20px    |
-| lg         | 1024 – 1279px | 12       | 24px    |
-| xl         | ≥ 1280px      | 12       | 24px    |
+Cuatro rangos, mobile-first. Todo componente debe funcionar desde 320px.
 
-Sidebar fijo 240px en lg+. En xs/sm se convierte en drawer off-canvas. Modales: full-screen bottom sheet en xs/sm, 90% en md, max 600px en lg+.
+| Breakpoint   | Rango         | Variable CSS | Padding horizontal | Cambios de layout                        |
+|--------------|---------------|--------------|--------------------|------------------------------------------|
+| xs (base)    | 320 – 479px   | —            | 18px               | Columna única                            |
+| sm (móvil)   | 480 – 767px   | `--bp-sm`    | 18px               | Formulario a 2 columnas permitido         |
+| md (tablet)  | 768 – 1199px  | `--bp-md`    | 24px               | Tarjetas de sensor 2 por fila             |
+| lg (escritorio) | ≥ 1200px   | `--bp-lg`    | 40px               | Tarjetas 3 por fila                       |
+
+CSS no admite `var()` dentro de `@media`, así que las media queries repiten el
+número; los tokens `--bp-*` son la referencia contra la cual se revisan.
+
+**Rejillas de contenido (`shared/design-system/Layout.css`)**
+
+| Clase | xs (<480) | sm (480–767) | md+ (≥768) |
+|---|---|---|---|
+| `.ds-fg2` | 1 columna | 2 columnas | 2 columnas |
+| `.ds-fg3` | 1 columna | 2 columnas | 3 columnas |
+| `.ds-split-aside` | apilado | apilado | contenido + panel de 280px |
+
+Una rejilla escrita como `style={{ gridTemplateColumns: '1fr 1fr' }}` **no puede
+llevar media query** y se queda en dos columnas a cualquier ancho: en un
+teléfono de 390px eso deja cada campo de formulario en ~147px dentro de un
+modal. Usa la clase. Lo verifica `Layout.responsive.test.ts`, que lee el código
+fuente y nombra el archivo y la línea — el fallo es invisible en escritorio, así
+que reaparece solo si nadie lo vigila.
+
+La única excepción registrada es la grilla del editor de dashboard
+(`repeat(4, 1fr)`): representa el tablero real de 4×3 que el usuario está
+editando, y colapsarla mostraría una disposición que no es la suya.
+
+**Padding de página**
+
+El contenedor de cada página usa `var(--page-pad)`, que ya vale 18/24/40 según
+el ancho. No pongas `--s6` ni `--s7` fijos ahí: 32px por lado sobre un teléfono
+de 320px se lleva el 20% de la pantalla. Los paddings *internos* de tarjetas y
+modales sí son fijos.
+
+**Divergencia conocida:** el sidebar pasa a drawer en **1024px**, no en el
+`--bp-md` de 768px que sugiere el DS. A 768–1023px el sidebar fijo de 240px
+deja menos de 800px de contenido y las tablas de datos empiezan a desbordar.
+Cambiarlo requiere rehacer esas tablas primero.
+
+Modales: bottom sheet a ancho completo en xs/sm, max 480px en md, max 560px en lg.
+
+**Touch targets:** el DS v2.0 pide 44px de altura mínima en móvil y 40px en
+escritorio. Este repo usa `--s9` (48px) en todos los anchos — más estricto que
+el mínimo, y lo que exige WCAG 2.5.5 AAA.
 
 ---
 
@@ -579,6 +656,7 @@ mantenibilidad del RF-29.
 | Los tests unitarios nunca importan de `api/` ni `db/` directamente | Testear a través del hook; las capas de red/persistencia se mockean |
 | Los tests e2e prueban flujos, no implementación | Resilientes a refactors internos; sensibles solo a la UX |
 | No crear archivos `*.test.ts` para cada componente presentacional | Solo lógica con bifurcaciones vale la pena testear unitariamente |
+| Cambiar un token de color obliga a correr `tokens.contraste.test.ts` | Lee el `tokens.css` real, resuelve las referencias `var()` y calcula cada par en los dos temas. Un token de texto sin override oscuro falla el test nombrando el rol |
 
 ---
 

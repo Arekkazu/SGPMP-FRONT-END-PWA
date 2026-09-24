@@ -84,6 +84,7 @@ export interface ActivoBiologicoResponse {
   nombre_estado: string | null;
   id_usuario: number;
   fecha_creacion: string | null;
+  fecha_actualizacion: string | null;
   detalle_individual: DetalleIndividualResponse | null;
   detalle_poblacional: DetallePoblacionalResponse | null;
 }
@@ -115,6 +116,8 @@ export interface ActualizarActivoIndividualDTO {
   sexo?: string | null;
   fecha_nacimiento?: string | null;        // datetime
   peso_inicial?: number | null;
+  // Concurrencia optimista (RF-35): el valor tal cual vino del último GET.
+  fecha_actualizacion?: string | null;
 }
 
 /** Ítem del listado (endpoint presunto GET /activos-biologicos/ — ver TODO en TASKS.md). */

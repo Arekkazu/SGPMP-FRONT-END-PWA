@@ -8,9 +8,13 @@ import type {
 } from '../types';
 
 export const contextoApi = {
-  async obtener(): Promise<ContextoInterfazResponse> {
+  /**
+   * `null` = 204 (RF-25): la finca existe pero no tiene especies **ni** áreas
+   * productivas. El 204 no trae cuerpo; axios entrega `''` en `data`.
+   */
+  async obtener(): Promise<ContextoInterfazResponse | null> {
     const res = await http.get<ContextoInterfazResponse>('/configuracion/interfaz/contexto');
-    return res.data;
+    return res.status === 204 ? null : res.data;
   },
 };
 

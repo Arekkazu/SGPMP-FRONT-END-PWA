@@ -11,24 +11,41 @@
   --brand-800: #133d17;
   --brand-900: #0d2a10;
 
-  /* Neutral */
+  /* Neutral. DS v2.0 anade dos pasos intermedios (450 y 550) porque ningun
+     paso de la rampa original servia de --text-muted con >=4.5:1: el 400
+     (#a0a89a) da 2.4:1 sobre blanco y el 500 (#787f72) da 4.4:1, ambos por
+     debajo de AA. */
   --neutral-0: #ffffff;
   --neutral-50: #f8f9f7;
-  --neutral-100: #f0f1ee;
+  --neutral-100: #f0f2ee;
   --neutral-200: #e2e4de;
-  --neutral-300: #c8ccc4;
+  --neutral-300: #c8d0c4;
   --neutral-400: #a0a89a;
+  --neutral-450: #8a9485;
   --neutral-500: #787f72;
+  --neutral-550: #696f64;
   --neutral-600: #585e53;
   --neutral-700: #3c4138;
   --neutral-800: #252820;
   --neutral-900: #141610;
 
-  /* Semantic */
-  --sem-success: #2e8634;
+  /* Semantic. Igual que --sem-error, estos tokens son el rol de TEXTO/ICONO,
+     no el de relleno (ese es --sem-*-solid).
+     Hallazgo 5 del DS v2.0: #2e8634 como texto da 4.2:1 sobre
+     --sem-success-bg y 4.6:1 sobre blanco — falla o roza AA. El repo lo usa
+     asi en ~30 sitios (chips "Activo" de configuracion, pasos completados,
+     celdas de tabla). La regla del DS para verde de marca como texto sobre
+     fondo claro es brand-600, que es lo que ya hacia .ds-badge--success; se
+     aplica al token para que valga en los 30 sitios y no en dos. */
+  --sem-success: #226a28;
   --sem-success-bg: #f0f7ee;
   --sem-success-border: #b2d8b5;
-  --sem-warning: #c07a00;
+  /* #134 / DS v2.0: #c07a00 daba 3.29:1 como texto sobre --sem-warning-bg
+     (#fff8e6), por debajo del 4.5:1 de WCAG 1.4.3 AA. El valor normativo del
+     DS v2.0 es #986000 (4.95:1 sobre su bg, 5.24:1 sobre blanco); reemplaza al
+     #7a4a00 que este repo habia elegido por su cuenta antes de que v2.0
+     publicara el token corregido. */
+  --sem-warning: #986000;
   --sem-warning-bg: #fff8e6;
   --sem-warning-border: #e8c860;
   --sem-error: #c0280a;
@@ -50,10 +67,11 @@
   --surface-border: var(--neutral-200);
   --surface-hover: var(--neutral-100);
 
-  /* Text */
+  /* Text (roles verificados en la tabla de contrastes del DS v2.0:
+     15.0:1 / 6.7:1 / 5.2:1 sobre --surface-card). */
   --text-primary: var(--neutral-800);
-  --text-secondary: var(--neutral-700);
-  --text-muted: var(--neutral-600);
+  --text-secondary: var(--neutral-600);
+  --text-muted: var(--neutral-550);
   --text-inverse: #ffffff;
 
   /* Foco visible (WCAG 2.4.7): anillo compartido por todos los componentes
@@ -90,17 +108,47 @@
   --font-sans: 'Plus Jakarta Sans', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Tamanos de la escala tipografica de CLAUDE.md. Solo estan los que ya
-     consume algun componente; anadir el resto al migrar cada hoja. */
-  --fs-display-lg: 26px;
+  /* Escala tipografica del DS v2.0. Los nombres --fs-* son los que ya
+     consumen los componentes de este repo; la columna de la derecha es el
+     nombre con que aparecen en el documento del DS.
+       --fs-display-lg  ->  display-lg   28 / 26 / 24  (md+ / sm / xs)
+       --fs-heading-md  ->  heading-lg   20 / 19 / 18
+       --fs-heading-sm  ->  heading-md   16
+       --fs-body-md     ->  body-md      14  (minimo en movil)
+       --fs-label-md    ->  label        12
+       --fs-label-sm    ->  caption      11
+       --fs-mono-md     ->  mono-sm      12
+     --fs-body-lg (15px) no tiene equivalente en v2.0; se conserva para el
+     cuerpo de lectura larga que ya lo usa. */
+  --fs-display-lg: 28px;
   --fs-heading-md: 20px;
-  --fs-heading-sm: 17px;
+  --fs-heading-sm: 16px;
   --fs-body-lg: 15px;
   --fs-body-md: 14px;
-  --fs-label-md: 13px;
+  --fs-label-md: 12px;
   --fs-body-sm: 12px;
   --fs-label-sm: 11px;
   --fs-mono-md: 12px;
+
+  /* Line-height y letter-spacing (DS v2.0). Antes cada hoja elegia su propio
+     valor suelto. */
+  --lh-tight: 1.1;
+  --lh-snug: 1.3;
+  --lh-base: 1.5;
+  --lh-relaxed: 1.65;
+  --lh-loose: 1.8;
+  --ls-tight: -0.02em;
+  --ls-normal: 0em;
+  --ls-wide: 0.02em;
+  --ls-wider: 0.06em;
+  --ls-widest: 0.12em;
+
+  /* Breakpoints del DS v2.0. CSS no permite var() dentro de @media, asi que
+     estos tokens son la referencia unica del valor: las media queries repiten
+     el numero, pero se comparan contra estas variables en revision. */
+  --bp-sm: 480px;
+  --bp-md: 768px;
+  --bp-lg: 1200px;
 
   /* Velo de los paneles flotantes (bandeja, drawer) */
   --overlay: rgba(20, 22, 16, 0.18);
@@ -108,6 +156,12 @@
   /* Layout */
   --sidebar-w: 240px;
   --topbar-h: 64px;
+
+  /* Padding horizontal de pagina, por breakpoint (DS v2.0: 18 / 24 / 40).
+     Las paginas lo aplicaban con --s6 o --s7 fijos: 32px por lado sobre un
+     telefono de 320px se lleva el 20% del ancho. El 18px de xs/sm es el unico
+     valor del sistema fuera de la rejilla de 4px, y viene asi del DS. */
+  --page-pad: var(--s8);
 
   /* Navegación institucional (RF-26): el color primario de la finca pinta la
      barra lateral. Por defecto es el neutro oscuro del producto; al aplicar la
@@ -120,15 +174,30 @@
      baja el contraste a 3.21:1) — siempre >=4.5:1 con #fff. */
   --brand-cta: #226a28;
   --brand-cta-hover: #1a521f;
+  --brand-cta-active: #133d17;
 }
 
-/* La escala se reduce en movil (columna "Movil" de la tabla de tipografia). */
+/* Escalado responsive del DS v2.0 ("Tipografia > Escalado responsive por
+   breakpoint"). Solo bajan display-lg y heading-lg; body-md se queda en 14px
+   en todos los anchos porque es el minimo legible en movil. */
+@media (max-width: 1199px) {
+  :root {
+    --page-pad: var(--s6);
+  }
+}
+
 @media (max-width: 767px) {
   :root {
-    --fs-display-lg: 20px;
-    --fs-heading-md: 17px;
-    --fs-heading-sm: 15px;
-    --fs-mono-md: 11px;
+    --fs-display-lg: 26px;
+    --fs-heading-md: 19px;
+    --page-pad: 18px;
+  }
+}
+
+@media (max-width: 479px) {
+  :root {
+    --fs-display-lg: 24px;
+    --fs-heading-md: 18px;
   }
 }
 
@@ -150,24 +219,30 @@
   --sem-success-border: #1e5020;
   --sem-warning-bg: #2a1c00;
   --sem-warning-border: #604000;
-  --sem-error-bg: #2a0800;
+  --sem-error-bg: #280800;
   --sem-error-border: #601000;
   --sem-info-bg: #081a38;
   --sem-info-border: #1a3870;
 
-  /* QA M01 2.4: #c0280a (heredado del tema claro) da solo 2.96:1 como texto
-     sobre --surface-card oscuro (#171a15). Solo se aclara el rol de
-     texto/icono; --sem-error-solid (fondos) no cambia. */
-  --sem-error: #ff6b52;
+  /* Hallazgo 2 del DS v2.0: solo los `-bg` tenian override oscuro. El rol de
+     texto/icono heredaba en silencio el hex del tema claro sobre superficie
+     oscura — #2e8634 daba 3.83:1, #986000 daba 2.35:1 (ilegible) y #1a6abf
+     daba 3.23:1 sobre --surface-card. Los cuatro roles llevan ahora valor
+     propio (5.5:1 a 7.4:1). --sem-error-solid, que es relleno y no texto, no
+     cambia en ningun tema. */
+  --sem-success: #6aba60;
+  --sem-warning: #c09020;
+  --sem-error: #e06050;
+  --sem-info: #6890e0;
 
   --surface-bg: #0f110e;
   --surface-card: #171a15;
   --surface-border: #2a3026;
   --surface-hover: #1f241d;
 
-  --text-primary: #d4e0ce;
-  --text-secondary: #a3c49a;
-  --text-muted: #7d9a75;
+  --text-primary: var(--neutral-100);
+  --text-secondary: var(--neutral-300);
+  --text-muted: var(--neutral-450);
 
   /* --focus-ring: var(--brand-500) ya apunta al verde claro invertido de la
      rampa dark, visible sobre superficies oscuras. Sin override. */

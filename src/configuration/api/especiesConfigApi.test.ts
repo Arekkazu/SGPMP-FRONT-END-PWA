@@ -36,6 +36,11 @@ const UMBRAL = {
   niveles: [{ nivel: 'normal', limite_inferior: 22, limite_superior: 30 }],
 };
 
+/** #125: los cuatro endpoints responden `{total, items}`; simular un arreglo ocultó el bug. */
+function listado(items: unknown[]) {
+  return { data: { total: items.length, items } };
+}
+
 function respuestasPorRuta() {
   getMock.mockImplementation((url: string) => {
     const datos: Record<string, unknown[]> = {
@@ -44,7 +49,7 @@ function respuestasPorRuta() {
       '/configuracion/metricas': [METRICA],
       '/configuracion/umbrales': [UMBRAL],
     };
-    return Promise.resolve({ data: datos[url] ?? [] }) as never;
+    return Promise.resolve(listado(datos[url] ?? [])) as never;
   });
 }
 
@@ -112,7 +117,7 @@ describe('capturarConfiguracionEspecie', () => {
   });
 
   it('devuelve la categoría vacía cuando la especie no tiene esa configuración', async () => {
-    getMock.mockResolvedValue({ data: [] } as never);
+    getMock.mockResolvedValue(listado([]) as never);
 
     const snapshot = await capturarConfiguracionEspecie(99);
 
@@ -130,7 +135,7 @@ describe('capturarConfiguracionEspecie', () => {
         '/configuracion/metricas': [METRICA],
         '/configuracion/umbrales': [UMBRAL],
       };
-      return Promise.resolve({ data: datos[url] ?? [] }) as never;
+      return Promise.resolve(listado(datos[url] ?? [])) as never;
     });
 
     const snapshot = await capturarConfiguracionEspecie(3);

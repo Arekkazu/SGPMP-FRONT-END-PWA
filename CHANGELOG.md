@@ -1,3 +1,50 @@
+## [1.0.0-rc.32](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.31...v1.0.0-rc.32) (2026-09-24)
+
+### Bug Fixes
+
+* **nginx:** [#113](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/113) emitir encabezados de seguridad en el frontend ([ce0a3a4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ce0a3a4997273ee808f88f0f1ad41e60c3dd86b4))
+* **rf25:** contexto de interfaz 204 sin cuerpo como finca sin catalogo ([d86f820](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d86f820cc9fa2f1196b4154c8116296593a1772a)), closes [Arekkazu/sgpmp-backend#410](https://github.com/Arekkazu/sgpmp-backend/issues/410)
+* **rf31:** [#125](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/125) leer items de los listados por especie de configuracion ([9c2ceb1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9c2ceb19b4d5b98e01721e5fda91389844f08d96))
+* **rf35:** reenviar fecha_actualizacion en el patch de activo individual (INC-M02-G22) ([f808ebb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f808ebb68d27408183e364db44ed67bb85d20aca))
+* **rf45:** [#130](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/130) enviar el dia utc cuando la baja es de hoy ([8726fa2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8726fa2b62b7f4018cc2093ebff2f6ffff394146))
+* **usuarios:** [#97](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/97) permitir asignar fincas que ya tienen dueno ([948b226](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/948b226da5fe38e6821c43a7353523fbac771e55)), closes [Arekkazu/sgpmp-backend#445](https://github.com/Arekkazu/sgpmp-backend/issues/445)
+
+## [1.0.0-rc.31](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.30...v1.0.0-rc.31) (2026-09-24)
+
+### Bug Fixes
+
+* **perfil:** editar perfil y cambiar contrasena como modal ([98f1484](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/98f14842bc85ad1b19012ed97cf8e33d1da93767))
+* **sesiones:** [#126](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/126) no cerrar la sesion cuando el refresh falla por el servidor (RF-02) ([4b64502](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4b6450234ec6dbe7f7d404cf5d1c1429abfdc795))
+
+## [1.0.0-rc.30](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.29...v1.0.0-rc.30) (2026-09-20)
+
+### Features
+
+* **design-system:** alinear tokens y componentes con el Design System v2.0 ([d5d07a7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d5d07a708b42e2b9c02a69a6f07812babc027467)), closes [#2e8634](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/2e8634) [#226a28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/226a28) [#7a4a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/7a4a00) [#986000](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/986000) [#7a4a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/7a4a00)
+* **design-system:** alinear tokens y componentes con el Design System v2.0 ([1f2cd4c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1f2cd4ca846916da8f26cf9a63ca03a0871a9a7a)), closes [#2e8634](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/2e8634) [#226a28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/226a28) [#7a4a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/7a4a00) [#986000](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/986000) [#7a4a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/7a4a00)
+
+### Bug Fixes
+
+* **auth:** #TC-DIS-05 restituir el acceso SSO a AgroFusion en el login ([01b63e8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/01b63e81432106eea5470de8f9516f10070d1d21)), closes [#TC-DIS-05](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/TC-DIS-05) [#132](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/132) [#136](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/136)
+* **design-system:** colapsar las rejillas de contenido en movil ([cbf2e28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cbf2e2874fa073029e0905652b4eb8faf001f33b))
+
+## [1.0.0-rc.29](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.28...v1.0.0-rc.29) (2026-09-20)
+
+### Bug Fixes
+
+* **auditoria:** [#135](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/135) anunciar el estado sin resultados con role=status ([28ea93d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/28ea93d89027404af05ebba99e99727a7523c0d6))
+* **design-system:** [#134](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/134) subir contraste del badge de advertencia y el enlace de perfil ([562c848](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/562c848c09a5323872ba845c9974d383f7e4309d)), closes [#c07a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/c07a00) [#fff8e6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/fff8e6) [#7a4a00](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/7a4a00)
+* **perfil:** [#133](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/133) no cerrar sesion cuando la contrasena actual es incorrecta ([c4bda1a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c4bda1a0a7d8edda5f219354c5c0f2b40a49710f))
+* **perfil:** [#136](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/136) mostrar el encabezado "Mi Perfil" tambien sin datos cargados ([e0f8290](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e0f8290f75fdb1405b07ebbb561455166b425264))
+* **sidebar:** [#132](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/132) marcar items como enlaces y evitar drawer inalcanzable en movil ([2787738](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2787738f706563a5600c335b8da964a66c7e6ba9))
+* **usuarios:** [#135](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/135) anunciar el resultado de "gestionar cuenta" con un alert accesible ([b8860ee](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b8860ee0be8b95fde2fc46f2948fe527ccb526fe))
+
+## [1.0.0-rc.28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.27...v1.0.0-rc.28) (2026-09-20)
+
+### Bug Fixes
+
+* **auditoria:** [#288](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/288) deshabilitar exportar cuando no hay conexion ([c08a21d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c08a21ddc26b7ea12b94f51663e711a6deb5515a))
+
 ## [1.0.0-rc.27](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.26...v1.0.0-rc.27) (2026-09-18)
 
 ### Bug Fixes

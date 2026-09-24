@@ -9,6 +9,7 @@ import { AuditoriaTable } from '../components/AuditoriaTable';
 import { VerificarIntegridadModal } from '../components/VerificarIntegridadModal';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { hoyLocal } from '../../shared/lib/fecha';
 import type { AuditoriaItemResponse } from '../types';
 
@@ -23,6 +24,7 @@ interface ExportacionAviso {
 export function AuditoriaPage() {
   const { t } = useT('auditoria');
   const puedeVer = usePermission(6, 2);
+  const online = useOnlineStatus();
   const {
     eventos,
     total,
@@ -48,7 +50,7 @@ export function AuditoriaPage() {
 
   if (!puedeVer) {
     return (
-      <div style={{ padding: 'var(--s7)', textAlign: 'center' }}>
+      <div style={{ padding: 'var(--page-pad)', textAlign: 'center' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('auditoriapage.no_tienes_permiso_para_ver_esta_seccion')}</p>
       </div>
     );
@@ -100,7 +102,7 @@ export function AuditoriaPage() {
   const totalPages = Math.ceil(total / filtros.tamano);
 
   return (
-    <div style={{ padding: 'var(--s6)', maxWidth: 1280, margin: '0 auto' }}>
+    <div style={{ padding: 'var(--page-pad)', maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s5)', gap: 'var(--s3)', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{t('auditoriapage.auditoria')}</h1>
@@ -116,7 +118,8 @@ export function AuditoriaPage() {
             size="sm"
             onClick={handleExportarCsv}
             loading={exportando}
-            disabled={loading || exportando || total === 0}
+            disabled={!online || loading || exportando || total === 0}
+            title={online ? undefined : t('auditoriapage.exportar_requiere_conexion')}
           >
             <Download size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriapage.exportar_csv')}</Button>
           <Button variant="ghost" size="sm" onClick={() => cargar()} aria-label={t('auditoriapage.recargar')}>
@@ -124,6 +127,15 @@ export function AuditoriaPage() {
           </Button>
         </div>
       </div>
+
+      {!online && (
+        <Alert
+          variant="warning"
+          title={t('estados.sin_conexion', { ns: 'common' })}
+          description={t('auditoriapage.exportar_requiere_conexion')}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
+      )}
 
       {error && (
         <Alert variant="error" title={t('auditoriapage.error_al_cargar_auditoria')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />

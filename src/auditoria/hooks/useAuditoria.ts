@@ -135,7 +135,8 @@ export function useAuditoria() {
     setExportProgreso(null);
 
     try {
-      // TC-M01-074: offline, el botón sigue generando el archivo desde la caché.
+      // La página deshabilita "Exportar" sin conexión (TC-M01-074); esta rama es
+      // solo una red de seguridad si el hook se invoca estando offline.
       if (!navigator.onLine) {
         return await exportarCsvDesdeCache();
       }

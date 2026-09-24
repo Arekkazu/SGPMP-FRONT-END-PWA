@@ -73,7 +73,7 @@ export function VinculacionesView() {
         <Button variant="ghost" size="sm" onClick={() => cargar(build(paginacion.pagina))} aria-label={t('vinculacionesview.recargar')}><RefreshCw size={15} aria-hidden /></Button>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {!online && <Alert variant="warning" title={t('vinculacionesview.sin_conexion')} description={t('vinculacionesview.resolver_y_corregir_estan_deshabilitados')} style={{ marginBottom: 'var(--s4)' }} />}
         {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('vinculacionesview.sin_acceso_a_vinculaciones') : t('vinculacionesview.error_al_cargar_vinculaciones')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 

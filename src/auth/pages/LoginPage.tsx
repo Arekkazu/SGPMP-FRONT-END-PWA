@@ -8,6 +8,7 @@ import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { consumirAvisoSesionCerrada } from '../../shared/api/http';
+import { agrofusionLoginUrl, ssoConfigurado } from '../config/sso';
 import type { LoginDTO } from '../types';
 import './AuthPages.css';
 
@@ -145,6 +146,23 @@ export function LoginPage() {
             disabled={!online}
           >{t('loginpage.ingresar')}</Button>
         </form>
+
+        {/* TC-DIS-05: el separador y el boton de AgroFusion estaban en la linea
+            base visual y no se renderizaban. El canje del token (/sso/callback)
+            y los rotulos traducidos ya existian — faltaba la entrada al flujo. */}
+        <div className="auth-divider">{t('loginpage.separador_o')}</div>
+
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
+          disabled={!online || !ssoConfigurado}
+          onClick={() => { window.location.href = agrofusionLoginUrl; }}
+        >{t('loginpage.continuar_con_agrofusion')}</Button>
+
+        {!ssoConfigurado && (
+          <p className="auth-hint">{t('loginpage.configuracion_pendiente')}</p>
+        )}
 
         <hr className="auth-sep" />
         <div className="auth-links">

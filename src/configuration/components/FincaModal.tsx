@@ -217,7 +217,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 'var(--s4)' }}>
                 Solo letras (A–Z, tildes, ñ) y espacios. Sin números ni símbolos.
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)' }}>
+              <div className="ds-fg2" style={{ gap: 'var(--s4)' }}>
                 <div>
                   <Input
                     label={t('fincamodal.latitud')}
@@ -259,7 +259,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
             {modoEditar && finca && (
               <>
                 <div style={SECTION_LABEL}>{t('fincamodal.3_fechas_del_registro')}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s5)', padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s5)', padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                   <div>
                     <div style={{ fontWeight: 600, marginBottom: 2 }}>{t('fincamodal.creado')}</div>
                     <div>{finca.fecha_creacion ? formatearFechaHora(finca.fecha_creacion) : '—'}</div>
