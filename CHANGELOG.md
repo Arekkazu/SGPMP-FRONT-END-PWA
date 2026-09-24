@@ -1,3 +1,10 @@
+## [1.0.0-rc.31](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.30...v1.0.0-rc.31) (2026-09-24)
+
+### Bug Fixes
+
+* **perfil:** editar perfil y cambiar contrasena como modal ([98f1484](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/98f14842bc85ad1b19012ed97cf8e33d1da93767))
+* **sesiones:** [#126](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/126) no cerrar la sesion cuando el refresh falla por el servidor (RF-02) ([4b64502](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4b6450234ec6dbe7f7d404cf5d1c1429abfdc795))
+
 ## [1.0.0-rc.30](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.29...v1.0.0-rc.30) (2026-09-20)
 
 ### Features
