@@ -4,6 +4,7 @@ import { useHistory } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { useActivos } from '../hooks/useActivos';
+import { useAtributosDinamicos } from '../hooks/useAtributosDinamicos';
 import { RegistrarActivoForm } from '../components/RegistrarActivoForm';
 import type { RegistrarActivoDTO } from '../types';
 
@@ -11,6 +12,7 @@ export function RegistrarActivoPage() {
   const { t } = useT('biologicalAssets');
   const history = useHistory();
   const { saving, saveError, registrar } = useActivos();
+  const atributos = useAtributosDinamicos();
 
   const handleSubmit = async (dto: RegistrarActivoDTO): Promise<boolean> => {
     const nuevo = await registrar(dto);
@@ -41,6 +43,10 @@ export function RegistrarActivoPage() {
           saveError={saveError}
           onSubmit={handleSubmit}
           onCancel={() => history.push('/activos-biologicos')}
+          atributosConfig={atributos.config}
+          cargandoAtributos={atributos.loading}
+          errorAtributos={atributos.error}
+          onEspecieTipoChange={atributos.cargar}
         />
       </div>
     </div>

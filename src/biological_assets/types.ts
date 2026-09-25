@@ -89,6 +89,27 @@ export interface ActivoBiologicoResponse {
   detalle_poblacional: DetallePoblacionalResponse | null;
 }
 
+// ── Atributos dinámicos (RF-33 FA-07) ────────────────────────────────
+/** Tipos de dato que acepta `_validar_atributos_dinamicos` en el backend. */
+export type TipoDatoAtributo = 'NUMERICO' | 'ENTERO' | 'TEXTO' | 'BOOLEANO';
+
+/**
+ * Métrica activa de la especie (`modulo9.metricas_produccion`) vista como
+ * atributo capturable al registrar un activo. El backend valida contra esta
+ * misma configuración; `valor_min`/`valor_max` solo se aplican en el cliente
+ * si el endpoint de configuración los expone.
+ */
+export interface AtributoDinamicoConfig {
+  id: number;
+  nombre: string;
+  unidad_medida: string;
+  tipo_dato: TipoDatoAtributo;
+  es_obligatorio: boolean;
+  aplica_a_tipo_activo: 'INDIVIDUAL' | 'LOTE' | 'AMBOS';
+  valor_min: number | null;
+  valor_max: number | null;
+}
+
 // ── DTOs — registro / actualización ──────────────────────────────────
 export interface RegistrarActivoDTO {
   tipo_activo: TipoActivo;

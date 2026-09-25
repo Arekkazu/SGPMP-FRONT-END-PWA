@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Boxes, User } from 'lucide-react';
@@ -6,8 +6,12 @@ import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { ApiError } from '../../shared/api/errors';
-import type { RegistrarActivoDTO, TipoActivo, OrigenFinanciero } from '../types';
+import type { AtributoDinamicoConfig, RegistrarActivoDTO, TipoActivo, OrigenFinanciero } from '../types';
 import { hoyLocal } from '../../shared/lib/fecha';
+import {
+  campoAtributo, construirAtributos, validarAtributo, type ValorAtributoForm,
+} from '../hooks/useAtributosDinamicos';
+import { AtributosDinamicosFields } from './AtributosDinamicosFields';
 
 interface FormValues {
   tipo_activo: TipoActivo;
@@ -27,6 +31,8 @@ interface FormValues {
   // poblacional
   cantidad_inicial: string;
   peso_promedio_inicial: string;
+  // RF-33: claves `m<id_metrica>` (ver campoAtributo)
+  atributos: Record<string, ValorAtributoForm>;
 }
 
 interface Props {
@@ -34,6 +40,11 @@ interface Props {
   saveError: ApiError | null;
   onSubmit: (dto: RegistrarActivoDTO) => Promise<boolean>;
   onCancel: () => void;
+  atributosConfig: AtributoDinamicoConfig[];
+  cargandoAtributos: boolean;
+  errorAtributos: ApiError | null;
+  /** Se invoca al cambiar especie o tipo, para recargar la configuración de atributos. */
+  onEspecieTipoChange: (idEspecie: number | null, tipo: TipoActivo) => void;
 }
 
 const SELECT: React.CSSProperties = {
@@ -96,21 +107,46 @@ function FieldError({ msg }: { msg?: string }) {
 }
 
 const HOY = hoyLocal();
+const PREFIJO_CAMPO_ATRIBUTO = 'atributos_dinamicos.';
 
-export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: Props) {
+export function RegistrarActivoForm({
+  saving, saveError, onSubmit, onCancel,
+  atributosConfig, cargandoAtributos, errorAtributos, onEspecieTipoChange,
+}: Props) {
   const { t } = useT('biologicalAssets');
   const {
-    register, handleSubmit, watch, formState: { errors },
+    register, handleSubmit, watch, setError, formState: { errors },
   } = useForm<FormValues>({
     mode: 'onBlur',
     defaultValues: {
       tipo_activo: 'INDIVIDUAL',
       origen_financiero: 'compra',
       sexo: '',
+      atributos: {},
     },
   });
 
   const tipo = watch('tipo_activo');
+  const idEspecieRaw = watch('id_especie');
+  const idEspecie = Number(idEspecieRaw) >= 1 ? Number(idEspecieRaw) : null;
+
+  // La configuración depende de especie y tipo; se espera a que el usuario deje de teclear el ID.
+  useEffect(() => {
+    const timer = setTimeout(() => onEspecieTipoChange(idEspecie, tipo), 400);
+    return () => clearTimeout(timer);
+  }, [idEspecie, tipo, onEspecieTipoChange]);
+
+  // El backend responde `field: 'atributos_dinamicos.<nombre>'`: el error va debajo de ese control.
+  useEffect(() => {
+    const campo = saveError?.field;
+    if (!saveError || !campo?.startsWith(PREFIJO_CAMPO_ATRIBUTO)) return;
+    const nombre = campo.slice(PREFIJO_CAMPO_ATRIBUTO.length).toLowerCase();
+    const cfg = atributosConfig.find((c) => c.nombre.toLowerCase() === nombre);
+    if (cfg) {
+      setError(`atributos.${campoAtributo(cfg)}`, { type: 'server', message: saveError.message });
+    }
+  }, [saveError, atributosConfig, setError]);
+
   const origen = watch('origen_financiero');
   const esIndividual = tipo === 'INDIVIDUAL';
   const requiereSoporte = origen === 'compra' || origen === 'donacion';
@@ -138,6 +174,8 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
       dto.cantidad_inicial = Number(v.cantidad_inicial);
       dto.peso_promedio_inicial = v.peso_promedio_inicial ? Number(v.peso_promedio_inicial) : null;
     }
+
+    dto.atributos_dinamicos = construirAtributos(atributosConfig, v.atributos);
 
     await onSubmit(dto);
   };
@@ -344,9 +382,23 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
         </div>
       )}
 
+      <AtributosDinamicosFields
+        config={atributosConfig}
+        loading={cargandoAtributos}
+        error={errorAtributos}
+        sinEspecie={idEspecie === null}
+        registrar={(cfg) => register(`atributos.${campoAtributo(cfg)}`, {
+          validate: (val) => {
+            const err = validarAtributo(cfg, val);
+            return err ? t(err.clave, err.params) : true;
+          },
+        })}
+        errorDe={(cfg) => errors.atributos?.[campoAtributo(cfg)]?.message}
+      />
+
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
         <Button type="button" variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('registraractivoform.cancelar')}</Button>
-        <Button type="submit" variant="primary" size="md" loading={saving}>{t('registraractivoform.registrar_activo')}</Button>
+        <Button type="submit" variant="primary" size="md" loading={saving} disabled={cargandoAtributos}>{t('registraractivoform.registrar_activo')}</Button>
       </div>
     </form>
   );
