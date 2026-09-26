@@ -33,7 +33,7 @@ vi.mock('../db/db', () => ({
   },
 }));
 
-import { enqueue, registerSyncHandler, replay, getConflictos } from './syncQueue';
+import { enqueue, registerSyncHandler, replay, getConflictos, SYNC_REPLAY_TERMINADO } from './syncQueue';
 
 beforeEach(() => {
   rows.length = 0;
@@ -81,5 +81,73 @@ describe('syncQueue.replay — resolución de conflictos (#115, RF-15)', () => {
     await replay();
 
     expect(await getConflictos('config_especies')).toHaveLength(0);
+  });
+});
+
+describe('syncQueue.replay — aviso de fin de replay (#450, RF-15)', () => {
+  // `replay()` corre fuera de React: sin este evento, useEspecies no se entera de que
+  // marcó un conflicto y la alerta "Conflicto de sincronización" nunca se dibuja.
+  function escucharReplay() {
+    const alTerminar = vi.fn();
+    window.addEventListener(SYNC_REPLAY_TERMINADO, alTerminar);
+    return { alTerminar, dejar: () => window.removeEventListener(SYNC_REPLAY_TERMINADO, alTerminar) };
+  }
+
+  it('emite el evento cuando un rechazo 4xx marca un conflicto', async () => {
+    await enqueue('config_especies', 'crear', { nombre: 'Bovino' });
+    registerSyncHandler('config_especies', vi.fn().mockRejectedValue({ status: 409, message: 'duplicada' }));
+    const { alTerminar, dejar } = escucharReplay();
+
+    await replay();
+    dejar();
+
+    expect(alTerminar).toHaveBeenCalledTimes(1);
+  });
+
+  it('emite el evento cuando una operación se sincroniza y sale de la cola', async () => {
+    await enqueue('config_especies', 'crear', { nombre: 'Porcino' });
+    registerSyncHandler('config_especies', vi.fn().mockResolvedValue(undefined));
+    const { alTerminar, dejar } = escucharReplay();
+
+    await replay();
+    dejar();
+
+    expect(alTerminar).toHaveBeenCalledTimes(1);
+  });
+
+  it('emite un solo evento por replay aunque haya varias operaciones', async () => {
+    await enqueue('config_especies', 'crear', { nombre: 'A' });
+    await enqueue('config_especies', 'crear', { nombre: 'B' });
+    registerSyncHandler('config_especies', vi.fn().mockResolvedValue(undefined));
+    const { alTerminar, dejar } = escucharReplay();
+
+    await replay();
+    dejar();
+
+    expect(alTerminar).toHaveBeenCalledTimes(1);
+  });
+
+  it('no emite nada con la cola vacía (replay corre en cada montaje y reconexión)', async () => {
+    const { alTerminar, dejar } = escucharReplay();
+
+    await replay();
+    dejar();
+
+    expect(alTerminar).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['una caída de red (sin status)', new Error('Network Error')],
+    ['un 5xx', { status: 503, message: 'no disponible' }],
+    ['un 401', { status: 401, message: 'sesión expirada' }],
+  ])('no emite nada si %s deja la cola igual', async (_nombre, fallo) => {
+    await enqueue('config_especies', 'crear', { nombre: 'Ovino' });
+    registerSyncHandler('config_especies', vi.fn().mockRejectedValue(fallo));
+    const { alTerminar, dejar } = escucharReplay();
+
+    await replay();
+    dejar();
+
+    expect(alTerminar).not.toHaveBeenCalled();
   });
 });
