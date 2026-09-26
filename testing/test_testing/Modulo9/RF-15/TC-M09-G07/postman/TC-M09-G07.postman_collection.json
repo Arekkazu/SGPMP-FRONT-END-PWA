@@ -1,0 +1,211 @@
+{
+  "info": {
+    "_postman_id": "7bf39d12-e841-4710-9b4e-28b9a12c8e15",
+    "name": "TC-M09-G07 - Backend Conflicto Unicidad Especies (RF-15)",
+    "description": "Verifica que el backend de TEST valida estrictamente la unicidad de nombres de especies productivas y responde con HTTP 409 Conflict ante duplicados, protegiendo la integridad de datos sin sobrescritura.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Iniciar Sesión Administrativa",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var letras = '';",
+              "var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';",
+              "for (var i = 0; i < 6; i++) {",
+              "    letras += chars.charAt(Math.floor(Math.random() * chars.length));",
+              "}",
+              "pm.environment.set('nombreEspeciePrueba', 'Especie Conflicto Newman ' + letras);"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 200 o 201 (Login exitoso)', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "",
+              "pm.test('Respuesta contiene token JWT', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('token');",
+              "    pm.environment.set('authToken', jsonData.token);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"correo_electronico\": \"{{ADMIN_EMAIL}}\",\n  \"contrasena\": \"{{TEST_ADMIN_PASSWORD}}\"\n}"
+        },
+        "url": {
+          "raw": "{{API_BASE_URL}}/sesiones/",
+          "host": [
+            "{{API_BASE_URL}}"
+          ],
+          "path": [
+            "sesiones",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Registro Base de Especie (Online)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 201 o 200 (Especie creada)', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "",
+              "pm.test('Especie contiene identificador asignado', function () {",
+              "    var jsonData = pm.response.json();",
+              "    var id = jsonData.id_especie || jsonData.id;",
+              "    pm.expect(id).to.be.a('number');",
+              "    pm.environment.set('idEspecieCreada', id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"{{nombreEspeciePrueba}}\",\n  \"descripcion\": \"Especie registrada para validacion de conflicto de nombres en RF-15\"\n}"
+        },
+        "url": {
+          "raw": "{{API_BASE_URL}}/configuracion/especies",
+          "host": [
+            "{{API_BASE_URL}}"
+          ],
+          "path": [
+            "configuracion",
+            "especies"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Rechazo de Especie Duplicada (HTTP 409 o 422)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code es 409 Conflict o 422 Unprocessable', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([409, 422]);",
+              "});",
+              "",
+              "pm.test('Cuerpo detalla error de duplicidad de especie', function () {",
+              "    var jsonData = pm.response.json();",
+              "    var raw = JSON.stringify(jsonData).toLowerCase();",
+              "    pm.expect(raw).to.satisfy(function(text) {",
+              "        return text.includes('duplicada') || text.includes('conflict') || text.includes('ya existe') || text.includes('especie_duplicada');",
+              "    });",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"{{nombreEspeciePrueba}}\",\n  \"descripcion\": \"Intento deliberado de duplicacion con el mismo nombre\"\n}"
+        },
+        "url": {
+          "raw": "{{API_BASE_URL}}/configuracion/especies",
+          "host": [
+            "{{API_BASE_URL}}"
+          ],
+          "path": [
+            "configuracion",
+            "especies"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Teardown: Desactivar Especie Creada",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Teardown respondio exitosamente (HTTP 200)', function () {",
+              "    pm.expect(pm.response.code).to.equal(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{API_BASE_URL}}/configuracion/especies/{{idEspecieCreada}}/desactivar",
+          "host": [
+            "{{API_BASE_URL}}"
+          ],
+          "path": [
+            "configuracion",
+            "especies",
+            "{{idEspecieCreada}}",
+            "desactivar"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

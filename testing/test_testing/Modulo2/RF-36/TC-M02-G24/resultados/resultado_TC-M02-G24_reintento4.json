@@ -1,0 +1,65 @@
+{
+  "tc": "TC-M02-G24",
+  "checkpoints": [
+    {
+      "paso": "TC-M02-048 — C1 API: Rechazo de mutación directa de métricas calculadas",
+      "esperado": "HTTP 400 o 422 Bad Request/Unprocessable",
+      "obtenido": "HTTP 400",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-048 — RF-36: Densidad inicial calculada automáticamente al registro (PR #260)",
+      "esperado": "densidad == 0.2000 (100 peces / 500 m²)",
+      "obtenido": "densidad == 0.2",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-049 — C2 API: Registro de evento CRECIMIENTO",
+      "esperado": "HTTP 201 Created",
+      "obtenido": "HTTP 201",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-049 — C2 API: Recálculo de biomasa_total = cantidad_actual * nuevo_peso",
+      "esperado": "biomasa_total == 1250.00 kg",
+      "obtenido": "biomasa_total == 1250.00 kg (peso_promedio = 12.5)",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-050 — C3 API: Registro de evento BAJA con trigger Postgres corregido (PR #254)",
+      "esperado": "HTTP 201 Created",
+      "obtenido": "HTTP 201",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-050 — C3 API: Descuento de cantidad_actual a 90 y recálculo de biomasa y densidad",
+      "esperado": "cantidad_actual == 90, biomasa == 1125.00, densidad == 0.1800",
+      "obtenido": "cantidad_actual == 90, biomasa == 1125.00, densidad == 0.18000000000000000000",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-056 — C4 API: Inmutabilidad estricta de cantidad_inicial (100) y peso_promedio_inicial (10.0)",
+      "esperado": "cantidad_inicial == 100, peso_promedio_inicial == 10.0, cantidad_actual != 100",
+      "obtenido": "cantidad_inicial == 100, peso_promedio_inicial == 10.0000, cantidad_actual == 90",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-048 — C1 UI: Indicadores zootécnicos son de solo lectura en DOM",
+      "esperado": "Sin inputs ni campos editables en tarjetas de métricas (inputsCount == 0)",
+      "obtenido": "Inputs editables encontrados en tarjetas: 0",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-049 — C2 UI: Indicador DOM de biomasa total actualizado",
+      "esperado": "Texto DOM contiene 1125",
+      "obtenido": "Texto DOM obtenido: \"Biomasa total1125.00\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-050 — C3 UI: Indicador DOM muestra cantidad actualizada 90",
+      "esperado": "Texto DOM contiene 90",
+      "obtenido": "Texto DOM obtenido: \"Cantidad actual90\"",
+      "estado": "OK"
+    }
+  ]
+}
