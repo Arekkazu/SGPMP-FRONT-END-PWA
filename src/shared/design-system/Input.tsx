@@ -11,6 +11,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   leadingIcon?: React.ReactNode;
   trailingIcon?: React.ReactNode;
   onTrailingClick?: () => void;
+  /** Estado toggle del botón trailing (ej. mostrar/ocultar contraseña). */
+  trailingPressed?: boolean;
+  /** aria-label del botón trailing; por defecto "Acción del campo". */
+  trailingLabel?: string;
   required?: boolean;
 }
 
@@ -23,6 +27,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     leadingIcon,
     trailingIcon,
     onTrailingClick,
+    trailingPressed,
+    trailingLabel,
     required,
     id,
     className = '',
@@ -73,7 +79,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             type="button"
             className="ds-field__icon ds-field__icon--trail"
             onClick={onTrailingClick}
-            aria-label={t('input.accion_del_campo')}
+            aria-label={trailingLabel ?? t('input.accion_del_campo')}
+            aria-pressed={trailingPressed}
           >
             {trailingIcon}
           </button>

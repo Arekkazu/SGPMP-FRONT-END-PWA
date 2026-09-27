@@ -133,6 +133,7 @@ export function LoginPage() {
               error={errors.contrasena?.message}
               trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               onTrailingClick={() => setShowPw((v) => !v)}
+              trailingPressed={showPw}
               {...register('contrasena', { required: t('loginpage.la_contrasena_es_obligatoria') })}
             />
           </div>

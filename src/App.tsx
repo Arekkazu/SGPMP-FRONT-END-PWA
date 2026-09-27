@@ -179,6 +179,7 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
           onDismissError={notificaciones.clearError}
         />
         <main
+          tabIndex={0}
           style={{
             flex: 1,
             marginTop: 'var(--topbar-h)',

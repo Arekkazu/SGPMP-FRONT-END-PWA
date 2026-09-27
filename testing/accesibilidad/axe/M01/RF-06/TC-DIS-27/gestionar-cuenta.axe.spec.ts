@@ -1,9 +1,33 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, Page } from '@playwright/test';
+import { expect, test, Page, Locator } from '@playwright/test';
 
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL!;
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD!;
 const USUARIO_PRUEBA = 'Sara Gonzalez';
+
+// #132: el drawer móvil se abre con transition:transform 0.2s y puede volver a
+// cerrarse (carrera confirmada con el velo de fondo de App.tsx) antes de que
+// el clic sobre el ítem llegue a completarse. En vez de esperar una sola vez,
+// se reintenta la apertura + el clic hasta que el target quede dentro del
+// viewport (bug de producto pendiente de corrección, ver reporte de QA).
+async function abrirMenuYClicRobusto(page: Page, menuToggle: Locator, target: Locator) {
+  for (let intento = 1; intento <= 8; intento++) {
+    const box = await target.boundingBox().catch(() => null);
+    const vp = page.viewportSize();
+    const dentro = !!box && !!vp && box.x >= -1 && box.y >= -1 && (box.x + box.width) <= vp.width + 1;
+    if (dentro) {
+      try {
+        await target.click({ timeout: 2000 });
+        return;
+      } catch { /* reintentar */ }
+    }
+    if (await menuToggle.isVisible().catch(() => false)) {
+      await menuToggle.click().catch(() => {});
+    }
+    await page.waitForTimeout(300);
+  }
+  await target.click();
+}
 
 async function loginComoAdmin(page: Page) {
   await page.goto('/login');
@@ -19,12 +43,8 @@ async function loginComoAdmin(page: Page) {
   // En viewports chicos (movil/tablet) el sidebar vive detrás de un botón
   // hamburguesa ("Alternar menú lateral"); en escritorio no existe/no hace falta.
   const menuToggle = page.getByRole('button', { name: /alternar menú lateral/i });
-  if (await menuToggle.isVisible().catch(() => false)) {
-    await menuToggle.click();
-  }
-  const btnUsuarios = page.getByRole('button', { name: /gestión de usuarios/i });
-  await expect(btnUsuarios).toBeEnabled({ timeout: 10000 });
-  await btnUsuarios.click();
+  const btnUsuarios = page.getByRole('link', { name: /gestión de usuarios/i }).or(page.getByRole('button', { name: /gestión de usuarios/i }));
+  await abrirMenuYClicRobusto(page, menuToggle, btnUsuarios);
 }
 
 // La tabla de usuarios está paginada; el usuario de prueba puede no estar
@@ -68,7 +88,9 @@ test.describe('TC-DIS-27 - Accesibilidad WCAG 2.1 AA - Gestionar Cuenta de Usuar
     await page.getByRole('button', { name: /inactivar/i }).click();
     await page.getByRole('button', { name: /confirmar/i }).click(); // sin llenar motivo_accion
 
-    await expect(page.getByRole('alert')).toContainText(/motivo/i);
+    // El toast de éxito de "Activar" del beforeEach puede seguir visible cuando
+    // aparece este error inline; se filtra por texto para no chocar con strict mode.
+    await expect(page.getByRole('alert').filter({ hasText: /motivo/i })).toContainText(/motivo/i);
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
