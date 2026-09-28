@@ -180,7 +180,7 @@ function TemaPanel({
         <Alert variant="success" title={t('temavisualsection.tema_guardado')} description={t('temavisualsection.el_tema_se_aplico_correctamente')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
+      <div className="ds-fg3" style={{ gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
         {TEMAS.map((tema) => (
           <TemaCard
             key={tema.mode}

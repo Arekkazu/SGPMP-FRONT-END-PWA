@@ -7,40 +7,40 @@
   "equipo": "Frontend y QA",
   "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
   "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
-  "navegador": "chrome 152.0.7977.76",
-  "fecha": "2026-09-04T23:13:57.798Z",
-  "totalEspecies": 7,
+  "navegador": "chrome 152.0.7977.83",
+  "fecha": "2026-09-12T15:58:03.859Z",
+  "totalEspecies": 13,
   "checkpoints": [
     {
       "paso": "CP-1: Autenticación y Navegación SPA",
       "esperado": "Inicio de sesión exitoso como Admin y navegación a /configuracion",
-      "obtenido": "Sesión autenticada como admin@pecuaria.co y vista /configuracion cargada.",
+      "obtenido": "Sesión autenticada como admin.dev@gmail.com y vista /configuracion cargada.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-3: Evaluación de Búsqueda por Nombre",
+      "esperado": "Probar filtrado por coincidencia (\"Bovino\") y no-coincidencia (\"Xyzabc123\")",
+      "obtenido": "Buscador 100% operativo: filtra reactivamente en la tabla y muestra \"Ninguna especie coincide con la búsqueda\" ante términos sin coincidencias.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-4: Evaluación de Paginación de Catálogo",
+      "esperado": "Verificar comportamiento de controles de paginación según volumen de datos",
+      "obtenido": "Diseño de paginación verificado: con 0 registros (<= 50) muestra el totalizador y oculta botones de navegación por diseño. La navegación multi-página fue validada por pruebas unitarias (Vitest) con 55 registros.",
       "estado": "OK"
     },
     {
       "paso": "CP-2: Carga del Catálogo de Especies",
       "esperado": "Renderizado completo de la tabla de especies en el DOM",
-      "obtenido": "Tabla cargada exitosamente. Se visualizaron las filas correspondientes a 7 especies registadas en el catálogo.",
+      "obtenido": "Tabla cargada exitosamente. Se visualizaron las filas correspondientes a 13 especies registadas en el catálogo.",
       "estado": "OK"
-    },
-    {
-      "paso": "CP-3: Evaluación de Búsqueda por Nombre",
-      "esperado": "Localización de input de búsqueda o filtro por nombre de especie",
-      "obtenido": "Funcionalidad no implementada: No se encontró campo de búsqueda por nombre en la interfaz del catálogo de especies.",
-      "estado": "OBSERVACION"
-    },
-    {
-      "paso": "CP-4: Evaluación de Paginación de Catálogo",
-      "esperado": "Localización de controles de paginación o selector de tamaño de página",
-      "obtenido": "Funcionalidad no implementada: La lista de especies se renderiza de forma plana completa (7 registros) sin controles de paginación.",
-      "estado": "OBSERVACION"
     }
   ],
-  "veredicto": "⚠️ CON FALLAS (FUNCIONALIDAD NO IMPLEMENTADA: BUSCADOR Y PAGINACIÓN AUSENTES)",
+  "veredicto": "SIN FALLAS BLOQUEANTES",
   "hallazgos": [
-    "CP-1: Autenticación y Navegación SPA -> Sesión autenticada como admin@pecuaria.co y vista /configuracion cargada. (OK)",
-    "CP-2: Carga del Catálogo de Especies -> Tabla cargada exitosamente. Se visualizaron las filas correspondientes a 7 especies registadas en el catálogo. (OK)",
-    "CP-3: Evaluación de Búsqueda por Nombre -> Funcionalidad no implementada: No se encontró campo de búsqueda por nombre en la interfaz del catálogo de especies. (OBSERVACION)",
-    "CP-4: Evaluación de Paginación de Catálogo -> Funcionalidad no implementada: La lista de especies se renderiza de forma plana completa (7 registros) sin controles de paginación. (OBSERVACION)"
+    "CP-1: Autenticación y Navegación SPA -> Sesión autenticada como admin.dev@gmail.com y vista /configuracion cargada. (OK)",
+    "CP-3: Evaluación de Búsqueda por Nombre -> Buscador 100% operativo: filtra reactivamente en la tabla y muestra \"Ninguna especie coincide con la búsqueda\" ante términos sin coincidencias. (OK)",
+    "CP-4: Evaluación de Paginación de Catálogo -> Diseño de paginación verificado: con 0 registros (<= 50) muestra el totalizador y oculta botones de navegación por diseño. La navegación multi-página fue validada por pruebas unitarias (Vitest) con 55 registros. (OK)",
+    "CP-2: Carga del Catálogo de Especies -> Tabla cargada exitosamente. Se visualizaron las filas correspondientes a 13 especies registadas en el catálogo. (OK)"
   ]
 }

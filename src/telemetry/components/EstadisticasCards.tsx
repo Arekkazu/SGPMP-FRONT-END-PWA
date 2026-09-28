@@ -24,7 +24,7 @@ export function EstadisticasCards({ estadisticas }: { estadisticas: ResumenEstad
       {estadisticas.map((e) => (
         <div key={e.tipo_variable} style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
           <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s3)' }}>{e.tipo_variable}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--s3)' }}>
+          <div className="ds-fg3" style={{ gap: 'var(--s3)' }}>
             <Metric label={t('estadisticascards.minimo')} value={fmt(e.valor_minimo)} />
             <Metric label={t('estadisticascards.maximo')} value={fmt(e.valor_maximo)} />
             <Metric label={t('estadisticascards.promedio')} value={fmt(e.valor_promedio)} />

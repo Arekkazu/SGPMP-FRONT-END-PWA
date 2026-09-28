@@ -22,7 +22,7 @@
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--surface-border);
-  padding: 2.25rem 2rem;
+  padding: var(--s7) var(--s6);
   width: 100%;
   max-width: 560px;
 }
@@ -85,6 +85,15 @@
   border-top: 1px solid var(--surface-border);
 }
 
+/* Motivo por el que un boton de la tarjeta esta deshabilitado. Va debajo del
+   boton, no en una alerta global: explica ese control y nada mas. */
+.auth-hint {
+  margin-top: var(--s2);
+  text-align: center;
+  font-size: var(--fs-label-sm);
+  color: var(--text-muted);
+}
+
 .auth-links {
   display: flex;
   justify-content: space-between;
@@ -106,6 +115,12 @@
 
 .auth-link:hover {
   text-decoration: underline;
+}
+
+.auth-link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Stepper */
@@ -182,45 +197,7 @@
   grid-column: span 2;
 }
 
-/* Password strength */
-.pw-rules {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s2);
-  margin-top: var(--s2);
-}
-
-.pw-rule {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.pw-rule--met {
-  color: var(--sem-success);
-}
-
-.pw-strength-bar {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--surface-border);
-  overflow: hidden;
-  margin-top: var(--s2);
-}
-
-.pw-strength-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.3s, background 0.3s;
-}
-
-.pw-strength-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
+/* El medidor de fortaleza vive en PasswordStrength.css (shared/design-system). */
 
 .auth-success-icon {
   width: 64px;
@@ -254,8 +231,8 @@
 }
 
 .auth-att-dot--used {
-  background: var(--sem-error);
-  border-color: var(--sem-error);
+  background: var(--sem-error-solid);
+  border-color: var(--sem-error-solid);
 }
 
 @media (max-width: 560px) {
@@ -266,6 +243,6 @@
     grid-column: span 1;
   }
   .auth-card {
-    padding: 1.5rem;
+    padding: var(--s5);
   }
 }

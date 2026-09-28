@@ -1,0 +1,99 @@
+{
+  "grupo": "TC-M09-G22",
+  "rf": "RF-17",
+  "tipo": "REEVALUACION V3",
+  "entorno": "TEST",
+  "rama": "qa/juan-esteban-tercera-evaluacion-M09",
+  "runId": "G22-REEVAL-V3-20260925-223414",
+  "fecha": "2026-09-25T22:34:00-05:00",
+  "momento": "ANTES DEL PRIMER POST — safety stop de la seccion 24",
+  "operacionesRealizadas": "solo login y GET; 0 POST, 0 PATCH, 0 DELETE, 0 SQL",
+
+  "hallazgo1": {
+    "titulo": "Umbrales en TEST con el payload canonico de G22 y la especie sustituida",
+    "descripcion": "Existen umbrales creados despues de V2 (id > 41) cuyo rango y cuyos tres niveles coinciden exactamente con los payloads de V2, cambiando unicamente la especie. Es el patron propio de una tercera evaluacion. No fueron creados por esta sesion: ya estaban presentes en el primer discovery de hoy (2026-09-25 ~16:43) y la EvaluacionV3 anterior de esta sesion ejecuto 0 POST.",
+    "umbrales": [
+      {
+        "id_umbral_ambiental": 45,
+        "id_especie": 10,
+        "especie": "Tilapia",
+        "id_variable_ambiental": 3,
+        "variable": "Oxigeno disuelto",
+        "valor_min": "8.00",
+        "valor_max": "12.00",
+        "niveles": ["8.00-9.33", "9.33-10.66", "10.66-12.00"],
+        "es_activo": true,
+        "fecha_actualizacion": null,
+        "equivaleA": "TC-M09-46 (payload identico al de V2 id 38, con Tilapia en lugar de Mojarra Plateada)",
+        "detectadoPorElScript": false,
+        "nota": "El detector solo revisa el fixture 61 y las especies candidatas nombradas (Equino, Cachama Blanca); este se identifico en la inspeccion manual de solo lectura."
+      },
+      {
+        "id_umbral_ambiental": 47,
+        "id_especie": 42,
+        "especie": "Equino",
+        "id_variable_ambiental": 10,
+        "variable": "Humedad Relativa",
+        "valor_min": "40.00",
+        "valor_max": "60.00",
+        "niveles": ["40.00-46.66", "46.66-53.32", "53.32-60.00"],
+        "es_activo": true,
+        "fecha_actualizacion": null,
+        "equivaleA": "TC-M09-48 (payload identico al de V2 id 40, con Equino en lugar de Bovino)",
+        "detectadoPorElScript": true
+      },
+      {
+        "id_umbral_ambiental": 48,
+        "id_especie": 4,
+        "especie": "Cachama Blanca",
+        "id_variable_ambiental": 2,
+        "variable": "pH del agua",
+        "valor_min": "5.60",
+        "valor_max": "8.40",
+        "niveles": ["5.60-6.53", "6.53-7.46", "7.46-8.40"],
+        "es_activo": true,
+        "fecha_actualizacion": null,
+        "equivaleA": "TC-M09-49 (payload identico al de V2 id 41, con Cachama Blanca en lugar de Camaron Blanco)",
+        "detectadoPorElScript": true
+      }
+    ],
+    "sinEquivalenteEncontrado": "TC-M09-47 — no existe ningun umbral posterior a V2 con Temperatura del agua 18.00-27.00 ademas del propio id 39 de V2",
+    "otrosUmbralesPosterioresAV2NoAtribuibles": [
+      { "id": 42, "especie": "Camaron Blanco", "variable": "Oxigeno disuelto", "rango": "5.00-14.00", "nota": "rango distinto del de G22" },
+      { "id": 43, "especie": "Ave Qa Je", "variable": "Temperatura del agua", "rango": "35.57-39.23", "nota": "rango distinto del de G22" },
+      { "id": 44, "especie": "Bovino", "variable": "Temperatura Corporal", "rango": "37.00-43.00", "nota": "variable ajena a G22; es_activo false" },
+      { "id": 46, "especie": "Trucha Arcoiris", "variable": "Temperatura Ambiental", "rango": "10.00-40.00", "nota": "variable ajena a G22" },
+      { "id": 49, "especie": "Bovino Qa Je", "variable": "Temperatura del agua", "rango": "35.57-39.23", "nota": "rango distinto del de G22" }
+    ],
+    "fechasDisponibles": "La API no expone fecha de creacion de umbrales y fecha_actualizacion es null en los tres casos, por lo que no puede datarse su origen por API. Lo unico datable es que ya existian el 2026-09-25 a las ~16:43 (discovery de esta sesion).",
+    "afectaLaReproduccionLimpia": {
+      "bloqueaElPlanV3": false,
+      "explicacion": "Ninguna de las cuatro combinaciones planificadas para V3 esta ocupada: TC-46 y TC-47 usan la especie 61 (0 umbrales), TC-48 usa Equina (43, distinta de Equino 42) y TC-49 usa Tilapia (10, distinta de Cachama Blanca 4).",
+      "riesgo": "Ejecutar V3 crearia registros funcionalmente equivalentes a los ids 45, 47 y 48 ya presentes: mismo caso, misma variable, mismo rango y mismos niveles, con otra especie. Seria duplicacion semantica de una ejecucion previa, no una reproduccion limpia."
+    }
+  },
+
+  "hallazgo2": {
+    "titulo": "El registro historico id 40 de V2 fue DESACTIVADO en TEST durante el dia de hoy",
+    "id_umbral_ambiental": 40,
+    "especie": "Bovino",
+    "variable": "Humedad Relativa",
+    "valor_min": "40.00",
+    "valor_max": "60.00",
+    "estadoEnV2": "es_activo true (evaluacion del 2026-09-13)",
+    "estadoObservadoHoy1643": "es_activo true (discovery de esta sesion, RUN_ID G22-REEVAL-V3-20260925-164239, cuya carpeta local fue eliminada por el responsable QA)",
+    "estadoObservadoHoy2234": "es_activo false",
+    "presente": true,
+    "autoria": "No corresponde a esta sesion: no se emitio ningun PATCH, DELETE ni SQL en ningun momento.",
+    "impacto": "El registro sigue existiendo y conserva valores y niveles, pero su estado cambio. Es evidencia historica de V2 alterada por un tercero en un ambiente compartido; debe documentarse antes de cualquier escritura y no se corrige desde QA.",
+    "accionTomada": "Ninguna. No se reactiva, no se modifica y no se borra."
+  },
+
+  "decisionPendiente": "Se detiene antes del primer POST conforme a las secciones 0 y 24 de las instrucciones. Se requiere autorizacion expresa del responsable QA para ejecutar los cuatro POST oficiales de V3 sabiendo que en TEST ya existen los registros 45, 47 y 48 con payload equivalente.",
+  "planV3Listo": {
+    "TC-M09-46": { "especie": 61, "variable": 3, "rango": "8.00-12.00", "combinacionLibre": true },
+    "TC-M09-47": { "especie": 61, "variable": 1, "rango": "18.00-27.00", "combinacionLibre": true },
+    "TC-M09-48": { "especie": 43, "variable": 10, "rango": "40.00-60.00", "combinacionLibre": true },
+    "TC-M09-49": { "especie": 10, "variable": 2, "rango": "5.60-8.40", "combinacionLibre": true }
+  }
+}

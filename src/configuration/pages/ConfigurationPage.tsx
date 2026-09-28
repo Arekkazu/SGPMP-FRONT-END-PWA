@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, RefreshCw } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Plus, RefreshCw, Search } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useAuth } from '../../shared/auth/useAuth';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { Input } from '../../shared/design-system/Input';
 import { useEspecies } from '../hooks/useEspecies';
 import { EspeciesTable } from '../components/EspeciesTable';
+import { Paginacion } from '../components/Paginacion';
 import { EspeciesModal } from '../components/EspeciesModal';
 import { PorEspeciePage } from '../components/PorEspeciePage';
 import { ParametrosSection } from '../components/ParametrosSection';
@@ -45,8 +47,16 @@ const TABS: { id: TabId; claveLabel: string; recurso: number }[] = [
   { id: 'plantillas', claveLabel: 'tabs.plantillas', recurso: 28 },       // plantillas
 ];
 
+// QA M09 (hallazgo #3): con solo padding vertical el boton medía ~40px, por
+// debajo del touch target minimo de 48px (--s9) del sistema de diseño, y en
+// viewport movil (nav con overflow-x) los flex items sin flex-shrink:0 podian
+// encogerse por debajo de su contenido en vez de forzar el scroll horizontal.
 const TAB_BTN: React.CSSProperties = {
-  padding: 'var(--s3) var(--s4)',
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: 'var(--s9)',
+  flexShrink: 0,
+  padding: '0 var(--s4)',
   background: 'none',
   border: 'none',
   borderBottom: '2px solid transparent',
@@ -74,19 +84,36 @@ type ModalState =
   | { tipo: 'desactivar'; especie: EspecieResponse }
   | { tipo: 'reactivar'; especie: EspecieResponse };
 
+// #53 (RF-15): CU-01 exige búsqueda por nombre y paginación en el catálogo. Ambas
+// son client-side — la lista ya llega completa en un solo GET — así que basta con
+// filtrar/paginar el arreglo que trae `useEspecies`, sin tocar la capa API.
+const ESPECIES_POR_PAGINA = 50;
+
 // ── Catálogo tab ─────────────────────────────────────────────────────────────
-function CatalogoTab() {
+// Exportado para poder testear la búsqueda/paginación (#53, RF-15) sin montar
+// toda la página ni su lógica de tabs por permiso.
+export function CatalogoTab() {
   const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear  = usePermission(8, 1);
   const puedeEditar = usePermission(8, 3);
   const puedeDesact = usePermission(8, 4);
 
-  const { especies, loading, saving, error, saveError, fromCache, cargar, registrar, editar, desactivar, reactivar } = useEspecies();
+  const { especies, loading, saving, error, saveError, fromCache, conflictos, cargar, registrar, editar, desactivar, reactivar, resolverConflicto } = useEspecies();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [pagina, setPagina] = useState(1);
 
   useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { setPagina(1); }, [busqueda]);
+
+  const filtradas = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return q ? especies.filter((e) => e.nombre.toLowerCase().includes(q)) : especies;
+  }, [especies, busqueda]);
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ESPECIES_POR_PAGINA));
+  const enPagina = filtradas.slice((pagina - 1) * ESPECIES_POR_PAGINA, pagina * ESPECIES_POR_PAGINA);
 
   const cerrar = () => setModal({ tipo: 'ninguno' });
 
@@ -129,7 +156,6 @@ function CatalogoTab() {
               variant="primary"
               size="sm"
               onClick={() => setModal({ tipo: 'crear' })}
-              disabled={!online}
             >
               <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('configurationpage.nueva_especie')}</Button>
           )}
@@ -137,11 +163,14 @@ function CatalogoTab() {
       </div>
 
       {/* Alertas de estado */}
+      {/* #115 (RF-15): la creación ya no depende de estar online — el hook encola en
+          syncQueue/Dexie y sincroniza al reconectar (useSyncOnReconnect). Este aviso ya
+          no dice que las acciones están deshabilitadas: dice que quedan pendientes. */}
       {!online && (
         <Alert
           variant="warning"
           title={t('configurationpage.sin_conexion')}
-          description={t('configurationpage.mostrando_datos_cacheados_las_acciones_de')}
+          description={t('configurationpage.los_cambios_se_guardaran_localmente')}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
@@ -159,17 +188,46 @@ function CatalogoTab() {
       {accionError && (
         <Alert variant="error" title={t('configurationpage.error')} description={accionError} style={{ marginBottom: 'var(--s4)' }} />
       )}
+      {conflictos.map((op) => (
+        <div key={op.id} style={{ marginBottom: 'var(--s4)' }}>
+          <Alert
+            variant="error"
+            title={t('configurationpage.conflicto_de_sincronizacion')}
+            description={op.error ?? t('configurationpage.no_se_pudo_sincronizar_esta_especie')}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--s2)' }}>
+            <Button variant="secondary" size="sm" onClick={() => resolverConflicto(op)}>
+              {t('configurationpage.descartar')}
+            </Button>
+          </div>
+        </div>
+      ))}
+
+      {/* Búsqueda por nombre */}
+      <div style={{ maxWidth: 320, marginBottom: 'var(--s4)' }}>
+        <Input
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder={t('configurationpage.buscar_por_nombre')}
+          aria-label={t('configurationpage.buscar_especies_por_nombre')}
+          leadingIcon={<Search size={16} />}
+        />
+      </div>
 
       {/* Tabla */}
       <EspeciesTable
-        especies={especies}
+        especies={enPagina}
         loading={loading}
         puedeEditar={puedeEditar && online}
         puedeDesactivar={puedeDesact && online}
+        busquedaActiva={busqueda.trim().length > 0}
         onEditar={(e) => setModal({ tipo: 'editar', especie: e })}
         onDesactivar={(e) => setModal({ tipo: 'desactivar', especie: e })}
         onReactivar={(e) => setModal({ tipo: 'reactivar', especie: e })}
       />
+      {!loading && (
+        <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={filtradas.length} onCambiar={setPagina} />
+      )}
 
       {/* Modal crear/editar */}
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (
@@ -393,7 +451,7 @@ export function ConfigurationPage() {
       </nav>
 
       {/* Content */}
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {activeTab === 'catalogo' && <CatalogoTab />}
         {activeTab === 'por-especie' && <PorEspeciePage />}
         {activeTab === 'fincas' && (

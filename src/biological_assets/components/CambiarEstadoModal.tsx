@@ -66,8 +66,10 @@ function normalizar(estado: string | null | undefined): EstadoActivoNombre | nul
 export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onConfirmar }: Props) {
   const { t } = useT('biologicalAssets');
   const actual = normalizar(estadoActual);
-  // CERRADO se gestiona por "Cerrar ciclo" (endpoint dedicado); se excluye aquí.
-  const destinos = (actual ? TRANSICIONES_VALIDAS[actual] : []).filter((e) => e !== 'CERRADO');
+  // CERRADO y BAJA no se alcanzan por cambio manual: van por sus endpoints
+  // dedicados ("Cerrar ciclo" RF-38 y "Registrar baja" RF-45), que aplican
+  // validaciones y efectos secundarios propios. Se excluyen aquí (RF-44).
+  const destinos = (actual ? TRANSICIONES_VALIDAS[actual] : []).filter((e) => e !== 'CERRADO' && e !== 'BAJA');
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
