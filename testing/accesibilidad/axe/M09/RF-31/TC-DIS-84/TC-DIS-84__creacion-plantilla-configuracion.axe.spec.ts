@@ -1,5 +1,6 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { guardarResultadoAxe } from '../../../_shared/axeReport';
 import fs from 'fs';
 import path from 'path';
 
@@ -51,24 +52,61 @@ import path from 'path';
  *   la primera especie disponible en el <select>, sin asumir un nombre.
  */
 
-const ADMIN_EMAIL = 'adminplaywright@gmail.com';
-const ADMIN_PASSWORD = 'pruebasadmin123#';
+const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
+const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 async function loginComoAdmin(page: Page) {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    throw new Error('Faltan TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD en testing/.env.test');
+  }
   await page.goto('/login');
   await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
   await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar' }).click();
-  await page.waitForURL(/dashboard/);
-  // el JWT vive SOLO en memoria, nunca en localStorage — por eso después
-  // del login nunca se usa page.goto() para navegar, eso recarga la
-  // página y borra la sesión. Se navega por clic, como un usuario real.
-  const menuToggle = page.getByRole('button', { name: /alternar menú lateral/i });
-  if (await menuToggle.isVisible().catch(() => false)) {
-    await menuToggle.click();
+  await page.waitForURL(/dashboard/, { timeout: 90_000 });
+  // Mitigación del reporte de Sara (hallazgo 2): navegar inmediatamente tras el
+  // login invalidaba la sesión bajo automatización.
+  await page.waitForLoadState('networkidle');
+  await irAConfiguracion(page, /^(Plantillas|Templates)$/);
+}
+
+async function dentroDelViewport(page: Page, loc: Locator): Promise<boolean> {
+  const box = await loc.boundingBox().catch(() => null);
+  const vp = page.viewportSize();
+  return !!box && !!vp && box.x >= -1 && box.x + box.width <= vp.width + 1;
+}
+
+// El JWT vive solo en memoria: tras el login NO se usa page.goto() (recarga y
+// borra la sesión); se navega por el sidebar como un usuario real.
+// El ítem del sidebar es un <Link> (rol link, no button). En móvil/tablet el
+// sidebar está fuera del viewport hasta abrir el menú lateral.
+async function irAConfiguracion(page: Page, pestana?: RegExp) {
+  const menuToggle = page.getByRole('button', { name: /alternar menú lateral|toggle side menu/i });
+  const linkConfig = page.getByRole('link', { name: /^(configuración|settings)$/i });
+  await linkConfig.waitFor({ state: 'attached', timeout: 30_000 });
+
+  if (await linkConfig.getAttribute('aria-disabled') === 'true') {
+    throw new Error(
+      `BLOQUEO DE AMBIENTE (no es hallazgo de accesibilidad): la cuenta ${ADMIN_EMAIL} ` +
+      'no tiene permiso sobre Configuración — el ítem del sidebar sale bloqueado.',
+    );
   }
-  await page.getByRole('button', { name: 'Configuración' }).click();
-  await page.getByRole('button', { name: 'Plantillas', exact: true }).click();
+  for (let intento = 0; intento < 5 && !(await dentroDelViewport(page, linkConfig)); intento++) {
+    if (await menuToggle.isVisible().catch(() => false)) await menuToggle.click();
+    await page.waitForTimeout(400);
+  }
+  await linkConfig.click();
+  await page.waitForURL(/configuracion/);
+  if (pestana) {
+    const boton = page.getByRole('button', { name: pestana });
+    await boton.waitFor({ state: 'visible', timeout: 15_000 }).catch(() => {
+      throw new Error(
+        `BLOQUEO DE AMBIENTE: la pestaña ${pestana} no aparece — la cuenta ${ADMIN_EMAIL} ` +
+        'no tiene permiso de lectura sobre ese recurso.',
+      );
+    });
+    await boton.click();
+  }
 }
 
 function guardarResultados(nombre: string, contenido: unknown) {
@@ -78,7 +116,7 @@ function guardarResultados(nombre: string, contenido: unknown) {
 }
 
 test.describe('TC-DIS-84 — RF-31: Creación de Plantilla de Configuración (accesibilidad)', () => {
-  test('modal "Nueva Plantilla de Configuración" no tiene violaciones de accesibilidad', async ({ page }) => {
+  test('modal "Nueva Plantilla de Configuración" no tiene violaciones de accesibilidad', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
     await page.getByRole('button', { name: 'Nueva plantilla' }).click();
 
@@ -90,12 +128,13 @@ test.describe('TC-DIS-84 — RF-31: Creación de Plantilla de Configuración (ac
     await expect(page.getByLabel('Especie base')).toBeVisible();
 
     const results = await new AxeBuilder({ page }).include('[role="dialog"]').analyze();
+    guardarResultadoAxe('TC-DIS-84', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
     guardarResultados('axe-TC-DIS-84-modal.json', results);
 
     expect(results.violations).toEqual([]);
   });
 
-  test('los toggles de categoría exponen su estado correctamente (checkbox real)', async ({ page }) => {
+  test('los toggles de categoría exponen su estado correctamente (checkbox real)', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
     await page.getByRole('button', { name: 'Nueva plantilla' }).click();
 
@@ -110,7 +149,7 @@ test.describe('TC-DIS-84 — RF-31: Creación de Plantilla de Configuración (ac
     expect(['true', 'false']).toContain(ariaChecked);
   });
 
-  test('el modal NO cierra con Escape — confirma el hallazgo transversal #1', async ({ page }) => {
+  test('el modal NO cierra con Escape — confirma el hallazgo transversal #1', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
     await page.getByRole('button', { name: 'Nueva plantilla' }).click();
 
