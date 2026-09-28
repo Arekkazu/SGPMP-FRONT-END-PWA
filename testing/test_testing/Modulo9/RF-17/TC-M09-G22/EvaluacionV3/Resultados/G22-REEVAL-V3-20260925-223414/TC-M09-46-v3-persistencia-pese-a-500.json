@@ -1,0 +1,46 @@
+{
+  "grupo": "TC-M09-G22",
+  "rf": "RF-17",
+  "tipo": "REEVALUACION V3",
+  "entorno": "TEST",
+  "rama": "qa/juan-esteban-tercera-evaluacion-M09",
+  "base": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "runId": "G22-REEVAL-V3-20260925-223414",
+  "fecha": "2026-09-26T03:47:31.813Z",
+  "caso": "TC-M09-46",
+  "motivo": "El POST respondio 500 FALLO_SINCRONIZACION_EDGE sin devolver cuerpo con id; la evidencia del intento se guardo antes de incorporar la deteccion de persistencia sin 201. Este archivo registra por GET el registro realmente creado. Solo lectura.",
+  "endpoint": "GET /configuracion/umbrales?id_especie=61",
+  "idPersistido": 50,
+  "persistioPeseAlError": true,
+  "registrosDeLaCombinacion": 1,
+  "detalle": {
+    "id_umbral_ambiental": 50,
+    "id_especie": 61,
+    "id_variable_ambiental": 3,
+    "unidad_medida": "mg/L",
+    "valor_min": "8.00",
+    "valor_max": "12.00",
+    "es_activo": true,
+    "fecha_actualizacion": null,
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "8.00",
+        "limite_superior": "9.33"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "9.33",
+        "limite_superior": "10.66"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "10.66",
+        "limite_superior": "12.00"
+      }
+    ],
+    "estado_sincronizacion": "PENDIENTE",
+    "fecha_ultima_sincronizacion": null,
+    "motivo_fallo_sincronizacion": "La propagación automática de umbrales hacia el Nodo Edge todavía no está disponible: el contrato de publicación (destino, topic, payload, ACK) está pendiente de definición con el equipo de IoT. La configuración quedó guardada y pendiente de sincronización."
+  }
+}

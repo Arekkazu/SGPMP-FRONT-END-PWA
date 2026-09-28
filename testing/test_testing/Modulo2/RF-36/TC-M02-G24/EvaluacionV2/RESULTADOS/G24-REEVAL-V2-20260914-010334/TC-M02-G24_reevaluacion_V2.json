@@ -1,0 +1,150 @@
+{
+  "caso": "TC-M02-G24",
+  "tipo_evaluacion": "REEVALUACION",
+  "titulo": "Gestión Poblacional de Activos Biológicos (Ficha UI, Crecimiento, Baja e Inmutabilidad)",
+  "cu": "CU03",
+  "rf": "RF-36 / RF-33 / RF-37 / RF-39 / RF-44 / RF-16",
+  "incidente_asociado": "INC-M02-37-G24",
+  "fecha_corrida_original": "2026-09-08T03:09:35Z",
+  "fecha_reevaluacion": "2026-09-14T19:07:00-05:00",
+  "ambiente_frontend": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "ambiente_backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "base_datos": "158.69.200.27:5448/sgpmp_test",
+  "usuario_ejecucion": "administador.dev@gmail.com",
+  "herramientas": {
+    "cypress": "13.17.0 (Headless Chrome 152.0.0.0)",
+    "newman": "6.2.2"
+  },
+  "veredicto_global": "SIGUE RECHAZADO",
+  "resumen_subcasos": [
+    {
+      "subcaso": "TC-M02-048",
+      "enfoque": "Ficha lote UI + densidad calculada",
+      "esperado": "HTTP 200 OK + densidad 0.2000",
+      "obtenido": "HTTP 500 ERROR_INTERNO en POST /activos-biologicos",
+      "estado": "FAIL",
+      "clasificacion": "Bloqueo Backend en Creación de Lote"
+    },
+    {
+      "subcaso": "TC-M02-049",
+      "enfoque": "Evento CRECIMIENTO (RF-39)",
+      "esperado": "HTTP 201 Created (biomasa recalculada)",
+      "obtenido": "HTTP 404 Not Found (URL con ID lote vacío)",
+      "estado": "FAIL",
+      "clasificacion": "Bloqueado por Paso 0.3"
+    },
+    {
+      "subcaso": "TC-M02-050",
+      "enfoque": "Evento BAJA (RF-39)",
+      "esperado": "HTTP 201 Created (descuento de 10 unidades)",
+      "obtenido": "HTTP 404 Not Found (URL con ID lote vacío)",
+      "estado": "FAIL",
+      "clasificacion": "Bloqueado por Paso 0.3"
+    },
+    {
+      "subcaso": "TC-M02-056",
+      "enfoque": "Inmutabilidad cantidad_inicial (RF-33)",
+      "esperado": "HTTP 200 OK (inmutable 100)",
+      "obtenido": "HTTP 404 Not Found (URL con ID lote vacío)",
+      "estado": "FAIL",
+      "clasificacion": "Bloqueado por Paso 0.3"
+    },
+    {
+      "subcaso": "Prerrequisito 0.4",
+      "enfoque": "Asignación de fase productiva (RF-37)",
+      "esperado": "HTTP 200/201 (fase vinculada)",
+      "obtenido": "HTTP 405 Method Not Allowed (URL con ID lote vacío)",
+      "estado": "FAIL",
+      "clasificacion": "Bloqueado por Paso 0.3"
+    }
+  ],
+  "checkpoints_evaluados": [
+    {
+      "paso": "Paso 0.1 — Login Admin",
+      "metodo": "POST",
+      "endpoint": "/sesiones/",
+      "esperado": "HTTP 200 OK",
+      "obtenido": "HTTP 200 OK",
+      "estado": "OK"
+    },
+    {
+      "paso": "Paso 0.2 — Crear Ciclo Biológico Propio (RF-16)",
+      "metodo": "POST",
+      "endpoint": "/configuracion/ciclos",
+      "esperado": "HTTP 201 Created",
+      "obtenido": "HTTP 201 Created (ID #39)",
+      "estado": "OK"
+    },
+    {
+      "paso": "Paso 0.3 — Crear Lote Poblacional Propio (RF-33)",
+      "metodo": "POST",
+      "endpoint": "/activos-biologicos",
+      "esperado": "HTTP 201 Created",
+      "obtenido": "HTTP 500 Internal Server Error (ERROR_INTERNO)",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "Paso 0.4 — Intentar Asignar Fase Productiva (RF-37)",
+      "metodo": "POST",
+      "endpoint": "/activos-biologicos//fases",
+      "esperado": "HTTP 200/201 (o 400 evaluable)",
+      "obtenido": "HTTP 405 Method Not Allowed",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "TC-M02-049 — Evento CRECIMIENTO (RF-39)",
+      "metodo": "POST",
+      "endpoint": "/activos-biologicos//eventos/crecimiento",
+      "esperado": "HTTP 200/201",
+      "obtenido": "HTTP 404 Not Found",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "TC-M02-050 — Evento BAJA (RF-39)",
+      "metodo": "POST",
+      "endpoint": "/activos-biologicos//eventos/baja",
+      "esperado": "HTTP 200/201",
+      "obtenido": "HTTP 404 Not Found",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "TC-M02-056 — Validar Inmutabilidad Registro Original (RF-33)",
+      "metodo": "GET",
+      "endpoint": "/activos-biologicos/",
+      "esperado": "HTTP 200 OK",
+      "obtenido": "HTTP 404 Not Found",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "Teardown Lote (RF-44)",
+      "metodo": "PATCH",
+      "endpoint": "/activos-biologicos//estado",
+      "esperado": "HTTP 200 OK",
+      "obtenido": "HTTP 400 Bad Request",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "Teardown Ciclo (RF-16)",
+      "metodo": "PATCH",
+      "endpoint": "/configuracion/ciclos/39/desactivar",
+      "esperado": "HTTP 200 OK",
+      "obtenido": "HTTP 200 OK (es_activo: false)",
+      "estado": "OK"
+    }
+  ],
+  "postcondicion_bd": {
+    "lotes_creados_recientes": 0,
+    "ciclos_desactivados": [38, 39],
+    "activos_huerfanos_activos": 0,
+    "politica_append_only_respetada": true
+  },
+  "archivos_evidencia": {
+    "reporte_md": "RESULTADOS/TC-M02-G24/TC-M02-G24_reevaluacion_2026-09-14.md",
+    "reporte_json": "RESULTADOS/TC-M02-G24/TC-M02-G24_reevaluacion_2026-09-14.json",
+    "postman_json": "RESULTADOS/TC-M02-G24/TC-M02-G24_postman_resultado_reevaluacion_2026-09-14.json",
+    "cypress_stdout": "RESULTADOS/TC-M02-G24/reevaluacion_2026-09-14/cypress_stdout.log",
+    "postman_stdout": "RESULTADOS/TC-M02-G24/reevaluacion_2026-09-14/postman_stdout.log",
+    "cypress_screenshots": "RESULTADOS/TC-M02-G24/reevaluacion_2026-09-14/cypress_screenshots/",
+    "cypress_video": "RESULTADOS/TC-M02-G24/reevaluacion_2026-09-14/cypress_video/"
+  }
+}
