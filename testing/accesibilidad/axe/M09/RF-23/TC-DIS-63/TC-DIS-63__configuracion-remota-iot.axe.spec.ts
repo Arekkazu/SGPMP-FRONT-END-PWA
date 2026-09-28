@@ -1,5 +1,6 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { guardarResultadoAxe } from '../../../_shared/axeReport';
 
 /**
  * TC-DIS-63 — Verificar accesibilidad WCAG 2.1 AA del panel y formulario de
@@ -32,40 +33,72 @@ import AxeBuilder from '@axe-core/playwright';
  * contra pantalla real antes de considerar este caso como ejecutado.
  * Credenciales confirmadas por Alex (líder de desarrollo) — misma cuenta
  * que ya usa TC-DIS-22 en el repo, rol Administrador:
- *   ADMIN_EMAIL=adminplaywright@gmail.com
- *   ADMIN_PASSWORD=pruebasadmin123#
+ *   TEST_ADMIN_EMAIL=<TEST_ADMIN_EMAIL de testing/.env.test>
  * Sin confirmar todavía: si esta cuenta tiene permiso real (recurso 11,
  * acción 3) para el formulario de configuración remota — se asume que sí
  * por ser Administrador, pero eso solo lo confirma la primera ejecución.
  * PENDIENTE: serial de un dispositivo IoT de prueba fijo en el seed de
  * staging (preguntado a Alex, sin respuesta aún) — sin esto, el test
  * depende de "el primer dispositivo activo que aparezca".
- * Correr con: ADMIN_EMAIL=... ADMIN_PASSWORD=... npx playwright test
+ * Correr con: TEST_ADMIN_EMAIL=... TEST_ADMIN_PASSWORD=... npx playwright test
  * axe/M09/RF-23/TC-DIS-63/
  */
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? '';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? '';
+const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
+const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 async function loginComoAdmin(page: Page) {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    throw new Error('Faltan TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD en testing/.env.test');
+  }
   await page.goto('/login');
   await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
   await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar' }).click();
-  await page.waitForURL(/dashboard/);
+  await page.waitForURL(/dashboard/, { timeout: 90_000 });
+  // Mitigación del reporte de Sara (hallazgo 2): navegar inmediatamente tras el
+  // login invalidaba la sesión bajo automatización.
+  await page.waitForLoadState('networkidle');
+  await irAConfiguracion(page, /^IoT$/);
+}
 
-  // IMPORTANTE (copiado de TC-DIS-22/30, no es idea mía): el JWT vive solo
-  // en memoria, NUNCA en localStorage. Por eso después de loguearse no se
-  // usa page.goto() para navegar — eso recarga la página y borra la sesión.
-  // Se navega como lo haría un usuario real: clic en el sidebar.
+async function dentroDelViewport(page: Page, loc: Locator): Promise<boolean> {
+  const box = await loc.boundingBox().catch(() => null);
+  const vp = page.viewportSize();
+  return !!box && !!vp && box.x >= -1 && box.x + box.width <= vp.width + 1;
+}
+
+// El JWT vive solo en memoria: tras el login NO se usa page.goto() (recarga y
+// borra la sesión); se navega por el sidebar como un usuario real.
+// El ítem del sidebar es un <Link> (rol link, no button). En móvil/tablet el
+// sidebar está fuera del viewport hasta abrir el menú lateral.
+async function irAConfiguracion(page: Page, pestana?: RegExp) {
   const menuToggle = page.getByRole('button', { name: /alternar menú lateral|toggle side menu/i });
-  if (await menuToggle.isVisible().catch(() => false)) {
-    await menuToggle.click();
+  const linkConfig = page.getByRole('link', { name: /^(configuración|settings)$/i });
+  await linkConfig.waitFor({ state: 'attached', timeout: 30_000 });
+
+  if (await linkConfig.getAttribute('aria-disabled') === 'true') {
+    throw new Error(
+      `BLOQUEO DE AMBIENTE (no es hallazgo de accesibilidad): la cuenta ${ADMIN_EMAIL} ` +
+      'no tiene permiso sobre Configuración — el ítem del sidebar sale bloqueado.',
+    );
   }
-  await page.getByRole('button', { name: 'Configuración' }).click();
-  // Tab real dentro de la página: claveLabel 'tabs.iot' (i18n) — confirmar
-  // texto exacto contra configuration.json si esto falla.
-  await page.getByRole('button', { name: /iot/i }).click();
+  for (let intento = 0; intento < 5 && !(await dentroDelViewport(page, linkConfig)); intento++) {
+    if (await menuToggle.isVisible().catch(() => false)) await menuToggle.click();
+    await page.waitForTimeout(400);
+  }
+  await linkConfig.click();
+  await page.waitForURL(/configuracion/);
+  if (pestana) {
+    const boton = page.getByRole('button', { name: pestana });
+    await boton.waitFor({ state: 'visible', timeout: 15_000 }).catch(() => {
+      throw new Error(
+        `BLOQUEO DE AMBIENTE: la pestaña ${pestana} no aparece — la cuenta ${ADMIN_EMAIL} ` +
+        'no tiene permiso de lectura sobre ese recurso.',
+      );
+    });
+    await boton.click();
+  }
 }
 
 test.describe('TC-DIS-63 — Accesibilidad: Configuración Remota IoT (RF-23)', () => {
@@ -73,7 +106,7 @@ test.describe('TC-DIS-63 — Accesibilidad: Configuración Remota IoT (RF-23)', 
     await loginComoAdmin(page);
   });
 
-  test('listado del panel de Configuración Remota + selector de dispositivo — sin violaciones axe A/AA', async ({ page }) => {
+  test('listado del panel de Configuración Remota + selector de dispositivo — sin violaciones axe A/AA', async ({ page }, testInfo) => {
     // DispSelector: cada dispositivo activo es un <button> con serial +
     // descripción + estado "Activo" (texto, no solo el punto verde) —
     // esto ya cumple 1.4.1 (no depender solo de color) según el código.
@@ -83,13 +116,14 @@ test.describe('TC-DIS-63 — Accesibilidad: Configuración Remota IoT (RF-23)', 
       .include('body')
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();
+    guardarResultadoAxe('TC-DIS-63', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
 
     // Documentar aquí, no solo aserción ciega: adjuntar el JSON completo en
     // resultados/axe-TC-DIS-63.json (paso aparte, ver README del proyecto).
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
   });
 
-  test('formulario de configuración (frecuencia/intervalo) — sin violaciones axe A/AA', async ({ page }) => {
+  test('formulario de configuración (frecuencia/intervalo) — sin violaciones axe A/AA', async ({ page }, testInfo) => {
     // Selecciona el primer dispositivo activo disponible (tarjeta-botón).
     // TODO: fijar un dispositivo de prueba determinístico por serial una
     // vez se confirme cuál existe en el seed del ambiente de QA.
@@ -111,11 +145,12 @@ test.describe('TC-DIS-63 — Accesibilidad: Configuración Remota IoT (RF-23)', 
       .include('body')
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();
+    guardarResultadoAxe('TC-DIS-63', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
 
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
   });
 
-  test('error de validación (intervalo < frecuencia) — mensaje anunciado (role=alert) y sin violaciones', async ({ page }) => {
+  test('error de validación (intervalo < frecuencia) — mensaje anunciado (role=alert) y sin violaciones', async ({ page }, testInfo) => {
     const primeraTarjeta = page.getByRole('button').filter({ hasText: /activo/i }).first();
     await primeraTarjeta.click();
 
@@ -134,6 +169,7 @@ test.describe('TC-DIS-63 — Accesibilidad: Configuración Remota IoT (RF-23)', 
       .include('body')
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();
+    guardarResultadoAxe('TC-DIS-63', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
 
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
   });
