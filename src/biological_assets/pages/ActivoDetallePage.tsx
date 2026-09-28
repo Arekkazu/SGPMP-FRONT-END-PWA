@@ -63,7 +63,7 @@ export function ActivoDetallePage() {
   const idValido = Number.isFinite(idActivo) && idActivo > 0;
 
   const { activo, loading, saving, error, saveError, cargar, actualizarIndividual } = useActivoDetalle(idActivo);
-  const { ficha, loading: fichaLoading, cargar: cargarFicha } = useFichaIntegral(idActivo);
+  const { ficha, loading: fichaLoading, error: fichaError, cargar: cargarFicha } = useFichaIntegral(idActivo);
   const [tab, setTab] = useState<TabId>('ficha');
 
   const refrescar = useCallback(() => {
@@ -77,7 +77,7 @@ export function ActivoDetallePage() {
 
   if (!idValido) {
     return (
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         <Alert variant="error" title={t('activodetallepage.activo_invalido')} description={t('activodetallepage.el_identificador_de_la_ruta_no_es_valido')} />
       </div>
     );
@@ -139,8 +139,8 @@ export function ActivoDetallePage() {
       </nav>
 
       {/* Contenido */}
-      <div style={{ padding: 'var(--s7)' }}>
-        {tab === 'ficha' && <FichaIntegralView ficha={ficha} loading={fichaLoading || loading} />}
+      <div style={{ padding: 'var(--page-pad)' }}>
+        {tab === 'ficha' && <FichaIntegralView ficha={ficha} loading={fichaLoading || loading} error={fichaError} />}
         {tab === 'datos' && (
           <DatosActivoSection
             activo={activo}
@@ -159,10 +159,11 @@ export function ActivoDetallePage() {
             onChanged={refrescar}
           />
         )}
-        {tab === 'fases' && <FasesSection idActivo={idActivo} onChanged={refrescar} />}
+        {tab === 'fases' && <FasesSection idActivo={idActivo} idEspecie={activo?.id_especie ?? null} estadoActual={estado} onChanged={refrescar} />}
         {tab === 'eventos' && (
           <EventosSection
             idActivo={idActivo}
+            idEspecie={activo?.id_especie ?? null}
             tipo={String(tipo)}
             estadoActual={estado}
             onChanged={refrescar}

@@ -8,7 +8,7 @@ import { ModalShell } from './ModalShell';
 import { FormSelect, FormTextArea, FORM_COL } from './formControls';
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarEventoBajaDTO, TipoBaja } from '../types';
-import { hoyLocal } from '../../shared/lib/fecha';
+import { diaParaBackendUtc, hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   tipo_baja: TipoBaja;
@@ -37,7 +37,7 @@ export function RegistrarBajaModal({ esPoblacional, saving, saveError, onClose, 
   const submit = async (v: FormValues) => {
     const dto: RegistrarEventoBajaDTO = {
       tipo_baja: v.tipo_baja,
-      fecha_baja: v.fecha_baja,
+      fecha_baja: diaParaBackendUtc(v.fecha_baja),
       motivo_baja: v.motivo_baja.trim(),
     };
     if (esPoblacional && v.cantidad_afectada) {

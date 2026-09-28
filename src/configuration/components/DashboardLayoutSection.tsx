@@ -322,7 +322,7 @@ export function DashboardLayoutSection() {
       )}
 
       {/* Two-panel layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 'var(--s5)', alignItems: 'start' }}>
+      <div className="ds-split-aside" style={{ gap: 'var(--s5)', alignItems: 'start' }}>
 
         {/* Left: grid editor */}
         <div>

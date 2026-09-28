@@ -65,6 +65,10 @@ export function EditarActivoModal({ activo, saving, saveError, onClose, onGuarda
       setFormError('Debes modificar al menos un campo.');
       return;
     }
+    // INC-M02-G22: sin esto, tras la primera edición el backend responde 412
+    // a toda edición siguiente. Se reenvía el string sin pasar por Date: el
+    // backend compara con microsegundos y Date trunca a milisegundos.
+    dto.fecha_actualizacion = activo.fecha_actualizacion ?? null;
     const ok = await onGuardar(dto);
     if (ok) onClose();
   };

@@ -44,6 +44,9 @@ export const TRANSICIONES_VALIDAS: Record<EstadoActivoNombre, EstadoActivoNombre
 /** Estados en los que se pueden registrar eventos biológicos. */
 export const ESTADOS_PERMITEN_EVENTOS: EstadoActivoNombre[] = ['ACTIVO', 'EN_TRATAMIENTO', 'AISLADO'];
 
+/** Estados terminales: no admiten cambio de fase ni otras transiciones operativas. */
+export const ESTADOS_TERMINALES: EstadoActivoNombre[] = ['CERRADO', 'BAJA'];
+
 // ── Activo biológico — detalle ───────────────────────────────────────
 export interface DetalleIndividualResponse {
   id_detalle: number | null;
@@ -81,6 +84,7 @@ export interface ActivoBiologicoResponse {
   nombre_estado: string | null;
   id_usuario: number;
   fecha_creacion: string | null;
+  fecha_actualizacion: string | null;
   detalle_individual: DetalleIndividualResponse | null;
   detalle_poblacional: DetallePoblacionalResponse | null;
 }
@@ -112,6 +116,8 @@ export interface ActualizarActivoIndividualDTO {
   sexo?: string | null;
   fecha_nacimiento?: string | null;        // datetime
   peso_inicial?: number | null;
+  // Concurrencia optimista (RF-35): el valor tal cual vino del último GET.
+  fecha_actualizacion?: string | null;
 }
 
 /** Ítem del listado (endpoint presunto GET /activos-biologicos/ — ver TODO en TASKS.md). */
@@ -449,7 +455,10 @@ export interface TransferenciaResponse {
 // ── Sensores IoT (recurso 30) ────────────────────────────────────────
 export interface AsociarSensorActivoDTO {
   tipo_activo: 'INDIVIDUAL' | 'LOTE';
-  tipo_asociacion: 'DIRECTA' | 'AMBIENTAL' | 'POBLACIONAL';
+  // AMBIENTAL no se soporta desde este DTO (issue #351 backend): una
+  // asociación ambiental se ancla a la infraestructura, no a un activo
+  // puntual. El backend la rechaza con 400 si se envía aquí.
+  tipo_asociacion: 'DIRECTA' | 'POBLACIONAL';
   dispositivo_iot_id: number;
   sensor_id: number;
   id_infraestructura: number;

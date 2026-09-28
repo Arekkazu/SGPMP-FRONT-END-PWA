@@ -20,7 +20,11 @@ export function SessionExpirationWarning({ remainingSeconds }: { remainingSecond
         // El texto anunciado cambia una vez por minuto: `Alert` es `role="alert"`,
         // y una cuenta regresiva al segundo la repetiría entera en cada tick de
         // un lector de pantalla.
-        description={`Queda${minutes === 1 ? '' : 'n'} ${minutes} minuto${minutes === 1 ? '' : 's'}. Interactúa con la aplicación para mantenerla activa.`}
+        description={
+          minutes === 1
+            ? t('sessionexpirationwarning.queda_un_minuto')
+            : t('sessionexpirationwarning.quedan_minutos', { count: minutes })
+        }
       />
       <span className="session-expiration-warning__countdown" aria-hidden="true">
         {formatCountdown(remainingSeconds)}

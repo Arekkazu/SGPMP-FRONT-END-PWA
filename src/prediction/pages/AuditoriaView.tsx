@@ -117,7 +117,7 @@ export function AuditoriaView() {
         </div>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {!online && <Alert variant="warning" title={t('auditoriaview.sin_conexion')} description={t('auditoriaview.mostrando_bitacora_cacheada')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('auditoriaview.datos_desde_cache')} description="No se pudo conectar; se muestran los últimos eventos disponibles." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('auditoriaview.solo_el_administrador_puede_consultar_la') : t('auditoriaview.error_al_cargar_la_bitacora')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
@@ -159,7 +159,7 @@ export function AuditoriaView() {
 
         {tab === 'tipo' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-            {porTipo.length === 0 && <div style={{ padding: 'var(--s7)', textAlign: 'center', color: 'var(--text-muted)' }}>{t('auditoriaview.sin_eventos_en_esta_pagina')}</div>}
+            {porTipo.length === 0 && <div style={{ padding: 'var(--page-pad)', textAlign: 'center', color: 'var(--text-muted)' }}>{t('auditoriaview.sin_eventos_en_esta_pagina')}</div>}
             {porTipo.map(([tipo, count]) => (
               <div key={tipo} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--s3) var(--s4)', background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
