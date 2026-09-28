@@ -1,5 +1,6 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { guardarResultadoAxe } from '../../../_shared/axeReport';
 import fs from 'fs';
 import path from 'path';
 
@@ -69,24 +70,61 @@ import path from 'path';
  *   bugs de accesibilidad).
  */
 
-const ADMIN_EMAIL = 'adminplaywright@gmail.com';
-const ADMIN_PASSWORD = 'pruebasadmin123#';
+const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
+const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 async function loginComoAdmin(page: Page) {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    throw new Error('Faltan TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD en testing/.env.test');
+  }
   await page.goto('/login');
   await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
   await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar' }).click();
-  await page.waitForURL(/dashboard/);
-  // el JWT vive SOLO en memoria, nunca en localStorage — por eso después
-  // del login nunca se usa page.goto() para navegar, eso recarga la
-  // página y borra la sesión. Se navega por clic, como un usuario real.
-  const menuToggle = page.getByRole('button', { name: /alternar menú lateral/i });
-  if (await menuToggle.isVisible().catch(() => false)) {
-    await menuToggle.click();
+  await page.waitForURL(/dashboard/, { timeout: 90_000 });
+  // Mitigación del reporte de Sara (hallazgo 2): navegar inmediatamente tras el
+  // login invalidaba la sesión bajo automatización.
+  await page.waitForLoadState('networkidle');
+  await irAConfiguracion(page, /^IoT$/);
+}
+
+async function dentroDelViewport(page: Page, loc: Locator): Promise<boolean> {
+  const box = await loc.boundingBox().catch(() => null);
+  const vp = page.viewportSize();
+  return !!box && !!vp && box.x >= -1 && box.x + box.width <= vp.width + 1;
+}
+
+// El JWT vive solo en memoria: tras el login NO se usa page.goto() (recarga y
+// borra la sesión); se navega por el sidebar como un usuario real.
+// El ítem del sidebar es un <Link> (rol link, no button). En móvil/tablet el
+// sidebar está fuera del viewport hasta abrir el menú lateral.
+async function irAConfiguracion(page: Page, pestana?: RegExp) {
+  const menuToggle = page.getByRole('button', { name: /alternar menú lateral|toggle side menu/i });
+  const linkConfig = page.getByRole('link', { name: /^(configuración|settings)$/i });
+  await linkConfig.waitFor({ state: 'attached', timeout: 30_000 });
+
+  if (await linkConfig.getAttribute('aria-disabled') === 'true') {
+    throw new Error(
+      `BLOQUEO DE AMBIENTE (no es hallazgo de accesibilidad): la cuenta ${ADMIN_EMAIL} ` +
+      'no tiene permiso sobre Configuración — el ítem del sidebar sale bloqueado.',
+    );
   }
-  await page.getByRole('button', { name: 'Configuración' }).click();
-  await page.getByRole('button', { name: 'IoT', exact: true }).click();
+  for (let intento = 0; intento < 5 && !(await dentroDelViewport(page, linkConfig)); intento++) {
+    if (await menuToggle.isVisible().catch(() => false)) await menuToggle.click();
+    await page.waitForTimeout(400);
+  }
+  await linkConfig.click();
+  await page.waitForURL(/configuracion/);
+  if (pestana) {
+    const boton = page.getByRole('button', { name: pestana });
+    await boton.waitFor({ state: 'visible', timeout: 15_000 }).catch(() => {
+      throw new Error(
+        `BLOQUEO DE AMBIENTE: la pestaña ${pestana} no aparece — la cuenta ${ADMIN_EMAIL} ` +
+        'no tiene permiso de lectura sobre ese recurso.',
+      );
+    });
+    await boton.click();
+  }
 }
 
 function guardarResultados(nombre: string, contenido: unknown) {
@@ -96,19 +134,20 @@ function guardarResultados(nombre: string, contenido: unknown) {
 }
 
 test.describe('TC-DIS-66 — RF-24: Calibración de Dispositivos IoT (accesibilidad)', () => {
-  test('paso 1 del wizard (selección de dispositivo) no tiene violaciones de accesibilidad', async ({ page }) => {
+  test('paso 1 del wizard (selección de dispositivo) no tiene violaciones de accesibilidad', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
 
     await expect(page.getByRole('heading', { name: 'Calibración de Sensores IoT' })).toBeVisible();
     await expect(page.getByText('Selecciona el dispositivo que contiene el sensor a calibrar:')).toBeVisible();
 
     const results = await new AxeBuilder({ page }).analyze();
+    guardarResultadoAxe('TC-DIS-66', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
     guardarResultados('axe-TC-DIS-66-paso1.json', results);
 
     expect(results.violations).toEqual([]);
   });
 
-  test('paso 3 del wizard (formulario de calibración) — confirma bugs de label en Valor de referencia y Observaciones', async ({ page }) => {
+  test('paso 3 del wizard (formulario de calibración) — confirma bugs de label en Valor de referencia y Observaciones', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
 
     // Avanza con lo primero disponible en el seed, sin asumir un serial fijo
@@ -128,6 +167,7 @@ test.describe('TC-DIS-66 — RF-24: Calibración de Dispositivos IoT (accesibili
     await expect(page.getByRole('heading', { name: 'Datos de calibración' })).toBeVisible();
 
     const results = await new AxeBuilder({ page }).analyze();
+    guardarResultadoAxe('TC-DIS-66', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
     guardarResultados('axe-TC-DIS-66-paso3.json', results);
 
     // Estos dos expects documentan explícitamente los hallazgos 1 y 2 del header:
