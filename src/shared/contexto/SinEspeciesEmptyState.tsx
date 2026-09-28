@@ -39,7 +39,9 @@ export function SinEspeciesEmptyState() {
       <Link
         to="/configuracion"
         style={{
-          color: 'var(--brand-500)',
+          /* DS v2.0: brand-500 nunca como texto normal sobre fondo claro
+             (4.2–4.6:1 en los tres fondos probados). brand-600 da >=6:1. */
+          color: 'var(--brand-600)',
           fontWeight: 600,
           fontSize: 'var(--fs-label-md)',
           textDecoration: 'none',

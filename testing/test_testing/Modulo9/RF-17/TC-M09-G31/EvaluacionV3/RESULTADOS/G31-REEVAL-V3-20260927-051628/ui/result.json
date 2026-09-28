@@ -1,0 +1,35 @@
+{
+  "totalTests": 2,
+  "totalPassed": 1,
+  "totalFailed": 1,
+  "browser": "electron",
+  "browserVersion": "118.0.5993.159",
+  "cypressVersion": "13.17.0",
+  "runs": [
+    {
+      "spec": "tc-m09-g31-semaforo.cy.js",
+      "screenshots": [
+        "ui/monitoreo-dashboard.png",
+        "ui/historial-defecto-frontend.png"
+      ],
+      "tests": [
+        {
+          "title": [
+            "TC-M09-G31 V3 — clasificacion semaforica RF-17 en la interfaz",
+            "Monitoreo: la UI muestra para el sensor del fixture el estado que entrega la API"
+          ],
+          "state": "passed",
+          "error": null
+        },
+        {
+          "title": [
+            "TC-M09-G31 V3 — clasificacion semaforica RF-17 en la interfaz",
+            "Historial: cada medicion del fixture muestra su propio semaforo (TC-66/67/68)"
+          ],
+          "state": "failed",
+          "error": "AssertionError: la vista Historial renderiza la tabla con el semaforo por medicion: expected false to equal true\n    at Context.eval (webpack:///./tc-m09-g31-semaforo.cy.js:95:97)"
+        }
+      ]
+    }
+  ]
+}

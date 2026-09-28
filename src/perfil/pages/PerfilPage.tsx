@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { User, Lock, Edit2 } from 'lucide-react';
+import { User, Lock, Edit2, X } from 'lucide-react';
 import { usePerfil } from '../hooks/usePerfil';
 import { PerfilForm } from '../components/PerfilForm';
 import { CambiarContrasenaForm } from '../components/CambiarContrasenaForm';
 import { Alert } from '../../shared/design-system/Alert';
 import { Badge } from '../../shared/design-system/Badge';
-
-function mascararId(valor: string): string {
-  if (valor.length <= 4) return valor;
-  return valor.slice(0, 4) + ' ●●●●●●';
-}
+import { Button } from '../../shared/design-system/Button';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { mascararId } from '../../shared/lib/mascararId';
+import { varianteRol, varianteEstado } from '../../shared/lib/varianteBadge';
 
 function formatFecha(fecha: string | undefined): string {
   if (!fecha) return '—';
@@ -40,13 +39,12 @@ export function PerfilPage() {
     cargar();
   }, [cargar]);
 
-  const toggleSeccion = (seccion: 'editar' | 'contrasena') => {
-    setSeccionAbierta((prev) => prev === seccion ? 'ninguna' : seccion);
-  };
+  const cerrarSeccion = () => setSeccionAbierta('ninguna');
 
   if (loading) {
     return (
-      <div style={{ padding: 'var(--s6)', maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ padding: 'var(--page-pad)', maxWidth: 800, margin: '0 auto' }}>
+        <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--s5)' }}>{t('perfilpage.mi_perfil')}</h1>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
           {[1, 2, 3].map((i) => (
             <div key={i} style={{ height: 80, borderRadius: 'var(--r-lg)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }} />
@@ -59,21 +57,31 @@ export function PerfilPage() {
 
   if (error) {
     return (
-      <div style={{ padding: 'var(--s6)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
+        <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--s5)' }}>{t('perfilpage.mi_perfil')}</h1>
         <Alert variant="error" title={t('perfilpage.error_al_cargar_perfil')} description={error.message} />
       </div>
     );
   }
 
-  if (!perfil) return null;
+  // #136: este estado (sin loading, sin error, aun sin `perfil`) es el que se
+  // observa justo al montar, antes de que `cargar()` resuelva — `return null`
+  // dejaba la vista sin ningun encabezado durante esa ventana.
+  if (!perfil) {
+    return (
+      <div style={{ padding: 'var(--page-pad)', maxWidth: 800, margin: '0 auto' }}>
+        <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--s5)' }}>{t('perfilpage.mi_perfil')}</h1>
+      </div>
+    );
+  }
 
   const iniciales = (perfil.nombre[0] ?? '') + (perfil.apellidos[0] ?? '');
 
   return (
-    <div style={{ padding: 'var(--s6)', maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ padding: 'var(--page-pad)', maxWidth: 800, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--s5)' }}>
-        <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{t('perfilpage.mi_perfil')}</h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('perfilpage.consulta_y_gestion_de_tu_informacion')}</p>
+        <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{t('perfilpage.mi_perfil')}</h1>
+        <p style={{ fontSize: 'var(--fs-body-lg)', color: 'var(--text-secondary)' }}>{t('perfilpage.consulta_y_gestion_de_tu_informacion')}</p>
       </div>
 
       {/* Hero card */}
@@ -112,56 +120,44 @@ export function PerfilPage() {
 
           {/* Info */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 2 }}>
+            <p style={{ fontSize: 'var(--fs-heading-sm)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 2 }}>
               {perfil.nombre} {perfil.apellidos}
             </p>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', marginBottom: 'var(--s2)' }}>
+            <p style={{ fontSize: 'var(--fs-mono-md)', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', marginBottom: 'var(--s2)' }}>
               {perfil.correo_electronico}
             </p>
             <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
-              <Badge variant={perfil.nombre_rol.toLowerCase() as any}>{perfil.nombre_rol}</Badge>
-              <Badge variant={perfil.estado_cuenta.toLowerCase() as any}>{perfil.estado_cuenta}</Badge>
+              <Badge variant={varianteRol(perfil.nombre_rol)}>{perfil.nombre_rol}</Badge>
+              <Badge variant={varianteEstado(perfil.estado_cuenta)}>{perfil.estado_cuenta}</Badge>
             </div>
           </div>
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
-            <button
+            <Button
               type="button"
-              onClick={() => toggleSeccion('editar')}
-              aria-pressed={seccionAbierta === 'editar'}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '8px 14px', borderRadius: 'var(--r-md)',
-                border: `1.5px solid ${seccionAbierta === 'editar' ? 'var(--brand-400)' : 'var(--surface-border)'}`,
-                background: seccionAbierta === 'editar' ? 'var(--brand-50)' : 'var(--surface-card)',
-                color: seccionAbierta === 'editar' ? 'var(--brand-600)' : 'var(--text-secondary)',
-                fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                transition: 'all 0.15s',
-              }}
+              variant="secondary"
+              size="md"
+              onClick={() => setSeccionAbierta('editar')}
+              aria-haspopup="dialog"
             >
-              <Edit2 size={13} aria-hidden />{t('perfilpage.editar_perfil')}</button>
-            <button
+              <Edit2 size={14} aria-hidden />{t('perfilpage.editar_perfil')}
+            </Button>
+            <Button
               type="button"
-              onClick={() => toggleSeccion('contrasena')}
-              aria-pressed={seccionAbierta === 'contrasena'}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '8px 14px', borderRadius: 'var(--r-md)',
-                border: '1.5px solid transparent',
-                background: seccionAbierta === 'contrasena' ? 'var(--brand-600)' : 'var(--brand-500)',
-                color: '#fff',
-                fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                transition: 'all 0.15s',
-              }}
+              variant="primary"
+              size="md"
+              onClick={() => setSeccionAbierta('contrasena')}
+              aria-haspopup="dialog"
             >
-              <Lock size={13} aria-hidden />{t('perfilpage.cambiar_contrasena')}</button>
+              <Lock size={14} aria-hidden />{t('perfilpage.cambiar_contrasena')}
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Info cards grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--s4)', marginBottom: 'var(--s5)' }}>
+      <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s5)' }}>
 
         {/* Información personal */}
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
@@ -169,18 +165,18 @@ export function PerfilPage() {
             <div style={{ width: 26, height: 26, borderRadius: 'var(--r-sm)', background: 'var(--brand-50)', border: '1px solid var(--brand-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-600)' }}>
               <User size={13} aria-hidden />
             </div>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('perfilpage.informacion_personal')}</span>
+            <span style={{ fontSize: 'var(--fs-label-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{t('perfilpage.informacion_personal')}</span>
           </div>
           <div style={{ padding: 'var(--s4)' }}>
             <InfoGrid items={[
-              ['Nombres', perfil.nombre],
-              ['Apellidos', perfil.apellidos],
-              ['Tipo de ID', perfil.tipo_identificacion],
-              ['N.° Identificación', mascararId(perfil.numero_identificacion), true],
-              ['Fecha de nacimiento', formatFecha(perfil.fecha_nacimiento), true],
-              ['Fecha de registro', formatFecha(perfil.fecha_registro), true],
-              ['Teléfono', perfil.telefono ?? '—', true],
-              ['Dirección', perfil.direccion ?? '—'],
+              ['perfilpage.nombres', perfil.nombre],
+              ['perfilpage.apellidos', perfil.apellidos],
+              ['perfilpage.tipo_de_id', perfil.tipo_identificacion],
+              ['perfilpage.numero_identificacion', mascararId(perfil.numero_identificacion), true],
+              ['perfilpage.fecha_de_nacimiento', formatFecha(perfil.fecha_nacimiento), true],
+              ['perfilpage.fecha_de_registro', formatFecha(perfil.fecha_registro), true],
+              ['perfilpage.telefono', perfil.telefono ?? '—', true],
+              ['perfilpage.direccion', perfil.direccion ?? '—'],
             ]} />
           </div>
         </div>
@@ -191,38 +187,38 @@ export function PerfilPage() {
             <div style={{ width: 26, height: 26, borderRadius: 'var(--r-sm)', background: 'var(--brand-50)', border: '1px solid var(--brand-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-600)' }}>
               <Lock size={13} aria-hidden />
             </div>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('perfilpage.datos_de_cuenta')}</span>
+            <span style={{ fontSize: 'var(--fs-label-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{t('perfilpage.datos_de_cuenta')}</span>
           </div>
           <div style={{ padding: 'var(--s4)' }}>
             <div style={{ paddingBottom: 'var(--s3)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s3)' }}>
-              <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{t('perfilpage.correo_electronico')}</p>
-              <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{perfil.correo_electronico}</p>
+              <p style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)', marginBottom: 4 }}>{t('perfilpage.correo_electronico')}</p>
+              <p style={{ fontSize: 'var(--fs-body-md)', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{perfil.correo_electronico}</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s3)' }}>
+            <div className="ds-fg2" style={{ gap: 'var(--s3)' }}>
               <div>
-                <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{t('perfilpage.estado_de_cuenta')}</p>
-                <Badge variant={perfil.estado_cuenta.toLowerCase() as any}>{perfil.estado_cuenta}</Badge>
+                <p style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)', marginBottom: 6 }}>{t('perfilpage.estado_de_cuenta')}</p>
+                <Badge variant={varianteEstado(perfil.estado_cuenta)}>{perfil.estado_cuenta}</Badge>
               </div>
               <div>
-                <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{t('perfilpage.rol_asignado')}</p>
-                <Badge variant={perfil.nombre_rol.toLowerCase() as any}>{perfil.nombre_rol}</Badge>
+                <p style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)', marginBottom: 6 }}>{t('perfilpage.rol_asignado')}</p>
+                <Badge variant={varianteRol(perfil.nombre_rol)}>{perfil.nombre_rol}</Badge>
               </div>
               <div style={{ gridColumn: 'span 2' }}>
-                <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{t('perfilpage.ultimo_acceso')}</p>
-                <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{formatFechaHora(perfil.ultimo_acceso)}</p>
+                <p style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)', marginBottom: 4 }}>{t('perfilpage.ultimo_acceso')}</p>
+                <p style={{ fontSize: 'var(--fs-body-md)', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{formatFechaHora(perfil.ultimo_acceso)}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Panel editar datos personales */}
       {seccionAbierta === 'editar' && (
-        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s5)', marginBottom: 'var(--s5)', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
-            <Edit2 size={16} color="var(--brand-600)" aria-hidden />
-            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('perfilpage.editar_datos_personales')}</h2>
-          </div>
+        <PerfilModal
+          tituloId="perfil-editar-titulo"
+          icono={<Edit2 size={16} color="var(--brand-600)" aria-hidden />}
+          titulo={t('perfilpage.editar_datos_personales')}
+          onClose={cerrarSeccion}
+        >
           <PerfilForm
             perfil={perfil}
             saving={saving}
@@ -230,35 +226,90 @@ export function PerfilPage() {
             saveSuccess={saveSuccess}
             onSave={editar}
           />
-        </div>
+        </PerfilModal>
       )}
 
-      {/* Panel cambiar contraseña */}
       {seccionAbierta === 'contrasena' && (
-        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s5)', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
-            <Lock size={16} color="var(--brand-600)" aria-hidden />
-            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('perfilpage.cambiar_contrasena')}</h2>
-          </div>
-          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('perfilpage.al_cambiar_tu_contrasena_se_cerraran_todas')}</p>
+        <PerfilModal
+          tituloId="perfil-contrasena-titulo"
+          icono={<Lock size={16} color="var(--brand-600)" aria-hidden />}
+          titulo={t('perfilpage.cambiar_contrasena')}
+          onClose={cerrarSeccion}
+        >
+          <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('perfilpage.al_cambiar_tu_contrasena_se_cerraran_todas')}</p>
           <CambiarContrasenaForm
             saving={saving}
             pwError={pwError}
             pwSuccess={pwSuccess}
             onSave={cambiarContrasena}
           />
-        </div>
+        </PerfilModal>
       )}
     </div>
   );
 }
 
-function InfoGrid({ items }: { items: [string, string, boolean?][] }) {
+// Editar perfil y cambiar contraseña se superponen a la página: como paneles al
+// final quedaban debajo de las tarjetas, fuera de la vista de quien los abría.
+function PerfilModal({ tituloId, icono, titulo, onClose, children }: {
+  tituloId: string;
+  icono: React.ReactNode;
+  titulo: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const { t } = useT('perfil');
+  const panelRef = useModalA11y(onClose);
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
-      {items.map(([label, value, mono], i) => (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={tituloId}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.45)',
+        backdropFilter: 'blur(3px)',
+        padding: 'var(--s4)',
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        ref={panelRef}
+        style={{
+          background: 'var(--surface-card)',
+          borderRadius: 'var(--r-xl)',
+          border: '1px solid var(--surface-border)',
+          padding: 'var(--s5)',
+          width: '100%',
+          maxWidth: 560,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          boxShadow: 'var(--shadow-lg)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
+            {icono}
+            <h2 id={tituloId} style={{ fontSize: 'var(--fs-heading-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>{titulo}</h2>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('acciones.cerrar', { ns: 'common' })}>
+            <X size={18} aria-hidden />
+          </Button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function InfoGrid({ items }: { items: [string, string, boolean?][] }) {
+  const { t } = useT('perfil');
+  return (
+    <div className="ds-fg2" style={{ gap: 0 }}>
+      {items.map(([claveLabel, value, mono], i) => (
         <div
-          key={label}
+          key={claveLabel}
           style={{
             padding: 'var(--s3) 0',
             borderBottom: i < items.length - 2 ? '1px solid var(--surface-border)' : 'none',
@@ -267,11 +318,11 @@ function InfoGrid({ items }: { items: [string, string, boolean?][] }) {
             borderLeft: i % 2 === 1 ? '1px solid var(--surface-border)' : 'none',
           }}
         >
-          <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 3 }}>
-            {label}
+          <p style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)', marginBottom: 3 }}>
+            {t(claveLabel)}
           </p>
           <p style={{
-            fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)',
+            fontSize: 'var(--fs-body-md)', fontWeight: 500, color: 'var(--text-primary)',
             fontFamily: mono ? 'var(--font-mono)' : 'inherit',
           }}>
             {value}

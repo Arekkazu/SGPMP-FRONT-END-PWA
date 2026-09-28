@@ -1,0 +1,256 @@
+{
+  "grupo": "TC-M09-G22",
+  "rf": "RF-17",
+  "tipo": "REEVALUACION V2",
+  "entorno": "TEST",
+  "rama": "qa/juan-esteban-re-evaluacion-M02",
+  "base": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "runId": "G22-REEVAL-V2-20260914-171827",
+  "fecha": "2026-09-14T22:18:48.889Z",
+  "caso": "TC-M09-46",
+  "intento": 1,
+  "resultado": "PASS",
+  "ambiente": "TEST",
+  "actor": {
+    "correo_electronico": "administador.dev@gmail.com",
+    "id_usuario": 104,
+    "nombre_rol": "Administrador",
+    "estado_cuenta": "Activo",
+    "permisosRecurso20": [
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "preflight": [
+    {
+      "url": "http://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/health",
+      "status": 404,
+      "location": null,
+      "nota": "URL suministrada"
+    },
+    {
+      "url": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/login",
+      "status": 301,
+      "location": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/login",
+      "nota": "URL suministrada"
+    },
+    {
+      "url": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/login",
+      "status": 200
+    },
+    {
+      "url": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/health",
+      "status": 200
+    },
+    {
+      "url": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/openapi.json",
+      "status": 200
+    },
+    {
+      "contrato": "POST /configuracion/umbrales",
+      "respuestasDeclaradas": [
+        "201",
+        "401",
+        "403",
+        "404",
+        "409",
+        "422"
+      ],
+      "exitoDeclarado": [
+        "201"
+      ],
+      "umbralResponse": [
+        "id_umbral_ambiental",
+        "id_especie",
+        "id_variable_ambiental",
+        "unidad_medida",
+        "valor_min",
+        "valor_max",
+        "es_activo",
+        "fecha_actualizacion",
+        "niveles"
+      ]
+    }
+  ],
+  "replanificado": false,
+  "especie": {
+    "id": 10,
+    "nombre": "Tilapia",
+    "es_activo": true
+  },
+  "variable": {
+    "id": 3,
+    "nombre": "Oxígeno disuelto",
+    "unidad": "mg/L",
+    "catalogoActivo": true,
+    "fisicoMin": "0",
+    "fisicoMax": "20",
+    "semantica": "Configuracion base (variable activa del catalogo)",
+    "coincidePatron": true
+  },
+  "limitesFisicos": {
+    "min": "0",
+    "max": "20",
+    "efectivoMin": "0.00",
+    "efectivoMax": "20.00"
+  },
+  "rangoElegido": {
+    "valor_min": "8.00",
+    "valor_max": "12.00",
+    "origen": "intervalo interior 40%-60% del rango fisico real, niveles en tercios",
+    "efectivoMin": "0.00",
+    "efectivoMax": "20.00"
+  },
+  "combinacionLibrePrevia": true,
+  "umbralesPrevios": [
+    {
+      "id": 39,
+      "id_variable_ambiental": 1
+    }
+  ],
+  "payloadEnviado": {
+    "id_especie": 10,
+    "id_variable_ambiental": 3,
+    "valor_min": "8.00",
+    "valor_max": "12.00",
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "8.00",
+        "limite_superior": "9.33"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "9.33",
+        "limite_superior": "10.66"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "10.66",
+        "limite_superior": "12.00"
+      }
+    ]
+  },
+  "cuerpoEnviado": "{\"id_especie\":10,\"id_variable_ambiental\":3,\"valor_min\":8.00,\"valor_max\":12.00,\"niveles\":[{\"nivel\":\"normal\",\"limite_inferior\":8.00,\"limite_superior\":9.33},{\"nivel\":\"precaucion\",\"limite_inferior\":9.33,\"limite_superior\":10.66},{\"nivel\":\"critico\",\"limite_inferior\":10.66,\"limite_superior\":12.00}]}",
+  "endpoint": "POST /configuracion/umbrales",
+  "status": 201,
+  "errorCode": null,
+  "respuesta": {
+    "id_umbral_ambiental": 45,
+    "id_especie": 10,
+    "id_variable_ambiental": 3,
+    "unidad_medida": "mg/L",
+    "valor_min": "8.00",
+    "valor_max": "12.00",
+    "es_activo": true,
+    "fecha_actualizacion": null,
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "8.00",
+        "limite_superior": "9.33"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "9.33",
+        "limite_superior": "10.66"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "10.66",
+        "limite_superior": "12.0"
+      }
+    ]
+  },
+  "idCreado": 45,
+  "getPosterior": {
+    "endpoint": "GET /configuracion/umbrales?id_especie=10",
+    "status": 200,
+    "total": 2,
+    "ids": [
+      39,
+      45
+    ]
+  },
+  "persistencia": {
+    "persistio": true,
+    "registrosDeLaCombinacion": 1,
+    "previosConservados": true,
+    "detalle": {
+      "id": 45,
+      "id_especie": 10,
+      "id_variable_ambiental": 3,
+      "valor_min": "8.00",
+      "valor_max": "12.00",
+      "es_activo": true,
+      "niveles": [
+        {
+          "nivel": "normal",
+          "limite_inferior": "8.00",
+          "limite_superior": "9.33"
+        },
+        {
+          "nivel": "precaucion",
+          "limite_inferior": "9.33",
+          "limite_superior": "10.66"
+        },
+        {
+          "nivel": "critico",
+          "limite_inferior": "10.66",
+          "limite_superior": "12.00"
+        }
+      ]
+    }
+  },
+  "eventos": [
+    {
+      "metodo": "POST",
+      "status": 201,
+      "cuerpo": "{\"id_especie\":10,\"id_variable_ambiental\":3,\"valor_min\":8.00,\"valor_max\":12.00,\"niveles\":[{\"nivel\":\"normal\",\"limite_inferior\":8.00,\"limite_superior\":9.33},{\"nivel\":\"precaucion\",\"limite_inferior\":9.33,\"limite_superior\":10.66},{\"nivel\":\"critico\",\"limite_inferior\":10.66,\"limite_superior\":12.00}]}",
+      "respuesta": {
+        "id_umbral_ambiental": 45,
+        "id_especie": 10,
+        "id_variable_ambiental": 3,
+        "unidad_medida": "mg/L",
+        "valor_min": "8.00",
+        "valor_max": "12.00",
+        "es_activo": true,
+        "fecha_actualizacion": null,
+        "niveles": [
+          {
+            "nivel": "normal",
+            "limite_inferior": "8.00",
+            "limite_superior": "9.33"
+          },
+          {
+            "nivel": "precaucion",
+            "limite_inferior": "9.33",
+            "limite_superior": "10.66"
+          },
+          {
+            "nivel": "critico",
+            "limite_inferior": "10.66",
+            "limite_superior": "12.0"
+          }
+        ]
+      },
+      "transportError": false
+    },
+    {
+      "metodo": "GET",
+      "status": 200,
+      "transportError": false
+    }
+  ],
+  "assertions": {
+    "total": 21,
+    "pending": 0,
+    "failed": 0
+  },
+  "failures": [],
+  "newman": "6.2.2",
+  "reporter": "newman-reporter-htmlextra 1.23.1",
+  "html": "newman/newman-TC-M09-46-v2-intento1.html"
+}

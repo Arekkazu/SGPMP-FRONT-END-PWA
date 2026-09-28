@@ -30,29 +30,33 @@ export function useIdentidadVisual() {
     }
   }, []);
 
-  const guardar = useCallback(async (dto: GuardarIdentidadVisualDTO, logo?: File): Promise<boolean> => {
+  // Devuelven la entidad guardada (no solo `boolean`): quien llama necesita los
+  // colores/logo tal como el backend los persistió (con la `accesibilidad` ya
+  // calculada) para aplicarlos de inmediato, y `identidad` en este hook queda
+  // desactualizado hasta el siguiente render — no sirve dentro del mismo `handleSubmit`.
+  const guardar = useCallback(async (dto: GuardarIdentidadVisualDTO, logo?: File): Promise<IdentidadVisualResponse | null> => {
     setSaving(true);
     setSaveError(null);
     try {
       const data = await identidadVisualApi.guardar(dto, logo);
       setIdentidad(data);
-      return true;
+      return data;
     } catch (e) {
       setSaveError(e as ApiError);
-      return false;
+      return null;
     } finally {
       setSaving(false);
     }
   }, []);
 
-  const actualizar = useCallback(async (idFinca: number, dto: ActualizarIdentidadVisualDTO, logo?: File): Promise<boolean> => {
+  const actualizar = useCallback(async (idFinca: number, dto: ActualizarIdentidadVisualDTO, logo?: File): Promise<IdentidadVisualResponse | null> => {
     setSaving(true);
     setSaveError(null);
     setConflicto412(false);
     try {
       const data = await identidadVisualApi.actualizar(idFinca, dto, logo);
       setIdentidad(data);
-      return true;
+      return data;
     } catch (e) {
       const err = e as ApiError;
       if (err.status === 412) {
@@ -60,7 +64,7 @@ export function useIdentidadVisual() {
       } else {
         setSaveError(err);
       }
-      return false;
+      return null;
     } finally {
       setSaving(false);
     }

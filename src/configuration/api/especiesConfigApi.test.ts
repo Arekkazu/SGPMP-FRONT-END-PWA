@@ -36,6 +36,11 @@ const UMBRAL = {
   niveles: [{ nivel: 'normal', limite_inferior: 22, limite_superior: 30 }],
 };
 
+/** #125: los cuatro endpoints responden `{total, items}`; simular un arreglo ocultó el bug. */
+function listado(items: unknown[]) {
+  return { data: { total: items.length, items } };
+}
+
 function respuestasPorRuta() {
   getMock.mockImplementation((url: string) => {
     const datos: Record<string, unknown[]> = {
@@ -44,7 +49,7 @@ function respuestasPorRuta() {
       '/configuracion/metricas': [METRICA],
       '/configuracion/umbrales': [UMBRAL],
     };
-    return Promise.resolve({ data: datos[url] ?? [] }) as never;
+    return Promise.resolve(listado(datos[url] ?? [])) as never;
   });
 }
 
@@ -112,7 +117,7 @@ describe('capturarConfiguracionEspecie', () => {
   });
 
   it('devuelve la categoría vacía cuando la especie no tiene esa configuración', async () => {
-    getMock.mockResolvedValue({ data: [] } as never);
+    getMock.mockResolvedValue(listado([]) as never);
 
     const snapshot = await capturarConfiguracionEspecie(99);
 
@@ -120,5 +125,24 @@ describe('capturarConfiguracionEspecie', () => {
       ciclos_biologicos: [], patologias: [],
       metricas_produccion: [], umbrales_ambientales: [],
     });
+  });
+
+  it('#52 (RF-31): una categoría que falla (permiso, 5xx puntual) no bloquea la lectura de las otras tres', async () => {
+    getMock.mockImplementation((url: string) => {
+      if (url === '/configuracion/patologias') return Promise.reject(new Error('403'));
+      const datos: Record<string, unknown[]> = {
+        '/configuracion/ciclos': [CICLO],
+        '/configuracion/metricas': [METRICA],
+        '/configuracion/umbrales': [UMBRAL],
+      };
+      return Promise.resolve(listado(datos[url] ?? [])) as never;
+    });
+
+    const snapshot = await capturarConfiguracionEspecie(3);
+
+    expect(snapshot.patologias).toEqual([]);
+    expect(snapshot.ciclos_biologicos).toHaveLength(1);
+    expect(snapshot.metricas_produccion).toHaveLength(1);
+    expect(snapshot.umbrales_ambientales).toHaveLength(1);
   });
 });

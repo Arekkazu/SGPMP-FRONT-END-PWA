@@ -1,0 +1,71 @@
+{
+  "tc": "TC-M02-G24",
+  "ronda": "V3",
+  "reintento": 2,
+  "fecha": "2026-09-18",
+  "run_id": "G24-REEVAL-V3-20260918-203134",
+  "veredicto": "Rechazado",
+  "incidente_asociado": "INC-M02-37-G24",
+  "checkpoints": [
+    {
+      "paso": "Paso 0.1 — Login administrativo y obtención de JWT en TEST",
+      "esperado": "HTTP 200 con token JWT válido",
+      "obtenido": "HTTP 200 OK con token JWT string no vacío",
+      "estado": "OK"
+    },
+    {
+      "paso": "Paso 0.2 — Creación dinámica de Lote Poblacional virgen (RF-33)",
+      "esperado": "HTTP 201 Created con id_activo_biologico",
+      "obtenido": "HTTP 201 Created (Lote ID #354 en Newman, #356 en Cypress)",
+      "estado": "OK"
+    },
+    {
+      "paso": "Paso 0.3 — Asignación de Fase Productiva inicial Cachama Blanca (RF-37)",
+      "esperado": "HTTP 201 Created con id_ciclo_productiva: 4",
+      "obtenido": "HTTP 201 Created asociando fase juvenil cachama",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-048 — C1 API: Rechazo de mutación directa de métricas calculadas (RF-36)",
+      "esperado": "HTTP 400 o 422 al intentar mutar métricas calculadas vía PATCH",
+      "obtenido": "HTTP 400 Bad Request rechazando mutación directa",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-048 — C1 UI: Consulta de Ficha Técnica en UI Web (RF-36)",
+      "esperado": "Renderizado DOM de tarjetas de métricas sin inputs editables",
+      "obtenido": "Falla: Redirección intempestiva a /login por HTTP 500 en POST /sesiones/refresh",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "TC-M02-049 — C2 API: Registro de evento CRECIMIENTO zootécnico (RF-39)",
+      "esperado": "HTTP 201 Created con actualización de peso_promedio",
+      "obtenido": "HTTP 201 Created con peso_promedio actualizado a 12.50",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-049.1 — C2 API: Recálculo matemático de biomasa_total (RF-36 / RF-39)",
+      "esperado": "biomasa_total recalculada como cantidad_actual * peso_promedio (1250.00 kg)",
+      "obtenido": "biomasa_total recalculada exactamente a 1250.00 kg",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M02-050 — C3 API: Registro de evento BAJA por mortalidad (RF-39)",
+      "esperado": "HTTP 201 Created descontando 10 animales del lote",
+      "obtenido": "HTTP 400 Bad Request (FECHA_INVALIDA: fecha de evento a medianoche UTC anterior a fecha_registro con hora)",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "TC-M02-050.1 — C3 API: Descuento de cantidad_actual a 90 y recálculo de métricas (RF-36 / RF-39)",
+      "esperado": "cantidad_actual == 90 y recálculo de biomasa y densidad",
+      "obtenido": "Falla en cascada: cantidad_actual se mantuvo en 100 por rechazo de evento baja",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "TC-M02-056 — C4 API: Inmutabilidad de registro original y dinamismo tras eventos (RF-33)",
+      "esperado": "cantidad_inicial == 100, peso_promedio_inicial == 10.0, cantidad_actual != 100",
+      "obtenido": "Falla en dinamismo: cantidad_actual permaneció en 100 por no haberse aplicado la baja",
+      "estado": "FALLA"
+    }
+  ]
+}

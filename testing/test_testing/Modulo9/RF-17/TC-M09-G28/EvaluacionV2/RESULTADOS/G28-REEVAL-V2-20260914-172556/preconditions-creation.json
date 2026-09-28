@@ -1,0 +1,68 @@
+{
+  "actor": {
+    "id_usuario": 100,
+    "correo_electronico": "admin.dev@gmail.com",
+    "nombre_rol": "Administrador"
+  },
+  "db": {
+    "session": [
+      {
+        "read_only": "on",
+        "database": "sgpmp_test"
+      }
+    ],
+    "columns": [
+      {
+        "column_name": "valor_max",
+        "data_type": "numeric",
+        "numeric_precision": 8,
+        "numeric_scale": 2
+      },
+      {
+        "column_name": "valor_min",
+        "data_type": "numeric",
+        "numeric_precision": 8,
+        "numeric_scale": 2
+      }
+    ]
+  },
+  "discovery": {
+    "especie": {
+      "id": 40,
+      "nombre": "Bovino Qa Je",
+      "es_activo": true
+    },
+    "variable": {
+      "id_variable_ambiental": 1,
+      "nombre": "Temperatura del agua",
+      "unidad": "°C",
+      "valor_fisico_min": "0",
+      "valor_fisico_max": "45"
+    },
+    "existing_ids": [],
+    "free_pair": true,
+    "payload": {
+      "id_especie": 40,
+      "id_variable_ambiental": 1,
+      "valor_min": "35.57",
+      "valor_max": "39.23",
+      "niveles": [
+        {
+          "nivel": "normal",
+          "limite_inferior": "35.57",
+          "limite_superior": "37.00"
+        },
+        {
+          "nivel": "precaucion",
+          "limite_inferior": "37.00",
+          "limite_superior": "38.00"
+        },
+        {
+          "nivel": "critico",
+          "limite_inferior": "38.00",
+          "limite_superior": "39.23"
+        }
+      ]
+    }
+  }
+}

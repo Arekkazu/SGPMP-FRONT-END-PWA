@@ -1,0 +1,37 @@
+import React from 'react';
+import { useT } from '../../shared/i18n/useT';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '../../shared/design-system/Button';
+
+interface Props {
+  pagina: number;
+  totalPaginas: number;
+  totalRegistros?: number;
+  onCambiar: (pagina: number) => void;
+}
+
+export function Paginacion({ pagina, totalPaginas, totalRegistros, onCambiar }: Props) {
+  const { t } = useT('configuration');
+  if (totalPaginas <= 1) {
+    return totalRegistros != null ? (
+      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 'var(--s4)' }}>
+        {t('paginacion.registro', { count: totalRegistros })}
+      </div>
+    ) : null;
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s3)', marginTop: 'var(--s5)', flexWrap: 'wrap' }}>
+      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+        {t('paginacion.pagina_de', { pagina, totalPaginas })}
+        {totalRegistros != null ? ` · ${t('paginacion.registro', { count: totalRegistros })}` : ''}
+      </span>
+      <div style={{ display: 'flex', gap: 'var(--s2)' }}>
+        <Button variant="secondary" size="sm" disabled={pagina <= 1} onClick={() => onCambiar(pagina - 1)}>
+          <ChevronLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('paginacion.anterior')}</Button>
+        <Button variant="secondary" size="sm" disabled={pagina >= totalPaginas} onClick={() => onCambiar(pagina + 1)}>{t('paginacion.siguiente')}<ChevronRight size={15} aria-hidden style={{ marginLeft: 'var(--s1)' }} />
+        </Button>
+      </div>
+    </div>
+  );
+}
