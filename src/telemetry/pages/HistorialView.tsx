@@ -65,7 +65,7 @@ export function HistorialView() {
         </p>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {error && (
           <Alert
             variant={error.status === 403 ? 'warning' : 'error'}

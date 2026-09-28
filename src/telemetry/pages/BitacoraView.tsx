@@ -68,7 +68,7 @@ export function BitacoraView() {
         )}
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('bitacoraview.sin_acceso_a_la_bitacora') : t('bitacoraview.error_al_cargar_la_bitacora')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
         {exportError && <Alert variant="error" title={t('bitacoraview.no_se_pudo_exportar')} description={exportError.message} style={{ marginBottom: 'var(--s4)' }} />}
 

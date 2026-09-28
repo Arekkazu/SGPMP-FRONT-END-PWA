@@ -8,12 +8,17 @@ import type {
   SnapshotEspecie,
 } from '../types';
 
+// #125 (RF-31): los cuatro listados por especie responden `{total, items}`, no un
+// arreglo. Tiparlos como arreglo hacía que cada `.map()` reventara y la captura de
+// plantillas cayera siempre en "No se pudo leer la configuración de la especie".
+interface Listado<T> { total: number; items: T[] }
+
 export const ciclosApi = {
   async listar(idEspecie: number, soloActivas = false): Promise<CicloBiologicoResponse[]> {
-    const res = await http.get<CicloBiologicoResponse[]>('/configuracion/ciclos', {
+    const res = await http.get<Listado<CicloBiologicoResponse>>('/configuracion/ciclos', {
       params: { id_especie: idEspecie, solo_activas: soloActivas },
     });
-    return res.data;
+    return res.data.items;
   },
 
   async registrar(dto: RegistrarCicloDTO): Promise<CicloBiologicoResponse> {
@@ -34,10 +39,10 @@ export const ciclosApi = {
 
 export const patologiasApi = {
   async listar(idEspecie: number, soloActivas = false): Promise<PatologiaEspecieItemResponse[]> {
-    const res = await http.get<PatologiaEspecieItemResponse[]>('/configuracion/patologias', {
+    const res = await http.get<Listado<PatologiaEspecieItemResponse>>('/configuracion/patologias', {
       params: { id_especie: idEspecie, solo_activas: soloActivas },
     });
-    return res.data;
+    return res.data.items;
   },
 
   async registrar(dto: RegistrarPatologiaDTO): Promise<PatologiaEspecieItemResponse> {
@@ -58,10 +63,10 @@ export const patologiasApi = {
 
 export const metricasApi = {
   async listar(idEspecie: number, soloActivas = false): Promise<MetricaProduccionResponse[]> {
-    const res = await http.get<MetricaProduccionResponse[]>('/configuracion/metricas', {
+    const res = await http.get<Listado<MetricaProduccionResponse>>('/configuracion/metricas', {
       params: { id_especie: idEspecie, solo_activas: soloActivas },
     });
-    return res.data;
+    return res.data.items;
   },
 
   async registrar(dto: RegistrarMetricaDTO): Promise<MetricaProduccionResponse> {
@@ -82,10 +87,10 @@ export const metricasApi = {
 
 export const umbralesApi = {
   async listar(idEspecie: number, soloActivas = false): Promise<UmbralAmbientalResponse[]> {
-    const res = await http.get<UmbralAmbientalResponse[]>('/configuracion/umbrales', {
+    const res = await http.get<Listado<UmbralAmbientalResponse>>('/configuracion/umbrales', {
       params: { id_especie: idEspecie, solo_activas: soloActivas },
     });
-    return res.data;
+    return res.data.items;
   },
 
   async registrar(dto: RegistrarUmbralDTO): Promise<UmbralAmbientalResponse> {
@@ -117,6 +122,16 @@ export const variablesAmbientalesApi = {
 // Captura de configuración para plantillas (RF-31)
 // =====================================================================
 
+/** `[]` en vez de propagar: una categoría sin permiso de lectura o con un error puntual
+ *  del backend no debe tumbar la lectura de las otras tres (#52, RF-31). */
+async function listarOVacio<T>(promesa: Promise<T[]>): Promise<T[]> {
+  try {
+    return await promesa;
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Lee la configuración real de una especie y la deja en la forma exacta que
  * `POST /configuracion/plantillas` espera en `params_snapshot`.
@@ -127,10 +142,10 @@ export const variablesAmbientalesApi = {
  */
 export async function capturarConfiguracionEspecie(idEspecie: number): Promise<SnapshotEspecie> {
   const [ciclos, patologias, metricas, umbrales] = await Promise.all([
-    ciclosApi.listar(idEspecie, true),
-    patologiasApi.listar(idEspecie, true),
-    metricasApi.listar(idEspecie, true),
-    umbralesApi.listar(idEspecie, true),
+    listarOVacio(ciclosApi.listar(idEspecie, true)),
+    listarOVacio(patologiasApi.listar(idEspecie, true)),
+    listarOVacio(metricasApi.listar(idEspecie, true)),
+    listarOVacio(umbralesApi.listar(idEspecie, true)),
   ]);
 
   return {

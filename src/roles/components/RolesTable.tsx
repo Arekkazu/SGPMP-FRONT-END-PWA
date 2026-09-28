@@ -35,25 +35,30 @@ export function RolesTable({ roles, loading, puedeEditar, puedeEliminar, onEdita
 
   return (
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-            {['Nombre del rol', 'Descripción', 'Permisos', 'Usuarios', 'Acciones'].map((h) => (
+            {([
+              ['nombre_del_rol', 'nombre-del-rol'],
+              ['descripcion', 'descripcion'],
+              ['permisos', 'permisos'],
+              ['usuarios', 'usuarios'],
+              ['acciones', 'acciones'],
+            ] as const).map(([clave, id]) => (
               <th
-                key={h}
+                key={id}
+                scope="col"
+                id={`th-${id}`}
                 style={{
                   padding: 'var(--s2) var(--s4)',
                   textAlign: 'left',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
+                  fontSize: 'var(--fs-label-sm)',
                   fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  color: 'var(--text-muted)',
+                  color: 'var(--text-secondary)',
                   whiteSpace: 'nowrap',
                 }}
               >
-                {h}
+                {t(`rolestable.${clave}`)}
               </th>
             ))}
           </tr>
@@ -63,14 +68,14 @@ export function RolesTable({ roles, loading, puedeEditar, puedeEliminar, onEdita
             const tieneUsuarios = (r.count_usuarios ?? 0) > 0;
             const puedeEliminarEste = puedeEliminar && !r.es_protegido && !tieneUsuarios;
             const tooltipEliminar = r.es_protegido
-              ? 'El rol Administrador es un objeto protegido por el sistema.'
+              ? t('rolestable.rol_protegido_por_el_sistema')
               : tieneUsuarios
-              ? `No se puede eliminar: existen ${r.count_usuarios} usuario${r.count_usuarios !== 1 ? 's' : ''} vinculados.`
+              ? t('rolestable.no_se_puede_eliminar_usuarios_vinculados', { count: r.count_usuarios })
               : undefined;
 
             return (
               <tr key={r.id_rol} style={{ borderBottom: '1px solid var(--surface-border)' }}>
-                <td style={{ padding: 'var(--s3) var(--s4)' }}>
+                <td headers="th-nombre-del-rol" style={{ padding: 'var(--s3) var(--s4)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{r.nombre_rol}</span>
                     {r.es_protegido && (
@@ -78,22 +83,22 @@ export function RolesTable({ roles, loading, puedeEditar, puedeEliminar, onEdita
                     )}
                   </div>
                 </td>
-                <td style={{ padding: 'var(--s3) var(--s4)', color: 'var(--text-secondary)', fontSize: '12.5px' }}>
+                <td headers="th-descripcion" style={{ padding: 'var(--s3) var(--s4)', color: 'var(--text-secondary)', fontSize: 'var(--fs-body-sm)' }}>
                   {r.descripcion ?? '—'}
                 </td>
-                <td style={{ padding: 'var(--s3) var(--s4)' }}>
-                  <Badge variant="inactivo">{r.permisos.length} permiso{r.permisos.length !== 1 ? 's' : ''}</Badge>
+                <td headers="th-permisos" style={{ padding: 'var(--s3) var(--s4)' }}>
+                  <Badge variant="inactivo">{t('rolestable.n_permisos', { count: r.permisos.length })}</Badge>
                 </td>
-                <td style={{ padding: 'var(--s3) var(--s4)' }}>
+                <td headers="th-usuarios" style={{ padding: 'var(--s3) var(--s4)' }}>
                   {r.count_usuarios !== undefined ? (
                     <Badge variant={tieneUsuarios ? 'activo' : 'inactivo'}>
-                      {r.count_usuarios} usuario{r.count_usuarios !== 1 ? 's' : ''}
+                      {t('rolestable.n_usuarios', { count: r.count_usuarios })}
                     </Badge>
                   ) : (
-                    <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>—</span>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--fs-body-sm)' }}>—</span>
                   )}
                 </td>
-                <td style={{ padding: 'var(--s3) var(--s4)', whiteSpace: 'nowrap' }}>
+                <td headers="th-acciones" style={{ padding: 'var(--s3) var(--s4)', whiteSpace: 'nowrap' }}>
                   <div style={{ display: 'flex', gap: 'var(--s2)' }}>
                     {puedeEditar && (
                       <Button
@@ -101,7 +106,7 @@ export function RolesTable({ roles, loading, puedeEditar, puedeEliminar, onEdita
                         size="sm"
                         onClick={() => onEditar(r)}
                         disabled={r.es_protegido}
-                        aria-label={`Editar ${r.nombre_rol}`}
+                        aria-label={t('rolestable.editar_rol', { nombre: r.nombre_rol })}
                         title={r.es_protegido ? t('rolestable.el_rol_administrador_no_puede_modificarse') : undefined}
                       >
                         <Edit2 size={13} aria-hidden style={{ marginRight: 4 }} />{t('rolestable.editar')}</Button>
@@ -112,7 +117,7 @@ export function RolesTable({ roles, loading, puedeEditar, puedeEliminar, onEdita
                         size="sm"
                         onClick={puedeEliminarEste ? () => onEliminar(r) : undefined}
                         disabled={!puedeEliminarEste}
-                        aria-label={`Eliminar ${r.nombre_rol}`}
+                        aria-label={t('rolestable.eliminar_rol', { nombre: r.nombre_rol })}
                         title={tooltipEliminar}
                       >
                         <Trash2 size={13} aria-hidden style={{ marginRight: 4 }} />{t('rolestable.eliminar')}</Button>

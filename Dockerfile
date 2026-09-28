@@ -33,8 +33,16 @@ RUN pnpm build
 
 FROM nginx:1.27-alpine AS prod
 
+# La CSP de nginx.conf necesita el origen de la API. Sale del mismo build arg que
+# Vite hornea en el bundle; con un valor vacío o relativo queda en blanco y la
+# API cae bajo 'self'. Solo se sustituye ${API_ORIGIN}: $uri y demás son de nginx.
+ARG VITE_API_BASE_URL
+
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /tmp/default.conf.template
+RUN API_ORIGIN="$(printf '%s' "$VITE_API_BASE_URL" | sed -nE 's#^(https?://[^/]+).*#\1#p')" \
+    envsubst '${API_ORIGIN}' < /tmp/default.conf.template > /etc/nginx/conf.d/default.conf \
+ && rm /tmp/default.conf.template
 
 EXPOSE 80
 
