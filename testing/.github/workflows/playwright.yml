@@ -1,0 +1,47 @@
+name: Playwright Tests
+on:
+  push:
+    branches: [ test ]
+    paths:
+      - 'testing/accesibilidad/**'
+      - 'testing/visual/**'
+      - 'testing/playwright.config.ts'
+      - 'testing/package.json'
+      - 'testing/package-lock.json'
+      - 'testing/.github/workflows/playwright.yml'
+  pull_request:
+    branches: [ test ]
+    paths:
+      - 'testing/accesibilidad/**'
+      - 'testing/visual/**'
+      - 'testing/playwright.config.ts'
+      - 'testing/package.json'
+      - 'testing/package-lock.json'
+      - 'testing/.github/workflows/playwright.yml'
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      working-directory: ./testing
+      run: npm ci
+    - name: Install Playwright Browsers
+      working-directory: ./testing
+      run: npx playwright install --with-deps
+    - name: Run Playwright tests (axe + visual)
+      working-directory: ./testing
+      env:
+        TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+        TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      run: npx playwright test
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report
+        path: testing/playwright-report/
+        retention-days: 30

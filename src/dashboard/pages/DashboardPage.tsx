@@ -22,7 +22,7 @@ export function DashboardPage() {
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
 
   return (
-    <div style={{ padding: 'var(--s6)', maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: 'var(--page-pad)', maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--s7)' }}>
         <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
           Bienvenido{claims?.nombre ? `, ${claims.nombre}` : ''}

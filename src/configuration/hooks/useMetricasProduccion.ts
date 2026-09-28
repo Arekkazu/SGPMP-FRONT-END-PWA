@@ -14,8 +14,7 @@ export function useMetricasProduccion() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await metricasApi.listar(idEspecie, soloActivas);
-      const data: MetricaProduccionResponse[] = Array.isArray(raw) ? raw : (raw as any)?.items ?? [];
+      const data = await metricasApi.listar(idEspecie, soloActivas);
       setMetricas(data);
     } catch (e) {
       setError(e as ApiError);

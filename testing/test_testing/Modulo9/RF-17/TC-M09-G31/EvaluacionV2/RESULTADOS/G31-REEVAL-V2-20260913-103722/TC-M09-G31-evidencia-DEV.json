@@ -1,0 +1,306 @@
+{
+  "grupo": "TC-M09-G31",
+  "casos": [
+    "TC-M09-66",
+    "TC-M09-67",
+    "TC-M09-68"
+  ],
+  "rf": "RF-17",
+  "tipo": "REEVALUACION V2",
+  "runId": "G31-REEVAL-V2-20260913-103722",
+  "environment": "DEV",
+  "fecha": "2026-09-13T15:39:56.494Z",
+  "preflight": [
+    {
+      "url": "https://sigab-backenddev-jpuya4-ea3a74-158-69-200-27.sslip.io/api-sgpmp/health",
+      "status": 200
+    }
+  ],
+  "actor": {
+    "correo": "admin.general@pecuaria.co",
+    "id_usuario": 46,
+    "rol": "Administrador",
+    "estado": "Activo",
+    "fincas": 0,
+    "intentosLogin": [
+      {
+        "correo": "administador.dev@gmail.com",
+        "status": 401
+      },
+      {
+        "correo": "admin.general@pecuaria.co",
+        "status": 200
+      }
+    ]
+  },
+  "threshold_config_before": {
+    "id_umbral_ambiental": 8,
+    "especie": {
+      "id": 3,
+      "nombre": "Camarón Blanco",
+      "es_activo": true
+    },
+    "variable": {
+      "id": 6,
+      "nombre": "Salinidad",
+      "unidad": "ppt"
+    },
+    "general": {
+      "min": "0.00",
+      "max": "100.00"
+    },
+    "normal": {
+      "nivel": "normal",
+      "limite_inferior": "10.00",
+      "limite_superior": "25.00"
+    },
+    "precaucion": {
+      "nivel": "precaucion",
+      "limite_inferior": "5.00",
+      "limite_superior": "10.00"
+    },
+    "critico": {
+      "nivel": "critico",
+      "limite_inferior": "0.00",
+      "limite_superior": "5.00"
+    },
+    "es_activo": true,
+    "fecha_actualizacion": null
+  },
+  "valores_planificados_no_enviados": {
+    "TC-M09-66": {
+      "esperado": "NORMAL / VERDE",
+      "valor": "17.50",
+      "zona": [
+        "10.00",
+        "25.00"
+      ]
+    },
+    "TC-M09-67": {
+      "esperado": "PRECAUCION / AMARILLO",
+      "valor": "7.50",
+      "zona": [
+        "5.00",
+        "10.00"
+      ]
+    },
+    "TC-M09-68": {
+      "esperado": "CRITICO / ROJO",
+      "valor": "2.50",
+      "zona": [
+        "0.00",
+        "5.00"
+      ]
+    }
+  },
+  "monitoreo": {
+    "dashboard": {
+      "status": 200,
+      "total": 5,
+      "campos": [
+        "id_sensor",
+        "id_dispositivo_iot",
+        "nombre_sensor",
+        "tipo_variable",
+        "categoria_variable",
+        "ultimo_valor",
+        "ultima_unidad",
+        "ultimo_timestamp_captura",
+        "estado_semaforo",
+        "estado_calidad",
+        "estado_desviacion",
+        "estado_conectividad",
+        "tiempo_sin_reporte_min",
+        "dato_desactualizado",
+        "id_alerta",
+        "severidad_alerta",
+        "tendencia",
+        "id_infraestructura",
+        "nombre_infraestructura",
+        "id_finca",
+        "nombre_finca",
+        "nivel_bateria_pct",
+        "calidad_senal_rssi",
+        "calidad_senal_snr"
+      ],
+      "sensores": [
+        {
+          "id_sensor": 1,
+          "tipo_variable": "Temperatura del agua",
+          "ultimo_valor": "48.5000",
+          "estado_semaforo": "GRIS",
+          "dato_desactualizado": true,
+          "id_alerta": null,
+          "severidad_alerta": null
+        },
+        {
+          "id_sensor": 2,
+          "tipo_variable": "pH del agua",
+          "ultimo_valor": "62.1000",
+          "estado_semaforo": "GRIS",
+          "dato_desactualizado": true,
+          "id_alerta": null,
+          "severidad_alerta": null
+        },
+        {
+          "id_sensor": 3,
+          "tipo_variable": "Oxígeno disuelto",
+          "ultimo_valor": "6.8200",
+          "estado_semaforo": "GRIS",
+          "dato_desactualizado": true,
+          "id_alerta": null,
+          "severidad_alerta": null
+        },
+        {
+          "id_sensor": 4,
+          "tipo_variable": "Amoniaco total",
+          "ultimo_valor": "1248.5000",
+          "estado_semaforo": "GRIS",
+          "dato_desactualizado": true,
+          "id_alerta": null,
+          "severidad_alerta": null
+        },
+        {
+          "id_sensor": 5,
+          "tipo_variable": "Nitrito",
+          "ultimo_valor": "18.4700",
+          "estado_semaforo": "GRIS",
+          "dato_desactualizado": false,
+          "id_alerta": null,
+          "severidad_alerta": null
+        }
+      ]
+    },
+    "historial": {
+      "status": 200,
+      "ventana": [
+        "2026-08-14",
+        "2026-09-13"
+      ],
+      "total": 1,
+      "semaforos": [
+        "GRIS"
+      ],
+      "lecturasConEspecie": 0
+    },
+    "rutasOpenApiRelacionadas": [
+      "/iot/monitoreo/dashboard",
+      "/iot/monitoreo/dashboard/{id_infraestructura}",
+      "/iot/monitoreo/historial/exportar",
+      "/iot/monitoreo/historial",
+      "/iot/calidad/{id_telemetria}/evaluar",
+      "/iot/calidad/reevaluar"
+    ]
+  },
+  "correlacion": {
+    "clasificadorBasadoEnNivelesRF17": false,
+    "motivo": "La ingesta fija VERDE; AMARILLO/ROJO provienen de alertas M03 por severidad; el historial usa stub (GRIS); ningun componente lee niveles RF-17",
+    "semaforosDashboard": [
+      "GRIS"
+    ],
+    "semaforosHistorial": [
+      "GRIS"
+    ],
+    "configuracionSinCambios": true
+  },
+  "threshold_config_after": {
+    "igualABefore": true
+  },
+  "medicionesGeneradas": 0,
+  "motivoSinMediciones": "Checklist §156: item 6 (clasificador RF-17 identificado) = No. Enviar mediciones no produciria una clasificacion basada en RF-17 y escribiria telemetria sin oraculo.",
+  "por_caso": {
+    "TC-M09-66": {
+      "threshold_config_id": 8,
+      "especie": "Camarón Blanco",
+      "variable": "Salinidad",
+      "measurement_id": null,
+      "measurement_value": "17.50",
+      "expected_classification": "NORMAL / VERDE",
+      "api_classification": null,
+      "ui_classification": null,
+      "persistence_correlation": "No aplica: medicion no generada",
+      "result": "DESAPROBADO — FUNCIONALIDAD NO IMPLEMENTADA"
+    },
+    "TC-M09-67": {
+      "threshold_config_id": 8,
+      "especie": "Camarón Blanco",
+      "variable": "Salinidad",
+      "measurement_id": null,
+      "measurement_value": "7.50",
+      "expected_classification": "PRECAUCION / AMARILLO",
+      "api_classification": null,
+      "ui_classification": null,
+      "persistence_correlation": "No aplica: medicion no generada",
+      "result": "DESAPROBADO — FUNCIONALIDAD NO IMPLEMENTADA"
+    },
+    "TC-M09-68": {
+      "threshold_config_id": 8,
+      "especie": "Camarón Blanco",
+      "variable": "Salinidad",
+      "measurement_id": null,
+      "measurement_value": "2.50",
+      "expected_classification": "CRITICO / ROJO",
+      "api_classification": null,
+      "ui_classification": null,
+      "persistence_correlation": "No aplica: medicion no generada",
+      "result": "DESAPROBADO — FUNCIONALIDAD NO IMPLEMENTADA"
+    }
+  },
+  "newman": {
+    "html": "newman/newman-TC-M09-66-67-68-v2-DEV.html",
+    "assertions": {
+      "total": 9,
+      "pending": 0,
+      "failed": 2
+    },
+    "aserciones": [
+      {
+        "request": "Actor",
+        "test": "Precondicion: /usuarios/me 200",
+        "ok": true
+      },
+      {
+        "request": "Actor",
+        "test": "Precondicion: Administrador o Veterinario activo",
+        "ok": true
+      },
+      {
+        "request": "THRESHOLD_CONFIG",
+        "test": "Precondicion: GET RF-17 200",
+        "ok": true
+      },
+      {
+        "request": "THRESHOLD_CONFIG",
+        "test": "Precondicion: configuracion activa con normal/precaucion/critico",
+        "ok": true
+      },
+      {
+        "request": "THRESHOLD_CONFIG",
+        "test": "Precondicion: niveles sin solapamiento y cada uno con amplitud positiva",
+        "ok": true
+      },
+      {
+        "request": "Monitoreo dashboard",
+        "test": "Precondicion: API Monitoreo dashboard 200",
+        "ok": true
+      },
+      {
+        "request": "Monitoreo dashboard",
+        "test": "Oraculo G31: el estado del sensor referencia el umbral/nivel RF-17 con que se clasifico",
+        "ok": false,
+        "detalle": "campos: id_sensor,id_dispositivo_iot,nombre_sensor,tipo_variable,categoria_variable,ultimo_valor,ultima_unidad,ultimo_timestamp_captura,estado_semaforo,estado_calidad,estado_desviacion,estado_conectividad,tiempo_sin_reporte_min,dato_desactualizado,id_alerta,severidad_alerta,tendencia,id_infraestruct"
+      },
+      {
+        "request": "Monitoreo historial",
+        "test": "Precondicion: API Monitoreo historial 200",
+        "ok": true
+      },
+      {
+        "request": "Monitoreo historial",
+        "test": "Oraculo G31: la clasificacion historica se calcula con umbral (no todo GRIS)",
+        "ok": false,
+        "detalle": "semaforos: GRIS: expected false to deeply equal true"
+      }
+    ]
+  }
+}
