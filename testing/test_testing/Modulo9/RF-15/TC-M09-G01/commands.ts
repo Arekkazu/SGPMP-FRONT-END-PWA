@@ -12,7 +12,7 @@ declare global {
 }
 
 Cypress.Commands.add('loginUI', (
-  email = Cypress.env('ADMIN_EMAIL') || 'admin@pecuaria.co',
+  email = Cypress.env('ADMIN_EMAIL') || 'admin.dev@gmail.com',
   password = Cypress.env('ADMIN_PASSWORD') || 'Test1234!',
 ) => {
   cy.visit('/login');

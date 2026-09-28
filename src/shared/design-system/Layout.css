@@ -1,0 +1,45 @@
+/* Rejillas de contenido del DS v2.0 ("Reglas responsive por componente").
+ *
+ * Existen porque una rejilla escrita como `style={{ gridTemplateColumns:
+ * '1fr 1fr' }}` no puede llevar media query: se queda en dos columnas a
+ * cualquier ancho. En un telefono de 390px eso deja cada campo de formulario
+ * en ~147px dentro de un modal — unos 119px utiles de texto una vez
+ * descontado el padding del input.
+ *
+ * Por encima del breakpoint el resultado es identico al `1fr 1fr` que
+ * reemplazan; lo unico que cambia es que por debajo colapsan a una columna.
+ */
+
+.ds-fg2,
+.ds-fg3 {
+  display: grid;
+  gap: var(--s4);
+  grid-template-columns: 1fr;
+}
+
+/* --bp-sm: dos columnas de formulario solo a partir de 480px. */
+@media (min-width: 480px) {
+  .ds-fg2 { grid-template-columns: 1fr 1fr; }
+  .ds-fg3 { grid-template-columns: 1fr 1fr; }
+}
+
+/* --bp-md: la tercera columna necesita tablet. */
+@media (min-width: 768px) {
+  .ds-fg3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Contenido principal con un panel lateral de ancho fijo (el editor de
+ * dashboard y su paleta de widgets). Apilado hasta que el lateral quepa sin
+ * comerse el contenido: a 390px, `1fr 280px` dejaba 42px para el editor. */
+.ds-split-aside {
+  display: grid;
+  gap: var(--s5);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .ds-split-aside {
+    grid-template-columns: 1fr 280px;
+    align-items: start;
+  }
+}
