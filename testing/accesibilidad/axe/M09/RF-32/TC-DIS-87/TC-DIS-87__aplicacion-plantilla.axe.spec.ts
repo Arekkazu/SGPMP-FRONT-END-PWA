@@ -1,5 +1,6 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { guardarResultadoAxe } from '../../../_shared/axeReport';
 import fs from 'fs';
 import path from 'path';
 
@@ -69,24 +70,61 @@ import path from 'path';
  *   ADMIN_EMAIL lo tiene.
  */
 
-const ADMIN_EMAIL = 'adminplaywright@gmail.com';
-const ADMIN_PASSWORD = 'pruebasadmin123#';
+const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
+const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 async function loginComoAdmin(page: Page) {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    throw new Error('Faltan TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD en testing/.env.test');
+  }
   await page.goto('/login');
   await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
   await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar' }).click();
-  await page.waitForURL(/dashboard/);
-  // el JWT vive SOLO en memoria, nunca en localStorage — por eso después
-  // del login nunca se usa page.goto() para navegar, eso recarga la
-  // página y borra la sesión. Se navega por clic, como un usuario real.
-  const menuToggle = page.getByRole('button', { name: /alternar menú lateral/i });
-  if (await menuToggle.isVisible().catch(() => false)) {
-    await menuToggle.click();
+  await page.waitForURL(/dashboard/, { timeout: 90_000 });
+  // Mitigación del reporte de Sara (hallazgo 2): navegar inmediatamente tras el
+  // login invalidaba la sesión bajo automatización.
+  await page.waitForLoadState('networkidle');
+  await irAConfiguracion(page, /^(Plantillas|Templates)$/);
+}
+
+async function dentroDelViewport(page: Page, loc: Locator): Promise<boolean> {
+  const box = await loc.boundingBox().catch(() => null);
+  const vp = page.viewportSize();
+  return !!box && !!vp && box.x >= -1 && box.x + box.width <= vp.width + 1;
+}
+
+// El JWT vive solo en memoria: tras el login NO se usa page.goto() (recarga y
+// borra la sesión); se navega por el sidebar como un usuario real.
+// El ítem del sidebar es un <Link> (rol link, no button). En móvil/tablet el
+// sidebar está fuera del viewport hasta abrir el menú lateral.
+async function irAConfiguracion(page: Page, pestana?: RegExp) {
+  const menuToggle = page.getByRole('button', { name: /alternar menú lateral|toggle side menu/i });
+  const linkConfig = page.getByRole('link', { name: /^(configuración|settings)$/i });
+  await linkConfig.waitFor({ state: 'attached', timeout: 30_000 });
+
+  if (await linkConfig.getAttribute('aria-disabled') === 'true') {
+    throw new Error(
+      `BLOQUEO DE AMBIENTE (no es hallazgo de accesibilidad): la cuenta ${ADMIN_EMAIL} ` +
+      'no tiene permiso sobre Configuración — el ítem del sidebar sale bloqueado.',
+    );
   }
-  await page.getByRole('button', { name: 'Configuración' }).click();
-  await page.getByRole('button', { name: 'Plantillas', exact: true }).click();
+  for (let intento = 0; intento < 5 && !(await dentroDelViewport(page, linkConfig)); intento++) {
+    if (await menuToggle.isVisible().catch(() => false)) await menuToggle.click();
+    await page.waitForTimeout(400);
+  }
+  await linkConfig.click();
+  await page.waitForURL(/configuracion/);
+  if (pestana) {
+    const boton = page.getByRole('button', { name: pestana });
+    await boton.waitFor({ state: 'visible', timeout: 15_000 }).catch(() => {
+      throw new Error(
+        `BLOQUEO DE AMBIENTE: la pestaña ${pestana} no aparece — la cuenta ${ADMIN_EMAIL} ` +
+        'no tiene permiso de lectura sobre ese recurso.',
+      );
+    });
+    await boton.click();
+  }
 }
 
 function guardarResultados(nombre: string, contenido: unknown) {
@@ -96,7 +134,7 @@ function guardarResultados(nombre: string, contenido: unknown) {
 }
 
 test.describe('TC-DIS-87 — RF-32: Aplicación de Plantilla (accesibilidad)', () => {
-  test('paso 1 del wizard (selección de especie destino) no tiene violaciones', async ({ page }) => {
+  test('paso 1 del wizard (selección de especie destino) no tiene violaciones', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
 
     // Requiere al menos 1 plantilla registrada en el seed (ver TODO de cabecera).
@@ -107,12 +145,13 @@ test.describe('TC-DIS-87 — RF-32: Aplicación de Plantilla (accesibilidad)', (
     await expect(page.getByText('Selecciona la especie destino')).toBeVisible();
 
     const results = await new AxeBuilder({ page }).include('[role="dialog"]').analyze();
+    guardarResultadoAxe('TC-DIS-87', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
     guardarResultados('axe-TC-DIS-87-paso1-especie.json', results);
 
     expect(results.violations).toEqual([]);
   });
 
-  test('paso 2 del wizard (previsualización) no tiene violaciones y advierte irreversibilidad', async ({ page }) => {
+  test('paso 2 del wizard (previsualización) no tiene violaciones y advierte irreversibilidad', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
     await page.getByRole('button', { name: 'Aplicar plantilla' }).first().click();
 
@@ -125,12 +164,13 @@ test.describe('TC-DIS-87 — RF-32: Aplicación de Plantilla (accesibilidad)', (
     await expect(page.getByText('Esta acción es irreversible')).toBeVisible();
 
     const results = await new AxeBuilder({ page }).include('[role="dialog"]').analyze();
+    guardarResultadoAxe('TC-DIS-87', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
     guardarResultados('axe-TC-DIS-87-paso2-previsualizacion.json', results);
 
     expect(results.violations).toEqual([]);
   });
 
-  test('el modal NO cierra con Escape — confirma hallazgo #2 (sistémico)', async ({ page }) => {
+  test('el modal NO cierra con Escape — confirma hallazgo #2 (sistémico)', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
     await page.getByRole('button', { name: 'Aplicar plantilla' }).first().click();
 
@@ -147,7 +187,7 @@ test.describe('TC-DIS-87 — RF-32: Aplicación de Plantilla (accesibilidad)', (
   // hallazgo #1 (paso "Aplicando..." sin role="status"/aria-live) ya está
   // confirmado por lectura de código — activar esto solo si el equipo
   // confirma una especie de prueba desechable para usar aquí.
-  test.skip('el paso "Aplicando..." se anuncia a lectores de pantalla — confirma hallazgo #1', async ({ page }) => {
+  test.skip('el paso "Aplicando..." se anuncia a lectores de pantalla — confirma hallazgo #1', async ({ page }, testInfo) => {
     // Pendiente: especie de prueba desechable confirmada por el equipo.
   });
 });
