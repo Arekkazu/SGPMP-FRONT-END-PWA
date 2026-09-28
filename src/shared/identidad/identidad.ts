@@ -23,12 +23,34 @@ import type { TemaAplicado } from '../tema/tema';
  * `--brand-600` en 50). No se recalcula la rampa completa 50-900: eso convertiría cada
  * cambio de marca en un problema de diseño de paleta, y el RF limita el alcance a color
  * primario y secundario.
+ *
+ * `--brand-cta` (QA M01 2.4) también recibe el primario: es el relleno del boton
+ * primario con texto blanco, y sin este setProperty una finca con marca propia perdia
+ * su color de marca en ese boton (quedaba pintado con el verde por defecto).
  */
 const VAR_PRIMARIO = '--brand-500';
 const VAR_PRIMARIO_FUERTE = '--brand-600';
+const VAR_CTA = '--brand-cta';
+const VAR_CTA_HOVER = '--brand-cta-hover';
 const VAR_SECUNDARIO = '--brand-400';
+const VAR_NAV = '--brand-nav';
 
-const VARIABLES = [VAR_PRIMARIO, VAR_PRIMARIO_FUERTE, VAR_SECUNDARIO];
+const VARIABLES = [VAR_PRIMARIO, VAR_PRIMARIO_FUERTE, VAR_CTA, VAR_CTA_HOVER, VAR_SECUNDARIO, VAR_NAV];
+
+/**
+ * Variante oscura del color institucional para pintar la barra de navegación.
+ *
+ * RF-26 pide aplicar el color primario a las "barras de navegación", pero el
+ * `Sidebar` tiene texto e iconos claros: pintarlo con el primario crudo dejaría
+ * ilegible una marca clara (amarillo, celeste). Se oscurece un 55% para conservar
+ * el matiz de la marca sin romper el contraste del texto blanco.
+ */
+export function oscurecerParaNav(hex: string): string {
+  const limpio = hex.replace('#', '');
+  const canales = [0, 2, 4].map((i) => parseInt(limpio.slice(i, i + 2), 16));
+  const oscurecido = canales.map((c) => Math.round(c * 0.45));
+  return `#${oscurecido.map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
 
 export interface MarcaAplicable {
   identidad: IdentidadVisualContexto | null;
@@ -62,9 +84,15 @@ export function aplicarIdentidad(marca: MarcaAplicable, tema: TemaAplicado): voi
   if (primario) {
     estilo.setProperty(VAR_PRIMARIO, primario);
     estilo.setProperty(VAR_PRIMARIO_FUERTE, primario);
+    estilo.setProperty(VAR_CTA, primario);
+    estilo.setProperty(VAR_CTA_HOVER, primario);
+    estilo.setProperty(VAR_NAV, oscurecerParaNav(primario));
   } else {
     estilo.removeProperty(VAR_PRIMARIO);
     estilo.removeProperty(VAR_PRIMARIO_FUERTE);
+    estilo.removeProperty(VAR_CTA);
+    estilo.removeProperty(VAR_CTA_HOVER);
+    estilo.removeProperty(VAR_NAV);
   }
 
   if (secundario) estilo.setProperty(VAR_SECUNDARIO, secundario);

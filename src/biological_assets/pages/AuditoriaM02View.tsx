@@ -145,7 +145,7 @@ export function AuditoriaM02View() {
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('auditoriam02view.bitacora_de_eventos_del_modulo_de_activos')}</p>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {/* Filtros */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
           <div><label style={LABEL} htmlFor="a-rf">{t('auditoriam02view.rf_origen')}</label><input id="a-rf" style={INPUT} placeholder="Ej: RF40" value={filtros.rf_origen} onChange={set('rf_origen')} /></div>

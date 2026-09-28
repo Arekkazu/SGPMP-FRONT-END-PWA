@@ -1,0 +1,1571 @@
+{
+  "grupo": "TC-M09-G22",
+  "rf": "RF-17",
+  "tipo": "REEVALUACION V3",
+  "entorno": "TEST",
+  "rama": "qa/juan-esteban-tercera-evaluacion-M09",
+  "base": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "runId": "G22-REEVAL-V3-20260925-223414",
+  "fecha": "2026-09-26T03:43:00.542Z",
+  "preflight": [
+    {
+      "url": "http://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/health",
+      "status": 404,
+      "location": null,
+      "nota": "URL HTTP suministrada; el ambiente decisorio es HTTPS"
+    },
+    {
+      "url": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/login",
+      "status": 301,
+      "location": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/login",
+      "nota": "URL HTTP suministrada; el ambiente decisorio es HTTPS"
+    },
+    {
+      "url": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/login",
+      "status": 200
+    },
+    {
+      "url": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/health",
+      "status": 200
+    },
+    {
+      "url": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/openapi.json",
+      "status": 200
+    },
+    {
+      "contrato": "POST /configuracion/umbrales",
+      "respuestasDeclaradas": [
+        "201",
+        "401",
+        "403",
+        "404",
+        "409",
+        "422"
+      ],
+      "exitoDeclarado": [
+        "201"
+      ],
+      "dto": "RegistrarUmbralDTO",
+      "dtoRequerido": [
+        "id_especie",
+        "id_variable_ambiental",
+        "valor_min",
+        "valor_max",
+        "niveles"
+      ],
+      "dtoPropiedades": [
+        "id_especie",
+        "id_variable_ambiental",
+        "valor_min",
+        "valor_max",
+        "niveles"
+      ],
+      "nivelDtoRequerido": [
+        "nivel",
+        "limite_inferior",
+        "limite_superior"
+      ],
+      "erroresDeclarados": [
+        "401",
+        "403",
+        "404",
+        "409",
+        "422"
+      ],
+      "umbralResponse": [
+        "id_umbral_ambiental",
+        "id_especie",
+        "id_variable_ambiental",
+        "unidad_medida",
+        "valor_min",
+        "valor_max",
+        "es_activo",
+        "fecha_actualizacion",
+        "niveles",
+        "estado_sincronizacion",
+        "fecha_ultima_sincronizacion",
+        "motivo_fallo_sincronizacion"
+      ]
+    }
+  ],
+  "headFrontend": "ad2b1e59bb872491bae368ae812993a3ded08d63",
+  "headBackend": "91f7738667a934a4eaf3db5519a57d7cf4803b0e",
+  "actor": {
+    "correo_electronico": "administador.dev@gmail.com",
+    "id_usuario": 104,
+    "nombre_rol": "Administrador",
+    "estado_cuenta": "Activo",
+    "permisosRecurso20": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "permisosV2": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "permisosIgualesQueV2": true,
+    "mismoActorQueV2": true
+  },
+  "especies": [
+    {
+      "id": 41,
+      "nombre": "Ave Qa Je",
+      "es_activo": true
+    },
+    {
+      "id": 39,
+      "nombre": "Bovino",
+      "es_activo": true
+    },
+    {
+      "id": 40,
+      "nombre": "Bovino Qa Je",
+      "es_activo": true
+    },
+    {
+      "id": 4,
+      "nombre": "Cachama Blanca",
+      "es_activo": true
+    },
+    {
+      "id": 3,
+      "nombre": "Camarón Blanco",
+      "es_activo": true
+    },
+    {
+      "id": 43,
+      "nombre": "Equina",
+      "es_activo": true
+    },
+    {
+      "id": 42,
+      "nombre": "Equino",
+      "es_activo": true
+    },
+    {
+      "id": 44,
+      "nombre": "Equino Test Qa",
+      "es_activo": true
+    },
+    {
+      "id": 61,
+      "nombre": "Especie Acuatica Prueba",
+      "es_activo": true
+    },
+    {
+      "id": 54,
+      "nombre": "Especie Audit Abnlvu",
+      "es_activo": false
+    },
+    {
+      "id": 49,
+      "nombre": "Especie Audit Meplnu",
+      "es_activo": false
+    },
+    {
+      "id": 53,
+      "nombre": "Especie Audit Swuxja",
+      "es_activo": false
+    },
+    {
+      "id": 55,
+      "nombre": "Especie Audit Xyxjfc",
+      "es_activo": false
+    },
+    {
+      "id": 50,
+      "nombre": "Especie Concurrencia Test",
+      "es_activo": false
+    },
+    {
+      "id": 59,
+      "nombre": "Especie Conflicto Newman Iirqky",
+      "es_activo": false
+    },
+    {
+      "id": 57,
+      "nombre": "Especie Conflicto Newman Quhvtt",
+      "es_activo": false
+    },
+    {
+      "id": 46,
+      "nombre": "Especie Conflicto Qa Fgxplu",
+      "es_activo": false
+    },
+    {
+      "id": 58,
+      "nombre": "Especie Conflicto Qa Luyrbl",
+      "es_activo": false
+    },
+    {
+      "id": 45,
+      "nombre": "Especie Conflicto Qa Vontsb",
+      "es_activo": false
+    },
+    {
+      "id": 51,
+      "nombre": "Especie Probing Api",
+      "es_activo": false
+    },
+    {
+      "id": 48,
+      "nombre": "Especieproductivaparapruebasdecontrolquigxsaegptvv",
+      "es_activo": false
+    },
+    {
+      "id": 56,
+      "nombre": "Especie Prueba Laura",
+      "es_activo": false
+    },
+    {
+      "id": 52,
+      "nombre": "Especie Simulacion Test",
+      "es_activo": false
+    },
+    {
+      "id": 60,
+      "nombre": "Gallina Qa Iquqaa",
+      "es_activo": false
+    },
+    {
+      "id": 11,
+      "nombre": "Miguel",
+      "es_activo": false
+    },
+    {
+      "id": 5,
+      "nombre": "Mojarra Plateada",
+      "es_activo": true
+    },
+    {
+      "id": 47,
+      "nombre": "Mwi",
+      "es_activo": false
+    },
+    {
+      "id": 10,
+      "nombre": "Tilapia",
+      "es_activo": true
+    },
+    {
+      "id": 1,
+      "nombre": "Tilapia Roja",
+      "es_activo": false
+    },
+    {
+      "id": 2,
+      "nombre": "Trucha Arcoíris",
+      "es_activo": true
+    }
+  ],
+  "variables": [
+    {
+      "id": 16,
+      "nombre": "Actividad/Movimiento",
+      "unidad": "m/s²",
+      "fisicoMin": "0",
+      "fisicoMax": "200"
+    },
+    {
+      "id": 11,
+      "nombre": "Amoniaco (NH3)",
+      "unidad": "ppm",
+      "fisicoMin": "0",
+      "fisicoMax": "500"
+    },
+    {
+      "id": 4,
+      "nombre": "Amoniaco total",
+      "unidad": "mg/L",
+      "fisicoMin": "0",
+      "fisicoMax": "10"
+    },
+    {
+      "id": 8,
+      "nombre": "Conductividad eléctrica",
+      "unidad": "µS/cm",
+      "fisicoMin": "0",
+      "fisicoMax": "5000"
+    },
+    {
+      "id": 12,
+      "nombre": "Dióxido de Carbono (CO2)",
+      "unidad": "ppm",
+      "fisicoMin": "0",
+      "fisicoMax": "100000"
+    },
+    {
+      "id": 14,
+      "nombre": "Frecuencia Cardiaca",
+      "unidad": "bpm",
+      "fisicoMin": "0",
+      "fisicoMax": "500"
+    },
+    {
+      "id": 15,
+      "nombre": "Frecuencia Respiratoria",
+      "unidad": "rpm",
+      "fisicoMin": "0",
+      "fisicoMax": "200"
+    },
+    {
+      "id": 10,
+      "nombre": "Humedad Relativa",
+      "unidad": "%",
+      "fisicoMin": "0",
+      "fisicoMax": "100"
+    },
+    {
+      "id": 5,
+      "nombre": "Nitrito",
+      "unidad": "mg/L",
+      "fisicoMin": "0",
+      "fisicoMax": "5"
+    },
+    {
+      "id": 3,
+      "nombre": "Oxígeno disuelto",
+      "unidad": "mg/L",
+      "fisicoMin": "0",
+      "fisicoMax": "20"
+    },
+    {
+      "id": 2,
+      "nombre": "pH del agua",
+      "unidad": "pH",
+      "fisicoMin": "0",
+      "fisicoMax": "14"
+    },
+    {
+      "id": 6,
+      "nombre": "Salinidad",
+      "unidad": "ppt",
+      "fisicoMin": "0",
+      "fisicoMax": "45"
+    },
+    {
+      "id": 9,
+      "nombre": "Temperatura Ambiental",
+      "unidad": "°C",
+      "fisicoMin": "-50",
+      "fisicoMax": "100"
+    },
+    {
+      "id": 13,
+      "nombre": "Temperatura Corporal",
+      "unidad": "°C",
+      "fisicoMin": "30",
+      "fisicoMax": "50"
+    },
+    {
+      "id": 1,
+      "nombre": "Temperatura del agua",
+      "unidad": "°C",
+      "fisicoMin": "0",
+      "fisicoMax": "45"
+    },
+    {
+      "id": 7,
+      "nombre": "Turbidez",
+      "unidad": "NTU",
+      "fisicoMin": "0",
+      "fisicoMax": "500"
+    }
+  ],
+  "umbralesExistentes": {
+    "2": [
+      {
+        "id": 4,
+        "id_variable_ambiental": 1,
+        "es_activo": true
+      },
+      {
+        "id": 5,
+        "id_variable_ambiental": 2,
+        "es_activo": true
+      },
+      {
+        "id": 6,
+        "id_variable_ambiental": 3,
+        "es_activo": true
+      },
+      {
+        "id": 46,
+        "id_variable_ambiental": 9,
+        "es_activo": true
+      }
+    ],
+    "3": [
+      {
+        "id": 7,
+        "id_variable_ambiental": 1,
+        "es_activo": true
+      },
+      {
+        "id": 41,
+        "id_variable_ambiental": 2,
+        "es_activo": true
+      },
+      {
+        "id": 42,
+        "id_variable_ambiental": 3,
+        "es_activo": true
+      },
+      {
+        "id": 9,
+        "id_variable_ambiental": 4,
+        "es_activo": true
+      },
+      {
+        "id": 8,
+        "id_variable_ambiental": 6,
+        "es_activo": true
+      }
+    ],
+    "4": [
+      {
+        "id": 10,
+        "id_variable_ambiental": 1,
+        "es_activo": true
+      },
+      {
+        "id": 48,
+        "id_variable_ambiental": 2,
+        "es_activo": true
+      },
+      {
+        "id": 11,
+        "id_variable_ambiental": 3,
+        "es_activo": true
+      }
+    ],
+    "5": [
+      {
+        "id": 12,
+        "id_variable_ambiental": 1,
+        "es_activo": true
+      },
+      {
+        "id": 13,
+        "id_variable_ambiental": 2,
+        "es_activo": true
+      },
+      {
+        "id": 38,
+        "id_variable_ambiental": 3,
+        "es_activo": true
+      }
+    ],
+    "10": [
+      {
+        "id": 39,
+        "id_variable_ambiental": 1,
+        "es_activo": true
+      },
+      {
+        "id": 45,
+        "id_variable_ambiental": 3,
+        "es_activo": true
+      }
+    ],
+    "39": [
+      {
+        "id": 36,
+        "id_variable_ambiental": 1,
+        "es_activo": false
+      },
+      {
+        "id": 37,
+        "id_variable_ambiental": 1,
+        "es_activo": false
+      },
+      {
+        "id": 40,
+        "id_variable_ambiental": 10,
+        "es_activo": false
+      },
+      {
+        "id": 44,
+        "id_variable_ambiental": 13,
+        "es_activo": false
+      }
+    ],
+    "40": [
+      {
+        "id": 49,
+        "id_variable_ambiental": 1,
+        "es_activo": true
+      }
+    ],
+    "41": [
+      {
+        "id": 43,
+        "id_variable_ambiental": 1,
+        "es_activo": true
+      }
+    ],
+    "42": [
+      {
+        "id": 47,
+        "id_variable_ambiental": 10,
+        "es_activo": true
+      }
+    ],
+    "43": [],
+    "44": [],
+    "61": []
+  },
+  "totalCombinacionesOcupadas": 23,
+  "totalCombinacionesLibres": 169,
+  "fixtureQA": {
+    "id": 61,
+    "esperado": "Especie Acuatica Prueba",
+    "presente": true,
+    "nombre": "Especie Acuatica Prueba",
+    "nombreCoincide": true,
+    "es_activo": true,
+    "densidad_maxima_por_especie": null,
+    "totalUmbrales": 0,
+    "umbrales": [],
+    "oxigenoLibre": true,
+    "temperaturaAguaLibre": true
+  },
+  "datosV2": {
+    "ids": [
+      38,
+      39,
+      40,
+      41
+    ],
+    "todosPresentes": true,
+    "detalle": {
+      "TC-M09-46": {
+        "idUmbralV2": 38,
+        "presente": true,
+        "especieEsperada": {
+          "id": 5,
+          "nombre": "Mojarra Plateada"
+        },
+        "especieReal": 5,
+        "variableReal": 3,
+        "valor_min": "8.00",
+        "valor_max": "12.00",
+        "es_activo": true,
+        "niveles": [
+          "normal 8.00-9.33",
+          "precaucion 9.33-10.66",
+          "critico 10.66-12.00"
+        ]
+      },
+      "TC-M09-47": {
+        "idUmbralV2": 39,
+        "presente": true,
+        "especieEsperada": {
+          "id": 10,
+          "nombre": "Tilapia"
+        },
+        "especieReal": 10,
+        "variableReal": 1,
+        "valor_min": "18.00",
+        "valor_max": "27.00",
+        "es_activo": true,
+        "niveles": [
+          "normal 18.00-21.00",
+          "precaucion 21.00-24.00",
+          "critico 24.00-27.00"
+        ]
+      },
+      "TC-M09-48": {
+        "idUmbralV2": 40,
+        "presente": true,
+        "especieEsperada": {
+          "id": 39,
+          "nombre": "Bovino"
+        },
+        "especieReal": 39,
+        "variableReal": 10,
+        "valor_min": "40.00",
+        "valor_max": "60.00",
+        "es_activo": false,
+        "niveles": [
+          "normal 40.00-46.66",
+          "precaucion 46.66-53.32",
+          "critico 53.32-60.00"
+        ]
+      },
+      "TC-M09-49": {
+        "idUmbralV2": 41,
+        "presente": true,
+        "especieEsperada": {
+          "id": 3,
+          "nombre": "Camaron Blanco"
+        },
+        "especieReal": 3,
+        "variableReal": 2,
+        "valor_min": "5.60",
+        "valor_max": "8.40",
+        "es_activo": true,
+        "niveles": [
+          "normal 5.60-6.53",
+          "precaucion 6.53-7.46",
+          "critico 7.46-8.40"
+        ]
+      }
+    }
+  },
+  "escriturasPreviasEnLasCombinacionesDeV3": [],
+  "escenariosEquivalentesEnOtrasEspecies": [
+    {
+      "caso": "TC-M09-46",
+      "id_umbral_ambiental": 45,
+      "id_especie": 10,
+      "especie": "Tilapia",
+      "id_variable_ambiental": 3,
+      "variable": "Oxígeno disuelto",
+      "valor_min": "8.00",
+      "valor_max": "12.00",
+      "niveles": [
+        "8.00-9.33",
+        "9.33-10.66",
+        "10.66-12.00"
+      ],
+      "es_activo": true,
+      "fecha_actualizacion": null
+    },
+    {
+      "caso": "TC-M09-48",
+      "id_umbral_ambiental": 47,
+      "id_especie": 42,
+      "especie": "Equino",
+      "id_variable_ambiental": 10,
+      "variable": "Humedad Relativa",
+      "valor_min": "40.00",
+      "valor_max": "60.00",
+      "niveles": [
+        "40.00-46.66",
+        "46.66-53.32",
+        "53.32-60.00"
+      ],
+      "es_activo": true,
+      "fecha_actualizacion": null
+    },
+    {
+      "caso": "TC-M09-49",
+      "id_umbral_ambiental": 48,
+      "id_especie": 4,
+      "especie": "Cachama Blanca",
+      "id_variable_ambiental": 2,
+      "variable": "pH del agua",
+      "valor_min": "5.60",
+      "valor_max": "8.40",
+      "niveles": [
+        "5.60-6.53",
+        "6.53-7.46",
+        "7.46-8.40"
+      ],
+      "es_activo": true,
+      "fecha_actualizacion": null
+    }
+  ],
+  "autorizacionResponsableQA": {
+    "fecha": "2026-09-25",
+    "responsable": "Juan Esteban",
+    "alcance": "Ejecutar los cuatro POST oficiales de V3 pese a la existencia previa en TEST de los umbrales 45, 47 y 48, equivalentes en variable, rango y niveles pero sobre especies distintas. La repeticion semantica del mismo caso con otro fixture es valida en una reevaluacion y no ocupa las combinaciones seleccionadas para V3.",
+    "umbralHistorico40": "id 40 (Bovino + Humedad Relativa) permanece con es_activo=false por deriva ajena del ambiente TEST. No se reactiva ni se modifica; V2 conserva como verdad historica que estaba activo durante aquella evaluacion.",
+    "aserciones38a41": "Solo verifican que los registros historicos siguen existiendo y que V3 no los modifica; no exigen su estado actual."
+  },
+  "referenciaV2": {
+    "TC-M09-46": {
+      "idUmbral": 38,
+      "especie": {
+        "id": 5,
+        "nombre": "Mojarra Plateada"
+      },
+      "variable": "Oxigeno disuelto",
+      "variableIdHistorico": 3,
+      "puntos": [
+        "8.00",
+        "9.33",
+        "10.66",
+        "12.00"
+      ],
+      "tipoEspecie": "ACUATICA"
+    },
+    "TC-M09-47": {
+      "idUmbral": 39,
+      "especie": {
+        "id": 10,
+        "nombre": "Tilapia"
+      },
+      "variable": "Temperatura del agua",
+      "variableIdHistorico": 1,
+      "puntos": [
+        "18.00",
+        "21.00",
+        "24.00",
+        "27.00"
+      ],
+      "tipoEspecie": "ACUATICA"
+    },
+    "TC-M09-48": {
+      "idUmbral": 40,
+      "especie": {
+        "id": 39,
+        "nombre": "Bovino"
+      },
+      "variable": "Humedad Relativa",
+      "variableIdHistorico": 10,
+      "puntos": [
+        "40.00",
+        "46.66",
+        "53.32",
+        "60.00"
+      ],
+      "tipoEspecie": "TERRESTRE"
+    },
+    "TC-M09-49": {
+      "idUmbral": 41,
+      "especie": {
+        "id": 3,
+        "nombre": "Camaron Blanco"
+      },
+      "variable": "pH del agua",
+      "variableIdHistorico": 2,
+      "puntos": [
+        "5.60",
+        "6.53",
+        "7.46",
+        "8.40"
+      ],
+      "tipoEspecie": "ACUATICA"
+    }
+  },
+  "diagnosticos": {
+    "TC-M09-46": {
+      "caso": "TC-M09-46",
+      "variableEsperada": "Oxigeno disuelto",
+      "variablePresente": true,
+      "variableId": 3,
+      "tipoEspecieRequerido": "ACUATICA",
+      "especiesRevisadas": [
+        {
+          "id": 41,
+          "nombre": "Ave Qa Je",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 39,
+          "nombre": "Bovino",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 40,
+          "nombre": "Bovino Qa Je",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 4,
+          "nombre": "Cachama Blanca",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 3,
+          "nombre": "Camarón Blanco",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 43,
+          "nombre": "Equina",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 42,
+          "nombre": "Equino",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 44,
+          "nombre": "Equino Test Qa",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 61,
+          "nombre": "Especie Acuatica Prueba",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 5,
+          "nombre": "Mojarra Plateada",
+          "tipoApropiado": true,
+          "esEspecieV2": true,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 10,
+          "nombre": "Tilapia",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 2,
+          "nombre": "Trucha Arcoíris",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        }
+      ],
+      "especiesAptas": [
+        "61:Especie Acuatica Prueba (libre)"
+      ],
+      "especiesAptasLibres": 1,
+      "datoAdicionalNecesario": "ninguno"
+    },
+    "TC-M09-47": {
+      "caso": "TC-M09-47",
+      "variableEsperada": "Temperatura del agua",
+      "variablePresente": true,
+      "variableId": 1,
+      "tipoEspecieRequerido": "ACUATICA",
+      "especiesRevisadas": [
+        {
+          "id": 41,
+          "nombre": "Ave Qa Je",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 39,
+          "nombre": "Bovino",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 40,
+          "nombre": "Bovino Qa Je",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 4,
+          "nombre": "Cachama Blanca",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 3,
+          "nombre": "Camarón Blanco",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 43,
+          "nombre": "Equina",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 42,
+          "nombre": "Equino",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 44,
+          "nombre": "Equino Test Qa",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 61,
+          "nombre": "Especie Acuatica Prueba",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 5,
+          "nombre": "Mojarra Plateada",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 10,
+          "nombre": "Tilapia",
+          "tipoApropiado": true,
+          "esEspecieV2": true,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 2,
+          "nombre": "Trucha Arcoíris",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        }
+      ],
+      "especiesAptas": [
+        "61:Especie Acuatica Prueba (libre)"
+      ],
+      "especiesAptasLibres": 1,
+      "datoAdicionalNecesario": "ninguno"
+    },
+    "TC-M09-48": {
+      "caso": "TC-M09-48",
+      "variableEsperada": "Humedad Relativa",
+      "variablePresente": true,
+      "variableId": 10,
+      "tipoEspecieRequerido": "TERRESTRE",
+      "especiesRevisadas": [
+        {
+          "id": 41,
+          "nombre": "Ave Qa Je",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 39,
+          "nombre": "Bovino",
+          "tipoApropiado": true,
+          "esEspecieV2": true,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 40,
+          "nombre": "Bovino Qa Je",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 4,
+          "nombre": "Cachama Blanca",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 3,
+          "nombre": "Camarón Blanco",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 43,
+          "nombre": "Equina",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 42,
+          "nombre": "Equino",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 44,
+          "nombre": "Equino Test Qa",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 61,
+          "nombre": "Especie Acuatica Prueba",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 5,
+          "nombre": "Mojarra Plateada",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 10,
+          "nombre": "Tilapia",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 2,
+          "nombre": "Trucha Arcoíris",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        }
+      ],
+      "especiesAptas": [
+        "41:Ave Qa Je (libre)",
+        "40:Bovino Qa Je (libre)",
+        "43:Equina (libre)",
+        "42:Equino (OCUPADA)",
+        "44:Equino Test Qa (libre)"
+      ],
+      "especiesAptasLibres": 4,
+      "datoAdicionalNecesario": "ninguno"
+    },
+    "TC-M09-49": {
+      "caso": "TC-M09-49",
+      "variableEsperada": "pH del agua",
+      "variablePresente": true,
+      "variableId": 2,
+      "tipoEspecieRequerido": "ACUATICA",
+      "especiesRevisadas": [
+        {
+          "id": 41,
+          "nombre": "Ave Qa Je",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 39,
+          "nombre": "Bovino",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 40,
+          "nombre": "Bovino Qa Je",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 4,
+          "nombre": "Cachama Blanca",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 3,
+          "nombre": "Camarón Blanco",
+          "tipoApropiado": true,
+          "esEspecieV2": true,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 43,
+          "nombre": "Equina",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 42,
+          "nombre": "Equino",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 44,
+          "nombre": "Equino Test Qa",
+          "tipoApropiado": false,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 61,
+          "nombre": "Especie Acuatica Prueba",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 5,
+          "nombre": "Mojarra Plateada",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        },
+        {
+          "id": 10,
+          "nombre": "Tilapia",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": false
+        },
+        {
+          "id": 2,
+          "nombre": "Trucha Arcoíris",
+          "tipoApropiado": true,
+          "esEspecieV2": false,
+          "combinacionOcupada": true
+        }
+      ],
+      "especiesAptas": [
+        "4:Cachama Blanca (OCUPADA)",
+        "5:Mojarra Plateada (OCUPADA)",
+        "10:Tilapia (libre)",
+        "2:Trucha Arcoíris (OCUPADA)"
+      ],
+      "especiesAptasLibres": 1,
+      "datoAdicionalNecesario": "ninguno"
+    }
+  },
+  "plan": {
+    "TC-M09-46": {
+      "caso": "TC-M09-46",
+      "especie": {
+        "id": 61,
+        "nombre": "Especie Acuatica Prueba",
+        "es_activo": true,
+        "esFixtureQA": true
+      },
+      "variable": {
+        "id": 3,
+        "nombre": "Oxígeno disuelto",
+        "unidad": "mg/L",
+        "catalogoActivo": true,
+        "fisicoMin": "0",
+        "fisicoMax": "20",
+        "semantica": "Configuracion base (variable activa del catalogo)",
+        "coincidePatron": true,
+        "idResueltoPorNombre": true,
+        "idHistorico": 3
+      },
+      "rangoElegido": {
+        "valor_min": "8.00",
+        "valor_max": "12.00",
+        "origen": "rango exacto de V2 (mismo criterio: intervalo interior 40%-60% del rango fisico, niveles en tercios)",
+        "efectivoMin": "0",
+        "efectivoMax": "20"
+      },
+      "equivalenciaV2": {
+        "idUmbralV2": 38,
+        "especieV2": {
+          "id": 5,
+          "nombre": "Mojarra Plateada"
+        },
+        "variableIdHistorico": 3,
+        "variableIdActual": 3,
+        "variableIdSinCambios": true,
+        "nombreVariableV2": "Oxigeno disuelto",
+        "nombreVariableActual": "Oxígeno disuelto",
+        "limiteFisicoHistorico": [
+          "0",
+          "20"
+        ],
+        "limiteFisicoActual": [
+          "0",
+          "20"
+        ],
+        "limiteFisicoSinCambios": true,
+        "puntosV2": [
+          "8.00",
+          "9.33",
+          "10.66",
+          "12.00"
+        ],
+        "puntosRecalculados": [
+          "8.00",
+          "9.33",
+          "10.66",
+          "12.00"
+        ],
+        "mismaVariable": true,
+        "mismoRango": true,
+        "mismosNiveles": true,
+        "rangoV2DentroDeLimitesActuales": true,
+        "criterio": "V3 reproduce variable, rango y niveles de V2; solo se sustituye la especie por unicidad (especie, variable)"
+      },
+      "datoModificadoRespectoV2": "solo especie",
+      "tipoEspecieEsperado": "ACUATICA",
+      "tipoEspecieCoincide": true,
+      "combinacionLibre": true,
+      "umbralesPrevios": [],
+      "payload": {
+        "id_especie": 61,
+        "id_variable_ambiental": 3,
+        "valor_min": "8.00",
+        "valor_max": "12.00",
+        "niveles": [
+          {
+            "nivel": "normal",
+            "limite_inferior": "8.00",
+            "limite_superior": "9.33"
+          },
+          {
+            "nivel": "precaucion",
+            "limite_inferior": "9.33",
+            "limite_superior": "10.66"
+          },
+          {
+            "nivel": "critico",
+            "limite_inferior": "10.66",
+            "limite_superior": "12.00"
+          }
+        ]
+      }
+    },
+    "TC-M09-47": {
+      "caso": "TC-M09-47",
+      "especie": {
+        "id": 61,
+        "nombre": "Especie Acuatica Prueba",
+        "es_activo": true,
+        "esFixtureQA": true
+      },
+      "variable": {
+        "id": 1,
+        "nombre": "Temperatura del agua",
+        "unidad": "°C",
+        "catalogoActivo": true,
+        "fisicoMin": "0",
+        "fisicoMax": "45",
+        "semantica": "Temperatura",
+        "coincidePatron": true,
+        "idResueltoPorNombre": true,
+        "idHistorico": 1
+      },
+      "rangoElegido": {
+        "valor_min": "18.00",
+        "valor_max": "27.00",
+        "origen": "rango exacto de V2 (mismo criterio: intervalo interior 40%-60% del rango fisico, niveles en tercios)",
+        "efectivoMin": "0",
+        "efectivoMax": "45"
+      },
+      "equivalenciaV2": {
+        "idUmbralV2": 39,
+        "especieV2": {
+          "id": 10,
+          "nombre": "Tilapia"
+        },
+        "variableIdHistorico": 1,
+        "variableIdActual": 1,
+        "variableIdSinCambios": true,
+        "nombreVariableV2": "Temperatura del agua",
+        "nombreVariableActual": "Temperatura del agua",
+        "limiteFisicoHistorico": [
+          "0",
+          "45"
+        ],
+        "limiteFisicoActual": [
+          "0",
+          "45"
+        ],
+        "limiteFisicoSinCambios": true,
+        "puntosV2": [
+          "18.00",
+          "21.00",
+          "24.00",
+          "27.00"
+        ],
+        "puntosRecalculados": [
+          "18.00",
+          "21.00",
+          "24.00",
+          "27.00"
+        ],
+        "mismaVariable": true,
+        "mismoRango": true,
+        "mismosNiveles": true,
+        "rangoV2DentroDeLimitesActuales": true,
+        "criterio": "V3 reproduce variable, rango y niveles de V2; solo se sustituye la especie por unicidad (especie, variable)"
+      },
+      "datoModificadoRespectoV2": "solo especie",
+      "tipoEspecieEsperado": "ACUATICA",
+      "tipoEspecieCoincide": true,
+      "combinacionLibre": true,
+      "umbralesPrevios": [],
+      "payload": {
+        "id_especie": 61,
+        "id_variable_ambiental": 1,
+        "valor_min": "18.00",
+        "valor_max": "27.00",
+        "niveles": [
+          {
+            "nivel": "normal",
+            "limite_inferior": "18.00",
+            "limite_superior": "21.00"
+          },
+          {
+            "nivel": "precaucion",
+            "limite_inferior": "21.00",
+            "limite_superior": "24.00"
+          },
+          {
+            "nivel": "critico",
+            "limite_inferior": "24.00",
+            "limite_superior": "27.00"
+          }
+        ]
+      }
+    },
+    "TC-M09-48": {
+      "caso": "TC-M09-48",
+      "especie": {
+        "id": 43,
+        "nombre": "Equina",
+        "es_activo": true,
+        "esFixtureQA": false
+      },
+      "variable": {
+        "id": 10,
+        "nombre": "Humedad Relativa",
+        "unidad": "%",
+        "catalogoActivo": true,
+        "fisicoMin": "0",
+        "fisicoMax": "100",
+        "semantica": "Humedad",
+        "coincidePatron": true,
+        "idResueltoPorNombre": true,
+        "idHistorico": 10
+      },
+      "rangoElegido": {
+        "valor_min": "40.00",
+        "valor_max": "60.00",
+        "origen": "rango exacto de V2 (mismo criterio: intervalo interior 40%-60% del rango fisico, niveles en tercios)",
+        "efectivoMin": "0",
+        "efectivoMax": "100"
+      },
+      "equivalenciaV2": {
+        "idUmbralV2": 40,
+        "especieV2": {
+          "id": 39,
+          "nombre": "Bovino"
+        },
+        "variableIdHistorico": 10,
+        "variableIdActual": 10,
+        "variableIdSinCambios": true,
+        "nombreVariableV2": "Humedad Relativa",
+        "nombreVariableActual": "Humedad Relativa",
+        "limiteFisicoHistorico": [
+          "0",
+          "100"
+        ],
+        "limiteFisicoActual": [
+          "0",
+          "100"
+        ],
+        "limiteFisicoSinCambios": true,
+        "puntosV2": [
+          "40.00",
+          "46.66",
+          "53.32",
+          "60.00"
+        ],
+        "puntosRecalculados": [
+          "40.00",
+          "46.66",
+          "53.32",
+          "60.00"
+        ],
+        "mismaVariable": true,
+        "mismoRango": true,
+        "mismosNiveles": true,
+        "rangoV2DentroDeLimitesActuales": true,
+        "criterio": "V3 reproduce variable, rango y niveles de V2; solo se sustituye la especie por unicidad (especie, variable)"
+      },
+      "datoModificadoRespectoV2": "solo especie",
+      "tipoEspecieEsperado": "TERRESTRE",
+      "tipoEspecieCoincide": true,
+      "combinacionLibre": true,
+      "umbralesPrevios": [],
+      "payload": {
+        "id_especie": 43,
+        "id_variable_ambiental": 10,
+        "valor_min": "40.00",
+        "valor_max": "60.00",
+        "niveles": [
+          {
+            "nivel": "normal",
+            "limite_inferior": "40.00",
+            "limite_superior": "46.66"
+          },
+          {
+            "nivel": "precaucion",
+            "limite_inferior": "46.66",
+            "limite_superior": "53.32"
+          },
+          {
+            "nivel": "critico",
+            "limite_inferior": "53.32",
+            "limite_superior": "60.00"
+          }
+        ]
+      }
+    },
+    "TC-M09-49": {
+      "caso": "TC-M09-49",
+      "especie": {
+        "id": 10,
+        "nombre": "Tilapia",
+        "es_activo": true,
+        "esFixtureQA": false
+      },
+      "variable": {
+        "id": 2,
+        "nombre": "pH del agua",
+        "unidad": "pH",
+        "catalogoActivo": true,
+        "fisicoMin": "0",
+        "fisicoMax": "14",
+        "semantica": "pH",
+        "coincidePatron": true,
+        "idResueltoPorNombre": true,
+        "idHistorico": 2
+      },
+      "rangoElegido": {
+        "valor_min": "5.60",
+        "valor_max": "8.40",
+        "origen": "rango exacto de V2 (mismo criterio: intervalo interior 40%-60% del rango fisico, niveles en tercios)",
+        "efectivoMin": "0",
+        "efectivoMax": "14"
+      },
+      "equivalenciaV2": {
+        "idUmbralV2": 41,
+        "especieV2": {
+          "id": 3,
+          "nombre": "Camaron Blanco"
+        },
+        "variableIdHistorico": 2,
+        "variableIdActual": 2,
+        "variableIdSinCambios": true,
+        "nombreVariableV2": "pH del agua",
+        "nombreVariableActual": "pH del agua",
+        "limiteFisicoHistorico": [
+          "0",
+          "14"
+        ],
+        "limiteFisicoActual": [
+          "0",
+          "14"
+        ],
+        "limiteFisicoSinCambios": true,
+        "puntosV2": [
+          "5.60",
+          "6.53",
+          "7.46",
+          "8.40"
+        ],
+        "puntosRecalculados": [
+          "5.60",
+          "6.53",
+          "7.46",
+          "8.40"
+        ],
+        "mismaVariable": true,
+        "mismoRango": true,
+        "mismosNiveles": true,
+        "rangoV2DentroDeLimitesActuales": true,
+        "criterio": "V3 reproduce variable, rango y niveles de V2; solo se sustituye la especie por unicidad (especie, variable)"
+      },
+      "datoModificadoRespectoV2": "solo especie",
+      "tipoEspecieEsperado": "ACUATICA",
+      "tipoEspecieCoincide": true,
+      "combinacionLibre": true,
+      "umbralesPrevios": [
+        {
+          "id": 39,
+          "id_variable_ambiental": 1
+        },
+        {
+          "id": 45,
+          "id_variable_ambiental": 3
+        }
+      ],
+      "payload": {
+        "id_especie": 10,
+        "id_variable_ambiental": 2,
+        "valor_min": "5.60",
+        "valor_max": "8.40",
+        "niveles": [
+          {
+            "nivel": "normal",
+            "limite_inferior": "5.60",
+            "limite_superior": "6.53"
+          },
+          {
+            "nivel": "precaucion",
+            "limite_inferior": "6.53",
+            "limite_superior": "7.46"
+          },
+          {
+            "nivel": "critico",
+            "limite_inferior": "7.46",
+            "limite_superior": "8.40"
+          }
+        ]
+      }
+    }
+  },
+  "checklist": {
+    "ramaCorrecta": true,
+    "v1Intacta": true,
+    "v2Intacta": true,
+    "evaluacionV3Aislada": true,
+    "actorMismoQueV2": true,
+    "cuentaActiva": true,
+    "permisosRF17Presentes": true,
+    "testAccesible": true,
+    "contratoConocido": true,
+    "contrato201Vigente": true,
+    "especiesActivasDescubiertas": true,
+    "variablesDescubiertas": true,
+    "variablesV2LocalizadasPorNombre": true,
+    "limitesFisicosConocidos": true,
+    "configuracionesExistentesConocidas": true,
+    "datosV2Presentes": true,
+    "fixture61Presente": true,
+    "fixture61Activo": true,
+    "fixture61NombreCorrecto": true,
+    "fixture61OxigenoLibre": true,
+    "fixture61TemperaturaAguaLibre": true,
+    "sinEscriturasPreviasEnLasCombinacionesDeV3": true,
+    "mismaVariableQueV2": true,
+    "mismoRangoQueV2": true,
+    "rangoV2DentroDeLimitesActuales": true,
+    "limitesFisicosSinCambiosRespectoV2": true,
+    "soloEspecieModificada": true,
+    "especiesDistintasDeLasDeV2": true,
+    "tipoDeEspecieCoherenteConV2": true,
+    "tc46y47UsanElFixture61": true,
+    "planCuatroCasosCompleto": true,
+    "nivelesValidosCalculados": true,
+    "sinDestruccionDeDatos": true
+  },
+  "postEjecutados": 0
+}

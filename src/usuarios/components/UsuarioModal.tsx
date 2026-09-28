@@ -1,13 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { Badge } from '../../shared/design-system/Badge';
 import { useUsuarioDetalle } from '../hooks/useUsuarioDetalle';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { mascararId } from '../../shared/lib/mascararId';
+import { varianteRol, varianteEstado } from '../../shared/lib/varianteBadge';
+import { fincasApi } from '../../configuration/api/fincasApi';
+import { rolesApi } from '../../roles/api/rolesApi';
+import type { FincaResponse } from '../../configuration/types';
 import type { EditarPerfilAdminDTO } from '../types';
 
 interface Props {
@@ -19,47 +26,29 @@ interface Props {
 
 const NAME_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 
-function mascararId(valor: string): string {
-  return valor.length > 4 ? '••••' + valor.slice(-4) : valor;
-}
-
-const SELECT_STYLE: React.CSSProperties = {
-  width: '100%',
-  height: 40,
-  padding: '0 var(--s3)',
-  borderRadius: 'var(--r-md)',
-  border: '1.5px solid var(--surface-border)',
-  background: 'var(--surface-card)',
-  color: 'var(--text-primary)',
-  fontSize: '13px',
-  cursor: 'pointer',
-};
-
-const LABEL_STYLE: React.CSSProperties = {
-  display: 'block',
-  fontSize: '13px',
-  fontWeight: 600,
-  color: 'var(--text-primary)',
-  marginBottom: 'var(--s1)',
-};
-
-const ROL_OPTIONS = [
-  { value: 1, label: 'Administrador' },
-  { value: 2, label: 'Productor' },
-  { value: 3, label: 'Veterinario' },
-  { value: 4, label: 'Contador' },
-  { value: 5, label: 'Ingeniero Agrónomo' },
-];
-
 export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props) {
   const { t } = useT('usuarios');
-  const { detalle, loading, saving, error, saveError, cargar, editar } = useUsuarioDetalle();
+  const panelRef = useModalA11y(onClose);
+  const { detalle, loading, saving, error, saveError, cargar, editar, asignarFincas } = useUsuarioDetalle();
+
+  const [fincas, setFincas] = useState<FincaResponse[]>([]);
+  const [fincasLoading, setFincasLoading] = useState(false);
+  const [idsFincas, setIdsFincas] = useState<Set<number>>(new Set());
+  const [rolOptions, setRolOptions] = useState<{ value: number; label: string }[]>([]);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EditarPerfilAdminDTO>({ mode: 'onBlur' });
 
   useEffect(() => {
     cargar(idUsuario);
   }, [idUsuario, cargar]);
+
+  useEffect(() => {
+    if (!puedeEditar) return;
+    rolesApi
+      .listar()
+      .then((roles) => setRolOptions(roles.map((r) => ({ value: r.id_rol, label: r.nombre_rol }))))
+      .catch(() => setRolOptions([]));
+  }, [puedeEditar]);
 
   useEffect(() => {
     if (detalle) {
@@ -72,13 +61,40 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
         version: detalle.version,
         id_rol: detalle.id_rol,
       });
+      setIdsFincas(new Set((detalle.fincas ?? []).map((f) => f.id_finca)));
     }
   }, [detalle, reset]);
+
+  useEffect(() => {
+    if (!puedeEditar) return;
+    setFincasLoading(true);
+    fincasApi
+      .listar()
+      .then((raw) => {
+        const data: FincaResponse[] = Array.isArray(raw) ? raw : (raw as unknown as { items?: FincaResponse[] })?.items ?? [];
+        setFincas(data);
+      })
+      .catch(() => setFincas([]))
+      .finally(() => setFincasLoading(false));
+  }, [puedeEditar]);
 
   const onSubmit = async (data: EditarPerfilAdminDTO) => {
     if (!detalle) return;
     const ok = await editar(idUsuario, { ...data, version: detalle.version });
-    if (ok) onSaved();
+    if (!ok) return;
+    const okFincas = await asignarFincas(idUsuario, { ids_fincas: Array.from(idsFincas) });
+    if (okFincas) onSaved();
+  };
+
+  // INC-M02-61-G52 (#97): el acceso a fincas es M:N. Una finca con otro dueño
+  // también se asigna: el Veterinario atiende fincas que no son suyas.
+  const toggleFinca = (id: number) => {
+    setIdsFincas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   return (
@@ -95,6 +111,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
+        ref={panelRef}
         style={{
           background: 'var(--surface-card)',
           borderRadius: 'var(--r-xl)',
@@ -108,7 +125,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
-          <h2 id="usuario-modal-title" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{t('usuariomodal.detalle_de_usuario')}</h2>
+          <h2 id="usuario-modal-title" style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{t('usuariomodal.detalle_de_usuario')}</h2>
           <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('usuariomodal.cerrar')}>
             <X size={18} aria-hidden />
           </Button>
@@ -133,21 +150,21 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
         {detalle && !loading && (
           <>
             <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
-              <Badge variant={detalle.nombre_rol.toLowerCase() as any}>{detalle.nombre_rol}</Badge>
-              <Badge variant={detalle.estado_cuenta.toLowerCase() as any}>{detalle.estado_cuenta}</Badge>
+              <Badge variant={varianteRol(detalle.nombre_rol)}>{detalle.nombre_rol}</Badge>
+              <Badge variant={varianteEstado(detalle.estado_cuenta)}>{detalle.estado_cuenta}</Badge>
             </div>
 
             {puedeEditar ? (
               <form onSubmit={handleSubmit(onSubmit)} noValidate>
                 <input type="hidden" {...register('version')} />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
+                <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
                   <div>
                     <Input
                       label={t('usuariomodal.nombres')}
                       required
                       error={errors.nombre?.message}
                       {...register('nombre', {
-                        required: 'Obligatorio.',
+                        required: t('validacion.requerido', { ns: 'common' }),
                         pattern: { value: NAME_REGEX, message: t('usuariomodal.solo_letras_y_espacios') },
                       })}
                     />
@@ -158,7 +175,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                       required
                       error={errors.apellidos?.message}
                       {...register('apellidos', {
-                        required: 'Obligatorio.',
+                        required: t('validacion.requerido', { ns: 'common' }),
                         pattern: { value: NAME_REGEX, message: t('usuariomodal.solo_letras_y_espacios') },
                       })}
                     />
@@ -177,7 +194,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                     <Input
                       label={t('usuariomodal.telefono')}
                       type="tel"
-                      hint="Opcional, 7-15 dígitos"
+                      hint={t('validacion.telefono_opcional', { ns: 'common' })}
                       error={errors.telefono?.message}
                       {...register('telefono', {
                         pattern: { value: /^[0-9]{7,15}$/, message: t('usuariomodal.solo_numeros_7_15_digitos') },
@@ -188,12 +205,49 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                     <Input label={t('usuariomodal.direccion')} {...register('direccion')} />
                   </div>
                   <div>
-                    <label style={LABEL_STYLE}>{t('usuariomodal.rol')}</label>
-                    <select style={SELECT_STYLE} {...register('id_rol', { valueAsNumber: true })}>
-                      {ROL_OPTIONS.map((o) => (
+                    <Select label={t('usuariomodal.rol')} {...register('id_rol', { valueAsNumber: true })}>
+                      {rolOptions.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
-                    </select>
+                    </Select>
+                  </div>
+                </div>
+                <div style={{ marginBottom: 'var(--s4)' }}>
+                  <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {t('usuariomodal.fincas_asignadas')}
+                  </p>
+                  {fincasLoading && (
+                    <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-muted)' }}>{t('usuariomodal.cargando_fincas')}</p>
+                  )}
+                  {!fincasLoading && fincas.length === 0 && (
+                    <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-muted)' }}>{t('usuariomodal.sin_fincas')}</p>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
+                    {fincas.map((f) => {
+                      const checked = idsFincas.has(f.id_finca);
+                      return (
+                        <label
+                          key={f.id_finca}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--s3)',
+                            padding: 'var(--s2) var(--s3)',
+                            borderRadius: 'var(--r-md)',
+                            border: `1px solid ${checked ? 'var(--brand-400)' : 'var(--surface-border)'}`,
+                            background: checked ? 'var(--brand-50)' : 'var(--surface-card)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleFinca(f.id_finca)}
+                          />
+                          <span style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-primary)' }}>{f.nombre}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
@@ -202,20 +256,20 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                 </div>
               </form>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s3)' }}>
+              <div className="ds-fg2" style={{ gap: 'var(--s3)' }}>
                 {[
-                  ['Nombres', detalle.nombre],
-                  ['Apellidos', detalle.apellidos],
-                  ['Correo', detalle.correo_electronico],
-                  ['Identificación', `${detalle.tipo_identificacion}: ${mascararId(detalle.numero_identificacion)}`],
-                  ['Fecha de nacimiento', detalle.fecha_nacimiento],
-                  ['Fecha de registro', formatearFecha(detalle.fecha_registro)],
-                  ['Teléfono', detalle.telefono ?? '—'],
-                  ['Dirección', detalle.direccion ?? '—'],
+                  [t('usuariomodal.nombres'), detalle.nombre],
+                  [t('usuariomodal.apellidos'), detalle.apellidos],
+                  [t('usuariomodal.correo_electronico'), detalle.correo_electronico],
+                  [t('usuariomodal.identificacion'), `${detalle.tipo_identificacion}: ${mascararId(detalle.numero_identificacion)}`],
+                  [t('usuariomodal.fecha_de_nacimiento'), detalle.fecha_nacimiento],
+                  [t('usuariomodal.fecha_de_registro'), formatearFecha(detalle.fecha_registro)],
+                  [t('usuariomodal.telefono'), detalle.telefono ?? '—'],
+                  [t('usuariomodal.direccion'), detalle.direccion ?? '—'],
                 ].map(([label, value]) => (
                   <div key={label}>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 2 }}>{label}</p>
-                    <p style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 500 }}>{value}</p>
+                    <p style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)', marginBottom: 2 }}>{label}</p>
+                    <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-primary)', fontWeight: 500 }}>{value}</p>
                   </div>
                 ))}
                 <div style={{ gridColumn: 'span 2', textAlign: 'right' }}>

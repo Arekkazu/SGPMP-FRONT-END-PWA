@@ -14,8 +14,7 @@ export function usePatologias() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await patologiasApi.listar(idEspecie, soloActivas);
-      const data: PatologiaEspecieItemResponse[] = Array.isArray(raw) ? raw : (raw as any)?.items ?? [];
+      const data = await patologiasApi.listar(idEspecie, soloActivas);
       setPatologias(data);
     } catch (e) {
       setError(e as ApiError);

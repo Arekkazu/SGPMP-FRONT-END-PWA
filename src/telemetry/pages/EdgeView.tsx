@@ -26,7 +26,7 @@ export function EdgeView() {
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('edgeview.rf_55_procesamiento_edge')}</p>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         <DatosSimuladosBanner />
 
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>

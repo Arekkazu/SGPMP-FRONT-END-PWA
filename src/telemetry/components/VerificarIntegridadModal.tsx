@@ -43,7 +43,7 @@ export function VerificarIntegridadModal({ verificando, verificacion, verificarE
     >
       <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('verificarintegridadmodal.verifica_la_cadena_hash_sha_256_deja_las')}</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
+      <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
         <div>
           <label style={LABEL} htmlFor="vi-desde">{t('verificarintegridadmodal.desde')}</label>
           <input id="vi-desde" type="date" style={INPUT} value={desde} onChange={(e) => setDesde(e.target.value)} />

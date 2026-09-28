@@ -1,0 +1,113 @@
+{
+  "actor": {
+    "id_usuario": 104,
+    "correo_electronico": "administador.dev@gmail.com",
+    "nombre_rol": "Administrador",
+    "estado_cuenta": "Activo",
+    "permisos_recurso_20": [
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "db": {
+    "session": [
+      {
+        "read_only": "on",
+        "database": "sgpmp_test"
+      }
+    ],
+    "show_transaction_read_only": [
+      {
+        "transaction_read_only": "on"
+      }
+    ],
+    "columns": [
+      {
+        "column_name": "valor_max",
+        "data_type": "numeric",
+        "numeric_precision": 5,
+        "numeric_scale": 2
+      },
+      {
+        "column_name": "valor_min",
+        "data_type": "numeric",
+        "numeric_precision": 5,
+        "numeric_scale": 2
+      }
+    ],
+    "tipo_observado": {
+      "valor_max": "numeric(5,2)",
+      "valor_min": "numeric(5,2)"
+    },
+    "tipo_observado_v2": "numeric(8,2)"
+  },
+  "discovery": {
+    "especie": {
+      "id": 44,
+      "nombre": "Equino Test Qa",
+      "es_activo": true,
+      "es_fixture_qa": true
+    },
+    "variable": {
+      "id": 1,
+      "nombre": "Temperatura del agua",
+      "unidad": "°C",
+      "fisico_min": "0",
+      "fisico_max": "45",
+      "id_historico_v2": 1,
+      "id_sin_cambios": true,
+      "limite_historico_v2": [
+        "0.00",
+        "45.00"
+      ],
+      "limite_sin_cambios": true
+    },
+    "existing_ids": [],
+    "free_pair": true,
+    "especies_revisadas": [
+      {
+        "id": 40,
+        "nombre": "Bovino Qa Je",
+        "combinacion_ocupada": true,
+        "es_fixture_qa": true
+      },
+      {
+        "id": 41,
+        "nombre": "Ave Qa Je",
+        "combinacion_ocupada": true,
+        "es_fixture_qa": true
+      },
+      {
+        "id": 44,
+        "nombre": "Equino Test Qa",
+        "combinacion_ocupada": false,
+        "es_fixture_qa": true
+      }
+    ],
+    "payload": {
+      "id_especie": 44,
+      "id_variable_ambiental": 1,
+      "valor_min": "35.57",
+      "valor_max": "39.23",
+      "niveles": [
+        {
+          "nivel": "normal",
+          "limite_inferior": "35.57",
+          "limite_superior": "37.00"
+        },
+        {
+          "nivel": "precaucion",
+          "limite_inferior": "37.00",
+          "limite_superior": "38.00"
+        },
+        {
+          "nivel": "critico",
+          "limite_inferior": "38.00",
+          "limite_superior": "39.23"
+        }
+      ]
+    }
+  }
+}
