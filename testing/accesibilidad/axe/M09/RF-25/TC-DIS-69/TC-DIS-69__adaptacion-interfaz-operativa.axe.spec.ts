@@ -1,5 +1,6 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { guardarResultadoAxe } from '../../../_shared/axeReport';
 import fs from 'fs';
 import path from 'path';
 
@@ -63,18 +64,21 @@ import path from 'path';
  *   esos 2 estados quedan como `test.skip` abajo hasta tener esa respuesta.
  */
 
-const ADMIN_EMAIL = 'adminplaywright@gmail.com';
-const ADMIN_PASSWORD = 'pruebasadmin123#';
+const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
+const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 async function loginComoAdmin(page: Page) {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    throw new Error('Faltan TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD en testing/.env.test');
+  }
   await page.goto('/login');
   await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
   await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar' }).click();
-  await page.waitForURL(/dashboard/);
-  // el JWT vive SOLO en memoria, nunca en localStorage — el login ya deja al
-  // usuario en /dashboard, que es justo la ruta que este caso necesita
-  // evaluar, así que no hace falta navegar más.
+  await page.waitForURL(/dashboard/, { timeout: 90_000 });
+  // Mitigación del reporte de Sara (hallazgo 2): navegar inmediatamente tras el
+  // login invalidaba la sesión bajo automatización.
+  await page.waitForLoadState('networkidle');
 }
 
 function guardarResultados(nombre: string, contenido: unknown) {
@@ -84,7 +88,7 @@ function guardarResultados(nombre: string, contenido: unknown) {
 }
 
 test.describe('TC-DIS-69 — RF-25: Adaptación de Interfaz Operativa (accesibilidad)', () => {
-  test('Administrador (sin finca vinculada) ve la bienvenida de "sin finca", sin violaciones', async ({ page }) => {
+  test('Administrador (sin finca vinculada) ve la bienvenida de "sin finca", sin violaciones', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
 
     // El Administrador siempre tiene id_finca = null → este estado es
@@ -96,6 +100,7 @@ test.describe('TC-DIS-69 — RF-25: Adaptación de Interfaz Operativa (accesibil
     await expect(page.getByRole('link', { name: 'Ir a mi perfil' })).toBeVisible();
 
     const results = await new AxeBuilder({ page }).analyze();
+    guardarResultadoAxe('TC-DIS-69', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
     guardarResultados('axe-TC-DIS-69-administrador.json', results);
 
     expect(results.violations).toEqual([]);
@@ -103,13 +108,13 @@ test.describe('TC-DIS-69 — RF-25: Adaptación de Interfaz Operativa (accesibil
 
   // TODO: requiere una cuenta de prueba con finca vinculada pero sin especies
   // configuradas. Sin credenciales confirmadas todavía — ver TODO de cabecera.
-  test.skip('rol con finca sin especies ve el estado vacío "Finca sin configuración", sin violaciones', async ({ page }) => {
+  test.skip('rol con finca sin especies ve el estado vacío "Finca sin configuración", sin violaciones', async ({ page }, testInfo) => {
     // Pendiente: credenciales de la cuenta + confirmar nombre del rol.
   });
 
   // TODO: requiere una cuenta de prueba con finca y especies configuradas
   // (dashboard operativo normal, sin ninguno de los dos estados alternos).
-  test.skip('rol con finca y especies configuradas ve el dashboard operativo normal, sin violaciones', async ({ page }) => {
+  test.skip('rol con finca y especies configuradas ve el dashboard operativo normal, sin violaciones', async ({ page }, testInfo) => {
     // Pendiente: credenciales de la cuenta + confirmar nombre del rol.
   });
 });
