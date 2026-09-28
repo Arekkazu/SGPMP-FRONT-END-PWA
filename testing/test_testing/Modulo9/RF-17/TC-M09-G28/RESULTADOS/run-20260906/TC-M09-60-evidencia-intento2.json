@@ -1,0 +1,63 @@
+{
+  "grupo": "TC-M09-G28",
+  "rf": "RF-17",
+  "cu": "CU-03",
+  "rol": "Administrador",
+  "rama": "qa/juan-esteban-m09",
+  "frontendSHA": "966621df4e2c6a1f2c9233ea5ebefbb9e3bc2f56",
+  "backendSHA": "adc3932b9f0293a76ebec7e89ed877274791b6a1",
+  "base": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "fecha": "2026-09-06T01:02:16.493080+00:00",
+  "caso": "TC-M09-60",
+  "intento": 2,
+  "metodo": "POST",
+  "endpoint": "/configuracion/umbrales",
+  "especie": {
+    "id": 10,
+    "nombre": "Tilapia",
+    "es_activo": true
+  },
+  "variable": {
+    "id": 1,
+    "nombre": "Temperatura del agua",
+    "unidad": "°C",
+    "fisicoMin": "0.00",
+    "fisicoMax": "45.00"
+  },
+  "combinacionLibrePrevia": true,
+  "umbralesPrevios": [],
+  "valorMinEnviado": "35.50",
+  "valorMaxEnviado": "39.20",
+  "payloadEnviado": {
+    "id_especie": 10,
+    "id_variable_ambiental": 1,
+    "valor_min": "35.50",
+    "valor_max": "39.20",
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "35.50",
+        "limite_superior": "37.00"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "37.00",
+        "limite_superior": "38.00"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "38.00",
+        "limite_superior": "39.20"
+      }
+    ]
+  },
+  "status": 500,
+  "errorCode": "ERROR_INTERNO",
+  "respuesta": {
+    "error_code": "ERROR_INTERNO",
+    "message": "Error inesperado en base de datos",
+    "fields": [],
+    "timestamp": "2026-09-06T01:02:16.438291+00:00"
+  },
+  "idCreado": null
+}

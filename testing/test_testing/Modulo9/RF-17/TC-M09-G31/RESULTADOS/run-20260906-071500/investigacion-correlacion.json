@@ -1,0 +1,64 @@
+{
+  "grupo": "TC-M09-G31",
+  "fecha": "2026-09-06",
+  "metodo": "Solo API GET y revisión estática de contrato/código; no se ejecutó ingesta de telemetría.",
+  "autenticacion_administrador": "HTTP 200",
+  "configuracion_rf17": {
+    "estado": "disponible",
+    "configuraciones_activas_y_completas": 10,
+    "especies_con_configuracion": [
+      "Cachama Blanca",
+      "Camarón Blanco",
+      "Mojarra Plateada",
+      "Trucha Arcoíris"
+    ]
+  },
+  "dashboard": {
+    "http": 200,
+    "sensores_total": 5,
+    "estados": [
+      { "id_sensor": 1, "estado": "GRIS", "dato_desactualizado": true },
+      { "id_sensor": 2, "estado": "GRIS", "dato_desactualizado": true },
+      { "id_sensor": 3, "estado": "GRIS", "dato_desactualizado": true },
+      { "id_sensor": 4, "estado": "GRIS", "dato_desactualizado": true },
+      { "id_sensor": 5, "estado": "GRIS", "dato_desactualizado": false }
+    ]
+  },
+  "estado_actual_dispositivos_y_sensores": {
+    "dispositivos_activos": 50,
+    "sensores_historicos_verificados_activos": [
+      { "id_sensor": 1, "id_dispositivo": 1, "id_infraestructura": 1 },
+      { "id_sensor": 2, "id_dispositivo": 1, "id_infraestructura": 1 },
+      { "id_sensor": 3, "id_dispositivo": 1, "id_infraestructura": 1 },
+      { "id_sensor": 4, "id_dispositivo": 2, "id_infraestructura": 1 },
+      { "id_sensor": 5, "id_dispositivo": 2, "id_infraestructura": 1 },
+      { "id_sensor": 7, "id_dispositivo": 3, "id_infraestructura": 1 }
+    ]
+  },
+  "historial_api": {
+    "periodos_consultados": [
+      { "inicio": "2024-05-01", "fin": "2024-07-30", "http": 200, "total": 5 },
+      { "inicio": "2026-04-01", "fin": "2026-06-30", "http": 200, "total": 5 },
+      { "inicio": "2026-07-01", "fin": "2026-09-06", "http": 200, "total": 5 }
+    ],
+    "unica_relacion_con_especie_obtenida": {
+      "id_sensor": 1,
+      "id_variable": 1,
+      "especie": "Tilapia Roja",
+      "observacion": "Tilapia Roja no está entre las especies con configuración activa RF-17 descubierta. La relación es histórica, no prueba una asociación vigente."
+    },
+    "otras_lecturas": "Las demás lecturas de sensores activos no devuelven especie o activo biológico; no permiten formar una combinación actual válida."
+  },
+  "limites_de_los_canales": [
+    "GET /configuracion/dispositivos-iot/{id}/sensores no expone la variable ambiental del sensor.",
+    "GET /iot/vinculaciones no expone id_sensor.",
+    "GET /iot/calidad/{id_telemetria} para las lecturas históricas 31 a 35 devolvió HTTP 404, por lo que no aporta una correlación alternativa.",
+    "El contrato fuente expone POST para asociar sensor a activo, pero no un GET de la asociación vigente.",
+    "No existe en el espacio de trabajo una configuración de conexión remota a TEST para realizar la consulta de base de datos solicitada en modo solo lectura. No se abrió conexión ni se emitió SQL."
+  ],
+  "conclusion": {
+    "combinacion_actual_especie_activo_sensor_variable_demostrada": false,
+    "post_iot_telemetria_ejecutado": false,
+    "motivo": "Enviar una lectura asignando por conjetura la especie, la variable o la asociación violaría el aislamiento funcional de TC-M09-66, TC-M09-67 y TC-M09-68."
+  }
+}

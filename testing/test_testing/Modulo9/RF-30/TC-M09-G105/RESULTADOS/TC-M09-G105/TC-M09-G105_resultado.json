@@ -1,0 +1,39 @@
+{
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.77",
+  "fecha": "2026-09-05T06:40:09.344Z",
+  "checkpoints": [
+    {
+      "paso": "TC-M09-201: abrir el flujo de creacion desde el boton \"Nueva plantilla\"",
+      "esperado": "Debe abrirse el dialogo de creacion de plantilla (PlantillaModal) con su titulo correspondiente",
+      "obtenido": "Se abrio un dialogo (role=\"dialog\", aria-modal=\"true\") con el titulo \"Nueva Plantilla de Configuración\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-201: conservar el contexto del modulo Configuracion al abrir el flujo",
+      "esperado": "La ruta debe seguir siendo /configuracion (el flujo se abre como superposicion, no como navegacion)",
+      "obtenido": "La ruta se mantuvo en /configuracion mientras el dialogo de creacion estaba abierto",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-202: abrir el flujo de aplicacion desde el boton \"Aplicar plantilla\" de una tarjeta",
+      "esperado": "Debe abrirse el asistente de aplicacion (AplicarPlantillaWizard) para \"Plantilla estándar camarón\", iniciando en el paso \"Seleccionar especie\"",
+      "obtenido": "Se abrio un dialogo (role=\"dialog\", aria-modal=\"true\") titulado \"Aplicar Plantilla\" mostrando \"Plantilla estándar camarón\" y el paso \"Seleccionar especie\" activo",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-202: conservar el contexto del modulo Configuracion al abrir el flujo",
+      "esperado": "La ruta debe seguir siendo /configuracion (el asistente se abre como superposicion, no como navegacion)",
+      "obtenido": "La ruta se mantuvo en /configuracion mientras el asistente de aplicacion estaba abierto",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-201/202: un usuario sin permisos sobre plantillas no ve la pestana \"Plantillas\"",
+      "esperado": "La pestana \"Plantillas\" no debe aparecer en la barra de navegacion de Configuracion para un rol sin permisos sobre el recurso",
+      "obtenido": "La pestana \"Plantillas\" no esta presente en la barra de navegacion; el usuario no tiene forma de llegar a los flujos de creacion ni de aplicacion",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES"
+}

@@ -1,0 +1,115 @@
+{
+  "info": {
+    "name": "TC-M09-G31 REEVALUACION V3 — TC-M09-66/67/68 clasificacion semaforica con umbrales RF-17",
+    "description": "Precondiciones (actor, configuracion RF-17 con tres niveles, vinculacion RF-61 de cada lectura) y oraculo por caso: la medicion ingerida debe clasificarse NORMAL->VERDE, PRECAUCION->AMARILLO, CRITICO->ROJO en dashboard e historial de Monitoreo, contra el umbral RF-17 vigente. Mismas assertions funcionales que V2; V3 agrega el oraculo por medicion, que en V2 no se pudo ejecutar.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Actor",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/usuarios/me" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const b=pm.response.json();",
+        "pm.test('Precondicion: /usuarios/me 200',()=>pm.response.to.have.status(200));",
+        "pm.test('Precondicion: actor autorizado y activo',()=>{pm.expect(['Administrador','Ingeniero de Campo','Veterinario']).to.include(b.nombre_rol);pm.expect(b.estado_cuenta).to.eql('Activo');});"
+      ] } }]
+    },
+    {
+      "name": "THRESHOLD_CONFIG",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/configuracion/umbrales?id_especie={{id_especie}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const b=pm.response.json(); const id=Number(pm.environment.get('id_umbral')); const num=x=>Number(x);",
+        "pm.test('Precondicion: GET RF-17 200',()=>pm.response.to.have.status(200));",
+        "const u=b.items.find(x=>x.id_umbral_ambiental===id);",
+        "pm.test('Precondicion: configuracion activa con normal/precaucion/critico',()=>{pm.expect(u).to.not.be.undefined;pm.expect(u.es_activo).to.eql(true);pm.expect(u.niveles.map(n=>n.nivel).sort()).to.eql(['critico','normal','precaucion']);});",
+        "pm.test('Precondicion: niveles sin solapamiento y cada uno con amplitud positiva',()=>{const o=[...u.niveles].sort((a,c)=>num(a.limite_inferior)-num(c.limite_inferior));o.forEach(n=>pm.expect(num(n.limite_inferior)).to.be.below(num(n.limite_superior)));for(let i=0;i<o.length-1;i++)pm.expect(num(o[i].limite_superior)).to.be.at.most(num(o[i+1].limite_inferior));});"
+      ] } }]
+    },
+
+    {
+      "name": "TC-M09-66 precondicion vinculacion RF-61",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/iot/vinculaciones?id_telemetria={{tc66_id_telemetria}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('TC-M09-66 precondicion: GET vinculaciones 200',()=>pm.response.to.have.status(200));",
+        "const b=pm.response.json();",
+        "pm.test('TC-M09-66 precondicion: la lectura ingerida tiene fila de vinculacion RF-61',()=>pm.expect(b.total,'filas de vinculacion para la lectura').to.be.above(0));",
+        "pm.test('TC-M09-66 precondicion: la vinculacion vigente resuelve un activo biologico',()=>{const v=(b.items||[]).filter(x=>x.estado_vinculacion!=='CORREGIDA');pm.expect(v.length,'vinculacion vigente').to.be.above(0);pm.expect(v[0].id_activo_biologico,'id_activo_biologico').to.not.be.null;});"
+      ] } }]
+    },
+    {
+      "name": "TC-M09-66 NORMAL -> VERDE",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/iot/monitoreo/historial?fecha_inicio={{fecha_inicio}}&fecha_fin={{fecha_fin}}&sensor_id={{id_sensor}}&pagina=1&por_pagina=200&orden=DESC" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('TC-M09-66: GET historial 200',()=>pm.response.to.have.status(200));",
+        "const id=Number(pm.environment.get('tc66_id_telemetria'));",
+        "const l=(pm.response.json().items||[]).find(x=>x.id_telemetria===id);",
+        "pm.test('TC-M09-66: la medicion ingerida esta en el historial',()=>pm.expect(l,'lectura id_telemetria '+id).to.not.be.undefined);",
+        "pm.test('TC-M09-66: el valor clasificado es el del fixture',()=>pm.expect(Number(l.valor)).to.eql(Number(pm.environment.get('tc66_valor'))));",
+        "pm.test('TC-M09-66: la lectura resuelve especie (requisito del clasificador RF-17)',()=>pm.expect(l.id_especie,'id_especie').to.not.be.null);",
+        "pm.test('TC-M09-66: se clasifico contra el umbral RF-17 del fixture',()=>pm.expect(l.id_umbral_ambiental).to.eql(Number(pm.environment.get('id_umbral'))));",
+        "pm.test('TC-M09-66: valor en zona NORMAL clasificado VERDE',()=>pm.expect(l.estado_semaforo_historico).to.eql(pm.environment.get('tc66_semaforo')));"
+      ] } }]
+    },
+
+    {
+      "name": "TC-M09-67 precondicion vinculacion RF-61",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/iot/vinculaciones?id_telemetria={{tc67_id_telemetria}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('TC-M09-67 precondicion: GET vinculaciones 200',()=>pm.response.to.have.status(200));",
+        "const b=pm.response.json();",
+        "pm.test('TC-M09-67 precondicion: la lectura ingerida tiene fila de vinculacion RF-61',()=>pm.expect(b.total,'filas de vinculacion para la lectura').to.be.above(0));",
+        "pm.test('TC-M09-67 precondicion: la vinculacion vigente resuelve un activo biologico',()=>{const v=(b.items||[]).filter(x=>x.estado_vinculacion!=='CORREGIDA');pm.expect(v.length,'vinculacion vigente').to.be.above(0);pm.expect(v[0].id_activo_biologico,'id_activo_biologico').to.not.be.null;});"
+      ] } }]
+    },
+    {
+      "name": "TC-M09-67 PRECAUCION -> AMARILLO",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/iot/monitoreo/historial?fecha_inicio={{fecha_inicio}}&fecha_fin={{fecha_fin}}&sensor_id={{id_sensor}}&pagina=1&por_pagina=200&orden=DESC" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('TC-M09-67: GET historial 200',()=>pm.response.to.have.status(200));",
+        "const id=Number(pm.environment.get('tc67_id_telemetria'));",
+        "const l=(pm.response.json().items||[]).find(x=>x.id_telemetria===id);",
+        "pm.test('TC-M09-67: la medicion ingerida esta en el historial',()=>pm.expect(l,'lectura id_telemetria '+id).to.not.be.undefined);",
+        "pm.test('TC-M09-67: el valor clasificado es el del fixture',()=>pm.expect(Number(l.valor)).to.eql(Number(pm.environment.get('tc67_valor'))));",
+        "pm.test('TC-M09-67: la lectura resuelve especie (requisito del clasificador RF-17)',()=>pm.expect(l.id_especie,'id_especie').to.not.be.null);",
+        "pm.test('TC-M09-67: se clasifico contra el umbral RF-17 del fixture',()=>pm.expect(l.id_umbral_ambiental).to.eql(Number(pm.environment.get('id_umbral'))));",
+        "pm.test('TC-M09-67: valor en zona PRECAUCION clasificado AMARILLO',()=>pm.expect(l.estado_semaforo_historico).to.eql(pm.environment.get('tc67_semaforo')));"
+      ] } }]
+    },
+
+    {
+      "name": "TC-M09-68 precondicion vinculacion RF-61",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/iot/vinculaciones?id_telemetria={{tc68_id_telemetria}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('TC-M09-68 precondicion: GET vinculaciones 200',()=>pm.response.to.have.status(200));",
+        "const b=pm.response.json();",
+        "pm.test('TC-M09-68 precondicion: la lectura ingerida tiene fila de vinculacion RF-61',()=>pm.expect(b.total,'filas de vinculacion para la lectura').to.be.above(0));",
+        "pm.test('TC-M09-68 precondicion: la vinculacion vigente resuelve un activo biologico',()=>{const v=(b.items||[]).filter(x=>x.estado_vinculacion!=='CORREGIDA');pm.expect(v.length,'vinculacion vigente').to.be.above(0);pm.expect(v[0].id_activo_biologico,'id_activo_biologico').to.not.be.null;});"
+      ] } }]
+    },
+    {
+      "name": "TC-M09-68 CRITICO -> ROJO",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/iot/monitoreo/historial?fecha_inicio={{fecha_inicio}}&fecha_fin={{fecha_fin}}&sensor_id={{id_sensor}}&pagina=1&por_pagina=200&orden=DESC" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('TC-M09-68: GET historial 200',()=>pm.response.to.have.status(200));",
+        "const id=Number(pm.environment.get('tc68_id_telemetria'));",
+        "const l=(pm.response.json().items||[]).find(x=>x.id_telemetria===id);",
+        "pm.test('TC-M09-68: la medicion ingerida esta en el historial',()=>pm.expect(l,'lectura id_telemetria '+id).to.not.be.undefined);",
+        "pm.test('TC-M09-68: el valor clasificado es el del fixture',()=>pm.expect(Number(l.valor)).to.eql(Number(pm.environment.get('tc68_valor'))));",
+        "pm.test('TC-M09-68: la lectura resuelve especie (requisito del clasificador RF-17)',()=>pm.expect(l.id_especie,'id_especie').to.not.be.null);",
+        "pm.test('TC-M09-68: se clasifico contra el umbral RF-17 del fixture',()=>pm.expect(l.id_umbral_ambiental).to.eql(Number(pm.environment.get('id_umbral'))));",
+        "pm.test('TC-M09-68: valor en zona CRITICO clasificado ROJO',()=>pm.expect(l.estado_semaforo_historico).to.eql(pm.environment.get('tc68_semaforo')));"
+      ] } }]
+    },
+
+    {
+      "name": "Monitoreo dashboard (ultima medicion)",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/iot/monitoreo/dashboard?pagina=1&por_pagina=50" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Precondicion: API Monitoreo dashboard 200',()=>pm.response.to.have.status(200));",
+        "const s=(pm.response.json().sensores||[]).find(x=>x.id_sensor===Number(pm.environment.get('id_sensor')));",
+        "pm.test('El sensor del fixture aparece en el dashboard',()=>pm.expect(s,'sensor '+pm.environment.get('id_sensor')).to.not.be.undefined);",
+        "pm.test('Oraculo G31: el estado del sensor refleja la clasificacion RF-17 de su ultima medicion',()=>pm.expect(s.estado_semaforo).to.eql(pm.environment.get('ultimo_caso_semaforo')));"
+      ] } }]
+    }
+  ]
+}

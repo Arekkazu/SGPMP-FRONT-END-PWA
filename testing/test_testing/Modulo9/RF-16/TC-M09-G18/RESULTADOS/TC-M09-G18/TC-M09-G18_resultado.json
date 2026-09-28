@@ -1,0 +1,73 @@
+{
+  "caso": "TC-M09-G18",
+  "fecha": "2026-09-12T19:07:17.881Z",
+  "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome v152.0.7977.83",
+  "idActivoEvaluado": 352,
+  "activoCreadoTemporal": false,
+  "teardownInfo": "No se requirió limpieza de activos temporales (se reutilizó activo biológico preexistente).",
+  "checkpoints": [
+    {
+      "paso": "CP-06a: Evaluación EventoProductivoForm (RF-43)",
+      "esperado": "Formulario gestiona tipo de producto y unidades",
+      "obtenido": "Formulario cuenta con campos de registro de eventos productivos.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06c: Inspección UI Configuración (/configuracion)",
+      "esperado": "Gestión de parámetros en interfaz",
+      "obtenido": "Vista de configuración operativa para consulta de parámetros.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06d: Usabilidad Menú Lateral (Sidebar.tsx)",
+      "esperado": "Interacción fluida de navegación",
+      "obtenido": "Navegación entre Activos Biológicos y Configuración ejecutada sin bloqueos.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-01: Autenticación Productor API",
+      "esperado": "Obtención de Bearer Token válido en TEST",
+      "obtenido": "Autenticado con éxito como productor@pecuaria.co",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02: Contrato API Backend (solo_activas=true)",
+      "esperado": "Backend excluye parámetros inactivos (Ciclo #14 Engorde, Patología #11 Mastitis, Métrica #15 Peso)",
+      "obtenido": "API excluye correctamente entidades inactivas cuando solo_activas=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03: Precondición de Activo Biológico (Cachama Blanca)",
+      "esperado": "Existencia de activo biológico activo en BD TEST para especie #4",
+      "obtenido": "Reutilizando activo biológico preexistente ID #352 (sin crear temporales ni requerir baja)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04: Evaluación EventoSanitarioForm (RF-39 / TC-M09-41)",
+      "esperado": "Selector dinámico de patologías excluye inactivas (\"Mastitis Test\") y lista activas (\"Columnaris\")",
+      "obtenido": "Formulario presenta <select name=\"diagnostico\"> poblado con patologías activas y excluyendo parámetros inactivos.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05: Evaluación EventoCrecimientoForm (RF-40 / TC-M09-41)",
+      "esperado": "Selector dinámico de métricas excluye inactivas (\"Peso Test\") y lista activas (\"Peso\")",
+      "obtenido": "Formulario presenta selector dinámico poblado con métricas de la especie y excluyendo inactivas.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06b: Evaluación CambiarFaseModal (RF-16 / TC-M09-41)",
+      "esperado": "Selector dinámico de etapas/ciclos excluye inactivos (\"Engorde Test\") y lista activos",
+      "obtenido": "Modal presenta <select name=\"id_ciclo_productiva\"> poblado con ciclos activos configurados por especie.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07: Teardown Seguro y Limpieza",
+      "esperado": "Procesamiento de cierre y teardown",
+      "obtenido": "No se requirió limpieza de activos temporales (se reutilizó activo biológico preexistente).",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "✅ SIN FALLAS BLOQUEANTES"
+}

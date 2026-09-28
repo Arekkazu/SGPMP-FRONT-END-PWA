@@ -1,0 +1,391 @@
+{
+  "info": {
+    "name": "TC-M09-G22 - RF-17 configuraciones ambientales validas por especie",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "TC-M09-46",
+      "item": [
+        {
+          "name": "TC-M09-46 POST umbral valido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/configuracion/umbrales",
+            "body": {
+              "mode": "raw",
+              "raw": "{{payload}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b=pm.response.json();",
+                  "const p=JSON.parse(pm.environment.get('payload'));",
+                  "const c=JSON.parse(pm.environment.get('contexto'));",
+                  "const num=x=>Number(x);",
+                  "const ord=ns=>[...ns].sort((x,y)=>num(x.limite_inferior)-num(y.limite_inferior));",
+                  "pm.test('POST enviado y respondido por el servidor',()=>{pm.expect(pm.response.code).to.be.a('number');pm.expect(pm.response.responseTime).to.be.a('number');});",
+                  "pm.test('La especie estaba activa antes del POST',()=>{pm.expect(c.especie.es_activo,'especie activa').to.eql(true);pm.expect(p.id_especie).to.eql(c.especie.id);});",
+                  "pm.test('La variable estaba en el catalogo activo antes del POST',()=>{pm.expect(c.variable.catalogoActivo).to.eql(true);pm.expect(p.id_variable_ambiental).to.eql(c.variable.id);});",
+                  "pm.test('La combinacion especie-variable estaba libre antes del POST',()=>{pm.expect(c.combinacionLibre).to.eql(true);pm.expect(c.umbralesPrevios.filter(u=>u.id_variable_ambiental===c.variable.id)).to.have.lengthOf(0);});",
+                  "pm.test('valor_min < valor_max',()=>pm.expect(num(p.valor_min)).to.be.below(num(p.valor_max)));",
+                  "pm.test('Rango dentro de los limites fisicos reales de la variable',()=>{pm.expect(num(p.valor_min)).to.be.at.least(num(c.variable.fisicoMin));pm.expect(num(p.valor_max)).to.be.at.most(num(c.variable.fisicoMax));});",
+                  "pm.test('Niveles obligatorios validos: tres, contiguos y cubriendo el rango',()=>{pm.expect(p.niveles).to.have.lengthOf(3);pm.expect(p.niveles.map(n=>n.nivel).sort()).to.eql(['critico','normal','precaucion']);const o=ord(p.niveles);o.forEach(n=>pm.expect(num(n.limite_inferior),n.nivel).to.be.below(num(n.limite_superior)));pm.expect(num(o[0].limite_inferior)).to.eql(num(p.valor_min));pm.expect(num(o[0].limite_superior)).to.eql(num(o[1].limite_inferior));pm.expect(num(o[1].limite_superior)).to.eql(num(o[2].limite_inferior));pm.expect(num(o[2].limite_superior)).to.eql(num(p.valor_max));});",
+                  "pm.test('TC46: configuracion base de una especie activa, con variable del catalogo',()=>{pm.expect(c.especie.nombre).to.be.a('string');pm.expect(c.variable.nombre).to.be.a('string');pm.expect(c.rangoElegido.origen).to.be.a('string');});",
+                  "pm.test('HTTP exactamente 201 segun el contrato',()=>pm.response.to.have.status(201));",
+                  "pm.test('La respuesta no contiene un error funcional',()=>{pm.expect(b).to.not.have.property('error_code');pm.expect(b).to.not.have.property('fields');});",
+                  "pm.test('ID de configuracion valido',()=>{pm.expect(b.id_umbral_ambiental).to.be.a('number');pm.expect(b.id_umbral_ambiental).to.be.above(0);pm.environment.set('id_creado',String(b.id_umbral_ambiental));});",
+                  "pm.test('Asociado a la especie y la variable correctas',()=>{pm.expect(b.id_especie).to.eql(p.id_especie);pm.expect(b.id_variable_ambiental).to.eql(p.id_variable_ambiental);});",
+                  "pm.test('valor_min y valor_max almacenados sin alteracion',()=>{pm.expect(num(b.valor_min)).to.eql(num(p.valor_min));pm.expect(num(b.valor_max)).to.eql(num(p.valor_max));});",
+                  "pm.test('Configuracion activa',()=>pm.expect(b.es_activo).to.eql(true));",
+                  "pm.test('Niveles persistidos: cantidad y valores',()=>{pm.expect(b.niveles).to.have.lengthOf(3);p.niveles.forEach(esp=>{const real=b.niveles.find(n=>n.nivel===esp.nivel);pm.expect(real,esp.nivel).to.not.be.undefined;pm.expect(num(real.limite_inferior)).to.eql(num(esp.limite_inferior));pm.expect(num(real.limite_superior)).to.eql(num(esp.limite_superior));});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-M09-46 GET verificacion de persistencia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/configuracion/umbrales?id_especie={{id_especie}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b=pm.response.json();",
+                  "const p=JSON.parse(pm.environment.get('payload'));",
+                  "const c=JSON.parse(pm.environment.get('contexto'));",
+                  "const num=x=>Number(x);",
+                  "const id=Number(pm.environment.get('id_creado'));",
+                  "pm.test('GET posterior HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('El registro creado esta presente exactamente una vez',()=>{pm.expect(b.items).to.be.an('array');pm.expect(b.items.filter(u=>u.id_umbral_ambiental===id)).to.have.lengthOf(1);pm.expect(b.items.filter(u=>u.id_variable_ambiental===p.id_variable_ambiental)).to.have.lengthOf(1);});",
+                  "pm.test('Valores persistidos coinciden con los enviados',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(num(u.valor_min)).to.eql(num(p.valor_min));pm.expect(num(u.valor_max)).to.eql(num(p.valor_max));pm.expect(u.es_activo).to.eql(true);});",
+                  "pm.test('Asociacion especie-variable correcta en el registro persistido',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(u.id_especie).to.eql(c.especie.id);pm.expect(u.id_variable_ambiental).to.eql(c.variable.id);});",
+                  "pm.test('Niveles persistidos correctamente',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(u.niveles).to.have.lengthOf(3);p.niveles.forEach(esp=>{const real=u.niveles.find(n=>n.nivel===esp.nivel);pm.expect(real,esp.nivel).to.not.be.undefined;pm.expect(num(real.limite_inferior)).to.eql(num(esp.limite_inferior));pm.expect(num(real.limite_superior)).to.eql(num(esp.limite_superior));});});",
+                  "pm.test('Los umbrales previos de la especie siguen presentes',()=>{const ids=b.items.map(u=>u.id_umbral_ambiental);c.umbralesPrevios.forEach(prev=>pm.expect(ids,'umbral previo conservado').to.include(prev.id));});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-M09-47",
+      "item": [
+        {
+          "name": "TC-M09-47 POST umbral valido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/configuracion/umbrales",
+            "body": {
+              "mode": "raw",
+              "raw": "{{payload}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b=pm.response.json();",
+                  "const p=JSON.parse(pm.environment.get('payload'));",
+                  "const c=JSON.parse(pm.environment.get('contexto'));",
+                  "const num=x=>Number(x);",
+                  "const ord=ns=>[...ns].sort((x,y)=>num(x.limite_inferior)-num(y.limite_inferior));",
+                  "pm.test('POST enviado y respondido por el servidor',()=>{pm.expect(pm.response.code).to.be.a('number');pm.expect(pm.response.responseTime).to.be.a('number');});",
+                  "pm.test('La especie estaba activa antes del POST',()=>{pm.expect(c.especie.es_activo,'especie activa').to.eql(true);pm.expect(p.id_especie).to.eql(c.especie.id);});",
+                  "pm.test('La variable estaba en el catalogo activo antes del POST',()=>{pm.expect(c.variable.catalogoActivo).to.eql(true);pm.expect(p.id_variable_ambiental).to.eql(c.variable.id);});",
+                  "pm.test('La combinacion especie-variable estaba libre antes del POST',()=>{pm.expect(c.combinacionLibre).to.eql(true);pm.expect(c.umbralesPrevios.filter(u=>u.id_variable_ambiental===c.variable.id)).to.have.lengthOf(0);});",
+                  "pm.test('valor_min < valor_max',()=>pm.expect(num(p.valor_min)).to.be.below(num(p.valor_max)));",
+                  "pm.test('Rango dentro de los limites fisicos reales de la variable',()=>{pm.expect(num(p.valor_min)).to.be.at.least(num(c.variable.fisicoMin));pm.expect(num(p.valor_max)).to.be.at.most(num(c.variable.fisicoMax));});",
+                  "pm.test('Niveles obligatorios validos: tres, contiguos y cubriendo el rango',()=>{pm.expect(p.niveles).to.have.lengthOf(3);pm.expect(p.niveles.map(n=>n.nivel).sort()).to.eql(['critico','normal','precaucion']);const o=ord(p.niveles);o.forEach(n=>pm.expect(num(n.limite_inferior),n.nivel).to.be.below(num(n.limite_superior)));pm.expect(num(o[0].limite_inferior)).to.eql(num(p.valor_min));pm.expect(num(o[0].limite_superior)).to.eql(num(o[1].limite_inferior));pm.expect(num(o[1].limite_superior)).to.eql(num(o[2].limite_inferior));pm.expect(num(o[2].limite_superior)).to.eql(num(p.valor_max));});",
+                  "pm.test('TC47: la variable corresponde semanticamente a Temperatura',()=>{pm.expect(c.variable.coincidePatron,'nombre de variable de temperatura').to.eql(true);pm.expect(c.variable.nombre.toLowerCase()).to.include('temperatura');pm.expect(c.variable.semantica).to.eql('Temperatura');});",
+                  "pm.test('TC47: limites fisicos descubiertos antes del POST',()=>{pm.expect(c.variable.fisicoMin).to.be.a('string');pm.expect(c.variable.fisicoMax).to.be.a('string');pm.expect(num(c.variable.fisicoMin)).to.be.below(num(c.variable.fisicoMax));});",
+                  "pm.test('HTTP exactamente 201 segun el contrato',()=>pm.response.to.have.status(201));",
+                  "pm.test('La respuesta no contiene un error funcional',()=>{pm.expect(b).to.not.have.property('error_code');pm.expect(b).to.not.have.property('fields');});",
+                  "pm.test('ID de configuracion valido',()=>{pm.expect(b.id_umbral_ambiental).to.be.a('number');pm.expect(b.id_umbral_ambiental).to.be.above(0);pm.environment.set('id_creado',String(b.id_umbral_ambiental));});",
+                  "pm.test('Asociado a la especie y la variable correctas',()=>{pm.expect(b.id_especie).to.eql(p.id_especie);pm.expect(b.id_variable_ambiental).to.eql(p.id_variable_ambiental);});",
+                  "pm.test('valor_min y valor_max almacenados sin alteracion',()=>{pm.expect(num(b.valor_min)).to.eql(num(p.valor_min));pm.expect(num(b.valor_max)).to.eql(num(p.valor_max));});",
+                  "pm.test('Configuracion activa',()=>pm.expect(b.es_activo).to.eql(true));",
+                  "pm.test('Niveles persistidos: cantidad y valores',()=>{pm.expect(b.niveles).to.have.lengthOf(3);p.niveles.forEach(esp=>{const real=b.niveles.find(n=>n.nivel===esp.nivel);pm.expect(real,esp.nivel).to.not.be.undefined;pm.expect(num(real.limite_inferior)).to.eql(num(esp.limite_inferior));pm.expect(num(real.limite_superior)).to.eql(num(esp.limite_superior));});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-M09-47 GET verificacion de persistencia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/configuracion/umbrales?id_especie={{id_especie}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b=pm.response.json();",
+                  "const p=JSON.parse(pm.environment.get('payload'));",
+                  "const c=JSON.parse(pm.environment.get('contexto'));",
+                  "const num=x=>Number(x);",
+                  "const id=Number(pm.environment.get('id_creado'));",
+                  "pm.test('GET posterior HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('El registro creado esta presente exactamente una vez',()=>{pm.expect(b.items).to.be.an('array');pm.expect(b.items.filter(u=>u.id_umbral_ambiental===id)).to.have.lengthOf(1);pm.expect(b.items.filter(u=>u.id_variable_ambiental===p.id_variable_ambiental)).to.have.lengthOf(1);});",
+                  "pm.test('Valores persistidos coinciden con los enviados',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(num(u.valor_min)).to.eql(num(p.valor_min));pm.expect(num(u.valor_max)).to.eql(num(p.valor_max));pm.expect(u.es_activo).to.eql(true);});",
+                  "pm.test('Asociacion especie-variable correcta en el registro persistido',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(u.id_especie).to.eql(c.especie.id);pm.expect(u.id_variable_ambiental).to.eql(c.variable.id);});",
+                  "pm.test('Niveles persistidos correctamente',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(u.niveles).to.have.lengthOf(3);p.niveles.forEach(esp=>{const real=u.niveles.find(n=>n.nivel===esp.nivel);pm.expect(real,esp.nivel).to.not.be.undefined;pm.expect(num(real.limite_inferior)).to.eql(num(esp.limite_inferior));pm.expect(num(real.limite_superior)).to.eql(num(esp.limite_superior));});});",
+                  "pm.test('Los umbrales previos de la especie siguen presentes',()=>{const ids=b.items.map(u=>u.id_umbral_ambiental);c.umbralesPrevios.forEach(prev=>pm.expect(ids,'umbral previo conservado').to.include(prev.id));});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-M09-48",
+      "item": [
+        {
+          "name": "TC-M09-48 POST umbral valido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/configuracion/umbrales",
+            "body": {
+              "mode": "raw",
+              "raw": "{{payload}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b=pm.response.json();",
+                  "const p=JSON.parse(pm.environment.get('payload'));",
+                  "const c=JSON.parse(pm.environment.get('contexto'));",
+                  "const num=x=>Number(x);",
+                  "const ord=ns=>[...ns].sort((x,y)=>num(x.limite_inferior)-num(y.limite_inferior));",
+                  "pm.test('POST enviado y respondido por el servidor',()=>{pm.expect(pm.response.code).to.be.a('number');pm.expect(pm.response.responseTime).to.be.a('number');});",
+                  "pm.test('La especie estaba activa antes del POST',()=>{pm.expect(c.especie.es_activo,'especie activa').to.eql(true);pm.expect(p.id_especie).to.eql(c.especie.id);});",
+                  "pm.test('La variable estaba en el catalogo activo antes del POST',()=>{pm.expect(c.variable.catalogoActivo).to.eql(true);pm.expect(p.id_variable_ambiental).to.eql(c.variable.id);});",
+                  "pm.test('La combinacion especie-variable estaba libre antes del POST',()=>{pm.expect(c.combinacionLibre).to.eql(true);pm.expect(c.umbralesPrevios.filter(u=>u.id_variable_ambiental===c.variable.id)).to.have.lengthOf(0);});",
+                  "pm.test('valor_min < valor_max',()=>pm.expect(num(p.valor_min)).to.be.below(num(p.valor_max)));",
+                  "pm.test('Rango dentro de los limites fisicos reales de la variable',()=>{pm.expect(num(p.valor_min)).to.be.at.least(num(c.variable.fisicoMin));pm.expect(num(p.valor_max)).to.be.at.most(num(c.variable.fisicoMax));});",
+                  "pm.test('Niveles obligatorios validos: tres, contiguos y cubriendo el rango',()=>{pm.expect(p.niveles).to.have.lengthOf(3);pm.expect(p.niveles.map(n=>n.nivel).sort()).to.eql(['critico','normal','precaucion']);const o=ord(p.niveles);o.forEach(n=>pm.expect(num(n.limite_inferior),n.nivel).to.be.below(num(n.limite_superior)));pm.expect(num(o[0].limite_inferior)).to.eql(num(p.valor_min));pm.expect(num(o[0].limite_superior)).to.eql(num(o[1].limite_inferior));pm.expect(num(o[1].limite_superior)).to.eql(num(o[2].limite_inferior));pm.expect(num(o[2].limite_superior)).to.eql(num(p.valor_max));});",
+                  "pm.test('TC48: la variable corresponde semanticamente a Humedad',()=>{pm.expect(c.variable.coincidePatron).to.eql(true);pm.expect(c.variable.nombre.toLowerCase()).to.include('humedad');pm.expect(c.variable.semantica).to.eql('Humedad');});",
+                  "pm.test('TC48: rango fisico real documentado, sin suponer porcentaje',()=>{pm.expect(c.variable.unidad).to.be.a('string');pm.expect(num(c.variable.fisicoMin)).to.be.below(num(c.variable.fisicoMax));});",
+                  "pm.test('HTTP exactamente 201 segun el contrato',()=>pm.response.to.have.status(201));",
+                  "pm.test('La respuesta no contiene un error funcional',()=>{pm.expect(b).to.not.have.property('error_code');pm.expect(b).to.not.have.property('fields');});",
+                  "pm.test('ID de configuracion valido',()=>{pm.expect(b.id_umbral_ambiental).to.be.a('number');pm.expect(b.id_umbral_ambiental).to.be.above(0);pm.environment.set('id_creado',String(b.id_umbral_ambiental));});",
+                  "pm.test('Asociado a la especie y la variable correctas',()=>{pm.expect(b.id_especie).to.eql(p.id_especie);pm.expect(b.id_variable_ambiental).to.eql(p.id_variable_ambiental);});",
+                  "pm.test('valor_min y valor_max almacenados sin alteracion',()=>{pm.expect(num(b.valor_min)).to.eql(num(p.valor_min));pm.expect(num(b.valor_max)).to.eql(num(p.valor_max));});",
+                  "pm.test('Configuracion activa',()=>pm.expect(b.es_activo).to.eql(true));",
+                  "pm.test('Niveles persistidos: cantidad y valores',()=>{pm.expect(b.niveles).to.have.lengthOf(3);p.niveles.forEach(esp=>{const real=b.niveles.find(n=>n.nivel===esp.nivel);pm.expect(real,esp.nivel).to.not.be.undefined;pm.expect(num(real.limite_inferior)).to.eql(num(esp.limite_inferior));pm.expect(num(real.limite_superior)).to.eql(num(esp.limite_superior));});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-M09-48 GET verificacion de persistencia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/configuracion/umbrales?id_especie={{id_especie}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b=pm.response.json();",
+                  "const p=JSON.parse(pm.environment.get('payload'));",
+                  "const c=JSON.parse(pm.environment.get('contexto'));",
+                  "const num=x=>Number(x);",
+                  "const id=Number(pm.environment.get('id_creado'));",
+                  "pm.test('GET posterior HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('El registro creado esta presente exactamente una vez',()=>{pm.expect(b.items).to.be.an('array');pm.expect(b.items.filter(u=>u.id_umbral_ambiental===id)).to.have.lengthOf(1);pm.expect(b.items.filter(u=>u.id_variable_ambiental===p.id_variable_ambiental)).to.have.lengthOf(1);});",
+                  "pm.test('Valores persistidos coinciden con los enviados',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(num(u.valor_min)).to.eql(num(p.valor_min));pm.expect(num(u.valor_max)).to.eql(num(p.valor_max));pm.expect(u.es_activo).to.eql(true);});",
+                  "pm.test('Asociacion especie-variable correcta en el registro persistido',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(u.id_especie).to.eql(c.especie.id);pm.expect(u.id_variable_ambiental).to.eql(c.variable.id);});",
+                  "pm.test('Niveles persistidos correctamente',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(u.niveles).to.have.lengthOf(3);p.niveles.forEach(esp=>{const real=u.niveles.find(n=>n.nivel===esp.nivel);pm.expect(real,esp.nivel).to.not.be.undefined;pm.expect(num(real.limite_inferior)).to.eql(num(esp.limite_inferior));pm.expect(num(real.limite_superior)).to.eql(num(esp.limite_superior));});});",
+                  "pm.test('Los umbrales previos de la especie siguen presentes',()=>{const ids=b.items.map(u=>u.id_umbral_ambiental);c.umbralesPrevios.forEach(prev=>pm.expect(ids,'umbral previo conservado').to.include(prev.id));});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TC-M09-49",
+      "item": [
+        {
+          "name": "TC-M09-49 POST umbral valido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/configuracion/umbrales",
+            "body": {
+              "mode": "raw",
+              "raw": "{{payload}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b=pm.response.json();",
+                  "const p=JSON.parse(pm.environment.get('payload'));",
+                  "const c=JSON.parse(pm.environment.get('contexto'));",
+                  "const num=x=>Number(x);",
+                  "const ord=ns=>[...ns].sort((x,y)=>num(x.limite_inferior)-num(y.limite_inferior));",
+                  "pm.test('POST enviado y respondido por el servidor',()=>{pm.expect(pm.response.code).to.be.a('number');pm.expect(pm.response.responseTime).to.be.a('number');});",
+                  "pm.test('La especie estaba activa antes del POST',()=>{pm.expect(c.especie.es_activo,'especie activa').to.eql(true);pm.expect(p.id_especie).to.eql(c.especie.id);});",
+                  "pm.test('La variable estaba en el catalogo activo antes del POST',()=>{pm.expect(c.variable.catalogoActivo).to.eql(true);pm.expect(p.id_variable_ambiental).to.eql(c.variable.id);});",
+                  "pm.test('La combinacion especie-variable estaba libre antes del POST',()=>{pm.expect(c.combinacionLibre).to.eql(true);pm.expect(c.umbralesPrevios.filter(u=>u.id_variable_ambiental===c.variable.id)).to.have.lengthOf(0);});",
+                  "pm.test('valor_min < valor_max',()=>pm.expect(num(p.valor_min)).to.be.below(num(p.valor_max)));",
+                  "pm.test('Rango dentro de los limites fisicos reales de la variable',()=>{pm.expect(num(p.valor_min)).to.be.at.least(num(c.variable.fisicoMin));pm.expect(num(p.valor_max)).to.be.at.most(num(c.variable.fisicoMax));});",
+                  "pm.test('Niveles obligatorios validos: tres, contiguos y cubriendo el rango',()=>{pm.expect(p.niveles).to.have.lengthOf(3);pm.expect(p.niveles.map(n=>n.nivel).sort()).to.eql(['critico','normal','precaucion']);const o=ord(p.niveles);o.forEach(n=>pm.expect(num(n.limite_inferior),n.nivel).to.be.below(num(n.limite_superior)));pm.expect(num(o[0].limite_inferior)).to.eql(num(p.valor_min));pm.expect(num(o[0].limite_superior)).to.eql(num(o[1].limite_inferior));pm.expect(num(o[1].limite_superior)).to.eql(num(o[2].limite_inferior));pm.expect(num(o[2].limite_superior)).to.eql(num(p.valor_max));});",
+                  "pm.test('TC49: la variable corresponde semanticamente a pH',()=>{pm.expect(c.variable.coincidePatron).to.eql(true);pm.expect(c.variable.nombre.toLowerCase()).to.match(/ph|potencial de hidr/);pm.expect(c.variable.semantica).to.eql('pH');});",
+                  "pm.test('TC49: los valores respetan la escala fisica 0-14',()=>{pm.expect(num(p.valor_min)).to.be.at.least(0);pm.expect(num(p.valor_max)).to.be.at.most(14);pm.expect(num(p.valor_min)).to.be.below(num(p.valor_max));});",
+                  "pm.test('HTTP exactamente 201 segun el contrato',()=>pm.response.to.have.status(201));",
+                  "pm.test('La respuesta no contiene un error funcional',()=>{pm.expect(b).to.not.have.property('error_code');pm.expect(b).to.not.have.property('fields');});",
+                  "pm.test('ID de configuracion valido',()=>{pm.expect(b.id_umbral_ambiental).to.be.a('number');pm.expect(b.id_umbral_ambiental).to.be.above(0);pm.environment.set('id_creado',String(b.id_umbral_ambiental));});",
+                  "pm.test('Asociado a la especie y la variable correctas',()=>{pm.expect(b.id_especie).to.eql(p.id_especie);pm.expect(b.id_variable_ambiental).to.eql(p.id_variable_ambiental);});",
+                  "pm.test('valor_min y valor_max almacenados sin alteracion',()=>{pm.expect(num(b.valor_min)).to.eql(num(p.valor_min));pm.expect(num(b.valor_max)).to.eql(num(p.valor_max));});",
+                  "pm.test('Configuracion activa',()=>pm.expect(b.es_activo).to.eql(true));",
+                  "pm.test('Niveles persistidos: cantidad y valores',()=>{pm.expect(b.niveles).to.have.lengthOf(3);p.niveles.forEach(esp=>{const real=b.niveles.find(n=>n.nivel===esp.nivel);pm.expect(real,esp.nivel).to.not.be.undefined;pm.expect(num(real.limite_inferior)).to.eql(num(esp.limite_inferior));pm.expect(num(real.limite_superior)).to.eql(num(esp.limite_superior));});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TC-M09-49 GET verificacion de persistencia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": "{{base_url}}/configuracion/umbrales?id_especie={{id_especie}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b=pm.response.json();",
+                  "const p=JSON.parse(pm.environment.get('payload'));",
+                  "const c=JSON.parse(pm.environment.get('contexto'));",
+                  "const num=x=>Number(x);",
+                  "const id=Number(pm.environment.get('id_creado'));",
+                  "pm.test('GET posterior HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('El registro creado esta presente exactamente una vez',()=>{pm.expect(b.items).to.be.an('array');pm.expect(b.items.filter(u=>u.id_umbral_ambiental===id)).to.have.lengthOf(1);pm.expect(b.items.filter(u=>u.id_variable_ambiental===p.id_variable_ambiental)).to.have.lengthOf(1);});",
+                  "pm.test('Valores persistidos coinciden con los enviados',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(num(u.valor_min)).to.eql(num(p.valor_min));pm.expect(num(u.valor_max)).to.eql(num(p.valor_max));pm.expect(u.es_activo).to.eql(true);});",
+                  "pm.test('Asociacion especie-variable correcta en el registro persistido',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(u.id_especie).to.eql(c.especie.id);pm.expect(u.id_variable_ambiental).to.eql(c.variable.id);});",
+                  "pm.test('Niveles persistidos correctamente',()=>{const u=b.items.find(x=>x.id_umbral_ambiental===id);pm.expect(u.niveles).to.have.lengthOf(3);p.niveles.forEach(esp=>{const real=u.niveles.find(n=>n.nivel===esp.nivel);pm.expect(real,esp.nivel).to.not.be.undefined;pm.expect(num(real.limite_inferior)).to.eql(num(esp.limite_inferior));pm.expect(num(real.limite_superior)).to.eql(num(esp.limite_superior));});});",
+                  "pm.test('Los umbrales previos de la especie siguen presentes',()=>{const ids=b.items.map(u=>u.id_umbral_ambiental);c.umbralesPrevios.forEach(prev=>pm.expect(ids,'umbral previo conservado').to.include(prev.id));});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

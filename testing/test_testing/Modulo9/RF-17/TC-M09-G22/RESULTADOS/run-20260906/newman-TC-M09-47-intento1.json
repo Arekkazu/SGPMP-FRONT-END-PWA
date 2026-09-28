@@ -1,0 +1,168 @@
+{
+  "grupo": "TC-M09-G22",
+  "rf": "RF-17",
+  "cu": "CU-03",
+  "cuOriginal": "CU-07",
+  "rol": "Administrador",
+  "rama": "qa/juan-esteban-m09",
+  "frontendSHA": "966621df4e2c6a1f2c9233ea5ebefbb9e3bc2f56",
+  "backendSHA": "adc3932b9f0293a76ebec7e89ed877274791b6a1",
+  "base": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "fecha": "2026-09-06T07:08:45.805Z",
+  "caso": "TC-M09-47",
+  "intento": 1,
+  "resultado": "FAIL",
+  "metodo": "POST",
+  "endpoint": "/configuracion/umbrales",
+  "especie": {
+    "id": 4,
+    "nombre": "Cachama Blanca",
+    "es_activo": true
+  },
+  "variable": {
+    "id": 9,
+    "nombre": "Temperatura Ambiental",
+    "unidad": "°C",
+    "catalogoActivo": true,
+    "fisicoMin": "-50",
+    "fisicoMax": "100",
+    "semantica": "Temperatura",
+    "coincidePatron": true
+  },
+  "rangoElegido": {
+    "valor_min": "35.50",
+    "valor_max": "39.20",
+    "origen": "valores del ejemplo academico, dentro de los limites fisicos reales"
+  },
+  "combinacionLibrePrevia": true,
+  "umbralesPrevios": [
+    {
+      "id": 10,
+      "id_variable_ambiental": 1
+    },
+    {
+      "id": 11,
+      "id_variable_ambiental": 3
+    }
+  ],
+  "payloadEnviado": {
+    "id_especie": 4,
+    "id_variable_ambiental": 9,
+    "valor_min": "35.50",
+    "valor_max": "39.20",
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "35.50",
+        "limite_superior": "36.70"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "36.70",
+        "limite_superior": "37.90"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "37.90",
+        "limite_superior": "39.20"
+      }
+    ]
+  },
+  "cuerpoEnviado": "{\"id_especie\":4,\"id_variable_ambiental\":9,\"valor_min\":35.50,\"valor_max\":39.20,\"niveles\":[{\"nivel\":\"normal\",\"limite_inferior\":35.50,\"limite_superior\":36.70},{\"nivel\":\"precaucion\",\"limite_inferior\":36.70,\"limite_superior\":37.90},{\"nivel\":\"critico\",\"limite_inferior\":37.90,\"limite_superior\":39.20}]}",
+  "status": 500,
+  "errorCode": "ERROR_INTERNO",
+  "respuesta": {
+    "error_code": "ERROR_INTERNO",
+    "message": "Error inesperado en base de datos",
+    "fields": [],
+    "timestamp": "2026-09-06T07:08:45.039586+00:00"
+  },
+  "eventos": [
+    {
+      "caso": "TC-M09-47",
+      "metodo": "POST",
+      "status": 500,
+      "cuerpo": "{\"id_especie\":4,\"id_variable_ambiental\":9,\"valor_min\":35.50,\"valor_max\":39.20,\"niveles\":[{\"nivel\":\"normal\",\"limite_inferior\":35.50,\"limite_superior\":36.70},{\"nivel\":\"precaucion\",\"limite_inferior\":36.70,\"limite_superior\":37.90},{\"nivel\":\"critico\",\"limite_inferior\":37.90,\"limite_superior\":39.20}]}",
+      "respuesta": {
+        "error_code": "ERROR_INTERNO",
+        "message": "Error inesperado en base de datos",
+        "fields": [],
+        "timestamp": "2026-09-06T07:08:45.039586+00:00"
+      },
+      "transportError": false
+    },
+    {
+      "caso": "TC-M09-47",
+      "metodo": "GET",
+      "status": 200,
+      "transportError": false
+    }
+  ],
+  "getPosterior": {
+    "status": 200,
+    "total": 2,
+    "ids": [
+      10,
+      11
+    ]
+  },
+  "persistencia": {
+    "idCreado": null,
+    "registrosDeLaCombinacion": 0,
+    "detalle": []
+  },
+  "assertions": {
+    "total": 22,
+    "pending": 0,
+    "failed": 11
+  },
+  "failures": [
+    {
+      "test": "HTTP exactamente 201 segun el contrato",
+      "message": "expected response to have status code 201 but got 500"
+    },
+    {
+      "test": "La respuesta no contiene un error funcional",
+      "message": "expected { error_code: 'ERROR_INTERNO', …(3) } to not have property 'error_code'"
+    },
+    {
+      "test": "ID de configuracion valido",
+      "message": "expected undefined to be a number"
+    },
+    {
+      "test": "Asociado a la especie y la variable correctas",
+      "message": "expected undefined to deeply equal 4"
+    },
+    {
+      "test": "valor_min y valor_max almacenados sin alteracion",
+      "message": "expected NaN to deeply equal 35.5"
+    },
+    {
+      "test": "Configuracion activa",
+      "message": "expected undefined to deeply equal true"
+    },
+    {
+      "test": "Niveles persistidos: cantidad y valores",
+      "message": "Target cannot be null or undefined."
+    },
+    {
+      "test": "El registro creado esta presente exactamente una vez",
+      "message": "expected [] to have a length of 1 but got +0"
+    },
+    {
+      "test": "Valores persistidos coinciden con los enviados",
+      "message": "Cannot read properties of undefined (reading 'valor_min')"
+    },
+    {
+      "test": "Asociacion especie-variable correcta en el registro persistido",
+      "message": "Cannot read properties of undefined (reading 'id_especie')"
+    },
+    {
+      "test": "Niveles persistidos correctamente",
+      "message": "Cannot read properties of undefined (reading 'niveles')"
+    }
+  ],
+  "newman": "6.2.2",
+  "reporter": "newman-reporter-htmlextra 1.23.1",
+  "html": "newman/newman-TC-M09-47-intento1.html"
+}

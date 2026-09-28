@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Loader2, UserCog } from 'lucide-react';
 import { useCompletarPerfilSso } from '../hooks/useCompletarPerfilSso';
 import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import './AuthPages.css';
@@ -131,17 +132,20 @@ export function CompletarPerfilSsoPage() {
             </div>
 
             <div className="auth-field">
-              <label className="ds-field__label" htmlFor="tipo_identificacion">{t('completarperfilssopage.tipo_de_identificacion')}<span className="ds-field__req">*</span>
-              </label>
-              <select
-                id="tipo_identificacion"
-                className="ds-field__input"
+              <Select
+                label={t('completarperfilssopage.tipo_de_identificacion')}
+                required
+                error={
+                  errors.tipo_identificacion
+                    ? t('registropage.selecciona_el_tipo_de_identificacion')
+                    : undefined
+                }
                 {...register('tipo_identificacion', { required: true })}
               >
                 <option value="CC">{t('completarperfilssopage.cedula_de_ciudadania_cc')}</option>
                 <option value="CE">{t('completarperfilssopage.cedula_de_extranjeria_ce')}</option>
                 <option value="Pasaporte">{t('completarperfilssopage.pasaporte')}</option>
-              </select>
+              </Select>
             </div>
 
             <div className="auth-field">
@@ -170,21 +174,28 @@ export function CompletarPerfilSsoPage() {
                     let age = today.getFullYear() - birth.getFullYear();
                     const m = today.getMonth() - birth.getMonth();
                     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-                    return age >= 18 || 'Debes ser mayor de 18 años.';
+                    return age >= 18 || t('validacion.debes_ser_mayor_de_18', { ns: 'common' });
                   },
                 })}
               />
             </div>
 
             <div className="auth-field">
-              <label className="ds-field__label" htmlFor="genero">{t('completarperfilssopage.genero')}<span className="ds-field__req">*</span>
-              </label>
-              <select id="genero" className="ds-field__input" {...register('genero', { required: true })}>
+              <Select
+                label={t('completarperfilssopage.genero')}
+                required
+                error={
+                  errors.genero
+                    ? t('registropage.selecciona_el_genero')
+                    : undefined
+                }
+                {...register('genero', { required: true })}
+              >
                 <option value="M">{t('completarperfilssopage.masculino_m')}</option>
                 <option value="F">{t('completarperfilssopage.femenino_f')}</option>
                 <option value="X">{t('completarperfilssopage.no_binario_x')}</option>
                 <option value="T">{t('completarperfilssopage.trans_t')}</option>
-              </select>
+              </Select>
             </div>
           </div>
 

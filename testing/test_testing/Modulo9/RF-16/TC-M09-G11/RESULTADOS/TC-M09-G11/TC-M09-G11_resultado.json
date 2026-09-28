@@ -1,0 +1,78 @@
+{
+  "caso": "TC-M09-G11",
+  "titulo": "CU-02 - Configurar Parámetros Productivos y Sanitarios por Especie (RF-16)",
+  "cu": "CU-02 - Configurar Parámetros Productivos y Sanitarios por Especie",
+  "rf": "RF-16",
+  "tipo": "Funcional Híbrida (UI y API)",
+  "equipo": "Frontend y QA",
+  "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.76",
+  "fecha": "2026-09-04T23:32:33.508Z",
+  "idEspecie": 4,
+  "idCiclo": 14,
+  "idPatologia": 11,
+  "idMetrica": 15,
+  "teardownInfo": "Desactivación lógica completada: Ciclo #14 (HTTP 200), Patología #11 (HTTP 200), Métrica #15 (HTTP 200).",
+  "checkpoints": [
+    {
+      "paso": "CP-1: Autenticación y Navegación a Detalle de Especie",
+      "esperado": "Acceso a /configuracion -> Por especie -> Detalle de \"Cachama Blanca\"",
+      "obtenido": "Sesión autenticada como Admin y vista de detalle de \"Cachama Blanca\" (#4) cargada.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-2: Registro en UI de Ciclo Biológico",
+      "esperado": "Diligenciar ciclo \"Engorde Test\", duración 120 días y guardar",
+      "obtenido": "Formulario de ciclo biológico diligenciado correctamente con datos válidos.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-4: Registro en UI de Patología",
+      "esperado": "Diligenciar patología \"Mastitis Test\" con descripción genérica válida",
+      "obtenido": "Formulario de patología diligenciado correctamente con datos de prueba sanitarios.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-6: Registro en UI de Métrica Productiva",
+      "esperado": "Diligenciar métrica \"Peso Test\", tipo \"PESO\", unidad \"kg\", aplica \"INDIVIDUAL\"",
+      "obtenido": "Formulario de métrica de producción diligenciado respetando coherencia de tipo y unidad.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-3: Contrato y Persistencia API de Ciclo Biológico",
+      "esperado": "Respuesta HTTP 200/201 con id_especie: 4, duracion_dias: 120",
+      "obtenido": "Ciclo registrado exitosamente en backend (ID #14, Especie #4, Duración 120 días).",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-5: Contrato y Persistencia API de Patología",
+      "esperado": "Respuesta HTTP 200/201 con id_especie: 4 y descripción preservada",
+      "obtenido": "Patología registrada exitosamente en backend (ID #11, Especie #4).",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-7: Contrato y Persistencia API de Métrica Productiva",
+      "esperado": "Respuesta HTTP 200/201 con id_especie: 4, tipo_medicion: PESO, unidad_medida: kg",
+      "obtenido": "Métrica registrada exitosamente en backend (ID #15, Especie #4, Coherencia unidad 'kg' validada).",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-8: Restauración y Limpieza Teardown",
+      "esperado": "Desactivar lógicamente los registros creados en el ambiente TEST",
+      "obtenido": "Desactivación lógica completada: Ciclo #14 (HTTP 200), Patología #11 (HTTP 200), Métrica #15 (HTTP 200).",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "hallazgos": [
+    "CP-1: Autenticación y Navegación a Detalle de Especie -> Sesión autenticada como Admin y vista de detalle de \"Cachama Blanca\" (#4) cargada. (OK)",
+    "CP-2: Registro en UI de Ciclo Biológico -> Formulario de ciclo biológico diligenciado correctamente con datos válidos. (OK)",
+    "CP-4: Registro en UI de Patología -> Formulario de patología diligenciado correctamente con datos de prueba sanitarios. (OK)",
+    "CP-6: Registro en UI de Métrica Productiva -> Formulario de métrica de producción diligenciado respetando coherencia de tipo y unidad. (OK)",
+    "CP-3: Contrato y Persistencia API de Ciclo Biológico -> Ciclo registrado exitosamente en backend (ID #14, Especie #4, Duración 120 días). (OK)",
+    "CP-5: Contrato y Persistencia API de Patología -> Patología registrada exitosamente en backend (ID #11, Especie #4). (OK)",
+    "CP-7: Contrato y Persistencia API de Métrica Productiva -> Métrica registrada exitosamente en backend (ID #15, Especie #4, Coherencia unidad 'kg' validada). (OK)",
+    "CP-8: Restauración y Limpieza Teardown -> Desactivación lógica completada: Ciclo #14 (HTTP 200), Patología #11 (HTTP 200), Métrica #15 (HTTP 200). (OK)"
+  ]
+}

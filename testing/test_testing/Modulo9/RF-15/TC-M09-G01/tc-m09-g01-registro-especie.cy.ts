@@ -2,10 +2,10 @@
 
 const DIR = 'RESULTADOS/TC-M09-G01';
 const ENDPOINT_ESPECIES = '/configuracion/especies';
-const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'admin@pecuaria.co';
+const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'admin.dev@gmail.com';
 const CUENTA_EJECUCION_PASSWORD = Cypress.env('ADMIN_PASSWORD') || 'Test1234!';
-const DATO_NOMBRE = 'Bovino';
-const DATO_DESCRIPCION = 'Especie bovina productiva';
+const DATO_NOMBRE = 'Equino Test QA';
+const DATO_DESCRIPCION = 'grupo de mamíferos herbívoros ungulados que incluye a los caballos, las cebras y los asnos';
 
 type Estado = 'OK' | 'FALLA' | 'OBSERVACION';
 interface Check { paso: string; esperado: string; obtenido: string; estado: Estado; }

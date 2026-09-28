@@ -1,5 +1,5 @@
 import React from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Shield, ClipboardList,
   User, LogOut, Lock, Settings, Sprout, Activity, BrainCircuit
@@ -37,11 +37,12 @@ const MY_ITEMS: NavItem[] = [
 interface SidebarProps {
   onLogout?: () => void;
   open?: boolean;
+  /** #132: cierra el drawer movil al navegar, para que el siguiente item quede alcanzable. */
+  onNavigate?: () => void;
 }
 
-function NavItemComponent({ item }: { item: NavItem }) {
+function NavItemComponent({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
   const { t } = useT('nav');
-  const history = useHistory();
   const { pathname } = useLocation();
   const hasPermission = usePermission(
     item.requirePermission?.[0] ?? 0,
@@ -53,10 +54,10 @@ function NavItemComponent({ item }: { item: NavItem }) {
   const label = t(item.claveLabel);
 
   return (
-    <button
-      type="button"
+    <Link
+      to={item.path}
       className={['ds-sidebar__item', active ? 'ds-sidebar__item--active' : '', locked ? 'ds-sidebar__item--locked' : ''].filter(Boolean).join(' ')}
-      onClick={() => { if (!locked) history.push(item.path); }}
+      onClick={(e) => { if (locked) { e.preventDefault(); return; } onNavigate?.(); }}
       aria-current={active ? 'page' : undefined}
       aria-disabled={locked}
       title={locked ? t('aria.sin_permiso') : label}
@@ -68,11 +69,11 @@ function NavItemComponent({ item }: { item: NavItem }) {
           <Lock size={11} />
         </span>
       )}
-    </button>
+    </Link>
   );
 }
 
-export function Sidebar({ onLogout, open }: SidebarProps) {
+export function Sidebar({ onLogout, open, onNavigate }: SidebarProps) {
   const { t } = useT('nav');
   const { userInfo } = useAuth();
   // RF-26: la marca de la finca activa sustituye a la del producto cuando existe.
@@ -116,7 +117,7 @@ export function Sidebar({ onLogout, open }: SidebarProps) {
       <div className="ds-sidebar__section">
         <span className="ds-sidebar__section-label">{t('secciones.modulos')}</span>
         {NAV_ITEMS.map((item) => (
-          <NavItemComponent key={item.path} item={item} />
+          <NavItemComponent key={item.path} item={item} onNavigate={onNavigate} />
         ))}
       </div>
 
@@ -125,7 +126,7 @@ export function Sidebar({ onLogout, open }: SidebarProps) {
       <div className="ds-sidebar__section">
         <span className="ds-sidebar__section-label">{t('secciones.mi_cuenta')}</span>
         {MY_ITEMS.map((item) => (
-          <NavItemComponent key={item.path} item={item} />
+          <NavItemComponent key={item.path} item={item} onNavigate={onNavigate} />
         ))}
       </div>
 

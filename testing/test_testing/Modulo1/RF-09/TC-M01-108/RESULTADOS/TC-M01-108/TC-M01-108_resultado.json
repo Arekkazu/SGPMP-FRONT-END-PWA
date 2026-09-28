@@ -1,0 +1,56 @@
+{
+  "caso": "TC-M01-108",
+  "titulo": "Cierre del navegador justo después de enviar la nueva contraseña en el restablecimiento",
+  "cu": "CU-RestablecerContrasena",
+  "rf": "RF-09",
+  "tipo": "Pruebas Extremas / Resiliencia y Red",
+  "severidad": "Media",
+  "responsable": "QA Team",
+  "testEmail": "jusebas73@gmail.com",
+  "idUsuario": 93,
+  "estadoInicial": "Activo",
+  "estadoFinal": "Activo",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.76",
+  "fecha": "2026-09-05T22:29:02.135Z",
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "checkpoints": [
+    {
+      "paso": "CP-01: Precondición de Cuenta Sujeto",
+      "esperado": "Cuenta jusebas73@gmail.com (ID: 93) confirmada en estado Activo en BD TEST",
+      "obtenido": "Cuenta encontrada, estado_cuenta: Activo",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02: Solicitud de Recuperación de Contraseña (Manual)",
+      "esperado": "Solicitud efectuada manualmente por el usuario desde su navegador para evitar consumir rate-limit por IP",
+      "obtenido": "Solicitud manual completada por el usuario. Enlace de restablecimiento entregado a la automatización.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03: Interrupción Prematura del Navegador en UI",
+      "esperado": "Formulario enviado e interrupción del cliente simulada antes de recibir el render de confirmación",
+      "obtenido": "Formulario procesado en backend y corte de cliente ejecutado en UI (win.stop() + navegación a /login)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04: Verificación Backend de Persistencia de Nueva Contraseña",
+      "esperado": "La nueva contraseña permite autenticarse (HTTP 200) y la contraseña anterior es rechazada (HTTP 401)",
+      "obtenido": "Autenticación con 'Reset#2029': HTTP 200 (Token JWT Recibido). Autenticación con clave previa: HTTP 401",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05: Reintento de Uso de Token Ya Consumido",
+      "esperado": "El backend rechaza el token previamente usado",
+      "obtenido": "Respuesta HTTP 401: Error de autenticidad. El token de recuperación es inválido o ha sido alterado. Por favor, inicie un nuevo proceso de recuperación. (Confirmación de INC-M01-15-054: El backend no diferencia en su mensaje un token ya consumido de uno inválido/corrupto).",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06: Teardown, Restauración de Contraseña y Estado Final (GET)",
+      "esperado": "Contraseña restaurada a Test1234! y estado de cuenta verificado en Activo por GET posterior",
+      "obtenido": "Restauración clave: HTTP 200 (Contraseña actualizada exitosamente). Estado verificado en BD por GET posterior: Activo",
+      "estado": "OK"
+    }
+  ]
+}

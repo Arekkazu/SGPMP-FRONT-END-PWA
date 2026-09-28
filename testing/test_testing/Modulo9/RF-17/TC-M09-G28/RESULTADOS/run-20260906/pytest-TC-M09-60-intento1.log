@@ -1,0 +1,129 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0 -- C:\Users\yoloh\OneDrive\Escritorio\pruebas\sgpmp-backend\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+metadata: {'Python': '3.13.13', 'Platform': 'Windows-11-10.0.26200-SP0', 'Packages': {'pytest': '9.0.3', 'pluggy': '1.6.0'}, 'Plugins': {'anyio': '4.13.0', 'cov': '7.1.0', 'html': '4.2.0', 'metadata': '3.1.1'}, 'JAVA_HOME': 'C:\\Program Files\\Java\\jdk-22'}
+rootdir: C:\Users\yoloh\OneDrive\Escritorio\pruebas\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo9\RF-17\TC-M09-G28
+configfile: pytest.ini
+testpaths: .
+plugins: anyio-4.13.0, cov-7.1.0, html-4.2.0, metadata-3.1.1
+collecting ... collected 16 items / 3 deselected / 13 selected
+
+test_tc_m09_g28.py::TestTC60Api::test_01_creacion_con_datos_dinamicos_y_combinacion_libre PASSED [  7%]
+test_tc_m09_g28.py::TestTC60Api::test_02_post_devuelve_creacion_exitosa FAILED [ 15%]
+test_tc_m09_g28.py::TestTC60Api::test_03_id_valido FAILED                [ 23%]
+test_tc_m09_g28.py::TestTC60Api::test_04_especie_y_variable_correctas FAILED [ 30%]
+test_tc_m09_g28.py::TestTC60Api::test_05_valor_min_sin_perdida_de_precision FAILED [ 38%]
+test_tc_m09_g28.py::TestTC60Api::test_06_valor_max_sin_perdida_de_precision FAILED [ 46%]
+test_tc_m09_g28.py::TestTC60Api::test_07_get_posterior_200_y_registro_unico FAILED [ 53%]
+test_tc_m09_g28.py::TestTC60Api::test_08_valores_del_get_coinciden_con_los_enviados FAILED [ 61%]
+test_tc_m09_g28.py::TestTC60Api::test_09_comparacion_hecha_con_decimal_no_con_float PASSED [ 69%]
+test_tc_m09_g28.py::TestTC60BaseDeDatos::test_10_registro_presente_en_postgresql SKIPPED [ 76%]
+test_tc_m09_g28.py::TestTC60BaseDeDatos::test_11_valor_min_almacenado_sin_alteracion SKIPPED [ 84%]
+test_tc_m09_g28.py::TestTC60BaseDeDatos::test_12_valor_max_almacenado_sin_alteracion SKIPPED [ 92%]
+test_tc_m09_g28.py::TestTC60BaseDeDatos::test_13_escala_declarada_de_las_columnas SKIPPED [100%]
+
+================================== FAILURES ===================================
+_____________ TestTC60Api.test_02_post_devuelve_creacion_exitosa ______________
+
+self = <test_tc_m09_g28.TestTC60Api object at 0x0000012C10D0CF50>
+registro = {'creadoEnEstaEjecucion': True, 'id_umbral_ambiental': None, 'intentosPost': 1, 'payloadEnviado': {'id_especie': 10, '... Decimal('38.00'), 'limite_superior': Decimal('39.20'), 'nivel': 'critico'}], 'valor_max': Decimal('39.20'), ...}, ...}
+
+    def test_02_post_devuelve_creacion_exitosa(self, registro):
+>       assert registro['statusPost'] == 201, f"POST devolvio {registro['statusPost']}"
+E       AssertionError: POST devolvio 500
+E       assert 500 == 201
+
+test_tc_m09_g28.py:105: AssertionError
+________________________ TestTC60Api.test_03_id_valido ________________________
+
+self = <test_tc_m09_g28.TestTC60Api object at 0x0000012C10CDDBA0>
+registro = {'creadoEnEstaEjecucion': True, 'id_umbral_ambiental': None, 'intentosPost': 1, 'payloadEnviado': {'id_especie': 10, '... Decimal('38.00'), 'limite_superior': Decimal('39.20'), 'nivel': 'critico'}], 'valor_max': Decimal('39.20'), ...}, ...}
+
+    def test_03_id_valido(self, registro):
+        idu = registro['id_umbral_ambiental']
+>       assert isinstance(idu, int) and idu > 0
+E       assert (False)
+E        +  where False = isinstance(None, int)
+
+test_tc_m09_g28.py:110: AssertionError
+______________ TestTC60Api.test_04_especie_y_variable_correctas _______________
+
+self = <test_tc_m09_g28.TestTC60Api object at 0x0000012C10CDE2C0>
+registro = {'creadoEnEstaEjecucion': True, 'id_umbral_ambiental': None, 'intentosPost': 1, 'payloadEnviado': {'id_especie': 10, '... Decimal('38.00'), 'limite_superior': Decimal('39.20'), 'nivel': 'critico'}], 'valor_max': Decimal('39.20'), ...}, ...}
+
+    def test_04_especie_y_variable_correctas(self, registro):
+        cuerpo, payload = registro['respuestaPost'], registro['payloadEnviado']
+>       assert cuerpo['id_especie'] == payload['id_especie']
+               ^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'id_especie'
+
+test_tc_m09_g28.py:114: KeyError
+___________ TestTC60Api.test_05_valor_min_sin_perdida_de_precision ____________
+
+self = <test_tc_m09_g28.TestTC60Api object at 0x0000012C10DE27B0>
+registro = {'creadoEnEstaEjecucion': True, 'id_umbral_ambiental': None, 'intentosPost': 1, 'payloadEnviado': {'id_especie': 10, '... Decimal('38.00'), 'limite_superior': Decimal('39.20'), 'nivel': 'critico'}], 'valor_max': Decimal('39.20'), ...}, ...}
+
+    def test_05_valor_min_sin_perdida_de_precision(self, registro):
+        enviado = h.d2(registro['payloadEnviado']['valor_min'])
+>       devuelto = h.d2(registro['respuestaPost']['valor_min'])
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'valor_min'
+
+test_tc_m09_g28.py:120: KeyError
+___________ TestTC60Api.test_06_valor_max_sin_perdida_de_precision ____________
+
+self = <test_tc_m09_g28.TestTC60Api object at 0x0000012C10C9BBD0>
+registro = {'creadoEnEstaEjecucion': True, 'id_umbral_ambiental': None, 'intentosPost': 1, 'payloadEnviado': {'id_especie': 10, '... Decimal('38.00'), 'limite_superior': Decimal('39.20'), 'nivel': 'critico'}], 'valor_max': Decimal('39.20'), ...}, ...}
+
+    def test_06_valor_max_sin_perdida_de_precision(self, registro):
+        enviado = h.d2(registro['payloadEnviado']['valor_max'])
+>       devuelto = h.d2(registro['respuestaPost']['valor_max'])
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'valor_max'
+
+test_tc_m09_g28.py:125: KeyError
+___________ TestTC60Api.test_07_get_posterior_200_y_registro_unico ____________
+
+self = <test_tc_m09_g28.TestTC60Api object at 0x0000012C10DF4490>
+token = '[JWT REDACTED]'
+registro = {'creadoEnEstaEjecucion': True, 'id_umbral_ambiental': None, 'intentosPost': 1, 'payloadEnviado': {'id_especie': 10, '... Decimal('38.00'), 'limite_superior': Decimal('39.20'), 'nivel': 'critico'}], 'valor_max': Decimal('39.20'), ...}, ...}
+
+    def test_07_get_posterior_200_y_registro_unico(self, token, registro):
+        especie = registro['payloadEnviado']['id_especie']
+        cuerpo = h.get(f'/configuracion/umbrales?id_especie={especie}', token)
+        coincidencias = [u for u in cuerpo['items']
+                         if u['id_umbral_ambiental'] == registro['id_umbral_ambiental']]
+>       assert len(coincidencias) == 1, 'el registro debe aparecer exactamente una vez'
+E       AssertionError: el registro debe aparecer exactamente una vez
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+test_tc_m09_g28.py:133: AssertionError
+_______ TestTC60Api.test_08_valores_del_get_coinciden_con_los_enviados ________
+
+self = <test_tc_m09_g28.TestTC60Api object at 0x0000012C10D3DC50>
+token = '[JWT REDACTED]'
+registro = {'creadoEnEstaEjecucion': True, 'id_umbral_ambiental': None, 'intentosPost': 1, 'payloadEnviado': {'id_especie': 10, '... Decimal('38.00'), 'limite_superior': Decimal('39.20'), 'nivel': 'critico'}], 'valor_max': Decimal('39.20'), ...}, ...}
+
+    def test_08_valores_del_get_coinciden_con_los_enviados(self, token, registro):
+        especie = registro['payloadEnviado']['id_especie']
+        cuerpo = h.get(f'/configuracion/umbrales?id_especie={especie}', token)
+>       u = next(x for x in cuerpo['items'] if x['id_umbral_ambiental'] == registro['id_umbral_ambiental'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       StopIteration
+
+test_tc_m09_g28.py:141: StopIteration
+- generated xml file: C:\Users\yoloh\OneDrive\Escritorio\pruebas\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo9\RF-17\TC-M09-G28\RESULTADOS\run-20260906\pytest-TC-M09-60-intento1.xml -
+=========================== short test summary info ===========================
+SKIPPED [1] test_tc_m09_g28.py:155: BLOCKED: falta G28_DB_PASSWORD; PostgreSQL read-only no disponible
+SKIPPED [1] test_tc_m09_g28.py:159: BLOCKED: falta G28_DB_PASSWORD; PostgreSQL read-only no disponible
+SKIPPED [1] test_tc_m09_g28.py:165: BLOCKED: falta G28_DB_PASSWORD; PostgreSQL read-only no disponible
+SKIPPED [1] test_tc_m09_g28.py:171: BLOCKED: falta G28_DB_PASSWORD; PostgreSQL read-only no disponible
+FAILED test_tc_m09_g28.py::TestTC60Api::test_02_post_devuelve_creacion_exitosa
+FAILED test_tc_m09_g28.py::TestTC60Api::test_03_id_valido - assert (False)
+FAILED test_tc_m09_g28.py::TestTC60Api::test_04_especie_y_variable_correctas
+FAILED test_tc_m09_g28.py::TestTC60Api::test_05_valor_min_sin_perdida_de_precision
+FAILED test_tc_m09_g28.py::TestTC60Api::test_06_valor_max_sin_perdida_de_precision
+FAILED test_tc_m09_g28.py::TestTC60Api::test_07_get_posterior_200_y_registro_unico
+FAILED test_tc_m09_g28.py::TestTC60Api::test_08_valores_del_get_coinciden_con_los_enviados
+============ 7 failed, 2 passed, 4 skipped, 3 deselected in 6.81s =============

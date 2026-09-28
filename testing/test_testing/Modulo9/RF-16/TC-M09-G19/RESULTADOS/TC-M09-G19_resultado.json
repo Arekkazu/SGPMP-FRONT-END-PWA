@@ -1,0 +1,64 @@
+{
+  "id": "TC-M09-G19",
+  "nombre": "Sincronización offline de parámetros de ciclo biológico por especie",
+  "rf": "RF-16",
+  "veredicto": "SIN FALLAS",
+  "resumen": {
+    "total": 5,
+    "ok": 5,
+    "fallas": 0,
+    "observaciones": 0
+  },
+  "teardown": {
+    "createdCicloId": 37,
+    "teardownVerificado": true,
+    "estadoFinalCiclo": "Confirmado inactivo vía GET (id_ciclo_biologico: 37, es_activo: false)"
+  },
+  "checkpoints": [
+    {
+      "id": "CP-1",
+      "nombre": "Precondición - Especie Cachama Blanca activa",
+      "tipo": "CHECK",
+      "esperado": "Especie #4 \"Cachama Blanca\" activa en backend TEST",
+      "obtenido": "Especie id_especie=4 encontrada (es_activo=true)",
+      "resultado": "OK",
+      "detalles": "ID: 4, Nombre: Cachama Blanca"
+    },
+    {
+      "id": "CP-2",
+      "nombre": "Soporte y Creación UI Offline en Sección Ciclos Biológicos de Cachama Blanca",
+      "tipo": "CHECK",
+      "esperado": "Botón \"Nuevo ciclo\" habilitado, alerta \"Sin conexión\" visible y ciclo creado localmente con badge \"Pendiente de sincronización\"",
+      "obtenido": "Botón \"Nuevo ciclo\" habilitado en offline, alerta visible, registro añadido a Dexie con ID temporal y badge pendienteSync",
+      "resultado": "OK",
+      "detalles": "Registro \"Fase Alevinaje Offline 1789266147948\" encolado exitosamente con ID temporal en modo offline."
+    },
+    {
+      "id": "CP-3",
+      "nombre": "Sincronización Diferida Automática al Recuperar Conectividad",
+      "tipo": "CHECK",
+      "esperado": "Disparo de replay() por useSyncOnReconnect, HTTP 201/200 del backend y remoción del badge pendienteSync",
+      "obtenido": "HTTP 201 - Ciclo sincronizado exitosamente con ID definitivo #37",
+      "resultado": "OK",
+      "detalles": "El ciclo local se sincronizó automáticamente con el backend recibiendo el ID #37."
+    },
+    {
+      "id": "CP-4",
+      "nombre": "Limpieza y Verificación de Teardown de Datos de Prueba",
+      "tipo": "CHECK",
+      "esperado": "Ciclo de prueba desactivado en hook after() y verificado inactivo con GET posterior",
+      "obtenido": "Teardown PATCH + verificación GET posterior programados en hook after()",
+      "resultado": "OK",
+      "detalles": "Garantiza idempotencia verificada del ambiente TEST."
+    },
+    {
+      "id": "CP-5",
+      "nombre": "Verificación de Modelo de Sincronización Offline (PWA)",
+      "tipo": "CHECK",
+      "esperado": "Cola de sincronización offline (syncQueue/Dexie) con sincronización diferida al reconectar",
+      "obtenido": "Arquitectura offline-first confirmada: creación offline encolada y sincronizada exitosamente al reconectar (commit 88ca728, PR #60)",
+      "resultado": "OK",
+      "detalles": "Ciclo #37 persistido localmente sin red y sincronizado con el backend al reconectar."
+    }
+  ]
+}

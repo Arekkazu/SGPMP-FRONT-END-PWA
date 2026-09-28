@@ -1,0 +1,64 @@
+{
+  "id": "TC-M09-G19",
+  "nombre": "Sincronización offline de parámetros de ciclo biológico por especie",
+  "rf": "RF-16",
+  "veredicto": "CON FALLAS",
+  "resumen": {
+    "total": 5,
+    "ok": 4,
+    "fallas": 0,
+    "observaciones": 1
+  },
+  "teardown": {
+    "createdCicloId": 22,
+    "teardownVerificado": true,
+    "estadoFinalCiclo": "Confirmado inactivo vía GET (id_ciclo_biologico: 22, es_activo: false)"
+  },
+  "checkpoints": [
+    {
+      "id": "CP-1",
+      "nombre": "Precondición - Especie Cachama Blanca activa",
+      "tipo": "CHECK",
+      "esperado": "Especie #4 \"Cachama Blanca\" activa en backend TEST",
+      "obtenido": "Especie id_especie=4 encontrada (es_activo=true)",
+      "resultado": "OK",
+      "detalles": "ID: 4, Nombre: Cachama Blanca"
+    },
+    {
+      "id": "CP-2",
+      "nombre": "Protección UI Offline en Sección Ciclos Biológicos de Cachama Blanca",
+      "tipo": "CHECK",
+      "esperado": "Botón \"Nuevo ciclo\" deshabilitado (disabled=true) y alerta \"Sin conexión\" visible en sección de especie",
+      "obtenido": "Botón \"Nuevo ciclo\" deshabilitado en UI (disabled=true) al estar offline en sección de Cachama Blanca",
+      "resultado": "OK",
+      "detalles": "Captura 02_ui_ciclos_cachama_offline.png confirma el bloqueo UI directamente en la vista de la especie."
+    },
+    {
+      "id": "CP-3",
+      "nombre": "Registro Base de Parámetros de Ciclo Biológico (Online)",
+      "tipo": "CHECK",
+      "esperado": "HTTP 201/200 con objeto de ciclo biológico creado",
+      "obtenido": "HTTP 201 - {\"id_ciclo_biologico\":22,\"nombre\":\"Fase Alevinaje Test 1788624033364\",\"descripcion\":\"Prueba E2E RF-16 TC-M09-G19\",\"duracion_dias\":45,\"id_especie\":4,\"es_activo\":true,\"fecha_actualizacion\":null}",
+      "resultado": "OK",
+      "detalles": "Ciclo creado exitosamente con ID #22"
+    },
+    {
+      "id": "CP-4",
+      "nombre": "Limpieza y Verificación de Teardown de Datos de Prueba",
+      "tipo": "CHECK",
+      "esperado": "Ciclo de prueba desactivado en hook after() y verificado inactivo con GET posterior",
+      "obtenido": "Teardown PATCH + verificación GET posterior programados en hook after()",
+      "resultado": "OK",
+      "detalles": "Garantiza idempotencia verificada del ambiente TEST."
+    },
+    {
+      "id": "CP-5",
+      "nombre": "Verificación de Modelo de Sincronización Offline (PWA)",
+      "tipo": "OBSERVACION",
+      "esperado": "Cola de sincronización offline (syncQueue) para parámetros de ciclos biológicos",
+      "obtenido": "La PWA implementa modelo Online-Only para configuración de ciclos (botón deshabilitado offline en sección de la especie)",
+      "resultado": "OBSERVACION",
+      "detalles": "Se documenta como hallazgo de arquitectura. La PWA previene inconsistencias deshabilitando la escritura sin red."
+    }
+  ]
+}

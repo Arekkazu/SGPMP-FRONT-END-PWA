@@ -2,25 +2,24 @@ import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff, Building2 } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useLogin } from '../hooks/useLogin';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
+import { consumirAvisoSesionCerrada } from '../../shared/api/http';
+import { agrofusionLoginUrl, ssoConfigurado } from '../config/sso';
 import type { LoginDTO } from '../types';
 import './AuthPages.css';
-
-const AGROFUSION_LOGIN_URL = import.meta.env.VITE_AGROFUSION_LOGIN_URL as string | undefined;
 
 export function LoginPage() {
   const { t } = useT('auth');
   const { login, loading, error, online } = useLogin();
   const [showPw, setShowPw] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
-
-  const handleAgroFusionLogin = () => {
-    if (AGROFUSION_LOGIN_URL) window.location.href = AGROFUSION_LOGIN_URL;
-  };
+  // El interceptor de http.ts deja esta bandera antes de un `location.replace`
+  // a /login, asi que se lee una sola vez, al montar tras esa recarga completa.
+  const [sesionCerrada] = useState(() => consumirAvisoSesionCerrada());
 
   const {
     register,
@@ -50,6 +49,15 @@ export function LoginPage() {
         </div>
         <h1 className="auth-title">{t('loginpage.iniciar_sesion')}</h1>
         <p className="auth-sub">{t('loginpage.sgp_multiespecie_sistema_de_gestion_pecuaria')}</p>
+
+        {sesionCerrada && (
+          <Alert
+            variant="warning"
+            title={t('loginpage.sesion_cerrada')}
+            description={t('loginpage.sesion_cerrada_descripcion')}
+            className="auth-alert"
+          />
+        )}
 
         {!online && (
           <Alert
@@ -86,10 +94,10 @@ export function LoginPage() {
 
         {failedAttempts > 0 && (
           <div style={{ marginBottom: 'var(--s4)' }}>
-            <p style={{ fontSize: '11px', color: 'var(--sem-error)', fontWeight: 700, marginBottom: 6, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Intentos fallidos ({failedAttempts} de 5)
+            <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--sem-error)', fontWeight: 700, marginBottom: 6 }}>
+              {t('loginpage.intentos_fallidos', { count: failedAttempts })}
             </p>
-            <div className="auth-attempts-bar" role="img" aria-label={`${failedAttempts} de 5 intentos fallidos`}>
+            <div className="auth-attempts-bar" role="img" aria-label={t('loginpage.intentos_fallidos', { count: failedAttempts })}>
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className={`auth-att-dot ${i <= failedAttempts ? 'auth-att-dot--used' : ''}`} />
               ))}
@@ -125,6 +133,7 @@ export function LoginPage() {
               error={errors.contrasena?.message}
               trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               onTrailingClick={() => setShowPw((v) => !v)}
+              trailingPressed={showPw}
               {...register('contrasena', { required: t('loginpage.la_contrasena_es_obligatoria') })}
             />
           </div>
@@ -139,19 +148,21 @@ export function LoginPage() {
           >{t('loginpage.ingresar')}</Button>
         </form>
 
-        <div className="auth-divider" role="presentation">o</div>
+        {/* TC-DIS-05: el separador y el boton de AgroFusion estaban en la linea
+            base visual y no se renderizaban. El canje del token (/sso/callback)
+            y los rotulos traducidos ya existian — faltaba la entrada al flujo. */}
+        <div className="auth-divider">{t('loginpage.separador_o')}</div>
 
         <Button
-          type="button"
           variant="secondary"
           size="lg"
           fullWidth
-          disabled={!AGROFUSION_LOGIN_URL}
-          onClick={handleAgroFusionLogin}
-        >
-          <Building2 size={18} aria-hidden />{t('loginpage.continuar_con_agrofusion')}</Button>
-        {!AGROFUSION_LOGIN_URL && (
-          <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', marginTop: 'var(--s2)' }}>{t('loginpage.configuracion_pendiente')}</p>
+          disabled={!online || !ssoConfigurado}
+          onClick={() => { window.location.href = agrofusionLoginUrl; }}
+        >{t('loginpage.continuar_con_agrofusion')}</Button>
+
+        {!ssoConfigurado && (
+          <p className="auth-hint">{t('loginpage.configuracion_pendiente')}</p>
         )}
 
         <hr className="auth-sep" />

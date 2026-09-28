@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { usuariosApi } from '../api/usuariosApi';
-import type { UsuarioDetalleResponse, EditarPerfilAdminDTO, GestionarCuentaDTO } from '../types';
+import type { UsuarioDetalleResponse, EditarPerfilAdminDTO, GestionarCuentaDTO, AsignarFincasDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 export function useUsuarioDetalle() {
@@ -52,5 +52,19 @@ export function useUsuarioDetalle() {
     }
   }, []);
 
-  return { detalle, loading, saving, error, saveError, cargar, editar, gestionar };
+  const asignarFincas = useCallback(async (id: number, dto: AsignarFincasDTO): Promise<boolean> => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await usuariosApi.asignarFincas(id, dto);
+      return true;
+    } catch (e) {
+      setSaveError(e as ApiError);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  return { detalle, loading, saving, error, saveError, cargar, editar, gestionar, asignarFincas };
 }

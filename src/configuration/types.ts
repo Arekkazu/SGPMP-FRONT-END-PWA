@@ -8,6 +8,9 @@ export interface EspecieResponse {
   es_activo: boolean;
   fecha_creacion: string;
   fecha_actualizacion: string | null;
+  /** #115 (RF-15): solo en cliente — true mientras la creación offline que lo generó
+   *  sigue en syncQueue. No lo emite el backend. */
+  pendienteSync?: boolean;
 }
 
 export interface RegistrarEspecieDTO {
@@ -214,6 +217,9 @@ export interface CicloBiologicoResponse {
   id_especie: number;
   es_activo: boolean;
   fecha_actualizacion: string | null;
+  /** #54 (RF-16): solo en cliente — true mientras la escritura offline que lo creó/tocó
+   *  sigue en syncQueue. No lo emite el backend. */
+  pendienteSync?: boolean;
 }
 
 export interface RegistrarCicloDTO {

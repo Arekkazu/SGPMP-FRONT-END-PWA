@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   aInstanteUtc,
+  diaParaBackendUtc,
   diasAtrasLocal,
   finDelDiaUtc,
   hoyLocal,
@@ -64,5 +65,17 @@ describe('diasAtrasLocal', () => {
     const hace7 = new Date();
     hace7.setDate(hace7.getDate() - 7);
     expect(diasAtrasLocal(7)).toBe(hoyLocal(hace7));
+  });
+});
+
+describe('diaParaBackendUtc', () => {
+  it('#130: el hoy local viaja como el hoy UTC, que el backend guarda con la hora real', () => {
+    // 22:00 local: en UTC-5 ya es el día siguiente en UTC.
+    const noche = new Date(2026, 0, 1, 22, 0);
+    expect(diaParaBackendUtc('2026-01-01', noche)).toBe(noche.toISOString().slice(0, 10));
+  });
+
+  it('un día pasado viaja tal cual', () => {
+    expect(diaParaBackendUtc('2025-12-30', new Date(2026, 0, 1, 22, 0))).toBe('2025-12-30');
   });
 });

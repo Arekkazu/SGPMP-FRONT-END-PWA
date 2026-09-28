@@ -1,0 +1,71 @@
+{
+  "caso": "TC-M01-109",
+  "titulo": "Pérdida de conexión intermitente en flujos de identidad (RF-01, RF-02, RF-07, RF-08, RF-09)",
+  "cus": "CU-InicioSesion, CU-CambioContrasena, CU-RecuperarContrasena",
+  "rfs": "RF-01, RF-02, RF-07, RF-08, RF-09",
+  "tipo": "Pruebas Extremas / Resiliencia e Interrupción Intermitente",
+  "modo": "Fase B (Punto 2) — 2 Caídas Simuladas + Verificación de Recuperación de Contraseña",
+  "severidad": "Media",
+  "responsable": "Sebastian",
+  "testEmailAuth": "jusebas73@gmail.com",
+  "testEmailRecovery": "jusebas73@gmail.com",
+  "currentPw": "Test1234!",
+  "newPw": "Reset#2029",
+  "idUsuario": 93,
+  "fallasPrevias": 0,
+  "restauracionExitosa": true,
+  "simulatedDropsCount": 2,
+  "peticionesRealesRecuperacion": 1,
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 152.0.7977.76",
+  "fecha": "2026-09-06T00:12:15.709Z",
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "observaciones": [
+    "El usuario comprobó que solo llegó un token válido de restablecimiento de contraseña."
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-01: Precondición Cuenta Sujeto Auth",
+      "esperado": "Cuenta jusebas73@gmail.com existente y activa (HTTP 200)",
+      "obtenido": "Cuenta encontrada ID: 93, Estado: Activo",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02: RF-02 Login UI Interrumpido + Captura Token A",
+      "esperado": "POST /sesiones/ procesado por backend (Token A emitido); cliente recibe Network Error",
+      "obtenido": "Token A capturado (eyJhbGciOiJIUzI...); cliente experimentó caída de red",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03: RF-02 Verificación de Sesión Única",
+      "esperado": "Token A EXIGE HTTP 401 (TOKEN_REVOCADO) y Token B responde HTTP 200 OK",
+      "obtenido": "Token A rechazado (HTTP 401); Token B activo (HTTP 200 OK) — Sesión única garantizada",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04: RF-07 Cambio de Clave Interrumpido",
+      "esperado": "PUT procesado en backend (clave actualizada a Reset#2029); cliente recibe Network Error",
+      "obtenido": "Caída de red simulada en respuesta recibida por el cliente",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05: RF-07 Reintento Manual con Clave Obsoleta",
+      "esperado": "EXIGE STRICTAMENTE HTTP 401 Unauthorized conteniendo \"Intento 1 de 5\"",
+      "obtenido": "HTTP 401 (CONTRASENA_ACTUAL_INCORRECTA) — Contador incrementado a Intento 1 de 5 (bloqueo a 30 min). Hallazgo de QA verificado",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06: RF-08/RF-09 Recuperación Intermitente",
+      "esperado": "Verificación de generación de token de recuperación sin duplicidad",
+      "obtenido": "El usuario comprobó que solo llegó un token válido de restablecimiento de contraseña.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07: Restauración de Contraseña Original",
+      "esperado": "Reversión exitosa a Test1234! (HTTP 200 OK) y verificación de login",
+      "obtenido": "Contraseña de jusebas73@gmail.com restaurada a Test1234!. Login final HTTP 200 OK",
+      "estado": "OK"
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "grupo": "TC-M09-G22",
+  "rf": "RF-17",
+  "cu": "CU-03",
+  "cuOriginal": "CU-07",
+  "rol": "Administrador",
+  "rama": "qa/juan-esteban-m09",
+  "frontendSHA": "966621df4e2c6a1f2c9233ea5ebefbb9e3bc2f56",
+  "backendSHA": "adc3932b9f0293a76ebec7e89ed877274791b6a1",
+  "base": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "fecha": "2026-09-06T07:08:49.387Z",
+  "preflight": [
+    {
+      "url": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/login",
+      "status": 200
+    },
+    {
+      "url": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/health",
+      "status": 200
+    },
+    {
+      "url": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/openapi.json",
+      "status": 200
+    },
+    {
+      "contrato": "POST /configuracion/umbrales",
+      "respuestasDeclaradas": [
+        "201",
+        "401",
+        "403",
+        "404",
+        "409",
+        "422"
+      ],
+      "exitoDeclarado": [
+        "201"
+      ]
+    }
+  ],
+  "loginStatus": 200,
+  "plan": {
+    "caso": "TC-M09-47",
+    "especie": {
+      "id": 4,
+      "nombre": "Cachama Blanca",
+      "es_activo": true
+    },
+    "variable": {
+      "id": 9,
+      "nombre": "Temperatura Ambiental",
+      "unidad": "°C",
+      "catalogoActivo": true,
+      "fisicoMin": "-50",
+      "fisicoMax": "100",
+      "semantica": "Temperatura",
+      "coincidePatron": true
+    },
+    "rangoElegido": {
+      "valor_min": "35.50",
+      "valor_max": "39.20",
+      "origen": "valores del ejemplo academico, dentro de los limites fisicos reales"
+    },
+    "combinacionLibre": true,
+    "combinacionesOcupadasRevisadas": [],
+    "umbralesPrevios": [
+      {
+        "id": 10,
+        "id_variable_ambiental": 1
+      },
+      {
+        "id": 11,
+        "id_variable_ambiental": 3
+      }
+    ],
+    "payload": {
+      "id_especie": 4,
+      "id_variable_ambiental": 9,
+      "valor_min": "35.50",
+      "valor_max": "39.20",
+      "niveles": [
+        {
+          "nivel": "normal",
+          "limite_inferior": "35.50",
+          "limite_superior": "36.70"
+        },
+        {
+          "nivel": "precaucion",
+          "limite_inferior": "36.70",
+          "limite_superior": "37.90"
+        },
+        {
+          "nivel": "critico",
+          "limite_inferior": "37.90",
+          "limite_superior": "39.20"
+        }
+      ]
+    }
+  },
+  "cuerpoEnviado": "{\"id_especie\":4,\"id_variable_ambiental\":9,\"valor_min\":35.50,\"valor_max\":39.20,\"niveles\":[{\"nivel\":\"normal\",\"limite_inferior\":35.50,\"limite_superior\":36.70},{\"nivel\":\"precaucion\",\"limite_inferior\":36.70,\"limite_superior\":37.90},{\"nivel\":\"critico\",\"limite_inferior\":37.90,\"limite_superior\":39.20}]}"
+}

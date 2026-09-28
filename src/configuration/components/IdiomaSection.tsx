@@ -166,7 +166,7 @@ function IdiomaPanel({
         <Alert variant="success" title={t('idioma.guardado_titulo')} description={t('idioma.guardado_detalle')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
+      <div className="ds-fg2" style={{ gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
         {IDIOMAS.map((idioma) => (
           <IdiomaCard
             key={idioma.code}

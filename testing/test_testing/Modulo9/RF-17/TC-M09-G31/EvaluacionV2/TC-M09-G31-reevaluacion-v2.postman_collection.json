@@ -1,0 +1,47 @@
+{
+  "info": {
+    "name": "TC-M09-G31 REEVALUACION V2 — TC-M09-66/67/68 clasificacion semaforica con umbrales RF-17 (solo lectura)",
+    "description": "Sin mediciones: precondiciones (actor, configuracion RF-17 con tres niveles) y oraculo de existencia del clasificador que usa los niveles RF-17 en Monitoreo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Actor",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/usuarios/me" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const b=pm.response.json();",
+        "pm.test('Precondicion: /usuarios/me 200',()=>pm.response.to.have.status(200));",
+        "pm.test('Precondicion: Administrador o Veterinario activo',()=>{pm.expect(['Administrador','Veterinario']).to.include(b.nombre_rol);pm.expect(b.estado_cuenta).to.eql('Activo');});"
+      ] } }]
+    },
+    {
+      "name": "THRESHOLD_CONFIG",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/configuracion/umbrales?id_especie={{id_especie}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const b=pm.response.json(); const id=Number(pm.environment.get('id_umbral')); const num=x=>Number(x);",
+        "pm.test('Precondicion: GET RF-17 200',()=>pm.response.to.have.status(200));",
+        "const u=b.items.find(x=>x.id_umbral_ambiental===id);",
+        "pm.test('Precondicion: configuracion activa con normal/precaucion/critico',()=>{pm.expect(u).to.not.be.undefined;pm.expect(u.es_activo).to.eql(true);pm.expect(u.niveles.map(n=>n.nivel).sort()).to.eql(['critico','normal','precaucion']);});",
+        "pm.test('Precondicion: niveles sin solapamiento y cada uno con amplitud positiva',()=>{const o=[...u.niveles].sort((a,c)=>num(a.limite_inferior)-num(c.limite_inferior));o.forEach(n=>pm.expect(num(n.limite_inferior)).to.be.below(num(n.limite_superior)));for(let i=0;i<o.length-1;i++)pm.expect(num(o[i].limite_superior)).to.be.at.most(num(o[i+1].limite_inferior));});"
+      ] } }]
+    },
+    {
+      "name": "Monitoreo dashboard",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/iot/monitoreo/dashboard?pagina=1&por_pagina=50" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const b=pm.response.json(); const s=b.sensores||[]; const campos=s.length?Object.keys(s[0]):[];",
+        "pm.test('Precondicion: API Monitoreo dashboard 200',()=>pm.response.to.have.status(200));",
+        "pm.test('Oraculo G31: el estado del sensor referencia el umbral/nivel RF-17 con que se clasifico',()=>pm.expect(campos.filter(c=>/(^|_)umbral|^nivel_alerta|nivel_(normal|precaucion|critico)|clasificacion_umbral/i.test(c)),'campos: '+campos.join(',')).to.not.be.empty);"
+      ] } }]
+    },
+    {
+      "name": "Monitoreo historial",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/iot/monitoreo/historial?fecha_inicio={{fecha_inicio}}&fecha_fin={{fecha_fin}}&pagina=1&por_pagina=50&orden=DESC" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const b=pm.response.json(); const it=b.items||[];",
+        "pm.test('Precondicion: API Monitoreo historial 200',()=>pm.response.to.have.status(200));",
+        "pm.test('Oraculo G31: la clasificacion historica se calcula con umbral (no todo GRIS)',()=>{pm.expect(it.length,'lecturas').to.be.above(0);pm.expect(it.some(x=>x.estado_semaforo_historico&&x.estado_semaforo_historico!=='GRIS'),'semaforos: '+[...new Set(it.map(x=>x.estado_semaforo_historico))].join(',')).to.eql(true);});"
+      ] } }]
+    }
+  ]
+}
