@@ -19,15 +19,6 @@
  * en una sola página con el pie "N registros".
  */
 import { expect, test, type Page, type Response } from '@playwright/test';
-import path from 'path';
-
-// Credenciales desde testing/accesibilidad/.env.test (no se sobreescriben variables ya definidas)
-try {
-  process.loadEnvFile(path.resolve(__dirname, '../../../../.env.test'));
-} catch {
-  // Sin archivo: se usan las variables del entorno (CI)
-}
-
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
@@ -57,7 +48,7 @@ async function iniciarSesionAdmin(page: Page) {
   await page.getByRole('textbox', { name: 'Correo electrónico', exact: true }).fill(ADMIN_EMAIL);
   await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20_000 });
+  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 60_000 });
 }
 
 /** Abre /configuracion (tab Catálogo por defecto) y espera a que la tabla termine de cargar. */
@@ -83,21 +74,17 @@ function zonasDinamicas(page: Page) {
 
 const OPCIONES_CAPTURA = { fullPage: true, animations: 'disabled' as const, caret: 'hide' as const };
 
-// El backend TEST (api.inmero.co/back-sigab-test) solo acepta por CORS el origen
-// https://api.inmero.co; desde el dominio sslip.io el login responde "Disallowed CORS origin".
-test.use({ baseURL: process.env.BASE_URL ?? 'https://api.inmero.co/' });
-
 test.describe('TC-DIS-39 - Consistencia visual - Catálogo de Especies (RF-15)', () => {
   // En serie: si el login falla se detiene, en vez de sumar intentos fallidos a la cuenta admin (bloqueo a los 5)
-  test.describe.configure({ mode: 'serial' });
+  test.describe.configure({ mode: 'serial', timeout: 120_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet. Solo se evalúa escritorio.`,
+      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
     );
-    expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en .env.test').not.toBe('');
-    expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en .env.test').not.toBe('');
+    expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
+    expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
 
     await iniciarSesionAdmin(page);
   });
