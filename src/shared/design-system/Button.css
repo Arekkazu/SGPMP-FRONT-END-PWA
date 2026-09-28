@@ -20,26 +20,27 @@
 .ds-btn--full { width: 100%; justify-content: center; }
 
 .ds-btn--primary {
-  background: var(--brand-500);
+  background: var(--brand-cta);
   color: #fff;
-  border-color: var(--brand-500);
+  border-color: var(--brand-cta);
 }
 .ds-btn--primary:hover:not(:disabled) {
-  background: var(--brand-600);
-  border-color: var(--brand-600);
+  background: var(--brand-cta-hover);
+  border-color: var(--brand-cta-hover);
 }
 
 .ds-btn--secondary {
   background: var(--surface-card);
-  color: var(--text-secondary);
-  border-color: var(--surface-border);
+  color: var(--brand-600);
+  border-color: var(--brand-400);
 }
-.ds-btn--secondary:hover:not(:disabled) { background: var(--surface-hover); }
+.ds-btn--secondary:hover:not(:disabled) { background: var(--brand-50); }
+[data-theme="dark"] .ds-btn--secondary:hover:not(:disabled) { background: var(--brand-900); }
 
 .ds-btn--danger {
-  background: var(--sem-error);
+  background: var(--sem-error-solid);
   color: #fff;
-  border-color: var(--sem-error);
+  border-color: var(--sem-error-solid);
 }
 .ds-btn--danger:hover:not(:disabled) { background: #a01e06; }
 
@@ -53,9 +54,45 @@
 
 .ds-btn:disabled,
 .ds-btn--loading {
-  opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* QA TC-DIS-15: deshabilitado sin opacity (rompe contraste). Colores
+   explicitos con ratio >= 4.5:1 sobre las superficies del tema activo. */
+.ds-btn:disabled,
+.ds-btn--loading {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  border-color: var(--surface-border);
+}
+
+/* DS v2.0 "Estados interactivos": cada variante define los 5 estados. Faltaba
+   :active — un click sostenido no daba ningun feedback. */
+.ds-btn:active:not(:disabled) { transform: scale(0.98); }
+.ds-btn--primary:active:not(:disabled) {
+  background: var(--brand-cta-active);
+  border-color: var(--brand-cta-active);
+}
+.ds-btn--danger:active:not(:disabled) {
+  background: #801404;
+  border-color: #801404;
+}
+.ds-btn--secondary:active:not(:disabled),
+.ds-btn--ghost:active:not(:disabled) { background: var(--brand-100); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-btn { transition: none; }
+  .ds-btn:active:not(:disabled) { transform: none; }
+}
+
+.ds-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.ds-btn--primary:focus-visible {
+  outline-color: var(--brand-600);
 }
 
 .ds-btn__spinner {

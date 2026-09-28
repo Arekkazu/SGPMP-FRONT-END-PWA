@@ -81,7 +81,7 @@ export function DistribucionOtaView() {
         </div>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         <DatosSimuladosBanner detalle="La creación de despliegues y el monitor en vivo son del motor de distribución OTA (equipo IoT/IA). Esta vista muestra el estado real de lectura; el asistente de creación no está disponible" />
 
         {!online && <Alert variant="warning" title={t('distribucionotaview.sin_conexion')} description={t('distribucionotaview.mostrando_despliegues_cacheados')} style={{ marginBottom: 'var(--s4)' }} />}

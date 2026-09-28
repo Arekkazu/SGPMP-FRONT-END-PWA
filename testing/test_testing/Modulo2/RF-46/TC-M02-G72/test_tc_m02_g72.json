@@ -1,0 +1,694 @@
+{
+  "info": {
+    "_postman_id": "9b22089e-d278-4bf8-964e-004e186774b2-tc-m02-g72",
+    "name": "TC-M02-G72 · Historial Consolidado (RF-46)",
+    "description": "Suite completa de pruebas de API REST para el caso agrupado TC-M02-G72 (RF-46 / CU10A)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+      "type": "string"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@pecuaria.co",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Test1234!",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Autenticación Admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Token obtenido y almacenado\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.token).to.be.a('string');",
+              "    pm.collectionVariables.set(\"token\", jsonData.token);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"correo_electronico\": \"{{adminEmail}}\",\n  \"contrasena\": \"{{adminPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/sesiones/",
+          "host": ["{{baseUrl}}"],
+          "path": ["sesiones", ""]
+        }
+      }
+    },
+    {
+      "name": "TC-M02-118",
+      "item": [
+        {
+          "name": "118 - Consultar historial completo consolidado (Activo 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Estructura paginada válida\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.id_activo_biologico).to.eql(2);",
+                  "    pm.expect(data.total_registros).to.eql(42);",
+                  "    pm.expect(data.registros).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "pm.test(\"Orden cronológico ascendente por fecha_evento\", function () {",
+                  "    var data = pm.response.json();",
+                  "    for (var i = 0; i < data.registros.length - 1; i++) {",
+                  "        var tCurrent = new Date(data.registros[i].fecha_evento).getTime();",
+                  "        var tNext = new Date(data.registros[i + 1].fecha_evento).getTime();",
+                  "        pm.expect(tCurrent).to.be.at.most(tNext);",
+                  "    }",
+                  "});",
+                  "pm.test(\"Presencia de múltiples categorías consolidadas\", function () {",
+                  "    var data = pm.response.json();",
+                  "    var cats = new Set(data.registros.map(function(r) { return r.categoria; }));",
+                  "    pm.expect(cats.size).to.be.above(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activos-biologicos/2/historial?pagina=1&page_size=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["activos-biologicos", "2", "historial"],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-M02-119",
+      "item": [
+        {
+          "name": "119 - Filtrar historial por rango de fechas válido (2024)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Retorna eventos filtrados en el rango\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.total_registros).to.be.above(0);",
+                  "    pm.expect(data.registros).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "pm.test(\"100% de eventos dentro del rango 2024-01-01 a 2024-12-31\", function () {",
+                  "    var data = pm.response.json();",
+                  "    var tInicio = new Date('2024-01-01T00:00:00Z').getTime();",
+                  "    var tFin = new Date('2024-12-31T23:59:59.999Z').getTime();",
+                  "    data.registros.forEach(function(r) {",
+                  "        var tEvt = new Date(r.fecha_evento).getTime();",
+                  "        pm.expect(tEvt).to.be.at.least(tInicio);",
+                  "        pm.expect(tEvt).to.be.at.most(tFin);",
+                  "    });",
+                  "});",
+                  "pm.test(\"Orden cronológico ascendente\", function () {",
+                  "    var data = pm.response.json();",
+                  "    for (var i = 0; i < data.registros.length - 1; i++) {",
+                  "        var tCurrent = new Date(data.registros[i].fecha_evento).getTime();",
+                  "        var tNext = new Date(data.registros[i + 1].fecha_evento).getTime();",
+                  "        pm.expect(tCurrent).to.be.at.most(tNext);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activos-biologicos/2/historial?fecha_inicio=2024-01-01&fecha_fin=2024-12-31&pagina=1&page_size=100",
+              "host": ["{{baseUrl}}"],
+              "path": ["activos-biologicos", "2", "historial"],
+              "query": [
+                {
+                  "key": "fecha_inicio",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "fecha_fin",
+                  "value": "2024-12-31"
+                },
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-M02-121",
+      "item": [
+        {
+          "name": "121a - Filtrar por categoría CRECIMIENTO (Activo 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"100% de los registros son categoría CRECIMIENTO\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.total_registros).to.be.above(0);",
+                  "    data.registros.forEach(function(r) {",
+                  "        pm.expect(r.categoria).to.eql(\"CRECIMIENTO\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activos-biologicos/2/historial?categoria_evento=CRECIMIENTO&page_size=100",
+              "host": ["{{baseUrl}}"],
+              "path": ["activos-biologicos", "2", "historial"],
+              "query": [
+                {
+                  "key": "categoria_evento",
+                  "value": "CRECIMIENTO"
+                },
+                {
+                  "key": "page_size",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "121b - Filtrar por categoría SANITARIO (Activo 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"100% de los registros son categoría SANITARIO\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.total_registros).to.be.above(0);",
+                  "    data.registros.forEach(function(r) {",
+                  "        pm.expect(r.categoria).to.eql(\"SANITARIO\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activos-biologicos/2/historial?categoria_evento=SANITARIO&page_size=100",
+              "host": ["{{baseUrl}}"],
+              "path": ["activos-biologicos", "2", "historial"],
+              "query": [
+                {
+                  "key": "categoria_evento",
+                  "value": "SANITARIO"
+                },
+                {
+                  "key": "page_size",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "121c - Filtrar por categoría TRANSFERENCIA (Activo 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"100% de los registros son categoría TRANSFERENCIA\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.total_registros).to.eql(2);",
+                  "    data.registros.forEach(function(r) {",
+                  "        pm.expect(r.categoria).to.eql(\"TRANSFERENCIA\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activos-biologicos/2/historial?categoria_evento=TRANSFERENCIA&page_size=100",
+              "host": ["{{baseUrl}}"],
+              "path": ["activos-biologicos", "2", "historial"],
+              "query": [
+                {
+                  "key": "categoria_evento",
+                  "value": "TRANSFERENCIA"
+                },
+                {
+                  "key": "page_size",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "121d - Filtrar por categoría BAJA (Activo 1 Fixture)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"100% de los registros son categoría BAJA\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.total_registros).to.be.at.least(1);",
+                  "    data.registros.forEach(function(r) {",
+                  "        pm.expect(r.categoria).to.eql(\"BAJA\");",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activos-biologicos/1/historial?categoria_evento=BAJA&page_size=100",
+              "host": ["{{baseUrl}}"],
+              "path": ["activos-biologicos", "1", "historial"],
+              "query": [
+                {
+                  "key": "categoria_evento",
+                  "value": "BAJA"
+                },
+                {
+                  "key": "page_size",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-M02-123",
+      "item": [
+        {
+          "name": "123a - Validar matemática de paginación (page_size=5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Paginación matemática exacta\", function () {",
+                  "    var data = pm.response.json();",
+                  "    pm.expect(data.registros.length).to.eql(5);",
+                  "    pm.expect(data.registros_por_pagina).to.eql(5);",
+                  "    pm.expect(data.pagina_actual).to.eql(1);",
+                  "    var expectedPages = Math.ceil(data.total_registros / 5);",
+                  "    pm.expect(data.total_paginas).to.eql(expectedPages);",
+                  "});",
+                  "pm.test(\"Tiempo de respuesta ≤ 3000 ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activos-biologicos/2/historial?pagina=1&page_size=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["activos-biologicos", "2", "historial"],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "123b - Rechazo de page_size > 100",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Rechaza page_size > 100 con HTTP 400 o 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "pm.test(\"Tiempo de respuesta ≤ 3000 ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/activos-biologicos/2/historial?page_size=200",
+              "host": ["{{baseUrl}}"],
+              "path": ["activos-biologicos", "2", "historial"],
+              "query": [
+                {
+                  "key": "page_size",
+                  "value": "200"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-M02-124",
+      "item": [
+        {
+          "name": "124-01 - Lectura idempotente 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/activos-biologicos/2/historial?pagina=1&page_size=10", "host": ["{{baseUrl}}"], "path": ["activos-biologicos", "2", "historial"], "query": [{ "key": "pagina", "value": "1" }, { "key": "page_size", "value": "10" }] }
+          }
+        },
+        {
+          "name": "124-02 - Lectura idempotente 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/activos-biologicos/2/historial?pagina=2&page_size=10", "host": ["{{baseUrl}}"], "path": ["activos-biologicos", "2", "historial"], "query": [{ "key": "pagina", "value": "2" }, { "key": "page_size", "value": "10" }] }
+          }
+        },
+        {
+          "name": "124-03 - Lectura idempotente 3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/activos-biologicos/2/historial?categoria_evento=ESTADO", "host": ["{{baseUrl}}"], "path": ["activos-biologicos", "2", "historial"], "query": [{ "key": "categoria_evento", "value": "ESTADO" }] }
+          }
+        },
+        {
+          "name": "124-04 - Lectura idempotente 4",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/activos-biologicos/2/historial?categoria_evento=FASE", "host": ["{{baseUrl}}"], "path": ["activos-biologicos", "2", "historial"], "query": [{ "key": "categoria_evento", "value": "FASE" }] }
+          }
+        },
+        {
+          "name": "124-05 - Lectura idempotente 5",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/activos-biologicos/2/historial?categoria_evento=SANITARIO", "host": ["{{baseUrl}}"], "path": ["activos-biologicos", "2", "historial"], "query": [{ "key": "categoria_evento", "value": "SANITARIO" }] }
+          }
+        },
+        {
+          "name": "124-06 - Lectura idempotente 6",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/activos-biologicos/2/historial?fecha_inicio=2024-01-01", "host": ["{{baseUrl}}"], "path": ["activos-biologicos", "2", "historial"], "query": [{ "key": "fecha_inicio", "value": "2024-01-01" }] }
+          }
+        },
+        {
+          "name": "124-07 - Lectura idempotente 7",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/activos-biologicos/2/historial?fecha_fin=2025-12-31", "host": ["{{baseUrl}}"], "path": ["activos-biologicos", "2", "historial"], "query": [{ "key": "fecha_fin", "value": "2025-12-31" }] }
+          }
+        },
+        {
+          "name": "124-08 - Lectura idempotente 8",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/activos-biologicos/2/historial?categoria_evento=PRODUCTIVO", "host": ["{{baseUrl}}"], "path": ["activos-biologicos", "2", "historial"], "query": [{ "key": "categoria_evento", "value": "PRODUCTIVO" }] }
+          }
+        },
+        {
+          "name": "124-09 - Lectura idempotente 9",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/activos-biologicos/2/historial?categoria_evento=REPRODUCTIVO", "host": ["{{baseUrl}}"], "path": ["activos-biologicos", "2", "historial"], "query": [{ "key": "categoria_evento", "value": "REPRODUCTIVO" }] }
+          }
+        },
+        {
+          "name": "124-10 - Lectura idempotente 10",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/activos-biologicos/2/historial?categoria_evento=TRANSFERENCIA", "host": ["{{baseUrl}}"], "path": ["activos-biologicos", "2", "historial"], "query": [{ "key": "categoria_evento", "value": "TRANSFERENCIA" }] }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "chrome 153.0.8010.36",
+  "fecha": "2026-09-12T07:24:11.213Z",
+  "checkpoints": [
+    {
+      "paso": "TC-M09-210 v2.0: leer la configuracion real de la especie para construir el snapshot de la plantilla",
+      "esperado": "Al elegir la especie activa \"Ave Qa Je\", el formulario debe mostrar sus parametros configurables (ciclos, patologias, metricas, umbrales)",
+      "obtenido": "Seguimos recibiendo el mismo error: \"No se pudo leer la configuración de la especie. Reintenta o elige otra.\". El boton \"Crear plantilla\" permanece deshabilitado. Revision de codigo confirma que especiesConfigApi.ts (ciclosApi/patologiasApi/metricasApi/umbralesApi.listar) sigue sin desenvolver la respuesta {total, items} de esos 4 endpoints antes de que capturarConfiguracionEspecie() les aplique .map() -- el mismo defecto reportado originalmente, sin cambios.",
+      "estado": "FALLA"
+    }
+  ],
+  "veredicto": "CON FALLAS"
+}

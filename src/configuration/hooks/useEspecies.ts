@@ -1,8 +1,23 @@
 import { useState, useCallback } from 'react';
 import { especiesApi } from '../api/especiesApi';
 import { cacheEspecies, getEspeciesCache } from '../db/especiesTable';
+import { enqueue, registerSyncHandler, getConflictos, removeFromQueue } from '../../shared/sync/syncQueue';
 import type { EspecieResponse, RegistrarEspecieDTO, EditarEspecieDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import type { SyncOperation } from '../../shared/db/db';
+
+const MODULO = 'config_especies';
+
+// #115 (RF-15): CU exige almacenamiento local y sincronización diferida al
+// reconectar — "Nueva especie" estaba deshabilitado offline sin ninguna cola
+// de por medio. Registrado una sola vez (efecto de carga del módulo):
+// useSyncOnReconnect() (montado en App.tsx) dispara replay() con esto ya cargado.
+registerSyncHandler(MODULO, async (accion, payload) => {
+  if (accion === 'crear') {
+    const { dto } = payload as { tempId: number; dto: RegistrarEspecieDTO };
+    await especiesApi.registrar(dto);
+  }
+});
 
 export function useEspecies() {
   const [especies, setEspecies] = useState<EspecieResponse[]>([]);
@@ -11,10 +26,16 @@ export function useEspecies() {
   const [error, setError] = useState<ApiError | null>(null);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
   const [fromCache, setFromCache] = useState(false);
+  const [conflictos, setConflictos] = useState<SyncOperation[]>([]);
+
+  const cargarConflictos = useCallback(async () => {
+    setConflictos(await getConflictos(MODULO));
+  }, []);
 
   const cargar = useCallback(async (soloActivas = false) => {
     setLoading(true);
     setError(null);
+    await cargarConflictos();
     try {
       const raw = await especiesApi.listar(soloActivas);
       const data: EspecieResponse[] = Array.isArray(raw) ? raw : (raw as any)?.items ?? [];
@@ -54,11 +75,26 @@ export function useEspecies() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [cargarConflictos]);
 
   const registrar = useCallback(async (dto: RegistrarEspecieDTO): Promise<boolean> => {
     setSaving(true);
     setSaveError(null);
+    if (!navigator.onLine) {
+      const tempId = -Date.now();
+      await enqueue(MODULO, 'crear', { tempId, dto });
+      setEspecies((prev) => [...prev, {
+        id_especie: tempId,
+        nombre: dto.nombre,
+        descripcion: dto.descripcion ?? null,
+        es_activo: true,
+        fecha_creacion: '',
+        fecha_actualizacion: null,
+        pendienteSync: true,
+      }]);
+      setSaving(false);
+      return true;
+    }
     try {
       const nueva = await especiesApi.registrar(dto);
       setEspecies((prev) => [...prev, nueva]);
@@ -70,6 +106,17 @@ export function useEspecies() {
       setSaving(false);
     }
   }, []);
+
+  /** #115 (RF-15): descarta una creación offline que el backend rechazó en firme al sincronizar (ver `syncQueue.replay`). */
+  const resolverConflicto = useCallback(async (op: SyncOperation): Promise<void> => {
+    if (op.id === undefined) return;
+    await removeFromQueue(op.id);
+    if (op.accion === 'crear') {
+      const { tempId } = op.payload as { tempId: number };
+      setEspecies((prev) => prev.filter((e) => e.id_especie !== tempId));
+    }
+    await cargarConflictos();
+  }, [cargarConflictos]);
 
   const editar = useCallback(async (id: number, dto: EditarEspecieDTO): Promise<boolean> => {
     setSaving(true);
@@ -123,10 +170,12 @@ export function useEspecies() {
     error,
     saveError,
     fromCache,
+    conflictos,
     cargar,
     registrar,
     editar,
     desactivar,
     reactivar,
+    resolverConflicto,
   };
 }

@@ -23,14 +23,14 @@ function renderMd(r: any): string {
 | Backend | ${r.backend} |
 | Navegador | ${r.navegador} |
 | Fecha ejecución | ${r.fecha} |
-| Precondiciones | Autenticado como Admin (${r.adminUser}) |
+| Precondiciones | Autenticado como Productor (${r.testUser}) |
 
 ## Nota de Precondición de Datos
 > [!NOTE]
 > ${r.precondicionNota}
 
-## Hallazgo de Error en Consulta de Detalle
-> [!WARNING]
+## Hallazgo de Consulta de Detalle
+> [!NOTE]
 > ${r.notaHallazgoError}
 
 ## Checkpoints
@@ -59,7 +59,6 @@ describe('TC-M01-087 · Verificar que el perfil sea de solo lectura', () => {
 
   let peticionInfo = 'Consulta de perfil de usuario en módulo /usuarios.';
   let precondicionCreado = false;
-  const notaHallazgoError = 'Al intentar abrir el modal de detalle del usuario, el sistema emite la petición HTTP GET /usuarios/undefined/detalle, generando un error de respuesta HTTP 400 Bad Request ("Input should be a valid integer, unable to parse string as an integer") y desplegando la alerta "Error al cargar" en la interfaz.';
 
   before(() => {
     // Evita congelamientos por CORS en scripts de Vite bajo el proxy de Cypress
@@ -74,7 +73,7 @@ describe('TC-M01-087 · Verificar que el perfil sea de solo lectura', () => {
     const hasFalla = checks.some((c) => c.estado === 'FALLA');
     const veredicto = checks.length === 0
       ? 'NO EJECUTADO'
-      : (hasFalla ? 'CON FALLAS (ERROR EN CONSULTA DE DETALLE)' : 'CON FALLAS (ERROR EN CONSULTA DE DETALLE)');
+      : (hasFalla ? 'CON FALLAS' : 'SIN FALLAS BLOQUEANTES');
 
     const precondicionNota = precondicionCreado
       ? 'El usuario no existía previamente en TEST y fue creado por el propio test como precondición para poder ejecutar la validación de solo lectura.'
@@ -87,19 +86,20 @@ describe('TC-M01-087 · Verificar que el perfil sea de solo lectura', () => {
       rf: 'RF-13',
       tipo: 'Funcional / Seguridad (Solo Lectura)',
       equipo: 'Frontend & QA',
-      adminUser: 'admin@pecuaria.co',
+      testUser: 'pruebaas0608@gmail.com',
       ambiente: Cypress.config('baseUrl'),
-      backend: 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
+      backend: Cypress.env('BACKEND_URL') || 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
       navegador: `${Cypress.browser.name} ${Cypress.browser.version}`,
       fecha: new Date().toISOString(),
       precondicionNota,
-      notaHallazgoError,
+      notaHallazgoError: hasFalla
+        ? 'Se detectaron fallas durante la carga de detalle o en la verificación de campos de solo lectura.'
+        : 'Carga de detalle exitosa (HTTP 200) y verificación satisfactoria de 0 campos editables para el rol Productor.',
       peticionInfo,
       checkpoints: checks,
       veredicto,
       hallazgos: [
         precondicionNota,
-        notaHallazgoError,
         ...checks.map((c) => `${c.paso} -> ${c.obtenido} (${c.estado})`),
       ],
     };
@@ -112,8 +112,8 @@ describe('TC-M01-087 · Verificar que el perfil sea de solo lectura', () => {
     checks.length = 0;
     precondicionCreado = false;
 
-    // 1) Login como administrador
-    cy.loginUI('admin@pecuaria.co', 'Test1234!');
+    // 1) Login con rol Productor (sin permisos de edición de usuarios)
+    cy.loginUI('pruebaas0608@gmail.com', 'Test1234!');
 
     // 2) Esperar a que se desbloquee el menú por permisos RBAC y navegar a /usuarios en la SPA
     cy.contains('button.ds-sidebar__item', 'Gestión de usuarios', { timeout: 15000 })
@@ -125,7 +125,7 @@ describe('TC-M01-087 · Verificar que el perfil sea de solo lectura', () => {
 
     add(
       'Checkpoint 1: Autenticación y Navegación al Módulo de Usuarios',
-      'Inicio de sesión exitoso como admin y navegación a /usuarios mediante la barra lateral SPA',
+      'Inicio de sesión exitoso como Productor y navegación a /usuarios mediante la barra lateral SPA',
       'Navegación completada exitosamente a la vista /usuarios',
       'OK'
     );
@@ -177,36 +177,63 @@ describe('TC-M01-087 · Verificar que el perfil sea de solo lectura', () => {
       }
     });
 
+    // Interceptar la solicitud de detalle antes de abrir el modal
+    cy.intercept('GET', '**/usuarios/*/detalle').as('getDetalle');
+
     // 4) Abrir modal de detalle
     cy.contains('tr', 'Diana Paola', { timeout: 15000 })
       .find('button[aria-label*="Ver detalle"]')
       .click();
 
-    // 5) Verificar apertura de modal / vista de detalle
+    // 5) Checkpoint 2: Carga de Información de Detalle del Perfil (dinámico según respuesta HTTP)
+    cy.wait('@getDetalle', { timeout: 15000 }).then((interception) => {
+      const status = interception.response?.statusCode ?? 0;
+      const okStatus = status === 200;
+
+      add(
+        'Checkpoint 2: Carga de Información de Detalle del Perfil',
+        'Carga exitosa de los datos del usuario en la pantalla de detalle (HTTP 200 OK)',
+        okStatus
+          ? `Carga exitosa: El backend respondió HTTP ${status} OK con los datos del usuario`
+          : `Error HTTP ${status} al realizar la solicitud ${interception.request.url}`,
+        okStatus ? 'OK' : 'FALLA'
+      );
+    });
+
     cy.get('div[role="dialog"]', { timeout: 12000 }).should('be.visible');
+
+    // 6) Checkpoint 3: Verificación de Entradas de Formulario Editables en el DOM
+    cy.get('div[role="dialog"]').then(($dialog) => {
+      const editables = $dialog.find('input:not([type="hidden"]), select, textarea');
+      const count = editables.length;
+      const esSoloLectura = count === 0;
+
+      add(
+        'Checkpoint 3: Verificación de Entradas de Formulario Editables',
+        '0 campos de entrada editables en la pantalla (inputs, selects, textareas)',
+        esSoloLectura
+          ? `Verificado: 0 campos editables encontrados en el modal de detalle (${count} inputs/selects/textareas detectados)`
+          : `FALLA: Se detectaron ${count} campos editables en la pantalla de detalle`,
+        esSoloLectura ? 'OK' : 'FALLA'
+      );
+    });
+
+    cy.get('[role="dialog"] input:not([type="hidden"]), [role="dialog"] select, [role="dialog"] textarea')
+      .should('have.length', 0);
 
     cy.screenshot('01_perfil_detalle_modal', { overwrite: true });
 
-    // 6) Registro formal del hallazgo de error en la consulta de detalle
-    add(
-      'Checkpoint 2: Carga de Información de Detalle del Perfil',
-      'Carga exitosa de los datos del usuario en la pantalla de detalle (HTTP 200 OK)',
-      'Error de servidor HTTP 400 Bad Request ("Input should be a valid integer") al realizar la solicitud /usuarios/undefined/detalle',
-      'FALLA'
-    );
-
-    add(
-      'Checkpoint 3: Verificación de Entradas de Formulario Editables',
-      '0 campos de entrada editables en la pantalla (inputs, selects, textareas)',
-      'No fue posible verificar por falla de carga de datos en el modal de detalle',
-      'FALLA'
-    );
-
-    add(
-      'Checkpoint 4: Veredicto de Solo Lectura de la Pantalla de Perfil (RF-13)',
-      'Pantalla 100% solo lectura (0 elementos editables en total)',
-      'FALLA: La consulta de detalle falla con HTTP 400 por enviar ID undefined al backend',
-      'FALLA'
-    );
+    // 7) Checkpoint 4: Veredicto de Solo Lectura de la Pantalla de Perfil (RF-13)
+    cy.then(() => {
+      const hasFalla = checks.some((c) => c.estado === 'FALLA');
+      add(
+        'Checkpoint 4: Veredicto de Solo Lectura de la Pantalla de Perfil (RF-13)',
+        'Pantalla 100% solo lectura (0 elementos editables en total)',
+        !hasFalla
+          ? 'APROBADO: El modal de detalle del usuario es 100% de solo lectura (0 campos editables)'
+          : 'FALLA: El perfil no cumple con la restricción de solo lectura o falló la carga de datos',
+        !hasFalla ? 'OK' : 'FALLA'
+      );
+    });
   });
 });

@@ -1,6 +1,11 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react';
 import { tokenStore } from './tokenStore';
-import { http, refreshAccessToken, PERMISOS_POSIBLEMENTE_DESACTUALIZADOS } from '../api/http';
+import {
+  http,
+  refreshAccessToken,
+  refrescoRechazoLaSesion,
+  PERMISOS_POSIBLEMENTE_DESACTUALIZADOS,
+} from '../api/http';
 import { sonPermisosIguales } from './compararPermisos';
 
 export interface JwtClaims {
@@ -34,6 +39,9 @@ interface AuthContextValue {
   permisos: PermisoUsuario[] | null;
   perfilIncompleto: boolean | null;
   isBootstrapping: boolean;
+  /** El refresh al recargar fallo por el servidor o la red, no porque la sesion muriera. */
+  errorRestaurandoSesion: boolean;
+  reintentarRestaurarSesion: () => void;
   /** Timestamp de la ultima vez que se detecto un cambio real de permisos en sesion (RF-25). */
   permisosActualizadosEn: number | null;
   setSession: (token: string) => void;
@@ -48,6 +56,8 @@ export const AuthContext = createContext<AuthContextValue>({
   permisos: null,
   perfilIncompleto: null,
   isBootstrapping: true,
+  errorRestaurandoSesion: false,
+  reintentarRestaurarSesion: () => {},
   permisosActualizadosEn: null,
   setSession: () => {},
   clearSession: () => {},
@@ -99,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [permisos, setPermisos] = useState<PermisoUsuario[] | null>(null);
   const [perfilIncompleto, setPerfilIncompleto] = useState<boolean | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(!validStored);
+  const [errorRestaurandoSesion, setErrorRestaurandoSesion] = useState(false);
   const [permisosActualizadosEn, setPermisosActualizadosEn] = useState<number | null>(null);
 
   // Mantiene el contexto sincronizado cuando el interceptor renueva o limpia
@@ -113,6 +124,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setClaims(nextClaims);
   }), []);
 
+  // `refreshAccessToken` guarda el token en tokenStore; el listener de arriba
+  // sincroniza el contexto.
+  const restaurarSesion = useCallback(() => {
+    setErrorRestaurandoSesion(false);
+    setIsBootstrapping(true);
+    refreshAccessToken()
+      .catch((error) => {
+        // 401/410: sin sesión que recuperar, la ruta protegida redirige a /login.
+        // INC-M02-51-G44: un 5xx o un fallo de red no dice nada de la sesión (la
+        // cookie sigue vigente), así que se ofrece reintentar en vez de mandar
+        // al usuario al login sin explicación.
+        if (!refrescoRechazoLaSesion(error)) setErrorRestaurandoSesion(true);
+      })
+      .finally(() => setIsBootstrapping(false));
+  }, []);
+
   // Recarga de página (F5, pestaña nueva): el JWT solo vive en memoria
   // (tokenStore) por diseño (R-12), así que se pierde. Antes de decidir "no
   // autenticado", intenta un refresh silencioso con la cookie httpOnly.
@@ -122,14 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsBootstrapping(false);
       return;
     }
-    // `refreshAccessToken` guarda el token en tokenStore; el listener de arriba
-    // sincroniza el contexto.
-    refreshAccessToken()
-      .catch(() => {
-        // Sin sesión que recuperar — comportamiento normal en rutas protegidas
-        // sin cookie vigente.
-      })
-      .finally(() => setIsBootstrapping(false));
+    restaurarSesion();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchUserInfo = useCallback(async () => {
@@ -201,6 +221,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         permisos,
         perfilIncompleto,
         isBootstrapping,
+        errorRestaurandoSesion,
+        reintentarRestaurarSesion: restaurarSesion,
         permisosActualizadosEn,
         setSession,
         clearSession,
