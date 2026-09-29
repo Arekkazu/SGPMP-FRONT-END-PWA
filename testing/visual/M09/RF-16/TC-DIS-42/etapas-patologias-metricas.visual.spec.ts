@@ -6,10 +6,10 @@
  * catálogo de selects): listado de la sección + formulario crear + formulario
  * editar. "Etapas" corresponde a la sub-pestaña "Ciclos Biológicos".
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero por ahora
- * solo se ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll en
- * móvil y tablet (ver TC-DIS-07/08/10/11). Para habilitarlos:
- *   TC_DIS_42_VIEWPORTS=movil,tablet,escritorio npx playwright test TC-DIS-42
+ * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
+ * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
+ * no reproduce el bug de M01. Para acotarlo puntualmente:
+ *   TC_DIS_42_VIEWPORTS=escritorio
  *
  * Precondición: especie con al menos una etapa, una patología y una métrica.
  * Por defecto "Tilapia Roja" (#1); se cambia con TC_DIS_42_ESPECIE.
@@ -21,7 +21,7 @@ const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 const ESPECIE = process.env.TC_DIS_42_ESPECIE ?? 'Tilapia Roja';
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_42_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_42_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 

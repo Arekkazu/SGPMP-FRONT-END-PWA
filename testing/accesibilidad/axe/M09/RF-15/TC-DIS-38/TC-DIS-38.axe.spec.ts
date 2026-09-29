@@ -37,7 +37,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Catálogo de Especies`, ()
     await page.getByRole('button', { name: /nueva especie/i }).click();
     await page.getByRole('heading', { name: /^nueva especie$/i }).waitFor({ state: 'visible' });
 
-    await page.getByLabel('Nombre', { exact: true }).fill('Tilapia');
+    // getByLabel({exact:true}) compara contra el texto crudo del <label>, que incluye
+    // el " *" de campo obligatorio (aria-hidden, así que no cuenta para el nombre
+    // accesible real). getByRole('textbox', {name}) sí usa el nombre accesible y es
+    // el patrón que usan los demás specs (ver TC-DIS-39) para este mismo diálogo.
+    await page.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Tilapia');
     await page.getByRole('button', { name: /registrar especie/i }).click();
     await page.getByText(/error al guardar/i).waitFor({ state: 'visible' });
 
