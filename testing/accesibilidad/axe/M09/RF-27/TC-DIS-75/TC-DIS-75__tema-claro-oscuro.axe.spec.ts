@@ -132,8 +132,14 @@ test.describe('TC-DIS-75 — RF-27: Tema Claro/Oscuro (accesibilidad)', () => {
   test('sección Tema Visual (tema por defecto de la cuenta) no tiene violaciones', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
 
-    await expect(page.getByRole('heading', { name: 'Tema Visual' })).toBeVisible();
-    await expect(page.getByText('Mi preferencia')).toBeVisible();
+    const headingTema = page.getByRole('heading', { name: 'Tema Visual' });
+    await expect(headingTema).toBeVisible();
+    // Acotado a la sección Tema Visual: "Mi preferencia" también aparece en la
+    // sección Idioma (snapshot admin.dev, 2026-09-29) y getByText sin acotar
+    // fallaba por strict mode antes de llegar al escaneo de axe. La sección es
+    // el ancestro más cercano del heading que contiene ese texto.
+    const seccionTema = headingTema.locator('xpath=ancestor::*[.//text()[contains(., "Mi preferencia")]][1]');
+    await expect(seccionTema.getByText('Mi preferencia')).toBeVisible();
 
     const results = await new AxeBuilder({ page }).analyze();
     guardarResultadoAxe('TC-DIS-75', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
@@ -147,9 +153,14 @@ test.describe('TC-DIS-75 — RF-27: Tema Claro/Oscuro (accesibilidad)', () => {
 
     // .first() porque el panel "Mi preferencia" (personal) siempre renderiza
     // primero en el DOM, antes que el opcional "Tema global" (ver TODO).
-    const claro = page.getByRole('button', { name: 'Claro' }).first();
-    const oscuro = page.getByRole('button', { name: 'Oscuro' }).first();
-    const automatico = page.getByRole('button', { name: 'Automático' }).first();
+    // Acotado a <main>: sin acotar, name 'Oscuro' (coincidencia parcial)
+    // resolvía primero al botón "Cambiar a modo oscuro" del AppBar. Nombres
+    // accesibles tomados del snapshot real (admin.dev, 2026-09-29):
+    // "Claro Claro Interfaz con fondo blanco", "Oscuro Oscuro Interfaz…", etc.
+    const main = page.getByRole('main');
+    const claro = main.getByRole('button', { name: /^Claro / }).first();
+    const oscuro = main.getByRole('button', { name: /^Oscuro / }).first();
+    const automatico = main.getByRole('button', { name: /^Automático / }).first();
 
     for (const boton of [claro, oscuro, automatico]) {
       await expect(boton).toBeVisible();
