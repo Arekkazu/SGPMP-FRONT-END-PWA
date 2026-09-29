@@ -88,6 +88,7 @@ export async function replay(): Promise<void> {
       if (typeof status === 'number' && status >= 400 && status < 500 && status !== 401) {
         await db.syncQueue.update(op.id, {
           conflicto: true,
+          status,
           error: (e as { message?: string } | null)?.message ?? 'No se pudo sincronizar.',
         });
         huboCambios = true;

@@ -52,6 +52,8 @@ describe('syncQueue.replay — resolución de conflictos (#115, RF-15)', () => {
     const conflictos = await getConflictos('config_especies');
     expect(conflictos).toHaveLength(1);
     expect(conflictos[0].error).toBe('Ya existe una especie con ese nombre.');
+    // #450: la UI distingue el 409 (nombre tomado) para mostrar el texto del RF-15.
+    expect(conflictos[0].status).toBe(409);
 
     // Otra reconexión no debe volver a llamar al handler: ya está esperando
     // resolución manual (ver useEspecies.resolverConflicto).
