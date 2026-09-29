@@ -18,12 +18,16 @@ import path from 'path';
  * `document.documentElement.setAttribute('data-theme', 'light' | 'dark')` (y lo
  * espeja en localStorage). No existe un mecanismo de "vista previa en sesión"
  * como el de Identidad Visual (RF-26) — la UI solo llama a esto al cargar la
- * sesión o tras pulsar "Guardar tema" (lo que persiste en el backend). Para
- * probar CONTRASTE en ambos temas sin escribir la preferencia real de la
- * cuenta de pruebas, los tests de abajo fuerzan el atributo directo por
- * `page.evaluate()` — mismo mecanismo que usa la propia app, sin pasar por
- * guardar/backend. Una prueba FUNCIONAL de que "Guardar tema" persiste y
- * aplica correctamente es un caso aparte, fuera del alcance de este archivo.
+ * sesión o tras pulsar "Guardar tema" (lo que persiste en el backend).
+ * ACTUALIZADO 2026-09-29: forzar el atributo por `page.evaluate()` no sirve —
+ * al abrir Personalización la app re-aplica la preferencia guardada y lo pisa.
+ * Los tests de contraste usan el botón del AppBar (`ponerTema`, al final del
+ * archivo). Ese botón persiste en backend, así que su PATCH se intercepta con
+ * `bloquearGuardadoTema` (la cuenta compartida no cambia) y el tema se restaura
+ * en un `finally` como respaldo. Re-ejecución 2026-09-29: 0 color-contrast en
+ * claro y oscuro, 3 viewports, con data-theme verificado antes y después de axe.
+ * Una prueba FUNCIONAL de que "Guardar tema" persiste y aplica correctamente
+ * es un caso aparte, fuera del alcance de este archivo.
  *
  * ── Hallazgos reales de accesibilidad ───────────────────────────────────────
  *
@@ -178,26 +182,95 @@ test.describe('TC-DIS-75 — RF-27: Tema Claro/Oscuro (accesibilidad)', () => {
   });
 
   test('CRÍTICO — tema Claro forzado: sin violaciones de contraste', async ({ page }, testInfo) => {
+    await bloquearGuardadoTema(page, testInfo);
     await loginComoAdmin(page);
-    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+    const temaOriginal = await ponerTema(page, 'light');
+    try {
+      const results = await new AxeBuilder({ page }).withTags(['wcag2aa']).analyze();
+      // El escaneo solo vale si el tema siguió aplicado mientras axe corría.
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+      guardarResultadoAxe('TC-DIS-75', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
+      guardarResultados('axe-TC-DIS-75-tema-claro.json', results);
 
-    const results = await new AxeBuilder({ page }).withTags(['wcag2aa']).analyze();
-    guardarResultadoAxe('TC-DIS-75', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
-    guardarResultados('axe-TC-DIS-75-tema-claro.json', results);
-
-    const violacionesContraste = results.violations.filter((v) => v.id === 'color-contrast');
-    expect(violacionesContraste).toEqual([]);
+      const violacionesContraste = results.violations.filter((v) => v.id === 'color-contrast');
+      expect(violacionesContraste).toEqual([]);
+    } finally {
+      await ponerTema(page, temaOriginal);
+    }
   });
 
   test('CRÍTICO — tema Oscuro forzado: sin violaciones de contraste', async ({ page }, testInfo) => {
+    await bloquearGuardadoTema(page, testInfo);
     await loginComoAdmin(page);
-    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+    const temaOriginal = await ponerTema(page, 'dark');
+    try {
+      const results = await new AxeBuilder({ page }).withTags(['wcag2aa']).analyze();
+      // El escaneo solo vale si el tema siguió aplicado mientras axe corría.
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+      guardarResultadoAxe('TC-DIS-75', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
+      guardarResultados('axe-TC-DIS-75-tema-oscuro.json', results);
 
-    const results = await new AxeBuilder({ page }).withTags(['wcag2aa']).analyze();
-    guardarResultadoAxe('TC-DIS-75', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
-    guardarResultados('axe-TC-DIS-75-tema-oscuro.json', results);
-
-    const violacionesContraste = results.violations.filter((v) => v.id === 'color-contrast');
-    expect(violacionesContraste).toEqual([]);
+      const violacionesContraste = results.violations.filter((v) => v.id === 'color-contrast');
+      expect(violacionesContraste).toEqual([]);
+    } finally {
+      await ponerTema(page, temaOriginal);
+    }
   });
 });
+
+type Tema = 'light' | 'dark';
+
+/**
+ * Cambia el tema con la acción real de usuario (botón del AppBar) y devuelve el tema
+ * que había antes, para restaurarlo al final del test.
+ *
+ * Antes se forzaba con `setAttribute('data-theme', …)`, pero al abrir Personalización
+ * `useTemaVisual` vuelve a aplicar la preferencia guardada y pisaba el atributo: axe
+ * llegó a escanear en claro un test "oscuro" (traza de la re-ejecución 2026-09-29).
+ *
+ * OJO: el botón del AppBar PERSISTE la preferencia en el backend
+ * (`useTheme.toggle` → `temaVisualApi.guardar`). Los tests de contraste bloquean ese
+ * guardado con `bloquearGuardadoTema` para no tocar la cuenta compartida; el `finally`
+ * que restaura el tema queda solo como respaldo.
+ *
+ * Antes de leer el tema actual se espera a que la sección Tema Visual termine de cargar
+ * ("Guardar tema" visible + networkidle): esa carga re-aplica la preferencia guardada y,
+ * si llega después del clic, revierte el tema (fallo de la ejecución del 2026-09-29).
+ */
+async function ponerTema(page: Page, objetivo: Tema): Promise<Tema> {
+  const html = page.locator('html');
+  await expect(page.getByRole('main').getByRole('button', { name: 'Guardar tema', exact: true }).first()).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  const actual: Tema = (await html.getAttribute('data-theme')) === 'dark' ? 'dark' : 'light';
+  if (actual !== objetivo) {
+    const nombre = objetivo === 'dark' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
+    await page.getByRole('banner').getByRole('button', { name: nombre, exact: true }).click();
+  }
+  await expect(html).toHaveAttribute('data-theme', objetivo);
+  // Que no quede red pendiente y el tema se mantenga (sin re-aplicación posterior).
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(1000);
+  await expect(html).toHaveAttribute('data-theme', objetivo);
+  return actual;
+}
+
+/**
+ * Intercepta SOLO el guardado de la preferencia personal de tema
+ * (`PATCH /configuracion/personalizacion/tema`, `temaVisualApi.guardar` en
+ * src/configuration/api/personalizacionApi.ts) y responde 200 sin llegar al backend.
+ * La lectura (GET) y el tema global (`/tema/global`) pasan intactos. El toggle del
+ * AppBar ignora la respuesta (`void guardar().catch(() => {})`), así que el cambio
+ * visual es el real de la app.
+ */
+async function bloquearGuardadoTema(page: Page, testInfo: { title: string; project: { name: string } }) {
+  let bloqueados = 0;
+  await page.route(/\/configuracion\/personalizacion\/tema(\?.*)?$/, async (route) => {
+    if (route.request().method() !== 'PATCH') return route.continue();
+    bloqueados++;
+    const dto = route.request().postDataJSON() ?? {};
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(dto) });
+  });
+  page.on('close', () => {
+    console.log(`[guardado-tema-bloqueado] ${testInfo.project.name} · ${testInfo.title}: ${bloqueados} PATCH interceptados`);
+  });
+}
