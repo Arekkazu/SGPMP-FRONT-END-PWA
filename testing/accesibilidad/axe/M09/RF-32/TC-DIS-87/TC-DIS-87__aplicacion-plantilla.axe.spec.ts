@@ -138,7 +138,8 @@ test.describe('TC-DIS-87 — RF-32: Aplicación de Plantilla (accesibilidad)', (
     await loginComoAdmin(page);
 
     // Requiere al menos 1 plantilla registrada en el seed (ver TODO de cabecera).
-    await page.getByRole('button', { name: 'Aplicar plantilla' }).first().click();
+    // Acotado a <main>: la lista de plantillas vive ahí; el modal (portal) no.
+    await page.getByRole('main').getByRole('button', { name: 'Aplicar plantilla' }).first().click();
 
     const modal = page.getByRole('dialog', { name: 'Aplicar Plantilla' });
     await expect(modal).toBeVisible();
@@ -153,12 +154,15 @@ test.describe('TC-DIS-87 — RF-32: Aplicación de Plantilla (accesibilidad)', (
 
   test('paso 2 del wizard (previsualización) no tiene violaciones y advierte irreversibilidad', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
-    await page.getByRole('button', { name: 'Aplicar plantilla' }).first().click();
+    await page.getByRole('main').getByRole('button', { name: 'Aplicar plantilla' }).first().click();
 
-    // Requiere al menos 1 especie activa en el seed.
-    const primeraEspecie = page.getByRole('button', { name: /./ }).last();
-    await primeraEspecie.click();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
+    // Especie destino por nombre accesible real (snapshot admin.dev, 2026-09-29).
+    // Antes: getByRole('button', { name: /./ }).last(), que resolvía al botón
+    // "Siguiente" deshabilitado. Solo se llega a la previsualización; nunca se
+    // pulsa "Aplicar plantilla" dentro del modal (ver test.skip de abajo).
+    const modal = page.getByRole('dialog', { name: 'Aplicar Plantilla' });
+    await modal.getByRole('button', { name: 'Especie Acuatica Prueba', exact: true }).click();
+    await modal.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByText('Previsualización')).toBeVisible();
     await expect(page.getByText('Esta acción es irreversible')).toBeVisible();
@@ -172,7 +176,7 @@ test.describe('TC-DIS-87 — RF-32: Aplicación de Plantilla (accesibilidad)', (
 
   test('el modal NO cierra con Escape — confirma hallazgo #2 (sistémico)', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
-    await page.getByRole('button', { name: 'Aplicar plantilla' }).first().click();
+    await page.getByRole('main').getByRole('button', { name: 'Aplicar plantilla' }).first().click();
 
     const modal = page.getByRole('dialog', { name: 'Aplicar Plantilla' });
     await expect(modal).toBeVisible();
