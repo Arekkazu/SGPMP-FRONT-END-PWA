@@ -2,10 +2,6 @@
  * TC-DIS-64 — Consistencia visual del panel Configuración Remota IoT
  * RF-23 · Configuración remota de dispositivos IoT · Rol: Administrador · Pareja de accesibilidad: TC-DIS-63
  *
- * BASELINE PENDIENTE (29/09/2026): no se generó por degradación de TEST
- * (/login sin evento load en >30 s entre 18:37 y 19:19, y en >90 s a las 19:27;
- * el bundle principal bajaba a ~22 KB/s). Generar con --update-snapshots
- * --workers=1 cuando /login cargue en menos de 30 s.
  *
  * ⚠ PARCIAL — BLOQUEADO POR #166 (backend): no hay fincas listables, así que no
  * hay dispositivos activos y el panel solo muestra su estado vacío ("No hay
@@ -57,6 +53,66 @@ async function usarCacheAssets(contexto: BrowserContext) {
 }
 
 /**
+ * Tema fijado (tema.fixture.json, cuerpos reales de TEST con theme_mode 1 = Claro):
+ * el tema guardado de la cuenta compartida lo cambian otras personas (el 29/09
+ * estaba en Oscuro personal y global) y no es lo que evalúa este caso. Guardar
+ * tema (PATCH) se aborta.
+ */
+const TEMA: Record<string, unknown> = JSON.parse(fs.readFileSync(path.join(__dirname, 'tema.fixture.json'), 'utf-8'));
+
+async function fijarTema(page: Page) {
+  await page.route(/\/configuracion\/personalizacion\/tema(\/global)?(\?.*)?$/, (route) => {
+    const req = route.request();
+    if (req.method() !== 'GET') return route.abort('blockedbyclient');
+    const pathname = new URL(req.url()).pathname;
+    const clave = Object.keys(TEMA).find((k) => pathname.endsWith(k))!;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(TEMA[clave]) });
+  });
+}
+
+/**
+ * Notificaciones fijadas (notificaciones.fixture.json, cuerpo real de TEST): cada
+ * login crea una notificación nueva ("nuevo inicio de sesión"), así que no_leidas
+ * sube en cada corrida, y el badge aparecía o no según cuándo llegaba el GET
+ * (diferencia de 555 px en TC-DIS-88 tablet el 29/09). Con el GET fijado el badge
+ * siempre está y se espera antes de capturar; su máscara es determinista. Marcar
+ * como leída (escritura) se aborta.
+ */
+const NOTIFICACIONES: unknown = JSON.parse(fs.readFileSync(path.join(__dirname, 'notificaciones.fixture.json'), 'utf-8'));
+
+async function fijarNotificaciones(page: Page) {
+  await page.route(/\/notificaciones(\/[^?]*)?(\?.*)?$/, (route) => {
+    const req = route.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType())) return route.continue();
+    if (req.method() !== 'GET') return route.abort('blockedbyclient');
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(NOTIFICACIONES) });
+  });
+}
+
+/**
+ * irAOpcionMenu (_shared/navegacion.ts) con reintento. Flake visto en tablet el
+ * 29/09: el drawer llega a abrirse (.ds-sidebar--open) pero un re-render de la app
+ * justo tras el login lo vuelve a cerrar y el ítem queda fuera del viewport; el
+ * clic se queda reintentando hasta agotar el tiempo. Cada intento dura como máximo
+ * 15 s; al reintentar, el helper compartido vuelve a abrir el menú.
+ */
+async function irAOpcionMenuConReintento(page: Page, opcion: string | RegExp) {
+  for (let intento = 1; ; intento++) {
+    page.setDefaultTimeout(15_000);
+    try {
+      await irAOpcionMenu(page, opcion);
+      return;
+    } catch (error) {
+      if (intento >= 3) throw error;
+      console.log(`[menu] reintento ${intento} para ${opcion}`);
+      await page.waitForTimeout(1000);
+    } finally {
+      page.setDefaultTimeout(60_000);
+    }
+  }
+}
+
+/**
  * Mismo flujo que iniciarSesionAdmin (_shared/navegacion.ts), pero sin esperar el
  * evento load (espera también fuentes e imágenes y con la red lenta pasa de 90 s):
  * el goto termina en 'commit' y se espera a que el campo de correo esté visible.
@@ -83,6 +139,8 @@ function seccionRemota(page: Page): Locator {
     .getByRole('main')
     .locator('div')
     .filter({ has: page.getByRole('heading', { name: 'Configuración Remota IoT' }) })
+    // Debe contener también la instrucción: el div más interno con solo el encabezado no incluye el estado vacío
+    .filter({ hasText: /Selecciona el dispositivo a configurar/i })
     .last();
 }
 
@@ -92,12 +150,20 @@ function estadoVacio(page: Page): Locator {
 
 /** Configuración → pestaña IoT, con la sección Configuración Remota cargada. */
 async function abrirConfiguracionRemota(page: Page) {
-  await irAOpcionMenu(page, /^(Configuración|Settings)$/);
+  // La instrucción de la sección se pinta antes de que llegue el listado: decidir con ella
+  // daba "hay dispositivos" en falso. Se espera la respuesta real (hoy 400 por #166).
+  const listado = page.waitForResponse(
+    (r) => r.request().method() === 'GET' && new URL(r.url()).pathname.endsWith('/configuracion/dispositivos-iot'),
+    { timeout: 120_000 },
+  );
+  await irAOpcionMenuConReintento(page, /^(Configuración|Settings)$/);
   await page.waitForURL(/configuracion/);
   await page.getByRole('button', { name: 'IoT', exact: true }).click();
+  await listado;
 
   await expect(page.getByRole('main').getByRole('heading', { name: 'Configuración Remota IoT' })).toBeVisible();
-  await expect(estadoVacio(page).or(seccionRemota(page).getByText(/selecciona el dispositivo a configurar/i))).toBeVisible();
+  // La instrucción aparece siempre, con o sin dispositivos: .first() evita el modo estricto con ambos visibles
+  await expect(estadoVacio(page).or(seccionRemota(page).getByRole('button').filter({ hasText: /activo/i })).first()).toBeVisible();
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => document.fonts.ready);
 }
@@ -122,6 +188,8 @@ test.describe('TC-DIS-64 - Consistencia visual - Configuración Remota IoT (RF-2
   let hayDispositivos = false;
 
   test.beforeAll(async ({ browser }, testInfo) => {
+    // describe.configure no alcanza a los hooks: sin esto el beforeAll usa los 30 s del config
+    test.setTimeout(600_000);
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
 
@@ -130,9 +198,12 @@ test.describe('TC-DIS-64 - Consistencia visual - Configuración Remota IoT (RF-2
     await usarCacheAssets(contexto);
     page = await contexto.newPage();
     page.setDefaultNavigationTimeout(300_000);
+    await fijarTema(page);
+    await fijarNotificaciones(page);
 
     await iniciarSesion(page);
     await page.waitForLoadState('networkidle');
+    await expect(page.locator('.ds-appbar__notif-badge')).toBeVisible();
     await abrirConfiguracionRemota(page);
     hayDispositivos = !(await estadoVacio(page).isVisible());
   });
