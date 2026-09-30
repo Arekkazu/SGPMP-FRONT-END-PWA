@@ -34,9 +34,9 @@
     <tr><td>Rol usado</td><td>Administrador (cuenta compartida de QA)</td></tr>
     <tr><td>Herramienta</td><td>Playwright toHaveScreenshot · fullPage + captura-completa.css · workers=1</td></tr>
     <tr><td>Viewports</td><td>movil 375×667 · tablet 768×1024 · escritorio 1440×900</td></tr>
-    <tr><td>Estabilidad</td><td><span class="pill ok">Estable</span> Baseline 6/6 y segunda corrida sin --update-snapshots 6/6 con 0 diferencias.</td></tr>
+    <tr><td>Estabilidad</td><td><span class="pill ok">Estable</span> Baseline 6/6 y segunda corrida sin --update-snapshots 6/6 con 0 diferencias. Re-generada tras fijar el GET de notificaciones (el badge llegaba asíncrono; flake visto en TC-DIS-88): baseline y dos corridas sin diferencias.</td></tr>
     <tr><td>Estado del caso</td><td><span class="pill ok">Completo</span></td></tr>
-    <tr><td>Lecturas fijadas</td><td>GET de tema (personal y global fijados en Claro; el real era Oscuro por pruebas manuales), idioma y dashboard, con cuerpos reales de TEST. PATCH de personalización interceptado: nada se escribe en la cuenta.</td></tr>
+    <tr><td>Lecturas fijadas</td><td>GET de tema (personal y global fijados en Claro; el real era Oscuro por pruebas manuales), idioma y dashboard, con cuerpos reales de TEST. PATCH de personalización interceptado: nada se escribe en la cuenta. Notificaciones fijadas (cada login crea una).</td></tr>
   </table>
   <h2>Hallazgos</h2>
   <ul><li>Usabilidad (verificado a mano el 29/09): tras pulsar el botón de tema del AppBar la interfaz pasa a Oscuro, pero la tarjeta marcada en «Mi preferencia» sigue siendo «Claro». La captura en oscuro lo muestra tal cual.</li><li>Móvil 375 px: la cabecera de «Dashboard Personalizable» desborda; «Guardar configuración» queda cortado en el borde derecho y la grilla 4×3 llega al borde (se evalúa en TC-DIS-79).</li></ul>

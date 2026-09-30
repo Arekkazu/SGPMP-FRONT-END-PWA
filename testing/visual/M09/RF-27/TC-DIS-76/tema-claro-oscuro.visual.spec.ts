@@ -57,6 +57,48 @@ async function usarCacheAssets(contexto: BrowserContext) {
 }
 
 /**
+ * Notificaciones fijadas (notificaciones.fixture.json, cuerpo real de TEST): cada
+ * login crea una notificación nueva ("nuevo inicio de sesión"), así que no_leidas
+ * sube en cada corrida, y el badge aparecía o no según cuándo llegaba el GET
+ * (diferencia de 555 px en TC-DIS-88 tablet el 29/09). Con el GET fijado el badge
+ * siempre está y se espera antes de capturar; su máscara es determinista. Marcar
+ * como leída (escritura) se aborta.
+ */
+const NOTIFICACIONES: unknown = JSON.parse(fs.readFileSync(path.join(__dirname, 'notificaciones.fixture.json'), 'utf-8'));
+
+async function fijarNotificaciones(page: Page) {
+  await page.route(/\/notificaciones(\/[^?]*)?(\?.*)?$/, (route) => {
+    const req = route.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType())) return route.continue();
+    if (req.method() !== 'GET') return route.abort('blockedbyclient');
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(NOTIFICACIONES) });
+  });
+}
+
+/**
+ * irAOpcionMenu (_shared/navegacion.ts) con reintento. Flake visto en tablet el
+ * 29/09: el drawer llega a abrirse (.ds-sidebar--open) pero un re-render de la app
+ * justo tras el login lo vuelve a cerrar y el ítem queda fuera del viewport; el
+ * clic se queda reintentando hasta agotar el tiempo. Cada intento dura como máximo
+ * 15 s; al reintentar, el helper compartido vuelve a abrir el menú.
+ */
+async function irAOpcionMenuConReintento(page: Page, opcion: string | RegExp) {
+  for (let intento = 1; ; intento++) {
+    page.setDefaultTimeout(15_000);
+    try {
+      await irAOpcionMenu(page, opcion);
+      return;
+    } catch (error) {
+      if (intento >= 3) throw error;
+      console.log(`[menu] reintento ${intento} para ${opcion}`);
+      await page.waitForTimeout(1000);
+    } finally {
+      page.setDefaultTimeout(0);
+    }
+  }
+}
+
+/**
  * Mismo flujo que iniciarSesionAdmin (_shared/navegacion.ts), pero sin esperar el
  * evento load (espera también fuentes e imágenes y con la red lenta pasa de 90 s):
  * el goto termina en 'commit' y se espera a que el campo de correo esté visible.
@@ -99,7 +141,7 @@ async function fijarPersonalizacion(page: Page) {
 
 /** Configuración → pestaña Personalización, esperando a que la sección Tema Visual termine de cargar. */
 async function abrirPersonalizacion(page: Page) {
-  await irAOpcionMenu(page, /^(Configuración|Settings)$/);
+  await irAOpcionMenuConReintento(page, /^(Configuración|Settings)$/);
   await page.waitForURL(/configuracion/);
   await page.getByRole('button', { name: /^(Personalización|Personalization)$/ }).click();
 
@@ -146,6 +188,8 @@ test.describe('TC-DIS-76 - Consistencia visual - Tema Claro/Oscuro (RF-27)', () 
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
+    // describe.configure no alcanza a los hooks: sin esto el beforeAll usa los 30 s del config
+    test.setTimeout(600_000);
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
 
@@ -154,10 +198,12 @@ test.describe('TC-DIS-76 - Consistencia visual - Tema Claro/Oscuro (RF-27)', () 
     await usarCacheAssets(contexto);
     page = await contexto.newPage();
     page.setDefaultNavigationTimeout(300_000);
+    await fijarNotificaciones(page);
 
     await fijarPersonalizacion(page);
     await iniciarSesion(page);
     await page.waitForLoadState('networkidle');
+    await expect(page.locator('.ds-appbar__notif-badge')).toBeVisible();
     await abrirPersonalizacion(page);
   });
 
