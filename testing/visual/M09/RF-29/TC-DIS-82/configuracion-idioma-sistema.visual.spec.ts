@@ -2,10 +2,6 @@
  * TC-DIS-82 — Consistencia visual de la sección Idioma
  * RF-29 · Configuración de Idioma del sistema · Rol: Administrador · Pareja de accesibilidad: TC-DIS-81
  *
- * BASELINE PENDIENTE (29/09/2026): no se generó por degradación de TEST
- * (/login sin evento load en >30 s entre 18:37 y 19:19, y en >90 s a las 19:27;
- * el bundle principal bajaba a ~22 KB/s). Generar con --update-snapshots
- * --workers=1 cuando /login cargue en menos de 30 s.
  * Falta también personalizacion.fixture.json: se arma con los cuerpos reales de los GET de TEST
  * (hoy no se pueden capturar); sin él el spec no carga.
  *
@@ -56,6 +52,29 @@ const HAR_ASSETS = path.join(__dirname, '../../../../.har-cache/assets.har');
 async function usarCacheAssets(contexto: BrowserContext) {
   const grabar = !fs.existsSync(HAR_ASSETS);
   await contexto.routeFromHAR(HAR_ASSETS, { url: '**/assets/**', update: grabar, notFound: 'fallback' });
+}
+
+/**
+ * irAOpcionMenu (_shared/navegacion.ts) con reintento. Flake visto en tablet el
+ * 29/09: el drawer llega a abrirse (.ds-sidebar--open) pero un re-render de la app
+ * justo tras el login lo vuelve a cerrar y el ítem queda fuera del viewport; el
+ * clic se queda reintentando hasta agotar el tiempo. Cada intento dura como máximo
+ * 15 s; al reintentar, el helper compartido vuelve a abrir el menú.
+ */
+async function irAOpcionMenuConReintento(page: Page, opcion: string | RegExp) {
+  for (let intento = 1; ; intento++) {
+    page.setDefaultTimeout(15_000);
+    try {
+      await irAOpcionMenu(page, opcion);
+      return;
+    } catch (error) {
+      if (intento >= 3) throw error;
+      console.log(`[menu] reintento ${intento} para ${opcion}`);
+      await page.waitForTimeout(1000);
+    } finally {
+      page.setDefaultTimeout(0);
+    }
+  }
 }
 
 /**
@@ -110,7 +129,7 @@ function panelIdiomaPersonal(page: Page): Locator {
 
 /** Configuración → pestaña Personalización, con la sección Idioma cargada. */
 async function abrirIdioma(page: Page) {
-  await irAOpcionMenu(page, /^(Configuración|Settings)$/);
+  await irAOpcionMenuConReintento(page, /^(Configuración|Settings)$/);
   await page.waitForURL(/configuracion/);
   await page.getByRole('button', { name: /^(Personalización|Personalization)$/ }).click();
 
@@ -139,6 +158,8 @@ test.describe('TC-DIS-82 - Consistencia visual - Configuración de Idioma (RF-29
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
+    // describe.configure no alcanza a los hooks: sin esto el beforeAll usa los 30 s del config
+    test.setTimeout(600_000);
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
 

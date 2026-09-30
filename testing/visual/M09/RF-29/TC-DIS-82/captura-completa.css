@@ -1,10 +1,27 @@
 /*
  * Solo se aplica durante toHaveScreenshot (opción stylePath); la app no cambia.
- * La app hace scroll dentro de <main> (overflow-y: auto) y .ds-app-content mide
- * 100vh, así que fullPage solo veía el viewport y las capturas de elemento
- * salían en blanco bajo el pliegue. Soltando ambos, el documento crece y
- * fullPage captura la página completa.
+ * La app hace scroll dentro de <main> (overflow-y: auto) y todo lo que lo
+ * envuelve mide el alto del viewport: .ds-app-content (100vh), ion-app e
+ * ion-router-outlet (absolute, 100%) y body de Ionic (position: fixed,
+ * overflow: hidden). Así fullPage solo veía el viewport. Soltando esa cadena,
+ * el documento crece al alto real del contenido y fullPage lo captura completo.
  */
+html,
+body {
+  height: auto !important;
+  overflow: visible !important;
+  position: static !important;
+}
+
+ion-app,
+ion-router-outlet,
+.ion-page {
+  position: relative !important;
+  height: auto !important;
+  overflow: visible !important;
+  contain: none !important;
+}
+
 .ds-app-content {
   height: auto !important;
 }
@@ -12,4 +29,18 @@
 main {
   overflow: visible !important;
   height: auto !important;
+}
+
+/*
+ * En escritorio el sidebar es position: fixed a 100vh: en la captura completa
+ * dejaba la columna izquierda en blanco bajo el primer viewport. Se estira al
+ * alto del documento (su bloque contenedor es .ion-page, ya relativo arriba).
+ */
+@media (min-width: 1024px) {
+  .ds-sidebar {
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    height: auto !important;
+  }
 }
