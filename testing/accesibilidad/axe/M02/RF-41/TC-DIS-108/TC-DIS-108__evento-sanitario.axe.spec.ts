@@ -242,7 +242,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Evento sanitario (RF-41)`,
       anteriores = ev.campos;
     }
 
-    expect.soft(sinAnuncio, 'BLOQUEANTE 4.1.3: al cambiar el tipo sanitario los campos que aparecen/desaparecen no se anuncian (no hay ninguna región aria-live/status)').toEqual([]);
+    expect.soft(sinAnuncio, 'Criterio BLOQUEANTE del caso (asociado a 4.1.3): al cambiar el tipo sanitario los campos que aparecen/desaparecen no se anuncian (no hay ninguna región aria-live/status)').toEqual([]);
     expect(focoPerdido, 'BLOQUEANTE 4.1.2/2.4.3: el foco debe quedarse en el selector de tipo al cambiarlo').toEqual([]);
     expect(sinLabel, '1.3.1: todos los campos revelados deben tener label asociado').toEqual([]);
     await dialogo.getByRole('button', { name: 'Cancelar', exact: true }).click();
