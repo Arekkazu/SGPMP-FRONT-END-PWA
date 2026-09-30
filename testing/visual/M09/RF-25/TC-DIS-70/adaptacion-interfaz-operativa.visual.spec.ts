@@ -14,7 +14,7 @@
  * Corre en movil / tablet / escritorio con UN login por viewport: describe en
  * serie, página creada en beforeAll y reutilizada por todos los tests. La sesión
  * (JWT) vive en memoria: tras el login NO se usa page.goto(); se navega por el
- * sidebar con irAOpcionMenu.
+ * sidebar con irAOpcionMenu (_shared/navegacion.ts).
  *
  * Captura de página completa: la app hace scroll dentro de <main>, no en el
  * documento, así que fullPage solo veía el viewport. captura-completa.css
@@ -30,12 +30,50 @@
  *
  * Solo se navega y se observa.
  */
+import fs from 'fs';
 import path from 'path';
-import { expect, test, type Page } from '@playwright/test';
-import { iniciarSesionAdmin, irAOpcionMenu } from '../../../../accesibilidad/axe/_shared/navegacion';
+import { expect as expectBase, test, type BrowserContext, type Page } from '@playwright/test';
+import { irAOpcionMenu } from '../../../../accesibilidad/axe/_shared/navegacion';
 
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
+
+// Red lenta (~3.5 Mbps): expect de 30 s en vez de los 5 s por defecto
+const expect = expectBase.configure({ timeout: 30_000 });
+
+const BASE_URL = process.env.BASE_URL ?? 'https://api.inmero.co/';
+
+/**
+ * Caché de assets para red lenta (~3.5 Mbps): la primera corrida graba en un HAR
+ * solo los estáticos de /assets/** (JS, CSS, fuentes) y las siguientes los sirven
+ * desde ahí sin red. NUNCA se cachea la API. Un asset que no esté en el HAR (nuevo
+ * despliegue) sale a la red. El HAR no se versiona (testing/.gitignore).
+ */
+const HAR_ASSETS = path.join(__dirname, '../../../../.har-cache/assets.har');
+
+async function usarCacheAssets(contexto: BrowserContext) {
+  const grabar = !fs.existsSync(HAR_ASSETS);
+  await contexto.routeFromHAR(HAR_ASSETS, { url: '**/assets/**', update: grabar, notFound: 'fallback' });
+}
+
+/**
+ * Mismo flujo que iniciarSesionAdmin (_shared/navegacion.ts), pero sin esperar el
+ * evento load (espera también fuentes e imágenes y con la red lenta pasa de 90 s):
+ * el goto termina en 'commit' y se espera a que el campo de correo esté visible.
+ */
+async function iniciarSesion(page: Page) {
+  const inicio = Date.now();
+  await page.goto(new URL('/login', BASE_URL).toString(), { waitUntil: 'commit' });
+  const correo = page.getByLabel(/correo electrónico/i);
+  await correo.waitFor({ state: 'visible', timeout: 300_000 });
+  await correo.fill(ADMIN_EMAIL);
+  await page.getByLabel(/contraseña/i).fill(ADMIN_PASSWORD);
+  const ingresar = page.getByRole('button', { name: /ingresar/i });
+  await ingresar.waitFor({ state: 'visible' });
+  await ingresar.click();
+  await page.waitForURL(/dashboard/, { timeout: 300_000 });
+  console.log(`[login] ${((Date.now() - inicio) / 1000).toFixed(0)} s`);
+}
 
 /** Va a una opción operativa del sidebar y espera la bienvenida de "sin finca". */
 async function abrirRutaOperativa(page: Page, opcion: RegExp) {
@@ -61,7 +99,7 @@ const OPCIONES_CAPTURA = {
 
 test.describe('TC-DIS-70 - Consistencia visual - Adaptación de la interfaz operativa (RF-25)', () => {
   // En serie y con un solo login: si falla se detiene, en vez de sumar intentos fallidos a la cuenta admin (bloqueo a los 5)
-  test.describe.configure({ mode: 'serial', timeout: 180_000 });
+  test.describe.configure({ mode: 'serial', timeout: 600_000 });
 
   let page: Page;
 
@@ -71,11 +109,11 @@ test.describe('TC-DIS-70 - Consistencia visual - Adaptación de la interfaz oper
 
     const { viewport, deviceScaleFactor, userAgent, isMobile, hasTouch } = testInfo.project.use;
     const contexto = await browser.newContext({ viewport, deviceScaleFactor, userAgent, isMobile, hasTouch });
+    await usarCacheAssets(contexto);
     page = await contexto.newPage();
-    page.setDefaultNavigationTimeout(90_000);
+    page.setDefaultNavigationTimeout(300_000);
 
-    await iniciarSesionAdmin(page, ADMIN_EMAIL, ADMIN_PASSWORD);
-    await page.waitForURL(/dashboard/, { timeout: 90_000 });
+    await iniciarSesion(page);
     await page.waitForLoadState('networkidle');
   });
 
