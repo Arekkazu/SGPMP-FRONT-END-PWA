@@ -2,12 +2,6 @@
  * TC-DIS-76 — Consistencia visual de la pestaña Personalización en tema Claro y Oscuro
  * RF-27 · Tema Claro/Oscuro · Rol: Administrador · Pareja de accesibilidad: TC-DIS-75
  *
- * BASELINE PENDIENTE (29/09/2026): no se generó por degradación de TEST
- * (/login sin evento load en >30 s entre 18:37 y 19:19, y en >90 s a las 19:27;
- * el bundle principal bajaba a ~22 KB/s). Generar con --update-snapshots
- * --workers=1 cuando /login cargue en menos de 30 s.
- * Falta también personalizacion.fixture.json: se arma con los cuerpos reales de los GET de TEST
- * (hoy no se pueden capturar); sin él el spec no carga.
  *
  * Corre en movil / tablet / escritorio con UN login por viewport: describe en
  * serie, página creada en beforeAll y reutilizada por todos los tests. La sesión
