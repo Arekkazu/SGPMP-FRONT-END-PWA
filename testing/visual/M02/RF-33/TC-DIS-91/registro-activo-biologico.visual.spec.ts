@@ -116,6 +116,8 @@ async function abrirFormulario(page: Page) {
 /** Sin peticiones pendientes, fuentes cargadas, foco fuera de los campos, scroll arriba y sin toasts. */
 async function estabilizar(page: Page) {
   await page.waitForLoadState('networkidle', { timeout: 60_000 }).catch(() => {});
+  // Ratón fuera de la UI antes de capturar: tras un clic queda encima del control pulsado (estado :hover)
+  await page.mouse.move(0, 0);
   await page.evaluate(async () => {
     (document.activeElement as HTMLElement | null)?.blur();
     await document.fonts.ready;
