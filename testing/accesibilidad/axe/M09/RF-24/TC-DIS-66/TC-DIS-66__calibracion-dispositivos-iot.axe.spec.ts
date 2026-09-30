@@ -153,12 +153,18 @@ test.describe('TC-DIS-66 — RF-24: Calibración de Dispositivos IoT (accesibili
     // Avanza con lo primero disponible en el seed, sin asumir un serial fijo
     // (ver TODO de cabecera). Si no hay dispositivos/sensores activos, este
     // test no podrá completarse hasta que se resuelva el pendiente de Alex.
-    const primerDispositivo = page.getByRole('button').filter({ hasText: /./ }).first();
-    // TODO: reemplazar por un selector más específico (ej. getByRole('button', { name: /^SN-/ }))
-    // en cuanto se confirme el formato real de serial usado en el seed de staging.
+    // Acotado a <main> + filtro por el texto fijo de cada tarjeta de DispSelector
+    // ("Solo dispositivos activos son calibrables"): un selector sin acotar
+    // (getByRole('button').filter({hasText:/./}).first()) resolvía al botón
+    // "Cerrar sesión" del sidebar y cerraba la sesión de verdad en vez de
+    // elegir un dispositivo.
+    const primerDispositivo = page.getByRole('main').getByRole('button').filter({ hasText: /calibrables/i }).first();
     await primerDispositivo.click();
 
-    const primerSensor = page.getByRole('button', { name: /./ }).first();
+    // Acotado por hermandad DOM: SensorSelector renderiza el grid de tarjetas
+    // como hermano del botón "Cambiar dispositivo", no hay otro texto fijo
+    // propio de la tarjeta de sensor para filtrar por contenido.
+    const primerSensor = page.locator('button:has-text("Cambiar dispositivo") ~ div button').first();
     await primerSensor.click();
 
     // Si el sensor no tiene área asociada, el formulario igual se renderiza

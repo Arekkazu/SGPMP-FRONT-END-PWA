@@ -131,7 +131,11 @@ test.describe('TC-DIS-72 — RF-26: Identidad Visual del sistema (accesibilidad)
     await loginComoAdmin(page);
 
     // Requiere al menos 1 finca activa en el seed (ver TODO de cabecera).
-    const primeraFinca = page.getByRole('button', { name: /./ }).first();
+    // Acotado a <main> + filtro por ", " (cada tarjeta de FincaSelectorIdent
+    // muestra "municipio, departamento"): un selector sin acotar (getByRole
+    // ('button', {name:/./}).first()) resolvía al botón "Cerrar sesión" del
+    // sidebar y cerraba la sesión de verdad en vez de elegir una finca.
+    const primeraFinca = page.getByRole('main').getByRole('button').filter({ hasText: ',' }).first();
     await primeraFinca.click();
 
     await expect(page.getByRole('heading', { name: 'Vista previa en vivo' })).toBeVisible();
@@ -152,7 +156,7 @@ test.describe('TC-DIS-72 — RF-26: Identidad Visual del sistema (accesibilidad)
   test('la zona de subir logo NO es operable por teclado — confirma el hallazgo #1', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
 
-    const primeraFinca = page.getByRole('button', { name: /./ }).first();
+    const primeraFinca = page.getByRole('main').getByRole('button').filter({ hasText: ',' }).first();
     await primeraFinca.click();
     await expect(page.getByRole('heading', { name: 'Vista previa en vivo' })).toBeVisible();
 

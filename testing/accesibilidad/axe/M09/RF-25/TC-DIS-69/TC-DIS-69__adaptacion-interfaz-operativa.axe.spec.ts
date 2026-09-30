@@ -56,29 +56,37 @@ import path from 'path';
  *    confunda pensando que ese Alert es el que se debe evaluar.
  *
  * ── TODO — bloqueante para completar (no para lo del Administrador) ────────
- * - TODO: falta confirmar qué cuentas/roles concretos corresponden a los
- *   estados (b) "finca sin especies" y (c) "finca con especies" — no tengo
- *   credenciales para ninguna cuenta distinta de ADMIN_EMAIL. Preguntar a
- *   Alex/Camila: ¿"los 3 roles" de la tabla son 3 roles RBAC con nombre propio,
- *   o 3 cuentas de prueba con distinto estado de finca/especies? Los tests de
- *   esos 2 estados quedan como `test.skip` abajo hasta tener esa respuesta.
+ * - Estado (c) "finca con especies" ya tiene cuenta confirmada: TEST_PRODUCTOR_EMAIL
+ *   (Ana Ramirez, id_finca 57 "Finca QA Juan Esteban") responde 200 en
+ *   /configuracion/interfaz/contexto con especies_configuradas pobladas — es
+ *   el dashboard operativo normal, sin ninguno de los dos estados alternos.
+ * - TODO: sigue faltando una cuenta para el estado (b) "finca sin especies"
+ *   (el backend lo señala con 204 en ese mismo endpoint). Ninguna de las
+ *   cuentas de rol agregadas a .env.test se confirmó todavía en ese estado.
+ *   Ese test queda como `test.skip` hasta tener una cuenta así.
  */
 
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
+const PRODUCTOR_EMAIL = process.env.TEST_PRODUCTOR_EMAIL ?? '';
+const PRODUCTOR_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD ?? '';
 
-async function loginComoAdmin(page: Page) {
-  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-    throw new Error('Faltan TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD en testing/.env.test');
-  }
+async function iniciarSesion(page: Page, email: string, password: string) {
   await page.goto('/login');
-  await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
-  await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
+  await page.getByLabel('Correo electrónico').fill(email);
+  await page.getByLabel('Contraseña').fill(password);
   await page.getByRole('button', { name: 'Ingresar' }).click();
   await page.waitForURL(/dashboard/, { timeout: 90_000 });
   // Mitigación del reporte de Sara (hallazgo 2): navegar inmediatamente tras el
   // login invalidaba la sesión bajo automatización.
   await page.waitForLoadState('networkidle');
+}
+
+async function loginComoAdmin(page: Page) {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    throw new Error('Faltan TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD en testing/.env.test');
+  }
+  await iniciarSesion(page, ADMIN_EMAIL, ADMIN_PASSWORD);
 }
 
 function guardarResultados(nombre: string, contenido: unknown) {
@@ -106,15 +114,30 @@ test.describe('TC-DIS-69 — RF-25: Adaptación de Interfaz Operativa (accesibil
     expect(results.violations).toEqual([]);
   });
 
-  // TODO: requiere una cuenta de prueba con finca vinculada pero sin especies
-  // configuradas. Sin credenciales confirmadas todavía — ver TODO de cabecera.
-  test.skip('rol con finca sin especies ve el estado vacío "Finca sin configuración", sin violaciones', async ({ page }, testInfo) => {
-    // Pendiente: credenciales de la cuenta + confirmar nombre del rol.
+  test('Productor (finca con especies configuradas) ve el dashboard operativo normal, sin violaciones', async ({ page }, testInfo) => {
+    expect(PRODUCTOR_EMAIL, 'Falta TEST_PRODUCTOR_EMAIL en testing/.env.test').not.toBe('');
+    expect(PRODUCTOR_PASSWORD, 'Falta TEST_PRODUCTOR_PASSWORD en testing/.env.test').not.toBe('');
+
+    await iniciarSesion(page, PRODUCTOR_EMAIL, PRODUCTOR_PASSWORD);
+
+    // Dashboard operativo normal: ni la bienvenida "sin finca" (estado a) ni el
+    // aviso "Finca sin configuración" (estado b) deben aparecer.
+    await expect(page.getByRole('heading', { name: /^Bienvenido/ })).toBeVisible();
+    await expect(page.getByText('Finca QA Juan Esteban', { exact: false }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Bienvenido al sistema' })).toHaveCount(0);
+    await expect(page.getByText('Finca sin configuración')).toHaveCount(0);
+
+    const results = await new AxeBuilder({ page }).analyze();
+    guardarResultadoAxe('TC-DIS-69', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
+    guardarResultados('axe-TC-DIS-69-productor.json', results);
+
+    expect(results.violations).toEqual([]);
   });
 
-  // TODO: requiere una cuenta de prueba con finca y especies configuradas
-  // (dashboard operativo normal, sin ninguno de los dos estados alternos).
-  test.skip('rol con finca y especies configuradas ve el dashboard operativo normal, sin violaciones', async ({ page }, testInfo) => {
-    // Pendiente: credenciales de la cuenta + confirmar nombre del rol.
+  // TODO: requiere una cuenta de prueba con finca vinculada pero sin especies
+  // configuradas (el backend lo señala con 204 en /configuracion/interfaz/contexto).
+  // Ninguna de las cuentas de rol de .env.test se confirmó todavía en ese estado.
+  test.skip('rol con finca sin especies ve el estado vacío "Finca sin configuración", sin violaciones', async ({ page }, testInfo) => {
+    // Pendiente: cuenta con id_finca asignado y especies_configuradas vacío (204).
   });
 });
