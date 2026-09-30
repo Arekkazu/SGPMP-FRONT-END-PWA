@@ -6,7 +6,8 @@
  *
  * Criterio (hoja M02): 0 violaciones axe A/AA y verificación del formulario dinámico con énfasis
  * BLOQUEANTE en 4.1.3 y 4.1.2: al cambiar tipo_evento los campos que aparecen/desaparecen se anuncian
- * por aria-live y el foco se gestiona sin perder contexto. Además 1.3.1 (labels y orden de los campos
+ * y el foco se gestiona sin perder contexto. Con un modal por tipo, el anuncio depende del foco:
+ * un diálogo con role=dialog y nombre se anuncia cuando el foco entra en él. Además 1.3.1 (labels y orden de los campos
  * revelados), 3.3.1 (404 activo inexistente, 409 estado no permite eventos, 400 fecha inválida
  * anunciados por campo) y 1.4.3.
  *
@@ -221,7 +222,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Registro de evento biológ
     for (const t of TIPOS) await expect(main(page).getByRole('button', { name: t.boton, exact: true })).toBeVisible();
   });
 
-  test('2. BLOQUEANTE - cambiar de tipo de evento: anuncio (4.1.3) y gestión del foco (4.1.2 / 2.4.3); labels de los campos revelados (1.3.1)', async ({}, testInfo) => {
+  test('2. BLOQUEANTE - cambiar de tipo de evento: gestión del foco al abrir y cerrar cada formulario (2.4.3 / 4.1.2); labels de los campos revelados (1.3.1)', async ({}, testInfo) => {
     await abrirEventos(page);
     const sinAnuncio: string[] = [];
     const focoFuera: string[] = [];
@@ -235,7 +236,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Registro de evento biológ
         type: `${tipo.boton} · al abrir`,
         description: `diálogo "${tipo.dialogo}" · foco ${alAbrir.foco} · regiones vivas: ${alAbrir.vivas.join(' ; ') || 'ninguna'}`,
       });
-      // El cambio de campos se anuncia si el foco entra al diálogo (se lee su nombre) o si hay una región viva con texto
+      // Un diálogo se anuncia por foco + role=dialog con nombre (no por región viva): sin foco dentro, el lector no lo anuncia
       if (!alAbrir.focoDentro && !alAbrir.vivas.some((v) => !v.endsWith('""'))) sinAnuncio.push(tipo.boton);
       if (!alAbrir.focoDentro) focoFuera.push(tipo.boton);
 
@@ -263,7 +264,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Registro de evento biológ
       if (!volvio) focoPerdido.push(`${tipo.boton} → ${alCerrar.foco}`);
     }
 
-    expect.soft(sinAnuncio, 'BLOQUEANTE 4.1.3: al cambiar de tipo de evento el nuevo formulario no se anuncia (el foco no entra al diálogo y no hay ninguna región aria-live)').toEqual([]);
+    expect.soft(sinAnuncio, 'BLOQUEANTE 2.4.3/4.1.2: al cambiar de tipo de evento el lector de pantalla no anuncia el formulario ni sus campos porque el foco no entra al diálogo').toEqual([]);
     expect.soft(focoFuera, 'BLOQUEANTE 4.1.2/2.4.3: al abrir el formulario del tipo el foco se queda fuera del diálogo').toEqual([]);
     expect.soft(focoPerdido, 'BLOQUEANTE 2.4.3: al cerrar el formulario el foco no vuelve al botón del tipo y se pierde el contexto').toEqual([]);
     expect(sinNombre, '1.3.1: todos los campos revelados deben tener label asociado').toEqual([]);
