@@ -2,10 +2,6 @@
  * TC-DIS-88 — Consistencia visual del wizard "Aplicar Plantilla"
  * RF-32 · Aplicación de Plantilla · Rol: Administrador · Pareja de accesibilidad: TC-DIS-87
  *
- * BASELINE PENDIENTE (29/09/2026): no se generó por degradación de TEST
- * (/login sin evento load en >30 s entre 18:37 y 19:19, y en >90 s a las 19:27;
- * el bundle principal bajaba a ~22 KB/s). Generar con --update-snapshots
- * --workers=1 cuando /login cargue en menos de 30 s.
  * Falta también plantillas.fixture.json: se arma con los cuerpos reales de los GET de TEST
  * (hoy no se pueden capturar); sin él el spec no carga.
  *
@@ -21,9 +17,11 @@
  *
  * Lecturas fijadas (plantillas.fixture.json): el listado de plantillas (qué
  * tarjeta es la primera y su params_snapshot, que se muestra en la
- * previsualización) y el catálogo de especies destino los cambia cualquiera que
- * use la cuenta compartida. Se sirven con page.route a partir de respuestas
- * reales de TEST (precedente: plantillas.fixture.json de TC-DIS-62). Cualquier
+ * previsualización), el catálogo de especies destino y el tema guardado
+ * (personal y global) los cambia cualquiera que use la cuenta compartida. Se
+ * sirven con page.route a partir de respuestas reales de TEST, con el tema
+ * fijado en Claro y las mismas 4 plantillas de TC-DIS-62 (3 semilla +
+ * QA-Inmutable v3; la primera es "Plantilla estándar tilapia"). Cualquier
  * escritura a esos endpoints (incluido POST /plantillas/{id}/aplicar) se aborta:
  * nunca llega al backend.
  *
@@ -59,6 +57,48 @@ const HAR_ASSETS = path.join(__dirname, '../../../../.har-cache/assets.har');
 async function usarCacheAssets(contexto: BrowserContext) {
   const grabar = !fs.existsSync(HAR_ASSETS);
   await contexto.routeFromHAR(HAR_ASSETS, { url: '**/assets/**', update: grabar, notFound: 'fallback' });
+}
+
+/**
+ * Notificaciones fijadas (notificaciones.fixture.json, cuerpo real de TEST): cada
+ * login crea una notificación nueva ("nuevo inicio de sesión"), así que no_leidas
+ * sube en cada corrida, y el badge aparecía o no según cuándo llegaba el GET
+ * (diferencia de 555 px en TC-DIS-88 tablet el 29/09). Con el GET fijado el badge
+ * siempre está y se espera antes de capturar; su máscara es determinista. Marcar
+ * como leída (escritura) se aborta.
+ */
+const NOTIFICACIONES: unknown = JSON.parse(fs.readFileSync(path.join(__dirname, 'notificaciones.fixture.json'), 'utf-8'));
+
+async function fijarNotificaciones(page: Page) {
+  await page.route(/\/notificaciones(\/[^?]*)?(\?.*)?$/, (route) => {
+    const req = route.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType())) return route.continue();
+    if (req.method() !== 'GET') return route.abort('blockedbyclient');
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(NOTIFICACIONES) });
+  });
+}
+
+/**
+ * irAOpcionMenu (_shared/navegacion.ts) con reintento. Flake visto en tablet el
+ * 29/09: el drawer llega a abrirse (.ds-sidebar--open) pero un re-render de la app
+ * justo tras el login lo vuelve a cerrar y el ítem queda fuera del viewport; el
+ * clic se queda reintentando hasta agotar el tiempo. Cada intento dura como máximo
+ * 15 s; al reintentar, el helper compartido vuelve a abrir el menú.
+ */
+async function irAOpcionMenuConReintento(page: Page, opcion: string | RegExp) {
+  for (let intento = 1; ; intento++) {
+    page.setDefaultTimeout(15_000);
+    try {
+      await irAOpcionMenu(page, opcion);
+      return;
+    } catch (error) {
+      if (intento >= 3) throw error;
+      console.log(`[menu] reintento ${intento} para ${opcion}`);
+      await page.waitForTimeout(1000);
+    } finally {
+      page.setDefaultTimeout(0);
+    }
+  }
 }
 
 /**
@@ -107,7 +147,7 @@ async function fijarLecturas(page: Page) {
 
 /** Configuración → pestaña Plantillas, con el listado cargado. */
 async function abrirPlantillas(page: Page) {
-  await irAOpcionMenu(page, /^(Configuración|Settings)$/);
+  await irAOpcionMenuConReintento(page, /^(Configuración|Settings)$/);
   await page.waitForURL(/configuracion/);
   await page.getByRole('button', { name: /^(Plantillas|Templates)$/ }).click();
 
@@ -121,13 +161,14 @@ function wizard(page: Page) {
   return page.getByRole('dialog', { name: 'Aplicar Plantilla' });
 }
 
-/** Zonas que cambian entre corridas y no son parte del diseño: badge, fechas de tarjetas y "ID · Creada …" de la especie. */
+/**
+ * Zonas que cambian entre corridas y no son parte del diseño: badge y la línea
+ * "ID · Creada …" de la especie destino (fecha dentro del propio wizard). Las
+ * fechas de las tarjetas del fondo NO se enmascaran: vienen fijas del fixture y,
+ * como las máscaras se pintan encima de todo, tapaban el wizard.
+ */
 function zonasDinamicas(page: Page) {
-  return [
-    page.locator('.ds-appbar__notif-badge'),
-    page.getByRole('main').getByText(/\b\d{1,2}[\s/-](de\s)?[\p{L}\d]{1,10}\.?[\s/-](de\s)?\d{2,4}\b/u),
-    wizard(page).getByText(/· Creada /),
-  ];
+  return [page.locator('.ds-appbar__notif-badge'), wizard(page).getByText(/· Creada /)];
 }
 
 const OPCIONES_CAPTURA = {
@@ -144,6 +185,8 @@ test.describe('TC-DIS-88 - Consistencia visual - Aplicación de Plantilla (RF-32
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
+    // describe.configure no alcanza a los hooks: sin esto el beforeAll usa los 30 s del config
+    test.setTimeout(600_000);
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
 
@@ -152,10 +195,12 @@ test.describe('TC-DIS-88 - Consistencia visual - Aplicación de Plantilla (RF-32
     await usarCacheAssets(contexto);
     page = await contexto.newPage();
     page.setDefaultNavigationTimeout(300_000);
+    await fijarNotificaciones(page);
 
     await fijarLecturas(page);
     await iniciarSesion(page);
     await page.waitForLoadState('networkidle');
+    await expect(page.locator('.ds-appbar__notif-badge')).toBeVisible();
     await abrirPlantillas(page);
   });
 
