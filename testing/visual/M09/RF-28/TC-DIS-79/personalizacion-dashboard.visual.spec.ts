@@ -59,6 +59,25 @@ async function usarCacheAssets(contexto: BrowserContext) {
 }
 
 /**
+ * Notificaciones fijadas (notificaciones.fixture.json, cuerpo real de TEST): cada
+ * login crea una notificación nueva ("nuevo inicio de sesión"), así que no_leidas
+ * sube en cada corrida, y el badge aparecía o no según cuándo llegaba el GET
+ * (diferencia de 555 px en TC-DIS-88 tablet el 29/09). Con el GET fijado el badge
+ * siempre está y se espera antes de capturar; su máscara es determinista. Marcar
+ * como leída (escritura) se aborta.
+ */
+const NOTIFICACIONES: unknown = JSON.parse(fs.readFileSync(path.join(__dirname, 'notificaciones.fixture.json'), 'utf-8'));
+
+async function fijarNotificaciones(page: Page) {
+  await page.route(/\/notificaciones(\/[^?]*)?(\?.*)?$/, (route) => {
+    const req = route.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType())) return route.continue();
+    if (req.method() !== 'GET') return route.abort('blockedbyclient');
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(NOTIFICACIONES) });
+  });
+}
+
+/**
  * irAOpcionMenu (_shared/navegacion.ts) con reintento. Flake visto en tablet el
  * 29/09: el drawer llega a abrirse (.ds-sidebar--open) pero un re-render de la app
  * justo tras el login lo vuelve a cerrar y el ítem queda fuera del viewport; el
@@ -171,10 +190,12 @@ test.describe('TC-DIS-79 - Consistencia visual - Personalización del Dashboard 
     await usarCacheAssets(contexto);
     page = await contexto.newPage();
     page.setDefaultNavigationTimeout(300_000);
+    await fijarNotificaciones(page);
 
     await fijarPersonalizacion(page);
     await iniciarSesion(page);
     await page.waitForLoadState('networkidle');
+    await expect(page.locator('.ds-appbar__notif-badge')).toBeVisible();
     await abrirDashboardPersonalizable(page);
   });
 
