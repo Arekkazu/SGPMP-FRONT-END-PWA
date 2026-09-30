@@ -19,9 +19,10 @@
  * ambos: (a) el error del cliente y (b) la respuesta 400 real del backend
  * (capturada del ambiente TEST) inyectada con page.route en un envío válido.
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_44_VIEWPORTS=movil,tablet,escritorio
+ * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
+ * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
+ * no reproduce el bug de M01. Para acotarlo puntualmente:
+ *   TC_DIS_44_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import fs from 'fs';
@@ -37,7 +38,7 @@ const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 const ESPECIE = process.env.TC_DIS_44_ESPECIE ?? 'Tilapia Roja';
 const VARIABLE = process.env.TC_DIS_44_VARIABLE ?? 'Temperatura del agua';
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_44_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_44_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 

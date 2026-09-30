@@ -28,7 +28,7 @@ export async function irAOpcionMenu(page: Page, nombreOpcion: string | RegExp) {
 
   if (await botonMenu.isVisible().catch(() => false)) {
     await botonMenu.click();
-    await page.locator('.sidebar--open').waitFor({ state: 'visible' });
+    await page.locator('.ds-sidebar--open').waitFor({ state: 'visible' });
   }
 
   const opcion = page.getByText(nombreOpcion, { exact: true }).first();

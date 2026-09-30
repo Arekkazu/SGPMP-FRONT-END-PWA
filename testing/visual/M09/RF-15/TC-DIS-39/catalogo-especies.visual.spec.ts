@@ -2,12 +2,10 @@
  * TC-DIS-39 — Consistencia visual del listado y formulario del Catálogo de Especies
  * RF-15 · CU-01 Gestionar Catálogo de Especies · Rol: Administrador
  *
- * El script está planteado para los 3 viewports del playwright.config.ts
- * (movil / tablet / escritorio), pero por ahora solo se ejecuta ESCRITORIO:
- * en móvil y tablet hay un defecto abierto de sidebar/scroll que Desarrollo
- * no ha corregido. Los otros dos proyectos quedan en "skipped" con el motivo.
- * Para habilitarlos cuando se corrija el defecto:
- *   TC_DIS_39_VIEWPORTS=movil,tablet,escritorio npx playwright test TC-DIS-39
+ * Corre en movil / tablet / escritorio por defecto — se confirmó que esta
+ * pantalla navega directo por URL (no por el toggle del sidebar) y no
+ * reproduce el bug de M01. Para acotarlo puntualmente:
+ *   TC_DIS_39_VIEWPORTS=escritorio
  *
  * Precondiciones:
  *   - Catálogo con al menos una especie ACTIVA y una INACTIVA (se valida).
@@ -22,7 +20,7 @@ import { expect, test, type Page, type Response } from '@playwright/test';
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_39_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_39_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 
