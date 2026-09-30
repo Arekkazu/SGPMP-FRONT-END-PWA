@@ -95,7 +95,7 @@ async function irAOpcionMenuConReintento(page: Page, opcion: string | RegExp) {
       console.log(`[menu] reintento ${intento} para ${opcion}`);
       await page.waitForTimeout(1000);
     } finally {
-      page.setDefaultTimeout(0);
+      page.setDefaultTimeout(60_000);
     }
   }
 }
