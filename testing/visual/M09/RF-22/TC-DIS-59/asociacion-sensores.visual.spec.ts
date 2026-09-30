@@ -18,9 +18,10 @@
  * los datos que otras pruebas cambian. Los sensores del dispositivo #1 son reales.
  * Ningún test modifica asociaciones en el ambiente.
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_59_VIEWPORTS=movil,tablet,escritorio
+ * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
+ * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
+ * no reproduce el bug de M01. Para acotarlo puntualmente:
+ *   TC_DIS_59_VIEWPORTS=escritorio
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
@@ -32,7 +33,7 @@ const SENSOR = 'Sensor oxígeno disuelto estanque-01';
 const FINCA = 'Finca Acuícola El Remanso';
 const AREA_DESTINO = 'Estanque-02';
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_59_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_59_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 

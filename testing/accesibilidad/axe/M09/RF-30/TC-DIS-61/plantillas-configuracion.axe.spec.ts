@@ -16,9 +16,10 @@
  * (NOMBRE_PLANTILLA_DUPLICADO, capturada del ambiente TEST sin crear registros).
  * Ningún test crea, versiona ni aplica plantillas en el ambiente.
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_61_VIEWPORTS=movil,tablet,escritorio
+ * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
+ * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
+ * no reproduce el bug de M01. Para acotarlo puntualmente:
+ *   TC_DIS_61_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
@@ -31,7 +32,7 @@ const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 const PLANTILLA_EXISTENTE = process.env.TC_DIS_61_PLANTILLA ?? 'Plantilla estándar tilapia';
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_61_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_61_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 

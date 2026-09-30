@@ -23,9 +23,10 @@
  *   - Superficie inválida: el cliente la valida antes de enviar; se prueba el error
  *     del cliente y la respuesta 400 real del backend inyectada con page.route.
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_52_VIEWPORTS=movil,tablet,escritorio
+ * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
+ * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
+ * no reproduce el bug de M01. Para acotarlo puntualmente:
+ *   TC_DIS_52_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Request, type TestInfo } from '@playwright/test';
@@ -39,7 +40,7 @@ const API_BASE = process.env.API_BASE_URL ?? 'https://api.inmero.co/back-sigab-t
 
 const AREA_EXISTENTE = process.env.TC_DIS_52_AREA_EXISTENTE ?? 'Estanque-01';
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_52_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_52_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 
