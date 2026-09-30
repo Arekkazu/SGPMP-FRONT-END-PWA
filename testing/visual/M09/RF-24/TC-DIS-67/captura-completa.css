@@ -1,0 +1,15 @@
+/*
+ * Solo se aplica durante toHaveScreenshot (opción stylePath); la app no cambia.
+ * La app hace scroll dentro de <main> (overflow-y: auto) y .ds-app-content mide
+ * 100vh, así que fullPage solo veía el viewport y las capturas de elemento
+ * salían en blanco bajo el pliegue. Soltando ambos, el documento crece y
+ * fullPage captura la página completa.
+ */
+.ds-app-content {
+  height: auto !important;
+}
+
+main {
+  overflow: visible !important;
+  height: auto !important;
+}
