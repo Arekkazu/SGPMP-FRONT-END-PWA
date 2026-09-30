@@ -22,9 +22,10 @@
  *     del backend (capturada del ambiente TEST) inyectada con page.route.
  * Teclado: el alta se intercepta para no crear fincas en el ambiente.
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_49_VIEWPORTS=movil,tablet,escritorio
+ * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
+ * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
+ * no reproduce el bug de M01. Para acotarlo puntualmente:
+ *   TC_DIS_49_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Request, type TestInfo } from '@playwright/test';
@@ -34,13 +35,13 @@ import { auditarLighthouse, PUERTO_LIGHTHOUSE } from '../../../_shared/lighthous
 const TC_ID = 'TC-DIS-49';
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
-const PRODUCTOR_EMAIL = process.env.TEST_USER_EMAIL ?? '';
-const PRODUCTOR_PASSWORD = process.env.TEST_USER_PASSWORD ?? '';
+const PRODUCTOR_EMAIL = process.env.TEST_PRODUCTOR_EMAIL ?? '';
+const PRODUCTOR_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD ?? '';
 
 const FINCA_EXISTENTE = process.env.TC_DIS_49_FINCA_EXISTENTE ?? 'Finca Acuícola El Remanso';
 const API_BASE = process.env.API_BASE_URL ?? 'https://api.inmero.co/back-sigab-test';
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_49_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_49_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 
@@ -411,11 +412,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Datos de la Finca (RF-19) 
 
   test('Restricción de solo lectura para el rol Productor - accesible y 0 violaciones axe A/AA', async ({ page }, testInfo) => {
     saltarViewportsDeshabilitados(testInfo);
-    expect(PRODUCTOR_EMAIL, 'Falta TEST_USER_EMAIL en testing/.env.test').not.toBe('');
-    expect(PRODUCTOR_PASSWORD, 'Falta TEST_USER_PASSWORD en testing/.env.test').not.toBe('');
+    expect(PRODUCTOR_EMAIL, 'Falta TEST_PRODUCTOR_EMAIL en testing/.env.test').not.toBe('');
+    expect(PRODUCTOR_PASSWORD, 'Falta TEST_PRODUCTOR_PASSWORD en testing/.env.test').not.toBe('');
 
     await iniciarSesion(page, PRODUCTOR_EMAIL, PRODUCTOR_PASSWORD);
-    await expect.soft(page.getByText('Productor', { exact: true }), 'La cuenta TEST_USER debe tener rol Productor').toBeVisible();
+    await expect.soft(page.getByText('Productor', { exact: true }), 'La cuenta TEST_PRODUCTOR debe tener rol Productor').toBeVisible();
 
     const estado = await abrirFincas(page);
     testInfo.annotations.push({ type: 'Listado (Productor)', description: `GET /configuracion/fincas → ${estado}` });
