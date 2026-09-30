@@ -18,16 +18,17 @@
  * solo_activos=true), lo que además las hace independientes de los datos que otras
  * pruebas crean en el ambiente.
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_56_VIEWPORTS=movil,tablet,escritorio
+ * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
+ * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
+ * no reproduce el bug de M01. Para acotarlo puntualmente:
+ *   TC_DIS_56_VIEWPORTS=escritorio
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_56_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_56_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 
