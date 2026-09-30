@@ -9,8 +9,9 @@
  * sección 7 solo LOTE, errores 404/403) y 1.4.3.
  *
  * Herramientas: @axe-core/playwright (resultados/axe-TC-DIS-117.html/json) + Lighthouse
- * en modo snapshot sobre la misma sesión (resultados/lighthouse-TC-DIS-117-<paso>.html/json).
- * Lighthouse audita un solo estado por paso, sin teclado: alcance limitado.
+ * en modo snapshot sobre la misma sesión (resultados/lighthouse-TC-DIS-117-<paso>-escritorio.html/json),
+ * solo en 3 estados (ficha INDIVIDUAL, ficha LOTE y 404) y solo en escritorio. Axe corre en
+ * todos los estados y los 3 viewports. Lighthouse audita un solo estado, sin teclado: alcance limitado.
  *
  * Datos (verificados en TEST el 30/09/2026, cuenta Administrador):
  *   - INDIVIDUAL #627 "QAG53R2-21297514", ACTIVO, fase "Ciclo completo cachama 2025-A",
@@ -53,6 +54,7 @@ const ID_INEXISTENTE = 999999;
 
 const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const HAR_ASSETS = path.join(__dirname, '../../../../../.har-cache/assets.har');
+const PASOS_LIGHTHOUSE = ['ficha-individual', 'ficha-lote', 'error-404'];
 
 // Las 8 secciones funcionales del RF-47 y cómo se reconocería su encabezado.
 // Sección 4 en LOTE: el RF la reemplaza por la biomasa agregada, que la UI muestra en "Datos del lote".
@@ -139,13 +141,16 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo) {
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
   guardarResultadoAxe(TC_ID, __dirname, pasoVp, axe);
 
-  const lh = await auditarLighthouse(page, TC_ID, __dirname, pasoVp);
-  testInfo.annotations.push({
-    type: `Lighthouse ${pasoVp}`,
-    description:
-      `Puntaje accesibilidad: ${lh.puntaje === null ? 'N/A' : Math.round(lh.puntaje * 100)} (snapshot, alcance limitado)` +
-      (lh.auditoriasFallidas.length ? ` · Fallidas: ${lh.auditoriasFallidas.map((a) => a.id).join(', ')}` : ' · 0 auditorías fallidas'),
-  });
+  // Lighthouse: máximo 3 estados por caso y solo en escritorio (el peso del reporte HTML)
+  if (PASOS_LIGHTHOUSE.includes(paso) && testInfo.project.name === 'escritorio') {
+    const lh = await auditarLighthouse(page, TC_ID, __dirname, pasoVp);
+    testInfo.annotations.push({
+      type: `Lighthouse ${pasoVp}`,
+      description:
+        `Puntaje accesibilidad: ${lh.puntaje === null ? 'N/A' : Math.round(lh.puntaje * 100)} (snapshot, alcance limitado)` +
+        (lh.auditoriasFallidas.length ? ` · Fallidas: ${lh.auditoriasFallidas.map((a) => a.id).join(', ')}` : ' · 0 auditorías fallidas'),
+    });
+  }
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${pasoVp}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
 }
