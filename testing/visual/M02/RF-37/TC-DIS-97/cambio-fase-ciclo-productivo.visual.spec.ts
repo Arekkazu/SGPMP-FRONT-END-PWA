@@ -132,6 +132,8 @@ async function abrirModal(page: Page): Promise<Locator> {
 
 /** Sin peticiones pendientes, fuentes cargadas, scroll arriba y sin toasts encima. */
 async function estabilizar(page: Page) {
+  // Ratón fuera de la UI antes de capturar: tras un clic queda encima del control pulsado (estado :hover)
+  await page.mouse.move(0, 0);
   await page.waitForLoadState('networkidle', { timeout: 60_000 }).catch(() => {});
   await page.evaluate(async () => {
     await document.fonts.ready;
