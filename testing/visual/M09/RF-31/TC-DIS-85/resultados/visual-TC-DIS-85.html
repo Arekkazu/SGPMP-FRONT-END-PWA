@@ -34,9 +34,9 @@
     <tr><td>Rol usado</td><td>Administrador (cuenta compartida de QA)</td></tr>
     <tr><td>Herramienta</td><td>Playwright toHaveScreenshot · fullPage + captura-completa.css · workers=1</td></tr>
     <tr><td>Viewports</td><td>movil 375×667 · tablet 768×1024 · escritorio 1440×900</td></tr>
-    <tr><td>Estabilidad</td><td><span class="pill ok">Estable</span> Baseline 9/9 y segunda corrida sin --update-snapshots 9/9 con 0 diferencias (un reintento de navegación del menú en la primera, recuperado; no visual).</td></tr>
+    <tr><td>Estabilidad</td><td><span class="pill ok">Estable</span> Baseline 9/9 y segunda corrida sin --update-snapshots 9/9 con 0 diferencias (un reintento de navegación del menú en la primera, recuperado; no visual). Re-generada tras fijar el GET de notificaciones (el badge llegaba asíncrono; flake visto en TC-DIS-88): baseline y dos corridas sin diferencias.</td></tr>
     <tr><td>Estado del caso</td><td><span class="pill ok">Completo</span></td></tr>
-    <tr><td>Lecturas fijadas</td><td>GET de plantillas (3 semilla + QA-Inmutable v3, como TC-DIS-62), especies, configuración de Tilapia (ciclos, patologías, métricas, umbrales) y tema (Claro), con cuerpos reales de TEST. Escrituras a esos endpoints abortadas; nunca se pulsa «Crear plantilla».</td></tr>
+    <tr><td>Lecturas fijadas</td><td>GET de plantillas (3 semilla + QA-Inmutable v3, como TC-DIS-62), especies, configuración de Tilapia (ciclos, patologías, métricas, umbrales) y tema (Claro), con cuerpos reales de TEST. Escrituras a esos endpoints abortadas; nunca se pulsa «Crear plantilla». Notificaciones fijadas (cada login crea una).</td></tr>
   </table>
   <h2>Hallazgos</h2>
   <ul><li>Móvil 375 px: el modal no es bottom sheet (el DS lo pide en xs/sm) y su pie («Cancelar» / «Crear plantilla») queda fuera de la vista con una especie elegida; hay que hacer scroll dentro del modal.</li><li>Móvil 375 px: la etiqueta «Inmutable» de las tarjetas se parte a mitad de palabra («Inmut / able»).</li><li>Accesibilidad (de TC-DIS-84): el modal no cierra con Escape.</li></ul>
