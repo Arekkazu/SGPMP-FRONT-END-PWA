@@ -19,8 +19,10 @@
  *
  * Escrituras: TODAS SIMULADAS. El POST /activos-biologicos se responde con route.fulfill
  * (201 con el activo #627 como cuerpo, 409, 400, 422 y 401) y nunca llega al backend; cualquier
- * otro POST/PUT/PATCH/DELETE se aborta (salvo /sesiones/, login y refresh). El 401 va en el
- * último test: la app intenta un refresh real de la sesión y reintenta la petición.
+ * otro POST/PUT/PATCH/DELETE se aborta (salvo /sesiones/, login y refresh). Dos escenarios 401:
+ *   - test 6: POST 401 y /sesiones/refresh también 401 (SIMULADO): sesión expirada de verdad.
+ *   - test 7 (último): POST 401 con refresh real exitoso; la app reintenta y termina en /login,
+ *     por eso va al final (deja la página sin sesión).
  *
  * Navegación: page.goto('/activos-biologicos') y clic en "Registrar activo", verificando tras el
  * goto que la sesión sigue viva ("BLOQUEO DE AMBIENTE: sesión perdida tras goto").
@@ -411,7 +413,39 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Registro de activo biológ
     }
   });
 
-  test('6. Error 401 al registrar (simulado) - mensaje comprensible (3.3.3)', async ({}, testInfo) => {
+  test('6. Error 401 con refresh fallido (simulado) - la sesión expirada se comunica (3.3.1 / 3.3.3)', async ({}, testInfo) => {
+    await abrirFormulario(page);
+    await llenarIndividualValido(page);
+    let intentos = 0;
+    let refrescos = 0;
+    const urlRefresh = (url: URL) => /\/back-sigab-test\/sesiones\/refresh\/?$/.test(url.pathname);
+    await page.route(URL_REGISTRO, (r: Route) => {
+      if (r.request().method() !== 'POST') return r.fallback();
+      intentos++;
+      return r.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify(ERROR_401) });
+    });
+    await page.route(urlRefresh, (r: Route) => {
+      refrescos++;
+      return r.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error_code: 'REFRESH_INVALIDO', message: 'La sesión expiró. Inicie sesión nuevamente.', fields: [] }) });
+    });
+    testInfo.annotations.push({ type: 'Datos simulados', description: 'POST /activos-biologicos y POST /sesiones/refresh respondidos con 401 (sesión expirada); nada llega al backend.' });
+    try {
+      await campos(page).enviar.click();
+      await expect.poll(() => intentos, { message: 'El envío debe llegar al POST simulado' }).toBeGreaterThan(0);
+      const alerta = main(page).getByRole('alert').filter({ hasText: 'No se pudo registrar el activo' });
+      const login = page.getByRole('textbox', { name: 'Correo electrónico', exact: true });
+      await expect(alerta.or(login)).toBeVisible({ timeout: 60_000 });
+      const resultado = (await login.isVisible()) ? `redirige a /login (${page.url()})` : (await alerta.innerText()).replace(/\s+/g, ' ').trim();
+      testInfo.annotations.push({ type: 'Resultado del 401 con refresh fallido', description: `${resultado} · intentos del POST: ${intentos} · refresh: ${refrescos}` });
+      expect.soft(resultado, '3.3.1/3.3.3: con la sesión expirada el mensaje debe decirlo y orientar (volver a iniciar sesión), no "error inesperado"').toMatch(/sesi[oó]n/i);
+      if (!(await login.isVisible())) await escanear(page, 'error-401-refresh', testInfo);
+    } finally {
+      await page.unroute(URL_REGISTRO);
+      await page.unroute(urlRefresh);
+    }
+  });
+
+  test('7. Error 401 con refresh exitoso (simulado) - mensaje comprensible (3.3.3)', async ({}, testInfo) => {
     await abrirFormulario(page);
     await llenarIndividualValido(page);
     let intentos = 0;
