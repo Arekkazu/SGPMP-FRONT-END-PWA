@@ -2,12 +2,6 @@
  * TC-DIS-79 — Consistencia visual de la sección Dashboard Personalizable
  * RF-28 · Personalización del Dashboard · Rol: Administrador · Pareja de accesibilidad: TC-DIS-78
  *
- * BASELINE PENDIENTE (29/09/2026): no se generó por degradación de TEST
- * (/login sin evento load en >30 s entre 18:37 y 19:19, y en >90 s a las 19:27;
- * el bundle principal bajaba a ~22 KB/s). Generar con --update-snapshots
- * --workers=1 cuando /login cargue en menos de 30 s.
- * Falta también personalizacion.fixture.json: se arma con los cuerpos reales de los GET de TEST
- * (hoy no se pueden capturar); sin él el spec no carga.
  *
  * Ruta: Configuración → pestaña Personalización → sección "Dashboard Personalizable".
  * Corre en movil / tablet / escritorio con UN login por viewport: describe en
@@ -25,6 +19,11 @@
  * de respuestas reales de TEST (precedente: plantillas.fixture.json de
  * TC-DIS-62). Las escrituras de personalización se interceptan y nunca llegan
  * al backend.
+ *
+ * HALLAZGO VISUAL (móvil 375 px, 29/09): la cabecera de la sección desborda el
+ * ancho: "Guardar configuración" queda cortado en el borde derecho y la grilla
+ * 4×3 llega al borde. NO se oculta ni se enmascara: la baseline lo registra tal
+ * cual, para que el arreglo aparezca como diferencia esperada.
  *
  * Precondiciones:
  *   - Baseline aprobada. La primera vez se genera con --update-snapshots.
@@ -57,6 +56,29 @@ const HAR_ASSETS = path.join(__dirname, '../../../../.har-cache/assets.har');
 async function usarCacheAssets(contexto: BrowserContext) {
   const grabar = !fs.existsSync(HAR_ASSETS);
   await contexto.routeFromHAR(HAR_ASSETS, { url: '**/assets/**', update: grabar, notFound: 'fallback' });
+}
+
+/**
+ * irAOpcionMenu (_shared/navegacion.ts) con reintento. Flake visto en tablet el
+ * 29/09: el drawer llega a abrirse (.ds-sidebar--open) pero un re-render de la app
+ * justo tras el login lo vuelve a cerrar y el ítem queda fuera del viewport; el
+ * clic se queda reintentando hasta agotar el tiempo. Cada intento dura como máximo
+ * 15 s; al reintentar, el helper compartido vuelve a abrir el menú.
+ */
+async function irAOpcionMenuConReintento(page: Page, opcion: string | RegExp) {
+  for (let intento = 1; ; intento++) {
+    page.setDefaultTimeout(15_000);
+    try {
+      await irAOpcionMenu(page, opcion);
+      return;
+    } catch (error) {
+      if (intento >= 3) throw error;
+      console.log(`[menu] reintento ${intento} para ${opcion}`);
+      await page.waitForTimeout(1000);
+    } finally {
+      page.setDefaultTimeout(0);
+    }
+  }
 }
 
 /**
@@ -110,7 +132,7 @@ function seccionDashboard(page: Page): Locator {
 
 /** Configuración → pestaña Personalización, con la sección Dashboard Personalizable cargada. */
 async function abrirDashboardPersonalizable(page: Page) {
-  await irAOpcionMenu(page, /^(Configuración|Settings)$/);
+  await irAOpcionMenuConReintento(page, /^(Configuración|Settings)$/);
   await page.waitForURL(/configuracion/);
   await page.getByRole('button', { name: /^(Personalización|Personalization)$/ }).click();
 
@@ -139,6 +161,8 @@ test.describe('TC-DIS-79 - Consistencia visual - Personalización del Dashboard 
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
+    // describe.configure no alcanza a los hooks: sin esto el beforeAll usa los 30 s del config
+    test.setTimeout(600_000);
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
 
@@ -159,6 +183,7 @@ test.describe('TC-DIS-79 - Consistencia visual - Personalización del Dashboard 
   });
 
   test('1. Vista inicial: grilla guardada y catálogo de widgets', async () => {
+    // Hallazgo visual en móvil 375 px: "Guardar configuración" cortado y grilla al borde (ver cabecera). Queda en la baseline.
     await expect(page).toHaveScreenshot('dashboard-vista-inicial.png', {
       ...OPCIONES_CAPTURA,
       mask: zonasDinamicas(page),
