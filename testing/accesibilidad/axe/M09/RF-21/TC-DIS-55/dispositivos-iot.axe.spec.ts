@@ -26,9 +26,10 @@
  * 422 real del backend. El 409 también se inyecta con su respuesta real, porque hoy el
  * alta desde la UI falla antes por el contrato (id_tipo_dispositivo).
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_55_VIEWPORTS=movil,tablet,escritorio
+ * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
+ * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
+ * no reproduce el bug de M01. Para acotarlo puntualmente:
+ *   TC_DIS_55_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -43,7 +44,7 @@ const API_BASE = process.env.API_BASE_URL ?? 'https://api.inmero.co/back-sigab-t
 const SERIAL_EXISTENTE = process.env.TC_DIS_55_SERIAL_EXISTENTE ?? 'IOT-EST01-HLA-001';
 const AREA = 'Estanque-01';
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_55_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_55_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 
