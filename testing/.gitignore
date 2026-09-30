@@ -14,6 +14,13 @@ node_modules/
 .env.local
 .env.*.local
 .env.production
+test-access-tc-dis-87
+
+# Copias de playwright-report dentro de resultados/: el reporte HTML incrusta
+# los pasos del test, incluidas las credenciales de .env.test. Nunca versionar.
+**/resultados/playwright-report/
+
 # Caché HAR de assets estáticos (/assets/**) para correr en red lenta.
 # Se regenera sola; nunca versionar.
 /.har-cache/
+test
