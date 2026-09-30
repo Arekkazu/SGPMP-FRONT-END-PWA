@@ -112,9 +112,12 @@ async function abrirDatos(page: Page) {
   await estabilizar(page);
 }
 
-/** Sin peticiones pendientes, fuentes cargadas, scroll arriba y sin toasts encima. */
+/** Sin peticiones pendientes, ratón fuera de la UI (sin hover), fuentes cargadas, scroll arriba y sin toasts. */
 async function estabilizar(page: Page) {
   await page.waitForLoadState('networkidle', { timeout: 60_000 }).catch(() => {});
+  // Tras un clic el ratón queda encima del botón pulsado; en móvil "Editar" cae sobre "Guardar cambios" del
+  // modal y la captura salía con el estado :hover. Se lleva a la esquina, fuera de cualquier control.
+  await page.mouse.move(0, 0);
   await page.evaluate(async () => {
     await document.fonts.ready;
     document.querySelector('main')?.scrollTo(0, 0);
