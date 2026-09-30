@@ -9,9 +9,9 @@
  * name/role/value), 1.4.3. Notas: navegación por teclado entre secciones del individuo.
  *
  * Herramientas: @axe-core/playwright (resultados/axe-TC-DIS-93.html/json) + Lighthouse en
- * modo snapshot (resultados/lighthouse-TC-DIS-93-<paso>-<viewport>.html/json). Axe recorre
- * las 10 pestañas; Lighthouse solo los estados centrales del caso (Datos, modal Editar y tras
- * guardar) para no inflar la evidencia. Lighthouse: alcance limitado.
+ * modo snapshot (resultados/lighthouse-TC-DIS-93-<paso>-escritorio.html/json). Axe recorre
+ * las 10 pestañas en los 3 viewports; Lighthouse solo 3 estados (Datos, modal Editar y tras
+ * guardar) y solo en escritorio, para no inflar la evidencia. Lighthouse: alcance limitado.
  *
  * Datos (TEST, 30/09/2026): INDIVIDUAL #627 "QAG53R2-21297514", ACTIVO, fase e infraestructura
  * (el mismo de TC-DIS-117). Si cambia, el spec corta con "BLOQUEO DE AMBIENTE".
@@ -135,7 +135,7 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo, { lighthou
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
   guardarResultadoAxe(TC_ID, __dirname, pasoVp, axe);
 
-  if (lighthouse) {
+  if (lighthouse && testInfo.project.name === 'escritorio') {
     const lh = await auditarLighthouse(page, TC_ID, __dirname, pasoVp);
     testInfo.annotations.push({
       type: `Lighthouse ${pasoVp}`,
@@ -206,7 +206,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Gestión de activo individ
     expect.soft(await main(page).locator('dl').count(), '1.3.1: etiqueta y valor de cada dato son dos <div> sin relación semántica (no hay <dl>/<dt>/<dd>)').toBeGreaterThan(0);
   });
 
-  test('2. Las 10 pestañas del individuo - 0 violaciones axe A/AA, encabezado por sección (2.4.6) y acciones con propósito claro (2.4.4)', async ({}, testInfo) => {
+  test('2. Las 10 pestañas del individuo - 0 violaciones axe A/AA, estructura por sección y acciones con propósito claro (2.4.4)', async ({}, testInfo) => {
     await abrirActivo(page);
     const sinEncabezado: string[] = [];
     const acciones: string[] = [];
@@ -239,7 +239,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Gestión de activo individ
     }
     testInfo.annotations.push({ type: 'Acciones por pestaña (2.4.4)', description: acciones.join(' · ') });
     testInfo.annotations.push({ type: 'Pestañas sin encabezado', description: sinEncabezado.join(', ') || 'ninguna' });
-    expect.soft(sinEncabezado, '1.3.1/2.4.6: pestañas cuyo contenido no tiene ningún encabezado').toEqual([]);
+    expect.soft(sinEncabezado, 'Estructura (observación, sin criterio WCAG: no hay título visual sin marcar): pestañas cuyo contenido no tiene ningún encabezado').toEqual([]);
 
     // 2.4.4: ninguna acción con nombre vacío o genérico
     const genericas = acciones.flatMap((a) => a.split(': ')[1].split(' | ')).filter((n) => /^(ver|más|aquí|click|ok|ir)$/i.test(n) || n === '');
