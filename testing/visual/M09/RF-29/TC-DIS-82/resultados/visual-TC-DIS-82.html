@@ -34,9 +34,9 @@
     <tr><td>Rol usado</td><td>Administrador (cuenta compartida de QA)</td></tr>
     <tr><td>Herramienta</td><td>Playwright toHaveScreenshot · fullPage + captura-completa.css · workers=1</td></tr>
     <tr><td>Viewports</td><td>movil 375×667 · tablet 768×1024 · escritorio 1440×900</td></tr>
-    <tr><td>Estabilidad</td><td><span class="pill ok">Estable</span> Baseline 6/6 y segunda corrida sin --update-snapshots 6/6 con 0 diferencias.</td></tr>
+    <tr><td>Estabilidad</td><td><span class="pill ok">Estable</span> Baseline 6/6 y segunda corrida sin --update-snapshots 6/6 con 0 diferencias. Re-generada tras fijar el GET de notificaciones (el badge llegaba asíncrono; flake visto en TC-DIS-88): baseline y dos corridas sin diferencias.</td></tr>
     <tr><td>Estado del caso</td><td><span class="pill ok">Completo</span></td></tr>
-    <tr><td>Lecturas fijadas</td><td>GET de idioma (personal por fuente global y global en es-CO), tema (Claro) y dashboard, con cuerpos reales de TEST. PATCH de personalización interceptado: nunca se pulsa «Guardar idioma».</td></tr>
+    <tr><td>Lecturas fijadas</td><td>GET de idioma (personal por fuente global y global en es-CO), tema (Claro) y dashboard, con cuerpos reales de TEST. PATCH de personalización interceptado: nunca se pulsa «Guardar idioma». Notificaciones fijadas (cada login crea una).</td></tr>
   </table>
   <h2>Hallazgos</h2>
   <ul><li>Seleccionar «English» marca la tarjeta pero la interfaz sigue en español hasta «Guardar idioma» (comportamiento esperado, capturado sin guardar).</li><li>Accesibilidad (de TC-DIS-81): las tarjetas de idioma no exponen estado de selección (sin aria-pressed) y el subtítulo «Mi preferencia» no es un encabezado semántico.</li></ul>
