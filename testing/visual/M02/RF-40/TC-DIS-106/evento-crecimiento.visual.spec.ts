@@ -63,11 +63,11 @@ const GET_CONGELADOS: { nombre: string; coincide: (u: URL) => boolean; cuerpo: s
 
 /** POST de evento de crecimiento del INDIVIDUAL (API). */
 const URL_CRECIMIENTO = (u: URL) => u.pathname.endsWith(`/back-sigab-test/activos-biologicos/${ID_INDIVIDUAL}/eventos/crecimiento`);
-// 400 SIMULADO con el formato estándar del backend
 // Métricas simuladas (derivadas de las reales) con una métrica de otra unidad: Talla en cm
 const METRICAS_CON_TALLA = fixture('metricas-especie-4-con-talla');
 const URL_METRICAS = (u: URL) => u.pathname.endsWith('/back-sigab-test/configuracion/metricas');
 
+// 400 SIMULADO con el formato estándar del backend
 const ERROR_400 = {
   error_code: 'VALOR_INVALIDO',
   message: 'El valor de la medición está fuera del rango permitido para la especie.',
@@ -290,6 +290,7 @@ test.describe('TC-DIS-106 - Consistencia visual - Formulario de medición de cre
       await page.unroute(URL_CRECIMIENTO);
     }
   });
+
   test('7. Tipo de medición con otra unidad: "Talla (TALLA)" en cm (métrica simulada)', async ({}, testInfo) => {
     // Handler más reciente = prioridad sobre el de metricas-especie-4 solo durante este test
     let servidas = 0;
