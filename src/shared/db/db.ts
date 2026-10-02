@@ -224,6 +224,8 @@ export interface SyncOperation {
   /** #115 (RF-15): el backend rechazó esta operación en firme (4xx) al reintentarla — ver `syncQueue.replay`. */
   conflicto?: boolean;
   error?: string;
+  /** HTTP del rechazo en firme — distingue un 409 de nombre duplicado de otros 4xx al mostrar el conflicto (#450). */
+  status?: number;
 }
 
 export class AppDB extends Dexie {

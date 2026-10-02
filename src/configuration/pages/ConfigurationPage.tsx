@@ -193,7 +193,12 @@ export function CatalogoTab() {
           <Alert
             variant="error"
             title={t('configurationpage.conflicto_de_sincronizacion')}
-            description={op.error ?? t('configurationpage.no_se_pudo_sincronizar_esta_especie')}
+            description={
+              // #450: texto exigido por el FA "Error de sincronización en modo offline" del RF-15.
+              op.accion === 'crear' && op.status === 409
+                ? t('configurationpage.especie_offline_ya_existe', { nombre: (op.payload as { dto: { nombre: string } }).dto.nombre })
+                : op.error ?? t('configurationpage.no_se_pudo_sincronizar_esta_especie')
+            }
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--s2)' }}>
             <Button variant="secondary" size="sm" onClick={() => resolverConflicto(op)}>
@@ -236,7 +241,13 @@ export function CatalogoTab() {
           saving={saving}
           saveError={saveError}
           onClose={cerrar}
-          onRegistrar={registrar}
+          onRegistrar={async (dto) => {
+            const ok = await registrar(dto);
+            // #450: la especie nueva queda al inicio de la lista; volver a la página 1
+            // para que el usuario la vea aunque estuviera en otra página al crearla.
+            if (ok) setPagina(1);
+            return ok;
+          }}
           onEditar={(id, dto) => editar(id, dto)}
         />
       )}
