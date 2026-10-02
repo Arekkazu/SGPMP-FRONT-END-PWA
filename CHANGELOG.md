@@ -1,3 +1,11 @@
+## [1.0.0-rc.34](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.33...v1.0.0-rc.34) (2026-10-02)
+
+### Bug Fixes
+
+* **rf10:** conservar el ancla fecha_hasta al paginar la auditoria (INC-M01-57-G71) ([c0df51e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c0df51ee8a4e727c6980b1bb81412136c286f693)), closes [Arekkazu/sgpmp-backend#457](https://github.com/Arekkazu/sgpmp-backend/issues/457)
+* **rf15:** mostrar el texto del rf-15 ante un 409 de sincronización y volver a la página 1 al crear (INC-M09-54-G07) ([b1a6f46](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b1a6f46c9e717d5d31d92eeff0cfc995ead5cde8)), closes [Arekkazu/sgpmp-backend#450](https://github.com/Arekkazu/sgpmp-backend/issues/450)
+* **rf15:** notificar conflictos tras el replay y mostrar la especie pendiente al inicio (INC-M09-54-G07) ([40ca927](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/40ca927c588f7d9056c7b8cba79cf450fb4503e9)), closes [Arekkazu/sgpmp-backend#450](https://github.com/Arekkazu/sgpmp-backend/issues/450)
+
 ## [1.0.0-rc.33](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.32...v1.0.0-rc.33) (2026-09-24)
 
 ### Bug Fixes
