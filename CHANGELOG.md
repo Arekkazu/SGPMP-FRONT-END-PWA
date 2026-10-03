@@ -1,3 +1,13 @@
+## [1.0.0-rc.36](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.35...v1.0.0-rc.36) (2026-10-03)
+
+### Bug Fixes
+
+* **a11y:** gestionar foco y Escape en todos los modales ([#199](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/199)) ([656dac6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/656dac6b1c41021ad0c92b80137d5f2b4b45c9c8))
+* **rf17-rf30-mod9:** corregir los hallazgos de accesibilidad de la primera evaluación de M09 ([a12843f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a12843f6ae3af19513c8edd5e8300449dfbb0035)), closes [#189](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/189)
+* **rf21-mod9:** enviar el tipo de dispositivo al registrar un dispositivo IoT ([#179](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/179)) ([654db8e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/654db8e190cdece473eaf1544a76ec8bdc74af51))
+* **rf33-rf35:** pedir los atributos dinámicos de la especie y alinear el sexo con la BD ([1ba5f49](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1ba5f49848181c739b280fc3605f22888fe73e1e)), closes [#194](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/194) [#192](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/192)
+* **rf34-rf52:** corregir los hallazgos de accesibilidad de la primera evaluación de M02 ([2df3430](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2df34305027ddebfe0020d590a2f793a3930bb90))
+
 ## [1.0.0-rc.35](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.34...v1.0.0-rc.35) (2026-10-03)
 
 ### Features
