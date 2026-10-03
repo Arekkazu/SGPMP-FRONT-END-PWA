@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { Radio, ChevronLeft, Check, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
@@ -12,7 +13,7 @@ import { useDispositivosIot } from '../hooks/useDispositivosIot';
 import { useSensores } from '../hooks/useSensores';
 import { useFincas } from '../hooks/useFincas';
 import { useInfraestructuras } from '../hooks/useInfraestructuras';
-import type { DispositivoIotResponse, SensorResponse, FincaResponse, InfraestructuraResponse } from '../types';
+import type { AsociacionActivoSuperada, DispositivoIotResponse, SensorResponse, FincaResponse, InfraestructuraResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -415,6 +416,9 @@ export function SensoresSection() {
   const [successMsg, setSuccessMsg]   = useState<string | null>(null);
   const [pendingPunto, setPendingPunto] = useState<string | null>(null);
   const [showReasignarConfirm, setShowReasignarConfirm] = useState(false);
+  // #290: asociaciones sensor→activo que la reasignación dejó superadas; se
+  // muestran para que el usuario las re-asocie desde la ficha del activo (RF-49).
+  const [superadas, setSuperadas] = useState<AsociacionActivoSuperada[]>([]);
 
   useEffect(() => { cargarDisp(); cargarFincas(); }, [cargarDisp, cargarFincas]);
 
@@ -430,6 +434,7 @@ export function SensoresSection() {
     setFinca(null);
     setArea(null);
     setSuccessMsg(null);
+    setSuperadas([]);
     setStep('sensor');
     cargarSensores(d.id_dispositivo_iot);
   };
@@ -465,12 +470,13 @@ export function SensoresSection() {
   const handleConfirm = async (punto: string) => {
     if (!sensor || !dispositivo || !area) return;
     setPendingPunto(punto);
-    const ok = await asociar(sensor.id_sensores, {
+    const res = await asociar(sensor.id_sensores, {
       id_dispositivo_iot: dispositivo.id_dispositivo_iot,
       id_infraestructura: area.id_infraestructura,
       punto_instalacion: punto,
     });
-    if (ok) {
+    if (res) {
+      setSuperadas(res.asociaciones_activo_superadas ?? []);
       setSuccessMsg(`Sensor "${sensor.nombre}" asociado a "${area.nombre_infraestructura}" correctamente.`);
       resetWizard();
     }
@@ -478,14 +484,15 @@ export function SensoresSection() {
 
   const handleConfirmarReasignacion = async () => {
     if (!sensor || !dispositivo || !area || pendingPunto === null) return;
-    const ok = await asociar(sensor.id_sensores, {
+    const res = await asociar(sensor.id_sensores, {
       id_dispositivo_iot: dispositivo.id_dispositivo_iot,
       id_infraestructura: area.id_infraestructura,
       punto_instalacion: pendingPunto,
       confirmar: true,
     });
     setShowReasignarConfirm(false);
-    if (ok) {
+    if (res) {
+      setSuperadas(res.asociaciones_activo_superadas ?? []);
       setSuccessMsg(`Sensor "${sensor.nombre}" reasignado a "${area.nombre_infraestructura}" correctamente.`);
       resetWizard();
     }
@@ -533,6 +540,28 @@ export function SensoresSection() {
       {/* Alerts */}
       {!online && <Alert variant="warning" title={t('sensoressection.sin_conexion')} description={t('sensoressection.la_asociacion_de_sensores_requiere_conexion')} style={{ marginBottom: 'var(--s4)' }} />}
       {successMsg && <Alert variant="success" title={t('sensoressection.asociacion_registrada')} description={successMsg} style={{ marginBottom: 'var(--s4)' }} />}
+      {superadas.length > 0 && (
+        <div style={{ marginBottom: 'var(--s4)' }}>
+          <Alert
+            variant="warning"
+            title={t('sensoressection.activos_sin_monitoreo_titulo')}
+            description={t('sensoressection.activos_sin_monitoreo', { count: superadas.length })}
+          />
+          <ul style={{ margin: 'var(--s2) 0 0', paddingLeft: 'var(--s6)', fontSize: '13px' }}>
+            {superadas.map((s) => (
+              <li key={s.id_asociacion_activo_sensor}>
+                {s.id_activo_biologico !== null ? (
+                  <Link to={`/activos-biologicos/${s.id_activo_biologico}`}>
+                    {t('sensoressection.activo_superado', { id: s.id_activo_biologico, tipo: t(`sensoressection.tipo_asociacion_${s.tipo}`, { defaultValue: s.tipo }) })}
+                  </Link>
+                ) : (
+                  t(`sensoressection.tipo_asociacion_${s.tipo}`, { defaultValue: s.tipo })
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {!puedeAsociar ? (
         <Alert variant="warning" title={t('sensoressection.sin_permiso')} description={t('sensoressection.no_tienes_permiso_para_asociar_sensores_a')} />
