@@ -7,6 +7,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useDashboardLayout } from '../hooks/useDashboardLayout';
 import type { WidgetCatalogoItem, WidgetConfigDTO } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 // ── Widget catalog ────────────────────────────────────────────────────────────
 // El catalogo lo define el backend (modulo9.widgets) y llega ya filtrado por el
@@ -84,9 +85,11 @@ function gridFromLayout(grid: WidgetConfigDTO[], catalogo: WidgetDef[]): GridCel
 
 // ── Confirm modal ─────────────────────────────────────────────────────────────
 function ConfirmModal({ onConfirm, onCancel, saving }: { onConfirm: () => void; onCancel: () => void; saving: boolean }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="restore-modal-title"
@@ -375,7 +378,11 @@ export function DashboardLayoutSection() {
                         overflow: 'hidden',
                         position: 'relative',
                       }}
-                      aria-label={def ? `Quitar ${def.nombre}` : isTarget ? `Colocar ${selectedKey}` : `Celda vacía fila ${fila + 1} columna ${col + 1}`}
+                      aria-label={def
+                        ? `Quitar ${def.nombre}`
+                        // TC-DIS-78: el nombre visible del widget y la posición, no su clave interna.
+                        : isTarget ? `Colocar ${widgets.find((w) => w.key === selectedKey)?.nombre ?? ''} en fila ${fila + 1} columna ${col + 1}`
+                        : `Celda vacía fila ${fila + 1} columna ${col + 1}`}
                     >
                       {cell && def ? (
                         <>
