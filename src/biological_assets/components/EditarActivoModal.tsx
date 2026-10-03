@@ -95,8 +95,8 @@ export function EditarActivoModal({ activo, saving, saveError, onClose, onGuarda
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="edit-sexo">{t('editaractivomodal.sexo')}</label>
             <select id="edit-sexo" style={SELECT} {...register('sexo')}>
               <option value="">{t('editaractivomodal.sin_especificar')}</option>
-              <option value="MACHO">{t('editaractivomodal.macho')}</option>
-              <option value="HEMBRA">{t('editaractivomodal.hembra')}</option>
+              <option value="Macho">{t('editaractivomodal.macho')}</option>
+              <option value="Hembra">{t('editaractivomodal.hembra')}</option>
             </select>
           </div>
 
