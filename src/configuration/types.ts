@@ -123,6 +123,28 @@ export interface TipoDispositivoIotResponse {
   nombre: string;
 }
 
+// RF-23 / TC-M09-250/251: credencial MQTT propia de cada Raspberry.
+// `password` llega una sola vez (respuesta del POST) y nunca se persiste.
+export interface CredencialMqttResponse {
+  usuario: string;
+  password: string;
+  seriales: string[];
+}
+
+export interface EstadoCredencialMqttResponse {
+  /** false: sin credencial propia (usa la compartida o transmite por otra Raspberry). */
+  emitida: boolean;
+  habilitada: boolean;
+  conectada: boolean;
+  usuario: string | null;
+  seriales: string[];
+}
+
+export interface EmitirCredencialMqttDTO {
+  /** Otros dispositivos que transmite la misma Raspberry (modelo "serial por ESP32"). */
+  ids_dispositivos_adicionales: number[];
+}
+
 // =====================================================================
 // Sensores
 // =====================================================================
