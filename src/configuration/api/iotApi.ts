@@ -3,7 +3,7 @@ import type {
   DispositivoIotResponse, RegistrarDispositivoIotDTO,
   SensorResponse, RegistrarSensorDTO,
   ConfiguracionRemotaResponse, ConfigurarRemotamenteDTO,
-  SensorAreaResponse, AsociarSensorAreaDTO,
+  SensorAreaResponse, AsociarSensorAreaDTO, AsociarSensorAreaResponse,
   CalibracionResponse, RegistrarCalibracionDTO,
 } from '../types';
 
@@ -62,8 +62,8 @@ export const configuracionRemotaApi = {
 };
 
 export const sensorAreaApi = {
-  async asociar(idSensor: number, dto: AsociarSensorAreaDTO): Promise<SensorAreaResponse> {
-    const res = await http.post<SensorAreaResponse>(`${SENS}/${idSensor}/asociar`, dto);
+  async asociar(idSensor: number, dto: AsociarSensorAreaDTO): Promise<AsociarSensorAreaResponse> {
+    const res = await http.post<AsociarSensorAreaResponse>(`${SENS}/${idSensor}/asociar`, dto);
     return res.data;
   },
 
