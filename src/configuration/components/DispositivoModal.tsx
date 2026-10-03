@@ -1,17 +1,21 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X, Cpu } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
-import type { InfraestructuraResponse, RegistrarDispositivoIotDTO } from '../types';
+import type { InfraestructuraResponse, RegistrarDispositivoIotDTO, TipoDispositivoIotResponse } from '../types';
+import { tiposDispositivoApi } from '../api/iotApi';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface FormValues {
   serial: string;
   descripcion: string;
+  id_tipo_dispositivo: string;
 }
 
 interface Props {
@@ -25,6 +29,7 @@ interface Props {
 const SERIAL_REGEX = /^[A-Za-z0-9_\-]+$/;
 
 export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const {
     register,
@@ -34,8 +39,11 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
 
+  // #179: el backend exige id_tipo_dispositivo desde RF-23 (rangos por tipo).
+  const [tipos, setTipos] = useState<TipoDispositivoIotResponse[]>([]);
   useEffect(() => {
-    reset({ serial: '', descripcion: '' });
+    reset({ serial: '', descripcion: '', id_tipo_dispositivo: '' });
+    tiposDispositivoApi.listar().then(setTipos).catch(() => setTipos([]));
   }, [reset]);
 
   useEffect(() => {
@@ -49,12 +57,14 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
       serial: data.serial.trim().toUpperCase(),
       descripcion: data.descripcion.trim(),
       id_infraestructura: area.id_infraestructura,
+      id_tipo_dispositivo: Number(data.id_tipo_dispositivo),
     });
     if (ok) onClose();
   };
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="disp-modal-title"
@@ -110,11 +120,14 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             {/* Serial */}
             <div style={{ marginBottom: 'var(--s4)' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivomodal.serial_fisico_del_dispositivo')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
+              <label htmlFor="disp-serial" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivomodal.serial_fisico_del_dispositivo')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
               </label>
               <input
+                id="disp-serial"
                 type="text"
                 aria-required="true"
+                aria-invalid={!!errors.serial}
+                aria-describedby={errors.serial ? 'disp-serial-err' : undefined}
                 placeholder={t('dispositivomodal.ej_sn_esp32_2024_001')}
                 maxLength={50}
                 style={{
@@ -138,11 +151,27 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
                 })}
               />
               {errors.serial && (
-                <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)', margin: 0 }}>
+                <p id="disp-serial-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)', margin: 0 }}>
                   {errors.serial.message}
                 </p>
               )}
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('dispositivomodal.se_guardara_en_mayusculas_debe_ser_unico_en')}</p>
+            </div>
+
+            {/* Tipo de dispositivo */}
+            <div style={{ marginBottom: 'var(--s4)' }}>
+              <Select
+                id="disp-tipo"
+                label={t('dispositivomodal.tipo_de_dispositivo')}
+                required
+                error={errors.id_tipo_dispositivo?.message}
+                {...register('id_tipo_dispositivo', { required: t('dispositivomodal.el_tipo_de_dispositivo_es_obligatorio') })}
+              >
+                <option value="">{t('dispositivomodal.seleccione_un_tipo')}</option>
+                {tipos.map((tipo) => (
+                  <option key={tipo.id_tipo_dispositivo} value={tipo.id_tipo_dispositivo}>{tipo.nombre}</option>
+                ))}
+              </Select>
             </div>
 
             {/* Descripción */}

@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { ModalShell } from './ModalShell';
-import { FormSelect, FormTextArea, FORM_COL } from './formControls';
+import { FormSelect, FormTextArea, FORM_COL, errorServidor } from './formControls';
+import { useDispositivosIot } from '../../configuration/hooks/useDispositivosIot';
+import { useSensores } from '../../configuration/hooks/useSensores';
 import type { ApiError } from '../../shared/api/errors';
 import type { AsociarSensorActivoDTO } from '../types';
 
@@ -30,7 +32,7 @@ interface Props {
 
 export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, saveError, onClose, onConfirmar }: Props) {
   const { t } = useT('biologicalAssets');
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
     defaultValues: {
       tipo_activo: esPoblacional ? 'LOTE' : 'INDIVIDUAL',
@@ -39,13 +41,23 @@ export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, s
     },
   });
 
+  // TC-DIS-137: dispositivo y sensor se eligen de una lista, no se teclean como ID.
+  const { dispositivos, loading: cargandoDispositivos, cargar: cargarDispositivos } = useDispositivosIot();
+  const { sensores, loading: cargandoSensores, cargar: cargarSensores } = useSensores();
+  const idDispositivo = Number(watch('dispositivo_iot_id'));
+  useEffect(() => { cargarDispositivos(true); }, [cargarDispositivos]);
+  useEffect(() => {
+    setValue('sensor_id', '');
+    if (idDispositivo > 0) cargarSensores(idDispositivo);
+  }, [idDispositivo, cargarSensores, setValue]);
+
   const submit = async (v: FormValues) => {
     const dto: AsociarSensorActivoDTO = {
       tipo_activo: v.tipo_activo,
       tipo_asociacion: v.tipo_asociacion,
       dispositivo_iot_id: Number(v.dispositivo_iot_id),
       sensor_id: Number(v.sensor_id),
-      id_infraestructura: Number(v.id_infraestructura),
+      id_infraestructura: idInfraestructura ?? Number(v.id_infraestructura),
       fecha_inicio: v.fecha_inicio ? new Date(v.fecha_inicio).toISOString() : null,
       motivo: v.motivo.trim() || null,
     };
@@ -75,21 +87,39 @@ export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, s
             <option value="POBLACIONAL">{t('asociarsensormodal.poblacional')}</option>
           </FormSelect>
 
-          <Input
-            label={t('asociarsensormodal.id_dispositivo_iot')} required type="number" min={1}
-            error={errors.dispositivo_iot_id?.message}
-            {...register('dispositivo_iot_id', { required: t('asociarsensormodal.el_dispositivo_es_obligatorio'), min: { value: 1, message: t('asociarsensormodal.id_invalido') } })}
-          />
-          <Input
-            label={t('asociarsensormodal.id_sensor')} required type="number" min={1}
-            error={errors.sensor_id?.message}
-            {...register('sensor_id', { required: t('asociarsensormodal.el_sensor_es_obligatorio'), min: { value: 1, message: t('asociarsensormodal.id_invalido') } })}
-          />
-          <Input
-            label={t('asociarsensormodal.id_infraestructura')} required type="number" min={1}
-            error={errors.id_infraestructura?.message}
-            {...register('id_infraestructura', { required: t('asociarsensormodal.la_infraestructura_es_obligatoria'), min: { value: 1, message: t('asociarsensormodal.id_invalido') } })}
-          />
+          <FormSelect
+            label={t('asociarsensormodal.dispositivo_iot')} required
+            error={errors.dispositivo_iot_id?.message ?? errorServidor(saveError, 'dispositivo_iot_id')}
+            disabled={cargandoDispositivos}
+            {...register('dispositivo_iot_id', { required: t('asociarsensormodal.el_dispositivo_es_obligatorio') })}
+          >
+            <option value="">{cargandoDispositivos ? t('asociarsensormodal.cargando') : t('asociarsensormodal.seleccionar')}</option>
+            {dispositivos.map((d) => (
+              <option key={d.id_dispositivo_iot} value={d.id_dispositivo_iot}>{d.serial} — {d.descripcion}</option>
+            ))}
+          </FormSelect>
+          <FormSelect
+            label={t('asociarsensormodal.sensor')} required
+            error={errors.sensor_id?.message ?? errorServidor(saveError, 'sensor_id')}
+            disabled={!(idDispositivo > 0) || cargandoSensores}
+            {...register('sensor_id', { required: t('asociarsensormodal.el_sensor_es_obligatorio') })}
+          >
+            <option value="">{cargandoSensores ? t('asociarsensormodal.cargando') : t('asociarsensormodal.seleccionar')}</option>
+            {sensores.filter((s) => s.es_activo).map((s) => (
+              <option key={s.id_sensores} value={s.id_sensores}>{s.nombre}{s.categoria ? ` (${s.categoria})` : ''}</option>
+            ))}
+          </FormSelect>
+          {idInfraestructura != null ? (
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+              {t('asociarsensormodal.infraestructura_del_activo')}: <strong>#{idInfraestructura}</strong>
+            </p>
+          ) : (
+            <Input
+              label={t('asociarsensormodal.id_infraestructura')} required type="number" min={1}
+              error={errors.id_infraestructura?.message ?? errorServidor(saveError, 'id_infraestructura')}
+              {...register('id_infraestructura', { required: t('asociarsensormodal.la_infraestructura_es_obligatoria'), min: { value: 1, message: t('asociarsensormodal.id_invalido') } })}
+            />
+          )}
           <Input label={t('asociarsensormodal.fecha_de_inicio')} type="date" {...register('fecha_inicio')} />
           <FormTextArea label={t('asociarsensormodal.motivo')} placeholder={t('asociarsensormodal.opcional')} {...register('motivo')} />
         </div>

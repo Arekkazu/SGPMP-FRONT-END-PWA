@@ -68,11 +68,11 @@ export function ActivoHeader({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s4)', flexWrap: 'wrap' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', flexWrap: 'wrap' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               {identificador ?? (
                 <span style={{ fontFamily: 'var(--font-mono)' }}>Activo #{idActivo}</span>
               )}
-            </h2>
+            </h1>
             <Badge variant="neutral">
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 {esPoblacional ? <Boxes size={12} aria-hidden /> : <User size={12} aria-hidden />}

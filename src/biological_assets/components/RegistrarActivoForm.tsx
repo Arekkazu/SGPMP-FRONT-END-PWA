@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Boxes, User } from 'lucide-react';
@@ -6,7 +6,8 @@ import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { ApiError } from '../../shared/api/errors';
-import type { RegistrarActivoDTO, TipoActivo, OrigenFinanciero } from '../types';
+import type { ParametroEspecie, RegistrarActivoDTO, TipoActivo, OrigenFinanciero } from '../types';
+import { activosApi } from '../api/activosApi';
 import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
@@ -27,6 +28,8 @@ interface FormValues {
   // poblacional
   cantidad_inicial: string;
   peso_promedio_inicial: string;
+  // atributos dinámicos de la especie, por posición en `parametros`
+  atrib: (string | boolean)[];
 }
 
 interface Props {
@@ -97,10 +100,21 @@ function FieldError({ msg }: { msg?: string }) {
 
 const HOY = hoyLocal();
 
+function valorAtributo(p: ParametroEspecie, v: string | boolean | undefined): unknown {
+  if (p.tipo_dato === 'BOOLEANO') return Boolean(v);
+  if (v === undefined || v === '') return null;
+  if (p.tipo_dato === 'NUMERICO' || p.tipo_dato === 'ENTERO') return Number(v);
+  return String(v).trim();
+}
+
+function etiquetaAtributo(p: ParametroEspecie): string {
+  return p.unidad_medida && p.unidad_medida !== 'N/A' ? `${p.nombre} (${p.unidad_medida})` : p.nombre;
+}
+
 export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: Props) {
   const { t } = useT('biologicalAssets');
   const {
-    register, handleSubmit, watch, formState: { errors },
+    register, handleSubmit, watch, setError, setValue, formState: { errors },
   } = useForm<FormValues>({
     mode: 'onBlur',
     defaultValues: {
@@ -116,6 +130,31 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   const requiereSoporte = origen === 'compra' || origen === 'donacion';
   const esNacimiento = origen === 'nacimiento';
 
+  // #194 (RF-33 FA-07): atributos dinámicos que la especie exige al registrar.
+  const idEspecie = Number(watch('id_especie'));
+  const [parametros, setParametros] = useState<ParametroEspecie[]>([]);
+  useEffect(() => {
+    if (!Number.isInteger(idEspecie) || idEspecie < 1) {
+      setParametros([]);
+      return;
+    }
+    const temporizador = setTimeout(() => {
+      activosApi.parametrosEspecie(idEspecie, tipo)
+        .then((lista) => { setValue('atrib', []); setParametros(lista); })
+        .catch(() => setParametros([]));
+    }, 400);
+    return () => clearTimeout(temporizador);
+  }, [idEspecie, tipo, setValue]);
+
+  // El backend señala el atributo con field="atributos_dinamicos.<nombre>".
+  useEffect(() => {
+    const campo = saveError?.field;
+    if (!campo?.startsWith('atributos_dinamicos.')) return;
+    const nombre = campo.slice('atributos_dinamicos.'.length).toLowerCase();
+    const i = parametros.findIndex((p) => p.nombre.toLowerCase() === nombre);
+    if (i >= 0) setError(`atrib.${i}`, { message: saveError!.message }, { shouldFocus: true });
+  }, [saveError, parametros, setError]);
+
   const submit = async (v: FormValues) => {
     const dto: RegistrarActivoDTO = {
       tipo_activo: v.tipo_activo,
@@ -127,6 +166,15 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
       costo_adquisicion: requiereSoporte && v.costo_adquisicion ? Number(v.costo_adquisicion) : null,
       soporte_documental: requiereSoporte ? (v.soporte_documental.trim() || null) : null,
     };
+
+    if (parametros.length > 0) {
+      const atributos: Record<string, unknown> = {};
+      parametros.forEach((p, i) => {
+        const valor = valorAtributo(p, v.atrib?.[i]);
+        if (valor !== null) atributos[p.nombre] = valor;
+      });
+      dto.atributos_dinamicos = atributos;
+    }
 
     if (esIndividual) {
       dto.identificador = v.identificador.trim();
@@ -302,8 +350,8 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
               <label style={FIELD_LABEL} htmlFor="sexo">{t('registraractivoform.sexo')}<span aria-hidden="true">*</span></label>
               <select id="sexo" style={SELECT} {...register('sexo', { required: 'El sexo es obligatorio.' })}>
                 <option value="">{t('registraractivoform.seleccionar')}</option>
-                <option value="MACHO">{t('registraractivoform.macho')}</option>
-                <option value="HEMBRA">{t('registraractivoform.hembra')}</option>
+                <option value="Macho">{t('registraractivoform.macho')}</option>
+                <option value="Hembra">{t('registraractivoform.hembra')}</option>
               </select>
               <FieldError msg={errors.sexo?.message} />
             </div>
@@ -340,6 +388,51 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
               placeholder={t('registraractivoform.opcional')}
               {...register('peso_promedio_inicial')}
             />
+          </div>
+        </div>
+      )}
+
+      {parametros.length > 0 && (
+        <div style={{ marginBottom: 'var(--s6)' }}>
+          <span style={SECTION_TITLE}>{t('registraractivoform.atributos_de_la_especie')}</span>
+          <div style={GRID}>
+            {parametros.map((p, i) => {
+              const msg = errors.atrib?.[i]?.message;
+              if (p.tipo_dato === 'BOOLEANO') {
+                return (
+                  <div key={p.nombre}>
+                    <label style={{ ...FIELD_LABEL, display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
+                      <input
+                        type="checkbox"
+                        aria-invalid={!!msg}
+                        style={{ accentColor: 'var(--brand-500)' }}
+                        {...register(`atrib.${i}`)}
+                      />
+                      {etiquetaAtributo(p)}
+                    </label>
+                    <FieldError msg={msg} />
+                  </div>
+                );
+              }
+              const numerico = p.tipo_dato === 'NUMERICO' || p.tipo_dato === 'ENTERO';
+              return (
+                <Input
+                  key={p.nombre}
+                  id={`atrib-${i}`}
+                  label={etiquetaAtributo(p)}
+                  required={p.es_obligatorio}
+                  type={numerico ? 'number' : 'text'}
+                  step={p.tipo_dato === 'ENTERO' ? 1 : 'any'}
+                  min={p.valor_min ?? undefined}
+                  max={p.valor_max ?? undefined}
+                  placeholder={p.es_obligatorio ? undefined : t('registraractivoform.opcional')}
+                  error={msg}
+                  {...register(`atrib.${i}`, {
+                    required: p.es_obligatorio ? t('registraractivoform.este_atributo_es_obligatorio') : false,
+                  })}
+                />
+              );
+            })}
           </div>
         </div>
       )}

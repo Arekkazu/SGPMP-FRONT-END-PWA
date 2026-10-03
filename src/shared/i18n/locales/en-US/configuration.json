@@ -122,6 +122,7 @@
     "descartar": "Discard",
     "error": "Error",
     "error_al_cargar": "Failed to load",
+    "especie_offline_ya_existe": "Sync failed. The species '{{nombre}}' created offline already exists on the server. Please resolve the conflict manually.",
     "los_cambios_se_guardaran_localmente": "You can register species offline: they will be saved locally and synced once connection is restored. Editing and deactivating still require a connection.",
     "no_se_pudo_conectar_con_el_servidor_se": "Could not reach the server. Showing the latest available data.",
     "no_se_pudo_sincronizar_esta_especie": "This species could not be synced. Discard it and register it again with a different name.",
@@ -160,6 +161,7 @@
     "ej_sensor_esp32_temperatura_humedad_modelo": "e.g. ESP32 temperature/humidity sensor, model DHT22",
     "ej_sn_esp32_2024_001": "e.g. SN-ESP32-2024-001",
     "el_serial_del_dispositivo_es_obligatorio": "The device serial number is required.",
+    "el_tipo_de_dispositivo_es_obligatorio": "Device type is required.",
     "error_al_registrar": "Registration failed",
     "la_descripcion_es_obligatoria": "Description is required.",
     "maximo_100_caracteres": "At most 100 characters.",
@@ -169,8 +171,10 @@
     "registrar_dispositivo": "Register device",
     "registrar_dispositivo_iot": "Register IoT device",
     "se_guardara_en_mayusculas_debe_ser_unico_en": "It is stored in uppercase and must be unique across the system.",
+    "seleccione_un_tipo": "Select a type",
     "serial_fisico_del_dispositivo": "Physical serial number of the device",
     "solo_letras_numeros_guiones_y_guiones_bajos": "Letters, digits, hyphens and underscores only.",
+    "tipo_de_dispositivo": "Device type",
     "ya_existe_un_dispositivo_con_este_serial": "A device with this serial number already exists."
   },
   "dispositivostable": {
@@ -533,6 +537,10 @@
   },
   "sensoressection": {
     "a_asociar": "to link:",
+    "activo_superado": "Asset #{{id}} ({{tipo}})",
+    "activos_sin_monitoreo_one": "Moving the sensor to another area closed {{count}} environmental or population association. If the asset still needs this sensor, associate it again from its record:",
+    "activos_sin_monitoreo_other": "Moving the sensor to another area closed {{count}} environmental or population associations. If the assets still need this sensor, associate it again from their records:",
+    "activos_sin_monitoreo_titulo": "The sensor stopped monitoring biological assets",
     "area_productiva": "Production area",
     "asociacion_de_sensores_a_areas": "Sensor-to-Area Linking",
     "asociacion_registrada": "Link recorded",
@@ -566,6 +574,8 @@
     "sensor": "Sensor",
     "sin_conexion": "Offline",
     "sin_permiso": "No permission",
+    "tipo_asociacion_ambiental": "environmental",
+    "tipo_asociacion_poblacional": "population",
     "vincula_cada_sensor_a_la_zona_fisica_de_la": "Link each sensor to the physical zone of the farm it must monitor"
   },
   "tabs": {

@@ -7,13 +7,21 @@
  * el diálogo de confirmación solo aparece para ese código, reenvía con
  * `confirmar: true` al aceptar, y cualquier otro error sigue mostrándose como
  * alerta persistente sin diálogo.
+ *
+ * #290: si la reasignación cerró asociaciones sensor→activo (ambiental o
+ * poblacional), el wizard las lista con enlace a la ficha del activo para que
+ * el usuario las re-asocie (RF-49).
  */
 import React, { useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ApiError } from '../../shared/api/errors';
-import type { AsociarSensorAreaDTO, DispositivoIotResponse, FincaResponse, InfraestructuraResponse, SensorResponse } from '../types';
+import type {
+  AsociacionActivoSuperada, AsociarSensorAreaDTO, AsociarSensorAreaResponse, DispositivoIotResponse, FincaResponse,
+  InfraestructuraResponse, SensorResponse,
+} from '../types';
 import { SensoresSection } from './SensoresSection';
 
 vi.mock('../../shared/rbac/usePermission', () => ({ usePermission: () => true }));
@@ -48,7 +56,8 @@ vi.mock('../hooks/useInfraestructuras', () => ({
 
 // Fake stateful, igual a lo que expone el hook real: `asociar` responde según
 // el escenario que cada test configura via `configurarRespuestas`.
-let respuestas: ((dto: AsociarSensorAreaDTO) => { ok: boolean; error?: ApiError })[] = [];
+type Resultado = { ok: boolean; error?: ApiError; superadas?: AsociacionActivoSuperada[] };
+let respuestas: ((dto: AsociarSensorAreaDTO) => Resultado)[] = [];
 const asociarCalls: AsociarSensorAreaDTO[] = [];
 
 function useSensoresFake() {
@@ -61,13 +70,18 @@ function useSensoresFake() {
     setSaving(true);
     setSaveError(null);
     const handler = respuestas.shift();
-    const resultado = handler ? handler(dto) : { ok: true };
+    const resultado: Resultado = handler ? handler(dto) : { ok: true };
     setSaving(false);
     if (!resultado.ok) {
       setSaveError(resultado.error ?? { code: 'ERROR', message: 'Error', status: 500 });
-      return false;
+      return null;
     }
-    return true;
+    const respuesta: AsociarSensorAreaResponse = {
+      id_sensores_area_asociada: 1, id_sensor: 5, id_dispositivo_iot: 1, id_infraestructura: dto.id_infraestructura,
+      punto_instalacion: dto.punto_instalacion, tiene_estado: true, fecha_asociacion: '', fecha_finalizacion: null,
+      id_usuario: 1, asociaciones_activo_superadas: resultado.superadas ?? [],
+    };
+    return respuesta;
   };
 
   return { sensores, loading: false, error: null, saving, saveError, cargar: vi.fn(), asociar };
@@ -76,7 +90,7 @@ function useSensoresFake() {
 vi.mock('../hooks/useSensores', () => ({ useSensores: () => useSensoresFake() }));
 
 async function avanzarHastaConfirmar() {
-  render(<SensoresSection />);
+  render(<MemoryRouter><SensoresSection /></MemoryRouter>);
   fireEvent.click(await screen.findByText('IOT-001'));
   fireEvent.click(await screen.findByText('Sensor pH'));
   fireEvent.click(await screen.findByText('Finca El Remanso'));
@@ -123,6 +137,25 @@ describe('wizard de asociación de sensores — reasignación (RF-22)', () => {
     expect(asociarCalls[0].confirmar).toBeFalsy();
     expect(asociarCalls[1]).toMatchObject({ confirmar: true, punto_instalacion: 'Esquina sur del estanque', id_infraestructura: 20 });
     await waitFor(() => expect(screen.queryByText('Confirmar reasignación')).not.toBeInTheDocument());
+    // Sin asociaciones sensor→activo cerradas no hay aviso que mostrar.
+    expect(screen.queryByText('El sensor dejó de monitorear activos biológicos')).not.toBeInTheDocument();
+  });
+
+  it('#290: lista las asociaciones sensor→activo superadas con enlace a la ficha del activo', async () => {
+    respuestas = [
+      () => ({
+        ok: false,
+        error: { code: 'REASIGNACION_REQUIERE_CONFIRMACION', status: 409, message: "El sensor ya está monitoreando el área 'Estanque Norte'." },
+      }),
+      () => ({ ok: true, superadas: [{ id_asociacion_activo_sensor: 14, id_activo_biologico: 279, tipo: 'ambiental' }] }),
+    ];
+
+    await avanzarHastaConfirmar();
+    fireEvent.click(await screen.findByText('Reasignar'));
+
+    expect(await screen.findByText('El sensor dejó de monitorear activos biológicos')).toBeInTheDocument();
+    expect(screen.getByText(/se cerró 1 asociación ambiental o poblacional/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Activo #279 (ambiental)' })).toHaveAttribute('href', '/activos-biologicos/279');
   });
 
   it('otro error (ej. ASOCIACION_DUPLICADA) se muestra como alerta persistente, sin diálogo', async () => {

@@ -9,6 +9,7 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
 import { FincaModal } from './FincaModal';
 import type { FincaResponse } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 type ModalState =
   | { tipo: 'ninguno' }
@@ -48,9 +49,11 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, o
   confirmVariant: 'danger' | 'primary'; saving: boolean;
   onCancel: () => void; onConfirm: () => void;
 }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}

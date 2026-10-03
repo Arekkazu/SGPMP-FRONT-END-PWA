@@ -111,6 +111,16 @@ export interface RegistrarActivoDTO {
   peso_promedio_inicial?: number | null;
 }
 
+/** Atributo dinámico que la especie exige o admite al registrar (RF-33 FA-07, #194). */
+export interface ParametroEspecie {
+  nombre: string;
+  tipo_dato: 'NUMERICO' | 'ENTERO' | 'TEXTO' | 'BOOLEANO' | string;
+  es_obligatorio: boolean;
+  unidad_medida: string | null;
+  valor_min: string | null;
+  valor_max: string | null;
+}
+
 export interface ActualizarActivoIndividualDTO {
   raza?: string | null;
   sexo?: string | null;
@@ -372,6 +382,7 @@ export interface ConsultaAsociacionResponse {
   id_activo_biologico: number;
   asociacion_activa: AsociacionInfraestructuraResponse | null;
   historial: AsociacionInfraestructuraResponse[] | null;
+  advertencia_integridad?: string | null;
 }
 
 export interface ConsultarHistorialFiltros {
@@ -400,6 +411,16 @@ export interface HistorialActivoResponse {
   registros: RegistroHistorialResponse[];
 }
 
+/** RF-47 Sección 8: acción que el rol del usuario puede ejecutar desde la ficha. */
+export interface AccesoDirecto {
+  codigo: string;
+  nombre: string;
+  metodo: string;
+  ruta: string;
+  rf_origen: string;
+  tipos_evento?: string[] | null;
+}
+
 export interface FichaIntegralResponse {
   id_activo_biologico: number;
   identificador: string | null;
@@ -425,6 +446,7 @@ export interface FichaIntegralResponse {
   eventos_reproductivos: Record<string, unknown>[];
   indicadores: Record<string, unknown>[];
   advertencias: string[];
+  accesos_directos?: AccesoDirecto[];
 }
 
 export interface InfraestructuraDisponibleResponse {
@@ -432,6 +454,7 @@ export interface InfraestructuraDisponibleResponse {
   nombre: string;
   tipo: string;
   capacidad_maxima: number | null;
+  ocupacion_actual?: number | null;
   id_especie: number | null;
 }
 
@@ -546,6 +569,7 @@ export interface ConsultarBitacoraFiltros {
   fecha_fin?: string;                      // datetime ISO
   pagina?: number;
   page_size?: number;
+  id_usuario_responsable?: number;
 }
 
 export interface EventoAuditoriaResponse {

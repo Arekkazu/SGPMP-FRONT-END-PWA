@@ -40,6 +40,15 @@ export async function getConflictos(modulo?: string): Promise<SyncOperation[]> {
 
 type SyncHandler = (accion: string, payload: unknown) => Promise<void>;
 
+/**
+ * Se emite en `window` cuando un `replay()` cambió algo (sincronizó operaciones o
+ * marcó conflictos). `replay()` corre fuera de cualquier componente (ver
+ * useSyncOnReconnect), así que sin este aviso los hooks no se enteran y siguen
+ * mostrando el estado previo: la fila "Pendiente" no se resuelve y la alerta de
+ * conflicto no aparece hasta recargar a mano (#450, RF-15).
+ */
+export const SYNC_REPLAY_TERMINADO = 'sgpmp:sync-replay-terminado';
+
 // Un handler por módulo, registrado una sola vez cuando el hook de ese módulo se
 // carga (efecto de import a nivel de módulo — ver useCiclosBiologicos.ts). No hay
 // service worker con Background Sync en este proyecto, así que `replay()` se
@@ -65,6 +74,7 @@ export function registerSyncHandler(modulo: string, handler: SyncHandler): void 
  */
 export async function replay(): Promise<void> {
   const cola = await getQueue();
+  let huboCambios = false;
   for (const op of cola) {
     if (op.conflicto || op.id === undefined) continue;
     const handler = handlers.get(op.modulo);
@@ -72,14 +82,19 @@ export async function replay(): Promise<void> {
     try {
       await handler(op.accion, op.payload);
       await removeFromQueue(op.id);
+      huboCambios = true;
     } catch (e) {
       const status = (e as { status?: unknown } | null)?.status;
       if (typeof status === 'number' && status >= 400 && status < 500 && status !== 401) {
         await db.syncQueue.update(op.id, {
           conflicto: true,
+          status,
           error: (e as { message?: string } | null)?.message ?? 'No se pudo sincronizar.',
         });
+        huboCambios = true;
       }
     }
   }
+  // Un fallo de red o 5xx deja la cola igual: no hay nada que refrescar.
+  if (huboCambios) window.dispatchEvent(new CustomEvent(SYNC_REPLAY_TERMINADO));
 }

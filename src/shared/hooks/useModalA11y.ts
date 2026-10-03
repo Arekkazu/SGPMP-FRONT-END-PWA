@@ -3,6 +3,10 @@ import { useEffect, useRef } from 'react';
 const SELECTOR_FOCABLES =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+// Modales abiertos, el último arriba. Solo ese atiende Escape/Tab: con dos
+// apilados (p. ej. una confirmación sobre un formulario), Escape cierra el de arriba.
+const pila: HTMLElement[] = [];
+
 function esVisible(el: HTMLElement): boolean {
   return el.getClientRects().length > 0 && !el.hasAttribute('disabled');
 }
@@ -27,9 +31,11 @@ export function useModalA11y(onClose: () => void) {
   useEffect(() => {
     const panel = panelRef.current;
     const focoPrevio = document.activeElement as HTMLElement | null;
+    if (panel) pila.push(panel);
     panel?.querySelector<HTMLElement>(SELECTOR_FOCABLES)?.focus();
 
     const manejarTecla = (event: KeyboardEvent) => {
+      if (panel && pila[pila.length - 1] !== panel) return;
       if (event.key === 'Escape') {
         event.stopPropagation();
         onCloseRef.current();
@@ -58,6 +64,7 @@ export function useModalA11y(onClose: () => void) {
     document.addEventListener('keydown', manejarTecla);
     return () => {
       document.removeEventListener('keydown', manejarTecla);
+      if (panel) pila.splice(pila.indexOf(panel), 1);
       focoPrevio?.focus?.();
     };
   }, []);
