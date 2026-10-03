@@ -4,7 +4,7 @@ import type {
   SensorResponse, RegistrarSensorDTO,
   ConfiguracionRemotaResponse, ConfigurarRemotamenteDTO,
   SensorAreaResponse, AsociarSensorAreaDTO, AsociarSensorAreaResponse,
-  CalibracionResponse, RegistrarCalibracionDTO,
+  CalibracionResponse, RegistrarCalibracionDTO, TipoDispositivoIotResponse,
 } from '../types';
 
 const DISP = '/configuracion/dispositivos-iot';
@@ -29,6 +29,13 @@ export const dispositivosApi = {
   async desactivar(id: number): Promise<DispositivoIotResponse> {
     const res = await http.patch<DispositivoIotResponse>(`${DISP}/${id}/desactivar`);
     return res.data;
+  },
+};
+
+export const tiposDispositivoApi = {
+  async listar(): Promise<TipoDispositivoIotResponse[]> {
+    const res = await http.get<{ items: TipoDispositivoIotResponse[] }>('/configuracion/tipos-dispositivo-iot');
+    return res.data.items;
   },
 };
 
