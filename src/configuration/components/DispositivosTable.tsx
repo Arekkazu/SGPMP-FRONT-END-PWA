@@ -13,6 +13,7 @@ import { useSensores } from '../hooks/useSensores';
 import { DispositivoModal } from './DispositivoModal';
 import { SensorModal } from './SensorModal';
 import type { FincaResponse, InfraestructuraResponse, DispositivoIotResponse } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
@@ -46,9 +47,11 @@ function ConfirmModal({ titulo, mensaje, saving, onCancel, onConfirm }: {
   titulo: string; mensaje: string; saving: boolean;
   onCancel: () => void; onConfirm: () => void;
 }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 'var(--s4)' }}

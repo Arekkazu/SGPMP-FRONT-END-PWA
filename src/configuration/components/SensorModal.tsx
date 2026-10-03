@@ -7,6 +7,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { DispositivoIotResponse, RegistrarSensorDTO, CategoriaSensor } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 const CATEGORIAS: CategoriaSensor[] = ['HUMEDAD', 'TEMPERATURA', 'OXIGENO', 'PH', 'AMONIACO', 'SALINIDAD', 'LUMINOSIDAD'];
 
@@ -37,6 +38,7 @@ interface Props {
 }
 
 export function SensorModal({ dispositivo, saving, saveError, onClose, onRegistrar }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const {
     register,
@@ -59,6 +61,7 @@ export function SensorModal({ dispositivo, saving, saveError, onClose, onRegistr
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="sensor-modal-title"

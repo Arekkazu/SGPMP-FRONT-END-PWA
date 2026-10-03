@@ -7,6 +7,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { useEspecies } from '../hooks/useEspecies';
 import type { PlantillaResponse, AplicacionPlantillaResponse, EspecieResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 // ── Stepper ───────────────────────────────────────────────────────────────────
 const STEPS = ['Seleccionar especie', 'Previsualizar', 'Aplicar', 'Resultado'] as const;
@@ -127,6 +128,7 @@ interface Props {
 }
 
 export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, onAplicar }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const { especies, cargar } = useEspecies();
   useEffect(() => { cargar(); }, [cargar]);
@@ -149,6 +151,7 @@ export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, 
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="wizard-modal-title"
