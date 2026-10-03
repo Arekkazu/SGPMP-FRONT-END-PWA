@@ -1,3 +1,9 @@
+## [1.0.0-rc.35](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.34...v1.0.0-rc.35) (2026-10-03)
+
+### Features
+
+* **rf22:** avisar qué asociaciones sensor-activo cerró la reasignación de un sensor ([89ee1f3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/89ee1f336433669f19a8017b0d96e9ece9831148)), closes [Arekkazu/sgpmp-backend#290](https://github.com/Arekkazu/sgpmp-backend/issues/290) [Arekkazu/sgpmp-backend#304](https://github.com/Arekkazu/sgpmp-backend/issues/304) [#304](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/304)
+
 ## [1.0.0-rc.34](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.33...v1.0.0-rc.34) (2026-10-02)
 
 ### Bug Fixes
