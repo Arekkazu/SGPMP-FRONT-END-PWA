@@ -7,6 +7,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { RegistrarTipoAreaDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface FormValues {
   nombre: string;
@@ -22,6 +23,7 @@ interface Props {
 const NOMBRE_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 
 export function TipoAreaModal({ saving, saveError, onClose, onRegistrar }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const {
     register,
@@ -41,6 +43,7 @@ export function TipoAreaModal({ saving, saveError, onClose, onRegistrar }: Props
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="tipo-area-modal-title"

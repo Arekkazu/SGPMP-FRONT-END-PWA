@@ -139,6 +139,8 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', overflowX: 'hidden' }}>
+      {/* WCAG 2.4.1: saltar el menú lateral (TC-DIS-117). */}
+      <a href="#contenido-principal" className="ds-skip-link">{t('saltar_al_contenido')}</a>
       <Sidebar open={sidebarOpen} onLogout={handleLogout} onNavigate={() => setSidebarOpen(false)} />
       {sidebarOpen && (
         <div
@@ -179,6 +181,8 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
           onDismissError={notificaciones.clearError}
         />
         <main
+          id="contenido-principal"
+          tabIndex={-1}
           style={{
             flex: 1,
             marginTop: 'var(--topbar-h)',

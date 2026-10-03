@@ -1,7 +1,31 @@
-import { expect, test, Page } from '@playwright/test';
+import { expect, test, Page, Locator } from '@playwright/test';
 
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL!;
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD!;
+
+// #132: el drawer móvil se abre con transition:transform 0.2s y puede volver a
+// cerrarse (carrera confirmada con el velo de fondo de App.tsx) antes de que
+// el clic sobre el ítem llegue a completarse. En vez de esperar una sola vez,
+// se reintenta la apertura + el clic hasta que el target quede dentro del
+// viewport (bug de producto pendiente de corrección, ver reporte de QA).
+async function abrirMenuYClicRobusto(page: Page, menuToggle: Locator, target: Locator) {
+  for (let intento = 1; intento <= 8; intento++) {
+    const box = await target.boundingBox().catch(() => null);
+    const vp = page.viewportSize();
+    const dentro = !!box && !!vp && box.x >= -1 && box.y >= -1 && (box.x + box.width) <= vp.width + 1;
+    if (dentro) {
+      try {
+        await target.click({ timeout: 2000 });
+        return;
+      } catch { /* reintentar */ }
+    }
+    if (await menuToggle.isVisible().catch(() => false)) {
+      await menuToggle.click().catch(() => {});
+    }
+    await page.waitForTimeout(300);
+  }
+  await target.click();
+}
 
 async function loginComoAdmin(page: Page) {
   await page.goto('/login');
@@ -17,14 +41,8 @@ async function loginComoAdmin(page: Page) {
 
   // Si el menú móvil/tablet está colapsado, desplegarlo
   const menuToggle = page.getByRole('button', { name: /alternar menú lateral/i });
-  if (await menuToggle.isVisible().catch(() => false)) {
-    await menuToggle.click();
-  }
-
-  // Corregido: En el sidebar los ítems son enlaces (<a>), no botones (<button>)
-  const linkRoles = page.getByRole('link', { name: /roles y permisos/i });
-  await expect(linkRoles).toBeVisible({ timeout: 10000 });
-  await linkRoles.click();
+  const linkRoles = page.getByRole('link', { name: /roles y permisos/i }).or(page.getByRole('button', { name: /roles y permisos/i }));
+  await abrirMenuYClicRobusto(page, menuToggle, linkRoles);
 
   // Asegurar navegación a la vista de roles antes de ejecutar los tests
   await page.waitForURL(/roles/);

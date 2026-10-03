@@ -6,6 +6,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { ModalShell } from './ModalShell';
 import { EstadoPill } from './EstadoPill';
+import { errorServidor } from './formControls';
 import { TRANSICIONES_VALIDAS } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import type { CambiarEstadoDTO, EstadoActivoNombre } from '../types';
@@ -76,6 +77,9 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
     defaultValues: { estado_nuevo: '', fecha_cambio_estado: HOY, motivo_cambio: '' },
   });
 
+  const errEstado = errors.estado_nuevo?.message ?? errorServidor(error, 'estado_nuevo');
+  const errMotivo = errors.motivo_cambio?.message ?? errorServidor(error, 'motivo_cambio');
+
   const submit = async (v: FormValues) => {
     if (!v.estado_nuevo) return;
     const ok = await onConfirmar({
@@ -117,6 +121,9 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
               <select
                 id="estado-nuevo"
                 style={SELECT}
+                aria-required="true"
+                aria-invalid={!!errEstado}
+                aria-describedby={errEstado ? 'estado-nuevo-err' : undefined}
                 {...register('estado_nuevo', { required: t('cambiarestadomodal.selecciona_el_nuevo_estado') })}
               >
                 <option value="">{t('cambiarestadomodal.seleccionar')}</option>
@@ -124,16 +131,16 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
                   <option key={e} value={e}>{ESTADO_LABEL[e]}</option>
                 ))}
               </select>
-              {errors.estado_nuevo && (
-                <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
-                  {errors.estado_nuevo.message}
+              {errEstado && (
+                <p id="estado-nuevo-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+                  {errEstado}
                 </p>
               )}
             </div>
 
             <Input
               label={t('cambiarestadomodal.fecha_del_cambio')} required type="date" max={HOY}
-              error={errors.fecha_cambio_estado?.message}
+              error={errors.fecha_cambio_estado?.message ?? errorServidor(error, 'fecha_cambio_estado')}
               {...register('fecha_cambio_estado', {
                 required: t('cambiarestadomodal.la_fecha_es_obligatoria'),
                 validate: (val) => val <= HOY || 'No puede ser una fecha futura.',
@@ -146,15 +153,18 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
               <textarea
                 id="motivo-cambio"
                 style={TEXTAREA}
+                aria-required="true"
+                aria-invalid={!!errMotivo}
+                aria-describedby={errMotivo ? 'motivo-cambio-err' : undefined}
                 placeholder={t('cambiarestadomodal.describe_la_razon_del_cambio_de_estado')}
                 {...register('motivo_cambio', {
                   required: t('cambiarestadomodal.el_motivo_es_obligatorio'),
                   validate: (val) => val.trim().length > 0 || 'El motivo no puede estar vacío.',
                 })}
               />
-              {errors.motivo_cambio && (
-                <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
-                  {errors.motivo_cambio.message}
+              {errMotivo && (
+                <p id="motivo-cambio-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+                  {errMotivo}
                 </p>
               )}
             </div>

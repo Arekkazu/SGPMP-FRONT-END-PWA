@@ -1,0 +1,74 @@
+name: SAST Security Scan
+
+# Workflow de Análisis Estático de Seguridad de Código (SAST) para Frontend
+# Motor: Bearer CLI (OWASP Top 10, Taint Analysis, Data Privacy para TypeScript/React)
+# Referencia: docs-sgpmp/seguridad/GUIA-OPERACION-SAST-CI-CD.md
+# Triaje de hallazgos: Área de Análisis / Seguridad
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - develop
+      - main
+      - test
+    paths:
+      - "src/**"
+      - "package*.json"
+      - "tsconfig*.json"
+      - ".github/workflows/sast.yml"
+      - "bearer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bearer-sast:
+    name: Bearer SAST Scan (TypeScript/React)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout del código fuente
+        uses: actions/checkout@v4
+
+      - name: Instalar Bearer CLI
+        run: |
+          curl -sfL https://raw.githubusercontent.com/Bearer/bearer/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          bearer --version
+
+      - name: Ejecutar Bearer SAST Scan
+        run: |
+          echo "Ejecutando análisis estático y de flujo de datos con Bearer sobre src/..."
+          bearer scan src \
+            --config-file bearer.yml \
+            --no-color > bearer-report.txt || true
+          cat bearer-report.txt
+
+      - name: Control de Bloqueo Bearer (Severidad Crítica y Alta)
+        run: |
+          echo "Verificando ausencia de vulnerabilidades de severidad CRÍTICA y ALTA..."
+          bearer scan src \
+            --config-file bearer.yml \
+            --fail-on-severity critical,high \
+            --hide-progress-bar
+
+      - name: Generar Reporte SARIF
+        if: always()
+        run: |
+          bearer scan src \
+            --config-file bearer.yml \
+            --format sarif \
+            --output bearer.sarif \
+            --exit-code 0 || true
+
+      - name: Subir reporte Bearer como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bearer-report
+          path: |
+            bearer-report.txt
+            bearer.sarif
+          retention-days: 14

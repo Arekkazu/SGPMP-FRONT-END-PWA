@@ -114,7 +114,13 @@ export interface RegistrarDispositivoIotDTO {
   serial: string;
   descripcion: string;
   id_infraestructura: number;
+  id_tipo_dispositivo: number;
   es_activo?: boolean;
+}
+
+export interface TipoDispositivoIotResponse {
+  id_tipo_dispositivo: number;
+  nombre: string;
 }
 
 // =====================================================================
@@ -175,6 +181,22 @@ export interface SensorAreaResponse {
   fecha_asociacion: string;
   fecha_finalizacion: string | null;
   id_usuario: number;
+}
+
+/** #290: asociación sensor→activo que una reasignación de área dejó SUPERADA. */
+export interface AsociacionActivoSuperada {
+  id_asociacion_activo_sensor: number;
+  id_activo_biologico: number | null;
+  /** `ambiental` o `poblacional` — las `directa` no se cierran al reasignar. */
+  tipo: string;
+}
+
+/**
+ * Respuesta de `POST /sensores/{id}/asociar`. Opcional porque un backend
+ * anterior a #290 no lo envía.
+ */
+export interface AsociarSensorAreaResponse extends SensorAreaResponse {
+  asociaciones_activo_superadas?: AsociacionActivoSuperada[];
 }
 
 export interface AsociarSensorAreaDTO {

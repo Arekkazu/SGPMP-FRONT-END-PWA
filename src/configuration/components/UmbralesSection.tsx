@@ -12,6 +12,7 @@ import { useUmbralesAmbientales } from '../hooks/useUmbralesAmbientales';
 import { useVariablesAmbientales } from '../hooks/useVariablesAmbientales';
 import { validarUmbral } from '../lib/validarUmbral';
 import type { UmbralAmbientalResponse, NivelAlertaDTO, VariableAmbientalCatalogo } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface Props {
   idEspecie: number;
@@ -78,7 +79,7 @@ function SemaforoBar({ umbral }: { umbral: UmbralAmbientalResponse }) {
           <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pct(precNivel.limite_inferior)}%`, right: `${100 - pct(precNivel.limite_superior)}%`, background: '#c07a00', opacity: 0.8 }} />
         )}
         {normalNivel && (
-          <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pct(normalNivel.limite_inferior)}%`, right: `${100 - pct(normalNivel.limite_superior)}%`, background: '#1a7a2e', opacity: 0.9 }} />
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pct(normalNivel.limite_inferior)}%`, right: `${100 - pct(normalNivel.limite_superior)}%`, background: 'var(--sem-success)', opacity: 0.9 }} />
         )}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2, fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
@@ -98,9 +99,10 @@ interface NivelCardProps {
 }
 
 const NIVEL_COLORS = {
-  normal:    { bg: 'var(--sem-success-bg)',  border: 'var(--sem-success-border)', color: '#1a7a2e', label: '🟢 NORMAL',    desc: 'Condiciones óptimas de operación.' },
-  precaucion:{ bg: 'var(--sem-warning-bg,#fff8e6)', border: '#e8c840',            color: '#b06000', label: '🟡 PRECAUCIÓN', desc: 'Condiciones límite, cercanas al borde aceptable.' },
-  critico:   { bg: 'var(--sem-error-bg)',    border: 'var(--sem-error-border)',   color: '#b01808', label: '🔴 CRÍTICO',   desc: 'Condiciones de riesgo en los extremos del rango.' },
+  // TC-DIS-44: tokens semánticos (contraste AA validado en tokens.contraste.test.ts), no hex sueltos.
+  normal:    { bg: 'var(--sem-success-bg)', border: 'var(--sem-success-border)', color: 'var(--sem-success)', label: '🟢 NORMAL',    desc: 'Condiciones óptimas de operación.' },
+  precaucion:{ bg: 'var(--sem-warning-bg)', border: 'var(--sem-warning-border)', color: 'var(--sem-warning)', label: '🟡 PRECAUCIÓN', desc: 'Condiciones límite, cercanas al borde aceptable.' },
+  critico:   { bg: 'var(--sem-error-bg)',   border: 'var(--sem-error-border)',   color: 'var(--sem-error)',   label: '🔴 CRÍTICO',   desc: 'Condiciones de riesgo en los extremos del rango.' },
 };
 
 function NivelCard({ nivel, unidad, register, errors }: NivelCardProps) {
@@ -118,9 +120,11 @@ function NivelCard({ nivel, unidad, register, errors }: NivelCardProps) {
       <p style={{ fontSize: '11px', color: cfg.color, marginBottom: 'var(--s3)', lineHeight: 1.4 }}>{cfg.desc}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
         <div style={{ minWidth: 0 }}>
-          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('umbralessection.limite_inferior')}</label>
+          <label htmlFor={`umbral-${nivel}-inf`} style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('umbralessection.limite_inferior')}<span className="ds-sr-only"> {cfg.label.slice(cfg.label.indexOf(" ") + 1)}</span></label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <input
+              id={`umbral-${nivel}-inf`}
+              aria-invalid={!!errors[infKey]}
               type="number"
               step="0.01"
               style={{ flex: 1, minWidth: 0, padding: '7px 10px', borderRadius: 'var(--r-md)', border: `1.5px solid ${errors[infKey] ? 'var(--sem-error)' : 'var(--surface-border)'}`, background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '13px', fontFamily: 'var(--font-sans)', outline: 'none' }}
@@ -131,9 +135,11 @@ function NivelCard({ nivel, unidad, register, errors }: NivelCardProps) {
           {errors[infKey] && <p role="alert" style={{ fontSize: '10px', color: 'var(--sem-error)', marginTop: 2 }}>{String(errors[infKey]?.message)}</p>}
         </div>
         <div style={{ minWidth: 0 }}>
-          <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('umbralessection.limite_superior')}</label>
+          <label htmlFor={`umbral-${nivel}-sup`} style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('umbralessection.limite_superior')}<span className="ds-sr-only"> {cfg.label.slice(cfg.label.indexOf(" ") + 1)}</span></label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <input
+              id={`umbral-${nivel}-sup`}
+              aria-invalid={!!errors[supKey]}
               type="number"
               step="0.01"
               style={{ flex: 1, minWidth: 0, padding: '7px 10px', borderRadius: 'var(--r-md)', border: `1.5px solid ${errors[supKey] ? 'var(--sem-error)' : 'var(--surface-border)'}`, background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '13px', fontFamily: 'var(--font-sans)', outline: 'none' }}
@@ -170,6 +176,7 @@ function UmbralModal({
   onRegistrar: (dto: import('../types').RegistrarUmbralDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarUmbralDTO) => Promise<boolean>;
 }) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = umbral !== null;
   const {
@@ -270,6 +277,7 @@ function UmbralModal({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="umbral-modal-title"
@@ -415,10 +423,12 @@ function UmbralModal({
 
 // ── Confirm desactivar ────────────────────────────────────────────────────────
 function ConfirmDesactivar({ umbral, variables, saving, onCancel, onConfirm }: { umbral: UmbralAmbientalResponse; variables: VariableAmbientalCatalogo[]; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   const v = getVar(variables, umbral.id_variable_ambiental);
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}
@@ -459,9 +469,9 @@ function NivelBadge({ nivel, niveles }: { nivel: string; niveles: NivelAlertaDTO
   if (!n) return <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>—</span>;
 
   const colors: Record<string, { bg: string; border: string; color: string }> = {
-    normal:    { bg: '#e8f5eb', border: '#a8d8b0', color: '#1a7a2e' },
-    precaucion:{ bg: '#fff3d0', border: '#e8c840', color: '#b06000' },
-    critico:   { bg: '#ffeaea', border: '#f0a8a8', color: '#b01808' },
+    normal:    { bg: 'var(--sem-success-bg)', border: 'var(--sem-success-border)', color: 'var(--sem-success)' },
+    precaucion:{ bg: 'var(--sem-warning-bg)', border: 'var(--sem-warning-border)', color: 'var(--sem-warning)' },
+    critico:   { bg: 'var(--sem-error-bg)',   border: 'var(--sem-error-border)',   color: 'var(--sem-error)' },
   };
   const c = colors[nivel];
   return (

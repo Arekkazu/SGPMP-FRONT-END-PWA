@@ -11,6 +11,7 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useMetricasProduccion } from '../hooks/useMetricasProduccion';
 import { UNIDADES_POR_TIPO_MEDICION } from '../types';
 import type { MetricaProduccionResponse, TipoMedicion, TipoActivo } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface Props {
   idEspecie: number;
@@ -99,6 +100,7 @@ function MetricaModal({
   onRegistrar: (dto: import('../types').RegistrarMetricaDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarMetricaDTO) => Promise<boolean>;
 }) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = metrica !== null;
   const {
@@ -152,6 +154,7 @@ function MetricaModal({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="metrica-modal-title"
@@ -280,9 +283,11 @@ function MetricaModal({
 }
 
 function ConfirmDesactivar({ metrica, saving, onCancel, onConfirm }: { metrica: MetricaProduccionResponse; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}

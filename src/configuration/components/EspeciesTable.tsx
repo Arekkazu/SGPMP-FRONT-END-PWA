@@ -144,9 +144,9 @@ export function EspeciesTable({
                         borderRadius: 'var(--r-full)',
                         fontSize: '11px',
                         fontWeight: 600,
-                        background: 'var(--sem-warning-bg, #fff8e6)',
-                        color: '#b06000',
-                        border: '1px solid #e8c840',
+                        background: 'var(--sem-warning-bg)',
+                        color: 'var(--sem-warning)',
+                        border: '1px solid var(--sem-warning-border)',
                       }}
                     >
                       {t('especiestable.pendiente_de_sincronizacion')}

@@ -330,6 +330,7 @@ export function RegistroPage() {
                 error={form2.formState.errors.contrasena?.message}
                 trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
                 onTrailingClick={() => setShowPw((v) => !v)}
+                trailingPressed={showPw}
                 {...form2.register('contrasena', {
                   required: t('registropage.la_contrasena_es_obligatoria'),
                   pattern: { value: PW_REGEX, message: t('registropage.la_contrasena_no_cumple_los_requisitos_de') },
@@ -346,6 +347,7 @@ export function RegistroPage() {
                 error={form2.formState.errors.confirmar_contrasena?.message}
                 trailingIcon={showConfirmPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
                 onTrailingClick={() => setShowConfirmPw((v) => !v)}
+                trailingPressed={showConfirmPw}
                 {...form2.register('confirmar_contrasena', {
                   required: t('registropage.confirma_tu_contrasena'),
                   validate: (v) => v === form2.getValues('contrasena') || t('validacion.las_contrasenas_no_coinciden', { ns: 'common' }),

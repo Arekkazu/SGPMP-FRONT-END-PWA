@@ -10,6 +10,7 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { usePatologias } from '../hooks/usePatologias';
 import type { PatologiaEspecieItemResponse } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface Props {
   idEspecie: number;
@@ -69,6 +70,7 @@ function PatologiaModal({
   onRegistrar: (dto: import('../types').RegistrarPatologiaDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarPatologiaDTO) => Promise<boolean>;
 }) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = patologia !== null;
   const {
@@ -106,6 +108,7 @@ function PatologiaModal({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="patologia-modal-title"
@@ -177,9 +180,11 @@ function PatologiaModal({
 }
 
 function ConfirmDesactivar({ patologia, saving, onCancel, onConfirm }: { patologia: PatologiaEspecieItemResponse; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}

@@ -8,6 +8,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { FincaResponse, RegistrarFincaDTO, EditarFincaDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface FormValues {
   nombre: string;
@@ -43,6 +44,7 @@ const SECTION_LABEL: React.CSSProperties = {
 };
 
 export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onEditar }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = finca !== null;
   const titulo = modoEditar ? `Editar finca — ${finca.nombre}` : 'Registrar nueva finca';
@@ -98,6 +100,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="finca-modal-title"

@@ -107,6 +107,7 @@ export function RestablecerPage() {
               error={errors.nueva_contrasena?.message}
               trailingIcon={showPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               onTrailingClick={() => setShowPw((v) => !v)}
+              trailingPressed={showPw}
               {...register('nueva_contrasena', {
                 required: t('restablecerpage.la_contrasena_es_obligatoria'),
                 pattern: { value: PW_REGEX, message: t('restablecerpage.la_contrasena_no_cumple_los_requisitos_de') },
@@ -123,6 +124,7 @@ export function RestablecerPage() {
               error={errors.confirmar_contrasena?.message}
               trailingIcon={showConfirmPw ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               onTrailingClick={() => setShowConfirmPw((v) => !v)}
+              trailingPressed={showConfirmPw}
               {...register('confirmar_contrasena', {
                 required: t('restablecerpage.confirma_tu_contrasena'),
                 validate: (v) => v === getValues('nueva_contrasena') || t('validacion.las_contrasenas_no_coinciden', { ns: 'common' }),

@@ -28,6 +28,7 @@ import { IdiomaSection } from '../components/IdiomaSection';
 import { DashboardLayoutSection } from '../components/DashboardLayoutSection';
 import { PlantillasTable } from '../components/PlantillasTable';
 import type { EspecieResponse, TipoAreaResponse } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
 type TabId = 'catalogo' | 'por-especie' | 'fincas' | 'iot' | 'sistema' | 'personalizacion' | 'plantillas';
@@ -193,7 +194,12 @@ export function CatalogoTab() {
           <Alert
             variant="error"
             title={t('configurationpage.conflicto_de_sincronizacion')}
-            description={op.error ?? t('configurationpage.no_se_pudo_sincronizar_esta_especie')}
+            description={
+              // #450: texto exigido por el FA "Error de sincronización en modo offline" del RF-15.
+              op.accion === 'crear' && op.status === 409
+                ? t('configurationpage.especie_offline_ya_existe', { nombre: (op.payload as { dto: { nombre: string } }).dto.nombre })
+                : op.error ?? t('configurationpage.no_se_pudo_sincronizar_esta_especie')
+            }
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--s2)' }}>
             <Button variant="secondary" size="sm" onClick={() => resolverConflicto(op)}>
@@ -236,7 +242,13 @@ export function CatalogoTab() {
           saving={saving}
           saveError={saveError}
           onClose={cerrar}
-          onRegistrar={registrar}
+          onRegistrar={async (dto) => {
+            const ok = await registrar(dto);
+            // #450: la especie nueva queda al inicio de la lista; volver a la página 1
+            // para que el usuario la vea aunque estuviera en otra página al crearla.
+            if (ok) setPagina(1);
+            return ok;
+          }}
           onEditar={(id, dto) => editar(id, dto)}
         />
       )}
@@ -350,9 +362,11 @@ interface ConfirmProps {
 }
 
 function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, onCancel, onConfirm }: ConfirmProps) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('common');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-modal-title"

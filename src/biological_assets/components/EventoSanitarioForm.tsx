@@ -5,7 +5,7 @@ import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { ModalShell } from './ModalShell';
-import { FormSelect, FormTextArea, FORM_COL } from './formControls';
+import { AnuncioCampos, FormSelect, FormTextArea, FORM_COL } from './formControls';
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarEventoSanitarioDTO, TipoEventoSanitario } from '../types';
 
@@ -45,6 +45,13 @@ export function EventoSanitarioForm({ patologias, patologiasLoading, saving, sav
   const esDiagnostico = tipo === 'DIAGNOSTICO';
   const esControl = tipo === 'CONTROL_PREVENTIVO';
   const permiteSolicitarEstado = tipo === 'TRATAMIENTO' || tipo === 'CONTROL_PREVENTIVO';
+  const camposVisibles = [
+    esDiagnostico && t('eventosanitarioform.diagnostico'),
+    requiereMedicamento && `${t('eventosanitarioform.medicamento')}, ${t('eventosanitarioform.dosis')}`,
+    esTratamiento && 'Frecuencia, Duración',
+    esControl && t('eventosanitarioform.observaciones'),
+    permiteSolicitarEstado && t('eventosanitarioform.solicitar_cambio_de_estado'),
+  ].filter(Boolean).join(', ');
 
   const submit = async (v: FormValues) => {
     const dto: RegistrarEventoSanitarioDTO = {
@@ -80,6 +87,7 @@ export function EventoSanitarioForm({ patologias, patologiasLoading, saving, sav
         />
       )}
       <form onSubmit={handleSubmit(submit)} noValidate>
+        <AnuncioCampos texto={camposVisibles ? `${t('eventosanitarioform.campos_para_el_tipo')}: ${camposVisibles}` : ''} />
         <div style={FORM_COL}>
           <FormSelect label={t('eventosanitarioform.tipo')} required {...register('tipo')}>
             <option value="DIAGNOSTICO">{t('eventosanitarioform.diagnostico')}</option>

@@ -28,7 +28,7 @@ export default defineConfig({
 
   use: {
     /* Es buena práctica incluir la diagonal final */
-    baseURL: 'http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/',
+    baseURL: 'https://api.inmero.co/',
     trace: 'on-first-retry',
   },
 

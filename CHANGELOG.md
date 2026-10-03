@@ -1,3 +1,33 @@
+## [1.0.0-rc.36](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.35...v1.0.0-rc.36) (2026-10-03)
+
+### Bug Fixes
+
+* **a11y:** gestionar foco y Escape en todos los modales ([#199](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/199)) ([656dac6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/656dac6b1c41021ad0c92b80137d5f2b4b45c9c8))
+* **rf17-rf30-mod9:** corregir los hallazgos de accesibilidad de la primera evaluación de M09 ([a12843f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a12843f6ae3af19513c8edd5e8300449dfbb0035)), closes [#189](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/189)
+* **rf21-mod9:** enviar el tipo de dispositivo al registrar un dispositivo IoT ([#179](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/179)) ([654db8e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/654db8e190cdece473eaf1544a76ec8bdc74af51))
+* **rf33-rf35:** pedir los atributos dinámicos de la especie y alinear el sexo con la BD ([1ba5f49](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1ba5f49848181c739b280fc3605f22888fe73e1e)), closes [#194](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/194) [#192](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/192)
+* **rf34-rf52:** corregir los hallazgos de accesibilidad de la primera evaluación de M02 ([2df3430](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2df34305027ddebfe0020d590a2f793a3930bb90))
+
+## [1.0.0-rc.35](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.34...v1.0.0-rc.35) (2026-10-03)
+
+### Features
+
+* **rf22:** avisar qué asociaciones sensor-activo cerró la reasignación de un sensor ([89ee1f3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/89ee1f336433669f19a8017b0d96e9ece9831148)), closes [Arekkazu/sgpmp-backend#290](https://github.com/Arekkazu/sgpmp-backend/issues/290) [Arekkazu/sgpmp-backend#304](https://github.com/Arekkazu/sgpmp-backend/issues/304) [#304](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/304)
+
+## [1.0.0-rc.34](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.33...v1.0.0-rc.34) (2026-10-02)
+
+### Bug Fixes
+
+* **rf10:** conservar el ancla fecha_hasta al paginar la auditoria (INC-M01-57-G71) ([c0df51e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c0df51ee8a4e727c6980b1bb81412136c286f693)), closes [Arekkazu/sgpmp-backend#457](https://github.com/Arekkazu/sgpmp-backend/issues/457)
+* **rf15:** mostrar el texto del rf-15 ante un 409 de sincronización y volver a la página 1 al crear (INC-M09-54-G07) ([b1a6f46](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b1a6f46c9e717d5d31d92eeff0cfc995ead5cde8)), closes [Arekkazu/sgpmp-backend#450](https://github.com/Arekkazu/sgpmp-backend/issues/450)
+* **rf15:** notificar conflictos tras el replay y mostrar la especie pendiente al inicio (INC-M09-54-G07) ([40ca927](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/40ca927c588f7d9056c7b8cba79cf450fb4503e9)), closes [Arekkazu/sgpmp-backend#450](https://github.com/Arekkazu/sgpmp-backend/issues/450)
+
+## [1.0.0-rc.33](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.32...v1.0.0-rc.33) (2026-09-24)
+
+### Bug Fixes
+
+* **ci:** corregir redireccion de reporte de texto en workflow de Bearer ([336dcc3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/336dcc33b043858e5736bad1b364b4679c67a559))
+
 ## [1.0.0-rc.32](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.31...v1.0.0-rc.32) (2026-09-24)
 
 ### Bug Fixes
