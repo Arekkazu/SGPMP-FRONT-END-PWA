@@ -5,7 +5,7 @@ import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { ModalShell } from './ModalShell';
-import { FormSelect, FormTextArea, FORM_COL } from './formControls';
+import { AnuncioCampos, FormSelect, FormTextArea, FORM_COL } from './formControls';
 import { UNIDADES_POR_MEDICION } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarEventoCrecimientoDTO, TipoMedicionCrecimiento } from '../types';
@@ -75,6 +75,7 @@ export function EventoCrecimientoForm({ metricas, metricasLoading, esPoblacional
         />
       )}
       <form onSubmit={handleSubmit(submit)} noValidate>
+        <AnuncioCampos texto={tipo && unidades.length ? `${t('eventocrecimientoform.unidades_disponibles')}: ${unidades.join(', ')}` : ''} />
         <div style={FORM_COL}>
           <FormSelect
             label={t('eventocrecimientoform.tipo_de_medicion')} required error={errors.tipo_medicion?.message}

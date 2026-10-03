@@ -98,14 +98,21 @@ export function DatosActivoSection({ activo, loading, saving, saveError, onGuard
             <Dato label={t('datosactivosection.peso_inicial')} value={ind.peso_inicial} />
           </Grid>
         ) : pob ? (
-          <Grid>
-            <Dato label={t('datosactivosection.cantidad_inicial')} value={pob.cantidad_inicial} />
-            <Dato label={t('datosactivosection.cantidad_actual')} value={pob.cantidad_actual} />
-            <Dato label={t('datosactivosection.peso_promedio_inicial')} value={pob.peso_promedio_inicial} />
-            <Dato label={t('datosactivosection.peso_promedio')} value={pob.peso_promedio} />
-            <Dato label={t('datosactivosection.biomasa_total')} value={pob.biomasa_total} />
-            <Dato label={t('datosactivosection.densidad')} value={pob.densidad} />
-          </Grid>
+          // TC-DIS-122: valores de registro y métricas calculadas en grupos con su propio encabezado.
+          <>
+            <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 var(--s2)' }}>{t('datosactivosection.valores_iniciales')}</h4>
+            <Grid>
+              <Dato label={t('datosactivosection.cantidad_inicial')} value={pob.cantidad_inicial} />
+              <Dato label={t('datosactivosection.peso_promedio_inicial')} value={pob.peso_promedio_inicial} />
+            </Grid>
+            <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', margin: 'var(--s4) 0 var(--s2)' }}>{t('datosactivosection.metricas_calculadas')}</h4>
+            <Grid>
+              <Dato label={t('datosactivosection.cantidad_actual')} value={pob.cantidad_actual} />
+              <Dato label={t('datosactivosection.peso_promedio')} value={pob.peso_promedio} />
+              <Dato label={t('datosactivosection.biomasa_total')} value={pob.biomasa_total} />
+              <Dato label={t('datosactivosection.densidad')} value={pob.densidad} />
+            </Grid>
+          </>
         ) : (
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('datosactivosection.sin_detalle_disponible')}</p>
         )}

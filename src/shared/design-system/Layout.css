@@ -43,3 +43,32 @@
     align-items: start;
   }
 }
+
+/* Enlace "Saltar al contenido" (WCAG 2.4.1): fuera de pantalla hasta recibir foco. */
+.ds-skip-link {
+  position: absolute;
+  left: var(--s4);
+  top: -100px;
+  z-index: 1100;
+  padding: var(--s2) var(--s4);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border: 2px solid var(--brand-500);
+  border-radius: var(--r-md);
+}
+.ds-skip-link:focus {
+  top: var(--s2);
+}
+
+/* Solo para lectores de pantalla (mensajes de estado, contexto extra). */
+.ds-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

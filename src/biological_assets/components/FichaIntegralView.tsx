@@ -2,6 +2,7 @@ import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { AlertTriangle } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
+import { Button } from '../../shared/design-system/Button';
 import type { FichaIntegralResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -9,6 +10,8 @@ interface Props {
   ficha: FichaIntegralResponse | null;
   loading: boolean;
   error?: ApiError | null;
+  /** Abre la pestaña de la ficha donde se ejecuta un acceso directo (Sección 8). */
+  onIrA?: (pestana: string) => void;
 }
 
 const CARD: React.CSSProperties = {
@@ -77,7 +80,20 @@ function DictList({ items, vacio }: { items: Record<string, unknown>[]; vacio: s
   );
 }
 
-export function FichaIntegralView({ ficha, loading, error }: Props) {
+// RF-47 Sección 8 → pestaña de la ficha donde vive cada acción.
+const PESTANA_ACCESO: Record<string, string> = {
+  historial: 'historial',
+  registrar_evento: 'eventos',
+  registrar_baja: 'eventos',
+  cambiar_estado: 'estado',
+};
+
+function mensajeError(error: ApiError, t: (k: string) => string): string {
+  // E-02 de RF-47: el 403 tiene su propio texto.
+  return error.status === 403 ? t('fichaintegralview.sin_permiso_e02') : error.message;
+}
+
+export function FichaIntegralView({ ficha, loading, error, onIrA }: Props) {
   const { t } = useT('biologicalAssets');
   if (loading) {
     return (
@@ -97,7 +113,7 @@ export function FichaIntegralView({ ficha, loading, error }: Props) {
           <Alert
             variant={error.status >= 500 ? 'error' : 'warning'}
             title={t('fichaintegralview.error_al_cargar_la_ficha_integral')}
-            description={error.message}
+            description={mensajeError(error, t)}
           />
         )}
         {!error && (
@@ -115,7 +131,7 @@ export function FichaIntegralView({ ficha, loading, error }: Props) {
         <Alert
           variant={error.status >= 500 ? 'error' : 'warning'}
           title={t('fichaintegralview.error_al_cargar_la_ficha_integral')}
-          description={error.message}
+          description={mensajeError(error, t)}
         />
       )}
       {ficha.advertencias.length > 0 && (
@@ -135,19 +151,36 @@ export function FichaIntegralView({ ficha, loading, error }: Props) {
         </div>
       )}
 
-      {/* Datos principales */}
-      <div style={CARD}>
-        <h3 style={CARD_TITLE}>{t('fichaintegralview.datos_del_activo')}</h3>
-        <InfoGrid>
-          <Dato label={t('fichaintegralview.identificador')} value={ficha.identificador} />
-          <Dato label={t('fichaintegralview.tipo')} value={esPoblacional ? 'Poblacional' : 'Individual'} />
-          <Dato label={t('fichaintegralview.especie')} value={ficha.especie} />
-          <Dato label={t('fichaintegralview.estado_actual')} value={ficha.estado_actual} />
-          <Dato label={t('fichaintegralview.infraestructura')} value={ficha.infraestructura_asociada} />
-          <Dato label={t('fichaintegralview.fase_productiva')} value={ficha.fase_productiva_activa} />
-          <Dato label={t('fichaintegralview.fecha_de_registro')} value={ficha.fecha_registro} />
-          <Dato label={t('fichaintegralview.dias_en_sistema')} value={ficha.dias_en_sistema} />
-        </InfoGrid>
+      {/* Secciones 1-4 de RF-47, cada una con su encabezado (TC-DIS-117). */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--s5)' }}>
+        <section style={CARD} aria-labelledby="ficha-s1">
+          <h3 id="ficha-s1" style={CARD_TITLE}>{t('fichaintegralview.datos_del_activo')}</h3>
+          <InfoGrid>
+            <Dato label={t('fichaintegralview.identificador')} value={ficha.identificador} />
+            <Dato label={t('fichaintegralview.tipo')} value={esPoblacional ? 'Poblacional' : 'Individual'} />
+            <Dato label={t('fichaintegralview.especie')} value={ficha.especie} />
+            <Dato label={t('fichaintegralview.fecha_de_registro')} value={ficha.fecha_registro} />
+            <Dato label={t('fichaintegralview.dias_en_sistema')} value={ficha.dias_en_sistema} />
+          </InfoGrid>
+        </section>
+        <section style={CARD} aria-labelledby="ficha-s2">
+          <h3 id="ficha-s2" style={CARD_TITLE}>{t('fichaintegralview.estado_actual')}</h3>
+          <InfoGrid>
+            <Dato label={t('fichaintegralview.estado_actual')} value={ficha.estado_actual} />
+          </InfoGrid>
+        </section>
+        <section style={CARD} aria-labelledby="ficha-s3">
+          <h3 id="ficha-s3" style={CARD_TITLE}>{t('fichaintegralview.infraestructura')}</h3>
+          <InfoGrid>
+            <Dato label={t('fichaintegralview.infraestructura')} value={ficha.infraestructura_asociada} />
+          </InfoGrid>
+        </section>
+        <section style={CARD} aria-labelledby="ficha-s4">
+          <h3 id="ficha-s4" style={CARD_TITLE}>{t('fichaintegralview.fase_productiva')}</h3>
+          <InfoGrid>
+            <Dato label={t('fichaintegralview.fase_productiva')} value={ficha.fase_productiva_activa} />
+          </InfoGrid>
+        </section>
       </div>
 
       {/* Detalle biológico */}
@@ -203,6 +236,27 @@ export function FichaIntegralView({ ficha, loading, error }: Props) {
           <DictList items={ficha.indicadores} vacio="Sin indicadores calculados." />
         </div>
       </div>
+
+      {/* Sección 8: accesos directos que el rol puede ejecutar. */}
+      {ficha.accesos_directos && ficha.accesos_directos.length > 0 && (
+        <section style={CARD} aria-labelledby="ficha-s8">
+          <h3 id="ficha-s8" style={CARD_TITLE}>{t('fichaintegralview.accesos_directos')}</h3>
+          <ul style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', listStyle: 'none', margin: 0, padding: 0 }}>
+            {ficha.accesos_directos.map((a) => (
+              <li key={a.codigo}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={!onIrA || !PESTANA_ACCESO[a.codigo]}
+                  onClick={() => onIrA?.(PESTANA_ACCESO[a.codigo])}
+                >
+                  {a.nombre}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
