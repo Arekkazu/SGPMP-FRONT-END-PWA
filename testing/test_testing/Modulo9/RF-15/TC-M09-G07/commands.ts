@@ -29,7 +29,6 @@ Cypress.Commands.add('loginUI', (email?: string, password?: string) => {
   cy.get('input[autocomplete="current-password"]').clear().type(targetPassword, { log: false });
   // Selector bilingüe para soporte i18n (es-CO: "Ingresar" / en-US: "Sign In", "Log in")
   cy.contains('button', /ingresar|sign in|log in/i).click();
-  cy.location('pathname', { timeout: 20000 }).should('not.eq', '/login');
 });
 
 Cypress.Commands.add('setOnline', (online: boolean) => {

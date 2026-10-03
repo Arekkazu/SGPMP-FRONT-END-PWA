@@ -5,9 +5,9 @@ const { spawnSync } = require('child_process');
 // Cargar variables desde .env.test
 const envPath = path.resolve(__dirname, '..', '.env.test');
 const envVars = {
-  API_BASE_URL: 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
-  ADMIN_EMAIL: 'administador.dev@gmail.com',
-  TEST_ADMIN_PASSWORD: 'Test1234!',
+  API_BASE_URL: process.env.API_BASE_URL || 'https://api.inmero.co/back-sigab-test',
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+  TEST_ADMIN_PASSWORD: process.env.TEST_ADMIN_PASSWORD,
 };
 
 if (fs.existsSync(envPath)) {
@@ -19,14 +19,19 @@ if (fs.existsSync(envPath)) {
       if (idx !== -1) {
         const k = trimmed.slice(0, idx).trim();
         const v = trimmed.slice(idx + 1).trim();
-        envVars[k] = v;
+        if (!envVars[k]) envVars[k] = v;
       }
     }
   }
 }
 
+if (!envVars.ADMIN_EMAIL || !envVars.TEST_ADMIN_PASSWORD) {
+  console.error('ERROR R5: Faltan variables obligatorias ADMIN_EMAIL y/o TEST_ADMIN_PASSWORD en el entorno (.env.test).');
+  process.exit(1);
+}
+
 const collectionPath = path.join(__dirname, 'TC-M09-G07.postman_collection.json');
-const evidenciasDir = path.join(__dirname, '..', 'evidencias');
+const evidenciasDir = path.join(__dirname, '..', 'evidencias', 'v4-reeval-20261003');
 const outJsonPath = path.join(evidenciasDir, 'TC-M09-G07_postman_resultado.json');
 
 if (!fs.existsSync(evidenciasDir)) {
@@ -59,6 +64,23 @@ const result = spawnSync(cmd, args, {
 if (result.error) {
   console.error('Error al invocar newman:', result.error);
   process.exit(1);
+}
+
+// Saneamiento de dump JSON (R5)
+if (fs.existsSync(outJsonPath)) {
+  try {
+    let raw = fs.readFileSync(outJsonPath, 'utf8');
+    raw = raw.replace(/"contrasena":\s*"[^"]+"/g, '"contrasena": "***"');
+    raw = raw.replace(/"value":\s*"[^"]+"/g, (match) => {
+      if (match.includes(envVars.TEST_ADMIN_PASSWORD)) return '"value": "***"';
+      return match;
+    });
+    raw = raw.replace(/"token":\s*"[^"]+"/g, '"token": "***"');
+    fs.writeFileSync(outJsonPath, raw, 'utf8');
+    console.log('  [run_newman] Dump saneado correctamente (R5).');
+  } catch (err) {
+    console.warn('  [run_newman] Advertencia al sanear dump:', err.message);
+  }
 }
 
 process.exit(result.status || 0);

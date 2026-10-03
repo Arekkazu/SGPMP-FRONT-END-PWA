@@ -31,16 +31,18 @@ try {
 // TC-M09-G07 · CU-01 – Sincronización offline y conflicto de nombres de especie (RF-15 · Frontend & Backend QA)
 module.exports = defineConfig({
   e2e: {
-    baseUrl:
-      process.env.BASE_URL ||
-      process.env.CYPRESS_BASE_URL ||
-      'https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io',
+    baseUrl: (() => {
+      const url = process.env.BASE_URL || process.env.CYPRESS_BASE_URL;
+      if (!url) throw new Error('ERROR CONFIG: Variable de entorno BASE_URL no definida en .env.test');
+      return url;
+    })(),
 
     env: {
-      API_BASE_URL:
-        process.env.API_BASE_URL ||
-        process.env.CYPRESS_API_BASE_URL ||
-        'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
+      API_BASE_URL: (() => {
+        const url = process.env.API_BASE_URL || process.env.CYPRESS_API_BASE_URL;
+        if (!url) throw new Error('ERROR CONFIG: Variable de entorno API_BASE_URL no definida en .env.test');
+        return url;
+      })(),
       ADMIN_EMAIL: process.env.ADMIN_EMAIL,
       TEST_ADMIN_PASSWORD: process.env.TEST_ADMIN_PASSWORD,
     },
@@ -54,9 +56,8 @@ module.exports = defineConfig({
     defaultCommandTimeout: 15000,
 
     pageLoadTimeout: 180000,
-    modifyObstructiveCode: false,
-    // retries: 2 — máximo permitido por R14.3
-    retries: { runMode: 2, openMode: 0 },
+    // retries: 0 — fijado por R14 para evitar borrado de fallos entre reintentos internos
+    retries: { runMode: 0, openMode: 0 },
 
     blockHosts: ['*.googleapis.com', '*.gstatic.com', '*.firebaseio.com'],
 

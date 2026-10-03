@@ -1,0 +1,39 @@
+{
+  "tc": "TC-M09-G07",
+  "rf": "RF-15",
+  "issue": "#115",
+  "fecha": "2026-09-24",
+  "veredicto": "RECHAZADO",
+  "checkpoints": [
+    {
+      "paso": "CP-1",
+      "esperado": "Creación previa de especie base en backend responde HTTP 201 Created",
+      "obtenido": "HTTP 201 Created recibido del backend TEST (ID asignado en servidor)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-2",
+      "esperado": "Botón 'Nueva especie' habilitado en modo offline",
+      "obtenido": "Botón permanece visible, interactivo y abre el modal en ausencia de red",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-3",
+      "esperado": "Registro optimista visible en UI con badge 'Pendiente de sincronización' e ID temporal negativo",
+      "obtenido": "Fila optimista creada con ID temporal negativo y badge visible tras filtrar por nombre en catálogo paginado",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-4",
+      "esperado": "Detección de conflicto 409 y alerta visual 'Conflicto de sincronización' reactiva al reconectar",
+      "obtenido": "Backend retornó HTTP 409 y Dexie registró conflicto: true, pero useEspecies carece de reactividad a eventos de sincronización y la alerta nunca se renderizó (timeout 20s)",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-5",
+      "esperado": "Resolución de conflicto (renombrar o descartar) en interfaz",
+      "obtenido": "No alcanzable: la UI no desplegó la alerta ni las opciones de resolución de conflicto",
+      "estado": "FALLA"
+    }
+  ]
+}
