@@ -5,6 +5,7 @@ import type {
   ConfiguracionRemotaResponse, ConfigurarRemotamenteDTO,
   SensorAreaResponse, AsociarSensorAreaDTO, AsociarSensorAreaResponse,
   CalibracionResponse, RegistrarCalibracionDTO, TipoDispositivoIotResponse,
+  CredencialMqttResponse, EstadoCredencialMqttResponse, EmitirCredencialMqttDTO,
 } from '../types';
 
 const DISP = '/configuracion/dispositivos-iot';
@@ -65,6 +66,25 @@ export const configuracionRemotaApi = {
   async listarConfiguraciones(idDispositivo: number): Promise<ConfiguracionRemotaResponse[]> {
     const res = await http.get<{ items: ConfiguracionRemotaResponse[] }>(`${DISP}/${idDispositivo}/configuraciones`);
     return res.data.items;
+  },
+};
+
+// RF-23 / TC-M09-250/251. Sin caché ni syncQueue a propósito: la respuesta del
+// POST trae la contraseña una sola vez y sin conexión la operación debe fallar,
+// no quedar en cola.
+export const credencialMqttApi = {
+  async consultar(idDispositivo: number): Promise<EstadoCredencialMqttResponse> {
+    const res = await http.get<EstadoCredencialMqttResponse>(`${DISP}/${idDispositivo}/credencial-mqtt`);
+    return res.data;
+  },
+
+  async emitir(idDispositivo: number, dto: EmitirCredencialMqttDTO): Promise<CredencialMqttResponse> {
+    const res = await http.post<CredencialMqttResponse>(`${DISP}/${idDispositivo}/credencial-mqtt`, dto);
+    return res.data;
+  },
+
+  async revocar(idDispositivo: number): Promise<void> {
+    await http.delete(`${DISP}/${idDispositivo}/credencial-mqtt`);
   },
 };
 
