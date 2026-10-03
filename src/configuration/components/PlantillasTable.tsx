@@ -68,9 +68,9 @@ function PlantillaCard({
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'var(--s3)' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 'var(--s1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 var(--s1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {plantilla.template_name}
-          </div>
+          </h3>
         </div>
         <span style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 'var(--r-full)', background: 'var(--surface-hover)', border: '1px solid var(--surface-border)', color: 'var(--text-muted)', flexShrink: 0, marginLeft: 'var(--s2)' }}>
           v{plantilla.version}
@@ -103,6 +103,7 @@ function PlantillaCard({
               disabled={!online}
               onClick={onVersionar}
               title={t('plantillastable.generar_la_version_siguiente')}
+              aria-label={`${t('plantillastable.nueva_version')}: ${plantilla.template_name}`}
             >
               <GitBranch size={13} aria-hidden style={{ marginRight: 'var(--s1)' }} />
               {t('plantillastable.nueva_version')}
@@ -113,6 +114,7 @@ function PlantillaCard({
             size="sm"
             disabled={!puedeAplicar || !online}
             onClick={onAplicar}
+            aria-label={`${t('plantillastable.aplicar_plantilla')}: ${plantilla.template_name}`}
           >{t('plantillastable.aplicar_plantilla')}</Button>
         </div>
       </div>
@@ -192,8 +194,10 @@ export function PlantillasTable() {
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('plantillastable.crea_la_primera_plantilla_para_capturar_una')}</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)' }}>
+        // TC-DIS-61: lista semántica; cada plantilla con su nombre como encabezado.
+        <ul style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)', listStyle: 'none', padding: 0, marginTop: 0 }}>
           {plantillas.map((p) => (
+            <li key={p.id_plantilla}>
             <PlantillaCard
               key={p.id_plantilla}
               plantilla={p}
@@ -204,21 +208,24 @@ export function PlantillasTable() {
               onAplicar={() => { setWizardResult(null); setWizardPlantilla(p); }}
               onVersionar={() => { setPlantillaBase(p); setShowModal(true); }}
             />
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       {/* Historial toggle */}
       <button
         type="button"
         onClick={toggleHistorial}
+        aria-expanded={showHistorial}
+        aria-controls="plantillas-historial"
         style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', cursor: 'pointer', padding: 'var(--s4) 0', borderTop: '1px solid var(--surface-border)', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
       >
-        {showHistorial ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        {showHistorial ? <ChevronUp size={16} aria-hidden /> : <ChevronDown size={16} aria-hidden />}
         Historial de aplicaciones
       </button>
       {showHistorial && (
-        <div style={{ marginTop: 'var(--s4)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
+        <div id="plantillas-historial" style={{ marginTop: 'var(--s4)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
           <div style={{ padding: 'var(--s3) var(--s5)', background: 'var(--surface-hover)', borderBottom: '1px solid var(--surface-border)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('plantillastable.aplicaciones_recientes')}</div>
           <PlantillaHistorial historial={historial} loading={loadingHistorial} />
         </div>

@@ -72,6 +72,7 @@ function TemaCard({ mode, label, emoji, desc, preview, selected, onClick }: {
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={selected}
       style={{
         padding: 'var(--s4)',
         background: 'var(--surface-card)',
@@ -167,8 +168,8 @@ function TemaPanel({
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--s4)' }}>
         <div>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 2 }}>{subtitle}</div>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{title}</h3>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>{subtitle}</p>
         </div>
         <FuenteBadge fuente={fuente} />
       </div>

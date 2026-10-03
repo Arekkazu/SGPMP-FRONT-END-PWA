@@ -12,6 +12,7 @@ import type {
   SnapshotEspecie, VersionarPlantillaDTO,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 // ── Categorías del RF-30 ──────────────────────────────────────────────────────
 // Las claves son las que espera `params_snapshot` en el backend; no se traducen
@@ -37,6 +38,7 @@ interface Props {
 export function PlantillaModal({
   saving, saveError, plantillaBase, onClose, onRegistrar, onVersionar,
 }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const { especies, cargar } = useEspecies();
   useEffect(() => { cargar(); }, [cargar]);
@@ -135,6 +137,7 @@ export function PlantillaModal({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="plantilla-modal-title"

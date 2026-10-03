@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { errorServidor } from './formControls';
 import { History } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { useHistorial } from '../hooks/useHistorial';
@@ -83,15 +84,23 @@ export function HistorialSection({ idActivo }: Props) {
         </div>
         <div>
           <label style={LABEL} htmlFor="hist-desde">{t('historialsection.desde')}</label>
-          <input id="hist-desde" type="date" style={INPUT_DATE} value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
+          <input
+            id="hist-desde" type="date" style={INPUT_DATE} value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)}
+            aria-invalid={!!errorServidor(error, 'fecha_inicio')}
+            aria-describedby={errorServidor(error, 'fecha_inicio') ? 'hist-error' : undefined}
+          />
         </div>
         <div>
           <label style={LABEL} htmlFor="hist-hasta">{t('historialsection.hasta')}</label>
-          <input id="hist-hasta" type="date" style={INPUT_DATE} value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
+          <input
+            id="hist-hasta" type="date" style={INPUT_DATE} value={fechaFin} onChange={(e) => setFechaFin(e.target.value)}
+            aria-invalid={!!errorServidor(error, 'fecha_fin')}
+            aria-describedby={errorServidor(error, 'fecha_fin') ? 'hist-error' : undefined}
+          />
         </div>
       </div>
 
-      {error && <Alert variant="error" title={t('historialsection.error_al_cargar_el_historial')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      {error && <Alert id="hist-error" variant="error" title={t('historialsection.error_al_cargar_el_historial')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
       {loading ? (
         <div style={{ height: 120, borderRadius: 'var(--r-md)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }}>

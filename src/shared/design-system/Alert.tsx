@@ -24,9 +24,10 @@ interface AlertProps {
   onDismiss?: () => void;
   className?: string;
   style?: React.CSSProperties;
+  id?: string;
 }
 
-export function Alert({ variant, title, description, onDismiss, className = '', style }: AlertProps) {
+export function Alert({ variant, title, description, onDismiss, className = '', style, id }: AlertProps) {
   const { t } = useT('common');
   const [visible, setVisible] = useState(true);
 
@@ -44,6 +45,7 @@ export function Alert({ variant, title, description, onDismiss, className = '', 
 
   return (
     <div
+      id={id}
       role="alert"
       aria-live="assertive"
       className={['ds-alert', `ds-alert--${variant}`, className].filter(Boolean).join(' ')}
@@ -52,7 +54,9 @@ export function Alert({ variant, title, description, onDismiss, className = '', 
       <span className="ds-alert__icon">{ICONS[variant]}</span>
       <div className="ds-alert__body">
         <span className="ds-alert__title">{title}</span>
-        {description && <span className="ds-alert__desc">{description}</span>}
+        {/* El espacio separa título y detalle en el texto que lee el lector de pantalla
+            ("Error al guardarError inesperado…", #189); en la columna flex no se ve. */}
+        {description && <>{' '}<span className="ds-alert__desc">{description}</span></>}
       </div>
       {onDismiss && (
         <button

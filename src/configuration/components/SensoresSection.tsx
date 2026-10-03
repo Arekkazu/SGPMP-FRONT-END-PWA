@@ -15,6 +15,7 @@ import { useFincas } from '../hooks/useFincas';
 import { useInfraestructuras } from '../hooks/useInfraestructuras';
 import type { AsociacionActivoSuperada, DispositivoIotResponse, SensorResponse, FincaResponse, InfraestructuraResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -373,9 +374,11 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
 function ConfirmReasignarModal({ mensaje, saving, onCancel, onConfirm }: {
   mensaje: string; saving: boolean; onCancel: () => void; onConfirm: () => void;
 }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="reasignar-modal-title"

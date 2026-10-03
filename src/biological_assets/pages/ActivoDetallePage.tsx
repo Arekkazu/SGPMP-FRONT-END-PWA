@@ -103,7 +103,9 @@ export function ActivoDetallePage() {
           <Alert
             variant="error"
             title={t('activodetallepage.no_se_pudo_cargar_el_activo')}
-            description={error.status === 404 ? t('activodetallepage.el_activo_no_existe_o_fue_eliminado') : error.message}
+            description={error.status === 404
+              ? t('activodetallepage.el_activo_no_existe_o_fue_eliminado')
+              : error.status === 403 ? t('fichaintegralview.sin_permiso_e02') : error.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
         )}
@@ -140,7 +142,14 @@ export function ActivoDetallePage() {
 
       {/* Contenido */}
       <div style={{ padding: 'var(--page-pad)' }}>
-        {tab === 'ficha' && <FichaIntegralView ficha={ficha} loading={fichaLoading || loading} error={fichaError} />}
+        {tab === 'ficha' && (
+          <FichaIntegralView
+            ficha={ficha}
+            loading={fichaLoading || loading}
+            error={fichaError}
+            onIrA={(pestana) => setTab(pestana as TabId)}
+          />
+        )}
         {tab === 'datos' && (
           <DatosActivoSection
             activo={activo}

@@ -8,6 +8,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { EspecieResponse, RegistrarEspecieDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface FormValues {
   nombre: string;
@@ -40,6 +41,7 @@ const TEXTAREA: React.CSSProperties = {
 const NOMBRE_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 
 export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar, onEditar }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = especie !== null;
   const titulo = modoEditar ? `Editar especie — ${especie.nombre}` : 'Nueva especie';
@@ -81,6 +83,7 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="especie-modal-title"

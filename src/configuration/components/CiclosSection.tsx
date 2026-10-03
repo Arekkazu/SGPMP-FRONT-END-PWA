@@ -10,6 +10,7 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useCiclosBiologicos } from '../hooks/useCiclosBiologicos';
 import type { CicloBiologicoResponse } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface Props {
   idEspecie: number;
@@ -70,6 +71,7 @@ function CicloModal({
   onRegistrar: (dto: import('../types').RegistrarCicloDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarCicloDTO) => Promise<boolean>;
 }) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = ciclo !== null;
   const {
@@ -107,6 +109,7 @@ function CicloModal({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="ciclo-modal-title"
@@ -189,9 +192,11 @@ function CicloModal({
 }
 
 function ConfirmDesactivar({ ciclo, saving, onCancel, onConfirm }: { ciclo: CicloBiologicoResponse; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}
@@ -310,7 +315,7 @@ export function CiclosSection({ idEspecie }: Props) {
                         {c.es_activo ? 'Activo' : 'Inactivo'}
                       </span>
                       {c.pendienteSync && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: 'var(--sem-warning-bg, #fff8e6)', color: '#b06000', border: '1px solid #e8c840' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: 'var(--sem-warning-bg)', color: 'var(--sem-warning)', border: '1px solid var(--sem-warning-border)' }}>
                           {t('ciclossection.pendiente_de_sincronizacion')}
                         </span>
                       )}

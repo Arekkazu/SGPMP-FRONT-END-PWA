@@ -1,4 +1,13 @@
 import React, { forwardRef } from 'react';
+import type { ApiError } from '../../shared/api/errors';
+
+/**
+ * Mensaje del error del servidor cuando apunta a `campo` (`ApiError.field`), para
+ * mostrarlo junto al control y marcarlo con aria-invalid (WCAG 3.3.1, TC-DIS-125/128/134/137).
+ */
+export function errorServidor(error: ApiError | null | undefined, campo: string): string | undefined {
+  return error?.field === campo ? error.message : undefined;
+}
 
 const CONTROL: React.CSSProperties = {
   width: '100%',
@@ -19,6 +28,14 @@ const LABEL: React.CSSProperties = {
   color: 'var(--text-primary)',
   marginBottom: 'var(--s1)',
 };
+
+/**
+ * Anuncia a lectores de pantalla los campos que aparecen al elegir una opción
+ * (WCAG 4.1.3, TC-DIS-102/108). Vacío no anuncia nada.
+ */
+export function AnuncioCampos({ texto }: { texto: string }) {
+  return <p role="status" className="ds-sr-only">{texto}</p>;
+}
 
 export function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;

@@ -2,6 +2,7 @@ import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface Props {
   title: string;
@@ -12,9 +13,11 @@ interface Props {
 }
 
 export function ModalShell({ title, onClose, children, footer, maxWidth = 520 }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('prediction');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={title}

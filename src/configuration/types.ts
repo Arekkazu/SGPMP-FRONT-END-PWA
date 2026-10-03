@@ -114,7 +114,13 @@ export interface RegistrarDispositivoIotDTO {
   serial: string;
   descripcion: string;
   id_infraestructura: number;
+  id_tipo_dispositivo: number;
   es_activo?: boolean;
+}
+
+export interface TipoDispositivoIotResponse {
+  id_tipo_dispositivo: number;
+  nombre: string;
 }
 
 // =====================================================================

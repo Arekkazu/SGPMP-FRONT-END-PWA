@@ -28,37 +28,58 @@ const LABEL: React.CSSProperties = {
 
 const TIPOS: TipoIndicador[] = ['TODOS', 'CRECIMIENTO', 'PRODUCCION', 'SANITARIO', 'EFICIENCIA'];
 
+// TC-DIS-140: el backend nombra indicadores y causas con claves internas
+// (`ganancia_peso`, `DATOS_INSUFICIENTES: ...`); al usuario se le muestra texto.
+const INDICADORES = ['ganancia_peso', 'conversion_alimenticia', 'produccion_promedio', 'tasa_morbilidad', 'tasa_mortalidad'];
+const CAUSAS = ['DATOS_INSUFICIENTES', 'NO_APLICA_INDIVIDUAL', 'OUTLIER_CRITICO'];
+
+function useTextoLegible() {
+  const { t } = useT('biologicalAssets');
+  const nombre = (clave: string) => t(`indicadoressection.ind_${clave}`, { defaultValue: clave.replace(/_/g, ' ') });
+  const texto = (crudo: string) => {
+    let s = crudo;
+    for (const c of CAUSAS) s = s.replace(new RegExp(`^${c}:\\s*`), `${t(`indicadoressection.causa_${c.toLowerCase()}`)}: `);
+    for (const k of INDICADORES) s = s.replace(new RegExp(`\\b${k}\\b`, 'g'), nombre(k).toLowerCase());
+    return s;
+  };
+  return { nombre, texto };
+}
+
+// Una fecha tecleada a mano pasa por años parciales (0002, 0020, 0202...).
+const fechaCompleta = (f: string) => f === '' || f >= '1900-01-01';
+
 function IndicadorCard({ ind }: { ind: IndicadorZootecnicoResponse }) {
   const { t } = useT('biologicalAssets');
+  const { nombre } = useTextoLegible();
   return (
-    <div
+    <dl
       style={{
         background: 'var(--surface-card)',
-        border: '1px solid var(--surface-border)',
+        border: `1px ${ind.disponible ? 'solid' : 'dashed'} var(--surface-border)`,
         borderRadius: 'var(--r-lg)',
         padding: 'var(--s5)',
-        opacity: ind.disponible ? 1 : 0.6,
+        margin: 0,
       }}
     >
-      <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
-        {ind.tipo}
-      </div>
+      <dt style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+        {nombre(ind.tipo)}
+      </dt>
       {ind.disponible ? (
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--s2)', marginTop: 'var(--s2)' }}>
+        <dd style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--s2)', margin: 'var(--s2) 0 0' }}>
           <span style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
             {ind.valor ?? '—'}
           </span>
           <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{ind.unidad}</span>
-        </div>
+        </dd>
       ) : (
-        <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: 'var(--s2)' }}>{t('indicadoressection.no_disponible')}</div>
+        <dd style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 'var(--s2) 0 0' }}>{t('indicadoressection.no_disponible')}</dd>
       )}
       {(ind.periodo_inicio || ind.periodo_fin) && (
-        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 'var(--s2)' }}>
+        <dd style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', margin: 'var(--s2) 0 0' }}>
           {ind.periodo_inicio ?? '…'} → {ind.periodo_fin ?? '…'}
-        </div>
+        </dd>
       )}
-    </div>
+    </dl>
   );
 }
 
@@ -68,6 +89,7 @@ export function IndicadoresSection({ idActivo }: Props) {
   const [tipo, setTipo] = useState<TipoIndicador>('TODOS');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
+  const { texto } = useTextoLegible();
 
   const consultar = useCallback(() => {
     const filtros: ConsultarIndicadoresFiltros = { tipo_indicador: tipo };
@@ -76,7 +98,12 @@ export function IndicadoresSection({ idActivo }: Props) {
     cargar(filtros);
   }, [tipo, fechaInicio, fechaFin, cargar]);
 
-  useEffect(() => { consultar(); }, [consultar]);
+  // TC-DIS-140: una consulta por tecla saturaba el backend; se espera a que el filtro se asiente.
+  useEffect(() => {
+    if (!fechaCompleta(fechaInicio) || !fechaCompleta(fechaFin)) return;
+    const temporizador = setTimeout(consultar, 400);
+    return () => clearTimeout(temporizador);
+  }, [consultar, fechaInicio, fechaFin]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
@@ -104,11 +131,11 @@ export function IndicadoresSection({ idActivo }: Props) {
       {error && <Alert variant="error" title={t('indicadoressection.error_al_cargar_indicadores')} description={error.message} />}
 
       {data && data.advertencias.length > 0 && (
-        <div style={{ background: 'var(--sem-warning-bg)', border: '1px solid var(--sem-warning-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
+        <div role="status" style={{ background: 'var(--sem-warning-bg)', border: '1px solid var(--sem-warning-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', color: 'var(--sem-warning)', fontWeight: 600, fontSize: '13px', marginBottom: 'var(--s2)' }}>
             <AlertTriangle size={15} aria-hidden />{t('indicadoressection.advertencias')}</div>
           <ul style={{ margin: 0, paddingLeft: 'var(--s5)', color: 'var(--text-secondary)', fontSize: '13px' }}>
-            {data.advertencias.map((a, i) => <li key={i}>{a}</li>)}
+            {data.advertencias.map((a, i) => <li key={i}>{texto(a)}</li>)}
           </ul>
         </div>
       )}
@@ -120,10 +147,10 @@ export function IndicadoresSection({ idActivo }: Props) {
           ))}
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
-      ) : !data || data.indicadores.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('indicadoressection.no_hay_indicadores_para_los_filtros')}</p>
+      ) : error ? null : !data || data.indicadores.length === 0 ? (
+        <p role="status" style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('indicadoressection.no_hay_indicadores_para_los_filtros')}</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--s4)' }}>
+        <div aria-live="polite" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--s4)' }}>
           {data.indicadores.map((ind, i) => <IndicadorCard key={i} ind={ind} />)}
         </div>
       )}

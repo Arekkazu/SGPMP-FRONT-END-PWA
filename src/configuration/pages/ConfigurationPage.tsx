@@ -28,6 +28,7 @@ import { IdiomaSection } from '../components/IdiomaSection';
 import { DashboardLayoutSection } from '../components/DashboardLayoutSection';
 import { PlantillasTable } from '../components/PlantillasTable';
 import type { EspecieResponse, TipoAreaResponse } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
 type TabId = 'catalogo' | 'por-especie' | 'fincas' | 'iot' | 'sistema' | 'personalizacion' | 'plantillas';
@@ -361,9 +362,11 @@ interface ConfirmProps {
 }
 
 function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, onCancel, onConfirm }: ConfirmProps) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('common');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-modal-title"

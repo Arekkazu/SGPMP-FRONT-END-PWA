@@ -13,6 +13,7 @@ import { useInfraestructuras } from '../hooks/useInfraestructuras';
 import { useTiposArea } from '../hooks/useTiposArea';
 import type { FincaResponse, InfraestructuraResponse, RegistrarInfraestructuraDTO, EditarInfraestructuraDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -73,9 +74,11 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, saving, onCancel, onConfi
   titulo: string; mensaje: string; confirmLabel: string;
   saving: boolean; onCancel: () => void; onConfirm: () => void;
 }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 'var(--s4)' }}
@@ -113,12 +116,20 @@ interface InfraModalProps {
 }
 
 function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onEditar }: InfraModalProps) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = infra !== null;
   const titulo = modoEditar ? `Editar área — ${infra.nombre_infraestructura}` : 'Registrar área productiva';
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({ mode: 'onBlur' });
+  const { register, handleSubmit, reset, watch, setError, formState: { errors } } = useForm<FormValues>({ mode: 'onBlur' });
   const desc = watch('descripcion_infraestructura', '');
+
+  // #189: el nombre duplicado (409) se anuncia en su campo, no en una alerta suelta.
+  useEffect(() => {
+    if (saveError?.status === 409) {
+      setError('nombre_infraestructura', { message: saveError.message }, { shouldFocus: true });
+    }
+  }, [saveError, setError]);
 
   const { tipos, cargar: cargarTipos } = useTiposArea();
   useEffect(() => { cargarTipos(true); }, [cargarTipos]);
@@ -155,6 +166,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="infra-modal-title"
@@ -173,7 +185,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
         </div>
 
         <div style={{ padding: 'var(--s6)' }}>
-          {saveError && (
+          {saveError && saveError.status !== 409 && (
             <Alert
               variant="error"
               title={saveError.status === 412 ? t('infraestructurasection.conflicto_de_edicion') : t('infraestructurasection.error_al_guardar')}
@@ -196,10 +208,12 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             {/* Tipo de área */}
             <div style={{ marginBottom: 'var(--s4)' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.tipo_de_area')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
+              <label htmlFor="infra-tipo-area" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.tipo_de_area')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
               </label>
               <select
+                id="infra-tipo-area"
                 aria-required="true"
+                aria-invalid={!!errors.tipo_area}
                 style={SELECT_STYLE}
                 {...register('tipo_area', { required: t('infraestructurasection.selecciona_un_tipo_de_area') })}
               >
@@ -249,11 +263,13 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
 
             {/* Descripción */}
             <div style={{ marginBottom: 'var(--s5)' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.descripcion')}<span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span>
+              <label htmlFor="infra-descripcion" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.descripcion')}<span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <textarea
+                  id="infra-descripcion"
                   rows={3}
+                  aria-invalid={!!errors.descripcion_infraestructura}
                   placeholder={t('infraestructurasection.descripcion_breve_del_area')}
                   style={{
                     width: '100%',
