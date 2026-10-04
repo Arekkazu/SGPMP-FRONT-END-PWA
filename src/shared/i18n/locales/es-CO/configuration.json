@@ -88,10 +88,13 @@
     "sin_conexion": "Sin conexión"
   },
   "configuracionremotasection": {
+    "acciones": "Acciones",
     "activo": "Activo",
     "cada_cuantos_minutos_el_dispositivo_captura": "Cada cuántos minutos el dispositivo captura datos.",
     "cada_cuantos_minutos_transmite_datos_al": "Cada cuántos minutos transmite datos al servidor.",
     "cambiar_dispositivo": "Cambiar dispositivo",
+    "cancelar": "Cancelar",
+    "configuracion_cancelada": "Configuración cancelada",
     "configuracion_encolada": "Configuración encolada",
     "configuracion_remota_iot": "Configuración Remota IoT",
     "el_dispositivo_no_esta_disponible_en_este": "El dispositivo no está disponible en este momento. La configuración se aplicará automáticamente en cuanto recupere la conectividad.",
@@ -108,10 +111,50 @@
     "no_tienes_permiso_para_configurar": "No tienes permiso para configurar dispositivos IoT remotamente.",
     "programar_configuracion_del_dispositivo": "Programar configuración del dispositivo",
     "recargar_historial": "Recargar historial",
+    "reintentar": "Reintentar",
     "selecciona_el_dispositivo_a_configurar": "Selecciona el dispositivo a configurar:",
     "sin_conexion": "Sin conexión",
     "sin_historial_de_configuraciones": "Sin historial de configuraciones.",
-    "sin_permiso": "Sin permiso"
+    "sin_permiso": "Sin permiso",
+    "ya_puedes_enviar_una_nueva": "Ya puedes enviar una nueva configuración a este dispositivo."
+  },
+  "credencialmqttmodal": {
+    "titulo": "Credencial MQTT del Gateway Edge",
+    "subtitulo": "El Gateway Edge es lo único que se conecta al broker. Su credencial cubre su serial y el de cada dispositivo activo que lo tiene asignado; los demás topics se rechazan.",
+    "cerrar": "Cerrar",
+    "sin_conexion": "Sin conexión",
+    "requiere_conexion": "Generar, rotar o revocar una credencial requiere conexión con el servidor.",
+    "cargando": "Consultando el broker…",
+    "recargar": "Recargar estado",
+    "estado_sin_credencial": "Sin credencial propia",
+    "estado_habilitada": "Habilitada",
+    "estado_revocada": "Revocada",
+    "conectado": "Conectado ahora",
+    "desconectado": "No conectado",
+    "seriales_cubiertos": "Seriales que cubre",
+    "generar": "Generar credencial",
+    "rotar": "Rotar credencial",
+    "revocar": "Revocar",
+    "cancelar": "Cancelar",
+    "confirmar_rotar": "La clave actual dejará de funcionar y el Gateway Edge se desconectará hasta que actualices su archivo de configuración. ¿Continuar?",
+    "confirmar_revocar": "El Gateway Edge se desconectará de inmediato y no podrá volver a conectarse hasta que generes una credencial nueva. ¿Continuar?",
+    "credencial_generada": "Credencial generada",
+    "solo_una_vez": "Copia estos datos ahora: la contraseña no se vuelve a mostrar. Pégalos en /etc/sgpmp/edge-agent.env del Gateway Edge y reinicia el servicio edge-agent.",
+    "copiar": "Copiar",
+    "copiado": "Copiado",
+    "listo": "Ya la copié",
+    "error_cargar": "No se pudo consultar la credencial",
+    "error_operacion": "No se pudo completar la operación"
+  },
+  "cambiargatewaymodal": {
+    "titulo": "Gateway Edge del dispositivo",
+    "cerrar": "Cerrar",
+    "gateway_edge": "Gateway Edge que lo atiende",
+    "ayuda": "Solo los Gateway Edge activos de la finca. El Edge recibe los nuevos permisos al instante, sin cambiar su clave; en el Edge agrega el serial a EDGE_SERIALS.",
+    "sin_gateway": "Sin Gateway Edge",
+    "cancelar": "Cancelar",
+    "guardar": "Guardar",
+    "error": "No se pudo cambiar el Gateway Edge"
   },
   "configurationpage": {
     "buscar_especies_por_nombre": "Buscar especies por nombre",
@@ -175,7 +218,12 @@
     "serial_fisico_del_dispositivo": "Serial físico del dispositivo",
     "solo_letras_numeros_guiones_y_guiones_bajos": "Solo letras, números, guiones y guiones bajos.",
     "tipo_de_dispositivo": "Tipo de dispositivo",
-    "ya_existe_un_dispositivo_con_este_serial": "Ya existe un dispositivo con este serial."
+    "ya_existe_un_dispositivo_con_este_serial": "Ya existe un dispositivo con este serial.",
+    "gateway_edge_que_lo_atiende": "Gateway Edge que lo atiende",
+    "gateway_edge_ayuda": "El Gateway Edge de la finca que recibe por radio los datos de este dispositivo y los envía al broker.",
+    "no_hay_gateway_edge_en_la_finca": "Esta finca aún no tiene Gateway Edge registrados: regístralo primero con el tipo GATEWAY_EDGE.",
+    "sin_gateway_edge": "Sin Gateway Edge",
+    "es_gateway_edge_ayuda": "Gateway Edge: la computadora de borde del sitio. Atiende a los dispositivos que lo tengan asignado y es lo único que se conecta al broker."
   },
   "dispositivostable": {
     "cambiar_finca": "Cambiar finca",
@@ -198,7 +246,12 @@
     "registrar_sensor": "Registrar sensor",
     "selecciona_el_area_productiva_donde_esta": "Selecciona el área productiva donde está instalado el dispositivo:",
     "sin_conexion": "Sin conexión",
-    "volver_a_fincas": "Volver a fincas"
+    "volver_a_fincas": "Volver a fincas",
+    "gateway_edge": "Gateway Edge",
+    "es_gateway_edge": "Gateway Edge · {{n}} dispositivos",
+    "credencial_mqtt": "Credencial MQTT de",
+    "cambiar_gateway_edge": "Cambiar Gateway Edge de",
+    "cascada_edge": "Es un Gateway Edge: también se desactivarán los dispositivos que atiende ({{seriales}})."
   },
   "especieselector": {
     "activa": "Activa",

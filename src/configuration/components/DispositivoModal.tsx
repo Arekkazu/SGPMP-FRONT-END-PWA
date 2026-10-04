@@ -7,7 +7,8 @@ import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
-import type { InfraestructuraResponse, RegistrarDispositivoIotDTO, TipoDispositivoIotResponse } from '../types';
+import { TIPO_GATEWAY_EDGE } from '../types';
+import type { DispositivoIotResponse, InfraestructuraResponse, RegistrarDispositivoIotDTO, TipoDispositivoIotResponse } from '../types';
 import { tiposDispositivoApi } from '../api/iotApi';
 import type { ApiError } from '../../shared/api/errors';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
@@ -16,10 +17,13 @@ interface FormValues {
   serial: string;
   descripcion: string;
   id_tipo_dispositivo: string;
+  id_dispositivo_gateway: string;
 }
 
 interface Props {
   area: InfraestructuraResponse;
+  /** RF-21: Gateway Edge activos de la finca, para vincular el dispositivo nuevo. */
+  edges: DispositivoIotResponse[];
   saving: boolean;
   saveError: ApiError | null;
   onClose: () => void;
@@ -28,7 +32,7 @@ interface Props {
 
 const SERIAL_REGEX = /^[A-Za-z0-9_\-]+$/;
 
-export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar }: Props) {
+export function DispositivoModal({ area, edges, saving, saveError, onClose, onRegistrar }: Props) {
   const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const {
@@ -36,13 +40,14 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
     handleSubmit,
     reset,
     setError,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
 
   // #179: el backend exige id_tipo_dispositivo desde RF-23 (rangos por tipo).
   const [tipos, setTipos] = useState<TipoDispositivoIotResponse[]>([]);
   useEffect(() => {
-    reset({ serial: '', descripcion: '', id_tipo_dispositivo: '' });
+    reset({ serial: '', descripcion: '', id_tipo_dispositivo: '', id_dispositivo_gateway: '' });
     tiposDispositivoApi.listar().then(setTipos).catch(() => setTipos([]));
   }, [reset]);
 
@@ -52,12 +57,17 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
     }
   }, [saveError, setError]);
 
+  // Un Gateway Edge no depende de otro Edge: el selector solo aplica al resto.
+  const tipoElegido = tipos.find((tipo) => String(tipo.id_tipo_dispositivo) === watch('id_tipo_dispositivo'));
+  const esEdge = tipoElegido?.nombre === TIPO_GATEWAY_EDGE;
+
   const onSubmit = async (data: FormValues) => {
     const ok = await onRegistrar({
       serial: data.serial.trim().toUpperCase(),
       descripcion: data.descripcion.trim(),
       id_infraestructura: area.id_infraestructura,
       id_tipo_dispositivo: Number(data.id_tipo_dispositivo),
+      id_dispositivo_gateway: !esEdge && data.id_dispositivo_gateway ? Number(data.id_dispositivo_gateway) : null,
     });
     if (ok) onClose();
   };
@@ -173,6 +183,26 @@ export function DispositivoModal({ area, saving, saveError, onClose, onRegistrar
                 ))}
               </Select>
             </div>
+
+            {/* Gateway Edge que lo atiende (RF-21) */}
+            {tipoElegido && !esEdge && (
+              <div style={{ marginBottom: 'var(--s4)' }}>
+                <Select
+                  id="disp-gateway"
+                  label={t('dispositivomodal.gateway_edge_que_lo_atiende')}
+                  hint={edges.length ? t('dispositivomodal.gateway_edge_ayuda') : t('dispositivomodal.no_hay_gateway_edge_en_la_finca')}
+                  {...register('id_dispositivo_gateway')}
+                >
+                  <option value="">{t('dispositivomodal.sin_gateway_edge')}</option>
+                  {edges.map((e) => (
+                    <option key={e.id_dispositivo_iot} value={e.id_dispositivo_iot}>{e.serial} — {e.descripcion}</option>
+                  ))}
+                </Select>
+              </div>
+            )}
+            {esEdge && (
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 0, marginBottom: 'var(--s4)' }}>{t('dispositivomodal.es_gateway_edge_ayuda')}</p>
+            )}
 
             {/* Descripción */}
             <div style={{ marginBottom: 'var(--s5)' }}>
