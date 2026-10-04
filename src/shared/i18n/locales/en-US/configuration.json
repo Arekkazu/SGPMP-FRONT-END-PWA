@@ -113,6 +113,44 @@
     "sin_historial_de_configuraciones": "No configuration history.",
     "sin_permiso": "No permission"
   },
+  "credencialmqttmodal": {
+    "titulo": "Gateway Edge MQTT credential",
+    "subtitulo": "The Gateway Edge is the only thing that connects to the broker. Its credential covers its serial and that of every active device assigned to it; any other topic is rejected.",
+    "cerrar": "Close",
+    "sin_conexion": "Offline",
+    "requiere_conexion": "Generating, rotating or revoking a credential requires a connection to the server.",
+    "cargando": "Checking the broker…",
+    "recargar": "Reload status",
+    "estado_sin_credencial": "No own credential",
+    "estado_habilitada": "Enabled",
+    "estado_revocada": "Revoked",
+    "conectado": "Connected now",
+    "desconectado": "Not connected",
+    "seriales_cubiertos": "Covered serials",
+    "generar": "Generate credential",
+    "rotar": "Rotate credential",
+    "revocar": "Revoke",
+    "cancelar": "Cancel",
+    "confirmar_rotar": "The current key will stop working and the Gateway Edge will disconnect until you update its configuration file. Continue?",
+    "confirmar_revocar": "The Gateway Edge will disconnect immediately and will not be able to reconnect until you generate a new credential. Continue?",
+    "credencial_generada": "Credential generated",
+    "solo_una_vez": "Copy this now: the password will not be shown again. Paste it into the Gateway Edge's /etc/sgpmp/edge-agent.env and restart the edge-agent service.",
+    "copiar": "Copy",
+    "copiado": "Copied",
+    "listo": "I copied it",
+    "error_cargar": "Could not check the credential",
+    "error_operacion": "Could not complete the operation"
+  },
+  "cambiargatewaymodal": {
+    "titulo": "Device Gateway Edge",
+    "cerrar": "Close",
+    "gateway_edge": "Gateway Edge that serves it",
+    "ayuda": "Only active Gateway Edges of the farm. The Edge gets the new permissions right away, without changing its key; on the Edge, add the serial to EDGE_SERIALS.",
+    "sin_gateway": "No Gateway Edge",
+    "cancelar": "Cancel",
+    "guardar": "Save",
+    "error": "Could not change the Gateway Edge"
+  },
   "configurationpage": {
     "buscar_especies_por_nombre": "Search species by name",
     "buscar_por_nombre": "Search by name…",
@@ -175,7 +213,12 @@
     "serial_fisico_del_dispositivo": "Physical serial number of the device",
     "solo_letras_numeros_guiones_y_guiones_bajos": "Letters, digits, hyphens and underscores only.",
     "tipo_de_dispositivo": "Device type",
-    "ya_existe_un_dispositivo_con_este_serial": "A device with this serial number already exists."
+    "ya_existe_un_dispositivo_con_este_serial": "A device with this serial number already exists.",
+    "gateway_edge_que_lo_atiende": "Gateway Edge that serves it",
+    "gateway_edge_ayuda": "The farm's Gateway Edge that receives this device's data over radio and sends it to the broker.",
+    "no_hay_gateway_edge_en_la_finca": "This farm has no Gateway Edge yet: register one first with the GATEWAY_EDGE type.",
+    "sin_gateway_edge": "No Gateway Edge",
+    "es_gateway_edge_ayuda": "Gateway Edge: the site's edge computer. It serves the devices assigned to it and is the only thing that connects to the broker."
   },
   "dispositivostable": {
     "cambiar_finca": "Change farm",
@@ -198,7 +241,12 @@
     "registrar_sensor": "Register sensor",
     "selecciona_el_area_productiva_donde_esta": "Select the production area where the device is installed:",
     "sin_conexion": "Offline",
-    "volver_a_fincas": "Back to farms"
+    "volver_a_fincas": "Back to farms",
+    "gateway_edge": "Gateway Edge",
+    "es_gateway_edge": "Gateway Edge · {{n}} devices",
+    "credencial_mqtt": "MQTT credential of",
+    "cambiar_gateway_edge": "Change Gateway Edge of",
+    "cascada_edge": "It is a Gateway Edge: the devices it serves will also be deactivated ({{seriales}})."
   },
   "especieselector": {
     "activa": "Active",
