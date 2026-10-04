@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
-import { Settings2, ChevronLeft, RefreshCw, Send } from 'lucide-react';
+import { Settings2, ChevronLeft, RefreshCw, RotateCw, Send, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -42,6 +42,7 @@ function EstadoCfgBadge({ estado }: { estado: string }) {
     APLICADA:  { bg: 'var(--sem-success-bg)', color: 'var(--sem-success)', border: 'var(--sem-success-border)', label: 'APLICADA' },
     PENDIENTE: { bg: 'var(--sem-warning-bg, #fffbe6)', color: 'var(--sem-warning, #b45309)', border: 'var(--sem-warning-border, #fde68a)', label: 'PENDIENTE' },
     NO_CONF:   { bg: 'var(--sem-error-bg)', color: 'var(--sem-error)', border: 'var(--sem-error-border)', label: 'NO CONF.' },
+    CANCELADA: { bg: 'var(--surface-hover)', color: 'var(--text-muted)', border: 'var(--surface-border)', label: 'CANCELADA' },
   };
   const s = map[estado?.toUpperCase()] ?? map['PENDIENTE'];
   return (
@@ -99,7 +100,20 @@ function DispSelector({ dispositivos, loading, onSelect }: {
 
 // ── History table ─────────────────────────────────────────────────────────────
 
-function Historial({ historial, loading }: { historial: ConfiguracionRemotaResponse[]; loading: boolean }) {
+// Solo una PENDIENTE o NO_CONF se reintenta o cancela, y solo la más reciente
+// se reintenta: reenviar una vieja pisaría la configuración nueva.
+const SIN_APLICAR = ['PENDIENTE', 'NO_CONF'];
+
+interface AccionesHistorial {
+  habilitadas: boolean;
+  saving: boolean;
+  onReintentar: (idConfiguracion: number) => void;
+  onCancelar: (idConfiguracion: number) => void;
+}
+
+function Historial({ historial, loading, acciones }: {
+  historial: ConfiguracionRemotaResponse[]; loading: boolean; acciones: AccionesHistorial;
+}) {
   const { t } = useT('configuration');
   if (loading) {
     return (
@@ -119,19 +133,31 @@ function Historial({ historial, loading }: { historial: ConfiguracionRemotaRespo
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ background: 'var(--surface-hover)' }}>
-            {['Fecha/Hora', 'Frec. captura', t('configuracionremotasection.interv_transmision'), t('configuracionremotasection.estado_cfg'), 'Mensaje'].map((h) => (
+            {['Fecha/Hora', 'Frec. captura', t('configuracionremotasection.interv_transmision'), t('configuracionremotasection.estado_cfg'), 'Mensaje', t('configuracionremotasection.acciones')].map((h) => (
               <th key={h} style={TH}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {historial.map((c) => (
+          {historial.map((c, i) => (
             <tr key={c.id_configuracion_remota} style={{ background: 'var(--surface-card)' }}>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatTs(c.fecha_creacion)}</td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{c.frecuencia_captura} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>min</span></td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{c.intervalo_transmision} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>min</span></td>
               <td style={TD}><EstadoCfgBadge estado={c.estado} /></td>
               <td style={{ ...TD, color: 'var(--text-muted)', fontSize: '12px', maxWidth: 200 }}>{c.mensaje ?? '—'}</td>
+              <td style={{ ...TD, whiteSpace: 'nowrap' }}>
+                {acciones.habilitadas && SIN_APLICAR.includes(c.estado?.toUpperCase()) && (
+                  <div style={{ display: 'flex', gap: 'var(--s1)' }}>
+                    {i === 0 && (
+                      <Button variant="ghost" size="sm" disabled={acciones.saving} onClick={() => acciones.onReintentar(c.id_configuracion_remota)}>
+                        <RotateCw size={13} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('configuracionremotasection.reintentar')}</Button>
+                    )}
+                    <Button variant="ghost" size="sm" disabled={acciones.saving} onClick={() => acciones.onCancelar(c.id_configuracion_remota)}>
+                      <X size={13} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('configuracionremotasection.cancelar')}</Button>
+                  </div>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -144,15 +170,17 @@ function Historial({ historial, loading }: { historial: ConfiguracionRemotaRespo
 
 interface FormValues { frecuencia_captura: number; intervalo_transmision: number; }
 
-function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, historial, loadingHist, onSubmit, onReload }: {
+function ConfigForm({ dispositivo, onBack, encolada, cancelada, saving, saveError, ultima, historial, loadingHist, acciones, onSubmit, onReload }: {
   dispositivo: DispositivoIotResponse;
   onBack: () => void;
   encolada: boolean;
+  cancelada: boolean;
   saving: boolean;
   saveError: { message: string } | null;
   ultima: ConfiguracionRemotaResponse | null;
   historial: ConfiguracionRemotaResponse[];
   loadingHist: boolean;
+  acciones: AccionesHistorial;
   onSubmit: (dto: { frecuencia_captura: number; intervalo_transmision: number }) => void;
   onReload: () => void;
 }) {
@@ -183,6 +211,14 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
           variant="info"
           title={t('configuracionremotasection.configuracion_encolada')}
           description={t('configuracionremotasection.el_dispositivo_no_esta_disponible_en_este')}
+          style={{ marginBottom: 'var(--s5)' }}
+        />
+      )}
+      {cancelada && (
+        <Alert
+          variant="success"
+          title={t('configuracionremotasection.configuracion_cancelada')}
+          description={t('configuracionremotasection.ya_puedes_enviar_una_nueva')}
           style={{ marginBottom: 'var(--s5)' }}
         />
       )}
@@ -289,7 +325,7 @@ function ConfigForm({ dispositivo, onBack, encolada, saving, saveError, ultima, 
             Historial de configuraciones · {dispositivo.serial}
           </span>
         </div>
-        <Historial historial={historial} loading={loadingHist} />
+        <Historial historial={historial} loading={loadingHist} acciones={acciones} />
       </div>
     </div>
   );
@@ -303,7 +339,10 @@ export function ConfiguracionRemotaSection() {
   const puedeConfigurar = usePermission(11, 3);
 
   const { dispositivos, loading: loadingDisp, cargar: cargarDisp, esGatewayEdge } = useDispositivosIot();
-  const { historial, ultima, loading: loadingHist, saving, saveError, encolada, cargar, configurar } = useConfiguracionRemota();
+  const {
+    historial, ultima, loading: loadingHist, saving, saveError, encolada, cancelada,
+    cargar, configurar, reintentar, cancelar,
+  } = useConfiguracionRemota();
 
   const [dispositivo, setDispositivo] = useState<DispositivoIotResponse | null>(null);
 
@@ -320,6 +359,13 @@ export function ConfiguracionRemotaSection() {
     if (!dispositivo) return;
     const ok = await configurar(dispositivo.id_dispositivo_iot, dto);
     if (ok) cargar(dispositivo.id_dispositivo_iot);
+  };
+
+  // Se recarga también si falla: un 504 deja la configuración NO_CONF.
+  const sobreConfiguracion = (accion: typeof reintentar) => async (idConfiguracion: number) => {
+    if (!dispositivo) return;
+    await accion(dispositivo.id_dispositivo_iot, idConfiguracion);
+    cargar(dispositivo.id_dispositivo_iot);
   };
 
   return (
@@ -347,11 +393,18 @@ export function ConfiguracionRemotaSection() {
             dispositivo={dispositivo}
             onBack={handleBack}
             encolada={encolada}
+            cancelada={cancelada}
             saving={saving}
             saveError={saveError}
             ultima={ultima}
             historial={historial}
             loadingHist={loadingHist}
+            acciones={{
+              habilitadas: online,
+              saving,
+              onReintentar: sobreConfiguracion(reintentar),
+              onCancelar: sobreConfiguracion(cancelar),
+            }}
             onSubmit={handleSubmit}
             onReload={() => cargar(dispositivo.id_dispositivo_iot)}
           />
