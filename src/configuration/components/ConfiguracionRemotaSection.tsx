@@ -302,7 +302,7 @@ export function ConfiguracionRemotaSection() {
   const online = useOnlineStatus();
   const puedeConfigurar = usePermission(11, 3);
 
-  const { dispositivos, loading: loadingDisp, cargar: cargarDisp } = useDispositivosIot();
+  const { dispositivos, loading: loadingDisp, cargar: cargarDisp, esGatewayEdge } = useDispositivosIot();
   const { historial, ultima, loading: loadingHist, saving, saveError, encolada, cargar, configurar } = useConfiguracionRemota();
 
   const [dispositivo, setDispositivo] = useState<DispositivoIotResponse | null>(null);
@@ -339,7 +339,8 @@ export function ConfiguracionRemotaSection() {
         !dispositivo ? (
           <>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('configuracionremotasection.selecciona_el_dispositivo_a_configurar')}</p>
-            <DispSelector dispositivos={dispositivos} loading={loadingDisp} onSelect={handleSelect} />
+            {/* RF-23 no aplica a un Gateway Edge: no captura datos. */}
+            <DispSelector dispositivos={dispositivos.filter((d) => !esGatewayEdge(d))} loading={loadingDisp} onSelect={handleSelect} />
           </>
         ) : (
           <ConfigForm

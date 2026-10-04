@@ -4,7 +4,7 @@ import type { CredencialMqttResponse, EstadoCredencialMqttResponse } from '../ty
 import type { ApiError } from '../../shared/api/errors';
 
 /**
- * RF-23 / TC-M09-250/251 — credencial MQTT propia de una Raspberry.
+ * RF-23 / TC-M09-250/251 — credencial MQTT del Gateway Edge.
  *
  * La contraseña solo vive en memoria mientras se muestra: no va a Dexie ni a
  * syncQueue, y `descartarCredencial` la borra. Sin conexión las operaciones
@@ -32,13 +32,13 @@ export function useCredencialMqtt() {
     }
   }, []);
 
-  const emitir = useCallback(async (idDispositivo: number, idsAdicionales: number[]): Promise<boolean> => {
+  const emitir = useCallback(async (idDispositivo: number): Promise<boolean> => {
     setSaving(true);
     setSaveError(null);
     try {
-      const nueva = await credencialMqttApi.emitir(idDispositivo, { ids_dispositivos_adicionales: idsAdicionales });
+      const nueva = await credencialMqttApi.emitir(idDispositivo);
       setCredencial(nueva);
-      // Emitir (o rotar) desconecta a la Raspberry hasta que use la clave nueva.
+      // Emitir (o rotar) desconecta al Edge hasta que use la clave nueva.
       setEstado({ emitida: true, habilitada: true, conectada: false, usuario: nueva.usuario, seriales: nueva.seriales });
       return true;
     } catch (e) {

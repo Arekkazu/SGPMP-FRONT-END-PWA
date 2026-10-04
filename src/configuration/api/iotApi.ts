@@ -5,7 +5,7 @@ import type {
   ConfiguracionRemotaResponse, ConfigurarRemotamenteDTO,
   SensorAreaResponse, AsociarSensorAreaDTO, AsociarSensorAreaResponse,
   CalibracionResponse, RegistrarCalibracionDTO, TipoDispositivoIotResponse,
-  CredencialMqttResponse, EstadoCredencialMqttResponse, EmitirCredencialMqttDTO,
+  CredencialMqttResponse, EstadoCredencialMqttResponse,
 } from '../types';
 
 const DISP = '/configuracion/dispositivos-iot';
@@ -29,6 +29,14 @@ export const dispositivosApi = {
 
   async desactivar(id: number): Promise<DispositivoIotResponse> {
     const res = await http.patch<DispositivoIotResponse>(`${DISP}/${id}/desactivar`);
+    return res.data;
+  },
+
+  /** RF-21: asigna, cambia o quita (null) el Gateway Edge del dispositivo. */
+  async asignarGateway(id: number, idGateway: number | null): Promise<DispositivoIotResponse> {
+    const res = await http.patch<DispositivoIotResponse>(`${DISP}/${id}/gateway`, {
+      id_dispositivo_gateway: idGateway,
+    });
     return res.data;
   },
 };
@@ -78,8 +86,8 @@ export const credencialMqttApi = {
     return res.data;
   },
 
-  async emitir(idDispositivo: number, dto: EmitirCredencialMqttDTO): Promise<CredencialMqttResponse> {
-    const res = await http.post<CredencialMqttResponse>(`${DISP}/${idDispositivo}/credencial-mqtt`, dto);
+  async emitir(idDispositivo: number): Promise<CredencialMqttResponse> {
+    const res = await http.post<CredencialMqttResponse>(`${DISP}/${idDispositivo}/credencial-mqtt`);
     return res.data;
   },
 

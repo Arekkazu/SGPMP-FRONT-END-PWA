@@ -21,7 +21,6 @@ import { InfraestructuraSection } from '../components/InfraestructuraSection';
 import { DispositivosTable } from '../components/DispositivosTable';
 import { SensoresSection } from '../components/SensoresSection';
 import { ConfiguracionRemotaSection } from '../components/ConfiguracionRemotaSection';
-import { CredencialMqttSection } from '../components/CredencialMqttSection';
 import { CalibracionSection } from '../components/CalibracionSection';
 import { IdentidadVisualSection } from '../components/IdentidadVisualSection';
 import { TemaVisualSection } from '../components/TemaVisualSection';
@@ -481,7 +480,6 @@ export function ConfigurationPage() {
             <DispositivosTable />
             <SensoresSection />
             <ConfiguracionRemotaSection />
-            <CredencialMqttSection />
             <CalibracionSection />
           </>
         )}

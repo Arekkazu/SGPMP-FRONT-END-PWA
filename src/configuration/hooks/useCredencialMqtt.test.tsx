@@ -1,5 +1,5 @@
 /**
- * RF-23 / TC-M09-250/251 — credencial MQTT propia de cada Raspberry.
+ * RF-23 / TC-M09-250/251 — credencial MQTT del Gateway Edge.
  *
  * Lo que vale la pena fijar: la contraseña solo existe en memoria hasta que se
  * descarta, y un fallo del broker se reporta sin inventar un estado.
@@ -17,7 +17,7 @@ vi.mock('../api/iotApi', () => ({
 
 const api = vi.mocked(credencialMqttApi);
 
-const CREDENCIAL = { usuario: 'RPI-1', password: 'clave-de-una-vez', seriales: ['RPI-1', 'ESP-2'] };
+const CREDENCIAL = { usuario: 'EDGE-1', password: 'clave-de-una-vez', seriales: ['EDGE-1', 'ESP-2'] };
 
 function error(code: string, status: number): ApiError {
   return { code, message: code, status };
@@ -33,14 +33,14 @@ describe('useCredencialMqtt', () => {
     const { result } = renderHook(() => useCredencialMqtt());
 
     let ok = false;
-    await act(async () => { ok = await result.current.emitir(1, [2]); });
+    await act(async () => { ok = await result.current.emitir(1); });
 
     expect(ok).toBe(true);
-    expect(api.emitir).toHaveBeenCalledWith(1, { ids_dispositivos_adicionales: [2] });
+    expect(api.emitir).toHaveBeenCalledWith(1);
     expect(result.current.credencial?.password).toBe('clave-de-una-vez');
-    // emitir/rotar desconecta a la Raspberry hasta que use la clave nueva
+    // emitir/rotar desconecta al Edge hasta que use la clave nueva
     expect(result.current.estado).toEqual({
-      emitida: true, habilitada: true, conectada: false, usuario: 'RPI-1', seriales: ['RPI-1', 'ESP-2'],
+      emitida: true, habilitada: true, conectada: false, usuario: 'EDGE-1', seriales: ['EDGE-1', 'ESP-2'],
     });
 
     act(() => { result.current.descartarCredencial(); });
@@ -52,7 +52,7 @@ describe('useCredencialMqtt', () => {
     api.consultar.mockResolvedValue({ emitida: false, habilitada: false, conectada: false, usuario: null, seriales: [] });
     const { result } = renderHook(() => useCredencialMqtt());
 
-    await act(async () => { await result.current.emitir(1, []); });
+    await act(async () => { await result.current.emitir(1); });
     await act(async () => { await result.current.cargar(3); });
 
     expect(result.current.credencial).toBeNull();
@@ -64,7 +64,7 @@ describe('useCredencialMqtt', () => {
     const { result } = renderHook(() => useCredencialMqtt());
 
     let ok = true;
-    await act(async () => { ok = await result.current.emitir(1, []); });
+    await act(async () => { ok = await result.current.emitir(1); });
 
     expect(ok).toBe(false);
     expect(result.current.saveError?.code).toBe('BROKER_MQTT_NO_DISPONIBLE');
@@ -73,7 +73,7 @@ describe('useCredencialMqtt', () => {
   });
 
   it('revocar deja la credencial como deshabilitada', async () => {
-    api.consultar.mockResolvedValue({ emitida: true, habilitada: true, conectada: true, usuario: 'RPI-1', seriales: ['RPI-1'] });
+    api.consultar.mockResolvedValue({ emitida: true, habilitada: true, conectada: true, usuario: 'EDGE-1', seriales: ['EDGE-1'] });
     api.revocar.mockResolvedValue(undefined);
     const { result } = renderHook(() => useCredencialMqtt());
 

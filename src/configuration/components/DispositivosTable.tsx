@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { Cpu, RefreshCw, Plus, PowerOff, ChevronLeft, Warehouse, Radio } from 'lucide-react';
+import { Cpu, RefreshCw, Plus, PowerOff, ChevronLeft, Warehouse, Radio, KeyRound, Network } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -12,6 +12,8 @@ import { useDispositivosIot } from '../hooks/useDispositivosIot';
 import { useSensores } from '../hooks/useSensores';
 import { DispositivoModal } from './DispositivoModal';
 import { SensorModal } from './SensorModal';
+import { CredencialMqttModal } from './CredencialMqttModal';
+import { CambiarGatewayModal } from './CambiarGatewayModal';
 import type { FincaResponse, InfraestructuraResponse, DispositivoIotResponse } from '../types';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
@@ -165,17 +167,23 @@ type ModalState =
   | { tipo: 'ninguno' }
   | { tipo: 'crear' }
   | { tipo: 'desactivar'; id: number; serial: string }
-  | { tipo: 'sensor'; dispositivo: DispositivoIotResponse };
+  | { tipo: 'sensor'; dispositivo: DispositivoIotResponse }
+  | { tipo: 'credencial'; dispositivo: DispositivoIotResponse }
+  | { tipo: 'gateway'; dispositivo: DispositivoIotResponse };
 
 export function DispositivosTable() {
   const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear  = usePermission(11, 1);
+  const puedeLeer   = usePermission(11, 2);
+  const puedeEditar = usePermission(11, 3);
   const puedeDesact = usePermission(11, 4);
 
   const { fincas, loading: loadingFincas, cargar: cargarFincas } = useFincas();
   const { infraestructuras, loading: loadingInfras, cargar: cargarInfras } = useInfraestructuras();
-  const { dispositivos, loading, saving, error, saveError, cargar, registrar, desactivar } = useDispositivosIot();
+  const {
+    dispositivos, loading, saving, error, saveError, cargar, registrar, desactivar, asignarGateway, esGatewayEdge,
+  } = useDispositivosIot();
   const { saving: savingSensor, saveError: saveErrorSensor, registrar: registrarSensor } = useSensores();
 
   const [step, setStep] = useState<Step>('finca');
@@ -224,6 +232,23 @@ export function DispositivosTable() {
 
   const activos   = dispositivosDelArea.filter((d) => d.es_activo).length;
   const inactivos = dispositivosDelArea.length - activos;
+
+  // RF-21: Gateway Edge de la finca (un Edge atiende dispositivos de cualquier
+  // área de su finca) y dispositivos activos que atiende cada uno.
+  const areasDeLaFinca = new Set(infraestructuras.map((i) => i.id_infraestructura));
+  const edgesDeLaFinca = dispositivos.filter(
+    (d) => esGatewayEdge(d) && d.es_activo && areasDeLaFinca.has(d.id_infraestructura),
+  );
+  const porId = new Map(dispositivos.map((d) => [d.id_dispositivo_iot, d]));
+  const atendidosPor = (idEdge: number) =>
+    dispositivos.filter((d) => d.id_dispositivo_gateway === idEdge && d.es_activo);
+
+  const mensajeDesactivar = (id: number, serial: string) => {
+    const atendidos = atendidosPor(id);
+    const base = `¿Desactivar el dispositivo "${serial}"? Los datos históricos de sus sensores seguirán accesibles.`;
+    if (atendidos.length === 0) return base;
+    return `${base} ${t('dispositivostable.cascada_edge', { seriales: atendidos.map((d) => d.serial).join(', ') })}`;
+  };
 
   return (
     <div>
@@ -321,7 +346,7 @@ export function DispositivosTable() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-                      {['ID', 'Serial físico', 'Descripción', 'Área → Finca', 'Estado', 'Registro', 'Acciones'].map((h) => (
+                      {['ID', 'Serial físico', 'Descripción', t('dispositivostable.gateway_edge'), 'Área → Finca', 'Estado', 'Registro', 'Acciones'].map((h) => (
                         <th key={h} style={TH}>{h}</th>
                       ))}
                     </tr>
@@ -339,6 +364,18 @@ export function DispositivosTable() {
                           <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
                             {d.descripcion}
                           </div>
+                        </td>
+                        <td style={{ ...TD, fontSize: '12px', whiteSpace: 'nowrap' }}>
+                          {esGatewayEdge(d) ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', fontWeight: 700, color: 'var(--brand-600)' }}>
+                              <Network size={13} aria-hidden />
+                              {t('dispositivostable.es_gateway_edge', { n: atendidosPor(d.id_dispositivo_iot).length })}
+                            </span>
+                          ) : (
+                            <span style={{ fontFamily: 'var(--font-mono)', color: d.id_dispositivo_gateway ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                              {d.id_dispositivo_gateway ? porId.get(d.id_dispositivo_gateway)?.serial ?? `#${d.id_dispositivo_gateway}` : '—'}
+                            </span>
+                          )}
                         </td>
                         <td style={TD}>
                           <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>{area.nombre_infraestructura}</div>
@@ -361,7 +398,27 @@ export function DispositivosTable() {
                           {formatFecha(d.fecha_creacion)}
                         </td>
                         <td style={{ ...TD, display: 'flex', gap: 'var(--s1)' }}>
-                          {puedeCrear && d.es_activo && online && (
+                          {esGatewayEdge(d) && puedeLeer && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setModal({ tipo: 'credencial', dispositivo: d })}
+                              aria-label={`${t('dispositivostable.credencial_mqtt')} ${d.serial}`}
+                            >
+                              <KeyRound size={15} aria-hidden style={{ color: 'var(--brand-500)' }} />
+                            </Button>
+                          )}
+                          {!esGatewayEdge(d) && puedeEditar && d.es_activo && online && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setModal({ tipo: 'gateway', dispositivo: d })}
+                              aria-label={`${t('dispositivostable.cambiar_gateway_edge')} ${d.serial}`}
+                            >
+                              <Network size={15} aria-hidden style={{ color: 'var(--brand-500)' }} />
+                            </Button>
+                          )}
+                          {!esGatewayEdge(d) && puedeCrear && d.es_activo && online && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -394,6 +451,7 @@ export function DispositivosTable() {
           {modal.tipo === 'crear' && (
             <DispositivoModal
               area={area}
+              edges={edgesDeLaFinca}
               saving={saving}
               saveError={saveError}
               onClose={cerrar}
@@ -403,10 +461,23 @@ export function DispositivosTable() {
           {modal.tipo === 'desactivar' && (
             <ConfirmModal
               titulo="Desactivar dispositivo"
-              mensaje={`¿Desactivar el dispositivo "${modal.serial}"? Los datos históricos de sus sensores seguirán accesibles.`}
+              mensaje={mensajeDesactivar(modal.id, modal.serial)}
               saving={saving}
               onCancel={cerrar}
               onConfirm={() => handleDesactivar(modal.id)}
+            />
+          )}
+          {modal.tipo === 'credencial' && (
+            <CredencialMqttModal dispositivo={modal.dispositivo} onClose={cerrar} />
+          )}
+          {modal.tipo === 'gateway' && (
+            <CambiarGatewayModal
+              dispositivo={modal.dispositivo}
+              edges={edgesDeLaFinca}
+              saving={saving}
+              saveError={saveError}
+              onClose={cerrar}
+              onAsignar={(idGateway) => asignarGateway(modal.dispositivo.id_dispositivo_iot, idGateway)}
             />
           )}
           {modal.tipo === 'sensor' && (

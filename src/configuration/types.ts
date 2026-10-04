@@ -106,8 +106,11 @@ export interface DispositivoIotResponse {
   serial: string;
   descripcion: string;
   id_infraestructura: number;
+  id_tipo_dispositivo: number;
   es_activo: boolean;
   fecha_creacion: string;
+  /** RF-21: Gateway Edge que lo atiende (N:1). null: es un Edge o no tiene uno. */
+  id_dispositivo_gateway: number | null;
 }
 
 export interface RegistrarDispositivoIotDTO {
@@ -116,15 +119,21 @@ export interface RegistrarDispositivoIotDTO {
   id_infraestructura: number;
   id_tipo_dispositivo: number;
   es_activo?: boolean;
+  id_dispositivo_gateway?: number | null;
 }
+
+/** Tipo de la computadora de borde del sitio: atiende N dispositivos y es lo
+ *  único que se conecta al broker MQTT (el "Gateway IoT" de M03). */
+export const TIPO_GATEWAY_EDGE = 'GATEWAY_EDGE';
 
 export interface TipoDispositivoIotResponse {
   id_tipo_dispositivo: number;
   nombre: string;
 }
 
-// RF-23 / TC-M09-250/251: credencial MQTT propia de cada Raspberry.
-// `password` llega una sola vez (respuesta del POST) y nunca se persiste.
+// RF-23 / TC-M09-250/251: credencial MQTT del Gateway Edge. Cubre su serial y
+// los de los dispositivos que lo apuntan. `password` llega una sola vez
+// (respuesta del POST) y nunca se persiste.
 export interface CredencialMqttResponse {
   usuario: string;
   password: string;
@@ -132,17 +141,12 @@ export interface CredencialMqttResponse {
 }
 
 export interface EstadoCredencialMqttResponse {
-  /** false: sin credencial propia (usa la compartida o transmite por otra Raspberry). */
+  /** false: sin credencial propia (todavía usa la compartida). */
   emitida: boolean;
   habilitada: boolean;
   conectada: boolean;
   usuario: string | null;
   seriales: string[];
-}
-
-export interface EmitirCredencialMqttDTO {
-  /** Otros dispositivos que transmite la misma Raspberry (modelo "serial por ESP32"). */
-  ids_dispositivos_adicionales: number[];
 }
 
 // =====================================================================
