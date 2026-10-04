@@ -1,3 +1,10 @@
+## [1.0.0-rc.37](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.36...v1.0.0-rc.37) (2026-10-04)
+
+### Features
+
+* **configuration:** gateway edge de los dispositivos IoT y su credencial MQTT (RF-21, RF-23, TC-M09-250/251) ([4d710ab](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4d710abe0d8ade78c469fd277a06146bd93cbe45))
+* **configuration:** gestionar la credencial MQTT de cada Raspberry (RF-23, TC-M09-250/251) ([438e487](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/438e487710aa7872934ddb226d5fca1c8f38b89f))
+
 ## [1.0.0-rc.36](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.35...v1.0.0-rc.36) (2026-10-03)
 
 ### Bug Fixes
