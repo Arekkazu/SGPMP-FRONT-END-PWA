@@ -1,3 +1,9 @@
+## [1.0.0-rc.38](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.37...v1.0.0-rc.38) (2026-10-04)
+
+### Features
+
+* **configuration:** reintentar o cancelar una configuracion remota PENDIENTE o NO_CONF (RF-23) ([4666b38](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4666b3880d19eea660ccac29afa28d76f21dc7d1))
+
 ## [1.0.0-rc.37](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.36...v1.0.0-rc.37) (2026-10-04)
 
 ### Features
