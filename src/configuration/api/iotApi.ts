@@ -75,6 +75,23 @@ export const configuracionRemotaApi = {
     const res = await http.get<{ items: ConfiguracionRemotaResponse[] }>(`${DISP}/${idDispositivo}/configuraciones`);
     return res.data.items;
   },
+
+  /** Reenvía una configuración PENDIENTE o NO_CONF; espera el ACK igual que `configurar`. */
+  async reintentar(idDispositivo: number, idConfiguracion: number): Promise<ConfiguracionRemotaResponse> {
+    const res = await http.post<ConfiguracionRemotaResponse>(
+      `${DISP}/${idDispositivo}/configuraciones/${idConfiguracion}/reintentar`,
+      undefined,
+      { timeout: 40000 },
+    );
+    return res.data;
+  },
+
+  async cancelar(idDispositivo: number, idConfiguracion: number): Promise<ConfiguracionRemotaResponse> {
+    const res = await http.patch<ConfiguracionRemotaResponse>(
+      `${DISP}/${idDispositivo}/configuraciones/${idConfiguracion}/cancelar`,
+    );
+    return res.data;
+  },
 };
 
 // RF-23 / TC-M09-250/251. Sin caché ni syncQueue a propósito: la respuesta del
