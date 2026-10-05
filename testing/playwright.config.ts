@@ -28,7 +28,7 @@ export default defineConfig({
 
   use: {
     /* Es buena práctica incluir la diagonal final */
-    baseURL: 'https://dev.inmero.co/',
+    baseURL: 'https://api.inmero.co/',
     trace: 'on-first-retry',
   },
 
