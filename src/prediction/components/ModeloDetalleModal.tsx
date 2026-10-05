@@ -59,6 +59,8 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
           <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', alignItems: 'center' }}>
             <EstadoModeloPill estado={modelo.estado_version} />
             <Pill tono="neutral">{TIPO_MODELO_LABEL[modelo.tipo_modelo] ?? modelo.tipo_modelo}</Pill>
+            {modelo.paradigma && <Pill tono="neutral">{modelo.paradigma}</Pill>}
+            {modelo.componente && <Pill tono="neutral">{modelo.componente}</Pill>}
             {modelo.esta_produccion && <Pill tono="success">{t('modelodetallemodal.en_produccion')}</Pill>}
           </div>
 
@@ -67,13 +69,22 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
           {/* Métricas de validación */}
           <div>
             <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>{t('modelodetallemodal.metricas_de_validacion')}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 'var(--s3)' }}>
-              <Metrica label={t('modelodetallemodal.f1_global')} valor={pct(modelo.f1_score)} destacado />
-              <Metrica label={t('modelodetallemodal.recall_riesgo_alto')} valor={pct(modelo.recall_clase_riesgo_alto)} destacado />
-              <Metrica label={t('modelodetallemodal.precision')} valor={pct(modelo.precision_modelo)} />
-              <Metrica label={t('modelodetallemodal.accuracy')} valor={pct(modelo.accuracy)} />
-              <Metrica label={t('modelodetallemodal.roc_auc')} valor={pct(modelo.roc_auc_score)} />
-            </div>
+            {modelo.metricas_poblacionales ? (
+              // RFC-009: un modelo POBLACIONAL (no supervisado) se valida por calibración, no por F1/recall.
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 'var(--s3)' }}>
+                <Metrica label={t('modelodetallemodal.calibracion_completada')} valor={modelo.metricas_poblacionales.calibracion_completada ? t('modelodetallemodal.si') : t('modelodetallemodal.no')} destacado />
+                <Metrica label={t('modelodetallemodal.tasa_falsos_positivos_rutina')} valor={pct(modelo.metricas_poblacionales.tasa_falsos_positivos_rutina as number ?? null)} />
+                <Metrica label={t('modelodetallemodal.tasa_deteccion_eventos_clinicos')} valor={pct(modelo.metricas_poblacionales.tasa_deteccion_eventos_clinicos as number ?? null)} />
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 'var(--s3)' }}>
+                <Metrica label={t('modelodetallemodal.f1_global')} valor={pct(modelo.f1_score)} destacado />
+                <Metrica label={t('modelodetallemodal.recall_riesgo_alto')} valor={pct(modelo.recall_clase_riesgo_alto)} destacado />
+                <Metrica label={t('modelodetallemodal.precision')} valor={pct(modelo.precision_modelo)} />
+                <Metrica label={t('modelodetallemodal.accuracy')} valor={pct(modelo.accuracy)} />
+                <Metrica label={t('modelodetallemodal.roc_auc')} valor={pct(modelo.roc_auc_score)} />
+              </div>
+            )}
           </div>
 
           {modelo.matriz_confusion && modelo.matriz_confusion.length > 0 && (

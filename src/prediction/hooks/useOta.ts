@@ -65,6 +65,7 @@ export function useOta() {
             id_version_modelo: c.id_version_modelo,
             id_dispositivo_iot: c.id_dispositivo_iot,
             tipo_modelo: c.tipo_modelo as DespliegueOtaResponse['tipo_modelo'],
+            paradigma: null, componente: null,
             modo_distribucion: '',
             estado_despliegue: c.estado_despliegue as DespliegueOtaResponse['estado_despliegue'],
             hash_modelo_sha256: null, resultado_validacion_hash: null, id_version_modelo_anterior: null,

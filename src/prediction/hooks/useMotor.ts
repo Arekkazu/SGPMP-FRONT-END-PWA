@@ -7,6 +7,7 @@ import type {
   ConfigurarMotorDTO,
   VersionModeloResponse,
 } from '../types';
+import { PARADIGMA_POR_TIPO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 /**
@@ -46,6 +47,7 @@ export function useMotor() {
             tipo_modelo: c.tipo_modelo,
             umbral_riesgo_alto: c.umbral_riesgo_alto,
             umbral_alerta_critica: c.umbral_alerta_critica,
+            umbral_score_anomalia: c.umbral_score_anomalia,
             ventana_temporal_min: c.ventana_temporal_min,
             modo_ejecucion: c.modo_ejecucion,
             es_activa: c.es_activa,
@@ -62,8 +64,11 @@ export function useMotor() {
           cached.map((c) => ({
             id_configuracion_motor: c.id_configuracion_motor,
             tipo_modelo: c.tipo_modelo as ConfiguracionMotorIAResponse['tipo_modelo'],
+            paradigma: PARADIGMA_POR_TIPO[c.tipo_modelo as ConfiguracionMotorIAResponse['tipo_modelo']],
             umbral_riesgo_alto: c.umbral_riesgo_alto,
             umbral_alerta_critica: c.umbral_alerta_critica,
+            umbral_score_anomalia: c.umbral_score_anomalia ?? null,
+            versiones_activas_por_componente: null,
             ventana_temporal_min: c.ventana_temporal_min,
             modo_ejecucion: c.modo_ejecucion as ConfiguracionMotorIAResponse['modo_ejecucion'],
             id_version_modelo_activa: null,

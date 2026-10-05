@@ -9,8 +9,16 @@
 // =====================================================================
 
 // ── Enums (uniones const) ────────────────────────────────────────────
+/** RFC-009: eje tipo de manejo (6 modelos en 3 paradigmas), ya no tamaño del animal. */
 export type TipoModelo =
-  | 'ESPECIES_PEQUEÑAS' | 'ESPECIES_MEDIANAS' | 'ESPECIES_GRANDES' | 'CONTAGIO';
+  | 'MODELO_AVES' | 'MODELO_PORCINOS' | 'MODELO_ACUICULTURA'
+  | 'MODELO_ESPECIES_MEDIANAS' | 'MODELO_ESPECIES_GRANDES' | 'MODELO_RIESGO_CONTAGIO';
+
+/** Lo deriva el backend del tipo_modelo; decide umbrales, métricas y componente. */
+export type Paradigma = 'POBLACIONAL' | 'INDIVIDUAL' | 'META';
+
+/** RF-69/RF-70: los modelos POBLACIONAL se versionan y despliegan por componente. */
+export type Componente = 'DETECTOR' | 'SEGUIMIENTO' | 'METRICAS' | 'ANOMALIAS';
 
 export type ModoEjecucion = 'EDGE' | 'SERVIDOR' | 'HIBRIDO';
 
@@ -29,17 +37,31 @@ export type SeveridadEvento = 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
 
 export type TipoActor = 'USUARIO' | 'SISTEMA';
 
-/** Etiquetas legibles para `tipo_modelo` (la ñ requiere URL-encode como path param). */
+/** Etiquetas legibles para `tipo_modelo`. */
 export const TIPO_MODELO_LABEL: Record<TipoModelo, string> = {
-  ESPECIES_PEQUEÑAS: 'Especies pequeñas',
-  ESPECIES_MEDIANAS: 'Especies medianas',
-  ESPECIES_GRANDES: 'Especies grandes',
-  CONTAGIO: 'Riesgo de contagio',
+  MODELO_AVES: 'Aves',
+  MODELO_PORCINOS: 'Porcinos',
+  MODELO_ACUICULTURA: 'Acuicultura',
+  MODELO_ESPECIES_MEDIANAS: 'Especies medianas',
+  MODELO_ESPECIES_GRANDES: 'Especies grandes',
+  MODELO_RIESGO_CONTAGIO: 'Riesgo de contagio',
 };
 
-export const TIPOS_MODELO: TipoModelo[] = [
-  'ESPECIES_PEQUEÑAS', 'ESPECIES_MEDIANAS', 'ESPECIES_GRANDES', 'CONTAGIO',
-];
+export const PARADIGMA_POR_TIPO: Record<TipoModelo, Paradigma> = {
+  MODELO_AVES: 'POBLACIONAL',
+  MODELO_PORCINOS: 'POBLACIONAL',
+  MODELO_ACUICULTURA: 'POBLACIONAL',
+  MODELO_ESPECIES_MEDIANAS: 'INDIVIDUAL',
+  MODELO_ESPECIES_GRANDES: 'INDIVIDUAL',
+  MODELO_RIESGO_CONTAGIO: 'META',
+};
+
+export const TIPOS_MODELO = Object.keys(PARADIGMA_POR_TIPO) as TipoModelo[];
+
+/** RF-20: el meta-modelo de contagio no se asigna a un área ni es familia de una especie. */
+export const TIPOS_MODELO_ASIGNABLES = TIPOS_MODELO.filter((t) => PARADIGMA_POR_TIPO[t] !== 'META');
+
+export const COMPONENTES: Componente[] = ['DETECTOR', 'SEGUIMIENTO', 'METRICAS', 'ANOMALIAS'];
 
 // =====================================================================
 // RF-64 · Catálogo de Patologías — /prediccion/patologias (recurso 18)
@@ -95,8 +117,14 @@ export interface EditarPatologiaDTO {
 export interface ConfiguracionMotorIAResponse {
   id_configuracion_motor: number;
   tipo_modelo: TipoModelo;
-  umbral_riesgo_alto: number;
-  umbral_alerta_critica: number;
+  paradigma: Paradigma;
+  /** INDIVIDUAL/META; null en POBLACIONAL. */
+  umbral_riesgo_alto: number | null;
+  umbral_alerta_critica: number | null;
+  /** POBLACIONAL; null en INDIVIDUAL/META. */
+  umbral_score_anomalia: number | null;
+  /** POBLACIONAL: componente -> id_version ACTIVO (reemplaza id_version_modelo_activa). */
+  versiones_activas_por_componente: Partial<Record<Componente, number>> | null;
   ventana_temporal_min: number;
   modo_ejecucion: ModoEjecucion;
   id_version_modelo_activa: number | null;
@@ -121,8 +149,10 @@ export interface ConfiguracionMotorIAListResponse {
 
 export interface ConfigurarMotorDTO {
   tipo_modelo: TipoModelo;
-  umbral_riesgo_alto: number;
-  umbral_alerta_critica: number;
+  umbral_riesgo_alto?: number | null;
+  umbral_alerta_critica?: number | null;
+  umbral_score_anomalia?: number | null;
+  versiones_activas_por_componente?: Partial<Record<Componente, number>> | null;
   ventana_temporal_min: number;
   modo_ejecucion: ModoEjecucion;
   w_factor_sanitario: number;
@@ -172,6 +202,10 @@ export interface VersionModeloResponse {
   id_version_modelo: number;
   nombre_version: string;
   tipo_modelo: TipoModelo;
+  paradigma: Paradigma | null;
+  componente: Componente | null;
+  /** POBLACIONAL: calibracion_completada, tasa_falsos_positivos_rutina, tasa_deteccion_eventos_clinicos. */
+  metricas_poblacionales: Record<string, number | boolean> | null;
   estado_version: EstadoVersion;
   formato_artefacto: string | null;
   tamanio_artefacto_bytes: number | null;
@@ -219,6 +253,8 @@ export interface DespliegueOtaResponse {
   id_version_modelo: number;
   id_dispositivo_iot: number;
   tipo_modelo: TipoModelo;
+  paradigma: Paradigma | null;
+  componente: Componente | null;
   modo_distribucion: string;
   estado_despliegue: EstadoOta;
   hash_modelo_sha256: string | null;
