@@ -5,6 +5,7 @@ import type {
   ConfiguracionRemotaResponse, ConfigurarRemotamenteDTO,
   SensorAreaResponse, AsociarSensorAreaDTO, AsociarSensorAreaResponse,
   CalibracionResponse, RegistrarCalibracionDTO, TipoDispositivoIotResponse,
+  CredencialMqttResponse, EstadoCredencialMqttResponse,
 } from '../types';
 
 const DISP = '/configuracion/dispositivos-iot';
@@ -28,6 +29,14 @@ export const dispositivosApi = {
 
   async desactivar(id: number): Promise<DispositivoIotResponse> {
     const res = await http.patch<DispositivoIotResponse>(`${DISP}/${id}/desactivar`);
+    return res.data;
+  },
+
+  /** RF-21: asigna, cambia o quita (null) el Gateway Edge del dispositivo. */
+  async asignarGateway(id: number, idGateway: number | null): Promise<DispositivoIotResponse> {
+    const res = await http.patch<DispositivoIotResponse>(`${DISP}/${id}/gateway`, {
+      id_dispositivo_gateway: idGateway,
+    });
     return res.data;
   },
 };
@@ -65,6 +74,42 @@ export const configuracionRemotaApi = {
   async listarConfiguraciones(idDispositivo: number): Promise<ConfiguracionRemotaResponse[]> {
     const res = await http.get<{ items: ConfiguracionRemotaResponse[] }>(`${DISP}/${idDispositivo}/configuraciones`);
     return res.data.items;
+  },
+
+  /** Reenvía una configuración PENDIENTE o NO_CONF; espera el ACK igual que `configurar`. */
+  async reintentar(idDispositivo: number, idConfiguracion: number): Promise<ConfiguracionRemotaResponse> {
+    const res = await http.post<ConfiguracionRemotaResponse>(
+      `${DISP}/${idDispositivo}/configuraciones/${idConfiguracion}/reintentar`,
+      undefined,
+      { timeout: 40000 },
+    );
+    return res.data;
+  },
+
+  async cancelar(idDispositivo: number, idConfiguracion: number): Promise<ConfiguracionRemotaResponse> {
+    const res = await http.patch<ConfiguracionRemotaResponse>(
+      `${DISP}/${idDispositivo}/configuraciones/${idConfiguracion}/cancelar`,
+    );
+    return res.data;
+  },
+};
+
+// RF-23 / TC-M09-250/251. Sin caché ni syncQueue a propósito: la respuesta del
+// POST trae la contraseña una sola vez y sin conexión la operación debe fallar,
+// no quedar en cola.
+export const credencialMqttApi = {
+  async consultar(idDispositivo: number): Promise<EstadoCredencialMqttResponse> {
+    const res = await http.get<EstadoCredencialMqttResponse>(`${DISP}/${idDispositivo}/credencial-mqtt`);
+    return res.data;
+  },
+
+  async emitir(idDispositivo: number): Promise<CredencialMqttResponse> {
+    const res = await http.post<CredencialMqttResponse>(`${DISP}/${idDispositivo}/credencial-mqtt`);
+    return res.data;
+  },
+
+  async revocar(idDispositivo: number): Promise<void> {
+    await http.delete(`${DISP}/${idDispositivo}/credencial-mqtt`);
   },
 };
 

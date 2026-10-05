@@ -11,6 +11,7 @@ export function useConfiguracionRemota() {
   const [error, setError] = useState<ApiError | null>(null);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
   const [encolada, setEncolada] = useState(false);
+  const [cancelada, setCancelada] = useState(false);
 
   const cargar = useCallback(async (idDispositivo: number) => {
     setLoading(true);
@@ -46,5 +47,40 @@ export function useConfiguracionRemota() {
     }
   }, []);
 
-  return { historial, ultima, loading, saving, error, saveError, encolada, cargar, configurar };
+  // Reintentar o cancelar una PENDIENTE/NO_CONF: el llamador recarga el
+  // historial después, también si falla (un 504 la deja NO_CONF).
+  const sobreExistente = useCallback(async (accion: () => Promise<ConfiguracionRemotaResponse>): Promise<boolean> => {
+    setSaving(true);
+    setSaveError(null);
+    setEncolada(false);
+    setCancelada(false);
+    try {
+      const r = await accion();
+      setEncolada(r.estado === 'PENDIENTE');
+      setCancelada(r.estado === 'CANCELADA');
+      return true;
+    } catch (e) {
+      setSaveError(e as ApiError);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  const reintentar = useCallback(
+    (idDispositivo: number, idConfiguracion: number) =>
+      sobreExistente(() => configuracionRemotaApi.reintentar(idDispositivo, idConfiguracion)),
+    [sobreExistente],
+  );
+
+  const cancelar = useCallback(
+    (idDispositivo: number, idConfiguracion: number) =>
+      sobreExistente(() => configuracionRemotaApi.cancelar(idDispositivo, idConfiguracion)),
+    [sobreExistente],
+  );
+
+  return {
+    historial, ultima, loading, saving, error, saveError, encolada, cancelada,
+    cargar, configurar, reintentar, cancelar,
+  };
 }
