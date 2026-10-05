@@ -7,7 +7,7 @@
  * agregados por el Administrador que no tienen un emoji mapeado.
  */
 import React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { TipoAreaResponse } from '../types';
@@ -30,6 +30,8 @@ vi.mock('../hooks/useFincas', () => ({
   }),
 }));
 
+const { registrar } = vi.hoisted(() => ({ registrar: vi.fn().mockResolvedValue(true) }));
+
 vi.mock('../hooks/useInfraestructuras', () => ({
   useInfraestructuras: () => ({
     infraestructuras: [],
@@ -38,9 +40,22 @@ vi.mock('../hooks/useInfraestructuras', () => ({
     error: null,
     saveError: null,
     cargar: vi.fn(),
-    registrar: vi.fn(),
+    registrar,
     editar: vi.fn(),
     desactivar: vi.fn(),
+    reactivar: vi.fn(),
+  }),
+}));
+
+// RF-20 v1.1 (RFC-009): especies del catálogo con y sin familia de modelo.
+vi.mock('../hooks/useEspecies', () => ({
+  useEspecies: () => ({
+    especies: [
+      { id_especie: 1, nombre: 'Pollo de engorde', es_activo: true, tipo_modelo: 'MODELO_AVES', fecha_creacion: '', fecha_actualizacion: null },
+      { id_especie: 2, nombre: 'Conejo', es_activo: true, tipo_modelo: null, fecha_creacion: '', fecha_actualizacion: null },
+      { id_especie: 3, nombre: 'Codorniz', es_activo: false, tipo_modelo: 'MODELO_AVES', fecha_creacion: '', fecha_actualizacion: null },
+    ],
+    cargar: vi.fn(),
   }),
 }));
 
@@ -70,10 +85,44 @@ describe('InfraestructuraSection — catálogo de tipos de área (RF-20)', () =>
     fireEvent.click(await screen.findByText('Finca El Remanso'));
     fireEvent.click(await screen.findByText('Registrar primera área'));
 
-    const select = await screen.findByRole('combobox');
+    const select = await screen.findByLabelText(/Tipo de área/);
     const opciones = within(select).getAllByRole('option').map((o) => o.textContent);
 
     expect(opciones).toEqual(['🏗️ Jaula', '🏗️ Vivero']);
     expect(opciones).not.toContain('🏚️ Galpón');
+  });
+});
+
+describe('InfraestructuraSection — especie y modelo de IA (RF-20 v1.1, RFC-009)', () => {
+  const abrirFormulario = async () => {
+    render(<InfraestructuraSection />);
+    fireEvent.click(await screen.findByText('Finca El Remanso'));
+    fireEvent.click(await screen.findByText('Registrar primera área'));
+  };
+  const opcionesDe = (el: HTMLElement) => within(el).getAllByRole('option').map((o) => o.textContent);
+
+  it('solo ofrece especies activas y, como modelo, la familia de la especie elegida', async () => {
+    await abrirFormulario();
+    const especie = await screen.findByLabelText(/Especie/);
+    expect(opcionesDe(especie)).toEqual(['Selecciona una especie', 'Pollo de engorde', 'Conejo']);
+
+    fireEvent.change(especie, { target: { value: '1' } });
+    expect(opcionesDe(screen.getByLabelText(/Modelo de IA/))).toEqual(['— Sin modelo asignado —', 'Aves']);
+
+    fireEvent.change(especie, { target: { value: '2' } });
+    expect(opcionesDe(screen.getByLabelText(/Modelo de IA/))).toEqual(['— Sin modelo asignado —']);
+    expect(screen.getByText(/no tiene familia de modelo/)).toBeTruthy();
+  });
+
+  it('envía especie_id y tipo_modelo_asignado al registrar', async () => {
+    await abrirFormulario();
+    fireEvent.change(await screen.findByLabelText(/Especie/), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/Modelo de IA/), { target: { value: 'MODELO_AVES' } });
+    fireEvent.change(screen.getByLabelText(/Nombre del área/), { target: { value: 'Galpón Norte' } });
+    fireEvent.change(screen.getByLabelText(/Superficie/), { target: { value: '120' } });
+    fireEvent.click(screen.getByText('Registrar área'));
+
+    await waitFor(() => expect(registrar).toHaveBeenCalled());
+    expect(registrar.mock.calls[0][0]).toMatchObject({ especie_id: 1, tipo_modelo_asignado: 'MODELO_AVES' });
   });
 });

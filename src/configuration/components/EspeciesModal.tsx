@@ -6,13 +6,15 @@ import { X } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
-import type { EspecieResponse, RegistrarEspecieDTO } from '../types';
+import type { EditarEspecieDTO, EspecieResponse, RegistrarEspecieDTO } from '../types';
+import { TIPOS_MODELO_ASIGNABLES, TIPO_MODELO_LABEL, type TipoModelo } from '../../prediction/types';
 import type { ApiError } from '../../shared/api/errors';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface FormValues {
   nombre: string;
   descripcion: string;
+  tipo_modelo: TipoModelo | '';
 }
 
 interface Props {
@@ -21,7 +23,7 @@ interface Props {
   saveError: ApiError | null;
   onClose: () => void;
   onRegistrar: (dto: RegistrarEspecieDTO) => Promise<boolean>;
-  onEditar: (id: number, dto: { nombre: string; descripcion?: string; fecha_actualizacion: string }) => Promise<boolean>;
+  onEditar: (id: number, dto: EditarEspecieDTO) => Promise<boolean>;
 }
 
 const TEXTAREA: React.CSSProperties = {
@@ -58,24 +60,26 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
 
   useEffect(() => {
     if (especie) {
-      reset({ nombre: especie.nombre, descripcion: especie.descripcion ?? '' });
+      reset({ nombre: especie.nombre, descripcion: especie.descripcion ?? '', tipo_modelo: especie.tipo_modelo ?? '' });
     } else {
-      reset({ nombre: '', descripcion: '' });
+      reset({ nombre: '', descripcion: '', tipo_modelo: '' });
     }
   }, [especie, reset]);
 
   const onSubmit = async (data: FormValues) => {
     const descripcion = data.descripcion.trim() || undefined;
+    const tipo_modelo = data.tipo_modelo || null;
     let ok: boolean;
 
     if (modoEditar && especie) {
       ok = await onEditar(especie.id_especie, {
         nombre: data.nombre.trim(),
         descripcion,
+        tipo_modelo,
         fecha_actualizacion: especie.fecha_actualizacion ?? new Date().toISOString(),
       });
     } else {
-      ok = await onRegistrar({ nombre: data.nombre.trim(), descripcion });
+      ok = await onRegistrar({ nombre: data.nombre.trim(), descripcion, tipo_modelo });
     }
 
     if (ok) onClose();
@@ -169,6 +173,18 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
                   {descValue?.length ?? 0} / 255
                 </span>
               </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="especie-tipo-modelo"
+                style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}
+              >{t('especiesmodal.familia_de_modelo_ia')}</label>
+              <select id="especie-tipo-modelo" style={{ ...TEXTAREA, minHeight: 0, resize: 'none', cursor: 'pointer' }} {...register('tipo_modelo')}>
+                <option value="">{t('especiesmodal.sin_familia_de_modelo')}</option>
+                {TIPOS_MODELO_ASIGNABLES.map((tm) => <option key={tm} value={tm}>{TIPO_MODELO_LABEL[tm]}</option>)}
+              </select>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 'var(--s1) 0 0' }}>{t('especiesmodal.ayuda_familia_de_modelo')}</p>
             </div>
 
             {modoEditar && especie && (

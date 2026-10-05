@@ -23,7 +23,7 @@ export interface FaseProceso {
 
 export const PROCESOS_REENTRENAMIENTO: ProcesoReentrenamiento[] = [
   { id: 5012, fecha_inicio: '2026-07-29T06:00:00Z', tipo_modelo: 'Especies medianas', activacion: 'Automática (degradación)', estado: 'EN_PROCESO', f1_global: null, recall_riesgo: null, duracion: '00:18:42', progreso: 62 },
-  { id: 5008, fecha_inicio: '2026-07-27T22:10:00Z', tipo_modelo: 'Especies pequeñas', activacion: 'Manual', estado: 'COMPLETADO', f1_global: 0.86, recall_riesgo: 0.89, duracion: '00:41:05', progreso: 100 },
+  { id: 5008, fecha_inicio: '2026-07-27T22:10:00Z', tipo_modelo: 'Aves', activacion: 'Manual', estado: 'COMPLETADO', f1_global: 0.86, recall_riesgo: 0.89, duracion: '00:41:05', progreso: 100 },
   { id: 5004, fecha_inicio: '2026-07-25T03:30:00Z', tipo_modelo: 'Riesgo de contagio', activacion: 'Automática (degradación)', estado: 'FALLIDO', f1_global: 0.71, recall_riesgo: 0.68, duracion: '00:12:20', progreso: 100 },
   { id: 5001, fecha_inicio: '2026-07-22T14:00:00Z', tipo_modelo: 'Especies grandes', activacion: 'Manual', estado: 'COMPLETADO', f1_global: 0.83, recall_riesgo: 0.87, duracion: '00:55:11', progreso: 100 },
 ];

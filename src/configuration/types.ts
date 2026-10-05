@@ -1,3 +1,5 @@
+import type { TipoModelo } from '../prediction/types';
+
 // =====================================================================
 // Especies
 // =====================================================================
@@ -8,6 +10,8 @@ export interface EspecieResponse {
   es_activo: boolean;
   fecha_creacion: string;
   fecha_actualizacion: string | null;
+  /** RFC-009: familia de modelo de IA de la especie; RF-20 exige que el modelo del área coincida. */
+  tipo_modelo?: TipoModelo | null;
   /** #115 (RF-15): solo en cliente — true mientras la creación offline que lo generó
    *  sigue en syncQueue. No lo emite el backend. */
   pendienteSync?: boolean;
@@ -16,11 +20,13 @@ export interface EspecieResponse {
 export interface RegistrarEspecieDTO {
   nombre: string;
   descripcion?: string;
+  tipo_modelo?: TipoModelo | null;
 }
 
 export interface EditarEspecieDTO {
   nombre: string;
   descripcion?: string;
+  tipo_modelo?: TipoModelo | null;
   fecha_actualizacion: string;
 }
 
@@ -84,6 +90,9 @@ export interface InfraestructuraResponse {
   descripcion_infraestructura: string | null;
   es_activo: boolean;
   fecha_actualizacion: string | null;
+  /** RF-20 v1.1 (RFC-009). null en áreas registradas antes del cambio. */
+  especie_id: number | null;
+  tipo_modelo_asignado: TipoModelo | null;
 }
 
 export interface RegistrarInfraestructuraDTO {
@@ -92,6 +101,9 @@ export interface RegistrarInfraestructuraDTO {
   superficie: number;
   finca_id: number;
   descripcion_infraestructura?: string;
+  especie_id: number;
+  /** Debe coincidir con la familia de modelo de la especie (422 si no). */
+  tipo_modelo_asignado?: TipoModelo | null;
 }
 
 export interface EditarInfraestructuraDTO extends RegistrarInfraestructuraDTO {
@@ -111,6 +123,10 @@ export interface DispositivoIotResponse {
   fecha_creacion: string;
   /** RF-21: Gateway Edge que lo atiende (N:1). null: es un Edge o no tiene uno. */
   id_dispositivo_gateway: number | null;
+  /** RF-21 v2.0 (RFC-011): solo cámaras; null para sensores. */
+  resolucion: string | null;
+  fps: number | null;
+  area_cobertura_m2: number | null;
 }
 
 export interface RegistrarDispositivoIotDTO {
@@ -120,6 +136,10 @@ export interface RegistrarDispositivoIotDTO {
   id_tipo_dispositivo: number;
   es_activo?: boolean;
   id_dispositivo_gateway?: number | null;
+  /** Obligatorios si el tipo es CAMARA; el backend los ignora para un SENSOR. */
+  resolucion?: string;
+  fps?: number;
+  area_cobertura_m2?: number;
 }
 
 /** Tipo de la computadora de borde del sitio: atiende N dispositivos y es lo
@@ -129,6 +149,8 @@ export const TIPO_GATEWAY_EDGE = 'GATEWAY_EDGE';
 export interface TipoDispositivoIotResponse {
   id_tipo_dispositivo: number;
   nombre: string;
+  /** RF-21 v2.0 (RFC-011): la categoría es del tipo, no del dispositivo. */
+  categoria: 'SENSOR' | 'CAMARA';
 }
 
 // RF-23 / TC-M09-250/251: credencial MQTT del Gateway Edge. Cubre su serial y

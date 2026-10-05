@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
-import { Plus, RefreshCw, Pencil, PowerOff, X, ChevronLeft, Warehouse } from 'lucide-react';
+import { Plus, RefreshCw, Pencil, PowerOff, Power, X, ChevronLeft, Warehouse } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
@@ -11,6 +11,8 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
 import { useInfraestructuras } from '../hooks/useInfraestructuras';
 import { useTiposArea } from '../hooks/useTiposArea';
+import { useEspecies } from '../hooks/useEspecies';
+import { TIPO_MODELO_LABEL, type TipoModelo } from '../../prediction/types';
 import type { FincaResponse, InfraestructuraResponse, RegistrarInfraestructuraDTO, EditarInfraestructuraDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
@@ -70,9 +72,9 @@ function formatFecha(iso: string | null | undefined): string {
 
 // ── Confirm modal ─────────────────────────────────────────────────────────────
 
-function ConfirmModal({ titulo, mensaje, confirmLabel, saving, onCancel, onConfirm }: {
+function ConfirmModal({ titulo, mensaje, confirmLabel, saving, onCancel, onConfirm, variante = 'danger' }: {
   titulo: string; mensaje: string; confirmLabel: string;
-  saving: boolean; onCancel: () => void; onConfirm: () => void;
+  saving: boolean; onCancel: () => void; onConfirm: () => void; variante?: 'danger' | 'primary';
 }) {
   const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
@@ -89,7 +91,7 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, saving, onCancel, onConfi
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
           <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('infraestructurasection.cancelar')}</Button>
-          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{confirmLabel}</Button>
+          <Button variant={variante} size="md" loading={saving} onClick={onConfirm}>{confirmLabel}</Button>
         </div>
       </div>
     </div>
@@ -103,6 +105,9 @@ interface FormValues {
   nombre_infraestructura: string;
   superficie: number;
   descripcion_infraestructura: string;
+  // RF-20 v1.1 (RFC-009): los <select> devuelven string; se convierte al enviar.
+  especie_id: string;
+  tipo_modelo_asignado: TipoModelo | '';
 }
 
 interface InfraModalProps {
@@ -121,8 +126,20 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
   const modoEditar = infra !== null;
   const titulo = modoEditar ? `Editar área — ${infra.nombre_infraestructura}` : 'Registrar área productiva';
 
-  const { register, handleSubmit, reset, watch, setError, formState: { errors } } = useForm<FormValues>({ mode: 'onBlur' });
+  const { register, handleSubmit, reset, watch, setError, setValue, formState: { errors } } = useForm<FormValues>({ mode: 'onBlur' });
   const desc = watch('descripcion_infraestructura', '');
+
+  // RF-20 v1.1: el modelo de IA del área solo puede ser la familia de su especie.
+  const { especies, cargar: cargarEspecies } = useEspecies();
+  useEffect(() => { cargarEspecies(false); }, [cargarEspecies]);
+  const especiesOpciones = especies.filter((e) => (e.es_activo && !e.pendienteSync) || e.id_especie === infra?.especie_id);
+  const especieId = watch('especie_id');
+  const tipoModelo = watch('tipo_modelo_asignado');
+  const familia = especies.find((e) => String(e.id_especie) === especieId)?.tipo_modelo ?? null;
+  const modelosOpciones = [...new Set([familia, infra?.tipo_modelo_asignado].filter((m): m is TipoModelo => !!m))];
+  useEffect(() => {
+    if (tipoModelo && familia && tipoModelo !== familia) setValue('tipo_modelo_asignado', '');
+  }, [familia]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // #189: el nombre duplicado (409) se anuncia en su campo, no en una alerta suelta.
   useEffect(() => {
@@ -141,9 +158,14 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
         nombre_infraestructura: infra.nombre_infraestructura,
         superficie: infra.superficie,
         descripcion_infraestructura: infra.descripcion_infraestructura ?? '',
+        especie_id: infra.especie_id ? String(infra.especie_id) : '',
+        tipo_modelo_asignado: infra.tipo_modelo_asignado ?? '',
       });
     } else {
-      reset({ tipo_area: tipos[0]?.nombre ?? '', nombre_infraestructura: '', superficie: 0, descripcion_infraestructura: '' });
+      reset({
+        tipo_area: tipos[0]?.nombre ?? '', nombre_infraestructura: '', superficie: 0, descripcion_infraestructura: '',
+        especie_id: '', tipo_modelo_asignado: '',
+      });
     }
   }, [infra, reset, tipos]);
 
@@ -154,6 +176,8 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
       superficie: Number(data.superficie),
       finca_id: finca.id_finca,
       descripcion_infraestructura: data.descripcion_infraestructura.trim() || undefined,
+      especie_id: Number(data.especie_id),
+      tipo_modelo_asignado: data.tipo_modelo_asignado || null,
     };
     let ok: boolean;
     if (modoEditar && infra) {
@@ -226,6 +250,39 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
                   {errors.tipo_area.message}
                 </p>
               )}
+            </div>
+
+            {/* Especie y modelo de IA (RF-20 v1.1) */}
+            <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
+              <div>
+                <label htmlFor="infra-especie" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.especie')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
+                </label>
+                <select
+                  id="infra-especie"
+                  aria-required="true"
+                  aria-invalid={!!errors.especie_id}
+                  style={SELECT_STYLE}
+                  {...register('especie_id', { required: t('infraestructurasection.selecciona_una_especie') })}
+                >
+                  <option value="">{t('infraestructurasection.selecciona_una_especie')}</option>
+                  {especiesOpciones.map((e) => <option key={e.id_especie} value={e.id_especie}>{e.nombre}</option>)}
+                </select>
+                {errors.especie_id && (
+                  <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
+                    {errors.especie_id.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="infra-modelo" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.modelo_de_ia')}</label>
+                <select id="infra-modelo" style={SELECT_STYLE} {...register('tipo_modelo_asignado')}>
+                  <option value="">{t('infraestructurasection.sin_modelo_asignado')}</option>
+                  {modelosOpciones.map((m) => <option key={m} value={m}>{TIPO_MODELO_LABEL[m]}</option>)}
+                </select>
+                {especieId && !familia && (
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('infraestructurasection.la_especie_no_tiene_familia_de_modelo')}</p>
+                )}
+              </div>
             </div>
 
             {/* Nombre */}
@@ -397,7 +454,8 @@ type ModalState =
   | { tipo: 'ninguno' }
   | { tipo: 'crear' }
   | { tipo: 'editar'; infra: InfraestructuraResponse }
-  | { tipo: 'desactivar'; infra: InfraestructuraResponse };
+  | { tipo: 'desactivar'; infra: InfraestructuraResponse }
+  | { tipo: 'reactivar'; infra: InfraestructuraResponse };
 
 export function InfraestructuraSection() {
   const { t } = useT('configuration');
@@ -407,7 +465,7 @@ export function InfraestructuraSection() {
   const puedeDesact = usePermission(10, 4);
 
   const { fincas, loading: loadingFincas, cargar: cargarFincas } = useFincas();
-  const { infraestructuras, loading, saving, error, saveError, cargar, registrar, editar, desactivar } = useInfraestructuras();
+  const { infraestructuras, loading, saving, error, saveError, cargar, registrar, editar, desactivar, reactivar } = useInfraestructuras();
 
   const [fincaSeleccionada, setFincaSeleccionada] = useState<FincaResponse | null>(null);
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
@@ -421,10 +479,10 @@ export function InfraestructuraSection() {
 
   const cerrar = () => setModal({ tipo: 'ninguno' });
 
-  const handleDesactivar = async (infra: InfraestructuraResponse) => {
+  const handleCambiarEstado = async (infra: InfraestructuraResponse, accion: typeof desactivar) => {
     setAccionError(null);
-    const ok = await desactivar(infra.id_infraestructura);
-    if (!ok) setAccionError(saveError?.message ?? 'Error al desactivar.');
+    const ok = await accion(infra.id_infraestructura);
+    if (!ok) setAccionError(saveError?.message ?? 'Error al cambiar el estado del área.');
     else cerrar();
   };
 
@@ -506,7 +564,7 @@ export function InfraestructuraSection() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-                      {['#', 'Tipo', 'Nombre', 'Superficie', 'Estado', 'Actualización', 'Acciones'].map((h) => (
+                      {['#', 'Tipo', 'Nombre', 'Superficie', 'Modelo IA', 'Estado', 'Actualización', 'Acciones'].map((h) => (
                         <th key={h} style={TH}>{h}</th>
                       ))}
                     </tr>
@@ -536,6 +594,9 @@ export function InfraestructuraSection() {
                           </span>
                           <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 4 }}>m²</span>
                         </td>
+                        <td style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          {infra.tipo_modelo_asignado ? TIPO_MODELO_LABEL[infra.tipo_modelo_asignado] : '—'}
+                        </td>
                         <td style={TD}>
                           <span style={{
                             display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)',
@@ -562,6 +623,11 @@ export function InfraestructuraSection() {
                             {puedeDesact && infra.es_activo && online && (
                               <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'desactivar', infra })} aria-label={`Desactivar ${infra.nombre_infraestructura}`}>
                                 <PowerOff size={15} aria-hidden style={{ color: 'var(--sem-error)' }} />
+                              </Button>
+                            )}
+                            {puedeDesact && !infra.es_activo && online && (
+                              <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'reactivar', infra })} aria-label={`${t('infraestructurasection.reactivar')} ${infra.nombre_infraestructura}`}>
+                                <Power size={15} aria-hidden style={{ color: 'var(--sem-success)' }} />
                               </Button>
                             )}
                           </div>
@@ -593,7 +659,18 @@ export function InfraestructuraSection() {
               confirmLabel="Desactivar"
               saving={saving}
               onCancel={cerrar}
-              onConfirm={() => handleDesactivar(modal.infra)}
+              onConfirm={() => handleCambiarEstado(modal.infra, desactivar)}
+            />
+          )}
+          {modal.tipo === 'reactivar' && (
+            <ConfirmModal
+              titulo={t('infraestructurasection.reactivar_area')}
+              mensaje={t('infraestructurasection.confirmar_reactivar', { nombre: modal.infra.nombre_infraestructura })}
+              confirmLabel={t('infraestructurasection.reactivar')}
+              variante="primary"
+              saving={saving}
+              onCancel={cerrar}
+              onConfirm={() => handleCambiarEstado(modal.infra, reactivar)}
             />
           )}
         </>

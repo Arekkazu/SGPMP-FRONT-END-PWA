@@ -68,6 +68,7 @@ export function useModelos() {
               id_version_modelo: c.id_version_modelo,
               nombre_version: c.nombre_version,
               tipo_modelo: c.tipo_modelo as VersionModeloResponse['tipo_modelo'],
+              paradigma: null, componente: null, metricas_poblacionales: null,
               estado_version: c.estado_version as VersionModeloResponse['estado_version'],
               formato_artefacto: null, tamanio_artefacto_bytes: null, hash_artefacto_sha256: null,
               dataset_entrenamiento_hash: null, id_proceso_rf71: null, version_referencia: null,
