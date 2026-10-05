@@ -115,8 +115,10 @@ export interface PrediccionPatologiaCacheRow {
 export interface PrediccionMotorCacheRow {
   id_configuracion_motor: number;
   tipo_modelo: string;
-  umbral_riesgo_alto: number;
-  umbral_alerta_critica: number;
+  umbral_riesgo_alto: number | null;
+  umbral_alerta_critica: number | null;
+  /** RFC-009: solo modelos POBLACIONAL. */
+  umbral_score_anomalia?: number | null;
   ventana_temporal_min: number;
   modo_ejecucion: string;
   es_activa: boolean;

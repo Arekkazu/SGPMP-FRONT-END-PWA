@@ -63,4 +63,10 @@ export const infraestructurasApi = {
     const res = await http.patch<InfraestructuraResponse>(`/configuracion/infraestructuras/${id}/desactivar`);
     return res.data;
   },
+
+  /** RF-20 v1.1: reactivar un área inactiva (Admin). */
+  async reactivar(id: number): Promise<InfraestructuraResponse> {
+    const res = await http.patch<InfraestructuraResponse>(`/configuracion/infraestructuras/${id}/reactivar`);
+    return res.data;
+  },
 };

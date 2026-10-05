@@ -18,7 +18,14 @@ interface FormValues {
   descripcion: string;
   id_tipo_dispositivo: string;
   id_dispositivo_gateway: string;
+  // RF-21 v2.0 (RFC-011): solo cámaras.
+  resolucion: string;
+  fps: string;
+  area_cobertura_m2: string;
 }
+
+const CAMPOS_VISION = ['resolucion', 'fps', 'area_cobertura_m2'] as const;
+const RESOLUCION_REGEX = /^[1-9][0-9]*x[1-9][0-9]*$/;
 
 interface Props {
   area: InfraestructuraResponse;
@@ -47,7 +54,7 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
   // #179: el backend exige id_tipo_dispositivo desde RF-23 (rangos por tipo).
   const [tipos, setTipos] = useState<TipoDispositivoIotResponse[]>([]);
   useEffect(() => {
-    reset({ serial: '', descripcion: '', id_tipo_dispositivo: '', id_dispositivo_gateway: '' });
+    reset({ serial: '', descripcion: '', id_tipo_dispositivo: '', id_dispositivo_gateway: '', resolucion: '', fps: '', area_cobertura_m2: '' });
     tiposDispositivoApi.listar().then(setTipos).catch(() => setTipos([]));
   }, [reset]);
 
@@ -55,11 +62,14 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
     if (saveError?.status === 409) {
       setError('serial', { message: t('dispositivomodal.ya_existe_un_dispositivo_con_este_serial') });
     }
+    const campo = CAMPOS_VISION.find((c) => c === saveError?.field);
+    if (saveError?.status === 400 && campo) setError(campo, { message: saveError.message });
   }, [saveError, setError]);
 
   // Un Gateway Edge no depende de otro Edge: el selector solo aplica al resto.
   const tipoElegido = tipos.find((tipo) => String(tipo.id_tipo_dispositivo) === watch('id_tipo_dispositivo'));
   const esEdge = tipoElegido?.nombre === TIPO_GATEWAY_EDGE;
+  const esCamara = tipoElegido?.categoria === 'CAMARA';
 
   const onSubmit = async (data: FormValues) => {
     const ok = await onRegistrar({
@@ -68,6 +78,11 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
       id_infraestructura: area.id_infraestructura,
       id_tipo_dispositivo: Number(data.id_tipo_dispositivo),
       id_dispositivo_gateway: !esEdge && data.id_dispositivo_gateway ? Number(data.id_dispositivo_gateway) : null,
+      ...(esCamara && {
+        resolucion: data.resolucion.trim(),
+        fps: Number(data.fps),
+        area_cobertura_m2: Number(data.area_cobertura_m2),
+      }),
     });
     if (ok) onClose();
   };
@@ -202,6 +217,44 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
             )}
             {esEdge && (
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 0, marginBottom: 'var(--s4)' }}>{t('dispositivomodal.es_gateway_edge_ayuda')}</p>
+            )}
+
+            {/* Atributos de visión (RF-21 v2.0, RFC-011) */}
+            {esCamara && (
+              <div className="ds-fg2" style={{ gap: 'var(--s3)', marginBottom: 'var(--s4)' }}>
+                <Input
+                  label={t('dispositivomodal.resolucion')}
+                  required
+                  placeholder="1920x1080"
+                  error={errors.resolucion?.message}
+                  {...register('resolucion', {
+                    required: t('dispositivomodal.campo_obligatorio_para_camara'),
+                    pattern: { value: RESOLUCION_REGEX, message: t('dispositivomodal.formato_ancho_x_alto') },
+                  })}
+                />
+                <Input
+                  label="FPS"
+                  type="number"
+                  required
+                  placeholder="25"
+                  error={errors.fps?.message}
+                  {...register('fps', {
+                    required: t('dispositivomodal.campo_obligatorio_para_camara'),
+                    validate: (v) => (Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 60) || t('dispositivomodal.fps_entre_1_y_60'),
+                  })}
+                />
+                <Input
+                  label={t('dispositivomodal.area_de_cobertura_m2')}
+                  type="number"
+                  required
+                  placeholder="80"
+                  error={errors.area_cobertura_m2?.message}
+                  {...register('area_cobertura_m2', {
+                    required: t('dispositivomodal.campo_obligatorio_para_camara'),
+                    validate: (v) => Number(v) > 0 || t('dispositivomodal.debe_ser_mayor_a_0'),
+                  })}
+                />
+              </div>
             )}
 
             {/* Descripción */}

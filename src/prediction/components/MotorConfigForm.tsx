@@ -5,7 +5,8 @@ import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { ThresholdStrip } from './ThresholdStrip';
 import { INPUT, LABEL } from './tableStyles';
-import type { ConfiguracionMotorIAResponse, ConfigurarMotorDTO, ModoEjecucion, TipoModelo, VersionModeloResponse } from '../types';
+import { COMPONENTES, PARADIGMA_POR_TIPO } from '../types';
+import type { Componente, ConfiguracionMotorIAResponse, ConfigurarMotorDTO, ModoEjecucion, TipoModelo, VersionModeloResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 interface Props {
@@ -56,6 +57,10 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
   const [ventana, setVentana] = useState(10);
   const [modo, setModo] = useState<ModoEjecucion>('SERVIDOR');
   const [version, setVersion] = useState<number | ''>('');
+  // RFC-009: POBLACIONAL usa un umbral de anomalía y una versión activa por componente.
+  const [scoreAnomalia, setScoreAnomalia] = useState(0.7);
+  const [versionesComp, setVersionesComp] = useState<Partial<Record<Componente, number>>>({});
+  const poblacional = PARADIGMA_POR_TIPO[tipoModelo] === 'POBLACIONAL';
   const [wSan, setWSan] = useState(0.5);
   const [wAmb, setWAmb] = useState(0.3);
   const [wDen, setWDen] = useState(0.2);
@@ -66,31 +71,42 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
     setVentana(config?.ventana_temporal_min ?? 10);
     setModo((config?.modo_ejecucion as ModoEjecucion) ?? 'SERVIDOR');
     setVersion(config?.id_version_modelo_activa ?? '');
+    setScoreAnomalia(config?.umbral_score_anomalia ?? 0.7);
+    setVersionesComp(config?.versiones_activas_por_componente ?? {});
     setWSan(config?.w_factor_sanitario ?? 0.5);
     setWAmb(config?.w_factor_ambiental ?? 0.3);
     setWDen(config?.w_factor_densidad ?? 0.2);
   }, [config, tipoModelo]);
 
   const sumaPesos = Number((wSan + wAmb + wDen).toFixed(3));
-  const errUmbral = alertaCritica < riesgoAlto ? 'La alerta crítica debe ser mayor o igual al riesgo alto.' : undefined;
+  const errUmbral = !poblacional && alertaCritica < riesgoAlto ? 'La alerta crítica debe ser mayor o igual al riesgo alto.' : undefined;
   const pesosOk = Math.abs(sumaPesos - 1) < 0.001;
 
   const guardar = () => {
     if (errUmbral) return;
-    onGuardar({
+    const comunes = {
       tipo_modelo: tipoModelo,
-      umbral_riesgo_alto: riesgoAlto,
-      umbral_alerta_critica: alertaCritica,
       ventana_temporal_min: ventana,
       modo_ejecucion: modo,
       w_factor_sanitario: wSan,
       w_factor_ambiental: wAmb,
       w_factor_densidad: wDen,
-      id_version_modelo_activa: version === '' ? null : Number(version),
-    });
+    };
+    onGuardar(poblacional
+      ? { ...comunes, umbral_score_anomalia: scoreAnomalia, versiones_activas_por_componente: versionesComp }
+      : {
+        ...comunes,
+        umbral_riesgo_alto: riesgoAlto,
+        umbral_alerta_critica: alertaCritica,
+        id_version_modelo_activa: version === '' ? null : Number(version),
+      });
   };
 
   const versionesTipo = versiones.filter((v) => v.tipo_modelo === tipoModelo);
+  const elegirVersionComp = (c: Componente, valor: string) => setVersionesComp((prev) => {
+    const { [c]: _quitado, ...resto } = prev;
+    return valor === '' ? resto : { ...resto, [c]: Number(valor) };
+  });
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s6)' }}>
@@ -98,10 +114,20 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
 
       <section style={{ marginBottom: 'var(--s6)' }}>
         <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('motorconfigform.umbrales_de_riesgo')}</h3>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 var(--s4)' }}>
+          {t('motorconfigform.paradigma')} <strong>{PARADIGMA_POR_TIPO[tipoModelo]}</strong>
+          {poblacional && ` · ${t('motorconfigform.ayuda_poblacional')}`}
+        </p>
         <div style={{ display: 'grid', gap: 'var(--s5)' }}>
-          <RangoCampo label={t('motorconfigform.umbral_de_riesgo_alto')} valor={riesgoAlto} min={0.5} max={0.95} step={0.01} disabled={!puedeEditar} onChange={setRiesgoAlto} />
-          <RangoCampo label={t('motorconfigform.umbral_de_alerta_critica')} valor={alertaCritica} min={0.5} max={0.99} step={0.01} disabled={!puedeEditar} onChange={setAlertaCritica} />
-          <ThresholdStrip riesgoAlto={riesgoAlto} alertaCritica={alertaCritica} />
+          {poblacional ? (
+            <RangoCampo label={t('motorconfigform.umbral_de_score_de_anomalia')} valor={scoreAnomalia} min={0} max={1} step={0.01} disabled={!puedeEditar} onChange={setScoreAnomalia} />
+          ) : (
+            <>
+              <RangoCampo label={t('motorconfigform.umbral_de_riesgo_alto')} valor={riesgoAlto} min={0.5} max={0.95} step={0.01} disabled={!puedeEditar} onChange={setRiesgoAlto} />
+              <RangoCampo label={t('motorconfigform.umbral_de_alerta_critica')} valor={alertaCritica} min={0.5} max={0.99} step={0.01} disabled={!puedeEditar} onChange={setAlertaCritica} />
+              <ThresholdStrip riesgoAlto={riesgoAlto} alertaCritica={alertaCritica} />
+            </>
+          )}
           {errUmbral && <span role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)' }}>{errUmbral}</span>}
           <RangoCampo label={t('motorconfigform.ventana_de_analisis')} valor={ventana} min={5} max={15} step={1} unidad="min" disabled={!puedeEditar} onChange={setVentana} />
         </div>
@@ -116,17 +142,31 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
               {MODOS.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
-          <div>
-            <label style={LABEL} htmlFor="motor-version">{t('motorconfigform.version_del_modelo_activo')}</label>
-            <select id="motor-version" style={INPUT} value={version} disabled={!puedeEditar} onChange={(e) => setVersion(e.target.value === '' ? '' : Number(e.target.value))}>
-              <option value="">{t('motorconfigform.sin_asignar')}</option>
-              {versionesTipo.map((v) => (
-                <option key={v.id_version_modelo} value={v.id_version_modelo}>
-                  {v.nombre_version} · {v.estado_version}
-                </option>
-              ))}
-            </select>
-          </div>
+          {poblacional ? COMPONENTES.map((c) => (
+            <div key={c}>
+              <label style={LABEL} htmlFor={`motor-version-${c}`}>{t('motorconfigform.version_activa_de', { componente: c })}</label>
+              <select id={`motor-version-${c}`} style={INPUT} value={versionesComp[c] ?? ''} disabled={!puedeEditar} onChange={(e) => elegirVersionComp(c, e.target.value)}>
+                <option value="">{t('motorconfigform.sin_asignar')}</option>
+                {versionesTipo.filter((v) => v.componente === c).map((v) => (
+                  <option key={v.id_version_modelo} value={v.id_version_modelo}>
+                    {v.nombre_version} · {v.estado_version}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )) : (
+            <div>
+              <label style={LABEL} htmlFor="motor-version">{t('motorconfigform.version_del_modelo_activo')}</label>
+              <select id="motor-version" style={INPUT} value={version} disabled={!puedeEditar} onChange={(e) => setVersion(e.target.value === '' ? '' : Number(e.target.value))}>
+                <option value="">{t('motorconfigform.sin_asignar')}</option>
+                {versionesTipo.map((v) => (
+                  <option key={v.id_version_modelo} value={v.id_version_modelo}>
+                    {v.nombre_version} · {v.estado_version}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </section>
 

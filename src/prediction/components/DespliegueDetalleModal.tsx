@@ -45,6 +45,7 @@ export function DespliegueDetalleModal({ despliegue, onClose }: Props) {
         <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', alignItems: 'center' }}>
           <EstadoOtaPill estado={d.estado_despliegue} />
           <Pill tono="neutral">{TIPO_MODELO_LABEL[d.tipo_modelo] ?? d.tipo_modelo}</Pill>
+          {d.componente && <Pill tono="neutral">{d.componente}</Pill>}
           {d.rollback_ejecutado && <Pill tono="warning" icon={<RotateCcw size={12} aria-hidden />}>{t('desplieguedetallemodal.rollback_ejecutado')}</Pill>}
         </div>
 
