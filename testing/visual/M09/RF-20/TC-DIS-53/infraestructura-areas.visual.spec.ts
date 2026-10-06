@@ -1,27 +1,48 @@
 /**
  * TC-DIS-53 — Consistencia visual del listado y formulario de Infraestructura Productiva
- * RF-20 · CU-04 Gestionar Infraestructura Productiva · Rol: Administrador
+ * RF-20 v1.1 · CU-04 Gestionar Infraestructura Productiva · Rol: Administrador
  * Configuración → Fincas → sección "Infraestructura Productiva"
  *
- * Baselines ("listado de áreas agrupado por finca" + formulario registrar/editar):
- *   - selector de fincas de la sección,
- *   - áreas de la finca #1 (activas + inactiva) y de la finca #2,
- *   - formulario "Registrar área productiva" y "Editar área".
+ * Cambio del RF (2026-10-05, RFC-009): el formulario agrega especie y modelo de IA, el listado
+ * la columna "Modelo IA", y un área inactiva ofrece "Reactivar". Baselines nuevas del
+ * formulario y del área en estado inactivo.
  *
- * BLOQUEOS DEL AMBIENTE (2026-09-28, ver TC-DIS-49/52):
- *   - GET /configuracion/fincas → 400 VEREDA_REQUERIDO (finca #34 sin departamento/vereda);
- *   - GET /configuracion/tipos-area → 403 ACCESO_DENEGADO (también para el Administrador).
- * El test "0" verifica ambos y falla mientras sigan. Las baselines se toman con
- * fixtures fijos de datos reales servidos por page.route (fincas #1–#5, áreas de
- * las fincas #1 y #2, y los tipos "Estanque" / "Invernadero" observados en ellas),
- * lo que además las hace independientes de los cambios de datos del ambiente.
+ * Baselines:
+ *   - selector de fincas de la sección;
+ *   - áreas de la finca #1 (activas + inactiva) y de la finca #2;
+ *   - fila del área inactiva ("Invernadero Norte") y su confirmación "Reactivar área";
+ *   - formulario "Registrar área productiva" (vacío y con especie y modelo de IA elegidos)
+ *     y "Editar área" (con especie y modelo asignados).
  *
- * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
- * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
- * no reproduce el bug de M01. Para acotarlo puntualmente:
- *   TC_DIS_53_VIEWPORTS=escritorio
+ * Datos: areas.fixture.json guarda las respuestas reales de TEST del 2026-10-05 (fincas
+ * #1–#5, tipos de área, áreas de las fincas #1 y #2 y especies). En TEST ninguna especie
+ * tiene familia de modelo ni ningún área tiene especie, así que se SIMULAN: "Tilapia Roja"
+ * con familia MODELO_ACUICULTURA y "Estanque-01" con esa especie y modelo. El test "0"
+ * verifica contra el ambiente real que fincas, tipos y áreas cargan y que la finca #1
+ * sigue teniendo un área inactiva.
+ *
+ * Una baseline solo se guarda si la vista no tiene defectos: la superficie de cada área, las
+ * etiquetas del formulario (estilo del DS) y la precarga de "Editar área" se verifican antes
+ * de capturar y fallan como DEFECTO.
+ *
+ * Formularios y confirmación: se captura solo la tarjeta del modal (el fondo de la pestaña
+ * cambia con los datos del ambiente); si no cabe, se amplía el alto de la ventana
+ * conservando el ancho. La tarjeta del formulario se mide además contra el DS v2.0 (bottom
+ * sheet a ancho completo en xs/sm, máx. 480px en md, máx. 560px en lg) y falla como DEFECTO
+ * si no cumple.
+ *
+ * PROTECCIÓN DE DATOS: todo POST/PATCH a /configuracion/infraestructuras se aborta; el caso
+ * no envía formularios ni confirma la reactivación.
+ *
+ * Tema: la preferencia de tema es de la cuenta (compartida); GET
+ * /configuracion/personalizacion/tema(/global) se sirve con el tema Claro (theme_mode 1,
+ * cuerpo real de TEST) y cualquier escritura a esos endpoints se aborta.
+ *
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_53_VIEWPORTS=escritorio
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import fixture from './areas.fixture.json';
 
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
@@ -34,38 +55,67 @@ const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_53_VIEWPORTS ?? 'movil,tablet,
 const RUTA_FINCAS = /\/configuracion\/fincas$/;
 const RUTA_TIPOS = /\/configuracion\/tipos-area$/;
 const RUTA_AREAS = /\/configuracion\/infraestructuras$/;
+const RUTA_ESPECIES = /\/configuracion\/especies$/;
 const porRuta = (patron: RegExp) => (url: URL) => patron.test(url.pathname);
+const URL_AREAS = (url: URL) => /\/configuracion\/infraestructuras(\/\d+(\/\w+)?)?$/.test(url.pathname);
 
-// ── Fixtures: datos reales del ambiente TEST (2026-09-28) ────────────────────
+const FINCA_1 = fixture.fincas[0].nombre;
+const FINCA_2 = fixture.fincas[1].nombre;
+const AREAS_1 = fixture.areas['1'].items;
+const AREAS_2 = fixture.areas['2'].items;
+const AREA_INACTIVA = AREAS_1.find((a) => !a.es_activo)!.nombre_infraestructura;
+const AREA_EDITAR = 'Estanque-01';
 
-const FINCAS_FIXTURE = [
-  { id_finca: 1, nombre: 'Finca Acuícola El Remanso', ubicacion: { departamento: 'Huila', municipio: 'Neiva', vereda: 'El Remanso', latitud: '2.9273', longitud: '-75.2819' }, tamano_h: '12.50', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 2, nombre: 'Piscícola Los Esteros', ubicacion: { departamento: 'Valle del Cauca', municipio: 'Cartago', vereda: 'Los Esteros', latitud: '3.8654', longitud: '-76.4920' }, tamano_h: '8.75', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 3, nombre: 'Camaronera Costa Azul', ubicacion: { departamento: 'Cordoba', municipio: 'Monteria', vereda: 'Costa Azul', latitud: '8.7479', longitud: '-75.8814' }, tamano_h: '25.00', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 4, nombre: 'Granja Piscícola La Esperanza', ubicacion: { departamento: 'Caldas', municipio: 'Manizales', vereda: 'La Esperanza', latitud: '5.0689', longitud: '-75.5174' }, tamano_h: '6.30', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 5, nombre: 'Finca El Paraiso Norte', ubicacion: { departamento: 'Antioquia', municipio: 'Medellin', vereda: 'La Estrella', latitud: '6.30', longitud: '-75.60' }, tamano_h: '120.00', es_activo: false, fecha_creacion: '2026-06-21T16:13:31Z', fecha_actualizacion: '2026-06-21T16:13:31.510491Z', id_usuario: 2 },
-];
+// SIMULADO: en TEST ninguna especie tiene familia de modelo ni ningún área tiene especie
+const ESPECIE = fixture.especies.items.find((e) => e.nombre === 'Tilapia Roja')!;
+const FAMILIA = 'MODELO_ACUICULTURA';
+const especies = { ...fixture.especies, items: fixture.especies.items.map((e) => (e.id_especie === ESPECIE.id_especie ? { ...e, tipo_modelo: FAMILIA } : e)) };
+const conEspecie = (a: (typeof AREAS_1)[number]) =>
+  a.nombre_infraestructura === AREA_EDITAR ? { ...a, especie_id: ESPECIE.id_especie, tipo_modelo_asignado: FAMILIA } : a;
 
-const AREAS_FIXTURE: Record<number, object[]> = {
-  1: [
-    { id_infraestructura: 3, nombre_infraestructura: 'Alevinera-01', tipo_area: 'Estanque', superficie: '500.00', id_finca: 1, descripcion_infraestructura: 'Área de alevinaje y larvicultura de tilapia', es_activo: true, fecha_actualizacion: null },
-    { id_infraestructura: 1, nombre_infraestructura: 'Estanque-01', tipo_area: 'Estanque', superficie: '2500.00', id_finca: 1, descripcion_infraestructura: 'Estanque principal de engorde de tilapia con aireación artificial', es_activo: true, fecha_actualizacion: '2026-09-26T07:22:58.409459Z' },
-    { id_infraestructura: 2, nombre_infraestructura: 'Estanque-02', tipo_area: 'Estanque', superficie: '1800.00', id_finca: 1, descripcion_infraestructura: 'Estanque secundario para fase juvenil de tilapia', es_activo: true, fecha_actualizacion: null },
-    { id_infraestructura: 10, nombre_infraestructura: 'Invernadero Norte', tipo_area: 'Invernadero', superficie: '500.00', id_finca: 1, descripcion_infraestructura: 'Zona controlada para cultivos', es_activo: false, fecha_actualizacion: null },
-  ],
-  2: [
-    { id_infraestructura: 4, nombre_infraestructura: 'Canal-Trucha-01', tipo_area: 'Estanque', superficie: '1200.00', id_finca: 2, descripcion_infraestructura: 'Estanque de trucha arcoíris con flujo de agua continuo', es_activo: true, fecha_actualizacion: null },
-    { id_infraestructura: 5, nombre_infraestructura: 'Canal-Trucha-02', tipo_area: 'Estanque', superficie: '1200.00', id_finca: 2, descripcion_infraestructura: 'Estanque de engorde de trucha con alta oxigenación', es_activo: true, fecha_actualizacion: null },
-  ],
+// Tema Claro fijo (cuerpos reales de TEST con theme_mode 1)
+const TEMA: Record<string, unknown> = {
+  '/configuracion/personalizacion/tema': { theme_mode: 1, fuente: 'personal', id_tema_visual: 10 },
+  '/configuracion/personalizacion/tema/global': { id_tema_visual: 1, id_usuario: 1, theme_mode: 1, es_global: true, fecha_actualizacion: '2026-09-29T22:56:03.004225Z' },
 };
 
-const TIPOS_FIXTURE = [
-  { id_tipo_area: 1, nombre: 'Estanque', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: null },
-  { id_tipo_area: 2, nombre: 'Invernadero', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: null },
-];
+test.use({ locale: 'es-CO', timezoneId: 'America/Bogota' });
 
-const AREA_EDITAR = 'Estanque-01';
-const OPCIONES_CAPTURA = { fullPage: true, animations: 'disabled' as const, caret: 'hide' as const };
+// ── Datos ────────────────────────────────────────────────────────────────────
+
+async function fijarTemaClaro(page: Page) {
+  await page.route((url) => Object.keys(TEMA).some((k) => url.pathname.endsWith(k)), (r) => {
+    const req = r.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType())) return r.continue();
+    if (req.method() !== 'GET') return r.abort('blockedbyclient');
+    const clave = Object.keys(TEMA).find((k) => new URL(req.url()).pathname.endsWith(k))!;
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(TEMA[clave]) });
+  });
+}
+
+/** Ninguna escritura a áreas llega al backend. */
+async function protegerAreas(page: Page) {
+  await page.route(URL_AREAS, (route) => {
+    const req = route.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType()) || req.method() === 'GET') return route.fallback();
+    return route.abort();
+  });
+}
+
+async function servirFixtures(page: Page) {
+  const json = (cuerpo: unknown) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(cuerpo) });
+  const soloGet = (cuerpo: (url: URL) => unknown) => (r: Parameters<Parameters<Page['route']>[1]>[0]) =>
+    r.request().method() === 'GET' && ['xhr', 'fetch'].includes(r.request().resourceType())
+      ? r.fulfill(json(cuerpo(new URL(r.request().url()))))
+      : r.fallback();
+  await page.route(porRuta(RUTA_FINCAS), soloGet(() => ({ total: fixture.fincas.length, items: fixture.fincas })));
+  await page.route(porRuta(RUTA_TIPOS), soloGet(() => fixture.tipos_area));
+  await page.route(porRuta(RUTA_ESPECIES), soloGet(() => especies));
+  await page.route(porRuta(RUTA_AREAS), soloGet((url) => {
+    const respuesta = fixture.areas[url.searchParams.get('finca_id') as '1' | '2'];
+    return respuesta ? { ...respuesta, items: respuesta.items.map(conEspecie) } : { total: 0, items: [] };
+  }));
+}
 
 // ── Navegación ───────────────────────────────────────────────────────────────
 
@@ -75,18 +125,6 @@ async function iniciarSesionAdmin(page: Page) {
   await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 60_000 });
-}
-
-async function servirFixtures(page: Page) {
-  const json = (cuerpo: unknown) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(cuerpo) });
-  await page.route(porRuta(RUTA_FINCAS), (r) => (r.request().method() === 'GET' ? r.fulfill(json(FINCAS_FIXTURE)) : r.fallback()));
-  await page.route(porRuta(RUTA_TIPOS), (r) => (r.request().method() === 'GET' ? r.fulfill(json(TIPOS_FIXTURE)) : r.fallback()));
-  await page.route(porRuta(RUTA_AREAS), (r) => {
-    if (r.request().method() !== 'GET') return r.fallback();
-    const idFinca = Number(new URL(r.request().url()).searchParams.get('finca_id'));
-    const items = AREAS_FIXTURE[idFinca] ?? [];
-    return r.fulfill(json({ total: items.length, items }));
-  });
 }
 
 /** /configuracion → Fincas → sección Infraestructura (queda en el selector de fincas). */
@@ -124,9 +162,58 @@ async function abrirAreas(page: Page, nombreFinca: string, cantidad: number) {
   await expect(seccionAreas(page).locator('table tbody tr')).toHaveCount(cantidad);
 }
 
-/** "Tipos de área" (fondo de los modales) muestra "Acceso denegado": defecto aparte, se enmascara. */
-function mascarasFondo(page: Page): Locator[] {
-  return [page.getByRole('alert'), page.getByText('No hay tipos de área registrados.')];
+function filaArea(page: Page, nombre: string): Locator {
+  return seccionAreas(page).locator('table tbody tr').filter({ hasText: nombre }).first();
+}
+
+function tarjetaModal(dialogo: Locator): Locator {
+  return dialogo.locator('> div');
+}
+
+/** Captura solo la tarjeta del modal; si no cabe, amplía el alto de la ventana conservando el ancho. */
+async function capturarModal(page: Page, dialogo: Locator, nombre: string) {
+  const viewport = page.viewportSize()!;
+  const caja = (await tarjetaModal(dialogo).boundingBox())!;
+  const necesario = Math.ceil(caja.y + caja.height + 48);
+  if (necesario > viewport.height) await page.setViewportSize({ width: viewport.width, height: necesario });
+  await sinFocoNiHover(page);
+  await expect(tarjetaModal(dialogo)).toHaveScreenshot(nombre, { animations: 'disabled', caret: 'hide' });
+}
+
+async function sinFocoNiHover(page: Page) {
+  await page.mouse.move(0, 0);
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.evaluate(() => document.fonts.ready);
+}
+
+/** DEFECTO si la columna "Superficie" no muestra el valor de cada área (se formatea como fecha). */
+async function verificarSuperficie(page: Page, areas: { nombre_infraestructura: string; superficie: string }[]) {
+  for (const a of areas) {
+    const valor = Number(a.superficie);
+    await expect(
+      filaArea(page, a.nombre_infraestructura),
+      `DEFECTO: la columna "Superficie" de "${a.nombre_infraestructura}" muestra "— m²" en vez de ${valor} m² (InfraestructuraSection.tsx formatea superficie con formatearFechaHora)`,
+    ).toContainText(new RegExp(`${valor.toLocaleString('es-CO').replace('.', '\.')}|${valor}`));
+  }
+}
+
+/** DEFECTO si las etiquetas del formulario no comparten el estilo del DS (.ds-field__label: 12px / 600). */
+async function verificarEtiquetas(dialogo: Locator) {
+  const estilos = await dialogo.locator('form label').evaluateAll((ls) => ls.map((l) => {
+    const c = getComputedStyle(l);
+    return { texto: (l.textContent ?? '').trim(), estilo: `${c.fontSize} ${c.fontWeight}` };
+  }));
+  const distintas = estilos.filter((e) => e.estilo !== '12px 600');
+  expect(distintas, `DEFECTO: etiquetas del formulario fuera del estilo del DS (12px 600, como "Nombre del área"): ${distintas.map((e) => `"${e.texto}" ${e.estilo}`).join(' · ')}`).toEqual([]);
+}
+
+async function abrirRegistro(page: Page) {
+  await page.getByRole('button', { name: 'Nueva área' }).click();
+  const dialogo = page.getByRole('dialog', { name: 'Registrar área productiva' });
+  await expect(dialogo).toBeVisible();
+  // Las especies se cargan al abrir el modal
+  await expect(dialogo.getByRole('combobox', { name: 'Especie', exact: true }).locator('option', { hasText: ESPECIE.nombre })).toHaveCount(1, { timeout: 20_000 });
+  return dialogo;
 }
 
 // ── Casos ────────────────────────────────────────────────────────────────────
@@ -136,70 +223,129 @@ test.describe('TC-DIS-53 - Consistencia visual - Infraestructura Productiva / Á
   test.describe.configure({ timeout: 120_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
-    test.skip(
-      !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
-    );
+    test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_53_VIEWPORTS.`);
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
+    await protegerAreas(page);
+    await fijarTemaClaro(page);
     await iniciarSesionAdmin(page);
   });
 
-  test('0. Precondición - el ambiente entrega fincas y catálogo de tipos de área', async ({ page }) => {
+  test('0. Precondición - el ambiente entrega fincas, tipos de área y áreas (con una inactiva)', async ({ page }, testInfo) => {
     const fincas = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_FINCAS.test(new URL(r.url()).pathname));
     const tipos = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_TIPOS.test(new URL(r.url()).pathname));
     await abrirSeccion(page);
+    expect((await fincas).status(), 'GET /configuracion/fincas debe responder 200').toBe(200);
+    expect((await tipos).status(), 'GET /configuracion/tipos-area debe responder 200').toBe(200);
 
-    expect.soft((await fincas).status(), 'BLOQUEO: GET /configuracion/fincas no responde 200 (400 VEREDA_REQUERIDO por la finca #34)').toBe(200);
-    expect.soft((await tipos).status(), 'BLOQUEO: GET /configuracion/tipos-area no responde 200 (403 ACCESO_DENEGADO para el Administrador)').toBe(200);
+    const areas = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_AREAS.test(new URL(r.url()).pathname));
+    await botonFinca(page, FINCA_1).click();
+    const r = await areas;
+    expect(r.status()).toBe(200);
+    const items: { nombre_infraestructura: string; es_activo: boolean }[] = (await r.json()).items;
+    testInfo.annotations.push({ type: `Áreas reales de ${FINCA_1}`, description: items.map((a) => `${a.nombre_infraestructura}${a.es_activo ? '' : ' (inactiva)'}`).join(' · ') });
+    expect(items.some((a) => !a.es_activo), 'La finca #1 debe tener un área inactiva').toBe(true);
   });
 
-  test('1. Selector de fincas de la sección', async ({ page }) => {
-    await servirFixtures(page);
-    await abrirSeccion(page);
-    const primera = botonFinca(page, FINCAS_FIXTURE[0].nombre);
-    await expect(primera).toBeVisible();
+  test.describe('con datos fijados', () => {
+    test.beforeEach(async ({ page }, testInfo) => {
+      testInfo.annotations.push({ type: 'Datos fijados', description: `areas.fixture.json (respuestas reales del 2026-10-05). SIMULADO: "${ESPECIE.nombre}" con familia ${FAMILIA} y "${AREA_EDITAR}" con esa especie y modelo.` });
+      await servirFixtures(page);
+      await abrirSeccion(page);
+    });
 
-    await expect(seccion(page, primera)).toHaveScreenshot('areas-selector-fincas.png', { animations: 'disabled' });
-  });
+    test('1. Selector de fincas de la sección', async ({ page }) => {
+      const primera = botonFinca(page, FINCA_1);
+      await expect(primera).toBeVisible();
+      await sinFocoNiHover(page);
+      await expect(seccion(page, primera)).toHaveScreenshot('areas-selector-fincas.png', { animations: 'disabled' });
+    });
 
-  test('1-2. Áreas agrupadas por finca - finca #1 (activas e inactiva)', async ({ page }) => {
-    await servirFixtures(page);
-    await abrirSeccion(page);
-    await abrirAreas(page, FINCAS_FIXTURE[0].nombre, AREAS_FIXTURE[1].length);
+    test('1-2. Áreas agrupadas por finca - finca #1 (activas, inactiva y columna Modelo IA)', async ({ page }) => {
+      await abrirAreas(page, FINCA_1, AREAS_1.length);
+      await expect(filaArea(page, AREA_EDITAR)).toContainText('Acuicultura');
+      await verificarSuperficie(page, AREAS_1);
+      await sinFocoNiHover(page);
+      await expect(seccionAreas(page)).toHaveScreenshot('areas-listado-finca-1.png', { animations: 'disabled' });
+    });
 
-    await expect(seccionAreas(page)).toHaveScreenshot('areas-listado-finca-1.png', { animations: 'disabled' });
-  });
+    test('1-2. Áreas agrupadas por finca - finca #2', async ({ page }) => {
+      await abrirAreas(page, FINCA_2, AREAS_2.length);
+      await verificarSuperficie(page, AREAS_2);
+      await sinFocoNiHover(page);
+      await expect(seccionAreas(page)).toHaveScreenshot('areas-listado-finca-2.png', { animations: 'disabled' });
+    });
 
-  test('1-2. Áreas agrupadas por finca - finca #2', async ({ page }) => {
-    await servirFixtures(page);
-    await abrirSeccion(page);
-    await abrirAreas(page, FINCAS_FIXTURE[1].nombre, AREAS_FIXTURE[2].length);
+    test('2. Área en estado inactivo - fila y confirmación "Reactivar área"', async ({ page }) => {
+      await abrirAreas(page, FINCA_1, AREAS_1.length);
+      const fila = filaArea(page, AREA_INACTIVA);
+      await expect(fila).toContainText('Inactiva');
+      const reactivar = fila.getByRole('button', { name: `Reactivar ${AREA_INACTIVA}`, exact: true });
+      await expect(reactivar).toBeVisible();
 
-    await expect(seccionAreas(page)).toHaveScreenshot('areas-listado-finca-2.png', { animations: 'disabled' });
-  });
+      // Confirmación primero: el defecto de la fila no debe impedir su baseline
+      await reactivar.click();
+      const confirmacion = page.getByRole('dialog').filter({ hasText: 'Reactivar área' });
+      await expect(confirmacion).toContainText(AREA_INACTIVA);
+      await capturarModal(page, confirmacion, 'areas-confirmar-reactivar.png');
+      await confirmacion.getByRole('button', { name: 'Cancelar', exact: true }).click();
+      await expect(confirmacion).toBeHidden();
 
-  test('3. Formulario "Registrar área productiva"', async ({ page }) => {
-    await servirFixtures(page);
-    await abrirSeccion(page);
-    await abrirAreas(page, FINCAS_FIXTURE[0].nombre, AREAS_FIXTURE[1].length);
-    await page.getByRole('button', { name: 'Nueva área' }).click();
-    const dialogo = page.getByRole('dialog', { name: 'Registrar área productiva' });
-    await expect(dialogo).toBeVisible();
-    await expect(dialogo.getByRole('combobox').first()).toHaveValue('Estanque');
+      await verificarSuperficie(page, AREAS_1.filter((a) => !a.es_activo));
+      await sinFocoNiHover(page);
+      await expect(fila).toHaveScreenshot('areas-fila-inactiva.png', { animations: 'disabled' });
+    });
 
-    await expect(page).toHaveScreenshot('areas-form-registrar.png', { ...OPCIONES_CAPTURA, mask: mascarasFondo(page) });
-  });
+    test('3. Formulario "Registrar área productiva"', async ({ page }) => {
+      await abrirAreas(page, FINCA_1, AREAS_1.length);
+      const dialogo = await abrirRegistro(page);
+      await expect(dialogo.getByRole('combobox', { name: 'Especie', exact: true })).toHaveValue('');
+      await verificarEtiquetas(dialogo);
+      await capturarModal(page, dialogo, 'areas-form-registrar.png');
+    });
 
-  test('3. Formulario "Editar área"', async ({ page }) => {
-    await servirFixtures(page);
-    await abrirSeccion(page);
-    await abrirAreas(page, FINCAS_FIXTURE[0].nombre, AREAS_FIXTURE[1].length);
-    await seccionAreas(page).locator('table tbody tr').filter({ hasText: AREA_EDITAR }).getByRole('button', { name: /^Editar / }).click();
-    const dialogo = page.getByRole('dialog', { name: `Editar área — ${AREA_EDITAR}` });
-    await expect(dialogo).toBeVisible();
-    await expect(dialogo.getByRole('textbox', { name: 'Nombre del área', exact: true })).toHaveValue(AREA_EDITAR);
+    test('3. Formulario "Registrar área productiva" con especie y modelo de IA elegidos', async ({ page }) => {
+      await abrirAreas(page, FINCA_1, AREAS_1.length);
+      const dialogo = await abrirRegistro(page);
+      await dialogo.getByRole('textbox', { name: 'Nombre del área', exact: true }).fill('Estanque-03');
+      await dialogo.getByRole('spinbutton', { name: 'Superficie (m²)', exact: true }).fill('1500');
+      await dialogo.getByRole('combobox', { name: 'Especie', exact: true }).selectOption({ label: ESPECIE.nombre });
+      await dialogo.getByRole('combobox', { name: 'Modelo de IA', exact: true }).selectOption(FAMILIA);
+      await verificarEtiquetas(dialogo);
+      await capturarModal(page, dialogo, 'areas-form-registrar-especie-modelo.png');
+    });
 
-    await expect(page).toHaveScreenshot('areas-form-editar.png', { ...OPCIONES_CAPTURA, mask: mascarasFondo(page) });
+    test('3. Formulario "Editar área" (con especie y modelo de IA)', async ({ page }) => {
+      await abrirAreas(page, FINCA_1, AREAS_1.length);
+      await filaArea(page, AREA_EDITAR).getByRole('button', { name: `Editar ${AREA_EDITAR}`, exact: true }).click();
+      const dialogo = page.getByRole('dialog', { name: `Editar área — ${AREA_EDITAR}` });
+      await expect(dialogo.getByRole('textbox', { name: 'Nombre del área', exact: true })).toHaveValue(AREA_EDITAR);
+      // Sin precarga no hay baseline válida: se falla antes de capturar el estado defectuoso
+      await expect(
+        dialogo.getByRole('combobox', { name: 'Especie', exact: true }),
+        `DEFECTO: "Editar área" no precarga la especie asignada (#${ESPECIE.id_especie} "${ESPECIE.nombre}"): el reset del formulario se repite al cargar los tipos de área pero no al cargar las especies, y si estas llegan después el select queda en "Selecciona una especie"`,
+      ).toHaveValue(String(ESPECIE.id_especie), { timeout: 10_000 });
+      await expect(dialogo.getByRole('combobox', { name: 'Modelo de IA', exact: true }), 'DEFECTO: "Editar área" no precarga el modelo de IA asignado').toHaveValue(FAMILIA);
+      await verificarEtiquetas(dialogo);
+      await capturarModal(page, dialogo, 'areas-form-editar.png');
+    });
+
+    test('4. Modal del formulario según el breakpoint del sistema de diseño', async ({ page }, testInfo) => {
+      await abrirAreas(page, FINCA_1, AREAS_1.length);
+      const dialogo = await abrirRegistro(page);
+      const viewport = page.viewportSize()!;
+      const caja = (await tarjetaModal(dialogo).boundingBox())!;
+      testInfo.annotations.push({ type: 'Tarjeta del modal', description: `viewport ${viewport.width}×${viewport.height} · x ${Math.round(caja.x)} · y ${Math.round(caja.y)} · ${Math.round(caja.width)}×${Math.round(caja.height)}` });
+
+      // DS v2.0 (CLAUDE.md, Grid y breakpoints): bottom sheet a ancho completo en xs/sm, max 480px en md, max 560px en lg
+      if (viewport.width < 768) {
+        expect.soft(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, xs/sm) el modal debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px y queda centrado con márgenes`).toBe(viewport.width);
+        expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${testInfo.project.name} el bottom sheet debe apoyarse en el borde inferior de la pantalla (empieza arriba y sale de la pantalla con scroll)`).toBe(viewport.height);
+      } else if (viewport.width < 1200) {
+        expect(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, md) el modal debe medir máximo 480px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(480);
+      } else {
+        expect(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, lg) el modal debe medir máximo 560px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(560);
+      }
+    });
   });
 });
