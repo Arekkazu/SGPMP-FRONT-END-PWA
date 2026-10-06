@@ -94,9 +94,44 @@
     <main role="main">
         <div style="padding: 2rem">
             <h1>
-                Axe-core® Accessibility Results
+                Axe-core® Accessibility Results for TC-DIS-72 project
             </h1>
             <div class="summarySection">
+                <div class="summary">
+<h3>Resumen de ejecución — TC-DIS-72 (RF-26, Identidad Visual)</h3>
+<ul>
+  <li><strong>Ambiente:</strong> TEST (api.inmero.co) · <strong>Fecha:</strong> 06/10/2026 · cuenta con rol id 1 (Administrador).</li>
+  <li><strong>Tema:</strong> oscuro — preferencia guardada de la cuenta (el test no fuerza tema).</li>
+  <li><strong>Finca fija:</strong> "QA DIS Santiago Accesibilidad" (por nombre, dentro de &lt;main&gt;). Toda escritura sobre
+    /configuracion/identidad-visual/** y /configuracion/personalizacion/** se abortó (ningún logo subido ni color guardado).</li>
+  <li><strong>Test 1 (selector de finca, vista inicial):</strong> 0 violaciones de axe en móvil, tablet y escritorio.</li>
+  <li><strong>Formulario de identidad:</strong> verificado manualmente: el formulario carga (breadcrumb, "Vista previa en vivo",
+    Color primario #1e6b4a). En la ejecución automatizada el test espera la tarjeta de la finca dentro de la sección y aplica la
+    opción (b): axe corre con el formulario abierto, antes del assert del heading.</li>
+  <li><strong>Test 2 (formulario):</strong> móvil — axe con el formulario abierto: 0 violaciones; falla después en el assert del
+    heading (hallazgo 1.3.1). Tablet — no medido: la tarjeta de la finca no apareció en 30 s (carga de la lista). Escritorio —
+    no medido: la página de login no mostró el campo de correo en 300 s (ambiente; sin intento de login).</li>
+  <li><strong>Test 3 (logo):</strong> el formulario cargó en los 3 viewports; el test falla en el assert del heading antes de
+    llegar al logo (se deja tal cual).</li>
+  <li><strong>Hallazgos por código (no medidos en esta ejecución):</strong>
+    <ul>
+      <li>Zona "Arrastra un logo o haz clic para seleccionar" es un &lt;div&gt; con onClick sin role/tabIndex/onKeyDown y el
+        &lt;input type="file"&gt; está oculto: no operable por teclado (WCAG 2.1.1).</li>
+      <li>"Vista previa en vivo" es un &lt;div&gt; con estilo de título (IdentidadVisualSection.tsx:469), no un heading (WCAG 1.3.1).</li>
+    </ul></li>
+  <li><strong>Lighthouse</strong> audita la pestaña Personalización tal como carga (sin finca elegida); no cubre el formulario.
+    Este reporte: accesibilidad 100 / best-practices 100.</li>
+  <li><strong>Hallazgo fuera del alcance de RF-26, en la misma pestaña (intermitente según el momento del escaneo):</strong>
+    un snapshot de Lighthouse anterior del mismo día (06/10) marcó <code>color-contrast</code> en la insignia "Global" de los
+    paneles de Tema e Idioma: #7c3aed sobre #171a15 = 3,08:1 (requerido 4,5:1, 11px; accesibilidad 96). Color fijo
+    <code>global: '#7c3aed'</code> sin token ni variante oscura (TemaVisualSection.tsx:44, IdiomaSection.tsx:41).
+    Corresponde a RF-27/RF-29. Ni el axe del test 1 ni este último Lighthouse lo capturaron: la insignia aparece al
+    terminar de cargar la preferencia.</li>
+</ul>
+<table border="1" cellpadding="4" style="border-collapse:collapse">
+  <thead><tr><th>Prueba (viewport · título)</th><th>Violaciones axe</th></tr></thead>
+  <tbody><tr><td>movil · selector de finca (vista inicial) no tiene violaciones de accesibilidad</td><td>0</td></tr><tr><td>movil · formulario de identidad — campos de color y nombre correctamente asociados</td><td>0</td></tr><tr><td>tablet · selector de finca (vista inicial) no tiene violaciones de accesibilidad</td><td>0</td></tr><tr><td>escritorio · selector de finca (vista inicial) no tiene violaciones de accesibilidad</td><td>0</td></tr></tbody>
+</table></div>
             </div>
             <h2>axe-core found <span class="badge badge-success">0</span> violations</h2>
                 <tbody>
