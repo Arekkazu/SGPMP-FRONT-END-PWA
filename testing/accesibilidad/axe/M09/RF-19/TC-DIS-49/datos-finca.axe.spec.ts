@@ -3,10 +3,13 @@
  * RF-19 · CU-04 Gestionar Infraestructura Productiva · Roles: Administrador y Productor
  *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
- * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>.html/json), ambos
- * en ./resultados.
+ * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque
+ * tenga peso 0 en el puntaje.
  *
- * BLOQUEO DEL AMBIENTE (2026-09-28): GET /configuracion/fincas responde
+ * Corregido al 2026-10-05: GET /configuracion/fincas responde 200 y 1a ya evalúa el
+ * listado real; 1b se conserva como control con los registros leídos uno por uno.
+ * BLOQUEO DEL AMBIENTE (2026-09-28): GET /configuracion/fincas respondía
  * 400 VEREDA_REQUERIDO para todos los usuarios, porque la finca #34 no tiene
  * departamento/vereda (su GET individual responde 400 DEPARTAMENTO_REQUERIDO) y
  * rompe la serialización del listado completo. Por eso:
@@ -15,6 +18,11 @@
  *     (GET /configuracion/fincas/{id}) y lo sirve con page.route, para poder
  *     evaluar 4.1.2 (estado activa/inactiva) mientras se corrige el dato.
  *
+ * PROTECCIÓN DE DATOS: una finca registrada es un registro real, así que todo POST/PATCH
+ * a /configuracion/fincas se intercepta y por defecto se aborta. Solo el 409 duplicado
+ * llega al backend, y únicamente si la finca ya existe en el listado real (si no, el
+ * POST se aborta y el caso falla por precondición).
+ *
  * Errores:
  *   - 409 duplicado: real, contra el backend ("Finca Acuícola El Remanso").
  *   - 400 coordenadas / formato de texto: el cliente los valida antes de enviar,
@@ -22,10 +30,10 @@
  *     del backend (capturada del ambiente TEST) inyectada con page.route.
  * Teclado: el alta se intercepta para no crear fincas en el ambiente.
  *
- * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
- * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
- * no reproduce el bug de M01. Para acotarlo puntualmente:
- *   TC_DIS_49_VIEWPORTS=escritorio
+ * Productor: TEST_PRODUCTOR_EMAIL/PASSWORD; si no están, TEST_USER_EMAIL/PASSWORD (cuenta Productor).
+ *
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_49_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Request, type TestInfo } from '@playwright/test';
@@ -35,8 +43,8 @@ import { auditarLighthouse, PUERTO_LIGHTHOUSE } from '../../../_shared/lighthous
 const TC_ID = 'TC-DIS-49';
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
-const PRODUCTOR_EMAIL = process.env.TEST_PRODUCTOR_EMAIL ?? '';
-const PRODUCTOR_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD ?? '';
+const PRODUCTOR_EMAIL = process.env.TEST_PRODUCTOR_EMAIL || process.env.TEST_USER_EMAIL || '';
+const PRODUCTOR_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD || process.env.TEST_USER_PASSWORD || '';
 
 const FINCA_EXISTENTE = process.env.TC_DIS_49_FINCA_EXISTENTE ?? 'Finca Acuícola El Remanso';
 const API_BASE = process.env.API_BASE_URL ?? 'https://api.inmero.co/back-sigab-test';
@@ -49,6 +57,7 @@ const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const RUTA_LISTADO = /\/configuracion\/fincas$/;
 // page.route compara la URL completa (con ?solo_activas=...): se filtra por pathname
 const URL_LISTADO = (url: URL) => RUTA_LISTADO.test(url.pathname);
+const URL_FINCAS = (url: URL) => /\/configuracion\/fincas(\/\d+(\/\w+)?)?$/.test(url.pathname);
 
 // Respuestas 400 reales del backend TEST (POST /configuracion/fincas, 2026-09-28)
 const ERROR_400_LATITUD = {
@@ -76,6 +85,20 @@ const DATOS_VALIDOS = {
 };
 
 test.use({ launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
+
+// ── Protección de escrituras ─────────────────────────────────────────────────
+
+/** Aborta todo POST/PATCH a fincas salvo que `permitirAlta` lo habilite (solo el 409 duplicado). */
+async function protegerFincas(page: Page) {
+  let permitir = false;
+  await page.route(URL_FINCAS, (route) => {
+    const req = route.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType()) || req.method() === 'GET') return route.fallback();
+    if (permitir && req.method() === 'POST' && URL_LISTADO(new URL(req.url()))) return route.fallback();
+    return route.abort();
+  });
+  return { permitirAlta: () => { permitir = true; } };
+}
 
 // ── Navegación ───────────────────────────────────────────────────────────────
 
@@ -178,7 +201,8 @@ function resumenViolaciones(violaciones: { id: string; impact?: string | null; h
   return violaciones.map((v) => `${v.id} (${v.impact}): ${v.help} [${v.nodes.length} nodo(s)]`).join('\n');
 }
 
-async function escanear(page: Page, paso: string, testInfo: TestInfo) {
+async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
+  const paso = `${pasoBase}-${testInfo.project.name}`;
   await page.evaluate(() => document.fonts.ready);
 
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
@@ -194,12 +218,14 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 function saltarViewportsDeshabilitados(testInfo: TestInfo) {
   test.skip(
     !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-    `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
+    `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_49_VIEWPORTS.`,
   );
 }
 
@@ -211,11 +237,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Datos de la Finca (RF-19) 
   test.describe.configure({ timeout: 180_000 });
 
   let tokenAdmin: () => string;
+  let permitirAlta: () => void;
 
   test.beforeEach(async ({ page }, testInfo) => {
     saltarViewportsDeshabilitados(testInfo);
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
+    ({ permitirAlta } = await protegerFincas(page));
     tokenAdmin = await iniciarSesion(page, ADMIN_EMAIL, ADMIN_PASSWORD);
   });
 
@@ -283,7 +311,14 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Datos de la Finca (RF-19) 
   });
 
   test('4. Nombre duplicado (HTTP 409 real) - anunciado por campo y 0 violaciones axe A/AA', async ({ page }, testInfo) => {
+    const listado = page.waitForResponse(esListado, { timeout: 20_000 });
     await abrirFincas(page);
+    const res = await listado;
+    const cuerpo = res.ok() ? await res.json() : [];
+    const nombres: string[] = (Array.isArray(cuerpo) ? cuerpo : cuerpo.items ?? []).map((f: { nombre: string }) => f.nombre);
+    expect(nombres, `Precondición: "${FINCA_EXISTENTE}" debe existir en el listado real para que el POST sea un duplicado (si no, no se envía)`).toContain(FINCA_EXISTENTE);
+    permitirAlta();
+    testInfo.annotations.push({ type: 'Petición real', description: `POST con el nombre de la finca existente "${FINCA_EXISTENTE}": el backend la rechaza por duplicado sin crear nada.` });
     const form = await abrirFormularioRegistro(page);
     await llenarFormulario(form, FINCA_EXISTENTE);
 
@@ -412,9 +447,10 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Datos de la Finca (RF-19) 
 
   test('Restricción de solo lectura para el rol Productor - accesible y 0 violaciones axe A/AA', async ({ page }, testInfo) => {
     saltarViewportsDeshabilitados(testInfo);
-    expect(PRODUCTOR_EMAIL, 'Falta TEST_PRODUCTOR_EMAIL en testing/.env.test').not.toBe('');
-    expect(PRODUCTOR_PASSWORD, 'Falta TEST_PRODUCTOR_PASSWORD en testing/.env.test').not.toBe('');
+    expect(PRODUCTOR_EMAIL, 'Falta TEST_PRODUCTOR_EMAIL (o TEST_USER_EMAIL) en testing/.env.test').not.toBe('');
+    expect(PRODUCTOR_PASSWORD, 'Falta TEST_PRODUCTOR_PASSWORD (o TEST_USER_PASSWORD) en testing/.env.test').not.toBe('');
 
+    await protegerFincas(page);
     await iniciarSesion(page, PRODUCTOR_EMAIL, PRODUCTOR_PASSWORD);
     await expect.soft(page.getByText('Productor', { exact: true }), 'La cuenta TEST_PRODUCTOR debe tener rol Productor').toBeVisible();
 
