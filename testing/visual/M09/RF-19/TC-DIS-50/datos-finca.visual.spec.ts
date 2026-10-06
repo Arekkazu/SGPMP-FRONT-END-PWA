@@ -2,21 +2,32 @@
  * TC-DIS-50 — Consistencia visual del listado y formulario de Datos de la Finca
  * RF-19 · CU-04 Gestionar Infraestructura Productiva · Rol: Administrador
  *
- * BLOQUEO DEL AMBIENTE (2026-09-28): GET /configuracion/fincas responde
- * 400 VEREDA_REQUERIDO porque la finca #34 no tiene departamento/vereda
- * (ver TC-DIS-49). El test "0" verifica el listado real y falla mientras siga
- * así; las baselines se toman con un fixture fijo servido por page.route:
- * las fincas #1–#5 tal como las devuelve hoy GET /configuracion/fincas/{id}
- * (4 activas y 1 inactiva, datos completos). Así la baseline no depende de
- * los datos que otras pruebas crean o editan en el ambiente.
+ * Datos: el test "0" verifica que el listado real carga (el 400 VEREDA_REQUERIDO del
+ * 2026-09-28 ya está corregido). Las baselines se toman con un fixture fijo servido por
+ * page.route: las fincas #1–#5 tal como las devolvía GET /configuracion/fincas/{id}
+ * (4 activas y 1 inactiva, datos completos), para no depender de los datos que otras
+ * pruebas crean o editan en el ambiente.
+ *
+ * Formularios: se captura solo la tarjeta del modal (el fondo de la pestaña cambia con
+ * los tipos de área del ambiente). El modal tiene scroll propio; antes de capturar se
+ * amplía el alto de la ventana, conservando el ancho, hasta que la tarjeta quepa completa.
+ *
+ * Verificación de layout: la tarjeta del modal se mide contra el DS v2.0 (bottom sheet a
+ * ancho completo en xs/sm, máx. 480px en md, máx. 560px en lg) y falla como DEFECTO si
+ * no cumple.
+ *
+ * PROTECCIÓN DE DATOS: todo POST/PATCH a /configuracion/fincas se aborta (el caso no
+ * envía formularios).
+ *
+ * Tema: la preferencia de tema es de la cuenta (compartida); GET
+ * /configuracion/personalizacion/tema(/global) se sirve con el tema Claro (theme_mode 1,
+ * cuerpo real de TEST) y cualquier escritura a esos endpoints se aborta.
  *
  * Nota del caso: el formulario no incluye mapa ni vista previa de coordenadas,
  * por lo que no aplica la baseline "con y sin marcador".
  *
- * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
- * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
- * no reproduce el bug de M01. Para acotarlo puntualmente:
- *   TC_DIS_50_VIEWPORTS=escritorio
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_50_VIEWPORTS=escritorio
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
@@ -41,7 +52,34 @@ const FINCAS_FIXTURE = [
 ];
 const FINCA_EDITAR = FINCAS_FIXTURE[0].nombre;
 
-const OPCIONES_CAPTURA = { fullPage: true, animations: 'disabled' as const, caret: 'hide' as const };
+const URL_FINCAS = (url: URL) => /\/configuracion\/fincas(\/\d+(\/\w+)?)?$/.test(url.pathname);
+
+// Tema Claro fijo (cuerpos reales de TEST con theme_mode 1)
+const TEMA: Record<string, unknown> = {
+  '/configuracion/personalizacion/tema': { theme_mode: 1, fuente: 'personal', id_tema_visual: 10 },
+  '/configuracion/personalizacion/tema/global': { id_tema_visual: 1, id_usuario: 1, theme_mode: 1, es_global: true, fecha_actualizacion: '2026-09-29T22:56:03.004225Z' },
+};
+
+test.use({ locale: 'es-CO', timezoneId: 'America/Bogota' });
+
+async function fijarTemaClaro(page: Page) {
+  await page.route((url) => Object.keys(TEMA).some((k) => url.pathname.endsWith(k)), (r) => {
+    const req = r.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType())) return r.continue();
+    if (req.method() !== 'GET') return r.abort('blockedbyclient');
+    const clave = Object.keys(TEMA).find((k) => new URL(req.url()).pathname.endsWith(k))!;
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(TEMA[clave]) });
+  });
+}
+
+/** Ninguna escritura a fincas llega al backend. */
+async function protegerFincas(page: Page) {
+  await page.route(URL_FINCAS, (route) => {
+    const req = route.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType()) || req.method() === 'GET') return route.fallback();
+    return route.abort();
+  });
+}
 
 async function iniciarSesionAdmin(page: Page) {
   await page.goto('/login');
@@ -72,13 +110,23 @@ async function servirFixture(page: Page) {
       : route.fallback());
 }
 
+function tarjetaModal(dialogo: Locator): Locator {
+  return dialogo.locator('> div');
+}
+
 /**
- * Sección "Tipos de área" que queda de fondo tras el modal: hoy muestra "Acceso denegado"
- * al Administrador (defecto aparte, ver TC-DIS-49). Se enmascara para que su corrección
- * no altere las baselines de los formularios.
+ * La capa del modal tiene scroll propio: si la tarjeta no cabe, la captura la cortaría.
+ * Se amplía el alto de la ventana (conservando el ancho del proyecto) hasta que quepa.
  */
-function seccionTiposArea(page: Page): Locator[] {
-  return [page.getByRole('alert'), page.getByText('No hay tipos de área registrados.')];
+async function capturarModal(page: Page, dialogo: Locator, nombre: string) {
+  const viewport = page.viewportSize()!;
+  const caja = (await tarjetaModal(dialogo).boundingBox())!;
+  const necesario = Math.ceil(caja.y + caja.height + 48);
+  if (necesario > viewport.height) await page.setViewportSize({ width: viewport.width, height: necesario });
+  await page.mouse.move(0, 0);
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.evaluate(() => document.fonts.ready);
+  await expect(tarjetaModal(dialogo)).toHaveScreenshot(nombre, { animations: 'disabled', caret: 'hide' });
 }
 
 /** Bloque "Gestión de Fincas" (encabezado, buscador y tabla), sin las secciones vecinas de la pestaña. */
@@ -95,11 +143,13 @@ test.describe('TC-DIS-50 - Consistencia visual - Datos de la Finca (RF-19)', () 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
+      `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_50_VIEWPORTS.`,
     );
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
 
+    await protegerFincas(page);
+    await fijarTemaClaro(page);
     await iniciarSesionAdmin(page);
   });
 
@@ -129,7 +179,7 @@ test.describe('TC-DIS-50 - Consistencia visual - Datos de la Finca (RF-19)', () 
     await expect(dialogo).toBeVisible();
     await expect(dialogo.getByRole('textbox', { name: 'Nombre de la finca', exact: true })).toHaveValue('');
 
-    await expect(page).toHaveScreenshot('fincas-form-registrar.png', { ...OPCIONES_CAPTURA, mask: seccionTiposArea(page) });
+    await capturarModal(page, dialogo, 'fincas-form-registrar.png');
   });
 
   test('3. Formulario "Editar finca" (datos completos)', async ({ page }) => {
@@ -140,6 +190,28 @@ test.describe('TC-DIS-50 - Consistencia visual - Datos de la Finca (RF-19)', () 
     await expect(dialogo).toBeVisible();
     await expect(dialogo.getByRole('textbox', { name: 'Nombre de la finca', exact: true })).toHaveValue(FINCA_EDITAR);
 
-    await expect(page).toHaveScreenshot('fincas-form-editar.png', { ...OPCIONES_CAPTURA, mask: seccionTiposArea(page) });
+    await capturarModal(page, dialogo, 'fincas-form-editar.png');
+  });
+
+  test('4. Modal del formulario según el breakpoint del sistema de diseño', async ({ page }, testInfo) => {
+    await servirFixture(page);
+    await abrirFincas(page);
+    await page.getByRole('button', { name: 'Nueva finca' }).click();
+    const dialogo = page.getByRole('dialog', { name: 'Registrar nueva finca' });
+    await expect(dialogo).toBeVisible();
+
+    const viewport = page.viewportSize()!;
+    const caja = (await tarjetaModal(dialogo).boundingBox())!;
+    testInfo.annotations.push({ type: 'Tarjeta del modal', description: `viewport ${viewport.width}×${viewport.height} · x ${Math.round(caja.x)} · y ${Math.round(caja.y)} · ${Math.round(caja.width)}×${Math.round(caja.height)}` });
+
+    // DS v2.0 (CLAUDE.md, Grid y breakpoints): bottom sheet a ancho completo en xs/sm, max 480px en md, max 560px en lg
+    if (viewport.width < 768) {
+      expect.soft(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, xs/sm) el modal debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px y queda centrado con márgenes`).toBe(viewport.width);
+      expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${testInfo.project.name} el bottom sheet debe apoyarse en el borde inferior de la pantalla (empieza arriba y sale de la pantalla con scroll)`).toBe(viewport.height);
+    } else if (viewport.width < 1200) {
+      expect(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, md) el modal debe medir máximo 480px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(480);
+    } else {
+      expect(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, lg) el modal debe medir máximo 560px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(560);
+    }
   });
 });
