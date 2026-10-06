@@ -361,12 +361,16 @@ export interface MetricaProduccionResponse {
   fecha_actualizacion: string | null;
 }
 
+/** RF-16 v1.2 (RFC-004): lo elige el usuario; el backend ya no lo infiere de `tipo_medicion`. */
+export type TipoDatoMetrica = 'NUMERICO' | 'ENTERO' | 'TEXTO' | 'BOOLEANO';
+
 export interface RegistrarMetricaDTO {
   id_especie: number;
   nombre: string;
   unidad_medida: string;
   tipo_medicion: TipoMedicion;
   aplica_a_tipo_activo?: TipoActivo;
+  tipo_dato: TipoDatoMetrica;
 }
 
 export interface EditarMetricaDTO {

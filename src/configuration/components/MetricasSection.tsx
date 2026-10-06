@@ -10,7 +10,7 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useMetricasProduccion } from '../hooks/useMetricasProduccion';
 import { UNIDADES_POR_TIPO_MEDICION } from '../types';
-import type { MetricaProduccionResponse, TipoMedicion, TipoActivo } from '../types';
+import type { MetricaProduccionResponse, TipoMedicion, TipoActivo, TipoDatoMetrica } from '../types';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface Props {
@@ -28,7 +28,10 @@ interface FormValues {
   unidad_medida: string;
   tipo_medicion: TipoMedicion;
   aplica_a_tipo_activo: TipoActivo;
+  tipo_dato: TipoDatoMetrica | '';
 }
+
+const TIPOS_DATO: TipoDatoMetrica[] = ['NUMERICO', 'ENTERO', 'TEXTO', 'BOOLEANO'];
 
 const TIPO_MEDICION_LABELS: Record<TipoMedicion, string> = {
   PESO: 'Peso',
@@ -126,7 +129,7 @@ function MetricaModal({
         aplica_a_tipo_activo: metrica.aplica_a_tipo_activo,
       });
     } else {
-      reset({ nombre: '', unidad_medida: '', tipo_medicion: 'PESO', aplica_a_tipo_activo: 'AMBOS' });
+      reset({ nombre: '', unidad_medida: '', tipo_medicion: 'PESO', aplica_a_tipo_activo: 'AMBOS', tipo_dato: '' });
     }
   }, [metrica, reset]);
 
@@ -147,6 +150,7 @@ function MetricaModal({
         unidad_medida: data.unidad_medida.trim(),
         tipo_medicion: data.tipo_medicion,
         aplica_a_tipo_activo: data.aplica_a_tipo_activo,
+        tipo_dato: data.tipo_dato as TipoDatoMetrica,
       });
     }
     if (ok) onClose();
@@ -268,6 +272,30 @@ function MetricaModal({
                 </p>
               )}
             </div>
+
+            {/* RF-16 v1.2 (RFC-004, #487): obligatorio y sin valor por defecto — el usuario lo elige. */}
+            {!modoEditar && (
+              <div>
+                <label htmlFor="tipo-dato" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('metricassection.tipo_de_dato')}<span style={{ color: 'var(--sem-error)' }}>*</span>
+                </label>
+                <select
+                  id="tipo-dato"
+                  style={SELECT_STYLE}
+                  aria-required="true"
+                  {...register('tipo_dato', { required: t('metricassection.selecciona_el_tipo_de_dato') })}
+                >
+                  <option value="">{t('metricassection.seleccionar')}</option>
+                  {TIPOS_DATO.map((val) => (
+                    <option key={val} value={val}>{t(`metricassection.tipo_dato_${val.toLowerCase()}`)}</option>
+                  ))}
+                </select>
+                {errors.tipo_dato && (
+                  <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
+                    {errors.tipo_dato.message}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
