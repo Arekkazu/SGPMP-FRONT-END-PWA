@@ -16,6 +16,10 @@
  *     confirmar con desarrollo).
  *   - Listado vacío por búsqueda sin resultados.
  *
+ * Verificación de layout: la tarjeta del modal del formulario se mide contra el DS v2.0
+ * (bottom sheet a ancho completo en xs/sm, máx. 480px en md, máx. 560px en lg) y falla
+ * como DEFECTO si no cumple.
+ *
  * Datos: el catálogo crece con cada prueba que registra especies, así que GET
  * /configuracion/especies se sirve con page.route desde especies.fixture.json (respuesta real
  * del 2026-10-05). El test "0" verifica contra el ambiente real que hay especies activas e
@@ -257,6 +261,29 @@ test.describe('TC-DIS-39 - Consistencia visual - Catálogo de Especies (RF-15)',
       await expect(page.getByText('0 registros', { exact: true })).toBeVisible();
       await expect(page.locator('table tbody tr')).toHaveCount(0);
       await capturar(page, 'catalogo-listado-vacio.png');
+    });
+
+    // Último en la serie: si falla no impide evaluar los anteriores
+    test('5. Modal del formulario según el breakpoint del sistema de diseño', async ({ page }, testInfo) => {
+      await servirCatalogo(page);
+      await abrirCatalogoEspecies(page);
+      await page.getByRole('button', { name: 'Nueva especie' }).click();
+      const dialogo = page.getByRole('dialog', { name: 'Nueva especie' });
+      await expect(dialogo).toBeVisible();
+
+      const viewport = page.viewportSize()!;
+      const caja = (await dialogo.locator('> div').boundingBox())!;
+      testInfo.annotations.push({ type: 'Tarjeta del modal', description: `viewport ${viewport.width}×${viewport.height} · x ${Math.round(caja.x)} · y ${Math.round(caja.y)} · ${Math.round(caja.width)}×${Math.round(caja.height)}` });
+
+      // DS v2.0 (CLAUDE.md, Grid y breakpoints): bottom sheet a ancho completo en xs/sm, max 480px en md, max 560px en lg
+      if (viewport.width < 768) {
+        expect.soft(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, xs/sm) el modal debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px y queda centrado con márgenes`).toBe(viewport.width);
+        expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${testInfo.project.name} el bottom sheet debe apoyarse en el borde inferior de la pantalla`).toBe(viewport.height);
+      } else if (viewport.width < 1200) {
+        expect(caja.width, `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, md) el modal debe medir máximo 480px`).toBeLessThanOrEqual(480);
+      } else {
+        expect(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, lg) el modal debe medir máximo 560px; mide ${Math.round(caja.width)}px (se queda en el máximo de md)`).toBe(560);
+      }
     });
   });
 });
