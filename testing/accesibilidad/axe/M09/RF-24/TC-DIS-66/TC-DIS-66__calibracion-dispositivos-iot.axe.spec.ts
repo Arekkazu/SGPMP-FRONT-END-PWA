@@ -83,7 +83,7 @@ const RAPIDO = { timeout: 15_000 };
  * - Login con waitUntil 'commit' + diagnóstico del POST, HAR de /assets/**,
  *   ruta relativa (baseURL del config). Esperas sobre posibles hallazgos: 15 s.
  * - Test 2 (paso 3) NO CUBIERTO: al cargar el historial del sensor la pantalla queda en
- *   blanco (#247). API: valor_referencia llega como string; CalibracionSection.tsx:187 usa
+ *   blanco (#251). API: valor_referencia llega como string; CalibracionSection.tsx:187 usa
  *   `.toFixed(4)` sin conversión y no hay ErrorBoundary. Queda en test.fixme hasta el fix.
  * - OBSERVACIÓN: el título "Historial de calibraciones" está escrito en español fijo
  *   (CalibracionSection.tsx:169), no pasa por i18n.
@@ -227,11 +227,11 @@ test.describe('TC-DIS-66 — RF-24: Calibración de Dispositivos IoT (accesibili
   });
 
   test('paso 3 del wizard (formulario de calibración) — confirma bugs de label en Valor de referencia y Observaciones', async ({ page }, testInfo) => {
-    // NO CUBIERTO (06/10/2026, #247): la pantalla se cae al cargar el historial. La API
+    // NO CUBIERTO (06/10/2026, #251): la pantalla se cae al cargar el historial. La API
     // devuelve valor_referencia como texto ("10.0000") y CalibracionSection.tsx:187 hace
     // `c.valor_referencia.toFixed(4)` → TypeError; sin ErrorBoundary en src/ la app entera se
     // desmonta (desaparece <main>). En fixme (antes del login), sin tocar sus asserts, hasta el fix.
-    test.fixme(true, 'No cubierto: la pantalla se cae al cargar el historial (#247)');
+    test.fixme(true, 'No cubierto: la pantalla se cae al cargar el historial (#251)');
 
     await loginComoAdmin(page);
 

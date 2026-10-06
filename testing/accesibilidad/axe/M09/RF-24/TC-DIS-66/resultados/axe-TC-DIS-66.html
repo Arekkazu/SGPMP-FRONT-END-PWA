@@ -104,9 +104,9 @@
   <li><strong>Tema:</strong> oscuro — preferencia guardada de la cuenta (el test no fuerza tema).</li>
   <li><strong>Datos fijos:</strong> dispositivo IOT-EST01-HLA-001 (id 1); sensor "Sensor oxígeno disuelto estanque-01" (id 3, 2 calibraciones).
     Toda escritura sobre /configuracion/dispositivos-iot/** y /configuracion/sensores/** se abortó (ninguna calibración enviada).</li>
-  <li><strong>Issue: #247</strong>, mismo patrón que #244/#245.</li>
+  <li><strong>Issue: #247</strong>, mismo patrón que #244/#245 (hallazgos de accesibilidad). <strong>Crash de Calibración (backend): #251.</strong></li>
   <li><strong>Paso 1 (selección de dispositivo):</strong> 0 violaciones de axe en móvil, tablet y escritorio.</li>
-  <li><strong>Paso 3 (formulario) — NO CUBIERTO: la pantalla se cae al cargar el historial (#247).</strong>
+  <li><strong>Paso 3 (formulario) — NO CUBIERTO: la pantalla se cae al cargar el historial (#251, backend).</strong>
     La API devuelve <code>valor_referencia</code> como texto ("10.0000"); CalibracionSection.tsx:187 hace
     <code>c.valor_referencia.toFixed(4)</code> → TypeError y, sin ErrorBoundary, la app entera se desmonta
     (desaparece &lt;main&gt;). El test queda en <code>test.fixme</code> hasta el fix; axe no escaneó el formulario.</li>
