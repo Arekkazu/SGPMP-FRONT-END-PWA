@@ -1,22 +1,41 @@
 /**
  * TC-DIS-39 — Consistencia visual del listado y formulario del Catálogo de Especies
  * RF-15 · CU-01 Gestionar Catálogo de Especies · Rol: Administrador
+ * Configuración → pestaña "Catálogo" (/configuracion)
  *
- * Corre en movil / tablet / escritorio por defecto — se confirmó que esta
- * pantalla navega directo por URL (no por el toggle del sidebar) y no
- * reproduce el bug de M01. Para acotarlo puntualmente:
- *   TC_DIS_39_VIEWPORTS=escritorio
+ * Cambio del RF (2026-10-05): el formulario incluye la lista desplegable de grupo de manejo
+ * y el error nuevo al intentar cambiar el grupo de una especie con dependencias. En la
+ * interfaz el grupo de manejo es el select "Familia de modelo de IA" (tipo_modelo).
  *
- * Precondiciones:
- *   - Catálogo con al menos una especie ACTIVA y una INACTIVA (se valida).
- *   - Baseline aprobada. La primera vez se genera con --update-snapshots.
+ * Baselines (página completa):
+ *   - Listado con especies activas e inactivas, y detalle de una fila de cada estado.
+ *   - Formulario crear especie (vacío) y con grupo de manejo elegido.
+ *   - Formulario editar especie sin grupo y con grupo asignado (SIMULADO: en TEST ninguna
+ *     especie tiene grupo de manejo).
+ *   - Error al cambiar el grupo de una especie con dependencias (409 SIMULADO, error_code a
+ *     confirmar con desarrollo).
+ *   - Listado vacío por búsqueda sin resultados.
  *
- * Paso 4: el listado vacío se obtiene con el buscador "Buscar por nombre…"
- * y un término sin coincidencias ("Ninguna especie coincide con la búsqueda.").
- * El catálogo desplegado no tiene paginación: muestra todos los registros
- * en una sola página con el pie "N registros".
+ * Datos: el catálogo crece con cada prueba que registra especies, así que GET
+ * /configuracion/especies se sirve con page.route desde especies.fixture.json (respuesta real
+ * del 2026-10-05). El test "0" verifica contra el ambiente real que hay especies activas e
+ * inactivas.
+ *
+ * PROTECCIÓN DE DATOS: todo POST/PATCH a /configuracion/especies se aborta o se responde con
+ * el error simulado; ninguna especie se crea ni se modifica.
+ *
+ * Tema: la preferencia de tema es de la cuenta (compartida); GET
+ * /configuracion/personalizacion/tema(/global) se sirve con el tema Claro (theme_mode 1,
+ * cuerpo real de TEST) y cualquier escritura a esos endpoints se aborta.
+ *
+ * El contador de notificaciones de la barra superior se enmascara (depende de la cuenta).
+ *
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_39_VIEWPORTS=escritorio
  */
-import { expect, test, type Page, type Response } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import fixture from './especies.fixture.json';
+
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
@@ -24,21 +43,63 @@ const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_39_VIEWPORTS ?? 'movil,tablet,
   .split(',')
   .map((v) => v.trim());
 
-const RUTA_ESPECIES = '/configuracion/especies';
+type Especie = (typeof fixture.items)[number];
 
-// Coincide con el GET del listado (XHR/fetch), no con la ruta de la SPA /configuracion
-function esListadoEspecies(url: string | URL): boolean {
-  const pathname = typeof url === 'string' ? new URL(url).pathname : url.pathname;
-  return pathname.endsWith(RUTA_ESPECIES);
+const URL_LISTADO = (url: URL) => url.pathname.endsWith('/configuracion/especies');
+const URL_ESPECIES = (url: URL) => /\/configuracion\/especies(\/\d+(\/\w+)?)?$/.test(url.pathname);
+
+// Especie con grupo de manejo asignado (SIMULADO sobre "Tilapia Roja" #1 del fixture)
+const ID_CON_GRUPO = 1;
+const GRUPO_ASIGNADO = 'MODELO_ACUICULTURA';
+const GRUPO_NUEVO = 'MODELO_PORCINOS';
+
+// 409 SIMULADO con el formato estándar del backend (error_code a confirmar con desarrollo)
+const ERROR_DEPENDENCIAS = {
+  error_code: 'ESPECIE_CON_DEPENDENCIAS',
+  message: 'No se puede cambiar el grupo de manejo de "Tilapia Roja": tiene áreas, activos biológicos o modelos de IA asociados al grupo actual.',
+  fields: [{ field: 'tipo_modelo', message: 'La especie tiene dependencias asociadas a su grupo de manejo actual.' }],
+};
+
+// Tema Claro fijo (cuerpos reales de TEST con theme_mode 1)
+const TEMA: Record<string, unknown> = {
+  '/configuracion/personalizacion/tema': { theme_mode: 1, fuente: 'personal', id_tema_visual: 10 },
+  '/configuracion/personalizacion/tema/global': { id_tema_visual: 1, id_usuario: 1, theme_mode: 1, es_global: true, fecha_actualizacion: '2026-09-29T22:56:03.004225Z' },
+};
+
+const OPCIONES_CAPTURA = { fullPage: true, animations: 'disabled' as const, caret: 'hide' as const };
+
+test.use({ locale: 'es-CO', timezoneId: 'America/Bogota' });
+
+async function fijarTemaClaro(page: Page) {
+  await page.route((url) => Object.keys(TEMA).some((k) => url.pathname.endsWith(k)), (r) => {
+    const req = r.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType())) return r.continue();
+    if (req.method() !== 'GET') return r.abort('blockedbyclient');
+    const clave = Object.keys(TEMA).find((k) => new URL(req.url()).pathname.endsWith(k))!;
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(TEMA[clave]) });
+  });
 }
 
-function esRespuestaListado(res: Response): boolean {
-  const req = res.request();
-  return (
-    req.method() === 'GET' &&
-    ['xhr', 'fetch'].includes(req.resourceType()) &&
-    esListadoEspecies(res.url())
-  );
+/** Escrituras: abortadas por defecto; con `error` se responde ese error simulado. */
+async function protegerEspecies(page: Page) {
+  let error: { status: number; cuerpo: unknown } | null = null;
+  await page.route(URL_ESPECIES, (r) => {
+    const req = r.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType()) || req.method() === 'GET') return r.fallback();
+    if (error) return r.fulfill({ status: error.status, contentType: 'application/json', body: JSON.stringify(error.cuerpo) });
+    return r.abort();
+  });
+  return { simularError: (status: number, cuerpo: unknown) => { error = { status, cuerpo }; } };
+}
+
+/** GET del listado desde el fixture; `ajustar` permite simular cambios sobre una especie. */
+async function servirCatalogo(page: Page, ajustar: (e: Especie) => Especie = (e) => e) {
+  await page.route(URL_LISTADO, (r) => {
+    const req = r.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType()) || req.method() !== 'GET') return r.fallback();
+    const cuerpo = { ...fixture, items: fixture.items.map((e) => ajustar({ ...e })) };
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(cuerpo) });
+  });
 }
 
 async function iniciarSesionAdmin(page: Page) {
@@ -51,114 +112,151 @@ async function iniciarSesionAdmin(page: Page) {
 
 /** Abre /configuracion (tab Catálogo por defecto) y espera a que la tabla termine de cargar. */
 async function abrirCatalogoEspecies(page: Page) {
-  const listado = page.waitForResponse(esRespuestaListado, { timeout: 20_000 });
+  const listado = page.waitForResponse((r) =>
+    URL_LISTADO(new URL(r.url())) && r.request().method() === 'GET' && ['xhr', 'fetch'].includes(r.request().resourceType()), { timeout: 20_000 });
   await page.goto('/configuracion');
-  await listado;
+  const respuesta = await listado;
 
   await page.getByRole('button', { name: 'Catálogo', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Catálogo de Especies' })).toBeVisible();
   // El contador "N activas · M inactivas" solo aparece cuando termina el skeleton
   await expect(page.getByText(/\d+ activas · \d+ inactivas/)).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
+  return respuesta;
 }
 
-/** Zonas con datos que cambian entre corridas (fechas, contador) y no son parte del diseño. */
-function zonasDinamicas(page: Page) {
-  return [
-    page.locator('table tbody td:nth-child(5)'), // columna "Actualizado"
-    page.getByText(/\d+ activas · \d+ inactivas/),
-  ];
+function filas(page: Page) {
+  const todas = page.locator('table tbody tr');
+  return {
+    activa: todas.filter({ has: page.getByText('Activo', { exact: true }) }).first(),
+    inactiva: todas.filter({ has: page.getByText('Inactivo', { exact: true }) }).first(),
+  };
 }
 
-const OPCIONES_CAPTURA = { fullPage: true, animations: 'disabled' as const, caret: 'hide' as const };
+function grupoDeManejo(dialogo: Locator): Locator {
+  return dialogo.getByRole('combobox', { name: 'Familia de modelo de IA', exact: true });
+}
+
+async function abrirEdicion(page: Page, nombre: string) {
+  await page.getByRole('button', { name: `Editar ${nombre}`, exact: true }).first().click();
+  const dialogo = page.getByRole('dialog', { name: `Editar especie — ${nombre}` });
+  await expect(dialogo).toBeVisible();
+  await expect(dialogo.getByRole('textbox', { name: 'Nombre', exact: true })).toHaveValue(nombre);
+  return dialogo;
+}
+
+async function capturar(page: Page, nombre: string) {
+  // Sin foco ni hover: el cursor queda donde se hizo el último clic
+  await page.mouse.move(0, 0);
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.evaluate(() => document.fonts.ready);
+  // El contador de notificaciones depende de la cuenta (compartida), no del diseño
+  await expect(page).toHaveScreenshot(nombre, { ...OPCIONES_CAPTURA, mask: [page.locator('.ds-appbar__notif-badge')] });
+}
 
 test.describe('TC-DIS-39 - Consistencia visual - Catálogo de Especies (RF-15)', () => {
   // En serie: si el login falla se detiene, en vez de sumar intentos fallidos a la cuenta admin (bloqueo a los 5)
   test.describe.configure({ mode: 'serial', timeout: 120_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
-    test.skip(
-      !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
-    );
+    test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_39_VIEWPORTS.`);
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
-
+    await protegerEspecies(page);
+    await fijarTemaClaro(page);
     await iniciarSesionAdmin(page);
   });
 
-  test('1-2. Listado con especies activas e inactivas', async ({ page }) => {
-    await abrirCatalogoEspecies(page);
-
-    const filas = page.locator('table tbody tr');
-    const filaActiva = filas.filter({ has: page.getByText('Activo', { exact: true }) }).first();
-    const filaInactiva = filas.filter({ has: page.getByText('Inactivo', { exact: true }) }).first();
-
-    // Precondición del caso: ambos estados deben existir para cubrirlos en la baseline
-    await expect(filaActiva, 'Precondición: se requiere al menos una especie activa').toBeVisible();
-    await expect(filaInactiva, 'Precondición: se requiere al menos una especie inactiva').toBeVisible();
-
-    await expect(page).toHaveScreenshot('catalogo-listado.png', {
-      ...OPCIONES_CAPTURA,
-      mask: zonasDinamicas(page),
-    });
-
-    // Detalle del estado: etiqueta + punto indicador + acción disponible (Desactivar / Reactivar)
-    await expect(filaActiva).toHaveScreenshot('catalogo-fila-activa.png', {
-      animations: 'disabled',
-      mask: [filaActiva.locator('td:nth-child(5)')],
-    });
-    await expect(filaInactiva).toHaveScreenshot('catalogo-fila-inactiva.png', {
-      animations: 'disabled',
-      mask: [filaInactiva.locator('td:nth-child(5)')],
-    });
+  test('0. Precondición - el catálogo real tiene especies activas e inactivas', async ({ page }, testInfo) => {
+    const r = await abrirCatalogoEspecies(page);
+    const { items } = await r.json();
+    const activas = items.filter((e: Especie) => e.es_activo).length;
+    testInfo.annotations.push({ type: 'Catálogo real', description: `${items.length} especies · ${activas} activas · ${items.length - activas} inactivas` });
+    expect(activas, 'Precondición: se requiere al menos una especie activa').toBeGreaterThan(0);
+    expect(items.length - activas, 'Precondición: se requiere al menos una especie inactiva').toBeGreaterThan(0);
   });
 
-  test('3a. Formulario crear especie', async ({ page }) => {
-    await abrirCatalogoEspecies(page);
-
-    await page.getByRole('button', { name: 'Nueva especie' }).click();
-    const dialogo = page.getByRole('dialog', { name: 'Nueva especie' });
-    await expect(dialogo).toBeVisible();
-    await expect(dialogo.getByRole('textbox', { name: 'Nombre', exact: true })).toHaveValue('');
-
-    await expect(page).toHaveScreenshot('catalogo-form-crear.png', OPCIONES_CAPTURA);
-  });
-
-  test('3b. Formulario editar especie', async ({ page }) => {
-    await abrirCatalogoEspecies(page);
-
-    const filaActiva = page
-      .locator('table tbody tr')
-      .filter({ has: page.getByText('Activo', { exact: true }) })
-      .first();
-    await filaActiva.getByRole('button', { name: /^Editar / }).click();
-
-    const dialogo = page.getByRole('dialog', { name: /^Editar especie — / });
-    await expect(dialogo).toBeVisible();
-    await expect(dialogo.getByRole('textbox', { name: 'Nombre', exact: true })).not.toHaveValue('');
-
-    await expect(page).toHaveScreenshot('catalogo-form-editar.png', {
-      ...OPCIONES_CAPTURA,
-      // Bloque "Creado: … · Actualizado: …" y fechas de la tabla de fondo
-      mask: [dialogo.getByText(/^Creado:/), ...zonasDinamicas(page)],
+  test.describe('con catálogo fijado', () => {
+    test.beforeEach(async ({}, testInfo) => {
+      testInfo.annotations.push({ type: 'Datos fijados', description: 'Catálogo servido desde especies.fixture.json (respuesta real del 2026-10-05).' });
     });
-  });
 
-  test('4. Listado vacío por filtro sin resultados', async ({ page }) => {
-    await abrirCatalogoEspecies(page);
+    test('1-2. Listado con especies activas e inactivas', async ({ page }) => {
+      await servirCatalogo(page);
+      await abrirCatalogoEspecies(page);
+      const { activa, inactiva } = filas(page);
+      await expect(activa).toBeVisible();
+      await expect(inactiva).toBeVisible();
 
-    await page
-      .getByRole('textbox', { name: 'Buscar especies por nombre' })
-      .fill('zzz sin resultados tc dis 39');
-    await expect(page.getByText('Ninguna especie coincide con la búsqueda.', { exact: true })).toBeVisible();
-    await expect(page.getByText('0 registros', { exact: true })).toBeVisible();
-    await expect(page.locator('table tbody tr')).toHaveCount(0);
+      await capturar(page, 'catalogo-listado.png');
+      // Detalle del estado: etiqueta + punto indicador + acción disponible (Desactivar / Reactivar)
+      await expect(activa).toHaveScreenshot('catalogo-fila-activa.png', { animations: 'disabled' });
+      await expect(inactiva).toHaveScreenshot('catalogo-fila-inactiva.png', { animations: 'disabled' });
+    });
 
-    await expect(page).toHaveScreenshot('catalogo-listado-vacio.png', {
-      ...OPCIONES_CAPTURA,
-      // El contador de la cabecera refleja el catálogo completo, no el filtro
-      mask: [page.getByText(/\d+ activas · \d+ inactivas/)],
+    test('3a. Formulario crear especie', async ({ page }) => {
+      await servirCatalogo(page);
+      await abrirCatalogoEspecies(page);
+      await page.getByRole('button', { name: 'Nueva especie' }).click();
+      const dialogo = page.getByRole('dialog', { name: 'Nueva especie' });
+      await expect(dialogo).toBeVisible();
+      await expect(dialogo.getByRole('textbox', { name: 'Nombre', exact: true })).toHaveValue('');
+      await expect(grupoDeManejo(dialogo)).toHaveValue('');
+      await capturar(page, 'catalogo-form-crear.png');
+    });
+
+    test('3a. Formulario crear especie con grupo de manejo elegido', async ({ page }) => {
+      await servirCatalogo(page);
+      await abrirCatalogoEspecies(page);
+      await page.getByRole('button', { name: 'Nueva especie' }).click();
+      const dialogo = page.getByRole('dialog', { name: 'Nueva especie' });
+      await expect(dialogo).toBeVisible();
+      await dialogo.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Codorniz');
+      await grupoDeManejo(dialogo).selectOption('MODELO_AVES');
+      await expect(grupoDeManejo(dialogo)).toHaveValue('MODELO_AVES');
+      await capturar(page, 'catalogo-form-crear-grupo.png');
+    });
+
+    test('3b. Formulario editar especie', async ({ page }) => {
+      await servirCatalogo(page);
+      await abrirCatalogoEspecies(page);
+      const nombre = fixture.items.find((e) => e.es_activo)!.nombre;
+      const dialogo = await abrirEdicion(page, nombre);
+      await expect(grupoDeManejo(dialogo)).toHaveValue('');
+      await capturar(page, 'catalogo-form-editar.png');
+    });
+
+    test('3b. Formulario editar especie con grupo de manejo asignado (simulado)', async ({ page }, testInfo) => {
+      testInfo.annotations.push({ type: 'Datos simulados', description: `"Tilapia Roja" #${ID_CON_GRUPO} servida con tipo_modelo ${GRUPO_ASIGNADO}: en TEST ninguna especie tiene grupo de manejo.` });
+      await servirCatalogo(page, (e) => (e.id_especie === ID_CON_GRUPO ? { ...e, tipo_modelo: GRUPO_ASIGNADO } : e));
+      await abrirCatalogoEspecies(page);
+      const dialogo = await abrirEdicion(page, 'Tilapia Roja');
+      await expect(grupoDeManejo(dialogo), 'El grupo asignado se precarga').toHaveValue(GRUPO_ASIGNADO);
+      await capturar(page, 'catalogo-form-editar-grupo.png');
+    });
+
+    test('3c. Error al cambiar el grupo de una especie con dependencias (simulado)', async ({ page }, testInfo) => {
+      testInfo.annotations.push({ type: 'Datos simulados', description: `"Tilapia Roja" con grupo ${GRUPO_ASIGNADO}; el PATCH a ${GRUPO_NUEVO} se responde con 409 ESPECIE_CON_DEPENDENCIAS (error_code a confirmar con desarrollo). La especie no se modifica.` });
+      const { simularError } = await protegerEspecies(page);
+      simularError(409, ERROR_DEPENDENCIAS);
+      await servirCatalogo(page, (e) => (e.id_especie === ID_CON_GRUPO ? { ...e, tipo_modelo: GRUPO_ASIGNADO } : e));
+      await abrirCatalogoEspecies(page);
+      const dialogo = await abrirEdicion(page, 'Tilapia Roja');
+      await grupoDeManejo(dialogo).selectOption(GRUPO_NUEVO);
+      await dialogo.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
+      await expect(dialogo.getByRole('alert').filter({ hasText: /error al guardar/i })).toContainText('dependencias');
+      await expect(dialogo, 'El diálogo sigue abierto tras el error').toBeVisible();
+      await capturar(page, 'catalogo-error-dependencias.png');
+    });
+
+    test('4. Listado vacío por filtro sin resultados', async ({ page }) => {
+      await servirCatalogo(page);
+      await abrirCatalogoEspecies(page);
+      await page.getByRole('textbox', { name: 'Buscar especies por nombre' }).fill('zzz sin resultados tc dis 39');
+      await expect(page.getByText('Ninguna especie coincide con la búsqueda.', { exact: true })).toBeVisible();
+      await expect(page.getByText('0 registros', { exact: true })).toBeVisible();
+      await expect(page.locator('table tbody tr')).toHaveCount(0);
+      await capturar(page, 'catalogo-listado-vacio.png');
     });
   });
 });
