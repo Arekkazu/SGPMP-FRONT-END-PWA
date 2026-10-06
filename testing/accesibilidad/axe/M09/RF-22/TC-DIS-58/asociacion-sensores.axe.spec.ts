@@ -1,29 +1,33 @@
 /**
  * TC-DIS-58 — Accesibilidad WCAG 2.1 AA del flujo por pasos de Asociación de Sensores
- * RF-22 · CU-05 Gestionar Dispositivos IoT · Rol: Administrador
+ * RF-22 v1.1 · CU-05 Gestionar Dispositivos IoT · Rol: Administrador
  * Configuración → IoT → "Asociación de Sensores a Áreas":
  *   Paso 1 dispositivo → Paso 2 sensor → Paso 3 área destino → Paso 4 punto de instalación
  *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
- * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>.html/json), ambos
- * en ./resultados.
+ * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
+ * peso 0 en el puntaje.
+ *
+ * Cambio del RF (v1.1, sgpmp-backend#290/#304): al reasignar un sensor, el backend cierra
+ * sus asociaciones sensor→activo ambientales y poblacionales y las devuelve en
+ * asociaciones_activo_superadas; el asistente las anuncia en un aviso con enlace a la ficha
+ * de cada activo.
  *
  * Datos: dispositivo #1 "IOT-EST01-HLA-001", sensor #3 "Sensor oxígeno disuelto
  * estanque-01", hoy asociado al área Estanque-01 (#1). Destino: Estanque-02 (#2).
- * Asociarlo sin `confirmar` responde 409 REASIGNACION_REQUIERE_CONFIRMACION y NO
- * cambia la asociación (verificado), así que el diálogo se dispara contra el backend
- * real. La confirmación (`confirmar: true`) se intercepta con page.route para no
- * mover el sensor en el ambiente.
  *
- * BLOQUEOS DEL AMBIENTE (2026-09-28, ver TC-DIS-49/55): GET /configuracion/fincas y
- * GET /configuracion/dispositivos-iot?solo_activos=false responden 400. El test "0"
- * verifica el estado real; el resto sirve con page.route el listado de fincas
- * (#1–#5 reales) y el de dispositivos (activos reales). Sensores y áreas son reales.
+ * PROTECCIÓN DE DATOS: todo POST a /configuracion/sensores/{id}/asociar se intercepta y por
+ * defecto se aborta:
+ *   - Real: el primer envío sin `confirmar`, que responde 409 REASIGNACION_REQUIERE_CONFIRMACION
+ *     sin cambiar nada. Solo se deja pasar si GET /configuracion/sensores/3/asociaciones
+ *     confirma que el sensor sigue asociado a otra área (si no, ese POST lo asociaría de verdad).
+ *   - SIMULADOS: la confirmación (`confirmar: true`, 201, con y sin asociaciones superadas) y
+ *     el 404 AREA_NO_ENCONTRADA (cuerpo real del 2026-09-28).
+ * Los listados de fincas y dispositivos ya responden 200 (bloqueos del 2026-09-28 corregidos).
  *
- * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
- * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
- * no reproduce el bug de M01. Para acotarlo puntualmente:
- *   TC_DIS_58_VIEWPORTS=escritorio
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_58_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Request, type TestInfo } from '@playwright/test';
@@ -36,6 +40,8 @@ const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 const API_BASE = process.env.API_BASE_URL ?? 'https://api.inmero.co/back-sigab-test';
 
 const DISPOSITIVO = 'IOT-EST01-HLA-001';
+const ID_SENSOR = 3;
+const ID_AREA_DESTINO = 2;
 const SENSOR = 'Sensor oxígeno disuelto estanque-01';
 const FINCA = 'Finca Acuícola El Remanso';
 const AREA_DESTINO = 'Estanque-02';
@@ -52,21 +58,23 @@ const RUTA_FINCAS = /\/configuracion\/fincas$/;
 const RUTA_DISPOSITIVOS = /\/configuracion\/dispositivos-iot$/;
 const RUTA_ASOCIAR = /\/configuracion\/sensores\/\d+\/asociar$/;
 
-// Fincas #1–#5 del ambiente TEST (GET /configuracion/fincas/{id}, 2026-09-28)
-const FINCAS_FIXTURE = [
-  { id_finca: 1, nombre: 'Finca Acuícola El Remanso', ubicacion: { departamento: 'Huila', municipio: 'Neiva', vereda: 'El Remanso', latitud: '2.9273', longitud: '-75.2819' }, tamano_h: '12.50', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 2, nombre: 'Piscícola Los Esteros', ubicacion: { departamento: 'Valle del Cauca', municipio: 'Cartago', vereda: 'Los Esteros', latitud: '3.8654', longitud: '-76.4920' }, tamano_h: '8.75', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 3, nombre: 'Camaronera Costa Azul', ubicacion: { departamento: 'Cordoba', municipio: 'Monteria', vereda: 'Costa Azul', latitud: '8.7479', longitud: '-75.8814' }, tamano_h: '25.00', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 4, nombre: 'Granja Piscícola La Esperanza', ubicacion: { departamento: 'Caldas', municipio: 'Manizales', vereda: 'La Esperanza', latitud: '5.0689', longitud: '-75.5174' }, tamano_h: '6.30', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 5, nombre: 'Finca El Paraiso Norte', ubicacion: { departamento: 'Antioquia', municipio: 'Medellin', vereda: 'La Estrella', latitud: '6.30', longitud: '-75.60' }, tamano_h: '120.00', es_activo: false, fecha_creacion: '2026-06-21T16:13:31Z', fecha_actualizacion: '2026-06-21T16:13:31.510491Z', id_usuario: 2 },
-];
-
 // Respuesta 404 real del backend TEST (POST /configuracion/sensores/3/asociar con área inexistente, 2026-09-28)
 const ERROR_404_AREA = {
   error_code: 'AREA_NO_ENCONTRADA',
   message: 'Ubicación inválida: El área productiva seleccionada no existe o se encuentra desactivada. No se pueden asociar sensores a infraestructuras fuera de operación.',
   fields: [{ field: 'id_infraestructura', message: 'Ubicación inválida: El área productiva seleccionada no existe o se encuentra desactivada. No se pueden asociar sensores a infraestructuras fuera de operación.' }],
 };
+
+// 201 SIMULADO de la confirmación; `superadas` replica el campo de sgpmp-backend#304
+const confirmacion201 = (cuerpo: Record<string, unknown>, n: number, superadas: unknown[] = []) => ({
+  id_sensores_area_asociada: 900000 + n, id_sensor: ID_SENSOR, id_dispositivo_iot: cuerpo.id_dispositivo_iot,
+  id_infraestructura: cuerpo.id_infraestructura, punto_instalacion: cuerpo.punto_instalacion, tiene_estado: true,
+  fecha_asociacion: new Date().toISOString(), fecha_finalizacion: null, id_usuario: 1, asociaciones_activo_superadas: superadas,
+});
+const SUPERADAS = [
+  { id_asociacion_activo_sensor: 14, id_activo_biologico: 279, tipo: 'ambiental' },
+  { id_asociacion_activo_sensor: 15, id_activo_biologico: 280, tipo: 'poblacional' },
+];
 
 test.use({ launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
 
@@ -87,20 +95,39 @@ async function iniciarSesionAdmin(page: Page) {
   return () => token;
 }
 
-async function reconstruir(page: Page, token: () => string, testInfo: TestInfo) {
-  await page.goto('/configuracion');
-  await expect.poll(() => token(), { message: 'No se capturó el JWT de la sesión' }).not.toBe('');
-  const activos = await page.request.get(`${API_BASE}/configuracion/dispositivos-iot?solo_activos=true`, { headers: { authorization: token() } });
-  expect(activos.status(), 'El listado de dispositivos activos debe responder 200').toBe(200);
-  const dispositivos = await activos.json();
+// ── Protección de escrituras ─────────────────────────────────────────────────
 
-  const json = (cuerpo: unknown) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(cuerpo) });
-  await page.route(porRuta(RUTA_FINCAS), (r) => (r.request().method() === 'GET' ? r.fulfill(json(FINCAS_FIXTURE)) : r.fallback()));
-  await page.route(porRuta(RUTA_DISPOSITIVOS), (r) => (r.request().method() === 'GET' ? r.fulfill(json(dispositivos)) : r.fallback()));
-  testInfo.annotations.push({
-    type: 'Datos simulados',
-    description: 'Listado de fincas (#1–#5 reales) y de dispositivos (activos reales vía solo_activos=true) servidos con page.route por los 400 de ambos listados. Sensores y áreas son reales.',
+/**
+ * Aborta por defecto; `permitirPrimera` deja pasar el envío real sin `confirmar` (409) y
+ * `simularConfirmacion` responde la confirmación con un 201 simulado.
+ */
+async function protegerAsociacion(page: Page) {
+  const estado = { permitirPrimera: false, superadas: null as unknown[] | null, error404: false };
+  const confirmaciones: Record<string, unknown>[] = [];
+  await page.route(porRuta(RUTA_ASOCIAR), async (route) => {
+    const req = route.request();
+    if (req.method() !== 'POST') return route.fallback();
+    const cuerpo = req.postDataJSON() ?? {};
+    if (estado.error404) return route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify(ERROR_404_AREA) });
+    if (cuerpo.confirmar) {
+      confirmaciones.push(cuerpo);
+      if (estado.superadas === null) return route.abort();
+      return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify(confirmacion201(cuerpo, confirmaciones.length, estado.superadas)) });
+    }
+    return estado.permitirPrimera && new URL(req.url()).pathname.endsWith(`/sensores/${ID_SENSOR}/asociar`) ? route.fallback() : route.abort();
   });
+  return { estado, confirmaciones };
+}
+
+/** Precondición del 409 real: el sensor sigue asociado a otra área (si no, el POST lo asociaría). */
+async function verificarAsociacionActual(page: Page, token: () => string, testInfo: TestInfo) {
+  await expect.poll(() => token(), { message: 'No se capturó el JWT de la sesión' }).not.toBe('');
+  const res = await page.request.get(`${API_BASE}/configuracion/sensores/${ID_SENSOR}/asociaciones`, { headers: { authorization: token() } });
+  expect(res.status(), `GET /configuracion/sensores/${ID_SENSOR}/asociaciones debe responder 200`).toBe(200);
+  const items: { id_infraestructura: number; fecha_finalizacion: string | null; tiene_estado: boolean }[] = (await res.json()).items ?? [];
+  const vigente = items.find((a) => a.fecha_finalizacion === null && a.tiene_estado);
+  testInfo.annotations.push({ type: 'Asociación vigente del sensor', description: vigente ? `área #${vigente.id_infraestructura}` : 'ninguna' });
+  expect(vigente && vigente.id_infraestructura !== ID_AREA_DESTINO, `Precondición: el sensor #${ID_SENSOR} debe seguir asociado a un área distinta de #${ID_AREA_DESTINO}; si no, el primer envío lo asociaría de verdad y no se envía`).toBe(true);
 }
 
 /** Sección "Asociación de Sensores a Áreas" (la pestaña IoT tiene otras secciones con tarjetas similares). */
@@ -184,7 +211,8 @@ function resumenViolaciones(violaciones: { id: string; impact?: string | null; h
   return violaciones.map((v) => `${v.id} (${v.impact}): ${v.help} [${v.nodes.length} nodo(s)]`).join('\n');
 }
 
-async function escanear(page: Page, paso: string, testInfo: TestInfo) {
+async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
+  const paso = `${pasoBase}-${testInfo.project.name}`;
   await page.evaluate(() => document.fonts.ready);
 
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
@@ -200,6 +228,8 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 // ── Casos ────────────────────────────────────────────────────────────────────
@@ -210,14 +240,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de Sensores (R
   test.describe.configure({ timeout: 240_000 });
 
   let token: () => string;
+  let proteccion: Awaited<ReturnType<typeof protegerAsociacion>>;
 
   test.beforeEach(async ({ page }, testInfo) => {
-    test.skip(
-      !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
-    );
+    test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_58_VIEWPORTS.`);
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
+    proteccion = await protegerAsociacion(page);
     token = await iniciarSesionAdmin(page);
   });
 
@@ -226,23 +255,21 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de Sensores (R
     await abrirAsociacion(page);
     expect(
       (await dispositivos).status(),
-      'BLOQUEO: GET /configuracion/dispositivos-iot?solo_activos=false responde 400 (SERIAL_FORMATO_INVALIDO); el Paso 1 no ofrece dispositivos',
+      'GET /configuracion/dispositivos-iot debe responder 200 para que el Paso 1 ofrezca dispositivos',
     ).toBe(200);
   });
 
   test('1-2. Flujo por pasos (dispositivo → sensor → área → punto) - 0 violaciones axe A/AA y foco (2.4.3)', async ({ page }, testInfo) => {
-    await reconstruir(page, token, testInfo);
     const sec = await abrirAsociacion(page);
     await avanzarHastaPaso4(page, testInfo, sec, true);
   });
 
   test('3-4. Reasignación: el diálogo recibe el foco y Esc lo cierra sin cambios', async ({ page }, testInfo) => {
-    await reconstruir(page, token, testInfo);
     const sec = await abrirAsociacion(page);
     const { confirmar } = await avanzarHastaPaso4(page, testInfo, sec);
-
-    const confirmaciones: Request[] = [];
-    page.on('request', (r) => { if (esAsociar(r, true)) confirmaciones.push(r); });
+    await verificarAsociacionActual(page, token, testInfo);
+    proteccion.estado.permitirPrimera = true;
+    const { confirmaciones } = proteccion;
 
     // Primer envío real: el backend pide confirmar la reasignación (409) sin cambiar la asociación
     const primera = page.waitForResponse((r) => esAsociar(r.request(), false));
@@ -266,45 +293,32 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de Sensores (R
     expect(confirmaciones, 'Esc no debe enviar la confirmación de reasignación').toHaveLength(0);
   });
 
-  test('5. Reasignación: Enter confirma igual que el clic en "Reasignar" (4.1.3 anunciado)', async ({ page }, testInfo) => {
-    await reconstruir(page, token, testInfo);
-    // Solo se intercepta la confirmación: el sensor no se mueve de área en el ambiente
-    const confirmaciones: Record<string, unknown>[] = [];
-    await page.route(porRuta(RUTA_ASOCIAR), async (route) => {
-      if (!esAsociar(route.request(), true)) return route.fallback();
-      const cuerpo = route.request().postDataJSON();
-      confirmaciones.push(cuerpo);
-      await route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id_sensores_area_asociada: 900000 + confirmaciones.length, id_sensor: 3, id_dispositivo_iot: cuerpo.id_dispositivo_iot,
-          id_infraestructura: cuerpo.id_infraestructura, punto_instalacion: cuerpo.punto_instalacion, tiene_estado: true,
-          fecha_asociacion: new Date().toISOString(), fecha_finalizacion: null, id_usuario: 1,
-        }),
-      });
-    });
-
+  test('5. Reasignación: Enter sobre "Reasignar" confirma (2.1.1) y el éxito se anuncia (4.1.3)', async ({ page }, testInfo) => {
+    // La confirmación se simula (201): el sensor no se mueve de área en el ambiente
+    proteccion.estado.superadas = [];
+    const { confirmaciones } = proteccion;
     const sec = await abrirAsociacion(page);
     const { confirmar } = await avanzarHastaPaso4(page, testInfo, sec);
+    await verificarAsociacionActual(page, token, testInfo);
+    proteccion.estado.permitirPrimera = true;
     const dialogo = page.getByRole('dialog', { name: 'Confirmar reasignación' });
 
-    // Enter con el diálogo abierto (sin mover el foco manualmente, como lo haría el usuario)
+    // Enter activa el botón con foco: al abrir, el foco queda en el diálogo (en "Cancelar",
+    // la opción segura); con Tab se llega a "Reasignar" y Enter confirma igual que el clic
     await confirmar.click();
     await expect(dialogo).toBeVisible();
-    await page.keyboard.press('Enter');
-    await expect.poll(() => confirmaciones.length, {
-      message: '2.1.1: Enter con el diálogo abierto no confirma la reasignación (el foco quedó fuera del diálogo)',
-      timeout: 3_000,
-    }).toBeGreaterThan(0).catch(() => { /* se registra abajo como soft */ });
-    expect.soft(confirmaciones.length, '2.1.1: Enter con el diálogo abierto no confirma la reasignación (el foco quedó fuera del diálogo)').toBeGreaterThan(0);
-
-    // Referencia: el clic en "Reasignar" sí confirma
-    if (await dialogo.isVisible()) {
-      await dialogo.getByRole('button', { name: 'Reasignar' }).click();
+    const reasignar = dialogo.getByRole('button', { name: 'Reasignar' });
+    const recorrido: string[] = [];
+    for (let i = 0; i < 6 && !(await reasignar.evaluate((b) => b === document.activeElement)); i++) {
+      recorrido.push(await page.evaluate(() => (document.activeElement?.textContent ?? '').trim() || document.activeElement?.getAttribute('aria-label') || document.activeElement?.tagName || ''));
+      await page.keyboard.press('Tab');
     }
-    await expect.poll(() => confirmaciones.length, { message: 'El clic en "Reasignar" debe confirmar' }).toBeGreaterThan(0);
-    expect(confirmaciones[0]).toMatchObject({ confirmar: true, id_dispositivo_iot: 1, id_infraestructura: 2 });
+    testInfo.annotations.push({ type: 'Foco en el diálogo hasta "Reasignar"', description: recorrido.join(' → ') || '(ya estaba en "Reasignar")' });
+    await expect(reasignar, '2.1.1: "Reasignar" debe alcanzarse con Tab dentro del diálogo').toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect.poll(() => confirmaciones.length, { message: '2.1.1: Enter sobre "Reasignar" debe confirmar la reasignación' }).toBe(1);
+    expect(confirmaciones[0]).toMatchObject({ confirmar: true, id_dispositivo_iot: 1, id_infraestructura: ID_AREA_DESTINO });
+    await expect(page.getByText('El sensor dejó de monitorear activos biológicos'), 'Sin asociaciones superadas no hay aviso').toHaveCount(0);
 
     // 4.1.3: la confirmación se anuncia (role="alert" / aria-live)
     const exito = page.getByRole('alert').filter({ hasText: 'reasignado' });
@@ -315,11 +329,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de Sensores (R
   });
 
   test('3.3.1. Referencia inválida (HTTP 404 AREA_NO_ENCONTRADA) - anunciada y 0 violaciones axe A/AA', async ({ page }, testInfo) => {
-    await reconstruir(page, token, testInfo);
-    await page.route(porRuta(RUTA_ASOCIAR), (route) =>
-      route.request().method() === 'POST'
-        ? route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify(ERROR_404_AREA) })
-        : route.fallback());
+    proteccion.estado.error404 = true;
+    testInfo.annotations.push({ type: 'Respuesta inyectada', description: '404 AREA_NO_ENCONTRADA real del backend TEST (2026-09-28).' });
 
     const sec = await abrirAsociacion(page);
     const { confirmar } = await avanzarHastaPaso4(page, testInfo, sec);
@@ -329,5 +340,46 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de Sensores (R
     await expect(alerta, '3.3.1: el 404 de área inválida debe anunciarse').toBeVisible();
 
     await escanear(page, 'error-404-area', testInfo);
+  });
+
+  test('6. Reasignación que cierra asociaciones sensor→activo - aviso anunciado con enlaces a cada activo (RF-22 v1.1)', async ({ page }, testInfo) => {
+    testInfo.annotations.push({ type: 'Datos simulados', description: 'Confirmación respondida con 201 y asociaciones_activo_superadas (activo #279 ambiental, #280 poblacional); el sensor no se mueve de área.' });
+    proteccion.estado.superadas = SUPERADAS;
+    const sec = await abrirAsociacion(page);
+    const { confirmar } = await avanzarHastaPaso4(page, testInfo, sec);
+    await verificarAsociacionActual(page, token, testInfo);
+    proteccion.estado.permitirPrimera = true;
+
+    await confirmar.click();
+    const dialogo = page.getByRole('dialog', { name: 'Confirmar reasignación' });
+    await expect(dialogo).toBeVisible();
+    await dialogo.getByRole('button', { name: 'Reasignar' }).click();
+    await expect.poll(() => proteccion.confirmaciones.length).toBe(1);
+
+    // 4.1.3: el aviso se anuncia (role="alert" con aria-live) y no desaparece solo
+    const aviso = page.getByRole('alert').filter({ hasText: 'El sensor dejó de monitorear activos biológicos' });
+    await expect(aviso, '4.1.3: el aviso de asociaciones cerradas debe anunciarse').toBeVisible();
+    await expect(aviso).toHaveAttribute('aria-live', /assertive|polite/);
+    await expect(aviso, 'El aviso indica cuántas asociaciones se cerraron').toContainText('se cerraron 2 asociaciones');
+    await page.waitForTimeout(7_000);
+    await expect(aviso, '2.2.1: el aviso con acciones pendientes no debe cerrarse solo').toBeVisible();
+
+    // 1.3.1 / 2.4.4: lista de enlaces con propósito claro hacia la ficha de cada activo
+    const lista = page.getByRole('list').filter({ has: page.getByRole('link', { name: /Activo #279/ }) });
+    await expect(lista.getByRole('listitem'), '1.3.1: las asociaciones cerradas se presentan como lista').toHaveCount(2);
+    for (const s of SUPERADAS) {
+      const enlace = lista.getByRole('link', { name: new RegExp(`Activo #${s.id_activo_biologico} \\(${s.tipo}\\)`) });
+      await expect(enlace, `2.4.4: el enlace al activo #${s.id_activo_biologico} nombra el activo y el tipo de asociación`).toBeVisible();
+      await expect(enlace).toHaveAttribute('href', `/activos-biologicos/${s.id_activo_biologico}`);
+    }
+
+    // 2.1.1: los enlaces se alcanzan con Tab
+    const primero = lista.getByRole('link').first();
+    await primero.focus();
+    await expect(primero, '2.1.1: el enlace recibe el foco del teclado').toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(lista.getByRole('link').nth(1), '2.1.1: Tab pasa al siguiente enlace').toBeFocused();
+
+    await escanear(page, 'aviso-asociaciones-superadas', testInfo);
   });
 });
