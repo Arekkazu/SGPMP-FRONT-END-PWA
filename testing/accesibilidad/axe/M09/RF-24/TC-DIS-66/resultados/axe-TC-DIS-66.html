@@ -94,9 +94,41 @@
     <main role="main">
         <div style="padding: 2rem">
             <h1>
-                Axe-core® Accessibility Results
+                Axe-core® Accessibility Results for TC-DIS-66 project
             </h1>
             <div class="summarySection">
+                <div class="summary">
+<h3>Resumen de ejecución — TC-DIS-66 (RF-24, Calibración de Sensores IoT)</h3>
+<ul>
+  <li><strong>Ambiente:</strong> TEST (api.inmero.co) · <strong>Fecha:</strong> 06/10/2026 · cuenta con rol id 1 (Administrador).</li>
+  <li><strong>Tema:</strong> oscuro — preferencia guardada de la cuenta (el test no fuerza tema).</li>
+  <li><strong>Datos fijos:</strong> dispositivo IOT-EST01-HLA-001 (id 1); sensor "Sensor oxígeno disuelto estanque-01" (id 3, 2 calibraciones).
+    Toda escritura sobre /configuracion/dispositivos-iot/** y /configuracion/sensores/** se abortó (ninguna calibración enviada).</li>
+  <li><strong>Issue: #247</strong>, mismo patrón que #244/#245.</li>
+  <li><strong>Paso 1 (selección de dispositivo):</strong> 0 violaciones de axe en móvil, tablet y escritorio.</li>
+  <li><strong>Paso 3 (formulario) — NO CUBIERTO: la pantalla se cae al cargar el historial (#247).</strong>
+    La API devuelve <code>valor_referencia</code> como texto ("10.0000"); CalibracionSection.tsx:187 hace
+    <code>c.valor_referencia.toFixed(4)</code> → TypeError y, sin ErrorBoundary, la app entera se desmonta
+    (desaparece &lt;main&gt;). El test queda en <code>test.fixme</code> hasta el fix; axe no escaneó el formulario.</li>
+  <li><strong>Hallazgos por código (no medidos por axe en esta ejecución):</strong>
+    <ul>
+      <li>"Datos de calibración" es un &lt;span&gt;, no un heading (WCAG 1.3.1) — el assert del test lo confirmó antes del fixme.</li>
+      <li>Labels "Valor de referencia" y "Observaciones" sin htmlFor/id (mismo patrón que #245); axe-core 4.13 no marcaría
+        <code>label</code> porque ambos campos tienen placeholder.</li>
+      <li>&lt;th&gt; del "Historial de calibraciones" sin <code>scope</code> (CalibracionSection.tsx:180).</li>
+      <li>Stepper de 3 pasos sin <code>aria-current</code> (0 elementos con aria-current en la sección, medido en el DOM).</li>
+      <li>Historial de calibraciones no cubierto por axe (no renderizó en la ejecución automatizada); contraste de
+        "Valor ref." verificado solo por código (&lt;td&gt; sin color, línea ~187), mismo patrón #244.</li>
+    </ul></li>
+  <li><strong>Observaciones (no violaciones):</strong> cada tarjeta de dispositivo repite "Solo dispositivos activos son
+    calibrables" (CalibracionSection.tsx:105) aunque la lista ya está filtrada a activos; el título "Historial de
+    calibraciones" está en español fijo (CalibracionSection.tsx:169), no pasa por i18n.</li>
+  <li><strong>Lighthouse</strong> audita la pestaña IoT sin dispositivo seleccionado; no cubre el formulario ni el historial.</li>
+</ul>
+<table border="1" cellpadding="4" style="border-collapse:collapse">
+  <thead><tr><th>Prueba (viewport · título)</th><th>Violaciones axe</th></tr></thead>
+  <tbody><tr><td>movil · paso 1 del wizard (selección de dispositivo) no tiene violaciones de accesibilidad</td><td>0</td></tr><tr><td>tablet · paso 1 del wizard (selección de dispositivo) no tiene violaciones de accesibilidad</td><td>0</td></tr><tr><td>escritorio · paso 1 del wizard (selección de dispositivo) no tiene violaciones de accesibilidad</td><td>0</td></tr></tbody>
+</table></div>
             </div>
             <h2>axe-core found <span class="badge badge-success">0</span> violations</h2>
                 <tbody>
