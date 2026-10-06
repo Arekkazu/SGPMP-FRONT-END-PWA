@@ -1,3 +1,14 @@
+## [1.0.0-rc.39](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.38...v1.0.0-rc.39) (2026-10-06)
+
+### Features
+
+* **prediction:** taxonomia por tipo de manejo y paradigma en el motor, modelos y OTA (RFC-009) ([44d04f8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/44d04f8bdc90341566bb95798fa486c68a8497f8))
+* **rf20-rf21-mod9:** especie y modelo de IA del area, reactivacion y camaras (RFC-009, RFC-011) ([16a7e6d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/16a7e6d4f1aa7962261f52256d9cdf374288589f))
+
+### Bug Fixes
+
+* **rf16-mod9:** pedir el tipo de dato al registrar una metrica (Arekkazu/sgpmp-backend[#487](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/487)) ([77b693a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/77b693ae7c4a058e317425f195ecf353c4f9727c))
+
 ## [1.0.0-rc.38](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.37...v1.0.0-rc.38) (2026-10-04)
 
 ### Features
