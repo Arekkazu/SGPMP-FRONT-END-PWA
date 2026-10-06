@@ -1,35 +1,34 @@
 /**
  * TC-DIS-55 — Accesibilidad WCAG 2.1 AA del listado y formulario de Registro de Dispositivos IoT
- * RF-21 · CU-05 Gestionar Dispositivos IoT · Rol: Administrador
+ * RF-21 v2.0 · CU-05 Gestionar Dispositivos IoT · Rol: Administrador
  * Configuración → IoT → "Dispositivos IoT": Paso 1 finca → Paso 2 área → dispositivos del área
  *
+ * Cambio del RF (2026-10-05, RFC-011): al elegir un tipo de categoría CAMARA aparecen los
+ * campos de visión (resolución, fps y área de cobertura). Deben anunciarse al aparecer,
+ * tener etiquetas con su unidad o formato (resolución ANCHOxALTO, fps 1–60, m²) y mostrar
+ * el error 400 en el campo correspondiente. Nuevo error 422 de tipo de dispositivo inexistente.
+ *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
- * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>.html/json), ambos
- * en ./resultados.
+ * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
+ * peso 0 en el puntaje.
  *
- * BLOQUEOS DEL AMBIENTE (2026-09-28):
- *   - GET /configuracion/fincas → 400 VEREDA_REQUERIDO (finca #34, ver TC-DIS-49): el
- *     Paso 1 no ofrece fincas.
- *   - GET /configuracion/dispositivos-iot?solo_activos=false (la llamada de la UI) →
- *     400 SERIAL_FORMATO_INVALIDO: un dispositivo con serial inválido rompe el listado
- *     completo (con solo_activos=true responde 200).
- *   - POST /configuracion/dispositivos-iot exige id_tipo_dispositivo, que el frontend
- *     no envía: todo registro desde la UI responde 400 VAL_ENTRADA.
- * Los tests "a" verifican el estado real y fallan mientras sigan. El resto sirve con
- * page.route el listado de fincas (#1–#5 reales) y el de dispositivos (los activos
- * reales, leídos con solo_activos=true). Las áreas de la finca son reales.
+ * Datos reales: finca "Finca Acuícola El Remanso", área "Estanque-01" y su dispositivo
+ * "IOT-EST01-HLA-001"; tipo de cámara "CAMARA_VISION" (#5). Los bloqueos del 2026-09-28
+ * (400 de los listados de fincas y dispositivos, alta sin id_tipo_dispositivo) ya no aplican.
  *
- * El formulario no tiene un select de área: el área se elige en el Paso 2 (tarjetas)
- * y el modal la muestra fija. El paso 5 se evalúa sobre esa selección.
- * El Paso 2 solo ofrece áreas activas, así que el 422 de área inactiva solo ocurre si
- * el área se desactiva mientras el formulario está abierto: se inyecta la respuesta
- * 422 real del backend. El 409 también se inyecta con su respuesta real, porque hoy el
- * alta desde la UI falla antes por el contrato (id_tipo_dispositivo).
+ * PROTECCIÓN DE DATOS: un dispositivo registrado es un registro real, así que todo POST/PATCH
+ * a /configuracion/dispositivos-iot se intercepta y por defecto se aborta:
+ *   - Reales: 409 SERIAL_DUPLICADO (serial existente) y 422 TIPO_DISPOSITIVO_NO_ENCONTRADO,
+ *     REDIRIGIENDO el POST con id_tipo_dispositivo 999999 y el serial existente (no se puede
+ *     crear nada aunque una validación faltara).
+ *   - SIMULADOS con el formato estándar: los 400 de resolución, fps y área de cobertura
+ *     (el backend valida el área antes que esos campos, así que obtenerlos reales exige un
+ *     área real y arriesgaría crear el dispositivo; error_code y mensajes a confirmar) y el
+ *     422 de área inactiva (cuerpo real del 2026-09-28).
  *
- * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
- * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
- * no reproduce el bug de M01. Para acotarlo puntualmente:
- *   TC_DIS_55_VIEWPORTS=escritorio
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_55_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -39,10 +38,12 @@ import { auditarLighthouse, PUERTO_LIGHTHOUSE } from '../../../_shared/lighthous
 const TC_ID = 'TC-DIS-55';
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
-const API_BASE = process.env.API_BASE_URL ?? 'https://api.inmero.co/back-sigab-test';
 
-const SERIAL_EXISTENTE = process.env.TC_DIS_55_SERIAL_EXISTENTE ?? 'IOT-EST01-HLA-001';
+const FINCA = 'Finca Acuícola El Remanso';
 const AREA = 'Estanque-01';
+const SERIAL_EXISTENTE = process.env.TC_DIS_55_SERIAL_EXISTENTE ?? 'IOT-EST01-HLA-001';
+const TIPO_CAMARA = 'CAMARA_VISION';
+const TIPO_SENSOR = 'SENSOR_AMBIENTAL';
 
 const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_55_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
@@ -51,26 +52,19 @@ const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_55_VIEWPORTS ?? 'movil,tablet,
 const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 // page.route compara la URL completa (con query): se filtra por pathname
-const porRuta = (patron: RegExp) => (url: URL) => patron.test(url.pathname);
 const RUTA_FINCAS = /\/configuracion\/fincas$/;
 const RUTA_DISPOSITIVOS = /\/configuracion\/dispositivos-iot$/;
+const URL_DISPOSITIVOS = (url: URL) => /\/configuracion\/dispositivos-iot(\/\d+(\/[\w-]+)*)?$/.test(url.pathname);
 
-// Fincas #1–#5 del ambiente TEST (GET /configuracion/fincas/{id}, 2026-09-28)
-const FINCAS_FIXTURE = [
-  { id_finca: 1, nombre: 'Finca Acuícola El Remanso', ubicacion: { departamento: 'Huila', municipio: 'Neiva', vereda: 'El Remanso', latitud: '2.9273', longitud: '-75.2819' }, tamano_h: '12.50', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 2, nombre: 'Piscícola Los Esteros', ubicacion: { departamento: 'Valle del Cauca', municipio: 'Cartago', vereda: 'Los Esteros', latitud: '3.8654', longitud: '-76.4920' }, tamano_h: '8.75', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 3, nombre: 'Camaronera Costa Azul', ubicacion: { departamento: 'Cordoba', municipio: 'Monteria', vereda: 'Costa Azul', latitud: '8.7479', longitud: '-75.8814' }, tamano_h: '25.00', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 4, nombre: 'Granja Piscícola La Esperanza', ubicacion: { departamento: 'Caldas', municipio: 'Manizales', vereda: 'La Esperanza', latitud: '5.0689', longitud: '-75.5174' }, tamano_h: '6.30', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 5, nombre: 'Finca El Paraiso Norte', ubicacion: { departamento: 'Antioquia', municipio: 'Medellin', vereda: 'La Estrella', latitud: '6.30', longitud: '-75.60' }, tamano_h: '120.00', es_activo: false, fecha_creacion: '2026-06-21T16:13:31Z', fecha_actualizacion: '2026-06-21T16:13:31.510491Z', id_usuario: 2 },
-];
-const FINCA = FINCAS_FIXTURE[0].nombre;
+// 400 SIMULADOS con el formato estándar del backend (error_code y mensajes a confirmar)
+const error400 = (field: string, message: string) => ({ error_code: 'VAL_ENTRADA', message: 'Errores de validacion en la solicitud', fields: [{ field, message }] });
+const ERRORES_400 = [
+  { campo: 'resolucion', cuerpo: error400('resolucion', 'La resolución debe tener el formato ANCHOxALTO, p. ej. 1920x1080.'), mensaje: /formato ANCHOxALTO/ },
+  { campo: 'fps', cuerpo: error400('fps', 'Los fps deben ser un entero entre 1 y 60.'), mensaje: /entre 1 y 60/ },
+  { campo: 'area_cobertura_m2', cuerpo: error400('area_cobertura_m2', 'El área de cobertura debe ser mayor a 0 m².'), mensaje: /mayor a 0/ },
+] as const;
 
-// Respuestas reales del backend TEST (POST /configuracion/dispositivos-iot con id_tipo_dispositivo, 2026-09-28)
-const ERROR_409_SERIAL = {
-  error_code: 'SERIAL_DUPLICADO',
-  message: `El serial '${SERIAL_EXISTENTE}' ya está registrado en el sistema.`,
-  fields: [{ field: 'serial', message: `El serial '${SERIAL_EXISTENTE}' ya está registrado en el sistema.` }],
-};
+// Respuesta 422 real del backend TEST (POST /configuracion/dispositivos-iot, área desactivada, 2026-09-28)
 const ERROR_422_AREA = {
   error_code: 'AREA_NO_DISPONIBLE',
   message: 'No se puede registrar el dispositivo porque el área productiva seleccionada está desactivada.',
@@ -79,39 +73,36 @@ const ERROR_422_AREA = {
 
 test.use({ launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
 
+// ── Protección de escrituras ─────────────────────────────────────────────────
+
+type Modo =
+  | { tipo: 'abortar' }
+  | { tipo: 'redirigir'; cuerpo: (enviado: Record<string, unknown>) => Record<string, unknown> }
+  | { tipo: 'simular'; status: number; cuerpo: unknown };
+
+async function protegerDispositivos(page: Page) {
+  let modo: Modo = { tipo: 'abortar' };
+  const intentos: Record<string, unknown>[] = [];
+  await page.route(URL_DISPOSITIVOS, (route) => {
+    const req = route.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType()) || req.method() === 'GET') return route.fallback();
+    const enviado = req.postDataJSON() ?? {};
+    intentos.push(enviado);
+    if (modo.tipo === 'redirigir' && req.method() === 'POST') return route.continue({ postData: JSON.stringify(modo.cuerpo(enviado)) });
+    if (modo.tipo === 'simular') return route.fulfill({ status: modo.status, contentType: 'application/json', body: JSON.stringify(modo.cuerpo) });
+    return route.abort();
+  });
+  return { fijarModo: (m: Modo) => { modo = m; }, intentos };
+}
+
 // ── Navegación ───────────────────────────────────────────────────────────────
 
 async function iniciarSesionAdmin(page: Page) {
-  // Solo JWT de respuestas exitosas del backend: tras una recarga, la última petición
-  // con Authorization puede ser una rechazada (401) con el token anterior
-  let token = '';
-  page.on('response', (res) => {
-    const h = res.request().headers()['authorization'];
-    if (h && res.ok() && res.url().startsWith(API_BASE)) token = h;
-  });
   await page.goto('/login');
   await page.getByRole('textbox', { name: 'Correo electrónico', exact: true }).fill(ADMIN_EMAIL);
   await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 60_000 });
-  return () => token;
-}
-
-/** Sirve lo que el ambiente no entrega hoy: listado de fincas y de dispositivos (activos reales). */
-async function reconstruir(page: Page, token: () => string, testInfo: TestInfo) {
-  await page.goto('/configuracion');
-  await expect.poll(() => token(), { message: 'No se capturó el JWT de la sesión' }).not.toBe('');
-  const activos = await page.request.get(`${API_BASE}/configuracion/dispositivos-iot?solo_activos=true`, { headers: { authorization: token() } });
-  expect(activos.status(), 'El listado de dispositivos activos debe responder 200').toBe(200);
-  const dispositivos = await activos.json();
-
-  const json = (cuerpo: unknown) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(cuerpo) });
-  await page.route(porRuta(RUTA_FINCAS), (r) => (r.request().method() === 'GET' ? r.fulfill(json(FINCAS_FIXTURE)) : r.fallback()));
-  await page.route(porRuta(RUTA_DISPOSITIVOS), (r) => (r.request().method() === 'GET' ? r.fulfill(json(dispositivos)) : r.fallback()));
-  testInfo.annotations.push({
-    type: 'Datos simulados',
-    description: 'Listado de fincas (#1–#5 reales) y de dispositivos (activos reales vía solo_activos=true) servidos con page.route por los 400 de ambos listados.',
-  });
 }
 
 /** /configuracion → IoT, en el Paso 1 de "Dispositivos IoT". */
@@ -134,7 +125,9 @@ async function abrirDispositivosDelArea(page: Page) {
   await abrirDispositivos(page);
   await tarjeta(page, FINCA).click();
   await expect(page.getByText(/Paso 2 — Selecciona el área de/)).toBeVisible();
+  const dispositivos = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_DISPOSITIVOS.test(new URL(r.url()).pathname));
   await tarjeta(page, AREA).click();
+  expect((await dispositivos).status(), 'GET /configuracion/dispositivos-iot debe responder 200').toBe(200);
   await expect(page.locator('table tbody tr').first()).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 }
@@ -142,6 +135,11 @@ async function abrirDispositivosDelArea(page: Page) {
 interface Formulario {
   dialogo: Locator;
   serial: Locator;
+  tipo: Locator;
+  gateway: Locator;
+  resolucion: Locator;
+  fps: Locator;
+  cobertura: Locator;
   descripcion: Locator;
   registrar: Locator;
 }
@@ -150,20 +148,37 @@ async function abrirFormulario(page: Page): Promise<Formulario> {
   await page.getByRole('button', { name: 'Nuevo dispositivo' }).click();
   const dialogo = page.getByRole('dialog', { name: 'Registrar dispositivo IoT' });
   await expect(dialogo).toBeVisible();
-  return {
+  const form = {
     dialogo,
-    // El input de serial se ubica por su placeholder: su <label> no está asociado (ver test 3)
-    serial: dialogo.getByRole('textbox').first(),
-    descripcion: dialogo.getByRole('textbox', { name: 'Descripción — tipo, modelo o referencia', exact: true }),
+    serial: dialogo.getByRole('textbox', { name: 'Serial físico del dispositivo' }),
+    tipo: dialogo.getByRole('combobox', { name: 'Tipo de dispositivo' }),
+    gateway: dialogo.getByRole('combobox', { name: /Gateway Edge/ }),
+    resolucion: dialogo.getByRole('textbox', { name: /^Resolución/ }),
+    fps: dialogo.getByRole('spinbutton', { name: /FPS/i }),
+    cobertura: dialogo.getByRole('spinbutton', { name: /Área de cobertura/ }),
+    descripcion: dialogo.getByRole('textbox', { name: /^Descripción/ }),
     registrar: dialogo.getByRole('button', { name: 'Registrar dispositivo' }),
   };
+  await expect(form.tipo.locator('option', { hasText: TIPO_CAMARA })).toHaveCount(1, { timeout: 20_000 });
+  return form;
 }
 
-async function inyectarRespuestaAlta(page: Page, status: number, cuerpo: object) {
-  await page.route(porRuta(RUTA_DISPOSITIVOS), (route) =>
-    route.request().method() === 'POST'
-      ? route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(cuerpo) })
-      : route.fallback());
+/** Formulario válido con tipo cámara, sin Gateway Edge. */
+async function llenarCamara(form: Formulario, serial: string) {
+  await form.serial.fill(serial);
+  await form.tipo.selectOption({ label: TIPO_CAMARA });
+  if (await form.gateway.count()) await form.gateway.selectOption({ index: 0 });
+  await form.resolucion.fill('1920x1080');
+  await form.fps.fill('25');
+  await form.cobertura.fill('80');
+  await form.descripcion.fill('Cámara QA TC-DIS-55');
+}
+
+/** 3.3.1: el campo queda inválido y con el mensaje asociado. */
+async function verificarErrorEnCampo(campo: Locator, nombre: string, mensaje: RegExp, soft = true) {
+  const e = soft ? expect.soft : expect;
+  await e(campo, `3.3.1: "${nombre}" debe marcarse con aria-invalid`).toHaveAttribute('aria-invalid', 'true');
+  await e(campo, `3.3.1: el error debe estar asociado al campo "${nombre}" (aria-describedby)`).toHaveAccessibleDescription(mensaje);
 }
 
 // ── Escaneo axe + Lighthouse ─────────────────────────────────────────────────
@@ -172,7 +187,8 @@ function resumenViolaciones(violaciones: { id: string; impact?: string | null; h
   return violaciones.map((v) => `${v.id} (${v.impact}): ${v.help} [${v.nodes.length} nodo(s)]`).join('\n');
 }
 
-async function escanear(page: Page, paso: string, testInfo: TestInfo) {
+async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
+  const paso = `${pasoBase}-${testInfo.project.name}`;
   await page.evaluate(() => document.fonts.ready);
 
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
@@ -188,6 +204,8 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 // ── Casos ────────────────────────────────────────────────────────────────────
@@ -197,118 +215,168 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
   // workers: 1 en el config, así que los logins siguen siendo secuenciales.
   test.describe.configure({ timeout: 180_000 });
 
-  let token: () => string;
+  let fijarModo: (m: Modo) => void;
+  let intentos: Record<string, unknown>[];
 
   test.beforeEach(async ({ page }, testInfo) => {
-    test.skip(
-      !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
-    );
+    test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_55_VIEWPORTS.`);
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
-    token = await iniciarSesionAdmin(page);
-  });
-
-  test('1a. Dispositivos IoT (estado real del ambiente) - 0 violaciones axe A/AA', async ({ page }, testInfo) => {
-    const dispositivos = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_DISPOSITIVOS.test(new URL(r.url()).pathname), { timeout: 20_000 }).catch(() => null);
-    const estadoFincas = await abrirDispositivos(page);
-
-    await escanear(page, 'estado-real', testInfo);
-
-    expect.soft(estadoFincas, 'BLOQUEO: GET /configuracion/fincas no responde 200 (400 VEREDA_REQUERIDO); el Paso 1 no ofrece fincas').toBe(200);
-    const resDispositivos = await dispositivos;
-    if (resDispositivos) {
-      expect.soft(resDispositivos.status(), 'BLOQUEO: GET /configuracion/dispositivos-iot?solo_activos=false no responde 200 (400 SERIAL_FORMATO_INVALIDO)').toBe(200);
-    }
+    ({ fijarModo, intentos } = await protegerDispositivos(page));
+    await iniciarSesionAdmin(page);
   });
 
   test('1-2. Listado de dispositivos de un área - 0 violaciones axe A/AA', async ({ page }, testInfo) => {
-    await reconstruir(page, token, testInfo);
+    expect(await abrirDispositivos(page), 'GET /configuracion/fincas debe responder 200').toBe(200);
     await abrirDispositivosDelArea(page);
-
     const fila = page.locator('table tbody tr').filter({ hasText: SERIAL_EXISTENTE }).first();
     await expect(fila, `Precondición: el área debe tener el dispositivo "${SERIAL_EXISTENTE}"`).toBeVisible();
     await expect(fila.getByRole('button', { name: `Desactivar ${SERIAL_EXISTENTE}` })).toBeVisible();
-
     await escanear(page, 'listado', testInfo);
   });
 
-  test('3. Formulario "Registrar dispositivo" - 0 violaciones axe A/AA (1.3.1 labels)', async ({ page }, testInfo) => {
-    await reconstruir(page, token, testInfo);
+  test('3. Formulario "Registrar dispositivo" - labels (1.3.1) y 0 violaciones axe A/AA', async ({ page }, testInfo) => {
     await abrirDispositivosDelArea(page);
     const form = await abrirFormulario(page);
-
-    // 1.3.1: serial y descripción deben identificarse por su label; el área se muestra fija
-    await expect.soft(form.serial, '1.3.1: el campo "Serial físico del dispositivo" no tiene nombre accesible (su <label> no está asociado)').toHaveAccessibleName(/Serial físico del dispositivo/);
-    await expect(form.descripcion).toBeVisible();
-    await expect(form.dialogo.getByText(`Estanque — ${AREA}`)).toBeVisible();
-
+    for (const [campo, nombre] of [[form.serial, 'Serial'], [form.tipo, 'Tipo de dispositivo'], [form.descripcion, 'Descripción']] as const) {
+      await expect(campo, `1.3.1: no se encontró el campo "${nombre}" por su label`).toBeVisible();
+    }
+    await expect(form.resolucion, 'Sin tipo de cámara no se muestran los campos de visión').toHaveCount(0);
     await escanear(page, 'formulario', testInfo);
   });
 
-  test('4a. Registro desde la UI (estado real del contrato con el backend)', async ({ page }, testInfo) => {
-    await reconstruir(page, token, testInfo);
+  test('3. Campos de cámara - aparecen anunciados, con unidad o formato en la etiqueta', async ({ page }, testInfo) => {
     await abrirDispositivosDelArea(page);
     const form = await abrirFormulario(page);
+
+    // Región viva que exista ANTES de elegir el tipo: solo así el lector anuncia el cambio
+    const regionesVivas = await form.dialogo.locator('[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"]').count();
+    await form.tipo.selectOption({ label: TIPO_CAMARA });
+    await expect(form.resolucion, 'Al elegir CAMARA aparecen los campos de visión').toBeVisible();
+    await expect(form.fps).toBeVisible();
+    await expect(form.cobertura).toBeVisible();
+
+    // 4.1.3: el cambio debe anunciarse (región viva con el aviso o los campos)
+    const anuncio = await form.resolucion.evaluate((input, antes) => {
+      const vivo = input.closest('[aria-live]:not([aria-live="off"]), [role="status"]');
+      const dialogo = input.closest('[role="dialog"]')!;
+      const despues = dialogo.querySelectorAll('[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"]').length;
+      const textos = [...dialogo.querySelectorAll('[aria-live]:not([aria-live="off"]), [role="status"]')].map((e) => e.textContent ?? '').join(' ');
+      return { dentroDeRegionViva: !!vivo, avisoNuevo: despues > antes && /c[aá]mara|resoluci|visi[oó]n/i.test(textos) };
+    }, regionesVivas);
+    testInfo.annotations.push({ type: 'Anuncio de los campos de cámara', description: JSON.stringify(anuncio) });
+    expect.soft(anuncio.dentroDeRegionViva || anuncio.avisoNuevo, 'DEFECTO 4.1.3: los campos de cámara aparecen sin anunciarse (no están en una región aria-live ni hay un aviso de estado al elegir el tipo CAMARA)').toBe(true);
+
+    // 1.3.1 / 3.3.2: etiquetas con unidad o formato; obligatorias con aria-required
+    await expect.soft(form.resolucion, '3.3.2: la etiqueta de resolución debe indicar el formato ANCHOxALTO').toHaveAccessibleName(/ANCHOxALTO/);
+    await expect.soft(form.fps, 'DEFECTO 3.3.2: la etiqueta "FPS" no indica el rango permitido 1–60').toHaveAccessibleName(/1\s*[–-]\s*60/);
+    await expect.soft(form.cobertura, '3.3.2: la etiqueta de área de cobertura debe indicar la unidad m²').toHaveAccessibleName(/m²/);
+    for (const [campo, nombre] of [[form.resolucion, 'Resolución'], [form.fps, 'FPS'], [form.cobertura, 'Área de cobertura']] as const) {
+      await expect.soft(campo, `3.3.2: "${nombre}" es obligatorio para una cámara y debe exponer aria-required`).toHaveAttribute('aria-required', 'true');
+    }
+    await escanear(page, 'campos-camara', testInfo);
+
+    // Al cambiar a un tipo SENSOR los campos desaparecen
+    await form.tipo.selectOption({ label: TIPO_SENSOR });
+    await expect(form.resolucion, 'Con un tipo SENSOR los campos de visión no se muestran').toHaveCount(0);
+  });
+
+  test('3. Campos de cámara - validación del cliente anunciada en cada campo', async ({ page }, testInfo) => {
+    await abrirDispositivosDelArea(page);
+    const form = await abrirFormulario(page);
+    await llenarCamara(form, 'QA-TCDIS55-001');
+    await form.resolucion.fill('1920-1080');
+    await form.fps.fill('0');
+    await form.cobertura.fill('0');
+    await form.registrar.click();
+
+    await verificarErrorEnCampo(form.resolucion, 'Resolución', /ANCHOxALTO/, false);
+    await verificarErrorEnCampo(form.fps, 'FPS', /entre 1 y 60/, false);
+    await verificarErrorEnCampo(form.cobertura, 'Área de cobertura', /mayor a 0/, false);
+    expect(intentos, 'La validación del cliente debe bloquear el envío').toHaveLength(0);
+    await escanear(page, 'error-camara-cliente', testInfo);
+  });
+
+  test('4. HTTP 400 del backend en un campo de cámara (simulado) - error en el campo correspondiente', async ({ page }, testInfo) => {
+    testInfo.annotations.push({ type: 'Datos simulados', description: '400 VAL_ENTRADA con fields resolucion / fps / area_cobertura_m2 inyectados (error_code y mensajes a confirmar); no se crea ningún dispositivo.' });
+    await abrirDispositivosDelArea(page);
+    const form = await abrirFormulario(page);
+    await llenarCamara(form, 'QA-TCDIS55-002');
+    const campos = { resolucion: form.resolucion, fps: form.fps, area_cobertura_m2: form.cobertura };
+
+    for (const [i, e] of ERRORES_400.entries()) {
+      fijarModo({ tipo: 'simular', status: 400, cuerpo: e.cuerpo });
+      await form.registrar.click();
+      await expect.poll(() => intentos.length).toBe(i + 1);
+      await expect(form.dialogo.getByRole('alert').filter({ hasText: e.mensaje }).first(), `3.3.1: el 400 de "${e.campo}" debe anunciarse`).toBeVisible();
+      await verificarErrorEnCampo(campos[e.campo], e.campo, e.mensaje);
+      if (i === 0) await escanear(page, 'error-400-campo-camara', testInfo);
+      // Corregir el campo para el siguiente envío (el error del campo se limpia al editar)
+      await campos[e.campo].fill(campos[e.campo] === form.resolucion ? '1280x720' : '30');
+    }
+  });
+
+  test('4. HTTP 409 real - serial duplicado anunciado en el campo', async ({ page }, testInfo) => {
+    await abrirDispositivosDelArea(page);
+    await expect(page.locator('table tbody tr').filter({ hasText: SERIAL_EXISTENTE }), `Precondición: "${SERIAL_EXISTENTE}" debe existir para que el POST sea un duplicado (si no, no se envía)`).toHaveCount(1);
+    const form = await abrirFormulario(page);
     await form.serial.fill(SERIAL_EXISTENTE);
+    await form.tipo.selectOption({ label: TIPO_SENSOR });
+    if (await form.gateway.count()) await form.gateway.selectOption({ index: 0 });
     await form.descripcion.fill('Prueba QA serial duplicado');
+    fijarModo({ tipo: 'redirigir', cuerpo: (enviado) => enviado });
+    testInfo.annotations.push({ type: 'Petición real', description: `POST con el serial existente "${SERIAL_EXISTENTE}": el backend lo rechaza sin crear nada.` });
 
     const alta = page.waitForResponse((r) => r.request().method() === 'POST' && RUTA_DISPOSITIVOS.test(new URL(r.url()).pathname));
     await form.registrar.click();
     const respuesta = await alta;
-    if (respuesta.ok()) {
-      // Salvaguarda: si el backend aceptara el alta, no dejar el dispositivo creado
-      const creado = await respuesta.json();
-      await page.request.patch(`${API_BASE}/configuracion/dispositivos-iot/${creado.id_dispositivo_iot}/desactivar`, { headers: { authorization: token() } });
-    }
-    testInfo.annotations.push({ type: 'Respuesta real del backend', description: `${respuesta.status()} ${await respuesta.text()}` });
+    testInfo.annotations.push({ type: 'Respuesta real', description: `${respuesta.status()} ${await respuesta.text()}` });
+    expect(respuesta.status(), 'El backend debe responder 409 al serial duplicado').toBe(409);
 
-    expect(
-      respuesta.status(),
-      'BLOQUEO: el alta desde la UI no llega a validar el serial; el backend exige id_tipo_dispositivo, que el frontend no envía (400 VAL_ENTRADA). Con el contrato corregido se espera 409 SERIAL_DUPLICADO',
-    ).toBe(409);
-  });
-
-  test('4b. Serial duplicado (HTTP 409) - anunciado en el campo y 0 violaciones axe A/AA', async ({ page }, testInfo) => {
-    await reconstruir(page, token, testInfo);
-    await inyectarRespuestaAlta(page, 409, ERROR_409_SERIAL);
-    await abrirDispositivosDelArea(page);
-    const form = await abrirFormulario(page);
-    await form.serial.fill(SERIAL_EXISTENTE);
-    await form.descripcion.fill('Prueba QA serial duplicado');
-    await form.registrar.click();
-
-    // 3.3.1: el 409 se muestra junto al campo serial con role="alert"
-    const error = form.dialogo.getByRole('alert').filter({ hasText: 'Ya existe un dispositivo con este serial.' });
-    await expect(error).toBeVisible();
-    await expect.soft(form.serial, '3.3.1: el campo serial debe marcarse con aria-invalid').toHaveAttribute('aria-invalid', 'true');
-    await expect.soft(form.serial, '3.3.1: el error debe asociarse al campo serial (aria-describedby)').toHaveAccessibleDescription(/Ya existe un dispositivo con este serial/);
-
+    await expect(form.dialogo.getByRole('alert').filter({ hasText: 'Ya existe un dispositivo con este serial.' })).toBeVisible();
+    await verificarErrorEnCampo(form.serial, 'Serial', /Ya existe un dispositivo con este serial/);
     await escanear(page, 'error-409-serial', testInfo);
   });
 
-  test('4c. Área inactiva (HTTP 422 AREA_NO_DISPONIBLE) - anunciado y 0 violaciones axe A/AA', async ({ page }, testInfo) => {
-    await reconstruir(page, token, testInfo);
-    await inyectarRespuestaAlta(page, 422, ERROR_422_AREA);
+  test('4. HTTP 422 real - tipo de dispositivo inexistente, anunciado', async ({ page }, testInfo) => {
     await abrirDispositivosDelArea(page);
     const form = await abrirFormulario(page);
-    await form.serial.fill('QA-TCDIS55-001');
-    await form.descripcion.fill('Prueba QA area inactiva');
+    await llenarCamara(form, 'QA-TCDIS55-003');
+    // Redirigido: tipo inexistente + serial existente (no se puede crear nada aunque faltara una validación)
+    fijarModo({ tipo: 'redirigir', cuerpo: (enviado) => ({ ...enviado, id_tipo_dispositivo: 999999, serial: SERIAL_EXISTENTE }) });
+    testInfo.annotations.push({ type: 'Petición redirigida', description: `POST con id_tipo_dispositivo 999999 y el serial existente "${SERIAL_EXISTENTE}": respuesta real del backend, sin crear nada.` });
+
+    const alta = page.waitForResponse((r) => r.request().method() === 'POST' && RUTA_DISPOSITIVOS.test(new URL(r.url()).pathname));
+    await form.registrar.click();
+    const respuesta = await alta;
+    const cuerpo = await respuesta.json();
+    testInfo.annotations.push({ type: 'Respuesta real', description: `${respuesta.status()} ${JSON.stringify(cuerpo)}` });
+    expect(respuesta.status()).toBe(422);
+    expect(cuerpo.error_code).toBe('TIPO_DISPOSITIVO_NO_ENCONTRADO');
+
+    const alerta = form.dialogo.getByRole('alert').filter({ hasText: 'Error al registrar' });
+    await expect(alerta, '3.3.1/4.1.3: el tipo inexistente se anuncia en una alerta').toContainText('tipo de dispositivo indicado no existe');
+    await expect(alerta).toHaveAttribute('aria-live', /assertive|polite/);
+    await expect(form.dialogo, 'El modal sigue abierto para corregir').toBeVisible();
+    await verificarErrorEnCampo(form.tipo, 'Tipo de dispositivo', /tipo de dispositivo indicado no existe/);
+    await escanear(page, 'error-422-tipo-inexistente', testInfo);
+  });
+
+  test('4. HTTP 422 - área inactiva (respuesta real inyectada), anunciado', async ({ page }, testInfo) => {
+    testInfo.annotations.push({ type: 'Respuesta inyectada', description: '422 AREA_NO_DISPONIBLE real del backend TEST (2026-09-28): el Paso 2 solo ofrece áreas activas.' });
+    await abrirDispositivosDelArea(page);
+    const form = await abrirFormulario(page);
+    await llenarCamara(form, 'QA-TCDIS55-004');
+    fijarModo({ tipo: 'simular', status: 422, cuerpo: ERROR_422_AREA });
     await form.registrar.click();
 
     const alerta = form.dialogo.getByRole('alert').filter({ hasText: 'área productiva seleccionada está desactivada' });
     await expect(alerta, '3.3.1: el 422 de área inactiva debe anunciarse').toBeVisible();
     await expect(form.dialogo, 'El modal debe seguir abierto').toBeVisible();
-
     await escanear(page, 'error-422-area-inactiva', testInfo);
   });
 
-  test('5. Teclado - la selección de área productiva se opera con Tab y Enter', async ({ page }, testInfo) => {
-    testInfo.annotations.push({
-      type: 'Adaptación del paso 5',
-      description: 'El formulario no tiene select de área: el área se elige en el Paso 2 con tarjetas (botones). Se verifica que se recorran con Tab y se seleccionen con Enter.',
-    });
-    await reconstruir(page, token, testInfo);
+  test('5. Teclado - selección de área con Tab/Enter y tipo de cámara con flechas', async ({ page }) => {
     await abrirDispositivos(page);
 
     // Paso 1: la tarjeta de la finca se activa con Enter
@@ -325,6 +393,21 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
     await expect(area, `Tab debe alcanzar la tarjeta del área "${AREA}"`).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.locator('table tbody tr').first(), 'Enter debe seleccionar el área y mostrar sus dispositivos').toBeVisible();
-    await expect(page.getByText(AREA, { exact: true }).first()).toBeVisible();
+
+    // Tipo de dispositivo: con flechas se llega a CAMARA_VISION y aparecen los campos, alcanzables con Tab
+    const form = await abrirFormulario(page);
+    await form.tipo.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(form.tipo.locator('option:checked')).toHaveText(TIPO_CAMARA);
+    await expect(form.resolucion).toBeVisible();
+    for (let i = 0; i < 6 && !(await form.resolucion.evaluate((el) => el === document.activeElement)); i++) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(form.resolucion, 'Tab debe alcanzar "Resolución" tras elegir el tipo').toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(form.fps, 'Tab pasa de "Resolución" a "FPS"').toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(form.cobertura, 'Tab pasa de "FPS" a "Área de cobertura"').toBeFocused();
+    expect(intentos, 'Operar el formulario con teclado no lo envía').toHaveLength(0);
   });
 });
