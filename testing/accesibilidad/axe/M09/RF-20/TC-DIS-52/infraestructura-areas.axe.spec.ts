@@ -1,32 +1,33 @@
 /**
  * TC-DIS-52 — Accesibilidad WCAG 2.1 AA del listado y formulario de Infraestructura Productiva (Áreas)
- * RF-20 · CU-04 Gestionar Infraestructura Productiva · Rol: Administrador
+ * RF-20 v1.1 · CU-04 Gestionar Infraestructura Productiva · Rol: Administrador
  * Configuración → Fincas → sección "Infraestructura Productiva" → finca → áreas
  *
+ * Cambio del RF (2026-10-05, RFC-009): el formulario agrega las listas de especie y modelo
+ * de IA; se anuncian tres errores 422 nuevos (incoherencia de modelo, especie inactiva y
+ * cambio de especie con activos alojados); y un área inactiva se puede reactivar.
+ *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
- * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>.html/json), ambos
- * en ./resultados.
+ * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
+ * peso 0 en el puntaje.
  *
- * BLOQUEOS DEL AMBIENTE (2026-09-28):
- *   - GET /configuracion/fincas responde 400 VEREDA_REQUERIDO (finca #34 sin
- *     departamento/vereda, ver TC-DIS-49): la sección no ofrece ninguna finca.
- *   - GET /configuracion/tipos-area responde 403 ACCESO_DENEGADO (Administrador y
- *     Productor): el select "Tipo de área" del formulario queda sin opciones.
- * Los tests "a" verifican el estado real y fallan mientras sigan los bloqueos;
- * los demás sirven con page.route el listado de fincas (#1–#5 reales) y un
- * catálogo de tipos con los nombres reales observados en las áreas existentes
- * ("Estanque", "Invernadero"). Las áreas de la finca sí son reales.
+ * Datos: finca "Finca Acuícola El Remanso" (#1) con sus áreas reales. En TEST ninguna
+ * especie tiene familia de modelo de IA, así que GET /configuracion/especies se sirve con
+ * la respuesta real y "Tilapia Roja" con tipo_modelo MODELO_ACUICULTURA (SIMULADO). Si la
+ * finca no tiene un área inactiva para reactivar, la última área del listado real se sirve
+ * como inactiva (SIMULADO).
  *
- * Errores:
- *   - Nombre duplicado: real contra el backend ("Estanque-01" en la finca #1).
- *     HOY responde 500 ERROR_INTERNO en vez de 409 (hallazgo); no crea registros.
- *   - Superficie inválida: el cliente la valida antes de enviar; se prueba el error
- *     del cliente y la respuesta 400 real del backend inyectada con page.route.
+ * PROTECCIÓN DE DATOS: un área registrada, editada o reactivada es un registro real, así
+ * que todo POST/PATCH a /configuracion/infraestructuras se intercepta y por defecto se aborta:
+ *   - Real: el POST del nombre duplicado, solo si el área ya existe en el listado real de la
+ *     finca (si no, el caso falla por precondición y no se envía nada).
+ *   - SIMULADOS con el formato estándar del backend: los tres 422 nuevos (error_code a
+ *     confirmar con desarrollo, salvo ESPECIE_INACTIVA que ya existe en el backend) y el
+ *     200 de la reactivación.
  *
- * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
- * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
- * no reproduce el bug de M01. Para acotarlo puntualmente:
- *   TC_DIS_52_VIEWPORTS=escritorio
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_52_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Request, type TestInfo } from '@playwright/test';
@@ -36,9 +37,14 @@ import { auditarLighthouse, PUERTO_LIGHTHOUSE } from '../../../_shared/lighthous
 const TC_ID = 'TC-DIS-52';
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
-const API_BASE = process.env.API_BASE_URL ?? 'https://api.inmero.co/back-sigab-test';
 
+const FINCA = process.env.TC_DIS_52_FINCA ?? 'Finca Acuícola El Remanso';
 const AREA_EXISTENTE = process.env.TC_DIS_52_AREA_EXISTENTE ?? 'Estanque-01';
+
+// Especie con familia de modelo (SIMULADO: en TEST ninguna especie tiene tipo_modelo)
+const ESPECIE_CON_FAMILIA = 'Tilapia Roja';
+const FAMILIA = 'MODELO_ACUICULTURA';
+const FAMILIA_TEXTO = 'Acuicultura';
 
 const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_52_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
@@ -47,73 +53,89 @@ const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_52_VIEWPORTS ?? 'movil,tablet,
 const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 // page.route compara la URL completa (con query): se filtra por pathname
-const porRuta = (patron: RegExp) => (url: URL) => patron.test(url.pathname);
 const RUTA_FINCAS = /\/configuracion\/fincas$/;
-const RUTA_TIPOS = /\/configuracion\/tipos-area$/;
+const RUTA_ESPECIES = /\/configuracion\/especies$/;
 const RUTA_AREAS = /\/configuracion\/infraestructuras$/;
+const URL_AREAS = (url: URL) => /\/configuracion\/infraestructuras(\/\d+(\/\w+)?)?$/.test(url.pathname);
 
-// Fincas #1–#5 del ambiente TEST (GET /configuracion/fincas/{id}, 2026-09-28)
-const FINCAS_FIXTURE = [
-  { id_finca: 1, nombre: 'Finca Acuícola El Remanso', ubicacion: { departamento: 'Huila', municipio: 'Neiva', vereda: 'El Remanso', latitud: '2.9273', longitud: '-75.2819' }, tamano_h: '12.50', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 2, nombre: 'Piscícola Los Esteros', ubicacion: { departamento: 'Valle del Cauca', municipio: 'Cartago', vereda: 'Los Esteros', latitud: '3.8654', longitud: '-76.4920' }, tamano_h: '8.75', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 3, nombre: 'Camaronera Costa Azul', ubicacion: { departamento: 'Cordoba', municipio: 'Monteria', vereda: 'Costa Azul', latitud: '8.7479', longitud: '-75.8814' }, tamano_h: '25.00', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 4, nombre: 'Granja Piscícola La Esperanza', ubicacion: { departamento: 'Caldas', municipio: 'Manizales', vereda: 'La Esperanza', latitud: '5.0689', longitud: '-75.5174' }, tamano_h: '6.30', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: '2026-04-28T14:42:28.213141Z', id_usuario: 2 },
-  { id_finca: 5, nombre: 'Finca El Paraiso Norte', ubicacion: { departamento: 'Antioquia', municipio: 'Medellin', vereda: 'La Estrella', latitud: '6.30', longitud: '-75.60' }, tamano_h: '120.00', es_activo: false, fecha_creacion: '2026-06-21T16:13:31Z', fecha_actualizacion: '2026-06-21T16:13:31.510491Z', id_usuario: 2 },
-];
-const FINCA = FINCAS_FIXTURE[0];
-
-// Catálogo de tipos: solo nombres reales observados en las áreas existentes (el catálogo real responde 403)
-const TIPOS_FIXTURE = [
-  { id_tipo_area: 1, nombre: 'Estanque', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: null },
-  { id_tipo_area: 2, nombre: 'Invernadero', es_activo: true, fecha_creacion: '2026-04-28T14:42:28Z', fecha_actualizacion: null },
-];
-
-// Respuesta 400 real del backend TEST (POST /configuracion/infraestructuras, superficie 0, 2026-09-28)
-const ERROR_400_SUPERFICIE = {
-  error_code: 'VAL_ENTRADA',
-  message: 'Errores de validacion en la solicitud',
-  fields: [{ field: 'superficie', message: 'La superficie debe ser mayor a cero. Valor recibido: 0.' }],
+// 422 SIMULADOS con el formato estándar del backend (error_code a confirmar, salvo ESPECIE_INACTIVA)
+const ERROR_422_MODELO = {
+  error_code: 'MODELO_INCOHERENTE_CON_ESPECIE',
+  message: `El modelo de IA "MODELO_AVES" no corresponde a la familia de la especie "${ESPECIE_CON_FAMILIA}" (${FAMILIA}).`,
+  fields: [{ field: 'tipo_modelo_asignado', message: 'El modelo de IA debe coincidir con la familia de modelo de la especie.' }],
+};
+const ERROR_422_ESPECIE_INACTIVA = {
+  error_code: 'ESPECIE_INACTIVA',
+  message: `La especie "${ESPECIE_CON_FAMILIA}" está inactiva; no se le pueden asignar áreas.`,
+  fields: [{ field: 'especie_id', message: 'La especie seleccionada está inactiva.' }],
+};
+const ERROR_422_ACTIVOS_ALOJADOS = {
+  error_code: 'CAMBIO_ESPECIE_CON_ACTIVOS_ALOJADOS',
+  message: 'No se puede cambiar la especie del área: tiene activos biológicos alojados de la especie actual.',
+  fields: [{ field: 'especie_id', message: 'El área tiene activos biológicos alojados; trasládalos antes de cambiar la especie.' }],
 };
 
 test.use({ launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
 
+// ── Datos y protección de escrituras ─────────────────────────────────────────
+
+type Area = { id_infraestructura: number; nombre_infraestructura: string; es_activo: boolean } & Record<string, unknown>;
+type Modo = { tipo: 'abortar' } | { tipo: 'real' } | { tipo: 'simular'; status: number; cuerpo: unknown };
+
+/**
+ * Intercepta escrituras a áreas (abortar por defecto), sirve especies con la familia
+ * simulada y, si hace falta, el listado de áreas con un área inactiva simulada.
+ */
+async function prepararDatos(page: Page, { areaInactiva = false } = {}) {
+  let modo: Modo = { tipo: 'abortar' };
+  const intentos: { metodo: string; url: string; cuerpo: unknown }[] = [];
+  const estado = { areas: [] as Area[], inactivaSimulada: null as Area | null };
+
+  await page.route(URL_AREAS, async (route) => {
+    const req = route.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType())) return route.fallback();
+    if (req.method() === 'GET') {
+      if (!RUTA_AREAS.test(new URL(req.url()).pathname)) return route.fallback();
+      const res = await route.fetch();
+      const cuerpo = await res.json();
+      const items: Area[] = Array.isArray(cuerpo) ? cuerpo : cuerpo.items ?? [];
+      estado.areas = items;
+      if (areaInactiva && items.length && !items.some((a) => !a.es_activo)) {
+        estado.inactivaSimulada = items[items.length - 1];
+        const ajustados = items.map((a) => (a === estado.inactivaSimulada ? { ...a, es_activo: false } : a));
+        return route.fulfill({ response: res, json: Array.isArray(cuerpo) ? ajustados : { ...cuerpo, items: ajustados } });
+      }
+      return route.fulfill({ response: res, json: cuerpo });
+    }
+    intentos.push({ metodo: req.method(), url: req.url(), cuerpo: req.postDataJSON() });
+    if (modo.tipo === 'real' && req.method() === 'POST') return route.fallback();
+    if (modo.tipo === 'simular') return route.fulfill({ status: modo.status, contentType: 'application/json', body: JSON.stringify(modo.cuerpo) });
+    return route.abort();
+  });
+
+  await page.route((url) => RUTA_ESPECIES.test(url.pathname), async (route) => {
+    const req = route.request();
+    if (req.method() !== 'GET' || !['xhr', 'fetch'].includes(req.resourceType())) return route.fallback();
+    const res = await route.fetch();
+    const cuerpo = await res.json();
+    const ajustar = (e: { nombre: string }) => (e.nombre === ESPECIE_CON_FAMILIA ? { ...e, tipo_modelo: FAMILIA } : e);
+    return route.fulfill({ response: res, json: Array.isArray(cuerpo) ? cuerpo.map(ajustar) : { ...cuerpo, items: cuerpo.items.map(ajustar) } });
+  });
+
+  return { fijarModo: (m: Modo) => { modo = m; }, intentos, estado };
+}
+
 // ── Navegación ───────────────────────────────────────────────────────────────
 
 async function iniciarSesionAdmin(page: Page) {
-  let token = '';
-  page.on('request', (r) => {
-    const h = r.headers()['authorization'];
-    if (h) token = h;
-  });
   await page.goto('/login');
   await page.getByRole('textbox', { name: 'Correo electrónico', exact: true }).fill(ADMIN_EMAIL);
   await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 60_000 });
-  return () => token;
 }
 
-async function servirJson(page: Page, ruta: RegExp, cuerpo: unknown) {
-  await page.route(porRuta(ruta), (route) =>
-    route.request().method() === 'GET'
-      ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(cuerpo) })
-      : route.fallback());
-}
-
-/** Reconstruye lo que el ambiente no entrega hoy: listado de fincas y/o catálogo de tipos. */
-async function reconstruir(page: Page, testInfo: TestInfo, { fincas = true, tipos = true } = {}) {
-  if (fincas) await servirJson(page, RUTA_FINCAS, FINCAS_FIXTURE);
-  if (tipos) await servirJson(page, RUTA_TIPOS, TIPOS_FIXTURE);
-  testInfo.annotations.push({
-    type: 'Datos simulados',
-    description: [
-      fincas && 'listado de fincas (#1–#5 reales) por el 400 de GET /configuracion/fincas',
-      tipos && 'catálogo de tipos de área (Estanque, Invernadero) por el 403 de GET /configuracion/tipos-area',
-    ].filter(Boolean).join('; '),
-  });
-}
-
-/** /configuracion → Fincas → sección Infraestructura. */
+/** /configuracion → Fincas → sección Infraestructura. Devuelve el estado HTTP del listado de fincas. */
 async function abrirSeccionInfraestructura(page: Page) {
   await page.goto('/configuracion');
   const fincas = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_FINCAS.test(new URL(r.url()).pathname));
@@ -125,11 +147,11 @@ async function abrirSeccionInfraestructura(page: Page) {
   return res.status();
 }
 
-/** Selecciona la finca en la sección y espera el listado real de sus áreas. */
+/** Selecciona la finca en la sección y espera el listado de sus áreas. */
 async function abrirAreasDeFinca(page: Page) {
   await abrirSeccionInfraestructura(page);
   const areas = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_AREAS.test(new URL(r.url()).pathname));
-  await page.getByRole('button').filter({ has: page.getByText(FINCA.nombre, { exact: true }) }).first().click();
+  await page.getByRole('button').filter({ has: page.getByText(FINCA, { exact: true }) }).first().click();
   expect((await areas).status(), 'El listado de áreas de la finca debe cargar').toBe(200);
   await expect(page.getByRole('button', { name: 'Cambiar finca' })).toBeVisible();
   await expect(page.locator('table tbody tr').first()).toBeVisible();
@@ -141,25 +163,57 @@ interface Formulario {
   tipo: Locator;
   nombre: Locator;
   superficie: Locator;
-  registrar: Locator;
+  especie: Locator;
+  modelo: Locator;
+  guardar: Locator;
 }
 
-async function abrirFormulario(page: Page): Promise<Formulario> {
+function formulario(dialogo: Locator, guardar: string): Formulario {
+  return {
+    dialogo,
+    tipo: dialogo.getByRole('combobox', { name: 'Tipo de área', exact: true }),
+    nombre: dialogo.getByRole('textbox', { name: 'Nombre del área', exact: true }),
+    superficie: dialogo.getByRole('spinbutton', { name: 'Superficie (m²)', exact: true }),
+    especie: dialogo.getByRole('combobox', { name: 'Especie', exact: true }),
+    modelo: dialogo.getByRole('combobox', { name: 'Modelo de IA', exact: true }),
+    guardar: dialogo.getByRole('button', { name: guardar, exact: true }),
+  };
+}
+
+async function abrirRegistro(page: Page): Promise<Formulario> {
   await page.getByRole('button', { name: 'Nueva área' }).click();
   const dialogo = page.getByRole('dialog', { name: 'Registrar área productiva' });
   await expect(dialogo).toBeVisible();
-  return {
-    dialogo,
-    // El select se ubica por rol: su <label> no está asociado (ver test 3b)
-    tipo: dialogo.getByRole('combobox').first(),
-    nombre: dialogo.getByRole('textbox', { name: 'Nombre del área', exact: true }),
-    superficie: dialogo.getByRole('spinbutton', { name: 'Superficie (m²)', exact: true }),
-    registrar: dialogo.getByRole('button', { name: 'Registrar área' }),
-  };
+  const form = formulario(dialogo, 'Registrar área');
+  // Las especies se cargan al abrir el modal
+  await expect(form.especie.locator('option', { hasText: ESPECIE_CON_FAMILIA })).toHaveCount(1, { timeout: 20_000 });
+  return form;
+}
+
+async function abrirEdicion(page: Page, nombre: string): Promise<Formulario> {
+  await page.getByRole('button', { name: `Editar ${nombre}`, exact: true }).click();
+  const dialogo = page.getByRole('dialog', { name: `Editar área — ${nombre}` });
+  await expect(dialogo).toBeVisible();
+  const form = formulario(dialogo, 'Guardar cambios');
+  await expect(form.nombre).toHaveValue(nombre);
+  await expect(form.especie.locator('option', { hasText: ESPECIE_CON_FAMILIA })).toHaveCount(1, { timeout: 20_000 });
+  return form;
+}
+
+async function llenarRegistro(form: Formulario, nombre: string) {
+  await form.nombre.fill(nombre);
+  await form.superficie.fill('100');
+  await form.especie.selectOption({ label: ESPECIE_CON_FAMILIA });
 }
 
 function esAlta(r: Request) {
   return r.method() === 'POST' && RUTA_AREAS.test(new URL(r.url()).pathname);
+}
+
+/** 3.3.1: el campo señalado por el error queda inválido y con el mensaje asociado. */
+async function verificarErrorEnCampo(campo: Locator, nombreCampo: string, mensaje: RegExp) {
+  await expect.soft(campo, `3.3.1: el error trae field para "${nombreCampo}" pero el campo no se marca con aria-invalid`).toHaveAttribute('aria-invalid', 'true');
+  await expect.soft(campo, `3.3.1: el mensaje del error no está asociado al campo "${nombreCampo}" (aria-describedby)`).toHaveAccessibleDescription(mensaje);
 }
 
 // ── Escaneo axe + Lighthouse ─────────────────────────────────────────────────
@@ -168,7 +222,8 @@ function resumenViolaciones(violaciones: { id: string; impact?: string | null; h
   return violaciones.map((v) => `${v.id} (${v.impact}): ${v.help} [${v.nodes.length} nodo(s)]`).join('\n');
 }
 
-async function escanear(page: Page, paso: string, testInfo: TestInfo) {
+async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
+  const paso = `${pasoBase}-${testInfo.project.name}`;
   await page.evaluate(() => document.fonts.ready);
 
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
@@ -184,6 +239,8 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 // ── Casos ────────────────────────────────────────────────────────────────────
@@ -193,160 +250,195 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
   // workers: 1 en el config, así que los logins siguen siendo secuenciales.
   test.describe.configure({ timeout: 180_000 });
 
-  let token: () => string;
-
-  test.beforeEach(async ({ page }, testInfo) => {
-    test.skip(
-      !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
-    );
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_52_VIEWPORTS.`);
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
-    token = await iniciarSesionAdmin(page);
   });
 
-  test('1a. Sección de áreas (estado real del ambiente) - 0 violaciones axe A/AA', async ({ page }, testInfo) => {
-    const estado = await abrirSeccionInfraestructura(page);
-
-    await escanear(page, 'seccion-real', testInfo);
-
-    expect(
-      estado,
-      'BLOQUEO: GET /configuracion/fincas no responde 200 (400 VEREDA_REQUERIDO por la finca #34); la sección no ofrece fincas para ver sus áreas',
-    ).toBe(200);
-  });
-
-  test('1-2. Listado de áreas de una finca - 0 violaciones axe A/AA', async ({ page }, testInfo) => {
-    await reconstruir(page, testInfo, { tipos: false });
+  test('1-2. Listado de áreas de una finca - columna Modelo IA y 0 violaciones axe A/AA', async ({ page }, testInfo) => {
+    await prepararDatos(page);
+    await iniciarSesionAdmin(page);
+    expect(await abrirSeccionInfraestructura(page), 'GET /configuracion/fincas debe responder 200').toBe(200);
     await abrirAreasDeFinca(page);
 
     // 4.1.2: estado de cada área en texto y acciones con nombre accesible
     const fila = page.locator('table tbody tr').filter({ hasText: AREA_EXISTENTE }).first();
     await expect(fila, `Precondición: la finca debe tener el área "${AREA_EXISTENTE}"`).toBeVisible();
     await expect(fila).toContainText(/Activa?/);
+    await expect(page.locator('table thead th').filter({ hasText: 'Modelo IA' }), 'Columna "Modelo IA" del RF-20 v1.1').toHaveCount(1);
 
     await escanear(page, 'listado-areas', testInfo);
   });
 
-  test('3a. Formulario "Registrar área" (estado real del catálogo de tipos)', async ({ page }, testInfo) => {
-    await reconstruir(page, testInfo, { tipos: false });
+  test('3. Formulario "Registrar área" - especie y modelo de IA con label y name/role/value (1.3.1, 4.1.2)', async ({ page }, testInfo) => {
+    testInfo.annotations.push({ type: 'Datos simulados', description: `"${ESPECIE_CON_FAMILIA}" servida con tipo_modelo ${FAMILIA}: en TEST ninguna especie tiene familia de modelo.` });
+    await prepararDatos(page);
+    await iniciarSesionAdmin(page);
     await abrirAreasDeFinca(page);
-    const form = await abrirFormulario(page);
+    const form = await abrirRegistro(page);
 
-    await escanear(page, 'formulario-real', testInfo);
-
-    expect(
-      await form.tipo.locator('option').count(),
-      'BLOQUEO: GET /configuracion/tipos-area responde 403 ACCESO_DENEGADO; el select "Tipo de área" queda sin opciones y no se puede registrar un área',
-    ).toBeGreaterThan(0);
-  });
-
-  test('3b. Formulario "Registrar área" - 0 violaciones axe A/AA (1.3.1 labels, 4.1.2 select)', async ({ page }, testInfo) => {
-    await reconstruir(page, testInfo);
-    await abrirAreasDeFinca(page);
-    const form = await abrirFormulario(page);
-
-    // 1.3.1: nombre y superficie se ubican por su label
-    await expect(form.nombre).toBeVisible();
-    await expect(form.superficie).toBeVisible();
-    // 4.1.2: el select de tipo_area debe exponer nombre, rol y valor
-    await expect.soft(form.tipo, '4.1.2: el select "Tipo de área" no tiene nombre accesible (su <label> no está asociado)').toHaveAccessibleName(/Tipo de área/);
-    await expect(form.tipo).toHaveValue('Estanque');
-    await expect(form.tipo.locator('option')).toHaveText([/Estanque/, /Invernadero/]);
-
-    await escanear(page, 'formulario', testInfo);
-  });
-
-  test('4. Nombre duplicado en la misma finca - HTTP 409 esperado, anunciado', async ({ page }, testInfo) => {
-    await reconstruir(page, testInfo);
-    await abrirAreasDeFinca(page);
-    const form = await abrirFormulario(page);
-    await form.tipo.selectOption('Estanque');
-    await form.nombre.fill(AREA_EXISTENTE);
-    await form.superficie.fill('100');
-
-    const alta = page.waitForResponse((r) => esAlta(r.request()));
-    await form.registrar.click();
-    const respuesta = await alta;
-    if (respuesta.ok()) {
-      // Salvaguarda: si el backend no detectara el duplicado, no dejar el área creada
-      const creada = await respuesta.json();
-      await page.request.patch(`${API_BASE}/configuracion/infraestructuras/${creada.id_infraestructura}/desactivar`, { headers: { authorization: token() } });
+    // 1.3.1: todos los campos se ubican por su label; los obligatorios exponen aria-required
+    for (const [campo, nombre] of [[form.tipo, 'Tipo de área'], [form.nombre, 'Nombre del área'], [form.superficie, 'Superficie'], [form.especie, 'Especie'], [form.modelo, 'Modelo de IA']] as const) {
+      await expect(campo, `1.3.1: no se encontró el campo "${nombre}" por su label`).toBeVisible();
     }
+    await expect(form.especie, '1.3.1: "Especie" es obligatoria').toHaveAttribute('aria-required', 'true');
+    expect(await form.tipo.locator('option').count(), 'El catálogo real de tipos de área debe tener opciones').toBeGreaterThan(0);
 
-    // 3.3.1: el error se anuncia (role="alert") y el modal sigue abierto para corregir
-    const alerta = form.dialogo.getByRole('alert');
-    await expect(alerta.first()).toBeVisible();
-    testInfo.annotations.push({ type: 'Respuesta del backend al duplicado', description: `${respuesta.status()} ${await respuesta.text()}` });
+    // 4.1.2 Especie: select nativo, valor inicial vacío y valor elegido expuesto
+    await expect(form.especie).toHaveValue('');
+    await form.especie.selectOption({ label: ESPECIE_CON_FAMILIA });
+    expect(await form.especie.evaluate((s) => (s as HTMLSelectElement).selectedOptions[0]?.text.trim()), '4.1.2: el valor anunciado es el nombre de la especie').toBe(ESPECIE_CON_FAMILIA);
+
+    // 4.1.2 Modelo de IA: solo la familia de la especie, con texto legible
+    const opcionesModelo = await form.modelo.locator('option').evaluateAll((os) => os.map((o) => ({ value: (o as HTMLOptionElement).value, texto: o.textContent?.trim() ?? '' })));
+    testInfo.annotations.push({ type: 'Opciones de Modelo de IA', description: opcionesModelo.map((o) => `${o.value || '(vacío)'}="${o.texto}"`).join(' · ') });
+    expect(opcionesModelo.map((o) => o.value).filter(Boolean), 'El modelo de IA solo ofrece la familia de la especie').toEqual([FAMILIA]);
+    await form.modelo.selectOption(FAMILIA);
+    await expect(form.modelo).toHaveValue(FAMILIA);
+    expect(await form.modelo.evaluate((s) => (s as HTMLSelectElement).selectedOptions[0]?.text.trim()), '4.1.2: el valor anunciado es el nombre del modelo').toBe(FAMILIA_TEXTO);
+    await escanear(page, 'formulario', testInfo);
+
+    // Especie sin familia: el aviso debe estar asociado al select de modelo (1.3.1)
+    const sinFamilia = await form.especie.locator('option').evaluateAll((os, conFamilia) =>
+      os.map((o) => o.textContent?.trim() ?? '').find((t) => t && t !== conFamilia && !t.startsWith('Selecciona')), ESPECIE_CON_FAMILIA);
+    await form.especie.selectOption({ label: sinFamilia! });
+    const aviso = form.dialogo.getByText('La especie no tiene familia de modelo configurada', { exact: false });
+    await expect(aviso, `Con "${sinFamilia}" (sin familia) se muestra el aviso`).toBeVisible();
+    await expect(form.modelo, 'Sin familia, el modelo queda sin asignar').toHaveValue('');
+    await expect.soft(form.modelo, '1.3.1: el aviso "La especie no tiene familia de modelo configurada…" no está asociado al select "Modelo de IA" (aria-describedby)').toHaveAccessibleDescription(/no tiene familia de modelo/);
+  });
+
+  test('4. Nombre duplicado en la misma finca (real) - anunciado por campo', async ({ page }, testInfo) => {
+    const { fijarModo, estado } = await prepararDatos(page);
+    await iniciarSesionAdmin(page);
+    await abrirAreasDeFinca(page);
+    expect(estado.areas.map((a) => a.nombre_infraestructura), `Precondición: "${AREA_EXISTENTE}" debe existir en la finca para que el POST sea un duplicado (si no, no se envía)`).toContain(AREA_EXISTENTE);
+
+    const form = await abrirRegistro(page);
+    await llenarRegistro(form, AREA_EXISTENTE);
+    fijarModo({ tipo: 'real' });
+    const alta = page.waitForResponse((r) => esAlta(r.request()));
+    await form.guardar.click();
+    const respuesta = await alta;
+    testInfo.annotations.push({ type: 'Respuesta real al duplicado', description: `${respuesta.status()} ${await respuesta.text()}` });
+
+    expect(respuesta.status(), `El backend debe responder 409 al nombre duplicado "${AREA_EXISTENTE}" en la misma finca`).toBe(409);
+    await expect(form.dialogo.getByRole('alert').first(), '3.3.1: el duplicado se anuncia').toContainText(/existe|duplicad/i);
+    await expect.soft(form.nombre, '3.3.1: "Nombre del área" debe marcarse con aria-invalid').toHaveAttribute('aria-invalid', 'true');
 
     await escanear(page, 'error-duplicado', testInfo);
-
-    expect.soft(respuesta.status(), `El backend debe responder 409 al nombre duplicado "${AREA_EXISTENTE}" en la misma finca`).toBe(409);
-    await expect.soft(alerta.first(), '3.3.1: el mensaje debe indicar que el nombre ya existe en la finca').toContainText(/existe|duplicad/i);
-    await expect.soft(form.nombre, '3.3.1: el campo "Nombre del área" debe marcarse con aria-invalid').toHaveAttribute('aria-invalid', 'true');
   });
 
-  test('4. Superficie inválida (validación del cliente) - anunciada por campo', async ({ page }, testInfo) => {
-    await reconstruir(page, testInfo);
+  test('4. Errores 422 nuevos (simulados) - incoherencia de modelo y especie inactiva en el alta', async ({ page }, testInfo) => {
+    testInfo.annotations.push({ type: 'Datos simulados', description: '422 MODELO_INCOHERENTE_CON_ESPECIE (error_code a confirmar) y 422 ESPECIE_INACTIVA inyectados en el POST; no se crea ningún área.' });
+    const { fijarModo, intentos } = await prepararDatos(page);
+    await iniciarSesionAdmin(page);
     await abrirAreasDeFinca(page);
-    const form = await abrirFormulario(page);
+    const form = await abrirRegistro(page);
+    await llenarRegistro(form, 'Area Qa Accesibilidad');
+    await form.modelo.selectOption(FAMILIA);
+    const alerta = form.dialogo.getByRole('alert').filter({ hasText: 'Error al guardar' });
 
-    let envios = 0;
-    page.on('request', (r) => { if (esAlta(r)) envios++; });
+    // Incoherencia de modelo
+    fijarModo({ tipo: 'simular', status: 422, cuerpo: ERROR_422_MODELO });
+    await form.guardar.click();
+    await expect(alerta, '3.3.1/4.1.3: la incoherencia de modelo se anuncia en una alerta').toBeVisible();
+    await expect(alerta).toHaveAttribute('aria-live', /assertive|polite/);
+    await expect(alerta, '3.3.1: la alerta explica la incoherencia').toContainText('familia');
+    await expect(form.dialogo, 'El modal sigue abierto para corregir').toBeVisible();
+    await verificarErrorEnCampo(form.modelo, 'Modelo de IA', /coincidir con la familia/);
+    await escanear(page, 'error-422-modelo', testInfo);
 
-    await form.nombre.fill('Area Qa Accesibilidad');
-    await form.superficie.fill('0');
-    await form.superficie.blur();
-    await form.registrar.click();
-
-    await expect(form.dialogo.getByRole('alert')).toBeVisible();
-    await expect(form.superficie).toHaveAttribute('aria-invalid', 'true');
-    await expect(form.superficie).toHaveAccessibleDescription(/mayor a 0/i);
-    expect(envios, 'La validación del cliente debe bloquear el envío').toBe(0);
-
-    await escanear(page, 'error-superficie-cliente', testInfo);
+    // Especie inactiva
+    fijarModo({ tipo: 'simular', status: 422, cuerpo: ERROR_422_ESPECIE_INACTIVA });
+    await form.guardar.click();
+    await expect.poll(() => intentos.length).toBe(2);
+    await expect(alerta, '3.3.1/4.1.3: la especie inactiva se anuncia').toContainText('inactiva');
+    await verificarErrorEnCampo(form.especie, 'Especie', /está inactiva/);
+    await escanear(page, 'error-422-especie-inactiva', testInfo);
   });
 
-  test('4. HTTP 400 del backend - superficie inválida (VAL_ENTRADA) - anunciada por campo', async ({ page }, testInfo) => {
-    await reconstruir(page, testInfo);
-    await page.route(porRuta(RUTA_AREAS), (route) =>
-      route.request().method() === 'POST'
-        ? route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify(ERROR_400_SUPERFICIE) })
-        : route.fallback());
+  test('4. Error 422 nuevo (simulado) - cambio de especie de un área con activos alojados', async ({ page }, testInfo) => {
+    testInfo.annotations.push({ type: 'Datos simulados', description: '422 CAMBIO_ESPECIE_CON_ACTIVOS_ALOJADOS (error_code a confirmar) inyectado en el PATCH; el área no se modifica.' });
+    const { fijarModo, intentos } = await prepararDatos(page);
+    await iniciarSesionAdmin(page);
     await abrirAreasDeFinca(page);
-    const form = await abrirFormulario(page);
-    await form.nombre.fill('Area Qa Accesibilidad');
-    await form.superficie.fill('100');
-    await form.registrar.click();
+    const form = await abrirEdicion(page, AREA_EXISTENTE);
 
-    await expect(form.dialogo.getByRole('alert').first()).toBeVisible();
-    await expect.soft(form.superficie, '3.3.1: el campo "Superficie" debe marcarse con aria-invalid').toHaveAttribute('aria-invalid', 'true');
-    await expect.soft(form.superficie, '3.3.1: el error del backend debe asociarse al campo "Superficie"').toHaveAccessibleDescription(/superficie debe ser mayor a cero/i);
+    const actual = await form.especie.inputValue();
+    const otra = await form.especie.locator('option').evaluateAll((os, v) => (os as HTMLOptionElement[]).find((o) => o.value && o.value !== v)?.value, actual);
+    await form.especie.selectOption(otra!);
+    fijarModo({ tipo: 'simular', status: 422, cuerpo: ERROR_422_ACTIVOS_ALOJADOS });
+    await form.guardar.click();
+    await expect.poll(() => intentos.length, { message: 'Guardar debe enviar el PATCH' }).toBe(1);
+    expect(intentos[0].metodo).toBe('PATCH');
 
-    await escanear(page, 'error-400-superficie-backend', testInfo);
+    const alerta = form.dialogo.getByRole('alert').filter({ hasText: 'Error al guardar' });
+    await expect(alerta, '3.3.1/4.1.3: el cambio de especie con activos alojados se anuncia').toContainText('activos biológicos alojados');
+    await expect(alerta).toHaveAttribute('aria-live', /assertive|polite/);
+    await expect(form.dialogo, 'El modal sigue abierto').toBeVisible();
+    await verificarErrorEnCampo(form.especie, 'Especie', /trasládalos antes de cambiar la especie/);
+    await escanear(page, 'error-422-activos-alojados', testInfo);
   });
 
-  test('5. Teclado - el select "Tipo de área" se opera con flechas y Enter', async ({ page }, testInfo) => {
-    await reconstruir(page, testInfo);
+  test('6. Reactivar un área inactiva - confirmación accesible y estado anunciado', async ({ page }, testInfo) => {
+    const { fijarModo, intentos, estado } = await prepararDatos(page, { areaInactiva: true });
+    await iniciarSesionAdmin(page);
     await abrirAreasDeFinca(page);
-    const form = await abrirFormulario(page);
+    const inactiva = estado.inactivaSimulada ?? estado.areas.find((a) => !a.es_activo);
+    expect(inactiva, 'Precondición: la finca debe tener al menos un área').toBeTruthy();
+    testInfo.annotations.push({
+      type: estado.inactivaSimulada ? 'Datos simulados' : 'Datos reales',
+      description: `${estado.inactivaSimulada ? `"${inactiva!.nombre_infraestructura}" servida como inactiva (la finca no tiene áreas inactivas). ` : ''}PATCH …/reactivar respondido con 200 simulado; el área no se modifica.`,
+    });
+    const nombre = inactiva!.nombre_infraestructura;
+    const fila = page.locator('table tbody tr').filter({ hasText: nombre }).first();
+    await expect(fila).toContainText('Inactiva');
 
-    // Llegar al select con el teclado desde el primer control del modal
-    await form.dialogo.getByRole('button', { name: /cerrar/i }).focus();
-    await page.keyboard.press('Tab');
-    await expect(form.tipo, 'El select debe ser el primer campo en el orden de tabulación').toBeFocused();
-
-    await expect(form.tipo).toHaveValue('Estanque');
-    await page.keyboard.press('ArrowDown');
-    await expect(form.tipo, 'Flecha abajo debe seleccionar la siguiente opción').toHaveValue('Invernadero');
-    await page.keyboard.press('ArrowUp');
-    await expect(form.tipo, 'Flecha arriba debe volver a la opción anterior').toHaveValue('Estanque');
-
-    // Abrir la lista (Alt+↓), moverse y confirmar con Enter
-    await page.keyboard.press('Alt+ArrowDown');
-    await page.keyboard.press('ArrowDown');
+    // 2.1.1 / 4.1.2: la acción se alcanza por teclado y nombra el área
+    const reactivar = fila.getByRole('button', { name: `Reactivar ${nombre}`, exact: true });
+    await expect(reactivar, '4.1.2: la acción "Reactivar" debe nombrar el área').toBeVisible();
+    await reactivar.focus();
     await page.keyboard.press('Enter');
-    await expect(form.tipo, 'Enter debe confirmar la opción resaltada').toHaveValue('Invernadero');
-    await expect(form.dialogo, 'Enter en el select no debe cerrar ni enviar el formulario').toBeVisible();
+
+    // Diálogo de confirmación
+    const confirmacion = page.getByRole('dialog').filter({ hasText: 'Reactivar área' });
+    await expect(confirmacion, 'Enter abre la confirmación').toBeVisible();
+    await expect(confirmacion).toContainText(nombre);
+    await expect.soft(confirmacion, '4.1.2: el diálogo de confirmación "Reactivar área" no tiene nombre accesible (sin aria-labelledby)').toHaveAccessibleName(/Reactivar área/);
+    const focoDentro = await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'));
+    expect.soft(focoDentro, '2.4.3: al abrir la confirmación el foco debe moverse al diálogo').toBe(true);
+    await escanear(page, 'confirmar-reactivar', testInfo);
+
+    // Confirmar: 200 simulado con el área activa
+    fijarModo({ tipo: 'simular', status: 200, cuerpo: { ...inactiva, es_activo: true, fecha_actualizacion: new Date().toISOString() } });
+    await confirmacion.getByRole('button', { name: 'Reactivar', exact: true }).click();
+    await expect.poll(() => intentos.length).toBe(1);
+    expect(intentos[0].url, 'La confirmación llama a PATCH …/reactivar').toMatch(/\/reactivar$/);
+    await expect(confirmacion).toBeHidden();
+    await expect(fila, '4.1.2: el estado nuevo se muestra como texto').toContainText('Activa');
+    await expect(fila.getByRole('button', { name: `Desactivar ${nombre}`, exact: true }), 'Tras reactivar se ofrece "Desactivar"').toBeVisible();
+  });
+
+  test('5. Teclado - los selects "Especie" y "Modelo de IA" se operan con flechas sin enviar el formulario', async ({ page }, testInfo) => {
+    testInfo.annotations.push({ type: 'Datos simulados', description: `"${ESPECIE_CON_FAMILIA}" servida con tipo_modelo ${FAMILIA}.` });
+    const { intentos } = await prepararDatos(page);
+    await iniciarSesionAdmin(page);
+    await abrirAreasDeFinca(page);
+    const form = await abrirRegistro(page);
+
+    // Tab desde "Superficie" hasta "Especie" (los campos siguen el orden visual)
+    await form.especie.focus();
+    await expect(form.especie).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(form.especie, 'Flecha abajo selecciona la primera especie').not.toHaveValue('');
+    await form.especie.selectOption({ label: ESPECIE_CON_FAMILIA });
+    await page.keyboard.press('Tab');
+    await expect(form.modelo, 'Tab pasa de "Especie" a "Modelo de IA"').toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(form.modelo, 'Flecha abajo selecciona la familia de la especie').toHaveValue(FAMILIA);
+    await expect(form.dialogo, 'Operar los selects no cierra el formulario').toBeVisible();
+    expect(intentos, 'Operar los selects no envía el formulario').toHaveLength(0);
   });
 });
