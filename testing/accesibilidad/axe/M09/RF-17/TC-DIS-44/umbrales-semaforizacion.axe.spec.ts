@@ -4,25 +4,27 @@
  * PRIORITARIO: riesgo de comunicar el nivel de alerta solo por color (WCAG 1.4.1).
  *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
- * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>.html/json), ambos
- * en ./resultados. Lighthouse no puede auditar en modo navegación porque el JWT
+ * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
+ * ambos en ./resultados. Lighthouse no puede auditar en modo navegación porque el JWT
  * vive en memoria y una recarga pierde la sesión.
  *
- * Datos: especie "Tilapia Roja" (#1), umbral "Temperatura del agua" (#1),
- * rango 0–32 con niveles contiguos crítico 0–20 / precaución 20–25 / normal 25–32.
- * El paso 3 guarda el umbral sin cambios (guardado válido e idempotente).
- * Se requiere un umbral que ya tenga fecha_actualizacion: los que nunca se han
- * editado responden 412 al guardar (hallazgo reportado en el PR del caso).
+ * Datos: especie "Tilapia Roja" (#1), umbral "Temperatura del agua".
+ *
+ * PROTECCIÓN DE DATOS: un umbral guardado se propaga a los nodos Edge, así que todo
+ * POST/PATCH a /configuracion/umbrales se intercepta y por defecto se aborta. El paso 3
+ * (guardado válido) responde con 200 SIMULADO: el umbral real del GET con los valores
+ * enviados por el formulario.
  *
  * Paso 5: la validación del cliente bloquea el solapamiento antes de enviar la
  * petición, así que el 400 real del backend no se alcanza desde la UI. Se prueban
  * ambos: (a) el error del cliente y (b) la respuesta 400 real del backend
  * (capturada del ambiente TEST) inyectada con page.route en un envío válido.
  *
- * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
- * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
- * no reproduce el bug de M01. Para acotarlo puntualmente:
- *   TC_DIS_44_VIEWPORTS=escritorio
+ * Toda observación es un defecto: la barra de semaforización sin alternativa textual
+ * (1.4.1) falla el caso en vez de quedar documentada.
+ *
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_44_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import fs from 'fs';
@@ -57,7 +59,39 @@ const ERROR_400_RANGO_INVERTIDO = {
   fields: [{ field: 'valor_max', message: 'valor_max debe ser estrictamente mayor que valor_min.' }],
 };
 
+const URL_UMBRALES = (url: URL) => /\/configuracion\/umbrales(\/\d+(\/\w+)?)?$/.test(url.pathname);
+
 test.use({ launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
+
+// ── Protección de escrituras ─────────────────────────────────────────────────
+
+type Umbral = Record<string, unknown> & { id_umbral_ambiental: number };
+
+/** Aborta todo POST/PATCH a umbrales; `simularGuardado` responde 200 con el umbral real + lo enviado. */
+async function protegerUmbrales(page: Page) {
+  let umbrales: Umbral[] = [];
+  let simular = false;
+  const intentos: unknown[] = [];
+  page.on('response', async (r) => {
+    const req = r.request();
+    if (req.method() === 'GET' && new URL(r.url()).pathname.endsWith('/configuracion/umbrales') && r.ok()) {
+      umbrales = (await r.json().catch(() => ({ items: [] }))).items ?? [];
+    }
+  });
+  await page.route(URL_UMBRALES, (route) => {
+    const req = route.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType()) || req.method() === 'GET') return route.fallback();
+    intentos.push(req.postDataJSON());
+    const id = Number(new URL(req.url()).pathname.split('/').pop());
+    const actual = umbrales.find((u) => u.id_umbral_ambiental === id);
+    if (simular && req.method() === 'PATCH' && actual) {
+      const cuerpo = { ...actual, ...req.postDataJSON(), fecha_actualizacion: new Date().toISOString() };
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(cuerpo) });
+    }
+    return route.abort();
+  });
+  return { simularGuardado: () => { simular = true; }, intentos };
+}
 
 // ── Navegación ───────────────────────────────────────────────────────────────
 
@@ -97,7 +131,7 @@ async function abrirFormularioEdicion(page: Page) {
   await filaUmbral(page).getByRole('button', { name: `Editar umbral ${VARIABLE}` }).click();
   const dialogo = page.getByRole('dialog', { name: `Editar umbral — ${VARIABLE}` });
   await expect(dialogo).toBeVisible();
-  await expect(dialogo.getByText('NORMAL')).toBeVisible();
+  await expect(dialogo.getByText('🟢 NORMAL', { exact: true })).toBeVisible();
   return dialogo;
 }
 
@@ -107,7 +141,8 @@ function resumenViolaciones(violaciones: { id: string; impact?: string | null; h
   return violaciones.map((v) => `${v.id} (${v.impact}): ${v.help} [${v.nodes.length} nodo(s)]`).join('\n');
 }
 
-async function escanear(page: Page, paso: string, testInfo: TestInfo) {
+async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
+  const paso = `${pasoBase}-${testInfo.project.name}`;
   await page.evaluate(() => document.fonts.ready);
 
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
@@ -124,6 +159,8 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo) {
 
   // soft: el resto de verificaciones del test se ejecuta aunque axe encuentre violaciones
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 // ── Casos ────────────────────────────────────────────────────────────────────
@@ -136,16 +173,17 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Umbrales Ambientales y Sem
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
+      `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_44_VIEWPORTS.`,
     );
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
 
     await iniciarSesionAdmin(page);
-    await abrirUmbrales(page);
   });
 
   test('1-2. Formulario de umbral - 0 violaciones axe A/AA (4.1.2 en campos min/max)', async ({ page }, testInfo) => {
+    await protegerUmbrales(page);
+    await abrirUmbrales(page);
     const dialogo = await abrirFormularioEdicion(page);
 
     await escanear(page, 'formulario', testInfo);
@@ -161,33 +199,25 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Umbrales Ambientales y Sem
   });
 
   test('3. Guardar umbral válido y vista de Semaforización - 0 violaciones axe A/AA', async ({ page }, testInfo) => {
+    const { simularGuardado, intentos } = await protegerUmbrales(page);
+    simularGuardado();
+    testInfo.annotations.push({ type: 'Datos simulados', description: 'PATCH del umbral respondido con 200: el umbral real del GET con los valores enviados. No se guarda ni se propaga a Edge.' });
+    await abrirUmbrales(page);
     const dialogo = await abrirFormularioEdicion(page);
 
     const guardado = page.waitForResponse(esPeticion('PATCH', /\/configuracion\/umbrales\/\d+$/));
     await dialogo.getByRole('button', { name: 'Guardar cambios' }).click();
-    const respuesta = await guardado;
-
-    if (respuesta.status() === 500) {
-      // Ambiente TEST: el backend persiste el umbral pero responde 500 porque la
-      // propagación a los nodos Edge aún no existe (contrato IoT pendiente).
-      const cuerpo = await respuesta.json();
-      expect(cuerpo.error_code, 'Solo se tolera el 500 de sincronización Edge').toBe('FALLO_SINCRONIZACION_EDGE');
-      testInfo.annotations.push({
-        type: 'Observación ambiente',
-        description: `Guardado persistido en BD pero respuesta 500 FALLO_SINCRONIZACION_EDGE: "${cuerpo.message}"`,
-      });
-      await dialogo.getByRole('button', { name: 'Cancelar' }).click();
-      await page.getByRole('button', { name: 'Recargar umbrales' }).click();
-    } else {
-      expect(respuesta.status(), 'El guardado del umbral válido debe responder 200').toBe(200);
-    }
+    expect((await guardado).status(), 'El guardado del umbral válido debe responder 200').toBe(200);
+    expect(intentos, 'Guardar debe enviar un único PATCH').toHaveLength(1);
     await expect(dialogo).toBeHidden();
     await expect(filaUmbral(page)).toBeVisible();
 
     await escanear(page, 'semaforizacion', testInfo);
   });
 
-  test('4. Criterio 1.4.1 (uso del color) - evidencia para la verificación manual', async ({ page }, testInfo) => {
+  test('4. Criterio 1.4.1 (uso del color) - niveles distinguibles sin color', async ({ page }, testInfo) => {
+    await protegerUmbrales(page);
+    await abrirUmbrales(page);
     testInfo.annotations.push({
       type: 'Verificación manual 1.4.1',
       description:
@@ -204,22 +234,19 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Umbrales Ambientales y Sem
       await expect(celdas.nth(i), `1.4.1: el rango del nivel ${nivel} debe mostrarse como texto`).toHaveText(/\d+(\.\d+)?\s*–\s*\d+(\.\d+)?/);
     }
 
-    // La barra de la columna "Semaforización" usa solo segmentos de color: se documenta, no bloquea,
-    // porque la misma información está en texto en las columnas Normal / Precaución / Crítico
+    // La barra de la columna "Semaforización" debe tener alternativa textual (no solo segmentos de color)
     const barra = celdas.nth(3);
-    const alternativaBarra = await barra.evaluate((td) =>
-      Boolean(td.querySelector('[aria-label],[role="img"],[title]')));
-    testInfo.annotations.push({
-      type: 'Observación 1.4.1',
-      description: alternativaBarra
-        ? 'La barra de semaforización tiene alternativa textual.'
-        : 'La barra de la columna "Semaforización" comunica los niveles solo con segmentos de color y sin alternativa textual; la información equivalente sí está en texto en las columnas Normal / Precaución / Crítico.',
+    // Los extremos del rango ("0", "32") son texto, pero no dicen qué nivel es cada segmento:
+    // la alternativa debe nombrar los niveles
+    const alternativaBarra = await barra.evaluate((td) => {
+      const etiquetas = [...td.querySelectorAll('[aria-label],[title]')].map((e) => `${e.getAttribute('aria-label') ?? ''} ${e.getAttribute('title') ?? ''}`);
+      return /normal|precauci[oó]n|cr[ií]tico/i.test(`${td.textContent ?? ''} ${etiquetas.join(' ')}`);
     });
 
     // Formulario: cada nivel lleva etiqueta de texto y descripción, no solo color
     const dialogo = await abrirFormularioEdicion(page);
     for (const texto of ['NORMAL', 'PRECAUCIÓN', 'CRÍTICO']) {
-      await expect(dialogo.getByText(new RegExp(`${texto}$`)), `1.4.1: falta la etiqueta "${texto}" en el formulario`).toBeVisible();
+      await expect(dialogo.getByText(new RegExp(`^\\S+ ${texto}$`)), `1.4.1: falta la etiqueta "${texto}" en el formulario`).toBeVisible();
     }
     await dialogo.getByRole('button', { name: 'Cancelar' }).click();
 
@@ -227,7 +254,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Umbrales Ambientales y Sem
     // reporte HTML y en ./resultados para adjuntar en Taiga
     const evidencia = async (nombre: string, imagen: Buffer) => {
       fs.mkdirSync(path.join(__dirname, 'resultados'), { recursive: true });
-      fs.writeFileSync(path.join(__dirname, 'resultados', `${TC_ID}-${nombre}`), imagen);
+      fs.writeFileSync(path.join(__dirname, 'resultados', `${TC_ID}-${nombre.replace('.png', `-${testInfo.project.name}.png`)}`), imagen);
       await testInfo.attach(nombre, { body: imagen, contentType: 'image/png' });
     };
     const tabla = page.locator('table');
@@ -236,18 +263,20 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Umbrales Ambientales y Sem
     await evidencia('1.4.1-semaforizacion-grises.png', await tabla.screenshot());
     await abrirFormularioEdicion(page);
     await evidencia('1.4.1-formulario-grises.png', await page.getByRole('dialog').screenshot());
+
+    expect.soft(alternativaBarra, 'DEFECTO 1.4.1: la barra de la columna "Semaforización" comunica los niveles solo con segmentos de color: ni texto, ni aria-label, ni title nombran normal / precaución / crítico (solo muestra los extremos del rango)').toBe(true);
   });
 
   test('5a. Error de solapamiento (validación del cliente) - anunciado y 0 violaciones axe A/AA', async ({ page }, testInfo) => {
+    await protegerUmbrales(page);
+    await abrirUmbrales(page);
     const dialogo = await abrirFormularioEdicion(page);
 
     let peticionesGuardado = 0;
     page.on('request', (r) => { if (r.method() === 'PATCH' && r.url().includes('/configuracion/umbrales/')) peticionesGuardado++; });
 
-    // Bajar 1 unidad el límite inferior de precaución lo hace invadir el nivel contiguo
-    // → solapamiento. Los campos de nivel no tienen nombre accesible (ver test 1), por
-    // eso se ubican por posición: [min, max, normal inf/sup, precaución inf/sup, crítico inf/sup].
-    const precaucionInferior = dialogo.getByRole('spinbutton').nth(4);
+    // Bajar 1 unidad el límite inferior de precaución lo hace invadir el nivel contiguo → solapamiento
+    const precaucionInferior = dialogo.getByRole('spinbutton', { name: 'Límite inferior PRECAUCIÓN', exact: true });
     const valorActual = Number(await precaucionInferior.inputValue());
     await precaucionInferior.fill(String(valorActual - 1));
     await precaucionInferior.blur();
@@ -263,10 +292,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Umbrales Ambientales y Sem
   });
 
   test('5b. Respuesta HTTP 400 del backend (SOLAPAMIENTO_NIVELES) - anunciada y 0 violaciones axe A/AA', async ({ page }, testInfo) => {
+    await protegerUmbrales(page);
     await page.route(/\/configuracion\/umbrales\/\d+$/, (route) =>
       route.request().method() === 'PATCH'
         ? route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify(ERROR_400_SOLAPAMIENTO) })
         : route.fallback());
+    testInfo.annotations.push({ type: 'Respuesta inyectada', description: 'Cuerpo 400 real del backend TEST (2026-09-28) inyectado en el PATCH; no se guarda nada.' });
+    await abrirUmbrales(page);
 
     const dialogo = await abrirFormularioEdicion(page);
     await dialogo.getByRole('button', { name: 'Guardar cambios' }).click();
@@ -280,10 +312,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Umbrales Ambientales y Sem
   });
 
   test('5c. Respuesta HTTP 400 del backend (rango inconsistente, VAL_ENTRADA) - campo identificado', async ({ page }, testInfo) => {
+    await protegerUmbrales(page);
     await page.route(/\/configuracion\/umbrales\/\d+$/, (route) =>
       route.request().method() === 'PATCH'
         ? route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify(ERROR_400_RANGO_INVERTIDO) })
         : route.fallback());
+    testInfo.annotations.push({ type: 'Respuesta inyectada', description: 'Cuerpo 400 real del backend TEST (2026-09-28) inyectado en el PATCH; no se guarda nada.' });
+    await abrirUmbrales(page);
 
     const dialogo = await abrirFormularioEdicion(page);
     await dialogo.getByRole('button', { name: 'Guardar cambios' }).click();
