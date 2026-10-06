@@ -94,14 +94,502 @@
     <main role="main">
         <div style="padding: 2rem">
             <h1>
-                Axe-core® Accessibility Results
+                Axe-core® Accessibility Results for TC-DIS-63 project
             </h1>
             <div class="summarySection">
+                <div class="summary">
+<h3>Resumen de ejecución — TC-DIS-63 (RF-23, Configuración Remota IoT)</h3>
+<ul>
+  <li><strong>Ambiente:</strong> TEST (api.inmero.co) · <strong>Fecha:</strong> 06/10/2026 · cuenta con rol id 1 (Administrador).</li>
+  <li><strong>Tema:</strong> oscuro — preferencia guardada de la cuenta (el test no fuerza tema).</li>
+  <li><strong>Violación de axe confirmada:</strong> <code>color-contrast</code> (serious, WCAG 1.4.3) en la tabla
+    "Historial de configuraciones": columnas "Frec. captura" e "Interv. transmisión" con texto #000000 sobre
+    #171a15 = 1,19:1 (requerido 4,5:1). Los &lt;td&gt; (ConfiguracionRemotaSection.tsx ~145-146) no declaran
+    color y heredan negro en tema oscuro.</li>
+  <li><strong>Falso negativo de axe (hallazgo por assert manual):</strong> los &lt;label&gt; "Frecuencia de captura" e
+    "Intervalo de transmisión" no están asociados a sus &lt;input&gt; (sin htmlFor/id). axe-core 4.13 no marca la regla
+    <code>label</code> porque acepta el <code>placeholder</code> ("5", "15") como nombre accesible; el lector anuncia el
+    número, no la etiqueta. Lo confirma el fallo de <code>getByLabel</code> en el test del formulario (WCAG 1.3.1 / 3.3.2).</li>
+  <li><strong>Observación manual (no violación):</strong> el nombre accesible de las tarjetas del selector empieza con el
+    emoji 📡 sin <code>aria-hidden</code> (también en cámaras).</li>
+  <li><strong>Panel específico de cámara:</strong> no implementado, pendiente criterio de Camila (RF-21 v2.0 / RF-23).
+    La cámara CAM-QA-063-01 muestra solo frecuencia de captura e intervalo de transmisión.</li>
+  <li><strong>Issue de contraste:</strong> #244 · <strong>Issue del label:</strong> #245.</li>
+  <li><strong>Lighthouse</strong> audita la pestaña IoT sin dispositivo seleccionado; no cubre la tabla de historial.</li>
+  <li><strong>Datos:</strong> sensor fijo IOT-EST01-HLA-001; cámara fija CAM-QA-063-01. Toda escritura sobre
+    /configuracion/dispositivos-iot/** se abortó (ninguna configuración real enviada).</li>
+</ul>
+<table border="1" cellpadding="4" style="border-collapse:collapse">
+  <thead><tr><th>Prueba (viewport · título)</th><th>Violaciones axe</th></tr></thead>
+  <tbody><tr><td>movil · listado del panel de Configuración Remota + selector de dispositivo — sin violaciones axe A/AA</td><td>0</td></tr><tr><td>movil · cámara CAM-QA-063-01 seleccionada (RF-21 v2.0) — formulario visible y sin violaciones axe A/AA</td><td>0</td></tr><tr><td>movil · formulario de configuración (frecuencia/intervalo) — sin violaciones axe A/AA</td><td>color-contrast / serious (4 nodos)</td></tr><tr><td>tablet · listado del panel de Configuración Remota + selector de dispositivo — sin violaciones axe A/AA</td><td>0</td></tr><tr><td>tablet · cámara CAM-QA-063-01 seleccionada (RF-21 v2.0) — formulario visible y sin violaciones axe A/AA</td><td>0</td></tr><tr><td>tablet · formulario de configuración (frecuencia/intervalo) — sin violaciones axe A/AA</td><td>color-contrast / serious (4 nodos)</td></tr><tr><td>escritorio · listado del panel de Configuración Remota + selector de dispositivo — sin violaciones axe A/AA</td><td>0</td></tr><tr><td>escritorio · cámara CAM-QA-063-01 seleccionada (RF-21 v2.0) — formulario visible y sin violaciones axe A/AA</td><td>0</td></tr><tr><td>escritorio · formulario de configuración (frecuencia/intervalo) — sin violaciones axe A/AA</td><td>color-contrast / serious (4 nodos)</td></tr></tbody>
+</table></div>
             </div>
-            <h2>axe-core found <span class="badge badge-success">0</span> violations</h2>
+            <h2>axe-core found <span class="badge badge-warning">12</span> violations</h2>
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th style="width: 5%">#</th>
+                        <th style="width: 45%">Description</th>
+                        <th style="width: 15%">Axe rule ID</th>
+                        <th style="width: 23%">WCAG</th>
+                        <th style="width: 7%">Impact</th>
+                        <th style="width: 5%">Count</th>
+                    </tr>
+                </thead>
                 <tbody>
+                    <tr>
+                        <th scope="row"><a href="#1" class="card-link">1</a></th>
+                        <td>Elements must meet minimum color contrast ratio thresholds</td>
+                        <td>color-contrast</td>
+                        <td>WCAG 2 Level AA, WCAG 1.4.3</td>
+                        <td>serious</td>
+                        <td>4</td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><a href="#2" class="card-link">2</a></th>
+                        <td>Elements must meet minimum color contrast ratio thresholds</td>
+                        <td>color-contrast</td>
+                        <td>WCAG 2 Level AA, WCAG 1.4.3</td>
+                        <td>serious</td>
+                        <td>4</td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><a href="#3" class="card-link">3</a></th>
+                        <td>Elements must meet minimum color contrast ratio thresholds</td>
+                        <td>color-contrast</td>
+                        <td>WCAG 2 Level AA, WCAG 1.4.3</td>
+                        <td>serious</td>
+                        <td>4</td>
+                    </tr>
                 </tbody>
             </table>
+            <h3>Failed</h3>
+            <div class="card violationCard">
+                <div class="card-body">
+                    <div class="violationCardLine">
+                        <p class="card-title">
+                            <a id="1">1.</a> Elements must meet minimum color contrast ratio thresholds
+                        </p>
+                        <a
+                            href="https:&#x2F;&#x2F;dequeuniversity.com&#x2F;rules&#x2F;axe&#x2F;4.13&#x2F;color-contrast?application&#x3D;playwright"
+                            target="_blank"
+                            class="card-link violationCardTitleItem learnMore"
+                            >Learn more</a
+                        >
+                    </div>
+                    <div class="violationCardLine">
+                        <p class="card-subtitle mb-2 text-muted">color-contrast</p>
+                        <p class="card-subtitle mb-2 text-muted violationCardTitleItem">
+                            WCAG 2 Level AA, WCAG 1.4.3
+                        </p>
+                    </div>
+                    <div class="violationCardLine">
+                        <p class="card-text">Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</p>
+                        <p class="card-subtitle mb-2 text-muted violationCardTitleItem">
+                            serious
+                        </p>
+                    </div>
+                    <div class="violationCardLine">
+                        <p class="card-subtitle mb-2 text-muted violationCardTitleItem">
+                            Issue Tags: 
+                            <span class="badge bg-light text-dark"> cat.color </span>
+
+                            <span class="badge bg-light text-dark"> wcag2aa </span>
+
+                            <span class="badge bg-light text-dark"> wcag143 </span>
+
+                            <span class="badge bg-light text-dark"> TTv5 </span>
+
+                            <span class="badge bg-light text-dark"> TT13.c </span>
+
+                            <span class="badge bg-light text-dark"> EN-301-549 </span>
+
+                            <span class="badge bg-light text-dark"> EN-9.1.4.3 </span>
+
+                            <span class="badge bg-light text-dark"> ACT </span>
+
+                            <span class="badge bg-light text-dark"> RGAAv4 </span>
+
+                            <span class="badge bg-light text-dark"> RGAA-3.2.1 </span>
+                        </p>
+                    </div>
+                    <div class="violationNode">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width: 2%">#</th>
+                                    <th style="width: 49%">Issue Description</th>
+                                    <th style="width: 49%">
+                                        To solve this violation, you need to...
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(1) &gt; td:nth-child(2)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;30 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tbody &gt; tr:nth-child(1)</code></pre>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(1) &gt; td:nth-child(3)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;60 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tbody &gt; tr:nth-child(1)</code></pre>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2) &gt; td:nth-child(2)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;30 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2)</code></pre>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2) &gt; td:nth-child(3)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;300 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2)</code></pre>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="card violationCard">
+                <div class="card-body">
+                    <div class="violationCardLine">
+                        <p class="card-title">
+                            <a id="2">2.</a> Elements must meet minimum color contrast ratio thresholds
+                        </p>
+                        <a
+                            href="https:&#x2F;&#x2F;dequeuniversity.com&#x2F;rules&#x2F;axe&#x2F;4.13&#x2F;color-contrast?application&#x3D;playwright"
+                            target="_blank"
+                            class="card-link violationCardTitleItem learnMore"
+                            >Learn more</a
+                        >
+                    </div>
+                    <div class="violationCardLine">
+                        <p class="card-subtitle mb-2 text-muted">color-contrast</p>
+                        <p class="card-subtitle mb-2 text-muted violationCardTitleItem">
+                            WCAG 2 Level AA, WCAG 1.4.3
+                        </p>
+                    </div>
+                    <div class="violationCardLine">
+                        <p class="card-text">Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</p>
+                        <p class="card-subtitle mb-2 text-muted violationCardTitleItem">
+                            serious
+                        </p>
+                    </div>
+                    <div class="violationCardLine">
+                        <p class="card-subtitle mb-2 text-muted violationCardTitleItem">
+                            Issue Tags: 
+                            <span class="badge bg-light text-dark"> cat.color </span>
+
+                            <span class="badge bg-light text-dark"> wcag2aa </span>
+
+                            <span class="badge bg-light text-dark"> wcag143 </span>
+
+                            <span class="badge bg-light text-dark"> TTv5 </span>
+
+                            <span class="badge bg-light text-dark"> TT13.c </span>
+
+                            <span class="badge bg-light text-dark"> EN-301-549 </span>
+
+                            <span class="badge bg-light text-dark"> EN-9.1.4.3 </span>
+
+                            <span class="badge bg-light text-dark"> ACT </span>
+
+                            <span class="badge bg-light text-dark"> RGAAv4 </span>
+
+                            <span class="badge bg-light text-dark"> RGAA-3.2.1 </span>
+                        </p>
+                    </div>
+                    <div class="violationNode">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width: 2%">#</th>
+                                    <th style="width: 49%">Issue Description</th>
+                                    <th style="width: 49%">
+                                        To solve this violation, you need to...
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(1) &gt; td:nth-child(2)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;30 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tbody &gt; tr:nth-child(1)</code></pre>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(1) &gt; td:nth-child(3)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;60 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tbody &gt; tr:nth-child(1)</code></pre>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2) &gt; td:nth-child(2)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;30 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2)</code></pre>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2) &gt; td:nth-child(3)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;300 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2)</code></pre>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="card violationCard">
+                <div class="card-body">
+                    <div class="violationCardLine">
+                        <p class="card-title">
+                            <a id="3">3.</a> Elements must meet minimum color contrast ratio thresholds
+                        </p>
+                        <a
+                            href="https:&#x2F;&#x2F;dequeuniversity.com&#x2F;rules&#x2F;axe&#x2F;4.13&#x2F;color-contrast?application&#x3D;playwright"
+                            target="_blank"
+                            class="card-link violationCardTitleItem learnMore"
+                            >Learn more</a
+                        >
+                    </div>
+                    <div class="violationCardLine">
+                        <p class="card-subtitle mb-2 text-muted">color-contrast</p>
+                        <p class="card-subtitle mb-2 text-muted violationCardTitleItem">
+                            WCAG 2 Level AA, WCAG 1.4.3
+                        </p>
+                    </div>
+                    <div class="violationCardLine">
+                        <p class="card-text">Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</p>
+                        <p class="card-subtitle mb-2 text-muted violationCardTitleItem">
+                            serious
+                        </p>
+                    </div>
+                    <div class="violationCardLine">
+                        <p class="card-subtitle mb-2 text-muted violationCardTitleItem">
+                            Issue Tags: 
+                            <span class="badge bg-light text-dark"> cat.color </span>
+
+                            <span class="badge bg-light text-dark"> wcag2aa </span>
+
+                            <span class="badge bg-light text-dark"> wcag143 </span>
+
+                            <span class="badge bg-light text-dark"> TTv5 </span>
+
+                            <span class="badge bg-light text-dark"> TT13.c </span>
+
+                            <span class="badge bg-light text-dark"> EN-301-549 </span>
+
+                            <span class="badge bg-light text-dark"> EN-9.1.4.3 </span>
+
+                            <span class="badge bg-light text-dark"> ACT </span>
+
+                            <span class="badge bg-light text-dark"> RGAAv4 </span>
+
+                            <span class="badge bg-light text-dark"> RGAA-3.2.1 </span>
+                        </p>
+                    </div>
+                    <div class="violationNode">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width: 2%">#</th>
+                                    <th style="width: 49%">Issue Description</th>
+                                    <th style="width: 49%">
+                                        To solve this violation, you need to...
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(1) &gt; td:nth-child(2)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;30 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tbody &gt; tr:nth-child(1)</code></pre>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(1) &gt; td:nth-child(3)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;60 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tbody &gt; tr:nth-child(1)</code></pre>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2) &gt; td:nth-child(2)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;30 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2)</code></pre>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>
+                                        <p><strong>Element location</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2) &gt; td:nth-child(3)</code></pre>
+                                        <p><strong>Element source</strong></p>
+                                        <pre><code class="html text-wrap">&lt;td style&#x3D;&quot;padding: var(--s3) var(--s4); border-bottom: 1px solid var(--surface-border); font-size: 13px; font-family: var(--font-mono); font-weight: 700;&quot;&gt;300 &lt;span style&#x3D;&quot;font-weight: 400; color: var(--text-muted);&quot;&gt;min&lt;&#x2F;span&gt;&lt;&#x2F;td&gt;</code></pre>
+                                    </td>
+                                    <td>
+                                        <div class="wrapBreakWord">
+                                            <p>Fix any of the following:</p>
+                                            <ul class="text-muted">
+                                                <li>  Element has insufficient color contrast of 1.19 (foreground color: #000000, background color: #171a15, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1</li>
+                                            </ul>
+                                        </div>
+                                        <p><strong>Related node:</strong></p>
+                                        <pre><code class="css text-wrap">tr:nth-child(2)</code></pre>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <script>
