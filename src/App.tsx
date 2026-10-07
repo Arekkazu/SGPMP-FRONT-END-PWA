@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
@@ -55,15 +55,23 @@ import { SsoCallbackPage } from './auth/pages/SsoCallbackPage';
 import { CompletarPerfilSsoPage } from './auth/pages/CompletarPerfilSsoPage';
 
 /* Private pages */
-import { DashboardPage } from './dashboard/pages/DashboardPage';
-import { UsuariosPage } from './usuarios/pages/UsuariosPage';
-import { PerfilPage } from './perfil/pages/PerfilPage';
-import { RolesPage } from './roles/pages/RolesPage';
-import { AuditoriaPage } from './auditoria/pages/AuditoriaPage';
-import { ConfigurationPage } from './configuration/pages/ConfigurationPage';
-import { ActivosBiologicosPage } from './biological_assets/pages/ActivosBiologicosPage';
-import { TelemetryPage } from './telemetry/pages/TelemetryPage';
-import { PrediccionPage } from './prediction/pages/PrediccionPage';
+// Cada modulo de negocio se descarga al entrar a su ruta, no en el arranque:
+// todo en un solo bundle eran 2.9 MB antes de poder ver el login.
+const DashboardPage = lazy(() => import('./dashboard/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const UsuariosPage = lazy(() => import('./usuarios/pages/UsuariosPage').then((m) => ({ default: m.UsuariosPage })));
+const PerfilPage = lazy(() => import('./perfil/pages/PerfilPage').then((m) => ({ default: m.PerfilPage })));
+const RolesPage = lazy(() => import('./roles/pages/RolesPage').then((m) => ({ default: m.RolesPage })));
+const AuditoriaPage = lazy(() => import('./auditoria/pages/AuditoriaPage').then((m) => ({ default: m.AuditoriaPage })));
+const ConfigurationPage = lazy(() => import('./configuration/pages/ConfigurationPage').then((m) => ({ default: m.ConfigurationPage })));
+const ActivosBiologicosPage = lazy(() => import('./biological_assets/pages/ActivosBiologicosPage').then((m) => ({ default: m.ActivosBiologicosPage })));
+const TelemetryPage = lazy(() => import('./telemetry/pages/TelemetryPage').then((m) => ({ default: m.TelemetryPage })));
+const PrediccionPage = lazy(() => import('./prediction/pages/PrediccionPage').then((m) => ({ default: m.PrediccionPage })));
+
+/** Mientras llega el chunk de la pagina: anuncio para el lector, sin salto visual. */
+function CargandoPagina() {
+  const { t } = useT('common');
+  return <p role="status" className="ds-sr-only">{t('estados.cargando')}</p>;
+}
 
 setupIonicReact();
 
@@ -256,7 +264,9 @@ function PrivateRoute({ path, component: Component }: { path: string; component:
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
         return (
           <AppShell operativa={RUTAS_CON_BLOQUEO_SIN_FINCA.includes(path)}>
-            <Component />
+            <Suspense fallback={<CargandoPagina />}>
+              <Component />
+            </Suspense>
           </AppShell>
         );
       }}
