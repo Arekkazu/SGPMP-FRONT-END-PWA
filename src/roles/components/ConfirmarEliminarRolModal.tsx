@@ -45,7 +45,7 @@ export function ConfirmarEliminarRolModal({ rol, eliminando, error, onCancelar, 
         }}
       >
         <h2 id="eliminar-rol-title" style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 700, marginBottom: 'var(--s3)', color: 'var(--text-primary)' }}>{t('rolespage.eliminar_rol')}</h2>
-        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>{t('rolespage.confirmas_que_deseas_eliminar_el_rol')}<strong>{rol.nombre_rol}</strong>{t('rolespage.esta_accion_no_se_puede_deshacer')}</p>
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>{t('rolespage.confirmas_que_deseas_eliminar_el_rol')}{' '}<strong>{rol.nombre_rol}</strong>{t('rolespage.esta_accion_no_se_puede_deshacer')}</p>
         {error && (
           <Alert variant="error" title={t('rolespage.no_se_pudo_eliminar_el_rol')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
         )}

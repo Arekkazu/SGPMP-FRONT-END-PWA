@@ -70,7 +70,7 @@ export function CambiarEstadoAlertaModal({ alerta, estado, saving, saveError, on
         </>
       }
     >
-      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('cambiarestadoalertamodal.alerta')}<strong>#{alerta.id_alerta}</strong> · {alerta.tipo_alerta} · {alerta.tipo_variable}
+      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('cambiarestadoalertamodal.alerta')}{' '}<strong>#{alerta.id_alerta}</strong> · {alerta.tipo_alerta} · {alerta.tipo_variable}
       </p>
 
       <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-alerta">

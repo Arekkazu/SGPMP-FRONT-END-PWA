@@ -48,7 +48,7 @@ export function VerificarIntegridadModal({ evento, tiposEvento, onClose }: Props
           </Button>
         </div>
 
-        <p style={{ fontSize: 'var(--fs-label-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>{t('auditoriapage.evento')}<strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>#{evento.id_evento}</strong>
+        <p style={{ fontSize: 'var(--fs-label-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>{t('auditoriapage.evento')}{' '}<strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>#{evento.id_evento}</strong>
           {' · '}{tiposEvento.find((t) => t.id_tipo_evento === evento.tipo_evento)?.nombre ?? evento.tipo_evento}
         </p>
 

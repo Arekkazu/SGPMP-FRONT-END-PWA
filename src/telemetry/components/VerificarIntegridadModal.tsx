@@ -61,7 +61,7 @@ export function VerificarIntegridadModal({ verificando, verificacion, verificarE
             {comprometido ? 'Se detectaron registros comprometidos' : 'Integridad verificada'}
           </div>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: 'var(--s2)' }}>
-            Verificados: <strong>{verificacion.total_verificados}</strong>{t('verificarintegridadmodal.comprometidos')}<strong>{verificacion.comprometidos}</strong>
+            Verificados: <strong>{verificacion.total_verificados}</strong>{' '}{t('verificarintegridadmodal.comprometidos')}{' '}<strong>{verificacion.comprometidos}</strong>
           </div>
           {verificacion.ids_comprometidos.length > 0 && (
             <div style={{ marginTop: 'var(--s2)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--sem-error)', wordBreak: 'break-all' }}>
