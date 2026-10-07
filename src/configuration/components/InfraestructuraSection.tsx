@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearFecha, formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, Power, X, ChevronLeft, Warehouse } from 'lucide-react';
@@ -590,7 +590,7 @@ export function InfraestructuraSection() {
                         </td>
                         <td style={{ ...TD, whiteSpace: 'nowrap' }}>
                           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                            {formatearFechaHora(infra.superficie)}
+                            {formatearNumero(infra.superficie)}
                           </span>
                           <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 4 }}>m²</span>
                         </td>

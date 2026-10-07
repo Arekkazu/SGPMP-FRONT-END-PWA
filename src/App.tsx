@@ -182,7 +182,8 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
         />
         <main
           id="contenido-principal"
-          tabIndex={-1}
+          // 0 y no -1: el main tiene scroll propio y debe poder desplazarse con teclado (WCAG 2.1.1).
+          tabIndex={0}
           style={{
             flex: 1,
             marginTop: 'var(--topbar-h)',

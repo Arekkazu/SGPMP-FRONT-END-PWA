@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, RefreshCw, Plus, PowerOff, ChevronLeft, Warehouse, Radio, KeyRound, Network } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -150,7 +150,7 @@ function AreaSelector({ infras, loading, onSelect, onBack }: {
             >
               <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{infra.nombre_infraestructura}</div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                {infra.tipo_area} · {formatearFechaHora(infra.superficie)} m²
+                {infra.tipo_area} · {formatearNumero(infra.superficie)} m²
               </div>
             </button>
           ))}

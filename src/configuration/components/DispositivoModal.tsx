@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X, Cpu } from 'lucide-react';
@@ -138,7 +138,7 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
               {area.tipo_area} — {area.nombre_infraestructura}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-              #{area.id_infraestructura} · {formatearFechaHora(area.superficie)} m²
+              #{area.id_infraestructura} · {formatearNumero(area.superficie)} m²
             </div>
           </div>
 

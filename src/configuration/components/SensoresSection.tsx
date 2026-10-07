@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
@@ -271,7 +271,7 @@ function AreaDestSelector({ fincas, infraestructuras, loadingFincas, loadingInfr
                         {infra.tipo_area} · {fincaSeleccionada.nombre}
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>
-                        {formatearFechaHora(infra.superficie)} m²
+                        {formatearNumero(infra.superficie)} m²
                       </div>
                     </div>
                   </div>
