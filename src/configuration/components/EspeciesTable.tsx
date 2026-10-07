@@ -3,6 +3,7 @@ import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Pencil, PowerOff, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import type { EspecieResponse } from '../types';
 
 interface Props {
@@ -82,7 +83,7 @@ export function EspeciesTable({
   }
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <ScrollRegion label={t('configurationpage.catalogo_de_especies')}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
@@ -195,6 +196,6 @@ export function EspeciesTable({
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }

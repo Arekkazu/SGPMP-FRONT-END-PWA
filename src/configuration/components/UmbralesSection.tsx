@@ -4,6 +4,7 @@ import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, X, CircleCheck, TriangleAlert, OctagonAlert, Gauge, type LucideIcon } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -591,7 +592,7 @@ export function UmbralesSection({ idEspecie }: Props) {
       ) : umbrales.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('umbralessection.no_hay_umbrales_configurados_para_esta')}</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <ScrollRegion label={t('umbralessection.umbrales_ambientales')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
@@ -650,7 +651,7 @@ export function UmbralesSection({ idEspecie }: Props) {
               })}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       )}
 
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (

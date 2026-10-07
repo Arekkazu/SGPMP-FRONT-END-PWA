@@ -3,6 +3,7 @@ import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, RefreshCw, Plus, PowerOff, ChevronLeft, Warehouse, Radio, KeyRound, Network } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Alert } from '../../shared/design-system/Alert';
 import { OptionCard } from '../../shared/design-system/OptionCard';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -329,7 +330,7 @@ export function DispositivosTable() {
             </div>
           ) : (
             <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
-              <div style={{ overflowX: 'auto' }}>
+              <ScrollRegion label={t('dispositivostable.dispositivos_iot')}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
@@ -430,7 +431,7 @@ export function DispositivosTable() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollRegion>
             </div>
           )}
 

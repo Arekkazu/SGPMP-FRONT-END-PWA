@@ -4,6 +4,7 @@ import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Settings2, ChevronLeft, RefreshCw, RotateCw, Send, X, Cpu } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Alert } from '../../shared/design-system/Alert';
 import { OptionCard } from '../../shared/design-system/OptionCard';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -123,7 +124,7 @@ function Historial({ historial, loading, acciones }: {
     return <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: 'var(--s5) 0' }}>{t('configuracionremotasection.sin_historial_de_configuraciones')}</p>;
   }
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <ScrollRegion label={t('configuracionremotasection.tabla_historial')}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ background: 'var(--surface-hover)' }}>
@@ -156,7 +157,7 @@ function Historial({ historial, loading, acciones }: {
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }
 

@@ -4,6 +4,7 @@ import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { ShieldCheck, ChevronLeft, Check, RefreshCw, Cpu } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { OptionCard } from '../../shared/design-system/OptionCard';
@@ -135,7 +136,7 @@ function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibracio
       {calibraciones.length === 0 ? (
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: 'var(--s5) 0' }}>{t('calibracionsection.sin_calibraciones_registradas_para_este')}</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <ScrollRegion label={t('calibracionsection.tabla_historial')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ background: 'var(--surface-hover)' }}>
@@ -153,7 +154,7 @@ function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibracio
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       )}
     </div>
   );

@@ -75,6 +75,7 @@ src/
 │   │   ├── Gauge.tsx
 │   │   ├── Stepper.tsx
 │   │   ├── OptionCard.tsx
+│   │   ├── ScrollRegion.tsx
 │   │   ├── Sidebar.tsx
 │   │   └── AppBar.tsx
 │   ├── db/                        # Instancia Dexie central
@@ -285,6 +286,7 @@ de esos solo `Gauge` está implementado — los demás siguen siendo especificac
 | `AppBar`           | 64px mínimo; logo, toggle de tema, badge de notificaciones              |
 | `Stepper`          | done · active (`aria-current="step"`) · pending; pasos de un asistente   |
 | `OptionCard`       | card · pill; hover, focus-visible y `selected` (`aria-pressed`) por CSS |
+| `ScrollRegion`     | scroll horizontal de tablas; enfocable (`tabIndex=0`) y con nombre (`role="region"`) |
 
 ### Reglas no negociables del sistema de diseño
 

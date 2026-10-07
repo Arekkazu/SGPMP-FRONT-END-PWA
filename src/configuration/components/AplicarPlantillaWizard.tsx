@@ -3,6 +3,7 @@ import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { X, Check } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Alert } from '../../shared/design-system/Alert';
 import { useEspecies } from '../hooks/useEspecies';
 import type { PlantillaResponse, AplicacionPlantillaResponse, EspecieResponse } from '../types';
@@ -84,7 +85,7 @@ function DiffTable({ before, after }: { before: Record<string, unknown> | null; 
   }
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <ScrollRegion label={t('aplicarplantillawizard.tabla_diferencias')}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
         <thead>
           <tr>
@@ -114,7 +115,7 @@ function DiffTable({ before, after }: { before: Record<string, unknown> | null; 
           })}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }
 

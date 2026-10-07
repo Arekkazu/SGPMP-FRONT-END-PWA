@@ -3,6 +3,7 @@ import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Plus, RefreshCw, Pencil, PowerOff, RotateCcw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -168,7 +169,7 @@ export function FincasTable() {
               {activas} activas · {inactivas} inactivas
             </span>
           </div>
-          <div tabIndex={0} role="region" aria-label={t('fincastable.fincas_registradas')} style={{ overflowX: 'auto' }}>
+          <ScrollRegion label={t('fincastable.fincas_registradas')}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
@@ -234,7 +235,7 @@ export function FincasTable() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollRegion>
         </div>
       )}
 

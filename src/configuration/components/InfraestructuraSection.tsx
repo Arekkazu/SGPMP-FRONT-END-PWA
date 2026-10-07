@@ -4,6 +4,7 @@ import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, Power, X, ChevronLeft, Warehouse } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
@@ -511,7 +512,7 @@ export function InfraestructuraSection() {
             </div>
           ) : (
             <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
-              <div style={{ overflowX: 'auto' }}>
+              <ScrollRegion label={t('infraestructurasection.infraestructura_productiva')}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
@@ -588,7 +589,7 @@ export function InfraestructuraSection() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollRegion>
             </div>
           )}
 

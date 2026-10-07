@@ -94,6 +94,16 @@
   .ds-modal__panel--sm { max-width: 400px; }
 }
 
+/* Scroll horizontal de tablas (ScrollRegion): enfocable con teclado. */
+.ds-scroll-region {
+  overflow-x: auto;
+}
+
+.ds-scroll-region:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 /* Enlace "Saltar al contenido" (WCAG 2.4.1): fuera de pantalla hasta recibir foco. */
 .ds-skip-link {
   position: absolute;
