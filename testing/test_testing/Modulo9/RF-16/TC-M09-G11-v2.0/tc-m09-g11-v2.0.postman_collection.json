@@ -1,0 +1,477 @@
+{
+  "info": {
+    "name": "TC-M09-G11-v2.0 (Newman)",
+    "description": "Coleccion de verificacion de contrato API para RF-16 v1.2 (CU-02) con bloque RFC-004",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "NW-01: Login y autenticacion",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"correo_electronico\": \"{{admin_email}}\",\n  \"contrasena\": \"{{admin_password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{api_url}}/sesiones/",
+          "host": ["{{api_url}}"],
+          "path": ["sesiones", ""]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-01: Login exitoso y captura de token', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('token');",
+              "    pm.collectionVariables.set('token', jsonData.token);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-02: Preflight especie objetivo",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/especies?solo_activas=false",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "especies"],
+          "query": [{ "key": "solo_activas", "value": "false" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-02: Preflight confirma Trucha Arcoiris id 2 activa', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var body = pm.response.json();",
+              "    var items = Array.isArray(body) ? body : (body.items || []);",
+              "    var trucha = items.find(function(i) { return Number(i.id_especie) === 2; });",
+              "    pm.expect(trucha, 'Trucha Arcoiris debe existir').to.be.an('object');",
+              "    pm.expect(trucha.es_activo, 'Trucha Arcoiris debe estar activa').to.eql(true);",
+              "    pm.collectionVariables.set('id_especie', 2);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-03a: Preflight nombre ciclo libre",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/ciclos?id_especie=2&solo_activas=false",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "ciclos"],
+          "query": [
+            { "key": "id_especie", "value": "2" },
+            { "key": "solo_activas", "value": "false" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var runId = pm.environment.get('run_id') || 'NWQA';",
+              "pm.collectionVariables.set('nw_nombre_ciclo', 'Alevinaje Nw ' + runId);",
+              "pm.collectionVariables.set('nw_nombre_patologia', 'Saprolegniosis Nw ' + runId);",
+              "pm.collectionVariables.set('nw_nombre_metrica', 'Huevos Nw ' + runId);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-03: Preflight nombre ciclo Newman inexistente', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var body = pm.response.json();",
+              "    var items = Array.isArray(body) ? body : (body.items || []);",
+              "    var target = (pm.collectionVariables.get('nw_nombre_ciclo') || '').trim().toLowerCase();",
+              "    var existe = items.some(function(c) { return (c.nombre || '').trim().toLowerCase() === target; });",
+              "    pm.expect(existe, 'Ciclo ' + target + ' debe ser libre').to.eql(false);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-03b: Preflight nombre patologia libre",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/patologias?id_especie=2&solo_activas=false",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "patologias"],
+          "query": [
+            { "key": "id_especie", "value": "2" },
+            { "key": "solo_activas", "value": "false" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-03: Preflight nombre patologia Newman inexistente', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var body = pm.response.json();",
+              "    var items = Array.isArray(body) ? body : (body.items || []);",
+              "    var target = (pm.collectionVariables.get('nw_nombre_patologia') || '').trim().toLowerCase();",
+              "    var existe = items.some(function(p) { return (p.nombre || '').trim().toLowerCase() === target; });",
+              "    pm.expect(existe, 'Patologia ' + target + ' debe ser libre').to.eql(false);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-03c: Preflight nombre metrica libre",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/metricas?id_especie=2&solo_activas=false",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "metricas"],
+          "query": [
+            { "key": "id_especie", "value": "2" },
+            { "key": "solo_activas", "value": "false" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-03: Preflight nombre metrica Newman inexistente', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var body = pm.response.json();",
+              "    var items = Array.isArray(body) ? body : (body.items || []);",
+              "    var target = (pm.collectionVariables.get('nw_nombre_metrica') || '').trim().toLowerCase();",
+              "    var existe = items.some(function(m) { return (m.nombre || '').trim().toLowerCase() === target; });",
+              "    pm.expect(existe, 'Metrica ' + target + ' debe ser libre').to.eql(false);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-04: Registrar etapa/ciclo biologico",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_especie\": 2,\n  \"nombre\": \"{{nw_nombre_ciclo}}\",\n  \"duracion_dias\": 45,\n  \"descripcion\": \"Etapa de prueba Newman RF-16\"\n}"
+        },
+        "url": {
+          "raw": "{{api_url}}/configuracion/ciclos",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "ciclos"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-04: Crear etapa responde 200/201 con datos correctos', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "    var json = pm.response.json();",
+              "    pm.expect(json).to.have.property('id_ciclo_biologico');",
+              "    pm.collectionVariables.set('nw_id_ciclo', json.id_ciclo_biologico);",
+              "    var expNombre = (pm.collectionVariables.get('nw_nombre_ciclo') || '').trim().toLowerCase();",
+              "    var actNombre = (json.nombre || '').trim().toLowerCase();",
+              "    pm.expect(actNombre).to.eql(expNombre);",
+              "    pm.expect(Number(json.duracion_dias)).to.eql(45);",
+              "    pm.expect(Number(json.id_especie || json.especie_id)).to.eql(2);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-05: Registrar patologia",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_especie\": 2,\n  \"nombre\": \"{{nw_nombre_patologia}}\",\n  \"descripcion\": \"Infeccion fungica (QA v2.0)\"\n}"
+        },
+        "url": {
+          "raw": "{{api_url}}/configuracion/patologias",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "patologias"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-05: Crear patologia responde 200/201 con descripcion preservada', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "    var json = pm.response.json();",
+              "    pm.expect(json).to.have.property('id_especies_patologias');",
+              "    pm.collectionVariables.set('nw_id_patologia', json.id_especies_patologias);",
+              "    var expNombre = (pm.collectionVariables.get('nw_nombre_patologia') || '').trim().toLowerCase();",
+              "    var actNombre = (json.nombre || '').trim().toLowerCase();",
+              "    pm.expect(actNombre).to.eql(expNombre);",
+              "    pm.expect(json.descripcion).to.eql('Infeccion fungica (QA v2.0)');",
+              "    pm.expect(Number(json.id_especie || json.especie_id)).to.eql(2);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-06: Registrar metrica productiva con bloque RFC-004",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_especie\": 2,\n  \"nombre\": \"{{nw_nombre_metrica}}\",\n  \"unidad_medida\": \"unidades\",\n  \"tipo_medicion\": \"CONTEO\",\n  \"aplica_a_tipo_activo\": \"LOTE\",\n  \"tipo_dato\": \"ENTERO\",\n  \"es_obligatorio\": true,\n  \"valor_min\": 0,\n  \"valor_max\": 5000\n}"
+        },
+        "url": {
+          "raw": "{{api_url}}/configuracion/metricas",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "metricas"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-06: Crear metrica con RFC-004 responde 200/201 (no rechaza campos)', function () {",
+              "    pm.expect(pm.response.code, 'No debe responder 400 ni 422 por campos desconocidos').to.be.oneOf([200, 201]);",
+              "    var json = pm.response.json();",
+              "    if (json && json.id_metrica_produccion) {",
+              "        pm.collectionVariables.set('nw_id_metrica', json.id_metrica_produccion);",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-07: Respuesta metrica contiene atributos RFC-004",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/metricas?id_especie=2&solo_activas=false",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "metricas"],
+          "query": [
+            { "key": "id_especie", "value": "2" },
+            { "key": "solo_activas", "value": "false" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-07: Body de metrica devuelve tipo_dato, es_obligatorio, valor_min, valor_max', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var body = pm.response.json();",
+              "    var items = Array.isArray(body) ? body : (body.items || []);",
+              "    var idTarget = Number(pm.collectionVariables.get('nw_id_metrica'));",
+              "    var m = items.find(function(i) { return Number(i.id_metrica_produccion) === idTarget; });",
+              "    pm.expect(m, 'Metrica recien creada debe encontrarse').to.be.an('object');",
+              "    pm.expect(m).to.have.property('tipo_dato', 'ENTERO');",
+              "    pm.expect(Boolean(m.es_obligatorio)).to.eql(true);",
+              "    pm.expect(Number(m.valor_min)).to.eql(0);",
+              "    pm.expect(Number(m.valor_max)).to.eql(5000);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-08: Persistencia metrica RFC-004 en GET posterior",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/metricas?id_especie=2&solo_activas=false",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "metricas"],
+          "query": [
+            { "key": "id_especie", "value": "2" },
+            { "key": "solo_activas", "value": "false" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-08: GET /metricas persiste tipo_dato, es_obligatorio y rango', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var body = pm.response.json();",
+              "    var items = Array.isArray(body) ? body : (body.items || []);",
+              "    var idTarget = Number(pm.collectionVariables.get('nw_id_metrica'));",
+              "    var m = items.find(function(i) { return Number(i.id_metrica_produccion) === idTarget; });",
+              "    pm.expect(m, 'Metrica debe estar presente').to.be.an('object');",
+              "    pm.expect(m.tipo_dato).to.eql('ENTERO');",
+              "    pm.expect(m.es_obligatorio).to.eql(true);",
+              "    pm.expect(Number(m.valor_min)).to.eql(0);",
+              "    pm.expect(Number(m.valor_max)).to.eql(5000);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-09a: Teardown desactivar ciclo",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/ciclos/{{nw_id_ciclo}}/desactivar",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "ciclos", "{{nw_id_ciclo}}", "desactivar"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-09a: Teardown desactiva ciclo de Newman', function () {",
+              "    if (!pm.collectionVariables.get('nw_id_ciclo')) { pm.expect(true).to.eql(true); return; }",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-09b: Teardown desactivar patologia",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/patologias/{{nw_id_patologia}}/desactivar",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "patologias", "{{nw_id_patologia}}", "desactivar"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-09b: Teardown desactiva patologia de Newman', function () {",
+              "    if (!pm.collectionVariables.get('nw_id_patologia')) { pm.expect(true).to.eql(true); return; }",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "NW-09c: Teardown desactivar metrica",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/metricas/{{nw_id_metrica}}/desactivar",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "metricas", "{{nw_id_metrica}}", "desactivar"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-09c: Teardown desactiva metrica de Newman', function () {",
+              "    if (!pm.collectionVariables.get('nw_id_metrica')) { pm.expect(true).to.eql(true); return; }",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

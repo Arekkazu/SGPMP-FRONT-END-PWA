@@ -1,0 +1,21 @@
+{
+  "name": "tc-m09-g03-v2.0-edicion-especie-grupo-manejo",
+  "private": true,
+  "version": "2.0.0",
+  "description": "TC-M09-G03-v2.0 · CU-01 – Edición de especie con grupo_manejo y verificación de conjunto admisible (RF-15 v1.1 · Frontend & Backend QA)",
+  "type": "commonjs",
+  "scripts": {
+    "cy:run": "cypress run --browser chrome",
+    "newman:run": "node run-newman.cjs",
+    "consolidar": "node consolidar-resultados.cjs",
+    "verificar-login": "node verificar-login.cjs",
+    "tsc": "tsc --noEmit",
+    "test": "npm run cy:run && npm run newman:run && npm run consolidar"
+  },
+  "devDependencies": {
+    "cypress": "^13.17.0",
+    "typescript": "^5.9.3",
+    "newman": "^6.2.1",
+    "newman-reporter-htmlextra": "^1.24.1"
+  }
+}
