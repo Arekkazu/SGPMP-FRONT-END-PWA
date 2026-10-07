@@ -5,7 +5,8 @@
  *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
  * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
- * ambos en ./resultados.
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
+ * peso 0 en el puntaje.
  *
  * Datos: bitácora real de M02 (≈7 000 registros, 20 por página). Cada consulta del sistema
  * genera registros nuevos, así que el contenido cambia entre corridas: los pasos se apoyan
@@ -129,6 +130,8 @@ async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 function enRegionViva(loc: Locator): Promise<boolean> {
@@ -161,25 +164,25 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Bitácora de auditoría (R
     const encabezados = (await tabla(page).getByRole('columnheader').allInnerTexts()).map((h) => h.trim().toLowerCase());
     testInfo.annotations.push({ type: 'Encabezados', description: encabezados.join(' · ') });
     for (const h of ['fecha', 'evento', 'resultado']) {
-      expect(encabezados, `1.3.1: la tabla debe tener el encabezado "${h}" (timestamp / tipo_operacion / resultado)`).toContain(h);
+      expect(encabezados, `DEFECTO: 1.3.1: la tabla debe tener el encabezado "${h}" (timestamp / tipo_operacion / resultado)`).toContain(h);
     }
-    expect.soft(encabezados.some((h) => /usuario|responsable/.test(h)), '1.3.1: la tabla no tiene columna de usuario (la respuesta trae id_usuario_responsable)').toBe(true);
-    expect.soft(encabezados.some((h) => /anterior|nuevo|valores|detalle/.test(h)), '1.3.1: la tabla no muestra valores anteriores / nuevos (la respuesta trae detalle_tecnico)').toBe(true);
+    expect.soft(encabezados.some((h) => /usuario|responsable/.test(h)), 'DEFECTO: 1.3.1: la tabla no tiene columna de usuario (la respuesta trae id_usuario_responsable)').toBe(true);
+    expect.soft(encabezados.some((h) => /anterior|nuevo|valores|detalle/.test(h)), 'DEFECTO: 1.3.1: la tabla no muestra valores anteriores / nuevos (la respuesta trae detalle_tecnico)').toBe(true);
     const nombreTabla = await tabla(page).evaluate((t) => !!t.querySelector('caption') || t.hasAttribute('aria-label') || t.hasAttribute('aria-labelledby'));
-    expect.soft(nombreTabla, '1.3.1: la tabla no tiene nombre accesible (caption/aria-label)').toBe(true);
+    expect.soft(nombreTabla, 'DEFECTO: 1.3.1: la tabla no tiene nombre accesible (caption/aria-label)').toBe(true);
 
     // Resultado y severidad se comunican con texto, no solo color
-    await expect(tabla(page).getByText(/^(EXITOSO|FALLIDO)$/).first(), '1.4.1: el resultado debe mostrarse como texto').toBeVisible();
+    await expect(tabla(page).getByText(/^(EXITOSO|FALLIDO)$/).first(), 'DEFECTO: 1.4.1: el resultado debe mostrarse como texto').toBeVisible();
 
     // 4.1.2: filtros con name/role/value
     const f = filtros(page);
     for (const [campo, nombre] of [[f.rf, 'RF origen'], [f.tipo, 'Tipo de evento'], [f.activo, 'ID activo'], [f.clasificacion, 'Clasificación'], [f.resultado, 'Resultado'], [f.severidad, 'Severidad'], [f.desde, 'Desde'], [f.hasta, 'Hasta']] as const) {
-      await expect(campo, `4.1.2: el filtro "${nombre}" debe tener nombre accesible`).toBeVisible();
+      await expect(campo, `DEFECTO: 4.1.2: el filtro "${nombre}" debe tener nombre accesible`).toBeVisible();
     }
     await f.resultado.selectOption('FALLIDO');
-    await expect(f.resultado, '4.1.2: el value del select debe reflejar la opción').toHaveValue('FALLIDO');
+    await expect(f.resultado, 'DEFECTO: 4.1.2: el value del select debe reflejar la opción').toHaveValue('FALLIDO');
     await f.resultado.selectOption('');
-    expect.soft(await page.getByRole('combobox', { name: /usuario/i }).or(page.getByRole('textbox', { name: /usuario/i })).count(), 'Filtro por usuario ausente: el caso pide filtrar por tipo de operación / usuario / fecha').toBeGreaterThan(0);
+    expect.soft(await page.getByRole('combobox', { name: /usuario/i }).or(page.getByRole('textbox', { name: /usuario/i })).count(), 'DEFECTO: Filtro por usuario ausente: el caso pide filtrar por tipo de operación / usuario / fecha').toBeGreaterThan(0);
 
     await escanear(page, 'listado', testInfo);
   });
@@ -206,7 +209,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Bitácora de auditoría (R
     if (cuerpo.total_registros > 0) {
       for (const celda of await tabla(page).locator('tbody td:nth-child(3) > div:first-child').allInnerTexts()) expect(celda.trim()).toBe(tipoEvento);
     }
-    expect.soft(await enRegionViva(page.getByText(/registro\(s\)/)), '4.1.3: el conteo de resultados tras filtrar no está en región viva').toBe(true);
+    expect.soft(await enRegionViva(page.getByText(/registro\(s\)/)), 'DEFECTO: 4.1.3: el conteo de resultados tras filtrar no está en región viva').toBe(true);
 
     await escanear(page, 'filtro-aplicado', testInfo);
   });
@@ -219,7 +222,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Bitácora de auditoría (R
     expect((await r.json()).total_registros).toBe(0);
     const vacio = page.getByText(VACIO);
     await expect(vacio, 'El estado vacío debe mostrarse').toBeVisible();
-    expect.soft(await enRegionViva(vacio), '3.3.1/4.1.3: el estado sin resultados es un <p> sin role="status"/aria-live; no se anuncia').toBe(true);
+    expect.soft(await enRegionViva(vacio), 'DEFECTO: 3.3.1/4.1.3: el estado sin resultados es un <p> sin role="status"/aria-live; no se anuncia').toBe(true);
     await escanear(page, 'estado-vacio', testInfo);
 
     // Rango de fechas invertido: debe informarse el error, no un "sin resultados"
@@ -229,7 +232,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Bitácora de auditoría (R
     const rInv = await aplicar(page);
     testInfo.annotations.push({ type: 'Rango invertido', description: `HTTP ${rInv.status()} · ${(await rInv.json()).total_registros ?? '—'} registros` });
     const hayError = await page.getByRole('alert').count();
-    expect.soft(hayError, '3.3.1: con "Desde" posterior a "Hasta" no se informa el error; solo aparece "Sin registros…"').toBeGreaterThan(0);
+    expect.soft(hayError, 'DEFECTO: 3.3.1: con "Desde" posterior a "Hasta" no se informa el error (el backend responde 200 y la vista muestra resultados como si el filtro fuera válido)').toBeGreaterThan(0);
   });
 
   test('3.3.1. Errores anunciados: 403 y 500 (simulados)', async ({ page }, testInfo) => {
@@ -239,8 +242,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Bitácora de auditoría (R
       ? r.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify(ERROR_403) })
       : r.continue()));
     await abrirBitacora(page);
-    await expect(page.getByRole('alert').filter({ hasText: 'Sin acceso a la auditoría' }), '3.3.1: el 403 debe anunciarse').toContainText('Acceso denegado');
-    expect.soft(await page.getByText(VACIO).count(), 'Con el 403 también se muestra "Sin registros…", como si no hubiera datos').toBe(0);
+    await expect(page.getByRole('alert').filter({ hasText: 'Sin acceso a la auditoría' }), 'DEFECTO: 3.3.1: el 403 debe anunciarse').toContainText('Acceso denegado');
+    expect.soft(await page.getByText(VACIO).count(), 'DEFECTO: Con el 403 también se muestra "Sin registros…", como si no hubiera datos').toBe(0);
     await escanear(page, 'error-403', testInfo);
 
     await page.unrouteAll({ behavior: 'ignoreErrors' });
@@ -249,7 +252,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Bitácora de auditoría (R
       ? r.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify(ERROR_500) })
       : r.continue()));
     await abrirBitacora(page);
-    await expect(page.getByRole('alert').filter({ hasText: 'Error al cargar la bitácora' }), '3.3.1: el 500 debe anunciarse').toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: 'Error al cargar la bitácora' }), 'DEFECTO: 3.3.1: el 500 debe anunciarse').toBeVisible();
   });
 
   test('5. Teclado - filtros, tabla y paginación operables (2.1.1)', async ({ page }, testInfo) => {
@@ -264,12 +267,12 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Bitácora de auditoría (R
     const aplicaConEnter = await conEnter;
     let respuesta: ReturnType<typeof esperarBitacora>;
     testInfo.annotations.push({ type: 'Enter en un filtro de texto', description: aplicaConEnter ? 'aplica' : 'no aplica' });
-    expect.soft(aplicaConEnter, '2.1.1: Enter en un filtro no aplica la búsqueda (los filtros no son un <form>); hay que tabular hasta "Aplicar filtros"').toBe(true);
+    expect.soft(aplicaConEnter, 'DEFECTO: 2.1.1: Enter en un filtro no aplica la búsqueda (los filtros no son un <form>); hay que tabular hasta "Aplicar filtros"').toBe(true);
 
     // Tab hasta "Aplicar filtros" y Enter
     // Los campos de fecha consumen 3 Tabs cada uno (día / mes / año)
     for (let i = 0; i < 20 && !(await f.aplicar.evaluate((e) => e === document.activeElement)); i++) await page.keyboard.press('Tab');
-    await expect(f.aplicar, '2.1.1: "Aplicar filtros" debe alcanzarse con Tab').toBeFocused();
+    await expect(f.aplicar, 'DEFECTO: 2.1.1: "Aplicar filtros" debe alcanzarse con Tab').toBeFocused();
     respuesta = esperarBitacora(page);
     await page.keyboard.press('Enter');
     expect(new URL((await respuesta).url()).searchParams.get('rf_origen')).toBe('RF48');
@@ -277,14 +280,14 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Bitácora de auditoría (R
     // Selects con flechas
     await f.resultado.focus();
     await page.keyboard.press('ArrowDown');
-    await expect(f.resultado, '2.1.1: "Resultado" debe operarse con flechas').not.toHaveValue('');
+    await expect(f.resultado, 'DEFECTO: 2.1.1: "Resultado" debe operarse con flechas').not.toHaveValue('');
 
     // Tabla: si desborda horizontalmente, su contenedor debe poder desplazarse con teclado
     const contenedor = tabla(page).locator('xpath=..');
     const desborda = await contenedor.evaluate((e) => e.scrollWidth > e.clientWidth);
     const enfocable = await contenedor.evaluate((e) => e.tabIndex >= 0);
     testInfo.annotations.push({ type: 'Tabla', description: `desborda horizontalmente: ${desborda} · contenedor enfocable: ${enfocable}` });
-    if (desborda) expect.soft(enfocable, '2.1.1: la tabla desborda horizontalmente y su contenedor no es enfocable; las columnas ocultas no se pueden desplazar con teclado').toBe(true);
+    if (desborda) expect.soft(enfocable, 'DEFECTO: 2.1.1: la tabla desborda horizontalmente y su contenedor no es enfocable; las columnas ocultas no se pueden desplazar con teclado').toBe(true);
 
     // Paginación con teclado
     respuesta = esperarBitacora(page);
@@ -296,7 +299,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Bitácora de auditoría (R
     respuesta = esperarBitacora(page);
     await page.keyboard.press('Enter');
     expect(new URL((await respuesta).url()).searchParams.get('pagina')).toBe('2');
-    await expect(page.getByText(/Página 2 de \d+/), '2.1.1: la paginación debe operarse con teclado').toBeVisible();
-    expect.soft(await enRegionViva(page.getByText(/Página 2 de \d+/)), '4.1.3: el cambio de página no se anuncia').toBe(true);
+    await expect(page.getByText(/Página 2 de \d+/), 'DEFECTO: 2.1.1: la paginación debe operarse con teclado').toBeVisible();
+    expect.soft(await enRegionViva(page.getByText(/Página 2 de \d+/)), 'DEFECTO: 4.1.3: el cambio de página no se anuncia').toBe(true);
   });
 });
