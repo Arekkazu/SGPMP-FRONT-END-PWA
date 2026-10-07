@@ -289,10 +289,10 @@ function ConfirmReasignarModal({ mensaje, saving, onCancel, onConfirm }: {
       role="dialog"
       aria-modal="true"
       aria-labelledby="reasignar-modal-title"
-      style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 'var(--s4)' }}
+      className="ds-modal" style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 420, boxShadow: 'var(--shadow-lg)' }}>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
         <h2 id="reasignar-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
           {t('sensoressection.confirmar_reasignacion_titulo')}
         </h2>

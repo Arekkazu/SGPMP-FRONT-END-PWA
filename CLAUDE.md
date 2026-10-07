@@ -76,6 +76,7 @@ src/
 │   │   ├── Stepper.tsx
 │   │   ├── OptionCard.tsx
 │   │   ├── ScrollRegion.tsx
+│   │   ├── ModalShell.tsx
 │   │   ├── Sidebar.tsx
 │   │   └── AppBar.tsx
 │   ├── db/                        # Instancia Dexie central
@@ -287,6 +288,7 @@ de esos solo `Gauge` está implementado — los demás siguen siendo especificac
 | `Stepper`          | done · active (`aria-current="step"`) · pending; pasos de un asistente   |
 | `OptionCard`       | card · pill; hover, focus-visible y `selected` (`aria-pressed`) por CSS |
 | `ScrollRegion`     | scroll horizontal de tablas; enfocable (`tabIndex=0`) y con nombre (`role="region"`) |
+| `ModalShell`       | marco de modal: título, cerrar, footer; `maxWidth` → variante sm · default · wide |
 
 ### Reglas no negociables del sistema de diseño
 
@@ -354,7 +356,11 @@ Cambiarlo requiere rehacer esas tablas primero.
 
 Modales: bottom sheet a ancho completo en xs/sm, max 480px en md, max 560px en lg.
 Se obtiene con `className="ds-modal"` en el overlay y `ds-modal__panel` en el
-panel (`Layout.css`); no con `maxWidth` inline, que no puede llevar media query.
+panel (`Layout.css`), o con `ModalShell` del design system; no con `maxWidth`
+inline, que no puede llevar media query. `--sm` (400px) es para confirmaciones
+cortas. `--wide` (720px) es una excepción registrada, como la grilla del
+dashboard: solo para detalles con tablas o matrices (matriz de confusión,
+payload de auditoría, permisos de un rol, niveles de umbral) que no caben en 560px.
 
 **Touch targets:** el DS v2.0 pide 44px de altura mínima en móvil y 40px en
 escritorio. Este repo usa `--s9` (48px) en todos los anchos — más estricto que

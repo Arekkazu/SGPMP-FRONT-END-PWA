@@ -92,6 +92,9 @@
 /* Confirmaciones cortas: mas angostas que un formulario en md+. */
 @media (min-width: 768px) {
   .ds-modal__panel--sm { max-width: 400px; }
+  /* Excepcion documentada: detalles con tablas o matrices (matriz de
+     confusion, payload de auditoria, niveles de umbral) no caben en 560px. */
+  .ds-modal__panel--wide { max-width: 720px; }
 }
 
 /* Scroll horizontal de tablas (ScrollRegion): enfocable con teclado. */
