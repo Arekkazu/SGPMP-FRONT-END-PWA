@@ -38,6 +38,7 @@ import { Sidebar } from './shared/design-system/Sidebar';
 import { AppBar } from './shared/design-system/AppBar';
 import { Alert } from './shared/design-system/Alert';
 import { Button } from './shared/design-system/Button';
+import { LimiteDeError } from './shared/design-system/LimiteDeError';
 import { useT } from './shared/i18n/useT';
 import { NotificationTray } from './notificaciones/components/NotificationTray';
 import { useNotificaciones } from './notificaciones/hooks/useNotificaciones';
@@ -264,9 +265,11 @@ function PrivateRoute({ path, component: Component }: { path: string; component:
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
         return (
           <AppShell operativa={RUTAS_CON_BLOQUEO_SIN_FINCA.includes(path)}>
-            <Suspense fallback={<CargandoPagina />}>
-              <Component />
-            </Suspense>
+            <LimiteDeError>
+              <Suspense fallback={<CargandoPagina />}>
+                <Component />
+              </Suspense>
+            </LimiteDeError>
           </AppShell>
         );
       }}

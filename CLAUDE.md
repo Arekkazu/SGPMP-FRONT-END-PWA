@@ -77,6 +77,7 @@ src/
 │   │   ├── OptionCard.tsx
 │   │   ├── ScrollRegion.tsx
 │   │   ├── ModalShell.tsx
+│   │   ├── LimiteDeError.tsx
 │   │   ├── Sidebar.tsx
 │   │   └── AppBar.tsx
 │   ├── db/                        # Instancia Dexie central
@@ -289,6 +290,7 @@ de esos solo `Gauge` está implementado — los demás siguen siendo especificac
 | `OptionCard`       | card · pill; hover, focus-visible y `selected` (`aria-pressed`) por CSS |
 | `ScrollRegion`     | scroll horizontal de tablas; enfocable (`tabIndex=0`) y con nombre (`role="region"`) |
 | `ModalShell`       | marco de modal: título, cerrar, footer; `maxWidth` → variante sm · default · wide |
+| `LimiteDeError`    | error boundary por página: aviso + recargar, sin desmontar la app (también chunk que no carga) |
 
 ### Reglas no negociables del sistema de diseño
 
