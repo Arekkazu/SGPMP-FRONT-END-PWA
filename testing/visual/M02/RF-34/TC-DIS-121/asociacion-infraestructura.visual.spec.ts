@@ -4,18 +4,26 @@
  * Activos biológicos → ficha del activo → pestaña "Infraestructura"
  *
  * Baselines: vista "Ubicación actual" (asociación activa) y vista "Historial de
- * ubicaciones" con 2 asociaciones. Se captura solo la sección de infraestructura.
+ * ubicaciones" con 2 asociaciones. Se captura solo la tarjeta de la sección de
+ * infraestructura.
  *
- * Datos: activo #4 (el único del ambiente con historial de asociaciones).
- * BLOQUEO DEL AMBIENTE (2026-09-29, ver TC-DIS-120): ningún activo tiene asociación
- * activa (GET …/infraestructura?tipo_consulta=ACTIVA → 404 para todos). El test "0"
- * lo verifica y falla mientras siga. Las baselines usan fixtures fijos servidos con
- * page.route: el historial real del activo #4 (2 asociaciones) y una asociación
+ * Datos: activo #4 (el único del ambiente con historial de asociaciones). El test "0"
+ * verifica que la consulta ACTIVA responde 200 (el 404 para todos los activos del
+ * 2026-09-29 quedó corregido el 2026-10-07). Las baselines usan fixtures fijos servidos
+ * con page.route: el historial real del activo #4 (2 asociaciones) y una asociación
  * activa construida con su último registro, así no dependen de cambios de datos.
+ * RF de solo lectura: ningún test escribe en el ambiente.
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_121_VIEWPORTS=movil,tablet,escritorio
+ * Una baseline solo se guarda si la vista no tiene defectos: el alto del selector de
+ * vista (touch target --s9 = 48px), el tamaño de su texto y el de la marca "ACTUAL"
+ * (escala tipográfica del DS v2.0) se verifican antes de capturar y fallan como DEFECTO.
+ *
+ * Tema: la preferencia de tema es de la cuenta (compartida); GET
+ * /configuracion/personalizacion/tema(/global) se sirve con el tema Claro (theme_mode 1,
+ * cuerpo real de TEST) y cualquier escritura a esos endpoints se aborta.
+ *
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_121_VIEWPORTS=escritorio
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
@@ -24,7 +32,7 @@ const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 const ID_ACTIVO = 4;
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_121_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_121_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 
@@ -50,6 +58,29 @@ const RESPUESTAS = {
   },
 };
 
+// Tema Claro fijo (cuerpos reales de TEST con theme_mode 1)
+const TEMA: Record<string, unknown> = {
+  '/configuracion/personalizacion/tema': { theme_mode: 1, fuente: 'personal', id_tema_visual: 10 },
+  '/configuracion/personalizacion/tema/global': { id_tema_visual: 1, id_usuario: 1, theme_mode: 1, es_global: true, fecha_actualizacion: '2026-09-29T22:56:03.004225Z' },
+};
+
+// DS v2.0: touch target mínimo (--s9) y escala tipográfica
+const TOUCH_TARGET_MIN = 48;
+const FS_BODY_MD = 14; // texto UI por defecto
+const FS_CAPTION_MIN = 11; // --fs-label-sm, el menor tamaño de la escala
+
+test.use({ locale: 'es-CO', timezoneId: 'America/Bogota' });
+
+async function fijarTemaClaro(page: Page) {
+  await page.route((url) => Object.keys(TEMA).some((k) => url.pathname.endsWith(k)), (r) => {
+    const req = r.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType())) return r.continue();
+    if (req.method() !== 'GET') return r.abort('blockedbyclient');
+    const clave = Object.keys(TEMA).find((k) => new URL(req.url()).pathname.endsWith(k))!;
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(TEMA[clave]) });
+  });
+}
+
 async function iniciarSesionAdmin(page: Page) {
   await page.goto('/login');
   await page.getByRole('textbox', { name: 'Correo electrónico', exact: true }).fill(ADMIN_EMAIL);
@@ -60,6 +91,7 @@ async function iniciarSesionAdmin(page: Page) {
 
 async function servirAsociaciones(page: Page) {
   await page.route(URL_ASOCIACION, (r) => {
+    if (r.request().method() !== 'GET') return r.abort('blockedbyclient');
     const tipo = new URL(r.request().url()).searchParams.get('tipo_consulta') as 'ACTIVA' | 'HISTORIAL';
     return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(RESPUESTAS[tipo] ?? RESPUESTAS.ACTIVA) });
   });
@@ -86,6 +118,53 @@ function seccion(page: Page, contenido: Locator): Locator {
     .last();
 }
 
+async function sinFocoNiHover(page: Page) {
+  await page.mouse.move(0, 0);
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.evaluate(() => document.fonts.ready);
+}
+
+/** Amplía el alto de la ventana (conservando el ancho) para que `objetivo` quepa sin scroll. */
+async function ajustarAlto(page: Page, objetivo: Locator) {
+  const viewport = page.viewportSize()!;
+  await objetivo.evaluate((e) => e.scrollIntoView({ block: 'start' }));
+  const caja = (await objetivo.boundingBox())!;
+  const scroll = await page.evaluate(() => {
+    const cont = [...document.querySelectorAll('*')].find((e) => e.scrollTop > 0) as HTMLElement | undefined;
+    return (cont?.scrollTop ?? 0) + window.scrollY;
+  });
+  const necesario = Math.ceil(caja.y + scroll + caja.height + 48);
+  if (necesario > viewport.height) await page.setViewportSize({ width: viewport.width, height: necesario });
+  await objetivo.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+}
+
+/** Captura la tarjeta de la sección. Sin baseline si hay defectos. */
+async function capturar(page: Page, objetivo: Locator, nombre: string) {
+  expect(test.info().errors.length, 'Sin baseline: la vista tiene defectos (ver errores anteriores)').toBe(0);
+  await ajustarAlto(page, objetivo);
+  await sinFocoNiHover(page);
+  await expect(objetivo).toHaveScreenshot(nombre, { animations: 'disabled', caret: 'hide' });
+}
+
+const tamanoFuente = (l: Locator) => l.evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+
+/** DEFECTO si los botones del selector de vista no cumplen el touch target ni la escala tipográfica. */
+async function verificarSelectorVista(page: Page) {
+  for (const nombre of ['Ubicación actual', 'Historial de ubicaciones']) {
+    const boton = page.getByRole('button', { name: nombre, exact: true });
+    const alto = Math.round((await boton.boundingBox())!.height);
+    expect.soft(alto, `DEFECTO: el botón "${nombre}" del selector de vista mide ${alto}px de alto; el DS exige touch target mínimo de ${TOUCH_TARGET_MIN}px (--s9)`).toBeGreaterThanOrEqual(TOUCH_TARGET_MIN);
+    const fs = await tamanoFuente(boton);
+    expect.soft(fs, `DEFECTO: el texto del botón "${nombre}" usa ${fs}px, fuera de la escala del DS v2.0 (body-md = ${FS_BODY_MD}px)`).toBe(FS_BODY_MD);
+  }
+}
+
+/** DEFECTO si la marca "ACTUAL" usa un tamaño menor al mínimo de la escala (caption 11px). */
+async function verificarMarcaActual(sec: Locator) {
+  const fs = await tamanoFuente(sec.getByText('ACTUAL', { exact: true }).first());
+  expect.soft(fs, `DEFECTO: la marca "ACTUAL" usa ${fs}px, menor que el mínimo de la escala del DS v2.0 (caption = ${FS_CAPTION_MIN}px)`).toBeGreaterThanOrEqual(FS_CAPTION_MIN);
+}
+
 test.describe('TC-DIS-121 - Consistencia visual - Asociación Activa e Historial (RF-34)', () => {
   // workers: 1 en el config; timeout amplio por la latencia del login en TEST
   test.describe.configure({ timeout: 120_000 });
@@ -93,17 +172,18 @@ test.describe('TC-DIS-121 - Consistencia visual - Asociación Activa e Historial
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
+      `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_121_VIEWPORTS.`,
     );
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
+    await fijarTemaClaro(page);
     await iniciarSesionAdmin(page);
   });
 
   test('0. Precondición - el activo tiene asociación activa en el ambiente', async ({ page }) => {
     expect(
       await abrirInfraestructura(page),
-      `BLOQUEO: GET /activos-biologicos/${ID_ACTIVO}/infraestructura?tipo_consulta=ACTIVA responde 404 ASOCIACION_INFRAESTRUCTURA_NO_ENCONTRADA; ningún activo del ambiente tiene asociación activa`,
+      `GET /activos-biologicos/${ID_ACTIVO}/infraestructura?tipo_consulta=ACTIVA debe responder 200`,
     ).toBe(200);
   });
 
@@ -112,9 +192,12 @@ test.describe('TC-DIS-121 - Consistencia visual - Asociación Activa e Historial
     await abrirInfraestructura(page);
     const tarjeta = page.getByText(RESPUESTAS.ACTIVA.asociacion_activa.nombre_infraestructura, { exact: true });
     await expect(tarjeta).toBeVisible();
-    await expect(page.getByText('ACTUAL', { exact: true })).toBeVisible();
+    const sec = seccion(page, tarjeta);
+    await expect(sec.getByText('ACTUAL', { exact: true })).toBeVisible();
 
-    await expect(seccion(page, tarjeta)).toHaveScreenshot('asociacion-activa.png', { animations: 'disabled' });
+    await verificarSelectorVista(page);
+    await verificarMarcaActual(sec);
+    await capturar(page, sec, 'asociacion-activa.png');
   });
 
   test('2. Vista "Historial de ubicaciones" (2 asociaciones)', async ({ page }) => {
@@ -124,8 +207,9 @@ test.describe('TC-DIS-121 - Consistencia visual - Asociación Activa e Historial
     for (const a of HISTORIAL) {
       await expect(page.getByText(a.nombre_infraestructura, { exact: true })).toBeVisible();
     }
+    await expect(page.getByText('El historial de ubicaciones tiene inconsistencias')).toBeVisible();
 
-    await expect(seccion(page, page.getByText(HISTORIAL[0].nombre_infraestructura, { exact: true })))
-      .toHaveScreenshot('asociacion-historial.png', { animations: 'disabled' });
+    await verificarSelectorVista(page);
+    await capturar(page, seccion(page, page.getByText(HISTORIAL[0].nombre_infraestructura, { exact: true })), 'asociacion-historial.png');
   });
 });
