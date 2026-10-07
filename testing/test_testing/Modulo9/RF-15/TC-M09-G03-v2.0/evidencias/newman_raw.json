@@ -1,0 +1,44 @@
+{
+  "executions": [
+    {
+      "item": "01 - Login Administrativo (NW-01)",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-01: Login admin (200)",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "02 - Localizar Especie Objetivo y Capturar Datos (NW-02)",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-02: GET /configuracion/especies?solo_activas=false y localizacion de especie candidata valida",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "03 - Intentar Edición con grupo_manejo Fuera de Conjunto (NW-03)",
+      "codigo": 400,
+      "assertions": [
+        {
+          "assertion": "NW-03: PATCH con grupo_manejo=REPTILES responde 400 (propuesto, no normativo)",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "04 - Confirmar Conservación de grupo_manejo en Catálogo (NW-04)",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-04: GET /configuracion/especies?solo_activas=false confirma que grupo_manejo conserva valor previo",
+          "error": "campo grupo_manejo ausente en respuesta del catálogo: expected false to be true"
+        }
+      ]
+    }
+  ]
+}

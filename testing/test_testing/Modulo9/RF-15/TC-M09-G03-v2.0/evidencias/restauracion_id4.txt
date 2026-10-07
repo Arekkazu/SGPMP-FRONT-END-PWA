@@ -1,0 +1,32 @@
+=== RESTAURACIÓN MANUAL DE ESPECIE ID 4 ===
+API:     https://api.inmero.co/back-sigab-test
+Usuario: administador.dev@gmail.com
+1. Autenticando vía POST /sesiones/...
+Login status: HTTP 200
+2. Consultando especie ID 4 previa...
+GET especies status: HTTP 200
+Estado previo ID 4: {
+  "id_especie": 4,
+  "nombre": "Cachama Blanca Editado",
+  "descripcion": "Descripción actualizada para Cachama Blanca (QA v2.0)",
+  "densidad_maxima_por_especie": null,
+  "tipo_modelo": null,
+  "es_activo": true,
+  "fecha_creacion": "2026-04-28T14:42:28.213141Z",
+  "fecha_actualizacion": "2026-10-06T23:13:54.403881Z"
+}
+3. Enviando PATCH de reversión a "Cachama Blanca"...
+PATCH status: HTTP 200
+4. Verificando estado post-restauración...
+GET confirmación status: HTTP 200
+Estado final verificado ID 4: {
+  "id_especie": 4,
+  "nombre": "Cachama Blanca",
+  "descripcion": "Restaurado tras prueba",
+  "densidad_maxima_por_especie": null,
+  "tipo_modelo": null,
+  "es_activo": true,
+  "fecha_creacion": "2026-04-28T14:42:28.213141Z",
+  "fecha_actualizacion": "2026-10-06T23:17:44.328977Z"
+}
+Veredicto restauración: EXITOSO
