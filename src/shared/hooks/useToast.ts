@@ -18,6 +18,9 @@ const AUTO_DISMISS: Record<ToastVariant, number | null> = {
 
 const MAX_TOASTS = 3;
 
+// Id unico de toast: un contador basta, no hace falta aleatoriedad.
+let ultimoId = 0;
+
 export function useToast() {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -27,7 +30,7 @@ export function useToast() {
 
   const push = useCallback(
     (variant: ToastVariant, title: string, description?: string) => {
-      const id = `${Date.now()}-${Math.random()}`;
+      const id = String(++ultimoId);
       setToasts((prev) => {
         const next = [...prev, { id, variant, title, description }];
         return next.slice(-MAX_TOASTS);

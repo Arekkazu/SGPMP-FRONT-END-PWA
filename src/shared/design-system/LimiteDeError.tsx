@@ -31,10 +31,6 @@ export class LimiteDeError extends React.Component<{ children: React.ReactNode }
     return { error: true };
   }
 
-  componentDidCatch(error: unknown) {
-    if (import.meta.env.DEV) console.error(error);
-  }
-
   render() {
     return this.state.error ? <ErrorDePagina /> : this.props.children;
   }

@@ -522,71 +522,76 @@ export function InfraestructuraSection() {
                     </tr>
                   </thead>
                   <tbody>
-                    {infraestructuras.map((infra) => (
-                      <tr key={infra.id_infraestructura} style={{ background: 'var(--surface-card)' }}>
-                        <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                          #{infra.id_infraestructura}
-                        </td>
-                        <td style={TD}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                            {React.createElement(iconoTipoArea(infra.tipo_area), { size: 16, strokeWidth: 1.5, 'aria-hidden': true })}
-                            {infra.tipo_area}
-                          </span>
-                        </td>
-                        <td style={TD}>
-                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{infra.nombre_infraestructura}</div>
-                          {infra.descripcion_infraestructura && (
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {infra.descripcion_infraestructura}
+                    {infraestructuras.map((infra) => {
+                      // Componente en variable y no React.createElement con tipo dinamico: el
+                      // icono sale de un mapa cerrado de Lucide (Bearer CWE-79).
+                      const IconoArea = iconoTipoArea(infra.tipo_area);
+                      return (
+                        <tr key={infra.id_infraestructura} style={{ background: 'var(--surface-card)' }}>
+                          <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
+                            #{infra.id_infraestructura}
+                          </td>
+                          <td style={TD}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                              <IconoArea size={16} strokeWidth={1.5} aria-hidden />
+                              {infra.tipo_area}
+                            </span>
+                          </td>
+                          <td style={TD}>
+                            <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{infra.nombre_infraestructura}</div>
+                            {infra.descripcion_infraestructura && (
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {infra.descripcion_infraestructura}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ ...TD, whiteSpace: 'nowrap' }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                              {formatearNumero(infra.superficie)}
+                            </span>
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 4 }}>m²</span>
+                          </td>
+                          <td style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            {infra.tipo_modelo_asignado ? TIPO_MODELO_LABEL[infra.tipo_modelo_asignado] : '—'}
+                          </td>
+                          <td style={TD}>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)',
+                              padding: '2px var(--s2)', borderRadius: 'var(--r-full)',
+                              fontSize: '11px', fontWeight: 600,
+                              background: infra.es_activo ? 'var(--sem-success-bg)' : 'var(--surface-hover)',
+                              color: infra.es_activo ? 'var(--sem-success)' : 'var(--text-muted)',
+                              border: `1px solid ${infra.es_activo ? 'var(--sem-success-border)' : 'var(--surface-border)'}`,
+                            }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: infra.es_activo ? 'var(--sem-success)' : 'var(--text-muted)' }} />
+                              {infra.es_activo ? 'Activa' : 'Inactiva'}
+                            </span>
+                          </td>
+                          <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                            {formatFecha(infra.fecha_actualizacion)}
+                          </td>
+                          <td style={TD}>
+                            <div style={{ display: 'flex', gap: 'var(--s2)' }}>
+                              {puedeEditar && online && infra.es_activo && (
+                                <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'editar', infra })} aria-label={`Editar ${infra.nombre_infraestructura}`}>
+                                  <Pencil size={15} aria-hidden />
+                                </Button>
+                              )}
+                              {puedeDesact && infra.es_activo && online && (
+                                <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'desactivar', infra })} aria-label={`Desactivar ${infra.nombre_infraestructura}`}>
+                                  <PowerOff size={15} aria-hidden style={{ color: 'var(--sem-error)' }} />
+                                </Button>
+                              )}
+                              {puedeDesact && !infra.es_activo && online && (
+                                <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'reactivar', infra })} aria-label={`${t('infraestructurasection.reactivar')} ${infra.nombre_infraestructura}`}>
+                                  <Power size={15} aria-hidden style={{ color: 'var(--sem-success)' }} />
+                                </Button>
+                              )}
                             </div>
-                          )}
-                        </td>
-                        <td style={{ ...TD, whiteSpace: 'nowrap' }}>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                            {formatearNumero(infra.superficie)}
-                          </span>
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 4 }}>m²</span>
-                        </td>
-                        <td style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>
-                          {infra.tipo_modelo_asignado ? TIPO_MODELO_LABEL[infra.tipo_modelo_asignado] : '—'}
-                        </td>
-                        <td style={TD}>
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)',
-                            padding: '2px var(--s2)', borderRadius: 'var(--r-full)',
-                            fontSize: '11px', fontWeight: 600,
-                            background: infra.es_activo ? 'var(--sem-success-bg)' : 'var(--surface-hover)',
-                            color: infra.es_activo ? 'var(--sem-success)' : 'var(--text-muted)',
-                            border: `1px solid ${infra.es_activo ? 'var(--sem-success-border)' : 'var(--surface-border)'}`,
-                          }}>
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: infra.es_activo ? 'var(--sem-success)' : 'var(--text-muted)' }} />
-                            {infra.es_activo ? 'Activa' : 'Inactiva'}
-                          </span>
-                        </td>
-                        <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                          {formatFecha(infra.fecha_actualizacion)}
-                        </td>
-                        <td style={TD}>
-                          <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-                            {puedeEditar && online && infra.es_activo && (
-                              <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'editar', infra })} aria-label={`Editar ${infra.nombre_infraestructura}`}>
-                                <Pencil size={15} aria-hidden />
-                              </Button>
-                            )}
-                            {puedeDesact && infra.es_activo && online && (
-                              <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'desactivar', infra })} aria-label={`Desactivar ${infra.nombre_infraestructura}`}>
-                                <PowerOff size={15} aria-hidden style={{ color: 'var(--sem-error)' }} />
-                              </Button>
-                            )}
-                            {puedeDesact && !infra.es_activo && online && (
-                              <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'reactivar', infra })} aria-label={`${t('infraestructurasection.reactivar')} ${infra.nombre_infraestructura}`}>
-                                <Power size={15} aria-hidden style={{ color: 'var(--sem-success)' }} />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </ScrollRegion>
