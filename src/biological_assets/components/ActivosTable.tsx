@@ -3,6 +3,7 @@ import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, Boxes, User } from 'lucide-react';
 import { EstadoPill } from './EstadoPill';
 import type { ActivoListItem } from '../types';
+import { alActivarConTeclado } from '../../shared/lib/teclado';
 
 interface Props {
   activos: ActivoListItem[];
@@ -80,10 +81,10 @@ export function ActivosTable({ activos, loading, onAbrir }: Props) {
           {activos.map((a) => (
             <tr
               key={a.id_activo_biologico}
+              className="ds-fila-accion"
+              tabIndex={0}
               onClick={() => onAbrir(a.id_activo_biologico)}
-              style={{ background: 'var(--surface-card)', cursor: 'pointer' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-card)')}
+              onKeyDown={alActivarConTeclado(() => onAbrir(a.id_activo_biologico))}
             >
               <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                 {a.identificador ?? (

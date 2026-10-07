@@ -6,6 +6,7 @@ import { Pill, type Tono } from './Pill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
 import { horaCaptura } from '../lib/sensorEscala';
 import type { EventoAuditoriaIotSchema } from '../types';
+import { alActivarConTeclado } from '../../shared/lib/teclado';
 
 const COLS = ['Fecha', 'Tipo de evento', 'Módulo', 'Entidad', 'Usuario', 'Resultado', 'Severidad', 'Clasif.', 'Hash'];
 
@@ -64,10 +65,10 @@ export function BitacoraTable({ items, loading, onAbrir }: Props) {
             return (
               <tr
                 key={ev.id_evento}
+                className="ds-fila-accion"
+                tabIndex={0}
                 onClick={() => onAbrir(ev)}
-                style={{ background: 'var(--surface-card)', cursor: 'pointer' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-hover)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-card)')}
+                onKeyDown={alActivarConTeclado(() => onAbrir(ev))}
               >
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                   {ev.fecha_hora?.slice(0, 10)} {horaCaptura(ev.fecha_hora)}

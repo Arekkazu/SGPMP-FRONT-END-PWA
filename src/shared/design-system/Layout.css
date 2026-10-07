@@ -107,6 +107,23 @@
   outline-offset: 2px;
 }
 
+/* Fila de tabla que abre un detalle: hover y foco de teclado por CSS. Va
+ * con tabIndex={0} y alActivarConTeclado (shared/lib/teclado.ts). */
+.ds-fila-accion {
+  background: var(--surface-card);
+  cursor: pointer;
+}
+
+.ds-fila-accion:hover,
+.ds-fila-accion:focus-visible {
+  background: var(--surface-hover);
+}
+
+.ds-fila-accion:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
 /* Enlace "Saltar al contenido" (WCAG 2.4.1): fuera de pantalla hasta recibir foco. */
 .ds-skip-link {
   position: absolute;
