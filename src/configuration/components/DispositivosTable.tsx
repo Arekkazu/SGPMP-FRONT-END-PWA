@@ -4,6 +4,7 @@ import { useT } from '../../shared/i18n/useT';
 import { Cpu, RefreshCw, Plus, PowerOff, ChevronLeft, Warehouse, Radio, KeyRound, Network } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
+import { OptionCard } from '../../shared/design-system/OptionCard';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
@@ -93,20 +94,13 @@ function FincaSelector({ fincas, loading, onSelect }: { fincas: FincaResponse[];
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 'var(--s4)' }}>
       {activas.map((f) => (
-        <button
-          key={f.id_finca}
-          type="button"
-          onClick={() => onSelect(f)}
-          style={{ background: 'var(--surface-card)', border: '1.5px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none'; }}
-        >
+        <OptionCard key={f.id_finca} onClick={() => onSelect(f)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
             <Warehouse size={15} color="var(--brand-500)" aria-hidden />
             <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{f.ubicacion.departamento}, {f.ubicacion.municipio}</div>
-        </button>
+        </OptionCard>
       ))}
     </div>
   );
@@ -140,19 +134,12 @@ function AreaSelector({ infras, loading, onSelect, onBack }: {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 'var(--s3)' }}>
           {activas.map((infra) => (
-            <button
-              key={infra.id_infraestructura}
-              type="button"
-              onClick={() => onSelect(infra)}
-              style={{ background: 'var(--surface-card)', border: '1.5px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'border-color 0.15s' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)'; }}
-            >
+            <OptionCard key={infra.id_infraestructura} onClick={() => onSelect(infra)}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{infra.nombre_infraestructura}</div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 {infra.tipo_area} · {formatearNumero(infra.superficie)} m²
               </div>
-            </button>
+            </OptionCard>
           ))}
         </div>
       )}

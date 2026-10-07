@@ -7,6 +7,7 @@ import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
+import { OptionCard } from '../../shared/design-system/OptionCard';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
@@ -16,20 +17,11 @@ import { useEspecies } from '../hooks/useEspecies';
 import { TIPO_MODELO_LABEL, type TipoModelo } from '../../prediction/types';
 import type { FincaResponse, InfraestructuraResponse, RegistrarInfraestructuraDTO, EditarInfraestructuraDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { iconoTipoArea } from '../iconos';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 
 // ── Constants ────────────────────────────────────────────────────────────────
-
-// Mapeo best-effort para los 5 tipos por defecto; un tipo agregado por el
-// Administrador desde el catálogo (RF-20) no tiene emoji y usa el fallback.
-const TIPO_EMOJI: Record<string, string> = {
-  'Galpón': '🏚️',
-  'Corral': '🐄',
-  'Potrero': '🌿',
-  'Estanque': '🐟',
-  'Invernadero': '🌱',
-};
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
@@ -234,7 +226,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
                 {...register('tipo_area', { required: t('infraestructurasection.selecciona_un_tipo_de_area') })}
               >
                 {tipos.map((tipo) => (
-                  <option key={tipo.id_tipo_area} value={tipo.nombre}>{TIPO_EMOJI[tipo.nombre] ?? '🏗️'} {tipo.nombre}</option>
+                  <option key={tipo.id_tipo_area} value={tipo.nombre}>{tipo.nombre}</option>
                 ))}
               </Select>
             </div>
@@ -389,28 +381,7 @@ function FincaSelectorInfra({ fincas, loading, onSelect }: FincaSelectorProps) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--s4)' }}>
       {activas.map((f) => (
-        <button
-          key={f.id_finca}
-          type="button"
-          onClick={() => onSelect(f)}
-          style={{
-            background: 'var(--surface-card)',
-            border: '1.5px solid var(--surface-border)',
-            borderRadius: 'var(--r-lg)',
-            padding: 'var(--s4)',
-            textAlign: 'left',
-            cursor: 'pointer',
-            transition: 'border-color 0.15s, box-shadow 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)';
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)';
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
-          }}
-        >
+        <OptionCard key={f.id_finca} onClick={() => onSelect(f)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
             <Warehouse size={16} color="var(--brand-500)" aria-hidden />
             <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
@@ -421,7 +392,7 @@ function FincaSelectorInfra({ fincas, loading, onSelect }: FincaSelectorProps) {
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
             {f.tamano_h > 0 ? `${f.tamano_h} ha` : '—'}
           </div>
-        </button>
+        </OptionCard>
       ))}
     </div>
   );
@@ -555,8 +526,9 @@ export function InfraestructuraSection() {
                           #{infra.id_infraestructura}
                         </td>
                         <td style={TD}>
-                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                            {TIPO_EMOJI[infra.tipo_area] ?? '🏗️'} {infra.tipo_area}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                            {React.createElement(iconoTipoArea(infra.tipo_area), { size: 16, strokeWidth: 1.5, 'aria-hidden': true })}
+                            {infra.tipo_area}
                           </span>
                         </td>
                         <td style={TD}>

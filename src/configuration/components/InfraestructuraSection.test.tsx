@@ -88,8 +88,8 @@ describe('InfraestructuraSection — catálogo de tipos de área (RF-20)', () =>
     const select = await screen.findByLabelText(/Tipo de área/);
     const opciones = within(select).getAllByRole('option').map((o) => o.textContent);
 
-    expect(opciones).toEqual(['🏗️ Jaula', '🏗️ Vivero']);
-    expect(opciones).not.toContain('🏚️ Galpón');
+    expect(opciones).toEqual(['Jaula', 'Vivero']);
+    expect(opciones).not.toContain('Galpón');
   });
 });
 
