@@ -5,7 +5,8 @@
  *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
  * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
- * ambos en ./resultados.
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
+ * peso 0 en el puntaje.
  *
  * Datos reales (Productor de prueba, 2026-09-30):
  *   - #296 lote: 3 indicadores disponibles (ganancia_peso, tasa_morbilidad, tasa_mortalidad),
@@ -139,6 +140,8 @@ async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 /** ¿El elemento está dentro de una región viva (role alert/status o aria-live)? */
@@ -169,9 +172,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Indicadores zootécnicos (
     expect(disponibles.length, 'Precondición: al menos 2 indicadores calculados').toBeGreaterThanOrEqual(2);
 
     // 1.3.1: cada indicador expone nombre / valor / unidad / periodo con estructura (encabezado, lista descriptiva o tabla)
-    for (const ind of disponibles) {
-      await expect(page.getByText(ind.tipo, { exact: true }), `El indicador ${ind.tipo} debe mostrarse`).toBeVisible();
-    }
+    await expect(page.locator('main dl'), 'Debe mostrarse una tarjeta por indicador').toHaveCount(cuerpo.indicadores.length);
     const estructura = await page.evaluate(() => ({
       encabezados: document.querySelectorAll('main h4, main [role="heading"][aria-level="4"]').length,
       listasDescriptivas: document.querySelectorAll('main dl').length,
@@ -179,25 +180,25 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Indicadores zootécnicos (
       listas: document.querySelectorAll('main [role="list"], main ul').length,
     }));
     testInfo.annotations.push({ type: 'Estructura de las tarjetas', description: JSON.stringify(estructura) });
-    expect.soft(estructura.encabezados + estructura.listasDescriptivas + estructura.tablas, '1.3.1: las tarjetas son <div> sin estructura: nombre, valor, unidad y periodo no se relacionan (sin encabezado, <dl> ni tabla)').toBeGreaterThan(0);
+    expect.soft(estructura.encabezados + estructura.listasDescriptivas + estructura.tablas, 'DEFECTO: 1.3.1: las tarjetas son <div> sin estructura: nombre, valor, unidad y periodo no se relacionan (sin encabezado, <dl> ni tabla)').toBeGreaterThan(0);
 
     // Nombres legibles para el Productor (no códigos técnicos)
-    expect.soft(await page.getByText('ganancia_peso', { exact: true }).count(), 'Los nombres de indicador se muestran como códigos (ganancia_peso → "GANANCIA_PESO" por CSS), no como texto traducido').toBe(0);
+    expect.soft(await page.getByText('ganancia_peso', { exact: true }).count(), 'DEFECTO: Los nombres de indicador se muestran como códigos (ganancia_peso → "GANANCIA_PESO" por CSS), no como texto traducido').toBe(0);
 
     // 1.4.1: "no disponible" se comunica con texto; no debe depender solo de atenuar (opacity)
-    await expect(page.getByText('No disponible').first(), '1.4.1: el estado no disponible debe comunicarse con texto').toBeVisible();
+    await expect(page.getByText('No disponible').first(), 'DEFECTO: 1.4.1: el estado no disponible debe comunicarse con texto').toBeVisible();
     const conOpacidad = await page.getByText('No disponible').first().evaluate((e) => {
       let n: HTMLElement | null = e as HTMLElement;
       while (n) { if (Number(getComputedStyle(n).opacity) < 1) return true; n = n.parentElement; }
       return false;
     });
-    expect.soft(conOpacidad, 'Sistema de diseño: las tarjetas no disponibles usan opacity sobre el texto (reduce el contraste real)').toBe(false);
+    expect.soft(conOpacidad, 'DEFECTO: Sistema de diseño: las tarjetas no disponibles usan opacity sobre el texto (reduce el contraste real)').toBe(false);
 
     // Advertencias (muestra insuficiente) comprensibles
     const advertencias = page.locator('li').filter({ hasText: 'DATOS_INSUFICIENTES' });
     const textoAdv = (await page.locator('main ul li').allInnerTexts()).join(' | ');
     testInfo.annotations.push({ type: 'Advertencias mostradas', description: textoAdv });
-    expect.soft(await advertencias.count(), 'Las advertencias muestran el código técnico (DATOS_INSUFICIENTES: …) y nombres internos (conversion_alimenticia)').toBe(0);
+    expect.soft(await advertencias.count(), 'DEFECTO: Las advertencias muestran el código técnico (DATOS_INSUFICIENTES: …) y nombres internos (conversion_alimenticia)').toBe(0);
 
     await escanear(page, 'vista-con-datos-claro', testInfo);
 
@@ -214,11 +215,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Indicadores zootécnicos (
     const r422 = await filtrar(page, () => filtros(page).tipo.selectOption('CRECIMIENTO'));
     expect(r422.status(), 'El backend debe responder 422 por muestra insuficiente').toBe(422);
     expect((await r422.json()).error_code).toBe('INDICADOR_NO_DISPONIBLE');
-    await expect(alertaError(page), '3.3.1: la muestra insuficiente (422) debe anunciarse').toBeVisible();
+    await expect(alertaError(page), 'DEFECTO: 3.3.1: la muestra insuficiente (422) debe anunciarse').toBeVisible();
     const texto422 = await alertaError(page).innerText();
     testInfo.annotations.push({ type: 'Mensaje 422', description: texto422.replace(/\s+/g, ' ') });
-    expect.soft(texto422, 'Comprensibilidad: el mensaje de muestra insuficiente muestra códigos técnicos (DATOS_INSUFICIENTES:, ganancia_peso) al Productor').not.toMatch(JERGA_TECNICA);
-    expect.soft(await alertaError(page).getAttribute('class'), 'Rol visual: una muestra insuficiente es informativa, pero se muestra como "Error al cargar indicadores" (alert-error)').not.toMatch(/--error/);
+    expect.soft(texto422, 'DEFECTO: Comprensibilidad: el mensaje de muestra insuficiente muestra códigos técnicos (DATOS_INSUFICIENTES:, ganancia_peso) al Productor').not.toMatch(JERGA_TECNICA);
+    expect.soft(await alertaError(page).getAttribute('class'), 'DEFECTO: Rol visual: una muestra insuficiente es informativa, pero se muestra como "Error al cargar indicadores" (alert-error)').not.toMatch(/--error/);
     await escanear(page, 'error-422-muestra-insuficiente', testInfo);
 
     // Outlier real: llega como advertencia OUTLIER_CRITICO en un 200
@@ -227,8 +228,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Indicadores zootécnicos (
     expect(adv.some((a) => a.startsWith('OUTLIER_CRITICO')), 'Precondición: el activo tiene un outlier detectado').toBe(true);
     const outlier = page.getByText(/OUTLIER_CRITICO|plausibilidad/).first();
     await expect(outlier, 'El outlier debe mostrarse').toBeVisible();
-    expect.soft(await enRegionViva(outlier), '4.1.3: el bloque de advertencias (outlier) no está en región viva ni tiene role="alert"/"status"').toBe(true);
-    expect.soft(await outlier.innerText(), 'Comprensibilidad: el outlier muestra el código OUTLIER_CRITICO y "kg/dia" sin tildes ni explicación para el Productor').not.toMatch(JERGA_TECNICA);
+    expect.soft(await enRegionViva(outlier), 'DEFECTO: 4.1.3: el bloque de advertencias (outlier) no está en región viva ni tiene role="alert"/"status"').toBe(true);
+    expect.soft(await outlier.innerText(), 'DEFECTO: Comprensibilidad: el outlier muestra el código OUTLIER_CRITICO y "kg/dia" sin tildes ni explicación para el Productor').not.toMatch(JERGA_TECNICA);
     await escanear(page, 'advertencia-outlier', testInfo);
   });
 
@@ -241,27 +242,27 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Indicadores zootécnicos (
     await filtrar(page, () => f.desde.fill('2026-09-20'));
     const r400 = await filtrar(page, () => f.hasta.fill('2026-01-01'));
     expect(r400.status()).toBe(400);
-    await expect(alertaError(page), '3.3.1: el 400 debe anunciarse').toContainText('no puede ser posterior');
-    const tarjetasTrasError = await page.getByText('ganancia_peso', { exact: true }).count();
-    expect.soft(tarjetasTrasError, '3.3.1: tras el error se siguen mostrando los indicadores de la consulta anterior').toBe(0);
+    await expect(alertaError(page), 'DEFECTO: 3.3.1: el 400 debe anunciarse').toContainText('no puede ser posterior');
+    const tarjetasTrasError = await page.locator('main dl').count();
+    expect.soft(tarjetasTrasError, 'DEFECTO: 3.3.1: tras el error se siguen mostrando los indicadores de la consulta anterior').toBe(0);
     await escanear(page, 'error-400-fechas', testInfo);
 
     // 404 real
     const r404 = await abrirIndicadores(page, 999999);
     expect(r404.status()).toBe(404);
-    await expect(alertaError(page), '3.3.1: el 404 debe anunciarse').toContainText('no existe');
+    await expect(alertaError(page), 'DEFECTO: 3.3.1: el 404 debe anunciarse').toContainText('no existe');
 
     // Simulados
     for (const [status, cuerpo, texto] of [[403, ERROR_403, 'Acceso denegado'], [409, ERROR_409, 'recalculando'], [500, ERROR_500_OUTLIER, '']] as const) {
       await page.unrouteAll({ behavior: 'ignoreErrors' });
       await page.route(URL_INDICADORES, (r) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(cuerpo) }));
       await abrirIndicadores(page, ID_CON_DATOS);
-      await expect(alertaError(page), `3.3.1: el ${status} debe anunciarse`).toBeVisible();
+      await expect(alertaError(page), `DEFECTO: 3.3.1: el ${status} debe anunciarse`).toBeVisible();
       if (texto) await expect(alertaError(page)).toContainText(texto);
       if (status === 500) {
         const t500 = await alertaError(page).innerText();
         testInfo.annotations.push({ type: 'Mensaje 500', description: t500.replace(/\s+/g, ' ') });
-        expect.soft(t500, '5xx: el mensaje no debe exponer detalles técnicos (OUTLIER_CRITICO, umbral) y debe ser comprensible').not.toMatch(JERGA_TECNICA);
+        expect.soft(t500, 'DEFECTO: 5xx: el mensaje no debe exponer detalles técnicos (OUTLIER_CRITICO, umbral) y debe ser comprensible').not.toMatch(JERGA_TECNICA);
       }
     }
   });
@@ -278,30 +279,30 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Indicadores zootécnicos (
       recorrido.push(await page.evaluate(() => { const e = document.activeElement as HTMLElement; return `${e.tagName}${e.id ? `#${e.id}` : ''}`; }));
     }
     testInfo.annotations.push({ type: 'Recorrido de Tab', description: recorrido.join(' → ') });
-    await expect(f.tipo, '2.1.1: el filtro de tipo debe alcanzarse con Tab').toBeFocused();
+    await expect(f.tipo, 'DEFECTO: 2.1.1: el filtro de tipo debe alcanzarse con Tab').toBeFocused();
 
     let respuesta = esperarIndicadores(page);
     await page.keyboard.press('ArrowDown'); // TODOS → CRECIMIENTO
-    expect(new URL((await respuesta).url()).searchParams.get('tipo_indicador'), '2.1.1: el tipo debe cambiarse con flechas').toBe('CRECIMIENTO');
+    expect(new URL((await respuesta).url()).searchParams.get('tipo_indicador'), 'DEFECTO: 2.1.1: el tipo debe cambiarse con flechas').toBe('CRECIMIENTO');
 
     // Desde / Hasta escritos con teclado
     await page.keyboard.press('Tab');
-    await expect(f.desde, '2.1.1: "Desde" debe alcanzarse con Tab').toBeFocused();
+    await expect(f.desde, 'DEFECTO: 2.1.1: "Desde" debe alcanzarse con Tab').toBeFocused();
     // Cada tecla dispara una consulta (0002-09-01, 0020-09-01…); se espera la del valor final
     const consultas: string[] = [];
     page.on('request', (req) => { if (URL_INDICADORES(new URL(req.url()))) consultas.push(new URL(req.url()).search); });
     respuesta = page.waitForResponse((r) => URL_INDICADORES(new URL(r.url())) && new URL(r.url()).searchParams.get('fecha_inicio') === '2026-09-01');
     await page.keyboard.type('01092026');
-    await expect.poll(() => f.desde.inputValue(), { message: '2.1.1: "Desde" debe poder escribirse con teclado' }).toBe('2026-09-01');
+    await expect.poll(() => f.desde.inputValue(), { message: 'DEFECTO: 2.1.1: "Desde" debe poder escribirse con teclado' }).toBe('2026-09-01');
     await respuesta;
 
     for (let i = 0; i < 4 && !(await f.hasta.evaluate((e) => e === document.activeElement)); i++) await page.keyboard.press('Tab');
-    await expect(f.hasta, '2.1.1: "Hasta" debe alcanzarse con Tab').toBeFocused();
+    await expect(f.hasta, 'DEFECTO: 2.1.1: "Hasta" debe alcanzarse con Tab').toBeFocused();
     respuesta = page.waitForResponse((r) => URL_INDICADORES(new URL(r.url())) && new URL(r.url()).searchParams.get('fecha_fin') === '2026-09-30');
     await page.keyboard.type('30092026');
-    await expect.poll(() => f.hasta.inputValue(), { message: '2.1.1: "Hasta" debe poder escribirse con teclado' }).toBe('2026-09-30');
+    await expect.poll(() => f.hasta.inputValue(), { message: 'DEFECTO: 2.1.1: "Hasta" debe poder escribirse con teclado' }).toBe('2026-09-30');
     await respuesta;
     testInfo.annotations.push({ type: 'Consultas al escribir las fechas', description: `${consultas.length}: ${consultas.join(' · ')}` });
-    expect.soft(consultas.length, 'Cada tecla en los filtros de fecha dispara una consulta al backend (años parciales 0002, 0020, 0202…)').toBeLessThanOrEqual(2);
+    expect.soft(consultas.length, 'DEFECTO: Cada tecla en los filtros de fecha dispara una consulta al backend (años parciales 0002, 0020, 0202…)').toBeLessThanOrEqual(2);
   });
 });
