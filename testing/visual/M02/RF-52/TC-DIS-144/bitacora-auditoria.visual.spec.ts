@@ -18,6 +18,10 @@
  * Tema: la preferencia de tema es de la cuenta (compartida); GET
  * /configuracion/personalizacion/tema(/global) se sirve con el tema Claro (theme_mode 1,
  * cuerpo real de TEST) y cualquier escritura a esos endpoints se aborta.
+ * Una baseline solo se guarda si la vista no tiene defectos: que el texto con estilo propio
+ * del módulo y los controles de filtro usen la escala tipográfica del DS v2.0 se verifica antes
+ * de capturar y falla como DEFECTO. Los componentes del DS (botón, alerta, badge) se evalúan con
+ * su propio CSS.
  * Captura completa: la vista es más alta que el viewport; antes de capturar se amplía el alto
  * de la ventana conservando el ancho.
  *
@@ -37,6 +41,9 @@ const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_144_VIEWPORTS ?? 'movil,tablet
 const URL_BITACORA = (url: URL) => url.pathname.endsWith('/activos-biologicos/auditoria');
 const FILTRO = { rf: 'RF48', tipo: fixture.tipo_evento_filtrado, resultado: 'EXITOSO', desde: '2026-09-01', hasta: '2026-09-30' };
 const VACIA = { total_registros: 0, pagina_actual: 1, total_paginas: 1, registros_por_pagina: 20, registros: [] };
+
+// DS v2.0: escala tipográfica (todos los anchos)
+const ESCALA = [11, 12, 14, 15, 16, 18, 19, 20, 24, 26, 28];
 
 // Tema Claro fijo (cuerpos reales de TEST con theme_mode 1)
 const TEMA: Record<string, unknown> = {
@@ -115,7 +122,35 @@ function vista(page: Page): Locator {
   return page.getByRole('heading', { name: 'Auditoría y trazabilidad', level: 1 }).locator('xpath=ancestor::div[2]');
 }
 
+/** DEFECTO si algún texto con estilo propio del módulo usa un tamaño fuera de la escala tipográfica del DS v2.0. */
+async function verificarEscala(page: Page) {
+  const fuera = await vista(page).evaluate((raiz, escala) => {
+    const cuenta = new Map<string, number>();
+    const walker = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const texto = (n.textContent ?? '').trim();
+      const el = n.parentElement;
+      // Componentes del DS (botón, alerta, badge) se evalúan con su propio CSS, no como estilo del módulo
+      if (!texto || !el || el.closest('option, .ds-sr-only, .ds-btn, .ds-alert, .ds-badge, style')) continue;
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      if (escala.includes(fs)) continue;
+      const zona = el.closest('th') ? 'encabezado de tabla' : el.closest('td') ? 'celda de tabla' : el.closest('label') ? 'etiqueta de filtro' : `"${texto.slice(0, 30)}"`;
+      const clave = `${zona} ${fs}px`;
+      cuenta.set(clave, (cuenta.get(clave) ?? 0) + 1);
+    }
+    for (const c of raiz.querySelectorAll('select, input')) {
+      const fs = parseFloat(getComputedStyle(c).fontSize);
+      if (!escala.includes(fs)) cuenta.set(`control de filtro ${fs}px`, (cuenta.get(`control de filtro ${fs}px`) ?? 0) + 1);
+    }
+    return [...cuenta].map(([k, v]) => `${k} (×${v})`);
+  }, ESCALA);
+  expect.soft(fuera, `DEFECTO: texto fuera de la escala tipográfica del DS v2.0 (texto UI = body-md 14px, etiqueta = 12px): ${fuera.join(' · ')}`).toEqual([]);
+}
+
+/** Captura la vista completa. Sin baseline si hay defectos. */
 async function capturar(page: Page, nombre: string) {
+  await verificarEscala(page);
+  expect(test.info().errors.length, 'Sin baseline: la vista tiene defectos (ver errores anteriores)').toBe(0);
   await page.mouse.move(0, 0);
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.evaluate(() => document.fonts.ready);
@@ -125,7 +160,7 @@ async function capturar(page: Page, nombre: string) {
     const alto = Math.ceil(caja.y + caja.height + 40);
     if (alto > viewport.height) await page.setViewportSize({ width: viewport.width, height: alto });
   }
-  await expect(vista(page)).toHaveScreenshot(nombre, { animations: 'disabled' });
+  await expect(vista(page)).toHaveScreenshot(nombre, { animations: 'disabled', caret: 'hide' });
 }
 
 test.describe('TC-DIS-144 - Consistencia visual - Bitácora de auditoría (RF-52)', () => {
@@ -181,7 +216,7 @@ test.describe('TC-DIS-144 - Consistencia visual - Bitácora de auditoría (RF-52
     const filtroUsuario = page.getByRole('textbox', { name: /usuario|responsable/i }).or(page.getByRole('combobox', { name: /usuario|responsable/i }));
     expect(
       await filtroUsuario.count(),
-      'BLOQUEO: la bitácora no tiene filtro por usuario (solo RF origen, Tipo de evento, ID activo, Clasificación, Resultado, Severidad, Desde y Hasta) ni columna de usuario. No hay estado filtrado por usuario que capturar.',
+      'DEFECTO (BLOQUEO): la bitácora no tiene filtro por usuario (solo RF origen, Tipo de evento, ID activo, Clasificación, Resultado, Severidad, Desde y Hasta); la columna "Usuario" existe pero no se puede filtrar. No hay estado filtrado por usuario que capturar.',
     ).toBeGreaterThan(0);
   });
 });
