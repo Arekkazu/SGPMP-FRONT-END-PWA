@@ -25,6 +25,11 @@ describe('mapToApiError', () => {
     );
     expect(err.code).toBe('VAL_ENTRADA');
     expect(err.field).toBe('confirmar_contrasena');
+    // Sin la etiqueta: cada mensaje va debajo de su propio input.
+    expect(err.fields).toEqual([
+      { field: 'confirmar_contrasena', message: 'Campo obligatorio.' },
+      { field: 'numero_identificacion', message: 'Solo dígitos.' },
+    ]);
   });
 
   it('no antepone la etiqueta cuando el campo solo repite el message del backend', () => {

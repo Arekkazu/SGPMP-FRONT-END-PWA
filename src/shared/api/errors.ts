@@ -7,9 +7,11 @@ export interface ApiError {
   message: string;
   field?: string;
   status: number;
+  /** Cada campo que fallo, con su mensaje sin la etiqueta. `field` vacio = error de modelo. */
+  fields?: BackendFieldError[];
 }
 
-interface BackendFieldError {
+export interface BackendFieldError {
   field: string;
   message: string;
 }
@@ -22,8 +24,12 @@ export function mapToApiError(error: AxiosError): ApiError {
   const fields = data?.fields as BackendFieldError[] | undefined;
   const message = traducirPorCodigo(code, resolveMessage(status, data, fields));
   const field = fields?.[0]?.field ?? (data?.field as string | undefined);
+  const porCampo = fields?.map((f) => ({
+    field: f.field ?? '',
+    message: f.message === data?.message ? message : mensajeDeCampo(f.message),
+  }));
 
-  return { code, message, field, status };
+  return { code, message, field, status, fields: porCampo?.length ? porCampo : undefined };
 }
 
 function stripPydanticPrefix(msg: string): string {
@@ -65,11 +71,15 @@ const PYDANTIC_ES: Record<string, string> = {
   'Field required': 'validacion.campo_obligatorio',
 };
 
-function describeField({ field, message }: BackendFieldError): string {
+function mensajeDeCampo(message: string): string {
   const clave = PYDANTIC_ES[message];
-  const msg = clave
+  return clave
     ? i18n.t(clave, { ns: 'common', defaultValue: 'Campo obligatorio.' })
     : stripPydanticPrefix(message);
+}
+
+function describeField({ field, message }: BackendFieldError): string {
+  const msg = mensajeDeCampo(message);
   if (!field) return msg;
   const label = field.replace(/_/g, ' ');
   return `${label.charAt(0).toUpperCase()}${label.slice(1)}: ${msg}`;

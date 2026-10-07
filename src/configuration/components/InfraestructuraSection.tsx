@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, Power, X, ChevronLeft, Warehouse } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -16,6 +17,7 @@ import { TIPO_MODELO_LABEL, type TipoModelo } from '../../prediction/types';
 import type { FincaResponse, InfraestructuraResponse, RegistrarInfraestructuraDTO, EditarInfraestructuraDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -46,19 +48,6 @@ const TH: React.CSSProperties = {
 const TD: React.CSSProperties = {
   padding: 'var(--s3) var(--s4)',
   borderBottom: '1px solid var(--surface-border)',
-};
-
-const SELECT_STYLE: React.CSSProperties = {
-  width: '100%',
-  padding: 'var(--s3)',
-  borderRadius: 'var(--r-md)',
-  border: '1.5px solid var(--surface-border)',
-  background: 'var(--surface-card)',
-  color: 'var(--text-primary)',
-  fontSize: '14px',
-  fontFamily: 'var(--font-sans)',
-  outline: 'none',
-  cursor: 'pointer',
 };
 
 function formatFecha(iso: string | null | undefined): string {
@@ -110,6 +99,10 @@ interface FormValues {
   tipo_modelo_asignado: TipoModelo | '';
 }
 
+const CAMPOS = [
+  'tipo_area', 'nombre_infraestructura', 'superficie', 'descripcion_infraestructura', 'especie_id', 'tipo_modelo_asignado',
+] as const;
+
 interface InfraModalProps {
   infra: InfraestructuraResponse | null;
   finca: FincaResponse;
@@ -128,6 +121,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
 
   const { register, handleSubmit, reset, watch, setError, setValue, formState: { errors } } = useForm<FormValues>({ mode: 'onBlur' });
   const desc = watch('descripcion_infraestructura', '');
+  const alertaGeneral = useErroresDeServidor(saveError, setError, CAMPOS);
 
   // RF-20 v1.1: el modelo de IA del área solo puede ser la familia de su especie.
   const { especies, cargar: cargarEspecies } = useEspecies();
@@ -209,7 +203,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
         </div>
 
         <div style={{ padding: 'var(--s6)' }}>
-          {saveError && saveError.status !== 409 && (
+          {saveError && saveError.status !== 409 && alertaGeneral && (
             <Alert
               variant="error"
               title={saveError.status === 412 ? t('infraestructurasection.conflicto_de_edicion') : t('infraestructurasection.error_al_guardar')}
@@ -232,57 +226,41 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             {/* Tipo de área */}
             <div style={{ marginBottom: 'var(--s4)' }}>
-              <label htmlFor="infra-tipo-area" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.tipo_de_area')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
-              </label>
-              <select
+              <Select
                 id="infra-tipo-area"
-                aria-required="true"
-                aria-invalid={!!errors.tipo_area}
-                style={SELECT_STYLE}
+                label={t('infraestructurasection.tipo_de_area')}
+                required
+                error={errors.tipo_area?.message}
                 {...register('tipo_area', { required: t('infraestructurasection.selecciona_un_tipo_de_area') })}
               >
                 {tipos.map((tipo) => (
                   <option key={tipo.id_tipo_area} value={tipo.nombre}>{TIPO_EMOJI[tipo.nombre] ?? '🏗️'} {tipo.nombre}</option>
                 ))}
-              </select>
-              {errors.tipo_area && (
-                <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
-                  {errors.tipo_area.message}
-                </p>
-              )}
+              </Select>
             </div>
 
             {/* Especie y modelo de IA (RF-20 v1.1) */}
             <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
-              <div>
-                <label htmlFor="infra-especie" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.especie')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
-                </label>
-                <select
-                  id="infra-especie"
-                  aria-required="true"
-                  aria-invalid={!!errors.especie_id}
-                  style={SELECT_STYLE}
-                  {...register('especie_id', { required: t('infraestructurasection.selecciona_una_especie') })}
-                >
-                  <option value="">{t('infraestructurasection.selecciona_una_especie')}</option>
-                  {especiesOpciones.map((e) => <option key={e.id_especie} value={e.id_especie}>{e.nombre}</option>)}
-                </select>
-                {errors.especie_id && (
-                  <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
-                    {errors.especie_id.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label htmlFor="infra-modelo" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.modelo_de_ia')}</label>
-                <select id="infra-modelo" style={SELECT_STYLE} {...register('tipo_modelo_asignado')}>
-                  <option value="">{t('infraestructurasection.sin_modelo_asignado')}</option>
-                  {modelosOpciones.map((m) => <option key={m} value={m}>{TIPO_MODELO_LABEL[m]}</option>)}
-                </select>
-                {especieId && !familia && (
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('infraestructurasection.la_especie_no_tiene_familia_de_modelo')}</p>
-                )}
-              </div>
+              <Select
+                id="infra-especie"
+                label={t('infraestructurasection.especie')}
+                required
+                error={errors.especie_id?.message}
+                {...register('especie_id', { required: t('infraestructurasection.selecciona_una_especie') })}
+              >
+                <option value="">{t('infraestructurasection.selecciona_una_especie')}</option>
+                {especiesOpciones.map((e) => <option key={e.id_especie} value={e.id_especie}>{e.nombre}</option>)}
+              </Select>
+              <Select
+                id="infra-modelo"
+                label={t('infraestructurasection.modelo_de_ia')}
+                hint={especieId && !familia ? t('infraestructurasection.la_especie_no_tiene_familia_de_modelo') : undefined}
+                error={errors.tipo_modelo_asignado?.message}
+                {...register('tipo_modelo_asignado')}
+              >
+                <option value="">{t('infraestructurasection.sin_modelo_asignado')}</option>
+                {modelosOpciones.map((m) => <option key={m} value={m}>{TIPO_MODELO_LABEL[m]}</option>)}
+              </Select>
             </div>
 
             {/* Nombre */}
@@ -327,6 +305,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
                   id="infra-descripcion"
                   rows={3}
                   aria-invalid={!!errors.descripcion_infraestructura}
+                  aria-describedby={errors.descripcion_infraestructura ? 'infra-descripcion-err' : undefined}
                   placeholder={t('infraestructurasection.descripcion_breve_del_area')}
                   style={{
                     width: '100%',
@@ -350,7 +329,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
                 </span>
               </div>
               {errors.descripcion_infraestructura && (
-                <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
+                <p id="infra-descripcion-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
                   {errors.descripcion_infraestructura.message}
                 </p>
               )}
