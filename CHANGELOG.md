@@ -1,3 +1,28 @@
+## [1.0.0-rc.40](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.39...v1.0.0-rc.40) (2026-10-07)
+
+### Bug Fixes
+
+* **a11y:** filas y tarjetas que abren un detalle accesibles por teclado, sin hover por JS ([b7d0607](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b7d0607f7ddbb14e0023e45788fc03af6d76f022))
+* **design-system:** todos los modales como bottom sheet en movil con ancho del DS ([820beae](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/820beaee2b03439220a392f89c75e7c5f04e573e))
+* **i18n:** espacio entre el texto traducido y el valor resaltado ([97f1669](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/97f16699144e0be577b90203f648abee89bba779))
+* **i18n:** traducir los textos fijos que quedaban junto a las frases partidas ([ad8bdd0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ad8bdd082a98c23eb0759b62dff7b9fd38f3cc25))
+* **m09:** asociar los errores de campo del backend a su input ([5123a22](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5123a22ec18ff269da2dc6a223e4edba8b2cd4fa))
+* **m09:** formatear superficie como numero, nombre accesible del badge y scroll enfocable ([a9c37a8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a9c37a836397cec0c8b2c443df986cbd30d35f48))
+* **m09:** limite de error por pagina para que un fallo no deje la app en blanco ([b10cacf](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b10cacf03e0ab99df4918cd8b01dddd395d84522)), closes [#251](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/251)
+* **m09:** modales como bottom sheet en movil y con ancho maximo del DS ([fe7d991](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/fe7d9916b7a6f51c9736ff874b346ae3b24dbd4b))
+* **m09:** mover el foco al paso nuevo en la asociacion de sensores ([a12a495](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a12a49542bdd7f97f3cc72ea2cf9b1ab6eee1b01))
+* **m09:** tablas de configuracion con scroll enfocable por teclado ([db39916](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/db39916dac11302958c481ee6f788f87b53cae0b))
+* **rf17:** semaforizacion con icono y patron, no solo color, y campos de umbral con nombre completo ([26346c9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/26346c9e2db2335e5f4ad83f40a331ef7598895a))
+* **rf23:** contraste del historial y etiquetas de frecuencia e intervalo en configuracion remota ([c512b16](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c512b16659ec57a15dc0ff956e28d4b478ddb1c7)), closes [#244](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/244) [#116](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/116) [#245](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/245)
+* **rf24:** convertir en el borde los valores de calibracion que el backend envia como texto ([74ed527](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/74ed527a3da10ee09d18faa86a71268780871207)), closes [#251](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/251)
+* **rf27-rf30:** estructura y teclado en tema, dashboard, idioma y plantillas ([2db50f8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2db50f8d08d8102ae8c2508f87ef06ca30928524)), closes [#7c3aed](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/7c3aed)
+* **sast:** quitar el createElement con tipo dinamico que Bearer marca como XSS ([5ae3731](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5ae37310b56c538d30c94f2fc0840fa43edd464e))
+
+### Performance Improvements
+
+* **build:** cargar cada modulo al entrar a su ruta y separar las librerias en chunks ([a7fba0f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a7fba0f700cf2f26e79220d27a4ff46472727870))
+* **design-system:** animar la barra de fortaleza de contrasena con transform ([c17b16e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c17b16e6bf3ad0afd6cf7a66e3c747e1cf36c6d6))
+
 ## [1.0.0-rc.39](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.38...v1.0.0-rc.39) (2026-10-06)
 
 ### Features
