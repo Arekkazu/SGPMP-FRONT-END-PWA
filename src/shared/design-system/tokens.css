@@ -152,6 +152,8 @@
 
   /* Velo de los paneles flotantes (bandeja, drawer) */
   --overlay: rgba(20, 22, 16, 0.18);
+  /* Velo de los modales: mas opaco porque bloquea la pagina (.ds-modal) */
+  --overlay-modal: rgba(0, 0, 0, 0.5);
 
   /* Layout */
   --sidebar-w: 240px;
@@ -168,6 +170,11 @@
      identidad visual, `aplicarIdentidad` lo sobreescribe con la variante
      oscurecida del primario. */
   --brand-nav: var(--neutral-900);
+
+  /* Ionic pinta <body> con --ion-text-color, que por defecto es negro en los
+     dos temas: todo texto sin color explicito quedaba negro sobre la
+     superficie oscura (1.19:1, #116 y #244). Se ata al rol de texto. */
+  --ion-text-color: var(--text-primary);
 
   /* QA M01 2.4: relleno solido de boton primario con texto blanco. Fijo en
      ambos temas (no sigue la rampa --brand-500/600, que se invierte en dark y

@@ -1,0 +1,72 @@
+.ds-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0 0 var(--s6);
+  padding: 0;
+  list-style: none;
+}
+
+.ds-stepper__paso {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--fs-label-md);
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* El conector crece entre pasos; el ultimo no lleva. */
+.ds-stepper__paso:not(:last-child) {
+  flex: 1 1 auto;
+}
+
+.ds-stepper__paso:not(:last-child)::after {
+  content: '';
+  flex: 1 1 16px;
+  min-width: 12px;
+  height: 2px;
+  background: var(--surface-border);
+}
+
+.ds-stepper__marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-full);
+  border: 2px solid var(--surface-border);
+  background: var(--surface-hover);
+  font-size: var(--fs-label-sm);
+  font-weight: 700;
+}
+
+/* Completado: tokens semanticos de fondo/borde; --sem-success es rol de texto e icono. */
+.ds-stepper__paso--done {
+  color: var(--sem-success);
+}
+
+.ds-stepper__paso--done .ds-stepper__marca {
+  background: var(--sem-success-bg);
+  border-color: var(--sem-success-border);
+}
+
+.ds-stepper__paso--done::after {
+  background: var(--sem-success);
+}
+
+.ds-stepper__paso--active {
+  color: var(--brand-600);
+  font-weight: 700;
+}
+
+/* Relleno solido con texto blanco: el mismo par que el boton primario. */
+.ds-stepper__paso--active .ds-stepper__marca {
+  background: var(--brand-cta);
+  border-color: var(--brand-cta);
+  color: var(--text-inverse);
+}

@@ -3,6 +3,7 @@ import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { X, Check } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Alert } from '../../shared/design-system/Alert';
 import { useEspecies } from '../hooks/useEspecies';
 import type { PlantillaResponse, AplicacionPlantillaResponse, EspecieResponse } from '../types';
@@ -84,7 +85,7 @@ function DiffTable({ before, after }: { before: Record<string, unknown> | null; 
   }
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <ScrollRegion label={t('aplicarplantillawizard.tabla_diferencias')}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
         <thead>
           <tr>
@@ -114,7 +115,7 @@ function DiffTable({ before, after }: { before: Record<string, unknown> | null; 
           })}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }
 
@@ -155,18 +156,10 @@ export function AplicarPlantillaWizard({ plantilla, saving, saveError, onClose, 
       role="dialog"
       aria-modal="true"
       aria-labelledby="wizard-modal-title"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000, display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.45)', padding: 'var(--s4)',
-      }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget && step !== 2) onClose(); }}
     >
-      <div style={{
-        background: 'var(--surface-card)', borderRadius: 'var(--r-xl)',
-        border: '1px solid var(--surface-border)', width: '100%', maxWidth: 600,
-        maxHeight: '92vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)',
-      }}>
+      <div className="ds-modal__panel ds-modal__panel--wide">
         {/* Header */}
         <div style={{
           position: 'sticky', top: 0, background: 'var(--surface-card)', zIndex: 1,

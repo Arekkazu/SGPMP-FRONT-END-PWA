@@ -35,10 +35,10 @@ export function CambiarGatewayModal({ dispositivo, edges, saving, saveError, onC
       role="dialog"
       aria-modal="true"
       aria-labelledby="cambiar-gateway-titulo"
-      style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 'var(--s4)' }}
+      className="ds-modal" style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 440, boxShadow: 'var(--shadow-lg)' }}>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
             <Network size={18} color="var(--brand-500)" aria-hidden />

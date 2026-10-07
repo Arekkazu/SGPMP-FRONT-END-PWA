@@ -7,6 +7,7 @@ import { OrigenPill } from './OrigenPill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
 import { horaCaptura } from '../lib/sensorEscala';
 import type { AlertaSchema } from '../types';
+import { alActivarConTeclado } from '../../shared/lib/teclado';
 
 interface Props {
   alertas: AlertaSchema[];
@@ -48,10 +49,10 @@ export function AlertasTable({ alertas, loading, onAbrir }: Props) {
           {alertas.map((a) => (
             <tr
               key={a.id_alerta}
+              className="ds-fila-accion"
+              tabIndex={0}
               onClick={() => onAbrir(a.id_alerta)}
-              style={{ background: 'var(--surface-card)', cursor: 'pointer' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-card)')}
+              onKeyDown={alActivarConTeclado(() => onAbrir(a.id_alerta))}
             >
               <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{a.tipo_alerta}</td>
               <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>{a.tipo_variable}</td>

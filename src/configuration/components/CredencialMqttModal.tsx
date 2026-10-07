@@ -80,10 +80,10 @@ export function CredencialMqttModal({ dispositivo, onClose }: { dispositivo: Dis
       role="dialog"
       aria-modal="true"
       aria-labelledby="credencial-mqtt-titulo"
-      style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', padding: 'var(--s6) var(--s4)', overflowY: 'auto' }}
+      className="ds-modal" style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', width: '100%', maxWidth: 560, boxShadow: 'var(--shadow-lg)', padding: 'var(--s6)' }}>
+      <div className="ds-modal__panel" style={{ padding: 'var(--s6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s3)', marginBottom: 'var(--s4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
             <KeyRound size={18} color="var(--brand-500)" aria-hidden />

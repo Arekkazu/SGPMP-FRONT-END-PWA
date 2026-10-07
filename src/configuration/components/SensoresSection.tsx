@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import React, { useEffect, useRef, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
-import { Radio, ChevronLeft, Check, RefreshCw } from 'lucide-react';
+import { Radio, ChevronLeft, Check, RefreshCw, Cpu, ArrowRight } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
+import { OptionCard } from '../../shared/design-system/OptionCard';
+import { Stepper } from '../../shared/design-system/Stepper';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useDispositivosIot } from '../hooks/useDispositivosIot';
@@ -15,76 +17,10 @@ import { useFincas } from '../hooks/useFincas';
 import { useInfraestructuras } from '../hooks/useInfraestructuras';
 import type { AsociacionActivoSuperada, DispositivoIotResponse, SensorResponse, FincaResponse, InfraestructuraResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { iconoCategoriaSensor, iconoTipoArea } from '../iconos';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const CATEGORIA_EMOJI: Record<string, string> = {
-  TEMPERATURA: '🌡️',
-  HUMEDAD: '💧',
-  OXIGENO: '💨',
-  PH: '⚗️',
-  AMONIACO: '☁️',
-  SALINIDAD: '🧂',
-  LUMINOSIDAD: '☀️',
-};
-
-const TIPO_EMOJI: Record<string, string> = {
-  'Galpón': '🏚️',
-  'Corral': '🐄',
-  'Potrero': '🌿',
-  'Estanque': '🐟',
-  'Invernadero': '🌱',
-};
-
-// ── Step indicator ────────────────────────────────────────────────────────────
-
 type WizardStep = 'dispositivo' | 'sensor' | 'area' | 'confirmar';
-
-const STEPS: { id: WizardStep; label: string }[] = [
-  { id: 'dispositivo', label: 'Dispositivo' },
-  { id: 'sensor',      label: 'Sensor' },
-  { id: 'area',        label: 'Área destino' },
-  { id: 'confirmar',   label: 'Confirmar' },
-];
-
-function Stepper({ current }: { current: WizardStep }) {
-  const idx = STEPS.findIndex((s) => s.id === current);
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--s6)', flexWrap: 'wrap', gap: 'var(--s2)' }}>
-      {STEPS.map((s, i) => {
-        const done    = i < idx;
-        const active  = i === idx;
-        const pending = i > idx;
-        return (
-          <React.Fragment key={s.id}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
-              <div style={{
-                width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '11px', fontWeight: 700, flexShrink: 0,
-                background: done ? 'var(--sem-success)' : active ? 'var(--brand-500)' : 'var(--surface-hover)',
-                color: done || active ? '#fff' : 'var(--text-muted)',
-                border: pending ? '2px solid var(--surface-border)' : 'none',
-              }}>
-                {done ? <Check size={12} aria-hidden /> : i + 1}
-              </div>
-              <span style={{
-                fontSize: '12px', fontWeight: active ? 700 : 500,
-                color: done ? 'var(--sem-success)' : active ? 'var(--brand-600)' : 'var(--text-muted)',
-                whiteSpace: 'nowrap',
-              }}>
-                {s.label}
-              </span>
-            </div>
-            {i < STEPS.length - 1 && (
-              <div style={{ flex: '1 1 16px', height: 2, background: done ? 'var(--sem-success)' : 'var(--surface-border)', minWidth: 12 }} />
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
-  );
-}
 
 // ── Step 1: Dispositivo selector ──────────────────────────────────────────────
 
@@ -109,16 +45,9 @@ function DispSelector({ dispositivos, loading, onSelect }: {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
       {activos.map((d) => (
-        <button
-          key={d.id_dispositivo_iot}
-          type="button"
-          onClick={() => onSelect(d)}
-          style={{ background: 'var(--surface-card)', border: '1.5px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none'; }}
-        >
+        <OptionCard key={d.id_dispositivo_iot} onClick={() => onSelect(d)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s3)' }}>
-            <span style={{ fontSize: 22 }}>📡</span>
+            <span className="ds-option__icono"><Cpu size={20} strokeWidth={1.5} aria-hidden /></span>
             <div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: 'var(--brand-600)' }}>{d.serial}</div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{d.descripcion}</div>
@@ -126,9 +55,9 @@ function DispSelector({ dispositivos, loading, onSelect }: {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '11px', color: 'var(--sem-success)', fontWeight: 600 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)', display: 'inline-block' }} />
-            Activo · #{d.id_dispositivo_iot}
+            {t('sensoressection.activo_id', { id: d.id_dispositivo_iot })}
           </div>
-        </button>
+        </OptionCard>
       ))}
     </div>
   );
@@ -159,26 +88,19 @@ function SensorSelector({ sensores, loading, error, onSelect, onBack }: {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
           {activos.map((s) => {
-            const emoji = s.categoria ? (CATEGORIA_EMOJI[s.categoria] ?? '📡') : '📡';
+            const Icono = iconoCategoriaSensor(s.categoria);
             return (
-              <button
-                key={s.id_sensores}
-                type="button"
-                onClick={() => onSelect(s)}
-                style={{ background: 'var(--surface-card)', border: '2px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s' }}
-                onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = 'var(--brand-400)'; b.style.background = 'var(--brand-50)'; b.style.transform = 'translateY(-2px)'; b.style.boxShadow = 'var(--shadow-md)'; }}
-                onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = 'var(--surface-border)'; b.style.background = 'var(--surface-card)'; b.style.transform = 'none'; b.style.boxShadow = 'none'; }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s2)' }}>
-                  <span style={{ fontSize: 26, flexShrink: 0 }}>{emoji}</span>
+              <OptionCard key={s.id_sensores} onClick={() => onSelect(s)}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
+                  <span className="ds-option__icono"><Icono size={20} strokeWidth={1.5} aria-hidden /></span>
                   <div>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{s.nombre}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
-                      {s.categoria ?? 'Sin categoría'} · #{s.id_sensores}
+                      {s.categoria ?? t('sensoressection.sin_categoria')} · #{s.id_sensores}
                     </div>
                   </div>
                 </div>
-              </button>
+              </OptionCard>
             );
           })}
         </div>
@@ -217,22 +139,15 @@ function AreaDestSelector({ fincas, infraestructuras, loadingFincas, loadingInfr
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)' }}>
             {fincas.filter((f) => f.es_activo).map((f) => (
-              <button
+              <OptionCard
                 key={f.id_finca}
-                type="button"
+                variant="pill"
+                selected={fincaSeleccionada?.id_finca === f.id_finca}
                 onClick={() => onSelectFinca(f)}
-                style={{
-                  padding: 'var(--s2) var(--s3)',
-                  borderRadius: 'var(--r-full)',
-                  border: `1.5px solid ${fincaSeleccionada?.id_finca === f.id_finca ? 'var(--brand-500)' : 'var(--surface-border)'}`,
-                  background: fincaSeleccionada?.id_finca === f.id_finca ? 'var(--brand-50)' : 'var(--surface-card)',
-                  color: fincaSeleccionada?.id_finca === f.id_finca ? 'var(--brand-700)' : 'var(--text-secondary)',
-                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
               >
+                {fincaSeleccionada?.id_finca === f.id_finca && <Check size={14} strokeWidth={2} aria-hidden />}
                 {f.nombre}
-              </button>
+              </OptionCard>
             ))}
           </div>
         )}
@@ -252,30 +167,22 @@ function AreaDestSelector({ fincas, infraestructuras, loadingFincas, loadingInfr
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 'var(--s4)' }}>
             {activas.map((infra) => {
-              const emoji = TIPO_EMOJI[infra.tipo_area] ?? '🏗️';
+              const Icono = iconoTipoArea(infra.tipo_area);
               return (
-                <button
-                  key={infra.id_infraestructura}
-                  type="button"
-                  onClick={() => onSelectArea(infra)}
-                  style={{ background: 'var(--surface-card)', border: '2px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', position: 'relative', overflow: 'hidden', transition: 'all 0.15s' }}
-                  onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = 'var(--brand-500)'; b.style.background = 'var(--brand-50)'; b.style.transform = 'translateY(-2px)'; b.style.boxShadow = 'var(--shadow-md)'; }}
-                  onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = 'var(--surface-border)'; b.style.background = 'var(--surface-card)'; b.style.transform = 'none'; b.style.boxShadow = 'none'; }}
-                >
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'var(--brand-500)', borderRadius: 'var(--r-xl) var(--r-xl) 0 0' }} />
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--s3)', marginTop: 'var(--s2)' }}>
-                    <span style={{ fontSize: 24, flexShrink: 0 }}>{emoji}</span>
+                <OptionCard key={infra.id_infraestructura} onClick={() => onSelectArea(infra)}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--s3)' }}>
+                    <span className="ds-option__icono"><Icono size={20} strokeWidth={1.5} aria-hidden /></span>
                     <div>
                       <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{infra.nombre_infraestructura}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
                         {infra.tipo_area} · {fincaSeleccionada.nombre}
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>
-                        {formatearFechaHora(infra.superficie)} m²
+                        {formatearNumero(infra.superficie)} m²
                       </div>
                     </div>
                   </div>
-                </button>
+                </OptionCard>
               );
             })}
           </div>
@@ -303,8 +210,8 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
 }) {
   const { t } = useT('configuration');
   const { register, handleSubmit, formState: { errors } } = useForm<ConfirmFormValues>({ mode: 'onBlur' });
-  const emoji = sensor.categoria ? (CATEGORIA_EMOJI[sensor.categoria] ?? '📡') : '📡';
-  const areaEmoji = TIPO_EMOJI[area.tipo_area] ?? '🏗️';
+  const IconoSensor = iconoCategoriaSensor(sensor.categoria);
+  const IconoArea = iconoTipoArea(area.tipo_area);
 
   return (
     <div>
@@ -319,18 +226,18 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
         {/* Sensor node */}
         <div style={{ flex: 1, minWidth: 160, background: 'var(--brand-50)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'center' }}>
-          <div style={{ fontSize: 28, marginBottom: 'var(--s2)' }}>{emoji}</div>
+          <span className="ds-option__icono" style={{ marginBottom: 'var(--s2)' }}><IconoSensor size={20} strokeWidth={1.5} aria-hidden /></span>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>{t('sensoressection.sensor')}</div>
           <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{sensor.nombre}</div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</div>
         </div>
 
         {/* Arrow */}
-        <div style={{ fontSize: 20, color: 'var(--brand-500)', fontWeight: 700 }}>→</div>
+        <ArrowRight size={20} strokeWidth={1.5} color="var(--brand-600)" aria-hidden />
 
         {/* Area node */}
         <div style={{ flex: 1, minWidth: 160, background: 'var(--sem-success-bg)', border: '1px solid var(--sem-success-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'center' }}>
-          <div style={{ fontSize: 28, marginBottom: 'var(--s2)' }}>{areaEmoji}</div>
+          <span className="ds-option__icono" style={{ marginBottom: 'var(--s2)' }}><IconoArea size={20} strokeWidth={1.5} aria-hidden /></span>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>{t('sensoressection.area_productiva')}</div>
           <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--brand-700)' }}>{area.nombre_infraestructura}</div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{finca.nombre}</div>
@@ -382,10 +289,10 @@ function ConfirmReasignarModal({ mensaje, saving, onCancel, onConfirm }: {
       role="dialog"
       aria-modal="true"
       aria-labelledby="reasignar-modal-title"
-      style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 'var(--s4)' }}
+      className="ds-modal" style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 420, boxShadow: 'var(--shadow-lg)' }}>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
         <h2 id="reasignar-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
           {t('sensoressection.confirmar_reasignacion_titulo')}
         </h2>
@@ -424,6 +331,15 @@ export function SensoresSection() {
   const [superadas, setSuperadas] = useState<AsociacionActivoSuperada[]>([]);
 
   useEffect(() => { cargarDisp(); cargarFincas(); }, [cargarDisp, cargarFincas]);
+
+  // WCAG 2.4.3: al cambiar de paso el contenido anterior desaparece y el foco
+  // caeria en <body>; se lleva a la instruccion del paso nuevo.
+  const instruccionRef = useRef<HTMLParagraphElement>(null);
+  const pasoPrevio = useRef(step);
+  useEffect(() => {
+    if (pasoPrevio.current !== step) instruccionRef.current?.focus();
+    pasoPrevio.current = step;
+  }, [step]);
 
   // El wizard ya envió la petición al llegar aquí (ese es el primer intento, sin
   // `confirmar`); un 409 con este codigo especifico pide reasignar, no es un error final.
@@ -480,7 +396,7 @@ export function SensoresSection() {
     });
     if (res) {
       setSuperadas(res.asociaciones_activo_superadas ?? []);
-      setSuccessMsg(`Sensor "${sensor.nombre}" asociado a "${area.nombre_infraestructura}" correctamente.`);
+      setSuccessMsg(t('sensoressection.asociado_ok', { sensor: sensor.nombre, area: area.nombre_infraestructura }));
       resetWizard();
     }
   };
@@ -496,7 +412,7 @@ export function SensoresSection() {
     setShowReasignarConfirm(false);
     if (res) {
       setSuperadas(res.asociaciones_activo_superadas ?? []);
-      setSuccessMsg(`Sensor "${sensor.nombre}" reasignado a "${area.nombre_infraestructura}" correctamente.`);
+      setSuccessMsg(t('sensoressection.reasignado_ok', { sensor: sensor.nombre, area: area.nombre_infraestructura }));
       resetWizard();
     }
   };
@@ -570,43 +486,53 @@ export function SensoresSection() {
         <Alert variant="warning" title={t('sensoressection.sin_permiso')} description={t('sensoressection.no_tienes_permiso_para_asociar_sensores_a')} />
       ) : !online ? null : (
         <>
-          <Stepper current={step} />
+          <Stepper
+            aria-label={t('sensoressection.pasos_de_la_asociacion')}
+            actual={step}
+            pasos={[
+              { id: 'dispositivo', label: t('sensoressection.paso_dispositivo') },
+              { id: 'sensor', label: t('sensoressection.paso_sensor') },
+              { id: 'area', label: t('sensoressection.paso_area_destino') },
+              { id: 'confirmar', label: t('sensoressection.paso_confirmar') },
+            ]}
+          />
+
+          <p key={step} ref={instruccionRef} tabIndex={-1} style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
+            {step === 'dispositivo' && t('sensoressection.paso_1_elige_el_dispositivo_que_contiene_el')}
+            {step === 'sensor' && dispositivo && (
+              <>{t('sensoressection.paso_2_elige_el_sensor_de')}{' '}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{' '}{t('sensoressection.a_asociar')}</>
+            )}
+            {step === 'area' && sensor && (
+              <>{t('sensoressection.paso_3_elige_el_area_productiva_destino_para')}{' '}<strong>{sensor.nombre}</strong>:</>
+            )}
+            {step === 'confirmar' && t('sensoressection.paso_4_confirma_la_asociacion')}
+          </p>
 
           {step === 'dispositivo' && (
-            <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_1_elige_el_dispositivo_que_contiene_el')}</p>
-              <DispSelector dispositivos={dispositivos} loading={loadingDisp} onSelect={handleSelectDisp} />
-            </>
+            <DispSelector dispositivos={dispositivos} loading={loadingDisp} onSelect={handleSelectDisp} />
           )}
 
           {step === 'sensor' && dispositivo && (
-            <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_2_elige_el_sensor_de')}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{t('sensoressection.a_asociar')}</p>
-              <SensorSelector
-                sensores={sensores}
-                loading={loadingSensores}
-                error={errorSensores}
-                onSelect={handleSelectSensor}
-                onBack={handleBackToDisp}
-              />
-            </>
+            <SensorSelector
+              sensores={sensores}
+              loading={loadingSensores}
+              error={errorSensores}
+              onSelect={handleSelectSensor}
+              onBack={handleBackToDisp}
+            />
           )}
 
           {step === 'area' && dispositivo && sensor && (
-            <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_3_elige_el_area_productiva_destino_para')}<strong>{sensor.nombre}</strong>:
-              </p>
-              <AreaDestSelector
-                fincas={fincas}
-                infraestructuras={infraestructuras}
-                loadingFincas={loadingFincas}
-                loadingInfras={loadingInfras}
-                fincaSeleccionada={finca}
-                onSelectFinca={handleSelectFinca}
-                onSelectArea={handleSelectArea}
-                onBack={handleBackToSensor}
-              />
-            </>
+            <AreaDestSelector
+              fincas={fincas}
+              infraestructuras={infraestructuras}
+              loadingFincas={loadingFincas}
+              loadingInfras={loadingInfras}
+              fincaSeleccionada={finca}
+              onSelectFinca={handleSelectFinca}
+              onSelectArea={handleSelectArea}
+              onBack={handleBackToSensor}
+            />
           )}
 
           {step === 'confirmar' && dispositivo && sensor && finca && area && (

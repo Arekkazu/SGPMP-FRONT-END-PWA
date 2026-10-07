@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { RefreshCw, Download, Archive, X, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useAuditoria } from '../hooks/useAuditoria';
@@ -72,8 +72,8 @@ export function AuditoriaPage() {
     enlace.remove();
     URL.revokeObjectURL(url);
 
-    const exportados = formatearFechaHora(resultado.exportados);
-    const disponibles = formatearFechaHora(resultado.total);
+    const exportados = formatearNumero(resultado.exportados);
+    const disponibles = formatearNumero(resultado.total);
     if (resultado.truncado) {
       setExportacionAviso({
         variant: 'warning',

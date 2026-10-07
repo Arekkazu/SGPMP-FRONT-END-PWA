@@ -125,14 +125,21 @@ export const sensorAreaApi = {
   },
 };
 
+// #251: el backend serializa los Decimal como texto ("12.5000"); el tipo de
+// dominio es numero y la vista hacia aritmetica sobre el, asi que se convierte
+// aqui, en el borde, y la pantalla de calibracion ya no queda en blanco.
+function aCalibracion(c: CalibracionResponse): CalibracionResponse {
+  return { ...c, valor_referencia: Number(c.valor_referencia) };
+}
+
 export const calibracionApi = {
   async calibrar(idSensor: number, dto: RegistrarCalibracionDTO): Promise<CalibracionResponse> {
     const res = await http.post<CalibracionResponse>(`${SENS}/${idSensor}/calibrar`, dto);
-    return res.data;
+    return aCalibracion(res.data);
   },
 
   async listarCalibraciones(idSensor: number): Promise<CalibracionResponse[]> {
     const res = await http.get<{ items: CalibracionResponse[] }>(`${SENS}/${idSensor}/calibraciones`);
-    return res.data.items;
+    return res.data.items.map(aCalibracion);
   },
 };

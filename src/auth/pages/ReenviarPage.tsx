@@ -55,8 +55,7 @@ export function ReenviarPage() {
             <CheckCircle size={28} color="var(--sem-success)" aria-hidden />
           </div>
           <h1 className="auth-title">{t('reenviarpage.correo_enviado')}</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>{t('reenviarpage.si_el_correo')}<strong>{getValues('correo_electronico')}</strong> tiene una cuenta pendiente de
-            activación, recibirás un nuevo enlace. Revisa también la carpeta de spam.
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>{t('reenviarpage.si_el_correo')}{' '}<strong>{getValues('correo_electronico')}</strong>{' '}{t('reenviarpage.tiene_cuenta_pendiente')}
           </p>
           <Link to="/login" className="auth-link">{t('reenviarpage.ir_a_iniciar_sesion')}</Link>
         </div>

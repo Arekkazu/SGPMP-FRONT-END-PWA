@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
-import { ShieldCheck, ChevronLeft, Check, RefreshCw } from 'lucide-react';
+import { ShieldCheck, ChevronLeft, Check, RefreshCw, Cpu } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
+import { OptionCard } from '../../shared/design-system/OptionCard';
+import { Stepper } from '../../shared/design-system/Stepper';
+import { iconoCategoriaSensor } from '../iconos';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useDispositivosIot } from '../hooks/useDispositivosIot';
@@ -14,11 +18,6 @@ import { useCalibracion } from '../hooks/useCalibracion';
 import type { DispositivoIotResponse, SensorResponse, CalibracionResponse } from '../types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const CATEGORIA_EMOJI: Record<string, string> = {
-  TEMPERATURA: '🌡️', HUMEDAD: '💧', OXIGENO: '💨', PH: '⚗️',
-  AMONIACO: '☁️', SALINIDAD: '🧂', LUMINOSIDAD: '☀️',
-};
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -39,34 +38,6 @@ function formatTs(iso: string | null | undefined): string {
 // ── Step indicator ────────────────────────────────────────────────────────────
 
 type WizardStep = 'dispositivo' | 'sensor' | 'calibrar';
-const STEPS: { id: WizardStep; label: string }[] = [
-  { id: 'dispositivo', label: 'Dispositivo' },
-  { id: 'sensor',      label: 'Sensor' },
-  { id: 'calibrar',    label: 'Registrar calibración' },
-];
-
-function Stepper({ current }: { current: WizardStep }) {
-  const idx = STEPS.findIndex((s) => s.id === current);
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--s5)', flexWrap: 'wrap', gap: 'var(--s2)' }}>
-      {STEPS.map((s, i) => {
-        const done = i < idx; const active = i === idx;
-        return (
-          <React.Fragment key={s.id}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0, background: done ? 'var(--sem-success)' : active ? 'var(--brand-500)' : 'var(--surface-hover)', color: done || active ? '#fff' : 'var(--text-muted)', border: i > idx ? '2px solid var(--surface-border)' : 'none' }}>
-                {done ? <Check size={12} aria-hidden /> : i + 1}
-              </div>
-              <span style={{ fontSize: '12px', fontWeight: active ? 700 : 500, color: done ? 'var(--sem-success)' : active ? 'var(--brand-600)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>{s.label}</span>
-            </div>
-            {i < STEPS.length - 1 && <div style={{ flex: '1 1 16px', height: 2, background: done ? 'var(--sem-success)' : 'var(--surface-border)', minWidth: 12 }} />}
-          </React.Fragment>
-        );
-      })}
-    </div>
-  );
-}
-
 // ── Device selector ───────────────────────────────────────────────────────────
 
 function DispSelector({ dispositivos, loading, onSelect }: {
@@ -90,20 +61,16 @@ function DispSelector({ dispositivos, loading, onSelect }: {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
       {activos.map((d) => (
-        <button key={d.id_dispositivo_iot} type="button" onClick={() => onSelect(d)}
-          style={{ background: 'var(--surface-card)', border: '1.5px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none'; }}
-        >
+        <OptionCard key={d.id_dispositivo_iot} onClick={() => onSelect(d)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s3)' }}>
-            <span style={{ fontSize: 20 }}>📡</span>
+            <span className="ds-option__icono"><Cpu size={20} strokeWidth={1.5} aria-hidden /></span>
             <div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: 'var(--brand-600)' }}>{d.serial}</div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{d.descripcion}</div>
             </div>
           </div>
           <div style={{ fontSize: '11px', color: 'var(--sem-success)', fontWeight: 600 }}>{t('calibracionsection.solo_dispositivos_activos_son_calibrables')}</div>
-        </button>
+        </OptionCard>
       ))}
     </div>
   );
@@ -132,21 +99,17 @@ function SensorSelector({ sensores, loading, error, onSelect, onBack }: {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 'var(--s4)' }}>
           {activos.map((s) => {
-            const emoji = s.categoria ? (CATEGORIA_EMOJI[s.categoria] ?? '📡') : '📡';
+            const Icono = iconoCategoriaSensor(s.categoria);
             return (
-              <button key={s.id_sensores} type="button" onClick={() => onSelect(s)}
-                style={{ background: 'var(--surface-card)', border: '1.5px solid var(--surface-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s' }}
-                onMouseEnter={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = 'var(--brand-400)'; b.style.background = 'var(--brand-50)'; }}
-                onMouseLeave={(e) => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = 'var(--surface-border)'; b.style.background = 'var(--surface-card)'; }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s2)' }}>
-                  <span style={{ fontSize: 24 }}>{emoji}</span>
+              <OptionCard key={s.id_sensores} onClick={() => onSelect(s)}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
+                  <span className="ds-option__icono"><Icono size={20} strokeWidth={1.5} aria-hidden /></span>
                   <div>
                     <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{s.nombre}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{s.categoria ?? 'Sin categoría'}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{s.categoria ?? t('calibracionsection.sin_categoria')}</div>
                   </div>
                 </div>
-              </button>
+              </OptionCard>
             );
           })}
         </div>
@@ -173,25 +136,25 @@ function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibracio
       {calibraciones.length === 0 ? (
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: 'var(--s5) 0' }}>{t('calibracionsection.sin_calibraciones_registradas_para_este')}</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <ScrollRegion label={t('calibracionsection.tabla_historial')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ background: 'var(--surface-hover)' }}>
-                {['Fecha/Hora', 'Valor ref.', 'Observaciones', 'Usuario'].map((h) => <th key={h} style={TH}>{h}</th>)}
+                {[t('calibracionsection.fecha_hora'), t('calibracionsection.valor_ref'), t('calibracionsection.observaciones_col'), t('calibracionsection.usuario')].map((h) => <th key={h} style={TH}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {calibraciones.map((c) => (
                 <tr key={c.id_calibracion} style={{ background: 'var(--surface-card)' }}>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatTs(c.fecha_calibracion)}</td>
-                  <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{c.valor_referencia.toFixed(4)}</td>
+                  <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{formatearNumero(c.valor_referencia, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</td>
                   <td style={{ ...TD, color: 'var(--text-secondary)', maxWidth: 240 }}>{c.observaciones ?? '—'}</td>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>#{c.id_usuario}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       )}
     </div>
   );
@@ -218,7 +181,7 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
   onBack: () => void;
 }) {
   const { t } = useT('configuration');
-  const emoji = sensor.categoria ? (CATEGORIA_EMOJI[sensor.categoria] ?? '📡') : '📡';
+  const IconoSensor = iconoCategoriaSensor(sensor.categoria);
   const now = new Date();
   const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
@@ -237,11 +200,11 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
 
       {/* Context header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s4)', background: 'var(--surface-hover)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 28 }}>{emoji}</span>
+        <span className="ds-option__icono"><IconoSensor size={20} strokeWidth={1.5} aria-hidden /></span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{sensor.nombre}</div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            {sensor.categoria ?? 'Sin categoría'} · Dispositivo: {dispositivo.serial}
+            {sensor.categoria ?? t('calibracionsection.sin_categoria')} · {t('calibracionsection.dispositivo_serial', { serial: dispositivo.serial })}
           </div>
         </div>
         {loadingAsoc ? (
@@ -404,7 +367,15 @@ export function CalibracionSection() {
 
       {puedeCalibar && online && (
         <>
-          <Stepper current={step} />
+          <Stepper
+            aria-label={t('calibracionsection.pasos_de_la_calibracion')}
+            actual={step}
+            pasos={[
+              { id: 'dispositivo', label: t('calibracionsection.paso_dispositivo') },
+              { id: 'sensor', label: t('calibracionsection.paso_sensor') },
+              { id: 'calibrar', label: t('calibracionsection.registrar_calibracion') },
+            ]}
+          />
 
           {step === 'dispositivo' && (
             <>
@@ -415,7 +386,7 @@ export function CalibracionSection() {
 
           {step === 'sensor' && dispositivo && (
             <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('calibracionsection.selecciona_el_sensor_de')}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{t('calibracionsection.a_calibrar')}</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('calibracionsection.selecciona_el_sensor_de')}{' '}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{' '}{t('calibracionsection.a_calibrar')}</p>
               <SensorSelector sensores={sensores} loading={loadingSensores} error={errorSensores} onSelect={handleSelectSensor} onBack={handleBackToDisp} />
             </>
           )}

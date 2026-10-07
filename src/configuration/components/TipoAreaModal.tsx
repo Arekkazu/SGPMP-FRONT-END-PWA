@@ -47,18 +47,10 @@ export function TipoAreaModal({ saving, saveError, onClose, onRegistrar }: Props
       role="dialog"
       aria-modal="true"
       aria-labelledby="tipo-area-modal-title"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)',
-      }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
-        background: 'var(--surface-card)', borderRadius: 'var(--r-xl)',
-        border: '1px solid var(--surface-border)', padding: 'var(--s6)',
-        width: '100%', maxWidth: 420, boxShadow: 'var(--shadow-lg)',
-      }}>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
           <h2 id="tipo-area-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {t('tipoareamodal.registrar_tipo_de_area')}

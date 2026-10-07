@@ -12,6 +12,7 @@ import { aplicarIdentidad, limpiarIdentidad, resolverLogoUrl } from '../../share
 import { temaActivo } from '../../shared/tema/useTemaSesion';
 import { useContexto } from '../../shared/contexto/useContexto';
 import type { FincaResponse, IdentidadVisualResponse } from '../types';
+import { OptionCard } from '../../shared/design-system/OptionCard';
 
 // RF-26: espeja src/shared/almacen_logos.py (FORMATOS_PERMITIDOS, TAMANO_MAX) del backend.
 const LOGO_TIPOS_PERMITIDOS = ['image/png', 'image/jpeg', 'image/svg+xml'];
@@ -43,27 +44,9 @@ function FincaSelectorIdent({ onSelect }: { onSelect: (f: FincaResponse) => void
       <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('identidadvisualsection.selecciona_la_finca_para_configurar_su')}</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 'var(--s4)' }}>
         {activas.map((f) => (
-          <button
+          <OptionCard
             key={f.id_finca}
-            type="button"
             onClick={() => onSelect(f)}
-            style={{
-              padding: 'var(--s4)',
-              background: 'var(--surface-card)',
-              border: '1px solid var(--surface-border)',
-              borderRadius: 'var(--r-lg)',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'border-color 0.15s, box-shadow 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)';
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)';
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
-            }}
           >
             <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>
               {f.nombre}
@@ -71,7 +54,7 @@ function FincaSelectorIdent({ onSelect }: { onSelect: (f: FincaResponse) => void
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
               {f.ubicacion.municipio}, {f.ubicacion.departamento}
             </div>
-          </button>
+          </OptionCard>
         ))}
       </div>
     </div>
