@@ -9,7 +9,8 @@
  *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
  * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
- * ambos en ./resultados.
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
+ * peso 0 en el puntaje.
  *
  * PROTECCIÓN DE DATOS: una especie registrada o editada es un registro real, así que todo
  * POST/PATCH a /configuracion/especies se intercepta y por defecto se aborta:
@@ -18,6 +19,10 @@
  *   - SIMULADO con el formato estándar del backend: error al cambiar el grupo de manejo de
  *     una especie con dependencias. Probarlo real exige que el backend acepte o evalúe el
  *     cambio sobre una especie en uso. error_code a confirmar con desarrollo.
+ *
+ * Errores con `fields` (flujo vigente desde la release 1.0.0-rc.40, 5123a22): el mensaje va
+ * debajo del campo con role="alert", el campo queda con aria-invalid y aria-describedby y recibe
+ * el foco; la alerta general solo aparece si el error no corresponde a un campo del formulario.
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_38_VIEWPORTS=escritorio
@@ -50,6 +55,20 @@ const errorDependencias = (e: Especie) => ({
 });
 
 test.use({ launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
+
+/** 3.3.1/4.1.3: error de campo anunciado bajo el input, con aria-invalid, aria-describedby y foco; sin duplicado global. */
+async function verificarErrorDeCampo(d: Locator, campo: Locator, mensaje: string, caso: string) {
+  const bajoElCampo = d.getByRole('alert').filter({ hasText: mensaje });
+  await expect(bajoElCampo.first(), `DEFECTO: 3.3.1/4.1.3: el ${caso} debe anunciarse (role="alert") con el mensaje del backend`).toBeVisible();
+  await expect.soft(campo, `DEFECTO: 3.3.1: con el ${caso} el campo debe marcarse como inválido (aria-invalid)`).toHaveAttribute('aria-invalid', 'true');
+  const describedby = (await campo.getAttribute('aria-describedby')) ?? '';
+  const describe = describedby
+    ? await campo.evaluate((e, ids) => ids.split(' ').map((id) => e.ownerDocument.getElementById(id)?.textContent ?? '').join(' '), describedby)
+    : '';
+  expect.soft(describe, `DEFECTO: 3.3.1: el campo con el ${caso} no referencia su mensaje con aria-describedby`).toContain(mensaje);
+  await expect.soft(campo, `DEFECTO: 3.3.1: el foco debe ir al campo con el ${caso}`).toBeFocused();
+  await expect.soft(bajoElCampo, `DEFECTO: 3.3.1: el ${caso} se anuncia dos veces (debajo del campo y en una alerta general)`).toHaveCount(1);
+}
 
 // ── Protección de escrituras ─────────────────────────────────────────────────
 
@@ -139,6 +158,8 @@ async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 // ── Casos ────────────────────────────────────────────────────────────────────
@@ -168,7 +189,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Catálogo de Especies (RF-
     const grupo = selectGrupo(d);
 
     // 1.3.1 / 4.1.2: label asociado → nombre accesible; rol combobox (select nativo)
-    await expect(grupo, `1.3.1/4.1.2: el grupo de manejo debe exponerse como combobox con nombre "${ETIQUETA_GRUPO}"`).toBeVisible();
+    await expect(grupo, `DEFECTO: 1.3.1/4.1.2: el grupo de manejo debe exponerse como combobox con nombre "${ETIQUETA_GRUPO}"`).toBeVisible();
     const info = await grupo.evaluate((e) => {
       const s = e as HTMLSelectElement;
       const describedby = (s.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
@@ -180,19 +201,19 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Catálogo de Especies (RF-
       };
     });
     testInfo.annotations.push({ type: 'Opciones del grupo de manejo', description: info.opciones.map((o) => `${o.value || '(vacío)'}="${o.texto}"`).join(' · ') });
-    expect(info.tag, '4.1.2: debe ser un <select> nativo (rol combobox implícito)').toBe('SELECT');
-    expect(info.labelFor, '1.3.1: el <label> debe estar asociado con for/id').toBe(true);
+    expect(info.tag, 'DEFECTO: 4.1.2: debe ser un <select> nativo (rol combobox implícito)').toBe('SELECT');
+    expect(info.labelFor, 'DEFECTO: 1.3.1: el <label> debe estar asociado con for/id').toBe(true);
 
     // Value: la opción vacía y los 5 grupos asignables, cada uno con texto legible
-    expect(info.opciones.map((o) => o.value).filter(Boolean), '4.1.2: el select ofrece los grupos de manejo asignables (sin el meta-modelo de contagio)').toEqual(GRUPOS_ASIGNABLES);
-    for (const o of info.opciones) expect(o.texto, `4.1.2: la opción ${o.value || '(vacía)'} debe tener texto`).not.toBe('');
+    expect(info.opciones.map((o) => o.value).filter(Boolean), 'DEFECTO: 4.1.2: el select ofrece los grupos de manejo asignables (sin el meta-modelo de contagio)').toEqual(GRUPOS_ASIGNABLES);
+    for (const o of info.opciones) expect(o.texto, `DEFECTO: 4.1.2: la opción ${o.value || '(vacía)'} debe tener texto`).not.toBe('');
     await expect(grupo, 'Valor inicial: sin grupo').toHaveValue('');
     await grupo.selectOption('MODELO_AVES');
-    await expect(grupo, '4.1.2: el valor elegido se expone en el control').toHaveValue('MODELO_AVES');
-    expect(await grupo.evaluate((s) => (s as HTMLSelectElement).selectedOptions[0]?.text.trim()), '4.1.2: el valor anunciado es el texto de la opción').toBe('Aves');
+    await expect(grupo, 'DEFECTO: 4.1.2: el valor elegido se expone en el control').toHaveValue('MODELO_AVES');
+    expect(await grupo.evaluate((s) => (s as HTMLSelectElement).selectedOptions[0]?.text.trim()), 'DEFECTO: 4.1.2: el valor anunciado es el texto de la opción').toBe('Aves');
 
     // El texto de ayuda debe estar asociado al control (1.3.1)
-    expect.soft(info.descripcion, '1.3.1: el texto de ayuda del grupo de manejo ("El modelo de IA de las áreas…") no está vinculado con aria-describedby').toContain('modelo de IA');
+    expect.soft(info.descripcion, 'DEFECTO: 1.3.1: el texto de ayuda del grupo de manejo ("El modelo de IA de las áreas…") no está vinculado con aria-describedby').toContain('modelo de IA');
 
     await grupo.selectOption('');
     await escanear(page, 'formulario', testInfo);
@@ -214,9 +235,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Catálogo de Especies (RF-
     testInfo.annotations.push({ type: 'Respuesta real', description: `${r.status()} ${JSON.stringify(await r.json().catch(() => null))}` });
     expect(r.status(), 'El backend debe rechazar el nombre duplicado').toBe(409);
 
-    const alerta = d.getByRole('alert').filter({ hasText: /error al guardar/i });
-    await expect(alerta, '3.3.1/4.1.3: el duplicado debe anunciarse en una alerta').toBeVisible();
-    await expect(alerta).toHaveAttribute('aria-live', /assertive|polite/);
+    const cuerpo409 = await r.json();
+    expect(cuerpo409.fields?.[0]?.field, 'El 409 real trae el campo nombre').toBe('nombre');
+    await verificarErrorDeCampo(d, d.getByRole('textbox', { name: 'Nombre', exact: true }), cuerpo409.fields[0].message, 'nombre duplicado (409)');
     await escanear(page, 'duplicado', testInfo);
   });
 
@@ -238,13 +259,10 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Catálogo de Especies (RF-
     await expect.poll(() => intentos.length, { message: 'Guardar debe enviar el PATCH' }).toBe(1);
     expect((intentos[0].cuerpo as { tipo_modelo: string }).tipo_modelo).toBe(nuevoGrupo);
 
-    const alerta = d.getByRole('alert').filter({ hasText: /error al guardar/i });
-    await expect(alerta, '3.3.1/4.1.3: el error de dependencias debe anunciarse en una alerta').toBeVisible();
-    await expect(alerta, 'La alerta debe estar en región viva').toHaveAttribute('aria-live', /assertive|polite/);
-    await expect(alerta, '3.3.1: la alerta explica por qué no se puede cambiar el grupo').toContainText('dependencias');
-    expect.soft(await alerta.innerText(), '3.3.1: con fields, la alerta reemplaza el mensaje principal (qué dependencias impiden el cambio) por el mensaje del campo').toContain('asociados al grupo actual');
+    const mensajeCampo = errorDependencias(especie!).fields[0].message;
+    await verificarErrorDeCampo(d, grupo, mensajeCampo, 'error de dependencias (409)');
+    await expect(d.getByRole('alert').filter({ hasText: mensajeCampo }).first(), 'DEFECTO: 3.3.1: el mensaje explica por qué no se puede cambiar el grupo').toContainText('dependencias');
     await expect(d, 'El diálogo sigue abierto tras el error').toBeVisible();
-    await expect.soft(grupo, '3.3.1: el error trae field tipo_modelo pero el select no se marca como inválido').toHaveAttribute('aria-invalid', 'true');
     await escanear(page, 'error-dependencias', testInfo);
   });
 });
