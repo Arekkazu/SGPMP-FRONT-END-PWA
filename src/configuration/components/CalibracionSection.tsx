@@ -106,7 +106,7 @@ function SensorSelector({ sensores, loading, error, onSelect, onBack }: {
                   <span className="ds-option__icono"><Icono size={20} strokeWidth={1.5} aria-hidden /></span>
                   <div>
                     <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{s.nombre}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{s.categoria ?? 'Sin categoría'}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{s.categoria ?? t('calibracionsection.sin_categoria')}</div>
                   </div>
                 </div>
               </OptionCard>
@@ -204,7 +204,7 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{sensor.nombre}</div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            {sensor.categoria ?? 'Sin categoría'} · Dispositivo: {dispositivo.serial}
+            {sensor.categoria ?? t('calibracionsection.sin_categoria')} · {t('calibracionsection.dispositivo_serial', { serial: dispositivo.serial })}
           </div>
         </div>
         {loadingAsoc ? (

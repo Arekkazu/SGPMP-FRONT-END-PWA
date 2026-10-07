@@ -34,8 +34,7 @@ export function RecuperarPage() {
             <CheckCircle size={28} color="var(--sem-success)" aria-hidden />
           </div>
           <h1 className="auth-title">{t('recuperarpage.correo_enviado')}</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>{t('recuperarpage.si_el_correo')}{' '}<strong>{getValues('correo_electronico')}</strong> está registrado, recibirás
-            un enlace para restablecer tu contraseña. Revisa también la carpeta de spam.
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>{t('recuperarpage.si_el_correo')}{' '}<strong>{getValues('correo_electronico')}</strong>{' '}{t('recuperarpage.esta_registrado_recibiras_enlace')}
           </p>
           <Link to="/login" className="auth-link">{t('recuperarpage.volver_al_inicio_de_sesion')}</Link>
         </div>

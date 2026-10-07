@@ -55,7 +55,7 @@ function DispSelector({ dispositivos, loading, onSelect }: {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '11px', color: 'var(--sem-success)', fontWeight: 600 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)', display: 'inline-block' }} />
-            Activo · #{d.id_dispositivo_iot}
+            {t('sensoressection.activo_id', { id: d.id_dispositivo_iot })}
           </div>
         </OptionCard>
       ))}
@@ -96,7 +96,7 @@ function SensorSelector({ sensores, loading, error, onSelect, onBack }: {
                   <div>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{s.nombre}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
-                      {s.categoria ?? 'Sin categoría'} · #{s.id_sensores}
+                      {s.categoria ?? t('sensoressection.sin_categoria')} · #{s.id_sensores}
                     </div>
                   </div>
                 </div>
@@ -396,7 +396,7 @@ export function SensoresSection() {
     });
     if (res) {
       setSuperadas(res.asociaciones_activo_superadas ?? []);
-      setSuccessMsg(`Sensor "${sensor.nombre}" asociado a "${area.nombre_infraestructura}" correctamente.`);
+      setSuccessMsg(t('sensoressection.asociado_ok', { sensor: sensor.nombre, area: area.nombre_infraestructura }));
       resetWizard();
     }
   };
@@ -412,7 +412,7 @@ export function SensoresSection() {
     setShowReasignarConfirm(false);
     if (res) {
       setSuperadas(res.asociaciones_activo_superadas ?? []);
-      setSuccessMsg(`Sensor "${sensor.nombre}" reasignado a "${area.nombre_infraestructura}" correctamente.`);
+      setSuccessMsg(t('sensoressection.reasignado_ok', { sensor: sensor.nombre, area: area.nombre_infraestructura }));
       resetWizard();
     }
   };

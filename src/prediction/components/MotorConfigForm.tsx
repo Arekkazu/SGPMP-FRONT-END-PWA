@@ -178,7 +178,7 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
           <RangoCampo label={t('motorconfigform.factor_densidad')} valor={wDen} min={0} max={1} step={0.05} disabled={!puedeEditar} onChange={setWDen} />
         </div>
         <p style={{ fontSize: '12px', color: pesosOk ? 'var(--text-muted)' : 'var(--sem-warning)', marginTop: 'var(--s3)' }}>{t('motorconfigform.suma_de_pesos')}{' '}<strong style={{ fontFamily: 'var(--font-mono)' }}>{sumaPesos.toFixed(2)}</strong>
-          {!pesosOk && ' — se recomienda que sumen 1.00'}
+          {!pesosOk && ` ${t('motorconfigform.se_recomienda_que_sumen_1')}`}
         </p>
       </section>
 
