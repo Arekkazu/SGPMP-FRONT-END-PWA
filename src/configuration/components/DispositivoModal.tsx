@@ -95,19 +95,11 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
       role="dialog"
       aria-modal="true"
       aria-labelledby="disp-modal-title"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1010,
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.5)',
-        padding: 'var(--s6) var(--s4)', overflowY: 'auto',
-      }}
+      className="ds-modal"
+      style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
-        background: 'var(--surface-card)', borderRadius: 'var(--r-xl)',
-        border: '1px solid var(--surface-border)', width: '100%', maxWidth: 480,
-        boxShadow: 'var(--shadow-lg)', marginBottom: 'var(--s6)',
-      }}>
+      <div className="ds-modal__panel">
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>

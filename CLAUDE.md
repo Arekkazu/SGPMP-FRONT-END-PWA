@@ -65,7 +65,7 @@ src/
 │   ├── design-system/             # Tokens CSS + componentes base
 │   │   ├── tokens.css             # CSS custom properties del sistema de diseño
 │   │   ├── tokens.contraste.test.ts  # Calcula el contraste WCAG de tokens.css
-│   │   ├── Layout.css             # Rejillas responsive (.ds-fg2 / .ds-fg3)
+│   │   ├── Layout.css             # Rejillas responsive (.ds-fg2 / .ds-fg3) + modal (.ds-modal)
 │   │   ├── Button.tsx
 │   │   ├── Input.tsx
 │   │   ├── Select.tsx
@@ -73,6 +73,8 @@ src/
 │   │   ├── Alert.tsx
 │   │   ├── PasswordStrength.tsx
 │   │   ├── Gauge.tsx
+│   │   ├── Stepper.tsx
+│   │   ├── OptionCard.tsx
 │   │   ├── Sidebar.tsx
 │   │   └── AppBar.tsx
 │   ├── db/                        # Instancia Dexie central
@@ -281,6 +283,8 @@ de esos solo `Gauge` está implementado — los demás siguen siendo especificac
 | `Gauge`            | ok · warning · critical · placeholder                                   |
 | `Sidebar`          | 240px fixed en ≥1024px · drawer off-canvas por debajo                   |
 | `AppBar`           | 64px mínimo; logo, toggle de tema, badge de notificaciones              |
+| `Stepper`          | done · active (`aria-current="step"`) · pending; pasos de un asistente   |
+| `OptionCard`       | card · pill; hover, focus-visible y `selected` (`aria-pressed`) por CSS |
 
 ### Reglas no negociables del sistema de diseño
 
@@ -347,6 +351,8 @@ deja menos de 800px de contenido y las tablas de datos empiezan a desbordar.
 Cambiarlo requiere rehacer esas tablas primero.
 
 Modales: bottom sheet a ancho completo en xs/sm, max 480px en md, max 560px en lg.
+Se obtiene con `className="ds-modal"` en el overlay y `ds-modal__panel` en el
+panel (`Layout.css`); no con `maxWidth` inline, que no puede llevar media query.
 
 **Touch targets:** el DS v2.0 pide 44px de altura mínima en móvil y 40px en
 escritorio. Este repo usa `--s9` (48px) en todos los anchos — más estricto que
