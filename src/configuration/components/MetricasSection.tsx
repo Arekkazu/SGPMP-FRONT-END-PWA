@@ -4,13 +4,14 @@ import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useMetricasProduccion } from '../hooks/useMetricasProduccion';
 import { UNIDADES_POR_TIPO_MEDICION } from '../types';
-import type { MetricaProduccionResponse, TipoMedicion, TipoActivo } from '../types';
+import type { MetricaProduccionResponse, TipoMedicion, TipoActivo, TipoDatoMetrica } from '../types';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface Props {
@@ -28,7 +29,10 @@ interface FormValues {
   unidad_medida: string;
   tipo_medicion: TipoMedicion;
   aplica_a_tipo_activo: TipoActivo;
+  tipo_dato: TipoDatoMetrica | '';
 }
+
+const TIPOS_DATO: TipoDatoMetrica[] = ['NUMERICO', 'ENTERO', 'TEXTO', 'BOOLEANO'];
 
 const TIPO_MEDICION_LABELS: Record<TipoMedicion, string> = {
   PESO: 'Peso',
@@ -126,7 +130,7 @@ function MetricaModal({
         aplica_a_tipo_activo: metrica.aplica_a_tipo_activo,
       });
     } else {
-      reset({ nombre: '', unidad_medida: '', tipo_medicion: 'PESO', aplica_a_tipo_activo: 'AMBOS' });
+      reset({ nombre: '', unidad_medida: '', tipo_medicion: 'PESO', aplica_a_tipo_activo: 'AMBOS', tipo_dato: '' });
     }
   }, [metrica, reset]);
 
@@ -147,6 +151,7 @@ function MetricaModal({
         unidad_medida: data.unidad_medida.trim(),
         tipo_medicion: data.tipo_medicion,
         aplica_a_tipo_activo: data.aplica_a_tipo_activo,
+        tipo_dato: data.tipo_dato as TipoDatoMetrica,
       });
     }
     if (ok) onClose();
@@ -158,10 +163,10 @@ function MetricaModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="metrica-modal-title"
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 480, boxShadow: 'var(--shadow-lg)' }}>
+      <div className="ds-modal__panel" style={{ padding: 'var(--s6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
           <h2 id="metrica-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {modoEditar ? `Editar métrica — ${metrica!.nombre}` : 'Nueva métrica de producción'}
@@ -268,6 +273,30 @@ function MetricaModal({
                 </p>
               )}
             </div>
+
+            {/* RF-16 v1.2 (RFC-004, #487): obligatorio y sin valor por defecto — el usuario lo elige. */}
+            {!modoEditar && (
+              <div>
+                <label htmlFor="tipo-dato" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('metricassection.tipo_de_dato')}<span style={{ color: 'var(--sem-error)' }}>*</span>
+                </label>
+                <select
+                  id="tipo-dato"
+                  style={SELECT_STYLE}
+                  aria-required="true"
+                  {...register('tipo_dato', { required: t('metricassection.selecciona_el_tipo_de_dato') })}
+                >
+                  <option value="">{t('metricassection.seleccionar')}</option>
+                  {TIPOS_DATO.map((val) => (
+                    <option key={val} value={val}>{t(`metricassection.tipo_dato_${val.toLowerCase()}`)}</option>
+                  ))}
+                </select>
+                {errors.tipo_dato && (
+                  <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
+                    {errors.tipo_dato.message}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
@@ -290,10 +319,10 @@ function ConfirmDesactivar({ metrica, saving, onCancel, onConfirm }: { metrica: 
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('metricassection.confirmar_desactivacion')}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>
           ¿Deseas desactivar la métrica "{metrica.nombre}"? Los registros históricos permanecerán accesibles.
@@ -373,7 +402,7 @@ export function MetricasSection({ idEspecie }: Props) {
       ) : metricas.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('metricassection.no_hay_metricas_registradas_para_esta')}</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <ScrollRegion label={t('metricassection.metricas_de_produccion')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
@@ -419,7 +448,7 @@ export function MetricasSection({ idEspecie }: Props) {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       )}
 
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
@@ -38,6 +38,7 @@ import { Sidebar } from './shared/design-system/Sidebar';
 import { AppBar } from './shared/design-system/AppBar';
 import { Alert } from './shared/design-system/Alert';
 import { Button } from './shared/design-system/Button';
+import { LimiteDeError } from './shared/design-system/LimiteDeError';
 import { useT } from './shared/i18n/useT';
 import { NotificationTray } from './notificaciones/components/NotificationTray';
 import { useNotificaciones } from './notificaciones/hooks/useNotificaciones';
@@ -55,15 +56,23 @@ import { SsoCallbackPage } from './auth/pages/SsoCallbackPage';
 import { CompletarPerfilSsoPage } from './auth/pages/CompletarPerfilSsoPage';
 
 /* Private pages */
-import { DashboardPage } from './dashboard/pages/DashboardPage';
-import { UsuariosPage } from './usuarios/pages/UsuariosPage';
-import { PerfilPage } from './perfil/pages/PerfilPage';
-import { RolesPage } from './roles/pages/RolesPage';
-import { AuditoriaPage } from './auditoria/pages/AuditoriaPage';
-import { ConfigurationPage } from './configuration/pages/ConfigurationPage';
-import { ActivosBiologicosPage } from './biological_assets/pages/ActivosBiologicosPage';
-import { TelemetryPage } from './telemetry/pages/TelemetryPage';
-import { PrediccionPage } from './prediction/pages/PrediccionPage';
+// Cada modulo de negocio se descarga al entrar a su ruta, no en el arranque:
+// todo en un solo bundle eran 2.9 MB antes de poder ver el login.
+const DashboardPage = lazy(() => import('./dashboard/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const UsuariosPage = lazy(() => import('./usuarios/pages/UsuariosPage').then((m) => ({ default: m.UsuariosPage })));
+const PerfilPage = lazy(() => import('./perfil/pages/PerfilPage').then((m) => ({ default: m.PerfilPage })));
+const RolesPage = lazy(() => import('./roles/pages/RolesPage').then((m) => ({ default: m.RolesPage })));
+const AuditoriaPage = lazy(() => import('./auditoria/pages/AuditoriaPage').then((m) => ({ default: m.AuditoriaPage })));
+const ConfigurationPage = lazy(() => import('./configuration/pages/ConfigurationPage').then((m) => ({ default: m.ConfigurationPage })));
+const ActivosBiologicosPage = lazy(() => import('./biological_assets/pages/ActivosBiologicosPage').then((m) => ({ default: m.ActivosBiologicosPage })));
+const TelemetryPage = lazy(() => import('./telemetry/pages/TelemetryPage').then((m) => ({ default: m.TelemetryPage })));
+const PrediccionPage = lazy(() => import('./prediction/pages/PrediccionPage').then((m) => ({ default: m.PrediccionPage })));
+
+/** Mientras llega el chunk de la pagina: anuncio para el lector, sin salto visual. */
+function CargandoPagina() {
+  const { t } = useT('common');
+  return <p role="status" className="ds-sr-only">{t('estados.cargando')}</p>;
+}
 
 setupIonicReact();
 
@@ -182,7 +191,8 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
         />
         <main
           id="contenido-principal"
-          tabIndex={-1}
+          // 0 y no -1: el main tiene scroll propio y debe poder desplazarse con teclado (WCAG 2.1.1).
+          tabIndex={0}
           style={{
             flex: 1,
             marginTop: 'var(--topbar-h)',
@@ -255,7 +265,11 @@ function PrivateRoute({ path, component: Component }: { path: string; component:
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
         return (
           <AppShell operativa={RUTAS_CON_BLOQUEO_SIN_FINCA.includes(path)}>
-            <Component />
+            <LimiteDeError>
+              <Suspense fallback={<CargandoPagina />}>
+                <Component />
+              </Suspense>
+            </LimiteDeError>
           </AppShell>
         );
       }}

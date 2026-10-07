@@ -1,13 +1,7 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import type { WidgetDatosResponse } from '../../configuration/types';
-
-const ICONOS: Record<string, string> = {
-  temp_galpon: '🌡️', hum_galpon: '💧', ph_estanque: '⚗️', co2_galpon: '💨',
-  temp_corral: '🌡️', estado_iot: '📡', cal_sensores: '🔧', alertas: '⚠️',
-  alertas_crit: '🔴', hist_temp: '📈', hist_hum: '📊', prod_aves: '🐔',
-  prod_bovinos: '🐄', fincas_estado: '🏡', cfg_pendiente: '⏳',
-};
+import { iconoWidget } from '../../configuration/iconos';
 
 /** Columnas que vale la pena mostrar primero de cada vista de widget. */
 const COLUMNAS_PREFERIDAS = ['serial', 'nombre', 'finca', 'area', 'departamento', 'estado_configuracion'];
@@ -23,7 +17,7 @@ function resumirFila(fila: Record<string, unknown>): string {
  * sensor desconectado no arrastre a los widgets vecinos.
  */
 export function WidgetCard({ widget }: { widget: WidgetDatosResponse }) {
-  const icono = ICONOS[widget.clave] ?? '📦';
+  const Icono = iconoWidget(widget.clave);
 
   return (
     <article
@@ -42,7 +36,7 @@ export function WidgetCard({ widget }: { widget: WidgetDatosResponse }) {
       aria-label={widget.nombre}
     >
       <header style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
-        <span style={{ fontSize: '18px', lineHeight: 1 }} aria-hidden>{icono}</span>
+        <Icono size={20} strokeWidth={1.5} color="var(--brand-600)" aria-hidden />
         <h2 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', margin: 0 }}>
           {widget.nombre}
         </h2>

@@ -42,7 +42,7 @@ export function ResolverVinculacionModal({ vinc, saving, saveError, onConfirm, o
         </>
       }
     >
-      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('resolvervinculacionmodal.asigna_el_activo_biologico_correcto_para_la')}<strong>#{vinc.id_telemetria}</strong>.
+      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('resolvervinculacionmodal.asigna_el_activo_biologico_correcto_para_la')}{' '}<strong>#{vinc.id_telemetria}</strong>.
       </p>
 
       <div style={{ marginBottom: 'var(--s4)' }}>

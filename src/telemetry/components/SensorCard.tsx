@@ -5,6 +5,7 @@ import { Gauge } from '../../shared/design-system/Gauge';
 import { SemaforoPill } from './SemaforoPill';
 import { semaforoToGauge, escalaNominal, horaCaptura } from '../lib/sensorEscala';
 import type { EstadoSensorSchema } from '../types';
+import { OptionCard } from '../../shared/design-system/OptionCard';
 
 interface Props {
   sensor: EstadoSensorSchema;
@@ -29,23 +30,9 @@ export function SensorCard({ sensor, onAbrir }: Props) {
   const status = semaforoToGauge(sensor.estado_semaforo);
 
   return (
-    <button
-      type="button"
+    <OptionCard
       onClick={() => onAbrir(sensor)}
-      style={{
-        textAlign: 'left',
-        background: 'var(--surface-card)',
-        border: '1px solid var(--surface-border)',
-        borderRadius: 'var(--r-lg)',
-        padding: 'var(--s4)',
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--s3)',
-        minWidth: 0,
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-400)')}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--surface-border)')}
+      style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)', minWidth: 0 }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s2)' }}>
         <div style={{ minWidth: 0 }}>
@@ -85,6 +72,6 @@ export function SensorCard({ sensor, onAbrir }: Props) {
         {horaCaptura(sensor.ultimo_timestamp_captura)}
         {sensor.dato_desactualizado && ' · desactualizado'}
       </div>
-    </button>
+    </OptionCard>
   );
 }

@@ -84,6 +84,7 @@ describe('MetricasSection — RF-16 coherencia unidad↔tipo_medición', () => {
 
     await user.type(screen.getByLabelText(/nombre/i), 'Peso promedio');
     await user.selectOptions(screen.getByLabelText(/unidad de medida/i), 'kg');
+    await user.selectOptions(screen.getByLabelText(/tipo de dato/i), 'NUMERICO');
     await user.click(screen.getByRole('button', { name: /registrar métrica/i }));
 
     await waitFor(() => expect(metricas.registrar).toHaveBeenCalledTimes(1));
@@ -93,6 +94,34 @@ describe('MetricasSection — RF-16 coherencia unidad↔tipo_medición', () => {
       unidad_medida: 'kg',
       tipo_medicion: 'PESO',
       aplica_a_tipo_activo: 'AMBOS',
+      tipo_dato: 'NUMERICO',
     });
+  });
+});
+
+describe('MetricasSection — RF-16 v1.2 tipo de dato obligatorio (#487)', () => {
+  it('no preselecciona el tipo de dato ni lo deduce del tipo de medición', async () => {
+    const user = userEvent.setup();
+    render(<MetricasSection idEspecie={3} />);
+    await abrirModal(user);
+
+    const tipoDato = screen.getByLabelText(/tipo de dato/i) as HTMLSelectElement;
+    expect(tipoDato.value).toBe('');
+    expect(Array.from(tipoDato.options).map((o) => o.value).filter(Boolean)).toEqual([
+      'NUMERICO', 'ENTERO', 'TEXTO', 'BOOLEANO',
+    ]);
+  });
+
+  it('sin tipo de dato no envía la métrica y avisa en el campo', async () => {
+    const user = userEvent.setup();
+    render(<MetricasSection idEspecie={3} />);
+    await abrirModal(user);
+
+    await user.type(screen.getByLabelText(/nombre/i), 'Peso promedio');
+    await user.selectOptions(screen.getByLabelText(/unidad de medida/i), 'kg');
+    await user.click(screen.getByRole('button', { name: /registrar métrica/i }));
+
+    expect(await screen.findByText('Selecciona el tipo de dato.')).toBeInTheDocument();
+    expect(metricas.registrar).not.toHaveBeenCalled();
   });
 });

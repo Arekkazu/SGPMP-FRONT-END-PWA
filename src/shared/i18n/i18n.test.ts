@@ -128,4 +128,9 @@ describe('formato por idioma activo', () => {
     expect(formatearFechaHora('')).toBe('—');
     expect(formatearNumero(null)).toBe('—');
   });
+
+  it('formatea los Decimal que el backend envía como texto', () => {
+    expect(formatearNumero('2500.00')).toBe(formatearNumero(2500));
+    expect(formatearNumero('')).toBe('—');
+  });
 });
