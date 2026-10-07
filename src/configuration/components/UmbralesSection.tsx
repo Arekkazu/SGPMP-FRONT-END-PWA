@@ -436,7 +436,7 @@ function ConfirmDesactivar({ umbral, variables, saving, onCancel, onConfirm }: {
     >
       <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('umbralessection.confirmar_desactivacion')}</h2>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{t('umbralessection.deseas_desactivar_el_umbral_de')}<strong>{v.nombre}</strong>{t('umbralessection.ya_no_estara_vigente_para_las_alertas')}</p>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{t('umbralessection.deseas_desactivar_el_umbral_de')}{' '}<strong>{v.nombre}</strong>{t('umbralessection.ya_no_estara_vigente_para_las_alertas')}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
           <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('umbralessection.cancelar')}</Button>
           <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{t('umbralessection.desactivar')}</Button>

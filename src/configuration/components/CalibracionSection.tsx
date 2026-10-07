@@ -415,7 +415,7 @@ export function CalibracionSection() {
 
           {step === 'sensor' && dispositivo && (
             <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('calibracionsection.selecciona_el_sensor_de')}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{t('calibracionsection.a_calibrar')}</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('calibracionsection.selecciona_el_sensor_de')}{' '}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{' '}{t('calibracionsection.a_calibrar')}</p>
               <SensorSelector sensores={sensores} loading={loadingSensores} error={errorSensores} onSelect={handleSelectSensor} onBack={handleBackToDisp} />
             </>
           )}

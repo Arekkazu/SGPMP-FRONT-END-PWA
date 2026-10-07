@@ -272,7 +272,7 @@ export function DispositivosTable() {
       {/* Step 2: Area */}
       {step === 'area' && finca && (
         <>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivostable.paso_2_selecciona_el_area_de')}<strong>{finca.nombre}</strong>:
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivostable.paso_2_selecciona_el_area_de')}{' '}<strong>{finca.nombre}</strong>:
           </p>
           <AreaSelector
             infras={infraestructuras}

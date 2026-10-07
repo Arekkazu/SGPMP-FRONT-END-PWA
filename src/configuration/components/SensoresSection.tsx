@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -58,7 +58,7 @@ function Stepper({ current }: { current: WizardStep }) {
         const pending = i > idx;
         return (
           <React.Fragment key={s.id}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
+            <div aria-current={active ? 'step' : undefined} style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
               <div style={{
                 width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '11px', fontWeight: 700, flexShrink: 0,
@@ -425,6 +425,15 @@ export function SensoresSection() {
 
   useEffect(() => { cargarDisp(); cargarFincas(); }, [cargarDisp, cargarFincas]);
 
+  // WCAG 2.4.3: al cambiar de paso el contenido anterior desaparece y el foco
+  // caeria en <body>; se lleva a la instruccion del paso nuevo.
+  const instruccionRef = useRef<HTMLParagraphElement>(null);
+  const pasoPrevio = useRef(step);
+  useEffect(() => {
+    if (pasoPrevio.current !== step) instruccionRef.current?.focus();
+    pasoPrevio.current = step;
+  }, [step]);
+
   // El wizard ya envió la petición al llegar aquí (ese es el primer intento, sin
   // `confirmar`); un 409 con este codigo especifico pide reasignar, no es un error final.
   useEffect(() => {
@@ -572,41 +581,42 @@ export function SensoresSection() {
         <>
           <Stepper current={step} />
 
+          <p key={step} ref={instruccionRef} tabIndex={-1} style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
+            {step === 'dispositivo' && t('sensoressection.paso_1_elige_el_dispositivo_que_contiene_el')}
+            {step === 'sensor' && dispositivo && (
+              <>{t('sensoressection.paso_2_elige_el_sensor_de')}{' '}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{' '}{t('sensoressection.a_asociar')}</>
+            )}
+            {step === 'area' && sensor && (
+              <>{t('sensoressection.paso_3_elige_el_area_productiva_destino_para')}{' '}<strong>{sensor.nombre}</strong>:</>
+            )}
+            {step === 'confirmar' && t('sensoressection.paso_4_confirma_la_asociacion')}
+          </p>
+
           {step === 'dispositivo' && (
-            <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_1_elige_el_dispositivo_que_contiene_el')}</p>
-              <DispSelector dispositivos={dispositivos} loading={loadingDisp} onSelect={handleSelectDisp} />
-            </>
+            <DispSelector dispositivos={dispositivos} loading={loadingDisp} onSelect={handleSelectDisp} />
           )}
 
           {step === 'sensor' && dispositivo && (
-            <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_2_elige_el_sensor_de')}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{t('sensoressection.a_asociar')}</p>
-              <SensorSelector
-                sensores={sensores}
-                loading={loadingSensores}
-                error={errorSensores}
-                onSelect={handleSelectSensor}
-                onBack={handleBackToDisp}
-              />
-            </>
+            <SensorSelector
+              sensores={sensores}
+              loading={loadingSensores}
+              error={errorSensores}
+              onSelect={handleSelectSensor}
+              onBack={handleBackToDisp}
+            />
           )}
 
           {step === 'area' && dispositivo && sensor && (
-            <>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('sensoressection.paso_3_elige_el_area_productiva_destino_para')}<strong>{sensor.nombre}</strong>:
-              </p>
-              <AreaDestSelector
-                fincas={fincas}
-                infraestructuras={infraestructuras}
-                loadingFincas={loadingFincas}
-                loadingInfras={loadingInfras}
-                fincaSeleccionada={finca}
-                onSelectFinca={handleSelectFinca}
-                onSelectArea={handleSelectArea}
-                onBack={handleBackToSensor}
-              />
-            </>
+            <AreaDestSelector
+              fincas={fincas}
+              infraestructuras={infraestructuras}
+              loadingFincas={loadingFincas}
+              loadingInfras={loadingInfras}
+              fincaSeleccionada={finca}
+              onSelectFinca={handleSelectFinca}
+              onSelectArea={handleSelectArea}
+              onBack={handleBackToSensor}
+            />
           )}
 
           {step === 'confirmar' && dispositivo && sensor && finca && area && (
