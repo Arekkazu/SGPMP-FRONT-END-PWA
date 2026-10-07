@@ -4,22 +4,24 @@
  * Configuración → pestaña "Plantillas"
  *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
- * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>.html/json), ambos
- * en ./resultados.
+ * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
+ * peso 0 en el puntaje.
  *
  * El listado se muestra como tarjetas (no como tabla): el test de 1.3.1 verifica
- * que la estructura nombre / especie / versión se exponga semánticamente.
+ * que la estructura nombre / especie / versión se exponga semánticamente (desde a12843f
+ * es una lista con el nombre como encabezado y acciones con el nombre de la plantilla).
  *
  * Paso 3 (listado vacío) se simula con page.route devolviendo [].
  * 409 de nombre duplicado: las plantillas no se pueden eliminar, así que no se
  * envía un duplicado desde la UI; se inyecta la respuesta 409 real del backend
  * (NOMBRE_PLANTILLA_DUPLICADO, capturada del ambiente TEST sin crear registros).
- * Ningún test crea, versiona ni aplica plantillas en el ambiente.
+ * PROTECCIÓN DE DATOS: todo POST/PATCH a /configuracion/plantillas* se intercepta y se
+ * aborta (o responde el 409 real inyectado); ningún test crea, versiona ni aplica
+ * plantillas en el ambiente.
  *
- * Viewports: corre en movil / tablet / escritorio por defecto — se confirmó
- * que esta pantalla navega directo por URL (no por el toggle del sidebar) y
- * no reproduce el bug de M01. Para acotarlo puntualmente:
- *   TC_DIS_61_VIEWPORTS=escritorio
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_61_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
@@ -39,6 +41,7 @@ const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_61_VIEWPORTS ?? 'movil,tablet,
 const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const RUTA_PLANTILLAS = /\/configuracion\/plantillas$/;
 const URL_PLANTILLAS = (url: URL) => RUTA_PLANTILLAS.test(url.pathname);
+const URL_PLANTILLAS_TODAS = (url: URL) => /\/configuracion\/plantillas(\/.*)?$/.test(url.pathname);
 
 // Respuesta 409 real del backend TEST (POST /configuracion/plantillas con nombre existente, 2026-09-28)
 const ERROR_409_NOMBRE = {
@@ -51,6 +54,15 @@ const ERROR_409_NOMBRE = {
 };
 
 test.use({ launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
+
+/** Ninguna escritura a plantillas llega al backend (no se pueden eliminar). */
+async function protegerPlantillas(page: Page) {
+  await page.route(URL_PLANTILLAS_TODAS, (route) => {
+    const req = route.request();
+    if (!['xhr', 'fetch'].includes(req.resourceType()) || req.method() === 'GET') return route.fallback();
+    return route.abort();
+  });
+}
 
 // ── Navegación ───────────────────────────────────────────────────────────────
 
@@ -78,7 +90,8 @@ function resumenViolaciones(violaciones: { id: string; impact?: string | null; h
   return violaciones.map((v) => `${v.id} (${v.impact}): ${v.help} [${v.nodes.length} nodo(s)]`).join('\n');
 }
 
-async function escanear(page: Page, paso: string, testInfo: TestInfo) {
+async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
+  const paso = `${pasoBase}-${testInfo.project.name}`;
   await page.evaluate(() => document.fonts.ready);
 
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
@@ -94,6 +107,8 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 // ── Casos ────────────────────────────────────────────────────────────────────
@@ -106,10 +121,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Plantillas de Configuraci�
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
+      `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_61_VIEWPORTS.`,
     );
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
+    await protegerPlantillas(page);
     await iniciarSesionAdmin(page);
   });
 
@@ -134,6 +150,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Plantillas de Configuraci�
     // 2.4.4: las acciones de cada tarjeta deben identificar la plantilla fuera de contexto
     for (const accion of ['Aplicar plantilla', 'Nueva versión']) {
       const iguales = await page.getByRole('button', { name: accion, exact: true }).count();
+      await expect.soft(page.getByRole('button', { name: `${accion}: ${PLANTILLA_EXISTENTE}`, exact: true }), `2.4.4: la acción "${accion}" debe nombrar la plantilla`).toHaveCount(1);
       testInfo.annotations.push({ type: `2.4.4 "${accion}"`, description: `${iguales} botones con el mismo nombre accesible` });
       expect.soft(iguales, `2.4.4: ${iguales} botones se anuncian solo como "${accion}", sin indicar a qué plantilla corresponden`).toBeLessThanOrEqual(1);
     }
@@ -168,8 +185,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Plantillas de Configuraci�
     await page.keyboard.press('Tab');
     await expect(nueva, '2.4.3: tras "Recargar" el foco debe pasar a "Nueva plantilla"').toBeFocused();
 
-    const versiones = page.getByRole('button', { name: 'Nueva versión', exact: true });
-    const aplicar = page.getByRole('button', { name: 'Aplicar plantilla', exact: true });
+    const versiones = page.getByRole('button', { name: /^Nueva versión/ });
+    const aplicar = page.getByRole('button', { name: /^Aplicar plantilla/ });
     for (let i = 0; i < 2; i++) {
       await page.keyboard.press('Tab');
       await expect(versiones.nth(i), `2.4.3: la tarjeta ${i + 1} debe ofrecer primero "Nueva versión"`).toBeFocused();
