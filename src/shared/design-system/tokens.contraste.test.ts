@@ -109,6 +109,13 @@ describe('contraste WCAG 2.1 AA (1.4.3) de tokens.css', () => {
       },
     );
 
+    // #116 / #244: el texto sin color propio hereda el del <body> de Ionic.
+    it('el texto heredado (--ion-text-color) cumple 4.5:1 sobre --surface-card', () => {
+      expect(contraste(resolver('ion-text-color', tema), resolver('surface-card', tema))).toBeGreaterThanOrEqual(
+        AA_TEXTO_NORMAL,
+      );
+    });
+
     it('el texto blanco de --brand-cta y --sem-error-solid cumple 4.5:1', () => {
       for (const relleno of ['brand-cta', 'brand-cta-hover', 'sem-error-solid']) {
         expect(contraste('#ffffff', resolver(relleno, tema))).toBeGreaterThanOrEqual(
