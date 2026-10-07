@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { Check } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { OptionCard } from '../../shared/design-system/OptionCard';
+import { FuenteBadge, type Fuente } from './FuenteBadge';
 import { useIdioma } from '../hooks/useIdioma';
 import { useT } from '../../shared/i18n/useT';
 
@@ -32,83 +34,34 @@ const IDIOMAS = [
   },
 ] as const;
 
-// El backend responde 'defecto', no 'default': con la clave equivocada este
-// badge renderizaba `undefined`.
-function FuenteBadge({ fuente }: { fuente: 'personal' | 'global' | 'defecto' }) {
-  const { t } = useT('configuration');
-  const colors: Record<string, string> = {
-    personal: 'var(--brand-500)',
-    global: '#7c3aed',
-    defecto: 'var(--text-muted)',
-  };
-  const labels: Record<string, string> = {
-    personal: t('idioma.fuente.personal'),
-    global: t('idioma.fuente.global'),
-    defecto: t('idioma.fuente.defecto'),
-  };
-  return (
-    <span style={{
-      fontSize: '11px',
-      fontWeight: 600,
-      color: colors[fuente],
-      border: `1px solid ${colors[fuente]}`,
-      borderRadius: 'var(--r-full)',
-      padding: '1px var(--s2)',
-    }}>
-      {labels[fuente]}
-    </span>
-  );
-}
-
-function IdiomaCard({ code, label, region, flag, sample, selected, onClick }: {
-  code: string; label: string; region: string; flag: string; sample: string;
+function IdiomaCard({ label, region, flag, sample, selected, onClick }: {
+  label: string; region: string; flag: string; sample: string;
   selected: boolean; onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <OptionCard
+      selected={selected}
       onClick={onClick}
-      aria-pressed={selected}
-      style={{
-        padding: 'var(--s4)',
-        background: 'var(--surface-card)',
-        border: `2px solid ${selected ? 'var(--brand-500)' : 'var(--surface-border)'}`,
-        borderRadius: 'var(--r-lg)',
-        cursor: 'pointer',
-        textAlign: 'left',
-        position: 'relative',
-        transition: 'border-color 0.15s',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 'var(--s4)',
-      }}
+      style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 'var(--s4)' }}
     >
-      <span style={{ fontSize: '36px', lineHeight: 1, flexShrink: 0 }} role="img" aria-label={label}>
-        {flag}
-      </span>
-      <div style={{ flex: 1 }}>
+      {/* La bandera acompaña al nombre del idioma: decorativa para el lector. */}
+      <span aria-hidden="true" style={{ fontSize: '36px', lineHeight: 1, flexShrink: 0 }}>{flag}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--s2)' }}>{region}</div>
         <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>"{sample}"</div>
       </div>
 
       {selected && (
-        <div style={{
-          position: 'absolute',
-          top: 8,
-          right: 8,
-          width: 20,
-          height: 20,
-          borderRadius: 'var(--r-full)',
-          background: 'var(--brand-500)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+        <span aria-hidden="true" style={{
+          position: 'absolute', top: 8, right: 8, width: 20, height: 20,
+          borderRadius: 'var(--r-full)', background: 'var(--brand-cta)', color: 'var(--text-inverse)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Check size={12} color="#fff" />
-        </div>
+          <Check size={12} strokeWidth={2.5} />
+        </span>
       )}
-    </button>
+    </OptionCard>
   );
 }
 
@@ -125,13 +78,14 @@ function IdiomaPanel({
   title: string;
   subtitle: string;
   currentCode: string;
-  fuente: 'personal' | 'global' | 'defecto';
+  fuente: Fuente;
   canSave: boolean;
   saving: boolean;
   saveError: ReturnType<typeof useIdioma>['saveError'];
   onSave: (code: string) => Promise<boolean>;
 }) {
   const { t } = useT('configuration');
+  const id = useId();
   const [selected, setSelected] = useState(currentCode);
   const [saved, setSaved] = useState(false);
 
@@ -145,17 +99,18 @@ function IdiomaPanel({
     setSaved(ok);
   };
 
+  // TC-DIS-81: seccion con encabezado y grupo de opciones nombrado (igual que Tema).
   return (
-    <div style={{
+    <section aria-labelledby={`${id}-titulo`} style={{
       background: 'var(--surface-card)',
       border: '1px solid var(--surface-border)',
       borderRadius: 'var(--r-xl)',
       padding: 'var(--s6)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--s4)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--s2)', marginBottom: 'var(--s4)' }}>
         <div>
-          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{title}</h3>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>{subtitle}</p>
+          <h3 id={`${id}-titulo`} style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{title}</h3>
+          <p id={`${id}-subtitulo`} style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>{subtitle}</p>
         </div>
         <FuenteBadge fuente={fuente} />
       </div>
@@ -167,7 +122,13 @@ function IdiomaPanel({
         <Alert variant="success" title={t('idioma.guardado_titulo')} description={t('idioma.guardado_detalle')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
-      <div className="ds-fg2" style={{ gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
+      <div
+        role="group"
+        aria-labelledby={`${id}-titulo`}
+        aria-describedby={`${id}-subtitulo`}
+        className="ds-fg2"
+        style={{ gap: 'var(--s3)', marginBottom: 'var(--s5)' }}
+      >
         {IDIOMAS.map((idioma) => (
           <IdiomaCard
             key={idioma.code}
@@ -189,7 +150,7 @@ function IdiomaPanel({
           {t('idioma.guardar')}
         </Button>
       </div>
-    </div>
+    </section>
   );
 }
 

@@ -1,5 +1,6 @@
 import {
-  Building2, Cloud, Droplets, Fence, Fish, FlaskConical, Radio, Sprout, Sun, Thermometer, Trees, Warehouse, Waves, Wind,
+  Beef, Bird, Building2, ChartColumn, ChartLine, Cloud, Cpu, Droplets, Fence, Fish, FlaskConical, Hourglass, House,
+  OctagonAlert, Package, Radio, Sprout, Sun, Thermometer, Trees, TriangleAlert, Warehouse, Waves, Wind, Wrench,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -29,4 +30,28 @@ export function iconoCategoriaSensor(categoria: string | null | undefined): Luci
 
 export function iconoTipoArea(tipo: string): LucideIcon {
   return POR_TIPO_AREA[tipo] ?? Building2;
+}
+
+// Iconos de los widgets del dashboard (RF-28). El catalogo lo define el backend;
+// el icono es presentacion pura y una clave nueva cae al generico.
+const POR_WIDGET: Record<string, LucideIcon> = {
+  temp_galpon: Thermometer,
+  hum_galpon: Droplets,
+  ph_estanque: FlaskConical,
+  co2_galpon: Wind,
+  temp_corral: Thermometer,
+  estado_iot: Cpu,
+  cal_sensores: Wrench,
+  alertas: TriangleAlert,
+  alertas_crit: OctagonAlert,
+  hist_temp: ChartLine,
+  hist_hum: ChartColumn,
+  prod_aves: Bird,
+  prod_bovinos: Beef,
+  fincas_estado: House,
+  cfg_pendiente: Hourglass,
+};
+
+export function iconoWidget(clave: string): LucideIcon {
+  return POR_WIDGET[clave] ?? Package;
 }
