@@ -7,6 +7,8 @@
  *   2. Formulario "Transferencia interna": motivo de >200 caracteres.
  *   3. Tabla: pestaña "Historial" del activo (columna Descripción, donde se muestra el motivo).
  *   4. Detalle: listado "Auditoría y trazabilidad" (columna Descripción de cada evento).
+ *   Los formularios pasan por el resumen de confirmación ("Confirma la baja" / "Confirma la
+ *   transferencia", flujo vigente desde 2026-10-07), que también muestra el motivo: se mide igual.
  *   En cada vista: sin overflow horizontal de la página, el contenedor de la tabla no crece por
  *   el texto largo (se compara antes/después) y el texto se ajusta (word-wrap) o se trunca con "…".
  *   Se guardan capturas antes/después en ./resultados (para adjuntar en Taiga) y en el reporte.
@@ -149,6 +151,20 @@ async function medir(page: Page, contenedor: Locator): Promise<Medicion> {
   return { paginaDesborda: pagina, contenedorDesborda: c.desborda, anchoContenedor: Math.round(c.ancho) };
 }
 
+/** DEFECTO si el motivo mostrado en el resumen de confirmación se sale de la tarjeta del modal. */
+async function verificarResumen(page: Page, dlg: Locator, tarjeta: Locator, motivo: string, antes: Medicion, testInfo: TestInfo, nombre: string) {
+  const dd = dlg.locator('dd').filter({ hasText: motivo.slice(0, 40) });
+  await expect(dd, 'El resumen de confirmación debe mostrar el motivo completo').toHaveText(motivo);
+  const resumen = await medir(page, tarjeta);
+  const texto = await presentacionTexto(dd);
+  await capturaEvidencia(page, tarjeta, `${nombre}-confirmacion`, testInfo);
+  anotar(testInfo, 'Resumen de confirmación', { resumen, motivo: texto });
+  expect.soft(resumen.contenedorDesborda, 'DEFECTO: el resumen de confirmación desborda horizontalmente con el motivo largo').toBeLessThanOrEqual(1);
+  expect.soft(resumen.anchoContenedor, 'DEFECTO: el modal se ensancha en el resumen de confirmación').toBe(antes.anchoContenedor);
+  expect.soft(texto.desbordaCelda, `DEFECTO: en el resumen, el token largo sin espacios (${TOKEN_LARGO.length} caracteres) se sale de su línea`).toBeLessThanOrEqual(1);
+  expect.soft(resumen.paginaDesborda, 'DEFECTO: la página no debe tener overflow horizontal').toBeLessThanOrEqual(1);
+}
+
 /** Cómo se presenta el texto largo: ajuste de línea o truncamiento con "…". */
 async function presentacionTexto(celda: Locator) {
   return celda.evaluate((e) => {
@@ -220,13 +236,19 @@ test.describe('TC-DIS-145 - Textos largos en motivo de baja y de transferencia (
     await capturaEvidencia(page, tarjeta, 'baja-formulario-despues', testInfo);
     anotar(testInfo, 'Formulario baja antes/después', { antes, despues, caracteres: (await motivo.inputValue()).length });
 
-    expect.soft(await motivo.inputValue(), 'El campo no debe recortar el texto (sin maxlength silencioso)').toBe(MOTIVO_BAJA);
-    expect.soft(despues.contenedorDesborda, 'El modal no debe desbordar horizontalmente con el motivo largo').toBeLessThanOrEqual(1);
-    expect.soft(despues.anchoContenedor, 'El modal no debe ensancharse con el motivo largo').toBe(antes.anchoContenedor);
-    expect.soft(despues.paginaDesborda, 'La página no debe tener overflow horizontal').toBeLessThanOrEqual(1);
+    expect.soft(await motivo.inputValue(), 'DEFECTO: El campo no debe recortar el texto (sin maxlength silencioso)').toBe(MOTIVO_BAJA);
+    expect.soft(despues.contenedorDesborda, 'DEFECTO: El modal no debe desbordar horizontalmente con el motivo largo').toBeLessThanOrEqual(1);
+    expect.soft(despues.anchoContenedor, 'DEFECTO: El modal no debe ensancharse con el motivo largo').toBe(antes.anchoContenedor);
+    expect.soft(despues.paginaDesborda, 'DEFECTO: La página no debe tener overflow horizontal').toBeLessThanOrEqual(1);
 
-    // Guardar (simulado): el motivo completo viaja en el cuerpo
+    // Resumen de confirmación con el motivo largo
     await dlg.getByRole('button', { name: 'Registrar baja', exact: true }).click();
+    await expect(dlg.getByRole('heading', { name: 'Confirma la baja' })).toBeVisible();
+    expect(enviados.length, 'Mostrar el resumen no debe enviar la baja').toBe(0);
+    await verificarResumen(page, dlg, tarjeta, MOTIVO_BAJA, antes, testInfo, 'baja');
+
+    // Confirmar (simulado): el motivo completo viaja en el cuerpo
+    await dlg.getByRole('button', { name: 'Confirmar baja', exact: true }).click();
     await expect.poll(() => enviados.length).toBe(1);
     expect(enviados[0].cuerpo.motivo_baja, 'Se envía el motivo completo').toBe(MOTIVO_BAJA);
   });
@@ -251,12 +273,19 @@ test.describe('TC-DIS-145 - Textos largos en motivo de baja y de transferencia (
     await capturaEvidencia(page, tarjeta, 'transferencia-formulario-despues', testInfo);
     anotar(testInfo, 'Formulario transferencia antes/después', { antes, despues, caracteres: (await motivo.inputValue()).length });
 
-    expect.soft(await motivo.inputValue(), 'El campo no debe recortar el texto (sin maxlength silencioso)').toBe(MOTIVO_TRANSFERENCIA);
-    expect.soft(despues.contenedorDesborda, 'El modal no debe desbordar horizontalmente con el motivo largo').toBeLessThanOrEqual(1);
-    expect.soft(despues.anchoContenedor, 'El modal no debe ensancharse con el motivo largo').toBe(antes.anchoContenedor);
-    expect.soft(despues.paginaDesborda, 'La página no debe tener overflow horizontal').toBeLessThanOrEqual(1);
+    expect.soft(await motivo.inputValue(), 'DEFECTO: El campo no debe recortar el texto (sin maxlength silencioso)').toBe(MOTIVO_TRANSFERENCIA);
+    expect.soft(despues.contenedorDesborda, 'DEFECTO: El modal no debe desbordar horizontalmente con el motivo largo').toBeLessThanOrEqual(1);
+    expect.soft(despues.anchoContenedor, 'DEFECTO: El modal no debe ensancharse con el motivo largo').toBe(antes.anchoContenedor);
+    expect.soft(despues.paginaDesborda, 'DEFECTO: La página no debe tener overflow horizontal').toBeLessThanOrEqual(1);
 
+    // Resumen de confirmación con el motivo largo
     await dlg.getByRole('button', { name: 'Transferir', exact: true }).click();
+    await expect(dlg.getByRole('heading', { name: 'Confirma la transferencia' })).toBeVisible();
+    expect(enviados.length, 'Mostrar el resumen no debe enviar la transferencia').toBe(0);
+    await verificarResumen(page, dlg, tarjeta, MOTIVO_TRANSFERENCIA, antes, testInfo, 'transferencia');
+
+    // Confirmar (simulado): el motivo completo viaja en el cuerpo
+    await dlg.getByRole('button', { name: 'Confirmar transferencia', exact: true }).click();
     await expect.poll(() => enviados.length).toBe(1);
     expect(enviados[0].cuerpo.motivo_transferencia, 'Se envía el motivo completo').toBe(MOTIVO_TRANSFERENCIA);
     expect(enviados[0].cuerpo.infraestructura_origen_id).toBe(ID_ORIGEN);
@@ -290,10 +319,10 @@ test.describe('TC-DIS-145 - Textos largos en motivo de baja y de transferencia (
     const texto = await presentacionTexto(celdaBaja);
     anotar(testInfo, 'Historial antes/después', { antes, despues, celda: texto });
 
-    expect.soft(despues.paginaDesborda, 'La página no debe tener overflow horizontal').toBeLessThanOrEqual(1);
-    expect.soft(despues.contenedorDesborda - antes.contenedorDesborda, 'La tabla no debe desbordar más por el motivo largo (sin overflow horizontal descontrolado)').toBeLessThanOrEqual(1);
-    expect.soft(texto.envuelve || texto.trunca, 'El motivo debe ajustarse en varias líneas o truncarse con "…"').toBe(true);
-    expect.soft(texto.desbordaCelda, `El token largo sin espacios (${TOKEN_LARGO.length} caracteres) no debe salirse de la celda`).toBeLessThanOrEqual(1);
+    expect.soft(despues.paginaDesborda, 'DEFECTO: La página no debe tener overflow horizontal').toBeLessThanOrEqual(1);
+    expect.soft(despues.contenedorDesborda - antes.contenedorDesborda, 'DEFECTO: La tabla no debe desbordar más por el motivo largo (sin overflow horizontal descontrolado)').toBeLessThanOrEqual(1);
+    expect.soft(texto.envuelve || texto.trunca, 'DEFECTO: El motivo debe ajustarse en varias líneas o truncarse con "…"').toBe(true);
+    expect.soft(texto.desbordaCelda, `DEFECTO: El token largo sin espacios (${TOKEN_LARGO.length} caracteres) no debe salirse de la celda`).toBeLessThanOrEqual(1);
   });
 
   test('4. Detalle en la bitácora de auditoría con los motivos largos', async ({ page }, testInfo) => {
@@ -328,9 +357,9 @@ test.describe('TC-DIS-145 - Textos largos en motivo de baja y de transferencia (
     const texto = await presentacionTexto(celdaTransferencia);
     anotar(testInfo, 'Bitácora antes/después', { antes, despues, celda: texto });
 
-    expect.soft(despues.paginaDesborda, 'La página no debe tener overflow horizontal').toBeLessThanOrEqual(1);
-    expect.soft(despues.contenedorDesborda - antes.contenedorDesborda, 'La tabla no debe desbordar más por el motivo largo (sin overflow horizontal descontrolado)').toBeLessThanOrEqual(1);
-    expect.soft(texto.envuelve || texto.trunca, 'El motivo debe ajustarse en varias líneas o truncarse con "…"').toBe(true);
-    expect.soft(texto.desbordaCelda, `El token largo sin espacios (${TOKEN_LARGO.length} caracteres) no debe salirse de la celda`).toBeLessThanOrEqual(1);
+    expect.soft(despues.paginaDesborda, 'DEFECTO: La página no debe tener overflow horizontal').toBeLessThanOrEqual(1);
+    expect.soft(despues.contenedorDesborda - antes.contenedorDesborda, 'DEFECTO: La tabla no debe desbordar más por el motivo largo (sin overflow horizontal descontrolado)').toBeLessThanOrEqual(1);
+    expect.soft(texto.envuelve || texto.trunca, 'DEFECTO: El motivo debe ajustarse en varias líneas o truncarse con "…"').toBe(true);
+    expect.soft(texto.desbordaCelda, `DEFECTO: El token largo sin espacios (${TOKEN_LARGO.length} caracteres) no debe salirse de la celda`).toBeLessThanOrEqual(1);
   });
 });
