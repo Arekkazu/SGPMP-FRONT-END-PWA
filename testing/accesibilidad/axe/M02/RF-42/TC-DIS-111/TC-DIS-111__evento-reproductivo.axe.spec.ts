@@ -16,6 +16,11 @@
  * Datos (TEST, 30/09/2026): INDIVIDUAL #627 (ACTIVO; su ficha ya tiene eventos reproductivos reales
  * del 26/09, así que su fase los admite) y LOTE #353 (ACTIVO). Si alguno cambia, el spec corta con
  * "BLOQUEO DE AMBIENTE". La compatibilidad de fase la valida el backend; aquí se simula su 422.
+ * Re-test 07/10/2026 (cuenta Administrador de otra finca, tema oscuro guardado): INDIVIDUAL #745
+ * "QAG53R2-63077805" (Cachama Blanca, ACTIVO, fase "Ciclo completo cachama 2025-A"), equivalente al #627, y
+ * LOTE #749 sin fase activa (en TEST no hay LOTE activo con fase en esta finca); no afecta lo verificado porque
+ * la apertura del modal y las categorías dependen solo del tipo y el estado, y la fase la valida el backend
+ * (simulada con 422).
  *
  * Escrituras: TODAS SIMULADAS. El POST /activos-biologicos/<id>/eventos/reproductivo se responde con
  * route.fulfill (201, 404, 409, 422, 400) y nunca llega al backend; cualquier otro POST/PUT/PATCH/DELETE
@@ -39,8 +44,8 @@ const TC_ID = 'TC-DIS-111';
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
-const ID_INDIVIDUAL = 627;
-const ID_LOTE = 353;
+const ID_INDIVIDUAL = 745;
+const ID_LOTE = 749;
 const DIALOGO = 'Registrar evento reproductivo';
 
 const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
