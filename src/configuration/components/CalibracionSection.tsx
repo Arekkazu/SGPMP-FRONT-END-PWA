@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { ShieldCheck, ChevronLeft, Check, RefreshCw, Cpu } from 'lucide-react';
@@ -139,14 +139,14 @@ function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibracio
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ background: 'var(--surface-hover)' }}>
-                {['Fecha/Hora', 'Valor ref.', 'Observaciones', 'Usuario'].map((h) => <th key={h} style={TH}>{h}</th>)}
+                {[t('calibracionsection.fecha_hora'), t('calibracionsection.valor_ref'), t('calibracionsection.observaciones_col'), t('calibracionsection.usuario')].map((h) => <th key={h} style={TH}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {calibraciones.map((c) => (
                 <tr key={c.id_calibracion} style={{ background: 'var(--surface-card)' }}>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatTs(c.fecha_calibracion)}</td>
-                  <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{c.valor_referencia.toFixed(4)}</td>
+                  <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{formatearNumero(c.valor_referencia, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</td>
                   <td style={{ ...TD, color: 'var(--text-secondary)', maxWidth: 240 }}>{c.observaciones ?? '—'}</td>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>#{c.id_usuario}</td>
                 </tr>
