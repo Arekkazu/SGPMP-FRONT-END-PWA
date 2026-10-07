@@ -20,12 +20,14 @@
  * crecimiento y error 409). Lighthouse: alcance limitado.
  *
  * Datos (TEST, 30/09/2026): INDIVIDUAL #627, ACTIVO, especie #4 con métricas de crecimiento.
+ * Re-test 07/10/2026: INDIVIDUAL #745 "QAG53R2-63077805" (Cachama Blanca, ACTIVO, fase "Ciclo completo
+ * cachama 2025-A"), equivalente al #627, con la cuenta Administrador de otra finca (tema oscuro guardado).
  *
- * Escrituras: TODAS SIMULADAS. El POST /activos-biologicos/627/eventos/crecimiento se responde con
+ * Escrituras: TODAS SIMULADAS. El POST /activos-biologicos/<id>/eventos/crecimiento se responde con
  * route.fulfill (201, 404, 409, 400) y nunca llega al backend; cualquier otro POST/PUT/PATCH/DELETE
  * se aborta (salvo /sesiones/).
  *
- * Navegación: page.goto directo a /activos-biologicos/627, verificando después de cada goto que la
+ * Navegación: page.goto directo a /activos-biologicos/<id>, verificando después de cada goto que la
  * sesión sigue viva ("BLOQUEO DE AMBIENTE: sesión perdida tras goto").
  *
  * Un login por viewport (página compartida en beforeAll). No se usa modo serial: un hallazgo no debe
@@ -43,7 +45,7 @@ const TC_ID = 'TC-DIS-102';
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
-const ID_INDIVIDUAL = 627;
+const ID_INDIVIDUAL = 745;
 
 const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const HAR_ASSETS = path.join(__dirname, '../../../../../.har-cache/assets.har');
