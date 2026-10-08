@@ -4,6 +4,8 @@
  * Configuración → IoT → "Asociación de Sensores a Áreas":
  *   Paso 1 dispositivo → Paso 2 sensor → Paso 3 área destino → Paso 4 punto de instalación
  *
+ * Reejecución sobre la release 1.0.0-rc.40.
+ *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
  * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
  * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
@@ -135,7 +137,8 @@ function seccion(page: Page): Locator {
   return page
     .locator('div')
     .filter({ has: page.getByRole('heading', { name: 'Asociación de Sensores a Áreas' }) })
-    .filter({ has: page.getByText('Área destino', { exact: true }) })
+    // Desde rc.40 el Stepper del DS antepone el número a cada paso ("3 Área destino")
+    .filter({ has: page.getByRole('list', { name: 'Pasos de la asociación' }) })
     .last();
 }
 
@@ -161,7 +164,7 @@ async function registrarFoco(page: Page, testInfo: TestInfo, paso: string) {
     return `${el.tagName.toLowerCase()}${el.getAttribute('aria-label') ? `[aria-label="${el.getAttribute('aria-label')}"]` : ''} "${(el.textContent ?? '').trim().slice(0, 40)}"`;
   });
   testInfo.annotations.push({ type: `Foco tras ${paso}`, description: foco });
-  expect.soft(foco, `2.4.3: tras ${paso} el foco se pierde en <body> (el contenido del paso se reemplaza sin mover el foco)`).not.toBe('body');
+  expect.soft(foco, `DEFECTO: 2.4.3: tras ${paso} el foco se pierde en <body> (el contenido del paso se reemplaza sin mover el foco)`).not.toBe('body');
 }
 
 function esAsociar(r: Request, confirmar?: boolean) {
@@ -174,7 +177,8 @@ function esAsociar(r: Request, confirmar?: boolean) {
 async function avanzarHastaPaso4(page: Page, testInfo: TestInfo, sec: Locator, escanearPasos = false) {
   if (escanearPasos) await escanear(page, 'paso-1-dispositivo', testInfo);
 
-  const sensores = page.waitForResponse((r) => /\/dispositivos-iot\/\d+\/sensores$/.test(new URL(r.url()).pathname));
+  // Los sensores pueden servirse desde la caché del hook: la petición no es obligatoria
+  const sensores = page.waitForResponse((r) => /\/dispositivos-iot\/\d+\/sensores$/.test(new URL(r.url()).pathname), { timeout: 15_000 }).catch(() => null);
   await tarjeta(sec, DISPOSITIVO).focus();
   await page.keyboard.press('Enter');
   await sensores;
@@ -187,7 +191,7 @@ async function avanzarHastaPaso4(page: Page, testInfo: TestInfo, sec: Locator, e
   await expect(sec.getByText(/Paso 3 — Elige el área productiva destino/)).toBeVisible();
   await registrarFoco(page, testInfo, 'elegir el sensor (Paso 2 → 3)');
 
-  const areas = page.waitForResponse((r) => /\/configuracion\/infraestructuras$/.test(new URL(r.url()).pathname));
+  const areas = page.waitForResponse((r) => /\/configuracion\/infraestructuras$/.test(new URL(r.url()).pathname), { timeout: 15_000 }).catch(() => null);
   await tarjeta(sec, FINCA).focus();
   await page.keyboard.press('Enter');
   await areas;
@@ -283,13 +287,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de Sensores (R
     // Nota del caso: el diálogo debe recibir el foco automáticamente al aparecer
     const focoEnDialogo = await dialogo.evaluate((d) => d.contains(document.activeElement));
     testInfo.annotations.push({ type: 'Foco al abrir el diálogo', description: focoEnDialogo ? 'dentro del diálogo' : 'fuera del diálogo' });
-    expect.soft(focoEnDialogo, '2.4.3: el diálogo de reasignación no recibe el foco al aparecer').toBe(true);
+    expect.soft(focoEnDialogo, 'DEFECTO: 2.4.3: el diálogo de reasignación no recibe el foco al aparecer').toBe(true);
 
     await escanear(page, 'dialogo-reasignacion', testInfo);
 
     // Paso 4: Esc cierra el diálogo sin ejecutar cambios
     await page.keyboard.press('Escape');
-    await expect.soft(dialogo, '2.1.1: la tecla Esc no cierra el diálogo de reasignación').toBeHidden({ timeout: 2_000 });
+    await expect.soft(dialogo, 'DEFECTO: 2.1.1: la tecla Esc no cierra el diálogo de reasignación').toBeHidden({ timeout: 2_000 });
     expect(confirmaciones, 'Esc no debe enviar la confirmación de reasignación').toHaveLength(0);
   });
 
@@ -314,9 +318,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de Sensores (R
       await page.keyboard.press('Tab');
     }
     testInfo.annotations.push({ type: 'Foco en el diálogo hasta "Reasignar"', description: recorrido.join(' → ') || '(ya estaba en "Reasignar")' });
-    await expect(reasignar, '2.1.1: "Reasignar" debe alcanzarse con Tab dentro del diálogo').toBeFocused();
+    await expect(reasignar, 'DEFECTO: 2.1.1: "Reasignar" debe alcanzarse con Tab dentro del diálogo').toBeFocused();
     await page.keyboard.press('Enter');
-    await expect.poll(() => confirmaciones.length, { message: '2.1.1: Enter sobre "Reasignar" debe confirmar la reasignación' }).toBe(1);
+    await expect.poll(() => confirmaciones.length, { message: 'DEFECTO: 2.1.1: Enter sobre "Reasignar" debe confirmar la reasignación' }).toBe(1);
     expect(confirmaciones[0]).toMatchObject({ confirmar: true, id_dispositivo_iot: 1, id_infraestructura: ID_AREA_DESTINO });
     await expect(page.getByText('El sensor dejó de monitorear activos biológicos'), 'Sin asociaciones superadas no hay aviso').toHaveCount(0);
 
@@ -337,7 +341,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de Sensores (R
     await confirmar.click();
 
     const alerta = sec.getByRole('alert').filter({ hasText: 'Ubicación inválida' });
-    await expect(alerta, '3.3.1: el 404 de área inválida debe anunciarse').toBeVisible();
+    await expect(alerta, 'DEFECTO: 3.3.1: el 404 de área inválida debe anunciarse').toBeVisible();
 
     await escanear(page, 'error-404-area', testInfo);
   });
@@ -358,27 +362,27 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de Sensores (R
 
     // 4.1.3: el aviso se anuncia (role="alert" con aria-live) y no desaparece solo
     const aviso = page.getByRole('alert').filter({ hasText: 'El sensor dejó de monitorear activos biológicos' });
-    await expect(aviso, '4.1.3: el aviso de asociaciones cerradas debe anunciarse').toBeVisible();
+    await expect(aviso, 'DEFECTO: 4.1.3: el aviso de asociaciones cerradas debe anunciarse').toBeVisible();
     await expect(aviso).toHaveAttribute('aria-live', /assertive|polite/);
     await expect(aviso, 'El aviso indica cuántas asociaciones se cerraron').toContainText('se cerraron 2 asociaciones');
     await page.waitForTimeout(7_000);
-    await expect(aviso, '2.2.1: el aviso con acciones pendientes no debe cerrarse solo').toBeVisible();
+    await expect(aviso, 'DEFECTO: 2.2.1: el aviso con acciones pendientes no debe cerrarse solo').toBeVisible();
 
     // 1.3.1 / 2.4.4: lista de enlaces con propósito claro hacia la ficha de cada activo
     const lista = page.getByRole('list').filter({ has: page.getByRole('link', { name: /Activo #279/ }) });
-    await expect(lista.getByRole('listitem'), '1.3.1: las asociaciones cerradas se presentan como lista').toHaveCount(2);
+    await expect(lista.getByRole('listitem'), 'DEFECTO: 1.3.1: las asociaciones cerradas se presentan como lista').toHaveCount(2);
     for (const s of SUPERADAS) {
       const enlace = lista.getByRole('link', { name: new RegExp(`Activo #${s.id_activo_biologico} \\(${s.tipo}\\)`) });
-      await expect(enlace, `2.4.4: el enlace al activo #${s.id_activo_biologico} nombra el activo y el tipo de asociación`).toBeVisible();
+      await expect(enlace, `DEFECTO: 2.4.4: el enlace al activo #${s.id_activo_biologico} nombra el activo y el tipo de asociación`).toBeVisible();
       await expect(enlace).toHaveAttribute('href', `/activos-biologicos/${s.id_activo_biologico}`);
     }
 
     // 2.1.1: los enlaces se alcanzan con Tab
     const primero = lista.getByRole('link').first();
     await primero.focus();
-    await expect(primero, '2.1.1: el enlace recibe el foco del teclado').toBeFocused();
+    await expect(primero, 'DEFECTO: 2.1.1: el enlace recibe el foco del teclado').toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(lista.getByRole('link').nth(1), '2.1.1: Tab pasa al siguiente enlace').toBeFocused();
+    await expect(lista.getByRole('link').nth(1), 'DEFECTO: 2.1.1: Tab pasa al siguiente enlace').toBeFocused();
 
     await escanear(page, 'aviso-asociaciones-superadas', testInfo);
   });
