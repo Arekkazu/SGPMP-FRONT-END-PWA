@@ -1,3 +1,34 @@
+## [1.0.0-rc.43](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.42...v1.0.0-rc.43) (2026-10-08)
+
+### Features
+
+* **rf14-mod1:** boton para marcar todas las notificaciones como leidas ([02407c8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/02407c810ee050b45780aaab1ae3e8bfb89d6dc2))
+* **ui:** buscador en las listas largas de fincas y dispositivos ([716acbd](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/716acbd5faadb1f2c294d906eb7001a0fa059d10))
+* **ui:** confirmar con un aviso las creaciones, ediciones y cambios de estado ([978376c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/978376c07e2e2dffc62da16a6e18cff32607eeb9)), closes [#298](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/298)
+
+### Bug Fixes
+
+* **mod9:** quitar la barra de scroll nativa de las pestanas de configuracion ([f13c371](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f13c371b91a4ba519c3117c17d88af8794bacb8d))
+* **rf03-mod1:** validar los permisos del rol al enviar y mostrar recursos legibles ([eb6cd12](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/eb6cd120959f4379ff4020eab8bccc415ea5f9ab))
+* **rf06-mod1:** distinguir inactivar de bloquear una cuenta ([16b60c8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/16b60c8a2928e3f389f150d45abd8ec94bfcbd39))
+* **rf10-mod1:** ocultar la simulacion de archivado fuera de desarrollo y mostrar eventos legibles ([ae41782](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ae41782f428dc28b6cf62e10fbb1176225c9e396))
+* **rf16-mod9:** registrar tipo de dato, obligatoriedad y rango de las metricas productivas ([#258](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/258)) ([1200a9c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1200a9cf0cf3da0f0939b810ac94a5d08b3a87d4))
+* **rf21-mod9:** refrescar los dispositivos en todas las secciones de IoT tras crear o cambiar uno ([79034e0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/79034e041048d1fee434143b9f887b12d55daa9d))
+* **rf24-mod9:** encabezados, labels asociados y scope de tabla en calibracion de sensores ([#247](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/247)) ([9294af9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9294af9344253254275febfd8fd3045b48c99bcf))
+* **rf25-mod9:** no ofrecer 'Ir a Configuracion' a roles que no pueden configurar la finca ([75168d0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/75168d04ba018e341607c387d4b14cbc1a5c720a))
+* **rf33-mod2:** elegir especie, finca e infraestructura por nombre al registrar un activo ([4665b58](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4665b5856affff6402842910cba89d2efa50e89a)), closes [#290](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/290) [#290](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/290) [#298](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/298)
+* **rf35-mod2:** buscar activos por numero, aclarar el alcance de la busqueda y unificar el acceso denegado ([51c11da](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/51c11da1be2f02f988d05094f3f5968af48abcc9)), closes [#290](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/290)
+* **rf37-mod2:** elegir el ciclo productivo del activo al cambiar de fase ([#288](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/288)) ([85aa3b0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/85aa3b01ef53f7d2767e4bc2a62e18a8c60666e7))
+* **rf38-mod2:** advertir sin ambiguedad que el cierre de ciclo no se puede deshacer ([5aeb0ba](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5aeb0ba33200b048b837226de91971366bb238c3)), closes [#298](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/298)
+* **rf38-mod2:** cerrar ciclo despues de las 7 p. m. y mostrar las fechas en hora local ([#300](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/300)) ([388ae9d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/388ae9dd133ab58c52a12a43df704964b6384547)), closes [#130](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/130)
+* **rf39-mod2:** avisar antes de registrar eventos que requieren fase activa ([f1d9393](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f1d939321a36c1ef18a9d34eb717990dfa2f885c)), closes [#298](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/298)
+* **rf39-mod2:** enviar la fecha de eventos como instante local y no como medianoche UTC ([#289](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/289)) ([d261d93](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d261d9368b8c9bb5c660711cc105b5c6fda7f46b))
+* **rf42-mod2:** mostrar en el evento reproductivo solo los campos de cada categoria ([b1ef96b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b1ef96b997817b21807a6d7686068be83031e58f)), closes [#298](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/298) [#290](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/290)
+* **rf46-mod2:** describir cada registro del historial en lenguaje legible ([eb7b7cc](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/eb7b7cc65dc443caa5dc8d62e29e5924b12815b5)), closes [#298](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/298)
+* **rf47-mod2:** mostrar los eventos de la ficha integral como lineas legibles ([cc8f633](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cc8f633d9be7907759d790c926e0ddaa71043bb2)), closes [#298](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/298) [#290](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/290)
+* **ui:** nombrar la seccion bloqueada en el menu y mostrar el nombre completo del usuario ([b14d0c3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b14d0c3ce2ab97a425cbcb292e611afa4bf3c448))
+* **ui:** traer a la vista los errores del servidor y mostrar codigos internos como texto legible ([48b8b96](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/48b8b9659583c0c64e5627d4101957579a77d0a3))
+
 ## [1.0.0-rc.42](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.41...v1.0.0-rc.42) (2026-10-08)
 
 ### Bug Fixes
