@@ -1,3 +1,9 @@
+## [1.0.0-rc.42](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.41...v1.0.0-rc.42) (2026-10-08)
+
+### Bug Fixes
+
+* **rf24-mod9:** enviar modo_calibracion SENSOR al registrar una calibracion ([5d0a4c2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5d0a4c2539e8a8f69982b463322257ef518229af)), closes [#521](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/521) [#510](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/510)
+
 ## [1.0.0-rc.41](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.40...v1.0.0-rc.41) (2026-10-08)
 
 ### Bug Fixes
