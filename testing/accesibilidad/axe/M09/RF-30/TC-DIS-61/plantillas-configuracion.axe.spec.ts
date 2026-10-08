@@ -3,6 +3,8 @@
  * RF-30 · CU-07 Gestionar Plantillas de Configuración · Rol: Administrador
  * Configuración → pestaña "Plantillas"
  *
+ * Reejecución sobre la release 1.0.0-rc.40.
+ *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
  * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
  * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
@@ -33,6 +35,10 @@ const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 const PLANTILLA_EXISTENTE = process.env.TC_DIS_61_PLANTILLA ?? 'Plantilla estándar tilapia';
+// Desde rc.40 el encabezado de la tarjeta y las acciones incluyen la versión ("… v1")
+const escaparRegex = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const conVersion = (prefijo: string) => new RegExp(`^${prefijo}${escaparRegex(PLANTILLA_EXISTENTE)} v\\d+$`);
+const NOMBRE_CON_VERSION = conVersion('');
 
 const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_61_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
@@ -131,7 +137,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Plantillas de Configuraci�
 
   test('1-2. Listado con datos - 0 violaciones axe A/AA (1.3.1 estructura, 2.4.4 propósito de acciones)', async ({ page }, testInfo) => {
     await abrirPlantillas(page);
-    await expect(page.getByText(PLANTILLA_EXISTENTE, { exact: true }).first(), `Precondición: debe existir "${PLANTILLA_EXISTENTE}"`).toBeVisible();
+    await expect(page.getByRole('heading', { name: NOMBRE_CON_VERSION }).first(), `Precondición: debe existir "${PLANTILLA_EXISTENTE}"`).toBeVisible();
 
     await escanear(page, 'listado', testInfo);
 
@@ -139,25 +145,25 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Plantillas de Configuraci�
     // encabezados, o al menos lista de tarjetas con el nombre como encabezado)
     const tabla = await page.getByRole('table').count();
     const lista = await page.getByRole('list').filter({ hasText: PLANTILLA_EXISTENTE }).count();
-    const nombreComoEncabezado = await page.getByRole('heading', { name: PLANTILLA_EXISTENTE }).count();
+    const nombreComoEncabezado = await page.getByRole('heading', { name: NOMBRE_CON_VERSION }).count();
     testInfo.annotations.push({
       type: 'Estructura del listado',
       description: `tablas: ${tabla} · listas con plantillas: ${lista} · nombre como encabezado: ${nombreComoEncabezado}`,
     });
-    expect.soft(tabla + lista, '1.3.1: el listado no expone estructura (ni tabla con encabezados ni lista); nombre / especie / versión solo se relacionan visualmente').toBeGreaterThan(0);
-    expect.soft(nombreComoEncabezado, '1.3.1: el nombre de cada plantilla no es un encabezado; con lector de pantalla no se puede navegar entre plantillas').toBeGreaterThan(0);
+    expect.soft(tabla + lista, 'DEFECTO: 1.3.1: el listado no expone estructura (ni tabla con encabezados ni lista); nombre / especie / versión solo se relacionan visualmente').toBeGreaterThan(0);
+    expect.soft(nombreComoEncabezado, 'DEFECTO: 1.3.1: el nombre de cada plantilla no es un encabezado; con lector de pantalla no se puede navegar entre plantillas').toBeGreaterThan(0);
 
     // 2.4.4: las acciones de cada tarjeta deben identificar la plantilla fuera de contexto
     for (const accion of ['Aplicar plantilla', 'Nueva versión']) {
       const iguales = await page.getByRole('button', { name: accion, exact: true }).count();
-      await expect.soft(page.getByRole('button', { name: `${accion}: ${PLANTILLA_EXISTENTE}`, exact: true }), `2.4.4: la acción "${accion}" debe nombrar la plantilla`).toHaveCount(1);
+      await expect.soft(page.getByRole('button', { name: conVersion(`${accion}: `) }), `DEFECTO: 2.4.4: la acción "${accion}" debe nombrar la plantilla`).toHaveCount(1);
       testInfo.annotations.push({ type: `2.4.4 "${accion}"`, description: `${iguales} botones con el mismo nombre accesible` });
-      expect.soft(iguales, `2.4.4: ${iguales} botones se anuncian solo como "${accion}", sin indicar a qué plantilla corresponden`).toBeLessThanOrEqual(1);
+      expect.soft(iguales, `DEFECTO: 2.4.4: ${iguales} botones se anuncian solo como "${accion}", sin indicar a qué plantilla corresponden`).toBeLessThanOrEqual(1);
     }
 
     // 4.1.2: el botón que despliega el historial debe exponer su estado
     await expect
-      .soft(page.getByRole('button', { name: 'Historial de aplicaciones' }), '4.1.2: "Historial de aplicaciones" despliega contenido pero no expone aria-expanded')
+      .soft(page.getByRole('button', { name: 'Historial de aplicaciones' }), 'DEFECTO: 4.1.2: "Historial de aplicaciones" despliega contenido pero no expone aria-expanded')
       .toHaveAttribute('aria-expanded', 'false');
   });
 
@@ -177,21 +183,21 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Plantillas de Configuraci�
   test('4. Teclado - Tab recorre "Nueva plantilla" y las acciones de cada tarjeta; Enter activa la acción', async ({ page }) => {
     await abrirPlantillas(page);
     // Esperar las tarjetas: mientras se ve el skeleton, Tab salta directo al historial
-    await expect(page.getByText(PLANTILLA_EXISTENTE, { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: NOMBRE_CON_VERSION }).first()).toBeVisible();
 
     // Orden de tabulación: Recargar → Nueva plantilla → (Nueva versión, Aplicar plantilla) de la 1.ª tarjeta → de la 2.ª…
     const nueva = page.getByRole('button', { name: 'Nueva plantilla', exact: true });
     await page.getByRole('button', { name: 'Recargar' }).focus();
     await page.keyboard.press('Tab');
-    await expect(nueva, '2.4.3: tras "Recargar" el foco debe pasar a "Nueva plantilla"').toBeFocused();
+    await expect(nueva, 'DEFECTO: 2.4.3: tras "Recargar" el foco debe pasar a "Nueva plantilla"').toBeFocused();
 
     const versiones = page.getByRole('button', { name: /^Nueva versión/ });
     const aplicar = page.getByRole('button', { name: /^Aplicar plantilla/ });
     for (let i = 0; i < 2; i++) {
       await page.keyboard.press('Tab');
-      await expect(versiones.nth(i), `2.4.3: la tarjeta ${i + 1} debe ofrecer primero "Nueva versión"`).toBeFocused();
+      await expect(versiones.nth(i), `DEFECTO: 2.4.3: la tarjeta ${i + 1} debe ofrecer primero "Nueva versión"`).toBeFocused();
       await page.keyboard.press('Tab');
-      await expect(aplicar.nth(i), `2.4.3: luego "Aplicar plantilla" de la tarjeta ${i + 1}`).toBeFocused();
+      await expect(aplicar.nth(i), `DEFECTO: 2.4.3: luego "Aplicar plantilla" de la tarjeta ${i + 1}`).toBeFocused();
     }
 
     // Enter sobre "Aplicar plantilla" abre el asistente de la tarjeta enfocada (se cierra sin aplicar)
@@ -238,8 +244,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Plantillas de Configuraci�
     // 3.3.1: el error se anuncia (role="alert") con el motivo
     const alerta = modal.getByRole('alert').filter({ hasText: 'Nombre no disponible' });
     await expect(alerta).toBeVisible();
-    await expect.soft(nombre, '3.3.1: el campo "Nombre de la plantilla" debe marcarse con aria-invalid').toHaveAttribute('aria-invalid', 'true');
-    await expect.soft(nombre, '3.3.1: el error del backend debe asociarse al campo "Nombre de la plantilla"').toHaveAccessibleDescription(/Nombre no disponible/);
+    await expect.soft(nombre, 'DEFECTO: 3.3.1: el campo "Nombre de la plantilla" debe marcarse con aria-invalid').toHaveAttribute('aria-invalid', 'true');
+    await expect.soft(nombre, 'DEFECTO: 3.3.1: el error del backend debe asociarse al campo "Nombre de la plantilla"').toHaveAccessibleDescription(/Nombre no disponible/);
 
     await escanear(page, 'error-409-nombre', testInfo);
   });
