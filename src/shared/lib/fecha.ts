@@ -78,3 +78,17 @@ export function diasAtrasLocal(dias: number): string {
 export function diaParaBackendUtc(valor: string, ahora: Date = new Date()): string {
   return valor === hoyLocal(ahora) ? ahora.toISOString().slice(0, 10) : valor;
 }
+
+/**
+ * Instante UTC para un `<input type="date">` que el backend guarda como
+ * `timestamptz` y valida contra el registro del activo y el último evento
+ * (eventos de M02, cambio de fase, asociación de sensor).
+ *
+ * `new Date('2026-10-07').toISOString()` —lo que se enviaba— es la medianoche
+ * UTC, es decir las 19:00 del *día anterior* en UTC-5: un activo creado hoy
+ * rechazaba cualquier evento fechado hoy (#289). Hoy viaja como el instante
+ * actual; otro día, como el final de ese día local.
+ */
+export function instanteParaEvento(valor: string, ahora: Date = new Date()): string | undefined {
+  return valor === hoyLocal(ahora) ? ahora.toISOString() : finDelDiaUtc(valor);
+}

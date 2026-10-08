@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { hoyLocal, instanteParaEvento } from '../../shared/lib/fecha';
 import { ModalShell } from './ModalShell';
 import { FormSelect, FormTextArea, FORM_COL, errorServidor } from './formControls';
 import { useDispositivosIot } from '../../configuration/hooks/useDispositivosIot';
@@ -62,7 +63,7 @@ export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, s
       dispositivo_iot_id: Number(v.dispositivo_iot_id),
       sensor_id: Number(v.sensor_id),
       id_infraestructura: idInfraestructura ?? Number(v.id_infraestructura),
-      fecha_inicio: v.fecha_inicio ? new Date(v.fecha_inicio).toISOString() : null,
+      fecha_inicio: v.fecha_inicio ? instanteParaEvento(v.fecha_inicio) : null,
       motivo: v.motivo.trim() || null,
     };
     const ok = await onConfirmar(dto);
@@ -124,7 +125,7 @@ export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, s
               {...register('id_infraestructura', { required: t('asociarsensormodal.la_infraestructura_es_obligatoria'), min: { value: 1, message: t('asociarsensormodal.id_invalido') } })}
             />
           )}
-          <Input label={t('asociarsensormodal.fecha_de_inicio')} type="date" {...register('fecha_inicio')} />
+          <Input label={t('asociarsensormodal.fecha_de_inicio')} type="date" max={hoyLocal()} {...register('fecha_inicio')} />
           <FormTextArea label={t('asociarsensormodal.motivo')} placeholder={t('asociarsensormodal.opcional')} {...register('motivo')} />
         </div>
 

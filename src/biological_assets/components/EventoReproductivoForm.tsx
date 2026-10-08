@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { hoyLocal, instanteParaEvento } from '../../shared/lib/fecha';
 import { ModalShell } from './ModalShell';
 import { FormSelect, FormTextArea, FORM_COL } from './formControls';
 import type { ApiError } from '../../shared/api/errors';
@@ -31,14 +32,14 @@ export function EventoReproductivoForm({ esPoblacional, saving, saveError, onClo
   const { t } = useT('biologicalAssets');
   const { register, handleSubmit } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { categoria: esPoblacional ? 'nacimiento' : 'inseminacion', resultado: 'exitoso', numero_crias: '0' },
+    defaultValues: { categoria: esPoblacional ? 'nacimiento' : 'inseminacion', resultado: 'exitoso', numero_crias: '0', fecha: hoyLocal() },
   });
 
   const submit = async (v: FormValues) => {
     const dto: RegistrarEventoReproductivoDTO = {
       categoria: v.categoria,
       resultado: v.resultado,
-      fecha: v.fecha ? new Date(v.fecha).toISOString() : null,
+      fecha: v.fecha ? instanteParaEvento(v.fecha) : null,
       id_padre: v.id_padre ? Number(v.id_padre) : null,
       id_madre: v.id_madre ? Number(v.id_madre) : null,
       numero_crias: v.numero_crias ? Number(v.numero_crias) : 0,
@@ -80,7 +81,7 @@ export function EventoReproductivoForm({ esPoblacional, saving, saveError, onClo
             <option value="fallido">{t('eventoreproductivoform.fallido')}</option>
           </FormSelect>
 
-          <Input label={t('eventoreproductivoform.fecha')} type="date" {...register('fecha')} />
+          <Input label={t('eventoreproductivoform.fecha')} type="date" max={hoyLocal()} {...register('fecha')} />
           <Input label={t('eventoreproductivoform.id_padre')} type="number" min={1} placeholder={t('eventoreproductivoform.opcional')} {...register('id_padre')} />
           <Input label={t('eventoreproductivoform.id_madre')} type="number" min={1} placeholder={t('eventoreproductivoform.opcional')} {...register('id_madre')} />
           <Input label={t('eventoreproductivoform.numero_de_crias')} type="number" min={0} {...register('numero_crias')} />
