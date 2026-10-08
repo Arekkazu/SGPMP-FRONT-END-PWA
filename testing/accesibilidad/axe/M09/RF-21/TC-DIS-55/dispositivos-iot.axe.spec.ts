@@ -8,6 +8,10 @@
  * tener etiquetas con su unidad o formato (resolución ANCHOxALTO, fps 1–60, m²) y mostrar
  * el error 400 en el campo correspondiente. Nuevo error 422 de tipo de dispositivo inexistente.
  *
+ * Reejecución sobre la release 1.0.0-rc.40 (5123a22): un error del backend con `fields` se
+ * anuncia debajo del campo (role="alert", aria-invalid, aria-describedby y foco) y ya no en
+ * la alerta general "Error al registrar"; el caso verifica que no se anuncie dos veces.
+ *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
  * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
  * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
@@ -177,8 +181,19 @@ async function llenarCamara(form: Formulario, serial: string) {
 /** 3.3.1: el campo queda inválido y con el mensaje asociado. */
 async function verificarErrorEnCampo(campo: Locator, nombre: string, mensaje: RegExp, soft = true) {
   const e = soft ? expect.soft : expect;
-  await e(campo, `3.3.1: "${nombre}" debe marcarse con aria-invalid`).toHaveAttribute('aria-invalid', 'true');
-  await e(campo, `3.3.1: el error debe estar asociado al campo "${nombre}" (aria-describedby)`).toHaveAccessibleDescription(mensaje);
+  await e(campo, `DEFECTO: 3.3.1: "${nombre}" debe marcarse con aria-invalid`).toHaveAttribute('aria-invalid', 'true');
+  await e(campo, `DEFECTO: 3.3.1: el error debe estar asociado al campo "${nombre}" (aria-describedby)`).toHaveAccessibleDescription(mensaje);
+}
+
+/**
+ * Error del backend (release 1.0.0-rc.40, 5123a22): se anuncia debajo del campo (role="alert"),
+ * el foco va al campo y no se repite en una alerta general.
+ */
+async function verificarErrorDelBackend(dialogo: Locator, campo: Locator, nombre: string, mensaje: RegExp) {
+  await expect(dialogo.getByRole('alert').filter({ hasText: mensaje }).first(), `DEFECTO: 3.3.1/4.1.3: el error de "${nombre}" debe anunciarse (role="alert") con el mensaje del backend`).toBeVisible();
+  await verificarErrorEnCampo(campo, nombre, mensaje);
+  await expect.soft(campo, `DEFECTO: 3.3.1: el foco debe ir al campo "${nombre}" con el error`).toBeFocused();
+  await expect.soft(dialogo.getByRole('alert').filter({ hasText: mensaje }), `DEFECTO: 3.3.1: el error de "${nombre}" se anuncia dos veces (debajo del campo y en una alerta general)`).toHaveCount(1);
 }
 
 // ── Escaneo axe + Lighthouse ─────────────────────────────────────────────────
@@ -239,7 +254,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
     await abrirDispositivosDelArea(page);
     const form = await abrirFormulario(page);
     for (const [campo, nombre] of [[form.serial, 'Serial'], [form.tipo, 'Tipo de dispositivo'], [form.descripcion, 'Descripción']] as const) {
-      await expect(campo, `1.3.1: no se encontró el campo "${nombre}" por su label`).toBeVisible();
+      await expect(campo, `DEFECTO: 1.3.1: no se encontró el campo "${nombre}" por su label`).toBeVisible();
     }
     await expect(form.resolucion, 'Sin tipo de cámara no se muestran los campos de visión').toHaveCount(0);
     await escanear(page, 'formulario', testInfo);
@@ -265,14 +280,14 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
       return { dentroDeRegionViva: !!vivo, avisoNuevo: despues > antes && /c[aá]mara|resoluci|visi[oó]n/i.test(textos) };
     }, regionesVivas);
     testInfo.annotations.push({ type: 'Anuncio de los campos de cámara', description: JSON.stringify(anuncio) });
-    expect.soft(anuncio.dentroDeRegionViva || anuncio.avisoNuevo, 'DEFECTO 4.1.3: los campos de cámara aparecen sin anunciarse (no están en una región aria-live ni hay un aviso de estado al elegir el tipo CAMARA)').toBe(true);
+    expect.soft(anuncio.dentroDeRegionViva || anuncio.avisoNuevo, 'DEFECTO: 4.1.3: los campos de cámara aparecen sin anunciarse (no están en una región aria-live ni hay un aviso de estado al elegir el tipo CAMARA)').toBe(true);
 
     // 1.3.1 / 3.3.2: etiquetas con unidad o formato; obligatorias con aria-required
-    await expect.soft(form.resolucion, '3.3.2: la etiqueta de resolución debe indicar el formato ANCHOxALTO').toHaveAccessibleName(/ANCHOxALTO/);
-    await expect.soft(form.fps, 'DEFECTO 3.3.2: la etiqueta "FPS" no indica el rango permitido 1–60').toHaveAccessibleName(/1\s*[–-]\s*60/);
-    await expect.soft(form.cobertura, '3.3.2: la etiqueta de área de cobertura debe indicar la unidad m²').toHaveAccessibleName(/m²/);
+    await expect.soft(form.resolucion, 'DEFECTO: 3.3.2: la etiqueta de resolución debe indicar el formato ANCHOxALTO').toHaveAccessibleName(/ANCHOxALTO/);
+    await expect.soft(form.fps, 'DEFECTO: 3.3.2: la etiqueta "FPS" no indica el rango permitido 1–60').toHaveAccessibleName(/1\s*[–-]\s*60/);
+    await expect.soft(form.cobertura, 'DEFECTO: 3.3.2: la etiqueta de área de cobertura debe indicar la unidad m²').toHaveAccessibleName(/m²/);
     for (const [campo, nombre] of [[form.resolucion, 'Resolución'], [form.fps, 'FPS'], [form.cobertura, 'Área de cobertura']] as const) {
-      await expect.soft(campo, `3.3.2: "${nombre}" es obligatorio para una cámara y debe exponer aria-required`).toHaveAttribute('aria-required', 'true');
+      await expect.soft(campo, `DEFECTO: 3.3.2: "${nombre}" es obligatorio para una cámara y debe exponer aria-required`).toHaveAttribute('aria-required', 'true');
     }
     await escanear(page, 'campos-camara', testInfo);
 
@@ -308,8 +323,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
       fijarModo({ tipo: 'simular', status: 400, cuerpo: e.cuerpo });
       await form.registrar.click();
       await expect.poll(() => intentos.length).toBe(i + 1);
-      await expect(form.dialogo.getByRole('alert').filter({ hasText: e.mensaje }).first(), `3.3.1: el 400 de "${e.campo}" debe anunciarse`).toBeVisible();
-      await verificarErrorEnCampo(campos[e.campo], e.campo, e.mensaje);
+      await verificarErrorDelBackend(form.dialogo, campos[e.campo], e.campo, e.mensaje);
       if (i === 0) await escanear(page, 'error-400-campo-camara', testInfo);
       // Corregir el campo para el siguiente envío (el error del campo se limpia al editar)
       await campos[e.campo].fill(campos[e.campo] === form.resolucion ? '1280x720' : '30');
@@ -333,8 +347,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
     testInfo.annotations.push({ type: 'Respuesta real', description: `${respuesta.status()} ${await respuesta.text()}` });
     expect(respuesta.status(), 'El backend debe responder 409 al serial duplicado').toBe(409);
 
-    await expect(form.dialogo.getByRole('alert').filter({ hasText: 'Ya existe un dispositivo con este serial.' })).toBeVisible();
-    await verificarErrorEnCampo(form.serial, 'Serial', /Ya existe un dispositivo con este serial/);
+    await verificarErrorDelBackend(form.dialogo, form.serial, 'Serial', /Ya existe un dispositivo con este serial/);
     await escanear(page, 'error-409-serial', testInfo);
   });
 
@@ -354,11 +367,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
     expect(respuesta.status()).toBe(422);
     expect(cuerpo.error_code).toBe('TIPO_DISPOSITIVO_NO_ENCONTRADO');
 
-    const alerta = form.dialogo.getByRole('alert').filter({ hasText: 'Error al registrar' });
-    await expect(alerta, '3.3.1/4.1.3: el tipo inexistente se anuncia en una alerta').toContainText('tipo de dispositivo indicado no existe');
-    await expect(alerta).toHaveAttribute('aria-live', /assertive|polite/);
     await expect(form.dialogo, 'El modal sigue abierto para corregir').toBeVisible();
-    await verificarErrorEnCampo(form.tipo, 'Tipo de dispositivo', /tipo de dispositivo indicado no existe/);
+    await verificarErrorDelBackend(form.dialogo, form.tipo, 'Tipo de dispositivo', /tipo de dispositivo indicado no existe/);
     await escanear(page, 'error-422-tipo-inexistente', testInfo);
   });
 
@@ -371,7 +381,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
     await form.registrar.click();
 
     const alerta = form.dialogo.getByRole('alert').filter({ hasText: 'área productiva seleccionada está desactivada' });
-    await expect(alerta, '3.3.1: el 422 de área inactiva debe anunciarse').toBeVisible();
+    await expect(alerta, 'DEFECTO: 3.3.1: el 422 de área inactiva debe anunciarse').toBeVisible();
     await expect(form.dialogo, 'El modal debe seguir abierto').toBeVisible();
     await escanear(page, 'error-422-area-inactiva', testInfo);
   });
