@@ -96,7 +96,7 @@ function PlantillaCard({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s2)' }}>
-        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', minWidth: 0 }}>{t('plantillastable.inmutable')}</span>
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap', flexShrink: 0 }}>{t('plantillastable.inmutable')}</span>
         <div style={{ display: 'flex', gap: 'var(--s2)', flexShrink: 0 }}>
           {/* Las plantillas no se editan: actualizar una es crear su versión
               siguiente. Versionar es acción C, igual que crear. */}

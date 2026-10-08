@@ -8,6 +8,7 @@ import type {
   ActivoBiologicoResponse,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { avisarExito } from '../../shared/hooks/useToast';
 
 interface PaginacionState {
   pagina: number;
@@ -91,6 +92,7 @@ export function useActivos() {
       setSaveError(null);
       try {
         const nuevo = await activosApi.registrar(dto);
+        avisarExito('registrado', nuevo.identificador ?? `#${nuevo.id_activo_biologico}`);
         return nuevo;
       } catch (e) {
         setSaveError(e as ApiError);

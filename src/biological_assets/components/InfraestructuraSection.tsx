@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
 import { MapPin, ArrowLeftRight } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
@@ -59,7 +60,7 @@ function AsociacionCard({ a, activa }: { a: AsociacionInfraestructuraResponse; a
         <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>{a.nombre_infraestructura}</div>
         <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{a.tipo_infraestructura}</div>
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-          {a.fecha_inicio?.slice(0, 10)}{a.fecha_fin ? ` → ${a.fecha_fin.slice(0, 10)}` : ' → vigente'}
+          {formatearFecha(a.fecha_inicio, FECHA_NUMERICA)}{a.fecha_fin ? ` → ${formatearFecha(a.fecha_fin, FECHA_NUMERICA)}` : ' → vigente'}
         </div>
       </div>
       {activa && (

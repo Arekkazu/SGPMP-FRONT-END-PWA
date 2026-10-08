@@ -18,6 +18,8 @@ import { CredencialMqttModal } from './CredencialMqttModal';
 import { CambiarGatewayModal } from './CambiarGatewayModal';
 import type { FincaResponse, InfraestructuraResponse, DispositivoIotResponse } from '../types';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda } from '../../shared/hooks/useBusqueda';
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
@@ -78,6 +80,7 @@ function ConfirmModal({ titulo, mensaje, saving, onCancel, onConfirm }: {
 function FincaSelector({ fincas, loading, onSelect }: { fincas: FincaResponse[]; loading: boolean; onSelect: (f: FincaResponse) => void }) {
   const { t } = useT('configuration');
   const activas = fincas.filter((f) => f.es_activo);
+  const busqueda = useBusqueda(activas, (f) => `${f.nombre} ${f.ubicacion?.municipio ?? ''} ${f.ubicacion?.departamento ?? ''}`);
 
   if (loading) {
     return (
@@ -93,17 +96,22 @@ function FincaSelector({ fincas, loading, onSelect }: { fincas: FincaResponse[];
     return <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('dispositivostable.no_hay_fincas_activas_registra_una_finca')}</p>;
   }
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 'var(--s4)' }}>
-      {activas.map((f) => (
-        <OptionCard key={f.id_finca} onClick={() => onSelect(f)}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
-            <Warehouse size={15} color="var(--brand-500)" aria-hidden />
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{f.ubicacion.departamento}, {f.ubicacion.municipio}</div>
-        </OptionCard>
-      ))}
-    </div>
+    <>
+      {busqueda.conBuscador && (
+        <Buscador id="buscar-finca-iot" label={t('busqueda.buscar_finca', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 'var(--s4)' }}>
+        {busqueda.filtrados.map((f) => (
+          <OptionCard key={f.id_finca} onClick={() => onSelect(f)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
+              <Warehouse size={15} color="var(--brand-500)" aria-hidden />
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{f.ubicacion.departamento}, {f.ubicacion.municipio}</div>
+          </OptionCard>
+        ))}
+      </div>
+    </>
   );
 }
 

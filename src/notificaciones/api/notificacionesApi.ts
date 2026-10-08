@@ -25,6 +25,12 @@ async function marcarComoLeida(
   return response.data;
 }
 
+/** T-08: marca como leídas todas las notificaciones internas del usuario. */
+async function marcarTodasLeidas(): Promise<{ marcadas: number }> {
+  const response = await http.patch<{ marcadas: number }>('/notificaciones/leidas');
+  return response.data;
+}
+
 async function registrarTokenFcm(dto: FcmTokenDTO): Promise<MessageResponse> {
   const response = await http.post<MessageResponse>('/usuarios/me/fcm-token', dto);
   return response.data;
@@ -33,5 +39,6 @@ async function registrarTokenFcm(dto: FcmTokenDTO): Promise<MessageResponse> {
 export const notificacionesApi = {
   listar,
   marcarComoLeida,
+  marcarTodasLeidas,
   registrarTokenFcm,
 };

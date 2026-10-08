@@ -111,8 +111,11 @@ export function AuditoriaPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
-          <Button variant="secondary" size="sm" onClick={handleSimularArchivado} disabled={eventos.length === 0}>
-            <Archive size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriapage.simular_archivado')}</Button>
+          {/* M1-02: herramienta de prueba del archivado; no se muestra fuera de desarrollo. */}
+          {import.meta.env.DEV && (
+            <Button variant="secondary" size="sm" onClick={handleSimularArchivado} disabled={eventos.length === 0}>
+              <Archive size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriapage.simular_archivado')}</Button>
+          )}
           <Button
             variant="secondary"
             size="sm"

@@ -432,7 +432,8 @@ export function ConfigurationPage() {
 
       {/* Tab bar */}
       <nav
-        style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', padding: '0 var(--s7)', overflowX: 'auto' }}
+        className="ds-tabs"
+        style={{ padding: '0 var(--s7)' }}
         aria-label={t('pagina.aria_secciones')}
       >
         {visibles.map((tab) => (

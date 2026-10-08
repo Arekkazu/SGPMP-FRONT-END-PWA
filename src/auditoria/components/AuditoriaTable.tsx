@@ -5,6 +5,7 @@ import { ShieldCheck } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
 import type { AuditoriaItemResponse, TipoEvento } from '../types';
+import { humanizar } from '../../shared/lib/etiquetas';
 
 interface Props {
   eventos: AuditoriaItemResponse[];
@@ -24,7 +25,8 @@ const BADGE_POR_CATEGORIA: Record<string, 'activo' | 'eliminado' | 'inactivo' | 
 
 /** Etiqueta del catálogo; cae al id si aún no cargó o el tipo es desconocido. */
 function tipoLabel(tipo: number, catalogo: TipoEvento[]): string {
-  return catalogo.find((t) => t.id_tipo_evento === tipo)?.nombre ?? String(tipo);
+  // M1-02 / T-01: CONSULTA_LISTA_USUARIOS → "Consulta lista usuarios".
+  return humanizar(catalogo.find((t) => t.id_tipo_evento === tipo)?.nombre ?? String(tipo));
 }
 
 function tipoBadge(tipo: number, catalogo: TipoEvento[]) {
@@ -120,14 +122,14 @@ export function AuditoriaTable({ eventos, loading, onVerificar, tiposEvento }: P
               </td>
               <td
                 headers="th-descripcion"
-                style={{ padding: 'var(--s3) var(--s4)', color: 'var(--text-secondary)', maxWidth: 220 }}
+                style={{ padding: 'var(--s3) var(--s4)', color: 'var(--text-secondary)', maxWidth: 220, overflowWrap: 'break-word', wordBreak: 'normal' }}
                 title={e.descripcion}
               >
                 {truncar(e.descripcion, 55)}
               </td>
               <td headers="th-resultado" style={{ padding: 'var(--s3) var(--s4)', whiteSpace: 'nowrap' }}>
                 <Badge variant={e.resultado === 'EXITOSO' || e.resultado === 'EXITO' ? 'activo' : 'eliminado'}>
-                  {e.resultado}
+                  {humanizar(e.resultado)}
                 </Badge>
               </td>
               <td headers="th-ip" style={{ padding: 'var(--s3) var(--s4)', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)' }}>

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
 import {
   TrendingUp, Stethoscope, Baby, Package, ArrowDownCircle, Info,
 } from 'lucide-react';
@@ -17,6 +18,7 @@ import { RECURSO_ACTIVOS, ACCION_C } from '../rbac';
 import { ESTADOS_PERMITEN_EVENTOS } from '../types';
 import type { EstadoActivoNombre, EventoActivoResponse } from '../types';
 import { metricasApi, patologiasApi } from '../../configuration/api/especiesConfigApi';
+import { activosApi } from '../api/activosApi';
 
 type ModalTipo = 'ninguno' | 'crecimiento' | 'sanitario' | 'reproductivo' | 'productivo' | 'baja';
 
@@ -27,6 +29,9 @@ interface Props {
   estadoActual: string | null;
   /** Cantidad actual del lote (ficha integral); acota la baja parcial. */
   cantidadDisponible?: number | null;
+  /** M2-03: true cuando la ficha confirma que no hay fase productiva activa. */
+  sinFase?: boolean;
+  onIrAFases?: () => void;
   onChanged: () => void;
 }
 
@@ -66,7 +71,7 @@ function resumenEvento(ev: EventoActivoResponse): { icon: React.ReactNode; tipo:
   return { icon: <Info size={15} aria-hidden />, tipo: 'Evento', detalle: ev.descripcion ?? '—' };
 }
 
-export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantidadDisponible, onChanged }: Props) {
+export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantidadDisponible, sinFase = false, onIrAFases, onChanged }: Props) {
   const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeCrear = usePermission(RECURSO_ACTIVOS, ACCION_C);
@@ -84,6 +89,16 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
   const [configLoading, setConfigLoading] = useState(false);
   const [patologias, setPatologias] = useState<{ id_patologia: number; nombre: string }[]>([]);
   const [metricas, setMetricas] = useState<{ id_metrica_produccion: number; nombre: string; tipo_medicion: string; unidad_medida: string }[]>([]);
+  // #290 §3: el padre se elige entre los individuales de la misma especie, no por número.
+  const [candidatosPadre, setCandidatosPadre] = useState<{ id: number; etiqueta: string }[]>([]);
+  useEffect(() => {
+    if (modal !== 'reproductivo' || esPoblacional || idEspecie == null) return;
+    activosApi.listar({ tipo: 'INDIVIDUAL', id_especie: idEspecie, page_size: 100 })
+      .then((pagina) => setCandidatosPadre(pagina.registros
+        .filter((a) => a.id_activo_biologico !== idActivo)
+        .map((a) => ({ id: a.id_activo_biologico, etiqueta: `${a.identificador ?? ''} (#${a.id_activo_biologico})`.trim() }))))
+      .catch(() => setCandidatosPadre([]));
+  }, [modal, esPoblacional, idEspecie, idActivo]);
   useEffect(() => {
     if (esPoblacional) cargar();
   }, [esPoblacional, cargar]);
@@ -112,11 +127,13 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
   const abrir = (m: ModalTipo) => { setSaveError(null); setAviso(null); setModal(m); };
   const cerrar = () => setModal('ninguno');
 
-  const botones: { id: ModalTipo; label: string; icon: React.ReactNode }[] = [
-    { id: 'crecimiento', label: 'Crecimiento', icon: <TrendingUp size={15} aria-hidden /> },
+  // M2-03: el backend exige fase activa en crecimiento, reproductivo y productivo
+  // (SIN_FASE_ACTIVA); se avisa antes de llenar el formulario, no al fallar.
+  const botones: { id: ModalTipo; label: string; icon: React.ReactNode; requiereFase?: boolean }[] = [
+    { id: 'crecimiento', label: 'Crecimiento', icon: <TrendingUp size={15} aria-hidden />, requiereFase: true },
     { id: 'sanitario', label: 'Sanitario', icon: <Stethoscope size={15} aria-hidden /> },
-    { id: 'reproductivo', label: 'Reproductivo', icon: <Baby size={15} aria-hidden /> },
-    { id: 'productivo', label: 'Productivo', icon: <Package size={15} aria-hidden /> },
+    { id: 'reproductivo', label: 'Reproductivo', icon: <Baby size={15} aria-hidden />, requiereFase: true },
+    { id: 'productivo', label: 'Productivo', icon: <Package size={15} aria-hidden />, requiereFase: true },
     { id: 'baja', label: 'Baja', icon: <ArrowDownCircle size={15} aria-hidden /> },
   ];
 
@@ -132,7 +149,8 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
                 key={b.id}
                 variant={b.id === 'baja' ? 'danger' : 'secondary'}
                 size="sm"
-                disabled={!online || !permite}
+                disabled={!online || !permite || (sinFase && !!b.requiereFase)}
+                title={sinFase && b.requiereFase ? t('eventossection.requiere_fase') : undefined}
                 onClick={() => abrir(b.id)}
               >
                 <span style={{ marginRight: 'var(--s1)', display: 'inline-flex' }}>{b.icon}</span>
@@ -146,20 +164,23 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
             El activo está en estado «{estadoActual}». Solo se pueden registrar eventos en ACTIVO, EN TRATAMIENTO o AISLADO.
           </p>
         )}
+        {permite && sinFase && (
+          <p style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap', fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', margin: 'var(--s3) 0 0' }}>
+            {t('eventossection.requiere_fase')}
+            {onIrAFases && <Button variant="ghost" size="sm" onClick={onIrAFases}>{t('eventossection.ir_a_fases')}</Button>}
+          </p>
+        )}
         {aviso && (
           <Alert variant="success" title={t('eventossection.evento_registrado')} description={aviso} style={{ marginTop: 'var(--s4)' }} />
         )}
       </div>
 
-      {/* Historial de eventos (solo POBLACIONAL) */}
+      {/* Historial de eventos (solo POBLACIONAL). #298 3.4: en un individual la
+          tarjeta solo decía que no aplicaba; sus eventos están en Historial. */}
+      {esPoblacional && (
       <div style={CARD}>
         <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('eventossection.historial_de_eventos')}</h2>
-        {!esPoblacional ? (
-          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: 0 }}>
-            El historial de eventos en lote solo aplica a activos poblacionales. Para activos individuales,
-            consulta la pestaña «Historial» o la «Ficha integral».
-          </p>
-        ) : loading ? (
+        {loading ? (
           <div style={{ height: 100, borderRadius: 'var(--r-md)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }}>
             <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
           </div>
@@ -182,7 +203,7 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{r.detalle}</div>
                   </div>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                    {ev.fecha?.slice(0, 10)}
+                    {formatearFecha(ev.fecha, FECHA_NUMERICA)}
                   </span>
                 </li>
               );
@@ -190,6 +211,7 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
           </ul>
         )}
       </div>
+      )}
 
       {/* Modales */}
       {modal === 'crecimiento' && (
@@ -224,6 +246,7 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
       {modal === 'reproductivo' && (
         <EventoReproductivoForm
           esPoblacional={esPoblacional}
+          candidatosPadre={candidatosPadre}
           saving={saving}
           saveError={saveError}
           onClose={cerrar}

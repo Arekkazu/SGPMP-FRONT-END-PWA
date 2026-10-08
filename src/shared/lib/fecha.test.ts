@@ -6,6 +6,7 @@ import {
   finDelDiaUtc,
   hoyLocal,
   inicioDelDiaUtc,
+  instanteParaEvento,
 } from './fecha';
 
 // Los tests se comparan contra el mismo cálculo en vez de contra literales, para
@@ -77,5 +78,16 @@ describe('diaParaBackendUtc', () => {
 
   it('un día pasado viaja tal cual', () => {
     expect(diaParaBackendUtc('2025-12-30', new Date(2026, 0, 1, 22, 0))).toBe('2025-12-30');
+  });
+});
+
+describe('instanteParaEvento', () => {
+  it('#289: el hoy local viaja como el instante actual, no como la medianoche UTC', () => {
+    const noche = new Date(2026, 9, 7, 20, 5);
+    expect(instanteParaEvento('2026-10-07', noche)).toBe(noche.toISOString());
+  });
+
+  it('un día pasado viaja como el final de ese día local', () => {
+    expect(instanteParaEvento('2026-10-05', new Date(2026, 9, 7, 20, 5))).toBe(finDelDiaUtc('2026-10-05'));
   });
 });

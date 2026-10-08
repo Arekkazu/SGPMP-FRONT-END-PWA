@@ -89,7 +89,8 @@ export function PorEspeciePage() {
 
       {/* Sub-tabs */}
       <nav
-        style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s6)', overflowX: 'auto' }}
+        className="ds-tabs"
+        style={{ marginBottom: 'var(--s6)' }}
         aria-label={t('porespeciepage.secciones_de_la_especie')}
       >
         {SUB_TABS.map((tab) => (

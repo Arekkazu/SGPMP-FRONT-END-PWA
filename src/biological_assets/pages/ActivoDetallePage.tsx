@@ -168,7 +168,7 @@ export function ActivoDetallePage() {
             onChanged={refrescar}
           />
         )}
-        {tab === 'fases' && <FasesSection idActivo={idActivo} idEspecie={activo?.id_especie ?? null} estadoActual={estado} onChanged={refrescar} />}
+        {tab === 'fases' && <FasesSection idActivo={idActivo} estadoActual={estado} onChanged={refrescar} />}
         {tab === 'eventos' && (
           <EventosSection
             idActivo={idActivo}
@@ -176,6 +176,8 @@ export function ActivoDetallePage() {
             tipo={String(tipo)}
             estadoActual={estado}
             cantidadDisponible={ficha?.cantidad_actual ?? null}
+            sinFase={!!ficha && !ficha.fase_productiva_activa}
+            onIrAFases={() => setTab('fases')}
             onChanged={refrescar}
           />
         )}
