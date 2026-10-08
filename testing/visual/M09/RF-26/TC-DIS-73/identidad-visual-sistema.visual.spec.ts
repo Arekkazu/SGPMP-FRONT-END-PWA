@@ -217,14 +217,6 @@ test.describe('TC-DIS-73 - Consistencia visual - Identidad Visual (RF-26)', () =
     await page?.context().close();
   });
 
-  test('1. Estado vacío por #166 (parcial)', async () => {
-    test.skip(hayFincas, 'Ya hay fincas activas: #166 parece resuelto; rehacer la baseline de este caso.');
-    await expect(page).toHaveScreenshot('identidad-estado-vacio-bloqueo-166.png', {
-      ...OPCIONES_CAPTURA,
-      mask: zonasDinamicas(page),
-    });
-  });
-
   test('2. Selector de finca', async () => {
     test.skip(!hayFincas, BLOQUEO_166);
     await expect(page).toHaveScreenshot('identidad-selector-finca.png', {
@@ -235,9 +227,8 @@ test.describe('TC-DIS-73 - Consistencia visual - Identidad Visual (RF-26)', () =
 
   test('3. Formulario de identidad con vista previa en vivo', async () => {
     test.skip(!hayFincas, BLOQUEO_166);
-    // TODO al cerrar #166: acotar a una finca concreta por nombre
-    await seccionIdentidad(page).getByRole('button', { name: /./ }).first().click();
-    await expect(page.getByRole('heading', { name: 'Vista previa en vivo' })).toBeVisible();
+    await page.getByRole('main').getByRole('button', { name: /^Finca Administrativa/ }).click();
+    await expect(page.getByText('Vista previa en vivo', { exact: true })).toBeVisible();
     await expect(page).toHaveScreenshot('identidad-formulario.png', {
       ...OPCIONES_CAPTURA,
       mask: zonasDinamicas(page),

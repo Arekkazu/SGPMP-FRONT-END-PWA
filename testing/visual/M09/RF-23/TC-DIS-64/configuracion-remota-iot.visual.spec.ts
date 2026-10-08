@@ -3,12 +3,9 @@
  * RF-23 · Configuración remota de dispositivos IoT · Rol: Administrador · Pareja de accesibilidad: TC-DIS-63
  *
  *
- * ⚠ PARCIAL — BLOQUEADO POR #166 (backend): no hay fincas listables, así que no
- * hay dispositivos activos y el panel solo muestra su estado vacío ("No hay
- * dispositivos activos…"). Hoy se versiona SOLO esa captura. Los pasos con
- * dispositivo (selector y formulario de frecuencia/intervalo) están escritos
- * pero se saltan solos mientras la lista esté vacía; al cerrar #166 hay que
- * generar su baseline y re-aprobar la del estado vacío (dejará de aplicar).
+ * Con #166 resuelto hay dispositivos activos: se versiona el selector, el
+ * formulario de frecuencia/intervalo y el error de intervalo. Los pasos que
+ * requieren dispositivo se saltan solos si la lista está vacía.
  *
  * Ruta: Configuración → pestaña IoT → sección "Configuración Remota IoT".
  * Corre en movil / tablet / escritorio con UN login por viewport: describe en
@@ -180,6 +177,18 @@ const OPCIONES_CAPTURA = {
   stylePath: path.join(__dirname, 'captura-completa.css'),
 };
 
+/** Espera a que la altura de <main> deje de cambiar (listas que cargan del backend). */
+async function esperarAlturaEstable(page: Page) {
+  let anterior = -1;
+  for (let i = 0; i < 40; i++) {
+    const altura = await page.getByRole('main').evaluate((m) => m.scrollHeight);
+    if (altura === anterior) return;
+    anterior = altura;
+    await page.waitForTimeout(750);
+  }
+  throw new Error('La altura de main no se estabilizó');
+}
+
 test.describe('TC-DIS-64 - Consistencia visual - Configuración Remota IoT (RF-23)', () => {
   // En serie y con un solo login: si falla se detiene, en vez de sumar intentos fallidos a la cuenta admin (bloqueo a los 5)
   test.describe.configure({ mode: 'serial', timeout: 600_000 });
@@ -212,16 +221,9 @@ test.describe('TC-DIS-64 - Consistencia visual - Configuración Remota IoT (RF-2
     await page?.context().close();
   });
 
-  test('1. Estado vacío por #166 (parcial)', async () => {
-    test.skip(hayDispositivos, 'Ya hay dispositivos activos: #166 parece resuelto; rehacer la baseline de este caso.');
-    await expect(page).toHaveScreenshot('remota-estado-vacio-bloqueo-166.png', {
-      ...OPCIONES_CAPTURA,
-      mask: zonasDinamicas(page),
-    });
-  });
-
   test('2. Selector de dispositivo', async () => {
     test.skip(!hayDispositivos, BLOQUEO_166);
+    await esperarAlturaEstable(page);
     await expect(page).toHaveScreenshot('remota-selector-dispositivo.png', {
       ...OPCIONES_CAPTURA,
       mask: zonasDinamicas(page),
@@ -231,7 +233,8 @@ test.describe('TC-DIS-64 - Consistencia visual - Configuración Remota IoT (RF-2
   test('3. Formulario de frecuencia / intervalo', async () => {
     test.skip(!hayDispositivos, BLOQUEO_166);
     await seccionRemota(page).getByRole('button').filter({ hasText: /activo/i }).first().click();
-    await expect(seccionRemota(page).getByRole('button', { name: /enviar configuración/i })).toBeVisible();
+    await expect(page.getByRole('main').getByRole('button', { name: /enviar configuración/i })).toBeVisible();
+    await esperarAlturaEstable(page);
     await expect(page).toHaveScreenshot('remota-formulario.png', {
       ...OPCIONES_CAPTURA,
       mask: zonasDinamicas(page),
@@ -240,12 +243,14 @@ test.describe('TC-DIS-64 - Consistencia visual - Configuración Remota IoT (RF-2
 
   test('4. Error intervalo < frecuencia (por blur, sin enviar)', async () => {
     test.skip(!hayDispositivos, BLOQUEO_166);
-    const seccion = seccionRemota(page);
-    await seccion.getByLabel(/frecuencia de captura/i).fill('20');
-    const intervalo = seccion.getByLabel(/intervalo de transmisión/i);
+    // Las etiquetas del formulario no están asociadas a su input: se localizan por orden (frecuencia, intervalo)
+    const main = page.getByRole('main');
+    await main.locator('input[type="number"]').nth(0).fill('20');
+    const intervalo = main.locator('input[type="number"]').nth(1);
     await intervalo.fill('5');
     await intervalo.blur();
-    await expect(seccion.getByRole('alert')).toContainText(/mayor o igual a la frecuencia/i);
+    await expect(main.getByRole('alert').filter({ hasText: /mayor o igual a la frecuencia/i })).toBeVisible();
+    await esperarAlturaEstable(page);
     await expect(page).toHaveScreenshot('remota-error-intervalo.png', {
       ...OPCIONES_CAPTURA,
       mask: zonasDinamicas(page),

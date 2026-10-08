@@ -212,14 +212,6 @@ test.describe('TC-DIS-67 - Consistencia visual - Calibración de dispositivos Io
     await page?.context().close();
   });
 
-  test('1. Paso 1 con estado vacío por #166 (parcial)', async () => {
-    test.skip(hayDispositivos, 'Ya hay dispositivos activos: #166 parece resuelto; rehacer la baseline de este caso.');
-    await expect(page).toHaveScreenshot('calibracion-estado-vacio-bloqueo-166.png', {
-      ...OPCIONES_CAPTURA,
-      mask: zonasDinamicas(page),
-    });
-  });
-
   test('2. Paso 1: selección de dispositivo', async () => {
     test.skip(!hayDispositivos, BLOQUEO_166);
     await expect(page).toHaveScreenshot('calibracion-paso1-dispositivo.png', {
@@ -231,14 +223,14 @@ test.describe('TC-DIS-67 - Consistencia visual - Calibración de dispositivos Io
   test('3. Paso 3: formulario de calibración', async () => {
     test.skip(!hayDispositivos, BLOQUEO_166);
     const seccion = seccionCalibracion(page);
-    // TODO al cerrar #166: acotar a un selector de dispositivo/sensor concreto (p. ej. /^SN-/), como pide TC-DIS-66
-    await seccion.getByRole('button').filter({ hasText: /./ }).first().click();
-    await seccion.getByRole('button').filter({ hasText: /./ }).first().click();
-    await expect(seccion.getByRole('heading', { name: 'Datos de calibración' })).toBeVisible();
+    await seccion.getByRole('button').filter({ hasText: 'IOT-EST01-HLA-001' }).click();
+    const paso2 = page.getByRole('main').locator('div').filter({ has: page.getByRole('heading', { name: 'Calibración de Sensores IoT' }) }).filter({ hasText: /a calibrar/ }).last();
+    await paso2.getByRole('button').filter({ hasText: 'Sensor pH' }).click();
+    await expect(page.getByRole('main').getByText('Datos de calibración', { exact: true })).toBeVisible();
     await expect(page).toHaveScreenshot('calibracion-paso3-formulario.png', {
       ...OPCIONES_CAPTURA,
       // Fecha de calibración precargada con la hora local y el historial Fecha/Hora
-      mask: [...zonasDinamicas(page), seccion.locator('input[type="datetime-local"]'), seccion.locator('table tbody td:first-child')],
+      mask: [...zonasDinamicas(page), page.getByRole('main').locator('input[type="datetime-local"]'), page.getByRole('main').locator('table tbody td:first-child')],
     });
   });
 });
