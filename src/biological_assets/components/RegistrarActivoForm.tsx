@@ -68,14 +68,14 @@ const TEXTAREA: React.CSSProperties = {
 
 const FIELD_LABEL: React.CSSProperties = {
   display: 'block',
-  fontSize: '13px',
+  fontSize: 'var(--fs-label-md)',
   fontWeight: 600,
   color: 'var(--text-primary)',
   marginBottom: 'var(--s1)',
 };
 
 const SECTION_TITLE: React.CSSProperties = {
-  fontSize: '13px',
+  fontSize: 'var(--fs-body-md)',
   fontWeight: 700,
   color: 'var(--text-secondary)',
   textTransform: 'uppercase',

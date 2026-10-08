@@ -27,7 +27,8 @@ export interface EditarEspecieDTO {
   nombre: string;
   descripcion?: string;
   tipo_modelo?: TipoModelo | null;
-  fecha_actualizacion: string;
+  /** Concurrencia optimista: el valor del último GET; null si nunca se editó (#231). */
+  fecha_actualizacion: string | null;
 }
 
 // =====================================================================

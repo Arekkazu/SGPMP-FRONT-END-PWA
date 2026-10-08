@@ -175,6 +175,7 @@ export function ActivoDetallePage() {
             idEspecie={activo?.id_especie ?? null}
             tipo={String(tipo)}
             estadoActual={estado}
+            cantidadDisponible={ficha?.cantidad_actual ?? null}
             onChanged={refrescar}
           />
         )}

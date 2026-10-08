@@ -3,6 +3,7 @@ import { useT } from '../../shared/i18n/useT';
 import { errorServidor } from './formControls';
 import { History } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { useHistorial } from '../hooks/useHistorial';
 import { Paginacion } from './Paginacion';
 import type { CategoriaHistorial, ConsultarHistorialFiltros } from '../types';
@@ -24,7 +25,7 @@ const SELECT: React.CSSProperties = {
   border: '1.5px solid var(--surface-border)',
   background: 'var(--surface-card)',
   color: 'var(--text-primary)',
-  fontSize: '13px',
+  fontSize: 'var(--fs-body-md)',
   height: 38,
 };
 
@@ -37,7 +38,7 @@ const LABEL: React.CSSProperties = {
 
 const TH: React.CSSProperties = {
   padding: 'var(--s2) var(--s4)', textAlign: 'left', fontFamily: 'var(--font-mono)',
-  fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+  fontSize: 'var(--fs-label-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
   color: 'var(--text-muted)', whiteSpace: 'nowrap',
 };
 
@@ -70,8 +71,8 @@ export function HistorialSection({ idActivo }: Props) {
 
   return (
     <div style={CARD}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-        <History size={16} aria-hidden />{t('historialsection.historial_consolidado')}</h3>
+      <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
+        <History size={16} aria-hidden />{t('historialsection.historial_consolidado')}</h2>
 
       {/* Filtros */}
       <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 'var(--s5)' }}>
@@ -109,8 +110,8 @@ export function HistorialSection({ idActivo }: Props) {
       ) : registros.length === 0 ? (
         <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('historialsection.sin_registros_para_los_filtros_seleccionados')}</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+        <ScrollRegion label={t('historialsection.historial_consolidado')}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
                 {['Fecha', 'Categoría', 'Descripción', 'Responsable', 'Origen'].map((h) => <th key={h} style={TH}>{h}</th>)}
@@ -134,7 +135,7 @@ export function HistorialSection({ idActivo }: Props) {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       )}
 
       <Paginacion

@@ -205,6 +205,8 @@ export function useEspecies() {
     }
   }, []);
 
+  const limpiarSaveError = useCallback(() => setSaveError(null), []);
+
   return {
     especies,
     loading,
@@ -219,5 +221,6 @@ export function useEspecies() {
     desactivar,
     reactivar,
     resolverConflicto,
+    limpiarSaveError,
   };
 }

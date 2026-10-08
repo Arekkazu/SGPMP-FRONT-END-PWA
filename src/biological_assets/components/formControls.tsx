@@ -23,11 +23,16 @@ const CONTROL: React.CSSProperties = {
 
 const LABEL: React.CSSProperties = {
   display: 'block',
-  fontSize: '13px',
+  fontSize: 'var(--fs-label-md)',
   fontWeight: 600,
   color: 'var(--text-primary)',
   marginBottom: 'var(--s1)',
 };
+
+/** Une la descripción propia del control con el id de su error (WCAG 3.3.1, TC-DIS-134/137). */
+function describedBy(propia: string | undefined, errorId: string | undefined): string | undefined {
+  return [propia, errorId].filter(Boolean).join(' ') || undefined;
+}
 
 /**
  * Anuncia a lectores de pantalla los campos que aparecen al elegir una opción
@@ -37,10 +42,10 @@ export function AnuncioCampos({ texto }: { texto: string }) {
   return <p role="status" className="ds-sr-only">{texto}</p>;
 }
 
-export function FieldError({ msg }: { msg?: string }) {
+export function FieldError({ msg, id }: { msg?: string; id?: string }) {
   if (!msg) return null;
   return (
-    <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+    <p id={id} role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
       {msg}
     </p>
   );
@@ -53,9 +58,10 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export const FormSelect = forwardRef<HTMLSelectElement, SelectProps>(function FormSelect(
-  { label, required, error, id, children, ...rest }, ref
+  { label, required, error, id, children, 'aria-describedby': descripcion, ...rest }, ref
 ) {
   const controlId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+  const errorId = error && controlId ? `${controlId}-error` : undefined;
   return (
     <div>
       {label && (
@@ -69,11 +75,12 @@ export const FormSelect = forwardRef<HTMLSelectElement, SelectProps>(function Fo
         style={{ ...CONTROL, height: 44, cursor: 'pointer', borderColor: error ? 'var(--sem-error)' : 'var(--surface-border)' }}
         aria-required={required}
         aria-invalid={!!error}
+        aria-describedby={describedBy(descripcion, errorId)}
         {...rest}
       >
         {children}
       </select>
-      <FieldError msg={error} />
+      <FieldError id={errorId} msg={error} />
     </div>
   );
 });
@@ -85,9 +92,10 @@ interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 }
 
 export const FormTextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function FormTextArea(
-  { label, required, error, id, ...rest }, ref
+  { label, required, error, id, 'aria-describedby': descripcion, ...rest }, ref
 ) {
   const controlId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+  const errorId = error && controlId ? `${controlId}-error` : undefined;
   return (
     <div>
       {label && (
@@ -101,9 +109,10 @@ export const FormTextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(funct
         style={{ ...CONTROL, minHeight: 68, resize: 'vertical', borderColor: error ? 'var(--sem-error)' : 'var(--surface-border)' }}
         aria-required={required}
         aria-invalid={!!error}
+        aria-describedby={describedBy(descripcion, errorId)}
         {...rest}
       />
-      <FieldError msg={error} />
+      <FieldError id={errorId} msg={error} />
     </div>
   );
 });

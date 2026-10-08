@@ -41,14 +41,14 @@ export function SensoresSection({ idActivo, esPoblacional, idInfraestructura }: 
   return (
     <div style={CARD}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--s3)', marginBottom: 'var(--s4)' }}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <Cpu size={16} aria-hidden />{t('sensoressection.sensores_iot')}</h3>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+          <Cpu size={16} aria-hidden />{t('sensoressection.sensores_iot')}</h2>
         {puedeAsociar && (
           <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSaveError(null); setAbierto(true); }}>{t('sensoressection.asociar_sensor')}</Button>
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--s2)', fontSize: '13px', color: 'var(--text-muted)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--s2)', fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)' }}>
         <Info size={15} aria-hidden style={{ marginTop: 2, flexShrink: 0 }} />
         <p style={{ margin: 0 }}>
           La consulta de asociaciones sensor–activo se realiza desde el módulo de Configuración.

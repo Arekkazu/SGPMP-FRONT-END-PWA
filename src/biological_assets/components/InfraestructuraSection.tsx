@@ -28,7 +28,8 @@ const TAB: React.CSSProperties = {
   border: 'none',
   borderBottom: '2px solid transparent',
   color: 'var(--text-secondary)',
-  fontSize: '13px',
+  fontSize: 'var(--fs-body-md)',
+  minHeight: 'var(--s9)',
   cursor: 'pointer',
 };
 
@@ -62,7 +63,7 @@ function AsociacionCard({ a, activa }: { a: AsociacionInfraestructuraResponse; a
         </div>
       </div>
       {activa && (
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--brand-600)' }}>{t('infraestructurasection.actual')}</span>
+        <span style={{ fontSize: 'var(--fs-label-sm)', fontWeight: 700, color: 'var(--brand-600)' }}>{t('infraestructurasection.actual')}</span>
       )}
     </div>
   );
@@ -77,6 +78,8 @@ export function InfraestructuraSection({ idActivo, onChanged }: Props) {
   const [view, setView] = useState<'ACTIVA' | 'HISTORIAL'>('ACTIVA');
   const [origen, setOrigen] = useState<{ id: number; nombre: string } | null>(null);
   const [transferir, setTransferir] = useState(false);
+  // Contador y no booleano: cada transferencia remonta la alerta para que se anuncie de nuevo (TC-DIS-134).
+  const [transferencias, setTransferencias] = useState(0);
 
   useEffect(() => { cargar(view); }, [view, cargar]);
 
@@ -86,7 +89,7 @@ export function InfraestructuraSection({ idActivo, onChanged }: Props) {
     }
   }, [data]);
 
-  const handleDone = () => { setView('ACTIVA'); cargar('ACTIVA'); onChanged(); };
+  const handleDone = () => { setView('ACTIVA'); cargar('ACTIVA'); onChanged(); setTransferencias((n) => n + 1); };
 
   return (
     <div style={CARD}>
@@ -102,6 +105,9 @@ export function InfraestructuraSection({ idActivo, onChanged }: Props) {
         )}
       </div>
 
+      {transferencias > 0 && (
+        <Alert key={transferencias} variant="success" title={t('infraestructurasection.transferencia_realizada')} style={{ marginBottom: 'var(--s4)' }} />
+      )}
       {error && <Alert variant="error" title={t('infraestructurasection.error_al_cargar_la_asociacion')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
       {data?.advertencia_integridad && (
         <Alert variant="warning" title={t('infraestructurasection.historial_con_inconsistencias')} description={data.advertencia_integridad} style={{ marginBottom: 'var(--s4)' }} />

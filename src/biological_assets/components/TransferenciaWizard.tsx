@@ -78,11 +78,11 @@ export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose,
 
       {/* Origen → destino */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
-        <div style={{ padding: 'var(--s2) var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '13px', color: 'var(--text-primary)' }}>
+        <div style={{ padding: 'var(--s2) var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: 'var(--fs-body-md)', color: 'var(--text-primary)' }}>
           {origenNombre ?? (origenId != null ? `Infra #${origenId}` : '—')}
         </div>
         <ArrowRight size={16} aria-hidden style={{ color: 'var(--text-muted)' }} />
-        <div style={{ padding: 'var(--s2) var(--s3)', background: 'var(--brand-50)', borderRadius: 'var(--r-md)', fontSize: '13px', color: 'var(--brand-600)', fontWeight: 600 }}>{t('transferenciawizard.destino')}</div>
+        <div style={{ padding: 'var(--s2) var(--s3)', background: 'var(--brand-50)', borderRadius: 'var(--r-md)', fontSize: 'var(--fs-body-md)', color: 'var(--brand-600)', fontWeight: 600 }}>{t('transferenciawizard.destino')}</div>
       </div>
 
       {pendiente ? (
@@ -90,7 +90,7 @@ export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose,
           <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>
             {t('transferenciawizard.confirma_la_transferencia')}
           </h3>
-          <dl className="ds-fg2" style={{ gap: 'var(--s2) var(--s4)', margin: 0, fontSize: '13px' }}>
+          <dl className="ds-fg2" style={{ gap: 'var(--s2) var(--s4)', margin: 0, fontSize: 'var(--fs-body-md)' }}>
             <dt style={{ color: 'var(--text-muted)' }}>{t('transferenciawizard.origen')}</dt>
             <dd style={{ margin: 0 }}>{origenNombre ?? `Infra #${pendiente.infraestructura_origen_id}`}</dd>
             <dt style={{ color: 'var(--text-muted)' }}>{t('transferenciawizard.destino')}</dt>
@@ -136,7 +136,7 @@ export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose,
             <Alert variant="warning" title={t('transferenciawizard.no_se_pudieron_cargar_los_destinos')} description={errorDisponibles.message} />
           )}
           {!loadingDisponibles && !errorDisponibles && disponibles.length === 0 && (
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('transferenciawizard.no_hay_infraestructuras_destino_compatibles')}</p>
+            <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: 0 }}>{t('transferenciawizard.no_hay_infraestructuras_destino_compatibles')}</p>
           )}
 
           <Input

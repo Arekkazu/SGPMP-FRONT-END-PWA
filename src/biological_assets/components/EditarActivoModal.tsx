@@ -92,7 +92,7 @@ export function EditarActivoModal({ activo, saving, saveError, onClose, onGuarda
           <Input label={t('editaractivomodal.raza')} placeholder={t('editaractivomodal.ej_holstein')} error={errors.raza?.message} {...register('raza')} />
 
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="edit-sexo">{t('editaractivomodal.sexo')}</label>
+            <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="edit-sexo">{t('editaractivomodal.sexo')}</label>
             <select id="edit-sexo" style={SELECT} {...register('sexo')}>
               <option value="">{t('editaractivomodal.sin_especificar')}</option>
               <option value="Macho">{t('editaractivomodal.macho')}</option>

@@ -51,6 +51,10 @@ export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, s
     if (idDispositivo > 0) cargarSensores(idDispositivo);
   }, [idDispositivo, cargarSensores, setValue]);
 
+  // El error con campo ya va debajo de su control: repetirlo en la alerta lo anuncia dos veces (TC-DIS-137).
+  const camposVisibles = ['tipo_activo', 'tipo_asociacion', 'dispositivo_iot_id', 'sensor_id', ...(idInfraestructura == null ? ['id_infraestructura'] : [])];
+  const errorEnCampo = camposVisibles.some((c) => errorServidor(saveError, c));
+
   const submit = async (v: FormValues) => {
     const dto: AsociarSensorActivoDTO = {
       tipo_activo: v.tipo_activo,
@@ -67,7 +71,7 @@ export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, s
 
   return (
     <ModalShell title={t('asociarsensormodal.asociar_sensor_iot')} onClose={onClose} maxWidth={520}>
-      {saveError && (
+      {saveError && !errorEnCampo && (
         <Alert
           variant={saveError.status >= 500 ? 'error' : 'warning'}
           title={t('asociarsensormodal.no_se_pudo_asociar_el_sensor')}
@@ -77,12 +81,12 @@ export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, s
       )}
       <form onSubmit={handleSubmit(submit)} noValidate>
         <div style={FORM_COL}>
-          <FormSelect label={t('asociarsensormodal.tipo_de_activo')} required {...register('tipo_activo')}>
+          <FormSelect label={t('asociarsensormodal.tipo_de_activo')} required error={errorServidor(saveError, 'tipo_activo')} {...register('tipo_activo')}>
             <option value="INDIVIDUAL">{t('asociarsensormodal.individual')}</option>
             <option value="LOTE">{t('asociarsensormodal.lote')}</option>
           </FormSelect>
 
-          <FormSelect label={t('asociarsensormodal.tipo_de_asociacion')} required {...register('tipo_asociacion')}>
+          <FormSelect label={t('asociarsensormodal.tipo_de_asociacion')} required error={errorServidor(saveError, 'tipo_asociacion')} {...register('tipo_asociacion')}>
             <option value="DIRECTA">{t('asociarsensormodal.directa')}</option>
             <option value="POBLACIONAL">{t('asociarsensormodal.poblacional')}</option>
           </FormSelect>
@@ -110,7 +114,7 @@ export function AsociarSensorModal({ esPoblacional, idInfraestructura, saving, s
             ))}
           </FormSelect>
           {idInfraestructura != null ? (
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+            <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', margin: 0 }}>
               {t('asociarsensormodal.infraestructura_del_activo')}: <strong>#{idInfraestructura}</strong>
             </p>
           ) : (

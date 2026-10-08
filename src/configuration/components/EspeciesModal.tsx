@@ -82,7 +82,9 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
         nombre: data.nombre.trim(),
         descripcion,
         tipo_modelo,
-        fecha_actualizacion: especie.fecha_actualizacion ?? new Date().toISOString(),
+        // Tal cual vino del GET, null incluido: una hora del cliente nunca coincide
+        // con la de la BD y el backend lo rechazaba con 412 (#231).
+        fecha_actualizacion: especie.fecha_actualizacion,
       });
     } else {
       ok = await onRegistrar({ nombre: data.nombre.trim(), descripcion, tipo_modelo });
