@@ -1,3 +1,11 @@
+## [1.0.0-rc.41](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.40...v1.0.0-rc.41) (2026-10-08)
+
+### Bug Fixes
+
+* **a11y:** [#271](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/271) el enlace saltar al contenido mueve el foco sin navegar a la raiz ([861e087](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/861e087bbbe6681a1e32c0cc6313e91c4e1726cd)), closes [#contenido-principal](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/contenido-principal)
+* **m02:** hallazgos de la segunda evaluacion de accesibilidad y consistencia visual ([c494df4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c494df400c100d4db2599b6fa886e841b3eb904b))
+* **rf15:** [#231](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/231) editar una especie nunca editada sin falso conflicto de concurrencia ([f46bafd](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f46bafdfab35b7b9295785f81748600cc99f604a))
+
 ## [1.0.0-rc.40](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.39...v1.0.0-rc.40) (2026-10-07)
 
 ### Bug Fixes
