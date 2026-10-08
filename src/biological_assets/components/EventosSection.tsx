@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
 import {
   TrendingUp, Stethoscope, Baby, Package, ArrowDownCircle, Info,
 } from 'lucide-react';
@@ -182,7 +183,7 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{r.detalle}</div>
                   </div>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                    {ev.fecha?.slice(0, 10)}
+                    {formatearFecha(ev.fecha, FECHA_NUMERICA)}
                   </span>
                 </li>
               );

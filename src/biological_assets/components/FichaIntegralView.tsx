@@ -1,5 +1,6 @@
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
 import { AlertTriangle } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
@@ -159,7 +160,7 @@ export function FichaIntegralView({ ficha, loading, error, onIrA }: Props) {
             <Dato label={t('fichaintegralview.identificador')} value={ficha.identificador} />
             <Dato label={t('fichaintegralview.tipo')} value={esPoblacional ? 'Poblacional' : 'Individual'} />
             <Dato label={t('fichaintegralview.especie')} value={ficha.especie} />
-            <Dato label={t('fichaintegralview.fecha_de_registro')} value={ficha.fecha_registro} />
+            <Dato label={t('fichaintegralview.fecha_de_registro')} value={formatearFecha(ficha.fecha_registro, FECHA_NUMERICA)} />
             <Dato label={t('fichaintegralview.dias_en_sistema')} value={ficha.dias_en_sistema} />
           </InfoGrid>
         </section>

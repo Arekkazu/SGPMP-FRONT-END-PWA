@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
 import { Pencil } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -94,7 +95,7 @@ export function DatosActivoSection({ activo, loading, saving, saveError, onGuard
           <Grid>
             <Dato label={t('datosactivosection.raza')} value={ind.raza} />
             <Dato label={t('datosactivosection.sexo')} value={ind.sexo} />
-            <Dato label={t('datosactivosection.fecha_de_nacimiento')} value={ind.fecha_nacimiento?.slice(0, 10)} />
+            <Dato label={t('datosactivosection.fecha_de_nacimiento')} value={formatearFecha(ind.fecha_nacimiento, FECHA_NUMERICA)} />
             <Dato label={t('datosactivosection.peso_inicial')} value={ind.peso_inicial} />
           </Grid>
         ) : pob ? (

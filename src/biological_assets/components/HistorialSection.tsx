@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
 import { errorServidor } from './formControls';
 import { History } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
@@ -121,7 +122,7 @@ export function HistorialSection({ idActivo }: Props) {
               {registros.map((r, i) => (
                 <tr key={i} style={{ background: 'var(--surface-card)' }}>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                    {r.fecha_evento?.slice(0, 10)}
+                    {formatearFecha(r.fecha_evento, FECHA_NUMERICA)}
                   </td>
                   <td style={TD}>
                     <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--surface-hover)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', whiteSpace: 'nowrap' }}>

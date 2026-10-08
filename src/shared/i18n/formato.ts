@@ -15,13 +15,22 @@ function locale(): string {
   return i18n.language || 'es-CO';
 }
 
+/** dd/mm/aaaa en es-CO (mm/dd/aaaa en en-US): el formato que pide la UAT (T-05). */
+export const FECHA_NUMERICA: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+
+/** Un `YYYY-MM-DD` sin hora es un día calendario, no un instante. */
+const SOLO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+
 /** `null`/`undefined`/fecha invalida devuelven un guion, no "Invalid Date". */
 export function formatearFecha(
   valor: string | number | Date | null | undefined,
   opciones: Intl.DateTimeFormatOptions = { dateStyle: 'medium' },
 ): string {
   if (valor === null || valor === undefined || valor === '') return '—';
-  const fecha = valor instanceof Date ? valor : new Date(valor);
+  // `new Date('2026-10-07')` es la medianoche UTC: en UTC-5 se mostraba el 06/10.
+  const fecha = valor instanceof Date
+    ? valor
+    : new Date(typeof valor === 'string' && SOLO_FECHA.test(valor) ? `${valor}T00:00:00` : valor);
   if (Number.isNaN(fecha.getTime())) return '—';
   return fecha.toLocaleDateString(locale(), opciones);
 }
