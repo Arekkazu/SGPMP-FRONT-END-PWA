@@ -12,6 +12,8 @@ export interface EspecieResponse {
   fecha_actualizacion: string | null;
   /** RFC-009: familia de modelo de IA de la especie; RF-20 exige que el modelo del área coincida. */
   tipo_modelo?: TipoModelo | null;
+  /** RF-36: límite de densidad del lote; null = sin configurar (el registro de lotes falla). Decimal → texto. */
+  densidad_maxima_por_especie?: number | string | null;
   /** #115 (RF-15): solo en cliente — true mientras la creación offline que lo generó
    *  sigue en syncQueue. No lo emite el backend. */
   pendienteSync?: boolean;
