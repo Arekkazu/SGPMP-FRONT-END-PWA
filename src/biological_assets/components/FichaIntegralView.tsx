@@ -1,6 +1,7 @@
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
+import { FECHA_NUMERICA, formatearFecha, formatearNumero } from '../../shared/i18n/formato';
+import { humanizar } from '../../shared/lib/etiquetas';
 import { AlertTriangle } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
@@ -52,8 +53,35 @@ function InfoGrid({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Renderiza un arreglo de dicts genéricos (eventos_*) de forma compacta. */
-function DictList({ items, vacio }: { items: Record<string, unknown>[]; vacio: string }) {
+type Fila = Record<string, unknown>;
+const txt = (v: unknown): string | null => (v == null || v === '' ? null : String(v));
+const fecha = (it: Fila) => formatearFecha(txt(it.fecha), FECHA_NUMERICA);
+const unir = (...partes: (string | null)[]) => partes.filter(Boolean).join(' · ');
+
+/**
+ * #298 §5.1 / #290 §4: una línea legible por evento ("07/10/2026 · Vacunación ·
+ * Aftosa 2 ml") en vez de volcar `clave: valor` con nombres internos y fecha UTC.
+ */
+type Etiqueta = (codigo: string | null) => string;
+
+export function lineasEvento(sanitario: Etiqueta = humanizar, reproductivo: Etiqueta = humanizar) {
+  return {
+  sanitario: (it: Fila) => {
+    const dosis = txt(it.dosis) ? `${formatearNumero(txt(it.dosis))} ${txt(it.unidad_dosis) ?? ''}`.trim() : null;
+    return unir(fecha(it), sanitario(txt(it.tipo_sanitario) ?? txt(it.tipo_evento)), txt(it.diagnostico), [txt(it.medicamento), dosis].filter(Boolean).join(' ') || null);
+  },
+  crecimiento: (it: Fila) => unir(fecha(it), humanizar(txt(it.variable)), `${formatearNumero(txt(it.valor))} ${txt(it.unidad) ?? ''}`.trim()),
+  productivo: (it: Fila) => unir(fecha(it), txt(it.tipo_producto), formatearNumero(txt(it.cantidad))),
+  reproductivo: (it: Fila) => unir(fecha(it), reproductivo(txt(it.tipo_evento)), txt(it.resultado) && reproductivo(txt(it.resultado))),
+  generico: (it: Fila) => Object.entries(it)
+    .filter(([, v]) => v != null && v !== '' && typeof v !== 'object')
+    .slice(0, 4)
+    .map(([k, v]) => `${humanizar(k)}: ${/^\d{4}-\d{2}-\d{2}/.test(String(v)) ? formatearFecha(String(v), FECHA_NUMERICA) : String(v)}`)
+    .join(' · '),
+  };
+}
+
+function DictList({ items, vacio, linea }: { items: Fila[]; vacio: string; linea: (it: Fila) => string }) {
   if (!items || items.length === 0) {
     return <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: 0 }}>{vacio}</p>;
   }
@@ -63,18 +91,14 @@ function DictList({ items, vacio }: { items: Record<string, unknown>[]; vacio: s
         <li
           key={i}
           style={{
-            fontSize: '12px',
+            fontSize: 'var(--fs-body-sm)',
             color: 'var(--text-secondary)',
             padding: 'var(--s2) var(--s3)',
             background: 'var(--surface-hover)',
             borderRadius: 'var(--r-md)',
           }}
         >
-          {Object.entries(it)
-            .filter(([, v]) => v != null && v !== '')
-            .slice(0, 4)
-            .map(([k, v]) => `${k}: ${String(v)}`)
-            .join(' · ') || '—'}
+          {linea(it) || '—'}
         </li>
       ))}
     </ul>
@@ -96,6 +120,10 @@ function mensajeError(error: ApiError, t: (k: string) => string): string {
 
 export function FichaIntegralView({ ficha, loading, error, onIrA }: Props) {
   const { t } = useT('biologicalAssets');
+  // Las mismas etiquetas que el usuario eligió en el formulario; humanizar() de respaldo.
+  const etiqueta = (seccion: string): Etiqueta => (c) =>
+    c ? t(`${seccion}.${c.toLowerCase()}`, { defaultValue: humanizar(c) }) : '—';
+  const LINEA_EVENTO = lineasEvento(etiqueta('eventosanitarioform'), etiqueta('eventoreproductivoform'));
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
@@ -218,23 +246,23 @@ export function FichaIntegralView({ ficha, loading, error, onIrA }: Props) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--s5)' }}>
         <div style={CARD}>
           <h2 style={CARD_TITLE}>{t('fichaintegralview.eventos_sanitarios')}</h2>
-          <DictList items={ficha.eventos_sanitarios} vacio="Sin eventos sanitarios." />
+          <DictList linea={LINEA_EVENTO.sanitario} items={ficha.eventos_sanitarios} vacio="Sin eventos sanitarios." />
         </div>
         <div style={CARD}>
           <h2 style={CARD_TITLE}>{t('fichaintegralview.eventos_de_crecimiento')}</h2>
-          <DictList items={ficha.eventos_crecimiento} vacio="Sin eventos de crecimiento." />
+          <DictList linea={LINEA_EVENTO.crecimiento} items={ficha.eventos_crecimiento} vacio="Sin eventos de crecimiento." />
         </div>
         <div style={CARD}>
           <h2 style={CARD_TITLE}>{t('fichaintegralview.eventos_productivos')}</h2>
-          <DictList items={ficha.eventos_productivos} vacio="Sin eventos productivos." />
+          <DictList linea={LINEA_EVENTO.productivo} items={ficha.eventos_productivos} vacio="Sin eventos productivos." />
         </div>
         <div style={CARD}>
           <h2 style={CARD_TITLE}>{t('fichaintegralview.eventos_reproductivos')}</h2>
-          <DictList items={ficha.eventos_reproductivos} vacio="Sin eventos reproductivos." />
+          <DictList linea={LINEA_EVENTO.reproductivo} items={ficha.eventos_reproductivos} vacio="Sin eventos reproductivos." />
         </div>
         <div style={CARD}>
           <h2 style={CARD_TITLE}>{t('fichaintegralview.indicadores')}</h2>
-          <DictList items={ficha.indicadores} vacio="Sin indicadores calculados." />
+          <DictList linea={LINEA_EVENTO.generico} items={ficha.indicadores} vacio="Sin indicadores calculados." />
         </div>
       </div>
 
