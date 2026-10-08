@@ -7,6 +7,10 @@
  * de IA; se anuncian tres errores 422 nuevos (incoherencia de modelo, especie inactiva y
  * cambio de especie con activos alojados); y un área inactiva se puede reactivar.
  *
+ * Reejecución sobre la release 1.0.0-rc.40 (5123a22): un error del backend con `fields` se
+ * anuncia debajo del campo (role="alert", aria-invalid, aria-describedby y foco) y ya no en
+ * la alerta general "Error al guardar"; el caso verifica que no se anuncie dos veces.
+ *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
  * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
  * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
@@ -212,8 +216,19 @@ function esAlta(r: Request) {
 
 /** 3.3.1: el campo señalado por el error queda inválido y con el mensaje asociado. */
 async function verificarErrorEnCampo(campo: Locator, nombreCampo: string, mensaje: RegExp) {
-  await expect.soft(campo, `3.3.1: el error trae field para "${nombreCampo}" pero el campo no se marca con aria-invalid`).toHaveAttribute('aria-invalid', 'true');
-  await expect.soft(campo, `3.3.1: el mensaje del error no está asociado al campo "${nombreCampo}" (aria-describedby)`).toHaveAccessibleDescription(mensaje);
+  await expect.soft(campo, `DEFECTO: 3.3.1: el error trae field para "${nombreCampo}" pero el campo no se marca con aria-invalid`).toHaveAttribute('aria-invalid', 'true');
+  await expect.soft(campo, `DEFECTO: 3.3.1: el mensaje del error no está asociado al campo "${nombreCampo}" (aria-describedby)`).toHaveAccessibleDescription(mensaje);
+}
+
+/**
+ * Error del backend con `fields` (release 1.0.0-rc.40, 5123a22): se anuncia debajo del campo
+ * (role="alert"), el foco va al campo y no se repite en una alerta general.
+ */
+async function verificarErrorDelBackend(dialogo: Locator, campo: Locator, nombreCampo: string, mensaje: RegExp) {
+  await expect(dialogo.getByRole('alert').filter({ hasText: mensaje }).first(), `DEFECTO: 3.3.1/4.1.3: el error de "${nombreCampo}" debe anunciarse (role="alert") con el mensaje del backend`).toBeVisible();
+  await verificarErrorEnCampo(campo, nombreCampo, mensaje);
+  await expect.soft(campo, `DEFECTO: 3.3.1: el foco debe ir al campo "${nombreCampo}" con el error`).toBeFocused();
+  await expect.soft(dialogo.getByRole('alert').filter({ hasText: mensaje }), `DEFECTO: 3.3.1: el error de "${nombreCampo}" se anuncia dos veces (debajo del campo y en una alerta general)`).toHaveCount(1);
 }
 
 // ── Escaneo axe + Lighthouse ─────────────────────────────────────────────────
@@ -280,15 +295,15 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
 
     // 1.3.1: todos los campos se ubican por su label; los obligatorios exponen aria-required
     for (const [campo, nombre] of [[form.tipo, 'Tipo de área'], [form.nombre, 'Nombre del área'], [form.superficie, 'Superficie'], [form.especie, 'Especie'], [form.modelo, 'Modelo de IA']] as const) {
-      await expect(campo, `1.3.1: no se encontró el campo "${nombre}" por su label`).toBeVisible();
+      await expect(campo, `DEFECTO: 1.3.1: no se encontró el campo "${nombre}" por su label`).toBeVisible();
     }
-    await expect(form.especie, '1.3.1: "Especie" es obligatoria').toHaveAttribute('aria-required', 'true');
+    await expect(form.especie, 'DEFECTO: 1.3.1: "Especie" es obligatoria').toHaveAttribute('aria-required', 'true');
     expect(await form.tipo.locator('option').count(), 'El catálogo real de tipos de área debe tener opciones').toBeGreaterThan(0);
 
     // 4.1.2 Especie: select nativo, valor inicial vacío y valor elegido expuesto
     await expect(form.especie).toHaveValue('');
     await form.especie.selectOption({ label: ESPECIE_CON_FAMILIA });
-    expect(await form.especie.evaluate((s) => (s as HTMLSelectElement).selectedOptions[0]?.text.trim()), '4.1.2: el valor anunciado es el nombre de la especie').toBe(ESPECIE_CON_FAMILIA);
+    expect(await form.especie.evaluate((s) => (s as HTMLSelectElement).selectedOptions[0]?.text.trim()), 'DEFECTO: 4.1.2: el valor anunciado es el nombre de la especie').toBe(ESPECIE_CON_FAMILIA);
 
     // 4.1.2 Modelo de IA: solo la familia de la especie, con texto legible
     const opcionesModelo = await form.modelo.locator('option').evaluateAll((os) => os.map((o) => ({ value: (o as HTMLOptionElement).value, texto: o.textContent?.trim() ?? '' })));
@@ -296,7 +311,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
     expect(opcionesModelo.map((o) => o.value).filter(Boolean), 'El modelo de IA solo ofrece la familia de la especie').toEqual([FAMILIA]);
     await form.modelo.selectOption(FAMILIA);
     await expect(form.modelo).toHaveValue(FAMILIA);
-    expect(await form.modelo.evaluate((s) => (s as HTMLSelectElement).selectedOptions[0]?.text.trim()), '4.1.2: el valor anunciado es el nombre del modelo').toBe(FAMILIA_TEXTO);
+    expect(await form.modelo.evaluate((s) => (s as HTMLSelectElement).selectedOptions[0]?.text.trim()), 'DEFECTO: 4.1.2: el valor anunciado es el nombre del modelo').toBe(FAMILIA_TEXTO);
     await escanear(page, 'formulario', testInfo);
 
     // Especie sin familia: el aviso debe estar asociado al select de modelo (1.3.1)
@@ -306,7 +321,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
     const aviso = form.dialogo.getByText('La especie no tiene familia de modelo configurada', { exact: false });
     await expect(aviso, `Con "${sinFamilia}" (sin familia) se muestra el aviso`).toBeVisible();
     await expect(form.modelo, 'Sin familia, el modelo queda sin asignar').toHaveValue('');
-    await expect.soft(form.modelo, '1.3.1: el aviso "La especie no tiene familia de modelo configurada…" no está asociado al select "Modelo de IA" (aria-describedby)').toHaveAccessibleDescription(/no tiene familia de modelo/);
+    await expect.soft(form.modelo, 'DEFECTO: 1.3.1: el aviso "La especie no tiene familia de modelo configurada…" no está asociado al select "Modelo de IA" (aria-describedby)').toHaveAccessibleDescription(/no tiene familia de modelo/);
   });
 
   test('4. Nombre duplicado en la misma finca (real) - anunciado por campo', async ({ page }, testInfo) => {
@@ -324,8 +339,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
     testInfo.annotations.push({ type: 'Respuesta real al duplicado', description: `${respuesta.status()} ${await respuesta.text()}` });
 
     expect(respuesta.status(), `El backend debe responder 409 al nombre duplicado "${AREA_EXISTENTE}" en la misma finca`).toBe(409);
-    await expect(form.dialogo.getByRole('alert').first(), '3.3.1: el duplicado se anuncia').toContainText(/existe|duplicad/i);
-    await expect.soft(form.nombre, '3.3.1: "Nombre del área" debe marcarse con aria-invalid').toHaveAttribute('aria-invalid', 'true');
+    const mensajeDuplicado = (await respuesta.json()).message as string;
+    await verificarErrorDelBackend(form.dialogo, form.nombre, 'Nombre del área', new RegExp(mensajeDuplicado.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 
     await escanear(page, 'error-duplicado', testInfo);
   });
@@ -338,24 +353,19 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
     const form = await abrirRegistro(page);
     await llenarRegistro(form, 'Area Qa Accesibilidad');
     await form.modelo.selectOption(FAMILIA);
-    const alerta = form.dialogo.getByRole('alert').filter({ hasText: 'Error al guardar' });
 
     // Incoherencia de modelo
     fijarModo({ tipo: 'simular', status: 422, cuerpo: ERROR_422_MODELO });
     await form.guardar.click();
-    await expect(alerta, '3.3.1/4.1.3: la incoherencia de modelo se anuncia en una alerta').toBeVisible();
-    await expect(alerta).toHaveAttribute('aria-live', /assertive|polite/);
-    await expect(alerta, '3.3.1: la alerta explica la incoherencia').toContainText('familia');
     await expect(form.dialogo, 'El modal sigue abierto para corregir').toBeVisible();
-    await verificarErrorEnCampo(form.modelo, 'Modelo de IA', /coincidir con la familia/);
+    await verificarErrorDelBackend(form.dialogo, form.modelo, 'Modelo de IA', /coincidir con la familia/);
     await escanear(page, 'error-422-modelo', testInfo);
 
     // Especie inactiva
     fijarModo({ tipo: 'simular', status: 422, cuerpo: ERROR_422_ESPECIE_INACTIVA });
     await form.guardar.click();
     await expect.poll(() => intentos.length).toBe(2);
-    await expect(alerta, '3.3.1/4.1.3: la especie inactiva se anuncia').toContainText('inactiva');
-    await verificarErrorEnCampo(form.especie, 'Especie', /está inactiva/);
+    await verificarErrorDelBackend(form.dialogo, form.especie, 'Especie', /está inactiva/);
     await escanear(page, 'error-422-especie-inactiva', testInfo);
   });
 
@@ -374,11 +384,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
     await expect.poll(() => intentos.length, { message: 'Guardar debe enviar el PATCH' }).toBe(1);
     expect(intentos[0].metodo).toBe('PATCH');
 
-    const alerta = form.dialogo.getByRole('alert').filter({ hasText: 'Error al guardar' });
-    await expect(alerta, '3.3.1/4.1.3: el cambio de especie con activos alojados se anuncia').toContainText('activos biológicos alojados');
-    await expect(alerta).toHaveAttribute('aria-live', /assertive|polite/);
     await expect(form.dialogo, 'El modal sigue abierto').toBeVisible();
-    await verificarErrorEnCampo(form.especie, 'Especie', /trasládalos antes de cambiar la especie/);
+    await verificarErrorDelBackend(form.dialogo, form.especie, 'Especie', /trasládalos antes de cambiar la especie/);
     await escanear(page, 'error-422-activos-alojados', testInfo);
   });
 
@@ -398,7 +405,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
 
     // 2.1.1 / 4.1.2: la acción se alcanza por teclado y nombra el área
     const reactivar = fila.getByRole('button', { name: `Reactivar ${nombre}`, exact: true });
-    await expect(reactivar, '4.1.2: la acción "Reactivar" debe nombrar el área').toBeVisible();
+    await expect(reactivar, 'DEFECTO: 4.1.2: la acción "Reactivar" debe nombrar el área').toBeVisible();
     await reactivar.focus();
     await page.keyboard.press('Enter');
 
@@ -406,9 +413,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
     const confirmacion = page.getByRole('dialog').filter({ hasText: 'Reactivar área' });
     await expect(confirmacion, 'Enter abre la confirmación').toBeVisible();
     await expect(confirmacion).toContainText(nombre);
-    await expect.soft(confirmacion, '4.1.2: el diálogo de confirmación "Reactivar área" no tiene nombre accesible (sin aria-labelledby)').toHaveAccessibleName(/Reactivar área/);
+    await expect.soft(confirmacion, 'DEFECTO: 4.1.2: el diálogo de confirmación "Reactivar área" no tiene nombre accesible (sin aria-labelledby)').toHaveAccessibleName(/Reactivar área/);
     const focoDentro = await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'));
-    expect.soft(focoDentro, '2.4.3: al abrir la confirmación el foco debe moverse al diálogo').toBe(true);
+    expect.soft(focoDentro, 'DEFECTO: 2.4.3: al abrir la confirmación el foco debe moverse al diálogo').toBe(true);
     await escanear(page, 'confirmar-reactivar', testInfo);
 
     // Confirmar: 200 simulado con el área activa
@@ -417,7 +424,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
     await expect.poll(() => intentos.length).toBe(1);
     expect(intentos[0].url, 'La confirmación llama a PATCH …/reactivar').toMatch(/\/reactivar$/);
     await expect(confirmacion).toBeHidden();
-    await expect(fila, '4.1.2: el estado nuevo se muestra como texto').toContainText('Activa');
+    await expect(fila, 'DEFECTO: 4.1.2: el estado nuevo se muestra como texto').toContainText('Activa');
     await expect(fila.getByRole('button', { name: `Desactivar ${nombre}`, exact: true }), 'Tras reactivar se ofrece "Desactivar"').toBeVisible();
   });
 
