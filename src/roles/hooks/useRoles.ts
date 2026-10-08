@@ -9,6 +9,7 @@ import type {
   AsignarPermisoDTO,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { avisarExito } from '../../shared/hooks/useToast';
 
 export function useRoles() {
   const [roles, setRoles] = useState<RolConPermisosResponse[]>([]);
@@ -40,6 +41,7 @@ export function useRoles() {
     try {
       const nuevo = await rolesApi.crear(dto);
       setRoles((prev) => [...prev, nuevo]);
+      avisarExito('registrado', dto.nombre_rol);
       return true;
     } catch (e) {
       setError(e as ApiError);
@@ -50,6 +52,7 @@ export function useRoles() {
   const editarRol = useCallback(async (id: number, dto: EditarRolDTO): Promise<boolean> => {
     try {
       await rolesApi.editar(id, dto);
+      avisarExito('guardado');
       setRoles((prev) =>
         prev.map((r) =>
           r.id_rol === id ? { ...r, nombre_rol: dto.nombre_rol ?? r.nombre_rol, descripcion: dto.descripcion ?? r.descripcion } : r
@@ -65,6 +68,7 @@ export function useRoles() {
   const eliminarRol = useCallback(async (id: number): Promise<boolean> => {
     try {
       await rolesApi.eliminar(id);
+      avisarExito('eliminado');
       setRoles((prev) => prev.filter((r) => r.id_rol !== id));
       return true;
     } catch (e) {

@@ -31,15 +31,16 @@ export function Alert({ variant, title, description, onDismiss, className = '', 
   const { t } = useT('common');
   const [visible, setVisible] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
+  const urgente = variant === 'error' || variant === 'warning';
 
   // T-03 (reporte UAT): el error del servidor salía arriba del formulario mientras
   // el usuario estaba abajo, junto al botón, y parecía que no pasaba nada. Un
   // error o advertencia se trae a la vista; `nearest` no mueve nada si ya se ve.
   useEffect(() => {
-    if (variant !== 'error' && variant !== 'warning') return;
+    if (!urgente) return;
     const reducido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     ref.current?.scrollIntoView?.({ block: 'nearest', behavior: reducido ? 'auto' : 'smooth' });
-  }, [variant, title, description]);
+  }, [urgente, title, description]);
 
   useEffect(() => {
     const delay = AUTO_DISMISS[variant];

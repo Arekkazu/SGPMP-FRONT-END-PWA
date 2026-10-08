@@ -3,6 +3,7 @@ import { dispositivosApi, tiposDispositivoApi } from '../api/iotApi';
 import { TIPO_GATEWAY_EDGE } from '../types';
 import type { DispositivoIotResponse, RegistrarDispositivoIotDTO, TipoDispositivoIotResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { avisarExito } from '../../shared/hooks/useToast';
 
 export function useDispositivosIot() {
   const [dispositivos, setDispositivos] = useState<DispositivoIotResponse[]>([]);
@@ -32,7 +33,8 @@ export function useDispositivosIot() {
     setSaveError(null);
     try {
       const nuevo = await dispositivosApi.registrar(dto);
-      setDispositivos((prev) => [...prev, nuevo]);
+      setDispositivos((prev) => [nuevo, ...prev]);
+      avisarExito('registrado', nuevo.serial);
       return true;
     } catch (e) {
       setSaveError(e as ApiError);

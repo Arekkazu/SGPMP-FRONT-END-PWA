@@ -29,6 +29,7 @@ import { useIdiomaSesion } from './shared/i18n/useIdiomaSesion';
 import { useTemaSesion } from './shared/tema/useTemaSesion';
 import { useSyncOnReconnect } from './shared/sync/useSyncOnReconnect';
 import { ContextoProvider } from './shared/contexto/ContextoProvider';
+import { ToastHost } from './shared/design-system/ToastHost';
 import { useContexto } from './shared/contexto/useContexto';
 import { BienvenidaSinFinca } from './shared/contexto/BienvenidaSinFinca';
 import { SinEspeciesEmptyState } from './shared/contexto/SinEspeciesEmptyState';
@@ -350,6 +351,7 @@ const App: React.FC = () => (
         <IonReactRouter>
           <AppRoutes />
         </IonReactRouter>
+        <ToastHost />
       </ContextoProvider>
     </AuthProvider>
   </IonApp>

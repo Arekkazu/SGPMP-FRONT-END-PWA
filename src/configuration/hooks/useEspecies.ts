@@ -7,6 +7,7 @@ import {
 import type { EspecieResponse, RegistrarEspecieDTO, EditarEspecieDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import type { SyncOperation } from '../../shared/db/db';
+import { avisarExito } from '../../shared/hooks/useToast';
 
 const MODULO = 'config_especies';
 
@@ -124,11 +125,14 @@ export function useEspecies() {
       // última página, fuera de la vista donde el usuario acaba de crearla (#450).
       setEspecies((prev) => [filaPendiente(tempId, dto), ...prev]);
       setSaving(false);
+      avisarExito('pendiente_sync', dto.nombre);
       return true;
     }
     try {
       const nueva = await especiesApi.registrar(dto);
-      setEspecies((prev) => [...prev, nueva]);
+      // T-02: al inicio, como la fila offline (#450), para que no quede perdida en la última página.
+      setEspecies((prev) => [nueva, ...prev]);
+      avisarExito('registrado', nueva.nombre);
       return true;
     } catch (e) {
       setSaveError(e as ApiError);
@@ -166,6 +170,7 @@ export function useEspecies() {
     try {
       const actualizada = await especiesApi.editar(id, dto);
       setEspecies((prev) => prev.map((e) => (e.id_especie === id ? actualizada : e)));
+      avisarExito('guardado', actualizada.nombre);
       return true;
     } catch (e) {
       setSaveError(e as ApiError);
@@ -181,6 +186,7 @@ export function useEspecies() {
     try {
       const actualizada = await especiesApi.desactivar(id);
       setEspecies((prev) => prev.map((e) => (e.id_especie === id ? actualizada : e)));
+      avisarExito('desactivado', actualizada.nombre);
       return true;
     } catch (e) {
       setSaveError(e as ApiError);
@@ -196,6 +202,7 @@ export function useEspecies() {
     try {
       const actualizada = await especiesApi.reactivar(id);
       setEspecies((prev) => prev.map((e) => (e.id_especie === id ? actualizada : e)));
+      avisarExito('reactivado', actualizada.nombre);
       return true;
     } catch (e) {
       setSaveError(e as ApiError);
