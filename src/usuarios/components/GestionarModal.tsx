@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { X, AlertTriangle, CheckCircle, Lock, Unlock, Trash2 } from 'lucide-react';
+import { X, AlertTriangle, CheckCircle, Lock, Unlock, Trash2, PauseCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
@@ -55,7 +55,8 @@ function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
       claveLabel: 'gestionarmodal.inactivar',
       claveDescripcion: 'gestionarmodal.inactivar_desc',
       variante: 'secondary',
-      icon: <Lock size={14} aria-hidden />,
+      // M1-03: Inactivar y Bloquear usaban el mismo candado.
+      icon: <PauseCircle size={14} aria-hidden />,
       requiresMotivo: true,
     });
     acciones.push({
