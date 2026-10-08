@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { Plus, RefreshCw, ChevronDown, ChevronUp, GitBranch } from 'lucide-react';
+import { Plus, RefreshCw, ChevronDown, ChevronUp, GitBranch, Sprout, ClipboardList } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
@@ -53,33 +53,37 @@ function PlantillaCard({
   plantilla, especieNombre, puedeAplicar, puedeCrear, online, onAplicar, onVersionar,
 }: PlantillaCardProps) {
   const { t } = useT('configuration');
+  // TC-DIS-61: varias versiones comparten nombre, asi que el encabezado y los
+  // botones nombran la plantilla con su version; si no, el lector anunciaba
+  // decenas de "Aplicar plantilla: X" identicos.
+  const nombreCompleto = `${plantilla.template_name} v${plantilla.version}`;
   return (
-    <div style={{
-      background: 'var(--surface-card)', border: '1px solid var(--surface-border)',
-      borderRadius: 'var(--r-xl)', padding: 'var(--s5)',
-      position: 'relative', overflow: 'hidden',
-      transition: 'border-color 0.15s, box-shadow 0.15s',
-    }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--brand-400)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-md)'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--surface-border)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'; }}
+    <article
+      aria-label={nombreCompleto}
+      style={{
+        background: 'var(--surface-card)', border: '1px solid var(--surface-border)',
+        borderRadius: 'var(--r-xl)', padding: 'var(--s5)',
+        position: 'relative', overflow: 'hidden', height: '100%',
+      }}
     >
       {/* Top accent bar */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'var(--brand-400)' }} />
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'var(--s3)' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 var(--s1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <h3 title={plantilla.template_name} style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 var(--s1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {plantilla.template_name}
+            <span className="ds-sr-only"> v{plantilla.version}</span>
           </h3>
         </div>
-        <span style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 'var(--r-full)', background: 'var(--surface-hover)', border: '1px solid var(--surface-border)', color: 'var(--text-muted)', flexShrink: 0, marginLeft: 'var(--s2)' }}>
+        <span aria-hidden="true" style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 'var(--r-full)', background: 'var(--surface-hover)', border: '1px solid var(--surface-border)', color: 'var(--text-muted)', flexShrink: 0, marginLeft: 'var(--s2)' }}>
           v{plantilla.version}
         </span>
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)', marginBottom: 'var(--s3)' }}>
-        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--brand-600)', background: 'var(--brand-50, #f0f7ee)', border: '1px solid var(--brand-200, #b2d8b5)', borderRadius: 'var(--r-full)', padding: '2px 7px' }}>
-          🌿 {especieNombre}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '11px', fontWeight: 600, color: 'var(--brand-600)', background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderRadius: 'var(--r-full)', padding: '2px 7px' }}>
+          <Sprout size={12} strokeWidth={2} aria-hidden />{especieNombre}
         </span>
         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
           {formatearFecha(plantilla.fecha_creacion)}
@@ -103,7 +107,7 @@ function PlantillaCard({
               disabled={!online}
               onClick={onVersionar}
               title={t('plantillastable.generar_la_version_siguiente')}
-              aria-label={`${t('plantillastable.nueva_version')}: ${plantilla.template_name}`}
+              aria-label={`${t('plantillastable.nueva_version')}: ${nombreCompleto}`}
             >
               <GitBranch size={13} aria-hidden style={{ marginRight: 'var(--s1)' }} />
               {t('plantillastable.nueva_version')}
@@ -114,11 +118,11 @@ function PlantillaCard({
             size="sm"
             disabled={!puedeAplicar || !online}
             onClick={onAplicar}
-            aria-label={`${t('plantillastable.aplicar_plantilla')}: ${plantilla.template_name}`}
+            aria-label={`${t('plantillastable.aplicar_plantilla')}: ${nombreCompleto}`}
           >{t('plantillastable.aplicar_plantilla')}</Button>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -189,13 +193,15 @@ export function PlantillasTable() {
         </div>
       ) : plantillas.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 'var(--s8) 0' }}>
-          <div style={{ fontSize: '32px', marginBottom: 'var(--s3)' }}>📋</div>
+          <ClipboardList size={32} strokeWidth={1.5} color="var(--text-muted)" aria-hidden style={{ marginBottom: 'var(--s3)' }} />
           <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('plantillastable.sin_plantillas_creadas')}</div>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('plantillastable.crea_la_primera_plantilla_para_capturar_una')}</p>
         </div>
       ) : (
         // TC-DIS-61: lista semántica; cada plantilla con su nombre como encabezado.
-        <ul style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)', listStyle: 'none', padding: 0, marginTop: 0 }}>
+        // role="list" explicito: Safari/VoiceOver quita la semantica de lista
+        // cuando lleva list-style: none.
+        <ul role="list" aria-label={t('plantillastable.plantillas_de_configuracion')} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)', listStyle: 'none', padding: 0, marginTop: 0 }}>
           {plantillas.map((p) => (
             <li key={p.id_plantilla}>
             <PlantillaCard
@@ -214,16 +220,18 @@ export function PlantillasTable() {
       )}
 
       {/* Historial toggle */}
-      <button
-        type="button"
-        onClick={toggleHistorial}
-        aria-expanded={showHistorial}
-        aria-controls="plantillas-historial"
-        style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', cursor: 'pointer', padding: 'var(--s4) 0', borderTop: '1px solid var(--surface-border)', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
-      >
-        {showHistorial ? <ChevronUp size={16} aria-hidden /> : <ChevronDown size={16} aria-hidden />}
-        Historial de aplicaciones
-      </button>
+      <div style={{ borderTop: '1px solid var(--surface-border)', paddingTop: 'var(--s3)' }}>
+        <Button
+          variant="ghost"
+          size="md"
+          onClick={toggleHistorial}
+          aria-expanded={showHistorial}
+          aria-controls="plantillas-historial"
+        >
+          {showHistorial ? <ChevronUp size={16} aria-hidden /> : <ChevronDown size={16} aria-hidden />}
+          <span style={{ marginLeft: 'var(--s2)' }}>{t('plantillastable.historial_de_aplicaciones')}</span>
+        </Button>
+      </div>
       {showHistorial && (
         <div id="plantillas-historial" style={{ marginTop: 'var(--s4)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
           <div style={{ padding: 'var(--s3) var(--s5)', background: 'var(--surface-hover)', borderBottom: '1px solid var(--surface-border)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('plantillastable.aplicaciones_recientes')}</div>

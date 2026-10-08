@@ -5,13 +5,16 @@
  *   "Ubicación actual" (asociación activa) / "Historial de ubicaciones"
  *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
- * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>.html/json), ambos
- * en ./resultados. RF de solo lectura: no se evalúan formularios de escritura.
+ * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
+ * peso 0 en el puntaje. RF de solo lectura: no se evalúan formularios de escritura.
  *
  * Datos: activo #4. Su historial es real (2 asociaciones) y el backend devuelve
  * advertencia_integridad por solapamiento de períodos, lo que permite evaluar 4.1.2.
  *
- * BLOQUEO DEL AMBIENTE (2026-09-29): ninguno de los 539 activos tiene asociación
+ * Corregido al 2026-10-07: la consulta ACTIVA del activo #4 responde 200 y 1a evalúa la
+ * vista real; 1b se conserva como control con una asociación fija.
+ * BLOQUEO DEL AMBIENTE (2026-09-29): ninguno de los 539 activos tenía asociación
  * activa: GET /activos-biologicos/{id}/infraestructura?tipo_consulta=ACTIVA responde
  * 404 ASOCIACION_INFRAESTRUCTURA_NO_ENCONTRADA ("inconsistencia") para todos. El
  * test 1a lo evalúa tal cual; 1b sirve con page.route una asociación activa
@@ -22,9 +25,8 @@
  * (el backend responde 404 y no 403 a un activo ajeno, así que el 403 no se
  * alcanza desde la UI; se usa el formato ACCESO_DENEGADO del backend).
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_120_VIEWPORTS=movil,tablet,escritorio
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_120_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -37,7 +39,7 @@ const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 const ID_ACTIVO = Number(process.env.TC_DIS_120_ACTIVO ?? 4);
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_120_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_120_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 
@@ -110,7 +112,8 @@ function resumenViolaciones(violaciones: { id: string; impact?: string | null; h
   return violaciones.map((v) => `${v.id} (${v.impact}): ${v.help} [${v.nodes.length} nodo(s)]`).join('\n');
 }
 
-async function escanear(page: Page, paso: string, testInfo: TestInfo) {
+async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
+  const paso = `${pasoBase}-${testInfo.project.name}`;
   await page.evaluate(() => document.fonts.ready);
 
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
@@ -126,6 +129,8 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 // ── Casos ────────────────────────────────────────────────────────────────────
@@ -138,7 +143,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación Activa e Histo
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
+      `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_120_VIEWPORTS.`,
     );
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
@@ -185,8 +190,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación Activa e Histo
     const respuesta = await (await consulta).json();
 
     expect(respuesta.historial.length, `Precondición: el activo #${ID_ACTIVO} debe tener historial`).toBeGreaterThan(0);
-    for (const a of respuesta.historial) {
-      await expect(page.getByText(a.nombre_infraestructura, { exact: true })).toBeVisible();
+    // Un área puede repetirse en el historial (varios períodos en la misma infraestructura)
+    for (const nombre of new Set<string>(respuesta.historial.map((a: { nombre_infraestructura: string }) => a.nombre_infraestructura))) {
+      await expect(page.getByText(nombre, { exact: true }).first()).toBeVisible();
     }
     await verificarEstadoSeleccion(botonesVista(page).historial, 'Historial de ubicaciones');
 
@@ -230,7 +236,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación Activa e Histo
     await page.goto(`/activos-biologicos/${ID_ACTIVO}`);
     const alerta403 = page.getByRole('alert').filter({ hasText: 'No se pudo cargar el activo' });
     await expect(alerta403, '3.3.1: el 403 debe anunciarse').toBeVisible({ timeout: 20_000 });
-    await expect(alerta403).toContainText('Acceso denegado');
+    await expect(alerta403, '3.3.1: el 403 debe explicar que no hay permiso').toContainText(/permiso|Acceso denegado/i);
     await escanear(page, 'error-403', testInfo);
   });
 
@@ -250,11 +256,12 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación Activa e Histo
     const consulta = page.waitForResponse((r) => URL_ASOCIACION(new URL(r.url())) && new URL(r.url()).searchParams.get('tipo_consulta') === 'HISTORIAL');
     await page.keyboard.press('Enter');
     const respuesta = await (await consulta).json();
-    await expect(page.getByText(respuesta.historial[0].nombre_infraestructura, { exact: true }), 'Enter debe mostrar el historial').toBeVisible();
+    await expect(page.getByText(respuesta.historial[0].nombre_infraestructura, { exact: true }).first(), 'Enter debe mostrar el historial').toBeVisible();
 
     await page.keyboard.press('Shift+Tab');
     await expect(activa).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(page.getByText(respuesta.historial[0].nombre_infraestructura, { exact: true }), 'Enter en "Ubicación actual" debe volver a la vista activa').toBeHidden();
+    // La ubicación actual puede ser la misma infraestructura del historial: se verifica la marca "ACTUAL"
+    await expect(page.getByText('ACTUAL', { exact: true }), 'Enter en "Ubicación actual" debe volver a la vista activa').toBeVisible();
   });
 });

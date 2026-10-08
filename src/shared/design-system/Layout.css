@@ -44,6 +44,86 @@
   }
 }
 
+/* Modales (DS v2.0): bottom sheet a ancho completo en xs/sm, maximo 480px en
+ * md y 560px en lg. El panel hace scroll propio, asi el formulario largo no
+ * empuja el velo ni pierde el encabezado de la pagina detras. */
+.ds-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--overlay-modal);
+}
+
+.ds-modal__panel {
+  width: 100%;
+  max-height: 92dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-bottom: none;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  box-shadow: var(--shadow-lg);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 768px) {
+  .ds-modal {
+    align-items: center;
+    padding: var(--s6) var(--s4);
+  }
+
+  .ds-modal__panel {
+    max-width: 480px;
+    max-height: 100%;
+    border-bottom: 1px solid var(--surface-border);
+    border-radius: var(--r-xl);
+    padding-bottom: 0;
+  }
+}
+
+@media (min-width: 1200px) {
+  .ds-modal__panel { max-width: 560px; }
+}
+
+/* Confirmaciones cortas: mas angostas que un formulario en md+. */
+@media (min-width: 768px) {
+  .ds-modal__panel--sm { max-width: 400px; }
+  /* Excepcion documentada: detalles con tablas o matrices (matriz de
+     confusion, payload de auditoria, niveles de umbral) no caben en 560px. */
+  .ds-modal__panel--wide { max-width: 720px; }
+}
+
+/* Scroll horizontal de tablas (ScrollRegion): enfocable con teclado. */
+.ds-scroll-region {
+  overflow-x: auto;
+}
+
+.ds-scroll-region:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Fila de tabla que abre un detalle: hover y foco de teclado por CSS. Va
+ * con tabIndex={0} y alActivarConTeclado (shared/lib/teclado.ts). */
+.ds-fila-accion {
+  background: var(--surface-card);
+  cursor: pointer;
+}
+
+.ds-fila-accion:hover,
+.ds-fila-accion:focus-visible {
+  background: var(--surface-hover);
+}
+
+.ds-fila-accion:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
 /* Enlace "Saltar al contenido" (WCAG 2.4.1): fuera de pantalla hasta recibir foco. */
 .ds-skip-link {
   position: absolute;

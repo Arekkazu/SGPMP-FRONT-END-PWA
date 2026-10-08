@@ -20,6 +20,10 @@
  *   - LOTE #353, ACTIVO, fase e infraestructura (el mismo que usa TC-DIS-122).
  *   Si alguno cambia de estado, el spec corta con "BLOQUEO DE AMBIENTE" en vez de auditar
  *   otra cosa.
+ * Re-test 07/10/2026 (cuenta Administrador de otra finca, tema oscuro guardado): INDIVIDUAL #745
+ * "QAG53R2-63077805" (Cachama Blanca, ACTIVO, fase "Ciclo completo cachama 2025-A", Piscina-Cam-01), equivalente
+ * al #627, y LOTE #749 sin fase activa (en TEST no hay LOTE activo con fase en esta finca); no afecta lo verificado
+ * porque la sección del lote depende solo del tipo POBLACIONAL y el spec solo le exige tipo y estado.
  *
  * Errores:
  *   - 404 REAL: activo inexistente (#999999). Solo lectura.
@@ -48,8 +52,8 @@ const TC_ID = 'TC-DIS-117';
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
-const ID_INDIVIDUAL = 627;
-const ID_LOTE = 353;
+const ID_INDIVIDUAL = 745;
+const ID_LOTE = 749;
 const ID_INEXISTENTE = 999999;
 
 const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
@@ -327,7 +331,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Ficha integral del activo 
     await escanear(page, 'error-404', testInfo);
 
     // 403 simulado sobre los GET del activo (el Administrador sí tiene permiso)
-    testInfo.annotations.push({ type: 'Datos simulados', description: '403 ACCESO_DENEGADO inyectado con route.fulfill sobre GET /activos-biologicos/627 y /ficha-integral.' });
+    testInfo.annotations.push({ type: 'Datos simulados', description: '403 ACCESO_DENEGADO inyectado con route.fulfill sobre GET /activos-biologicos/745 y /ficha-integral.' });
     const api403 = (url: URL) => url.pathname.includes(`/back-sigab-test/activos-biologicos/${ID_INDIVIDUAL}`);
     await page.route(api403, (r) => r.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify(ERROR_403) }));
     try {
@@ -338,7 +342,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Ficha integral del activo 
       testInfo.annotations.push({ type: 'Alertas 403', description: alertas.map((a) => a.replace(/\s+/g, ' ').trim()).join(' · ') });
       expect.soft(alertas.join(' '), 'El 403 debe mostrar el mensaje E-02 del RF-47').toContain(ERROR_403.message);
       // E-02: sin exponer ningún dato del activo
-      await expect(main(page).getByText('QAG53R2-21297514'), 'Con 403 no se debe exponer el identificador del activo').toHaveCount(0);
+      await expect(main(page).getByText('QAG53R2-63077805'), 'Con 403 no se debe exponer el identificador del activo').toHaveCount(0);
       await escanear(page, 'error-403', testInfo);
     } finally {
       await page.unroute(api403);

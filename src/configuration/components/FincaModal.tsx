@@ -9,6 +9,7 @@ import { Button } from '../../shared/design-system/Button';
 import type { FincaResponse, RegistrarFincaDTO, EditarFincaDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 
 interface FormValues {
   nombre: string;
@@ -20,6 +21,8 @@ interface FormValues {
   latitud: number;
   longitud: number;
 }
+
+const CAMPOS = ['nombre', 'tamano_h', 'id_usuario', 'departamento', 'municipio', 'vereda', 'latitud', 'longitud'] as const;
 
 interface Props {
   finca: FincaResponse | null;
@@ -53,8 +56,10 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
+  const alertaGeneral = useErroresDeServidor(saveError, setError, CAMPOS);
 
   useEffect(() => {
     if (finca) {
@@ -104,10 +109,10 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
       role="dialog"
       aria-modal="true"
       aria-labelledby="finca-modal-title"
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', padding: 'var(--s6) var(--s4)', overflowY: 'auto' }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', width: '100%', maxWidth: 600, boxShadow: 'var(--shadow-lg)', marginBottom: 'var(--s6)' }}>
+      <div className="ds-modal__panel">
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)' }}>
           <h2 id="finca-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
@@ -119,7 +124,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
         </div>
 
         <div style={{ padding: 'var(--s6)' }}>
-          {saveError && (
+          {saveError && alertaGeneral && (
             <Alert
               variant="error"
               title={saveError.status === 412 ? t('fincamodal.conflicto_de_edicion') : t('fincamodal.error_al_guardar')}
@@ -182,6 +187,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   required
                   aria-required="true"
                   placeholder={t('fincamodal.ej_antioquia')}
+                  ariaDescribedBy="finca-ubicacion-ayuda"
                   error={errors.departamento?.message}
                   {...register('departamento', {
                     required: 'Requerido.',
@@ -195,6 +201,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   required
                   aria-required="true"
                   placeholder={t('fincamodal.ej_rionegro')}
+                  ariaDescribedBy="finca-ubicacion-ayuda"
                   error={errors.municipio?.message}
                   {...register('municipio', {
                     required: 'Requerido.',
@@ -208,6 +215,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   required
                   aria-required="true"
                   placeholder={t('fincamodal.ej_la_mosquitera')}
+                  ariaDescribedBy="finca-ubicacion-ayuda"
                   error={errors.vereda?.message}
                   {...register('vereda', {
                     required: 'Requerido.',
@@ -217,44 +225,40 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   })}
                 />
               </div>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 'var(--s4)' }}>
+              <p id="finca-ubicacion-ayuda" style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 'var(--s4)' }}>
                 Solo letras (A–Z, tildes, ñ) y espacios. Sin números ni símbolos.
               </p>
               <div className="ds-fg2" style={{ gap: 'var(--s4)' }}>
-                <div>
-                  <Input
-                    label={t('fincamodal.latitud')}
-                    type="number"
-                    required
-                    aria-required="true"
-                    placeholder="Ej: 6.152438"
-                    error={errors.latitud?.message}
-                    {...register('latitud', {
-                      required: 'Requerida.',
-                      valueAsNumber: true,
-                      min: { value: -90, message: t('fincamodal.min_90') },
-                      max: { value: 90,  message: t('fincamodal.max_90') },
-                    })}
-                  />
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('fincamodal.rango_90_a_90')}</p>
-                </div>
-                <div>
-                  <Input
-                    label={t('fincamodal.longitud')}
-                    type="number"
-                    required
-                    aria-required="true"
-                    placeholder="Ej: -75.374908"
-                    error={errors.longitud?.message}
-                    {...register('longitud', {
-                      required: 'Requerida.',
-                      valueAsNumber: true,
-                      min: { value: -180, message: t('fincamodal.min_180') },
-                      max: { value: 180,  message: t('fincamodal.max_180') },
-                    })}
-                  />
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('fincamodal.rango_180_a_180')}</p>
-                </div>
+                <Input
+                  label={t('fincamodal.latitud')}
+                  type="number"
+                  required
+                  aria-required="true"
+                  placeholder="Ej: 6.152438"
+                  hint={t('fincamodal.rango_90_a_90')}
+                  error={errors.latitud?.message}
+                  {...register('latitud', {
+                    required: 'Requerida.',
+                    valueAsNumber: true,
+                    min: { value: -90, message: t('fincamodal.min_90') },
+                    max: { value: 90,  message: t('fincamodal.max_90') },
+                  })}
+                />
+                <Input
+                  label={t('fincamodal.longitud')}
+                  type="number"
+                  required
+                  aria-required="true"
+                  placeholder="Ej: -75.374908"
+                  hint={t('fincamodal.rango_180_a_180')}
+                  error={errors.longitud?.message}
+                  {...register('longitud', {
+                    required: 'Requerida.',
+                    valueAsNumber: true,
+                    min: { value: -180, message: t('fincamodal.min_180') },
+                    max: { value: 180,  message: t('fincamodal.max_180') },
+                  })}
+                />
               </div>
             </div>
 

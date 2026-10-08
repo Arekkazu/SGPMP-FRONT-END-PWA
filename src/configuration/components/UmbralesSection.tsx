@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
-import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
+import { Plus, RefreshCw, Pencil, PowerOff, X, CircleCheck, TriangleAlert, OctagonAlert, Gauge, type LucideIcon } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -25,16 +26,29 @@ interface VarAmbiental {
   id: number;
   nombre: string;
   unidad: string;
-  emoji: string;
 }
-
-const EMOJI_VARIABLE = '📊';
 
 function getVar(variables: VariableAmbientalCatalogo[], id: number): VarAmbiental {
   const v = variables.find((x) => x.id_variable_ambiental === id);
   return v
-    ? { id: v.id_variable_ambiental, nombre: v.nombre, unidad: v.unidad, emoji: EMOJI_VARIABLE }
-    : { id, nombre: `Variable #${id}`, unidad: '', emoji: EMOJI_VARIABLE };
+    ? { id: v.id_variable_ambiental, nombre: v.nombre, unidad: v.unidad }
+    : { id, nombre: `Variable #${id}`, unidad: '' };
+}
+
+// ── Niveles del semáforo ──────────────────────────────────────────────────────
+// TC-DIS-44 (WCAG 1.4.1): cada nivel se distingue por icono y nombre, no solo
+// por color. Los colores son tokens semánticos, sin opacity.
+type Nivel = 'normal' | 'precaucion' | 'critico';
+
+const NIVELES: Record<Nivel, { icono: LucideIcon; bg: string; border: string; color: string }> = {
+  normal:     { icono: CircleCheck,   bg: 'var(--sem-success-bg)', border: 'var(--sem-success-border)', color: 'var(--sem-success)' },
+  precaucion: { icono: TriangleAlert, bg: 'var(--sem-warning-bg)', border: 'var(--sem-warning-border)', color: 'var(--sem-warning)' },
+  critico:    { icono: OctagonAlert,  bg: 'var(--sem-error-bg)',   border: 'var(--sem-error-border)',   color: 'var(--sem-error)' },
+};
+
+function rangoDe(niveles: NivelAlertaDTO[], nivel: Nivel): string {
+  const n = niveles.find((x) => x.nivel === nivel);
+  return n ? `${n.limite_inferior}–${n.limite_superior}` : '—';
 }
 
 // ── Modal state ───────────────────────────────────────────────────────────────
@@ -58,31 +72,51 @@ interface FormValues {
 }
 
 // ── Semáforo visual — barra proporcional horizontal ───────────────────────────
+// Resumen grafico: los rangos con icono y texto estan en las columnas de cada
+// nivel, y el lector de pantalla recibe el mismo resumen en el aria-label.
 function SemaforoBar({ umbral }: { umbral: UmbralAmbientalResponse }) {
+  const { t } = useT('configuration');
   const { valor_min, valor_max, niveles } = umbral;
   const rango = valor_max - valor_min;
   if (rango <= 0 || niveles.length === 0) return null;
 
   const pct = (v: number) => Math.min(100, Math.max(0, ((v - valor_min) / rango) * 100));
-
-  const normalNivel = niveles.find((n) => n.nivel === 'normal');
-  const precNivel = niveles.find((n) => n.nivel === 'precaucion');
-  const critNivel = niveles.find((n) => n.nivel === 'critico');
+  // Se pinta de afuera hacia adentro: critico, precaucion y normal encima.
+  const capas: Nivel[] = ['critico', 'precaucion', 'normal'];
 
   return (
     <div style={{ width: '100%', minWidth: 140 }}>
-      <div style={{ position: 'relative', height: 8, borderRadius: 4, background: 'var(--surface-hover)', overflow: 'hidden' }}>
-        {critNivel && (
-          <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pct(critNivel.limite_inferior)}%`, right: `${100 - pct(critNivel.limite_superior)}%`, background: '#c0280a', opacity: 0.8 }} />
-        )}
-        {precNivel && (
-          <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pct(precNivel.limite_inferior)}%`, right: `${100 - pct(precNivel.limite_superior)}%`, background: '#c07a00', opacity: 0.8 }} />
-        )}
-        {normalNivel && (
-          <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pct(normalNivel.limite_inferior)}%`, right: `${100 - pct(normalNivel.limite_superior)}%`, background: 'var(--sem-success)', opacity: 0.9 }} />
-        )}
+      <div
+        role="img"
+        aria-label={t('umbralessection.semaforo_resumen', {
+          normal: rangoDe(niveles, 'normal'),
+          precaucion: rangoDe(niveles, 'precaucion'),
+          critico: rangoDe(niveles, 'critico'),
+        })}
+        style={{ position: 'relative', height: 8, borderRadius: 4, background: 'var(--surface-hover)', overflow: 'hidden' }}
+      >
+        {capas.map((nivel) => {
+          const n = niveles.find((x) => x.nivel === nivel);
+          if (!n) return null;
+          const color = NIVELES[nivel].color;
+          return (
+            <div
+              key={nivel}
+              style={{
+                position: 'absolute', top: 0, bottom: 0,
+                left: `${pct(n.limite_inferior)}%`, right: `${100 - pct(n.limite_superior)}%`,
+                // Patron ademas del color: critico rayado, precaucion punteado, normal solido.
+                background: nivel === 'critico'
+                  ? `repeating-linear-gradient(45deg, ${color} 0 3px, var(--surface-card) 3px 5px)`
+                  : nivel === 'precaucion'
+                    ? `radial-gradient(circle, ${color} 1.5px, var(--sem-warning-bg) 1.6px) 0 0 / 4px 4px`
+                    : color,
+              }}
+            />
+          );
+        })}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2, fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+      <div aria-hidden="true" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2, fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
         <span>{valor_min}</span>
         <span>{valor_max}</span>
       </div>
@@ -98,56 +132,55 @@ interface NivelCardProps {
   errors: ReturnType<typeof useForm<FormValues>>['formState']['errors'];
 }
 
-const NIVEL_COLORS = {
-  // TC-DIS-44: tokens semánticos (contraste AA validado en tokens.contraste.test.ts), no hex sueltos.
-  normal:    { bg: 'var(--sem-success-bg)', border: 'var(--sem-success-border)', color: 'var(--sem-success)', label: '🟢 NORMAL',    desc: 'Condiciones óptimas de operación.' },
-  precaucion:{ bg: 'var(--sem-warning-bg)', border: 'var(--sem-warning-border)', color: 'var(--sem-warning)', label: '🟡 PRECAUCIÓN', desc: 'Condiciones límite, cercanas al borde aceptable.' },
-  critico:   { bg: 'var(--sem-error-bg)',   border: 'var(--sem-error-border)',   color: 'var(--sem-error)',   label: '🔴 CRÍTICO',   desc: 'Condiciones de riesgo en los extremos del rango.' },
-};
-
 function NivelCard({ nivel, unidad, register, errors }: NivelCardProps) {
   const { t } = useT('configuration');
-  const cfg = NIVEL_COLORS[nivel];
+  const cfg = NIVELES[nivel];
+  const Icono = cfg.icono;
+  const nombre = t(`umbralessection.nivel_${nivel}`);
   const infKey = `${nivel}_inf` as keyof FormValues;
   const supKey = `${nivel}_sup` as keyof FormValues;
 
   return (
     <div style={{ minWidth: 0, borderRadius: 'var(--r-lg)', padding: 'var(--s4)', border: `1.5px solid ${cfg.border}`, background: cfg.bg }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
-        <span style={{ width: 10, height: 10, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
-        <span style={{ fontSize: '12px', fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
+        <Icono size={16} strokeWidth={2} color={cfg.color} aria-hidden />
+        <span style={{ fontSize: '12px', fontWeight: 700, color: cfg.color, textTransform: 'uppercase' }}>{nombre}</span>
       </div>
-      <p style={{ fontSize: '11px', color: cfg.color, marginBottom: 'var(--s3)', lineHeight: 1.4 }}>{cfg.desc}</p>
+      <p style={{ fontSize: '11px', color: cfg.color, marginBottom: 'var(--s3)', lineHeight: 1.4 }}>{t(`umbralessection.nivel_${nivel}_desc`)}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
         <div style={{ minWidth: 0 }}>
-          <label htmlFor={`umbral-${nivel}-inf`} style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('umbralessection.limite_inferior')}<span className="ds-sr-only"> {cfg.label.slice(cfg.label.indexOf(" ") + 1)}</span></label>
+          <label htmlFor={`umbral-${nivel}-inf`} style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('umbralessection.limite_inferior')}<span className="ds-sr-only"> {nombre} ({unidad})</span></label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <input
               id={`umbral-${nivel}-inf`}
+              aria-required="true"
               aria-invalid={!!errors[infKey]}
+              aria-describedby={errors[infKey] ? `umbral-${nivel}-inf-err` : undefined}
               type="number"
               step="0.01"
               style={{ flex: 1, minWidth: 0, padding: '7px 10px', borderRadius: 'var(--r-md)', border: `1.5px solid ${errors[infKey] ? 'var(--sem-error)' : 'var(--surface-border)'}`, background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '13px', fontFamily: 'var(--font-sans)', outline: 'none' }}
               {...register(infKey, { required: 'Requerido.', valueAsNumber: true })}
             />
-            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg.color, fontFamily: 'var(--font-mono)', flexShrink: 0 }}>{unidad}</span>
+            <span aria-hidden="true" style={{ fontSize: '11px', fontWeight: 700, color: cfg.color, fontFamily: 'var(--font-mono)', flexShrink: 0 }}>{unidad}</span>
           </div>
-          {errors[infKey] && <p role="alert" style={{ fontSize: '10px', color: 'var(--sem-error)', marginTop: 2 }}>{String(errors[infKey]?.message)}</p>}
+          {errors[infKey] && <p id={`umbral-${nivel}-inf-err`} role="alert" style={{ fontSize: '10px', color: 'var(--sem-error)', marginTop: 2 }}>{String(errors[infKey]?.message)}</p>}
         </div>
         <div style={{ minWidth: 0 }}>
-          <label htmlFor={`umbral-${nivel}-sup`} style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('umbralessection.limite_superior')}<span className="ds-sr-only"> {cfg.label.slice(cfg.label.indexOf(" ") + 1)}</span></label>
+          <label htmlFor={`umbral-${nivel}-sup`} style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('umbralessection.limite_superior')}<span className="ds-sr-only"> {nombre} ({unidad})</span></label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <input
               id={`umbral-${nivel}-sup`}
+              aria-required="true"
               aria-invalid={!!errors[supKey]}
+              aria-describedby={errors[supKey] ? `umbral-${nivel}-sup-err` : undefined}
               type="number"
               step="0.01"
               style={{ flex: 1, minWidth: 0, padding: '7px 10px', borderRadius: 'var(--r-md)', border: `1.5px solid ${errors[supKey] ? 'var(--sem-error)' : 'var(--surface-border)'}`, background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '13px', fontFamily: 'var(--font-sans)', outline: 'none' }}
               {...register(supKey, { required: 'Requerido.', valueAsNumber: true })}
             />
-            <span style={{ fontSize: '11px', fontWeight: 700, color: cfg.color, fontFamily: 'var(--font-mono)', flexShrink: 0 }}>{unidad}</span>
+            <span aria-hidden="true" style={{ fontSize: '11px', fontWeight: 700, color: cfg.color, fontFamily: 'var(--font-mono)', flexShrink: 0 }}>{unidad}</span>
           </div>
-          {errors[supKey] && <p role="alert" style={{ fontSize: '10px', color: 'var(--sem-error)', marginTop: 2 }}>{String(errors[supKey]?.message)}</p>}
+          {errors[supKey] && <p id={`umbral-${nivel}-sup-err`} role="alert" style={{ fontSize: '10px', color: 'var(--sem-error)', marginTop: 2 }}>{String(errors[supKey]?.message)}</p>}
         </div>
       </div>
     </div>
@@ -281,10 +314,10 @@ function UmbralModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="umbral-modal-title"
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', padding: 'var(--s6) var(--s4)', overflowY: 'auto' }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', width: '100%', maxWidth: 720, boxShadow: 'var(--shadow-lg)', marginBottom: 'var(--s6)' }}>
+      <div className="ds-modal__panel ds-modal__panel--wide">
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)' }}>
           <h2 id="umbral-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
@@ -325,7 +358,7 @@ function UmbralModal({
                   <select id="var-ambiental" style={SELECT_STYLE} {...register('id_variable_ambiental', { required: true, valueAsNumber: true })}>
                     {variables.map((v) => (
                       <option key={v.id_variable_ambiental} value={v.id_variable_ambiental}>
-                        {EMOJI_VARIABLE} {v.nombre} ({v.unidad})
+                        {v.nombre} ({v.unidad})
                       </option>
                     ))}
                   </select>
@@ -340,7 +373,7 @@ function UmbralModal({
               {/* Unidad de referencia */}
               {modoEditar && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)' }}>
-                  <span style={{ fontSize: '18px' }}>{getVar(variables, umbral!.id_variable_ambiental).emoji}</span>
+                  <Gauge size={20} strokeWidth={1.5} color="var(--brand-600)" aria-hidden />
                   <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{getVar(variables, umbral!.id_variable_ambiental).nombre}</span>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>({getVar(variables, umbral!.id_variable_ambiental).unidad})</span>
                 </div>
@@ -431,12 +464,13 @@ function ConfirmDesactivar({ umbral, variables, saving, onCancel, onConfirm }: {
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}
+      aria-labelledby="umbral-desactivar-title"
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('umbralessection.confirmar_desactivacion')}</h2>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{t('umbralessection.deseas_desactivar_el_umbral_de')}<strong>{v.nombre}</strong>{t('umbralessection.ya_no_estara_vigente_para_las_alertas')}</p>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
+        <h2 id="umbral-desactivar-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('umbralessection.confirmar_desactivacion')}</h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{t('umbralessection.deseas_desactivar_el_umbral_de')}{' '}<strong>{v.nombre}</strong>{t('umbralessection.ya_no_estara_vigente_para_las_alertas')}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
           <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('umbralessection.cancelar')}</Button>
           <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{t('umbralessection.desactivar')}</Button>
@@ -464,19 +498,27 @@ const TD: React.CSSProperties = {
   borderBottom: '1px solid var(--surface-border)',
 };
 
-function NivelBadge({ nivel, niveles }: { nivel: string; niveles: NivelAlertaDTO[] }) {
+function NivelBadge({ nivel, niveles }: { nivel: Nivel; niveles: NivelAlertaDTO[] }) {
   const n = niveles.find((x) => x.nivel === nivel);
   if (!n) return <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>—</span>;
 
-  const colors: Record<string, { bg: string; border: string; color: string }> = {
-    normal:    { bg: 'var(--sem-success-bg)', border: 'var(--sem-success-border)', color: 'var(--sem-success)' },
-    precaucion:{ bg: 'var(--sem-warning-bg)', border: 'var(--sem-warning-border)', color: 'var(--sem-warning)' },
-    critico:   { bg: 'var(--sem-error-bg)',   border: 'var(--sem-error-border)',   color: 'var(--sem-error)' },
-  };
-  const c = colors[nivel];
+  const c = NIVELES[nivel];
+  const Icono = c.icono;
   return (
-    <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 'var(--r-full)', fontSize: '10px', fontWeight: 600, fontFamily: 'var(--font-mono)', background: c.bg, border: `1px solid ${c.border}`, color: c.color, whiteSpace: 'nowrap' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 7px', borderRadius: 'var(--r-full)', fontSize: '10px', fontWeight: 600, fontFamily: 'var(--font-mono)', background: c.bg, border: `1px solid ${c.border}`, color: c.color, whiteSpace: 'nowrap' }}>
+      <Icono size={12} strokeWidth={2} aria-hidden />
       {n.limite_inferior}–{n.limite_superior}
+    </span>
+  );
+}
+
+function NivelHeader({ nivel }: { nivel: Nivel }) {
+  const { t } = useT('configuration');
+  const Icono = NIVELES[nivel].icono;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      <Icono size={12} strokeWidth={2} color={NIVELES[nivel].color} aria-hidden />
+      {t(`umbralessection.nivel_${nivel}`)}
     </span>
   );
 }
@@ -550,13 +592,13 @@ export function UmbralesSection({ idEspecie }: Props) {
       ) : umbrales.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('umbralessection.no_hay_umbrales_configurados_para_esta')}</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <ScrollRegion label={t('umbralessection.umbrales_ambientales')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-                {['#', 'Variable', 'Rango general', 'Semaforización', '🟢 Normal', '🟡 Precaución', '🔴 Crítico', 'Estado', 'Actualizado', 'Acciones'].map((h) => (
-                  <th key={h} style={TH}>{h}</th>
-                ))}
+                {['#', 'Variable', 'Rango general', 'Semaforización'].map((h) => <th key={h} style={TH}>{h}</th>)}
+                {(['normal', 'precaucion', 'critico'] as const).map((n) => <th key={n} style={TH}><NivelHeader nivel={n} /></th>)}
+                {['Estado', 'Actualizado', 'Acciones'].map((h) => <th key={h} style={TH}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -567,7 +609,7 @@ export function UmbralesSection({ idEspecie }: Props) {
                     <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>#{u.id_umbral_ambiental}</td>
                     <td style={{ ...TD, whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)' }}>
-                        <span style={{ fontSize: '16px' }}>{v.emoji}</span>
+                        <Gauge size={16} strokeWidth={1.5} color="var(--brand-600)" aria-hidden />
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>{v.nombre}</div>
                           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)' }}>{v.unidad}</div>
@@ -609,7 +651,7 @@ export function UmbralesSection({ idEspecie }: Props) {
               })}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       )}
 
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (

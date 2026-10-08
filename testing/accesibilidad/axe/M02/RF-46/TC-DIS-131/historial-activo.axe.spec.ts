@@ -4,8 +4,9 @@
  * Activos biológicos → ficha del activo → pestaña "Historial"
  *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
- * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>.html/json), ambos
- * en ./resultados.
+ * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
+ * peso 0 en el puntaje.
  *
  * Datos: activo #281 (lote del Productor de prueba) con 5 registros en 4 categorías:
  * TRANSFERENCIA (2), ESTADO, FASE_PRODUCTIVA y BAJA.
@@ -18,9 +19,8 @@
  * frontend, así que la consulta se envía con page_size=2 (route.continue): paginación real
  * del backend sobre datos reales (5 registros → 3 páginas).
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_131_VIEWPORTS=movil,tablet,escritorio
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_131_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -34,7 +34,7 @@ const USER_PASSWORD = process.env.TEST_USER_PASSWORD ?? '';
 const ID_ACTIVO = 281;
 const TOTAL_REGISTROS = 5;
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_131_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_131_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 
@@ -100,7 +100,8 @@ function resumenViolaciones(violaciones: { id: string; impact?: string | null; h
   return violaciones.map((v) => `${v.id} (${v.impact}): ${v.help} [${v.nodes.length} nodo(s)]`).join('\n');
 }
 
-async function escanear(page: Page, paso: string, testInfo: TestInfo) {
+async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
+  const paso = `${pasoBase}-${testInfo.project.name}`;
   await page.evaluate(() => document.fonts.ready);
 
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
@@ -116,6 +117,8 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 /** ¿El texto está dentro de una región viva (role alert/status o aria-live)? */
@@ -133,7 +136,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial del activo (RF-4
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
+      `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_131_VIEWPORTS.`,
     );
     expect(USER_EMAIL, 'Falta TEST_USER_EMAIL en testing/.env.test').not.toBe('');
     expect(USER_PASSWORD, 'Falta TEST_USER_PASSWORD en testing/.env.test').not.toBe('');
@@ -150,20 +153,20 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial del activo (RF-4
 
     // 1.3.1: tabla con encabezados de columna
     const encabezados = (await tabla(page).getByRole('columnheader').allInnerTexts()).map((h) => h.trim().toLowerCase());
-    expect(encabezados, '1.3.1: la tabla debe tener encabezados categoría/fecha/descripción/responsable/origen').toEqual(ENCABEZADOS.map((h) => h.toLowerCase()));
+    expect(encabezados, 'DEFECTO: 1.3.1: la tabla debe tener encabezados categoría/fecha/descripción/responsable/origen').toEqual(ENCABEZADOS.map((h) => h.toLowerCase()));
     const conCaption = await tabla(page).evaluate((t) => !!t.querySelector('caption') || t.hasAttribute('aria-label') || t.hasAttribute('aria-labelledby'));
-    expect.soft(conCaption, '1.3.1: la tabla no tiene nombre accesible (caption/aria-label) que la identifique como "Historial consolidado"').toBe(true);
+    expect.soft(conCaption, 'DEFECTO: 1.3.1: la tabla no tiene nombre accesible (caption/aria-label) que la identifique como "Historial consolidado"').toBe(true);
 
     // 4.1.2: filtros con name/role/value
     const f = filtros(page);
-    await expect(f.categoria, '4.1.2: filtro categoria_evento con nombre accesible').toBeVisible();
+    await expect(f.categoria, 'DEFECTO: 4.1.2: filtro categoria_evento con nombre accesible').toBeVisible();
     await expect(f.categoria).toHaveValue('');
-    await expect(f.desde, '4.1.2: filtro fecha_inicio con nombre accesible').toHaveAttribute('type', 'date');
-    await expect(f.hasta, '4.1.2: filtro fecha_fin con nombre accesible').toHaveAttribute('type', 'date');
+    await expect(f.desde, 'DEFECTO: 4.1.2: filtro fecha_inicio con nombre accesible').toHaveAttribute('type', 'date');
+    await expect(f.hasta, 'DEFECTO: 4.1.2: filtro fecha_fin con nombre accesible').toHaveAttribute('type', 'date');
 
     // 2.4.6 / 1.4.1: la categoría se identifica con texto, no solo con color
     for (const c of categorias) {
-      await expect(tabla(page).getByRole('cell', { name: String(c), exact: true }).first(), `2.4.6: la categoría ${c} debe mostrarse como texto`).toBeVisible();
+      await expect(tabla(page).getByRole('cell', { name: String(c), exact: true }).first(), `DEFECTO: 2.4.6: la categoría ${c} debe mostrarse como texto`).toBeVisible();
     }
 
     await escanear(page, 'listado', testInfo);
@@ -186,7 +189,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial del activo (RF-4
     for (const celda of await tabla(page).locator('tbody td:nth-child(2)').allInnerTexts()) expect(celda.trim()).toBe('TRANSFERENCIA');
 
     // El resultado del filtro debería anunciarse (conteo de registros en región viva)
-    expect.soft(await anunciado(page, /registro\(s\)/), '4.1.3: el conteo de resultados tras filtrar no está en una región viva (aria-live/status)').toBe(true);
+    expect.soft(await anunciado(page, /registro\(s\)/), 'DEFECTO: 4.1.3: el conteo de resultados tras filtrar no está en una región viva (aria-live/status)').toBe(true);
 
     await escanear(page, 'filtro-categoria-fechas', testInfo);
   });
@@ -199,7 +202,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial del activo (RF-4
     const vacio = page.getByText('Sin registros para los filtros seleccionados.');
     await expect(vacio, 'El estado vacío debe mostrarse').toBeVisible();
     await expect(tabla(page)).toHaveCount(0);
-    expect.soft(await anunciado(page, 'Sin registros para los filtros seleccionados.'), '3.3.1/4.1.3: el estado sin resultados es un <p> sin role="status"/aria-live; el lector de pantalla no lo anuncia').toBe(true);
+    expect.soft(await anunciado(page, 'Sin registros para los filtros seleccionados.'), 'DEFECTO: 3.3.1/4.1.3: el estado sin resultados es un <p> sin role="status"/aria-live; el lector de pantalla no lo anuncia').toBe(true);
 
     await escanear(page, 'estado-vacio', testInfo);
   });
@@ -214,20 +217,20 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial del activo (RF-4
     const r422 = await filtrar(page, () => f.hasta.fill('2026-01-01'));
     expect(r422.status(), 'El backend debe rechazar el rango invertido').toBe(422);
     const alerta422 = page.getByRole('alert').filter({ hasText: 'Error al cargar el historial' });
-    await expect(alerta422, '3.3.1: el 422 debe anunciarse').toContainText('no puede ser posterior');
-    await expect.soft(f.desde, '3.3.1: el filtro "Desde" debe marcarse como inválido (aria-invalid) con el error de campo del backend (field: fecha_inicio)').toHaveAttribute('aria-invalid', 'true');
-    await expect.soft(tabla(page), '3.3.1: tras el error se siguen mostrando los registros de la consulta anterior como si fueran el resultado del filtro').toHaveCount(0);
+    await expect(alerta422, 'DEFECTO: 3.3.1: el 422 debe anunciarse').toContainText('no puede ser posterior');
+    await expect.soft(f.desde, 'DEFECTO: 3.3.1: el filtro "Desde" debe marcarse como inválido (aria-invalid) con el error de campo del backend (field: fecha_inicio)').toHaveAttribute('aria-invalid', 'true');
+    await expect.soft(tabla(page), 'DEFECTO: 3.3.1: tras el error se siguen mostrando los registros de la consulta anterior como si fueran el resultado del filtro').toHaveCount(0);
     await escanear(page, 'error-422-rango-fechas', testInfo);
 
     // 404 real: activo inexistente
     const r404 = await abrirHistorial(page, 999999);
     expect(r404.status()).toBe(404);
-    await expect(page.getByRole('alert').filter({ hasText: 'Error al cargar el historial' }), '3.3.1: el 404 debe anunciarse').toContainText('no fue encontrado');
+    await expect(page.getByRole('alert').filter({ hasText: 'Error al cargar el historial' }), 'DEFECTO: 3.3.1: el 404 debe anunciarse').toContainText('no fue encontrado');
 
     // 403 simulado
     await page.route(URL_HISTORIAL, (r) => r.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify(ERROR_403) }));
     await abrirHistorial(page);
-    await expect(page.getByRole('alert').filter({ hasText: 'Error al cargar el historial' }), '3.3.1: el 403 debe anunciarse').toContainText('Acceso denegado');
+    await expect(page.getByRole('alert').filter({ hasText: 'Error al cargar el historial' }), 'DEFECTO: 3.3.1: el 403 debe anunciarse').toContainText('Acceso denegado');
     await escanear(page, 'error-403', testInfo);
   });
 
@@ -251,18 +254,18 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial del activo (RF-4
     let respuesta = esperarHistorial(page);
     await page.keyboard.press('Enter');
     expect(new URL((await respuesta).url()).searchParams.get('pagina')).toBe('2');
-    await expect(estadoPagina, '2.1.1: Enter en "Siguiente" debe avanzar de página').toContainText('Página 2 de 3');
+    await expect(estadoPagina, 'DEFECTO: 2.1.1: Enter en "Siguiente" debe avanzar de página').toContainText('Página 2 de 3');
     const focoTrasPaginar = await page.evaluate(() => document.activeElement?.textContent?.trim() ?? 'ninguno');
     testInfo.annotations.push({ type: 'Foco tras paginar', description: focoTrasPaginar });
-    expect.soft(await anunciado(page, /Página \d+ de \d+/), '4.1.3: el cambio de página ("Página 2 de 3") no se anuncia (sin aria-live/status)').toBe(true);
+    expect.soft(await anunciado(page, /Página \d+ de \d+/), 'DEFECTO: 4.1.3: el cambio de página ("Página 2 de 3") no se anuncia (sin aria-live/status)').toBe(true);
     const navPaginacion = await page.getByRole('navigation', { name: /pagina/i }).count();
-    expect.soft(navPaginacion, '1.3.1: la paginación no está agrupada como navegación con nombre (nav aria-label="Paginación")').toBeGreaterThan(0);
+    expect.soft(navPaginacion, 'DEFECTO: 1.3.1: la paginación no está agrupada como navegación con nombre (nav aria-label="Paginación")').toBeGreaterThan(0);
 
     await anterior.focus();
     respuesta = esperarHistorial(page);
     await page.keyboard.press('Space');
     await respuesta;
-    await expect(estadoPagina, '2.1.1: Espacio en "Anterior" debe retroceder de página').toContainText('Página 1 de 3');
+    await expect(estadoPagina, 'DEFECTO: 2.1.1: Espacio en "Anterior" debe retroceder de página').toContainText('Página 1 de 3');
 
     // Filtros con teclado: recorrido con Tab desde la pestaña Historial
     const f = filtros(page);
@@ -274,22 +277,22 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial del activo (RF-4
       if (recorrido.at(-1) === 'SELECT#hist-cat') break;
     }
     testInfo.annotations.push({ type: 'Recorrido de Tab hasta el filtro', description: recorrido.join(' → ') });
-    await expect(f.categoria, '2.1.1: el filtro de categoría debe alcanzarse con Tab').toBeFocused();
+    await expect(f.categoria, 'DEFECTO: 2.1.1: el filtro de categoría debe alcanzarse con Tab').toBeFocused();
 
     // Categoría con flechas del teclado
     respuesta = esperarHistorial(page);
     await page.keyboard.press('ArrowDown'); // Todas → ESTADO
-    expect(new URL((await respuesta).url()).searchParams.get('categoria_evento'), '2.1.1: el filtro de categoría debe operarse con flechas').toBe('ESTADO');
+    expect(new URL((await respuesta).url()).searchParams.get('categoria_evento'), 'DEFECTO: 2.1.1: el filtro de categoría debe operarse con flechas').toBe('ESTADO');
 
     // Fechas escritas con teclado
     await page.keyboard.press('Tab');
-    await expect(f.desde, '2.1.1: "Desde" debe alcanzarse con Tab').toBeFocused();
+    await expect(f.desde, 'DEFECTO: 2.1.1: "Desde" debe alcanzarse con Tab').toBeFocused();
     respuesta = esperarHistorial(page);
     await page.keyboard.type('01092026'); // dd/mm/aaaa en es-CO
-    await expect.poll(async () => f.desde.inputValue(), { message: '2.1.1: "Desde" debe poder escribirse con teclado' }).toBe('2026-09-01');
+    await expect.poll(async () => f.desde.inputValue(), { message: 'DEFECTO: 2.1.1: "Desde" debe poder escribirse con teclado' }).toBe('2026-09-01');
     await respuesta;
     // Tab recorre los segmentos del campo de fecha (dd/mm/aaaa) antes de pasar al siguiente
     for (let i = 0; i < 4 && !(await f.hasta.evaluate((e) => e === document.activeElement)); i++) await page.keyboard.press('Tab');
-    await expect(f.hasta, '2.1.1: "Hasta" debe alcanzarse con Tab').toBeFocused();
+    await expect(f.hasta, 'DEFECTO: 2.1.1: "Hasta" debe alcanzarse con Tab').toBeFocused();
   });
 });

@@ -1,0 +1,205 @@
+{
+  "info": {
+    "_postman_id": "tc-m09-g01-v2.0-postman-collection",
+    "name": "TC-M09-G01-v2.0 · RF-15 v1.1 - Registro de Especie con Grupo de Manejo",
+    "description": "Colección Newman para TC-M09-G01-v2.0. Evalúa el contrato de creación con grupo_manejo='AVES', desenvolvimiento de body, persistencia via listado y teardown protegido.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Login Administrativo (NW-01)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-01: Login admin (200)', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    var token = jsonData.token || jsonData.access_token || (jsonData.data && jsonData.data.token);",
+              "    pm.expect(token, 'Access token presente').to.be.a('string');",
+              "    pm.environment.set('bearer_token', token);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"correo_electronico\": \"{{admin_email}}\",\n  \"contrasena\": \"{{admin_password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{api_url}}/sesiones/",
+          "host": ["{{api_url}}"],
+          "path": ["sesiones", ""]
+        }
+      }
+    },
+    {
+      "name": "02 - Crear Especie con Grupo de Manejo (NW-02, NW-03)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var raw = pm.response.json();",
+              "var data = raw;",
+              "if (raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data)) {",
+              "    data = raw.data;",
+              "} else if (raw.item && typeof raw.item === 'object') {",
+              "    data = raw.item;",
+              "} else if (raw.especie && typeof raw.especie === 'object') {",
+              "    data = raw.especie;",
+              "}",
+              "var idVal = data.id_especie || data.id;",
+              "if (idVal) {",
+              "    pm.environment.set('created_especie_id', idVal);",
+              "}",
+              "",
+              "pm.test('NW-02: POST /configuracion/especies con \"Gallina QA API\" + grupo_manejo AVES: éxito (201 o 200)', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "",
+              "pm.test('NW-03: Body de respuesta con id, activo=true, grupo_manejo=AVES y fechas', function () {",
+              "    var activoVal = data.activo !== undefined ? data.activo : data.es_activo;",
+              "    var grupoVal = data.grupo_manejo;",
+              "    var fechaCreacion = data.fecha_creacion_especie || data.fecha_creacion;",
+              "    var fechaActualizacion = data.fecha_actualizacion_especie || data.fecha_actualizacion;",
+              "",
+              "    pm.expect(idVal, 'id generado > 0').to.be.above(0);",
+              "    pm.expect(activoVal, 'activo es true').to.eql(true);",
+              "    pm.expect(grupoVal, 'grupo_manejo es AVES').to.eql('AVES');",
+              "",
+              "    // NW-03: Validar AMBAS fechas con Date.parse válido",
+              "    pm.expect(fechaCreacion, 'fecha_creacion presente').to.be.a('string');",
+              "    pm.expect(Date.parse(fechaCreacion), 'fecha_creacion es ISO valido').to.not.be.NaN;",
+              "    pm.expect(fechaActualizacion, 'fecha_actualizacion presente').to.be.a('string');",
+              "    pm.expect(Date.parse(fechaActualizacion), 'fecha_actualizacion es ISO valido').to.not.be.NaN;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{bearer_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Gallina QA API\",\n  \"descripcion\": \"Especie avícola de postura (QA v2.0)\",\n  \"grupo_manejo\": \"AVES\"\n}"
+        },
+        "url": {
+          "raw": "{{api_url}}/configuracion/especies",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "especies"]
+        }
+      }
+    },
+    {
+      "name": "03 - Consultar Catálogo para Confirmar Persistencia (NW-04)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('NW-04: GET /configuracion/especies?solo_activas=false confirma persistencia de grupo_manejo=AVES y activo=true', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var raw = pm.response.json();",
+              "    var lista = [];",
+              "    if (Array.isArray(raw)) {",
+              "        lista = raw;",
+              "    } else if (Array.isArray(raw.items)) {",
+              "        lista = raw.items;",
+              "    } else if (Array.isArray(raw.data)) {",
+              "        lista = raw.data;",
+              "    } else if (Array.isArray(raw.especies)) {",
+              "        lista = raw.especies;",
+              "    }",
+              "",
+              "    var idEsperado = parseInt(pm.environment.get('created_especie_id'), 10);",
+              "    var encontrado = lista.find(function(it) {",
+              "        var idIt = it.id_especie || it.id;",
+              "        return idIt === idEsperado;",
+              "    });",
+              "",
+              "    pm.expect(encontrado, 'Especie creada encontrada en listado').to.be.an('object');",
+              "    var activoVal = encontrado.activo !== undefined ? encontrado.activo : encontrado.es_activo;",
+              "    var grupoVal = encontrado.grupo_manejo;",
+              "",
+              "    pm.expect(activoVal, 'activo permanece true').to.eql(true);",
+              "    pm.expect(grupoVal, 'grupo_manejo permanece AVES').to.eql('AVES');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{bearer_token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/especies?solo_activas=false",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "especies"],
+          "query": [
+            { "key": "solo_activas", "value": "false" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "04 - Teardown: Desactivación Lógica",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var createdId = pm.environment.get('created_especie_id');",
+              "if (!createdId) {",
+              "    if (typeof pm.execution !== 'undefined' && typeof pm.execution.skipRequest === 'function') {",
+              "        pm.execution.skipRequest();",
+              "    } else if (typeof postman !== 'undefined' && typeof postman.setNextRequest === 'function') {",
+              "        postman.setNextRequest(null);",
+              "    }",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('TD: PATCH desactivar responde 200 o 204', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{bearer_token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/especies/{{created_especie_id}}/desactivar",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "especies", "{{created_especie_id}}", "desactivar"]
+        }
+      }
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import type { EspecieResponse } from '../types';
+import { OptionCard } from '../../shared/design-system/OptionCard';
 
 interface Props {
   especies: EspecieResponse[];
@@ -14,21 +15,16 @@ const GRID: React.CSSProperties = {
   gap: 'var(--s4)',
 };
 
-const CARD_BASE: React.CSSProperties = {
+// Especie inactiva: se distingue por fondo y borde punteado, no con opacity
+// (bajaba el contraste del texto por debajo de 4.5:1, regla del DS).
+const CARD_DISABLED: React.CSSProperties = {
   padding: 'var(--s5)',
   borderRadius: 'var(--r-lg)',
-  border: '1.5px solid var(--surface-border)',
-  background: 'var(--surface-card)',
-  cursor: 'pointer',
-  transition: 'border-color 0.15s, box-shadow 0.15s',
+  border: '1.5px dashed var(--surface-border)',
+  background: 'var(--surface-hover)',
+  cursor: 'not-allowed',
   textAlign: 'left',
   width: '100%',
-};
-
-const CARD_DISABLED: React.CSSProperties = {
-  ...CARD_BASE,
-  cursor: 'not-allowed',
-  opacity: 0.5,
 };
 
 export function EspecieSelector({ especies, loading, onSelect }: Props) {
@@ -66,19 +62,10 @@ export function EspecieSelector({ especies, loading, onSelect }: Props) {
       <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>{t('especieselector.selecciona_una_especie_para_gestionar_sus')}</p>
       <div style={GRID}>
         {activas.map((e) => (
-          <button
+          <OptionCard
             key={e.id_especie}
-            type="button"
-            style={CARD_BASE}
             onClick={() => onSelect(e)}
-            onMouseEnter={(ev) => {
-              (ev.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)';
-              (ev.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)';
-            }}
-            onMouseLeave={(ev) => {
-              (ev.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)';
-              (ev.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
-            }}
+            style={{ padding: 'var(--s5)' }}
           >
             <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>
               {e.nombre}
@@ -109,7 +96,7 @@ export function EspecieSelector({ especies, loading, onSelect }: Props) {
               }}
             >
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)' }} />{t('especieselector.activa')}</div>
-          </button>
+          </OptionCard>
         ))}
 
         {inactivas.map((e) => (

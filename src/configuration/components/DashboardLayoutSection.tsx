@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { RotateCcw, Save } from 'lucide-react';
+import { Check, Plus, RotateCcw, Save, type LucideIcon } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
@@ -8,6 +8,7 @@ import { Button } from '../../shared/design-system/Button';
 import { useDashboardLayout } from '../hooks/useDashboardLayout';
 import type { WidgetCatalogoItem, WidgetConfigDTO } from '../types';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { iconoWidget } from '../iconos';
 
 // ── Widget catalog ────────────────────────────────────────────────────────────
 // El catalogo lo define el backend (modulo9.widgets) y llega ya filtrado por el
@@ -19,18 +20,9 @@ interface WidgetDef {
   key: string;
   nombre: string;
   grupo: string;
-  icon: string;
+  icon: LucideIcon;
   defaultSpan: 1 | 2;
 }
-
-const ICONOS: Record<string, string> = {
-  temp_galpon: '🌡️', hum_galpon: '💧', ph_estanque: '⚗️', co2_galpon: '💨',
-  temp_corral: '🌡️', estado_iot: '📡', cal_sensores: '🔧', alertas: '⚠️',
-  alertas_crit: '🔴', hist_temp: '📈', hist_hum: '📊', prod_aves: '🐔',
-  prod_bovinos: '🐄', fincas_estado: '🏡', cfg_pendiente: '⏳',
-};
-
-const ICONO_POR_DEFECTO = '📦';
 
 function aWidgetDef(w: WidgetCatalogoItem): WidgetDef {
   return {
@@ -38,7 +30,7 @@ function aWidgetDef(w: WidgetCatalogoItem): WidgetDef {
     key: w.clave,
     nombre: w.nombre,
     grupo: w.grupo,
-    icon: ICONOS[w.clave] ?? ICONO_POR_DEFECTO,
+    icon: iconoWidget(w.clave),
     defaultSpan: w.span_predeterminado,
   };
 }
@@ -51,6 +43,23 @@ const MAX_WIDGETS = 12;
 // ── Grid cell type ────────────────────────────────────────────────────────────
 // idWidget === -1 means "covered by the span of the widget to the left"
 type GridCell = { idWidget: number; key: string; span: number } | null;
+
+interface Posicion { fila: number; col: number }
+
+/**
+ * Widget elegido: del catalogo (para colocarlo) o de la grilla (para moverlo o
+ * quitarlo). TC-DIS-78: antes un clic en un widget colocado lo quitaba de
+ * inmediato, asi que no habia forma de reordenar sin mouse ni sin perderlo.
+ */
+type Seleccion = { key: string; origen: Posicion | null } | null;
+
+/** Copia de la grilla sin el widget de `pos` ni las celdas que cubria su span. */
+function sinWidget(grid: GridCell[][], pos: Posicion): GridCell[][] {
+  const copia = grid.map((row) => [...row]);
+  const span = copia[pos.fila][pos.col]?.span ?? 1;
+  for (let s = 0; s < span && pos.col + s < 4; s++) copia[pos.fila][pos.col + s] = null;
+  return copia;
+}
 
 function initGrid(): GridCell[][] {
   return Array.from({ length: 3 }, () => Array<GridCell>(4).fill(null));
@@ -93,18 +102,10 @@ function ConfirmModal({ onConfirm, onCancel, saving }: { onConfirm: () => void; 
       role="dialog"
       aria-modal="true"
       aria-labelledby="restore-modal-title"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000, display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)',
-      }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div style={{
-        background: 'var(--surface-card)', borderRadius: 'var(--r-xl)',
-        border: '1px solid var(--surface-border)', padding: 'var(--s6)',
-        width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)',
-      }}>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
         <h2 id="restore-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('dashboardlayoutsection.restaurar_configuracion_predeterminada')}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{t('dashboardlayoutsection.se_cargara_el_layout_predeterminado_para_tu')}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
@@ -132,7 +133,9 @@ export function DashboardLayoutSection() {
 
   const [localGrid, setLocalGrid] = useState<GridCell[][]>(initGrid());
   const [activeWidgets, setActiveWidgets] = useState<string[]>([]);
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [seleccion, setSeleccion] = useState<Seleccion>(null);
+  // Region aria-live: cada cambio de la grilla se anuncia, no solo se ve.
+  const [anuncio, setAnuncio] = useState('');
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [saved, setSaved] = useState(false);
   const [limiteAviso, setLimiteAviso] = useState(false);
@@ -156,59 +159,62 @@ export function DashboardLayoutSection() {
     return false;
   }, [localGrid]);
 
+  const nombreDe = (key: string) => widgets.find((w) => w.key === key)?.nombre ?? key;
+
   const handleCatalogClick = (key: string) => {
     if (isInGrid(key)) return;
-    setSelectedKey((prev) => (prev === key ? null : key));
+    setSeleccion((prev) => (prev?.key === key && !prev.origen ? null : { key, origen: null }));
+  };
+
+  const quitarSeleccionado = () => {
+    if (!seleccion?.origen) return;
+    setLocalGrid(sinWidget(localGrid, seleccion.origen));
+    setActiveWidgets((prev) => prev.filter((k) => k !== seleccion.key));
+    setLimiteAviso(false);
+    setAnuncio(t('dashboardlayoutsection.widget_quitado', { nombre: nombreDe(seleccion.key) }));
+    setSeleccion(null);
   };
 
   const handleCellClick = (fila: number, col: number) => {
     const cell = localGrid[fila][col];
+    if (cell && cell.idWidget === -1) return; // cubierta por un span
 
-    if (cell && cell.idWidget !== -1) {
-      // Remove widget from grid
-      const newGrid = localGrid.map((row) => [...row]);
-      const span = cell.span;
-      for (let s = 0; s < span && col + s < 4; s++) {
-        newGrid[fila][col + s] = null;
-      }
-      setLocalGrid(newGrid);
-      setActiveWidgets((prev) => prev.filter((k) => k !== cell.key));
-      setLimiteAviso(false);
+    if (cell) {
+      const mismo = seleccion?.origen?.fila === fila && seleccion.origen.col === col;
+      setSeleccion(mismo ? null : { key: cell.key, origen: { fila, col } });
       return;
     }
 
-    if (cell && cell.idWidget === -1) return; // covered by span — ignore
-
-    if (!selectedKey) return; // empty cell, nothing selected
-
-    // Place the selected widget
-    const def = widgets.find((w) => w.key === selectedKey);
+    if (!seleccion) return; // celda vacia sin nada elegido
+    const def = widgets.find((w) => w.key === seleccion.key);
     if (!def) return;
 
     // El RF pide informar cuando se alcanza el maximo, no ignorar el clic en
-    // silencio. La matriz 4x3 ya impide pasar de 12, pero sin este aviso el
-    // usuario no sabe por que dejo de poder agregar.
-    if (contarColocados(localGrid) >= MAX_WIDGETS) {
+    // silencio. Mover no suma widgets, asi que solo aplica al colocar.
+    if (!seleccion.origen && contarColocados(localGrid) >= MAX_WIDGETS) {
       setLimiteAviso(true);
       return;
     }
     setLimiteAviso(false);
 
-    const span = def.defaultSpan;
-    // Validate: span must fit in row and not collide
-    if (col + span > 4) return;
-    for (let s = 0; s < span; s++) {
-      if (localGrid[fila][col + s] !== null) return;
+    // Al mover, el origen se libera antes de validar el destino.
+    const base = seleccion.origen ? sinWidget(localGrid, seleccion.origen) : localGrid;
+    const span = seleccion.origen ? localGrid[seleccion.origen.fila][seleccion.origen.col]?.span ?? def.defaultSpan : def.defaultSpan;
+    const cabe = col + span <= 4 && Array.from({ length: span }, (_, s) => base[fila][col + s]).every((c) => c === null);
+    if (!cabe) {
+      setAnuncio(t('dashboardlayoutsection.no_cabe', { nombre: def.nombre, ancho: span }));
+      return;
     }
 
-    const newGrid = localGrid.map((row) => [...row]);
+    const newGrid = base.map((row) => [...row]);
     newGrid[fila][col] = { idWidget: def.id, key: def.key, span };
     for (let s = 1; s < span; s++) {
       newGrid[fila][col + s] = { idWidget: -1, key: '', span: 0 };
     }
     setLocalGrid(newGrid);
     setActiveWidgets((prev) => prev.includes(def.key) ? prev : [...prev, def.key]);
-    setSelectedKey(null);
+    setAnuncio(t(seleccion.origen ? 'dashboardlayoutsection.widget_movido' : 'dashboardlayoutsection.widget_colocado', { nombre: def.nombre, fila: fila + 1, columna: col + 1 }));
+    setSeleccion(null);
   };
 
   const buildDTO = () => {
@@ -264,7 +270,7 @@ export function DashboardLayoutSection() {
   return (
     <div>
       {/* Section header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s5)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
         <div>
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('dashboardlayoutsection.dashboard_personalizable')}</h2>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('dashboardlayoutsection.organiza_los_widgets_en_la_grilla_43')}</p>
@@ -307,7 +313,7 @@ export function DashboardLayoutSection() {
         <Alert
           variant="warning"
           title={t('dashboardlayoutsection.limite_de_widgets_alcanzado')}
-          description={`El dashboard permite un máximo de ${MAX_WIDGETS} elementos activos simultáneamente. Por favor, desactive un widget antes de agregar uno nuevo.`}
+          description={t('dashboardlayoutsection.limite_de_widgets_detalle', { max: MAX_WIDGETS })}
           style={{ marginBottom: 'var(--s4)' }}
         />
       )}
@@ -315,13 +321,28 @@ export function DashboardLayoutSection() {
         <Alert variant="success" title={t('dashboardlayoutsection.guardado')} description={t('dashboardlayoutsection.el_layout_del_dashboard_se_actualizo')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
-      {selectedKey && (
-        <Alert
-          variant="info"
-          title={`Widget seleccionado: ${widgets.find((w) => w.key === selectedKey)?.nombre}`}
-          description={t('dashboardlayoutsection.haz_clic_en_una_celda_vacia_de_la_grilla')}
-          style={{ marginBottom: 'var(--s4)' }}
-        />
+      <p className="ds-sr-only" aria-live="polite">{anuncio}</p>
+
+      {seleccion && (
+        <div style={{ marginBottom: 'var(--s4)' }}>
+          <Alert
+            variant="info"
+            title={t('dashboardlayoutsection.widget_seleccionado', { nombre: nombreDe(seleccion.key) })}
+            description={seleccion.origen
+              ? t('dashboardlayoutsection.elige_celda_para_mover')
+              : t('dashboardlayoutsection.haz_clic_en_una_celda_vacia_de_la_grilla')}
+          />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)', marginTop: 'var(--s2)' }}>
+            {seleccion.origen && (
+              <Button variant="danger" size="sm" onClick={quitarSeleccionado} disabled={!canAct}>
+                {t('dashboardlayoutsection.quitar_del_dashboard')}
+              </Button>
+            )}
+            <Button variant="secondary" size="sm" onClick={() => setSeleccion(null)}>
+              {t('dashboardlayoutsection.cancelar')}
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Two-panel layout */}
@@ -329,9 +350,10 @@ export function DashboardLayoutSection() {
 
         {/* Left: grid editor */}
         <div>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s3)' }}>
-            Grilla del dashboard (4 columnas × 3 filas)
+          <div id="dashboard-grilla-titulo" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s3)' }}>
+            {t('dashboardlayoutsection.grilla_titulo')}
           </div>
+          <div role="group" aria-labelledby="dashboard-grilla-titulo">
           {/* Row labels + grid */}
           {[0, 1, 2].map((fila) => (
             <div key={fila} style={{ display: 'flex', alignItems: 'stretch', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
@@ -348,7 +370,9 @@ export function DashboardLayoutSection() {
                   const span = cell ? cell.span : 1;
                   const def = cell ? widgets.find((w) => w.id === cell.idWidget) : null;
                   const isEmpty = !cell;
-                  const isTarget = isEmpty && !!selectedKey;
+                  const isTarget = isEmpty && !!seleccion;
+                  const isMoving = !!cell && seleccion?.origen?.fila === fila && seleccion.origen.col === col;
+                  const pos = { fila: fila + 1, columna: col + 1 };
 
                   return (
                     <button
@@ -356,16 +380,17 @@ export function DashboardLayoutSection() {
                       type="button"
                       onClick={() => handleCellClick(fila, col)}
                       disabled={!canAct}
+                      aria-pressed={cell ? isMoving : undefined}
                       style={{
                         gridColumn: `span ${span}`,
                         height: 80,
                         border: isEmpty
                           ? `2px dashed ${isTarget ? 'var(--brand-500)' : 'var(--surface-border)'}`
-                          : '2px solid var(--brand-400)',
+                          : `2px solid ${isMoving ? 'var(--brand-600)' : 'var(--brand-400)'}`,
                         borderRadius: 'var(--r-md)',
                         background: isEmpty
-                          ? isTarget ? 'rgba(var(--brand-50-rgb, 240,253,244),0.5)' : 'var(--surface-hover)'
-                          : 'var(--surface-card)',
+                          ? isTarget ? 'var(--brand-50)' : 'var(--surface-hover)'
+                          : isMoving ? 'var(--brand-50)' : 'var(--surface-card)',
                         cursor: canAct ? 'pointer' : 'default',
                         display: 'flex',
                         flexDirection: 'column',
@@ -378,28 +403,27 @@ export function DashboardLayoutSection() {
                         overflow: 'hidden',
                         position: 'relative',
                       }}
+                      // TC-DIS-78: el nombre visible del widget y la posicion, no su clave interna.
                       aria-label={def
-                        ? `Quitar ${def.nombre}`
-                        // TC-DIS-78: el nombre visible del widget y la posición, no su clave interna.
-                        : isTarget ? `Colocar ${widgets.find((w) => w.key === selectedKey)?.nombre ?? ''} en fila ${fila + 1} columna ${col + 1}`
-                        : `Celda vacía fila ${fila + 1} columna ${col + 1}`}
+                        ? t('dashboardlayoutsection.celda_widget', { nombre: def.nombre, ...pos })
+                        : isTarget && seleccion
+                          ? t(seleccion.origen ? 'dashboardlayoutsection.mover_a_celda' : 'dashboardlayoutsection.colocar_en_celda', { nombre: nombreDe(seleccion.key), ...pos })
+                          : t('dashboardlayoutsection.celda_vacia', pos)}
                     >
                       {cell && def ? (
                         <>
-                          <span style={{ fontSize: '20px', lineHeight: 1 }} role="img" aria-label={def.nombre}>{def.icon}</span>
+                          <def.icon size={20} strokeWidth={1.5} color="var(--brand-600)" aria-hidden />
                           <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
                             {def.nombre}
                           </span>
                           {span > 1 && (
                             <span style={{ fontSize: '10px', color: 'var(--brand-600)', fontFamily: 'var(--font-mono)' }}>
-                              ×{span}col
+                              {t('dashboardlayoutsection.ancho_columnas', { n: span })}
                             </span>
                           )}
                         </>
                       ) : (
-                        <span style={{ fontSize: isTarget ? '20px' : '16px', color: isTarget ? 'var(--brand-500)' : 'var(--text-muted)' }}>
-                          {isTarget ? '+' : '·'}
-                        </span>
+                        isTarget && <Plus size={20} strokeWidth={1.5} color="var(--brand-600)" aria-hidden />
                       )}
                     </button>
                   );
@@ -407,6 +431,8 @@ export function DashboardLayoutSection() {
               </div>
             </div>
           ))}
+
+          </div>
 
           {/* Column labels */}
           <div style={{ display: 'flex', gap: 'var(--s2)', marginLeft: 36, marginTop: 'var(--s1)' }}>
@@ -438,12 +464,13 @@ export function DashboardLayoutSection() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
                     {delGrupo.map((w) => {
                       const inGrid = isInGrid(w.key);
-                      const isSelected = selectedKey === w.key;
+                      const isSelected = seleccion?.key === w.key && !seleccion.origen;
                       return (
                         <button
                           key={w.key}
                           type="button"
                           disabled={inGrid || !canAct}
+                          aria-pressed={inGrid ? undefined : isSelected}
                           onClick={() => handleCatalogClick(w.key)}
                           style={{
                             display: 'flex',
@@ -455,24 +482,25 @@ export function DashboardLayoutSection() {
                             borderRadius: 'var(--r-md)',
                             cursor: inGrid || !canAct ? 'default' : 'pointer',
                             textAlign: 'left',
-                            opacity: inGrid ? 0.5 : 1,
+                            minHeight: 'var(--s9)',
                             transition: 'border-color 0.15s',
                           }}
                         >
-                          <span style={{ fontSize: '16px', flexShrink: 0 }} role="img" aria-label={w.nombre}>{w.icon}</span>
+                          <w.icon size={20} strokeWidth={1.5} color={inGrid ? 'var(--text-muted)' : 'var(--brand-600)'} aria-hidden style={{ flexShrink: 0 }} />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {/* Atenuado con un token de texto, no con opacity (regla del DS). */}
+                            <div title={w.nombre} style={{ fontSize: '12px', fontWeight: 600, color: inGrid ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {w.nombre}
                             </div>
                             {w.defaultSpan > 1 && (
                               <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                                ancho ×{w.defaultSpan}
+                                {t('dashboardlayoutsection.ancho_columnas', { n: w.defaultSpan })}
                               </div>
                             )}
                           </div>
                           {inGrid && (
-                            <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--sem-success)', border: '1px solid var(--sem-success)', borderRadius: 'var(--r-full)', padding: '1px 5px', flexShrink: 0 }}>
-                              ✓
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: '10px', fontWeight: 600, color: 'var(--sem-success)', border: '1px solid var(--sem-success-border)', background: 'var(--sem-success-bg)', borderRadius: 'var(--r-full)', padding: '1px 6px', flexShrink: 0 }}>
+                              <Check size={10} strokeWidth={2.5} aria-hidden />{t('dashboardlayoutsection.en_el_dashboard')}
                             </span>
                           )}
                         </button>

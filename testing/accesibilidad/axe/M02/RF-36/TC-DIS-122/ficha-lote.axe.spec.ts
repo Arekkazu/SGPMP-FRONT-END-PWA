@@ -5,8 +5,9 @@
  * valores iniciales y métricas calculadas) + "Eventos" (formulario de crecimiento)
  *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
- * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>.html/json), ambos
- * en ./resultados.
+ * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
+ * peso 0 en el puntaje.
  *
  * Datos: lote #353 (activo, especie #4): cantidad 100/100, peso promedio 10 → 12,5,
  * biomasa 1250, densidad 0,2.
@@ -19,9 +20,8 @@
  *     que se inyecta un 409 con el formato estándar del backend (a confirmar con
  *     desarrollo). Ningún test registra eventos en el ambiente.
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_122_VIEWPORTS=movil,tablet,escritorio
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_122_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -34,7 +34,7 @@ const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 const ID_LOTE = Number(process.env.TC_DIS_122_LOTE ?? 353);
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_122_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_122_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 
@@ -102,7 +102,8 @@ function resumenViolaciones(violaciones: { id: string; impact?: string | null; h
   return violaciones.map((v) => `${v.id} (${v.impact}): ${v.help} [${v.nodes.length} nodo(s)]`).join('\n');
 }
 
-async function escanear(page: Page, paso: string, testInfo: TestInfo) {
+async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
+  const paso = `${pasoBase}-${testInfo.project.name}`;
   await page.evaluate(() => document.fonts.ready);
 
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
@@ -118,6 +119,8 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 // ── Casos ────────────────────────────────────────────────────────────────────
@@ -130,7 +133,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Ficha de gestión del lote
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
+      `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_122_VIEWPORTS.`,
     );
     expect(ADMIN_EMAIL, 'Falta TEST_ADMIN_EMAIL en testing/.env.test').not.toBe('');
     expect(ADMIN_PASSWORD, 'Falta TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
@@ -161,12 +164,12 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Ficha de gestión del lote
     const grupoIniciales = await page.getByRole('heading', { name: /inicial|referencia/i }).count()
       + await page.getByRole('group', { name: /inicial|referencia/i }).count();
     testInfo.annotations.push({ type: 'Agrupación', description: `grupos de métricas calculadas: ${grupoCalculadas} · grupos de valores iniciales: ${grupoIniciales}` });
-    expect.soft(grupoCalculadas, '1.3.1: las métricas calculadas (cantidad actual, peso promedio, biomasa, densidad) no se distinguen estructuralmente de los valores iniciales; todo está en un único bloque "Detalle poblacional"').toBeGreaterThan(0);
-    expect.soft(grupoIniciales, '1.3.1: los valores iniciales de referencia no tienen un grupo propio').toBeGreaterThan(0);
+    expect.soft(grupoCalculadas, 'DEFECTO: 1.3.1: las métricas calculadas (cantidad actual, peso promedio, biomasa, densidad) no se distinguen estructuralmente de los valores iniciales; todo está en un único bloque "Detalle poblacional"').toBeGreaterThan(0);
+    expect.soft(grupoIniciales, 'DEFECTO: 1.3.1: los valores iniciales de referencia no tienen un grupo propio').toBeGreaterThan(0);
 
     // 1.3.1: cada etiqueta debe asociarse a su valor (p. ej. <dl>/<dt>/<dd>)
     const listasDescriptivas = await page.locator('dl').count();
-    expect.soft(listasDescriptivas, '1.3.1: etiqueta y valor de cada dato son dos <div> sin relación semántica (no hay <dl>/<dt>/<dd>)').toBeGreaterThan(0);
+    expect.soft(listasDescriptivas, 'DEFECTO: 1.3.1: etiqueta y valor de cada dato son dos <div> sin relación semántica (no hay <dl>/<dt>/<dd>)').toBeGreaterThan(0);
   });
 
   test('3. Campos calculados no editables ni tabulables como inputs (4.1.2)', async ({ page }, testInfo) => {
@@ -175,10 +178,10 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Ficha de gestión del lote
 
     for (const campo of METRICAS_CALCULADAS) {
       const editable = page.getByRole('textbox', { name: campo, exact: true }).or(page.getByRole('spinbutton', { name: campo, exact: true }));
-      await expect(editable, `4.1.2: "${campo}" no debe presentarse como campo editable`).toHaveCount(0);
+      await expect(editable, `DEFECTO: 4.1.2: "${campo}" no debe presentarse como campo editable`).toHaveCount(0);
       const readonly = await page.getByLabel(campo, { exact: true }).evaluateAll((els) =>
         els.filter((e) => ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.tagName) && e.getAttribute('aria-readonly') !== 'true' && !(e as HTMLInputElement).readOnly).length);
-      expect(readonly, `4.1.2: "${campo}" es un control de formulario sin aria-readonly/readonly`).toBe(0);
+      expect(readonly, `DEFECTO: 4.1.2: "${campo}" es un control de formulario sin aria-readonly/readonly`).toBe(0);
     }
 
     // Recorrido completo con Tab: ningún foco cae en un valor calculado
@@ -199,12 +202,12 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Ficha de gestión del lote
   test('4. Errores: lote inexistente (404 real), identificador inválido y densidad excedida (409 simulado) - anunciados', async ({ page }, testInfo) => {
     await page.goto('/activos-biologicos/999999');
     const alerta404 = page.getByRole('alert').filter({ hasText: 'No se pudo cargar el activo' });
-    await expect(alerta404, '3.3.1: el 404 debe anunciarse').toBeVisible({ timeout: 20_000 });
+    await expect(alerta404, 'DEFECTO: 3.3.1: el 404 debe anunciarse').toBeVisible({ timeout: 20_000 });
     await expect(alerta404).toContainText('El activo no existe o fue eliminado.');
     await escanear(page, 'error-404', testInfo);
 
     await page.goto('/activos-biologicos/abc');
-    await expect(page.getByRole('alert').filter({ hasText: 'Activo inválido' }), '3.3.1: el identificador inválido debe anunciarse').toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: 'Activo inválido' }), 'DEFECTO: 3.3.1: el identificador inválido debe anunciarse').toBeVisible();
 
     // 409 densidad excedida (simulado): el formulario no llega al backend
     await page.route(URL_CRECIMIENTO, (r) => r.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify(ERROR_409_DENSIDAD) }));
@@ -212,7 +215,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Ficha de gestión del lote
     const { registrar } = await abrirFormularioCrecimiento(page);
     await registrar.click();
     const alerta409 = page.getByRole('alert').filter({ hasText: 'densidad' });
-    await expect(alerta409, '3.3.1: el 409 de densidad excedida debe anunciarse').toBeVisible();
+    await expect(alerta409, 'DEFECTO: 3.3.1: el 409 de densidad excedida debe anunciarse').toBeVisible();
     await escanear(page, 'error-409-densidad', testInfo);
   });
 

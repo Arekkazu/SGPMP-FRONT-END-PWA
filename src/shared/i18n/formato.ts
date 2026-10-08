@@ -48,10 +48,13 @@ export function formatearHora(
   return fecha.toLocaleTimeString(locale(), opciones);
 }
 
+/** Acepta texto porque los Decimal del backend llegan serializados ("2500.00"). */
 export function formatearNumero(
-  valor: number | null | undefined,
+  valor: number | string | null | undefined,
   opciones: Intl.NumberFormatOptions = {},
 ): string {
-  if (valor === null || valor === undefined || Number.isNaN(valor)) return '—';
-  return valor.toLocaleString(locale(), opciones);
+  if (valor === null || valor === undefined || valor === '') return '—';
+  const numero = Number(valor);
+  if (Number.isNaN(numero)) return '—';
+  return numero.toLocaleString(locale(), opciones);
 }

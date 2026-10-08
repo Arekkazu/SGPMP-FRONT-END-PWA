@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, RefreshCw, Plus, PowerOff, ChevronLeft, Warehouse, Radio, KeyRound, Network } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Alert } from '../../shared/design-system/Alert';
+import { OptionCard } from '../../shared/design-system/OptionCard';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
@@ -56,10 +58,10 @@ function ConfirmModal({ titulo, mensaje, saving, onCancel, onConfirm }: {
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 'var(--s4)' }}
+      className="ds-modal" style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
@@ -93,20 +95,13 @@ function FincaSelector({ fincas, loading, onSelect }: { fincas: FincaResponse[];
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 'var(--s4)' }}>
       {activas.map((f) => (
-        <button
-          key={f.id_finca}
-          type="button"
-          onClick={() => onSelect(f)}
-          style={{ background: 'var(--surface-card)', border: '1.5px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none'; }}
-        >
+        <OptionCard key={f.id_finca} onClick={() => onSelect(f)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
             <Warehouse size={15} color="var(--brand-500)" aria-hidden />
             <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{f.ubicacion.departamento}, {f.ubicacion.municipio}</div>
-        </button>
+        </OptionCard>
       ))}
     </div>
   );
@@ -140,19 +135,12 @@ function AreaSelector({ infras, loading, onSelect, onBack }: {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 'var(--s3)' }}>
           {activas.map((infra) => (
-            <button
-              key={infra.id_infraestructura}
-              type="button"
-              onClick={() => onSelect(infra)}
-              style={{ background: 'var(--surface-card)', border: '1.5px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'border-color 0.15s' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)'; }}
-            >
+            <OptionCard key={infra.id_infraestructura} onClick={() => onSelect(infra)}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{infra.nombre_infraestructura}</div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                {infra.tipo_area} · {formatearFechaHora(infra.superficie)} m²
+                {infra.tipo_area} · {formatearNumero(infra.superficie)} m²
               </div>
-            </button>
+            </OptionCard>
           ))}
         </div>
       )}
@@ -272,7 +260,7 @@ export function DispositivosTable() {
       {/* Step 2: Area */}
       {step === 'area' && finca && (
         <>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivostable.paso_2_selecciona_el_area_de')}<strong>{finca.nombre}</strong>:
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivostable.paso_2_selecciona_el_area_de')}{' '}<strong>{finca.nombre}</strong>:
           </p>
           <AreaSelector
             infras={infraestructuras}
@@ -342,7 +330,7 @@ export function DispositivosTable() {
             </div>
           ) : (
             <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
-              <div style={{ overflowX: 'auto' }}>
+              <ScrollRegion label={t('dispositivostable.dispositivos_iot')}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
@@ -443,7 +431,7 @@ export function DispositivosTable() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollRegion>
             </div>
           )}
 

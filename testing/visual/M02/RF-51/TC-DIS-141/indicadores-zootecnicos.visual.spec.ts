@@ -21,6 +21,11 @@
  * Tema: la preferencia de tema es de la cuenta (compartida); GET
  * /configuracion/personalizacion/tema(/global) se sirve con el tema Claro (theme_mode 1,
  * cuerpo real de TEST) y cualquier escritura a esos endpoints se aborta.
+ * Una baseline solo se guarda si la vista no tiene defectos: que el texto con estilo propio
+ * del módulo use la escala tipográfica del DS v2.0, que no se muestren códigos técnicos al
+ * Productor y que la muestra insuficiente (422) use el rol visual de advertencia se verifican
+ * antes de capturar y fallan como DEFECTO. Los componentes del DS (botón, alerta) se evalúan
+ * con su propio CSS.
  * Captura completa: la sección es más alta que el viewport (sobre todo en móvil); antes de
  * capturar se amplía el alto de la ventana conservando el ancho.
  *
@@ -40,6 +45,11 @@ const ID_INSUFICIENTE = 291;
 const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_141_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
+
+// DS v2.0: escala tipográfica (todos los anchos)
+const ESCALA = [11, 12, 14, 15, 16, 18, 19, 20, 24, 26, 28];
+/** Códigos técnicos que no debería leer un Productor: prefijos EN_MAYÚSCULAS: o identificadores snake_case. */
+const JERGA_TECNICA = /\b[A-Z]{2,}(?:_[A-Z]+)+:|\b[a-z]+_[a-z_]+\b/;
 
 const URL_INDICADORES = (url: URL) => /\/activos-biologicos\/\d+\/indicadores$/.test(url.pathname);
 
@@ -102,7 +112,43 @@ function seccion(page: Page): Locator {
   return page.getByRole('heading', { name: 'Indicadores zootécnicos' }).locator('xpath=ancestor::div[2]');
 }
 
+/** DEFECTO si algún texto con estilo propio del módulo usa un tamaño fuera de la escala tipográfica del DS v2.0. */
+async function verificarEscala(page: Page) {
+  const fuera = await seccion(page).evaluate((raiz, escala) => {
+    const res: string[] = [];
+    const vistos = new Set<string>();
+    const walker = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const texto = (n.textContent ?? '').trim();
+      const el = n.parentElement;
+      // Componentes del DS (botón, alerta) se evalúan con su propio CSS, no como estilo del módulo
+      if (!texto || !el || el.closest('option, .ds-sr-only, .ds-btn, .ds-alert, style')) continue;
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      const clave = `${fs}|${texto.slice(0, 30)}`;
+      if (!escala.includes(fs) && !vistos.has(clave)) { vistos.add(clave); res.push(`"${texto.slice(0, 30)}" ${fs}px`); }
+    }
+    // Los controles de filtro también llevan texto (valor del select / fecha)
+    for (const c of raiz.querySelectorAll('select, input')) {
+      const fs = parseFloat(getComputedStyle(c).fontSize);
+      if (!escala.includes(fs)) res.push(`control #${c.id} ${fs}px`);
+    }
+    return res;
+  }, ESCALA);
+  expect.soft(fuera, `DEFECTO: texto fuera de la escala tipográfica del DS v2.0 (texto UI = body-md 14px): ${fuera.join(' · ')}`).toEqual([]);
+}
+
+/** DEFECTO si la sección muestra códigos técnicos al Productor. */
+async function verificarSinCodigos(page: Page) {
+  const texto = (await seccion(page).innerText()).replace(/\s+/g, ' ');
+  const hallado = texto.match(JERGA_TECNICA)?.[0] ?? null;
+  expect.soft(hallado, `DEFECTO: la vista muestra códigos técnicos al Productor ("${hallado}"); deben mostrarse con texto legible`).toBeNull();
+}
+
+/** Captura la sección completa. Sin baseline si hay defectos. */
 async function capturar(page: Page, nombre: string) {
+  await verificarEscala(page);
+  await verificarSinCodigos(page);
+  expect(test.info().errors.length, 'Sin baseline: la vista tiene defectos (ver errores anteriores)').toBe(0);
   await page.mouse.move(0, 0);
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.evaluate(() => document.fonts.ready);
@@ -112,7 +158,7 @@ async function capturar(page: Page, nombre: string) {
     const alto = Math.ceil(caja.y + caja.height + 40);
     if (alto > viewport.height) await page.setViewportSize({ width: viewport.width, height: alto });
   }
-  await expect(seccion(page)).toHaveScreenshot(nombre, { animations: 'disabled' });
+  await expect(seccion(page)).toHaveScreenshot(nombre, { animations: 'disabled', caret: 'hide' });
 }
 
 test.describe('TC-DIS-141 - Consistencia visual - Indicadores zootécnicos (RF-51)', () => {
@@ -151,7 +197,7 @@ test.describe('TC-DIS-141 - Consistencia visual - Indicadores zootécnicos (RF-5
       testInfo.annotations.push({ type: 'Datos fijados', description: 'Respuesta real del lote #296 (2026-09-30).' });
       await servirIndicadores(page);
       await abrirIndicadores(page, ID_LOTE);
-      await expect(page.getByText('tasa_mortalidad', { exact: true })).toBeVisible();
+      await expect(page.locator('main dl'), 'Debe mostrarse una tarjeta por indicador').toHaveCount(fixture.lote.indicadores.length);
       await capturar(page, 'indicadores-lote.png');
     });
 
@@ -170,7 +216,10 @@ test.describe('TC-DIS-141 - Consistencia visual - Indicadores zootécnicos (RF-5
       const respuesta = esperarIndicadores(page);
       await page.getByRole('combobox', { name: 'Tipo', exact: true }).selectOption('CRECIMIENTO');
       expect((await respuesta).status()).toBe(422);
-      await expect(page.getByRole('alert').filter({ hasText: 'Error al cargar indicadores' })).toBeVisible();
+      const alerta = page.getByRole('alert').filter({ hasText: /indicadores/i }).first();
+      await expect(alerta).toBeVisible();
+      // Mapeo del proyecto: 422 = alert-warning (regla de negocio), no alert-error
+      expect.soft(await alerta.getAttribute('class'), 'DEFECTO: la muestra insuficiente (422) se muestra como "Error al cargar indicadores" con el rol visual de error (ds-alert--error); un 422 usa alert-warning').not.toMatch(/--error/);
       await capturar(page, 'indicadores-datos-insuficientes.png');
     });
   });
@@ -184,7 +233,7 @@ test.describe('TC-DIS-141 - Consistencia visual - Indicadores zootécnicos (RF-5
     testInfo.annotations.push({ type: 'Controles de modo encontrados', description: String(await controles.count()) });
     expect(
       await controles.count(),
-      'BLOQUEO: la vista de indicadores no tiene selector de modo tiempo real / diferido (batch) y GET …/indicadores no acepta ese parámetro (solo fecha_inicio, fecha_fin y tipo_indicador). No hay modos que capturar.',
+      'DEFECTO (BLOQUEO): la vista de indicadores no tiene selector de modo tiempo real / diferido (batch) y GET …/indicadores no acepta ese parámetro (solo fecha_inicio, fecha_fin y tipo_indicador). No hay modos que capturar.',
     ).toBeGreaterThan(0);
   });
 });

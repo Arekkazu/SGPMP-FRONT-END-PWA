@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X, Cpu } from 'lucide-react';
@@ -12,6 +12,7 @@ import type { DispositivoIotResponse, InfraestructuraResponse, RegistrarDisposit
 import { tiposDispositivoApi } from '../api/iotApi';
 import type { ApiError } from '../../shared/api/errors';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 
 interface FormValues {
   serial: string;
@@ -24,7 +25,9 @@ interface FormValues {
   area_cobertura_m2: string;
 }
 
-const CAMPOS_VISION = ['resolucion', 'fps', 'area_cobertura_m2'] as const;
+const CAMPOS = [
+  'serial', 'descripcion', 'id_tipo_dispositivo', 'id_dispositivo_gateway', 'resolucion', 'fps', 'area_cobertura_m2',
+] as const;
 const RESOLUCION_REGEX = /^[1-9][0-9]*x[1-9][0-9]*$/;
 
 interface Props {
@@ -50,6 +53,7 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
     watch,
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
+  const alertaGeneral = useErroresDeServidor(saveError, setError, CAMPOS);
 
   // #179: el backend exige id_tipo_dispositivo desde RF-23 (rangos por tipo).
   const [tipos, setTipos] = useState<TipoDispositivoIotResponse[]>([]);
@@ -62,8 +66,6 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
     if (saveError?.status === 409) {
       setError('serial', { message: t('dispositivomodal.ya_existe_un_dispositivo_con_este_serial') });
     }
-    const campo = CAMPOS_VISION.find((c) => c === saveError?.field);
-    if (saveError?.status === 400 && campo) setError(campo, { message: saveError.message });
   }, [saveError, setError]);
 
   // Un Gateway Edge no depende de otro Edge: el selector solo aplica al resto.
@@ -93,19 +95,11 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
       role="dialog"
       aria-modal="true"
       aria-labelledby="disp-modal-title"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1010,
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.5)',
-        padding: 'var(--s6) var(--s4)', overflowY: 'auto',
-      }}
+      className="ds-modal"
+      style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
-        background: 'var(--surface-card)', borderRadius: 'var(--r-xl)',
-        border: '1px solid var(--surface-border)', width: '100%', maxWidth: 480,
-        boxShadow: 'var(--shadow-lg)', marginBottom: 'var(--s6)',
-      }}>
+      <div className="ds-modal__panel">
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
@@ -118,7 +112,7 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
         </div>
 
         <div style={{ padding: 'var(--s6)' }}>
-          {saveError && saveError.status !== 409 && (
+          {saveError && saveError.status !== 409 && alertaGeneral && (
             <Alert
               variant="error"
               title={t('dispositivomodal.error_al_registrar')}
@@ -138,36 +132,21 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
               {area.tipo_area} — {area.nombre_infraestructura}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-              #{area.id_infraestructura} · {formatearFechaHora(area.superficie)} m²
+              #{area.id_infraestructura} · {formatearNumero(area.superficie)} m²
             </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             {/* Serial */}
             <div style={{ marginBottom: 'var(--s4)' }}>
-              <label htmlFor="disp-serial" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivomodal.serial_fisico_del_dispositivo')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
-              </label>
-              <input
+              <Input
                 id="disp-serial"
-                type="text"
-                aria-required="true"
-                aria-invalid={!!errors.serial}
-                aria-describedby={errors.serial ? 'disp-serial-err' : undefined}
+                label={t('dispositivomodal.serial_fisico_del_dispositivo')}
+                required
                 placeholder={t('dispositivomodal.ej_sn_esp32_2024_001')}
                 maxLength={50}
-                style={{
-                  width: '100%',
-                  padding: 'var(--s3)',
-                  borderRadius: 'var(--r-md)',
-                  border: `1.5px solid ${errors.serial ? 'var(--sem-error)' : 'var(--surface-border)'}`,
-                  background: 'var(--surface-card)',
-                  color: 'var(--text-primary)',
-                  fontSize: '13px',
-                  fontFamily: 'var(--font-mono)',
-                  letterSpacing: '0.04em',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
+                hint={t('dispositivomodal.se_guardara_en_mayusculas_debe_ser_unico_en')}
+                error={errors.serial?.message}
                 {...register('serial', {
                   required: t('dispositivomodal.el_serial_del_dispositivo_es_obligatorio'),
                   minLength: { value: 3, message: t('dispositivomodal.minimo_3_caracteres') },
@@ -175,12 +154,6 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
                   pattern: { value: SERIAL_REGEX, message: t('dispositivomodal.solo_letras_numeros_guiones_y_guiones_bajos') },
                 })}
               />
-              {errors.serial && (
-                <p id="disp-serial-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)', margin: 0 }}>
-                  {errors.serial.message}
-                </p>
-              )}
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('dispositivomodal.se_guardara_en_mayusculas_debe_ser_unico_en')}</p>
             </div>
 
             {/* Tipo de dispositivo */}

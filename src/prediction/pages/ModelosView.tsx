@@ -135,7 +135,7 @@ export function ModelosView() {
             <AlertTriangle size={20} aria-hidden style={{ color: 'var(--sem-warning)', flexShrink: 0, marginTop: 2 }} />
             <div>
               <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>
-                <strong>{detalleSel.nombre_version}</strong>{t('modelosview.pasara_a_produccion_y_reemplazara_la')}</p>
+                <strong>{detalleSel.nombre_version}</strong>{' '}{t('modelosview.pasara_a_produccion_y_reemplazara_la')}</p>
               {saveError && <p role="alert" style={{ margin: 'var(--s3) 0 0', fontSize: '13px', color: 'var(--sem-error)' }}>{saveError.message}</p>}
             </div>
           </div>

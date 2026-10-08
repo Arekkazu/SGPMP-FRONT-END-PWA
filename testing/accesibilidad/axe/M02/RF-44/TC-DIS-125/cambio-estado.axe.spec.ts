@@ -4,8 +4,9 @@
  * Activos biológicos → ficha del activo → pestaña "Estado" → "Cambiar estado"
  *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
- * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>.html/json), ambos
- * en ./resultados.
+ * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
+ * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
+ * peso 0 en el puntaje.
  *
  * Datos (activos del Productor de prueba):
  *   - #296 lote ACTIVO: formulario con transiciones manuales (Inactivo, En tratamiento, Aislado).
@@ -19,11 +20,13 @@
  *   - 400 VAL_ENTRADA: estado_nuevo "XYZ" sobre #471 (BAJA).
  *   - 422 VALIDACIONES_PREVIAS_REQUERIDAS: CERRADO manual sobre #288 (ya CERRADO).
  *   - 404 ACTIVO_NO_ENCONTRADO: activo inexistente.
+ * Salvaguarda: antes de redirigir, GET /activos-biologicos/{id} confirma que el destino sigue en
+ * el estado esperado (#468 INACTIVO, #288 CERRADO); si cambió, ese envío no se hace (con otro
+ * estado la transición podría ser válida y se aplicaría de verdad).
  * La prueba de teclado responde con el 422 real capturado (2026-09-29) sin llegar al backend.
  *
- * Viewports: el script contempla movil / tablet / escritorio, pero solo se
- * ejecuta ESCRITORIO por el defecto abierto de sidebar/scroll (TC-DIS-07/08/10/11).
- * Para habilitarlos: TC_DIS_125_VIEWPORTS=movil,tablet,escritorio
+ * Navegación directa por URL (page.goto), sin sidebar.
+ * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_125_VIEWPORTS=escritorio
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
@@ -40,7 +43,7 @@ const ID_CERRADO = 288; // individual CERRADO
 const ID_INACTIVO = 468; // lote INACTIVO (destino de la redirección de transición inválida)
 const ID_BAJA = 471; // lote BAJA (destino de la redirección de estado inválido)
 
-const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_125_VIEWPORTS ?? 'escritorio')
+const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_125_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
   .map((v) => v.trim());
 
@@ -88,11 +91,27 @@ async function protegerCambioEstado(page: Page) {
 // ── Navegación ───────────────────────────────────────────────────────────────
 
 async function iniciarSesionProductor(page: Page) {
+  // Solo JWT de respuestas exitosas del backend (tras una recarga puede haber 401 con el token anterior)
+  let token = '';
+  page.on('response', (res) => {
+    const h = res.request().headers()['authorization'];
+    if (h && res.ok() && res.url().startsWith(API)) token = h;
+  });
   await page.goto('/login');
   await page.getByRole('textbox', { name: 'Correo electrónico', exact: true }).fill(USER_EMAIL);
   await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill(USER_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 60_000 });
+  return () => token;
+}
+
+/** Salvaguarda de la redirección: el activo destino debe seguir en el estado esperado. */
+async function verificarEstado(page: Page, token: () => string, idActivo: number, esperado: string) {
+  await expect.poll(() => token(), { message: 'No se capturó el JWT de la sesión' }).not.toBe('');
+  const res = await page.request.get(`${API}/activos-biologicos/${idActivo}`, { headers: { authorization: token() } });
+  expect(res.status(), `GET /activos-biologicos/${idActivo} debe responder 200`).toBe(200);
+  const estado = String((await res.json()).nombre_estado ?? '').toUpperCase();
+  expect(estado, `Precondición: el activo #${idActivo} debe seguir ${esperado}; si cambió, el envío redirigido podría aplicarse de verdad y no se hace`).toBe(esperado);
 }
 
 function dialogo(page: Page): Locator {
@@ -140,7 +159,8 @@ function resumenViolaciones(violaciones: { id: string; impact?: string | null; h
   return violaciones.map((v) => `${v.id} (${v.impact}): ${v.help} [${v.nodes.length} nodo(s)]`).join('\n');
 }
 
-async function escanear(page: Page, paso: string, testInfo: TestInfo) {
+async function escanear(page: Page, pasoBase: string, testInfo: TestInfo) {
+  const paso = `${pasoBase}-${testInfo.project.name}`;
   await page.evaluate(() => document.fonts.ready);
 
   const axe = await new AxeBuilder({ page }).withTags(ETIQUETAS_WCAG).analyze();
@@ -156,13 +176,15 @@ async function escanear(page: Page, paso: string, testInfo: TestInfo) {
   await testInfo.attach(`lighthouse-${paso}.html`, { path: lh.archivoHtml, contentType: 'text/html' });
 
   expect.soft(axe.violations, `Violaciones axe A/AA en "${paso}":\n${resumenViolaciones(axe.violations)}`).toEqual([]);
+  // Una auditoría fallida es un defecto aunque Lighthouse le asigne peso 0 en el puntaje
+  expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
 /** 3.3.1: el campo con error debe marcarse como inválido y referenciar su mensaje. */
 async function verificarCampoConError(campo: Locator, nombre: string) {
-  await expect.soft(campo, `3.3.1/4.1.2: "${nombre}" con error debe tener aria-invalid="true"`).toHaveAttribute('aria-invalid', 'true');
+  await expect.soft(campo, `DEFECTO: 3.3.1/4.1.2: "${nombre}" con error debe tener aria-invalid="true"`).toHaveAttribute('aria-invalid', 'true');
   const describedby = await campo.getAttribute('aria-describedby');
-  expect.soft(describedby, `3.3.1: "${nombre}" debe referenciar su mensaje de error con aria-describedby`).not.toBeNull();
+  expect.soft(describedby, `DEFECTO: 3.3.1: "${nombre}" debe referenciar su mensaje de error con aria-describedby`).not.toBeNull();
 }
 
 // ── Casos ────────────────────────────────────────────────────────────────────
@@ -172,14 +194,16 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Cambio de estado del activ
   // workers: 1 en el config, así que los logins siguen siendo secuenciales.
   test.describe.configure({ timeout: 180_000 });
 
+  let token: () => string = () => '';
+
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
-      `Viewport "${testInfo.project.name}" deshabilitado: defecto abierto de sidebar/scroll en móvil y tablet (TC-DIS-07/08/10/11). Solo se evalúa escritorio.`,
+      `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_125_VIEWPORTS.`,
     );
     expect(USER_EMAIL, 'Falta TEST_USER_EMAIL en testing/.env.test').not.toBe('');
     expect(USER_PASSWORD, 'Falta TEST_USER_PASSWORD en testing/.env.test').not.toBe('');
-    await iniciarSesionProductor(page);
+    token = await iniciarSesionProductor(page);
   });
 
   test('1-2. Formulario (activo ACTIVO) - 0 violaciones axe, labels 1.3.1 y select con transiciones válidas 4.1.2', async ({ page }, testInfo) => {
@@ -189,32 +213,32 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Cambio de estado del activ
     const c = campos(page);
 
     // 1.3.1: los tres campos tienen nombre accesible por su label
-    await expect(c.estado, '1.3.1: el select de estado_nuevo debe tener label asociado').toBeVisible();
-    await expect(c.fecha, '1.3.1: fecha_cambio_estado debe tener label asociado').toBeVisible();
-    await expect(c.motivo, '1.3.1: motivo_cambio debe tener label asociado').toBeVisible();
+    await expect(c.estado, 'DEFECTO: 1.3.1: el select de estado_nuevo debe tener label asociado').toBeVisible();
+    await expect(c.fecha, 'DEFECTO: 1.3.1: fecha_cambio_estado debe tener label asociado').toBeVisible();
+    await expect(c.motivo, 'DEFECTO: 1.3.1: motivo_cambio debe tener label asociado').toBeVisible();
 
     // 4.1.2: el select solo ofrece las transiciones manuales válidas desde ACTIVO
     const opciones = await c.estado.locator('option').evaluateAll((os) =>
       os.map((o) => ({ texto: (o.textContent ?? '').trim(), valor: (o as HTMLOptionElement).value, deshabilitada: (o as HTMLOptionElement).disabled })));
     testInfo.annotations.push({ type: 'Opciones de estado_nuevo', description: opciones.map((o) => `${o.texto}${o.deshabilitada ? ' (deshabilitada)' : ''}`).join(' · ') });
     const habilitadas = opciones.filter((o) => o.valor && !o.deshabilitada).map((o) => o.texto);
-    expect(habilitadas, '4.1.2: el select debe mostrar solo las transiciones válidas desde ACTIVO').toEqual(DESTINOS_DESDE_ACTIVO);
+    expect(habilitadas, 'DEFECTO: 4.1.2: el select debe mostrar solo las transiciones válidas desde ACTIVO').toEqual(DESTINOS_DESDE_ACTIVO);
 
     // CERRADO y BAJA: si aparecen, deben estar deshabilitadas de forma programática (no solo atenuadas)
     for (const terminal of ['Cerrado', 'Baja']) {
       const op = opciones.find((o) => o.texto === terminal);
-      if (op) expect(op.deshabilitada, `4.1.2: "${terminal}" aparece en el select pero no está deshabilitada (disabled)`).toBe(true);
+      if (op) expect(op.deshabilitada, `DEFECTO: 4.1.2: "${terminal}" aparece en el select pero no está deshabilitada (disabled)`).toBe(true);
     }
 
     // 4.1.2: estado y valor programáticos del select
     await c.estado.selectOption({ label: 'En tratamiento' });
-    await expect(c.estado, '4.1.2: el value del select debe reflejar la opción elegida').toHaveValue('EN_TRATAMIENTO');
+    await expect(c.estado, 'DEFECTO: 4.1.2: el value del select debe reflejar la opción elegida').toHaveValue('EN_TRATAMIENTO');
     await c.estado.selectOption({ index: 0 });
 
     // Requeridos: asterisco visual + aria-required (convención del proyecto)
     for (const [campo, nombre] of [[c.estado, 'Nuevo estado'], [c.fecha, 'Fecha del cambio'], [c.motivo, 'Motivo del cambio']] as const) {
       const requerido = await campo.evaluate((e) => e.getAttribute('aria-required') === 'true' || (e as HTMLInputElement).required);
-      expect.soft(requerido, `3.3.2: "${nombre}" es obligatorio (asterisco visual) pero no se expone como requerido (aria-required/required)`).toBe(true);
+      expect.soft(requerido, `DEFECTO: 3.3.2: "${nombre}" es obligatorio (asterisco visual) pero no se expone como requerido (aria-required/required)`).toBe(true);
     }
 
     await escanear(page, 'formulario', testInfo);
@@ -229,8 +253,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Cambio de estado del activ
 
     // Guardar sin estado ni motivo
     await c.guardar.click();
-    await expect(alertas.filter({ hasText: /nuevo estado/i }), '3.3.1: el estado_nuevo faltante debe anunciarse').toBeVisible();
-    await expect(alertas.filter({ hasText: /motivo/i }), '3.3.1: el motivo_cambio faltante debe anunciarse').toBeVisible();
+    await expect(alertas.filter({ hasText: /nuevo estado/i }), 'DEFECTO: 3.3.1: el estado_nuevo faltante debe anunciarse').toBeVisible();
+    await expect(alertas.filter({ hasText: /motivo/i }), 'DEFECTO: 3.3.1: el motivo_cambio faltante debe anunciarse').toBeVisible();
     await verificarCampoConError(c.estado, 'Nuevo estado');
     await verificarCampoConError(c.motivo, 'Motivo del cambio');
     await escanear(page, 'error-motivo-requerido', testInfo);
@@ -239,13 +263,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Cambio de estado del activ
     await c.estado.selectOption({ label: 'Inactivo' });
     await c.motivo.fill('   ');
     await c.guardar.click();
-    await expect(alertas.filter({ hasText: /motivo/i }), '3.3.1: el motivo vacío (solo espacios) debe anunciarse').toBeVisible();
+    await expect(alertas.filter({ hasText: /motivo/i }), 'DEFECTO: 3.3.1: el motivo vacío (solo espacios) debe anunciarse').toBeVisible();
 
     // Fecha futura
     await c.motivo.fill('QA TC-DIS-125 (envío interceptado)');
     await c.fecha.fill('2099-01-01');
     await c.guardar.click();
-    await expect(alertas.filter({ hasText: /futura/i }), '3.3.1: la fecha futura debe anunciarse').toBeVisible();
+    await expect(alertas.filter({ hasText: /futura/i }), 'DEFECTO: 3.3.1: la fecha futura debe anunciarse').toBeVisible();
     await verificarCampoConError(c.fecha, 'Fecha del cambio');
     await escanear(page, 'error-fecha-futura', testInfo);
   });
@@ -273,26 +297,38 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Cambio de estado del activ
     };
 
     // 422 TRANSICION_INVALIDA: debe anunciar el listado de transiciones válidas
+    await verificarEstado(page, token, ID_INACTIVO, 'INACTIVO');
     await enviar(ID_INACTIVO, { estado_nuevo: 'AISLADO', fecha_cambio_estado: HOY, motivo_cambio: 'QA TC-DIS-125 sondeo' }, 422);
-    await expect(alerta.filter({ hasText: 'Transiciones válidas desde INACTIVO' }), '3.3.1: la transición inválida debe anunciarse con las transiciones válidas').toBeVisible();
+    await expect(alerta.filter({ hasText: 'Transiciones válidas desde INACTIVO' }), 'DEFECTO: 3.3.1: la transición inválida debe anunciarse con las transiciones válidas').toBeVisible();
     await escanear(page, 'error-transicion-invalida', testInfo);
     await cerrar();
 
     // 400 VAL_ENTRADA con error de campo en estado_nuevo: debe ir debajo del select
     await enviar(ID_BAJA, { estado_nuevo: 'XYZ', fecha_cambio_estado: HOY, motivo_cambio: 'QA TC-DIS-125 sondeo' }, 400);
-    await expect(alerta.filter({ hasText: 'Estado inválido' }), '3.3.1: el estado inválido debe anunciarse').toBeVisible();
+    const errorCampo = dialogo(page).locator('#estado-nuevo-err');
+    await expect(errorCampo, 'DEFECTO: 3.3.1: el estado inválido debe anunciarse debajo del select').toContainText('Estado inválido');
     await verificarCampoConError(campos(page).estado, 'Nuevo estado (error 400 del backend)');
+    // Errores de campo debajo del input, nunca en alerta global: si no, se anuncian dos veces
+    await expect.soft(
+      alerta.filter({ hasText: 'No se pudo cambiar el estado' }).filter({ hasText: 'Estado inválido' }),
+      'DEFECTO: 3.3.1: el error de campo del 400 se repite en la alerta global "No se pudo cambiar el estado" (el lector lo anuncia dos veces; los errores de campo van solo debajo del input)',
+    ).toHaveCount(0);
     await escanear(page, 'error-estado-invalido', testInfo);
     await cerrar();
 
     // 422 VALIDACIONES_PREVIAS_REQUERIDAS: CERRADO no se establece con el cambio manual
+    await verificarEstado(page, token, ID_CERRADO, 'CERRADO');
     await enviar(ID_CERRADO, { estado_nuevo: 'CERRADO', fecha_cambio_estado: HOY, motivo_cambio: 'QA TC-DIS-125 sondeo' }, 422);
-    await expect(alerta.filter({ hasText: 'cierre de ciclo' }), '3.3.1: el rechazo de CERRADO manual debe anunciarse').toBeVisible();
+    await expect(errorCampo, 'DEFECTO: 3.3.1: el rechazo de CERRADO manual debe anunciarse debajo del select').toContainText('cierre de ciclo');
+    await expect.soft(
+      alerta.filter({ hasText: 'No se pudo cambiar el estado' }).filter({ hasText: 'cierre de ciclo' }),
+      'DEFECTO: 3.3.1: el error de campo del 422 (CERRADO manual) se repite en la alerta global "No se pudo cambiar el estado" (el lector lo anuncia dos veces)',
+    ).toHaveCount(0);
     await cerrar();
 
     // 404 ACTIVO_NO_ENCONTRADO
     await enviar(999999, { estado_nuevo: 'INACTIVO', fecha_cambio_estado: HOY, motivo_cambio: 'QA TC-DIS-125 sondeo' }, 404);
-    await expect(alerta.filter({ hasText: 'no existe' }), '3.3.1: el activo inexistente debe anunciarse').toBeVisible();
+    await expect(alerta.filter({ hasText: 'no existe' }), 'DEFECTO: 3.3.1: el activo inexistente debe anunciarse').toBeVisible();
     await cerrar();
   });
 
@@ -305,7 +341,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Cambio de estado del activ
     // Sin select editable: la ausencia de transiciones manuales se comunica con texto, no solo visualmente
     await expect(dialogo(page).getByRole('combobox'), 'Un activo CERRADO no debe ofrecer un select de transiciones manuales').toHaveCount(0);
     const aviso = dialogo(page).getByRole('alert').filter({ hasText: 'Sin transiciones disponibles' });
-    await expect(aviso, '3.3.1/4.1.3: la falta de transiciones debe comunicarse de forma accesible').toBeVisible();
+    await expect(aviso, 'DEFECTO: 3.3.1/4.1.3: la falta de transiciones debe comunicarse de forma accesible').toBeVisible();
     testInfo.annotations.push({ type: 'Mensaje para CERRADO', description: (await aviso.innerText()).replace(/\s+/g, ' ') });
 
     await escanear(page, 'activo-cerrado', testInfo);

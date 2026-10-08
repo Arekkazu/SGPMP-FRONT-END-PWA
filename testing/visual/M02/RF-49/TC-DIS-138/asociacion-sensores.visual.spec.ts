@@ -1,22 +1,28 @@
 /**
  * TC-DIS-138 — Consistencia visual del formulario de Asociación de Sensores IoT
- * RF-49 · CU-11 Asociar Sensores IoT al Activo · Rol: Administrador
+ * RF-49 v1.2 · CU-11 Asociar Sensores IoT al Activo · Rol: Administrador
  * Activos biológicos → ficha del activo → pestaña "Sensores" → "Asociar sensor"
  *
- * Baselines (tarjeta del modal o tarjeta de la sección, sin el fondo):
- *   - Formulario con asociación DIRECTA (activo individual #297).
- *   - Formulario con asociación POBLACIONAL (lote #296).
- *   - Advertencia por dispositivo desconectado tras asociar (201 con warning, SIMULADO).
- *   - AMBIENTAL: BLOQUEO. El formulario del activo no ofrece ese tipo a propósito
- *     (types.ts: "AMBIENTAL no se soporta desde este DTO (issue #351 backend)": se ancla a
- *     la infraestructura y el backend la rechaza con 400). El test verifica la opción y
- *     falla mientras no exista; entonces genera su baseline.
+ * Baselines nuevas por el cambio del formulario (RF-49 v1.2; tarjeta del modal o de la
+ * sección, sin el fondo):
+ *   - Formulario con asociación DIRECTA (activo individual #297), dispositivo y sensor elegidos.
+ *   - Formulario con asociación POBLACIONAL (lote #296), dispositivo y sensor elegidos.
+ *   - Advertencia por dispositivo desconectado tras asociar (201 con warning, SIMULADO, mensaje
+ *     del RF v1.2).
+ * La asociación AMBIENTAL (tipo B) se forma por la infraestructura (RF-22) y el formulario del
+ * activo ya no la ofrece (#351); el test verifica que solo haya DIRECTA y POBLACIONAL.
+ *
+ * Dispositivo #1 "IOT-EST01-HLA-001" con sus sensores reales (listas encadenadas).
  *
  * PROTECCIÓN DE DATOS: todo POST /activos-biologicos/{id}/sensores se aborta o se responde
  * con el 201 simulado; no se crea ninguna asociación.
  *
- * Móvil: el modal tiene scroll interno (max-height 90vh); antes de capturar se amplía el
- * alto de la ventana, conservando el ancho, para que el formulario completo quede visible.
+ * Una baseline solo se guarda si la vista no tiene defectos: el ancho del modal según el
+ * breakpoint del DS v2.0 (bottom sheet en xs/sm, máx. 480px en md, máx. 560px en lg), las
+ * etiquetas de los campos (`.ds-field__label`: 12px / 600 / --text-secondary) y que todo el
+ * texto use la escala tipográfica del DS se verifican antes de capturar y fallan como DEFECTO.
+ * El modal tiene scroll interno (max-height 90vh): antes de capturar se amplía el alto de la
+ * ventana, conservando el ancho, para que el formulario completo quede visible.
  *
  * Tema: la preferencia de tema es de la cuenta (compartida); GET
  * /configuracion/personalizacion/tema(/global) se sirve con el tema Claro (theme_mode 1,
@@ -31,6 +37,7 @@ const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 const ORIGEN = 'Corral QA JE Origen'; // infraestructura #48 de ambos activos
+const ID_DISPOSITIVO = '1';
 const ESCENARIOS = [
   { tipo: 'DIRECTA', idActivo: 297, tipoActivo: 'INDIVIDUAL', descripcion: 'activo individual #297' },
   { tipo: 'POBLACIONAL', idActivo: 296, tipoActivo: 'LOTE', descripcion: 'lote #296' },
@@ -41,13 +48,14 @@ const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_138_VIEWPORTS ?? 'movil,tablet
   .map((v) => v.trim());
 
 const URL_SENSORES = (url: URL) => /\/activos-biologicos\/\d+\/sensores$/.test(url.pathname);
+const URL_SENSORES_DISPOSITIVO = (url: URL) => /\/dispositivos-iot\/\d+\/sensores$/.test(url.pathname);
 
-// 201 SIMULADO con advertencia de dispositivo desconectado
+// 201 SIMULADO con advertencia de dispositivo desconectado (mensaje del RF-49 v1.2)
 const EXITO_CON_ADVERTENCIA = {
-  id_asociacion: 999001, id_activo_biologico: 296, sensor_id: 12, dispositivo_iot_id: 5,
+  id_asociacion: 999001, id_activo_biologico: 296, sensor_id: 3, dispositivo_iot_id: 1,
   id_infraestructura: 48, tipo_activo: 'LOTE', tipo_asociacion: 'POBLACIONAL',
-  estado_asociacion: 'ACTIVA', fecha_inicio: '2026-09-30T00:00:00Z', fecha_fin: null,
-  advertencia: 'El dispositivo IoT #5 está desconectado (última transmisión hace más de 24 h). La asociación se registró, pero no recibirá lecturas hasta que el dispositivo se reconecte.',
+  estado_asociacion: 'ACTIVA', fecha_inicio: '2026-10-07T00:00:00Z', fecha_fin: null,
+  advertencia: 'Asociación registrada exitosamente. Advertencia: El dispositivo 1 se encuentra desconectado desde las 08:15:00. Las lecturas podrían no verse reflejadas de inmediato.',
 };
 
 // Tema Claro fijo (cuerpos reales de TEST con theme_mode 1)
@@ -55,6 +63,12 @@ const TEMA: Record<string, unknown> = {
   '/configuracion/personalizacion/tema': { theme_mode: 1, fuente: 'personal', id_tema_visual: 10 },
   '/configuracion/personalizacion/tema/global': { id_tema_visual: 1, id_usuario: 1, theme_mode: 1, es_global: true, fecha_actualizacion: '2026-09-29T22:56:03.004225Z' },
 };
+
+// DS v2.0: escala tipográfica (todos los anchos) y etiquetas de campo
+const ESCALA = [11, 12, 14, 15, 16, 18, 19, 20, 24, 26, 28];
+const CAMPOS = ['Tipo de activo', 'Tipo de asociación', 'Dispositivo IoT', 'Sensor', 'Fecha de inicio', 'Motivo'];
+
+test.use({ locale: 'es-CO', timezoneId: 'America/Bogota' });
 
 async function fijarTemaClaro(page: Page) {
   await page.route((url) => Object.keys(TEMA).some((k) => url.pathname.endsWith(k)), (r) => {
@@ -78,6 +92,10 @@ function dialogo(page: Page): Locator {
   return page.getByRole('dialog', { name: 'Asociar sensor IoT' });
 }
 
+function tarjetaModal(page: Page): Locator {
+  return dialogo(page).locator('> div');
+}
+
 /** Tarjeta de la sección "Sensores IoT" con el mensaje de resultado. */
 function tarjetaSeccion(page: Page): Locator {
   return page.locator('div')
@@ -86,41 +104,112 @@ function tarjetaSeccion(page: Page): Locator {
     .last();
 }
 
-/**
- * El modal tiene max-height 90vh con scroll interno: en móvil el formulario no cabe y la
- * captura cortaría los últimos campos y los botones. Se amplía el alto de la ventana
- * (conservando el ancho del proyecto) hasta que el modal completo quepa sin scroll.
- */
-async function ajustarAltoParaModal(page: Page) {
-  const alto = await dialogo(page).locator('> div').evaluate((e) => e.scrollHeight);
-  const viewport = page.viewportSize();
-  if (!viewport) return;
-  const necesario = Math.ceil(alto / 0.9) + 40;
-  if (necesario > viewport.height) {
-    await page.setViewportSize({ width: viewport.width, height: necesario });
-    await expect.poll(() => dialogo(page).locator('> div').evaluate((e) => e.scrollHeight <= e.clientHeight)).toBe(true);
-  }
-}
-
 async function abrirFormulario(page: Page, idActivo: number) {
   await page.goto(`/activos-biologicos/${idActivo}`);
   const secciones = page.getByRole('navigation', { name: 'Secciones del activo' });
   await expect(secciones).toBeVisible({ timeout: 20_000 });
-  // Esperar la ficha: la infraestructura del activo se precarga en el formulario al abrirlo
+  // Esperar la ficha: la infraestructura del activo se pasa al formulario al abrirlo
   await expect(page.getByText(ORIGEN).first()).toBeVisible({ timeout: 20_000 });
   await secciones.getByRole('button', { name: 'Sensores', exact: true }).click();
   await page.getByRole('button', { name: 'Asociar sensor', exact: true }).first().click();
   await expect(dialogo(page)).toBeVisible();
-  await expect(dialogo(page).getByLabel(/ID infraestructura/i)).toHaveValue('48');
+  await expect(dialogo(page).getByText(/Infraestructura del activo.*#48/)).toBeVisible();
 }
 
+/** Elige el dispositivo de prueba y el primer sensor de su lista (listas encadenadas). */
+async function elegirDispositivoYSensor(page: Page) {
+  const d = dialogo(page);
+  const dispositivo = d.getByRole('combobox', { name: /Dispositivo IoT/ });
+  const sensor = d.getByRole('combobox', { name: /^Sensor/ });
+  await expect(dispositivo.locator(`option[value="${ID_DISPOSITIVO}"]`), `Precondición: el dispositivo #${ID_DISPOSITIVO} debe estar en la lista`).toBeAttached({ timeout: 20_000 });
+  const sensores = page.waitForResponse((r) => URL_SENSORES_DISPOSITIVO(new URL(r.url())));
+  await dispositivo.selectOption(ID_DISPOSITIVO);
+  expect((await sensores).status(), 'Los sensores del dispositivo deben cargar').toBe(200);
+  await expect(sensor).toBeEnabled();
+  await sensor.selectOption({ index: 1 });
+}
+
+// ── Verificaciones previas a la captura ──────────────────────────────────────
+
+/** DEFECTO si la tarjeta del modal no respeta el breakpoint del DS v2.0. */
+async function verificarBreakpoint(page: Page) {
+  const nombre = test.info().project.name;
+  const viewport = page.viewportSize()!;
+  const caja = (await tarjetaModal(page).boundingBox())!;
+  test.info().annotations.push({ type: 'Tarjeta del modal', description: `viewport ${viewport.width}×${viewport.height} · ${Math.round(caja.width)}×${Math.round(caja.height)} · y ${Math.round(caja.y)}` });
+  if (viewport.width < 768) {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, xs/sm) el modal debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px y queda centrado con márgenes`).toBe(viewport.width);
+    expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${nombre} el bottom sheet debe apoyarse en el borde inferior de la pantalla`).toBe(viewport.height);
+  } else if (viewport.width < 1200) {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, md) el modal debe medir máximo 480px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(480);
+  } else {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, lg) el modal debe medir máximo 560px; mide ${Math.round(caja.width)}px`).toBe(560);
+  }
+}
+
+/** DEFECTO si las etiquetas de los campos no usan el estilo de etiqueta del DS (12px / 600 / --text-secondary). */
+async function verificarEtiquetas(page: Page) {
+  const resultado = await dialogo(page).evaluate((d, campos) => {
+    const ref = document.createElement('span');
+    ref.style.color = 'var(--text-secondary)';
+    document.body.appendChild(ref);
+    const secundario = getComputedStyle(ref).color;
+    ref.remove();
+    return campos.map((campo) => {
+      const label = [...d.querySelectorAll('label')].find((l) => (l.textContent ?? '').replace('*', '').trim() === campo);
+      if (!label) return { campo, estilo: 'sin <label>', ok: false };
+      const cs = getComputedStyle(label);
+      return { campo, estilo: `${cs.fontSize} / ${cs.fontWeight}`, ok: cs.fontSize === '12px' && cs.fontWeight === '600' && cs.color === secundario };
+    });
+  }, CAMPOS);
+  const distintas = resultado.filter((r) => !r.ok);
+  expect.soft(
+    distintas.map((r) => r.campo),
+    `DEFECTO: etiquetas fuera del estilo de etiqueta del DS (.ds-field__label 12px / 600 / --text-secondary): ${distintas.map((r) => `"${r.campo}" ${r.estilo}`).join(' · ')}; en el mismo formulario conviven dos estilos de etiqueta`,
+  ).toEqual([]);
+}
+
+/** DEFECTO si algún texto con estilo propio del módulo usa un tamaño fuera de la escala tipográfica del DS v2.0. */
+async function verificarEscala(objetivo: Locator, zona: string) {
+  const fuera = await objetivo.evaluate((raiz, escala) => {
+    const res: string[] = [];
+    const vistos = new Set<string>();
+    const walker = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const texto = (n.textContent ?? '').trim();
+      const el = n.parentElement;
+      // Componentes del DS (botón, alerta) se evalúan con su propio CSS, no como estilo del módulo
+      if (!texto || !el || el.closest('option, label, .ds-sr-only, .ds-btn, .ds-alert')) continue;
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      const clave = `${fs}|${texto.slice(0, 40)}`;
+      if (!escala.includes(fs) && !vistos.has(clave)) { vistos.add(clave); res.push(`"${texto.slice(0, 40)}" ${fs}px`); }
+    }
+    return res;
+  }, ESCALA);
+  expect.soft(fuera, `DEFECTO: ${zona}: texto fuera de la escala tipográfica del DS v2.0 (texto UI = body-md 14px): ${fuera.join(' · ')}`).toEqual([]);
+}
+
+/** Amplía el alto de la ventana (conservando el ancho) si el modal no cabe sin scroll. */
+async function ajustarAltoParaModal(page: Page) {
+  const alto = await tarjetaModal(page).evaluate((e) => e.scrollHeight);
+  const viewport = page.viewportSize()!;
+  const necesario = Math.ceil(alto / 0.9) + 40;
+  if (necesario > viewport.height) {
+    await page.setViewportSize({ width: viewport.width, height: necesario });
+    await expect.poll(() => tarjetaModal(page).evaluate((e) => e.scrollHeight <= e.clientHeight)).toBe(true);
+  }
+}
+
+/** Captura el objetivo. Sin baseline si hay defectos. */
 async function capturar(page: Page, objetivo: Locator, nombre: string) {
-  // Sin foco ni hover: el cursor queda donde se hizo el último clic
+  expect(test.info().errors.length, 'Sin baseline: la vista tiene defectos (ver errores anteriores)').toBe(0);
   await page.mouse.move(0, 0);
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.evaluate(() => document.fonts.ready);
-  await expect(objetivo).toHaveScreenshot(nombre, { animations: 'disabled' });
+  await expect(objetivo).toHaveScreenshot(nombre, { animations: 'disabled', caret: 'hide' });
 }
+
+// ── Casos ────────────────────────────────────────────────────────────────────
 
 test.describe('TC-DIS-138 - Consistencia visual - Asociación de sensores IoT (RF-49)', () => {
   // workers: 1 en el config; timeout amplio por la latencia del login en TEST
@@ -137,40 +226,39 @@ test.describe('TC-DIS-138 - Consistencia visual - Asociación de sensores IoT (R
   });
 
   for (const esc of ESCENARIOS) {
-    test(`1. Formulario con asociación ${esc.tipo} (${esc.descripcion})`, async ({ page }) => {
+    test(`1. Formulario con asociación ${esc.tipo} (${esc.descripcion})`, async ({ page }, testInfo) => {
       await abrirFormulario(page, esc.idActivo);
-      await expect(dialogo(page).getByLabel(/Tipo de activo/)).toHaveValue(esc.tipoActivo);
-      await expect(dialogo(page).getByLabel(/Tipo de asociación/)).toHaveValue(esc.tipo);
+      const d = dialogo(page);
+      await expect(d.getByRole('combobox', { name: /Tipo de activo/ })).toHaveValue(esc.tipoActivo);
+      const tipo = d.getByRole('combobox', { name: /Tipo de asociación/ });
+      await expect(tipo).toHaveValue(esc.tipo);
+      // RF v1.2: el tipo AMBIENTAL va por la infraestructura (RF-22), no por este formulario
+      const tipos = await tipo.locator('option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
+      testInfo.annotations.push({ type: 'Tipos de asociación ofrecidos', description: tipos.join(' · ') });
+      expect(tipos, 'El formulario del activo ofrece DIRECTA y POBLACIONAL').toEqual(['DIRECTA', 'POBLACIONAL']);
+      await elegirDispositivoYSensor(page);
+
       await ajustarAltoParaModal(page);
-      await capturar(page, dialogo(page).locator('> div'), `asociacion-${esc.tipo.toLowerCase()}.png`);
+      await verificarBreakpoint(page);
+      await verificarEtiquetas(page);
+      await verificarEscala(tarjetaModal(page), 'formulario');
+      await capturar(page, tarjetaModal(page), `asociacion-${esc.tipo.toLowerCase()}.png`);
     });
   }
 
-  test('1. Formulario con asociación AMBIENTAL', async ({ page }, testInfo) => {
-    await abrirFormulario(page, 296);
-    const opciones = await dialogo(page).getByLabel(/Tipo de asociación/).locator('option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
-    testInfo.annotations.push({ type: 'Tipos de asociación ofrecidos', description: opciones.join(', ') });
-    expect(
-      opciones,
-      'BLOQUEO: el formulario del activo no ofrece AMBIENTAL (excluido a propósito, types.ts: "issue #351 backend"; se ancla a la infraestructura y el backend la rechaza con 400). No hay formulario AMBIENTAL que capturar.',
-    ).toContain('AMBIENTAL');
-    await dialogo(page).getByLabel(/Tipo de asociación/).selectOption('AMBIENTAL');
-    await ajustarAltoParaModal(page);
-    await capturar(page, dialogo(page).locator('> div'), 'asociacion-ambiental.png');
-  });
-
   test('2. Advertencia por dispositivo desconectado (201 con warning, simulado)', async ({ page }, testInfo) => {
-    testInfo.annotations.push({ type: 'Datos simulados', description: '201 con advertencia de dispositivo desconectado inyectado; no se crea ninguna asociación.' });
+    testInfo.annotations.push({ type: 'Datos simulados', description: '201 con advertencia de dispositivo desconectado (mensaje del RF v1.2) inyectado; no se crea ninguna asociación.' });
     await page.route(URL_SENSORES, (r) =>
       r.request().method() === 'POST'
         ? r.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify(EXITO_CON_ADVERTENCIA) })
         : r.continue());
     await abrirFormulario(page, 296);
-    await dialogo(page).getByLabel(/ID dispositivo IoT/i).fill('5');
-    await dialogo(page).getByLabel(/ID sensor/i).fill('12');
+    await elegirDispositivoYSensor(page);
     await dialogo(page).getByRole('button', { name: 'Asociar sensor', exact: true }).click();
     await expect(dialogo(page)).toBeHidden();
     await expect(page.getByRole('alert').filter({ hasText: 'desconectado' })).toBeVisible();
+
+    await verificarEscala(tarjetaSeccion(page), 'sección "Sensores IoT"');
     await capturar(page, tarjetaSeccion(page), 'asociacion-advertencia-desconectado.png');
   });
 });

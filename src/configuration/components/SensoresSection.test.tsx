@@ -169,3 +169,22 @@ describe('wizard de asociación de sensores — reasignación (RF-22)', () => {
     expect(screen.queryByText('Confirmar reasignación')).not.toBeInTheDocument();
   });
 });
+
+describe('wizard de asociación de sensores — foco entre pasos (QA M09 TC-DIS-58/59)', () => {
+  it('lleva el foco a la instrucción del paso nuevo y separa el valor resaltado', async () => {
+    render(<MemoryRouter><SensoresSection /></MemoryRouter>);
+    expect(document.body).toHaveFocus();
+
+    fireEvent.click(await screen.findByText('IOT-001'));
+    const paso2 = await screen.findByText(/^Paso 2/);
+    expect(paso2).toHaveFocus();
+    expect(paso2).toHaveTextContent('Paso 2 — Elige el sensor de IOT-001 a asociar:');
+
+    fireEvent.click(await screen.findByText('Sensor pH'));
+    expect(await screen.findByText(/^Paso 3/)).toHaveFocus();
+
+    fireEvent.click(await screen.findByText('Finca El Remanso'));
+    fireEvent.click(await screen.findByText('Estanque Sur'));
+    expect(await screen.findByText(/^Paso 4/)).toHaveFocus();
+  });
+});
