@@ -152,3 +152,21 @@
   white-space: nowrap;
   border: 0;
 }
+
+/*
+ * Barra de pestañas con scroll horizontal (T-13, reporte UAT 07/10).
+ * `overflow-x: auto` sola fuerza `overflow-y: auto`: el subrayado de la pestaña
+ * activa desbordaba unos píxeles y aparecía la barra vertical del navegador
+ * (flechas ▲▼) aun con dos pestañas. Se sigue desplazando con touch, trackpad
+ * y foco de teclado; solo se oculta la barra nativa.
+ */
+.ds-tabs {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--surface-border);
+}
+.ds-tabs::-webkit-scrollbar {
+  display: none;
+}
