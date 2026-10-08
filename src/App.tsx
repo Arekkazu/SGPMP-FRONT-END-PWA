@@ -148,8 +148,16 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', overflowX: 'hidden' }}>
-      {/* WCAG 2.4.1: saltar el menú lateral (TC-DIS-117). */}
-      <a href="#contenido-principal" className="ds-skip-link">{t('saltar_al_contenido')}</a>
+      {/* WCAG 2.4.1: saltar el menú lateral (TC-DIS-117). Foco por código: con
+          <base href="/"> el ancla relativa navegaba a /#contenido-principal (#271). */}
+      <a
+        href="#contenido-principal"
+        className="ds-skip-link"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('contenido-principal')?.focus();
+        }}
+      >{t('saltar_al_contenido')}</a>
       <Sidebar open={sidebarOpen} onLogout={handleLogout} onNavigate={() => setSidebarOpen(false)} />
       {sidebarOpen && (
         <div
