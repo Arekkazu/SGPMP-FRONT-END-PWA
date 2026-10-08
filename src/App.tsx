@@ -195,6 +195,8 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
           onRefresh={() => void notificaciones.cargar()}
           onLoadMore={() => void notificaciones.cargarMas()}
           onMarkAsRead={notificaciones.marcarComoLeida}
+          onMarkAllAsRead={notificaciones.marcarTodasLeidas}
+          markingAll={notificaciones.marcandoTodas}
           onEnablePush={push.requestNotificationPermission}
           onDismissError={notificaciones.clearError}
         />
