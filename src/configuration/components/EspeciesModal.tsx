@@ -128,6 +128,8 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
               required
               aria-required="true"
               placeholder={t('especiesmodal.ej_bovino_avicola_porcino')}
+              // M9-07: la regla se veía solo al fallar.
+              hint={t('especiesmodal.regla_nombre')}
               error={errors.nombre?.message}
               {...register('nombre', {
                 required: t('especiesmodal.el_nombre_es_obligatorio'),
