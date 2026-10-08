@@ -362,10 +362,18 @@ export interface MetricaProduccionResponse {
   id_especie: number | null;
   es_activo: boolean;
   fecha_actualizacion: string | null;
+  /** RFC-004 (#258). valor_min/valor_max llegan como texto ("10.0000"): son Decimal. */
+  tipo_dato: TipoDatoMetrica;
+  es_obligatorio: boolean;
+  valor_min: number | string | null;
+  valor_max: number | string | null;
 }
 
 /** RF-16 v1.2 (RFC-004): lo elige el usuario; el backend ya no lo infiere de `tipo_medicion`. */
 export type TipoDatoMetrica = 'NUMERICO' | 'ENTERO' | 'TEXTO' | 'BOOLEANO';
+
+/** RFC-004: el rango solo aplica a estos tipos (el backend rechaza el resto con 400). */
+export const TIPOS_DATO_CON_RANGO: TipoDatoMetrica[] = ['NUMERICO', 'ENTERO'];
 
 export interface RegistrarMetricaDTO {
   id_especie: number;
@@ -374,6 +382,9 @@ export interface RegistrarMetricaDTO {
   tipo_medicion: TipoMedicion;
   aplica_a_tipo_activo?: TipoActivo;
   tipo_dato: TipoDatoMetrica;
+  es_obligatorio: boolean;
+  valor_min: number | null;
+  valor_max: number | null;
 }
 
 export interface EditarMetricaDTO {
@@ -381,6 +392,10 @@ export interface EditarMetricaDTO {
   unidad_medida: string;
   tipo_medicion: TipoMedicion;
   aplica_a_tipo_activo: TipoActivo;
+  tipo_dato: TipoDatoMetrica;
+  es_obligatorio: boolean;
+  valor_min: number | null;
+  valor_max: number | null;
   fecha_actualizacion?: string;
 }
 

@@ -95,6 +95,10 @@ describe('MetricasSection — RF-16 coherencia unidad↔tipo_medición', () => {
       tipo_medicion: 'PESO',
       aplica_a_tipo_activo: 'AMBOS',
       tipo_dato: 'NUMERICO',
+      // #258 (RFC-004): sin rango ni obligatoriedad salvo que el usuario los marque.
+      es_obligatorio: false,
+      valor_min: null,
+      valor_max: null,
     });
   });
 });
