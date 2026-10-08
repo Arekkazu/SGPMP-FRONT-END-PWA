@@ -16,6 +16,8 @@ import { useDispositivosIot } from '../hooks/useDispositivosIot';
 import { useSensores } from '../hooks/useSensores';
 import { useCalibracion } from '../hooks/useCalibracion';
 import type { DispositivoIotResponse, SensorResponse, CalibracionResponse } from '../types';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda } from '../../shared/hooks/useBusqueda';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -45,6 +47,7 @@ function DispSelector({ dispositivos, loading, onSelect }: {
 }) {
   const { t } = useT('configuration');
   const activos = dispositivos.filter((d) => d.es_activo);
+  const busqueda = useBusqueda(activos, (d) => `${d.serial} ${d.descripcion ?? ''}`);
   if (loading) {
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
@@ -59,19 +62,24 @@ function DispSelector({ dispositivos, loading, onSelect }: {
     return <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s7) 0' }}>{t('calibracionsection.no_hay_dispositivos_activos_disponibles')}</p>;
   }
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
-      {activos.map((d) => (
-        <OptionCard key={d.id_dispositivo_iot} onClick={() => onSelect(d)}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s3)' }}>
-            <span className="ds-option__icono"><Cpu size={20} strokeWidth={1.5} aria-hidden /></span>
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: 'var(--brand-600)' }}>{d.serial}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{d.descripcion}</div>
+    <>
+      {busqueda.conBuscador && (
+        <Buscador id="buscar-disp-calibracion" label={t('busqueda.buscar_dispositivo', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
+        {busqueda.filtrados.map((d) => (
+          <OptionCard key={d.id_dispositivo_iot} onClick={() => onSelect(d)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s3)' }}>
+              <span className="ds-option__icono"><Cpu size={20} strokeWidth={1.5} aria-hidden /></span>
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: 'var(--brand-600)' }}>{d.serial}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{d.descripcion}</div>
+              </div>
             </div>
-          </div>
-        </OptionCard>
-      ))}
-    </div>
+          </OptionCard>
+        ))}
+      </div>
+    </>
   );
 }
 
