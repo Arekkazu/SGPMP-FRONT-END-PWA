@@ -100,7 +100,7 @@ export function CatalogoTab() {
   const puedeEditar = usePermission(8, 3);
   const puedeDesact = usePermission(8, 4);
 
-  const { especies, loading, saving, error, saveError, fromCache, conflictos, cargar, registrar, editar, desactivar, reactivar, resolverConflicto } = useEspecies();
+  const { especies, loading, saving, error, saveError, fromCache, conflictos, cargar, registrar, editar, desactivar, reactivar, resolverConflicto, limpiarSaveError } = useEspecies();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
@@ -116,7 +116,8 @@ export function CatalogoTab() {
   const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ESPECIES_POR_PAGINA));
   const enPagina = filtradas.slice((pagina - 1) * ESPECIES_POR_PAGINA, pagina * ESPECIES_POR_PAGINA);
 
-  const cerrar = () => setModal({ tipo: 'ninguno' });
+  // El error de un guardado fallido no debe aparecer al abrir otra especie (#231).
+  const cerrar = () => { limpiarSaveError(); setModal({ tipo: 'ninguno' }); };
 
   const handleDesactivar = async (especie: EspecieResponse) => {
     setAccionError(null);
