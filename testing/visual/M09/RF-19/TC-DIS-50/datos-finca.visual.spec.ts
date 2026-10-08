@@ -12,9 +12,11 @@
  * los tipos de área del ambiente). El modal tiene scroll propio; antes de capturar se
  * amplía el alto de la ventana, conservando el ancho, hasta que la tarjeta quepa completa.
  *
- * Verificación de layout: la tarjeta del modal se mide contra el DS v2.0 (bottom sheet a
- * ancho completo en xs/sm, máx. 480px en md, máx. 560px en lg) y falla como DEFECTO si
- * no cumple.
+ * Una baseline solo se guarda si la vista no tiene defectos: la tarjeta del modal se mide
+ * contra el DS v2.0 (bottom sheet a ancho completo en xs/sm, máx. 480px en md, máx. 560px en
+ * lg) y el texto con estilo propio del módulo debe usar la escala tipográfica del DS (los
+ * componentes del DS se evalúan con su propio CSS); si algo falla es DEFECTO y no se captura.
+ * Release 1.0.0-rc.40: los modales pasan a bottom sheet en móvil; baselines del formulario nuevas.
  *
  * PROTECCIÓN DE DATOS: todo POST/PATCH a /configuracion/fincas se aborta (el caso no
  * envía formularios).
@@ -118,7 +120,52 @@ function tarjetaModal(dialogo: Locator): Locator {
  * La capa del modal tiene scroll propio: si la tarjeta no cabe, la captura la cortaría.
  * Se amplía el alto de la ventana (conservando el ancho del proyecto) hasta que quepa.
  */
+// DS v2.0: escala tipográfica (todos los anchos)
+const ESCALA = [11, 12, 14, 15, 16, 18, 19, 20, 24, 26, 28];
+
+/** DEFECTO si la tarjeta del modal no respeta el breakpoint del DS v2.0. */
+async function verificarBreakpoint(page: Page, dialogo: Locator) {
+  const nombre = test.info().project.name;
+  const viewport = page.viewportSize()!;
+  const caja = (await tarjetaModal(dialogo).boundingBox())!;
+  test.info().annotations.push({ type: 'Tarjeta del modal', description: `viewport ${viewport.width}×${viewport.height} · x ${Math.round(caja.x)} · y ${Math.round(caja.y)} · ${Math.round(caja.width)}×${Math.round(caja.height)}` });
+  if (viewport.width < 768) {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, xs/sm) el modal debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px`).toBe(viewport.width);
+    expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${nombre} el bottom sheet debe apoyarse en el borde inferior de la pantalla`).toBe(viewport.height);
+  } else if (viewport.width < 1200) {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, md) el modal debe medir máximo 480px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(480);
+  } else {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, lg) el modal debe medir máximo 560px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(560);
+  }
+}
+
+/** DEFECTO si algún texto con estilo propio del objetivo usa un tamaño fuera de la escala del DS v2.0. */
+async function verificarEscala(objetivo: Locator, zona: string) {
+  const fuera = await objetivo.evaluate((raiz, escala) => {
+    const res: string[] = [];
+    const walker = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const texto = (n.textContent ?? '').trim();
+      const el = n.parentElement;
+      // Componentes del DS (botón, alerta, badge, campos) se evalúan con su propio CSS, no como estilo del módulo
+      if (!texto || !el || el.closest('option, .ds-sr-only, .ds-btn, .ds-alert, .ds-badge, .ds-field, style')) continue;
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      if (!escala.includes(fs)) res.push(`"${texto.slice(0, 30)}" ${fs}px`);
+    }
+    return [...new Set(res)];
+  }, ESCALA);
+  expect.soft(fuera, `DEFECTO: ${zona}: texto fuera de la escala tipográfica del DS v2.0: ${fuera.join(' · ')}`).toEqual([]);
+}
+
+/** Sin baseline si la vista tiene defectos. */
+function exigirSinDefectos() {
+  expect(test.info().errors.length, 'Sin baseline: la vista tiene defectos (ver errores anteriores)').toBe(0);
+}
+
 async function capturarModal(page: Page, dialogo: Locator, nombre: string) {
+  await verificarBreakpoint(page, dialogo);
+  await verificarEscala(tarjetaModal(dialogo), 'formulario');
+  exigirSinDefectos();
   const viewport = page.viewportSize()!;
   const caja = (await tarjetaModal(dialogo).boundingBox())!;
   const necesario = Math.ceil(caja.y + caja.height + 48);
@@ -168,6 +215,8 @@ test.describe('TC-DIS-50 - Consistencia visual - Datos de la Finca (RF-19)', () 
     await expect(page.locator('table tbody tr').first()).toBeVisible();
     await expect(page.getByText(`${FINCAS_FIXTURE.filter((f) => f.es_activo).length} activas · 1 inactivas`).first()).toBeVisible();
 
+    await verificarEscala(seccionFincas(page), 'listado');
+    exigirSinDefectos();
     await expect(seccionFincas(page)).toHaveScreenshot('fincas-listado.png', { animations: 'disabled', caret: 'hide' });
   });
 
