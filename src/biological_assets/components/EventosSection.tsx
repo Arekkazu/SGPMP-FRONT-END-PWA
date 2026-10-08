@@ -18,6 +18,7 @@ import { RECURSO_ACTIVOS, ACCION_C } from '../rbac';
 import { ESTADOS_PERMITEN_EVENTOS } from '../types';
 import type { EstadoActivoNombre, EventoActivoResponse } from '../types';
 import { metricasApi, patologiasApi } from '../../configuration/api/especiesConfigApi';
+import { activosApi } from '../api/activosApi';
 
 type ModalTipo = 'ninguno' | 'crecimiento' | 'sanitario' | 'reproductivo' | 'productivo' | 'baja';
 
@@ -85,6 +86,16 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
   const [configLoading, setConfigLoading] = useState(false);
   const [patologias, setPatologias] = useState<{ id_patologia: number; nombre: string }[]>([]);
   const [metricas, setMetricas] = useState<{ id_metrica_produccion: number; nombre: string; tipo_medicion: string; unidad_medida: string }[]>([]);
+  // #290 §3: el padre se elige entre los individuales de la misma especie, no por número.
+  const [candidatosPadre, setCandidatosPadre] = useState<{ id: number; etiqueta: string }[]>([]);
+  useEffect(() => {
+    if (modal !== 'reproductivo' || esPoblacional || idEspecie == null) return;
+    activosApi.listar({ tipo: 'INDIVIDUAL', id_especie: idEspecie, page_size: 100 })
+      .then((pagina) => setCandidatosPadre(pagina.registros
+        .filter((a) => a.id_activo_biologico !== idActivo)
+        .map((a) => ({ id: a.id_activo_biologico, etiqueta: `${a.identificador ?? ''} (#${a.id_activo_biologico})`.trim() }))))
+      .catch(() => setCandidatosPadre([]));
+  }, [modal, esPoblacional, idEspecie, idActivo]);
   useEffect(() => {
     if (esPoblacional) cargar();
   }, [esPoblacional, cargar]);
@@ -225,6 +236,7 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
       {modal === 'reproductivo' && (
         <EventoReproductivoForm
           esPoblacional={esPoblacional}
+          candidatosPadre={candidatosPadre}
           saving={saving}
           saveError={saveError}
           onClose={cerrar}
