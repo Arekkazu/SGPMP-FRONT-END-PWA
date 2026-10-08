@@ -35,7 +35,7 @@ interface Props {
 
 export function EventoCrecimientoForm({ metricas, metricasLoading, esPoblacional, saving, saveError, onClose, onConfirmar }: Props) {
   const { t } = useT('biologicalAssets');
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
     defaultValues: { tipo_medicion: '', unidad_medida: '', fecha: hoyLocal() },
   });
@@ -45,6 +45,11 @@ export function EventoCrecimientoForm({ metricas, metricasLoading, esPoblacional
   const unidades = metricaSeleccionada
     ? [metricaSeleccionada.unidad_medida]
     : tipo ? UNIDADES_POR_MEDICION[tipo] ?? [] : [];
+  // M2-08: con una sola unidad posible (ej. kg) se preselecciona.
+  const unicaUnidad = unidades.length === 1 ? unidades[0] : null;
+  React.useEffect(() => {
+    if (unicaUnidad) setValue('unidad_medida', unicaUnidad, { shouldValidate: true });
+  }, [unicaUnidad, setValue]);
 
   const submit = async (v: FormValues) => {
     if (!v.tipo_medicion) return;
