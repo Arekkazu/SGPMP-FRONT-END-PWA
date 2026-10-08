@@ -176,6 +176,8 @@ export function ActivoDetallePage() {
             tipo={String(tipo)}
             estadoActual={estado}
             cantidadDisponible={ficha?.cantidad_actual ?? null}
+            sinFase={!!ficha && !ficha.fase_productiva_activa}
+            onIrAFases={() => setTab('fases')}
             onChanged={refrescar}
           />
         )}
