@@ -20,13 +20,13 @@ const CARD: React.CSSProperties = {
 };
 
 const CARD_TITLE: React.CSSProperties = {
-  fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)',
+  fontSize: 'var(--fs-body-md)', fontWeight: 700, color: 'var(--text-secondary)',
   textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 var(--s4)',
 };
 
 const SELECT: React.CSSProperties = {
   padding: 'var(--s2) var(--s3)', borderRadius: 'var(--r-md)', border: '1.5px solid var(--surface-border)',
-  background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '13px', height: 38,
+  background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: 'var(--fs-body-md)', height: 38,
 };
 
 const LABEL: React.CSSProperties = {
@@ -36,7 +36,7 @@ const LABEL: React.CSSProperties = {
 
 function DictList({ items, vacio }: { items: Record<string, unknown>[]; vacio: string }) {
   if (!items || items.length === 0) {
-    return <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{vacio}</p>;
+    return <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: 0 }}>{vacio}</p>;
   }
   return (
     <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
@@ -74,8 +74,8 @@ export function DatosAnaliticosSection({ idActivo }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
       <div style={CARD}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-          <BarChart3 size={16} aria-hidden />{t('datosanaliticossection.datos_consolidados')}</h3>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
+          <BarChart3 size={16} aria-hidden />{t('datosanaliticossection.datos_consolidados')}</h2>
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
             <label style={LABEL} htmlFor="dc-tipo">{t('datosanaliticossection.tipo_de_dato')}</label>
@@ -110,14 +110,14 @@ export function DatosAnaliticosSection({ idActivo }: Props) {
         <>
           {mostrar('metricas') && (
             <div style={CARD}>
-              <h4 style={CARD_TITLE}>{t('datosanaliticossection.metricas_actuales')}</h4>
+              <h3 style={CARD_TITLE}>{t('datosanaliticossection.metricas_actuales')}</h3>
               {Object.keys(data.metricas_actuales ?? {}).length === 0 ? (
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('datosanaliticossection.sin_metricas')}</p>
+                <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: 0 }}>{t('datosanaliticossection.sin_metricas')}</p>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s4)' }}>
                   {Object.entries(data.metricas_actuales).map(([k, v]) => (
                     <div key={k}>
-                      <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{k}</div>
+                      <div style={{ fontSize: 'var(--fs-label-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{k}</div>
                       <div style={{ fontSize: '15px', color: 'var(--text-primary)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{String(v)}</div>
                     </div>
                   ))}
@@ -128,19 +128,19 @@ export function DatosAnaliticosSection({ idActivo }: Props) {
 
           {mostrar('eventos') && (
             <div style={CARD}>
-              <h4 style={CARD_TITLE}>{t('datosanaliticossection.historial_de_eventos')}</h4>
+              <h3 style={CARD_TITLE}>{t('datosanaliticossection.historial_de_eventos')}</h3>
               <DictList items={data.historial_eventos} vacio="Sin eventos." />
             </div>
           )}
           {mostrar('fases') && (
             <div style={CARD}>
-              <h4 style={CARD_TITLE}>{t('datosanaliticossection.historial_de_fases')}</h4>
+              <h3 style={CARD_TITLE}>{t('datosanaliticossection.historial_de_fases')}</h3>
               <DictList items={data.historial_fases} vacio="Sin fases." />
             </div>
           )}
           {mostrar('estado') && (
             <div style={CARD}>
-              <h4 style={CARD_TITLE}>{t('datosanaliticossection.historico_de_estados')}</h4>
+              <h3 style={CARD_TITLE}>{t('datosanaliticossection.historico_de_estados')}</h3>
               <DictList items={data.historico_estados} vacio="Sin cambios de estado." />
             </div>
           )}

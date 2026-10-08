@@ -38,4 +38,17 @@ describe('RegistrarBajaModal', () => {
     );
     expect(screen.getByRole('spinbutton')).toHaveAttribute('aria-invalid', 'true');
   });
+
+  it('no deja pasar al resumen una cantidad mayor que la del lote', async () => {
+    const onConfirmar = vi.fn();
+    render(<RegistrarBajaModal esPoblacional cantidadDisponible={10} saving={false} saveError={null} onClose={vi.fn()} onConfirmar={onConfirmar} />);
+
+    await userEvent.type(screen.getByRole('spinbutton'), '11');
+    await userEvent.type(screen.getByRole('textbox'), 'Venta parcial');
+    const botones = screen.getAllByRole('button');
+    await userEvent.click(botones[botones.length - 1]);  // "Registrar baja"
+
+    expect(screen.getByRole('spinbutton')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByText('Venta parcial')).not.toBeInTheDocument();  // sigue en el formulario
+  });
 });

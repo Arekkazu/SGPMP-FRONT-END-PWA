@@ -4,6 +4,7 @@ import { useHistory } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck, Search } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { useAuditoriaM02 } from '../hooks/useAuditoriaM02';
 import { Paginacion } from '../components/Paginacion';
 import type { ConsultarBitacoraFiltros, EventoAuditoriaResponse } from '../types';
@@ -16,7 +17,7 @@ const INPUT: React.CSSProperties = {
   border: '1.5px solid var(--surface-border)',
   background: 'var(--surface-card)',
   color: 'var(--text-primary)',
-  fontSize: '13px',
+  fontSize: 'var(--fs-body-md)',
   height: 38,
 };
 
@@ -27,7 +28,7 @@ const LABEL: React.CSSProperties = {
 
 const TH: React.CSSProperties = {
   padding: 'var(--s2) var(--s4)', textAlign: 'left', fontFamily: 'var(--font-mono)',
-  fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+  fontSize: 'var(--fs-label-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
   color: 'var(--text-muted)', whiteSpace: 'nowrap',
 };
 
@@ -126,7 +127,7 @@ function Row({ ev }: { ev: EventoAuditoriaResponse }) {
           </details>
         )}
       </td>
-      <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)' }} title={ev.hash_integridad}>
+      <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-label-sm)', color: 'var(--text-muted)' }} title={ev.hash_integridad}>
         {ev.hash_integridad ? `${ev.hash_integridad.slice(0, 10)}…` : '—'}
       </td>
     </tr>
@@ -169,7 +170,7 @@ export function AuditoriaM02View() {
           <ArrowLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriam02view.volver_a_la_lista')}</Button>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
           <ShieldCheck size={20} aria-hidden />{t('auditoriam02view.auditoria_y_trazabilidad')}</h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('auditoriam02view.bitacora_de_eventos_del_modulo_de_activos')}</p>
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('auditoriam02view.bitacora_de_eventos_del_modulo_de_activos')}</p>
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
@@ -225,8 +226,9 @@ export function AuditoriaM02View() {
           // Un 403 no debe leerse como "sin registros" (TC-DIS-143).
           <p role="status" style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('auditoriam02view.sin_registros_de_auditoria_para_los_filtros')}</p>
         ) : (
-          <div style={{ overflowX: 'auto', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
+            <ScrollRegion label={t('auditoriam02view.auditoria_y_trazabilidad')}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
                   {['Fecha', 'RF', 'Evento', 'Activo', 'Resultado', 'Severidad', 'Usuario', 'Descripción', 'Hash'].map((h) => <th key={h} scope="col" style={TH}>{h}</th>)}
@@ -236,6 +238,7 @@ export function AuditoriaM02View() {
                 {registros.map((ev) => <Row key={ev.id_bitacora} ev={ev} />)}
               </tbody>
             </table>
+            </ScrollRegion>
           </div>
         )}
 

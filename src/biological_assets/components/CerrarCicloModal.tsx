@@ -82,7 +82,7 @@ export function CerrarCicloModal({ identificador, saving, error, onClose, onConf
             })}
           />
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-cierre">{t('cerrarciclomodal.motivo_del_cierre')}<span aria-hidden="true">*</span>
+            <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-cierre">{t('cerrarciclomodal.motivo_del_cierre')}<span aria-hidden="true">*</span>
             </label>
             <textarea
               id="motivo-cierre" style={TEXTAREA}
@@ -99,7 +99,7 @@ export function CerrarCicloModal({ identificador, saving, error, onClose, onConf
             )}
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="descripcion-cierre">{t('cerrarciclomodal.descripcion_adicional')}</label>
+            <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="descripcion-cierre">{t('cerrarciclomodal.descripcion_adicional')}</label>
             <textarea id="descripcion-cierre" style={TEXTAREA} placeholder={t('cerrarciclomodal.opcional')} {...register('descripcion_cierre')} />
           </div>
         </div>

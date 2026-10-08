@@ -74,7 +74,7 @@ export function RegistryView() {
       >
         <div>
           <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('registryview.gestion_de_activos_biologicos')}</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : `${paginacion.totalRegistros} activo(s)`}
             {fromCache && ' · desde caché'}
           </p>

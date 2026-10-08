@@ -25,6 +25,8 @@ interface Props {
   idEspecie?: number | null;
   tipo: string;
   estadoActual: string | null;
+  /** Cantidad actual del lote (ficha integral); acota la baja parcial. */
+  cantidadDisponible?: number | null;
   onChanged: () => void;
 }
 
@@ -64,7 +66,7 @@ function resumenEvento(ev: EventoActivoResponse): { icon: React.ReactNode; tipo:
   return { icon: <Info size={15} aria-hidden />, tipo: 'Evento', detalle: ev.descripcion ?? '—' };
 }
 
-export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, onChanged }: Props) {
+export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantidadDisponible, onChanged }: Props) {
   const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeCrear = usePermission(RECURSO_ACTIVOS, ACCION_C);
@@ -123,7 +125,7 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, onChan
       {/* Acciones de registro */}
       <div style={CARD}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--s3)' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('eventossection.registrar_evento')}</h3>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('eventossection.registrar_evento')}</h2>
           <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
             {puedeCrear && botones.map((b) => (
               <Button
@@ -140,7 +142,7 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, onChan
           </div>
         </div>
         {!permite && (
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 'var(--s3) 0 0' }}>
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: 'var(--s3) 0 0' }}>
             El activo está en estado «{estadoActual}». Solo se pueden registrar eventos en ACTIVO, EN TRATAMIENTO o AISLADO.
           </p>
         )}
@@ -151,9 +153,9 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, onChan
 
       {/* Historial de eventos (solo POBLACIONAL) */}
       <div style={CARD}>
-        <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('eventossection.historial_de_eventos')}</h3>
+        <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('eventossection.historial_de_eventos')}</h2>
         {!esPoblacional ? (
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: 0 }}>
             El historial de eventos en lote solo aplica a activos poblacionales. Para activos individuales,
             consulta la pestaña «Historial» o la «Ficha integral».
           </p>
@@ -164,7 +166,7 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, onChan
         ) : error && error.status !== 409 ? (
           <Alert variant="error" title={t('eventossection.error_al_cargar_eventos')} description={error.message} />
         ) : eventos.length === 0 ? (
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{t('eventossection.sin_eventos_registrados')}</p>
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: 0 }}>{t('eventossection.sin_eventos_registrados')}</p>
         ) : (
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
             {eventos.map((ev) => {
@@ -176,7 +178,7 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, onChan
                 >
                   <span style={{ color: 'var(--text-secondary)' }}>{r.icon}</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{r.tipo}</div>
+                    <div style={{ fontSize: 'var(--fs-body-md)', fontWeight: 600, color: 'var(--text-primary)' }}>{r.tipo}</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{r.detalle}</div>
                   </div>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -247,6 +249,7 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, onChan
       {modal === 'baja' && (
         <RegistrarBajaModal
           esPoblacional={esPoblacional}
+          cantidadDisponible={cantidadDisponible}
           saving={saving}
           saveError={saveError}
           onClose={cerrar}

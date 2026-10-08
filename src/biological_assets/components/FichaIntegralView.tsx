@@ -22,7 +22,7 @@ const CARD: React.CSSProperties = {
 };
 
 const CARD_TITLE: React.CSSProperties = {
-  fontSize: '13px',
+  fontSize: 'var(--fs-body-md)',
   fontWeight: 700,
   color: 'var(--text-secondary)',
   textTransform: 'uppercase',
@@ -33,7 +33,7 @@ const CARD_TITLE: React.CSSProperties = {
 function Dato({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+      <div style={{ fontSize: 'var(--fs-label-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
         {label}
       </div>
       <div style={{ fontSize: '14px', color: 'var(--text-primary)', marginTop: 2 }}>
@@ -54,7 +54,7 @@ function InfoGrid({ children }: { children: React.ReactNode }) {
 /** Renderiza un arreglo de dicts genéricos (eventos_*) de forma compacta. */
 function DictList({ items, vacio }: { items: Record<string, unknown>[]; vacio: string }) {
   if (!items || items.length === 0) {
-    return <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{vacio}</p>;
+    return <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: 0 }}>{vacio}</p>;
   }
   return (
     <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
@@ -143,9 +143,9 @@ export function FichaIntegralView({ ficha, loading, error, onIrA }: Props) {
             padding: 'var(--s4)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', color: 'var(--sem-warning)', fontWeight: 600, fontSize: '13px', marginBottom: 'var(--s2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', color: 'var(--sem-warning)', fontWeight: 600, fontSize: 'var(--fs-body-md)', marginBottom: 'var(--s2)' }}>
             <AlertTriangle size={15} aria-hidden />{t('fichaintegralview.advertencias')}</div>
-          <ul style={{ margin: 0, paddingLeft: 'var(--s5)', color: 'var(--text-secondary)', fontSize: '13px' }}>
+          <ul style={{ margin: 0, paddingLeft: 'var(--s5)', color: 'var(--text-secondary)', fontSize: 'var(--fs-body-md)' }}>
             {ficha.advertencias.map((a, i) => <li key={i}>{a}</li>)}
           </ul>
         </div>
@@ -154,7 +154,7 @@ export function FichaIntegralView({ ficha, loading, error, onIrA }: Props) {
       {/* Secciones 1-4 de RF-47, cada una con su encabezado (TC-DIS-117). */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--s5)' }}>
         <section style={CARD} aria-labelledby="ficha-s1">
-          <h3 id="ficha-s1" style={CARD_TITLE}>{t('fichaintegralview.datos_del_activo')}</h3>
+          <h2 id="ficha-s1" style={CARD_TITLE}>{t('fichaintegralview.datos_del_activo')}</h2>
           <InfoGrid>
             <Dato label={t('fichaintegralview.identificador')} value={ficha.identificador} />
             <Dato label={t('fichaintegralview.tipo')} value={esPoblacional ? 'Poblacional' : 'Individual'} />
@@ -164,19 +164,19 @@ export function FichaIntegralView({ ficha, loading, error, onIrA }: Props) {
           </InfoGrid>
         </section>
         <section style={CARD} aria-labelledby="ficha-s2">
-          <h3 id="ficha-s2" style={CARD_TITLE}>{t('fichaintegralview.estado_actual')}</h3>
+          <h2 id="ficha-s2" style={CARD_TITLE}>{t('fichaintegralview.estado_actual')}</h2>
           <InfoGrid>
             <Dato label={t('fichaintegralview.estado_actual')} value={ficha.estado_actual} />
           </InfoGrid>
         </section>
         <section style={CARD} aria-labelledby="ficha-s3">
-          <h3 id="ficha-s3" style={CARD_TITLE}>{t('fichaintegralview.infraestructura')}</h3>
+          <h2 id="ficha-s3" style={CARD_TITLE}>{t('fichaintegralview.infraestructura')}</h2>
           <InfoGrid>
             <Dato label={t('fichaintegralview.infraestructura')} value={ficha.infraestructura_asociada} />
           </InfoGrid>
         </section>
         <section style={CARD} aria-labelledby="ficha-s4">
-          <h3 id="ficha-s4" style={CARD_TITLE}>{t('fichaintegralview.fase_productiva')}</h3>
+          <h2 id="ficha-s4" style={CARD_TITLE}>{t('fichaintegralview.fase_productiva')}</h2>
           <InfoGrid>
             <Dato label={t('fichaintegralview.fase_productiva')} value={ficha.fase_productiva_activa} />
           </InfoGrid>
@@ -185,7 +185,7 @@ export function FichaIntegralView({ ficha, loading, error, onIrA }: Props) {
 
       {/* Detalle biológico */}
       <div style={CARD}>
-        <h3 style={CARD_TITLE}>{esPoblacional ? 'Datos del lote' : 'Datos biológicos'}</h3>
+        <h2 style={CARD_TITLE}>{esPoblacional ? 'Datos del lote' : 'Datos biológicos'}</h2>
         <InfoGrid>
           {!esPoblacional && (
             <>
@@ -216,23 +216,23 @@ export function FichaIntegralView({ ficha, loading, error, onIrA }: Props) {
       {/* Eventos e indicadores resumidos */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--s5)' }}>
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>{t('fichaintegralview.eventos_sanitarios')}</h3>
+          <h2 style={CARD_TITLE}>{t('fichaintegralview.eventos_sanitarios')}</h2>
           <DictList items={ficha.eventos_sanitarios} vacio="Sin eventos sanitarios." />
         </div>
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>{t('fichaintegralview.eventos_de_crecimiento')}</h3>
+          <h2 style={CARD_TITLE}>{t('fichaintegralview.eventos_de_crecimiento')}</h2>
           <DictList items={ficha.eventos_crecimiento} vacio="Sin eventos de crecimiento." />
         </div>
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>{t('fichaintegralview.eventos_productivos')}</h3>
+          <h2 style={CARD_TITLE}>{t('fichaintegralview.eventos_productivos')}</h2>
           <DictList items={ficha.eventos_productivos} vacio="Sin eventos productivos." />
         </div>
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>{t('fichaintegralview.eventos_reproductivos')}</h3>
+          <h2 style={CARD_TITLE}>{t('fichaintegralview.eventos_reproductivos')}</h2>
           <DictList items={ficha.eventos_reproductivos} vacio="Sin eventos reproductivos." />
         </div>
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>{t('fichaintegralview.indicadores')}</h3>
+          <h2 style={CARD_TITLE}>{t('fichaintegralview.indicadores')}</h2>
           <DictList items={ficha.indicadores} vacio="Sin indicadores calculados." />
         </div>
       </div>
@@ -240,7 +240,7 @@ export function FichaIntegralView({ ficha, loading, error, onIrA }: Props) {
       {/* Sección 8: accesos directos que el rol puede ejecutar. */}
       {ficha.accesos_directos && ficha.accesos_directos.length > 0 && (
         <section style={CARD} aria-labelledby="ficha-s8">
-          <h3 id="ficha-s8" style={CARD_TITLE}>{t('fichaintegralview.accesos_directos')}</h3>
+          <h2 id="ficha-s8" style={CARD_TITLE}>{t('fichaintegralview.accesos_directos')}</h2>
           <ul style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', listStyle: 'none', margin: 0, padding: 0 }}>
             {ficha.accesos_directos.map((a) => (
               <li key={a.codigo}>

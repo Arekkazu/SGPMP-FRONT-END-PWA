@@ -62,7 +62,7 @@ function FaseItem({ fase, ultimo }: { fase: GestionFaseResponse; ultimo: boolean
             {fase.nombre_ciclo}
           </span>
           {activa && (
-            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--brand-600)', background: 'var(--brand-50)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)' }}>{t('fasessection.activa')}</span>
+            <span style={{ fontSize: 'var(--fs-label-sm)', fontWeight: 700, color: 'var(--brand-600)', background: 'var(--brand-50)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)' }}>{t('fasessection.activa')}</span>
           )}
         </div>
         {fase.nombre_fase_actual && (
@@ -149,7 +149,7 @@ function CambiarFaseModal({
           </select>
           <Input label={t('fasessection.fecha_de_inicio')} type="date" {...register('fecha_inicio')} />
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-fase">{t('fasessection.motivo_del_cambio')}</label>
+            <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-fase">{t('fasessection.motivo_del_cambio')}</label>
             <textarea id="motivo-fase" style={TEXTAREA} placeholder={t('fasessection.opcional')} {...register('motivo_cambio')} />
           </div>
         </div>
@@ -190,15 +190,15 @@ export function FasesSection({ idActivo, idEspecie = null, estadoActual, onChang
   return (
     <div style={CARD}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <GitBranch size={16} aria-hidden />{t('fasessection.secuencia_de_fases')}</h3>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+          <GitBranch size={16} aria-hidden />{t('fasessection.secuencia_de_fases')}</h2>
         {puedeCambiar && !terminal && (
           <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSaveError(null); setAbierto(true); }}>{t('fasessection.cambiar_fase')}</Button>
         )}
       </div>
 
       {terminal && (
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 var(--s4)' }}>
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: '0 0 var(--s4)' }}>
           El activo está en estado «{estadoActual}». No se pueden cambiar fases en estados terminales (CERRADO, BAJA).
         </p>
       )}

@@ -79,6 +79,8 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
 
   const errEstado = errors.estado_nuevo?.message ?? errorServidor(error, 'estado_nuevo');
   const errMotivo = errors.motivo_cambio?.message ?? errorServidor(error, 'motivo_cambio');
+  // El error con campo ya va debajo de su control: repetirlo en la alerta lo anuncia dos veces (TC-DIS-125).
+  const errorEnCampo = !!(errorServidor(error, 'estado_nuevo') || errorServidor(error, 'motivo_cambio'));
 
   const submit = async (v: FormValues) => {
     if (!v.estado_nuevo) return;
@@ -92,7 +94,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
 
   return (
     <ModalShell title={t('cambiarestadomodal.cambiar_estado_del_activo')} onClose={onClose}>
-      {error && (
+      {error && !errorEnCampo && (
         <Alert
           variant={error.status >= 500 ? 'error' : 'warning'}
           title={t('cambiarestadomodal.no_se_pudo_cambiar_el_estado')}
@@ -102,7 +104,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
-        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('cambiarestadomodal.estado_actual')}</span>
+        <span style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)' }}>{t('cambiarestadomodal.estado_actual')}</span>
         <EstadoPill estado={estadoActual} size="md" />
       </div>
 
@@ -116,7 +118,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
         <form onSubmit={handleSubmit(submit)} noValidate>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="estado-nuevo">{t('cambiarestadomodal.nuevo_estado')}<span aria-hidden="true">*</span>
+              <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="estado-nuevo">{t('cambiarestadomodal.nuevo_estado')}<span aria-hidden="true">*</span>
               </label>
               <select
                 id="estado-nuevo"
@@ -148,7 +150,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
             />
 
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-cambio">{t('cambiarestadomodal.motivo_del_cambio')}<span aria-hidden="true">*</span>
+              <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-cambio">{t('cambiarestadomodal.motivo_del_cambio')}<span aria-hidden="true">*</span>
               </label>
               <textarea
                 id="motivo-cambio"
