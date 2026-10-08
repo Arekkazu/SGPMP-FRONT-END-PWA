@@ -69,7 +69,6 @@ function DispSelector({ dispositivos, loading, onSelect }: {
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{d.descripcion}</div>
             </div>
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--sem-success)', fontWeight: 600 }}>{t('calibracionsection.solo_dispositivos_activos_son_calibrables')}</div>
         </OptionCard>
       ))}
     </div>
@@ -128,10 +127,10 @@ function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibracio
   return (
     <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-xl)', overflow: 'hidden', marginTop: 'var(--s5)' }}>
       <div style={{ background: 'var(--surface-hover)', padding: 'var(--s3) var(--s5)', borderBottom: calibraciones.length > 0 ? '1px solid var(--surface-border)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Historial de calibraciones · {sensor.nombre}
-        </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>{calibraciones.length} calibraciones</span>
+        <h3 style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          {t('calibracionsection.tabla_historial')} · {sensor.nombre}
+        </h3>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>{t('calibracionsection.n_calibraciones', { count: calibraciones.length })}</span>
       </div>
       {calibraciones.length === 0 ? (
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: 'var(--s5) 0' }}>{t('calibracionsection.sin_calibraciones_registradas_para_este')}</p>
@@ -140,7 +139,7 @@ function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibracio
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ background: 'var(--surface-hover)' }}>
-                {[t('calibracionsection.fecha_hora'), t('calibracionsection.valor_ref'), t('calibracionsection.observaciones_col'), t('calibracionsection.usuario')].map((h) => <th key={h} style={TH}>{h}</th>)}
+                {[t('calibracionsection.fecha_hora'), t('calibracionsection.valor_ref'), t('calibracionsection.observaciones_col'), t('calibracionsection.usuario')].map((h) => <th key={h} scope="col" style={TH}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -223,7 +222,7 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
       {/* Form */}
       <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-xl)', overflow: 'hidden', marginBottom: 'var(--s5)' }}>
         <div style={{ background: 'var(--surface-hover)', padding: 'var(--s3) var(--s5)', borderBottom: '1px solid var(--surface-border)' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('calibracionsection.datos_de_calibracion')}</span>
+          <h3 style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('calibracionsection.datos_de_calibracion')}</h3>
         </div>
         <div style={{ padding: 'var(--s5)' }}>
           <form onSubmit={handleSubmit((d) => onSubmit({
@@ -234,13 +233,16 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s5)', marginBottom: 'var(--s5)' }}>
               {/* Valor de referencia */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('calibracionsection.valor_de_referencia')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
+                <label htmlFor="cal-valor-referencia" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('calibracionsection.valor_de_referencia')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
                 </label>
                 <input
+                  id="cal-valor-referencia"
                   type="number"
                   step="0.0001"
                   placeholder="0.0000"
                   aria-required="true"
+                  aria-invalid={!!errors.valor_referencia}
+                  aria-describedby={errors.valor_referencia ? 'cal-valor-referencia-err cal-valor-referencia-hint' : 'cal-valor-referencia-hint'}
                   style={{ width: '100%', padding: 'var(--s3)', borderRadius: 'var(--r-md)', border: `1.5px solid ${errors.valor_referencia ? 'var(--sem-error)' : 'var(--surface-border)'}`, background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '15px', fontFamily: 'var(--font-mono)', fontWeight: 700, outline: 'none', boxSizing: 'border-box' }}
                   {...register('valor_referencia', {
                     required: t('calibracionsection.el_valor_de_referencia_es_obligatorio'),
@@ -248,8 +250,8 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
                     validate: (v) => !isNaN(v) || 'Debe ser un número válido.',
                   })}
                 />
-                {errors.valor_referencia && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)', margin: 0 }}>{errors.valor_referencia.message}</p>}
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('calibracionsection.hasta_4_decimales_solo_afecta_mediciones')}</p>
+                {errors.valor_referencia && <p id="cal-valor-referencia-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>{errors.valor_referencia.message}</p>}
+                <p id="cal-valor-referencia-hint" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('calibracionsection.hasta_4_decimales_solo_afecta_mediciones')}</p>
               </div>
 
               {/* Fecha calibración */}
@@ -267,11 +269,13 @@ function CalibracionForm({ dispositivo, sensor, saving, saveError, asociacion, l
 
             {/* Observaciones */}
             <div style={{ marginBottom: 'var(--s5)' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('calibracionsection.observaciones')}<span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span>
+              <label htmlFor="cal-observaciones" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('calibracionsection.observaciones')} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>{t('calibracionsection.opcional')}</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <textarea
+                  id="cal-observaciones"
                   rows={3}
+                  aria-invalid={!!errors.observaciones}
                   placeholder={t('calibracionsection.condiciones_de_calibracion_motivo_drift')}
                   style={{ width: '100%', padding: 'var(--s3)', borderRadius: 'var(--r-md)', border: `1.5px solid ${errors.observaciones ? 'var(--sem-error)' : 'var(--surface-border)'}`, background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-sans)', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
                   {...register('observaciones', { maxLength: { value: 200, message: t('calibracionsection.maximo_200_caracteres') } })}

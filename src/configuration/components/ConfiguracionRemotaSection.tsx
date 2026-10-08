@@ -129,7 +129,7 @@ function Historial({ historial, loading, acciones }: {
         <thead>
           <tr style={{ background: 'var(--surface-hover)' }}>
             {[t('configuracionremotasection.fecha_hora'), t('configuracionremotasection.frec_captura'), t('configuracionremotasection.interv_transmision'), t('configuracionremotasection.estado_cfg'), t('configuracionremotasection.mensaje'), t('configuracionremotasection.acciones')].map((h) => (
-              <th key={h} style={TH}>{h}</th>
+              <th key={h} scope="col" style={TH}>{h}</th>
             ))}
           </tr>
         </thead>
