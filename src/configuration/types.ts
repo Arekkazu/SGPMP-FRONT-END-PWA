@@ -275,6 +275,8 @@ export interface RegistrarCalibracionDTO {
   valor_referencia: number;
   fecha_calibracion: string;
   observaciones?: string;
+  // RF-24 v2.0 (#510): obligatorio en el backend; este endpoint solo acepta SENSOR.
+  modo_calibracion: 'SENSOR';
 }
 
 // =====================================================================

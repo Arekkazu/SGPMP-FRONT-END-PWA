@@ -338,6 +338,7 @@ export function CalibracionSection() {
       valor_referencia: dto.valor_referencia,
       fecha_calibracion: dto.fecha_calibracion,
       observaciones: dto.observaciones,
+      modo_calibracion: 'SENSOR',
     });
     if (ok) {
       setSuccessMsg(`Calibración de "${sensor.nombre}" registrada correctamente. Solo afecta mediciones futuras.`);
