@@ -17,6 +17,6 @@ export function useBusqueda<T>(items: T[], texto: (item: T) => string) {
   return { consulta, setConsulta, filtrados, conBuscador: items.length > UMBRAL_BUSCADOR };
 }
 
-function normalizar(s: string): string {
+export function normalizar(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }

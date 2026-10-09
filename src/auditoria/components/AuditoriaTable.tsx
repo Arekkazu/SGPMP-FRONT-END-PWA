@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
-import { useT } from '../../shared/i18n/useT';
+import { useT, useNombreModulo } from '../../shared/i18n/useT';
 import { ShieldCheck } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
@@ -62,6 +62,7 @@ const HEADERS = [
 
 export function AuditoriaTable({ eventos, loading, onVerificar, tiposEvento }: Props) {
   const { t } = useT('auditoria');
+  const nombreModulo = useNombreModulo();
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -118,7 +119,7 @@ export function AuditoriaTable({ eventos, loading, onVerificar, tiposEvento }: P
                 </Badge>
               </td>
               <td headers="th-modulo" style={{ padding: 'var(--s3) var(--s4)', color: 'var(--text-secondary)' }}>
-                {e.modulo}
+                {nombreModulo(e.modulo)}
               </td>
               <td
                 headers="th-descripcion"

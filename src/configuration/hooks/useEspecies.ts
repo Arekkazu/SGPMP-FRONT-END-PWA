@@ -74,8 +74,7 @@ export function useEspecies() {
     setError(null);
     await cargarConflictos();
     try {
-      const raw = await especiesApi.listar(soloActivas);
-      const data: EspecieResponse[] = Array.isArray(raw) ? raw : (raw as any)?.items ?? [];
+      const data = await especiesApi.listar(soloActivas);
       setEspecies([...(await pendientesDeCola()), ...data]);
       setFromCache(false);
       const now = Date.now();

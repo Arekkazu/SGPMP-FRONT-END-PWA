@@ -378,7 +378,7 @@ export function ConfiguracionRemotaSection() {
   };
 
   return (
-    <div style={{ marginTop: 'var(--s7)', borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
+    <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
         <Settings2 size={18} color="var(--brand-500)" aria-hidden />
         <div>

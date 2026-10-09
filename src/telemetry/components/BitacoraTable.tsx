@@ -1,5 +1,5 @@
 import React from 'react';
-import { useT } from '../../shared/i18n/useT';
+import { useT, useNombreModulo } from '../../shared/i18n/useT';
 import { ClipboardList } from 'lucide-react';
 import { SeveridadLogPill } from './SeveridadLogPill';
 import { Pill, type Tono } from './Pill';
@@ -33,6 +33,7 @@ interface Props {
 
 export function BitacoraTable({ items, loading, onAbrir }: Props) {
   const { t } = useT('telemetry');
+  const nombreModulo = useNombreModulo();
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -74,7 +75,7 @@ export function BitacoraTable({ items, loading, onAbrir }: Props) {
                   {ev.fecha_hora?.slice(0, 10)} {horaCaptura(ev.fecha_hora)}
                 </td>
                 <td style={{ ...TD, color: 'var(--text-primary)', fontWeight: 600, fontSize: '12px' }}>{ev.tipo_evento}</td>
-                <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>{ev.modulo}</td>
+                <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>{nombreModulo(ev.modulo)}</td>
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
                   {ev.entidad_afectada_tipo ? `${ev.entidad_afectada_tipo}${ev.entidad_afectada_id ? ` #${ev.entidad_afectada_id}` : ''}` : '—'}
                 </td>

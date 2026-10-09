@@ -27,7 +27,10 @@ const TAB: React.CSSProperties = {
   padding: 'var(--s2) var(--s3)',
   background: 'none',
   border: 'none',
-  borderBottom: '2px solid transparent',
+  // Longhands: la pestaña activa sobrescribe borderBottomColor y React avisa si se mezcla con el shorthand.
+  borderBottomWidth: 2,
+  borderBottomStyle: 'solid',
+  borderBottomColor: 'transparent',
   color: 'var(--text-secondary)',
   fontSize: 'var(--fs-body-md)',
   minHeight: 'var(--s9)',

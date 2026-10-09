@@ -58,9 +58,11 @@ export const temaVisualApi = {
     return res.data;
   },
 
-  async obtenerGlobal(): Promise<TemaResueltoResponse> {
-    const res = await http.get<TemaResueltoResponse>('/configuracion/personalizacion/tema/global');
-    return res.data;
+  async obtenerGlobal(): Promise<TemaResueltoResponse | null> {
+    // Este endpoint responde la fila (TemaVisualResponse, sin `fuente`) o null,
+    // no un tema resuelto: sin el mapeo el badge mostraba `idioma.fuente.undefined`.
+    const res = await http.get<TemaVisualResponse | null>('/configuracion/personalizacion/tema/global');
+    return res.data && { theme_mode: res.data.theme_mode, fuente: 'global', id_tema_visual: res.data.id_tema_visual };
   },
 
   async guardarGlobal(dto: GuardarTemaDTO): Promise<TemaVisualResponse> {

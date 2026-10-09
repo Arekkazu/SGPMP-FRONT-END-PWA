@@ -1,0 +1,85 @@
+/* Combobox: hereda .ds-field__input (estados y foco) y agrega el botón de la
+   flecha y la lista. */
+
+.ds-combobox__input {
+  padding-right: var(--s9);
+}
+
+/* Ocupa toda la altura del campo: touch target de 48px (--s9). */
+.ds-combobox__toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--s9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.ds-combobox__toggle:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.ds-combobox__toggle:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.ds-combobox__lista {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--s1));
+  left: 0;
+  right: 0;
+  max-height: 288px;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--s1) 0;
+  list-style: none;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+}
+
+.ds-combobox__opcion {
+  min-height: var(--s9);
+  padding: var(--s2) var(--s3);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-md);
+  color: var(--text-primary);
+}
+
+.ds-combobox__opcion:hover,
+.ds-combobox__opcion--activa {
+  background: var(--surface-hover);
+}
+
+/* La opción activa por teclado no depende solo del fondo (WCAG 1.4.1). */
+.ds-combobox__opcion--activa {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.ds-combobox__detalle {
+  font-size: var(--fs-body-sm);
+  color: var(--text-secondary);
+}
+
+.ds-combobox__vacio {
+  padding: var(--s3);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-md);
+  color: var(--text-secondary);
+}
