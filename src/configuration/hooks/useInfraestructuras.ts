@@ -14,8 +14,7 @@ export function useInfraestructuras() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await infraestructurasApi.listarPorFinca(fincaId, soloActivas);
-      const data: InfraestructuraResponse[] = Array.isArray(raw) ? raw : (raw as any)?.items ?? [];
+      const data = await infraestructurasApi.listarPorFinca(fincaId, soloActivas);
       setInfraestructuras(data);
     } catch (e) {
       setError(e as ApiError);
