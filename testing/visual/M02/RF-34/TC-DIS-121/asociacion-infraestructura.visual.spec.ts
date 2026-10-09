@@ -7,12 +7,17 @@
  * ubicaciones" con 2 asociaciones. Se captura solo la tarjeta de la sección de
  * infraestructura.
  *
- * Datos: activo #4 (el único del ambiente con historial de asociaciones). El test "0"
- * verifica que la consulta ACTIVA responde 200 (el 404 para todos los activos del
- * 2026-09-29 quedó corregido el 2026-10-07). Las baselines usan fixtures fijos servidos
- * con page.route: el historial real del activo #4 (2 asociaciones) y una asociación
- * activa construida con su último registro, así no dependen de cambios de datos.
- * RF de solo lectura: ningún test escribe en el ambiente.
+ * Datos: activo #765 ("galpon prueba", Finca Administrativa de la cuenta Admin). El
+ * test "0" verifica que la consulta ACTIVA responde 200. Las baselines usan fixtures
+ * fijos servidos con page.route: un historial simulado de 2 asociaciones con
+ * solapamiento y una asociación activa construida con el último registro, así no
+ * dependen de cambios de datos. RF de solo lectura: ningún test escribe en el ambiente.
+ *
+ * 2026-10-09: el activo #4 original ya no existe en el ambiente (404
+ * ACTIVO_NO_ENCONTRADO) — la cuenta Admin quedó momentáneamente sin ningún activo
+ * visible; Alex sembró 10 activos nuevos (#756-765) en su finca. Se cambia ID_ACTIVO
+ * a uno de ellos (igual que TC-DIS-120). El historial y la asociación activa de abajo
+ * siguen siendo simulados (page.route), independientes del historial real del activo.
  *
  * Una baseline solo se guarda si la vista no tiene defectos: el alto del selector de
  * vista (touch target --s9 = 48px), el tamaño de su texto y el de la marca "ACTUAL"
@@ -30,7 +35,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
-const ID_ACTIVO = 4;
+const ID_ACTIVO = 765;
 
 const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_121_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
@@ -38,21 +43,21 @@ const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_121_VIEWPORTS ?? 'movil,tablet
 
 const URL_ASOCIACION = (url: URL) => /\/activos-biologicos\/\d+\/infraestructura$/.test(url.pathname);
 
-// Historial real del activo #4 (GET …/infraestructura?tipo_consulta=HISTORIAL, 2026-09-29)
+// Historial simulado (2 asociaciones con solapamiento), independiente de ID_ACTIVO
 const HISTORIAL = [
-  { id_historial: 292, id_activo_biologico: 4, id_infraestructura: 7, nombre_infraestructura: 'Piscina-Cam-02', tipo_infraestructura: 'Estanque', fecha_inicio: '2024-03-01T00:00:00Z', fecha_fin: '2024-03-15T00:00:00Z' },
-  { id_historial: 293, id_activo_biologico: 4, id_infraestructura: 16, nombre_infraestructura: 'QA-G05-Infra-1789005185', tipo_infraestructura: 'Estanque', fecha_inicio: '2024-03-10T00:00:00Z', fecha_fin: '2024-03-20T00:00:00Z' },
+  { id_historial: 292, id_activo_biologico: ID_ACTIVO, id_infraestructura: 7, nombre_infraestructura: 'Piscina-Cam-02', tipo_infraestructura: 'Estanque', fecha_inicio: '2024-03-01T00:00:00Z', fecha_fin: '2024-03-15T00:00:00Z' },
+  { id_historial: 293, id_activo_biologico: ID_ACTIVO, id_infraestructura: 16, nombre_infraestructura: 'QA-G05-Infra-1789005185', tipo_infraestructura: 'Estanque', fecha_inicio: '2024-03-10T00:00:00Z', fecha_fin: '2024-03-20T00:00:00Z' },
 ];
 
 const RESPUESTAS = {
   HISTORIAL: {
-    tipo_consulta: 'HISTORIAL', id_activo_biologico: 4, asociacion_activa: null, historial: HISTORIAL,
+    tipo_consulta: 'HISTORIAL', id_activo_biologico: ID_ACTIVO, asociacion_activa: null, historial: HISTORIAL,
     sensores_en_infraestructura: [],
     advertencia_integridad: 'Se detectó solapamiento entre los períodos de asociación a infraestructura con id_historial 292 y 293.',
   },
   // Asociación activa construida con el último registro del historial (vigente)
   ACTIVA: {
-    tipo_consulta: 'ACTIVA', id_activo_biologico: 4,
+    tipo_consulta: 'ACTIVA', id_activo_biologico: ID_ACTIVO,
     asociacion_activa: { ...HISTORIAL[1], fecha_fin: null },
     historial: [], sensores_en_infraestructura: [], advertencia_integridad: null,
   },
