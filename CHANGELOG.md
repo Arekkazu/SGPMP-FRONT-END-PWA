@@ -1,3 +1,15 @@
+## [1.0.0-rc.46](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.45...v1.0.0-rc.46) (2026-10-09)
+
+### Bug Fixes
+
+* **auth:** ocultar boton de AgroFusion en el login ([9c278e3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9c278e32931735108ade2de3155aeea193b1227b))
+
+## [1.0.0-rc.45](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.44...v1.0.0-rc.45) (2026-10-09)
+
+### Bug Fixes
+
+* **rf59-mod3:** convertir a numero los decimales del historial para que la vista no se caiga ([#317](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/317)) ([be911e4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/be911e482194ba4449eaf095ce8ebacbc8a9d74b))
+
 ## [1.0.0-rc.44](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.43...v1.0.0-rc.44) (2026-10-09)
 
 ### Features
