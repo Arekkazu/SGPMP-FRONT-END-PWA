@@ -9,17 +9,18 @@
  * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
  * peso 0 en el puntaje. RF de solo lectura: no se evalúan formularios de escritura.
  *
- * Datos: activo #4. Su historial es real (2 asociaciones) y el backend devuelve
- * advertencia_integridad por solapamiento de períodos, lo que permite evaluar 4.1.2.
+ * Datos: activo #765 ("galpon prueba", finca Administrativa de la cuenta Admin).
+ * Su historial tiene 1 registro (sin solapamiento, advertencia_integridad: null) y
+ * la consulta ACTIVA responde 200.
  *
- * Corregido al 2026-10-07: la consulta ACTIVA del activo #4 responde 200 y 1a evalúa la
- * vista real; 1b se conserva como control con una asociación fija.
- * BLOQUEO DEL AMBIENTE (2026-09-29): ninguno de los 539 activos tenía asociación
- * activa: GET /activos-biologicos/{id}/infraestructura?tipo_consulta=ACTIVA responde
- * 404 ASOCIACION_INFRAESTRUCTURA_NO_ENCONTRADA ("inconsistencia") para todos. El
- * test 1a lo evalúa tal cual; 1b sirve con page.route una asociación activa
- * construida con el último registro real del historial del activo #4 para poder
- * evaluar la vista.
+ * 2026-10-09: el activo #4 original ya no existe en el ambiente (404
+ * ACTIVO_NO_ENCONTRADO) — la cuenta Admin quedó momentáneamente sin ningún activo
+ * visible (su única finca, "Finca Administrativa", no tenía ninguno registrado);
+ * Alex lo corrigió sembrando 10 activos nuevos (#756-765) en esa finca. Se cambia
+ * ID_ACTIVO a uno de ellos. El test 1-2 (reconstruida) se mantiene como estaba —
+ * sigue sirviendo de control con page.route independientemente del activo real.
+ * Si en el futuro el activo real tiene más de un registro de historial con
+ * solapamiento, el test 3 lo evalúa automáticamente (advertencia_integridad).
  *
  * Errores: 404 real (activo inexistente), 400 de ruta inválida y 403 inyectado
  * (el backend responde 404 y no 403 a un activo ajeno, así que el 403 no se
@@ -37,7 +38,7 @@ const TC_ID = 'TC-DIS-120';
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
-const ID_ACTIVO = Number(process.env.TC_DIS_120_ACTIVO ?? 4);
+const ID_ACTIVO = Number(process.env.TC_DIS_120_ACTIVO ?? 765);
 
 const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_120_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
@@ -47,12 +48,13 @@ const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const RUTA_ASOCIACION = /\/activos-biologicos\/\d+\/infraestructura$/;
 const URL_ASOCIACION = (url: URL) => RUTA_ASOCIACION.test(url.pathname);
 
-// Asociación activa construida con el último registro real del historial del activo #4
+// Asociación activa simulada, independiente de ID_ACTIVO: sirve de control fijo para el
+// test 1-2 aunque cambien los datos reales del ambiente (igual que 1a, que sí usa datos reales).
 const ASOCIACION_ACTIVA_FIXTURE = {
   tipo_consulta: 'ACTIVA',
-  id_activo_biologico: 4,
+  id_activo_biologico: ID_ACTIVO,
   asociacion_activa: {
-    id_historial: 293, id_activo_biologico: 4, id_infraestructura: 16,
+    id_historial: 293, id_activo_biologico: ID_ACTIVO, id_infraestructura: 16,
     nombre_infraestructura: 'QA-G05-Infra-1789005185', tipo_infraestructura: 'Estanque',
     fecha_inicio: '2024-03-10T00:00:00Z', fecha_fin: null,
   },
