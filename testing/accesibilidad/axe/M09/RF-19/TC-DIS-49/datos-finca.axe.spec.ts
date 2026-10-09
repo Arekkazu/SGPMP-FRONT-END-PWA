@@ -191,8 +191,19 @@ async function inyectarErrorAlta(page: Page, cuerpo: object) {
 
 /** 3.3.1 "anunciado por campo": el input queda inválido y el mensaje asociado a él. */
 async function verificarErrorEnCampo(campo: Locator, nombreCampo: string, mensaje: RegExp) {
-  await expect.soft(campo, `3.3.1: el campo "${nombreCampo}" debe marcarse con aria-invalid`).toHaveAttribute('aria-invalid', 'true');
-  await expect.soft(campo, `3.3.1: el error debe estar asociado al campo "${nombreCampo}" (aria-describedby)`).toHaveAccessibleDescription(mensaje);
+  await expect.soft(campo, `DEFECTO: 3.3.1: el campo "${nombreCampo}" debe marcarse con aria-invalid`).toHaveAttribute('aria-invalid', 'true');
+  await expect.soft(campo, `DEFECTO: 3.3.1: el error debe estar asociado al campo "${nombreCampo}" (aria-describedby)`).toHaveAccessibleDescription(mensaje);
+}
+
+/**
+ * Error del backend con `fields` (release 1.0.0-rc.40, 5123a22): se anuncia debajo del campo
+ * (role="alert") y no se repite en una alerta general.
+ */
+async function verificarErrorDelBackend(dialogo: Locator, campo: Locator, nombreCampo: string, mensaje: RegExp) {
+  await expect(dialogo.getByRole('alert').filter({ hasText: mensaje }).first(), `DEFECTO: 3.3.1/4.1.3: el error de "${nombreCampo}" debe anunciarse (role="alert") con el mensaje del backend`).toBeVisible();
+  await verificarErrorEnCampo(campo, nombreCampo, mensaje);
+  await expect.soft(campo, `DEFECTO: 3.3.1: el foco debe ir al campo "${nombreCampo}" con el error`).toBeFocused();
+  await expect.soft(dialogo.getByRole('alert').filter({ hasText: mensaje }), `DEFECTO: 3.3.1: el error de "${nombreCampo}" se anuncia dos veces (debajo del campo y en una alerta general)`).toHaveCount(1);
 }
 
 // ── Escaneo axe + Lighthouse ─────────────────────────────────────────────────
@@ -303,8 +314,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Datos de la Finca (RF-19) 
       [form.nombre, 'Nombre'], [form.departamento, 'Departamento'], [form.municipio, 'Municipio'],
       [form.vereda, 'Vereda'], [form.latitud, 'Latitud'], [form.longitud, 'Longitud'], [form.tamano, 'Tamaño'],
     ] as const) {
-      await expect(campo, `1.3.1: no se encontró el campo "${nombre}" por su label`).toBeVisible();
-      await expect.soft(campo, `1.3.1: "${nombre}" debe exponer aria-required`).toHaveAttribute('aria-required', 'true');
+      await expect(campo, `DEFECTO: 1.3.1: no se encontró el campo "${nombre}" por su label`).toBeVisible();
+      await expect.soft(campo, `DEFECTO: 1.3.1: "${nombre}" debe exponer aria-required`).toHaveAttribute('aria-required', 'true');
     }
 
     await escanear(page, 'formulario', testInfo);
@@ -333,8 +344,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Datos de la Finca (RF-19) 
     }
     expect(respuesta.status(), `El backend debe rechazar el nombre duplicado "${FINCA_EXISTENTE}" con 409`).toBe(409);
 
-    await expect(form.dialogo.getByRole('alert').filter({ hasText: 'Error al guardar' })).toContainText('Ya existe una finca');
-    await verificarErrorEnCampo(form.nombre, 'Nombre de la finca', /Ya existe una finca/);
+    await verificarErrorDelBackend(form.dialogo, form.nombre, 'Nombre de la finca', /Ya existe una finca/);
 
     await escanear(page, 'error-409-duplicado', testInfo);
   });
@@ -354,9 +364,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Datos de la Finca (RF-19) 
     await form.registrar.click();
 
     for (const [campo, nombre] of [[form.latitud, 'Latitud'], [form.departamento, 'Departamento']] as const) {
-      await expect(campo, `3.3.1: "${nombre}" debe marcarse con aria-invalid`).toHaveAttribute('aria-invalid', 'true');
+      await expect(campo, `DEFECTO: 3.3.1: "${nombre}" debe marcarse con aria-invalid`).toHaveAttribute('aria-invalid', 'true');
       const idsDescripcion = (await campo.getAttribute('aria-describedby')) ?? '';
-      expect.soft(idsDescripcion, `3.3.1: el error de "${nombre}" debe estar asociado al campo`).not.toBe('');
+      expect.soft(idsDescripcion, `DEFECTO: 3.3.1: el error de "${nombre}" debe estar asociado al campo`).not.toBe('');
     }
     await expect(form.dialogo.getByRole('alert')).toHaveCount(2);
     expect(envios, 'La validación del cliente debe bloquear el envío').toBe(0);
@@ -371,8 +381,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Datos de la Finca (RF-19) 
     await llenarFormulario(form, 'Finca Qa Accesibilidad');
     await form.registrar.click();
 
-    await expect(form.dialogo.getByRole('alert').filter({ hasText: 'Error al guardar' })).toBeVisible();
-    await verificarErrorEnCampo(form.latitud, 'Latitud', /latitud debe estar entre -90 y 90/i);
+    await verificarErrorDelBackend(form.dialogo, form.latitud, 'Latitud', /latitud debe estar entre -90 y 90/i);
 
     await escanear(page, 'error-400-coordenadas-backend', testInfo);
   });
@@ -384,8 +393,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Datos de la Finca (RF-19) 
     await llenarFormulario(form, 'Finca Qa Accesibilidad');
     await form.registrar.click();
 
-    await expect(form.dialogo.getByRole('alert').filter({ hasText: 'Error al guardar' })).toBeVisible();
-    await verificarErrorEnCampo(form.departamento, 'Departamento', /solo permite letras y espacios/);
+    await verificarErrorDelBackend(form.dialogo, form.departamento, 'Departamento', /solo permite letras y espacios/);
 
     await escanear(page, 'error-400-formato-backend', testInfo);
   });
@@ -418,7 +426,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Datos de la Finca (RF-19) 
     await orden[0][0].focus();
     for (let i = 1; i < orden.length; i++) {
       await page.keyboard.press('Tab');
-      await expect(orden[i][0], `2.1.1: tras "${orden[i - 1][1]}" el foco debe pasar a "${orden[i][1]}"`).toBeFocused();
+      await expect(orden[i][0], `DEFECTO: 2.1.1: tras "${orden[i - 1][1]}" el foco debe pasar a "${orden[i][1]}"`).toBeFocused();
     }
 
     // Enter en un campo (Longitud) y clic en "Registrar finca" deben enviar lo mismo
