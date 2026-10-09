@@ -1,3 +1,21 @@
+## [1.0.0-rc.44](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.43...v1.0.0-rc.44) (2026-10-09)
+
+### Features
+
+* **rf31-mod9:** buscar, paginar y mostrar las plantillas como filas legibles ([a17c198](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a17c198a7dcca1034002a4976be074fdf14584df))
+* **rf33-mod2:** elegir especie e infraestructura con lista desplegable o escribiendo nombre o id ([238becd](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/238becded3df1f07d94243255e40d4f20584afd1))
+* **ui:** combobox con lista desplegable y escritura libre en el sistema de diseno ([eb2dea7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/eb2dea7a0edc1af80b2906d74458e9192c2ac07e))
+* **ui:** sub-pestanas en configuracion para fincas, iot y personalizacion ([6763d47](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6763d47814ff0d99b03fb39b660e0e6d5455be8d))
+
+### Bug Fixes
+
+* **i18n:** mostrar el nombre del modulo en vez de su codigo ([cd1edab](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cd1edab0d34b80d3777b7f8feca2dc1a6b7d3413))
+* **i18n:** traducir el error REFRESH_TOKEN_REQUERIDO ([2c4a61c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2c4a61c3234daebf6726e454a0a3f2a42fdb4a31))
+* **rf27-mod9:** mapear el tema global para que el badge de origen no muestre la clave cruda ([9f29619](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9f29619955eef9daaed7191945b38534f1c2d4f3))
+* **rf33-mod2:** leer los listados de especies, fincas e infraestructuras desde items ([e739ad5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e739ad5f10443dc263dff658c820edf3a057b857))
+* **rf53-mod3:** describir las vistas de telemetria en lugar del codigo del requisito ([d97b48e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d97b48e454d33bfcc645cbafd0ab731456f1c1cd))
+* **ui:** usar longhands del borde inferior en las pestanas ([03f1dd3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/03f1dd303f31c4c9d80c79b50cbc55ea0015a45e))
+
 ## [1.0.0-rc.43](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.42...v1.0.0-rc.43) (2026-10-08)
 
 ### Features
