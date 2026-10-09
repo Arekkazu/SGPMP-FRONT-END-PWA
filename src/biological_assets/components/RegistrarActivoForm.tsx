@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { Boxes, User } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
+import { Combobox } from '../../shared/design-system/Combobox';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { ApiError } from '../../shared/api/errors';
@@ -106,6 +107,18 @@ function FieldError({ msg }: { msg?: string }) {
 
 const HOY = hoyLocal();
 
+/**
+ * M2-02: especie e infraestructura se escriben con autocompletado. Se acepta el
+ * ID tal cual (como antes del catálogo, lo usan los scripts de pruebas), la
+ * sugerencia elegida «Nombre (#id)» o el nombre exacto. El backend valida el ID.
+ */
+export function idDeCatalogo(texto: string, opciones: { id: number; nombre: string }[]): number | null {
+  const v = (texto ?? '').trim();
+  const id = /^\d+$/.test(v) ? v : v.match(/\(#(\d+)\)$/)?.[1];
+  if (id) return Number(id) || null;
+  return opciones.find((o) => o.nombre.toLowerCase() === v.toLowerCase())?.id ?? null;
+}
+
 function valorAtributo(p: ParametroEspecie, v: string | boolean | undefined): unknown {
   if (p.tipo_dato === 'BOOLEANO') return Boolean(v);
   if (v === undefined || v === '') return null;
@@ -121,11 +134,13 @@ function etiquetaAtributo(p: ParametroEspecie): string {
 export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: Props) {
   const { t } = useT('biologicalAssets');
   const {
-    register, handleSubmit, watch, setError, setValue, resetField, formState: { errors },
+    register, control, handleSubmit, watch, setError, setValue, resetField, formState: { errors },
   } = useForm<FormValues>({
     mode: 'onBlur',
     defaultValues: {
       tipo_activo: 'INDIVIDUAL',
+      id_especie: '',
+      id_infraestructura: '',
       origen_financiero: 'compra',
       sexo: '',
     },
@@ -139,16 +154,18 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
 
   const { especies, fincas, infraestructuras, cargando, cargandoInfra, cargarInfraestructuras } = useCatalogoRegistro();
   const idFinca = Number(watch('id_finca')) || null;
+  const opcEspecies = especies.map((e) => ({ id: e.id_especie, nombre: e.nombre }));
   useEffect(() => {
     resetField('id_infraestructura');
     cargarInfraestructuras(idFinca);
   }, [idFinca, cargarInfraestructuras, resetField]);
 
   // #194 (RF-33 FA-07): atributos dinámicos que la especie exige al registrar.
-  const idEspecie = Number(watch('id_especie'));
+  const idEspecie = idDeCatalogo(watch('id_especie'), opcEspecies) ?? 0;
   const especie = especies.find((e) => e.id_especie === idEspecie);
   // RF-20 v1.1: el área declara su especie; las anteriores al cambio no (null).
   const infraCompatibles = infraestructuras.filter((i) => i.especie_id == null || i.especie_id === idEspecie);
+  const opcInfra = infraCompatibles.map((i) => ({ id: i.id_infraestructura, nombre: i.nombre_infraestructura }));
   // #298 1.1: sin densidad máxima el backend rechaza el lote al final; se avisa antes.
   // `=== null` y no `== null`: una especie cacheada sin el campo no debe bloquear el registro.
   const loteSinDensidad = !esIndividual && !!especie && especie.densidad_maxima_por_especie === null;
@@ -178,9 +195,9 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   const submit = async (v: FormValues) => {
     const dto: RegistrarActivoDTO = {
       tipo_activo: v.tipo_activo,
-      id_especie: Number(v.id_especie),
+      id_especie: idDeCatalogo(v.id_especie, opcEspecies)!,
       fecha_inicio_ciclo: v.fecha_inicio_ciclo,
-      id_infraestructura: Number(v.id_infraestructura),
+      id_infraestructura: idDeCatalogo(v.id_infraestructura, opcInfra)!,
       origen_financiero: v.origen_financiero,
       detalles_procedencia: v.detalles_procedencia.trim() || null,
       costo_adquisicion: requiereSoporte && v.costo_adquisicion ? Number(v.costo_adquisicion) : null,
@@ -264,46 +281,59 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
       <div style={{ marginBottom: 'var(--s6)' }}>
         <span style={SECTION_TITLE}>{t('registraractivoform.datos_generales')}</span>
         <div style={GRID}>
-          <Select
-            id="registro-especie"
-            label={t('registraractivoform.especie')} required
-            disabled={cargando}
-            error={errors.id_especie?.message}
-            {...register('id_especie', { required: t('registraractivoform.la_especie_es_obligatoria') })}
-          >
-            <option value="">{cargando ? t('registraractivoform.cargando') : t('registraractivoform.seleccionar')}</option>
-            {especies.map((e) => <option key={e.id_especie} value={e.id_especie}>{e.nombre}</option>)}
-          </Select>
+          <Controller
+            name="id_especie"
+            control={control}
+            rules={{
+              required: t('registraractivoform.la_especie_es_obligatoria'),
+              validate: (v) => idDeCatalogo(v, opcEspecies) !== null || t('registraractivoform.opcion_no_valida'),
+            }}
+            render={({ field }) => (
+              <Combobox
+                id="registro-especie" label={t('registraractivoform.especie')} required
+                name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref}
+                opciones={especies.map((e) => ({ valor: `${e.nombre} (#${e.id_especie})` }))}
+                placeholder={cargando ? t('registraractivoform.cargando') : undefined}
+                hint={t('registraractivoform.especie_hint')}
+                error={errors.id_especie?.message}
+              />
+            )}
+          />
           <Select
             id="registro-finca"
-            label={t('registraractivoform.finca')} required
+            label={t('registraractivoform.finca')}
             disabled={cargando}
-            hint={!cargando && fincas.length === 0 ? t('registraractivoform.sin_fincas') : undefined}
-            error={errors.id_finca?.message}
-            {...register('id_finca', { required: t('registraractivoform.la_finca_es_obligatoria') })}
+            hint={!cargando && fincas.length === 0 ? t('registraractivoform.sin_fincas') : t('registraractivoform.finca_hint')}
+            {...register('id_finca')}
           >
             <option value="">{cargando ? t('registraractivoform.cargando') : t('registraractivoform.seleccionar')}</option>
             {fincas.map((f) => <option key={f.id_finca} value={f.id_finca}>{f.nombre}</option>)}
           </Select>
-          <Select
-            id="registro-infraestructura"
-            label={t('registraractivoform.infraestructura')} required
-            disabled={!idFinca || cargandoInfra}
-            hint={
-              !idFinca ? t('registraractivoform.elige_primero_la_finca')
-                : !cargandoInfra && infraCompatibles.length === 0 ? t('registraractivoform.sin_infraestructuras_compatibles')
-                  : undefined
-            }
-            error={errors.id_infraestructura?.message}
-            {...register('id_infraestructura', { required: t('registraractivoform.la_infraestructura_es_obligatoria') })}
-          >
-            <option value="">{cargandoInfra ? t('registraractivoform.cargando') : t('registraractivoform.seleccionar')}</option>
-            {infraCompatibles.map((i) => (
-              <option key={i.id_infraestructura} value={i.id_infraestructura}>
-                {i.nombre_infraestructura} · {i.tipo_area} · {formatearNumero(i.superficie)} m²
-              </option>
-            ))}
-          </Select>
+          <Controller
+            name="id_infraestructura"
+            control={control}
+            rules={{
+              required: t('registraractivoform.la_infraestructura_es_obligatoria'),
+              validate: (v) => idDeCatalogo(v, opcInfra) !== null || t('registraractivoform.opcion_no_valida'),
+            }}
+            render={({ field }) => (
+              <Combobox
+                id="registro-infraestructura" label={t('registraractivoform.infraestructura')} required
+                name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref}
+                opciones={infraCompatibles.map((i) => ({
+                  valor: `${i.nombre_infraestructura} (#${i.id_infraestructura})`,
+                  detalle: `${i.tipo_area} · ${formatearNumero(i.superficie)} m²`,
+                }))}
+                placeholder={cargandoInfra ? t('registraractivoform.cargando') : undefined}
+                hint={
+                  idFinca && !cargandoInfra && infraCompatibles.length === 0
+                    ? t('registraractivoform.sin_infraestructuras_compatibles')
+                    : t('registraractivoform.infraestructura_hint')
+                }
+                error={errors.id_infraestructura?.message}
+              />
+            )}
+          />
           <Input
             label={t('registraractivoform.fecha_de_inicio_de_ciclo')} required type="date" max={HOY}
             error={errors.fecha_inicio_ciclo?.message}
