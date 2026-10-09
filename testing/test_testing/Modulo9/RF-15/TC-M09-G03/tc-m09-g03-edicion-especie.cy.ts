@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 
-const DIR = 'RESULTADOS/TC-M09-G03';
+const DIR = 'evidencias';
 const ENDPOINT_ESPECIES = '/configuracion/especies';
-const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'admin.dev@gmail.com';
+const CUENTA_EJECUCION_EMAIL = Cypress.env('ADMIN_EMAIL') || 'administador.dev@gmail.com';
 const CUENTA_EJECUCION_PASSWORD = Cypress.env('ADMIN_PASSWORD') || 'Test1234!';
 
 const DATO_BUSQUEDA_ORIGINAL = 'Equino';
@@ -67,7 +67,7 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
 
   after(() => {
     // Teardown garantizado en after(): Restaura el registro a "Equino" usando GET fresco para evitar HTTP 412
-    const backendUrl = Cypress.env('API_BASE_URL') || 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test';
+    const backendUrl = Cypress.env('API_BASE_URL') || 'https://api.inmero.co/back-sigab-test';
 
     const escribirResultados = () => {
       const veredicto = checks.length === 0
@@ -93,6 +93,8 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
         hallazgos: checks.map((c) => `${c.paso} -> ${c.obtenido} (${c.estado})`),
       };
 
+      cy.task('writeResult', { file: `resultados/resultado_TC-M09-G03.json`, content: JSON.stringify(r, null, 2) });
+      cy.task('writeResult', { file: `resultados/resultado_TC-M09-G03_reintento1.json`, content: JSON.stringify(r, null, 2) });
       cy.task('writeResult', { file: `${DIR}/TC-M09-G03_resultado.json`, content: JSON.stringify(r, null, 2) });
       cy.task('writeResult', { file: `${DIR}/TC-M09-G03_resultado.md`, content: renderMd(r) });
     };
@@ -175,7 +177,7 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
   it('edita una especie activa existente con datos válidos y verifica la actualización de fecha_actualizacion en UI y API', () => {
     checks.length = 0;
 
-    const backendUrl = Cypress.env('API_BASE_URL') || 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test';
+    const backendUrl = Cypress.env('API_BASE_URL') || 'https://api.inmero.co/back-sigab-test';
 
     // 0. Verificación previa por API REST de que "Equino" está ACTIVA antes de iniciar UI
     cy.request({
@@ -235,11 +237,18 @@ describe('TC-M09-G03 - Edición de Especie Productiva (RF-15)', () => {
         add(
           'CP-1: Autenticación y Navegación SPA',
           'Inicio de sesión exitoso como Admin y navegación a /configuracion',
-          'Sesión autenticada como admin.dev@gmail.com y catálogo cargado por GET /configuracion/especies.',
+          `Sesión autenticada como ${CUENTA_EJECUCION_EMAIL} y catálogo cargado por GET /configuracion/especies.`,
           'OK'
         );
 
         // 2. CP-2: Localización asíncrona de la especie activa en la tabla
+        cy.get('body').then(($b) => {
+          if ($b.find('input[placeholder*="Buscar"], input[aria-label*="Buscar"]').length > 0) {
+            cy.get('input[placeholder*="Buscar"], input[aria-label*="Buscar"]').first().clear().type(DATO_BUSQUEDA_ORIGINAL);
+            cy.wait(500);
+          }
+        });
+
         cy.get('table tbody tr', { timeout: 15000 }).should('have.length.gte', 1);
 
         cy.contains('tbody tr', DATO_BUSQUEDA_ORIGINAL, { timeout: 15000 })

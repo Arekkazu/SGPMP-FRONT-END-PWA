@@ -1,0 +1,62 @@
+{
+  "caso": "TC-M09-G03",
+  "titulo": "CU-01 - Gestionar Catálogo de Especies Productivas (RF-15)",
+  "cu": "CU-01 - Gestionar Catálogo de Especies Productivas",
+  "rf": "RF-15",
+  "tipo": "Funcional Híbrida (UI y API)",
+  "equipo": "Frontend y QA",
+  "ambiente": "https://api.inmero.co",
+  "backend": "https://api.inmero.co/back-sigab-test",
+  "navegador": "electron 118.0.5993.159",
+  "fecha": "2026-10-09T15:14:24.232Z",
+  "idEspecie": 42,
+  "peticionInfo": "PATCH /configuracion/especies/42 -> HTTP 200. Body: {\"id_especie\":42,\"nombre\":\"Equino Editado\",\"descripcion\":\"Especie editada en prueba de reevaluación QA\",\"densidad_maxima_por_especie\":null,\"tipo_modelo\":null,\"es_activo\":true,\"fecha_creacion\":\"2026-09-12T14:21:32.432281Z\",\"fecha_actualizacion\":\"2026-10-09T15:14:26.582206Z\"}",
+  "teardownInfo": "PATCH /configuracion/especies/42 -> HTTP 200. Body: {\"id_especie\":42,\"nombre\":\"Equino\",\"descripcion\":\"prueba\",\"densidad_maxima_por_especie\":null,\"tipo_modelo\":null,\"es_activo\":true,\"fecha_creacion\":\"2026-09-12T14:21:32.432281Z\",\"fecha_actualizacion\":\"2026-10-09T15:14:28.069680Z\"}",
+  "checkpoints": [
+    {
+      "paso": "CP-1: Autenticación y Navegación SPA",
+      "esperado": "Inicio de sesión exitoso como Admin y navegación a /configuracion",
+      "obtenido": "Sesión autenticada como administador.dev@gmail.com y catálogo cargado por GET /configuracion/especies.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-3: Diligenciamiento de Edición UI",
+      "esperado": "Ingresar nombre \"Equino Editado\" y descripción \"Especie editada en prueba de reevaluación QA\"",
+      "obtenido": "Campos de nombre y descripción actualizados con datos de prueba válidos.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-2: Localización de registro \"Equino\"",
+      "esperado": "Ubicar en la tabla la especie activa \"Equino\" y capturar su ID",
+      "obtenido": "Registro activo localizado exitosamente en UI. Especie ID #42 (\"Equino\").",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-4: Contrato API PATCH de Edición",
+      "esperado": "Respuesta HTTP 200/201 con objeto actualizado (nombre=\"Equino Editado\")",
+      "obtenido": "HTTP 200 OK - ID: 42, Nombre: \"Equino Editado\", Descripcion: \"Especie editada en prueba de reevaluación QA\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-5: Verificación de fecha_actualizacion",
+      "esperado": "La propiedad fecha_actualizacion debe actualizarse a un timestamp posterior/distinto",
+      "obtenido": "Fecha de actualización modificada correctamente: de \"2026-10-09T14:51:37.816187Z\" a \"2026-10-09T15:14:26.582206Z\".",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-6: Restauración Teardown (Reversión a \"Equino\")",
+      "esperado": "Registro de especie restaurado exitosamente a \"Equino\" con su descripción original",
+      "obtenido": "Restauración exitosa (HTTP 200). Registro #42 restaurado a \"Equino\".",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "SIN FALLAS BLOQUEANTES",
+  "hallazgos": [
+    "CP-1: Autenticación y Navegación SPA -> Sesión autenticada como administador.dev@gmail.com y catálogo cargado por GET /configuracion/especies. (OK)",
+    "CP-3: Diligenciamiento de Edición UI -> Campos de nombre y descripción actualizados con datos de prueba válidos. (OK)",
+    "CP-2: Localización de registro \"Equino\" -> Registro activo localizado exitosamente en UI. Especie ID #42 (\"Equino\"). (OK)",
+    "CP-4: Contrato API PATCH de Edición -> HTTP 200 OK - ID: 42, Nombre: \"Equino Editado\", Descripcion: \"Especie editada en prueba de reevaluación QA\" (OK)",
+    "CP-5: Verificación de fecha_actualizacion -> Fecha de actualización modificada correctamente: de \"2026-10-09T14:51:37.816187Z\" a \"2026-10-09T15:14:26.582206Z\". (OK)",
+    "CP-6: Restauración Teardown (Reversión a \"Equino\") -> Restauración exitosa (HTTP 200). Registro #42 restaurado a \"Equino\". (OK)"
+  ]
+}
