@@ -79,6 +79,10 @@ async function loginComoAdmin(page: Page) {
   // login invalidaba la sesión bajo automatización.
   await page.waitForLoadState('networkidle');
   await irAConfiguracion(page, /^(Personalización|Personalization)$/);
+  // 2026-10-09: la pestaña "Personalización" ahora tiene sub-pestañas (SubPestanas.tsx,
+  // refactorización #309) y abre en "Identidad visual" por defecto, no en "Dashboard".
+  // Hay que elegir la sub-pestaña "Dashboard" antes de llegar a DashboardLayoutSection.
+  await page.getByRole('main').getByRole('button', { name: 'Dashboard', exact: true }).click();
 }
 
 async function dentroDelViewport(page: Page, loc: Locator): Promise<boolean> {
@@ -126,6 +130,20 @@ function guardarResultados(nombre: string, contenido: unknown) {
   fs.writeFileSync(path.join(outDir, nombre), JSON.stringify(contenido, null, 2));
 }
 
+/**
+ * 2026-10-09: la grilla de la cuenta de prueba llega completa (10/10 celdas
+ * ocupadas, verificado con un script de diagnóstico) — no hay celda vacía para
+ * probar la colocación de un widget. Selecciona la primera celda ocupada y la
+ * quita para liberar un espacio: es una acción local (sin pulsar "Guardar"),
+ * no persiste en el backend y no toca la cuenta compartida.
+ */
+async function liberarUnaCelda(page: Page) {
+  const grilla = page.getByRole('group');
+  const celdaOcupada = grilla.getByRole('button', { name: /Selecciónalo para moverlo/i }).first();
+  await celdaOcupada.click();
+  await page.getByRole('button', { name: 'Quitar del dashboard', exact: true }).click();
+}
+
 test.describe('TC-DIS-78 — RF-28: Personalización del Dashboard (accesibilidad)', () => {
   test('vista inicial de Dashboard Personalizable no tiene violaciones', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
@@ -142,16 +160,21 @@ test.describe('TC-DIS-78 — RF-28: Personalización del Dashboard (accesibilida
 
   test('seleccionar y colocar un widget funciona completamente por teclado', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
+    await liberarUnaCelda(page);
 
+    // 2026-10-09: .first() a secas podía caer en un widget ya colocado en la grilla
+    // (disabled={inGrid || !canAct}, DashboardLayoutSection.tsx:472) y el test nunca
+    // llegaba a seleccionar nada. Se filtra a botones habilitados.
     const panelCatalogo = page.getByText('Catálogo de Widgets', { exact: true }).locator('xpath=../..');
-    const primerWidget = panelCatalogo.getByRole('button').first();
+    const primerWidget = panelCatalogo.locator('button:not([disabled])').first();
+    const nombreVisible = (await primerWidget.textContent())?.trim() ?? '';
 
     // Selección por teclado: foco + Enter, no .click().
     await primerWidget.focus();
     await expect(primerWidget).toBeFocused();
     await page.keyboard.press('Enter');
 
-    // Tras seleccionar, las celdas vacías cambian su aria-label a "Colocar ...".
+    // Tras seleccionar, la celda liberada cambia su aria-label a "Colocar ...".
     const celdaObjetivo = page.getByRole('button', { name: /^Colocar /i }).first();
     await expect(celdaObjetivo).toBeVisible();
 
@@ -160,18 +183,22 @@ test.describe('TC-DIS-78 — RF-28: Personalización del Dashboard (accesibilida
     await expect(celdaObjetivo).toBeFocused();
     await page.keyboard.press('Enter');
 
-    // Si funcionó, el catálogo debe reflejar el widget como ya colocado
-    // (badge "✓") y debe aparecer la alerta de éxito al guardar, aunque este
-    // test no guarda — solo confirma que la colocación en la grilla ocurrió
-    // sin usar el mouse en ningún momento.
-    await expect(page.getByRole('button', { name: /^Quitar /i }).first()).toBeVisible();
+    // Si funcionó, el catálogo debe reflejar el mismo widget como ya colocado
+    // ("En el dashboard"), aunque este test no guarda — solo confirma que la
+    // colocación en la grilla ocurrió sin usar el mouse en ningún momento
+    // (salvo el paso de preparación que liberó la celda).
+    await expect(
+      panelCatalogo.getByRole('button', { name: new RegExp(`^${nombreVisible}`) }),
+    ).toBeDisabled();
   });
 
   test('la celda objetivo anuncia el identificador interno, no el nombre visible — confirma hallazgo #1', async ({ page }, testInfo) => {
     await loginComoAdmin(page);
+    await liberarUnaCelda(page);
 
+    // Mismo ajuste que el test anterior: filtrar a botones habilitados.
     const panelCatalogo = page.getByText('Catálogo de Widgets', { exact: true }).locator('xpath=../..');
-    const primerWidget = panelCatalogo.getByRole('button').first();
+    const primerWidget = panelCatalogo.locator('button:not([disabled])').first();
 
     const nombreVisible = (await primerWidget.textContent())?.trim() ?? '';
     await primerWidget.click();
