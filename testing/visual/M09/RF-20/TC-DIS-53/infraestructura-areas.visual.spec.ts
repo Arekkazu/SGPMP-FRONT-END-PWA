@@ -21,15 +21,18 @@
  * verifica contra el ambiente real que fincas, tipos y áreas cargan y que la finca #1
  * sigue teniendo un área inactiva.
  *
- * Una baseline solo se guarda si la vista no tiene defectos: la superficie de cada área, las
- * etiquetas del formulario (estilo del DS) y la precarga de "Editar área" se verifican antes
- * de capturar y fallan como DEFECTO.
+ * Reejecución sobre la release 1.0.0-rc.40 (modales como bottom sheet con el ancho del DS).
+ *
+ * Una baseline solo se guarda si la vista no tiene defectos. Antes de capturar se verifican y
+ * fallan como DEFECTO: la superficie de cada área, las etiquetas del formulario (estilo del
+ * DS), la precarga de "Editar área", la escala tipográfica del DS v2.0 en el texto con estilo
+ * propio del módulo (los componentes del DS se evalúan con su propio CSS) y el breakpoint de
+ * cada modal (bottom sheet a ancho completo en xs/sm; formulario máx. 480px en md y 560px en
+ * lg; confirmación corta máx. 400px en md+).
  *
  * Formularios y confirmación: se captura solo la tarjeta del modal (el fondo de la pestaña
  * cambia con los datos del ambiente); si no cabe, se amplía el alto de la ventana
- * conservando el ancho. La tarjeta del formulario se mide además contra el DS v2.0 (bottom
- * sheet a ancho completo en xs/sm, máx. 480px en md, máx. 560px en lg) y falla como DEFECTO
- * si no cumple.
+ * conservando el ancho.
  *
  * PROTECCIÓN DE DATOS: todo POST/PATCH a /configuracion/infraestructuras se aborta; el caso
  * no envía formularios ni confirma la reactivación.
@@ -170,8 +173,55 @@ function tarjetaModal(dialogo: Locator): Locator {
   return dialogo.locator('> div');
 }
 
-/** Captura solo la tarjeta del modal; si no cabe, amplía el alto de la ventana conservando el ancho. */
-async function capturarModal(page: Page, dialogo: Locator, nombre: string) {
+// DS v2.0: escala tipográfica (todos los anchos)
+const ESCALA = [11, 12, 14, 15, 16, 18, 19, 20, 24, 26, 28];
+
+/**
+ * DEFECTO si la tarjeta del modal no respeta el breakpoint del DS v2.0: bottom sheet a ancho
+ * completo en xs/sm; formulario máx. 480px en md y 560px en lg; confirmación corta máx. 400px en md+.
+ */
+async function verificarBreakpoint(page: Page, dialogo: Locator, variante: 'formulario' | 'confirmacion' = 'formulario') {
+  const nombre = test.info().project.name;
+  const viewport = page.viewportSize()!;
+  const caja = (await tarjetaModal(dialogo).boundingBox())!;
+  test.info().annotations.push({ type: `Tarjeta del modal (${variante})`, description: `viewport ${viewport.width}×${viewport.height} · x ${Math.round(caja.x)} · y ${Math.round(caja.y)} · ${Math.round(caja.width)}×${Math.round(caja.height)}` });
+  if (viewport.width < 768) {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, xs/sm) el modal debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px`).toBe(viewport.width);
+    expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${nombre} el bottom sheet debe apoyarse en el borde inferior de la pantalla`).toBe(viewport.height);
+    return;
+  }
+  const maximo = variante === 'confirmacion' ? 400 : viewport.width < 1200 ? 480 : 560;
+  expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px) el modal de ${variante} debe medir máximo ${maximo}px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(maximo);
+}
+
+/** DEFECTO si algún texto con estilo propio del objetivo usa un tamaño fuera de la escala del DS v2.0. */
+async function verificarEscala(objetivo: Locator, zona: string) {
+  const fuera = await objetivo.evaluate((raiz, escala) => {
+    const res: string[] = [];
+    const walker = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const texto = (n.textContent ?? '').trim();
+      const el = n.parentElement;
+      // Componentes del DS (botón, alerta, badge, campos) se evalúan con su propio CSS, no como estilo del módulo
+      if (!texto || !el || el.closest('option, .ds-sr-only, .ds-btn, .ds-alert, .ds-badge, .ds-field, style')) continue;
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      if (!escala.includes(fs)) res.push(`"${texto.slice(0, 30)}" ${fs}px`);
+    }
+    return [...new Set(res)];
+  }, ESCALA);
+  expect.soft(fuera, `DEFECTO: ${zona}: texto fuera de la escala tipográfica del DS v2.0: ${fuera.join(' · ')}`).toEqual([]);
+}
+
+/** Sin baseline si la vista tiene defectos. */
+function exigirSinDefectos() {
+  expect(test.info().errors.length, 'Sin baseline: la vista tiene defectos (ver errores anteriores)').toBe(0);
+}
+
+/** Verifica breakpoint y escala; captura solo la tarjeta del modal (si no cabe, amplía el alto conservando el ancho). */
+async function capturarModal(page: Page, dialogo: Locator, nombre: string, variante: 'formulario' | 'confirmacion' = 'formulario') {
+  await verificarBreakpoint(page, dialogo, variante);
+  await verificarEscala(tarjetaModal(dialogo), `modal de ${variante}`);
+  exigirSinDefectos();
   const viewport = page.viewportSize()!;
   const caja = (await tarjetaModal(dialogo).boundingBox())!;
   const necesario = Math.ceil(caja.y + caja.height + 48);
@@ -204,7 +254,7 @@ async function verificarEtiquetas(dialogo: Locator) {
     return { texto: (l.textContent ?? '').trim(), estilo: `${c.fontSize} ${c.fontWeight}` };
   }));
   const distintas = estilos.filter((e) => e.estilo !== '12px 600');
-  expect(distintas, `DEFECTO: etiquetas del formulario fuera del estilo del DS (12px 600, como "Nombre del área"): ${distintas.map((e) => `"${e.texto}" ${e.estilo}`).join(' · ')}`).toEqual([]);
+  expect.soft(distintas, `DEFECTO: etiquetas del formulario fuera del estilo del DS (12px 600, como "Nombre del área"): ${distintas.map((e) => `"${e.texto}" ${e.estilo}`).join(' · ')}`).toEqual([]);
 }
 
 async function abrirRegistro(page: Page) {
@@ -257,6 +307,8 @@ test.describe('TC-DIS-53 - Consistencia visual - Infraestructura Productiva / Á
     test('1. Selector de fincas de la sección', async ({ page }) => {
       const primera = botonFinca(page, FINCA_1);
       await expect(primera).toBeVisible();
+      await verificarEscala(seccion(page, primera), 'selector de fincas');
+      exigirSinDefectos();
       await sinFocoNiHover(page);
       await expect(seccion(page, primera)).toHaveScreenshot('areas-selector-fincas.png', { animations: 'disabled' });
     });
@@ -265,6 +317,8 @@ test.describe('TC-DIS-53 - Consistencia visual - Infraestructura Productiva / Á
       await abrirAreas(page, FINCA_1, AREAS_1.length);
       await expect(filaArea(page, AREA_EDITAR)).toContainText('Acuicultura');
       await verificarSuperficie(page, AREAS_1);
+      await verificarEscala(seccionAreas(page), 'áreas de la finca #1');
+      exigirSinDefectos();
       await sinFocoNiHover(page);
       await expect(seccionAreas(page)).toHaveScreenshot('areas-listado-finca-1.png', { animations: 'disabled' });
     });
@@ -272,28 +326,32 @@ test.describe('TC-DIS-53 - Consistencia visual - Infraestructura Productiva / Á
     test('1-2. Áreas agrupadas por finca - finca #2', async ({ page }) => {
       await abrirAreas(page, FINCA_2, AREAS_2.length);
       await verificarSuperficie(page, AREAS_2);
+      await verificarEscala(seccionAreas(page), 'áreas de la finca #2');
+      exigirSinDefectos();
       await sinFocoNiHover(page);
       await expect(seccionAreas(page)).toHaveScreenshot('areas-listado-finca-2.png', { animations: 'disabled' });
     });
 
-    test('2. Área en estado inactivo - fila y confirmación "Reactivar área"', async ({ page }) => {
+    test('2. Área en estado inactivo - fila', async ({ page }) => {
       await abrirAreas(page, FINCA_1, AREAS_1.length);
       const fila = filaArea(page, AREA_INACTIVA);
       await expect(fila).toContainText('Inactiva');
-      const reactivar = fila.getByRole('button', { name: `Reactivar ${AREA_INACTIVA}`, exact: true });
-      await expect(reactivar).toBeVisible();
-
-      // Confirmación primero: el defecto de la fila no debe impedir su baseline
-      await reactivar.click();
-      const confirmacion = page.getByRole('dialog').filter({ hasText: 'Reactivar área' });
-      await expect(confirmacion).toContainText(AREA_INACTIVA);
-      await capturarModal(page, confirmacion, 'areas-confirmar-reactivar.png');
-      await confirmacion.getByRole('button', { name: 'Cancelar', exact: true }).click();
-      await expect(confirmacion).toBeHidden();
-
+      await expect(fila.getByRole('button', { name: `Reactivar ${AREA_INACTIVA}`, exact: true })).toBeVisible();
       await verificarSuperficie(page, AREAS_1.filter((a) => !a.es_activo));
+      await verificarEscala(fila, 'fila del área inactiva');
+      exigirSinDefectos();
       await sinFocoNiHover(page);
       await expect(fila).toHaveScreenshot('areas-fila-inactiva.png', { animations: 'disabled' });
+    });
+
+    test('2. Área en estado inactivo - confirmación "Reactivar área"', async ({ page }) => {
+      await abrirAreas(page, FINCA_1, AREAS_1.length);
+      await filaArea(page, AREA_INACTIVA).getByRole('button', { name: `Reactivar ${AREA_INACTIVA}`, exact: true }).click();
+      const confirmacion = page.getByRole('dialog').filter({ hasText: 'Reactivar área' });
+      await expect(confirmacion).toContainText(AREA_INACTIVA);
+      await capturarModal(page, confirmacion, 'areas-confirmar-reactivar.png', 'confirmacion');
+      await confirmacion.getByRole('button', { name: 'Cancelar', exact: true }).click();
+      await expect(confirmacion).toBeHidden();
     });
 
     test('3. Formulario "Registrar área productiva"', async ({ page }) => {
@@ -330,22 +388,10 @@ test.describe('TC-DIS-53 - Consistencia visual - Infraestructura Productiva / Á
       await capturarModal(page, dialogo, 'areas-form-editar.png');
     });
 
-    test('4. Modal del formulario según el breakpoint del sistema de diseño', async ({ page }, testInfo) => {
+    test('4. Modal del formulario según el breakpoint del sistema de diseño', async ({ page }) => {
       await abrirAreas(page, FINCA_1, AREAS_1.length);
       const dialogo = await abrirRegistro(page);
-      const viewport = page.viewportSize()!;
-      const caja = (await tarjetaModal(dialogo).boundingBox())!;
-      testInfo.annotations.push({ type: 'Tarjeta del modal', description: `viewport ${viewport.width}×${viewport.height} · x ${Math.round(caja.x)} · y ${Math.round(caja.y)} · ${Math.round(caja.width)}×${Math.round(caja.height)}` });
-
-      // DS v2.0 (CLAUDE.md, Grid y breakpoints): bottom sheet a ancho completo en xs/sm, max 480px en md, max 560px en lg
-      if (viewport.width < 768) {
-        expect.soft(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, xs/sm) el modal debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px y queda centrado con márgenes`).toBe(viewport.width);
-        expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${testInfo.project.name} el bottom sheet debe apoyarse en el borde inferior de la pantalla (empieza arriba y sale de la pantalla con scroll)`).toBe(viewport.height);
-      } else if (viewport.width < 1200) {
-        expect(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, md) el modal debe medir máximo 480px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(480);
-      } else {
-        expect(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, lg) el modal debe medir máximo 560px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(560);
-      }
+      await verificarBreakpoint(page, dialogo);
     });
   });
 });
