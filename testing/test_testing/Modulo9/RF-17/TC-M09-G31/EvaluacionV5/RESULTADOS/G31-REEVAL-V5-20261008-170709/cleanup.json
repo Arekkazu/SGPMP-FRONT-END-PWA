@@ -1,0 +1,124 @@
+{
+  "run_id": "G31-REEVAL-V5-20261008-170709",
+  "fase": "cleanup",
+  "ejecutado": "2026-10-08T17:38:26.946Z",
+  "politica_telemetrias": "Las telemetrias de TC-66/67/68 NO se eliminan: son la evidencia oficial del RUN y no existe politica explicita del proyecto que autorice su eliminacion.",
+  "acciones": [
+    {
+      "tipo": "activo_biologico",
+      "id": 755,
+      "endpoint": "GET /activos-biologicos/755",
+      "status": 200,
+      "estado_comprobado": "INACTIVO",
+      "revertido": true,
+      "nota": "ya estaba fuera de servicio por un intento anterior de esta misma fase"
+    },
+    {
+      "tipo": "dispositivo_iot",
+      "id": 203,
+      "endpoint": "GET /configuracion/dispositivos-iot/203",
+      "status": 200,
+      "estado_comprobado": "es_activo=false",
+      "revertido": true,
+      "nota": "ya estaba inactivo por un intento anterior de esta misma fase"
+    },
+    {
+      "tipo": "infraestructura",
+      "id": 268,
+      "endpoint": "PATCH /configuracion/infraestructuras/268/desactivar",
+      "status": 422,
+      "body": {
+        "error_code": "INFRAESTRUCTURA_CON_DEPENDENCIAS",
+        "message": "El área 'QA-G31-AREA-1008170709' tiene dispositivos y/o activos biológicos asociados. Debe desvincular o trasladar los recursos antes de desactivar la infraestructura.",
+        "fields": [],
+        "timestamp": "2026-10-08T17:38:26.667118+00:00"
+      },
+      "revertido": false
+    }
+  ],
+  "diferidos": [
+    {
+      "tipo": "especie",
+      "id": 109,
+      "endpoint_reversion": "PATCH /configuracion/especies/109/desactivar",
+      "motivo": "desactivarla afecta al umbral QA y, con el, a la clasificacion de las tres lecturas"
+    },
+    {
+      "tipo": "umbral_rf17",
+      "id": 63,
+      "endpoint_reversion": "PATCH /configuracion/umbrales/63/desactivar",
+      "motivo": "desactivarlo reclasificaria las tres lecturas oficiales como GRIS"
+    },
+    {
+      "tipo": "sensor",
+      "id": 53,
+      "endpoint_reversion": "sin endpoint publico de reversion directa: se revierte al desactivar el dispositivo",
+      "motivo": "no existe endpoint publico de baja de sensor; queda cubierto por la baja del dispositivo"
+    },
+    {
+      "tipo": "asociacion_sensor_area",
+      "id": 49,
+      "endpoint_reversion": "PATCH /infraestructuras/268/sensores/{id_asociacion}",
+      "motivo": "cerrarla dejaria sin area ni finca a las tres lecturas del historial"
+    },
+    {
+      "tipo": "calibracion",
+      "id": 23,
+      "endpoint_reversion": "sin reversion: la calibracion es un registro historico; se revierte al desactivar el dispositivo",
+      "motivo": "registro historico de RF-24, sin endpoint de reversion y sin efecto fuera del dispositivo dado de baja"
+    }
+  ],
+  "clasificacion_antes_de_la_limpieza": {
+    "TC-M09-66": {
+      "id_telemetria": 60,
+      "esperado": "VERDE",
+      "observado": "VERDE",
+      "id_umbral_ambiental": 63,
+      "id_especie": 109
+    },
+    "TC-M09-67": {
+      "id_telemetria": 61,
+      "esperado": "AMARILLO",
+      "observado": "AMARILLO",
+      "id_umbral_ambiental": 63,
+      "id_especie": 109
+    },
+    "TC-M09-68": {
+      "id_telemetria": 62,
+      "esperado": "ROJO",
+      "observado": "ROJO",
+      "id_umbral_ambiental": 63,
+      "id_especie": 109
+    }
+  },
+  "clasificacion_despues_de_la_limpieza": {
+    "TC-M09-66": {
+      "id_telemetria": 60,
+      "esperado": "VERDE",
+      "observado": "VERDE",
+      "id_umbral_ambiental": 63,
+      "id_especie": 109
+    },
+    "TC-M09-67": {
+      "id_telemetria": 61,
+      "esperado": "AMARILLO",
+      "observado": "AMARILLO",
+      "id_umbral_ambiental": 63,
+      "id_especie": 109
+    },
+    "TC-M09-68": {
+      "id_telemetria": 62,
+      "esperado": "ROJO",
+      "observado": "ROJO",
+      "id_umbral_ambiental": 63,
+      "id_especie": 109
+    }
+  },
+  "evidencia_intacta_tras_la_limpieza": true,
+  "estado": "CLEANUP_PENDIENTE_POR_FALTA_DE_ENDPOINT_PUBLICO",
+  "pendientes": [
+    "infraestructura 268: PATCH /configuracion/infraestructuras/268/desactivar -> 422 INFRAESTRUCTURA_CON_DEPENDENCIAS"
+  ],
+  "motivo_del_pendiente": "El area QA no admite baja mientras conserve el dispositivo y el activo QA asociados, y la API no expone ninguna via publica para desvincular o trasladar un dispositivo de su area. El dispositivo queda inactivo y el activo INACTIVO, de modo que el area no puede recibir ni generar datos nuevos.",
+  "nota": "Reversion realizada exclusivamente con endpoints publicos oficiales. No se ejecuto SQL. Los elementos diferidos quedan marcados como QA en su nombre y descripcion y pueden darse de baja con los endpoints listados cuando la evidencia del RUN ya no sea necesaria."
+}
