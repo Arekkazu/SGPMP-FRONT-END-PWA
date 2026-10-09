@@ -19,13 +19,16 @@
  * SIMULADO con dos asociaciones superadas (activos #279 ambiental y #280 poblacional).
  * Ningún test modifica asociaciones en el ambiente.
  *
- * Una baseline solo se guarda si la vista no tiene defectos: el texto de cada paso, la
- * superficie de las áreas, que las etiquetas del indicador de pasos no se salgan del borde y
- * el color de los enlaces del aviso (token del DS) se verifican antes de capturar y fallan
- * como DEFECTO. La sección
- * se captura con la ventana ampliada a lo alto (conservando el ancho) para que la barra
- * superior fija no la tape; el diálogo, solo su tarjeta, que se mide además contra los
- * breakpoints del DS.
+ * Reejecución sobre la release 1.0.0-rc.40 (Stepper del DS, modales como bottom sheet).
+ *
+ * Una baseline solo se guarda si la vista no tiene defectos. Antes de capturar se verifican y
+ * fallan como DEFECTO: el texto de cada paso, la superficie de las áreas, que las etiquetas del
+ * indicador de pasos no se salgan del borde, el color de los enlaces del aviso (token del DS),
+ * la escala tipográfica del DS v2.0 en el texto con estilo propio del módulo (los componentes
+ * del DS se evalúan con su propio CSS) y el breakpoint del diálogo (confirmación corta: bottom
+ * sheet a ancho completo en xs/sm, máx. 400px en md+). La sección se captura con la ventana
+ * ampliada a lo alto (conservando el ancho) para que la barra superior fija no la tape; el
+ * diálogo, solo su tarjeta.
  *
  * Tema: la preferencia de tema es de la cuenta (compartida); GET
  * /configuracion/personalizacion/tema(/global) se sirve con el tema Claro (theme_mode 1,
@@ -155,7 +158,8 @@ function seccion(page: Page): Locator {
   return page
     .locator('div')
     .filter({ has: page.getByRole('heading', { name: 'Asociación de Sensores a Áreas' }) })
-    .filter({ has: page.getByText('Área destino', { exact: true }) })
+    // Desde rc.40 el Stepper del DS antepone el número a cada paso ("3 Área destino")
+    .filter({ has: page.getByRole('list', { name: 'Pasos de la asociación' }) })
     .last();
 }
 
@@ -176,9 +180,11 @@ async function abrirAsociacion(page: Page): Promise<Locator> {
 }
 
 async function irAPaso2(page: Page, sec: Locator) {
-  const sensores = page.waitForResponse((r) => /\/dispositivos-iot\/\d+\/sensores$/.test(new URL(r.url()).pathname));
+  // Los sensores pueden servirse desde la caché del hook: la petición no es obligatoria
+  const sensores = page.waitForResponse((r) => /\/dispositivos-iot\/\d+\/sensores$/.test(new URL(r.url()).pathname), { timeout: 15_000 }).catch(() => null);
   await tarjeta(sec, DISPOSITIVO).click();
-  expect((await sensores).status(), 'Los sensores del dispositivo deben cargar').toBe(200);
+  const res = await sensores;
+  if (res) expect(res.status(), 'Los sensores del dispositivo deben cargar').toBe(200);
   await expect(tarjeta(sec, SENSOR)).toBeVisible();
 }
 
@@ -214,8 +220,45 @@ async function ajustarAlto(page: Page, objetivo: Locator) {
   if (necesario > viewport.height) await page.setViewportSize({ width: viewport.width, height: necesario });
 }
 
+// DS v2.0: escala tipográfica (todos los anchos)
+const ESCALA = [11, 12, 14, 15, 16, 18, 19, 20, 24, 26, 28];
+
+/** DEFECTO si algún texto con estilo propio del objetivo usa un tamaño fuera de la escala del DS v2.0. */
+async function verificarEscala(objetivo: Locator, zona: string) {
+  const fuera = await objetivo.evaluate((raiz, escala) => {
+    const res: string[] = [];
+    const walker = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const texto = (n.textContent ?? '').trim();
+      const el = n.parentElement;
+      // Componentes del DS (botón, alerta, badge, campos, stepper) se evalúan con su propio CSS, no como estilo del módulo
+      if (!texto || !el || el.closest('option, .ds-sr-only, .ds-btn, .ds-alert, .ds-badge, .ds-field, .ds-stepper, style')) continue;
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      if (!escala.includes(fs)) res.push(`"${texto.slice(0, 30)}" ${fs}px`);
+    }
+    return [...new Set(res)];
+  }, ESCALA);
+  expect.soft(fuera, `DEFECTO: ${zona}: texto fuera de la escala tipográfica del DS v2.0: ${fuera.join(' · ')}`).toEqual([]);
+}
+
+/** DEFECTO si la tarjeta del diálogo de confirmación no respeta el breakpoint del DS v2.0. */
+async function verificarBreakpoint(page: Page, tarjetaDialogo: Locator) {
+  const nombre = test.info().project.name;
+  const viewport = page.viewportSize()!;
+  const caja = (await tarjetaDialogo.boundingBox())!;
+  test.info().annotations.push({ type: 'Tarjeta del diálogo', description: `viewport ${viewport.width}×${viewport.height} · x ${Math.round(caja.x)} · y ${Math.round(caja.y)} · ${Math.round(caja.width)}×${Math.round(caja.height)}` });
+  // DS v2.0: bottom sheet a ancho completo en xs/sm; confirmación corta (--sm) máx. 400px en md+
+  if (viewport.width < 768) {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, xs/sm) el diálogo debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px`).toBe(viewport.width);
+    expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${nombre} el bottom sheet debe apoyarse en el borde inferior de la pantalla`).toBe(viewport.height);
+  } else {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px) el diálogo de confirmación debe medir máximo 400px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(400);
+  }
+}
+
 /** Captura la sección (o un bloque) sin que la barra superior fija la tape. Sin baseline si hay defectos. */
 async function capturar(page: Page, objetivo: Locator, nombre: string) {
+  await verificarEscala(objetivo, nombre.replace(/\.png$/, ''));
   expect(test.info().errors.length, 'Sin baseline: la vista tiene defectos (ver errores anteriores)').toBe(0);
   await ajustarAlto(page, objetivo);
   await sinFocoNiHover(page);
@@ -243,7 +286,7 @@ async function verificarStepper(page: Page, sec: Locator) {
   const borde = (await sec.boundingBox())!;
   const viewport = page.viewportSize()!;
   for (const etiqueta of ['Dispositivo', 'Sensor', 'Área destino', 'Confirmar']) {
-    const caja = (await sec.getByText(etiqueta, { exact: true }).first().boundingBox())!;
+    const caja = (await sec.getByRole('list', { name: 'Pasos de la asociación' }).getByRole('listitem').filter({ hasText: etiqueta }).first().boundingBox())!;
     const limite = Math.min(borde.x + borde.width, viewport.width);
     expect.soft(Math.round(caja.x + caja.width), `DEFECTO: la etiqueta "${etiqueta}" del indicador de pasos se sale del borde (termina en ${Math.round(caja.x + caja.width)}px; la sección termina en ${Math.round(limite)}px)`).toBeLessThanOrEqual(Math.round(limite));
   }
@@ -339,10 +382,11 @@ test.describe('TC-DIS-59 - Consistencia visual - Asociación de Sensores (RF-22)
     await expect(dialogo).toBeVisible();
     await expect(dialogo).toContainText('ya está monitoreando el área');
 
+    await verificarBreakpoint(page, dialogo.locator('> div'));
     await capturar(page, dialogo.locator('> div'), 'sensores-dialogo-reasignacion.png');
   });
 
-  test('2. Diálogo de reasignación según el breakpoint del sistema de diseño', async ({ page }, testInfo) => {
+  test('2. Diálogo de reasignación según el breakpoint del sistema de diseño', async ({ page }) => {
     await servirFixtures(page);
     const sec = await abrirAsociacion(page);
     await irAPaso4(page, sec);
@@ -351,19 +395,7 @@ test.describe('TC-DIS-59 - Consistencia visual - Asociación de Sensores (RF-22)
     const dialogo = page.getByRole('dialog', { name: 'Confirmar reasignación' });
     await expect(dialogo).toBeVisible();
 
-    const viewport = page.viewportSize()!;
-    const caja = (await dialogo.locator('> div').boundingBox())!;
-    testInfo.annotations.push({ type: 'Tarjeta del diálogo', description: `viewport ${viewport.width}×${viewport.height} · x ${Math.round(caja.x)} · y ${Math.round(caja.y)} · ${Math.round(caja.width)}×${Math.round(caja.height)}` });
-
-    // DS v2.0 (CLAUDE.md, Grid y breakpoints): bottom sheet a ancho completo en xs/sm, max 480px en md, max 560px en lg
-    if (viewport.width < 768) {
-      expect.soft(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, xs/sm) el diálogo debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px y queda centrado con márgenes`).toBe(viewport.width);
-      expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${testInfo.project.name} el bottom sheet debe apoyarse en el borde inferior de la pantalla`).toBe(viewport.height);
-    } else if (viewport.width < 1200) {
-      expect(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, md) el diálogo debe medir máximo 480px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(480);
-    } else {
-      expect(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, lg) el diálogo debe medir máximo 560px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(560);
-    }
+    await verificarBreakpoint(page, dialogo.locator('> div'));
   });
 
   test('3. Aviso de asociaciones sensor→activo cerradas por la reasignación (simulado)', async ({ page }, testInfo) => {
