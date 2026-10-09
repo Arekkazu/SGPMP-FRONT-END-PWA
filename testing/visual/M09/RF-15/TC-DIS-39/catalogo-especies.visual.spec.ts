@@ -16,9 +16,14 @@
  *     confirmar con desarrollo).
  *   - Listado vacío por búsqueda sin resultados.
  *
- * Verificación de layout: la tarjeta del modal del formulario se mide contra el DS v2.0
- * (bottom sheet a ancho completo en xs/sm, máx. 480px en md, máx. 560px en lg) y falla
- * como DEFECTO si no cumple.
+ * Una baseline solo se guarda si la vista no tiene defectos: en las capturas con el modal
+ * abierto, la tarjeta se mide contra el DS v2.0 (bottom sheet a ancho completo en xs/sm, máx.
+ * 480px en md, máx. 560px en lg) y el texto con estilo propio del formulario debe usar la
+ * escala tipográfica del DS (los componentes del DS se evalúan con su propio CSS); si algo
+ * falla es DEFECTO y no se captura.
+ *
+ * Release 1.0.0-rc.40: los modales pasan a bottom sheet en móvil y los errores con `fields`
+ * van debajo del campo (role="alert", aria-invalid), sin alerta general; baselines nuevas.
  *
  * Datos: el catálogo crece con cada prueba que registra especies, así que GET
  * /configuracion/especies se sirve con page.route desde especies.fixture.json (respuesta real
@@ -37,6 +42,9 @@
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_39_VIEWPORTS=escritorio
  */
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import fixture from './especies.fixture.json';
 
@@ -106,12 +114,22 @@ async function servirCatalogo(page: Page, ajustar: (e: Especie) => Especie = (e)
   });
 }
 
+// Si un login falla, los demás tests se saltan: la cuenta admin se bloquea a los 5 intentos.
+// Marca en archivo porque Playwright reinicia el worker tras cada test fallido.
+const MARCA_LOGIN_FALLIDO = path.join(os.tmpdir(), 'tc-dis-39-login-fallido');
+
 async function iniciarSesionAdmin(page: Page) {
+  test.skip(fs.existsSync(MARCA_LOGIN_FALLIDO), 'Un login anterior falló: se omite para no bloquear la cuenta admin.');
   await page.goto('/login');
   await page.getByRole('textbox', { name: 'Correo electrónico', exact: true }).fill(ADMIN_EMAIL);
   await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 60_000 });
+  try {
+    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 60_000 });
+  } catch (e) {
+    fs.writeFileSync(MARCA_LOGIN_FALLIDO, new Date().toISOString());
+    throw e;
+  }
 }
 
 /** Abre /configuracion (tab Catálogo por defecto) y espera a que la tabla termine de cargar. */
@@ -149,7 +167,50 @@ async function abrirEdicion(page: Page, nombre: string) {
   return dialogo;
 }
 
-async function capturar(page: Page, nombre: string) {
+// DS v2.0: escala tipográfica (todos los anchos)
+const ESCALA = [11, 12, 14, 15, 16, 18, 19, 20, 24, 26, 28];
+
+/** DEFECTO si la tarjeta del modal no respeta el breakpoint del DS v2.0. */
+async function verificarBreakpoint(page: Page, dialogo: Locator) {
+  const nombre = test.info().project.name;
+  const viewport = page.viewportSize()!;
+  const caja = (await dialogo.locator('> div').boundingBox())!;
+  test.info().annotations.push({ type: 'Tarjeta del modal', description: `viewport ${viewport.width}×${viewport.height} · x ${Math.round(caja.x)} · y ${Math.round(caja.y)} · ${Math.round(caja.width)}×${Math.round(caja.height)}` });
+  if (viewport.width < 768) {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, xs/sm) el modal debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px`).toBe(viewport.width);
+    expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${nombre} el bottom sheet debe apoyarse en el borde inferior de la pantalla`).toBe(viewport.height);
+  } else if (viewport.width < 1200) {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, md) el modal debe medir máximo 480px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(480);
+  } else {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, lg) el modal debe medir máximo 560px; mide ${Math.round(caja.width)}px`).toBe(560);
+  }
+}
+
+/** DEFECTO si algún texto con estilo propio del formulario usa un tamaño fuera de la escala del DS v2.0. */
+async function verificarEscala(dialogo: Locator) {
+  const fuera = await dialogo.locator('> div').evaluate((raiz, escala) => {
+    const res: string[] = [];
+    const walker = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const texto = (n.textContent ?? '').trim();
+      const el = n.parentElement;
+      // Componentes del DS (botón, alerta, campos) se evalúan con su propio CSS, no como estilo del módulo
+      if (!texto || !el || el.closest('option, .ds-sr-only, .ds-btn, .ds-alert, .ds-field, style')) continue;
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      if (!escala.includes(fs)) res.push(`"${texto.slice(0, 30)}" ${fs}px`);
+    }
+    return [...new Set(res)];
+  }, ESCALA);
+  expect.soft(fuera, `DEFECTO: texto del formulario fuera de la escala tipográfica del DS v2.0: ${fuera.join(' · ')}`).toEqual([]);
+}
+
+/** Captura la página completa; con un modal abierto, antes se verifica. Sin baseline si hay defectos. */
+async function capturar(page: Page, nombre: string, dialogo?: Locator) {
+  if (dialogo) {
+    await verificarBreakpoint(page, dialogo);
+    await verificarEscala(dialogo);
+  }
+  expect(test.info().errors.length, 'Sin baseline: la vista tiene defectos (ver errores anteriores)').toBe(0);
   // Sin foco ni hover: el cursor queda donde se hizo el último clic
   await page.mouse.move(0, 0);
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
@@ -159,8 +220,10 @@ async function capturar(page: Page, nombre: string) {
 }
 
 test.describe('TC-DIS-39 - Consistencia visual - Catálogo de Especies (RF-15)', () => {
-  // En serie: si el login falla se detiene, en vez de sumar intentos fallidos a la cuenta admin (bloqueo a los 5)
-  test.describe.configure({ mode: 'serial', timeout: 120_000 });
+  // Modo por defecto: un caso con defectos no impide evaluar los demás. Si el login falla, la
+  // marca MARCA_LOGIN_FALLIDO hace que los siguientes se omitan (la cuenta admin se bloquea a los 5).
+  test.describe.configure({ timeout: 120_000 });
+  test.beforeAll(() => fs.rmSync(MARCA_LOGIN_FALLIDO, { force: true }));
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_39_VIEWPORTS.`);
@@ -206,7 +269,7 @@ test.describe('TC-DIS-39 - Consistencia visual - Catálogo de Especies (RF-15)',
       await expect(dialogo).toBeVisible();
       await expect(dialogo.getByRole('textbox', { name: 'Nombre', exact: true })).toHaveValue('');
       await expect(grupoDeManejo(dialogo)).toHaveValue('');
-      await capturar(page, 'catalogo-form-crear.png');
+      await capturar(page, 'catalogo-form-crear.png', dialogo);
     });
 
     test('3a. Formulario crear especie con grupo de manejo elegido', async ({ page }) => {
@@ -218,7 +281,7 @@ test.describe('TC-DIS-39 - Consistencia visual - Catálogo de Especies (RF-15)',
       await dialogo.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Codorniz');
       await grupoDeManejo(dialogo).selectOption('MODELO_AVES');
       await expect(grupoDeManejo(dialogo)).toHaveValue('MODELO_AVES');
-      await capturar(page, 'catalogo-form-crear-grupo.png');
+      await capturar(page, 'catalogo-form-crear-grupo.png', dialogo);
     });
 
     test('3b. Formulario editar especie', async ({ page }) => {
@@ -227,7 +290,7 @@ test.describe('TC-DIS-39 - Consistencia visual - Catálogo de Especies (RF-15)',
       const nombre = fixture.items.find((e) => e.es_activo)!.nombre;
       const dialogo = await abrirEdicion(page, nombre);
       await expect(grupoDeManejo(dialogo)).toHaveValue('');
-      await capturar(page, 'catalogo-form-editar.png');
+      await capturar(page, 'catalogo-form-editar.png', dialogo);
     });
 
     test('3b. Formulario editar especie con grupo de manejo asignado (simulado)', async ({ page }, testInfo) => {
@@ -236,7 +299,7 @@ test.describe('TC-DIS-39 - Consistencia visual - Catálogo de Especies (RF-15)',
       await abrirCatalogoEspecies(page);
       const dialogo = await abrirEdicion(page, 'Tilapia Roja');
       await expect(grupoDeManejo(dialogo), 'El grupo asignado se precarga').toHaveValue(GRUPO_ASIGNADO);
-      await capturar(page, 'catalogo-form-editar-grupo.png');
+      await capturar(page, 'catalogo-form-editar-grupo.png', dialogo);
     });
 
     test('3c. Error al cambiar el grupo de una especie con dependencias (simulado)', async ({ page }, testInfo) => {
@@ -248,9 +311,11 @@ test.describe('TC-DIS-39 - Consistencia visual - Catálogo de Especies (RF-15)',
       const dialogo = await abrirEdicion(page, 'Tilapia Roja');
       await grupoDeManejo(dialogo).selectOption(GRUPO_NUEVO);
       await dialogo.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
-      await expect(dialogo.getByRole('alert').filter({ hasText: /error al guardar/i })).toContainText('dependencias');
+      // Error con field tipo_modelo: va debajo del select, sin alerta general (rc.40)
+      await expect(dialogo.getByRole('alert').filter({ hasText: ERROR_DEPENDENCIAS.fields[0].message })).toBeVisible();
+      await expect(grupoDeManejo(dialogo)).toHaveAttribute('aria-invalid', 'true');
       await expect(dialogo, 'El diálogo sigue abierto tras el error').toBeVisible();
-      await capturar(page, 'catalogo-error-dependencias.png');
+      await capturar(page, 'catalogo-error-dependencias.png', dialogo);
     });
 
     test('4. Listado vacío por filtro sin resultados', async ({ page }) => {
@@ -263,7 +328,6 @@ test.describe('TC-DIS-39 - Consistencia visual - Catálogo de Especies (RF-15)',
       await capturar(page, 'catalogo-listado-vacio.png');
     });
 
-    // Último en la serie: si falla no impide evaluar los anteriores
     test('5. Modal del formulario según el breakpoint del sistema de diseño', async ({ page }, testInfo) => {
       await servirCatalogo(page);
       await abrirCatalogoEspecies(page);
