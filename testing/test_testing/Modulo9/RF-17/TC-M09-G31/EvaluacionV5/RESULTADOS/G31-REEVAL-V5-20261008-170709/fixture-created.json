@@ -1,0 +1,467 @@
+{
+  "run_id": "G31-REEVAL-V5-20261008-170709",
+  "fase": "fixture",
+  "iniciado": "2026-10-08T17:08:48.000Z",
+  "estrategia": "PROVISION MINIMA POR API: ninguna area con dispositivo activo tiene exactamente un activo operativo cuyo umbral RF-17 clasifique 36/38/40, de modo que se crea el conjunto minimo coherente (especie QA, umbral QA, area QA, dispositivo QA, sensor QA, calibracion QA, activo QA) solo con endpoints publicos",
+  "creados": [
+    {
+      "tipo": "especie",
+      "id": 109,
+      "endpoint_creacion": "POST /configuracion/especies",
+      "payload_saneado": {
+        "nombre": "Qa Semaforo Geuno Baaibhahaj",
+        "descripcion": "Fixture temporal QA TC-M09-G31 G31-REEVAL-V5-20261008-170709",
+        "tipo_modelo": "MODELO_ACUICULTURA"
+      },
+      "endpoint_reversion": "PATCH /configuracion/especies/109/desactivar",
+      "estado_PRE": "no existia",
+      "estado_POST": "reversion diferida: desactivarla afecta al umbral QA y, con el, a la clasificacion de las tres lecturas (endpoint: PATCH /configuracion/especies/109/desactivar)"
+    },
+    {
+      "tipo": "umbral_rf17",
+      "id": 63,
+      "endpoint_creacion": "POST /configuracion/umbrales",
+      "payload_saneado": {
+        "id_especie": 109,
+        "id_variable_ambiental": 9,
+        "valor_min": "35.00",
+        "valor_max": "41.00",
+        "niveles": [
+          {
+            "nivel": "normal",
+            "limite_inferior": "35.00",
+            "limite_superior": "37.00"
+          },
+          {
+            "nivel": "precaucion",
+            "limite_inferior": "37.00",
+            "limite_superior": "39.00"
+          },
+          {
+            "nivel": "critico",
+            "limite_inferior": "39.00",
+            "limite_superior": "41.00"
+          }
+        ]
+      },
+      "endpoint_reversion": "PATCH /configuracion/umbrales/63/desactivar",
+      "estado_PRE": "no existia",
+      "estado_POST": "reversion diferida: desactivarlo reclasificaria las tres lecturas oficiales como GRIS (endpoint: PATCH /configuracion/umbrales/63/desactivar)"
+    },
+    {
+      "tipo": "infraestructura",
+      "id": 268,
+      "endpoint_creacion": "POST /configuracion/infraestructuras",
+      "payload_saneado": {
+        "nombre_infraestructura": "QA-G31-AREA-1008170709",
+        "tipo_area": "Estanque",
+        "superficie": "100.00",
+        "finca_id": 1,
+        "descripcion_infraestructura": "Fixture temporal QA TC-M09-G31 G31-REEVAL-V5-20261008-170709",
+        "especie_id": 109,
+        "tipo_modelo_asignado": "MODELO_ACUICULTURA"
+      },
+      "endpoint_reversion": "PATCH /configuracion/infraestructuras/268/desactivar",
+      "estado_PRE": "no existia",
+      "estado_POST": "no revertido: PATCH /configuracion/infraestructuras/268/desactivar -> 422"
+    },
+    {
+      "tipo": "dispositivo_iot",
+      "id": 203,
+      "endpoint_creacion": "POST /configuracion/dispositivos-iot",
+      "payload_saneado": {
+        "serial": "[REDACTED_ACCESS_KEY]",
+        "descripcion": "Fixture temporal QA TC-M09-G31 G31-REEVAL-V5-20261008-170709",
+        "id_infraestructura": 268,
+        "id_tipo_dispositivo": 1,
+        "es_activo": true
+      },
+      "endpoint_reversion": "PATCH /configuracion/dispositivos-iot/203/desactivar",
+      "estado_PRE": "no existia",
+      "estado_POST": "revertido por GET /configuracion/dispositivos-iot/203"
+    },
+    {
+      "tipo": "sensor",
+      "id": 53,
+      "endpoint_creacion": "POST /configuracion/dispositivos-iot/203/sensores",
+      "payload_saneado": {
+        "nombre": "Sensor QA G31 V5 1008170709",
+        "categoria": "TEMPERATURA"
+      },
+      "endpoint_reversion": "sin endpoint publico de reversion directa: se revierte al desactivar el dispositivo",
+      "estado_PRE": "no existia",
+      "estado_POST": "reversion diferida: no existe endpoint publico de baja de sensor; queda cubierto por la baja del dispositivo (endpoint: sin endpoint publico de reversion directa: se revierte al desactivar el dispositivo)"
+    },
+    {
+      "tipo": "asociacion_sensor_area",
+      "id": 49,
+      "endpoint_creacion": "POST /configuracion/sensores/53/asociar",
+      "payload_saneado": {
+        "id_dispositivo_iot": 203,
+        "id_infraestructura": 268,
+        "punto_instalacion": "QA G31 V5 1008170709"
+      },
+      "endpoint_reversion": "PATCH /infraestructuras/268/sensores/{id_asociacion}",
+      "estado_PRE": "el sensor no tenia asociacion",
+      "estado_POST": "reversion diferida: cerrarla dejaria sin area ni finca a las tres lecturas del historial (endpoint: PATCH /infraestructuras/268/sensores/{id_asociacion})"
+    },
+    {
+      "tipo": "calibracion",
+      "id": 23,
+      "endpoint_creacion": "POST /configuracion/sensores/53/calibrar",
+      "payload_saneado": {
+        "id_dispositivo_iot": 203,
+        "id_infraestructura": 268,
+        "valor_referencia": "36.00",
+        "ganancia": "1.0000",
+        "offset": "0.0000",
+        "fecha_calibracion": "2026-10-08T17:11:05.000Z",
+        "observaciones": "Fixture temporal QA TC-M09-G31 G31-REEVAL-V5-20261008-170709",
+        "modo_calibracion": "SENSOR"
+      },
+      "endpoint_reversion": "sin reversion: la calibracion es un registro historico; se revierte al desactivar el dispositivo",
+      "estado_PRE": "el sensor no tenia calibracion",
+      "estado_POST": "reversion diferida: registro historico de RF-24, sin endpoint de reversion y sin efecto fuera del dispositivo dado de baja (endpoint: sin reversion: la calibracion es un registro historico; se revierte al desactivar el dispositivo)"
+    },
+    {
+      "tipo": "activo_biologico",
+      "id": 755,
+      "endpoint_creacion": "POST /activos-biologicos",
+      "payload_saneado": {
+        "tipo_activo": "INDIVIDUAL",
+        "id_especie": 109,
+        "fecha_inicio_ciclo": "2026-10-08",
+        "origen_financiero": "nacimiento",
+        "id_infraestructura": 268,
+        "identificador": "QA-G31-ACTIVO-1008170709",
+        "raza": "QA G31 V5",
+        "sexo": "Hembra",
+        "fecha_nacimiento": "2026-04-11T17:12:16.000Z",
+        "peso_inicial": "0.250"
+      },
+      "endpoint_reversion": "POST /activos-biologicos/755/cierre",
+      "estado_PRE": "no existia",
+      "estado_POST": "revertido por GET /activos-biologicos/755"
+    }
+  ],
+  "escrituras_preparacion": 8,
+  "nota_intento_1": "El primer intento de la fase fixture uso POST /infraestructuras/{id}/sensores para asociar el sensor al area y recibio 422 SENSOR_SIN_AREA: ese endpoint es RF-49 Tipo B y exige que el sensor ya tenga asociacion de area. La asociacion se crea con POST /configuracion/sensores/{id_sensor}/asociar (RF-22 Flujo B). Lo creado hasta ese punto queda registrado aqui y se reutiliza en el reintento, de modo que nada queda huerfano ni duplicado. Ninguna escritura funcional de TC-66/67/68 se habia ejecutado todavia.",
+  "reintentos": 3,
+  "verificacion": {
+    "consultas": {
+      "especie": {
+        "id_especie": 109,
+        "nombre": "Qa Semaforo Geuno Baaibhahaj",
+        "descripcion": "Fixture temporal QA TC-M09-G31 G31-REEVAL-V5-20261008-170709",
+        "densidad_maxima_por_especie": null,
+        "tipo_modelo": "MODELO_ACUICULTURA",
+        "es_activo": true,
+        "fecha_creacion": "2026-10-08T17:08:49.224029Z",
+        "fecha_actualizacion": null
+      },
+      "activo": {
+        "id_activo_biologico": 755,
+        "id_especie": 109,
+        "tipo": "INDIVIDUAL",
+        "identificador": "QA-G31-ACTIVO-1008170709",
+        "fecha_inicio_ciclo": "2026-10-08",
+        "detalles_procedencia": null,
+        "origen_financiero": "nacimiento",
+        "costo_adquisicion": null,
+        "soporte_documental": null,
+        "descripcion": null,
+        "id_infraestructura": 268,
+        "atributos_dinamicos": null,
+        "id_estado": 1,
+        "nombre_estado": "ACTIVO",
+        "id_usuario": 104,
+        "fecha_creacion": "2026-10-08T17:12:17.317537Z",
+        "fecha_actualizacion": null,
+        "detalle_individual": {
+          "id_detalle": 581,
+          "raza": "QA G31 V5",
+          "sexo": "Hembra",
+          "fecha_nacimiento": "2026-04-11T17:12:16Z",
+          "peso_inicial": "0.250",
+          "fecha_creacion": "2026-10-08T17:12:17.317537Z"
+        },
+        "detalle_poblacional": null
+      },
+      "censo_area": {
+        "total_registros": 1,
+        "censo_completo": true,
+        "operativos": [
+          {
+            "id": 755,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 109
+          }
+        ]
+      },
+      "dispositivo": {
+        "id": 203,
+        "id_infraestructura": 268,
+        "es_activo": true,
+        "serial": "[REDACTED_ACCESS_KEY]"
+      },
+      "sensor": {
+        "id_sensores": 53,
+        "nombre": "Sensor QA G31 V5 1008170709",
+        "id_dispositivo_iot": 203,
+        "es_activo": true,
+        "categoria": "TEMPERATURA"
+      },
+      "asociaciones": [
+        {
+          "id_sensores_area_asociada": 49,
+          "id_sensor": 53,
+          "id_dispositivo_iot": 203,
+          "id_infraestructura": 268,
+          "punto_instalacion": "QA G31 V5 1008170709",
+          "tiene_estado": true,
+          "fecha_asociacion": "2026-10-08T17:11:35.638733Z",
+          "fecha_finalizacion": null,
+          "id_usuario": 104
+        }
+      ],
+      "calibracion_vigente": {
+        "id_calibracion": 23,
+        "id_dispositivo_iot": 203,
+        "id_sensor": 53,
+        "valor_referencia": 36,
+        "ganancia": 1,
+        "offset": 0,
+        "fecha_calibracion": "2026-10-08T17:11:05Z",
+        "id_usuario": 104,
+        "observaciones": "Fixture temporal QA TC-M09-G31 G31-REEVAL-V5-20261008-170709",
+        "modo_calibracion": "SENSOR"
+      },
+      "umbral": {
+        "id_umbral_ambiental": 63,
+        "id_especie": 109,
+        "id_variable_ambiental": 9,
+        "unidad_medida": "°C",
+        "valor_min": "35.00",
+        "valor_max": "41.00",
+        "es_activo": true,
+        "fecha_actualizacion": null,
+        "niveles": [
+          {
+            "nivel": "normal",
+            "limite_inferior": "35.00",
+            "limite_superior": "37.00"
+          },
+          {
+            "nivel": "precaucion",
+            "limite_inferior": "37.00",
+            "limite_superior": "39.00"
+          },
+          {
+            "nivel": "critico",
+            "limite_inferior": "39.00",
+            "limite_superior": "41.00"
+          }
+        ],
+        "estado_sincronizacion": "PENDIENTE",
+        "fecha_ultima_sincronizacion": null,
+        "motivo_fallo_sincronizacion": "Ningún Gateway Edge activo atiende las áreas de esta especie. El umbral quedó guardado y se propagará cuando se vuelva a editar con un Gateway asignado."
+      }
+    },
+    "clasificacion_esperada": [
+      {
+        "caso": "TC-M09-66",
+        "objetivo": "36.00",
+        "nivel_esperado": "normal",
+        "color_esperado": "VERDE",
+        "banda": "normal 35.00..37.00",
+        "color_calculado": "VERDE",
+        "en_frontera": false
+      },
+      {
+        "caso": "TC-M09-67",
+        "objetivo": "38.00",
+        "nivel_esperado": "precaucion",
+        "color_esperado": "AMARILLO",
+        "banda": "precaucion 37.00..39.00",
+        "color_calculado": "AMARILLO",
+        "en_frontera": false
+      },
+      {
+        "caso": "TC-M09-68",
+        "objetivo": "40.00",
+        "nivel_esperado": "critico",
+        "color_esperado": "ROJO",
+        "banda": "critico 39.00..41.00",
+        "color_calculado": "ROJO",
+        "en_frontera": false
+      }
+    ],
+    "calibracion": {
+      "id_calibracion": 23,
+      "ganancia": "1",
+      "offset": "0",
+      "formula": "valor_crudo = (objetivo - offset) / ganancia",
+      "crudos": {
+        "TC-M09-66": "36.00",
+        "TC-M09-67": "38.00",
+        "TC-M09-68": "40.00"
+      }
+    },
+    "dashboard_previo": {
+      "status": 200,
+      "sensor": null,
+      "alertas_activas_count": null
+    }
+  },
+  "oraculo_fixture": [
+    {
+      "caso": "FIXTURE",
+      "descripcion": "la especie del fixture existe y esta activa",
+      "cumple": true,
+      "observado": "109 activa=true"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "el activo biologico esta en estado operativo",
+      "cumple": true,
+      "observado": "755 estado=ACTIVO"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "el activo pertenece a la infraestructura del fixture",
+      "cumple": true,
+      "observado": 268
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "el activo es de la especie del umbral",
+      "cumple": true,
+      "observado": 109
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "el area tiene exactamente un activo operativo y es el objetivo (la vinculacion automatica quedara VINCULADA, no AMBIGUA)",
+      "cumple": true,
+      "observado": "1 operativos de 1 registros"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "el dispositivo IoT esta activo",
+      "cumple": true,
+      "observado": true
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "el dispositivo pertenece al area del fixture (de ahi toma el area la vinculacion)",
+      "cumple": true,
+      "observado": 268
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "el sensor de temperatura esta activo",
+      "cumple": true,
+      "observado": "53 TEMPERATURA activo=true"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "existe una asociacion vigente del sensor con el area",
+      "cumple": true,
+      "observado": "vigente"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "el sensor tiene calibracion vigente",
+      "cumple": true,
+      "observado": "id=23 ganancia=1 offset=0"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "el umbral RF-17 del fixture esta activo",
+      "cumple": true,
+      "observado": "id=63 35.00..41.00 sync=PENDIENTE"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "el umbral es de la variable alcanzable por la ingesta (TEMPERATURA_AMBIENTAL -> variable 9)",
+      "cumple": true,
+      "observado": 9
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "36.00 °C clasifica NORMAL/VERDE contra las bandas del umbral",
+      "cumple": true,
+      "observado": "banda=normal 35.00..37.00 color=VERDE"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "36.00 °C no cae en una frontera de banda",
+      "cumple": true,
+      "observado": "interior"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "38.00 °C clasifica PRECAUCION/AMARILLO contra las bandas del umbral",
+      "cumple": true,
+      "observado": "banda=precaucion 37.00..39.00 color=AMARILLO"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "38.00 °C no cae en una frontera de banda",
+      "cumple": true,
+      "observado": "interior"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "40.00 °C clasifica CRITICO/ROJO contra las bandas del umbral",
+      "cumple": true,
+      "observado": "banda=critico 39.00..41.00 color=ROJO"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "40.00 °C no cae en una frontera de banda",
+      "cumple": true,
+      "observado": "interior"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "los tres valores crudos quedan calculados antes del primer POST",
+      "cumple": true,
+      "observado": "{\"TC-M09-66\":\"36.00\",\"TC-M09-67\":\"38.00\",\"TC-M09-68\":\"40.00\"}"
+    },
+    {
+      "caso": "FIXTURE",
+      "descripcion": "el sensor no tiene alerta M03 activa que pueda enmascarar el color del dashboard",
+      "cumple": true,
+      "observado": "sin alerta"
+    }
+  ],
+  "resumen_oraculo_fixture": {
+    "total": 20,
+    "superadas": 20,
+    "fallidas": 0
+  },
+  "congelado": {
+    "FIXTURE_READY": true,
+    "SENSOR_ID": 53,
+    "DEVICE_ID": 203,
+    "INFRA_ID": 268,
+    "ACTIVO_OBJETIVO": 755,
+    "ESPECIE_ID": 109,
+    "UMBRAL_ID": 63,
+    "VARIABLE_ID": 9,
+    "CALIBRACION_ID": 23,
+    "codigo_ingesta": "TEMPERATURA_AMBIENTAL",
+    "unidad": "°C",
+    "ganancia": "1",
+    "offset": "0",
+    "crudos": {
+      "TC-M09-66": "36.00",
+      "TC-M09-67": "38.00",
+      "TC-M09-68": "40.00"
+    },
+    "nombre_sensor": "Sensor QA G31 V5 1008170709",
+    "creado_por_qa": true
+  },
+  "terminado": "2026-10-08T17:12:19.046Z"
+}
