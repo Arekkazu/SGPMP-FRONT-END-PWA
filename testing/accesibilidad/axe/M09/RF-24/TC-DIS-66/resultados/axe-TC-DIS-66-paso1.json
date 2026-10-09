@@ -13,7 +13,7 @@
     "orientationAngle": 0,
     "orientationType": "landscape-primary"
   },
-  "timestamp": "2026-10-06T16:43:27.487Z",
+  "timestamp": "2026-10-09T03:10:53.555Z",
   "url": "https://api.inmero.co/configuracion",
   "toolOptions": {
     "reporter": "v1"
@@ -636,40 +636,6 @@
       "description": "Ensure links are distinguished from surrounding text in a way that does not rely on color",
       "help": "Links must be distinguishable without relying on color",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/link-in-text-block?application=playwright",
-      "nodes": []
-    },
-    {
-      "id": "list",
-      "impact": null,
-      "tags": [
-        "cat.structure",
-        "wcag2a",
-        "wcag131",
-        "EN-301-549",
-        "EN-9.1.3.1",
-        "RGAAv4",
-        "RGAA-9.3.1"
-      ],
-      "description": "Ensure that lists are structured correctly",
-      "help": "<ul> and <ol> must only directly contain <li>, <script> or <template> elements",
-      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/list?application=playwright",
-      "nodes": []
-    },
-    {
-      "id": "listitem",
-      "impact": null,
-      "tags": [
-        "cat.structure",
-        "wcag2a",
-        "wcag131",
-        "EN-301-549",
-        "EN-9.1.3.1",
-        "RGAAv4",
-        "RGAA-9.3.1"
-      ],
-      "description": "Ensure <li> elements are used semantically",
-      "help": "<li> elements must be contained in a <ul> or <ol>",
-      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/listitem?application=playwright",
       "nodes": []
     },
     {
@@ -1470,9 +1436,9 @@
             }
           ],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo claro\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo oscuro\">",
           "target": [
-            "button[aria-label=\"Cambiar a modo claro\"]"
+            "button[aria-label=\"Cambiar a modo oscuro\"]"
           ]
         },
         {
@@ -1510,7 +1476,7 @@
             }
           ],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (15 sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (99+ sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
           "target": [
             "button[aria-controls=\"notification-tray\"]"
           ]
@@ -1550,7 +1516,7 @@
             }
           ],
           "impact": null,
-          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Santiago Cuevas\" title=\"Santiago Cuevas\">SC</div>",
+          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Admin Camila\" title=\"Admin Camila\">AC</div>",
           "target": [
             ".ds-appbar__avatar"
           ]
@@ -1633,6 +1599,166 @@
           "html": "<button type=\"button\" style=\"display: inline-flex...\" aria-current=\"page\">",
           "target": [
             "button[aria-current=\"page\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-allowed-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attributes are used correctly for the defined role"
+            },
+            {
+              "id": "aria-allowed-attr-elm",
+              "data": null,
+              "relatedNodes": [],
+              "message": "ARIA attributes are allowed for this element",
+              "impact": "critical"
+            },
+            {
+              "id": "aria-no-deprecated-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "No deprecated ARIA attributes are used"
+            }
+          ],
+          "none": [
+            {
+              "id": "aria-unsupported-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute is supported"
+            }
+          ],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la asociación\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-allowed-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attributes are used correctly for the defined role"
+            },
+            {
+              "id": "aria-allowed-attr-elm",
+              "data": null,
+              "relatedNodes": [],
+              "message": "ARIA attributes are allowed for this element",
+              "impact": "critical"
+            },
+            {
+              "id": "aria-no-deprecated-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "No deprecated ARIA attributes are used"
+            }
+          ],
+          "none": [
+            {
+              "id": "aria-unsupported-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute is supported"
+            }
+          ],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-allowed-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attributes are used correctly for the defined role"
+            },
+            {
+              "id": "aria-allowed-attr-elm",
+              "data": null,
+              "relatedNodes": [],
+              "message": "ARIA attributes are allowed for this element",
+              "impact": "critical"
+            },
+            {
+              "id": "aria-no-deprecated-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "No deprecated ARIA attributes are used"
+            }
+          ],
+          "none": [
+            {
+              "id": "aria-unsupported-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute is supported"
+            }
+          ],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la calibración\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-allowed-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attributes are used correctly for the defined role"
+            },
+            {
+              "id": "aria-allowed-attr-elm",
+              "data": null,
+              "relatedNodes": [],
+              "message": "ARIA attributes are allowed for this element",
+              "impact": "critical"
+            },
+            {
+              "id": "aria-no-deprecated-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "No deprecated ARIA attributes are used"
+            }
+          ],
+          "none": [
+            {
+              "id": "aria-unsupported-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute is supported"
+            }
+          ],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
           ]
         }
       ]
@@ -1913,9 +2039,9 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo claro\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo oscuro\">",
           "target": [
-            "button[aria-label=\"Cambiar a modo claro\"]"
+            "button[aria-label=\"Cambiar a modo oscuro\"]"
           ]
         },
         {
@@ -1931,7 +2057,7 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (15 sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (99+ sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
           "target": [
             "button[aria-controls=\"notification-tray\"]"
           ]
@@ -1949,7 +2075,7 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Santiago Cuevas\" title=\"Santiago Cuevas\">SC</div>",
+          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Admin Camila\" title=\"Admin Camila\">AC</div>",
           "target": [
             ".ds-appbar__avatar"
           ]
@@ -1988,6 +2114,78 @@
           "html": "<button type=\"button\" style=\"display: inline-flex...\" aria-current=\"page\">",
           "target": [
             "button[aria-current=\"page\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-conditional-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "ARIA attribute is allowed"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la asociación\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-conditional-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "ARIA attribute is allowed"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-conditional-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "ARIA attribute is allowed"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la calibración\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-conditional-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "ARIA attribute is allowed"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
           ]
         }
       ]
@@ -2449,7 +2647,7 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<div class=\"ds-sidebar__avatar\" aria-hidden=\"true\">SC</div>",
+          "html": "<div class=\"ds-sidebar__avatar\" aria-hidden=\"true\">AC</div>",
           "target": [
             ".ds-sidebar__avatar"
           ]
@@ -2545,9 +2743,9 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-sun\" aria-hidden=\"true\">",
+          "html": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-moon\" aria-hidden=\"true\">",
           "target": [
-            ".lucide-sun"
+            ".lucide-moon"
           ]
         },
         {
@@ -2609,7 +2807,7 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<span class=\"ds-appbar__notif-badge\" aria-hidden=\"true\">15</span>",
+          "html": "<span class=\"ds-appbar__notif-badge\" aria-hidden=\"true\">99+</span>",
           "target": [
             ".ds-appbar__notif-badge"
           ]
@@ -2705,6 +2903,134 @@
           ],
           "none": [],
           "impact": null,
+          "html": "<span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--active[aria-current=\"step\"] > .ds-stepper__marca[aria-hidden=\"true\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "focusable-modal-open",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements while a modal is open"
+            },
+            {
+              "id": "focusable-disabled",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            },
+            {
+              "id": "focusable-not-tabbable",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<span class=\"ds-stepper__marca\" aria-hidden=\"true\">2</span>",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--pending:nth-child(2) > .ds-stepper__marca[aria-hidden=\"true\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "focusable-modal-open",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements while a modal is open"
+            },
+            {
+              "id": "focusable-disabled",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            },
+            {
+              "id": "focusable-not-tabbable",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<span class=\"ds-stepper__marca\" aria-hidden=\"true\">3</span>",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--pending:nth-child(3) > .ds-stepper__marca[aria-hidden=\"true\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "focusable-modal-open",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements while a modal is open"
+            },
+            {
+              "id": "focusable-disabled",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            },
+            {
+              "id": "focusable-not-tabbable",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<span class=\"ds-stepper__marca\" aria-hidden=\"true\">4</span>",
+          "target": [
+            ".ds-stepper__paso--pending:nth-child(4) > .ds-stepper__marca[aria-hidden=\"true\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "focusable-modal-open",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements while a modal is open"
+            },
+            {
+              "id": "focusable-disabled",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            },
+            {
+              "id": "focusable-not-tabbable",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            }
+          ],
+          "none": [],
+          "impact": null,
           "html": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--brand-500)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-settings2 lucide-settings-2\" aria-hidden=\"true\">",
           "target": [
             ".lucide-settings2"
@@ -2740,6 +3066,102 @@
           "html": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"var(--brand-500)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shield-check\" aria-hidden=\"true\">",
           "target": [
             ".lucide-shield-check"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "focusable-modal-open",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements while a modal is open"
+            },
+            {
+              "id": "focusable-disabled",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            },
+            {
+              "id": "focusable-not-tabbable",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--active[aria-current=\"step\"] > .ds-stepper__marca[aria-hidden=\"true\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "focusable-modal-open",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements while a modal is open"
+            },
+            {
+              "id": "focusable-disabled",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            },
+            {
+              "id": "focusable-not-tabbable",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<span class=\"ds-stepper__marca\" aria-hidden=\"true\">2</span>",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--pending:nth-child(2) > .ds-stepper__marca[aria-hidden=\"true\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "focusable-modal-open",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements while a modal is open"
+            },
+            {
+              "id": "focusable-disabled",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            },
+            {
+              "id": "focusable-not-tabbable",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "No focusable elements contained within element"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<span class=\"ds-stepper__marca\" aria-hidden=\"true\">3</span>",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--pending:nth-child(3) > .ds-stepper__marca[aria-hidden=\"true\"]"
           ]
         }
       ]
@@ -2971,9 +3393,9 @@
             }
           ],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo claro\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo oscuro\">",
           "target": [
-            "button[aria-label=\"Cambiar a modo claro\"]"
+            "button[aria-label=\"Cambiar a modo oscuro\"]"
           ]
         },
         {
@@ -2989,7 +3411,7 @@
             }
           ],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (15 sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (99+ sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
           "target": [
             "button[aria-controls=\"notification-tray\"]"
           ]
@@ -3028,6 +3450,78 @@
           "html": "<button type=\"button\" style=\"display: inline-flex...\" aria-current=\"page\">",
           "target": [
             "button[aria-current=\"page\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [],
+          "none": [
+            {
+              "id": "aria-prohibited-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "ARIA attribute is allowed"
+            }
+          ],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la asociación\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [],
+          "none": [
+            {
+              "id": "aria-prohibited-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "ARIA attribute is allowed"
+            }
+          ],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [],
+          "none": [
+            {
+              "id": "aria-prohibited-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "ARIA attribute is allowed"
+            }
+          ],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la calibración\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [],
+          "none": [
+            {
+              "id": "aria-prohibited-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "ARIA attribute is allowed"
+            }
+          ],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
           ]
         }
       ]
@@ -3563,9 +4057,9 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo claro\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo oscuro\">",
           "target": [
-            "button[aria-label=\"Cambiar a modo claro\"]"
+            "button[aria-label=\"Cambiar a modo oscuro\"]"
           ]
         },
         {
@@ -3595,7 +4089,7 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Santiago Cuevas\" title=\"Santiago Cuevas\">SC</div>",
+          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Admin Camila\" title=\"Admin Camila\">AC</div>",
           "target": [
             ".ds-appbar__avatar"
           ]
@@ -3662,6 +4156,134 @@
           "html": "<button type=\"button\" style=\"display: inline-flex...\" aria-current=\"page\">",
           "target": [
             "button[aria-current=\"page\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-valid-attr-value",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute values are valid"
+            },
+            {
+              "id": "aria-errormessage",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "aria-errormessage exists and references elements visible to screen readers that use a supported aria-errormessage technique"
+            },
+            {
+              "id": "aria-level",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "aria-level values are valid"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la asociación\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-valid-attr-value",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute values are valid"
+            },
+            {
+              "id": "aria-errormessage",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "aria-errormessage exists and references elements visible to screen readers that use a supported aria-errormessage technique"
+            },
+            {
+              "id": "aria-level",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "aria-level values are valid"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-valid-attr-value",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute values are valid"
+            },
+            {
+              "id": "aria-errormessage",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "aria-errormessage exists and references elements visible to screen readers that use a supported aria-errormessage technique"
+            },
+            {
+              "id": "aria-level",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "aria-level values are valid"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la calibración\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [
+            {
+              "id": "aria-valid-attr-value",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute values are valid"
+            },
+            {
+              "id": "aria-errormessage",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "aria-errormessage exists and references elements visible to screen readers that use a supported aria-errormessage technique"
+            },
+            {
+              "id": "aria-level",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "aria-level values are valid"
+            }
+          ],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
           ]
         }
       ]
@@ -3893,9 +4515,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo claro\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo oscuro\">",
           "target": [
-            "button[aria-label=\"Cambiar a modo claro\"]"
+            "button[aria-label=\"Cambiar a modo oscuro\"]"
           ]
         },
         {
@@ -3911,7 +4533,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (15 sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (99+ sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
           "target": [
             "button[aria-controls=\"notification-tray\"]"
           ]
@@ -3929,7 +4551,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Santiago Cuevas\" title=\"Santiago Cuevas\">SC</div>",
+          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Admin Camila\" title=\"Admin Camila\">AC</div>",
           "target": [
             ".ds-appbar__avatar"
           ]
@@ -3968,6 +4590,78 @@
           "html": "<button type=\"button\" style=\"display: inline-flex...\" aria-current=\"page\">",
           "target": [
             "button[aria-current=\"page\"]"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "aria-valid-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute name is valid"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la asociación\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"]"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "aria-valid-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute name is valid"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "aria-valid-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute name is valid"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la calibración\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"]"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "aria-valid-attr",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "critical",
+              "message": "ARIA attribute name is valid"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
           ]
         }
       ]
@@ -4046,7 +4740,7 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<main id=\"contenido-principal\" tabindex=\"-1\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
+          "html": "<main id=\"contenido-principal\" tabindex=\"0\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
           "target": [
             "#contenido-principal"
           ]
@@ -4848,7 +5542,7 @@
           "impact": null,
           "html": "<div style=\"display: flex; align-items: center; gap: var(--s3);\">",
           "target": [
-            "div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div"
+            "div:nth-child(2) > div:nth-child(1) > div"
           ]
         },
         {
@@ -4942,519 +5636,7 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; margin-bottom: var(--s6); flex-wrap: wrap; gap: var(--s2);\">",
-          "target": [
-            "div:nth-child(3) > div:nth-child(2) > div:nth-child(2)"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; gap: var(--s2);\">",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(1)"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"width: 24px; height:...\">",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 700; color: var(--brand-600); white-space: nowrap;\">Dispositivo</span>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > span"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"flex: 1 1 16px; height: 2px; background: var(--surface-border); min-width: 12px;\"></div>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(2)"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; gap: var(--s2);\">",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(3)"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--surface-hover); color: var(--text-muted); border: 2px solid var(--surface-border);\">2</div>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(3) > div"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap;\">Sensor</span>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(3) > span"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"flex: 1 1 16px; height: 2px; background: var(--surface-border); min-width: 12px;\"></div>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(4)"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; gap: var(--s2);\">",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(5)"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--surface-hover); color: var(--text-muted); border: 2px solid var(--surface-border);\">3</div>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(5) > div"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap;\">Área destino</span>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(5) > span"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"flex: 1 1 16px; height: 2px; background: var(--surface-border); min-width: 12px;\"></div>",
-          "target": [
-            "div:nth-child(6)"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; gap: var(--s2);\">",
-          "target": [
-            "div:nth-child(7)"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--surface-hover); color: var(--text-muted); border: 2px solid var(--surface-border);\">4</div>",
-          "target": [
-            "div:nth-child(7) > div"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap;\">Confirmar</span>",
-          "target": [
-            "div:nth-child(7) > span"
-          ]
-        },
-        {
-          "any": [],
-          "all": [
-            {
-              "id": "important-letter-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "Letter-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-word-spacing",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "word-spacing in the style attribute is not set to !important, or meets the minimum"
-            },
-            {
-              "id": "important-line-height",
-              "data": null,
-              "relatedNodes": [],
-              "impact": "serious",
-              "message": "line-height in the style attribute is not set to !important, or meets the minimum"
-            }
-          ],
-          "none": [],
-          "impact": null,
-          "html": "<p style=\"font-size: 13px; color: var(--text-secondary); margin-bottom: var(--s4);\">Paso 1 — Elige el dispositivo que contiene el sensor a vincular:</p>",
+          "html": "<p tabindex=\"-1\" style=\"font-size: 13px; color: var(--text-secondary); margin-bottom: var(--s4);\">Paso 1 — Elige el dispositivo que contiene el sensor a vincular:</p>",
           "target": [
             "div:nth-child(3) > div:nth-child(2) > p"
           ]
@@ -5488,7 +5670,7 @@
           "impact": null,
           "html": "<div style=\"display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s4);\">",
           "target": [
-            "div:nth-child(3) > div:nth-child(2) > div:nth-child(4)"
+            "div:nth-child(2) > div:nth-child(4)"
           ]
         },
         {
@@ -5936,9 +6118,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo claro\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo oscuro\">",
           "target": [
-            "button[aria-label=\"Cambiar a modo claro\"]"
+            "button[aria-label=\"Cambiar a modo oscuro\"]"
           ]
         },
         {
@@ -5954,7 +6136,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (15 sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (99+ sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
           "target": [
             "button[aria-controls=\"notification-tray\"]"
           ]
@@ -6159,7 +6341,7 @@
               "data": null,
               "relatedNodes": [
                 {
-                  "html": "<main id=\"contenido-principal\" tabindex=\"-1\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
+                  "html": "<main id=\"contenido-principal\" tabindex=\"0\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
                   "target": [
                     "#contenido-principal"
                   ]
@@ -6172,7 +6354,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"dark\">",
+          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"light\">",
           "target": [
             "html"
           ]
@@ -6181,7 +6363,7 @@
     },
     {
       "id": "color-contrast",
-      "impact": "serious",
+      "impact": null,
       "tags": [
         "cat.color",
         "wcag2aa",
@@ -6204,15 +6386,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#d8e8d2",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 15.32,
+                "bgColor": "#141610",
+                "contrastRatio": 14.23,
                 "fontSize": "8.6pt (11.5px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 15.32"
+              "message": "Element has sufficient color contrast of 14.23"
             }
           ],
           "all": [],
@@ -6229,21 +6411,21 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#7d9a75",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 6.31,
+                "bgColor": "#141610",
+                "contrastRatio": 5.86,
                 "fontSize": "6.8pt (9px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 6.31"
+              "message": "Element has sufficient color contrast of 5.86"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div class=\"ds-sidebar__logo-sub\">Finca Limite fxoneedgly</div>",
+          "html": "<div class=\"ds-sidebar__logo-sub\">Sistema Pecuario</div>",
           "target": [
             ".ds-sidebar__logo-sub"
           ]
@@ -6254,15 +6436,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#7d9a75",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 6.31,
+                "bgColor": "#141610",
+                "contrastRatio": 5.86,
                 "fontSize": "6.8pt (9px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 6.31"
+              "message": "Element has sufficient color contrast of 5.86"
             }
           ],
           "all": [],
@@ -6279,15 +6461,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#a3c49a",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 10.21,
+                "bgColor": "#141610",
+                "contrastRatio": 9.47,
                 "fontSize": "9.4pt (12.5px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 10.21"
+              "message": "Element has sufficient color contrast of 9.47"
             }
           ],
           "all": [],
@@ -6304,15 +6486,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#a3c49a",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 10.21,
+                "bgColor": "#141610",
+                "contrastRatio": 9.47,
                 "fontSize": "9.4pt (12.5px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 10.21"
+              "message": "Element has sufficient color contrast of 9.47"
             }
           ],
           "all": [],
@@ -6329,15 +6511,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#a3c49a",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 10.21,
+                "bgColor": "#141610",
+                "contrastRatio": 9.47,
                 "fontSize": "9.4pt (12.5px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 10.21"
+              "message": "Element has sufficient color contrast of 9.47"
             }
           ],
           "all": [],
@@ -6354,15 +6536,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#a3c49a",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 10.21,
+                "bgColor": "#141610",
+                "contrastRatio": 9.47,
                 "fontSize": "9.4pt (12.5px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 10.21"
+              "message": "Element has sufficient color contrast of 9.47"
             }
           ],
           "all": [],
@@ -6379,15 +6561,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#a3c49a",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 10.21,
+                "bgColor": "#141610",
+                "contrastRatio": 9.47,
                 "fontSize": "9.4pt (12.5px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 10.21"
+              "message": "Element has sufficient color contrast of 9.47"
             }
           ],
           "all": [],
@@ -6404,15 +6586,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#a3c49a",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 10.21,
+                "bgColor": "#141610",
+                "contrastRatio": 9.47,
                 "fontSize": "9.4pt (12.5px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 10.21"
+              "message": "Element has sufficient color contrast of 9.47"
             }
           ],
           "all": [],
@@ -6429,15 +6611,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#a3c49a",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 10.21,
+                "bgColor": "#141610",
+                "contrastRatio": 9.47,
                 "fontSize": "9.4pt (12.5px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 10.21"
+              "message": "Element has sufficient color contrast of 9.47"
             }
           ],
           "all": [],
@@ -6454,15 +6636,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#ffffff",
-                "bgColor": "#0e1b0e",
-                "contrastRatio": 17.76,
+                "bgColor": "#172314",
+                "contrastRatio": 16.31,
                 "fontSize": "9.4pt (12.5px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 17.76"
+              "message": "Element has sufficient color contrast of 16.31"
             }
           ],
           "all": [],
@@ -6479,15 +6661,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#7d9a75",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 6.31,
+                "bgColor": "#141610",
+                "contrastRatio": 5.86,
                 "fontSize": "6.8pt (9px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 6.31"
+              "message": "Element has sufficient color contrast of 5.86"
             }
           ],
           "all": [],
@@ -6504,15 +6686,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#a3c49a",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 10.21,
+                "bgColor": "#141610",
+                "contrastRatio": 9.47,
                 "fontSize": "9.4pt (12.5px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 10.21"
+              "message": "Element has sufficient color contrast of 9.47"
             }
           ],
           "all": [],
@@ -6528,22 +6710,22 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#d8ecda",
-                "bgColor": "#1a521f",
-                "contrastRatio": 7.45,
+                "fgColor": "#133d17",
+                "bgColor": "#b2d8b5",
+                "contrastRatio": 7.83,
                 "fontSize": "8.6pt (11.52px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 7.45"
+              "message": "Element has sufficient color contrast of 7.83"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div class=\"ds-sidebar__avatar\" aria-hidden=\"true\">SC</div>",
+          "html": "<div class=\"ds-sidebar__avatar\" aria-hidden=\"true\">AC</div>",
           "target": [
             ".ds-sidebar__avatar"
           ]
@@ -6554,21 +6736,21 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#ffffff",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 19.63,
+                "bgColor": "#141610",
+                "contrastRatio": 18.22,
                 "fontSize": "9.0pt (12px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 19.63"
+              "message": "Element has sufficient color contrast of 18.22"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<span class=\"ds-sidebar__user-name\">Santiago Cuevas</span>",
+          "html": "<span class=\"ds-sidebar__user-name\">Admin Camila</span>",
           "target": [
             ".ds-sidebar__user-name"
           ]
@@ -6579,15 +6761,15 @@
               "id": "color-contrast",
               "data": {
                 "fgColor": "#7d9a75",
-                "bgColor": "#0a0c09",
-                "contrastRatio": 6.31,
+                "bgColor": "#141610",
+                "contrastRatio": 5.86,
                 "fontSize": "7.5pt (10px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 6.31"
+              "message": "Element has sufficient color contrast of 5.86"
             }
           ],
           "all": [],
@@ -6618,7 +6800,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<span class=\"ds-appbar__notif-badge\" aria-hidden=\"true\">15</span>",
+          "html": "<span class=\"ds-appbar__notif-badge\" aria-hidden=\"true\">99+</span>",
           "target": [
             ".ds-appbar__notif-badge"
           ]
@@ -6628,22 +6810,22 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#b2d8b5",
-                "bgColor": "#133d17",
-                "contrastRatio": 7.83,
+                "fgColor": "#1a521f",
+                "bgColor": "#d8ecda",
+                "contrastRatio": 7.45,
                 "fontSize": "8.4pt (11.2px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 7.83"
+              "message": "Element has sufficient color contrast of 7.45"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Santiago Cuevas\" title=\"Santiago Cuevas\">SC</div>",
+          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Admin Camila\" title=\"Admin Camila\">AC</div>",
           "target": [
             ".ds-appbar__avatar"
           ]
@@ -6653,16 +6835,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#f0f2ee",
-                "bgColor": "#0f110e",
-                "contrastRatio": 16.84,
+                "fgColor": "#252820",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 14.17,
                 "fontSize": "15.0pt (20px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "3:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 16.84"
+              "message": "Element has sufficient color contrast of 14.17"
             }
           ],
           "all": [],
@@ -6678,16 +6860,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#8a9485",
-                "bgColor": "#0f110e",
-                "contrastRatio": 6.01,
+                "fgColor": "#696f64",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 4.89,
                 "fontSize": "9.8pt (13px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 6.01"
+              "message": "Element has sufficient color contrast of 4.89"
             }
           ],
           "all": [],
@@ -6703,16 +6885,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#c8d0c4",
-                "bgColor": "#0f110e",
-                "contrastRatio": 11.99,
+                "fgColor": "#585e53",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 6.33,
                 "fontSize": "10.5pt (14px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 11.99"
+              "message": "Element has sufficient color contrast of 6.33"
             }
           ],
           "all": [],
@@ -6728,16 +6910,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#c8d0c4",
-                "bgColor": "#0f110e",
-                "contrastRatio": 11.99,
+                "fgColor": "#585e53",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 6.33,
                 "fontSize": "10.5pt (14px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 11.99"
+              "message": "Element has sufficient color contrast of 6.33"
             }
           ],
           "all": [],
@@ -6753,16 +6935,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#c8d0c4",
-                "bgColor": "#0f110e",
-                "contrastRatio": 11.99,
+                "fgColor": "#585e53",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 6.33,
                 "fontSize": "10.5pt (14px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 11.99"
+              "message": "Element has sufficient color contrast of 6.33"
             }
           ],
           "all": [],
@@ -6778,16 +6960,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#7eba82",
-                "bgColor": "#0f110e",
-                "contrastRatio": 8.34,
+                "fgColor": "#226a28",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 6.29,
                 "fontSize": "10.5pt (14px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 8.34"
+              "message": "Element has sufficient color contrast of 6.29"
             }
           ],
           "all": [],
@@ -6803,16 +6985,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#c8d0c4",
-                "bgColor": "#0f110e",
-                "contrastRatio": 11.99,
+                "fgColor": "#585e53",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 6.33,
                 "fontSize": "10.5pt (14px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 11.99"
+              "message": "Element has sufficient color contrast of 6.33"
             }
           ],
           "all": [],
@@ -6828,16 +7010,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#c8d0c4",
-                "bgColor": "#0f110e",
-                "contrastRatio": 11.99,
+                "fgColor": "#585e53",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 6.33,
                 "fontSize": "10.5pt (14px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 11.99"
+              "message": "Element has sufficient color contrast of 6.33"
             }
           ],
           "all": [],
@@ -6853,16 +7035,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#c8d0c4",
-                "bgColor": "#0f110e",
-                "contrastRatio": 11.99,
+                "fgColor": "#585e53",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 6.33,
                 "fontSize": "10.5pt (14px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 11.99"
+              "message": "Element has sufficient color contrast of 6.33"
             }
           ],
           "all": [],
@@ -6878,16 +7060,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#f0f2ee",
-                "bgColor": "#0f110e",
-                "contrastRatio": 16.84,
+                "fgColor": "#252820",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 14.17,
                 "fontSize": "12.0pt (16px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 16.84"
+              "message": "Element has sufficient color contrast of 14.17"
             }
           ],
           "all": [],
@@ -6903,16 +7085,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#8a9485",
-                "bgColor": "#0f110e",
-                "contrastRatio": 6.01,
+                "fgColor": "#696f64",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 4.89,
                 "fontSize": "9.0pt (12px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 6.01"
+              "message": "Element has sufficient color contrast of 4.89"
             }
           ],
           "all": [],
@@ -6928,16 +7110,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#c8d0c4",
-                "bgColor": "#0f110e",
-                "contrastRatio": 11.99,
+                "fgColor": "#585e53",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 6.33,
                 "fontSize": "9.8pt (13px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 11.99"
+              "message": "Element has sufficient color contrast of 6.33"
             }
           ],
           "all": [],
@@ -6953,16 +7135,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#f0f2ee",
-                "bgColor": "#0f110e",
-                "contrastRatio": 16.84,
+                "fgColor": "#252820",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 14.17,
                 "fontSize": "12.0pt (16px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 16.84"
+              "message": "Element has sufficient color contrast of 14.17"
             }
           ],
           "all": [],
@@ -6978,16 +7160,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#8a9485",
-                "bgColor": "#0f110e",
-                "contrastRatio": 6.01,
+                "fgColor": "#696f64",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 4.89,
                 "fontSize": "9.0pt (12px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 6.01"
+              "message": "Element has sufficient color contrast of 4.89"
             }
           ],
           "all": [],
@@ -7003,24 +7185,24 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#7eba82",
-                "bgColor": "#0f110e",
-                "contrastRatio": 8.34,
+                "fgColor": "#226a28",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 6.29,
                 "fontSize": "9.0pt (12px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 8.34"
+              "message": "Element has sufficient color contrast of 6.29"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 700; color: var(--brand-600); white-space: nowrap;\">Dispositivo</span>",
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
           "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > span"
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
           ]
         },
         {
@@ -7028,24 +7210,24 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#8a9485",
-                "bgColor": "#1f241d",
-                "contrastRatio": 5.01,
+                "fgColor": "#ffffff",
+                "bgColor": "#226a28",
+                "contrastRatio": 6.64,
                 "fontSize": "8.3pt (11px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 5.01"
+              "message": "Element has sufficient color contrast of 6.64"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div style=\"width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--surface-hover); color: var(--text-muted); border: 2px solid var(--surface-border);\">2</div>",
+          "html": "<span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>",
           "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(3) > div"
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--active[aria-current=\"step\"] > .ds-stepper__marca[aria-hidden=\"true\"]"
           ]
         },
         {
@@ -7053,24 +7235,24 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#8a9485",
-                "bgColor": "#0f110e",
-                "contrastRatio": 6.01,
+                "fgColor": "#696f64",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 4.89,
                 "fontSize": "9.0pt (12px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 6.01"
+              "message": "Element has sufficient color contrast of 4.89"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap;\">Sensor</span>",
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">2</span>Sensor</li>",
           "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(3) > span"
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--pending:nth-child(2)"
           ]
         },
         {
@@ -7078,24 +7260,24 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#8a9485",
-                "bgColor": "#1f241d",
-                "contrastRatio": 5.01,
+                "fgColor": "#696f64",
+                "bgColor": "#f0f2ee",
+                "contrastRatio": 4.59,
                 "fontSize": "8.3pt (11px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 5.01"
+              "message": "Element has sufficient color contrast of 4.59"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div style=\"width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--surface-hover); color: var(--text-muted); border: 2px solid var(--surface-border);\">3</div>",
+          "html": "<span class=\"ds-stepper__marca\" aria-hidden=\"true\">2</span>",
           "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(5) > div"
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--pending:nth-child(2) > .ds-stepper__marca[aria-hidden=\"true\"]"
           ]
         },
         {
@@ -7103,24 +7285,24 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#8a9485",
-                "bgColor": "#0f110e",
-                "contrastRatio": 6.01,
+                "fgColor": "#696f64",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 4.89,
                 "fontSize": "9.0pt (12px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 6.01"
+              "message": "Element has sufficient color contrast of 4.89"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap;\">Área destino</span>",
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">3</span>Área destino</li>",
           "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(5) > span"
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--pending:nth-child(3)"
           ]
         },
         {
@@ -7128,24 +7310,24 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#8a9485",
-                "bgColor": "#1f241d",
-                "contrastRatio": 5.01,
+                "fgColor": "#696f64",
+                "bgColor": "#f0f2ee",
+                "contrastRatio": 4.59,
                 "fontSize": "8.3pt (11px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 5.01"
+              "message": "Element has sufficient color contrast of 4.59"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div style=\"width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--surface-hover); color: var(--text-muted); border: 2px solid var(--surface-border);\">4</div>",
+          "html": "<span class=\"ds-stepper__marca\" aria-hidden=\"true\">3</span>",
           "target": [
-            "div:nth-child(7) > div"
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--pending:nth-child(3) > .ds-stepper__marca[aria-hidden=\"true\"]"
           ]
         },
         {
@@ -7153,24 +7335,24 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#8a9485",
-                "bgColor": "#0f110e",
-                "contrastRatio": 6.01,
+                "fgColor": "#696f64",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 4.89,
                 "fontSize": "9.0pt (12px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 6.01"
+              "message": "Element has sufficient color contrast of 4.89"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap;\">Confirmar</span>",
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">4</span>Confirmar</li>",
           "target": [
-            "div:nth-child(7) > span"
+            ".ds-stepper__paso--pending:nth-child(4)"
           ]
         },
         {
@@ -7178,22 +7360,47 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#c8d0c4",
-                "bgColor": "#0f110e",
-                "contrastRatio": 11.99,
+                "fgColor": "#696f64",
+                "bgColor": "#f0f2ee",
+                "contrastRatio": 4.59,
+                "fontSize": "8.3pt (11px)",
+                "fontWeight": "bold",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element has sufficient color contrast of 4.59"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<span class=\"ds-stepper__marca\" aria-hidden=\"true\">4</span>",
+          "target": [
+            ".ds-stepper__paso--pending:nth-child(4) > .ds-stepper__marca[aria-hidden=\"true\"]"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "fgColor": "#585e53",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 6.33,
                 "fontSize": "9.8pt (13px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 11.99"
+              "message": "Element has sufficient color contrast of 6.33"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<p style=\"font-size: 13px; color: var(--text-secondary); margin-bottom: var(--s4);\">Paso 1 — Elige el dispositivo que contiene el sensor a vincular:</p>",
+          "html": "<p tabindex=\"-1\" style=\"font-size: 13px; color: var(--text-secondary); margin-bottom: var(--s4);\">Paso 1 — Elige el dispositivo que contiene el sensor a vincular:</p>",
           "target": [
             "div:nth-child(3) > div:nth-child(2) > p"
           ]
@@ -7203,16 +7410,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#f0f2ee",
-                "bgColor": "#0f110e",
-                "contrastRatio": 16.84,
+                "fgColor": "#252820",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 14.17,
                 "fontSize": "12.0pt (16px)",
                 "fontWeight": "bold",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 16.84"
+              "message": "Element has sufficient color contrast of 14.17"
             }
           ],
           "all": [],
@@ -7228,16 +7435,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#8a9485",
-                "bgColor": "#0f110e",
-                "contrastRatio": 6.01,
+                "fgColor": "#696f64",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 4.89,
                 "fontSize": "9.0pt (12px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 6.01"
+              "message": "Element has sufficient color contrast of 4.89"
             }
           ],
           "all": [],
@@ -7253,16 +7460,16 @@
             {
               "id": "color-contrast",
               "data": {
-                "fgColor": "#c8d0c4",
-                "bgColor": "#0f110e",
-                "contrastRatio": 11.99,
+                "fgColor": "#585e53",
+                "bgColor": "#f8f9f7",
+                "contrastRatio": 6.33,
                 "fontSize": "9.8pt (13px)",
                 "fontWeight": "normal",
                 "expectedContrastRatio": "4.5:1"
               },
               "relatedNodes": [],
               "impact": "serious",
-              "message": "Element has sufficient color contrast of 11.99"
+              "message": "Element has sufficient color contrast of 6.33"
             }
           ],
           "all": [],
@@ -7307,7 +7514,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"dark\">",
+          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"light\">",
           "target": [
             "html"
           ]
@@ -7585,7 +7792,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"dark\">",
+          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"light\">",
           "target": [
             "html"
           ]
@@ -7624,7 +7831,7 @@
             }
           ],
           "impact": null,
-          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"dark\">",
+          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"light\">",
           "target": [
             "html"
           ]
@@ -7690,7 +7897,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<main id=\"contenido-principal\" tabindex=\"-1\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
+          "html": "<main id=\"contenido-principal\" tabindex=\"0\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
           "target": [
             "#contenido-principal"
           ]
@@ -7752,7 +7959,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<main id=\"contenido-principal\" tabindex=\"-1\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
+          "html": "<main id=\"contenido-principal\" tabindex=\"0\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
           "target": [
             "#contenido-principal"
           ]
@@ -7783,7 +7990,7 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"dark\">",
+          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"light\">",
           "target": [
             "html"
           ]
@@ -7859,7 +8066,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<main id=\"contenido-principal\" tabindex=\"-1\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
+          "html": "<main id=\"contenido-principal\" tabindex=\"0\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
           "target": [
             "#contenido-principal"
           ]
@@ -8236,6 +8443,204 @@
       ]
     },
     {
+      "id": "list",
+      "impact": null,
+      "tags": [
+        "cat.structure",
+        "wcag2a",
+        "wcag131",
+        "EN-301-549",
+        "EN-9.1.3.1",
+        "RGAAv4",
+        "RGAA-9.3.1"
+      ],
+      "description": "Ensure that lists are structured correctly",
+      "help": "<ul> and <ol> must only directly contain <li>, <script> or <template> elements",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/list?application=playwright",
+      "nodes": [
+        {
+          "any": [],
+          "all": [],
+          "none": [
+            {
+              "id": "only-listitems",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "List element only has direct children that are allowed inside <li> elements"
+            }
+          ],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la asociación\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"]"
+          ]
+        },
+        {
+          "any": [],
+          "all": [],
+          "none": [
+            {
+              "id": "only-listitems",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "List element only has direct children that are allowed inside <li> elements"
+            }
+          ],
+          "impact": null,
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la calibración\">",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "listitem",
+      "impact": null,
+      "tags": [
+        "cat.structure",
+        "wcag2a",
+        "wcag131",
+        "EN-301-549",
+        "EN-9.1.3.1",
+        "RGAAv4",
+        "RGAA-9.3.1"
+      ],
+      "description": "Ensure <li> elements are used semantically",
+      "help": "<li> elements must be contained in a <ul> or <ol>",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/listitem?application=playwright",
+      "nodes": [
+        {
+          "any": [
+            {
+              "id": "listitem",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "List item has a <ul>, <ol> or role=\"list\" parent element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "listitem",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "List item has a <ul>, <ol> or role=\"list\" parent element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">2</span>Sensor</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--pending:nth-child(2)"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "listitem",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "List item has a <ul>, <ol> or role=\"list\" parent element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">3</span>Área destino</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--pending:nth-child(3)"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "listitem",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "List item has a <ul>, <ol> or role=\"list\" parent element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">4</span>Confirmar</li>",
+          "target": [
+            ".ds-stepper__paso--pending:nth-child(4)"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "listitem",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "List item has a <ul>, <ol> or role=\"list\" parent element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "listitem",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "List item has a <ul>, <ol> or role=\"list\" parent element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">2</span>Sensor</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--pending:nth-child(2)"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "listitem",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "List item has a <ul>, <ol> or role=\"list\" parent element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">3</span>Registrar calibración</li>",
+          "target": [
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--pending:nth-child(3)"
+          ]
+        }
+      ]
+    },
+    {
       "id": "meta-viewport-large",
       "impact": null,
       "tags": [
@@ -8370,9 +8775,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo claro\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo oscuro\">",
           "target": [
-            "button[aria-label=\"Cambiar a modo claro\"]"
+            "button[aria-label=\"Cambiar a modo oscuro\"]"
           ]
         },
         {
@@ -8388,7 +8793,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (15 sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (99+ sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
           "target": [
             "button[aria-controls=\"notification-tray\"]"
           ]
@@ -8545,7 +8950,7 @@
           ],
           "none": [],
           "impact": null,
-          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"dark\">",
+          "html": "<html lang=\"es-CO\" class=\"ion-ce plt-desktop md\" mode=\"md\" data-theme=\"light\">",
           "target": [
             "html"
           ]
@@ -8720,7 +9125,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div><div class=\"ds-sidebar__logo-text\">SGP Multiespecie</div><div class=\"ds-sidebar__logo-sub\">Finca Limite fxoneedgly</div></div>",
+          "html": "<div><div class=\"ds-sidebar__logo-text\">SGP Multiespecie</div><div class=\"ds-sidebar__logo-sub\">Sistema Pecuario</div></div>",
           "target": [
             ".ds-sidebar__logo > div:nth-child(2)"
           ]
@@ -8760,7 +9165,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div class=\"ds-sidebar__logo-sub\">Finca Limite fxoneedgly</div>",
+          "html": "<div class=\"ds-sidebar__logo-sub\">Sistema Pecuario</div>",
           "target": [
             ".ds-sidebar__logo-sub"
           ]
@@ -9440,7 +9845,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div class=\"ds-sidebar__user-info\"><span class=\"ds-sidebar__user-name\">Santiago Cuevas</span><span class=\"ds-sidebar__user-role\">Administrador</span></div>",
+          "html": "<div class=\"ds-sidebar__user-info\"><span class=\"ds-sidebar__user-name\">Admin Camila</span><span class=\"ds-sidebar__user-role\">Administrador</span></div>",
           "target": [
             ".ds-sidebar__user-info"
           ]
@@ -9460,7 +9865,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<span class=\"ds-sidebar__user-name\">Santiago Cuevas</span>",
+          "html": "<span class=\"ds-sidebar__user-name\">Admin Camila</span>",
           "target": [
             ".ds-sidebar__user-name"
           ]
@@ -9600,9 +10005,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo claro\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-label=\"Cambiar a modo oscuro\">",
           "target": [
-            "button[aria-label=\"Cambiar a modo claro\"]"
+            "button[aria-label=\"Cambiar a modo oscuro\"]"
           ]
         },
         {
@@ -9620,7 +10025,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (15 sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (99+ sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
           "target": [
             "button[aria-controls=\"notification-tray\"]"
           ]
@@ -9640,7 +10045,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Santiago Cuevas\" title=\"Santiago Cuevas\">SC</div>",
+          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Admin Camila\" title=\"Admin Camila\">AC</div>",
           "target": [
             ".ds-appbar__avatar"
           ]
@@ -9660,7 +10065,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<main id=\"contenido-principal\" tabindex=\"-1\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
+          "html": "<main id=\"contenido-principal\" tabindex=\"0\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
           "target": [
             "#contenido-principal"
           ]
@@ -10202,7 +10607,7 @@
           "impact": null,
           "html": "<div style=\"display: flex; align-items: center; gap: var(--s3);\">",
           "target": [
-            "div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div"
+            "div:nth-child(2) > div:nth-child(1) > div"
           ]
         },
         {
@@ -10280,9 +10685,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; margin-bottom: var(--s6); flex-wrap: wrap; gap: var(--s2);\">",
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la asociación\">",
           "target": [
-            "div:nth-child(3) > div:nth-child(2) > div:nth-child(2)"
+            "ol[aria-label=\"Pasos de la asociación\"]"
           ]
         },
         {
@@ -10300,9 +10705,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; gap: var(--s2);\">",
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
           "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(1)"
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
           ]
         },
         {
@@ -10320,9 +10725,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div style=\"width: 24px; height:...\">",
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">2</span>Sensor</li>",
           "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div"
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--pending:nth-child(2)"
           ]
         },
         {
@@ -10340,9 +10745,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 700; color: var(--brand-600); white-space: nowrap;\">Dispositivo</span>",
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">3</span>Área destino</li>",
           "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > span"
+            "ol[aria-label=\"Pasos de la asociación\"] > .ds-stepper__paso--pending:nth-child(3)"
           ]
         },
         {
@@ -10360,9 +10765,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div style=\"flex: 1 1 16px; height: 2px; background: var(--surface-border); min-width: 12px;\"></div>",
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">4</span>Confirmar</li>",
           "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(2)"
+            ".ds-stepper__paso--pending:nth-child(4)"
           ]
         },
         {
@@ -10380,227 +10785,7 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; gap: var(--s2);\">",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(3)"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--surface-hover); color: var(--text-muted); border: 2px solid var(--surface-border);\">2</div>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(3) > div"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap;\">Sensor</span>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(3) > span"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"flex: 1 1 16px; height: 2px; background: var(--surface-border); min-width: 12px;\"></div>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(4)"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; gap: var(--s2);\">",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(5)"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--surface-hover); color: var(--text-muted); border: 2px solid var(--surface-border);\">3</div>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(5) > div"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap;\">Área destino</span>",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(5) > span"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"flex: 1 1 16px; height: 2px; background: var(--surface-border); min-width: 12px;\"></div>",
-          "target": [
-            "div:nth-child(6)"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; gap: var(--s2);\">",
-          "target": [
-            "div:nth-child(7)"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--surface-hover); color: var(--text-muted); border: 2px solid var(--surface-border);\">4</div>",
-          "target": [
-            "div:nth-child(7) > div"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap;\">Confirmar</span>",
-          "target": [
-            "div:nth-child(7) > span"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<p style=\"font-size: 13px; color: var(--text-secondary); margin-bottom: var(--s4);\">Paso 1 — Elige el dispositivo que contiene el sensor a vincular:</p>",
+          "html": "<p tabindex=\"-1\" style=\"font-size: 13px; color: var(--text-secondary); margin-bottom: var(--s4);\">Paso 1 — Elige el dispositivo que contiene el sensor a vincular:</p>",
           "target": [
             "div:nth-child(3) > div:nth-child(2) > p"
           ]
@@ -10622,7 +10807,7 @@
           "impact": null,
           "html": "<div style=\"display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s4);\">",
           "target": [
-            "div:nth-child(3) > div:nth-child(2) > div:nth-child(4)"
+            "div:nth-child(2) > div:nth-child(4)"
           ]
         },
         {
@@ -11020,9 +11205,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; margin-bottom: var(--s5); flex-wrap: wrap; gap: var(--s2);\">",
+          "html": "<ol class=\"ds-stepper\" aria-label=\"Pasos de la calibración\">",
           "target": [
-            "div:nth-child(3) > div:nth-child(4) > div:nth-child(2)"
+            "ol[aria-label=\"Pasos de la calibración\"]"
           ]
         },
         {
@@ -11040,9 +11225,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; gap: var(--s2);\">",
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--active\" aria-current=\"step\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">1</span>Dispositivo</li>",
           "target": [
-            "div:nth-child(4) > div:nth-child(2) > div:nth-child(1)"
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--active[aria-current=\"step\"]"
           ]
         },
         {
@@ -11060,9 +11245,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<div style=\"width: 24px; height:...\">",
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">2</span>Sensor</li>",
           "target": [
-            "div:nth-child(4) > div:nth-child(2) > div:nth-child(1) > div"
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--pending:nth-child(2)"
           ]
         },
         {
@@ -11080,169 +11265,9 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 700; color: var(--brand-600); white-space: nowrap;\">Dispositivo</span>",
+          "html": "<li class=\"ds-stepper__paso ds-stepper__paso--pending\"><span class=\"ds-stepper__marca\" aria-hidden=\"true\">3</span>Registrar calibración</li>",
           "target": [
-            "div:nth-child(4) > div:nth-child(2) > div:nth-child(1) > span"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"flex: 1 1 16px; height: 2px; background: var(--surface-border); min-width: 12px;\"></div>",
-          "target": [
-            "div:nth-child(4) > div:nth-child(2) > div:nth-child(2)"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; gap: var(--s2);\">",
-          "target": [
-            "div:nth-child(4) > div:nth-child(2) > div:nth-child(3)"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--surface-hover); color: var(--text-muted); border: 2px solid var(--surface-border);\">2</div>",
-          "target": [
-            "div:nth-child(4) > div:nth-child(2) > div:nth-child(3) > div"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap;\">Sensor</span>",
-          "target": [
-            "div:nth-child(4) > div:nth-child(2) > div:nth-child(3) > span"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"flex: 1 1 16px; height: 2px; background: var(--surface-border); min-width: 12px;\"></div>",
-          "target": [
-            "div:nth-child(4) > div:nth-child(2) > div:nth-child(4)"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"display: flex; align-items: center; gap: var(--s2);\">",
-          "target": [
-            "div:nth-child(4) > div:nth-child(2) > div:nth-child(5)"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<div style=\"width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--surface-hover); color: var(--text-muted); border: 2px solid var(--surface-border);\">3</div>",
-          "target": [
-            "div:nth-child(4) > div:nth-child(2) > div:nth-child(5) > div"
-          ]
-        },
-        {
-          "any": [
-            {
-              "id": "region",
-              "data": {
-                "isIframe": false
-              },
-              "relatedNodes": [],
-              "impact": "moderate",
-              "message": "All page content is contained by landmarks"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": null,
-          "html": "<span style=\"font-size: 12px; font-weight: 500; color: var(--text-muted); white-space: nowrap;\">Registrar calibración</span>",
-          "target": [
-            "div:nth-child(4) > div:nth-child(2) > div:nth-child(5) > span"
+            "ol[aria-label=\"Pasos de la calibración\"] > .ds-stepper__paso--pending:nth-child(3)"
           ]
         },
         {
@@ -11375,12 +11400,19 @@
               "relatedNodes": [],
               "impact": "serious",
               "message": "Element contains focusable elements"
+            },
+            {
+              "id": "focusable-element",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element is focusable"
             }
           ],
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<main id=\"contenido-principal\" tabindex=\"-1\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
+          "html": "<main id=\"contenido-principal\" tabindex=\"0\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
           "target": [
             "#contenido-principal"
           ]
@@ -11444,9 +11476,27 @@
           "all": [],
           "none": [],
           "impact": null,
-          "html": "<main id=\"contenido-principal\" tabindex=\"-1\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
+          "html": "<main id=\"contenido-principal\" tabindex=\"0\" style=\"flex: 1 1 0%; margin-top: var(--topbar-h); background: var(--surface-bg); overflow-y: auto;\">",
           "target": [
             "#contenido-principal"
+          ]
+        },
+        {
+          "any": [
+            {
+              "id": "tabindex",
+              "data": null,
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element does not have a tabindex greater than 0"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": null,
+          "html": "<p tabindex=\"-1\" style=\"font-size: 13px; color: var(--text-secondary); margin-bottom: var(--s4);\">Paso 1 — Elige el dispositivo que contiene el sensor a vincular:</p>",
+          "target": [
+            "div:nth-child(3) > div:nth-child(2) > p"
           ]
         }
       ]
@@ -11489,7 +11539,7 @@
             }
           ],
           "impact": "serious",
-          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Santiago Cuevas\" title=\"Santiago Cuevas\">SC</div>",
+          "html": "<div class=\"ds-appbar__avatar\" aria-label=\"Usuario: Admin Camila\" title=\"Admin Camila\">AC</div>",
           "target": [
             ".ds-appbar__avatar"
           ],
@@ -11529,66 +11579,11 @@
           ],
           "none": [],
           "impact": "critical",
-          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (15 sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
+          "html": "<button type=\"button\" class=\"ds-appbar__icon-btn\" aria-controls=\"notification-tray\" aria-label=\"Notificaciones (99+ sin leer)\" aria-expanded=\"false\" aria-haspopup=\"dialog\">",
           "target": [
             "button[aria-controls=\"notification-tray\"]"
           ],
           "failureSummary": "Fix all of the following:\n  Unable to determine if aria-controls referenced ID exists on the page while using aria-haspopup: aria-controls=\"notification-tray\""
-        }
-      ]
-    },
-    {
-      "id": "color-contrast",
-      "impact": "serious",
-      "tags": [
-        "cat.color",
-        "wcag2aa",
-        "wcag143",
-        "TTv5",
-        "TT13.c",
-        "EN-301-549",
-        "EN-9.1.4.3",
-        "ACT",
-        "RGAAv4",
-        "RGAA-3.2.1"
-      ],
-      "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
-      "help": "Elements must meet minimum color contrast ratio thresholds",
-      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
-      "nodes": [
-        {
-          "any": [
-            {
-              "id": "color-contrast",
-              "data": {
-                "fgColor": "#ffffff",
-                "bgColor": "#52a057",
-                "contrastRatio": 3.21,
-                "fontSize": "8.3pt (11px)",
-                "fontWeight": "bold",
-                "messageKey": "shortTextContent",
-                "expectedContrastRatio": "4.5:1"
-              },
-              "relatedNodes": [
-                {
-                  "html": "<div style=\"width: 24px; height:...\">",
-                  "target": [
-                    "div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div"
-                  ]
-                }
-              ],
-              "impact": "serious",
-              "message": "Element content is too short to determine if it is actual text content"
-            }
-          ],
-          "all": [],
-          "none": [],
-          "impact": "serious",
-          "html": "<div style=\"width: 24px; height:...\">",
-          "target": [
-            "div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div"
-          ],
-          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
         }
       ]
     }

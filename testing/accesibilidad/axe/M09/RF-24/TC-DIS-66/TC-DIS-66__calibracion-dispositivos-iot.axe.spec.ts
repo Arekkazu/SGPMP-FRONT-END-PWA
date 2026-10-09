@@ -227,12 +227,9 @@ test.describe('TC-DIS-66 — RF-24: Calibración de Dispositivos IoT (accesibili
   });
 
   test('paso 3 del wizard (formulario de calibración) — confirma bugs de label en Valor de referencia y Observaciones', async ({ page }, testInfo) => {
-    // NO CUBIERTO (06/10/2026, #251): la pantalla se cae al cargar el historial. La API
-    // devuelve valor_referencia como texto ("10.0000") y CalibracionSection.tsx:187 hace
-    // `c.valor_referencia.toFixed(4)` → TypeError; sin ErrorBoundary en src/ la app entera se
-    // desmonta (desaparece <main>). En fixme (antes del login), sin tocar sus asserts, hasta el fix.
-    test.fixme(true, 'No cubierto: la pantalla se cae al cargar el historial (#251)');
-
+    // 2026-10-08: verificado contra la API real (GET /configuracion/sensores/3/calibraciones)
+    // que valor_referencia, ganancia y offset ya llegan como number (10.0, 8.5), no como texto.
+    // Se destraba el fixme de #251 para confirmar en pantalla si la calibración ya no se cae.
     await loginComoAdmin(page);
 
     // Avanza con lo primero disponible en el seed, sin asumir un serial fijo
