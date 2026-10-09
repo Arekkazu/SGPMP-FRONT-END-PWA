@@ -9,3 +9,4 @@ export { useTranslation as useT, Trans } from 'react-i18next';
 export { aplicarLocale, localeGuardado, esLocaleValido, LOCALES, LOCALE_DEFAULT } from './index';
 export type { Locale } from './index';
 export { formatearFecha, formatearFechaHora, formatearHora, formatearNumero } from './formato';
+export { useNombreModulo } from './useNombreModulo';
