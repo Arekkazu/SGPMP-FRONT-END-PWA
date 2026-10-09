@@ -69,6 +69,7 @@ src/
 │   │   ├── Button.tsx
 │   │   ├── Input.tsx
 │   │   ├── Select.tsx
+│   │   ├── Combobox.tsx
 │   │   ├── Badge.tsx
 │   │   ├── Alert.tsx
 │   │   ├── PasswordStrength.tsx
@@ -280,6 +281,7 @@ de esos solo `Gauge` está implementado — los demás siguen siendo especificac
 | `Button`           | primary · secondary · danger · ghost; sm · md · lg; los 5 estados (default/hover/focus/active/disabled) |
 | `Input`            | default · hover · focus · error · disabled; icono leading/trailing; toggle contraseña |
 | `Select`           | mismo `.ds-field__input` con flecha propia                              |
+| `Combobox`         | lista desplegable + escritura libre que filtra (ARIA 1.2); conserva el texto fuera de la lista |
 | `Badge`            | Rol: admin/productor/vet/contador/ingeniero; Estado: success/warning/error/info/neutral |
 | `Alert`            | success · warning · error · info; color de texto desde el token semántico |
 | `PasswordStrength` | medidor de fortaleza (única validación que corre en `onChange`)          |
