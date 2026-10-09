@@ -6,8 +6,9 @@ import type {
 
 export const fincasApi = {
   async listar(soloActivas = false): Promise<FincaResponse[]> {
-    const res = await http.get<FincaResponse[]>('/configuracion/fincas', { params: { solo_activas: soloActivas } });
-    return res.data;
+    // El backend responde { total, items }, no un arreglo.
+    const res = await http.get<{ items: FincaResponse[] }>('/configuracion/fincas', { params: { solo_activas: soloActivas } });
+    return res.data.items;
   },
 
   async obtener(id: number): Promise<FincaResponse> {
@@ -38,10 +39,10 @@ export const fincasApi = {
 
 export const infraestructurasApi = {
   async listarPorFinca(fincaId: number, soloActivas = false): Promise<InfraestructuraResponse[]> {
-    const res = await http.get<InfraestructuraResponse[]>('/configuracion/infraestructuras', {
+    const res = await http.get<{ items: InfraestructuraResponse[] }>('/configuracion/infraestructuras', {
       params: { finca_id: fincaId, solo_activas: soloActivas },
     });
-    return res.data;
+    return res.data.items;
   },
 
   async obtener(id: number): Promise<InfraestructuraResponse> {

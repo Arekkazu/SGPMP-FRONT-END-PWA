@@ -24,7 +24,7 @@ export function PipelineView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
           <Workflow size={20} aria-hidden />{t('pipelineview.pipeline_de_inferencia')}</h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('pipelineview.rf_56_consolidacion_y_envio_al_motor')}</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('pipelineview.descripcion')}</p>
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>

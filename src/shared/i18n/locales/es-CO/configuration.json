@@ -64,9 +64,11 @@
     "sin_calibraciones_registradas_para_este": "Sin calibraciones registradas para este sensor.",
     "sin_conexion": "Sin conexión",
     "sin_permiso": "Sin permiso",
-    "solo_dispositivos_activos_son_calibrables": "Solo dispositivos activos son calibrables",
     "valor_de_referencia": "Valor de referencia",
-    "verificando_asociacion": "Verificando asociación…"
+    "verificando_asociacion": "Verificando asociación…",
+    "n_calibraciones_one": "{{count}} calibración",
+    "n_calibraciones_other": "{{count}} calibraciones",
+    "opcional": "(opcional)"
   },
   "ciclossection": {
     "cancelar": "Cancelar",
@@ -319,7 +321,8 @@
     "solo_letras_y_espacios": "Solo letras y espacios.",
     "familia_de_modelo_ia": "Familia de modelo de IA",
     "sin_familia_de_modelo": "— Sin familia de modelo —",
-    "ayuda_familia_de_modelo": "El modelo de IA de las áreas de esta especie debe coincidir con esta familia."
+    "ayuda_familia_de_modelo": "El modelo de IA de las áreas de esta especie debe coincidir con esta familia.",
+    "regla_nombre": "Entre 3 y 50 caracteres: solo letras y espacios (sin números ni guiones)."
   },
   "especiestable": {
     "no_hay_especies_registradas": "No hay especies registradas.",
@@ -504,12 +507,21 @@
     "tipo_dato_texto": "Texto",
     "tipo_de_dato": "Tipo de dato",
     "tipo_de_medicion": "Tipo de medición",
-    "unidad_de_medida": "Unidad de medida"
+    "unidad_de_medida": "Unidad de medida",
+    "valor_minimo": "Valor mínimo",
+    "valor_maximo": "Valor máximo",
+    "ayuda_rango": "Opcional. Vacío = sin límite.",
+    "rango_invalido": "El máximo no puede ser menor que el mínimo.",
+    "es_obligatoria": "Obligatoria al registrar un activo",
+    "ayuda_obligatoria": "El registro de activos de esta especie exigirá este dato.",
+    "col_dato": "Tipo de dato",
+    "obligatoria": "obligatoria"
   },
   "pagina": {
     "aria_secciones": "Secciones de configuración",
     "subtitulo": "Gestión de especies, fincas, dispositivos IoT y personalización",
-    "titulo": "Configuración del Sistema"
+    "titulo": "Configuración del Sistema",
+    "aria_subsecciones": "Subsecciones de {{seccion}}"
   },
   "paginacion": {
     "anterior": "Anterior",
@@ -620,15 +632,28 @@
     "crea_la_primera_plantilla_para_capturar_una": "Crea la primera plantilla para capturar una configuración base.",
     "error_al_cargar": "Error al cargar",
     "generar_la_version_siguiente": "Generar la versión siguiente con los parámetros actuales de la especie",
-    "inmutable": "🔒 Inmutable",
     "mostrando_datos_cargados_las_acciones_de": "Mostrando datos cargados. Las acciones de escritura están deshabilitadas.",
     "nueva_plantilla": "Nueva plantilla",
     "nueva_version": "Nueva versión",
-    "parametros_incluidos": "Parámetros incluidos:",
     "plantillas_de_configuracion": "Plantillas de Configuración",
     "recargar": "Recargar",
     "sin_conexion": "Sin conexión",
-    "sin_plantillas_creadas": "Sin plantillas creadas"
+    "sin_plantillas_creadas": "Sin plantillas creadas",
+    "buscar_plantilla": "Buscar plantilla",
+    "para": "Para",
+    "creada": "creada el {{fecha}}",
+    "sin_parametros": "Sin parámetros incluidos",
+    "no_se_editan": "Las plantillas no se editan: «Nueva versión» guarda la configuración actual de la especie como la versión siguiente.",
+    "categoria": {
+      "ciclos_biologicos_one": "ciclo biológico",
+      "ciclos_biologicos_other": "ciclos biológicos",
+      "patologias_one": "patología",
+      "patologias_other": "patologías",
+      "metricas_produccion_one": "métrica de producción",
+      "metricas_produccion_other": "métricas de producción",
+      "umbrales_ambientales_one": "umbral ambiental",
+      "umbrales_ambientales_other": "umbrales ambientales"
+    }
   },
   "porespeciepage": {
     "configuracion_por_especie": "Configuración por Especie",
@@ -781,5 +806,18 @@
     "variable_ambiental": "Variable ambiental",
     "ya_existe_un_umbral_activo_para": "Ya existe un umbral activo para esta variable en esta especie.",
     "ya_no_estara_vigente_para_las_alertas": "? Ya no estará vigente para las alertas."
+  },
+  "subpestanas": {
+    "fincas": "Fincas",
+    "tipos_area": "Tipos de área",
+    "infraestructura": "Infraestructura",
+    "dispositivos": "Dispositivos",
+    "sensores": "Asociación de sensores",
+    "configuracion_remota": "Configuración remota",
+    "calibracion": "Calibración",
+    "identidad_visual": "Identidad visual",
+    "tema": "Tema",
+    "idioma": "Idioma",
+    "dashboard": "Dashboard"
   }
 }

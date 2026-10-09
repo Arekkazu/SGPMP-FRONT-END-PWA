@@ -1,0 +1,51 @@
+/* Sub-navegación en píldoras. En móvil la fila se desplaza en horizontal en
+   vez de partirse en dos líneas. */
+.ds-subpestanas {
+  display: flex;
+  gap: var(--s2);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: var(--s1);
+  margin-bottom: var(--s6);
+}
+
+.ds-subpestanas__item {
+  flex-shrink: 0;
+  min-height: var(--s9);
+  padding: 0 var(--s4);
+  border: 1.5px solid var(--surface-border);
+  border-radius: var(--r-full);
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-md);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease-out, border-color 0.15s ease-out, color 0.15s ease-out;
+}
+
+.ds-subpestanas__item:hover:not([aria-current='page']) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.ds-subpestanas__item:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Activa: relleno, borde y peso a la vez, no solo el color (WCAG 1.4.1). */
+.ds-subpestanas__item[aria-current='page'] {
+  /* Mismo trío que OptionCard[aria-pressed]: ya verificado en los dos temas. */
+  background: var(--brand-50);
+  border-color: var(--brand-500);
+  color: var(--brand-700);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-subpestanas__item {
+    transition: none;
+  }
+}

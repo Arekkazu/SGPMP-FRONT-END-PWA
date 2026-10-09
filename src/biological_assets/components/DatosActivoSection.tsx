@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
 import { Pencil } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -26,7 +27,7 @@ const CARD: React.CSSProperties = {
 };
 
 const CARD_TITLE: React.CSSProperties = {
-  fontSize: '13px',
+  fontSize: 'var(--fs-body-md)',
   fontWeight: 700,
   color: 'var(--text-secondary)',
   textTransform: 'uppercase',
@@ -37,7 +38,7 @@ const CARD_TITLE: React.CSSProperties = {
 function Dato({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+      <div style={{ fontSize: 'var(--fs-label-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
         {label}
       </div>
       <div style={{ fontSize: '14px', color: 'var(--text-primary)', marginTop: 2, wordBreak: 'break-word' }}>
@@ -84,7 +85,7 @@ export function DatosActivoSection({ activo, loading, saving, saveError, onGuard
       {/* Detalle según tipo */}
       <div style={CARD}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s4)' }}>
-          <h3 style={{ ...CARD_TITLE, margin: 0 }}>{esIndividual ? 'Detalle individual' : 'Detalle poblacional'}</h3>
+          <h2 style={{ ...CARD_TITLE, margin: 0 }}>{esIndividual ? 'Detalle individual' : 'Detalle poblacional'}</h2>
           {esIndividual && puedeEditar && (
             <Button variant="ghost" size="sm" onClick={() => setEditando(true)} disabled={!online} aria-label={t('datosactivosection.editar_activo')}>
               <Pencil size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('datosactivosection.editar')}</Button>
@@ -94,18 +95,18 @@ export function DatosActivoSection({ activo, loading, saving, saveError, onGuard
           <Grid>
             <Dato label={t('datosactivosection.raza')} value={ind.raza} />
             <Dato label={t('datosactivosection.sexo')} value={ind.sexo} />
-            <Dato label={t('datosactivosection.fecha_de_nacimiento')} value={ind.fecha_nacimiento?.slice(0, 10)} />
+            <Dato label={t('datosactivosection.fecha_de_nacimiento')} value={formatearFecha(ind.fecha_nacimiento, FECHA_NUMERICA)} />
             <Dato label={t('datosactivosection.peso_inicial')} value={ind.peso_inicial} />
           </Grid>
         ) : pob ? (
           // TC-DIS-122: valores de registro y métricas calculadas en grupos con su propio encabezado.
           <>
-            <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 var(--s2)' }}>{t('datosactivosection.valores_iniciales')}</h4>
+            <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 var(--s2)' }}>{t('datosactivosection.valores_iniciales')}</h3>
             <Grid>
               <Dato label={t('datosactivosection.cantidad_inicial')} value={pob.cantidad_inicial} />
               <Dato label={t('datosactivosection.peso_promedio_inicial')} value={pob.peso_promedio_inicial} />
             </Grid>
-            <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', margin: 'var(--s4) 0 var(--s2)' }}>{t('datosactivosection.metricas_calculadas')}</h4>
+            <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', margin: 'var(--s4) 0 var(--s2)' }}>{t('datosactivosection.metricas_calculadas')}</h3>
             <Grid>
               <Dato label={t('datosactivosection.cantidad_actual')} value={pob.cantidad_actual} />
               <Dato label={t('datosactivosection.peso_promedio')} value={pob.peso_promedio} />
@@ -120,7 +121,7 @@ export function DatosActivoSection({ activo, loading, saving, saveError, onGuard
 
       {/* Datos generales / procedencia */}
       <div style={CARD}>
-        <h3 style={CARD_TITLE}>{t('datosactivosection.origen_y_procedencia')}</h3>
+        <h2 style={CARD_TITLE}>{t('datosactivosection.origen_y_procedencia')}</h2>
         <Grid>
           <Dato label={t('datosactivosection.origen_financiero')} value={activo.origen_financiero} />
           <Dato label={t('datosactivosection.costo_de_adquisicion')} value={activo.costo_adquisicion} />
@@ -133,7 +134,7 @@ export function DatosActivoSection({ activo, loading, saving, saveError, onGuard
       {/* Atributos dinámicos */}
       {activo.atributos_dinamicos && Object.keys(activo.atributos_dinamicos).length > 0 && (
         <div style={CARD}>
-          <h3 style={CARD_TITLE}>{t('datosactivosection.atributos_dinamicos')}</h3>
+          <h2 style={CARD_TITLE}>{t('datosactivosection.atributos_dinamicos')}</h2>
           <Grid>
             {Object.entries(activo.atributos_dinamicos).map(([k, v]) => (
               <Dato key={k} label={k} value={String(v)} />

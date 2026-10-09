@@ -39,7 +39,10 @@ const TAB_BTN: React.CSSProperties = {
   padding: 'var(--s3) var(--s4)',
   background: 'none',
   border: 'none',
-  borderBottom: '2px solid transparent',
+  // Longhands: la pestaña activa sobrescribe borderBottomColor y React avisa si se mezcla con el shorthand.
+  borderBottomWidth: 2,
+  borderBottomStyle: 'solid',
+  borderBottomColor: 'transparent',
   color: 'var(--text-secondary)',
   fontWeight: 400,
   fontSize: '14px',
@@ -168,13 +171,16 @@ export function ActivoDetallePage() {
             onChanged={refrescar}
           />
         )}
-        {tab === 'fases' && <FasesSection idActivo={idActivo} idEspecie={activo?.id_especie ?? null} estadoActual={estado} onChanged={refrescar} />}
+        {tab === 'fases' && <FasesSection idActivo={idActivo} estadoActual={estado} onChanged={refrescar} />}
         {tab === 'eventos' && (
           <EventosSection
             idActivo={idActivo}
             idEspecie={activo?.id_especie ?? null}
             tipo={String(tipo)}
             estadoActual={estado}
+            cantidadDisponible={ficha?.cantidad_actual ?? null}
+            sinFase={!!ficha && !ficha.fase_productiva_activa}
+            onIrAFases={() => setTab('fases')}
             onChanged={refrescar}
           />
         )}

@@ -2,12 +2,15 @@ import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, Boxes, User } from 'lucide-react';
 import { EstadoPill } from './EstadoPill';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import type { ActivoListItem } from '../types';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
 
 interface Props {
   activos: ActivoListItem[];
   loading: boolean;
+  /** T-11: distingue "nada coincide con los filtros" de "aún no hay activos". */
+  hayFiltros?: boolean;
   onAbrir: (id: number) => void;
 }
 
@@ -15,7 +18,7 @@ const TH: React.CSSProperties = {
   padding: 'var(--s2) var(--s4)',
   textAlign: 'left',
   fontFamily: 'var(--font-mono)',
-  fontSize: '10px',
+  fontSize: 'var(--fs-label-sm)',
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
@@ -28,7 +31,7 @@ const TD: React.CSSProperties = {
   borderBottom: '1px solid var(--surface-border)',
 };
 
-export function ActivosTable({ activos, loading, onAbrir }: Props) {
+export function ActivosTable({ activos, loading, hayFiltros = false, onAbrir }: Props) {
   const { t } = useT('biologicalAssets');
   if (loading) {
     return (
@@ -62,14 +65,14 @@ export function ActivosTable({ activos, loading, onAbrir }: Props) {
         }}
       >
         <Boxes size={32} aria-hidden style={{ opacity: 0.5, marginBottom: 'var(--s3)' }} />
-        <p style={{ margin: 0 }}>{t('activostable.no_hay_activos_biologicos_que_coincidan_con')}</p>
+        <p style={{ margin: 0 }}>{hayFiltros ? t('activostable.no_hay_activos_biologicos_que_coincidan_con') : t('activostable.aun_no_hay_activos')}</p>
       </div>
     );
   }
 
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+    <ScrollRegion label={t('registryview.gestion_de_activos_biologicos')}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
             {['Identificador', 'Tipo', 'Especie', 'Estado', 'Infraestructura', ''].map((h, i) => (
@@ -122,6 +125,6 @@ export function ActivosTable({ activos, loading, onAbrir }: Props) {
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }

@@ -23,7 +23,7 @@ const AREA = { id_infraestructura: 7, tipo_area: 'Galpón', nombre_infraestructu
 async function abrir() {
   const onRegistrar = vi.fn().mockResolvedValue(true);
   render(<DispositivoModal area={AREA} edges={[]} saving={false} saveError={null} onClose={vi.fn()} onRegistrar={onRegistrar} />);
-  await screen.findByText('CAMARA_VISION');
+  await screen.findByText('Camara vision');  // T-01: el código se muestra legible
   fireEvent.change(screen.getByLabelText(/Serial/), { target: { value: 'CAM-01' } });
   fireEvent.change(screen.getByLabelText(/Descripción/), { target: { value: 'Camara galpon' } });
   return onRegistrar;

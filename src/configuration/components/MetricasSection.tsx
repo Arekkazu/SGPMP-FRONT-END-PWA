@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { formatearFecha } from '../../shared/i18n/formato';
+import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
@@ -10,9 +10,10 @@ import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useMetricasProduccion } from '../hooks/useMetricasProduccion';
-import { UNIDADES_POR_TIPO_MEDICION } from '../types';
+import { TIPOS_DATO_CON_RANGO, UNIDADES_POR_TIPO_MEDICION } from '../types';
 import type { MetricaProduccionResponse, TipoMedicion, TipoActivo, TipoDatoMetrica } from '../types';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import styles from './MetricasSection.module.css';
 
 interface Props {
   idEspecie: number;
@@ -30,6 +31,14 @@ interface FormValues {
   tipo_medicion: TipoMedicion;
   aplica_a_tipo_activo: TipoActivo;
   tipo_dato: TipoDatoMetrica | '';
+  es_obligatorio: boolean;
+  valor_min: string;
+  valor_max: string;
+}
+
+/** `''` → null: un rango vacío es "sin límite", no cero. */
+function numeroONulo(valor: string): number | null {
+  return valor.trim() === '' ? null : Number(valor);
 }
 
 const TIPOS_DATO: TipoDatoMetrica[] = ['NUMERICO', 'ENTERO', 'TEXTO', 'BOOLEANO'];
@@ -112,8 +121,11 @@ function MetricaModal({
     handleSubmit,
     reset,
     watch,
+    getValues,
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
+  const tipoDato = watch('tipo_dato');
+  const conRango = tipoDato !== '' && TIPOS_DATO_CON_RANGO.includes(tipoDato);
 
   // RF-16: unidad_medida coherente con tipo_medicion — mismo patron que
   // UNIDADES_POR_MEDICION en EventoCrecimientoForm. OTRO no restringe (backend
@@ -128,13 +140,25 @@ function MetricaModal({
         unidad_medida: metrica.unidad_medida,
         tipo_medicion: metrica.tipo_medicion,
         aplica_a_tipo_activo: metrica.aplica_a_tipo_activo,
+        tipo_dato: metrica.tipo_dato ?? '',
+        es_obligatorio: metrica.es_obligatorio ?? false,
+        valor_min: metrica.valor_min == null ? '' : String(Number(metrica.valor_min)),
+        valor_max: metrica.valor_max == null ? '' : String(Number(metrica.valor_max)),
       });
     } else {
-      reset({ nombre: '', unidad_medida: '', tipo_medicion: 'PESO', aplica_a_tipo_activo: 'AMBOS', tipo_dato: '' });
+      reset({
+        nombre: '', unidad_medida: '', tipo_medicion: 'PESO', aplica_a_tipo_activo: 'AMBOS',
+        tipo_dato: '', es_obligatorio: false, valor_min: '', valor_max: '',
+      });
     }
   }, [metrica, reset]);
 
   const onSubmit = async (data: FormValues) => {
+    // RFC-004: fuera de NUMERICO/ENTERO el rango no aplica y no se envía.
+    const rango = conRango
+      ? { valor_min: numeroONulo(data.valor_min), valor_max: numeroONulo(data.valor_max) }
+      : { valor_min: null, valor_max: null };
+    const atributos = { tipo_dato: data.tipo_dato as TipoDatoMetrica, es_obligatorio: data.es_obligatorio, ...rango };
     let ok: boolean;
     if (modoEditar && metrica) {
       ok = await onEditar(metrica.id_metrica_produccion, {
@@ -142,6 +166,7 @@ function MetricaModal({
         unidad_medida: data.unidad_medida.trim(),
         tipo_medicion: data.tipo_medicion,
         aplica_a_tipo_activo: data.aplica_a_tipo_activo,
+        ...atributos,
         fecha_actualizacion: metrica.fecha_actualizacion ?? new Date().toISOString(),
       });
     } else {
@@ -151,7 +176,7 @@ function MetricaModal({
         unidad_medida: data.unidad_medida.trim(),
         tipo_medicion: data.tipo_medicion,
         aplica_a_tipo_activo: data.aplica_a_tipo_activo,
-        tipo_dato: data.tipo_dato as TipoDatoMetrica,
+        ...atributos,
       });
     }
     if (ok) onClose();
@@ -275,8 +300,7 @@ function MetricaModal({
             </div>
 
             {/* RF-16 v1.2 (RFC-004, #487): obligatorio y sin valor por defecto — el usuario lo elige. */}
-            {!modoEditar && (
-              <div>
+            <div>
                 <label htmlFor="tipo-dato" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{t('metricassection.tipo_de_dato')}<span style={{ color: 'var(--sem-error)' }}>*</span>
                 </label>
                 <select
@@ -295,8 +319,44 @@ function MetricaModal({
                     {errors.tipo_dato.message}
                   </p>
                 )}
+            </div>
+
+            {/* #258 (RFC-004): RF-33 valida los atributos dinámicos del activo contra esto. */}
+            {conRango && (
+              <div className="ds-fg2">
+                <Input
+                  id="metrica-valor-min"
+                  label={t('metricassection.valor_minimo')}
+                  type="number"
+                  step={tipoDato === 'ENTERO' ? 1 : 'any'}
+                  hint={t('metricassection.ayuda_rango')}
+                  error={errors.valor_min?.message}
+                  {...register('valor_min')}
+                />
+                <Input
+                  id="metrica-valor-max"
+                  label={t('metricassection.valor_maximo')}
+                  type="number"
+                  step={tipoDato === 'ENTERO' ? 1 : 'any'}
+                  error={errors.valor_max?.message}
+                  {...register('valor_max', {
+                    validate: (max) => {
+                      const min = numeroONulo(getValues('valor_min'));
+                      const valor = numeroONulo(max);
+                      return min === null || valor === null || min <= valor || t('metricassection.rango_invalido');
+                    },
+                  })}
+                />
               </div>
             )}
+
+            <label className={styles.obligatoria}>
+              <input type="checkbox" {...register('es_obligatorio')} />
+              <span>
+                {t('metricassection.es_obligatoria')}
+                <small>{t('metricassection.ayuda_obligatoria')}</small>
+              </span>
+            </label>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
@@ -406,7 +466,7 @@ export function MetricasSection({ idEspecie }: Props) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-                {['#', 'Nombre', 'Unidad', 'Tipo medición', 'Aplica a', 'Estado', 'Actualizado', 'Acciones'].map((h) => (
+                {['#', 'Nombre', 'Unidad', 'Tipo medición', 'Aplica a', t('metricassection.col_dato'), 'Estado', 'Actualizado', 'Acciones'].map((h) => (
                   <th key={h} style={TH}>{h}</th>
                 ))}
               </tr>
@@ -422,6 +482,11 @@ export function MetricasSection({ idEspecie }: Props) {
                   </td>
                   <td style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>
                     {TIPO_ACTIVO_LABELS[m.aplica_a_tipo_activo] ?? m.aplica_a_tipo_activo}
+                  </td>
+                  <td style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                    {m.tipo_dato ? t(`metricassection.tipo_dato_${m.tipo_dato.toLowerCase()}`) : '—'}
+                    {(m.valor_min != null || m.valor_max != null) && ` · ${m.valor_min != null ? formatearNumero(m.valor_min) : '−∞'} – ${m.valor_max != null ? formatearNumero(m.valor_max) : '∞'}`}
+                    {m.es_obligatorio && ` · ${t('metricassection.obligatoria')}`}
                   </td>
                   <td style={TD}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: m.es_activo ? 'var(--sem-success-bg)' : 'var(--surface-hover)', color: m.es_activo ? 'var(--sem-success)' : 'var(--text-muted)', border: `1px solid ${m.es_activo ? 'var(--sem-success-border)' : 'var(--surface-border)'}` }}>

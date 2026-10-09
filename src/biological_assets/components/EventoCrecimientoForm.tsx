@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { hoyLocal, instanteParaEvento } from '../../shared/lib/fecha';
 import { ModalShell } from './ModalShell';
 import { AnuncioCampos, FormSelect, FormTextArea, FORM_COL } from './formControls';
 import { UNIDADES_POR_MEDICION } from '../types';
@@ -34,9 +35,9 @@ interface Props {
 
 export function EventoCrecimientoForm({ metricas, metricasLoading, esPoblacional, saving, saveError, onClose, onConfirmar }: Props) {
   const { t } = useT('biologicalAssets');
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { tipo_medicion: '', unidad_medida: '' },
+    defaultValues: { tipo_medicion: '', unidad_medida: '', fecha: hoyLocal() },
   });
 
   const tipo = watch('tipo_medicion');
@@ -44,6 +45,11 @@ export function EventoCrecimientoForm({ metricas, metricasLoading, esPoblacional
   const unidades = metricaSeleccionada
     ? [metricaSeleccionada.unidad_medida]
     : tipo ? UNIDADES_POR_MEDICION[tipo] ?? [] : [];
+  // M2-08: con una sola unidad posible (ej. kg) se preselecciona.
+  const unicaUnidad = unidades.length === 1 ? unidades[0] : null;
+  React.useEffect(() => {
+    if (unicaUnidad) setValue('unidad_medida', unicaUnidad, { shouldValidate: true });
+  }, [unicaUnidad, setValue]);
 
   const submit = async (v: FormValues) => {
     if (!v.tipo_medicion) return;
@@ -51,7 +57,7 @@ export function EventoCrecimientoForm({ metricas, metricasLoading, esPoblacional
       tipo_medicion: v.tipo_medicion,
       valor_medicion: Number(v.valor_medicion),
       unidad_medida: v.unidad_medida,
-      fecha: v.fecha ? new Date(v.fecha).toISOString() : null,
+      fecha: v.fecha ? instanteParaEvento(v.fecha) : null,
       descripcion: v.descripcion.trim() || null,
     };
     if (esPoblacional) {
@@ -108,7 +114,7 @@ export function EventoCrecimientoForm({ metricas, metricasLoading, esPoblacional
             {unidades.map((u) => <option key={u} value={u}>{u}</option>)}
           </FormSelect>
 
-          <Input label={t('eventocrecimientoform.fecha')} type="date" {...register('fecha')} />
+          <Input label={t('eventocrecimientoform.fecha')} type="date" max={hoyLocal()} {...register('fecha')} />
 
           {esPoblacional && (
             <>

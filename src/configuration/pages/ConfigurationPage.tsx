@@ -7,6 +7,7 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
+import { SubPestanas } from '../../shared/design-system/SubPestanas';
 import { useEspecies } from '../hooks/useEspecies';
 import { EspeciesTable } from '../components/EspeciesTable';
 import { Paginacion } from '../components/Paginacion';
@@ -48,6 +49,28 @@ const TABS: { id: TabId; claveLabel: string; recurso: number }[] = [
   { id: 'plantillas', claveLabel: 'tabs.plantillas', recurso: 28 },       // plantillas
 ];
 
+// Pestañas con varias tareas independientes (cada una con su propio asistente):
+// se muestra una a la vez bajo sub-pestañas en vez de apilarlas en un scroll largo.
+const SUBPESTANAS: Partial<Record<TabId, { id: string; claveLabel: string; contenido: () => React.ReactNode }[]>> = {
+  fincas: [
+    { id: 'fincas', claveLabel: 'subpestanas.fincas', contenido: () => <FincasTable /> },
+    { id: 'tipos-area', claveLabel: 'subpestanas.tipos_area', contenido: () => <TiposAreaSubSection /> },
+    { id: 'infraestructura', claveLabel: 'subpestanas.infraestructura', contenido: () => <InfraestructuraSection /> },
+  ],
+  iot: [
+    { id: 'dispositivos', claveLabel: 'subpestanas.dispositivos', contenido: () => <DispositivosTable /> },
+    { id: 'sensores', claveLabel: 'subpestanas.sensores', contenido: () => <SensoresSection /> },
+    { id: 'remota', claveLabel: 'subpestanas.configuracion_remota', contenido: () => <ConfiguracionRemotaSection /> },
+    { id: 'calibracion', claveLabel: 'subpestanas.calibracion', contenido: () => <CalibracionSection /> },
+  ],
+  personalizacion: [
+    { id: 'identidad', claveLabel: 'subpestanas.identidad_visual', contenido: () => <IdentidadVisualSection /> },
+    { id: 'tema', claveLabel: 'subpestanas.tema', contenido: () => <TemaVisualSection /> },
+    { id: 'idioma', claveLabel: 'subpestanas.idioma', contenido: () => <IdiomaSection /> },
+    { id: 'dashboard', claveLabel: 'subpestanas.dashboard', contenido: () => <DashboardLayoutSection /> },
+  ],
+};
+
 // QA M09 (hallazgo #3): con solo padding vertical el boton medía ~40px, por
 // debajo del touch target minimo de 48px (--s9) del sistema de diseño, y en
 // viewport movil (nav con overflow-x) los flex items sin flex-shrink:0 podian
@@ -60,7 +83,10 @@ const TAB_BTN: React.CSSProperties = {
   padding: '0 var(--s4)',
   background: 'none',
   border: 'none',
-  borderBottom: '2px solid transparent',
+  // Longhands: la pestaña activa sobrescribe borderBottomColor y React avisa si se mezcla con el shorthand.
+  borderBottomWidth: 2,
+  borderBottomStyle: 'solid',
+  borderBottomColor: 'transparent',
   color: 'var(--text-secondary)',
   fontWeight: 400,
   fontSize: '14px',
@@ -100,7 +126,7 @@ export function CatalogoTab() {
   const puedeEditar = usePermission(8, 3);
   const puedeDesact = usePermission(8, 4);
 
-  const { especies, loading, saving, error, saveError, fromCache, conflictos, cargar, registrar, editar, desactivar, reactivar, resolverConflicto } = useEspecies();
+  const { especies, loading, saving, error, saveError, fromCache, conflictos, cargar, registrar, editar, desactivar, reactivar, resolverConflicto, limpiarSaveError } = useEspecies();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
@@ -116,7 +142,8 @@ export function CatalogoTab() {
   const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ESPECIES_POR_PAGINA));
   const enPagina = filtradas.slice((pagina - 1) * ESPECIES_POR_PAGINA, pagina * ESPECIES_POR_PAGINA);
 
-  const cerrar = () => setModal({ tipo: 'ninguno' });
+  // El error de un guardado fallido no debe aparecer al abrir otra especie (#231).
+  const cerrar = () => { limpiarSaveError(); setModal({ tipo: 'ninguno' }); };
 
   const handleDesactivar = async (especie: EspecieResponse) => {
     setAccionError(null);
@@ -307,7 +334,7 @@ function TiposAreaSubSection() {
   };
 
   return (
-    <div style={{ marginTop: 'var(--s7)', borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('configurationpage.tipos_de_area')}</h2>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
@@ -408,6 +435,11 @@ export function ConfigurationPage() {
       ));
 
   const [activeTab, setActiveTab] = useState<TabId>('catalogo');
+  // Sub-pestaña elegida por pestaña: volver a IoT regresa a la que se dejó.
+  const [subActiva, setSubActiva] = useState<Partial<Record<TabId, string>>>({});
+  const subs = SUBPESTANAS[activeTab];
+  const sub = subs?.find((s) => s.id === subActiva[activeTab]) ?? subs?.[0];
+  const tabActual = visibles.find((tab) => tab.id === activeTab);
 
   // Si la pestana activa no esta permitida (o deja de estarlo tras un cambio de rol), se
   // cae a la primera visible en vez de dejar el panel en blanco.
@@ -431,7 +463,8 @@ export function ConfigurationPage() {
 
       {/* Tab bar */}
       <nav
-        style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', padding: '0 var(--s7)', overflowX: 'auto' }}
+        className="ds-tabs"
+        style={{ padding: '0 var(--s7)' }}
         aria-label={t('pagina.aria_secciones')}
       >
         {visibles.map((tab) => (
@@ -451,36 +484,18 @@ export function ConfigurationPage() {
       <div style={{ padding: 'var(--page-pad)' }}>
         {activeTab === 'catalogo' && <CatalogoTab />}
         {activeTab === 'por-especie' && <PorEspeciePage />}
-        {activeTab === 'fincas' && (
+        {subs && sub && (
           <>
-            <FincasTable />
-            <TiposAreaSubSection />
-            <InfraestructuraSection />
-          </>
-        )}
-        {activeTab === 'iot' && (
-          <>
-            <DispositivosTable />
-            <SensoresSection />
-            <ConfiguracionRemotaSection />
-            <CalibracionSection />
+            <SubPestanas
+              pestanas={subs.map((x) => ({ id: x.id, label: t(x.claveLabel) }))}
+              activa={sub.id}
+              onCambiar={(id) => setSubActiva((prev) => ({ ...prev, [activeTab]: id }))}
+              ariaLabel={t('pagina.aria_subsecciones', { seccion: tabActual ? t(tabActual.claveLabel) : '' })}
+            />
+            {sub.contenido()}
           </>
         )}
         {activeTab === 'sistema' && <ParametrosSection />}
-        {activeTab === 'personalizacion' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s8)' }}>
-            <IdentidadVisualSection />
-            <div style={{ borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
-              <TemaVisualSection />
-            </div>
-            <div style={{ borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
-              <IdiomaSection />
-            </div>
-            <div style={{ borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
-              <DashboardLayoutSection />
-            </div>
-          </div>
-        )}
         {activeTab === 'plantillas' && <PlantillasTable />}
       </div>
     </div>

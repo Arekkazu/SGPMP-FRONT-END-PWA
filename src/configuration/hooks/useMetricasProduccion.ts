@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { metricasApi } from '../api/especiesConfigApi';
 import type { MetricaProduccionResponse, RegistrarMetricaDTO, EditarMetricaDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { avisarExito } from '../../shared/hooks/useToast';
 
 export function useMetricasProduccion() {
   const [metricas, setMetricas] = useState<MetricaProduccionResponse[]>([]);
@@ -28,6 +29,7 @@ export function useMetricasProduccion() {
     setSaveError(null);
     try {
       const nueva = await metricasApi.registrar(dto);
+      avisarExito('registrado', nueva.nombre);
       setMetricas((prev) => [...prev, nueva]);
       return true;
     } catch (e) {
@@ -43,6 +45,7 @@ export function useMetricasProduccion() {
     setSaveError(null);
     try {
       const actualizada = await metricasApi.editar(id, dto);
+      avisarExito('guardado', actualizada.nombre);
       setMetricas((prev) => prev.map((m) => (m.id_metrica_produccion === id ? actualizada : m)));
       return true;
     } catch (e) {

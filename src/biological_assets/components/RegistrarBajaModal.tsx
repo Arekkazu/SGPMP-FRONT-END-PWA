@@ -19,6 +19,8 @@ interface FormValues {
 
 interface Props {
   esPoblacional: boolean;
+  /** Cantidad actual del lote; acota "Cantidad afectada" antes de enviar (TC-DIS-128). */
+  cantidadDisponible?: number | null;
   saving: boolean;
   saveError: ApiError | null;
   onClose: () => void;
@@ -27,7 +29,7 @@ interface Props {
 
 const HOY = hoyLocal();
 
-export function RegistrarBajaModal({ esPoblacional, saving, saveError, onClose, onConfirmar }: Props) {
+export function RegistrarBajaModal({ esPoblacional, cantidadDisponible, saving, saveError, onClose, onConfirmar }: Props) {
   const { t } = useT('biologicalAssets');
   const { register, handleSubmit, getValues, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
@@ -78,7 +80,7 @@ export function RegistrarBajaModal({ esPoblacional, saving, saveError, onClose, 
           <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>
             {t('registrarbajamodal.confirma_la_baja')}
           </h3>
-          <dl className="ds-fg2" style={{ gap: 'var(--s2) var(--s4)', margin: 0, fontSize: '13px' }}>
+          <dl className="ds-fg2" style={{ gap: 'var(--s2) var(--s4)', margin: 0, fontSize: 'var(--fs-body-md)' }}>
             <dt style={{ color: 'var(--text-muted)' }}>{t('registrarbajamodal.tipo_de_baja')}</dt>
             <dd style={{ margin: 0 }}>{t(`registrarbajamodal.${pendiente.tipo_baja}`)}</dd>
             <dt style={{ color: 'var(--text-muted)' }}>{t('registrarbajamodal.fecha_de_baja')}</dt>
@@ -116,10 +118,18 @@ export function RegistrarBajaModal({ esPoblacional, saving, saveError, onClose, 
 
           {esPoblacional && (
             <Input
-              label={t('registrarbajamodal.cantidad_afectada')} type="number" min={1}
+              label={t('registrarbajamodal.cantidad_afectada')} type="number" min={1} max={cantidadDisponible ?? undefined}
               placeholder="Vacío = baja total del lote"
-              error={errorServidor(saveError, 'cantidad_afectada')}
-              {...register('cantidad_afectada')}
+              error={errors.cantidad_afectada?.message ?? errorServidor(saveError, 'cantidad_afectada')}
+              {...register('cantidad_afectada', {
+                validate: (v) => {
+                  if (!v) return true;
+                  const n = Number(v);
+                  if (!Number.isInteger(n) || n < 1) return t('registrarbajamodal.cantidad_minima');
+                  return cantidadDisponible == null || n <= cantidadDisponible
+                    || t('registrarbajamodal.cantidad_maxima', { max: cantidadDisponible });
+                },
+              })}
             />
           )}
 

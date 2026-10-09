@@ -17,7 +17,8 @@
     "todos": "All"
   },
   "activostable": {
-    "no_hay_activos_biologicos_que_coincidan_con": "No biological assets match the filters."
+    "no_hay_activos_biologicos_que_coincidan_con": "No biological assets match the filters.",
+    "aun_no_hay_activos": "There are no biological assets registered on your farms yet."
   },
   "asociarsensormodal": {
     "ambiental": "Environmental",
@@ -94,12 +95,12 @@
     "sin_transiciones_disponibles": "No transitions available"
   },
   "cerrarciclomodal": {
-    "accion_dificilmente_reversible": "Action that is hard to reverse",
+    "accion_dificilmente_reversible": "This action cannot be undone",
     "cancelar": "Cancel",
     "cerrar_ciclo": "Close cycle",
     "descripcion_adicional": "Additional description",
     "ej_venta_fin_de_ciclo_productivo": "e.g. Sale, end of production cycle…",
-    "el_cierre_marca_el_activo_como_cerrado_y": "Closing marks the asset as CLOSED and ends its production cycle. From CLOSED the only possible status is WRITTEN OFF.",
+    "el_cierre_marca_el_activo_como_cerrado_y": "The asset will be closed: you will not be able to record more events or change its phase. Afterwards you can only remove it.",
     "el_motivo_es_obligatorio": "A reason is required.",
     "fecha_de_cierre": "Closing date",
     "la_fecha_de_cierre_es_obligatoria": "The closing date is required.",
@@ -216,12 +217,11 @@
     "cancelar": "Cancel",
     "categoria": "Category",
     "descripcion": "Description",
-    "diagnostico": "Diagnosis",
+    "diagnostico": "Pregnancy diagnosis",
     "exitoso": "Successful",
     "fallido": "Failed",
     "fecha": "Date",
     "id_madre": "Dam ID",
-    "id_padre": "Sire ID",
     "inseminacion": "Insemination",
     "nacimiento": "Birth",
     "no_se_pudo_registrar": "Could not be recorded",
@@ -231,7 +231,15 @@
     "registrar": "Record",
     "registrar_evento_reproductivo": "Record a reproductive event",
     "resultado": "Result",
-    "servicio": "Service"
+    "servicio": "Service",
+    "secuencia": "Process order: service or insemination → pregnancy diagnosis → birth.",
+    "padre": "Sire",
+    "padre_de_la_cria": "Sire of the offspring",
+    "sin_candidatos_padre": "There are no other individual animals of this species registered.",
+    "padre_obligatorio": "Choose the sire: this event requires it.",
+    "sin_especificar": "Not specified",
+    "seleccionar": "Select…",
+    "al_menos_una_cria": "There must be at least 1 offspring."
   },
   "eventosanitarioform": {
     "campos_para_el_tipo": "Fields for the selected type",
@@ -272,8 +280,10 @@
     "historial_de_eventos": "Event history",
     "registrado_se_aplico_un_cambio_de_estado": "Recorded. A status change was applied.",
     "registrado_se_avanzo_de_fase_automaticamente": "Recorded. The phase advanced automatically.",
-    "registrar_evento": "Record event",
-    "sin_eventos_registrados": "No events recorded."
+    "registrar_evento": "Record biological event",
+    "sin_eventos_registrados": "No events recorded.",
+    "requiere_fase": "Growth, reproductive and production events need an active phase. Assign it in the Phases tab.",
+    "ir_a_fases": "Go to Phases"
   },
   "fasessection": {
     "activa": "ACTIVE",
@@ -284,12 +294,16 @@
     "error_al_cargar_fases": "Failed to load phases",
     "este_activo_no_tiene_fases_registradas": "This asset has no recorded phases.",
     "fecha_de_inicio": "Start date",
-    "id_del_ciclo_productivo": "Production cycle ID",
     "id_invalido": "Invalid ID.",
     "motivo_del_cambio": "Reason for the change",
     "no_se_pudo_cambiar_la_fase": "The phase could not be changed",
     "opcional": "Optional",
-    "secuencia_de_fases": "Phase sequence"
+    "secuencia_de_fases": "Phase sequence",
+    "ciclo_productivo": "Production cycle",
+    "cargando_ciclos": "Loading cycles…",
+    "seleccionar_ciclo": "Select a production cycle",
+    "sin_ciclos": "This asset's species has no production cycles configured in Settings.",
+    "ayuda_ciclo": "The next phase of the selected cycle is assigned."
   },
   "fichaintegralview": {
     "accesos_directos": "Shortcuts",
@@ -328,7 +342,20 @@
     "hasta": "To",
     "historial_consolidado": "Consolidated history",
     "sin_registros_para_los_filtros_seleccionados": "No records for the selected filters.",
-    "todas": "All"
+    "todas": "All",
+    "cat_creacion": "Registration",
+    "cat_estado": "State change",
+    "cat_fase": "Production phase",
+    "cat_fase_productiva": "Production phase",
+    "cat_evento_biologico": "Biological event",
+    "cat_crecimiento": "Growth",
+    "cat_sanitario": "Health",
+    "cat_reproductivo": "Reproductive",
+    "cat_productivo": "Production",
+    "cat_baja": "Removal",
+    "cat_transferencia": "Transfer",
+    "cat_ingreso": "Intake",
+    "cat_indicador": "Indicator"
   },
   "indicadoressection": {
     "advertencias": "Warnings",
@@ -355,6 +382,7 @@
     "historial_de_ubicaciones": "Location history",
     "sin_historial_de_ubicaciones": "No location history.",
     "sin_infraestructura_asociada_actualmente": "No infrastructure currently linked.",
+    "transferencia_realizada": "Transfer completed.",
     "transferir": "Transfer",
     "ubicacion_actual": "Current location"
   },
@@ -379,7 +407,7 @@
     "donacion": "Donation",
     "ej_bov_2024_001": "e.g. BOV-2024-001",
     "ej_factura_n_o_00123": "e.g. Invoice No. 00123",
-    "ej_holstein": "e.g. Holstein",
+    "ej_holstein": "Type the breed",
     "el_costo_es_obligatorio_para_compra_donacion": "Cost is required for a purchase or donation.",
     "el_identificador_es_obligatorio_para": "The identifier is required for individual assets.",
     "el_soporte_documental_es_obligatorio": "The supporting document is required.",
@@ -388,8 +416,6 @@
     "fecha_de_inicio_de_ciclo": "Cycle start date",
     "fecha_de_nacimiento": "Date of birth",
     "hembra": "Female",
-    "id_de_especie": "Species ID",
-    "id_de_infraestructura": "Infrastructure ID",
     "id_invalido": "Invalid ID.",
     "identificador": "Identifier",
     "la_cantidad_inicial_es_obligatoria_para": "The initial quantity is required for batches.",
@@ -412,7 +438,19 @@
     "sexo": "Sex",
     "soporte_documental": "Supporting document",
     "tipo_de_activo": "Asset type",
-    "transferencia_interna": "Internal transfer"
+    "transferencia_interna": "Internal transfer",
+    "especie": "Species",
+    "finca": "Farm",
+    "infraestructura": "Infrastructure",
+    "cargando": "Loading…",
+    "sin_fincas": "You have no farms assigned. Ask the administrator to assign one.",
+    "sin_infraestructuras_compatibles": "This farm has no active areas for that species.",
+    "lote_sin_densidad_titulo": "This species cannot register batches yet",
+    "lote_sin_densidad_detalle": "{{especie}} is missing its maximum density. Ask the administrator, or register an individual animal.",
+    "especie_hint": "Type the species name or ID.",
+    "finca_hint": "Optional: filters the suggested infrastructures.",
+    "infraestructura_hint": "Type the name or ID. Choose a farm to see suggestions.",
+    "opcion_no_valida": "Choose an option from the list or type the ID."
   },
   "registraractivopage": {
     "alta_de_un_ejemplar_individual_o_de_un_lote": "Register a single animal or a population batch",
@@ -424,6 +462,8 @@
     "baja_total_del_lote": "Whole batch",
     "cancelar": "Cancel",
     "cantidad_afectada": "Quantity affected",
+    "cantidad_maxima": "The quantity cannot exceed what is available in the batch ({{max}}).",
+    "cantidad_minima": "The quantity must be a whole number greater than zero.",
     "confirma_la_baja": "Confirm the write-off",
     "confirmar_baja": "Confirm write-off",
     "descarte_sanitario": "Health culling",
@@ -451,7 +491,9 @@
     "no_se_pudo_conectar_con_el_servidor_se": "Could not reach the server. Showing the latest available data.",
     "recargar_lista": "Reload list",
     "registrar_activo": "Register asset",
-    "sin_conexion": "Offline"
+    "sin_conexion": "Offline",
+    "coincidencias_en_pagina_one": "{{count}} of {{total}} assets on this page matches. Search only checks the current page.",
+    "coincidencias_en_pagina_other": "{{count}} of {{total}} assets on this page match. Search only checks the current page."
   },
   "sensoressection": {
     "asociacion_creada_con_advertencia": "Link created with a warning",

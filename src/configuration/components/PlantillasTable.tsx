@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { Plus, RefreshCw, ChevronDown, ChevronUp, GitBranch, Sprout, ClipboardList } from 'lucide-react';
+import { Plus, RefreshCw, ChevronDown, ChevronUp, GitBranch, ClipboardList } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
+import css from './PlantillasTable.module.css';
 import { usePlantillas } from '../hooks/usePlantillas';
 import { useEspecies } from '../hooks/useEspecies';
 import { PlantillaModal } from './PlantillaModal';
@@ -14,32 +18,31 @@ import { PlantillaHistorial } from './PlantillaHistorial';
 import { CATEGORIAS_PLANTILLA } from '../types';
 import type { PlantillaResponse, AplicacionPlantillaResponse } from '../types';
 
+const PLANTILLAS_POR_PAGINA = 10;
+
 // Solo las categorías del RF-30, con cuántos parámetros trae cada una. Listar
 // `Object.keys` mostraba `schema_version` como si fuera un parámetro incluido, y
 // una categoría con lista vacía como si tuviera contenido.
-function ParamsBadges({ snapshot }: { snapshot: Record<string, unknown> }) {
+function ResumenContenido({ snapshot }: { snapshot: Record<string, unknown> }) {
+  const { t } = useT('configuration');
   const conContenido = CATEGORIAS_PLANTILLA
     .map((categoria) => ({ categoria, total: (snapshot[categoria] as unknown[] | undefined)?.length ?? 0 }))
     .filter(({ total }) => total > 0);
 
-  if (conContenido.length === 0) return <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>;
+  if (conContenido.length === 0) return <p className={css.contenido}>{t('plantillastable.sin_parametros')}</p>;
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-      {conContenido.map(({ categoria, total }) => (
-        <span key={categoria} style={{
-          fontSize: '10px', fontWeight: 600, fontFamily: 'var(--font-mono)',
-          padding: '2px 6px', borderRadius: 'var(--r-full)',
-          background: 'var(--surface-hover)', border: '1px solid var(--surface-border)',
-          color: 'var(--text-secondary)',
-        }}>
-          {categoria} · {total}
-        </span>
+    <p className={css.contenido}>
+      {conContenido.map(({ categoria, total }, i) => (
+        <React.Fragment key={categoria}>
+          {i > 0 && ' · '}
+          <strong>{total}</strong> {t(`plantillastable.categoria.${categoria}`, { count: total })}
+        </React.Fragment>
       ))}
-    </div>
+    </p>
   );
 }
 
-interface PlantillaCardProps {
+interface PlantillaFilaProps {
   plantilla: PlantillaResponse;
   especieNombre: string;
   puedeAplicar: boolean;
@@ -49,78 +52,54 @@ interface PlantillaCardProps {
   onVersionar: () => void;
 }
 
-function PlantillaCard({
+function PlantillaFila({
   plantilla, especieNombre, puedeAplicar, puedeCrear, online, onAplicar, onVersionar,
-}: PlantillaCardProps) {
+}: PlantillaFilaProps) {
   const { t } = useT('configuration');
   // TC-DIS-61: varias versiones comparten nombre, asi que el encabezado y los
   // botones nombran la plantilla con su version; si no, el lector anunciaba
   // decenas de "Aplicar plantilla: X" identicos.
   const nombreCompleto = `${plantilla.template_name} v${plantilla.version}`;
   return (
-    <article
-      aria-label={nombreCompleto}
-      style={{
-        background: 'var(--surface-card)', border: '1px solid var(--surface-border)',
-        borderRadius: 'var(--r-xl)', padding: 'var(--s5)',
-        position: 'relative', overflow: 'hidden', height: '100%',
-      }}
-    >
-      {/* Top accent bar */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'var(--brand-400)' }} />
-
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'var(--s3)' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 title={plantilla.template_name} style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 var(--s1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+    <article aria-label={nombreCompleto} className={css.plantilla}>
+      <div>
+        <div className={css.titulo}>
+          <h3 title={plantilla.template_name} className={css.nombre}>
             {plantilla.template_name}
             <span className="ds-sr-only"> v{plantilla.version}</span>
           </h3>
+          <span aria-hidden="true" className={css.version}>v{plantilla.version}</span>
         </div>
-        <span aria-hidden="true" style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'var(--font-mono)', padding: '2px 7px', borderRadius: 'var(--r-full)', background: 'var(--surface-hover)', border: '1px solid var(--surface-border)', color: 'var(--text-muted)', flexShrink: 0, marginLeft: 'var(--s2)' }}>
-          v{plantilla.version}
-        </span>
+        <p className={css.meta}>
+          {t('plantillastable.para')} <span className={css.especie}>{especieNombre}</span>
+          {' · '}{t('plantillastable.creada', { fecha: formatearFecha(plantilla.fecha_creacion) })}
+        </p>
+        <ResumenContenido snapshot={plantilla.params_snapshot} />
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)', marginBottom: 'var(--s3)' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '11px', fontWeight: 600, color: 'var(--brand-600)', background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderRadius: 'var(--r-full)', padding: '2px 7px' }}>
-          <Sprout size={12} strokeWidth={2} aria-hidden />{especieNombre}
-        </span>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-          {formatearFecha(plantilla.fecha_creacion)}
-        </span>
-      </div>
-
-      <div style={{ marginBottom: 'var(--s4)' }}>
-        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 'var(--s2)' }}>{t('plantillastable.parametros_incluidos')}</div>
-        <ParamsBadges snapshot={plantilla.params_snapshot} />
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s2)' }}>
-        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', minWidth: 0 }}>{t('plantillastable.inmutable')}</span>
-        <div style={{ display: 'flex', gap: 'var(--s2)', flexShrink: 0 }}>
-          {/* Las plantillas no se editan: actualizar una es crear su versión
-              siguiente. Versionar es acción C, igual que crear. */}
-          {puedeCrear && (
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={!online}
-              onClick={onVersionar}
-              title={t('plantillastable.generar_la_version_siguiente')}
-              aria-label={`${t('plantillastable.nueva_version')}: ${nombreCompleto}`}
-            >
-              <GitBranch size={13} aria-hidden style={{ marginRight: 'var(--s1)' }} />
-              {t('plantillastable.nueva_version')}
-            </Button>
-          )}
+      <div className={css.acciones}>
+        {/* Las plantillas no se editan: actualizar una es crear su versión
+            siguiente. Versionar es acción C, igual que crear. */}
+        {puedeCrear && (
           <Button
-            variant="primary"
-            size="sm"
-            disabled={!puedeAplicar || !online}
-            onClick={onAplicar}
-            aria-label={`${t('plantillastable.aplicar_plantilla')}: ${nombreCompleto}`}
-          >{t('plantillastable.aplicar_plantilla')}</Button>
-        </div>
+            variant="secondary"
+            size="md"
+            disabled={!online}
+            onClick={onVersionar}
+            title={t('plantillastable.generar_la_version_siguiente')}
+            aria-label={`${t('plantillastable.nueva_version')}: ${nombreCompleto}`}
+          >
+            <GitBranch size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />
+            {t('plantillastable.nueva_version')}
+          </Button>
+        )}
+        <Button
+          variant="primary"
+          size="md"
+          disabled={!puedeAplicar || !online}
+          onClick={onAplicar}
+          aria-label={`${t('plantillastable.aplicar_plantilla')}: ${nombreCompleto}`}
+        >{t('plantillastable.aplicar_plantilla')}</Button>
       </div>
     </article>
   );
@@ -146,6 +125,13 @@ export function PlantillasTable() {
   const getEspecieNombre = (idEspecie: number) =>
     especies.find((e) => e.id_especie === idEspecie)?.nombre ?? `Especie #${idEspecie}`;
 
+  // Busca por nombre y por especie: es lo que distingue dos plantillas a simple vista.
+  const busqueda = useBusqueda(plantillas, (p) => `${p.template_name} ${getEspecieNombre(p.id_especie)}`);
+  const [pagina, setPagina] = useState(1);
+  useEffect(() => { setPagina(1); }, [busqueda.consulta]);
+  const totalPaginas = Math.max(1, Math.ceil(busqueda.filtrados.length / PLANTILLAS_POR_PAGINA));
+  const enPagina = busqueda.filtrados.slice((pagina - 1) * PLANTILLAS_POR_PAGINA, pagina * PLANTILLAS_POR_PAGINA);
+
   const handleAplicar = async (idEspecieDestino: number, fechaActualizacion: string | null): Promise<AplicacionPlantillaResponse | null> => {
     if (!wizardPlantilla) return null;
     const result = await aplicar(wizardPlantilla.id_plantilla, { id_especie_destino: idEspecieDestino, fecha_actualizacion_especie_destino: fechaActualizacion });
@@ -164,7 +150,9 @@ export function PlantillasTable() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--s5)' }}>
         <div>
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('plantillastable.plantillas_de_configuracion')}</h2>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('plantillastable.captura_y_aplica_configuraciones_completas')}</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0, maxWidth: '72ch' }}>
+            {t('plantillastable.captura_y_aplica_configuraciones_completas')}. {t('plantillastable.no_se_editan')}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
           <Button variant="ghost" size="sm" onClick={() => listar()} aria-label={t('plantillastable.recargar')}>
@@ -186,10 +174,8 @@ export function PlantillasTable() {
 
       {/* Cards grid */}
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--s4)' }}>
-          {[1, 2, 3].map((i) => (
-            <div key={i} style={{ height: 200, borderRadius: 'var(--r-xl)', background: 'var(--surface-hover)', animation: 'pulse 1.4s infinite' }} />
-          ))}
+        <div className={css.lista} aria-busy="true">
+          {[1, 2, 3].map((i) => <div key={i} className={css.esqueleto} />)}
         </div>
       ) : plantillas.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 'var(--s8) 0' }}>
@@ -198,14 +184,17 @@ export function PlantillasTable() {
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('plantillastable.crea_la_primera_plantilla_para_capturar_una')}</p>
         </div>
       ) : (
-        // TC-DIS-61: lista semántica; cada plantilla con su nombre como encabezado.
-        // role="list" explicito: Safari/VoiceOver quita la semantica de lista
-        // cuando lleva list-style: none.
-        <ul role="list" aria-label={t('plantillastable.plantillas_de_configuracion')} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)', listStyle: 'none', padding: 0, marginTop: 0 }}>
-          {plantillas.map((p) => (
-            <li key={p.id_plantilla}>
-            <PlantillaCard
-              key={p.id_plantilla}
+        <>
+        {busqueda.conBuscador && (
+          <Buscador id="buscar-plantilla" label={t('plantillastable.buscar_plantilla')} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+        )}
+        {/* TC-DIS-61: lista semántica; cada plantilla con su nombre como encabezado.
+            role="list" explicito: Safari/VoiceOver quita la semantica de lista
+            cuando lleva list-style: none. */}
+        <ul role="list" aria-label={t('plantillastable.plantillas_de_configuracion')} className={css.lista}>
+          {enPagina.map((p) => (
+            <li key={p.id_plantilla} className={css.fila}>
+            <PlantillaFila
               plantilla={p}
               especieNombre={getEspecieNombre(p.id_especie)}
               puedeAplicar={puedeAplicar}
@@ -217,6 +206,10 @@ export function PlantillasTable() {
             </li>
           ))}
         </ul>
+        <div style={{ marginBottom: 'var(--s6)' }}>
+          <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
+        </div>
+        </>
       )}
 
       {/* Historial toggle */}

@@ -46,6 +46,7 @@ function mockEspecies(
     desactivar: vi.fn(),
     reactivar: vi.fn(),
     resolverConflicto: vi.fn(),
+    limpiarSaveError: vi.fn(),
     ...extra,
   } as ReturnType<typeof useEspecies>);
 }

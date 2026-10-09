@@ -13,6 +13,8 @@ import { temaActivo } from '../../shared/tema/useTemaSesion';
 import { useContexto } from '../../shared/contexto/useContexto';
 import type { FincaResponse, IdentidadVisualResponse } from '../types';
 import { OptionCard } from '../../shared/design-system/OptionCard';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda } from '../../shared/hooks/useBusqueda';
 
 // RF-26: espeja src/shared/almacen_logos.py (FORMATOS_PERMITIDOS, TAMANO_MAX) del backend.
 const LOGO_TIPOS_PERMITIDOS = ['image/png', 'image/jpeg', 'image/svg+xml'];
@@ -24,6 +26,7 @@ function FincaSelectorIdent({ onSelect }: { onSelect: (f: FincaResponse) => void
   const { fincas, loading, cargar } = useFincas();
   useEffect(() => { cargar(); }, [cargar]);
   const activas = fincas.filter((f) => f.es_activo);
+  const busqueda = useBusqueda(activas, (f) => `${f.nombre} ${f.ubicacion?.municipio ?? ''}`);
 
   if (loading) {
     return (
@@ -42,8 +45,11 @@ function FincaSelectorIdent({ onSelect }: { onSelect: (f: FincaResponse) => void
   return (
     <div>
       <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('identidadvisualsection.selecciona_la_finca_para_configurar_su')}</p>
+      {busqueda.conBuscador && (
+        <Buscador id="buscar-finca-identidad" label={t('busqueda.buscar_finca', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 'var(--s4)' }}>
-        {activas.map((f) => (
+        {busqueda.filtrados.map((f) => (
           <OptionCard
             key={f.id_finca}
             onClick={() => onSelect(f)}

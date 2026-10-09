@@ -18,7 +18,7 @@ const CARD: React.CSSProperties = {
 
 const SELECT: React.CSSProperties = {
   padding: 'var(--s2) var(--s3)', borderRadius: 'var(--r-md)', border: '1.5px solid var(--surface-border)',
-  background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '13px', height: 38,
+  background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: 'var(--fs-body-md)', height: 38,
 };
 
 const LABEL: React.CSSProperties = {
@@ -69,7 +69,7 @@ function IndicadorCard({ ind }: { ind: IndicadorZootecnicoResponse }) {
           <span style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
             {ind.valor ?? '—'}
           </span>
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{ind.unidad}</span>
+          <span style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)' }}>{ind.unidad}</span>
         </dd>
       ) : (
         <dd style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 'var(--s2) 0 0' }}>{t('indicadoressection.no_disponible')}</dd>
@@ -108,8 +108,8 @@ export function IndicadoresSection({ idActivo }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
       <div style={CARD}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-          <Gauge size={16} aria-hidden />{t('indicadoressection.indicadores_zootecnicos')}</h3>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
+          <Gauge size={16} aria-hidden />{t('indicadoressection.indicadores_zootecnicos')}</h2>
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
             <label style={LABEL} htmlFor="ind-tipo">{t('indicadoressection.tipo')}</label>
@@ -128,13 +128,20 @@ export function IndicadoresSection({ idActivo }: Props) {
         </div>
       </div>
 
-      {error && <Alert variant="error" title={t('indicadoressection.error_al_cargar_indicadores')} description={error.message} />}
+      {/* TC-DIS-140/141: el 422 de muestra insuficiente es informativo (warning) y un 5xx no muestra detalle técnico. */}
+      {error && (
+        <Alert
+          variant={error.status >= 500 ? 'error' : 'warning'}
+          title={t('indicadoressection.error_al_cargar_indicadores')}
+          description={error.status >= 500 ? t('errores.generico', { ns: 'common' }) : texto(error.message)}
+        />
+      )}
 
       {data && data.advertencias.length > 0 && (
         <div role="status" style={{ background: 'var(--sem-warning-bg)', border: '1px solid var(--sem-warning-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', color: 'var(--sem-warning)', fontWeight: 600, fontSize: '13px', marginBottom: 'var(--s2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', color: 'var(--sem-warning)', fontWeight: 600, fontSize: 'var(--fs-body-md)', marginBottom: 'var(--s2)' }}>
             <AlertTriangle size={15} aria-hidden />{t('indicadoressection.advertencias')}</div>
-          <ul style={{ margin: 0, paddingLeft: 'var(--s5)', color: 'var(--text-secondary)', fontSize: '13px' }}>
+          <ul style={{ margin: 0, paddingLeft: 'var(--s5)', color: 'var(--text-secondary)', fontSize: 'var(--fs-body-md)' }}>
             {data.advertencias.map((a, i) => <li key={i}>{texto(a)}</li>)}
           </ul>
         </div>

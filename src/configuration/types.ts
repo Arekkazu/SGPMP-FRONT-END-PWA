@@ -12,6 +12,8 @@ export interface EspecieResponse {
   fecha_actualizacion: string | null;
   /** RFC-009: familia de modelo de IA de la especie; RF-20 exige que el modelo del área coincida. */
   tipo_modelo?: TipoModelo | null;
+  /** RF-36: límite de densidad del lote; null = sin configurar (el registro de lotes falla). Decimal → texto. */
+  densidad_maxima_por_especie?: number | string | null;
   /** #115 (RF-15): solo en cliente — true mientras la creación offline que lo generó
    *  sigue en syncQueue. No lo emite el backend. */
   pendienteSync?: boolean;
@@ -27,7 +29,8 @@ export interface EditarEspecieDTO {
   nombre: string;
   descripcion?: string;
   tipo_modelo?: TipoModelo | null;
-  fecha_actualizacion: string;
+  /** Concurrencia optimista: el valor del último GET; null si nunca se editó (#231). */
+  fecha_actualizacion: string | null;
 }
 
 // =====================================================================
@@ -274,6 +277,8 @@ export interface RegistrarCalibracionDTO {
   valor_referencia: number;
   fecha_calibracion: string;
   observaciones?: string;
+  // RF-24 v2.0 (#510): obligatorio en el backend; este endpoint solo acepta SENSOR.
+  modo_calibracion: 'SENSOR';
 }
 
 // =====================================================================
@@ -359,10 +364,18 @@ export interface MetricaProduccionResponse {
   id_especie: number | null;
   es_activo: boolean;
   fecha_actualizacion: string | null;
+  /** RFC-004 (#258). valor_min/valor_max llegan como texto ("10.0000"): son Decimal. */
+  tipo_dato: TipoDatoMetrica;
+  es_obligatorio: boolean;
+  valor_min: number | string | null;
+  valor_max: number | string | null;
 }
 
 /** RF-16 v1.2 (RFC-004): lo elige el usuario; el backend ya no lo infiere de `tipo_medicion`. */
 export type TipoDatoMetrica = 'NUMERICO' | 'ENTERO' | 'TEXTO' | 'BOOLEANO';
+
+/** RFC-004: el rango solo aplica a estos tipos (el backend rechaza el resto con 400). */
+export const TIPOS_DATO_CON_RANGO: TipoDatoMetrica[] = ['NUMERICO', 'ENTERO'];
 
 export interface RegistrarMetricaDTO {
   id_especie: number;
@@ -371,6 +384,9 @@ export interface RegistrarMetricaDTO {
   tipo_medicion: TipoMedicion;
   aplica_a_tipo_activo?: TipoActivo;
   tipo_dato: TipoDatoMetrica;
+  es_obligatorio: boolean;
+  valor_min: number | null;
+  valor_max: number | null;
 }
 
 export interface EditarMetricaDTO {
@@ -378,6 +394,10 @@ export interface EditarMetricaDTO {
   unidad_medida: string;
   tipo_medicion: TipoMedicion;
   aplica_a_tipo_activo: TipoActivo;
+  tipo_dato: TipoDatoMetrica;
+  es_obligatorio: boolean;
+  valor_min: number | null;
+  valor_max: number | null;
   fecha_actualizacion?: string;
 }
 

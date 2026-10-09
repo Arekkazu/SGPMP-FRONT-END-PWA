@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { activosApi } from '../api/activosApi';
 import type { ActivoBiologicoResponse, ActualizarActivoIndividualDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { avisarExito } from '../../shared/hooks/useToast';
 
 export function useActivoDetalle(idActivo: number) {
   const [activo, setActivo] = useState<ActivoBiologicoResponse | null>(null);
@@ -29,6 +30,7 @@ export function useActivoDetalle(idActivo: number) {
       setSaveError(null);
       try {
         const actualizado = await activosApi.actualizarIndividual(idActivo, dto);
+        avisarExito('guardado');
         setActivo(actualizado);
         return true;
       } catch (e) {

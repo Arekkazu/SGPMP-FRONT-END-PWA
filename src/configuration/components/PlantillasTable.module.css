@@ -1,0 +1,104 @@
+/* Plantillas como filas de un solo panel: la tarjeta de 300px no cabía el
+   nombre, la especie, el contenido y dos acciones sin apretarlos. */
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.fila + .fila {
+  border-top: 1px solid var(--surface-border);
+}
+
+.plantilla {
+  display: grid;
+  gap: var(--s4);
+  padding: var(--s4) var(--s5);
+}
+
+/* md+: datos a la izquierda, acciones alineadas a la derecha. */
+@media (min-width: 768px) {
+  .plantilla {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--s6);
+  }
+}
+
+.titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.nombre {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-heading-sm);
+  font-weight: 700;
+  line-height: var(--lh-snug);
+  color: var(--text-primary);
+}
+
+.version {
+  flex-shrink: 0;
+  padding: 2px var(--s2);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--r-full);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.meta,
+.contenido {
+  margin: var(--s1) 0 0;
+  font-size: var(--fs-body-md);
+  line-height: var(--lh-base);
+  color: var(--text-secondary);
+}
+
+.especie {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.contenido strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.esqueleto {
+  height: 96px;
+  background: var(--surface-hover);
+  animation: pulso 1.4s ease-in-out infinite;
+}
+
+.esqueleto + .esqueleto {
+  border-top: 1px solid var(--surface-border);
+}
+
+@keyframes pulso {
+  50% { background: var(--surface-bg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto { animation: none; }
+}

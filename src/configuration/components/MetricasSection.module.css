@@ -1,0 +1,43 @@
+/* #258: casilla "obligatoria" con touch target de 48px (--s9) y foco visible. */
+.obligatoria {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  min-height: var(--s9);
+  padding: var(--s3);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+
+.obligatoria:hover {
+  background: var(--surface-hover);
+}
+
+.obligatoria:focus-within {
+  outline: 2px solid var(--brand-600);
+  outline-offset: 2px;
+}
+
+.obligatoria input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--brand-cta);
+}
+
+.obligatoria span {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  font-size: var(--fs-body-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.obligatoria small {
+  font-size: var(--fs-body-sm);
+  font-weight: 400;
+  color: var(--text-secondary);
+}

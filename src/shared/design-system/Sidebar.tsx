@@ -41,6 +41,11 @@ interface SidebarProps {
   onNavigate?: () => void;
 }
 
+/** "juan veterinario" → "Juan Veterinario" (T-12). */
+function capitalizar(nombre: string): string {
+  return nombre.trim().toLowerCase().replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase());
+}
+
 function NavItemComponent({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
   const { t } = useT('nav');
   const { pathname } = useLocation();
@@ -60,7 +65,9 @@ function NavItemComponent({ item, onNavigate }: { item: NavItem; onNavigate?: ()
       onClick={(e) => { if (locked) { e.preventDefault(); return; } onNavigate?.(); }}
       aria-current={active ? 'page' : undefined}
       aria-disabled={locked}
-      title={locked ? t('aria.sin_permiso') : label}
+      // T-09: el nombre accesible y el tooltip dicen de qué sección se trata.
+      aria-label={locked ? t('aria.sin_permiso_modulo', { modulo: label }) : undefined}
+      title={locked ? t('aria.sin_permiso_tooltip', { modulo: label }) : label}
     >
       <span className="ds-sidebar__item-icon">{item.icon}</span>
       <span className="ds-sidebar__item-label">{label}</span>
@@ -80,10 +87,14 @@ export function Sidebar({ onLogout, open, onNavigate }: SidebarProps) {
   // Sin identidad configurada se conserva la de SGP, que es el comportamiento previo.
   const { contexto } = useContexto();
   const identidad = contexto?.identidad_visual ?? null;
-  const logoUrl = resolverLogoUrl(identidad?.logo_path);
+  // M9-09: si el logo no carga se vuelve a la marca por defecto, no a una imagen rota.
+  const [logoRoto, setLogoRoto] = React.useState(false);
+  React.useEffect(() => setLogoRoto(false), [identidad?.logo_path]);
+  const logoUrl = logoRoto ? null : resolverLogoUrl(identidad?.logo_path);
   const nombreOrg = identidad?.org_display_name || t('marca.nombre');
   const subtitulo = contexto?.finca_activa || t('marca.descripcion');
 
+  const nombreUsuario = userInfo ? capitalizar(`${userInfo.nombre} ${userInfo.apellidos}`) : '';
   const initials =
     userInfo?.nombre && userInfo?.apellidos
       ? `${userInfo.nombre.charAt(0)}${userInfo.apellidos.charAt(0)}`
@@ -97,6 +108,7 @@ export function Sidebar({ onLogout, open, onNavigate }: SidebarProps) {
             <img
               src={logoUrl}
               alt={nombreOrg}
+              onError={() => setLogoRoto(true)}
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           ) : (
@@ -133,8 +145,9 @@ export function Sidebar({ onLogout, open, onNavigate }: SidebarProps) {
       <div className="ds-sidebar__footer">
         <div className="ds-sidebar__avatar" aria-hidden="true">{initials}</div>
         <div className="ds-sidebar__user-info">
-          <span className="ds-sidebar__user-name">
-            {userInfo ? `${userInfo.nombre} ${userInfo.apellidos}` : '—'}
+          {/* T-12: el nombre se trunca con elipsis; el title conserva el completo. */}
+          <span className="ds-sidebar__user-name" title={nombreUsuario || undefined}>
+            {nombreUsuario || '—'}
           </span>
           <span className="ds-sidebar__user-role">{userInfo?.nombre_rol ?? ''}</span>
         </div>

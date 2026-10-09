@@ -26,7 +26,7 @@ function Meta({ items }: { items: MetaItem[] }) {
         <div key={m.label}>
           <div
             style={{
-              fontSize: '10px',
+              fontSize: 'var(--fs-label-sm)',
               fontWeight: 700,
               textTransform: 'uppercase',
               letterSpacing: '0.05em',

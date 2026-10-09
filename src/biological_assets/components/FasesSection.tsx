@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
 import { useForm } from 'react-hook-form';
 import { GitBranch, CheckCircle2, CircleDot } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFases } from '../hooks/useFases';
-import { ciclosApi } from '../../configuration/api/especiesConfigApi';
+import { hoyLocal, instanteParaEvento } from '../../shared/lib/fecha';
 import { ModalShell } from './ModalShell';
 import { RECURSO_ACTIVOS, ACCION_E } from '../rbac';
 import { ESTADOS_TERMINALES } from '../types';
-import type { CambiarFaseDTO, EstadoActivoNombre, GestionFaseResponse } from '../types';
+import type { CambiarFaseDTO, CicloProductivoAsignable, EstadoActivoNombre, GestionFaseResponse } from '../types';
 
 interface Props {
   idActivo: number;
@@ -62,7 +64,7 @@ function FaseItem({ fase, ultimo }: { fase: GestionFaseResponse; ultimo: boolean
             {fase.nombre_ciclo}
           </span>
           {activa && (
-            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--brand-600)', background: 'var(--brand-50)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)' }}>{t('fasessection.activa')}</span>
+            <span style={{ fontSize: 'var(--fs-label-sm)', fontWeight: 700, color: 'var(--brand-600)', background: 'var(--brand-50)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)' }}>{t('fasessection.activa')}</span>
           )}
         </div>
         {fase.nombre_fase_actual && (
@@ -72,8 +74,8 @@ function FaseItem({ fase, ultimo }: { fase: GestionFaseResponse; ultimo: boolean
           </div>
         )}
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-          {fase.fecha_inicio?.slice(0, 10)}
-          {fase.fecha_finalizacion ? ` → ${fase.fecha_finalizacion.slice(0, 10)}` : ' → en curso'}
+          {formatearFecha(fase.fecha_inicio, FECHA_NUMERICA)}
+          {fase.fecha_finalizacion ? ` → ${formatearFecha(fase.fecha_finalizacion, FECHA_NUMERICA)}` : ' → en curso'}
         </div>
         {fase.motivo_cambio && (
           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: 'var(--s1)' }}>
@@ -96,7 +98,7 @@ function CambiarFaseModal({
   ciclosLoading,
   saving, saveError, onClose, onConfirmar,
 }: {
-  ciclos: { id_ciclo_biologico: number; nombre: string }[];
+  ciclos: CicloProductivoAsignable[];
   ciclosLoading: boolean;
   saving: boolean;
   saveError: ReturnType<typeof useFases>['saveError'];
@@ -113,7 +115,7 @@ function CambiarFaseModal({
     const ok = await onConfirmar({
       id_ciclo_productiva: Number(v.id_ciclo_productiva),
       motivo_cambio: v.motivo_cambio.trim() || null,
-      fecha_inicio: v.fecha_inicio ? new Date(v.fecha_inicio).toISOString() : null,
+      fecha_inicio: v.fecha_inicio ? instanteParaEvento(v.fecha_inicio) : null,
     });
     if (ok) onClose();
   };
@@ -130,26 +132,29 @@ function CambiarFaseModal({
       )}
       <form onSubmit={handleSubmit(submit)} noValidate>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
-          <select
-            aria-label={t('fasessection.id_del_ciclo_productivo')}
+          <Select
+            id="ciclo-productivo"
+            label={t('fasessection.ciclo_productivo')}
+            required
             disabled={ciclosLoading || ciclos.length === 0}
-            style={{ width: '100%', padding: 'var(--s3)', borderRadius: 'var(--r-md)', border: '1.5px solid var(--surface-border)', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
+            error={errors.id_ciclo_productiva?.message}
+            hint={!ciclosLoading && ciclos.length === 0 ? t('fasessection.sin_ciclos') : t('fasessection.ayuda_ciclo')}
             {...register('id_ciclo_productiva', {
               required: t('fasessection.el_ciclo_productivo_es_obligatorio'),
             })}
           >
             <option value="">
-              {ciclosLoading ? 'Cargando ciclos…' : ciclos.length ? 'Seleccionar ciclo productivo' : 'No hay ciclos configurados'}
+              {ciclosLoading ? t('fasessection.cargando_ciclos') : t('fasessection.seleccionar_ciclo')}
             </option>
             {ciclos.map((ciclo) => (
-              <option key={ciclo.id_ciclo_biologico} value={ciclo.id_ciclo_biologico}>
-                {ciclo.nombre}
+              <option key={ciclo.id_ciclo_productivo} value={ciclo.id_ciclo_productivo}>
+                {ciclo.nombre} · {ciclo.fases.map((f) => f.nombre_fase).join(' → ')}
               </option>
             ))}
-          </select>
-          <Input label={t('fasessection.fecha_de_inicio')} type="date" {...register('fecha_inicio')} />
+          </Select>
+          <Input label={t('fasessection.fecha_de_inicio')} type="date" max={hoyLocal()} {...register('fecha_inicio')} />
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-fase">{t('fasessection.motivo_del_cambio')}</label>
+            <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-fase">{t('fasessection.motivo_del_cambio')}</label>
             <textarea id="motivo-fase" style={TEXTAREA} placeholder={t('fasessection.opcional')} {...register('motivo_cambio')} />
           </div>
         </div>
@@ -162,24 +167,16 @@ function CambiarFaseModal({
   );
 }
 
-export function FasesSection({ idActivo, idEspecie = null, estadoActual, onChanged }: Props & { idEspecie?: number | null }) {
+export function FasesSection({ idActivo, estadoActual, onChanged }: Props) {
   const { t } = useT('biologicalAssets');
   const online = useOnlineStatus();
   const puedeCambiar = usePermission(RECURSO_ACTIVOS, ACCION_E);
   const terminal = estadoEsTerminal(estadoActual);
-  const { fases, loading, saving, error, saveError, cargar, cambiarFase, setSaveError } = useFases(idActivo);
-  const [ciclos, setCiclos] = useState<{ id_ciclo_biologico: number; nombre: string }[]>([]);
-  const [ciclosLoading, setCiclosLoading] = useState(false);
+  const { fases, loading, saving, error, saveError, cargar, cambiarFase, setSaveError, ciclos, ciclosLoading, cargarCiclos } = useFases(idActivo);
   const [abierto, setAbierto] = useState(false);
 
   useEffect(() => { cargar(); }, [cargar]);
-  useEffect(() => {
-    if (!abierto || idEspecie == null) return;
-    setCiclosLoading(true);
-    ciclosApi.listar(idEspecie, true)
-      .then((items) => setCiclos(items.map((item) => ({ id_ciclo_biologico: item.id_ciclo_biologico, nombre: item.nombre }))))
-      .finally(() => setCiclosLoading(false));
-  }, [abierto, idEspecie]);
+  useEffect(() => { if (abierto) cargarCiclos(); }, [abierto, cargarCiclos]);
 
   const handleConfirmar = async (dto: CambiarFaseDTO): Promise<boolean> => {
     const ok = await cambiarFase(dto);
@@ -190,15 +187,15 @@ export function FasesSection({ idActivo, idEspecie = null, estadoActual, onChang
   return (
     <div style={CARD}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <GitBranch size={16} aria-hidden />{t('fasessection.secuencia_de_fases')}</h3>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+          <GitBranch size={16} aria-hidden />{t('fasessection.secuencia_de_fases')}</h2>
         {puedeCambiar && !terminal && (
           <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSaveError(null); setAbierto(true); }}>{t('fasessection.cambiar_fase')}</Button>
         )}
       </div>
 
       {terminal && (
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 var(--s4)' }}>
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: '0 0 var(--s4)' }}>
           El activo está en estado «{estadoActual}». No se pueden cambiar fases en estados terminales (CERRADO, BAJA).
         </p>
       )}

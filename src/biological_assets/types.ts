@@ -229,6 +229,13 @@ export interface HistorialFasesResponse {
   fases: GestionFaseResponse[];
 }
 
+/** GET /activos-biologicos/{id}/ciclos-productivos (#288): ciclos de la especie del activo. */
+export interface CicloProductivoAsignable {
+  id_ciclo_productivo: number;
+  nombre: string;
+  fases: { id_ciclos_productivo_biologico: number; id_ciclo_biologico: number; nombre_fase: string; duracion_dias: number }[];
+}
+
 // ── Eventos ──────────────────────────────────────────────────────────
 export interface EventoCrecimientoResponse {
   tipo_medicion: string;

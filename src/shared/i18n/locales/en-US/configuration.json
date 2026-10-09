@@ -64,9 +64,11 @@
     "sin_calibraciones_registradas_para_este": "No calibrations recorded for this sensor.",
     "sin_conexion": "Offline",
     "sin_permiso": "No permission",
-    "solo_dispositivos_activos_son_calibrables": "Only active devices can be calibrated",
     "valor_de_referencia": "Reference value",
-    "verificando_asociacion": "Checking the link…"
+    "verificando_asociacion": "Checking the link…",
+    "n_calibraciones_one": "{{count}} calibration",
+    "n_calibraciones_other": "{{count}} calibrations",
+    "opcional": "(optional)"
   },
   "ciclossection": {
     "cancelar": "Cancel",
@@ -319,7 +321,8 @@
     "solo_letras_y_espacios": "Letters and spaces only.",
     "familia_de_modelo_ia": "AI model family",
     "sin_familia_de_modelo": "— No model family —",
-    "ayuda_familia_de_modelo": "The AI model of the areas of this species must match this family."
+    "ayuda_familia_de_modelo": "The AI model of the areas of this species must match this family.",
+    "regla_nombre": "3 to 50 characters: letters and spaces only (no numbers or hyphens)."
   },
   "especiestable": {
     "no_hay_especies_registradas": "No species registered.",
@@ -504,12 +507,21 @@
     "tipo_dato_texto": "Text",
     "tipo_de_dato": "Data type",
     "tipo_de_medicion": "Measurement type",
-    "unidad_de_medida": "Unit of measure"
+    "unidad_de_medida": "Unit of measure",
+    "valor_minimo": "Minimum value",
+    "valor_maximo": "Maximum value",
+    "ayuda_rango": "Optional. Empty = no limit.",
+    "rango_invalido": "The maximum cannot be lower than the minimum.",
+    "es_obligatoria": "Required when registering an asset",
+    "ayuda_obligatoria": "Registering assets of this species will require this value.",
+    "col_dato": "Data type",
+    "obligatoria": "required"
   },
   "pagina": {
     "aria_secciones": "Settings sections",
     "subtitulo": "Manage species, farms, IoT devices and personalization",
-    "titulo": "System Settings"
+    "titulo": "System Settings",
+    "aria_subsecciones": "{{seccion}} subsections"
   },
   "paginacion": {
     "anterior": "Previous",
@@ -620,15 +632,28 @@
     "crea_la_primera_plantilla_para_capturar_una": "Create the first template to capture a base configuration.",
     "error_al_cargar": "Failed to load",
     "generar_la_version_siguiente": "Create the next version from the species' current parameters",
-    "inmutable": "🔒 Immutable",
     "mostrando_datos_cargados_las_acciones_de": "Showing loaded data. Write actions are disabled.",
     "nueva_plantilla": "New template",
     "nueva_version": "New version",
-    "parametros_incluidos": "Parameters included:",
     "plantillas_de_configuracion": "Configuration Templates",
     "recargar": "Reload",
     "sin_conexion": "Offline",
-    "sin_plantillas_creadas": "No templates created"
+    "sin_plantillas_creadas": "No templates created",
+    "buscar_plantilla": "Search template",
+    "para": "For",
+    "creada": "created {{fecha}}",
+    "sin_parametros": "No parameters included",
+    "no_se_editan": "Templates are not edited: “New version” saves the species’ current configuration as the next version.",
+    "categoria": {
+      "ciclos_biologicos_one": "biological cycle",
+      "ciclos_biologicos_other": "biological cycles",
+      "patologias_one": "pathology",
+      "patologias_other": "pathologies",
+      "metricas_produccion_one": "production metric",
+      "metricas_produccion_other": "production metrics",
+      "umbrales_ambientales_one": "environmental threshold",
+      "umbrales_ambientales_other": "environmental thresholds"
+    }
   },
   "porespeciepage": {
     "configuracion_por_especie": "Species Configuration",
@@ -781,5 +806,18 @@
     "variable_ambiental": "Environmental variable",
     "ya_existe_un_umbral_activo_para": "There is already an active threshold for this variable in this species.",
     "ya_no_estara_vigente_para_las_alertas": "? It will no longer apply to alerts."
+  },
+  "subpestanas": {
+    "fincas": "Farms",
+    "tipos_area": "Area types",
+    "infraestructura": "Infrastructure",
+    "dispositivos": "Devices",
+    "sensores": "Sensor assignment",
+    "configuracion_remota": "Remote configuration",
+    "calibracion": "Calibration",
+    "identidad_visual": "Visual identity",
+    "tema": "Theme",
+    "idioma": "Language",
+    "dashboard": "Dashboard"
   }
 }

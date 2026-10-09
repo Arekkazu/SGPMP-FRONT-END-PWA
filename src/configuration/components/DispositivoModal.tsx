@@ -13,6 +13,7 @@ import { tiposDispositivoApi } from '../api/iotApi';
 import type { ApiError } from '../../shared/api/errors';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
+import { humanizar } from '../../shared/lib/etiquetas';
 
 interface FormValues {
   serial: string;
@@ -52,7 +53,9 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
     setError,
     watch,
     formState: { errors },
-  } = useForm<FormValues>({ mode: 'onBlur' });
+    // M9-06: onTouched valida en el primer blur y luego en cada cambio; con onBlur el
+    // error "obligatorio" seguía visible después de elegir un tipo.
+  } = useForm<FormValues>({ mode: 'onTouched' });
   const alertaGeneral = useErroresDeServidor(saveError, setError, CAMPOS);
 
   // #179: el backend exige id_tipo_dispositivo desde RF-23 (rangos por tipo).
@@ -167,7 +170,7 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
               >
                 <option value="">{t('dispositivomodal.seleccione_un_tipo')}</option>
                 {tipos.map((tipo) => (
-                  <option key={tipo.id_tipo_dispositivo} value={tipo.id_tipo_dispositivo}>{tipo.nombre}</option>
+                  <option key={tipo.id_tipo_dispositivo} value={tipo.id_tipo_dispositivo}>{humanizar(tipo.nombre)}</option>
                 ))}
               </Select>
             </div>
