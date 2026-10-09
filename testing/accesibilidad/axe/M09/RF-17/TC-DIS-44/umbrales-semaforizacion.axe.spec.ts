@@ -131,7 +131,8 @@ async function abrirFormularioEdicion(page: Page) {
   await filaUmbral(page).getByRole('button', { name: `Editar umbral ${VARIABLE}` }).click();
   const dialogo = page.getByRole('dialog', { name: `Editar umbral — ${VARIABLE}` });
   await expect(dialogo).toBeVisible();
-  await expect(dialogo.getByText('🟢 NORMAL', { exact: true })).toBeVisible();
+  // Desde 26346c9 (RF-17) cada nivel lleva ícono Lucide + nombre traducido, sin emoji de color
+  await expect(dialogo.getByText('Normal', { exact: true }).first()).toBeVisible();
   return dialogo;
 }
 
@@ -245,8 +246,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Umbrales Ambientales y Sem
 
     // Formulario: cada nivel lleva etiqueta de texto y descripción, no solo color
     const dialogo = await abrirFormularioEdicion(page);
-    for (const texto of ['NORMAL', 'PRECAUCIÓN', 'CRÍTICO']) {
-      await expect(dialogo.getByText(new RegExp(`^\\S+ ${texto}$`)), `1.4.1: falta la etiqueta "${texto}" en el formulario`).toBeVisible();
+    for (const texto of ['Normal', 'Precaución', 'Crítico']) {
+      await expect(dialogo.getByText(texto, { exact: true }).first(), `DEFECTO: 1.4.1: falta la etiqueta "${texto}" en el formulario`).toBeVisible();
     }
     await dialogo.getByRole('button', { name: 'Cancelar' }).click();
 
@@ -276,7 +277,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Umbrales Ambientales y Sem
     page.on('request', (r) => { if (r.method() === 'PATCH' && r.url().includes('/configuracion/umbrales/')) peticionesGuardado++; });
 
     // Bajar 1 unidad el límite inferior de precaución lo hace invadir el nivel contiguo → solapamiento
-    const precaucionInferior = dialogo.getByRole('spinbutton', { name: 'Límite inferior PRECAUCIÓN', exact: true });
+    const precaucionInferior = dialogo.getByRole('spinbutton', { name: /^Límite inferior Precaución/ });
     const valorActual = Number(await precaucionInferior.inputValue());
     await precaucionInferior.fill(String(valorActual - 1));
     await precaucionInferior.blur();
