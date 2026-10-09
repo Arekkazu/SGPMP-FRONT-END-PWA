@@ -16,10 +16,16 @@
  * áreas (2026-09-28) y el catálogo de tipos de dispositivo (tipos-dispositivo.fixture.json,
  * 2026-10-05), independientes de los datos que otras pruebas crean en el ambiente.
  *
+ * Reejecución sobre la release 1.0.0-rc.40 (modales como bottom sheet con el ancho del DS).
+ *
+ * Una baseline solo se guarda si la vista no tiene defectos. Antes de capturar se verifican y
+ * fallan como DEFECTO: la escala tipográfica del DS v2.0 en el texto con estilo propio del
+ * módulo (los componentes del DS se evalúan con su propio CSS) en cada vista; y en el
+ * formulario, además, la superficie del área asignada, el estilo de las etiquetas y el
+ * breakpoint del modal (bottom sheet a ancho completo en xs/sm, máx. 480px en md, 560px en lg).
+ *
  * Formularios: se captura solo la tarjeta del modal; si no cabe, se amplía el alto de la
- * ventana conservando el ancho. Una baseline solo se guarda si la vista no tiene defectos:
- * la superficie del área asignada y el estilo de las etiquetas (DS) se verifican antes de
- * capturar y fallan como DEFECTO. La tarjeta se mide además contra los breakpoints del DS.
+ * ventana conservando el ancho.
  *
  * PROTECCIÓN DE DATOS: todo POST/PATCH a /configuracion/dispositivos-iot se aborta; el caso
  * no envía formularios.
@@ -174,10 +180,53 @@ async function sinFocoNiHover(page: Page) {
   await page.evaluate(() => document.fonts.ready);
 }
 
-/** Captura solo la tarjeta del modal; si no cabe, amplía el alto de la ventana conservando el ancho. */
-async function capturarModal(page: Page, dialogo: Locator, nombre: string) {
-  // Una baseline con defectos no es una referencia válida
+// DS v2.0: escala tipográfica (todos los anchos)
+const ESCALA = [11, 12, 14, 15, 16, 18, 19, 20, 24, 26, 28];
+
+/** DEFECTO si la tarjeta del modal no respeta el breakpoint del DS v2.0. */
+async function verificarBreakpoint(page: Page, dialogo: Locator) {
+  const nombre = test.info().project.name;
+  const viewport = page.viewportSize()!;
+  const caja = (await tarjetaModal(dialogo).boundingBox())!;
+  test.info().annotations.push({ type: 'Tarjeta del modal', description: `viewport ${viewport.width}×${viewport.height} · x ${Math.round(caja.x)} · y ${Math.round(caja.y)} · ${Math.round(caja.width)}×${Math.round(caja.height)}` });
+  if (viewport.width < 768) {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, xs/sm) el modal debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px`).toBe(viewport.width);
+    expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${nombre} el bottom sheet debe apoyarse en el borde inferior de la pantalla`).toBe(viewport.height);
+  } else if (viewport.width < 1200) {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, md) el modal debe medir máximo 480px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(480);
+  } else {
+    expect.soft(Math.round(caja.width), `DEFECTO: en ${nombre} (${viewport.width}px, lg) el modal debe medir máximo 560px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(560);
+  }
+}
+
+/** DEFECTO si algún texto con estilo propio del objetivo usa un tamaño fuera de la escala del DS v2.0. */
+async function verificarEscala(objetivo: Locator, zona: string) {
+  const fuera = await objetivo.evaluate((raiz, escala) => {
+    const res: string[] = [];
+    const walker = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const texto = (n.textContent ?? '').trim();
+      const el = n.parentElement;
+      // Componentes del DS (botón, alerta, badge, campos) se evalúan con su propio CSS, no como estilo del módulo
+      if (!texto || !el || el.closest('option, .ds-sr-only, .ds-btn, .ds-alert, .ds-badge, .ds-field, style')) continue;
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      if (!escala.includes(fs)) res.push(`"${texto.slice(0, 30)}" ${fs}px`);
+    }
+    return [...new Set(res)];
+  }, ESCALA);
+  expect.soft(fuera, `DEFECTO: ${zona}: texto fuera de la escala tipográfica del DS v2.0: ${fuera.join(' · ')}`).toEqual([]);
+}
+
+/** Sin baseline si la vista tiene defectos. */
+function exigirSinDefectos() {
   expect(test.info().errors.length, 'Sin baseline: la vista tiene defectos (ver errores anteriores)').toBe(0);
+}
+
+/** Verifica breakpoint y escala; captura solo la tarjeta del modal (si no cabe, amplía el alto conservando el ancho). */
+async function capturarModal(page: Page, dialogo: Locator, nombre: string) {
+  await verificarBreakpoint(page, dialogo);
+  await verificarEscala(tarjetaModal(dialogo), 'formulario');
+  exigirSinDefectos();
   const viewport = page.viewportSize()!;
   const caja = (await tarjetaModal(dialogo).boundingBox())!;
   const necesario = Math.ceil(caja.y + caja.height + 48);
@@ -251,6 +300,8 @@ test.describe('TC-DIS-56 - Consistencia visual - Dispositivos IoT (RF-21)', () =
     const finca = tarjeta(page, FINCA);
     await expect(finca).toBeVisible();
 
+    await verificarEscala(seccion(page, finca), 'paso 1 (fincas)');
+    exigirSinDefectos();
     await sinFocoNiHover(page);
     await expect(seccion(page, finca)).toHaveScreenshot('iot-paso1-fincas.png', { animations: 'disabled' });
   });
@@ -262,6 +313,8 @@ test.describe('TC-DIS-56 - Consistencia visual - Dispositivos IoT (RF-21)', () =
     const area = tarjeta(page, 'Estanque-01');
     await expect(area).toBeVisible();
 
+    await verificarEscala(seccion(page, area), 'paso 2 (áreas)');
+    exigirSinDefectos();
     await sinFocoNiHover(page);
     await expect(seccion(page, area)).toHaveScreenshot('iot-paso2-areas.png', { animations: 'disabled' });
   });
@@ -273,6 +326,8 @@ test.describe('TC-DIS-56 - Consistencia visual - Dispositivos IoT (RF-21)', () =
     const tabla = page.locator('table').filter({ hasText: 'IOT-EST01-HLA-001' });
     await expect(tabla.locator('tbody tr')).toHaveCount(9);
 
+    await verificarEscala(seccion(page, tabla), 'dispositivos de Estanque-01');
+    exigirSinDefectos();
     await sinFocoNiHover(page);
     await expect(seccion(page, tabla)).toHaveScreenshot('iot-dispositivos-estanque-01.png', { animations: 'disabled' });
   });
@@ -284,6 +339,8 @@ test.describe('TC-DIS-56 - Consistencia visual - Dispositivos IoT (RF-21)', () =
     const tabla = page.locator('table').filter({ hasText: 'TC-M09-G61-1788611738279' });
     await expect(tabla.locator('tbody tr')).toHaveCount(2);
 
+    await verificarEscala(seccion(page, tabla), 'dispositivos de Alevinera-01');
+    exigirSinDefectos();
     await sinFocoNiHover(page);
     await expect(seccion(page, tabla)).toHaveScreenshot('iot-dispositivos-alevinera-01.png', { animations: 'disabled' });
   });
@@ -295,6 +352,8 @@ test.describe('TC-DIS-56 - Consistencia visual - Dispositivos IoT (RF-21)', () =
     const vacio = page.getByRole('button', { name: 'Registrar primer dispositivo' });
     await expect(vacio).toBeVisible();
 
+    await verificarEscala(seccion(page, vacio), 'área sin dispositivos');
+    exigirSinDefectos();
     await sinFocoNiHover(page);
     await expect(seccion(page, vacio)).toHaveScreenshot('iot-dispositivos-area-vacia.png', { animations: 'disabled' });
   });
@@ -321,22 +380,10 @@ test.describe('TC-DIS-56 - Consistencia visual - Dispositivos IoT (RF-21)', () =
     await capturarModal(page, dialogo, 'iot-form-camara.png');
   });
 
-  test('4. Modal del formulario según el breakpoint del sistema de diseño', async ({ page }, testInfo) => {
+  test('4. Modal del formulario según el breakpoint del sistema de diseño', async ({ page }) => {
     await servirFixtures(page);
     await abrirDispositivos(page);
     const dialogo = await abrirFormulario(page, TIPO_CAMARA);
-    const viewport = page.viewportSize()!;
-    const caja = (await tarjetaModal(dialogo).boundingBox())!;
-    testInfo.annotations.push({ type: 'Tarjeta del modal', description: `viewport ${viewport.width}×${viewport.height} · x ${Math.round(caja.x)} · y ${Math.round(caja.y)} · ${Math.round(caja.width)}×${Math.round(caja.height)}` });
-
-    // DS v2.0 (CLAUDE.md, Grid y breakpoints): bottom sheet a ancho completo en xs/sm, max 480px en md, max 560px en lg
-    if (viewport.width < 768) {
-      expect.soft(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, xs/sm) el modal debe ser un bottom sheet a ancho completo; mide ${Math.round(caja.width)}px y queda centrado con márgenes`).toBe(viewport.width);
-      expect.soft(Math.round(caja.y + caja.height), `DEFECTO: en ${testInfo.project.name} el bottom sheet debe apoyarse en el borde inferior de la pantalla`).toBe(viewport.height);
-    } else if (viewport.width < 1200) {
-      expect(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, md) el modal debe medir máximo 480px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(480);
-    } else {
-      expect(Math.round(caja.width), `DEFECTO: en ${testInfo.project.name} (${viewport.width}px, lg) el modal debe medir máximo 560px; mide ${Math.round(caja.width)}px`).toBeLessThanOrEqual(560);
-    }
+    await verificarBreakpoint(page, dialogo);
   });
 });
