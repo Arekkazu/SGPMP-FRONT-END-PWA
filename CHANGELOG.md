@@ -1,3 +1,9 @@
+## [1.0.0-rc.46](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.45...v1.0.0-rc.46) (2026-10-09)
+
+### Bug Fixes
+
+* **auth:** ocultar boton de AgroFusion en el login ([9c278e3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9c278e32931735108ade2de3155aeea193b1227b))
+
 ## [1.0.0-rc.45](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.44...v1.0.0-rc.45) (2026-10-09)
 
 ### Bug Fixes
