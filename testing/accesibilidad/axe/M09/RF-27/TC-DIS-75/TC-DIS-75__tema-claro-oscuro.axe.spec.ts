@@ -85,6 +85,10 @@ async function loginComoAdmin(page: Page) {
   // login invalidaba la sesión bajo automatización.
   await page.waitForLoadState('networkidle');
   await irAConfiguracion(page, /^(Personalización|Personalization)$/);
+  // 2026-10-09: la pestaña "Personalización" ahora tiene sub-pestañas (SubPestanas.tsx,
+  // commit de la refactorización #309) y abre en "Identidad visual" por defecto, no en
+  // "Tema". Hay que elegir la sub-pestaña "Tema" antes de llegar a TemaVisualSection.
+  await page.getByRole('main').getByRole('button', { name: 'Tema', exact: true }).click();
 }
 
 async function dentroDelViewport(page: Page, loc: Locator): Promise<boolean> {
