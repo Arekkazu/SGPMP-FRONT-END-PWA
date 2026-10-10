@@ -114,9 +114,15 @@ export function useDispositivosIot() {
     (d: DispositivoIotResponse) => d.id_tipo_dispositivo === idTipoGatewayEdge,
     [idTipoGatewayEdge],
   );
+  // RF-21 v2.0: la categoría es del tipo; una CAMARA se configura con fps (RF-23 v1.1).
+  const esCamara = useCallback(
+    (d: DispositivoIotResponse) =>
+      tipos.find((t) => t.id_tipo_dispositivo === d.id_tipo_dispositivo)?.categoria === 'CAMARA',
+    [tipos],
+  );
 
   return {
     dispositivos, tipos, loading, saving, error, saveError,
-    cargar, registrar, desactivar, asignarGateway, esGatewayEdge,
+    cargar, registrar, desactivar, asignarGateway, esGatewayEdge, esCamara,
   };
 }
