@@ -35,24 +35,26 @@ const CARD_TITLE: React.CSSProperties = {
   margin: '0 0 var(--s4)',
 };
 
+// <dl>/<dt>/<dd>: el lector de pantalla asocia cada etiqueta con su valor (TC-DIS-122).
+// El <div> que agrupa cada par es válido dentro de <dl> y conserva la grilla.
 function Dato({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <div style={{ fontSize: 'var(--fs-label-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+      <dt style={{ fontSize: 'var(--fs-label-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
         {label}
-      </div>
-      <div style={{ fontSize: '14px', color: 'var(--text-primary)', marginTop: 2, wordBreak: 'break-word' }}>
+      </dt>
+      <dd style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-primary)', margin: '2px 0 0', wordBreak: 'break-word' }}>
         {value ?? '—'}
-      </div>
+      </dd>
     </div>
   );
 }
 
 function Grid({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--s5)' }}>
+    <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--s5)', margin: 0 }}>
       {children}
-    </div>
+    </dl>
   );
 }
 

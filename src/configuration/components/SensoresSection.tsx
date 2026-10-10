@@ -139,7 +139,7 @@ function AreaDestSelector({ fincas, infraestructuras, loadingFincas, loadingInfr
 
       {/* Finca filter pills */}
       <div style={{ marginBottom: 'var(--s4)' }}>
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s3)' }}>
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s3)' }}>
           {fincaSeleccionada ? `Áreas de ${fincaSeleccionada.nombre}:` : 'Selecciona la finca:'}
         </p>
         {loadingFincas ? (
@@ -236,7 +236,7 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
         <div style={{ flex: 1, minWidth: 160, background: 'var(--brand-50)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'center' }}>
           <span className="ds-option__icono" style={{ marginBottom: 'var(--s2)' }}><IconoSensor size={20} strokeWidth={1.5} aria-hidden /></span>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>{t('sensoressection.sensor')}</div>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{sensor.nombre}</div>
+          <div style={{ fontSize: 'var(--fs-body-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{sensor.nombre}</div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</div>
         </div>
 
@@ -247,7 +247,7 @@ function ConfirmStep({ dispositivo, sensor, finca, area, saving, saveError, onBa
         <div style={{ flex: 1, minWidth: 160, background: 'var(--sem-success-bg)', border: '1px solid var(--sem-success-border)', borderRadius: 'var(--r-xl)', padding: 'var(--s4)', textAlign: 'center' }}>
           <span className="ds-option__icono" style={{ marginBottom: 'var(--s2)' }}><IconoArea size={20} strokeWidth={1.5} aria-hidden /></span>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>{t('sensoressection.area_productiva')}</div>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--brand-700)' }}>{area.nombre_infraestructura}</div>
+          <div style={{ fontSize: 'var(--fs-body-md)', fontWeight: 700, color: 'var(--brand-700)' }}>{area.nombre_infraestructura}</div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{finca.nombre}</div>
         </div>
       </div>
@@ -474,11 +474,16 @@ export function SensoresSection() {
             title={t('sensoressection.activos_sin_monitoreo_titulo')}
             description={t('sensoressection.activos_sin_monitoreo', { count: superadas.length })}
           />
-          <ul style={{ margin: 'var(--s2) 0 0', paddingLeft: 'var(--s6)', fontSize: '13px' }}>
+          {/* Cada enlace con área táctil de 48px y apilado: en campo, con el dedo, no se toca el
+              activo vecino (WCAG 2.5.8, TC-DIS-58/59). Color de enlace del DS. */}
+          <ul style={{ margin: 'var(--s2) 0 0', paddingLeft: 'var(--s6)', fontSize: 'var(--fs-body-md)' }}>
             {superadas.map((s) => (
               <li key={s.id_asociacion_activo_sensor}>
                 {s.id_activo_biologico !== null ? (
-                  <Link to={`/activos-biologicos/${s.id_activo_biologico}`}>
+                  <Link
+                    to={`/activos-biologicos/${s.id_activo_biologico}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', minHeight: 'var(--s9)', padding: '0 var(--s2)', color: 'var(--brand-600)', fontWeight: 600 }}
+                  >
                     {t('sensoressection.activo_superado', { id: s.id_activo_biologico, tipo: t(`sensoressection.tipo_asociacion_${s.tipo}`, { defaultValue: s.tipo }) })}
                   </Link>
                 ) : (
@@ -505,7 +510,7 @@ export function SensoresSection() {
             ]}
           />
 
-          <p key={step} ref={instruccionRef} tabIndex={-1} style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
+          <p key={step} ref={instruccionRef} tabIndex={-1} style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>
             {step === 'dispositivo' && t('sensoressection.paso_1_elige_el_dispositivo_que_contiene_el')}
             {step === 'sensor' && dispositivo && (
               <>{t('sensoressection.paso_2_elige_el_sensor_de')}{' '}<strong style={{ fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</strong>{' '}{t('sensoressection.a_asociar')}</>

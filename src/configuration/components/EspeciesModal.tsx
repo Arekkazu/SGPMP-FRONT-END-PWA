@@ -142,7 +142,7 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
             <div>
               <label
                 htmlFor="especie-desc"
-                style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}
+                style={{ display: 'block', fontSize: 'var(--fs-body-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}
               >{t('especiesmodal.descripcion')}</label>
               <textarea
                 id="especie-desc"

@@ -38,6 +38,10 @@ export function RegistrarBajaModal({ esPoblacional, cantidadDisponible, saving, 
   // La baja es irreversible: el envío pasa por un resumen que hay que confirmar (TC-DIS-128/129).
   const [pendiente, setPendiente] = useState<RegistrarEventoBajaDTO | null>(null);
 
+  // El error con campo ya va debajo de su control: repetirlo en la alerta lo anuncia dos veces (TC-DIS-128).
+  const errorEnCampo = ['tipo_baja', 'fecha_baja', 'cantidad_afectada', 'motivo_baja']
+    .some((campo) => errorServidor(saveError, campo));
+
   const confirmar = async () => {
     if (!pendiente) return;
     const ok = await onConfirmar(pendiente);
@@ -67,7 +71,7 @@ export function RegistrarBajaModal({ esPoblacional, cantidadDisponible, saving, 
           : 'La baja de un activo individual es total.'} ${t('registrarbajamodal.accion_irreversible')}`}
         style={{ marginBottom: 'var(--s4)' }}
       />
-      {saveError && (
+      {saveError && !errorEnCampo && (
         <Alert
           variant={saveError.status >= 500 ? 'error' : 'warning'}
           title={t('registrarbajamodal.no_se_pudo_registrar_la_baja')}
