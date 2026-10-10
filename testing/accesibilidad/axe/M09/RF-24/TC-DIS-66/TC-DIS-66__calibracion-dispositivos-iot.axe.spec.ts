@@ -153,6 +153,11 @@ async function loginComoAdmin(page: Page) {
   // login invalidaba la sesión bajo automatización.
   await page.waitForLoadState('networkidle', { timeout: 60_000 }).catch(() => {});
   await irAConfiguracion(page, /^IoT$/);
+  // 2026-10-09: la pestaña IoT ahora tiene sub-secciones (Dispositivos / Asociación de
+  // sensores / Configuración remota / Calibración) y abre por defecto en "Dispositivos".
+  // Antes el heading de Calibración aparecía directo al entrar a IoT; ya no.
+  await page.getByRole('navigation', { name: 'Subsecciones de IoT' })
+    .getByRole('button', { name: 'Calibración', exact: true }).click();
   await page.waitForLoadState('networkidle', { timeout: 60_000 }).catch(() => {});
 }
 
@@ -213,11 +218,8 @@ test.describe('TC-DIS-66 — RF-24: Calibración de Dispositivos IoT (accesibili
     await expect(page.getByRole('heading', { name: 'Calibración de Sensores IoT' })).toBeVisible();
     await expect(page.getByText('Selecciona el dispositivo que contiene el sensor a calibrar:')).toBeVisible();
 
-    // OBSERVACIÓN MANUAL (no violación de axe), registrada en el resumen del test.
-    testInfo.annotations.push({
-      type: 'Observación manual (no violación)',
-      description: 'Cada tarjeta de dispositivo en Calibración repite "Solo dispositivos activos son calibrables" (CalibracionSection.tsx:105) aunque la lista ya está filtrada a activos: repetitivo y confuso.',
-    });
+    // 2026-10-09: la tarjeta ya no repite "Solo dispositivos activos son calibrables" por
+    // dispositivo — se corrigió la observación de redundancia que documentaba esta anotación.
 
     const results = await new AxeBuilder({ page }).analyze();
     guardarResultadoAxe('TC-DIS-66', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
@@ -242,10 +244,11 @@ test.describe('TC-DIS-66 — RF-24: Calibración de Dispositivos IoT (accesibili
     // elegir un dispositivo.
     // 2026-10-06: dispositivo FIJO por serial (SERIAL_DISPOSITIVO) en vez de `.first()`:
     // el orden de la lista cambia cada vez que alguien crea un dispositivo en TEST.
-    // Mismo tipo de selector (tarjeta en <main> con el texto fijo de Calibración).
+    // 2026-10-09: se quitó el filtro por "calibrables" — la tarjeta ya no repite ese texto
+    // (se corrigió la observación de redundancia del header); el serial dentro de <main>
+    // ya es suficiente para no ambigüar con "Cerrar sesión" del sidebar.
     const dispositivo = page.getByRole('main')
-      .getByRole('button', { name: reSerial(SERIAL_DISPOSITIVO) })
-      .filter({ hasText: /calibrables/i });
+      .getByRole('button', { name: reSerial(SERIAL_DISPOSITIVO) });
     await dispositivo.click();
 
     // Acotado por hermandad DOM: SensorSelector renderiza el grid de tarjetas
