@@ -1,3 +1,9 @@
+## [1.0.0-rc.48](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.47...v1.0.0-rc.48) (2026-10-10)
+
+### Bug Fixes
+
+* **m02-m09:** hallazgos de la tercera evaluacion de accesibilidad y consistencia visual ([2b7b44e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2b7b44ecfbfa3980c4108b1a0c5f7fac68aaf439))
+
 ## [1.0.0-rc.47](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.46...v1.0.0-rc.47) (2026-10-10)
 
 ### Features
