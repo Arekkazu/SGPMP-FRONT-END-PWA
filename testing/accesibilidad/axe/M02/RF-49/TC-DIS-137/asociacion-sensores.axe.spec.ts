@@ -16,14 +16,16 @@
  *     vinculado (con la opción "Reasignar"), 400 incompatibilidad de especie, 201 con
  *     advertencia de dispositivo desconectado y 500 de auditoría (operación revertida).
  *
- * Datos: lote #296 (ACTIVO) en "Corral QA JE Origen" (#48); dispositivo #1 "IOT-EST01-HLA-001"
- * con sus sensores reales.
+ * Datos (reejecución sobre la release 1.0.0-rc.46, 2026-10-09): los datos de QA anteriores
+ * (#296 en "Corral QA JE Origen", #471 en BAJA) ya no existen en TEST. Se usan el lote #130
+ * (ACTIVO) en "Estanque-01" (#1), la misma infraestructura del dispositivo #1
+ * "IOT-EST01-HLA-001" con sus sensores reales, y el lote #466 (BAJA) para la salvaguarda.
  *
  * PROTECCIÓN DE DATOS: una asociación creada es un registro real, así que todo
  * POST /activos-biologicos/{id}/sensores se intercepta y por defecto se aborta:
  *   - Reales, REDIRIGIENDO la petición a casos que el backend rechaza sin crear nada:
  *     404 SENSOR_NO_ENCONTRADO, 422 ACTIVO_NO_ENCONTRADO, 400 VAL_ENTRADA y 422 de activo en
- *     BAJA (#471). Salvaguarda: antes de redirigir al #471, GET /activos-biologicos/471 confirma
+ *     BAJA (#466). Salvaguarda: antes de redirigir al #466, GET /activos-biologicos/466 confirma
  *     que sigue en BAJA; si cambió, ese envío no se hace.
  *   - SIMULADOS con el formato estándar del backend y los mensajes del RF: 201 con y sin
  *     advertencia, 409 fincas distintas, 409 sensor ya vinculado, 400 incompatibilidad de
@@ -45,9 +47,10 @@ const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
 const API = 'https://api.inmero.co/back-sigab-test';
-const ID_ACTIVO = 296;
-const ID_INFRAESTRUCTURA = 48;
-const ID_EN_BAJA = 471;
+const ID_ACTIVO = 130;
+const ID_INFRAESTRUCTURA = 1;
+const INFRAESTRUCTURA = 'Estanque-01';
+const ID_EN_BAJA = 466;
 const ID_DISPOSITIVO = '1';
 
 const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_137_VIEWPORTS ?? 'movil,tablet,escritorio')
@@ -77,18 +80,22 @@ const EXITO_SIN_ADVERTENCIA = { ...ASOCIACION, advertencia: null };
 const ERROR_409_FINCA = {
   error_code: 'UBICACION_INCOMPATIBLE',
   message: "Error de ubicación. El activo está registrado en 'Finca A' y el sensor en 'Finca B'. La asociación solo es permitida dentro de la misma unidad territorial.",
-  fields: [{ field: 'sensor_id', message: 'El sensor pertenece a otra finca.' }],
+  fields: [{ field: 'sensor_id', message: '' }],
 };
 const ERROR_409_VINCULADO = {
   error_code: 'SENSOR_YA_VINCULADO',
   message: "Conflicto de asignación. El sensor 3 ya está vinculado al activo 280. Debe desvincularlo primero o elegir la opción 'Reasignar'.",
-  fields: [{ field: 'sensor_id', message: 'El sensor ya está vinculado a otro activo.' }],
+  fields: [{ field: 'sensor_id', message: '' }],
 };
 const ERROR_400_ESPECIE = {
   error_code: 'INCOMPATIBILIDAD_BIOLOGICA',
-  message: 'Incompatibilidad biológica. El sensor 3 está parametrizado para Aves, no es compatible con el activo 296 de tipo Bovino.',
-  fields: [{ field: 'sensor_id', message: 'El sensor no es compatible con la especie del activo.' }],
+  message: 'Incompatibilidad biológica. El sensor 3 está parametrizado para Aves, no es compatible con el activo 130 de tipo Bovino.',
+  fields: [{ field: 'sensor_id', message: '' }],
 };
+// El backend repite el mensaje completo en fields[].message (formato real de SERIAL_DUPLICADO,
+// AREA_NO_ENCONTRADA y TIPO_DISPOSITIVO_NO_ENCONTRADO)
+for (const e of [ERROR_409_FINCA, ERROR_409_VINCULADO, ERROR_400_ESPECIE]) e.fields[0].message = e.message;
+
 const ERROR_500_AUDITORIA = {
   error_code: 'AUDITORIA_NO_DISPONIBLE',
   message: 'Fallo crítico de seguridad. No se pudo generar el registro de auditoría obligatorio. La operación ha sido revertida por integridad de datos.',
@@ -160,7 +167,7 @@ async function abrirPestanaSensores(page: Page) {
   const secciones = page.getByRole('navigation', { name: 'Secciones del activo' });
   await expect(secciones).toBeVisible({ timeout: 20_000 });
   // Esperar la ficha: la infraestructura del activo se pasa al formulario al abrirlo
-  await expect(page.getByText('Corral QA JE Origen').first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(INFRAESTRUCTURA).first()).toBeVisible({ timeout: 20_000 });
   await secciones.getByRole('button', { name: 'Sensores', exact: true }).click();
   await expect(botonAbrir(page)).toBeEnabled({ timeout: 20_000 });
 }
@@ -339,13 +346,15 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de sensores Io
   test('4. Errores del RF v1.2 anunciados: BAJA, fincas distintas, sensor vinculado, especie, auditoría y reales', async ({ page }, testInfo) => {
     const { fijarModo } = await protegerAsociacion(page);
     testInfo.annotations.push(
-      { type: 'Petición redirigida', description: '404 SENSOR_NO_ENCONTRADO, 422 ACTIVO_NO_ENCONTRADO, 400 VAL_ENTRADA y 422 de activo en BAJA (#471): respuestas reales de casos que el backend rechaza sin crear nada.' },
+      { type: 'Petición redirigida', description: '404 SENSOR_NO_ENCONTRADO, 422 ACTIVO_NO_ENCONTRADO, 400 VAL_ENTRADA y 422 de activo en BAJA (#466): respuestas reales de casos que el backend rechaza sin crear nada.' },
       { type: 'Datos simulados', description: '409 fincas distintas, 409 sensor ya vinculado, 400 incompatibilidad de especie y 500 de auditoría con los mensajes del RF v1.2 (error_code a confirmar con desarrollo).' },
     );
     await abrirPestanaSensores(page);
     await abrirFormulario(page);
     const c = await llenarValido(page);
     const alerta = dialogo(page).getByRole('alert').filter({ hasText: 'No se pudo asociar el sensor' });
+    // Desde rc.46 un error con field se anuncia debajo de su campo y no en la alerta general
+    const anunciado = dialogo(page).getByRole('alert');
 
     const enviar = async (modo: Modo) => {
       fijarModo(modo);
@@ -356,19 +365,19 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de sensores Io
 
     // 409 fincas distintas (simulado)
     expect(await enviar({ tipo: 'simular', status: 409, cuerpo: ERROR_409_FINCA })).toBe(409);
-    await expect.soft(alerta, 'DEFECTO: 3.3.1: el conflicto de ubicación (fincas distintas) debe anunciarse').toContainText('misma unidad territorial');
+    await expect.soft(anunciado.filter({ hasText: 'misma unidad territorial' }), 'DEFECTO: 3.3.1: el conflicto de ubicación (fincas distintas) debe anunciarse').toHaveCount(1);
     await verificarErrorDeCampo(page, c.sensor, ERROR_409_FINCA.fields[0].message, alerta, '409 de fincas distintas');
     await escanear(page, 'error-409-finca', testInfo);
 
     // 409 sensor ya vinculado (simulado): debe ofrecer la salida "Reasignar"
     expect(await enviar({ tipo: 'simular', status: 409, cuerpo: ERROR_409_VINCULADO })).toBe(409);
-    await expect.soft(alerta, 'DEFECTO: 3.3.1: el sensor ya vinculado debe anunciarse').toContainText('ya está vinculado al activo');
-    await expect.soft(alerta, 'DEFECTO: 3.3.3: el mensaje debe indicar cómo resolverlo (desvincular o "Reasignar")').toContainText('Reasignar');
+    await expect.soft(anunciado.filter({ hasText: 'ya está vinculado al activo' }), 'DEFECTO: 3.3.1: el sensor ya vinculado debe anunciarse').toHaveCount(1);
+    await expect.soft(anunciado.filter({ hasText: 'Reasignar' }), 'DEFECTO: 3.3.3: el mensaje debe indicar cómo resolverlo (desvincular o "Reasignar")').toHaveCount(1);
     await verificarErrorDeCampo(page, c.sensor, ERROR_409_VINCULADO.fields[0].message, alerta, '409 de sensor ya vinculado');
 
     // 400 incompatibilidad de especie (simulado)
     expect(await enviar({ tipo: 'simular', status: 400, cuerpo: ERROR_400_ESPECIE })).toBe(400);
-    await expect.soft(alerta, 'DEFECTO: 3.3.1: la incompatibilidad biológica debe anunciarse').toContainText('Incompatibilidad biológica');
+    await expect.soft(anunciado.filter({ hasText: 'Incompatibilidad biológica' }), 'DEFECTO: 3.3.1: la incompatibilidad biológica debe anunciarse').toHaveCount(1);
     await verificarErrorDeCampo(page, c.sensor, ERROR_400_ESPECIE.fields[0].message, alerta, '400 de incompatibilidad de especie');
     await escanear(page, 'error-400-especie', testInfo);
 
@@ -386,12 +395,12 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación de sensores Io
     await verificarEstado(page, token, ID_EN_BAJA, 'BAJA');
     const sensorReal = Number(await c.sensor.inputValue());
     const estadoBaja = await enviar({ tipo: 'redirigir', idActivo: ID_EN_BAJA, cuerpo: cuerpo({ dispositivo_iot_id: Number(ID_DISPOSITIVO), sensor_id: sensorReal }) });
-    testInfo.annotations.push({ type: 'Activo en BAJA (#471)', description: `HTTP ${estadoBaja}: ${(await alerta.innerText()).replace(/\s+/g, ' ')}` });
+    testInfo.annotations.push({ type: `Activo en BAJA (#${ID_EN_BAJA})`, description: `HTTP ${estadoBaja}: ${(await alerta.innerText()).replace(/\s+/g, ' ')}` });
     expect(estadoBaja, 'El backend debe rechazar la asociación a un activo en BAJA con 422').toBe(422);
     await expect(alerta, 'DEFECTO: 3.3.1: el rechazo por activo en BAJA debe anunciarse').toContainText(/BAJA/i);
 
     expect(await enviar({ tipo: 'redirigir', idActivo: ID_ACTIVO, cuerpo: cuerpo({ tipo_asociacion: 'XYZ' }) })).toBe(400);
-    await expect(alerta, 'DEFECTO: 3.3.1: 400 VAL_ENTRADA anunciado').toContainText('no es una de las opciones permitidas');
+    await expect(anunciado.filter({ hasText: 'no es una de las opciones permitidas' }), 'DEFECTO: 3.3.1: 400 VAL_ENTRADA anunciado').toHaveCount(1);
     await expect.soft(c.tipoAsociacion, 'DEFECTO: 3.3.1: el 400 trae field tipo_asociacion pero el select no se marca como inválido').toHaveAttribute('aria-invalid', 'true');
 
     // Validación del cliente: dispositivo y sensor vacíos
