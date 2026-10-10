@@ -52,3 +52,4 @@ Este archivo se genera automáticamente en cada release (ver `scripts/append_tra
 | 1.0.0-rc.46 | v1.0.0-rc.46 | 2026-10-09 | — | — | — | ba6cbb9 Merge pull request #321 from Arekkazu/fix/ocultar-boton-agrofusion<br>9c278e3 fix(auth): ocultar boton de AgroFusion en el login |
 | 1.0.0-rc.47 | v1.0.0-rc.47 | 2026-10-10 | RF-23 | — | — | 6b03449 Merge pull request #329 from Arekkazu/feat/rf23-config-remota-camara-fps<br>f01a549 feat(rf23-mod9): configurar fps de camaras en la configuracion remota (RF-23 v1.1) |
 | 1.0.0-rc.48 | v1.0.0-rc.48 | 2026-10-10 | — | — | — | b631703 Merge pull request #337 from Arekkazu/fix/correciones-m02-m09<br>2b7b44e fix(m02-m09): hallazgos de la tercera evaluacion de accesibilidad y consistencia visual |
+| 1.0.0-rc.49 | v1.0.0-rc.49 | 2026-10-10 | RF-27 | — | — | af826cb Merge pull request #338 from Arekkazu/fix/rf27-contraste-sidebar<br>fe90591 fix(rf27-mod9): garantizar contraste AA del texto del sidebar sobre la marca (TC-M09-179) |

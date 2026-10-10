@@ -1,3 +1,9 @@
+## [1.0.0-rc.49](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.48...v1.0.0-rc.49) (2026-10-10)
+
+### Bug Fixes
+
+* **rf27-mod9:** garantizar contraste AA del texto del sidebar sobre la marca (TC-M09-179) ([fe90591](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/fe905916e98fec8950d56d9ef34f7b735a96ee84)), closes [#249453](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/249453) [#97b68f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/97b68f) [#1A6B3C](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1A6B3C) [#249453](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/249453)
+
 ## [1.0.0-rc.48](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.47...v1.0.0-rc.48) (2026-10-10)
 
 ### Bug Fixes
