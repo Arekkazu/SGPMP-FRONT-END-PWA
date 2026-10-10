@@ -29,6 +29,12 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_134_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-09 ──────────────────────────────────────────────────
+ * El script leía TEST_USER_EMAIL (cuenta Admin, sin estos activos) en vez de
+ * TEST_PRODUCTOR_EMAIL, la dueña real. Se corrige. Confirmado por curl: #296 (ACTIVO, infra
+ * #48), destinos disponibles #47/#51, #471 en BAJA — todo igual a lo documentado. El bug de
+ * backend en POST /sesiones/refresh para esta cuenta (ver TC-DIS-125) ya estaba corregido.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -36,8 +42,8 @@ import { guardarResultadoAxe } from '../../../_shared/axeReport';
 import { auditarLighthouse, PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 
 const TC_ID = 'TC-DIS-134';
-const USER_EMAIL = process.env.TEST_USER_EMAIL ?? '';
-const USER_PASSWORD = process.env.TEST_USER_PASSWORD ?? '';
+const USER_EMAIL = process.env.TEST_PRODUCTOR_EMAIL ?? '';
+const USER_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD ?? '';
 
 const API = 'https://api.inmero.co/back-sigab-test';
 const ID_ACTIVO = 296;
@@ -239,8 +245,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Transferencia interna (RF-
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
       `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_134_VIEWPORTS.`,
     );
-    expect(USER_EMAIL, 'Falta TEST_USER_EMAIL en testing/.env.test').not.toBe('');
-    expect(USER_PASSWORD, 'Falta TEST_USER_PASSWORD en testing/.env.test').not.toBe('');
+    expect(USER_EMAIL, 'Falta TEST_PRODUCTOR_EMAIL en testing/.env.test').not.toBe('');
+    expect(USER_PASSWORD, 'Falta TEST_PRODUCTOR_PASSWORD en testing/.env.test').not.toBe('');
     token = await iniciarSesionProductor(page);
   });
 
