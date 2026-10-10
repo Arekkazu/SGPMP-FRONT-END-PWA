@@ -27,6 +27,12 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_125_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-09 ──────────────────────────────────────────────────
+ * El script leía TEST_USER_EMAIL (hoy = la cuenta Admin, sin ninguno de estos 4 activos:
+ * 404 ACTIVO_NO_ENCONTRADO en los 4) en vez de TEST_PRODUCTOR_EMAIL, la cuenta real dueña
+ * de #296/288/468/471. Se corrige a TEST_PRODUCTOR_EMAIL/PASSWORD. Confirmado por curl que
+ * los 4 activos existen con el estado exacto que este TC espera.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
@@ -34,8 +40,8 @@ import { guardarResultadoAxe } from '../../../_shared/axeReport';
 import { auditarLighthouse, PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 
 const TC_ID = 'TC-DIS-125';
-const USER_EMAIL = process.env.TEST_USER_EMAIL ?? '';
-const USER_PASSWORD = process.env.TEST_USER_PASSWORD ?? '';
+const USER_EMAIL = process.env.TEST_PRODUCTOR_EMAIL ?? '';
+const USER_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD ?? '';
 
 const API = 'https://api.inmero.co/back-sigab-test';
 const ID_ACTIVO = 296; // lote ACTIVO
@@ -201,8 +207,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Cambio de estado del activ
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
       `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_125_VIEWPORTS.`,
     );
-    expect(USER_EMAIL, 'Falta TEST_USER_EMAIL en testing/.env.test').not.toBe('');
-    expect(USER_PASSWORD, 'Falta TEST_USER_PASSWORD en testing/.env.test').not.toBe('');
+    expect(USER_EMAIL, 'Falta TEST_PRODUCTOR_EMAIL en testing/.env.test').not.toBe('');
+    expect(USER_PASSWORD, 'Falta TEST_PRODUCTOR_PASSWORD en testing/.env.test').not.toBe('');
     token = await iniciarSesionProductor(page);
   });
 
