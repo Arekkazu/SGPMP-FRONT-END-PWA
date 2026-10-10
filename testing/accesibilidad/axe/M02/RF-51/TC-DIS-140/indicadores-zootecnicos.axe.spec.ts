@@ -24,6 +24,12 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_140_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-09 ──────────────────────────────────────────────────
+ * El script leía TEST_USER_EMAIL (cuenta Admin, sin estos activos) en vez de
+ * TEST_PRODUCTOR_EMAIL, la dueña real. Se corrige. Confirmado por curl: #296, #291 y #280
+ * responden exactamente igual a lo documentado. El bug de backend en POST /sesiones/refresh
+ * para esta cuenta (ver TC-DIS-125) ya estaba corregido.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -31,8 +37,8 @@ import { guardarResultadoAxe } from '../../../_shared/axeReport';
 import { auditarLighthouse, PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 
 const TC_ID = 'TC-DIS-140';
-const USER_EMAIL = process.env.TEST_USER_EMAIL ?? '';
-const USER_PASSWORD = process.env.TEST_USER_PASSWORD ?? '';
+const USER_EMAIL = process.env.TEST_PRODUCTOR_EMAIL ?? '';
+const USER_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD ?? '';
 
 const ID_CON_DATOS = 296;
 const ID_MUESTRA_INSUFICIENTE = 291;
@@ -158,8 +164,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Indicadores zootécnicos (
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_140_VIEWPORTS.`);
-    expect(USER_EMAIL, 'Falta TEST_USER_EMAIL en testing/.env.test').not.toBe('');
-    expect(USER_PASSWORD, 'Falta TEST_USER_PASSWORD en testing/.env.test').not.toBe('');
+    expect(USER_EMAIL, 'Falta TEST_PRODUCTOR_EMAIL en testing/.env.test').not.toBe('');
+    expect(USER_PASSWORD, 'Falta TEST_PRODUCTOR_PASSWORD en testing/.env.test').not.toBe('');
     await fijarTema(page, 1);
     await iniciarSesionProductor(page);
   });
