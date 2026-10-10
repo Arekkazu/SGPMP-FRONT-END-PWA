@@ -22,6 +22,15 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_122_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-09 ──────────────────────────────────────────────────
+ * El lote #353 sigue existiendo con los mismos datos documentados arriba; no hizo falta
+ * sembrar datos nuevos. DEFECTO confirmado 1.3.1: "Valores iniciales" y "Métricas calculadas"
+ * ya tienen su propio <h3>, pero cada etiqueta/valor sigue siendo un <div> sin <dl>/<dt>/<dd>.
+ * Se corrigió además un bug del propio test (no de accesibilidad): el test 5 comparaba el
+ * cuerpo completo entre el envío por Enter y por clic, incluido `fecha` (generado con
+ * `new Date().toISOString()` en cada envío) — nunca iba a coincidir al milisegundo. Ahora se
+ * compara aparte.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -234,6 +243,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Ficha de gestión del lote
 
     await registrar.click();
     await expect.poll(() => cuerpos.length, { message: 'El clic en "Registrar" debe enviar el formulario' }).toBe(2);
-    expect(cuerpos[0], 'Enter debe enviar exactamente lo mismo que el clic').toEqual(cuerpos[1]);
+    // `fecha` se genera con `new Date().toISOString()` en cada envío: Enter y el clic ocurren
+    // en instantes distintos, así que ese campo nunca va a coincidir al milisegundo. Se compara
+    // aparte (ambos deben ser timestamps válidos) y el resto del cuerpo sí debe ser idéntico.
+    const { fecha: fechaEnter, ...restoEnter } = cuerpos[0] as Record<string, unknown>;
+    const { fecha: fechaClic, ...restoClic } = cuerpos[1] as Record<string, unknown>;
+    expect(new Date(fechaEnter as string).toString()).not.toBe('Invalid Date');
+    expect(new Date(fechaClic as string).toString()).not.toBe('Invalid Date');
+    expect(restoEnter, 'Enter debe enviar exactamente lo mismo que el clic (salvo `fecha`)').toEqual(restoClic);
   });
 });
