@@ -131,7 +131,7 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
             border: '1px solid var(--surface-border)',
           }}>
             <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--s1)' }}>{t('dispositivomodal.area_productiva_asignada')}</div>
-            <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>
+            <div style={{ fontWeight: 700, fontSize: 'var(--fs-body-md)', color: 'var(--text-primary)' }}>
               {area.tipo_area} — {area.nombre_infraestructura}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
@@ -196,6 +196,8 @@ export function DispositivoModal({ area, edges, saving, saveError, onClose, onRe
             )}
 
             {/* Atributos de visión (RF-21 v2.0, RFC-011) */}
+            {/* La región existe siempre: un live region que se monta junto con su texto no se anuncia (WCAG 4.1.3, TC-DIS-55). */}
+            <p role="status" className="ds-sr-only">{esCamara ? t('dispositivomodal.campos_camara_anuncio') : ''}</p>
             {esCamara && (
               <div className="ds-fg2" style={{ gap: 'var(--s3)', marginBottom: 'var(--s4)' }}>
                 <Input

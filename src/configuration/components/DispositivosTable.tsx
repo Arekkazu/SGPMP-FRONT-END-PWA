@@ -27,7 +27,7 @@ const TH: React.CSSProperties = {
   padding: 'var(--s2) var(--s4)',
   textAlign: 'left',
   fontFamily: 'var(--font-mono)',
-  fontSize: '10px',
+  fontSize: 'var(--fs-label-sm)',
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
@@ -105,7 +105,7 @@ function FincaSelector({ fincas, loading, onSelect }: { fincas: FincaResponse[];
           <OptionCard key={f.id_finca} onClick={() => onSelect(f)}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
               <Warehouse size={15} color="var(--brand-500)" aria-hidden />
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
+              <span style={{ fontSize: 'var(--fs-body-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{f.ubicacion.departamento}, {f.ubicacion.municipio}</div>
           </OptionCard>
@@ -130,7 +130,7 @@ function AreaSelector({ infras, loading, onSelect, onBack }: {
         <Button variant="ghost" size="sm" onClick={onBack} aria-label={t('dispositivostable.volver_a_fincas')}>
           <ChevronLeft size={16} aria-hidden />{t('dispositivostable.cambiar_finca')}</Button>
       </div>
-      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('dispositivostable.selecciona_el_area_productiva_donde_esta')}</p>
+      <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('dispositivostable.selecciona_el_area_productiva_donde_esta')}</p>
       {loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 'var(--s3)' }}>
           {Array.from({ length: 3 }).map((_, i) => (
@@ -144,7 +144,7 @@ function AreaSelector({ infras, loading, onSelect, onBack }: {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 'var(--s3)' }}>
           {activas.map((infra) => (
             <OptionCard key={infra.id_infraestructura} onClick={() => onSelect(infra)}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{infra.nombre_infraestructura}</div>
+              <div style={{ fontSize: 'var(--fs-body-md)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{infra.nombre_infraestructura}</div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 {infra.tipo_area} · {formatearNumero(infra.superficie)} m²
               </div>
@@ -260,7 +260,7 @@ export function DispositivosTable() {
       {/* Step 1: Finca */}
       {step === 'finca' && (
         <>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('dispositivostable.paso_1_selecciona_la_finca')}</p>
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('dispositivostable.paso_1_selecciona_la_finca')}</p>
           <FincaSelector fincas={fincas} loading={loadingFincas} onSelect={handleSelectFinca} />
         </>
       )}
@@ -268,7 +268,7 @@ export function DispositivosTable() {
       {/* Step 2: Area */}
       {step === 'area' && finca && (
         <>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivostable.paso_2_selecciona_el_area_de')}{' '}<strong>{finca.nombre}</strong>:
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivostable.paso_2_selecciona_el_area_de')}{' '}<strong>{finca.nombre}</strong>:
           </p>
           <AreaSelector
             infras={infraestructuras}
@@ -285,18 +285,19 @@ export function DispositivosTable() {
           {/* Breadcrumb / context */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--s5)', flexWrap: 'wrap', gap: 'var(--s3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
-              <Button variant="ghost" size="sm" onClick={handleBackToFinca} aria-label={t('dispositivostable.cambiar_finca')}>
+              {/* Sin aria-label: el nombre accesible es el texto visible, el que dice quien usa control por voz (WCAG 2.5.3, TC-DIS-55). */}
+              <Button variant="ghost" size="sm" onClick={handleBackToFinca}>
                 <ChevronLeft size={16} aria-hidden />{t('dispositivostable.fincas')}</Button>
               <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>›</span>
               <button
                 type="button"
                 onClick={handleBackToArea}
-                style={{ background: 'none', border: 'none', padding: 'var(--s1) var(--s2)', cursor: 'pointer', fontSize: '13px', color: 'var(--brand-600)', fontWeight: 600 }}
+                style={{ background: 'none', border: 'none', padding: 'var(--s1) var(--s2)', cursor: 'pointer', fontSize: 'var(--fs-body-md)', color: 'var(--brand-600)', fontWeight: 600 }}
               >
                 {finca.nombre}
               </button>
               <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>›</span>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{area.nombre_infraestructura}</span>
+              <span style={{ fontSize: 'var(--fs-body-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{area.nombre_infraestructura}</span>
               {!loading && (
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                   {activos} activos · {inactivos} inactivos
@@ -339,7 +340,7 @@ export function DispositivosTable() {
           ) : (
             <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
               <ScrollRegion label={t('dispositivostable.dispositivos_iot')}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
                       {['ID', 'Serial físico', 'Descripción', t('dispositivostable.gateway_edge'), 'Área → Finca', 'Estado', 'Registro', 'Acciones'].map((h) => (

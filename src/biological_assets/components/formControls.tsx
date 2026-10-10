@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import type { ApiError } from '../../shared/api/errors';
+import '../../shared/design-system/Input.css';
 
 /**
  * Mensaje del error del servidor cuando apunta a `campo` (`ApiError.field`), para
@@ -21,11 +22,10 @@ const CONTROL: React.CSSProperties = {
   outline: 'none',
 };
 
+// Tipografía y color salen de .ds-field__label, la misma etiqueta del Input del DS:
+// así un select o textarea no se ve distinto a los inputs del mismo formulario (TC-DIS-129).
 const LABEL: React.CSSProperties = {
   display: 'block',
-  fontSize: 'var(--fs-label-md)',
-  fontWeight: 600,
-  color: 'var(--text-primary)',
   marginBottom: 'var(--s1)',
 };
 
@@ -65,7 +65,7 @@ export const FormSelect = forwardRef<HTMLSelectElement, SelectProps>(function Fo
   return (
     <div>
       {label && (
-        <label style={LABEL} htmlFor={controlId}>
+        <label className="ds-field__label" style={LABEL} htmlFor={controlId}>
           {label}{required && <span aria-hidden="true"> *</span>}
         </label>
       )}
@@ -99,7 +99,7 @@ export const FormTextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(funct
   return (
     <div>
       {label && (
-        <label style={LABEL} htmlFor={controlId}>
+        <label className="ds-field__label" style={LABEL} htmlFor={controlId}>
           {label}{required && <span aria-hidden="true"> *</span>}
         </label>
       )}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { formatearFecha, formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -30,7 +30,7 @@ const TH: React.CSSProperties = {
   padding: 'var(--s2) var(--s4)',
   textAlign: 'left',
   fontFamily: 'var(--font-mono)',
-  fontSize: '10px',
+  fontSize: 'var(--fs-label-sm)',
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
@@ -60,17 +60,20 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, saving, onCancel, onConfi
 }) {
   const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
+  // Sin aria-labelledby el lector anuncia "diálogo" sin decir cuál (WCAG 4.1.2, TC-DIS-52).
+  const tituloId = useId();
   return (
     <div
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
+      aria-labelledby={tituloId}
       className="ds-modal" style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo}</h2>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
+        <h2 id={tituloId} style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo}</h2>
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
           <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('infraestructurasection.cancelar')}</Button>
           <Button variant={variante} size="md" loading={saving} onClick={onConfirm}>{confirmLabel}</Button>
@@ -119,6 +122,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
   // RF-20 v1.1: el modelo de IA del área solo puede ser la familia de su especie.
   const { especies, cargar: cargarEspecies } = useEspecies();
   useEffect(() => { cargarEspecies(false); }, [cargarEspecies]);
+  const especiesCargadas = especies.length > 0;
   const especiesOpciones = especies.filter((e) => (e.es_activo && !e.pendienteSync) || e.id_especie === infra?.especie_id);
   const especieId = watch('especie_id');
   const tipoModelo = watch('tipo_modelo_asignado');
@@ -154,7 +158,11 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
         especie_id: '', tipo_modelo_asignado: '',
       });
     }
-  }, [infra, reset, tipos]);
+    // Si las especies llegan después del área, el <select> aún no tenía la opción
+    // y quedaba en "Selecciona una especie"; se repite el reset una vez, con las
+    // opciones ya pintadas (TC-DIS-53). Booleano y no el arreglo: así no depende
+    // de que la referencia de `especies` sea estable.
+  }, [infra, reset, tipos, especiesCargadas]);
 
   const onSubmit = async (data: FormValues) => {
     const payload = {
@@ -209,7 +217,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
           )}
 
           {/* Finca readonly */}
-          <div style={{ padding: 'var(--s3) var(--s4)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', marginBottom: 'var(--s5)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+          <div style={{ padding: 'var(--s3) var(--s4)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', marginBottom: 'var(--s5)', fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('infraestructurasection.finca')}</span>
             <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: 'var(--s1)' }}>{finca.nombre}</div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -292,7 +300,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
 
             {/* Descripción */}
             <div style={{ marginBottom: 'var(--s5)' }}>
-              <label htmlFor="infra-descripcion" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.descripcion')}<span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span>
+              <label htmlFor="infra-descripcion" style={{ display: 'block', fontSize: 'var(--fs-body-md)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.descripcion')}<span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <textarea
@@ -386,7 +394,7 @@ function FincaSelectorInfra({ fincas, loading, onSelect }: FincaSelectorProps) {
         <OptionCard key={f.id_finca} onClick={() => onSelect(f)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
             <Warehouse size={16} color="var(--brand-500)" aria-hidden />
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
+            <span style={{ fontSize: 'var(--fs-body-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
             {f.ubicacion.departamento}, {f.ubicacion.municipio}
@@ -454,7 +462,7 @@ export function InfraestructuraSection() {
 
       {!fincaSeleccionada ? (
         <>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('infraestructurasection.selecciona_una_finca_para_gestionar_sus')}</p>
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('infraestructurasection.selecciona_una_finca_para_gestionar_sus')}</p>
           <FincaSelectorInfra fincas={fincas} loading={loadingFincas} onSelect={setFincaSeleccionada} />
         </>
       ) : (
@@ -469,7 +477,7 @@ export function InfraestructuraSection() {
                 aria-label={t('infraestructurasection.cambiar_finca')}
               >
                 <ChevronLeft size={16} aria-hidden />{t('infraestructurasection.cambiar_finca')}</Button>
-              <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>·</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-body-md)' }}>·</span>
               <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{fincaSeleccionada.nombre}</span>
               {!loading && (
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -513,7 +521,7 @@ export function InfraestructuraSection() {
           ) : (
             <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
               <ScrollRegion label={t('infraestructurasection.infraestructura_productiva')}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
                       {['#', 'Tipo', 'Nombre', 'Superficie', 'Modelo IA', 'Estado', 'Actualización', 'Acciones'].map((h) => (
@@ -546,10 +554,10 @@ export function InfraestructuraSection() {
                             )}
                           </td>
                           <td style={{ ...TD, whiteSpace: 'nowrap' }}>
-                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-mono-md)', fontWeight: 700, color: 'var(--text-primary)' }}>
                               {formatearNumero(infra.superficie)}
                             </span>
-                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 4 }}>m²</span>
+                            <span style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-muted)', marginLeft: 4 }}>m²</span>
                           </td>
                           <td style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>
                             {infra.tipo_modelo_asignado ? TIPO_MODELO_LABEL[infra.tipo_modelo_asignado] : '—'}
