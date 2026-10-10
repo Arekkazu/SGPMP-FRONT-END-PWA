@@ -51,10 +51,14 @@
   line-height: 1.2;
 }
 
+/* RF-27 (TC-M09-179): #97b68f es el texto mas tenue del sidebar (logo-sub,
+   section-label, user-role, logout). El #7d9a75 anterior daba 3.64:1 sobre el
+   nav de la variante oscura #249453; `oscurecerParaNav` (identidad.ts) garantiza
+   4.5:1 contra este color, asi que si se cambia aqui hay que cambiarlo alli. */
 .ds-sidebar__logo-sub {
   font-family: var(--font-mono);
   font-size: 9px;
-  color: #7d9a75;
+  color: #97b68f;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -68,7 +72,7 @@
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #7d9a75;
+  color: #97b68f;
   padding: var(--s2) var(--s5) var(--s1);
   display: block;
 }
@@ -192,7 +196,7 @@
 
 .ds-sidebar__user-role {
   font-size: 10px;
-  color: #7d9a75;
+  color: #97b68f;
   display: block;
 }
 
@@ -200,7 +204,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #7d9a75;
+  color: #97b68f;
   transition: color 0.12s;
   flex-shrink: 0;
   display: flex;
