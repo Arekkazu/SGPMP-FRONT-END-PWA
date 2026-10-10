@@ -202,11 +202,14 @@ export interface RegistrarSensorDTO {
 // =====================================================================
 // Configuración Remota IoT (202 Accepted)
 // =====================================================================
+// RF-23 v1.1: un SENSOR trae frecuencia_captura + intervalo_transmision (fps
+// null); una CAMARA trae solo fps (los otros dos null).
 export interface ConfiguracionRemotaResponse {
   id_configuracion_remota: number;
   id_dispositivo_iot: number;
-  frecuencia_captura: number;
-  intervalo_transmision: number;
+  frecuencia_captura: number | null;
+  intervalo_transmision: number | null;
+  fps: number | null;
   estado: string;
   id_usuario: number | null;
   fecha_creacion: string | null;
@@ -214,10 +217,9 @@ export interface ConfiguracionRemotaResponse {
   mensaje: string | null;
 }
 
-export interface ConfigurarRemotamenteDTO {
-  frecuencia_captura: number;
-  intervalo_transmision: number;
-}
+export type ConfigurarRemotamenteDTO =
+  | { frecuencia_captura: number; intervalo_transmision: number }
+  | { fps: number };
 
 // =====================================================================
 // Sensores — Asociación a Áreas

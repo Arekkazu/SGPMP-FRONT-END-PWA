@@ -1,3 +1,9 @@
+## [1.0.0-rc.47](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.46...v1.0.0-rc.47) (2026-10-10)
+
+### Features
+
+* **rf23-mod9:** configurar fps de camaras en la configuracion remota (RF-23 v1.1) ([f01a549](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f01a54930b53d0c4e22ebd3e77fb48f6e37ab108))
+
 ## [1.0.0-rc.46](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.45...v1.0.0-rc.46) (2026-10-09)
 
 ### Bug Fixes
