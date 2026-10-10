@@ -7,7 +7,10 @@
  *   - Listado sin filtros (página 1).
  *   - Listado con filtros de tipo de operación, resultado y rango de fechas (con resultados).
  *   - Listado con filtros sin resultados (estado vacío).
- *   - Filtro por usuario: BLOQUEO. La vista no tiene ese filtro; el test falla mientras no exista.
+ *   - Filtro por usuario (campo numérico "ID usuario", desde la release 1.0.0-rc.46): la
+ *     página 1 real filtrada por el usuario responsable #35.
+ *
+ * Reejecución sobre la release 1.0.0-rc.46 (2026-10-09).
  *
  * Datos: la bitácora crece con la actividad del sistema, así que GET /activos-biologicos/auditoria
  * se sirve con page.route desde bitacora.fixture.json (respuestas reales del 2026-09-30): sin
@@ -63,14 +66,25 @@ async function fijarTemaClaro(page: Page) {
   });
 }
 
-/** Sin filtros → página 1 real; el filtro de la prueba → respuesta real filtrada; otro → vacía. */
+// Usuario responsable de los registros de la página 1 real (fixture)
+const USUARIO = String(fixture.sin_filtros.registros[0].id_usuario_responsable);
+
+/** Página 1 real filtrada por el usuario responsable (los registros del fixture son reales). */
+function filtradoPorUsuario(id: string) {
+  const registros = fixture.sin_filtros.registros.filter((e) => String(e.id_usuario_responsable) === id);
+  return { ...fixture.sin_filtros, total_registros: registros.length, total_paginas: 1, registros };
+}
+
+/** Sin filtros → página 1 real; el filtro de la prueba → respuesta real filtrada; solo usuario → página 1 filtrada; otro → vacía. */
 async function servirBitacora(page: Page) {
   await page.route(URL_BITACORA, (r) => {
     if (!['xhr', 'fetch'].includes(r.request().resourceType())) return r.continue();
     const q = new URL(r.request().url()).searchParams;
-    const conFiltros = [...q.keys()].some((k) => !['pagina', 'page_size'].includes(k));
+    const filtrosUsados = [...q.keys()].filter((k) => !['pagina', 'page_size'].includes(k));
+    const conFiltros = filtrosUsados.length > 0;
     const esElFiltro = q.get('rf_origen') === FILTRO.rf && q.get('tipo_evento') === FILTRO.tipo && q.get('resultado') === FILTRO.resultado;
-    const cuerpo = !conFiltros ? fixture.sin_filtros : esElFiltro ? fixture.filtrado : VACIA;
+    const soloUsuario = filtrosUsados.length === 1 && filtrosUsados[0] === 'id_usuario_responsable';
+    const cuerpo = !conFiltros ? fixture.sin_filtros : esElFiltro ? fixture.filtrado : soloUsuario ? filtradoPorUsuario(q.get('id_usuario_responsable')!) : VACIA;
     return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(cuerpo) });
   });
 }
@@ -209,14 +223,18 @@ test.describe('TC-DIS-144 - Consistencia visual - Bitácora de auditoría (RF-52
       await expect(page.getByText('Sin registros de auditoría para los filtros seleccionados.')).toBeVisible();
       await capturar(page, 'bitacora-sin-resultados.png');
     });
-  });
 
-  test('Filtro por usuario', async ({ page }) => {
-    await abrirBitacora(page);
-    const filtroUsuario = page.getByRole('textbox', { name: /usuario|responsable/i }).or(page.getByRole('combobox', { name: /usuario|responsable/i }));
-    expect(
-      await filtroUsuario.count(),
-      'DEFECTO (BLOQUEO): la bitácora no tiene filtro por usuario (solo RF origen, Tipo de evento, ID activo, Clasificación, Resultado, Severidad, Desde y Hasta); la columna "Usuario" existe pero no se puede filtrar. No hay estado filtrado por usuario que capturar.',
-    ).toBeGreaterThan(0);
+    test('2. Listado filtrado por usuario', async ({ page }) => {
+      await abrirBitacora(page);
+      // Campo numérico (type="number" → spinbutton)
+      const filtroUsuario = page.getByRole('spinbutton', { name: /usuario/i }).or(page.getByRole('textbox', { name: /usuario|responsable/i }));
+      await expect(filtroUsuario, 'DEFECTO: la bitácora no tiene filtro por usuario').toHaveCount(1);
+      await filtroUsuario.fill(USUARIO);
+      const respuesta = esperarBitacora(page);
+      await filtros(page).aplicar.click();
+      expect(new URL((await respuesta).url()).searchParams.get('id_usuario_responsable'), 'El filtro envía el usuario responsable').toBe(USUARIO);
+      await expect(page.getByRole('table').getByRole('row')).toHaveCount(filtradoPorUsuario(USUARIO).registros.length + 1);
+      await capturar(page, 'bitacora-filtro-usuario.png');
+    });
   });
 });
