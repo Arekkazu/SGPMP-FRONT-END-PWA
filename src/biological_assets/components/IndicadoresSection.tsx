@@ -36,13 +36,17 @@ const CAUSAS = ['DATOS_INSUFICIENTES', 'NO_APLICA_INDIVIDUAL', 'OUTLIER_CRITICO'
 function useTextoLegible() {
   const { t } = useT('biologicalAssets');
   const nombre = (clave: string) => t(`indicadoressection.ind_${clave}`, { defaultValue: clave.replace(/_/g, ' ') });
+  // TC-DIS-141: el backend manda unidades compuestas como `kg_alimento/kg_ganancia`.
+  const unidad = (crudo: string) => t(`indicadoressection.unidad_${crudo.replace(/\W+/g, '_')}`, {
+    defaultValue: crudo.replace(/_/g, ' ').replace(/\//g, ' / '),
+  });
   const texto = (crudo: string) => {
-    let s = crudo;
+    let s = crudo.replace(/\b\w+_\w+\/\w+_\w+\b/g, unidad);
     for (const c of CAUSAS) s = s.replace(new RegExp(`^${c}:\\s*`), `${t(`indicadoressection.causa_${c.toLowerCase()}`)}: `);
     for (const k of INDICADORES) s = s.replace(new RegExp(`\\b${k}\\b`, 'g'), nombre(k).toLowerCase());
     return s;
   };
-  return { nombre, texto };
+  return { nombre, unidad, texto };
 }
 
 // Una fecha tecleada a mano pasa por años parciales (0002, 0020, 0202...).
@@ -50,7 +54,7 @@ const fechaCompleta = (f: string) => f === '' || f >= '1900-01-01';
 
 function IndicadorCard({ ind }: { ind: IndicadorZootecnicoResponse }) {
   const { t } = useT('biologicalAssets');
-  const { nombre } = useTextoLegible();
+  const { nombre, unidad } = useTextoLegible();
   return (
     <dl
       style={{
@@ -69,7 +73,7 @@ function IndicadorCard({ ind }: { ind: IndicadorZootecnicoResponse }) {
           <span style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
             {ind.valor ?? '—'}
           </span>
-          <span style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)' }}>{ind.unidad}</span>
+          <span style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)' }}>{ind.unidad ? unidad(ind.unidad) : null}</span>
         </dd>
       ) : (
         <dd style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 'var(--s2) 0 0' }}>{t('indicadoressection.no_disponible')}</dd>

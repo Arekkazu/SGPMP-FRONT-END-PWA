@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
+import type { UseFormSetError } from 'react-hook-form';
 import { useT } from '../../shared/i18n/useT';
 import { X, Check } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -13,6 +14,7 @@ import type {
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 
 // ── Categorías del RF-30 ──────────────────────────────────────────────────────
 // Las claves son las que espera `params_snapshot` en el backend; no se traducen
@@ -24,6 +26,11 @@ const ICONOS: Record<CategoriaPlantilla, string> = {
   metricas_produccion: '📊',
   umbrales_ambientales: '🌡️',
 };
+
+// Campos que el backend puede señalar en `fields` (409 nombre duplicado, 400 especie).
+type CamposServidor = { template_name: string; id_especie: string };
+const CAMPOS_SERVIDOR = ['template_name', 'id_especie'] as const;
+const INPUT_DEL_CAMPO: Record<keyof CamposServidor, string> = { template_name: 'tpl-nombre', id_especie: 'tpl-especie' };
 
 interface Props {
   saving: boolean;
@@ -52,6 +59,19 @@ export function PlantillaModal({
   const [nombreErr, setNombreErr] = useState('');
   const [idEspecie, setIdEspecie] = useState<number | ''>(plantillaBase?.id_especie ?? '');
   const [especieErr, setEspecieErr] = useState('');
+  // TC-DIS-61: mismo hook que especies, fincas, áreas y dispositivos. Este
+  // formulario no usa react-hook-form, así que el error de campo se guarda aquí
+  // y lo pintan el Input/select con aria-invalid y aria-describedby.
+  const [erroresServidor, setErroresServidor] = useState<Partial<CamposServidor>>({});
+  useEffect(() => { setErroresServidor({}); }, [saveError]);
+  const asignarErrorServidor = useCallback(((campo, { message }, opciones) => {
+    setErroresServidor((previos) => ({ ...previos, [campo]: message }));
+    if (opciones?.shouldFocus) document.getElementById(INPUT_DEL_CAMPO[campo as keyof CamposServidor])?.focus();
+  }) as UseFormSetError<CamposServidor>, []);
+  const alertaGeneral = useErroresDeServidor(saveError, asignarErrorServidor, CAMPOS_SERVIDOR);
+  const errorNombre = nombreErr || erroresServidor.template_name;
+  const errorEspecie = especieErr || erroresServidor.id_especie;
+
   const [seleccionadas, setSeleccionadas] = useState<Set<CategoriaPlantilla>>(
     () => new Set(CATEGORIAS_PLANTILLA)
   );
@@ -164,7 +184,7 @@ export function PlantillaModal({
         {/* Body */}
         <form onSubmit={handleSubmit}>
           <div style={{ padding: 'var(--s6)', display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
-            {saveError && (
+            {saveError && alertaGeneral && (
               <Alert variant="error" title={t('plantillamodal.error_al_crear')} description={saveError.message} />
             )}
 
@@ -178,18 +198,18 @@ export function PlantillaModal({
 
             {/* Nombre */}
             <div>
-              <label htmlFor="tpl-nombre" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('plantillamodal.nombre_de_la_plantilla')}<span aria-hidden>*</span>
+              <label htmlFor="tpl-nombre" style={{ display: 'block', fontSize: 'var(--fs-body-md)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('plantillamodal.nombre_de_la_plantilla')}<span aria-hidden>*</span>
               </label>
               <Input
                 id="tpl-nombre"
                 value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                onChange={(e) => { setNombre(e.target.value); setErroresServidor((p) => ({ ...p, template_name: undefined })); }}
                 onBlur={() => { if (!versionando && !nombre.trim()) setNombreErr(t('plantillamodal.el_nombre_es_requerido')); else setNombreErr(''); }}
                 placeholder={t('plantillamodal.ej_config_estandar_pollos_de_engorde')}
                 maxLength={50}
                 aria-required="true"
                 disabled={versionando}
-                error={nombreErr}
+                error={errorNombre}
               />
               {versionando && (
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('plantillamodal.el_nombre_se_hereda_de_la_version_anterior')}</p>
@@ -198,17 +218,23 @@ export function PlantillaModal({
 
             {/* Especie */}
             <div>
-              <label htmlFor="tpl-especie" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('plantillamodal.especie_base')}<span aria-hidden>*</span>
+              <label htmlFor="tpl-especie" style={{ display: 'block', fontSize: 'var(--fs-body-md)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('plantillamodal.especie_base')}<span aria-hidden>*</span>
               </label>
               <select
                 id="tpl-especie"
                 value={idEspecie}
-                onChange={(e) => { setIdEspecie(e.target.value ? Number(e.target.value) : ''); setEspecieErr(''); }}
+                onChange={(e) => {
+                  setIdEspecie(e.target.value ? Number(e.target.value) : '');
+                  setEspecieErr('');
+                  setErroresServidor((p) => ({ ...p, id_especie: undefined }));
+                }}
                 aria-required="true"
+                aria-invalid={!!errorEspecie}
+                aria-describedby={errorEspecie ? 'tpl-especie-error' : undefined}
                 disabled={versionando}
                 style={{
                   width: '100%', padding: 'var(--s3) var(--s4)',
-                  border: `1.5px solid ${especieErr ? 'var(--sem-error)' : 'var(--surface-border)'}`,
+                  border: `1.5px solid ${errorEspecie ? 'var(--sem-error)' : 'var(--surface-border)'}`,
                   borderRadius: 'var(--r-md)', background: 'var(--surface-card)',
                   color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-sans)',
                   outline: 'none', cursor: 'pointer',
@@ -219,12 +245,12 @@ export function PlantillaModal({
                   <option key={e.id_especie} value={e.id_especie}>{e.nombre}</option>
                 ))}
               </select>
-              {especieErr && <p role="alert" style={{ fontSize: '11px', color: 'var(--sem-error)', marginTop: 'var(--s1)', fontWeight: 500 }}>{especieErr}</p>}
+              {errorEspecie && <p id="tpl-especie-error" role="alert" style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--sem-error)', marginTop: 'var(--s1)', fontWeight: 500 }}>{errorEspecie}</p>}
             </div>
 
             {/* Parámetros reales de la especie seleccionada */}
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)' }}>{t('plantillamodal.parametros_a_incluir_en_la_plantilla')}<span aria-hidden>*</span>
+              <div style={{ fontSize: 'var(--fs-body-md)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)' }}>{t('plantillamodal.parametros_a_incluir_en_la_plantilla')}<span aria-hidden>*</span>
               </div>
 
               {!idEspecie && (
@@ -250,7 +276,9 @@ export function PlantillaModal({
                         type="button"
                         role="checkbox"
                         aria-checked={checked}
-                        aria-label={etiqueta}
+                        // TC-DIS-61: el nombre es la etiqueta visible (WCAG 2.5.3); el conteo va como descripción.
+                        aria-labelledby={`tpl-cat-${categoria}`}
+                        aria-describedby={`tpl-cat-${categoria}-conteo`}
                         disabled={vacia}
                         onClick={() => toggleCategoria(categoria)}
                         style={{
@@ -273,8 +301,8 @@ export function PlantillaModal({
                         </div>
                         <span role="img" aria-hidden>{ICONOS[categoria]}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }} title={etiqueta}>{etiqueta}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          <div id={`tpl-cat-${categoria}`} style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }} title={etiqueta}>{etiqueta}</div>
+                          <div id={`tpl-cat-${categoria}-conteo`} style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                             {vacia
                               ? t('plantillamodal.sin_parametros_configurados')
                               : t('plantillamodal.parametros_disponibles', { count: total })}

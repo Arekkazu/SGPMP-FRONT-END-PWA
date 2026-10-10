@@ -138,11 +138,11 @@ export function HistorialSection({ idActivo }: Props) {
         <div style={{ height: 120, borderRadius: 'var(--r-md)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }}>
           <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
         </div>
-      ) : registros.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('historialsection.sin_registros_para_los_filtros_seleccionados')}</p>
+      ) : error ? null : registros.length === 0 ? (
+        <p role="status" style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-body-md)', margin: 0 }}>{t('historialsection.sin_registros_para_los_filtros_seleccionados')}</p>
       ) : (
         <ScrollRegion label={t('historialsection.historial_consolidado')}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
+          <table aria-label={t('historialsection.historial_consolidado')} style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
                 {['Fecha', 'Categoría', 'Descripción', 'Responsable'].map((h) => <th key={h} scope="col" style={TH}>{h}</th>)}
@@ -168,12 +168,12 @@ export function HistorialSection({ idActivo }: Props) {
         </ScrollRegion>
       )}
 
-      <Paginacion
+      {!error && <Paginacion
         pagina={paginacion.pagina}
         totalPaginas={paginacion.totalPaginas}
         totalRegistros={paginacion.totalRegistros}
         onCambiar={consultar}
-      />
+      />}
     </div>
   );
 }

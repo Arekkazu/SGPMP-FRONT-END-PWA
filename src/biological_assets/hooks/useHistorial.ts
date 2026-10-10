@@ -28,6 +28,10 @@ export function useHistorial(idActivo: number) {
           totalRegistros: res.total_registros ?? (res.registros?.length ?? 0),
         });
       } catch (e) {
+        // Sin esto la tabla seguía mostrando la consulta anterior como si fuera
+        // el resultado del filtro que falló (TC-DIS-131).
+        setRegistros([]);
+        setPaginacion({ pagina: 1, totalPaginas: 1, totalRegistros: 0 });
         setError(e as ApiError);
       } finally {
         setLoading(false);
