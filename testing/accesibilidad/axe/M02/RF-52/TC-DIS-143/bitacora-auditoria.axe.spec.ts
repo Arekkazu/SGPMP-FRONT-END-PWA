@@ -3,6 +3,8 @@
  * RF-52 · CU-13 Auditoría y Trazabilidad de Transformación Biológica · Rol: Administrador
  * Ruta: /activos-biologicos/auditoria ("Auditoría y trazabilidad")
  *
+ * Reejecución sobre la release 1.0.0-rc.46 (2026-10-09).
+ *
  * Herramientas: @axe-core/playwright (reporte axe-<TC>.html/json) + Lighthouse en
  * modo snapshot sobre la misma sesión (lighthouse-<TC>-<paso>-<viewport>.html/json),
  * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
