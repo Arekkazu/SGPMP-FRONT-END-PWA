@@ -21,6 +21,17 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_131_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-09 ──────────────────────────────────────────────────
+ * El script leía TEST_USER_EMAIL (cuenta Admin, sin el activo #281) en vez de
+ * TEST_PRODUCTOR_EMAIL, la dueña real. Se corrige. Confirmado por curl: #281 (POBLACIONAL,
+ * BAJA) tiene exactamente 5 registros de historial en las 4 categorías esperadas. El bug de
+ * backend en POST /sesiones/refresh para esta cuenta (ver TC-DIS-125) ya estaba corregido.
+ *
+ * Dos cambios de UI, no hallazgos: la tabla ya no tiene una columna "Origen" separada (el
+ * origen/destino de una transferencia quedó integrado en el texto de "Descripción"); y la
+ * categoría ya se muestra con la etiqueta legible del combobox ("Transferencia") en vez del
+ * código crudo del backend ("TRANSFERENCIA").
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -28,8 +39,8 @@ import { guardarResultadoAxe } from '../../../_shared/axeReport';
 import { auditarLighthouse, PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 
 const TC_ID = 'TC-DIS-131';
-const USER_EMAIL = process.env.TEST_USER_EMAIL ?? '';
-const USER_PASSWORD = process.env.TEST_USER_PASSWORD ?? '';
+const USER_EMAIL = process.env.TEST_PRODUCTOR_EMAIL ?? '';
+const USER_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD ?? '';
 
 const ID_ACTIVO = 281;
 const TOTAL_REGISTROS = 5;
@@ -40,7 +51,22 @@ const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_131_VIEWPORTS ?? 'movil,tablet
 
 const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const URL_HISTORIAL = (url: URL) => /\/activos-biologicos\/\d+\/historial$/.test(url.pathname);
-const ENCABEZADOS = ['Fecha', 'Categoría', 'Descripción', 'Responsable', 'Origen'];
+// 2026-10-09: la columna "Origen" ya no existe como tal — el origen/destino de una
+// transferencia se integró al texto de "Descripción" (no aplica a las demás categorías).
+const ENCABEZADOS = ['Fecha', 'Categoría', 'Descripción', 'Responsable'];
+// 2026-10-09: la categoría ya se muestra con la etiqueta legible del combobox, no el
+// código crudo del backend (ej. "Transferencia", no "TRANSFERENCIA").
+const ETIQUETA_CATEGORIA: Record<string, string> = {
+  TRANSFERENCIA: 'Transferencia',
+  ESTADO: 'Cambio de estado',
+  FASE_PRODUCTIVA: 'Fase productiva',
+  EVENTO_BIOLOGICO: 'Evento biológico',
+  CRECIMIENTO: 'Crecimiento',
+  SANITARIO: 'Sanitario',
+  REPRODUCTIVO: 'Reproductivo',
+  PRODUCTIVO: 'Productivo',
+  BAJA: 'Baja',
+};
 
 // 403 SIMULADO con el formato estándar del backend
 const ERROR_403 = { error_code: 'ACCESO_DENEGADO', message: 'Acceso denegado. Su rol no tiene permisos para realizar esta operación.', fields: [] };
@@ -138,8 +164,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial del activo (RF-4
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
       `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_131_VIEWPORTS.`,
     );
-    expect(USER_EMAIL, 'Falta TEST_USER_EMAIL en testing/.env.test').not.toBe('');
-    expect(USER_PASSWORD, 'Falta TEST_USER_PASSWORD en testing/.env.test').not.toBe('');
+    expect(USER_EMAIL, 'Falta TEST_PRODUCTOR_EMAIL en testing/.env.test').not.toBe('');
+    expect(USER_PASSWORD, 'Falta TEST_PRODUCTOR_PASSWORD en testing/.env.test').not.toBe('');
     await iniciarSesionProductor(page);
   });
 
@@ -166,7 +192,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial del activo (RF-4
 
     // 2.4.6 / 1.4.1: la categoría se identifica con texto, no solo con color
     for (const c of categorias) {
-      await expect(tabla(page).getByRole('cell', { name: String(c), exact: true }).first(), `DEFECTO: 2.4.6: la categoría ${c} debe mostrarse como texto`).toBeVisible();
+      const etiqueta = ETIQUETA_CATEGORIA[String(c)] ?? String(c);
+      await expect(tabla(page).getByRole('cell', { name: etiqueta, exact: true }).first(), `DEFECTO: 2.4.6: la categoría ${c} debe mostrarse como texto`).toBeVisible();
     }
 
     await escanear(page, 'listado', testInfo);
@@ -186,7 +213,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial del activo (RF-4
 
     const filas = tabla(page).getByRole('row');
     await expect(filas).toHaveCount(3);
-    for (const celda of await tabla(page).locator('tbody td:nth-child(2)').allInnerTexts()) expect(celda.trim()).toBe('TRANSFERENCIA');
+    for (const celda of await tabla(page).locator('tbody td:nth-child(2)').allInnerTexts()) expect(celda.trim()).toBe(ETIQUETA_CATEGORIA.TRANSFERENCIA);
 
     // El resultado del filtro debería anunciarse (conteo de registros en región viva)
     expect.soft(await anunciado(page, /registro\(s\)/), 'DEFECTO: 4.1.3: el conteo de resultados tras filtrar no está en una región viva (aria-live/status)').toBe(true);
