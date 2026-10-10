@@ -30,6 +30,12 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_50_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-10 ──────────────────────────────────────────────────
+ * GET /configuracion/fincas ahora responde { total, items } en vez de un arreglo plano
+ * (fincasApi.ts ya lo esperaba así); el fixture servía un arreglo plano y la vista caía al
+ * error boundary ("No se pudo mostrar esta sección") al intentar leer .items de un arreglo.
+ * Se corrige envolviendo FINCAS_FIXTURE en { total, items }.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
@@ -106,9 +112,10 @@ async function abrirFincas(page: Page): Promise<number> {
 }
 
 async function servirFixture(page: Page) {
+  // El backend responde { total, items }, no un arreglo plano (ver fincasApi.ts).
   await page.route(URL_LISTADO, (route) =>
     route.request().method() === 'GET'
-      ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(FINCAS_FIXTURE) })
+      ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ total: FINCAS_FIXTURE.length, items: FINCAS_FIXTURE }) })
       : route.fallback());
 }
 
