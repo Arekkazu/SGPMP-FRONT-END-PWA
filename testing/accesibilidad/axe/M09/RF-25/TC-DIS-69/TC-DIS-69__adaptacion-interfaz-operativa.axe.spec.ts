@@ -65,21 +65,20 @@ import path from 'path';
  *   para este estado y el test quedaba `test.skip`; ahora está implementado.
  * - Estado (a) "sin finca": la cuenta TEST_ADMIN_EMAIL (admin.dev@gmail.com), que
  *   el código de ContextoProvider.tsx sigue documentando como "sin finca activa
- *   propia", responde 204 en esta reejecución — el mismo código que el estado (b),
- *   no el 200 con id_finca=null que este TC asumía como determinístico para el
- *   Administrador.
- *   CONFIRMADO con una segunda cuenta (2026-10-09): TEST_CONTADOR_EMAIL
- *   (contador@pecuaria.co), cuyo GET /usuarios/me trae `"fincas": []` — cero fincas,
- *   el caso genuino de "sin finca" — también responde 204 en /configuracion/interfaz/contexto
- *   y la UI muestra "Finca sin configuración" (estado b), no "Bienvenido al sistema"
- *   (estado a). Dos cuentas con situaciones distintas (una con finca sin especies, otra
- *   sin ninguna finca) dan exactamente la misma respuesta: el backend ya no distingue
- *   los dos estados de RF-25, solo el "con especies" (200) del resto (204). No hay forma
- *   de distinguirlos en el frontend cuando ambos responden 204: BLOQUEADO hasta que el
- *   backend separe las dos respuestas (sugerido: 200 con id_finca=null y sin body de
- *   especies para "sin finca"; 204 solo para "finca sin especies").
- *   Reportado como issue de backend: #312. BLOQUEADO hasta que se corrija; no se intenta
- *   cubrir el estado (a) en este archivo mientras tanto.
+ *   propia", respondía 204 en la reejecución anterior — el mismo código que el
+ *   estado (b), no el 200 con id_finca=null que este TC asumía como determinístico
+ *   para el Administrador. Lo mismo ocurría con TEST_CONTADOR_EMAIL
+ *   (contador@pecuaria.co, `fincas: []` en /usuarios/me): también 204, no 200.
+ *   Se reportó como issue de backend #312; Alex confirmó que ninguna de esas dos
+ *   cuentas sin especies/áreas corresponde al estado (a) genuino, y que el campo
+ *   `fincas` de /usuarios/me está hardcodeado (no refleja el vínculo real) — no
+ *   hizo falta ningún cambio de backend para #312, el bug estaba en no tener una
+ *   cuenta sin NINGÚN vínculo a finca para probar.
+ *   RESUELTO 2026-10-09 con una tercera cuenta, TEST_SIN_FINCA_EMAIL
+ *   (cm09175.qa@sgpmp-test.com): confirmado por curl directo que
+ *   GET /configuracion/interfaz/contexto responde 200 con `id_finca: null`,
+ *   `finca_activa: null` y `especies_configuradas: []` — el estado (a) genuino,
+ *   distinto del 204 de las otras dos cuentas. El test ya no está bloqueado.
  * - Copy del dashboard operativo: el encabezado "Bienvenido…" que medía el estado
  *   (c) ya no existe — DashboardPage.tsx saluda con "Hola, {nombre}" (sin relación
  *   con RF-25). Se actualiza el assert a ese texto.
@@ -89,6 +88,8 @@ const PRODUCTOR_EMAIL = process.env.TEST_PRODUCTOR_EMAIL ?? '';
 const PRODUCTOR_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD ?? '';
 const SIN_ESPECIES_EMAIL = process.env.TEST_FINCA_SIN_ESPECIES_EMAIL ?? '';
 const SIN_ESPECIES_PASSWORD = process.env.TEST_FINCA_SIN_ESPECIES_PASSWORD ?? '';
+const SIN_FINCA_EMAIL = process.env.TEST_SIN_FINCA_EMAIL ?? '';
+const SIN_FINCA_PASSWORD = process.env.TEST_SIN_FINCA_PASSWORD ?? '';
 
 async function iniciarSesion(page: Page, email: string, password: string) {
   await page.goto('/login');
@@ -149,13 +150,25 @@ test.describe('TC-DIS-69 — RF-25: Adaptación de Interfaz Operativa (accesibil
     expect(results.violations).toEqual([]);
   });
 
-  // BLOQUEADO por issue de backend #312 (ver cabecera, "Re-ejecución 2026-10-09"):
-  // GET /configuracion/interfaz/contexto responde 204 tanto para "sin finca" como
-  // para "finca sin especies" — confirmado con TEST_ADMIN_EMAIL y TEST_CONTADOR_EMAIL,
-  // ambas sin ninguna finca vinculada. El frontend no puede distinguir los dos estados
-  // cuando ambos dan 204, así que no hay forma de confirmar el estado (a) hoy.
-  test.skip('Administrador (sin finca vinculada) ve la bienvenida de "sin finca", sin violaciones', async ({ page }, testInfo) => {
-    // Pendiente: issue #312. Desbloquear cuando el backend responda 200 con
-    // id_finca=null para cuentas sin ninguna finca vinculada.
+  test('Cuenta sin finca vinculada ve la bienvenida de "sin finca", sin violaciones', async ({ page }, testInfo) => {
+    expect(SIN_FINCA_EMAIL, 'Falta TEST_SIN_FINCA_EMAIL en testing/.env.test').not.toBe('');
+    expect(SIN_FINCA_PASSWORD, 'Falta TEST_SIN_FINCA_PASSWORD en testing/.env.test').not.toBe('');
+
+    await iniciarSesion(page, SIN_FINCA_EMAIL, SIN_FINCA_PASSWORD);
+
+    // Estado (a): sin ninguna finca vinculada; el backend lo señala con 200 e
+    // id_finca=null en /configuracion/interfaz/contexto (confirmado por curl).
+    await expect(page.getByRole('heading', { name: 'Bienvenido al sistema' })).toBeVisible();
+    await expect(
+      page.getByText('Actualmente no tiene una unidad productiva asignada. Por favor, contacte al administrador para vincular su cuenta a una finca.')
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ir a mi perfil' })).toBeVisible();
+    await expect(page.getByText('Finca sin configuración')).toHaveCount(0);
+
+    const results = await new AxeBuilder({ page }).analyze();
+    guardarResultadoAxe('TC-DIS-69', __dirname, `${testInfo.project.name} · ${testInfo.title}`, results);
+    guardarResultados('axe-TC-DIS-69-sin-finca.json', results);
+
+    expect(results.violations).toEqual([]);
   });
 });
