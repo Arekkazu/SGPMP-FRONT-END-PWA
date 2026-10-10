@@ -13,7 +13,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { AccesibilidadResponse, IdentidadVisualContexto } from '../../configuration/types';
-import { aplicarIdentidad, colorParaTema, limpiarIdentidad, oscurecerParaNav, resolverLogoUrl } from './identidad';
+import { aplicarIdentidad, colorParaTema, contraste, limpiarIdentidad, oscurecerParaNav, resolverLogoUrl } from './identidad';
 
 const IDENTIDAD: IdentidadVisualContexto = {
   logo_path: '/uploads/logos/remanso.png',
@@ -154,6 +154,25 @@ describe('oscurecerParaNav', () => {
     expect(canales[0]).toBeLessThan(0x1a);
     expect(canales[1]).toBeLessThan(0x6b);
     expect(canales[2]).toBeLessThan(0x3c);
+  });
+
+  it('TC-M09-179: el texto tenue del sidebar cumple 4.5:1 sobre la variante oscura', () => {
+    // Antes: #7d9a75 sobre #104325 daba 3.64:1 (axe, rev8).
+    expect(oscurecerParaNav('#249453')).toBe('#104325');
+    expect(contraste(oscurecerParaNav('#249453'), '#97b68f')).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('oscurece mas una marca clara hasta cumplir 4.5:1', () => {
+    for (const marca of ['#F5C518', '#87CEEB', '#FFFFFF']) {
+      expect(contraste(oscurecerParaNav(marca), '#97b68f')).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
+describe('contraste', () => {
+  it('coincide con WCAG en los extremos', () => {
+    expect(contraste('#000000', '#FFFFFF')).toBeCloseTo(21, 5);
+    expect(contraste('#7d9a75', '#104325')).toBeCloseTo(3.64, 1);
   });
 });
 
