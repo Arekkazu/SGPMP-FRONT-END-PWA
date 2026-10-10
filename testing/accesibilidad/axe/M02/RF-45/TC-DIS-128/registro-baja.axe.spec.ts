@@ -27,6 +27,16 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_128_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-09 ──────────────────────────────────────────────────
+ * El script leía TEST_USER_EMAIL (cuenta Admin, sin estos activos) en vez de
+ * TEST_PRODUCTOR_EMAIL, la dueña real de #296/#471. Se corrige. El POST /sesiones/refresh de
+ * esta cuenta, que daba 500 (ver TC-DIS-125), ya está corregido en backend.
+ * Cambio de comportamiento: "Cantidad afectada" mayor a la disponible ya no llega al backend —
+ * el cliente la valida y bloquea el envío con su propio mensaje ("La cantidad no puede superar
+ * la disponible en el lote"), cerrando el DEFECTO 3.3.3 que documentaba la ronda anterior (sin
+ * límite en el cliente). Ya no se puede forzar el 422 simulado por esta vía; el test 5 ahora
+ * verifica la validación de cliente en su lugar.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -34,8 +44,8 @@ import { guardarResultadoAxe } from '../../../_shared/axeReport';
 import { auditarLighthouse, PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 
 const TC_ID = 'TC-DIS-128';
-const USER_EMAIL = process.env.TEST_USER_EMAIL ?? '';
-const USER_PASSWORD = process.env.TEST_USER_PASSWORD ?? '';
+const USER_EMAIL = process.env.TEST_PRODUCTOR_EMAIL ?? '';
+const USER_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD ?? '';
 
 const API = 'https://api.inmero.co/back-sigab-test';
 const ID_LOTE = 296; // lote ACTIVO con 10 animales
@@ -212,8 +222,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Registro de baja (RF-45)`,
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
       `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_128_VIEWPORTS.`,
     );
-    expect(USER_EMAIL, 'Falta TEST_USER_EMAIL en testing/.env.test').not.toBe('');
-    expect(USER_PASSWORD, 'Falta TEST_USER_PASSWORD en testing/.env.test').not.toBe('');
+    expect(USER_EMAIL, 'Falta TEST_PRODUCTOR_EMAIL en testing/.env.test').not.toBe('');
+    expect(USER_PASSWORD, 'Falta TEST_PRODUCTOR_PASSWORD en testing/.env.test').not.toBe('');
     token = await iniciarSesionProductor(page);
   });
 
@@ -273,7 +283,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Registro de baja (RF-45)`,
     const { fijarModo } = await protegerBaja(page);
     testInfo.annotations.push(
       { type: 'Petición redirigida', description: '404, 400 y 409: el POST del formulario se redirige a casos que el backend rechaza sin modificar datos; respuestas reales. No se registra ninguna baja.' },
-      { type: 'Datos simulados', description: '422 cantidad_afectada mayor a la disponible (error_code a confirmar con desarrollo) y 403.' },
+      { type: 'Datos simulados', description: '403. La cantidad mayor a la disponible ya la bloquea el cliente (ver 2026-10-09 en el header); no llega a simularse un 422 del backend.' },
     );
     await abrirPestanaEventos(page);
     await abrirFormulario(page);
@@ -293,13 +303,18 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Registro de baja (RF-45)`,
       return estado;
     };
 
-    // 422: cantidad_afectada mayor a la disponible — el cliente no la valida, el error viene del backend
-    expect(await enviar({ tipo: 'simular', status: 422, cuerpo: ERROR_422_CANTIDAD }, String(CANTIDAD_DISPONIBLE + 5))).toBe(422);
-    await expect(alertaError.filter({ hasText: 'cantidad' }), 'DEFECTO: 3.3.1: el 422 de cantidad excedida debe anunciarse').toBeVisible();
-    await expect.soft(c.cantidad, 'DEFECTO: 3.3.1: "Cantidad afectada" debe marcarse como inválida (aria-invalid) con el error de campo del backend').toHaveAttribute('aria-invalid', 'true');
+    // Cantidad mayor a la disponible: 2026-10-09, el cliente ya la valida y bloquea el envío
+    // antes de llegar al backend (DEFECTO 3.3.3 de la ronda anterior, ya resuelto) — ya no se
+    // puede forzar el 422 simulado por esta vía; se verifica la validación de cliente en su lugar.
+    await llenarValido(page, String(CANTIDAD_DISPONIBLE + 5));
+    await c.registrar.click();
+    const alertaCantidad = dialogo(page).getByRole('alert').filter({ hasText: /no puede superar/i });
+    await expect(alertaCantidad, 'DEFECTO: 3.3.1: la cantidad mayor a la disponible debe anunciarse').toBeVisible();
+    await expect.soft(c.cantidad, 'DEFECTO: 3.3.1: "Cantidad afectada" debe marcarse como inválida (aria-invalid) con el error de validación de cliente').toHaveAttribute('aria-invalid', 'true');
+    await expect(c.resumen, 'La validación de cliente no debe dejar avanzar a la confirmación').toBeHidden();
     const maximo = await c.cantidad.getAttribute('max');
-    expect.soft(maximo, `DEFECTO: 3.3.3: "Cantidad afectada" no limita ni valida la cantidad disponible (${CANTIDAD_DISPONIBLE}) en el cliente`).not.toBeNull();
-    await escanear(page, 'error-422-cantidad', testInfo);
+    testInfo.annotations.push({ type: 'Atributo max de "Cantidad afectada"', description: maximo ?? '(sin max)' });
+    await escanear(page, 'error-cantidad-excedida', testInfo);
 
     // 404 real: activo inexistente
     expect(await enviar({ tipo: 'redirigir', idActivo: 999999, cuerpo: { tipo_baja: 'muerte', fecha_baja: HOY, motivo_baja: 'QA TC-DIS-128 sondeo' } })).toBe(404);
