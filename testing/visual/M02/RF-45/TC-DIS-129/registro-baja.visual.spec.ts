@@ -29,11 +29,16 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_129_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-09 ──────────────────────────────────────────────────
+ * El script leía TEST_USER_EMAIL (cuenta Admin, sin el lote #296) en vez de
+ * TEST_PRODUCTOR_EMAIL, la dueña real. Se corrige. El bug de backend en
+ * POST /sesiones/refresh para esta cuenta (ver TC-DIS-125) ya estaba corregido.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-const USER_EMAIL = process.env.TEST_USER_EMAIL ?? '';
-const USER_PASSWORD = process.env.TEST_USER_PASSWORD ?? '';
+const USER_EMAIL = process.env.TEST_PRODUCTOR_EMAIL ?? '';
+const USER_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD ?? '';
 
 const ID_LOTE = 296;
 const FECHA_FIJA = new Date('2026-09-29T12:00:00-05:00');
@@ -180,8 +185,8 @@ test.describe('TC-DIS-129 - Consistencia visual - Registro de baja (RF-45)', () 
       !VIEWPORTS_HABILITADOS.includes(testInfo.project.name),
       `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_129_VIEWPORTS.`,
     );
-    expect(USER_EMAIL, 'Falta TEST_USER_EMAIL en testing/.env.test').not.toBe('');
-    expect(USER_PASSWORD, 'Falta TEST_USER_PASSWORD en testing/.env.test').not.toBe('');
+    expect(USER_EMAIL, 'Falta TEST_PRODUCTOR_EMAIL en testing/.env.test').not.toBe('');
+    expect(USER_PASSWORD, 'Falta TEST_PRODUCTOR_PASSWORD en testing/.env.test').not.toBe('');
     // Acción irreversible: ninguna baja llega al backend
     await page.route(URL_BAJA, (r) => (r.request().method() === 'POST' ? r.abort() : r.continue()));
     await fijarTemaClaro(page);
