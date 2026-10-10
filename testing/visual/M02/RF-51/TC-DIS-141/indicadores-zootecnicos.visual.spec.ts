@@ -31,12 +31,18 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar. Solo lecturas.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_141_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-09 ──────────────────────────────────────────────────
+ * El script leía TEST_USER_EMAIL (cuenta Admin, sin estos activos) en vez de
+ * TEST_PRODUCTOR_EMAIL, la dueña real. Se corrige. Confirmado por curl: #295, #296 y #291
+ * responden igual a lo documentado. El bug de backend en POST /sesiones/refresh para esta
+ * cuenta (ver TC-DIS-125) ya estaba corregido.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import fixture from './indicadores.fixture.json';
 
-const USER_EMAIL = process.env.TEST_USER_EMAIL ?? '';
-const USER_PASSWORD = process.env.TEST_USER_PASSWORD ?? '';
+const USER_EMAIL = process.env.TEST_PRODUCTOR_EMAIL ?? '';
+const USER_PASSWORD = process.env.TEST_PRODUCTOR_PASSWORD ?? '';
 
 const ID_INDIVIDUAL = 295;
 const ID_LOTE = 296;
@@ -167,8 +173,8 @@ test.describe('TC-DIS-141 - Consistencia visual - Indicadores zootécnicos (RF-5
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_141_VIEWPORTS.`);
-    expect(USER_EMAIL, 'Falta TEST_USER_EMAIL en testing/.env.test').not.toBe('');
-    expect(USER_PASSWORD, 'Falta TEST_USER_PASSWORD en testing/.env.test').not.toBe('');
+    expect(USER_EMAIL, 'Falta TEST_PRODUCTOR_EMAIL en testing/.env.test').not.toBe('');
+    expect(USER_PASSWORD, 'Falta TEST_PRODUCTOR_PASSWORD en testing/.env.test').not.toBe('');
     await fijarTemaClaro(page);
     await iniciarSesionProductor(page);
   });
