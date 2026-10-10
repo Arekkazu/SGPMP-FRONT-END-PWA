@@ -42,14 +42,43 @@ const VARIABLES = [VAR_PRIMARIO, VAR_PRIMARIO_FUERTE, VAR_CTA, VAR_CTA_HOVER, VA
  *
  * RF-26 pide aplicar el color primario a las "barras de navegación", pero el
  * `Sidebar` tiene texto e iconos claros: pintarlo con el primario crudo dejaría
- * ilegible una marca clara (amarillo, celeste). Se oscurece un 55% para conservar
- * el matiz de la marca sin romper el contraste del texto blanco.
+ * ilegible una marca clara (amarillo, celeste). Se oscurece al menos un 55% para
+ * conservar el matiz, y más si hace falta: un porcentaje fijo dejaba el texto tenue
+ * del sidebar en 3.64:1 sobre la variante oscura `#249453` (TC-M09-179). Se baja
+ * hasta que `TEXTO_NAV_TENUE`, el texto más tenue, alcance 4.5:1 (WCAG AA); los
+ * demás textos del sidebar son más claros, así que cumplen también.
  */
-export function oscurecerParaNav(hex: string): string {
+const TEXTO_NAV_TENUE = '#97b68f'; // mismo valor que en Sidebar.css
+const CONTRASTE_AA = 4.5;
+
+function canalesDe(hex: string): number[] {
   const limpio = hex.replace('#', '');
-  const canales = [0, 2, 4].map((i) => parseInt(limpio.slice(i, i + 2), 16));
-  const oscurecido = canales.map((c) => Math.round(c * 0.45));
-  return `#${oscurecido.map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+  return [0, 2, 4].map((i) => parseInt(limpio.slice(i, i + 2), 16));
+}
+
+/** Luminancia relativa WCAG 2.1, la misma fórmula que `color_hex.py` en el backend. */
+function luminancia(hex: string): number {
+  const [r, g, b] = canalesDe(hex).map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function contraste(uno: string, otro: string): number {
+  const [claro, oscuro] = [luminancia(uno), luminancia(otro)].sort((a, b) => b - a);
+  return (claro + 0.05) / (oscuro + 0.05);
+}
+
+export function oscurecerParaNav(hex: string): string {
+  const canales = canalesDe(hex);
+  for (let porcentaje = 45; porcentaje > 0; porcentaje -= 5) {
+    const candidato = `#${canales
+      .map((c) => Math.round((c * porcentaje) / 100).toString(16).padStart(2, '0'))
+      .join('')}`;
+    if (contraste(candidato, TEXTO_NAV_TENUE) >= CONTRASTE_AA) return candidato;
+  }
+  return '#000000';
 }
 
 export interface MarcaAplicable {
