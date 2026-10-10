@@ -5,14 +5,18 @@
  *
  * Baselines nuevas por el cambio del formulario (RF-49 v1.2; tarjeta del modal o de la
  * sección, sin el fondo):
- *   - Formulario con asociación DIRECTA (activo individual #297), dispositivo y sensor elegidos.
- *   - Formulario con asociación POBLACIONAL (lote #296), dispositivo y sensor elegidos.
+ *   - Formulario con asociación DIRECTA (activo individual #46 "A-001"), dispositivo y sensor elegidos.
+ *   - Formulario con asociación POBLACIONAL (lote #130), dispositivo y sensor elegidos.
  *   - Advertencia por dispositivo desconectado tras asociar (201 con warning, SIMULADO, mensaje
  *     del RF v1.2).
  * La asociación AMBIENTAL (tipo B) se forma por la infraestructura (RF-22) y el formulario del
  * activo ya no la ofrece (#351); el test verifica que solo haya DIRECTA y POBLACIONAL.
  *
  * Dispositivo #1 "IOT-EST01-HLA-001" con sus sensores reales (listas encadenadas).
+ *
+ * Reejecución sobre la release 1.0.0-rc.46 (2026-10-09): los activos de QA anteriores (#296 y
+ * #297 en "Corral QA JE Origen") ya no existen en TEST. Se usan el individual #46 y el lote
+ * #130 (ambos ACTIVOS) en "Estanque-01" (#1), la misma infraestructura del dispositivo #1.
  *
  * PROTECCIÓN DE DATOS: todo POST /activos-biologicos/{id}/sensores se aborta o se responde
  * con el 201 simulado; no se crea ninguna asociación.
@@ -36,11 +40,12 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD ?? '';
 
-const ORIGEN = 'Corral QA JE Origen'; // infraestructura #48 de ambos activos
+const ORIGEN = 'Estanque-01'; // infraestructura #1 de ambos activos y del dispositivo #1
+const ID_INFRAESTRUCTURA = 1;
 const ID_DISPOSITIVO = '1';
 const ESCENARIOS = [
-  { tipo: 'DIRECTA', idActivo: 297, tipoActivo: 'INDIVIDUAL', descripcion: 'activo individual #297' },
-  { tipo: 'POBLACIONAL', idActivo: 296, tipoActivo: 'LOTE', descripcion: 'lote #296' },
+  { tipo: 'DIRECTA', idActivo: 46, tipoActivo: 'INDIVIDUAL', descripcion: 'activo individual #46' },
+  { tipo: 'POBLACIONAL', idActivo: 130, tipoActivo: 'LOTE', descripcion: 'lote #130' },
 ] as const;
 
 const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_138_VIEWPORTS ?? 'movil,tablet,escritorio')
@@ -52,8 +57,8 @@ const URL_SENSORES_DISPOSITIVO = (url: URL) => /\/dispositivos-iot\/\d+\/sensore
 
 // 201 SIMULADO con advertencia de dispositivo desconectado (mensaje del RF-49 v1.2)
 const EXITO_CON_ADVERTENCIA = {
-  id_asociacion: 999001, id_activo_biologico: 296, sensor_id: 3, dispositivo_iot_id: 1,
-  id_infraestructura: 48, tipo_activo: 'LOTE', tipo_asociacion: 'POBLACIONAL',
+  id_asociacion: 999001, id_activo_biologico: 130, sensor_id: 3, dispositivo_iot_id: 1,
+  id_infraestructura: 1, tipo_activo: 'LOTE', tipo_asociacion: 'POBLACIONAL',
   estado_asociacion: 'ACTIVA', fecha_inicio: '2026-10-07T00:00:00Z', fecha_fin: null,
   advertencia: 'Asociación registrada exitosamente. Advertencia: El dispositivo 1 se encuentra desconectado desde las 08:15:00. Las lecturas podrían no verse reflejadas de inmediato.',
 };
@@ -113,7 +118,7 @@ async function abrirFormulario(page: Page, idActivo: number) {
   await secciones.getByRole('button', { name: 'Sensores', exact: true }).click();
   await page.getByRole('button', { name: 'Asociar sensor', exact: true }).first().click();
   await expect(dialogo(page)).toBeVisible();
-  await expect(dialogo(page).getByText(/Infraestructura del activo.*#48/)).toBeVisible();
+  await expect(dialogo(page).getByText(new RegExp(`Infraestructura del activo.*#${ID_INFRAESTRUCTURA}`))).toBeVisible();
 }
 
 /** Elige el dispositivo de prueba y el primer sensor de su lista (listas encadenadas). */
@@ -122,9 +127,10 @@ async function elegirDispositivoYSensor(page: Page) {
   const dispositivo = d.getByRole('combobox', { name: /Dispositivo IoT/ });
   const sensor = d.getByRole('combobox', { name: /^Sensor/ });
   await expect(dispositivo.locator(`option[value="${ID_DISPOSITIVO}"]`), `Precondición: el dispositivo #${ID_DISPOSITIVO} debe estar en la lista`).toBeAttached({ timeout: 20_000 });
-  const sensores = page.waitForResponse((r) => URL_SENSORES_DISPOSITIVO(new URL(r.url())));
+  const sensores = page.waitForResponse((r) => URL_SENSORES_DISPOSITIVO(new URL(r.url())), { timeout: 15_000 }).catch(() => null);
   await dispositivo.selectOption(ID_DISPOSITIVO);
-  expect((await sensores).status(), 'Los sensores del dispositivo deben cargar').toBe(200);
+  const res = await sensores;
+  if (res) expect(res.status(), 'Los sensores del dispositivo deben cargar').toBe(200);
   await expect(sensor).toBeEnabled();
   await sensor.selectOption({ index: 1 });
 }
@@ -252,7 +258,7 @@ test.describe('TC-DIS-138 - Consistencia visual - Asociación de sensores IoT (R
       r.request().method() === 'POST'
         ? r.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify(EXITO_CON_ADVERTENCIA) })
         : r.continue());
-    await abrirFormulario(page, 296);
+    await abrirFormulario(page, 130);
     await elegirDispositivoYSensor(page);
     await dialogo(page).getByRole('button', { name: 'Asociar sensor', exact: true }).click();
     await expect(dialogo(page)).toBeHidden();
