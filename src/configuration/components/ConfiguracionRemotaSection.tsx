@@ -11,7 +11,7 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useDispositivosIot } from '../hooks/useDispositivosIot';
 import { useConfiguracionRemota } from '../hooks/useConfiguracionRemota';
-import type { DispositivoIotResponse, ConfiguracionRemotaResponse } from '../types';
+import type { DispositivoIotResponse, ConfiguracionRemotaResponse, ConfigurarRemotamenteDTO } from '../types';
 import { Buscador } from '../../shared/design-system/Buscador';
 import { useBusqueda } from '../../shared/hooks/useBusqueda';
 
@@ -114,8 +114,8 @@ interface AccionesHistorial {
   onCancelar: (idConfiguracion: number) => void;
 }
 
-function Historial({ historial, loading, acciones }: {
-  historial: ConfiguracionRemotaResponse[]; loading: boolean; acciones: AccionesHistorial;
+function Historial({ historial, loading, acciones, esCamara }: {
+  historial: ConfiguracionRemotaResponse[]; loading: boolean; acciones: AccionesHistorial; esCamara: boolean;
 }) {
   const { t } = useT('configuration');
   if (loading) {
@@ -136,7 +136,13 @@ function Historial({ historial, loading, acciones }: {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ background: 'var(--surface-hover)' }}>
-            {[t('configuracionremotasection.fecha_hora'), t('configuracionremotasection.frec_captura'), t('configuracionremotasection.interv_transmision'), t('configuracionremotasection.estado_cfg'), t('configuracionremotasection.mensaje'), t('configuracionremotasection.acciones')].map((h) => (
+            {[
+              t('configuracionremotasection.fecha_hora'),
+              ...(esCamara
+                ? [t('configuracionremotasection.fps_col')]
+                : [t('configuracionremotasection.frec_captura'), t('configuracionremotasection.interv_transmision')]),
+              t('configuracionremotasection.estado_cfg'), t('configuracionremotasection.mensaje'), t('configuracionremotasection.acciones'),
+            ].map((h) => (
               <th key={h} scope="col" style={TH}>{h}</th>
             ))}
           </tr>
@@ -145,8 +151,14 @@ function Historial({ historial, loading, acciones }: {
           {historial.map((c, i) => (
             <tr key={c.id_configuracion_remota} style={{ background: 'var(--surface-card)' }}>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatTs(c.fecha_creacion)}</td>
-              <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{c.frecuencia_captura} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>min</span></td>
-              <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{c.intervalo_transmision} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>min</span></td>
+              {esCamara ? (
+                <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{c.fps ?? '—'} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>fps</span></td>
+              ) : (
+                <>
+                  <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{c.frecuencia_captura ?? '—'} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>min</span></td>
+                  <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{c.intervalo_transmision ?? '—'} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>min</span></td>
+                </>
+              )}
               <td style={TD}><EstadoCfgBadge estado={c.estado} /></td>
               <td style={{ ...TD, color: 'var(--text-muted)', fontSize: '12px', maxWidth: 200 }}>{c.mensaje ?? '—'}</td>
               <td style={{ ...TD, whiteSpace: 'nowrap' }}>
@@ -171,10 +183,12 @@ function Historial({ historial, loading, acciones }: {
 
 // ── Config form ───────────────────────────────────────────────────────────────
 
-interface FormValues { frecuencia_captura: number; intervalo_transmision: number; }
+interface FormValues { frecuencia_captura: number; intervalo_transmision: number; fps: number; }
 
-function ConfigForm({ dispositivo, onBack, encolada, cancelada, saving, saveError, ultima, historial, loadingHist, acciones, onSubmit, onReload }: {
+function ConfigForm({ dispositivo, esCamara, onBack, encolada, cancelada, saving, saveError, ultima, historial, loadingHist, acciones, onSubmit, onReload }: {
   dispositivo: DispositivoIotResponse;
+  /** RF-23 v1.1: una CAMARA se configura solo con fps (1–60). */
+  esCamara: boolean;
   onBack: () => void;
   encolada: boolean;
   cancelada: boolean;
@@ -184,7 +198,7 @@ function ConfigForm({ dispositivo, onBack, encolada, cancelada, saving, saveErro
   historial: ConfiguracionRemotaResponse[];
   loadingHist: boolean;
   acciones: AccionesHistorial;
-  onSubmit: (dto: { frecuencia_captura: number; intervalo_transmision: number }) => void;
+  onSubmit: (dto: ConfigurarRemotamenteDTO) => void;
   onReload: () => void;
 }) {
   const { t } = useT('configuration');
@@ -193,6 +207,7 @@ function ConfigForm({ dispositivo, onBack, encolada, cancelada, saving, saveErro
     defaultValues: {
       frecuencia_captura: ultima?.frecuencia_captura ?? 5,
       intervalo_transmision: ultima?.intervalo_transmision ?? 15,
+      fps: ultima?.fps ?? 15,
     },
   });
 
@@ -233,8 +248,12 @@ function ConfigForm({ dispositivo, onBack, encolada, cancelada, saving, saveErro
       {ultima && (
         <div style={{ display: 'flex', gap: 'var(--s4)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
           {[
-            { label: t('configuracionremotasection.frec_captura_actual'), value: `${ultima.frecuencia_captura} min` },
-            { label: t('configuracionremotasection.interv_transmision_actual'), value: `${ultima.intervalo_transmision} min` },
+            ...(esCamara
+              ? [{ label: t('configuracionremotasection.fps_actual'), value: `${ultima.fps ?? '—'} fps` }]
+              : [
+                  { label: t('configuracionremotasection.frec_captura_actual'), value: `${ultima.frecuencia_captura ?? '—'} min` },
+                  { label: t('configuracionremotasection.interv_transmision_actual'), value: `${ultima.intervalo_transmision ?? '—'} min` },
+                ]),
             { label: t('configuracionremotasection.estado'), value: ultima.estado },
           ].map((item) => (
             <div key={item.label} style={{ flex: 1, minWidth: 120, background: 'var(--surface-hover)', borderRadius: 'var(--r-lg)', padding: 'var(--s3) var(--s4)' }}>
@@ -251,8 +270,47 @@ function ConfigForm({ dispositivo, onBack, encolada, cancelada, saving, saveErro
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('configuracionremotasection.programar_configuracion_del_dispositivo')}</span>
         </div>
         <div style={{ padding: 'var(--s5)' }}>
-          <form onSubmit={handleSubmit((d) => onSubmit({ frecuencia_captura: Number(d.frecuencia_captura), intervalo_transmision: Number(d.intervalo_transmision) }))} noValidate>
+          <form
+            onSubmit={handleSubmit((d) => onSubmit(esCamara
+              ? { fps: Number(d.fps) }
+              : { frecuencia_captura: Number(d.frecuencia_captura), intervalo_transmision: Number(d.intervalo_transmision) }))}
+            noValidate
+          >
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 'var(--s5)', marginBottom: 'var(--s5)' }}>
+              {esCamara ? (
+              <div>
+                <label htmlFor="cfg-fps" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('configuracionremotasection.fps')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="cfg-fps"
+                    type="number"
+                    min={1}
+                    max={60}
+                    step={1}
+                    placeholder="15"
+                    aria-required="true"
+                    aria-invalid={!!errors.fps}
+                    aria-describedby={errors.fps ? 'cfg-fps-err cfg-fps-ayuda' : 'cfg-fps-ayuda'}
+                    style={{
+                      width: '100%', padding: 'var(--s3)', paddingRight: 44,
+                      borderRadius: 'var(--r-md)', border: `1.5px solid ${errors.fps ? 'var(--sem-error)' : 'var(--surface-border)'}`,
+                      background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '15px', fontFamily: 'var(--font-mono)', fontWeight: 700, outline: 'none', boxSizing: 'border-box',
+                    }}
+                    {...register('fps', {
+                      required: t('configuracionremotasection.obligatorio'),
+                      valueAsNumber: true,
+                      min: { value: 1, message: t('configuracionremotasection.fps_rango') },
+                      max: { value: 60, message: t('configuracionremotasection.fps_rango') },
+                    })}
+                  />
+                  <span aria-hidden="true" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', pointerEvents: 'none' }}>fps</span>
+                </div>
+                {errors.fps && <p id="cfg-fps-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)', margin: 0 }}>{errors.fps.message}</p>}
+                <p id="cfg-fps-ayuda" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('configuracionremotasection.fps_ayuda')}</p>
+              </div>
+              ) : (
+              <>
               {/* Frecuencia captura */}
               <div>
                 <label htmlFor="cfg-frecuencia-captura" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('configuracionremotasection.frecuencia_de_captura')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
@@ -317,6 +375,8 @@ function ConfigForm({ dispositivo, onBack, encolada, cancelada, saving, saveErro
                 {errors.intervalo_transmision && <p id="cfg-intervalo-transmision-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)', margin: 0 }}>{errors.intervalo_transmision.message}</p>}
                 <p id="cfg-intervalo-transmision-ayuda" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('configuracionremotasection.cada_cuantos_minutos_transmite_datos_al')}</p>
               </div>
+              </>
+              )}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -334,7 +394,7 @@ function ConfigForm({ dispositivo, onBack, encolada, cancelada, saving, saveErro
             {t('configuracionremotasection.historial_de_configuraciones', { serial: dispositivo.serial })}
           </span>
         </div>
-        <Historial historial={historial} loading={loadingHist} acciones={acciones} />
+        <Historial historial={historial} loading={loadingHist} acciones={acciones} esCamara={esCamara} />
       </div>
     </div>
   );
@@ -347,7 +407,7 @@ export function ConfiguracionRemotaSection() {
   const online = useOnlineStatus();
   const puedeConfigurar = usePermission(11, 3);
 
-  const { dispositivos, loading: loadingDisp, cargar: cargarDisp, esGatewayEdge } = useDispositivosIot();
+  const { dispositivos, loading: loadingDisp, cargar: cargarDisp, esGatewayEdge, esCamara } = useDispositivosIot();
   const {
     historial, ultima, loading: loadingHist, saving, saveError, encolada, cancelada,
     cargar, configurar, reintentar, cancelar,
@@ -364,7 +424,7 @@ export function ConfiguracionRemotaSection() {
 
   const handleBack = () => setDispositivo(null);
 
-  const handleSubmit = async (dto: { frecuencia_captura: number; intervalo_transmision: number }) => {
+  const handleSubmit = async (dto: ConfigurarRemotamenteDTO) => {
     if (!dispositivo) return;
     const ok = await configurar(dispositivo.id_dispositivo_iot, dto);
     if (ok) cargar(dispositivo.id_dispositivo_iot);
@@ -400,6 +460,7 @@ export function ConfiguracionRemotaSection() {
         ) : (
           <ConfigForm
             dispositivo={dispositivo}
+            esCamara={esCamara(dispositivo)}
             onBack={handleBack}
             encolada={encolada}
             cancelada={cancelada}
