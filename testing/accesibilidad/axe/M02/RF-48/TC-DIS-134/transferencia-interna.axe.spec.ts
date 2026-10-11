@@ -35,6 +35,11 @@
  * TEST_PRODUCTOR_EMAIL, la dueña real. Se corrige. Confirmado por curl: #296 (ACTIVO, infra
  * #48), destinos disponibles #47/#51, #471 en BAJA — todo igual a lo documentado. El bug de
  * backend en POST /sesiones/refresh para esta cuenta (ver TC-DIS-125) ya estaba corregido.
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * Sin cambios de criterio. Mismos activos y destinos (#296 en #48, destinos #47/#51, #471 en
+ * BAJA); la ocupación de "Corral QA JE Destino OK" (#51) pasó de 1/200 a 3/200 por datos de
+ * otras pruebas del ambiente (este TC aborta todo POST). No afecta las verificaciones.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
