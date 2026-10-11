@@ -7,11 +7,11 @@
   "severidad": "Media",
   "responsable": "QA Team",
   "testEmail": "ana.perez.qa2@sgpmp-test.com",
-  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
-  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
-  "navegador": "chrome 152.0.7977.65",
-  "fecha": "2026-09-03T03:51:08.317Z",
-  "peticionInfo": "Submit POST /usuarios/ simulado con interrupción de red TCP -> Captura de error enviada | Reintento Real POST /usuarios/ -> HTTP 400 Bad Request (CAPTCHA_INVALIDO)",
+  "ambiente": "https://api.inmero.co",
+  "backend": "https://api.inmero.co/back-sigab-test",
+  "navegador": "chrome 154.0.8037.98",
+  "fecha": "2026-10-11T13:59:10.217Z",
+  "peticionInfo": "Submit POST /usuarios/ simulado con interrupción de red TCP -> Captura de error enviada | Reintento Real POST /usuarios/ -> HTTP 400 (CAPTCHA_INVALIDO)",
   "checkpoints": [
     {
       "paso": "CP-01: Verificación Inicial del Correo en BD TEST",
@@ -40,7 +40,7 @@
     {
       "paso": "CP-05: Reintento de Registro tras Restablecer Conexión (Fase 2 Reintento)",
       "esperado": "El servidor TEST responde HTTP 201 Created",
-      "obtenido": "Bloqueado por Incidencia Conocida INC-M01-13 (HTTP 400 Bad Request: CAPTCHA_INVALIDO - Validación de seguridad fallida)",
+      "obtenido": "Bloqueado por Incidencia Conocida INC-M01-13 (HTTP 400 Bad Request: CAPTCHA_INVALIDO)",
       "estado": "FALLA"
     },
     {

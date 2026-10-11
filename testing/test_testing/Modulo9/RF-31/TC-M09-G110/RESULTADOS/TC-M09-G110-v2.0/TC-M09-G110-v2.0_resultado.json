@@ -1,15 +1,39 @@
 {
-  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
-  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
-  "navegador": "chrome 153.0.8010.36",
-  "fecha": "2026-09-12T07:24:11.213Z",
+  "ambiente": "https://api.inmero.co",
+  "backend": "https://api.inmero.co/back-sigab-test",
+  "navegador": "chrome 154.0.8037.98",
+  "fecha": "2026-10-11T23:02:27.135Z",
   "checkpoints": [
     {
       "paso": "TC-M09-210 v2.0: leer la configuracion real de la especie para construir el snapshot de la plantilla",
       "esperado": "Al elegir la especie activa \"Ave Qa Je\", el formulario debe mostrar sus parametros configurables (ciclos, patologias, metricas, umbrales)",
-      "obtenido": "Seguimos recibiendo el mismo error: \"No se pudo leer la configuración de la especie. Reintenta o elige otra.\". El boton \"Crear plantilla\" permanece deshabilitado. Revision de codigo confirma que especiesConfigApi.ts (ciclosApi/patologiasApi/metricasApi/umbralesApi.listar) sigue sin desenvolver la respuesta {total, items} de esos 4 endpoints antes de que capturarConfiguracionEspecie() les aplique .map() -- el mismo defecto reportado originalmente, sin cambios.",
-      "estado": "FALLA"
+      "obtenido": "Se cargaron correctamente los parametros de la especie \"Ave Qa Je\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-210 v2.0: registrar la plantilla (nombre + especie activa + snapshot valido)",
+      "esperado": "La API debe responder 200 o 201 al registrar la plantilla \"Config Bovino G110 v2 1791759734730\" con la especie \"Ave Qa Je\"",
+      "obtenido": "HTTP 201, cuerpo: {\"id_plantilla\":159,\"id_especie\":41,\"id_usuario\":137,\"template_name\":\"Config Bovino G110 v2 1791759734730\",\"params_snapshot\":{\"patologias\":[{\"nombre\":\"Ave Qa Je\",\"es_activo\":true,\"descripcion\":null},{\"nombre\":\"QA Claude Patología\",\"es_activo\":true,\"descripcion\":\"Patología de prueba de usabilidad\"}],",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-210 v2.0: la plantilla creada queda en version=1",
+      "esperado": "La plantilla recien registrada debe iniciar en version=1",
+      "obtenido": "version=1",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-210 v2.0: el formulario se cierra tras un registro exitoso",
+      "esperado": "El dialogo de creacion debe cerrarse automaticamente al completar el registro",
+      "obtenido": "El dialogo ya no esta presente en la pantalla",
+      "estado": "OK"
+    },
+    {
+      "paso": "TC-M09-210 v2.0: la plantilla queda disponible en el listado",
+      "esperado": "La tarjeta de \"Config Bovino G110 v2 1791759734730\" debe aparecer en el listado de plantillas, mostrando la version v1",
+      "obtenido": "La tarjeta aparece en el listado mostrando el nombre y la version v1",
+      "estado": "OK"
     }
   ],
-  "veredicto": "CON FALLAS"
+  "veredicto": "SIN FALLAS BLOQUEANTES"
 }

@@ -6,10 +6,10 @@
 | Tipo / Equipo | Pruebas Extremas / Resiliencia y Manejo de Red · Frontend & Backend QA |
 | Severidad | Media |
 | Responsable | QA Team |
-| Ambiente (front) | http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io |
-| Backend | https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test |
-| Navegador | chrome 152.0.7977.65 |
-| Fecha ejecución | 2026-09-03T03:51:08.317Z |
+| Ambiente (front) | https://api.inmero.co |
+| Backend | https://api.inmero.co/back-sigab-test |
+| Navegador | chrome 154.0.8037.98 |
+| Fecha ejecución | 2026-10-11T13:59:10.217Z |
 | Correo de Prueba | ana.perez.qa2@sgpmp-test.com |
 
 ## Contexto de Ejecución, Transparencia y Declaración de Fuentes (INC-M01-13)
@@ -27,14 +27,14 @@
 | CP-02: Diligenciamiento de Formulario de Registro (Pasos 1 y 2) | Formulario completado en UI con los datos de Ana Pérez y correo ana.perez.qa2@sgpmp-test.com | Formulario listo y validado en cliente para submit | **OK** |
 | CP-03: Simulación de Corte de Red y Reacción de UI (Fase 1 Interrupción) | El cliente captura el fallo de red sin colgar la pantalla y conserva los datos del formulario | Manejo de interrupción de red simulado correctamente ({ forceNetworkError: true }) | **OK** |
 | CP-04: Verificación de Ausencia de Registros Huérfanos Post-Corte (Fase 1) | El servidor NO creó ningún usuario parcial o huérfano durante la interrupción de red | Registros huérfanos en BD tras el corte de red: 0 | **OK** |
-| CP-05: Reintento de Registro tras Restablecer Conexión (Fase 2 Reintento) | El servidor TEST responde HTTP 201 Created | Bloqueado por Incidencia Conocida INC-M01-13 (HTTP 400 Bad Request: CAPTCHA_INVALIDO - Validación de seguridad fallida) | **FALLA** |
+| CP-05: Reintento de Registro tras Restablecer Conexión (Fase 2 Reintento) | El servidor TEST responde HTTP 201 Created | Bloqueado por Incidencia Conocida INC-M01-13 (HTTP 400 Bad Request: CAPTCHA_INVALIDO) | **FALLA** |
 | CP-06: Verificación Estricta de No Duplicidad en Base de Datos | Existencia de máximo 1 registro en BD tras el reintento (sin duplicados >= 2) | Conteo final en BD para ana.perez.qa2@sgpmp-test.com: 0 registro(s) encontrado(s) | **OK** |
 
 ## Veredicto: **CON FALLAS (BLOQUEADO POR INC-M01-13 EN BACKEND TEST)**
 
 ## Registro Técnico de Red y Navegación
 - **Ruta de Navegación**: /registro (Paso 1 -> Paso 2) -> Submit con { forceNetworkError: true } -> Captura de Error de Red -> Reintento REST API -> GET /usuarios/admin (Verificación BD).
-- **Detalle de Ejecución**: Submit POST /usuarios/ simulado con interrupción de red TCP -> Captura de error enviada | Reintento Real POST /usuarios/ -> HTTP 400 Bad Request (CAPTCHA_INVALIDO: Validación de seguridad fallida. Por favor, confirme que no es un robot e intente enviar el formulario nuevamente.)
+- **Detalle de Ejecución**: Submit POST /usuarios/ simulado con interrupción de red TCP -> Captura de error enviada | Reintento Real POST /usuarios/ -> HTTP 400 (CAPTCHA_INVALIDO)
 
 ## Hallazgos y Observaciones Técnicas
 - Correo de Prueba Analizado: ana.perez.qa2@sgpmp-test.com

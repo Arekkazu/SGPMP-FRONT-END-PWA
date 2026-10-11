@@ -97,7 +97,7 @@ describe('TC-M01-102 · Interrupción de conexión a internet durante el registr
       responsable: 'QA Team',
       testEmail,
       ambiente: Cypress.config('baseUrl'),
-      backend: 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
+      backend: 'https://api.inmero.co/back-sigab-test',
       navegador: `${Cypress.browser.name} ${Cypress.browser.version}`,
       fecha: new Date().toISOString(),
       peticionInfo,
@@ -119,13 +119,13 @@ describe('TC-M01-102 · Interrupción de conexión a internet durante el registr
 
   it('valida la reacción ante una interrupción de red y verifica por API la ausencia de registros duplicados o huérfanos', () => {
     checks.length = 0;
-    const backendUrl = 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test';
+    const backendUrl = 'https://api.inmero.co/back-sigab-test';
 
     // CP-01: Autenticación Admin API y Verificación Inicial del Correo en BD TEST
     cy.request({
       method: 'POST',
       url: `${backendUrl}/sesiones/`,
-      body: { correo_electronico: 'admin@pecuaria.co', contrasena: 'Test1234!' }
+      body: { correo_electronico: Cypress.env('ADMIN_EMAIL'), contrasena: Cypress.env('ADMIN_PASSWORD') }
     }).then((resLogin) => {
       expect(resLogin.status).to.eq(200);
       const tokenAdmin = resLogin.body.token;
@@ -201,7 +201,7 @@ describe('TC-M01-102 · Interrupción de conexión a internet durante el registr
         cy.request({
           method: 'POST',
           url: `${backendUrl}/sesiones/`,
-          body: { correo_electronico: 'admin@pecuaria.co', contrasena: 'Test1234!' }
+          body: { correo_electronico: Cypress.env('ADMIN_EMAIL'), contrasena: Cypress.env('ADMIN_PASSWORD') }
         }).then((resLoginFresh) => {
           const tokenFresh = resLoginFresh.body.token;
 
@@ -259,7 +259,7 @@ describe('TC-M01-102 · Interrupción de conexión a internet durante el registr
               cy.request({
                 method: 'POST',
                 url: `${backendUrl}/sesiones/`,
-                body: { correo_electronico: 'admin@pecuaria.co', contrasena: 'Test1234!' }
+                body: { correo_electronico: Cypress.env('ADMIN_EMAIL'), contrasena: Cypress.env('ADMIN_PASSWORD') }
               }).then((resLoginFinal) => {
                 const tokenFinal = resLoginFinal.body.token;
 

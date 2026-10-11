@@ -52,7 +52,8 @@ describe('TC-M01-074 · Exportar auditoría sin conexión', () => {
     // (app hecha en Ionic, no hay <a href>). Confirmado manualmente que un clic real
     // sí navega bien a /auditoria -> apuntamos directo a ese botón por atributo,
     // evitando cy.contains sobre el wrapper que no disparaba la navegación.
-    cy.get('button.ds-sidebar__item[title="Auditoría"]', { timeout: 20000 })
+    // Actualizado 2026-10-11: el ítem del sidebar ahora es un enlace (<a>, commit #132), ya no un <button>.
+    cy.get('.ds-sidebar__item[title="Auditoría"]', { timeout: 20000 })
       .should('be.visible')
       .click();
     cy.location('pathname', { timeout: 30000 }).should('eq', '/auditoria');

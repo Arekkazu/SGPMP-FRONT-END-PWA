@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 
-const EMAIL = 'admin.dev@gmail.com';
-const PASSWORD = 'Test1234!';
-const API_URL = 'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test';
+const EMAIL = Cypress.env('ADMIN_EMAIL') as string; // credenciales por variable de entorno (CYPRESS_ADMIN_EMAIL / CYPRESS_ADMIN_PASSWORD)
+const PASSWORD = Cypress.env('ADMIN_PASSWORD') as string;
+const API_URL = 'https://api.inmero.co/back-sigab-test';
 const RESULT_DIR = 'EvaluacionV2/RESULTADOS/TC-M01-088';
 
 type Estado = 'OK' | 'FALLA' | 'OBSERVACION';

@@ -5,14 +5,14 @@
   "rf": "RF-10",
   "tipo": "Negativa / Offline",
   "equipo": "Frontend",
-  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "ambiente": "https://api.inmero.co",
   "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
-  "navegador": "chrome 152.0.7977.65",
-  "fecha": "2026-09-03T15:24:27.907Z",
+  "navegador": "chrome 154.0.8037.98",
+  "fecha": "2026-10-11T13:56:18.433Z",
   "precondiciones": {
     "cuenta": "admin@pecuaria.co",
     "vista": "/auditoria",
-    "eventosCargados": 3932
+    "eventosCargados": 50170
   },
   "checkpoints": [
     {
@@ -30,19 +30,19 @@
     {
       "paso": "¿La vista avisa que no hay conexión?",
       "esperado": "Debería mostrar aviso de offline",
-      "obtenido": "No muestra ningún aviso",
-      "estado": "OBSERVACION"
+      "obtenido": "Muestra aviso",
+      "estado": "OK"
     },
     {
       "paso": "Estado del botón \"Exportar CSV\" al quedar offline",
       "esperado": "Habilitado (hay eventos en memoria)",
-      "obtenido": "Habilitado",
-      "estado": "OK"
+      "obtenido": "Deshabilitado",
+      "estado": "OBSERVACION"
     },
     {
       "paso": "¿El botón \"Exportar CSV\" es alcanzable con un clic real (sin forzar)?",
       "esperado": "Dentro del viewport, sin overlap",
-      "obtenido": "Se sale del viewport (right=1446, viewportWidth=1280)",
+      "obtenido": "Dentro del viewport pero cubierto por otro elemento",
       "estado": "FALLA"
     },
     {
@@ -66,34 +66,34 @@
     {
       "paso": "Alertas de error tras exportar offline",
       "esperado": "Ninguna",
-      "obtenido": "1: Error al exportar CSVOcurrió un error inesperado. Intenta nuevamente.",
+      "obtenido": "1: Sin conexión Exportar el historial requiere conexión. Vuelve a intentarlo cuando se restablezca.",
       "estado": "OBSERVACION"
     },
     {
       "paso": "Recargar datos estando offline (botón ↻)",
       "esperado": "Alerta de error de red visible",
-      "obtenido": "Muestra \"Error al cargar auditoría\"",
-      "estado": "OK"
+      "obtenido": "No muestra alerta",
+      "estado": "FALLA"
     },
     {
       "paso": "Estado de \"Exportar CSV\" tras recargar fallido offline",
       "esperado": "Sigue habilitado (eventos previos en memoria)",
-      "obtenido": "Habilitado",
-      "estado": "OK"
+      "obtenido": "Deshabilitado",
+      "estado": "OBSERVACION"
     }
   ],
   "veredicto": "CON FALLAS",
   "hallazgos": [
     "Activar modo offline -> navigator.onLine = false (OK)",
     "¿Existe el botón \"Exportar CSV\" al quedar offline? -> Presente (OK)",
-    "¿La vista avisa que no hay conexión? -> No muestra ningún aviso (OBSERVACION)",
-    "Estado del botón \"Exportar CSV\" al quedar offline -> Habilitado (OK)",
-    "¿El botón \"Exportar CSV\" es alcanzable con un clic real (sin forzar)? -> Se sale del viewport (right=1446, viewportWidth=1280) (FALLA)",
+    "¿La vista avisa que no hay conexión? -> Muestra aviso (OK)",
+    "Estado del botón \"Exportar CSV\" al quedar offline -> Deshabilitado (OBSERVACION)",
+    "¿El botón \"Exportar CSV\" es alcanzable con un clic real (sin forzar)? -> Dentro del viewport pero cubierto por otro elemento (FALLA)",
     "Clic en \"Exportar CSV\" offline → generación del archivo -> NO se generó archivo (FALLA)",
     "Disparo de la descarga -> Descarga NO disparada (FALLA)",
     "Contenido del CSV exportado offline -> Encabezado: \"\" · 0 filas (FALLA)",
-    "Alertas de error tras exportar offline -> 1: Error al exportar CSVOcurrió un error inesperado. Intenta nuevamente. (OBSERVACION)",
-    "Recargar datos estando offline (botón ↻) -> Muestra \"Error al cargar auditoría\" (OK)",
-    "Estado de \"Exportar CSV\" tras recargar fallido offline -> Habilitado (OK)"
+    "Alertas de error tras exportar offline -> 1: Sin conexión Exportar el historial requiere conexión. Vuelve a intentarlo cuando se restablezca. (OBSERVACION)",
+    "Recargar datos estando offline (botón ↻) -> No muestra alerta (FALLA)",
+    "Estado de \"Exportar CSV\" tras recargar fallido offline -> Deshabilitado (OBSERVACION)"
   ]
 }
