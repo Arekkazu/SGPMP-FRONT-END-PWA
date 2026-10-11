@@ -1,9 +1,12 @@
 import React, { useEffect } from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { X, MapPin } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
+import { Combobox } from '../../shared/design-system/Combobox';
+import { idDeCatalogo } from '../../shared/lib/catalogo';
+import { useUsuariosAsignables } from '../hooks/useUsuariosAsignables';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { FincaResponse, RegistrarFincaDTO, EditarFincaDTO } from '../types';
@@ -33,6 +36,9 @@ interface Props {
   onEditar: (id: number, dto: EditarFincaDTO) => Promise<boolean>;
 }
 
+/** Lo que queda escrito al elegir un usuario; `idDeCatalogo` recupera el ID. */
+const etiquetaUsuario = (u: { id_usuario: number; nombre_usuario: string }) => `${u.nombre_usuario} (#${u.id_usuario})`;
+
 const NOMBRE_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 const TEXTO_REGEX  = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 
@@ -57,9 +63,14 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
     handleSubmit,
     reset,
     setError,
+    control,
+    getValues,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
   const alertaGeneral = useErroresDeServidor(saveError, setError, CAMPOS);
+  const { usuarios, cargando: cargandoUsuarios } = useUsuariosAsignables();
+  const opcUsuarios = usuarios.map((u) => ({ id: u.id_usuario, nombre: u.nombre_usuario }));
 
   useEffect(() => {
     if (finca) {
@@ -78,6 +89,13 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
     }
   }, [finca, reset]);
 
+  // Al editar llega solo el ID; cuando carga la lista se muestra con su nombre.
+  useEffect(() => {
+    const actual = getValues('id_usuario');
+    const u = /^\d+$/.test(actual ?? '') ? usuarios.find((x) => x.id_usuario === Number(actual)) : undefined;
+    if (u) setValue('id_usuario', etiquetaUsuario(u));
+  }, [usuarios, finca, getValues, setValue]);
+
   const onSubmit = async (data: FormValues) => {
     const ubicacion = {
       departamento: data.departamento.trim(),
@@ -86,7 +104,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
       latitud: Number(data.latitud),
       longitud: Number(data.longitud),
     };
-    const id_usuario = data.id_usuario ? Number(data.id_usuario) : undefined;
+    const id_usuario = idDeCatalogo(data.id_usuario, opcUsuarios) ?? undefined;
     let ok: boolean;
 
     if (modoEditar && finca) {
@@ -165,14 +183,22 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   min: { value: 0.01, message: t('fincamodal.debe_ser_mayor_a_0') },
                 })}
               />
-              <Input
-                label={t('fincamodal.id_productor_asignado')}
-                type="number"
-                placeholder={t('fincamodal.id_del_usuario_productor')}
-                error={errors.id_usuario?.message}
-                {...register('id_usuario', {
-                  min: { value: 1, message: t('fincamodal.id_invalido') },
-                })}
+              <Controller
+                name="id_usuario"
+                control={control}
+                rules={{
+                  validate: (v) => !v.trim() || idDeCatalogo(v, opcUsuarios) !== null || t('fincamodal.productor_no_valido'),
+                }}
+                render={({ field }) => (
+                  <Combobox
+                    id="finca-productor" label={t('fincamodal.productor_asignado')}
+                    name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref}
+                    opciones={usuarios.map((u) => ({ valor: etiquetaUsuario(u), detalle: u.nombre_rol }))}
+                    placeholder={cargandoUsuarios ? t('fincamodal.cargando') : undefined}
+                    hint={t('fincamodal.productor_hint')}
+                    error={errors.id_usuario?.message}
+                  />
+                )}
               />
             </div>
 
