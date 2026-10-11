@@ -3,8 +3,8 @@ import { Globe } from 'lucide-react';
 import { aplicarLocale, LOCALES, useT, type Locale } from '../i18n/useT';
 import './SelectorIdioma.css';
 
-// En su propio idioma, sin traducir: quien no entiende la interfaz actual
-// reconoce la opción que busca. `Record<Locale>` obliga a nombrar cada idioma nuevo.
+// Se muestra la sigla (ES / EN) para que el selector sea compacto; el nombre en
+// su propio idioma queda en el `title`. `Record<Locale>` obliga a nombrar cada idioma nuevo.
 const NOMBRE: Record<Locale, string> = { 'es-CO': 'Español', 'en-US': 'English' };
 
 /**
@@ -24,7 +24,9 @@ export function SelectorIdioma() {
           value={i18n.language}
           onChange={(e) => aplicarLocale(e.target.value)}
         >
-          {LOCALES.map((l) => <option key={l} value={l} lang={l}>{NOMBRE[l]}</option>)}
+          {LOCALES.map((l) => (
+            <option key={l} value={l} lang={l} title={NOMBRE[l]}>{l.slice(0, 2).toUpperCase()}</option>
+          ))}
         </select>
       </span>
     </div>
