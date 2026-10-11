@@ -28,9 +28,8 @@ export const usuariosApi = {
     return res.data;
   },
 
-  async editar(id: number, dto: EditarPerfilAdminDTO): Promise<UsuarioDetalleResponse> {
-    const res = await http.patch<UsuarioDetalleResponse>(`/usuarios/${id}`, dto);
-    return res.data;
+  async editar(id: number, dto: EditarPerfilAdminDTO): Promise<void> {
+    await http.patch(`/usuarios/${id}`, dto);
   },
 
   async gestionar(id: number, dto: GestionarCuentaDTO): Promise<MessageResponse> {

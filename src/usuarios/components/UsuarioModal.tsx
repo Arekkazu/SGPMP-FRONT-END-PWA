@@ -105,6 +105,9 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
     if (!ok) return;
     const okFincas = await asignarFincas(idUsuario, { ids_fincas: Array.from(idsFincas) });
     if (okFincas) onSaved();
+    // El perfil ya se guardó: sin recargar, reintentar mandaría la version
+    // vieja y el backend respondería 412.
+    else cargar(idUsuario);
   };
 
   return (
