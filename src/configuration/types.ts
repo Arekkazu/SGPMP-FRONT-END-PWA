@@ -1,5 +1,11 @@
 import type { TipoModelo } from '../prediction/types';
 
+/** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
+export type GrupoManejo = 'AVES' | 'PORCINOS' | 'ACUICULTURA' | 'ESPECIES_MEDIANAS' | 'ESPECIES_GRANDES';
+export const GRUPOS_MANEJO: readonly GrupoManejo[] = [
+  'AVES', 'PORCINOS', 'ACUICULTURA', 'ESPECIES_MEDIANAS', 'ESPECIES_GRANDES',
+];
+
 // =====================================================================
 // Especies
 // =====================================================================
@@ -10,7 +16,9 @@ export interface EspecieResponse {
   es_activo: boolean;
   fecha_creacion: string;
   fecha_actualizacion: string | null;
-  /** RFC-009: familia de modelo de IA de la especie; RF-20 exige que el modelo del área coincida. */
+  /** RF-15 v1.1: obligatorio al registrar; null solo en especies previas sin clasificar. */
+  grupo_manejo?: GrupoManejo | null;
+  /** Derivado de grupo_manejo (solo lectura); RF-20 exige que el modelo del área coincida. */
   tipo_modelo?: TipoModelo | null;
   /** RF-36: límite de densidad del lote; null = sin configurar (el registro de lotes falla). Decimal → texto. */
   densidad_maxima_por_especie?: number | string | null;
@@ -22,13 +30,13 @@ export interface EspecieResponse {
 export interface RegistrarEspecieDTO {
   nombre: string;
   descripcion?: string;
-  tipo_modelo?: TipoModelo | null;
+  grupo_manejo: GrupoManejo;
 }
 
 export interface EditarEspecieDTO {
   nombre: string;
   descripcion?: string;
-  tipo_modelo?: TipoModelo | null;
+  grupo_manejo: GrupoManejo;
   /** Concurrencia optimista: el valor del último GET; null si nunca se editó (#231). */
   fecha_actualizacion: string | null;
 }

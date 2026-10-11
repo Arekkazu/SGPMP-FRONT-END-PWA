@@ -47,13 +47,13 @@ vi.mock('../hooks/useInfraestructuras', () => ({
   }),
 }));
 
-// RF-20 v1.1 (RFC-009): especies del catálogo con y sin familia de modelo.
+// RF-20 v1.1 (RFC-009): especies con y sin grupo de manejo (tipo_modelo es su derivado).
 vi.mock('../hooks/useEspecies', () => ({
   useEspecies: () => ({
     especies: [
-      { id_especie: 1, nombre: 'Pollo de engorde', es_activo: true, tipo_modelo: 'MODELO_AVES', fecha_creacion: '', fecha_actualizacion: null },
-      { id_especie: 2, nombre: 'Conejo', es_activo: true, tipo_modelo: null, fecha_creacion: '', fecha_actualizacion: null },
-      { id_especie: 3, nombre: 'Codorniz', es_activo: false, tipo_modelo: 'MODELO_AVES', fecha_creacion: '', fecha_actualizacion: null },
+      { id_especie: 1, nombre: 'Pollo de engorde', es_activo: true, grupo_manejo: 'AVES', tipo_modelo: 'MODELO_AVES', fecha_creacion: '', fecha_actualizacion: null },
+      { id_especie: 2, nombre: 'Conejo', es_activo: true, grupo_manejo: null, tipo_modelo: null, fecha_creacion: '', fecha_actualizacion: null },
+      { id_especie: 3, nombre: 'Codorniz', es_activo: false, grupo_manejo: 'AVES', tipo_modelo: 'MODELO_AVES', fecha_creacion: '', fecha_actualizacion: null },
     ],
     cargar: vi.fn(),
   }),
@@ -111,7 +111,7 @@ describe('InfraestructuraSection — especie y modelo de IA (RF-20 v1.1, RFC-009
 
     fireEvent.change(especie, { target: { value: '2' } });
     expect(opcionesDe(screen.getByLabelText(/Modelo de IA/))).toEqual(['— Sin modelo asignado —']);
-    expect(screen.getByText(/no tiene familia de modelo/)).toBeTruthy();
+    expect(screen.getByText(/no tiene grupo de manejo/)).toBeTruthy();
   });
 
   it('envía especie_id y tipo_modelo_asignado al registrar', async () => {
