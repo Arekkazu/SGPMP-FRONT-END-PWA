@@ -256,7 +256,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
               <Select
                 id="infra-modelo"
                 label={t('infraestructurasection.modelo_de_ia')}
-                hint={especieId && !familia ? t('infraestructurasection.la_especie_no_tiene_familia_de_modelo') : undefined}
+                hint={especieId && !familia ? t('infraestructurasection.la_especie_no_tiene_grupo_de_manejo') : undefined}
                 error={errors.tipo_modelo_asignado?.message}
                 {...register('tipo_modelo_asignado')}
               >

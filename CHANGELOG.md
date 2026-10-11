@@ -1,3 +1,38 @@
+## [1.0.0-rc.60](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.59...v1.0.0-rc.60) (2026-10-11)
+
+### Bug Fixes
+
+* **auth:** mostrar el contador de intentos solo con el conteo real del backend (RF-02) ([69d2500](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/69d25009cf09feffd456b02047b1ed617a3dcfeb))
+
+## [1.0.0-rc.59](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.58...v1.0.0-rc.59) (2026-10-11)
+
+### Features
+
+* **rf15-mod9:** grupo de manejo obligatorio en el formulario de especies (RF-15 v1.1) ([7cdb7a5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7cdb7a571c62345f1298495938ebd21cfa69a4f3))
+
+## [1.0.0-rc.58](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.57...v1.0.0-rc.58) (2026-10-11)
+
+### Features
+
+* **rf06:** accion desbloquear para cuentas bloqueadas en la gestion de usuarios ([68d660d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/68d660df79c284b9300536247f9031e90fc63bb4)), closes [#568](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/568)
+
+### Bug Fixes
+
+* **rf06:** mostrar que la sesion termino por un cambio de estado de la cuenta ([e1a4cd1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e1a4cd106beb2461dbf4b7c10447ad87a20eecaa)), closes [#569](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/569)
+
+## [1.0.0-rc.57](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.56...v1.0.0-rc.57) (2026-10-11)
+
+### Bug Fixes
+
+* **usuarios:** no usar la respuesta del PATCH como detalle del usuario ([f8e6301](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f8e6301375b4066221e1d925de94299bd2760ab6))
+
+## [1.0.0-rc.56](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.55...v1.0.0-rc.56) (2026-10-11)
+
+### Bug Fixes
+
+* **auditoria:** alinear los filtros pese al hint del campo usuario ([88c8f58](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/88c8f5838b3f8b90a775c6f83697e7b62b6d778d))
+* **usuarios:** omitir opcionales vacios al guardar y resolver el rol sin id ([5021e23](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5021e23eb65b58e24bda2916ecf079d5fe67dea9)), closes [#undefined](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/undefined)
+
 ## [1.0.0-rc.55](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.54...v1.0.0-rc.55) (2026-10-11)
 
 ### Bug Fixes

@@ -103,7 +103,24 @@ describe('interceptor 401', () => {
     expect(tokenStore.get()).toBeNull();
     // QA M09 (hallazgo #2): la redirección forzada debe dejar una bandera para
     // que LoginPage explique por qué se cerró la sesión.
-    expect(consumirAvisoSesionCerrada()).toBe(true);
+    expect(consumirAvisoSesionCerrada()).toBe('generica');
+  });
+
+  it('RF-06: una sesion finalizada por cambio de estado cierra sin refresh y deja su propio aviso', async () => {
+    tokenStore.set('access-viejo');
+    const postSpy = vi.spyOn(http, 'post');
+
+    const error = {
+      config: { url: '/usuarios/me', headers: {} },
+      response: { status: 401, data: { error_code: 'SESION_FINALIZADA_CAMBIO_ESTADO' } },
+    };
+
+    await expect(onRejected()(error)).rejects.toBeTruthy();
+    // La cuenta quedo INACTIVA/BLOQUEADA/ELIMINADA: refrescar no la recupera.
+    expect(postSpy).not.toHaveBeenCalled();
+    expect(replaceSpy).toHaveBeenCalledWith('/login');
+    expect(tokenStore.get()).toBeNull();
+    expect(consumirAvisoSesionCerrada()).toBe('cambio_estado');
   });
 
   it('INC-M02-51-G44: un 5xx o un fallo de red en el refresh no cierra la sesion', async () => {
@@ -123,7 +140,7 @@ describe('interceptor 401', () => {
       await expect(onRejected()({ ...error, config: { ...error.config } })).rejects.toBeTruthy();
       expect(replaceSpy).not.toHaveBeenCalled();
       expect(tokenStore.get()).toBe('access-viejo');
-      expect(consumirAvisoSesionCerrada()).toBe(false);
+      expect(consumirAvisoSesionCerrada()).toBeNull();
     }
   });
 

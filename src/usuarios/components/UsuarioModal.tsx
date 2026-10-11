@@ -67,7 +67,8 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
         id_rol: detalle.id_rol,
       });
       setIdsFincas(new Set((detalle.fincas ?? []).map((f) => f.id_finca)));
-      setRolTexto(etiquetaDeCatalogo(detalle.nombre_rol, detalle.id_rol));
+      // El detalle del backend no trae id_rol: sin él, el nombre exacto basta.
+      setRolTexto(detalle.id_rol != null ? etiquetaDeCatalogo(detalle.nombre_rol, detalle.id_rol) : detalle.nombre_rol);
       setRolError(undefined);
     }
   }, [detalle, reset]);
@@ -92,10 +93,21 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
       setRolError(t('usuariomodal.rol_no_encontrado'));
       return;
     }
-    const ok = await editar(idUsuario, { ...data, id_rol: idRol, version: detalle.version });
+    // Un opcional vacío se omite: el backend valida '' y lo rechaza.
+    const ok = await editar(idUsuario, {
+      ...data,
+      correo_electronico: data.correo_electronico || undefined,
+      telefono: data.telefono || undefined,
+      direccion: data.direccion || undefined,
+      id_rol: idRol,
+      version: detalle.version,
+    });
     if (!ok) return;
     const okFincas = await asignarFincas(idUsuario, { ids_fincas: Array.from(idsFincas) });
     if (okFincas) onSaved();
+    // El perfil ya se guardó: sin recargar, reintentar mandaría la version
+    // vieja y el backend respondería 412.
+    else cargar(idUsuario);
   };
 
   return (

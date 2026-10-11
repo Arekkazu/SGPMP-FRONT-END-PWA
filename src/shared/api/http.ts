@@ -51,10 +51,24 @@ export const PERMISOS_POSIBLEMENTE_DESACTUALIZADOS = 'sgpmp:permisos-posiblement
 // invalida esta). LoginPage lee esta bandera una sola vez para explicarlo.
 const SESION_CERRADA_KEY = 'sgpmp:sesion-cerrada';
 
-export function consumirAvisoSesionCerrada(): boolean {
-  const avisar = sessionStorage.getItem(SESION_CERRADA_KEY) === '1';
-  if (avisar) sessionStorage.removeItem(SESION_CERRADA_KEY);
-  return avisar;
+/** Por qué se cerró la sesión: `cambio_estado` es el aviso propio de RF-06. */
+export type MotivoSesionCerrada = 'generica' | 'cambio_estado';
+
+// RF-06: "Su sesión ha sido finalizada debido a un cambio en el estado de su
+// cuenta." El backend lo señala con este código cuando la cuenta pasó a
+// INACTIVO, BLOQUEADO o ELIMINADO. No se intenta refresh: la sesión ya no vuelve.
+const CODIGO_SESION_FINALIZADA_POR_ESTADO = 'SESION_FINALIZADA_CAMBIO_ESTADO';
+
+export function consumirAvisoSesionCerrada(): MotivoSesionCerrada | null {
+  const valor = sessionStorage.getItem(SESION_CERRADA_KEY);
+  if (valor === null) return null;
+  sessionStorage.removeItem(SESION_CERRADA_KEY);
+  return valor === 'cambio_estado' ? 'cambio_estado' : 'generica';
+}
+
+function esSesionFinalizadaPorEstado(error: { response?: { data?: unknown } }): boolean {
+  const data = error.response?.data as Record<string, unknown> | undefined;
+  return data?.error_code === CODIGO_SESION_FINALIZADA_POR_ESTADO;
 }
 
 function statusDe(error: unknown): number | undefined {
@@ -76,12 +90,12 @@ export function esFalloDeRed(error: unknown): boolean {
   return !statusDe(error);
 }
 
-export function marcarSesionCerrada(): void {
-  sessionStorage.setItem(SESION_CERRADA_KEY, '1');
+export function marcarSesionCerrada(motivo: MotivoSesionCerrada = 'generica'): void {
+  sessionStorage.setItem(SESION_CERRADA_KEY, motivo);
 }
 
-function forzarLogout(): void {
-  marcarSesionCerrada();
+function forzarLogout(motivo: MotivoSesionCerrada = 'generica'): void {
+  marcarSesionCerrada(motivo);
   tokenStore.clear();
   window.location.replace('/login');
 }
@@ -112,6 +126,11 @@ http.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const isPublicAuthEndpoint = PUBLIC_AUTH_ENDPOINTS.includes(originalRequest?.url ?? '');
+
+    if (error.response?.status === 401 && !isPublicAuthEndpoint && esSesionFinalizadaPorEstado(error)) {
+      forzarLogout('cambio_estado');
+      return Promise.reject(mapToApiError(error));
+    }
 
     // QA TC-DIS-22/24/27: ante CUALQUIER 401 no-público se intenta el refresh
     // silencioso una vez antes de decidir. Antes solo se refrescaba con
