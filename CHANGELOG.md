@@ -1,3 +1,9 @@
+## [1.0.0-rc.54](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.53...v1.0.0-rc.54) (2026-10-11)
+
+### Features
+
+* **pwa:** service worker que precachea la app para abrir sin red ([abed246](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/abed246b3dda5f43e9c4d2c3ad26a5240901af03))
+
 ## [1.0.0-rc.53](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.52...v1.0.0-rc.53) (2026-10-11)
 
 ### Features
