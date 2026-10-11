@@ -9,3 +9,8 @@ export function idDeCatalogo(texto: string, opciones: { id: number; nombre: stri
   if (id) return Number(id) || null;
   return opciones.find((o) => o.nombre.toLowerCase() === v.toLowerCase())?.id ?? null;
 }
+
+/** «Nombre (#id)», el texto que deja el combobox al elegir una opción. */
+export function etiquetaDeCatalogo(nombre: string, id: number): string {
+  return `${nombre} (#${id})`;
+}

@@ -18,6 +18,13 @@ interface ComboboxProps {
   opciones: OpcionCombobox[];
   value: string;
   onChange: (valor: string) => void;
+  /** Se llama al elegir una opción (clic o Enter), después de `onChange`. */
+  onSelect?: (opcion: OpcionCombobox) => void;
+  /**
+   * Enter sin opción activa. Sin esta prop, Enter sigue su curso normal (envía
+   * el formulario); con ella, el campo lo consume (ej. "agregar" lo escrito).
+   */
+  onEnter?: (valor: string) => void;
   onBlur?: () => void;
   inputRef?: (el: HTMLInputElement | null) => void;
   name?: string;
@@ -35,7 +42,7 @@ interface ComboboxProps {
  * puede aceptar también valores fuera de la lista (ej. un ID).
  */
 export function Combobox({
-  id, label, opciones, value, onChange, onBlur, inputRef, name,
+  id, label, opciones, value, onChange, onSelect, onEnter, onBlur, inputRef, name,
   required, disabled, placeholder, hint, error,
 }: ComboboxProps) {
   const { t } = useT('common');
@@ -64,6 +71,7 @@ export function Combobox({
     onChange(o.valor);
     setFiltrar(false);
     cerrar();
+    onSelect?.(o);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -76,6 +84,10 @@ export function Combobox({
     } else if (e.key === 'Enter' && mostrar && visibles[activo]) {
       e.preventDefault();
       elegir(visibles[activo]);
+    } else if (e.key === 'Enter' && onEnter) {
+      e.preventDefault();
+      cerrar();
+      onEnter(value ?? '');
     } else if (e.key === 'Escape' && abierto) {
       e.preventDefault();
       cerrar();
