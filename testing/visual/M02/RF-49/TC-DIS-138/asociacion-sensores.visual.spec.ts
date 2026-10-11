@@ -34,6 +34,13 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_138_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * El defecto de etiquetas de la ronda anterior está corregido: los selects y el textarea usan
+ * .ds-field__label. Se agrega verificarMarcaObligatorio (mismo hallazgo de TC-DIS-129): los 4
+ * campos obligatorios son FormSelect de formControls.tsx y su asterisco hereda el color de la
+ * etiqueta en vez de la marca del DS (.ds-field__req, --sem-error). DEFECTO: sin baseline del
+ * formulario DIRECTA ni POBLACIONAL; la advertencia conserva la suya.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
@@ -175,6 +182,33 @@ async function verificarEtiquetas(page: Page) {
   ).toEqual([]);
 }
 
+/**
+ * DEFECTO si el asterisco de los campos obligatorios no es la marca del DS (.ds-field__req,
+ * color --sem-error), la misma que pinta el Input del DS en el resto de formularios.
+ */
+async function verificarMarcaObligatorio(page: Page) {
+  const resultado = await dialogo(page).evaluate((d, campos) => {
+    const ref = document.createElement('span');
+    ref.style.color = 'var(--sem-error)';
+    document.body.appendChild(ref);
+    const error = getComputedStyle(ref).color;
+    ref.remove();
+    return campos.flatMap((campo) => {
+      const label = [...d.querySelectorAll('label')].find((l) => (l.textContent ?? '').replace('*', '').trim() === campo);
+      const marca = label ? [...label.querySelectorAll('span')].find((s) => (s.textContent ?? '').trim() === '*') : undefined;
+      if (!marca) return [];
+      const color = getComputedStyle(marca).color;
+      return [{ campo, color, ok: color === error }];
+    });
+  }, CAMPOS);
+  test.info().annotations.push({ type: 'Asterisco de obligatorio', description: resultado.map((r) => `"${r.campo}" ${r.color}`).join(' · ') });
+  const distintas = resultado.filter((r) => !r.ok);
+  expect.soft(
+    distintas.map((r) => r.campo),
+    `DEFECTO: el asterisco de obligatorio de ${distintas.map((r) => `"${r.campo}"`).join(', ')} no usa la marca del DS (.ds-field__req, --sem-error) y se ve del color de la etiqueta; el Input del DS lo pinta en rojo en el resto de formularios`,
+  ).toEqual([]);
+}
+
 /** DEFECTO si algún texto con estilo propio del módulo usa un tamaño fuera de la escala tipográfica del DS v2.0. */
 async function verificarEscala(objetivo: Locator, zona: string) {
   const fuera = await objetivo.evaluate((raiz, escala) => {
@@ -247,6 +281,7 @@ test.describe('TC-DIS-138 - Consistencia visual - Asociación de sensores IoT (R
       await ajustarAltoParaModal(page);
       await verificarBreakpoint(page);
       await verificarEtiquetas(page);
+      await verificarMarcaObligatorio(page);
       await verificarEscala(tarjetaModal(page), 'formulario');
       await capturar(page, tarjetaModal(page), `asociacion-${esc.tipo.toLowerCase()}.png`);
     });
