@@ -37,6 +37,11 @@
  * la disponible en el lote"), cerrando el DEFECTO 3.3.3 que documentaba la ronda anterior (sin
  * límite en el cliente). Ya no se puede forzar el 422 simulado por esta vía; el test 5 ahora
  * verifica la validación de cliente en su lugar.
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * El 400 con campo (tipo_baja) ya no se repite en la alerta "No se pudo registrar la baja":
+ * se anuncia una sola vez como error debajo de "Tipo de baja". El test 5 busca ahora ese
+ * error de campo en vez de la alerta general.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -322,7 +327,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Registro de baja (RF-45)`,
 
     // 400 real: tipo_baja inválido (error de campo)
     expect(await enviar({ tipo: 'redirigir', idActivo: 999999, cuerpo: { tipo_baja: 'XYZ', fecha_baja: HOY, motivo_baja: 'QA TC-DIS-128 sondeo' } })).toBe(400);
-    await expect(alertaError.filter({ hasText: 'tipo de baja' }), 'DEFECTO: 3.3.1: el 400 debe anunciarse').toBeVisible();
+    // rc.48: el error con campo va solo debajo de "Tipo de baja" (role="alert"), ya no en la alerta general
+    await expect(dialogo(page).getByRole('alert').filter({ hasText: /tipo de baja/i }), 'DEFECTO: 3.3.1: el 400 debe anunciarse (error de campo de "Tipo de baja")').toHaveCount(1);
     await expect.soft(c.tipo, 'DEFECTO: 3.3.1: "Tipo de baja" debe marcarse como inválido (aria-invalid) con el error de campo del backend').toHaveAttribute('aria-invalid', 'true');
     // Errores de campo debajo del input, nunca en alerta global: si no, se anuncian dos veces
     const idErrorTipo = await c.tipo.getAttribute('aria-describedby');
