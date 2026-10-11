@@ -22,6 +22,9 @@
  * Si en el futuro el activo real tiene más de un registro de historial con
  * solapamiento, el test 3 lo evalúa automáticamente (advertencia_integridad).
  *
+ * 2026-10-10: reejecución sobre la release 1.0.0-rc.48. Sin cambios de datos ni de
+ * criterio; solo se corrige la anotación del test 1-2, que todavía hablaba del activo #4.
+ *
  * Errores: 404 real (activo inexistente), 400 de ruta inválida y 403 inyectado
  * (el backend responde 404 y no 403 a un activo ajeno, así que el 403 no se
  * alcanza desde la UI; se usa el formato ACCESO_DENEGADO del backend).
@@ -174,7 +177,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Asociación Activa e Histo
         : r.fallback());
     testInfo.annotations.push({
       type: 'Datos simulados',
-      description: 'Asociación activa construida con el último registro real del historial del activo #4 (el endpoint ACTIVA responde 404 para todos los activos).',
+      description: 'Asociación activa fija servida con page.route (control independiente de los datos del ambiente; el test 1a cubre la asociación real).',
     });
 
     await abrirInfraestructura(page);
