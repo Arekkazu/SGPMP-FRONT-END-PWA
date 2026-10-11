@@ -1,3 +1,9 @@
+## [1.0.0-rc.55](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.54...v1.0.0-rc.55) (2026-10-11)
+
+### Bug Fixes
+
+* **pwa:** abrir la app instalada con la sesion vigente u offline ([e137f17](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e137f176871cb47275e440f762a4c6eba9b12a92))
+
 ## [1.0.0-rc.54](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.53...v1.0.0-rc.54) (2026-10-11)
 
 ### Features
