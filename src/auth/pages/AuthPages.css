@@ -31,7 +31,8 @@
   width: 52px;
   height: 52px;
   border-radius: var(--r-lg);
-  background: var(--brand-500);
+  /* Fijo en los dos temas, como el favicon: --brand-500 se aclara en oscuro. */
+  background: var(--brand-cta);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -245,4 +246,14 @@
   .auth-card {
     padding: var(--s5);
   }
+}
+
+/* Selector de idioma: esquina superior derecha de la pantalla. Va en el flujo
+   (no absolute) para no taparle el borde a una tarjeta larga en móvil; el
+   margen negativo lo deja a la misma distancia del borde superior y del derecho. */
+.auth-bg > .ds-idioma {
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-top: -1rem;
+  margin-bottom: var(--s2);
 }

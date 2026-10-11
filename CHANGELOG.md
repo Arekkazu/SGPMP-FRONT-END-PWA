@@ -1,3 +1,60 @@
+## [1.0.0-rc.55](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.54...v1.0.0-rc.55) (2026-10-11)
+
+### Bug Fixes
+
+* **pwa:** abrir la app instalada con la sesion vigente u offline ([e137f17](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e137f176871cb47275e440f762a4c6eba9b12a92))
+
+## [1.0.0-rc.54](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.53...v1.0.0-rc.54) (2026-10-11)
+
+### Features
+
+* **pwa:** service worker que precachea la app para abrir sin red ([abed246](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/abed246b3dda5f43e9c4d2c3ad26a5240901af03))
+
+## [1.0.0-rc.53](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.52...v1.0.0-rc.53) (2026-10-11)
+
+### Features
+
+* **sync:** sesion offline hasta recuperar la red con reenvio de la cola ([60afde9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/60afde987fa39366b27e11141c7a9b9569868d89))
+
+### Bug Fixes
+
+* **auth:** detectar la sesion rechazada cuando el refresh devuelve ApiError ([cbb93a8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cbb93a8c8b2b3b8d5eecabf5a1a1b3260e1a353a))
+
+## [1.0.0-rc.52](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.51...v1.0.0-rc.52) (2026-10-11)
+
+### Bug Fixes
+
+* **i18n:** selector de idioma compacto en la esquina del acceso ([a778d0f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a778d0f18cf3003d9e27e146fb683199afe15ba5))
+
+## [1.0.0-rc.51](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.50...v1.0.0-rc.51) (2026-10-11)
+
+### Features
+
+* **i18n:** selector de idioma en las pantallas de acceso ([281f3fb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/281f3fb38791055181c83fd5e9e52ff9e2c68a1b))
+* **rf05-rf10-mod1:** autocompletado de rol, fincas y usuario sin romper el ID ([da6cfef](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/da6cfefa3caf530fc494df36600be663e8c19831)), closes [#id](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/id)
+
+### Bug Fixes
+
+* **auth:** mostrar la hora de desbloqueo de la cuenta en la zona horaria del usuario ([bc9348a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/bc9348a8648dd194ece4d4c4105af16add265c06))
+* **catalogo:** aceptar el ID con # en los campos de autocompletado ([7f57d60](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7f57d608b5939030522e99a1788e5c07aa04f2e8)), closes [#300](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/300) [#300](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/300)
+
+## [1.0.0-rc.50](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.49...v1.0.0-rc.50) (2026-10-11)
+
+### Features
+
+* **marca:** presentar el producto como SIGAB con su isotipo ([d646677](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d64667713774af5478f7278959ed38364adaf783))
+* **rf19:** elegir el productor de la finca por nombre o id ([5a62402](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5a62402b27ee564c0cc46d0acdfa8ccacb2b14d5)), closes [#id](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/id)
+
+### Bug Fixes
+
+* **deploy:** cachear como immutable solo los assets con hash de /assets/ ([f09af93](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f09af9392b74bcbaf4e872e5783ad143de7dcee5))
+
+## [1.0.0-rc.49](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.48...v1.0.0-rc.49) (2026-10-10)
+
+### Bug Fixes
+
+* **rf27-mod9:** garantizar contraste AA del texto del sidebar sobre la marca (TC-M09-179) ([fe90591](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/fe905916e98fec8950d56d9ef34f7b735a96ee84)), closes [#249453](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/249453) [#97b68f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/97b68f) [#1A6B3C](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1A6B3C) [#249453](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/249453)
+
 ## [1.0.0-rc.48](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.47...v1.0.0-rc.48) (2026-10-10)
 
 ### Bug Fixes

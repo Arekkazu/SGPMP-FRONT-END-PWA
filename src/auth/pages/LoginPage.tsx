@@ -7,13 +7,15 @@ import { useLogin } from '../hooks/useLogin';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
+import { Isotipo } from '../../shared/design-system/Isotipo';
 import { consumirAvisoSesionCerrada } from '../../shared/api/http';
 import type { LoginDTO } from '../types';
 import './AuthPages.css';
+import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
 
 export function LoginPage() {
   const { t } = useT('auth');
-  const { login, loading, error, online } = useLogin();
+  const { login, loading, error, online, pendientes } = useLogin();
   const [showPw, setShowPw] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   // El interceptor de http.ts deja esta bandera antes de un `location.replace`
@@ -36,20 +38,22 @@ export function LoginPage() {
 
   return (
     <div className="auth-bg">
+      <SelectorIdioma />
       <div className="auth-card">
         <div className="auth-logo" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <path d="M8 22C8 16 12 11 16 11C20 11 24 16 24 22" stroke="white" strokeWidth="2"/>
-            <circle cx="12" cy="17" r="2" fill="white" opacity=".8"/>
-            <circle cx="20" cy="17" r="2" fill="white" opacity=".8"/>
-            <path d="M13 21C13 19.5 14.3 18.5 16 18.5C17.7 18.5 19 19.5 19 21" stroke="white" strokeWidth="1.5"/>
-            <path d="M10 11L8 8M22 11L24 8" stroke="#a8d8a8" strokeWidth="1.5"/>
-          </svg>
+          <Isotipo size={30} />
         </div>
         <h1 className="auth-title">{t('loginpage.iniciar_sesion')}</h1>
-        <p className="auth-sub">{t('loginpage.sgp_multiespecie_sistema_de_gestion_pecuaria')}</p>
+        <p className="auth-sub">{t('loginpage.nombre_del_producto')}</p>
 
-        {sesionCerrada && (
+        {pendientes > 0 ? (
+          <Alert
+            variant="warning"
+            title={t('loginpage.operaciones_pendientes', { count: pendientes })}
+            description={t('loginpage.operaciones_pendientes_descripcion')}
+            className="auth-alert"
+          />
+        ) : sesionCerrada && (
           <Alert
             variant="warning"
             title={t('loginpage.sesion_cerrada')}

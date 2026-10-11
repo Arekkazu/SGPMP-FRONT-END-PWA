@@ -3,10 +3,37 @@
 import legacy from "@vitejs/plugin-legacy";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), legacy()],
+  plugins: [
+    react(),
+    legacy(),
+    // Precachea la app (HTML, JS, CSS, iconos) para que la PWA abra sin red: sin
+    // esto el navegador muestra su propia página "Sin conexión" y el modo offline
+    // de AuthContext nunca llega a correr. Los datos no pasan por aquí: los guarda
+    // cada módulo en Dexie.
+    VitePWA({
+      registerType: "autoUpdate",
+      // Ya existe public/manifest.json.
+      manifest: false,
+      workbox: {
+        // Un solo service worker por scope "/": el de push (public/) se importa
+        // dentro de este en vez de competir por el mismo scope.
+        importScripts: ["firebase-messaging-sw.js"],
+        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        // El build legacy solo lo piden navegadores sin módulos ES, que tampoco
+        // tienen service worker: precacharlo duplicaría la descarga inicial.
+        globIgnores: ["**/*-legacy-*.js", "firebase-messaging-sw.js"],
+        // El chunk de Ionic pesa ~1.2 MB; el límite por defecto es 2 MiB.
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        navigateFallback: "index.html",
+        // Con el proxy de producción la API vive en el mismo origen bajo /api.
+        navigateFallbackDenylist: [/^\/api\//],
+      },
+    }),
+  ],
   build: {
     // El unico chunk por encima de 500 kB es el de Ionic (~1.13 MB, 1.16 MB en el
     // build legacy; ~235 kB gzip), casi todo @ionic/core:

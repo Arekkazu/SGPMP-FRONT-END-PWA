@@ -22,6 +22,7 @@ describe('idDeCatalogo', () => {
   const opciones = [{ id: 4, nombre: 'Cachama Blanca' }];
   it('acepta el ID, la sugerencia elegida o el nombre exacto', () => {
     expect(idDeCatalogo('7', opciones)).toBe(7); // ID fuera del catálogo: lo valida el backend
+    expect(idDeCatalogo('#300', opciones)).toBe(300);
     expect(idDeCatalogo('Cachama Blanca (#4)', opciones)).toBe(4);
     expect(idDeCatalogo(' cachama blanca ', opciones)).toBe(4);
     expect(idDeCatalogo('Cachama', opciones)).toBeNull();

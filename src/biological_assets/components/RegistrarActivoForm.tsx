@@ -14,6 +14,9 @@ import { hoyLocal } from '../../shared/lib/fecha';
 import { humanizar } from '../../shared/lib/etiquetas';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useCatalogoRegistro } from '../hooks/useCatalogoRegistro';
+import { idDeCatalogo } from '../../shared/lib/catalogo';
+
+export { idDeCatalogo };
 
 interface FormValues {
   tipo_activo: TipoActivo;
@@ -106,18 +109,6 @@ function FieldError({ msg }: { msg?: string }) {
 }
 
 const HOY = hoyLocal();
-
-/**
- * M2-02: especie e infraestructura se escriben con autocompletado. Se acepta el
- * ID tal cual (como antes del catálogo, lo usan los scripts de pruebas), la
- * sugerencia elegida «Nombre (#id)» o el nombre exacto. El backend valida el ID.
- */
-export function idDeCatalogo(texto: string, opciones: { id: number; nombre: string }[]): number | null {
-  const v = (texto ?? '').trim();
-  const id = /^\d+$/.test(v) ? v : v.match(/\(#(\d+)\)$/)?.[1];
-  if (id) return Number(id) || null;
-  return opciones.find((o) => o.nombre.toLowerCase() === v.toLowerCase())?.id ?? null;
-}
 
 function valorAtributo(p: ParametroEspecie, v: string | boolean | undefined): unknown {
   if (p.tipo_dato === 'BOOLEANO') return Boolean(v);

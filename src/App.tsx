@@ -55,6 +55,7 @@ import { RecuperarPage } from './auth/pages/RecuperarPage';
 import { RestablecerPage } from './auth/pages/RestablecerPage';
 import { SsoCallbackPage } from './auth/pages/SsoCallbackPage';
 import { CompletarPerfilSsoPage } from './auth/pages/CompletarPerfilSsoPage';
+import { SelectorIdioma } from './shared/design-system/SelectorIdioma';
 
 /* Private pages */
 // Cada modulo de negocio se descarga al entrar a su ruta, no en el arranque:
@@ -105,7 +106,7 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   useTemaSesion(token);
   // Sin service worker con Background Sync en este proyecto: la cola de escrituras
   // offline se reintenta aquí en cuanto vuelve el evento `online` del navegador.
-  useSyncOnReconnect();
+  useSyncOnReconnect(token !== null);
   const { sinFinca, sinEspecies } = useContexto();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -245,6 +246,7 @@ function SesionNoRestaurada() {
   const { t } = useT('auth');
   return (
     <div className="auth-bg">
+      <SelectorIdioma />
       <div className="auth-card">
         <Alert
           variant="error"
@@ -264,14 +266,15 @@ function SesionNoRestaurada() {
 }
 
 function PrivateRoute({ path, component: Component }: { path: string; component: React.ComponentType }) {
-  const { token, perfilIncompleto, isBootstrapping, errorRestaurandoSesion } = useAuth();
+  const { token, sesionOffline, perfilIncompleto, isBootstrapping, errorRestaurandoSesion } = useAuth();
+  const conSesion = token !== null || sesionOffline;
   return (
     <Route
       path={path}
       render={() => {
         if (isBootstrapping) return null;
-        if (!token && errorRestaurandoSesion) return <SesionNoRestaurada />;
-        if (!token) return <Redirect to="/login" />;
+        if (!conSesion && errorRestaurandoSesion) return <SesionNoRestaurada />;
+        if (!conSesion) return <Redirect to="/login" />;
         if (perfilIncompleto === null) return null;
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
         return (
@@ -311,6 +314,15 @@ function AuthedRoute({
   );
 }
 
+// "/" es el start_url del manifest: la PWA instalada siempre abre aquí. Redirigir
+// a /login sin mirar la sesión mandaba al login a quien tenía la cookie de refresco
+// vigente, y sin red ni siquiera llegaba a usar la sesión offline guardada.
+function RutaRaiz() {
+  const { token, sesionOffline, isBootstrapping } = useAuth();
+  if (isBootstrapping) return null;
+  return <Redirect to={token || sesionOffline ? '/dashboard' : '/login'} />;
+}
+
 function AppRoutes() {
   return (
     <IonRouterOutlet>
@@ -338,9 +350,7 @@ function AppRoutes() {
       <PrivateRoute path="/prediccion" component={PrediccionPage} />
 
       {/* Default */}
-      <Route exact path="/">
-        <Redirect to="/login" />
-      </Route>
+      <Route exact path="/" component={RutaRaiz} />
     </IonRouterOutlet>
   );
 }
