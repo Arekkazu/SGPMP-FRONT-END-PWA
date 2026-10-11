@@ -9,13 +9,30 @@ vi.mock('../api/http', async (importOriginal) => ({
   http: { get: vi.fn() },
 }));
 
+vi.mock('./sesionOffline', () => ({
+  leerSesionOffline: vi.fn(async () => undefined),
+  guardarSesionOffline: vi.fn(async () => {}),
+  borrarSesionOffline: vi.fn(async () => {}),
+}));
+
 import { refreshAccessToken } from '../api/http';
+import { borrarSesionOffline, leerSesionOffline } from './sesionOffline';
 
 function Probe() {
-  const { isBootstrapping, errorRestaurandoSesion } = useContext(AuthContext);
+  const { isBootstrapping, errorRestaurandoSesion, sesionOffline, userInfo } = useContext(AuthContext);
   if (isBootstrapping) return <span>cargando</span>;
+  if (sesionOffline) return <span>offline:{userInfo?.nombre}</span>;
   return <span>{errorRestaurandoSesion ? 'error-restaurando' : 'listo'}</span>;
 }
+
+const copia = {
+  claims: { sub: '7', jti: 'j', rol: 2, exp: 0, iat: 0 },
+  userInfo: {
+    id_usuario: 7, nombre: 'Ana', apellidos: 'P', correo_electronico: 'a@b.co',
+    nombre_rol: 'Productor', estado_cuenta: 'Activo',
+  },
+  permisos: [{ id_recurso: 8, id_accion: 2 }],
+};
 
 function setPath(path: string) {
   window.history.pushState({}, '', path);
@@ -72,5 +89,49 @@ describe('AuthProvider — bootstrap de sesion', () => {
     );
 
     await screen.findByText('listo');
+  });
+
+  it('sin red y con una sesion previa, entra en modo offline en vez de pedir login', async () => {
+    vi.mocked(refreshAccessToken).mockRejectedValueOnce({ status: 0 });
+    vi.mocked(leerSesionOffline).mockResolvedValueOnce(copia);
+    setPath('/perfil');
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>
+    );
+
+    await screen.findByText('offline:Ana');
+  });
+
+  it('sin red y sin sesion previa, ofrece reintentar', async () => {
+    vi.mocked(refreshAccessToken).mockRejectedValueOnce({ status: 0 });
+    setPath('/perfil');
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>
+    );
+
+    await screen.findByText('error-restaurando');
+  });
+
+  it('al volver la red con la sesion cerrada en el servidor, sale del modo offline y avisa en el login', async () => {
+    vi.mocked(refreshAccessToken).mockRejectedValueOnce({ status: 0 });
+    vi.mocked(leerSesionOffline).mockResolvedValueOnce(copia);
+    setPath('/perfil');
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>
+    );
+    await screen.findByText('offline:Ana');
+
+    vi.mocked(refreshAccessToken).mockRejectedValueOnce({ status: 401 });
+    window.dispatchEvent(new Event('online'));
+
+    await screen.findByText('listo');
+    expect(borrarSesionOffline).toHaveBeenCalled();
+    expect(sessionStorage.getItem('sgpmp:sesion-cerrada')).toBe('1');
   });
 });

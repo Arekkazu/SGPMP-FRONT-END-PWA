@@ -15,7 +15,7 @@ import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
 
 export function LoginPage() {
   const { t } = useT('auth');
-  const { login, loading, error, online } = useLogin();
+  const { login, loading, error, online, pendientes } = useLogin();
   const [showPw, setShowPw] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   // El interceptor de http.ts deja esta bandera antes de un `location.replace`
@@ -46,7 +46,14 @@ export function LoginPage() {
         <h1 className="auth-title">{t('loginpage.iniciar_sesion')}</h1>
         <p className="auth-sub">{t('loginpage.nombre_del_producto')}</p>
 
-        {sesionCerrada && (
+        {pendientes > 0 ? (
+          <Alert
+            variant="warning"
+            title={t('loginpage.operaciones_pendientes', { count: pendientes })}
+            description={t('loginpage.operaciones_pendientes_descripcion')}
+            className="auth-alert"
+          />
+        ) : sesionCerrada && (
           <Alert
             variant="warning"
             title={t('loginpage.sesion_cerrada')}

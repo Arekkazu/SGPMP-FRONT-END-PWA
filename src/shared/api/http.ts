@@ -71,8 +71,17 @@ export function refrescoRechazoLaSesion(error: unknown): boolean {
   return status === 401 || status === 410;
 }
 
-function forzarLogout(): void {
+/** No hubo respuesta del servidor (sin red, timeout): `mapToApiError` deja status 0. */
+export function esFalloDeRed(error: unknown): boolean {
+  return !statusDe(error);
+}
+
+export function marcarSesionCerrada(): void {
   sessionStorage.setItem(SESION_CERRADA_KEY, '1');
+}
+
+function forzarLogout(): void {
+  marcarSesionCerrada();
   tokenStore.clear();
   window.location.replace('/login');
 }
