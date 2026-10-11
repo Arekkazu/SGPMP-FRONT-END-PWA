@@ -33,7 +33,7 @@ vi.mock('../db/db', () => ({
   },
 }));
 
-import { enqueue, registerSyncHandler, replay, getConflictos, SYNC_REPLAY_TERMINADO } from './syncQueue';
+import { enqueue, registerSyncHandler, replay, getConflictos, setUsuarioSync, SYNC_REPLAY_TERMINADO } from './syncQueue';
 
 beforeEach(() => {
   rows.length = 0;
@@ -151,5 +151,23 @@ describe('syncQueue.replay — aviso de fin de replay (#450, RF-15)', () => {
     dejar();
 
     expect(alTerminar).not.toHaveBeenCalled();
+  });
+});
+
+describe('replay — operaciones de otro usuario', () => {
+  it('no reenvía con la sesión de B lo que encoló A en el mismo dispositivo', async () => {
+    const handler = vi.fn(async () => {});
+    registerSyncHandler('aislado', handler);
+
+    setUsuarioSync('A');
+    await enqueue('aislado', 'crear', { n: 1 });
+    setUsuarioSync('B');
+    await replay();
+    expect(handler).not.toHaveBeenCalled();
+
+    setUsuarioSync('A');
+    await replay();
+    expect(handler).toHaveBeenCalledTimes(1);
+    setUsuarioSync(null);
   });
 });

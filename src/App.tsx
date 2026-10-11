@@ -106,7 +106,7 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   useTemaSesion(token);
   // Sin service worker con Background Sync en este proyecto: la cola de escrituras
   // offline se reintenta aquí en cuanto vuelve el evento `online` del navegador.
-  useSyncOnReconnect();
+  useSyncOnReconnect(token !== null);
   const { sinFinca, sinEspecies } = useContexto();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -266,14 +266,15 @@ function SesionNoRestaurada() {
 }
 
 function PrivateRoute({ path, component: Component }: { path: string; component: React.ComponentType }) {
-  const { token, perfilIncompleto, isBootstrapping, errorRestaurandoSesion } = useAuth();
+  const { token, sesionOffline, perfilIncompleto, isBootstrapping, errorRestaurandoSesion } = useAuth();
+  const conSesion = token !== null || sesionOffline;
   return (
     <Route
       path={path}
       render={() => {
         if (isBootstrapping) return null;
-        if (!token && errorRestaurandoSesion) return <SesionNoRestaurada />;
-        if (!token) return <Redirect to="/login" />;
+        if (!conSesion && errorRestaurandoSesion) return <SesionNoRestaurada />;
+        if (!conSesion) return <Redirect to="/login" />;
         if (perfilIncompleto === null) return null;
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
         return (

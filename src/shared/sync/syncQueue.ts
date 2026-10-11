@@ -1,5 +1,13 @@
 import { db, type SyncOperation } from '../db/db';
 
+// `sub` del usuario en sesión (en línea u offline), lo fija AuthContext. `enqueue`
+// y `replay` corren fuera de React, así que no pueden leerlo del contexto.
+let usuarioActual: string | null = null;
+
+export function setUsuarioSync(usuario: string | null): void {
+  usuarioActual = usuario;
+}
+
 export async function enqueue(
   modulo: string,
   accion: string,
@@ -11,6 +19,7 @@ export async function enqueue(
     payload,
     intentos: 0,
     creadoEn: Date.now(),
+    usuario: usuarioActual ?? undefined,
   });
 
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
@@ -30,6 +39,11 @@ export async function getQueue(): Promise<SyncOperation[]> {
 
 export async function removeFromQueue(id: number): Promise<void> {
   await db.syncQueue.delete(id);
+}
+
+/** Operaciones que esperan red y sesión; LoginPage las anuncia tras una sesión que murió offline. */
+export async function contarPendientes(): Promise<number> {
+  return (await getQueue()).filter((op) => !op.conflicto).length;
 }
 
 /** Operaciones que el backend rechazó en firme (ver `replay`) — requieren resolución manual. */
@@ -77,6 +91,7 @@ export async function replay(): Promise<void> {
   let huboCambios = false;
   for (const op of cola) {
     if (op.conflicto || op.id === undefined) continue;
+    if (op.usuario && op.usuario !== usuarioActual) continue;
     const handler = handlers.get(op.modulo);
     if (!handler) continue;
     try {
