@@ -1,0 +1,11 @@
+/**
+ * Campo de catálogo con autocompletado (Combobox): se acepta el ID tal cual
+ * (lo usan los scripts de pruebas), la sugerencia elegida «Nombre (#id)» o el
+ * nombre exacto. El backend valida el ID.
+ */
+export function idDeCatalogo(texto: string, opciones: { id: number; nombre: string }[]): number | null {
+  const v = (texto ?? '').trim();
+  const id = /^\d+$/.test(v) ? v : v.match(/\(#(\d+)\)$/)?.[1];
+  if (id) return Number(id) || null;
+  return opciones.find((o) => o.nombre.toLowerCase() === v.toLowerCase())?.id ?? null;
+}

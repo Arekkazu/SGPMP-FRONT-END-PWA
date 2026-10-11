@@ -32,7 +32,7 @@ export function DashboardPage() {
         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
           {contexto?.finca_activa
             ? `${contexto.finca_activa}${contexto.departamento ? ` · ${contexto.departamento}` : ''}`
-            : t('dashboardpage.sgp_multiespecie_sistema_de_gestion_pecuaria')}
+            : t('dashboardpage.nombre_del_producto')}
         </p>
       </div>
 
