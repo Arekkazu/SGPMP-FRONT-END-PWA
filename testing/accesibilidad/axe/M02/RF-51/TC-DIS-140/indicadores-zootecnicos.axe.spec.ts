@@ -30,6 +30,10 @@
  * TEST_PRODUCTOR_EMAIL, la dueña real. Se corrige. Confirmado por curl: #296, #291 y #280
  * responden exactamente igual a lo documentado. El bug de backend en POST /sesiones/refresh
  * para esta cuenta (ver TC-DIS-125) ya estaba corregido.
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * Sin cambios de datos ni de criterio: #296, #291 y #280 responden igual a lo documentado.
+ * La unidad compuesta del backend ahora se muestra legible ("kg / dia"; commit 2b7b44e).
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
