@@ -4,6 +4,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { AlertTriangle, Lock, Loader2, XCircle } from 'lucide-react';
 import { useSsoCallback } from '../hooks/useSsoCallback';
 import './AuthPages.css';
+import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
 
 type TipoError = 'token_invalido' | 'cuenta_bloqueada' | 'cuenta_deshabilitada' | 'generico';
 
@@ -23,6 +24,7 @@ export function SsoCallbackPage() {
   if (estado === 'canjeando') {
     return (
       <div className="auth-bg">
+        <SelectorIdioma />
         <div className="auth-card auth-center">
           <div className="auth-success-icon" style={{ background: 'var(--sem-info-bg)' }} aria-hidden="true">
             <Loader2 size={28} color="var(--sem-info)" className="spin" />
@@ -67,6 +69,7 @@ export function SsoCallbackPage() {
 
   return (
     <div className="auth-bg">
+      <SelectorIdioma />
       <div className="auth-card auth-center">
         <div className="auth-success-icon" style={{ background: bgMap[tipo] }} aria-hidden="true">
           {iconMap[tipo]}

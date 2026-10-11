@@ -55,6 +55,7 @@ import { RecuperarPage } from './auth/pages/RecuperarPage';
 import { RestablecerPage } from './auth/pages/RestablecerPage';
 import { SsoCallbackPage } from './auth/pages/SsoCallbackPage';
 import { CompletarPerfilSsoPage } from './auth/pages/CompletarPerfilSsoPage';
+import { SelectorIdioma } from './shared/design-system/SelectorIdioma';
 
 /* Private pages */
 // Cada modulo de negocio se descarga al entrar a su ruta, no en el arranque:
@@ -245,6 +246,7 @@ function SesionNoRestaurada() {
   const { t } = useT('auth');
   return (
     <div className="auth-bg">
+      <SelectorIdioma />
       <div className="auth-card">
         <Alert
           variant="error"
