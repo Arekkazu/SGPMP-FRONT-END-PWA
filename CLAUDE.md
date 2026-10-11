@@ -1,5 +1,9 @@
 # CLAUDE.md — SGPMP Frontend
 
+**Nombre del producto: SIGAB** (Sistema de Gestión Pecuaria Multiespecie de Precisión con Modelado
+Predictivo de Patologías e Integración Contable de Activos Biológicos). `sgpmp` es solo el código interno
+del proyecto (repos, claves de storage, base Dexie, eventos): todo texto visible usa SIGAB, nunca SGP/SGPMP.
+
 ---
 
 ## Convención de commits (obligatoria en `dev`)
@@ -295,6 +299,7 @@ de esos solo `Gauge` está implementado — los demás siguen siendo especificac
 | `ScrollRegion`     | scroll horizontal de tablas; enfocable (`tabIndex=0`) y con nombre (`role="region"`) |
 | `ModalShell`       | marco de modal: título, cerrar, footer; `maxWidth` → variante sm · default · wide |
 | `LimiteDeError`    | error boundary por página: aviso + recargar, sin desmontar la app (también chunk que no carga) |
+| `Isotipo`         | figura blanca del isotipo SIGAB; el contenedor pone el fondo de marca (login, sidebar). Mismos trazos que `public/favicon.svg` |
 
 ### Reglas no negociables del sistema de diseño
 
