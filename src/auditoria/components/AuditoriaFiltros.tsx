@@ -51,7 +51,7 @@ export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
   return (
     <form
       onSubmit={(e) => { e.preventDefault(); buscar(); }}
-      style={{ display: 'flex', gap: 'var(--s3)', flexWrap: 'wrap', marginBottom: 'var(--s5)', alignItems: 'flex-end' }}
+      style={{ display: 'flex', gap: 'var(--s3)', flexWrap: 'wrap', marginBottom: 'var(--s5)', alignItems: 'flex-start' }}
     >
       <div style={{ flex: '1 1 220px' }}>
         <UsuarioCombobox
@@ -94,10 +94,16 @@ export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
           onChange={(e) => setFechaHasta(e.target.value)}
         />
       </div>
-      <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-        <Button type="submit" variant="primary" size="md">
-          <Search size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriafiltros.buscar')}</Button>
-        <Button type="button" variant="secondary" size="md" onClick={limpiar}>{t('auditoriafiltros.limpiar')}</Button>
+      {/* Alineado arriba, no abajo: el hint del usuario alarga ese campo y con
+          flex-end su input quedaba más alto que los demás. El rótulo vacío
+          baja los botones a la altura de los inputs. */}
+      <div className="ds-field">
+        <span className="ds-field__label" aria-hidden>&nbsp;</span>
+        <div style={{ display: 'flex', gap: 'var(--s2)' }}>
+          <Button type="submit" variant="primary" size="md">
+            <Search size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriafiltros.buscar')}</Button>
+          <Button type="button" variant="secondary" size="md" onClick={limpiar}>{t('auditoriafiltros.limpiar')}</Button>
+        </div>
       </div>
     </form>
   );
