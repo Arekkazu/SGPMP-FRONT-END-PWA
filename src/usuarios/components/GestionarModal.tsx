@@ -38,7 +38,20 @@ function getAccionesDisponibles(estadoActual: string): OpcionAccion[] {
   const estado = estadoActual.toUpperCase();
   const acciones: OpcionAccion[] = [];
 
-  if (['INACTIVO', 'BLOQUEADO', 'PENDIENTE'].includes(estado)) {
+  // RF-06: una cuenta BLOQUEADA se levanta con «Desbloquear»; «Activar» queda
+  // para INACTIVO y PENDIENTE.
+  if (estado === 'BLOQUEADO') {
+    acciones.push({
+      value: 'desbloquear',
+      claveLabel: 'gestionarmodal.desbloquear',
+      claveDescripcion: 'gestionarmodal.desbloquear_desc',
+      variante: 'primary',
+      icon: <Unlock size={14} aria-hidden />,
+      requiresMotivo: false,
+    });
+  }
+
+  if (['INACTIVO', 'PENDIENTE'].includes(estado)) {
     acciones.push({
       value: 'activar',
       claveLabel: 'gestionarmodal.activar',

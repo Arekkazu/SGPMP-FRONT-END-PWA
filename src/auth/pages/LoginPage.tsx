@@ -57,7 +57,11 @@ export function LoginPage() {
           <Alert
             variant="warning"
             title={t('loginpage.sesion_cerrada')}
-            description={t('loginpage.sesion_cerrada_descripcion')}
+            description={
+              sesionCerrada === 'cambio_estado'
+                ? t('loginpage.sesion_finalizada_cambio_estado')
+                : t('loginpage.sesion_cerrada_descripcion')
+            }
             className="auth-alert"
           />
         )}
