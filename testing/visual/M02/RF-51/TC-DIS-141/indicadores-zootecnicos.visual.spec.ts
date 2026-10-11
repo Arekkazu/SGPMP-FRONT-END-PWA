@@ -37,6 +37,14 @@
  * TEST_PRODUCTOR_EMAIL, la dueña real. Se corrige. Confirmado por curl: #295, #296 y #291
  * responden igual a lo documentado. El bug de backend en POST /sesiones/refresh para esta
  * cuenta (ver TC-DIS-125) ya estaba corregido.
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * El código técnico "kg_alimento/kg_ganancia" de la ronda anterior está corregido: se muestra
+ * "kg de alimento / kg de ganancia" (commit 2b7b44e). Las demás unidades no tienen traducción
+ * propia y se formatean desde el código del backend, así que quedan "kg / dia" y
+ * "unidades / dia", sin tilde. verificarSinCodigos lo detecta ahora como DEFECTO: se eliminan
+ * las baselines de individual y lote (las vistas cambiaron y tienen el defecto) y no se genera
+ * la de todas las categorías. El BLOQUEO del modo tiempo real / diferido sigue igual.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import fixture from './indicadores.fixture.json';
@@ -148,6 +156,10 @@ async function verificarSinCodigos(page: Page) {
   const texto = (await seccion(page).innerText()).replace(/\s+/g, ' ');
   const hallado = texto.match(JERGA_TECNICA)?.[0] ?? null;
   expect.soft(hallado, `DEFECTO: la vista muestra códigos técnicos al Productor ("${hallado}"); deben mostrarse con texto legible`).toBeNull();
+  // rc.48: las unidades compuestas se formatean desde el código del backend (kg/dia → "kg / dia");
+  // sin traducción propia, la palabra queda sin tilde
+  const sinTilde = [...new Set(texto.match(/[^\s.]*\s?\/\s?dia\b/g) ?? [])];
+  expect.soft(sinTilde, `DEFECTO: la unidad se muestra con error ortográfico: ${sinTilde.map((u) => `"${u}"`).join(', ')} (debe decir "día"); la unidad sale del código del backend formateado, sin traducción propia en el i18n`).toEqual([]);
 }
 
 /** Captura la sección completa. Sin baseline si hay defectos. */
