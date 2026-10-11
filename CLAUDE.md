@@ -716,7 +716,9 @@ Todas las variables comienzan con `VITE_` para ser expuestas por Vite al bundle.
 El mismo código se despliega como PWA (navegador) y como app nativa (Capacitor). Las APIs nativas (push notifications, haptics, status bar) se acceden vía plugins de Capacitor que degradan gracefully en web. Nunca usar `import ... from '@capacitor/...'` en `shared/design-system/` ni en lógica de negocio; solo en adaptadores dedicados dentro de `shared/hooks/` o `shared/sync/`.
 
 **Service Worker y Vite**
-El SW se registra en `main.tsx`. En desarrollo (`vite dev`) el SW está desactivado por defecto; usar `vite preview` o build con `VITE_SW=true` para testear comportamiento offline.
+`vite-plugin-pwa` genera `/sw.js` en el build: precachea la app para que la PWA abra sin red e importa
+`public/firebase-messaging-sw.js` (push), porque solo cabe un SW por scope `/`. Se registra solo
+(`registerSW.js`, `autoUpdate`). En `vite dev` no hay `/sw.js`: para probar offline, `pnpm build && pnpm preview`.
 
 **`root_path="/api"` del backend**
 En producción, el proxy inverso agrega el prefijo `/api`. `VITE_API_BASE_URL` en producción apuntará a la URL con ese prefijo ya incluido. Localmente, apunta directamente al puerto de uvicorn.
