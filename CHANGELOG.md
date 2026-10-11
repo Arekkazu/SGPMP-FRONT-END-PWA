@@ -1,3 +1,9 @@
+## [1.0.0-rc.59](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.58...v1.0.0-rc.59) (2026-10-11)
+
+### Features
+
+* **rf15-mod9:** grupo de manejo obligatorio en el formulario de especies (RF-15 v1.1) ([7cdb7a5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7cdb7a571c62345f1298495938ebd21cfa69a4f3))
+
 ## [1.0.0-rc.58](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.57...v1.0.0-rc.58) (2026-10-11)
 
 ### Features
