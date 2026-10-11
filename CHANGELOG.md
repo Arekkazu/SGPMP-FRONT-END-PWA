@@ -1,3 +1,9 @@
+## [1.0.0-rc.60](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.59...v1.0.0-rc.60) (2026-10-11)
+
+### Bug Fixes
+
+* **auth:** mostrar el contador de intentos solo con el conteo real del backend (RF-02) ([69d2500](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/69d25009cf09feffd456b02047b1ed617a3dcfeb))
+
 ## [1.0.0-rc.59](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.58...v1.0.0-rc.59) (2026-10-11)
 
 ### Features
