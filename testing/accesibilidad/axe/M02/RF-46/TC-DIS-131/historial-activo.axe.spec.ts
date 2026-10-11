@@ -32,6 +32,12 @@
  * origen/destino de una transferencia quedó integrado en el texto de "Descripción"); y la
  * categoría ya se muestra con la etiqueta legible del combobox ("Transferencia") en vez del
  * código crudo del backend ("TRANSFERENCIA").
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * Los 4 DEFECTOS de la ronda anterior están corregidos (commit 2b7b44e): la tabla tiene
+ * nombre accesible, el estado vacío usa role="status", la tabla se vacía tras un error de
+ * filtro y la paginación va en <nav aria-label="Paginación">. Mismo activo #281 con sus 5
+ * registros; sin cambios de criterio.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
