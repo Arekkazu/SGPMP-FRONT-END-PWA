@@ -1,3 +1,15 @@
+## [1.0.0-rc.51](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.50...v1.0.0-rc.51) (2026-10-11)
+
+### Features
+
+* **i18n:** selector de idioma en las pantallas de acceso ([281f3fb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/281f3fb38791055181c83fd5e9e52ff9e2c68a1b))
+* **rf05-rf10-mod1:** autocompletado de rol, fincas y usuario sin romper el ID ([da6cfef](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/da6cfefa3caf530fc494df36600be663e8c19831)), closes [#id](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/id)
+
+### Bug Fixes
+
+* **auth:** mostrar la hora de desbloqueo de la cuenta en la zona horaria del usuario ([bc9348a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/bc9348a8648dd194ece4d4c4105af16add265c06))
+* **catalogo:** aceptar el ID con # en los campos de autocompletado ([7f57d60](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7f57d608b5939030522e99a1788e5c07aa04f2e8)), closes [#300](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/300) [#300](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/300)
+
 ## [1.0.0-rc.50](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.49...v1.0.0-rc.50) (2026-10-11)
 
 ### Features
