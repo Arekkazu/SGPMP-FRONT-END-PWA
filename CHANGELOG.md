@@ -1,3 +1,13 @@
+## [1.0.0-rc.58](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.57...v1.0.0-rc.58) (2026-10-11)
+
+### Features
+
+* **rf06:** accion desbloquear para cuentas bloqueadas en la gestion de usuarios ([68d660d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/68d660df79c284b9300536247f9031e90fc63bb4)), closes [#568](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/568)
+
+### Bug Fixes
+
+* **rf06:** mostrar que la sesion termino por un cambio de estado de la cuenta ([e1a4cd1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e1a4cd106beb2461dbf4b7c10447ad87a20eecaa)), closes [#569](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/569)
+
 ## [1.0.0-rc.57](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.56...v1.0.0-rc.57) (2026-10-11)
 
 ### Bug Fixes
