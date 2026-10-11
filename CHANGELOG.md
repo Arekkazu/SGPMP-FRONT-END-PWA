@@ -1,3 +1,14 @@
+## [1.0.0-rc.50](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.49...v1.0.0-rc.50) (2026-10-11)
+
+### Features
+
+* **marca:** presentar el producto como SIGAB con su isotipo ([d646677](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d64667713774af5478f7278959ed38364adaf783))
+* **rf19:** elegir el productor de la finca por nombre o id ([5a62402](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5a62402b27ee564c0cc46d0acdfa8ccacb2b14d5)), closes [#id](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/id)
+
+### Bug Fixes
+
+* **deploy:** cachear como immutable solo los assets con hash de /assets/ ([f09af93](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f09af9392b74bcbaf4e872e5783ad143de7dcee5))
+
 ## [1.0.0-rc.49](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.48...v1.0.0-rc.49) (2026-10-10)
 
 ### Bug Fixes
