@@ -11,6 +11,7 @@ import { Isotipo } from '../../shared/design-system/Isotipo';
 import { consumirAvisoSesionCerrada } from '../../shared/api/http';
 import type { LoginDTO } from '../types';
 import './AuthPages.css';
+import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
 
 export function LoginPage() {
   const { t } = useT('auth');
@@ -37,6 +38,7 @@ export function LoginPage() {
 
   return (
     <div className="auth-bg">
+      <SelectorIdioma />
       <div className="auth-card">
         <div className="auth-logo" aria-hidden="true">
           <Isotipo size={30} />

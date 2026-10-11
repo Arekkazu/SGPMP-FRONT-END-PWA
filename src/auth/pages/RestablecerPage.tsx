@@ -9,6 +9,8 @@ import { Input } from '../../shared/design-system/Input';
 import { PasswordStrength } from '../../shared/design-system/PasswordStrength';
 import { Alert } from '../../shared/design-system/Alert';
 import './AuthPages.css';
+import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
+import { Isotipo } from '../../shared/design-system/Isotipo';
 
 const PW_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!*])[A-Za-z\d@#$%^&+=!*]{8,}$/;
 
@@ -47,6 +49,7 @@ export function RestablecerPage() {
   if (!token) {
     return (
       <div className="auth-bg">
+        <SelectorIdioma />
         <div className="auth-card auth-center">
           <div className="auth-success-icon" style={{ background: 'var(--sem-warning-bg)' }}>
             <AlertTriangle size={28} color="var(--sem-warning)" aria-hidden />
@@ -62,6 +65,7 @@ export function RestablecerPage() {
   if (success) {
     return (
       <div className="auth-bg">
+        <SelectorIdioma />
         <div className="auth-card auth-center">
           <div className="auth-success-icon">
             <CheckCircle size={28} color="var(--sem-success)" aria-hidden />
@@ -76,14 +80,10 @@ export function RestablecerPage() {
 
   return (
     <div className="auth-bg">
+      <SelectorIdioma />
       <div className="auth-card">
         <div className="auth-logo" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <path d="M8 22C8 16 12 11 16 11C20 11 24 16 24 22" stroke="white" strokeWidth="2"/>
-            <circle cx="12" cy="17" r="2" fill="white" opacity=".8"/>
-            <circle cx="20" cy="17" r="2" fill="white" opacity=".8"/>
-            <path d="M13 21C13 19.5 14.3 18.5 16 18.5C17.7 18.5 19 19.5 19 21" stroke="white" strokeWidth="1.5"/>
-          </svg>
+          <Isotipo size={30} />
         </div>
         <h1 className="auth-title">{t('restablecerpage.nueva_contrasena')}</h1>
         <p className="auth-sub">{t('restablecerpage.elige_una_contrasena_segura_para_tu_cuenta')}</p>

@@ -4,7 +4,7 @@ import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
-import { Select } from '../../shared/design-system/Select';
+import { Combobox } from '../../shared/design-system/Combobox';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { Badge } from '../../shared/design-system/Badge';
@@ -14,6 +14,8 @@ import { mascararId } from '../../shared/lib/mascararId';
 import { varianteRol, varianteEstado } from '../../shared/lib/varianteBadge';
 import { fincasApi } from '../../configuration/api/fincasApi';
 import { rolesApi } from '../../roles/api/rolesApi';
+import { etiquetaDeCatalogo, idDeCatalogo } from '../../shared/lib/catalogo';
+import { FincasAsignadas } from './FincasAsignadas';
 import type { FincaResponse } from '../../configuration/types';
 import type { EditarPerfilAdminDTO } from '../types';
 
@@ -34,7 +36,10 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
   const [fincas, setFincas] = useState<FincaResponse[]>([]);
   const [fincasLoading, setFincasLoading] = useState(false);
   const [idsFincas, setIdsFincas] = useState<Set<number>>(new Set());
-  const [rolOptions, setRolOptions] = useState<{ value: number; label: string }[]>([]);
+  const [roles, setRoles] = useState<{ id: number; nombre: string }[]>([]);
+  // Rol con autocompletado: «Nombre (#id)», el nombre exacto o el ID.
+  const [rolTexto, setRolTexto] = useState('');
+  const [rolError, setRolError] = useState<string>();
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EditarPerfilAdminDTO>({ mode: 'onBlur' });
 
@@ -46,8 +51,8 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
     if (!puedeEditar) return;
     rolesApi
       .listar()
-      .then((roles) => setRolOptions(roles.map((r) => ({ value: r.id_rol, label: r.nombre_rol }))))
-      .catch(() => setRolOptions([]));
+      .then((lista) => setRoles(lista.map((r) => ({ id: r.id_rol, nombre: r.nombre_rol }))))
+      .catch(() => setRoles([]));
   }, [puedeEditar]);
 
   useEffect(() => {
@@ -62,6 +67,8 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
         id_rol: detalle.id_rol,
       });
       setIdsFincas(new Set((detalle.fincas ?? []).map((f) => f.id_finca)));
+      setRolTexto(etiquetaDeCatalogo(detalle.nombre_rol, detalle.id_rol));
+      setRolError(undefined);
     }
   }, [detalle, reset]);
 
@@ -80,21 +87,15 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
 
   const onSubmit = async (data: EditarPerfilAdminDTO) => {
     if (!detalle) return;
-    const ok = await editar(idUsuario, { ...data, version: detalle.version });
+    const idRol = idDeCatalogo(rolTexto, roles);
+    if (idRol == null) {
+      setRolError(t('usuariomodal.rol_no_encontrado'));
+      return;
+    }
+    const ok = await editar(idUsuario, { ...data, id_rol: idRol, version: detalle.version });
     if (!ok) return;
     const okFincas = await asignarFincas(idUsuario, { ids_fincas: Array.from(idsFincas) });
     if (okFincas) onSaved();
-  };
-
-  // INC-M02-61-G52 (#97): el acceso a fincas es M:N. Una finca con otro dueño
-  // también se asigna: el Veterinario atiende fincas que no son suyas.
-  const toggleFinca = (id: number) => {
-    setIdsFincas((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   };
 
   return (
@@ -190,51 +191,25 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                     <Input label={t('usuariomodal.direccion')} {...register('direccion')} />
                   </div>
                   <div>
-                    <Select label={t('usuariomodal.rol')} {...register('id_rol', { valueAsNumber: true })}>
-                      {rolOptions.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </Select>
+                    <Combobox
+                      id="usuario-rol"
+                      label={t('usuariomodal.rol')}
+                      opciones={roles.map((r) => ({ valor: etiquetaDeCatalogo(r.nombre, r.id) }))}
+                      value={rolTexto}
+                      onChange={(v) => { setRolTexto(v); setRolError(undefined); }}
+                      hint={t('usuariomodal.rol_hint')}
+                      error={rolError}
+                    />
                   </div>
                 </div>
-                <div style={{ marginBottom: 'var(--s4)' }}>
-                  <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    {t('usuariomodal.fincas_asignadas')}
-                  </p>
-                  {fincasLoading && (
-                    <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-muted)' }}>{t('usuariomodal.cargando_fincas')}</p>
-                  )}
-                  {!fincasLoading && fincas.length === 0 && (
-                    <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-muted)' }}>{t('usuariomodal.sin_fincas')}</p>
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-                    {fincas.map((f) => {
-                      const checked = idsFincas.has(f.id_finca);
-                      return (
-                        <label
-                          key={f.id_finca}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--s3)',
-                            padding: 'var(--s2) var(--s3)',
-                            borderRadius: 'var(--r-md)',
-                            border: `1px solid ${checked ? 'var(--brand-400)' : 'var(--surface-border)'}`,
-                            background: checked ? 'var(--brand-50)' : 'var(--surface-card)',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleFinca(f.id_finca)}
-                          />
-                          <span style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-primary)' }}>{f.nombre}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
+                {/* INC-M02-61-G52 (#97): el acceso a fincas es M:N. Una finca con otro
+                    dueño también se asigna: el Veterinario atiende fincas ajenas. */}
+                <FincasAsignadas
+                  fincas={fincas}
+                  seleccionadas={idsFincas}
+                  onChange={setIdsFincas}
+                  cargando={fincasLoading}
+                />
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
                   <Button type="button" variant="secondary" size="md" onClick={onClose}>{t('usuariomodal.cancelar')}</Button>
                   <Button type="submit" variant="primary" size="md" loading={saving}>{t('usuariomodal.guardar')}</Button>

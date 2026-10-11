@@ -13,6 +13,8 @@ import { RecaptchaField } from '../components/RecaptchaField';
 import { recaptchaConfigured, recaptchaSiteKey } from '../config/recaptcha';
 import type { UsuarioCreateDTO } from '../types';
 import './AuthPages.css';
+import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
+import { Isotipo } from '../../shared/design-system/Isotipo';
 
 const NAME_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 const PW_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!*])[A-Za-z\d@#$%^&+=!*]{8,}$/;
@@ -107,6 +109,7 @@ export function RegistroPage() {
   if (success) {
     return (
       <div className="auth-bg">
+        <SelectorIdioma />
         <div className="auth-card auth-center">
           <div className="auth-success-icon">
             <CheckCircle size={28} color="var(--sem-success)" aria-hidden />
@@ -129,14 +132,10 @@ export function RegistroPage() {
 
   return (
     <div className="auth-bg">
+      <SelectorIdioma />
       <div className="auth-card">
         <div className="auth-logo" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <path d="M8 22C8 16 12 11 16 11C20 11 24 16 24 22" stroke="white" strokeWidth="2"/>
-            <circle cx="12" cy="17" r="2" fill="white" opacity=".8"/>
-            <circle cx="20" cy="17" r="2" fill="white" opacity=".8"/>
-            <path d="M13 21C13 19.5 14.3 18.5 16 18.5C17.7 18.5 19 19.5 19 21" stroke="white" strokeWidth="1.5"/>
-          </svg>
+          <Isotipo size={30} />
         </div>
         <h1 className="auth-title">{t('registropage.crear_cuenta_nueva')}</h1>
         <p className="auth-sub">

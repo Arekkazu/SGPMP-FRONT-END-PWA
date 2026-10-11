@@ -9,6 +9,7 @@ import { useAuditoriaM02 } from '../hooks/useAuditoriaM02';
 import { Paginacion } from '../components/Paginacion';
 import type { ConsultarBitacoraFiltros, EventoAuditoriaResponse } from '../types';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
+import { UsuarioCombobox, idDeUsuario } from '../../usuarios/components/UsuarioCombobox';
 
 const INPUT: React.CSSProperties = {
   width: '100%',
@@ -139,6 +140,7 @@ export function AuditoriaM02View() {
   const history = useHistory();
   const { registros, paginacion, loading, error, cargar } = useAuditoriaM02();
   const [filtros, setFiltros] = useState<FiltrosState>(VACIO);
+  const [usuarioError, setUsuarioError] = useState<string>();
 
   const consultar = useCallback(
     (pagina: number) => {
@@ -149,12 +151,18 @@ export function AuditoriaM02View() {
       if (filtros.clasificacion_biologica) f.clasificacion_biologica = filtros.clasificacion_biologica.trim();
       if (filtros.resultado) f.resultado = filtros.resultado;
       if (filtros.severidad_log) f.severidad_log = filtros.severidad_log;
-      if (filtros.id_usuario_responsable) f.id_usuario_responsable = Number(filtros.id_usuario_responsable);
+      // Usuario por nombre, correo o ID (antes solo el ID numérico).
+      const idUsuario = idDeUsuario(filtros.id_usuario_responsable);
+      if (idUsuario === null) {
+        setUsuarioError(t('auditoriam02view.usuario_no_encontrado'));
+        return;
+      }
+      if (idUsuario) f.id_usuario_responsable = idUsuario;
       if (filtros.fecha_inicio) f.fecha_inicio = inicioDelDiaUtc(filtros.fecha_inicio);
       if (filtros.fecha_fin) f.fecha_fin = finDelDiaUtc(filtros.fecha_fin);
       cargar(f);
     },
-    [filtros, cargar]
+    [filtros, cargar, t]
   );
 
   // Carga inicial (sin filtros).
@@ -198,14 +206,21 @@ export function AuditoriaM02View() {
               <option value="ERROR">{t('auditoriam02view.error')}</option>
             </select>
           </div>
-          <div><label style={LABEL} htmlFor="a-usuario">{t('auditoriam02view.id_usuario')}</label><input id="a-usuario" type="number" min={1} style={INPUT} value={filtros.id_usuario_responsable} onChange={set('id_usuario_responsable')} /></div>
+          <UsuarioCombobox
+            id="a-usuario"
+            label={t('auditoriam02view.usuario')}
+            value={filtros.id_usuario_responsable}
+            onChange={(v) => { setFiltros((prev) => ({ ...prev, id_usuario_responsable: v })); setUsuarioError(undefined); }}
+            hint={t('auditoriam02view.usuario_hint')}
+            error={usuarioError}
+          />
           <div><label style={LABEL} htmlFor="a-desde">{t('auditoriam02view.desde')}</label><input id="a-desde" type="date" style={INPUT} value={filtros.fecha_inicio} onChange={set('fecha_inicio')} /></div>
           <div><label style={LABEL} htmlFor="a-hasta">{t('auditoriam02view.hasta')}</label><input id="a-hasta" type="date" style={INPUT} value={filtros.fecha_fin} onChange={set('fecha_fin')} /></div>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)' }}>
           <Button type="submit" variant="primary" size="sm">
             <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriam02view.aplicar_filtros')}</Button>
-          <Button type="button" variant="ghost" size="sm" onClick={() => { setFiltros(VACIO); cargar({ pagina: 1, page_size: 20 }); }}>{t('auditoriam02view.limpiar')}</Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => { setFiltros(VACIO); setUsuarioError(undefined); cargar({ pagina: 1, page_size: 20 }); }}>{t('auditoriam02view.limpiar')}</Button>
         </div>
         </form>
 
