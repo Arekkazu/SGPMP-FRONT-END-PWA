@@ -24,6 +24,13 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_61_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * - Desde rc.47 cada plantilla es una fila (ya no una tarjeta) y hay un buscador "Buscar
+ *   plantilla" entre la cabecera y las filas; el test de teclado lo incluye en el orden de Tab.
+ * - rc.48 nombra cada casilla de categoría del formulario solo con su etiqueta
+ *   (aria-labelledby) y deja el conteo como descripción. El conteo se ve dentro del mismo botón,
+ *   así que Lighthouse falla label-content-name-mismatch en las 4 casillas. DEFECTO (3 viewports).
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
@@ -185,11 +192,14 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Plantillas de Configuraci�
     // Esperar las tarjetas: mientras se ve el skeleton, Tab salta directo al historial
     await expect(page.getByRole('heading', { name: NOMBRE_CON_VERSION }).first()).toBeVisible();
 
-    // Orden de tabulación: Recargar → Nueva plantilla → (Nueva versión, Aplicar plantilla) de la 1.ª tarjeta → de la 2.ª…
+    // Orden de tabulación: Recargar → Nueva plantilla → Buscar plantilla → (Nueva versión, Aplicar plantilla) de la 1.ª fila → de la 2.ª…
     const nueva = page.getByRole('button', { name: 'Nueva plantilla', exact: true });
     await page.getByRole('button', { name: 'Recargar' }).focus();
     await page.keyboard.press('Tab');
     await expect(nueva, 'DEFECTO: 2.4.3: tras "Recargar" el foco debe pasar a "Nueva plantilla"').toBeFocused();
+    // rc.47: buscador por nombre o especie entre la cabecera y las filas
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('searchbox', { name: 'Buscar plantilla' }), 'DEFECTO: 2.4.3: tras "Nueva plantilla" el foco debe pasar al buscador').toBeFocused();
 
     const versiones = page.getByRole('button', { name: /^Nueva versión/ });
     const aplicar = page.getByRole('button', { name: /^Aplicar plantilla/ });
