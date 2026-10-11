@@ -8,9 +8,13 @@ import type {
 } from '../types';
 
 export const contextoApi = {
-  async obtener(): Promise<ContextoInterfazResponse> {
+  /**
+   * `null` = 204 (RF-25): la finca existe pero no tiene especies **ni** áreas
+   * productivas. El 204 no trae cuerpo; axios entrega `''` en `data`.
+   */
+  async obtener(): Promise<ContextoInterfazResponse | null> {
     const res = await http.get<ContextoInterfazResponse>('/configuracion/interfaz/contexto');
-    return res.data;
+    return res.status === 204 ? null : res.data;
   },
 };
 
@@ -54,9 +58,11 @@ export const temaVisualApi = {
     return res.data;
   },
 
-  async obtenerGlobal(): Promise<TemaResueltoResponse> {
-    const res = await http.get<TemaResueltoResponse>('/configuracion/personalizacion/tema/global');
-    return res.data;
+  async obtenerGlobal(): Promise<TemaResueltoResponse | null> {
+    // Este endpoint responde la fila (TemaVisualResponse, sin `fuente`) o null,
+    // no un tema resuelto: sin el mapeo el badge mostraba `idioma.fuente.undefined`.
+    const res = await http.get<TemaVisualResponse | null>('/configuracion/personalizacion/tema/global');
+    return res.data && { theme_mode: res.data.theme_mode, fuente: 'global', id_tema_visual: res.data.id_tema_visual };
   },
 
   async guardarGlobal(dto: GuardarTemaDTO): Promise<TemaVisualResponse> {

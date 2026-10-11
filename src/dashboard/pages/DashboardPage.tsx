@@ -10,7 +10,9 @@ import './DashboardPage.css';
 
 export function DashboardPage() {
   const { t } = useT('dashboard');
-  const { claims } = useAuth();
+  const { claims, userInfo } = useAuth();
+  // T-12: el saludo iba sin nombre cuando el JWT no traía `nombre`.
+  const nombre = (claims?.nombre ?? userInfo?.nombre ?? '').trim().split(/\s+/)[0];
   // El layout que el usuario guardo en Configuracion → Personalizacion es el que
   // manda aca. Antes esta pagina era estatica y la configuracion no se aplicaba
   // en ningun lado.
@@ -22,15 +24,15 @@ export function DashboardPage() {
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
 
   return (
-    <div style={{ padding: 'var(--s6)', maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: 'var(--page-pad)', maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ marginBottom: 'var(--s7)' }}>
         <h1 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
-          Bienvenido{claims?.nombre ? `, ${claims.nombre}` : ''}
+          {nombre ? `Hola, ${nombre.charAt(0).toUpperCase()}${nombre.slice(1).toLowerCase()}` : 'Hola'}
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
           {contexto?.finca_activa
             ? `${contexto.finca_activa}${contexto.departamento ? ` · ${contexto.departamento}` : ''}`
-            : t('dashboardpage.sgp_multiespecie_sistema_de_gestion_pecuaria')}
+            : t('dashboardpage.nombre_del_producto')}
         </p>
       </div>
 

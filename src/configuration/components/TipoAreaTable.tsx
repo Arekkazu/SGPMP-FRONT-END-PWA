@@ -2,6 +2,7 @@ import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { PowerOff } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import type { TipoAreaResponse } from '../types';
 
 interface Props {
@@ -49,7 +50,7 @@ export function TipoAreaTable({ tipos, loading, puedeDesactivar, onDesactivar }:
   }
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <ScrollRegion label={t('configurationpage.tipos_de_area')}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
@@ -96,6 +97,6 @@ export function TipoAreaTable({ tipos, loading, puedeDesactivar, onDesactivar }:
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }

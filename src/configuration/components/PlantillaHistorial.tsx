@@ -2,6 +2,7 @@ import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import type { AplicacionPlantillaResponse } from '../types';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 
 interface Props {
   historial: AplicacionPlantillaResponse[];
@@ -27,7 +28,7 @@ export function PlantillaHistorial({ historial, loading }: Props) {
   }
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <ScrollRegion label={t('plantillastable.aplicaciones_recientes')}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr>
@@ -76,6 +77,6 @@ export function PlantillaHistorial({ historial, loading }: Props) {
           })}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }

@@ -89,7 +89,7 @@ export function PasswordStrength({ valor, id }: PasswordStrengthProps) {
           >
             <div
               className="ds-pw__fill"
-              style={{ width: `${score * 25}%`, background: color }}
+              style={{ '--pw-nivel': score / 4, background: color } as React.CSSProperties}
             />
           </div>
           <span className="ds-pw__label">

@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Redirect, Route } from 'react-router-dom';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { useLogout } from './auth/hooks/useLogout';
@@ -20,6 +20,7 @@ import '@ionic/react/css/display.css';
 
 /* Design system tokens */
 import './shared/design-system/tokens.css';
+import './shared/design-system/Layout.css';
 
 /* Auth provider */
 import { AuthProvider } from './shared/auth/AuthContext';
@@ -28,6 +29,7 @@ import { useIdiomaSesion } from './shared/i18n/useIdiomaSesion';
 import { useTemaSesion } from './shared/tema/useTemaSesion';
 import { useSyncOnReconnect } from './shared/sync/useSyncOnReconnect';
 import { ContextoProvider } from './shared/contexto/ContextoProvider';
+import { ToastHost } from './shared/design-system/ToastHost';
 import { useContexto } from './shared/contexto/useContexto';
 import { BienvenidaSinFinca } from './shared/contexto/BienvenidaSinFinca';
 import { SinEspeciesEmptyState } from './shared/contexto/SinEspeciesEmptyState';
@@ -36,6 +38,8 @@ import { SinEspeciesEmptyState } from './shared/contexto/SinEspeciesEmptyState';
 import { Sidebar } from './shared/design-system/Sidebar';
 import { AppBar } from './shared/design-system/AppBar';
 import { Alert } from './shared/design-system/Alert';
+import { Button } from './shared/design-system/Button';
+import { LimiteDeError } from './shared/design-system/LimiteDeError';
 import { useT } from './shared/i18n/useT';
 import { NotificationTray } from './notificaciones/components/NotificationTray';
 import { useNotificaciones } from './notificaciones/hooks/useNotificaciones';
@@ -43,6 +47,7 @@ import { usePushNotifications } from './notificaciones/hooks/usePushNotification
 
 /* Auth pages */
 import { LoginPage } from './auth/pages/LoginPage';
+import './auth/pages/AuthPages.css';
 import { RegistroPage } from './auth/pages/RegistroPage';
 import { ActivacionPage } from './auth/pages/ActivacionPage';
 import { ReenviarPage } from './auth/pages/ReenviarPage';
@@ -50,17 +55,26 @@ import { RecuperarPage } from './auth/pages/RecuperarPage';
 import { RestablecerPage } from './auth/pages/RestablecerPage';
 import { SsoCallbackPage } from './auth/pages/SsoCallbackPage';
 import { CompletarPerfilSsoPage } from './auth/pages/CompletarPerfilSsoPage';
+import { SelectorIdioma } from './shared/design-system/SelectorIdioma';
 
 /* Private pages */
-import { DashboardPage } from './dashboard/pages/DashboardPage';
-import { UsuariosPage } from './usuarios/pages/UsuariosPage';
-import { PerfilPage } from './perfil/pages/PerfilPage';
-import { RolesPage } from './roles/pages/RolesPage';
-import { AuditoriaPage } from './auditoria/pages/AuditoriaPage';
-import { ConfigurationPage } from './configuration/pages/ConfigurationPage';
-import { ActivosBiologicosPage } from './biological_assets/pages/ActivosBiologicosPage';
-import { TelemetryPage } from './telemetry/pages/TelemetryPage';
-import { PrediccionPage } from './prediction/pages/PrediccionPage';
+// Cada modulo de negocio se descarga al entrar a su ruta, no en el arranque:
+// todo en un solo bundle eran 2.9 MB antes de poder ver el login.
+const DashboardPage = lazy(() => import('./dashboard/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const UsuariosPage = lazy(() => import('./usuarios/pages/UsuariosPage').then((m) => ({ default: m.UsuariosPage })));
+const PerfilPage = lazy(() => import('./perfil/pages/PerfilPage').then((m) => ({ default: m.PerfilPage })));
+const RolesPage = lazy(() => import('./roles/pages/RolesPage').then((m) => ({ default: m.RolesPage })));
+const AuditoriaPage = lazy(() => import('./auditoria/pages/AuditoriaPage').then((m) => ({ default: m.AuditoriaPage })));
+const ConfigurationPage = lazy(() => import('./configuration/pages/ConfigurationPage').then((m) => ({ default: m.ConfigurationPage })));
+const ActivosBiologicosPage = lazy(() => import('./biological_assets/pages/ActivosBiologicosPage').then((m) => ({ default: m.ActivosBiologicosPage })));
+const TelemetryPage = lazy(() => import('./telemetry/pages/TelemetryPage').then((m) => ({ default: m.TelemetryPage })));
+const PrediccionPage = lazy(() => import('./prediction/pages/PrediccionPage').then((m) => ({ default: m.PrediccionPage })));
+
+/** Mientras llega el chunk de la pagina: anuncio para el lector, sin salto visual. */
+function CargandoPagina() {
+  const { t } = useT('common');
+  return <p role="status" className="ds-sr-only">{t('estados.cargando')}</p>;
+}
 
 setupIonicReact();
 
@@ -92,7 +106,7 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   useTemaSesion(token);
   // Sin service worker con Background Sync en este proyecto: la cola de escrituras
   // offline se reintenta aquí en cuanto vuelve el evento `online` del navegador.
-  useSyncOnReconnect();
+  useSyncOnReconnect(token !== null);
   const { sinFinca, sinEspecies } = useContexto();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -136,7 +150,17 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', overflowX: 'hidden' }}>
-      <Sidebar open={sidebarOpen} onLogout={handleLogout} />
+      {/* WCAG 2.4.1: saltar el menú lateral (TC-DIS-117). Foco por código: con
+          <base href="/"> el ancla relativa navegaba a /#contenido-principal (#271). */}
+      <a
+        href="#contenido-principal"
+        className="ds-skip-link"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('contenido-principal')?.focus();
+        }}
+      >{t('saltar_al_contenido')}</a>
+      <Sidebar open={sidebarOpen} onLogout={handleLogout} onNavigate={() => setSidebarOpen(false)} />
       {sidebarOpen && (
         <div
           // Por encima de la AppBar (z-100) y por debajo del drawer (z-150):
@@ -172,10 +196,15 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
           onRefresh={() => void notificaciones.cargar()}
           onLoadMore={() => void notificaciones.cargarMas()}
           onMarkAsRead={notificaciones.marcarComoLeida}
+          onMarkAllAsRead={notificaciones.marcarTodasLeidas}
+          markingAll={notificaciones.marcandoTodas}
           onEnablePush={push.requestNotificationPermission}
           onDismissError={notificaciones.clearError}
         />
         <main
+          id="contenido-principal"
+          // 0 y no -1: el main tiene scroll propio y debe poder desplazarse con teclado (WCAG 2.1.1).
+          tabIndex={0}
           style={{
             flex: 1,
             marginTop: 'var(--topbar-h)',
@@ -210,19 +239,51 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   );
 }
 
+// INC-M02-51-G44: el refresh al recargar fallo por el servidor o la red. La
+// cookie sigue vigente, asi que mandar al login sin decir nada perderia la sesion.
+function SesionNoRestaurada() {
+  const { reintentarRestaurarSesion } = useAuth();
+  const { t } = useT('auth');
+  return (
+    <div className="auth-bg">
+      <SelectorIdioma />
+      <div className="auth-card">
+        <Alert
+          variant="error"
+          title={t('sesion_no_restaurada.titulo')}
+          description={t('sesion_no_restaurada.descripcion')}
+          className="auth-alert"
+        />
+        <Button type="button" variant="primary" size="lg" fullWidth onClick={reintentarRestaurarSesion}>
+          {t('sesion_no_restaurada.reintentar')}
+        </Button>
+        <div className="auth-links">
+          <Link to="/login" className="auth-link">{t('sesion_no_restaurada.ir_al_login')}</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PrivateRoute({ path, component: Component }: { path: string; component: React.ComponentType }) {
-  const { token, perfilIncompleto, isBootstrapping } = useAuth();
+  const { token, sesionOffline, perfilIncompleto, isBootstrapping, errorRestaurandoSesion } = useAuth();
+  const conSesion = token !== null || sesionOffline;
   return (
     <Route
       path={path}
       render={() => {
         if (isBootstrapping) return null;
-        if (!token) return <Redirect to="/login" />;
+        if (!conSesion && errorRestaurandoSesion) return <SesionNoRestaurada />;
+        if (!conSesion) return <Redirect to="/login" />;
         if (perfilIncompleto === null) return null;
         if (perfilIncompleto) return <Redirect to="/sso/completar-perfil" />;
         return (
           <AppShell operativa={RUTAS_CON_BLOQUEO_SIN_FINCA.includes(path)}>
-            <Component />
+            <LimiteDeError>
+              <Suspense fallback={<CargandoPagina />}>
+                <Component />
+              </Suspense>
+            </LimiteDeError>
           </AppShell>
         );
       }}
@@ -239,17 +300,27 @@ function AuthedRoute({
   exact?: boolean;
   component: React.ComponentType;
 }) {
-  const { token, isBootstrapping } = useAuth();
+  const { token, isBootstrapping, errorRestaurandoSesion } = useAuth();
   return (
     <Route
       path={path}
       exact={exact}
       render={() => {
         if (isBootstrapping) return null;
+        if (!token && errorRestaurandoSesion) return <SesionNoRestaurada />;
         return token ? <Component /> : <Redirect to="/login" />;
       }}
     />
   );
+}
+
+// "/" es el start_url del manifest: la PWA instalada siempre abre aquí. Redirigir
+// a /login sin mirar la sesión mandaba al login a quien tenía la cookie de refresco
+// vigente, y sin red ni siquiera llegaba a usar la sesión offline guardada.
+function RutaRaiz() {
+  const { token, sesionOffline, isBootstrapping } = useAuth();
+  if (isBootstrapping) return null;
+  return <Redirect to={token || sesionOffline ? '/dashboard' : '/login'} />;
 }
 
 function AppRoutes() {
@@ -279,9 +350,7 @@ function AppRoutes() {
       <PrivateRoute path="/prediccion" component={PrediccionPage} />
 
       {/* Default */}
-      <Route exact path="/">
-        <Redirect to="/login" />
-      </Route>
+      <Route exact path="/" component={RutaRaiz} />
     </IonRouterOutlet>
   );
 }
@@ -294,6 +363,7 @@ const App: React.FC = () => (
         <IonReactRouter>
           <AppRoutes />
         </IonReactRouter>
+        <ToastHost />
       </ContextoProvider>
     </AuthProvider>
   </IonApp>

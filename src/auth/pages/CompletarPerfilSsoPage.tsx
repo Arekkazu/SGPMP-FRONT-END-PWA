@@ -8,6 +8,7 @@ import { Select } from '../../shared/design-system/Select';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import './AuthPages.css';
+import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
 
 const NAME_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 
@@ -60,6 +61,7 @@ export function CompletarPerfilSsoPage() {
   if (loading) {
     return (
       <div className="auth-bg">
+        <SelectorIdioma />
         <div className="auth-card auth-center">
           <div className="auth-success-icon" style={{ background: 'var(--sem-info-bg)' }} aria-hidden="true">
             <Loader2 size={28} color="var(--sem-info)" className="spin" />
@@ -74,6 +76,7 @@ export function CompletarPerfilSsoPage() {
   if (loadError || !perfil) {
     return (
       <div className="auth-bg">
+        <SelectorIdioma />
         <div className="auth-card auth-center">
           <Alert
             variant="error"
@@ -89,6 +92,7 @@ export function CompletarPerfilSsoPage() {
 
   return (
     <div className="auth-bg">
+      <SelectorIdioma />
       <div className="auth-card">
         <div className="auth-logo" aria-hidden="true">
           <UserCog size={26} color="white" strokeWidth={1.5} />

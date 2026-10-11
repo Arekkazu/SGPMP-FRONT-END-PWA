@@ -1,3 +1,5 @@
+import type { TipoModelo } from '../prediction/types';
+
 // =====================================================================
 // Especies
 // =====================================================================
@@ -8,17 +10,27 @@ export interface EspecieResponse {
   es_activo: boolean;
   fecha_creacion: string;
   fecha_actualizacion: string | null;
+  /** RFC-009: familia de modelo de IA de la especie; RF-20 exige que el modelo del área coincida. */
+  tipo_modelo?: TipoModelo | null;
+  /** RF-36: límite de densidad del lote; null = sin configurar (el registro de lotes falla). Decimal → texto. */
+  densidad_maxima_por_especie?: number | string | null;
+  /** #115 (RF-15): solo en cliente — true mientras la creación offline que lo generó
+   *  sigue en syncQueue. No lo emite el backend. */
+  pendienteSync?: boolean;
 }
 
 export interface RegistrarEspecieDTO {
   nombre: string;
   descripcion?: string;
+  tipo_modelo?: TipoModelo | null;
 }
 
 export interface EditarEspecieDTO {
   nombre: string;
   descripcion?: string;
-  fecha_actualizacion: string;
+  tipo_modelo?: TipoModelo | null;
+  /** Concurrencia optimista: el valor del último GET; null si nunca se editó (#231). */
+  fecha_actualizacion: string | null;
 }
 
 // =====================================================================
@@ -81,6 +93,9 @@ export interface InfraestructuraResponse {
   descripcion_infraestructura: string | null;
   es_activo: boolean;
   fecha_actualizacion: string | null;
+  /** RF-20 v1.1 (RFC-009). null en áreas registradas antes del cambio. */
+  especie_id: number | null;
+  tipo_modelo_asignado: TipoModelo | null;
 }
 
 export interface RegistrarInfraestructuraDTO {
@@ -89,6 +104,9 @@ export interface RegistrarInfraestructuraDTO {
   superficie: number;
   finca_id: number;
   descripcion_infraestructura?: string;
+  especie_id: number;
+  /** Debe coincidir con la familia de modelo de la especie (422 si no). */
+  tipo_modelo_asignado?: TipoModelo | null;
 }
 
 export interface EditarInfraestructuraDTO extends RegistrarInfraestructuraDTO {
@@ -103,15 +121,57 @@ export interface DispositivoIotResponse {
   serial: string;
   descripcion: string;
   id_infraestructura: number;
+  id_tipo_dispositivo: number;
   es_activo: boolean;
   fecha_creacion: string;
+  /** RF-21: Gateway Edge que lo atiende (N:1). null: es un Edge o no tiene uno. */
+  id_dispositivo_gateway: number | null;
+  /** RF-21 v2.0 (RFC-011): solo cámaras; null para sensores. */
+  resolucion: string | null;
+  fps: number | null;
+  area_cobertura_m2: number | null;
 }
 
 export interface RegistrarDispositivoIotDTO {
   serial: string;
   descripcion: string;
   id_infraestructura: number;
+  id_tipo_dispositivo: number;
   es_activo?: boolean;
+  id_dispositivo_gateway?: number | null;
+  /** Obligatorios si el tipo es CAMARA; el backend los ignora para un SENSOR. */
+  resolucion?: string;
+  fps?: number;
+  area_cobertura_m2?: number;
+}
+
+/** Tipo de la computadora de borde del sitio: atiende N dispositivos y es lo
+ *  único que se conecta al broker MQTT (el "Gateway IoT" de M03). */
+export const TIPO_GATEWAY_EDGE = 'GATEWAY_EDGE';
+
+export interface TipoDispositivoIotResponse {
+  id_tipo_dispositivo: number;
+  nombre: string;
+  /** RF-21 v2.0 (RFC-011): la categoría es del tipo, no del dispositivo. */
+  categoria: 'SENSOR' | 'CAMARA';
+}
+
+// RF-23 / TC-M09-250/251: credencial MQTT del Gateway Edge. Cubre su serial y
+// los de los dispositivos que lo apuntan. `password` llega una sola vez
+// (respuesta del POST) y nunca se persiste.
+export interface CredencialMqttResponse {
+  usuario: string;
+  password: string;
+  seriales: string[];
+}
+
+export interface EstadoCredencialMqttResponse {
+  /** false: sin credencial propia (todavía usa la compartida). */
+  emitida: boolean;
+  habilitada: boolean;
+  conectada: boolean;
+  usuario: string | null;
+  seriales: string[];
 }
 
 // =====================================================================
@@ -142,11 +202,14 @@ export interface RegistrarSensorDTO {
 // =====================================================================
 // Configuración Remota IoT (202 Accepted)
 // =====================================================================
+// RF-23 v1.1: un SENSOR trae frecuencia_captura + intervalo_transmision (fps
+// null); una CAMARA trae solo fps (los otros dos null).
 export interface ConfiguracionRemotaResponse {
   id_configuracion_remota: number;
   id_dispositivo_iot: number;
-  frecuencia_captura: number;
-  intervalo_transmision: number;
+  frecuencia_captura: number | null;
+  intervalo_transmision: number | null;
+  fps: number | null;
   estado: string;
   id_usuario: number | null;
   fecha_creacion: string | null;
@@ -154,10 +217,9 @@ export interface ConfiguracionRemotaResponse {
   mensaje: string | null;
 }
 
-export interface ConfigurarRemotamenteDTO {
-  frecuencia_captura: number;
-  intervalo_transmision: number;
-}
+export type ConfigurarRemotamenteDTO =
+  | { frecuencia_captura: number; intervalo_transmision: number }
+  | { fps: number };
 
 // =====================================================================
 // Sensores — Asociación a Áreas
@@ -172,6 +234,22 @@ export interface SensorAreaResponse {
   fecha_asociacion: string;
   fecha_finalizacion: string | null;
   id_usuario: number;
+}
+
+/** #290: asociación sensor→activo que una reasignación de área dejó SUPERADA. */
+export interface AsociacionActivoSuperada {
+  id_asociacion_activo_sensor: number;
+  id_activo_biologico: number | null;
+  /** `ambiental` o `poblacional` — las `directa` no se cierran al reasignar. */
+  tipo: string;
+}
+
+/**
+ * Respuesta de `POST /sensores/{id}/asociar`. Opcional porque un backend
+ * anterior a #290 no lo envía.
+ */
+export interface AsociarSensorAreaResponse extends SensorAreaResponse {
+  asociaciones_activo_superadas?: AsociacionActivoSuperada[];
 }
 
 export interface AsociarSensorAreaDTO {
@@ -201,6 +279,8 @@ export interface RegistrarCalibracionDTO {
   valor_referencia: number;
   fecha_calibracion: string;
   observaciones?: string;
+  // RF-24 v2.0 (#510): obligatorio en el backend; este endpoint solo acepta SENSOR.
+  modo_calibracion: 'SENSOR';
 }
 
 // =====================================================================
@@ -286,7 +366,18 @@ export interface MetricaProduccionResponse {
   id_especie: number | null;
   es_activo: boolean;
   fecha_actualizacion: string | null;
+  /** RFC-004 (#258). valor_min/valor_max llegan como texto ("10.0000"): son Decimal. */
+  tipo_dato: TipoDatoMetrica;
+  es_obligatorio: boolean;
+  valor_min: number | string | null;
+  valor_max: number | string | null;
 }
+
+/** RF-16 v1.2 (RFC-004): lo elige el usuario; el backend ya no lo infiere de `tipo_medicion`. */
+export type TipoDatoMetrica = 'NUMERICO' | 'ENTERO' | 'TEXTO' | 'BOOLEANO';
+
+/** RFC-004: el rango solo aplica a estos tipos (el backend rechaza el resto con 400). */
+export const TIPOS_DATO_CON_RANGO: TipoDatoMetrica[] = ['NUMERICO', 'ENTERO'];
 
 export interface RegistrarMetricaDTO {
   id_especie: number;
@@ -294,6 +385,10 @@ export interface RegistrarMetricaDTO {
   unidad_medida: string;
   tipo_medicion: TipoMedicion;
   aplica_a_tipo_activo?: TipoActivo;
+  tipo_dato: TipoDatoMetrica;
+  es_obligatorio: boolean;
+  valor_min: number | null;
+  valor_max: number | null;
 }
 
 export interface EditarMetricaDTO {
@@ -301,6 +396,10 @@ export interface EditarMetricaDTO {
   unidad_medida: string;
   tipo_medicion: TipoMedicion;
   aplica_a_tipo_activo: TipoActivo;
+  tipo_dato: TipoDatoMetrica;
+  es_obligatorio: boolean;
+  valor_min: number | null;
+  valor_max: number | null;
   fecha_actualizacion?: string;
 }
 

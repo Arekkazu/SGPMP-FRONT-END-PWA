@@ -1,30 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
+import React, { useEffect, useId, useState } from 'react';
+import { formatearFecha, formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
-import { Plus, RefreshCw, Pencil, PowerOff, X, ChevronLeft, Warehouse } from 'lucide-react';
+import { Plus, RefreshCw, Pencil, PowerOff, Power, X, ChevronLeft, Warehouse } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
+import { OptionCard } from '../../shared/design-system/OptionCard';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
 import { useInfraestructuras } from '../hooks/useInfraestructuras';
 import { useTiposArea } from '../hooks/useTiposArea';
+import { useEspecies } from '../hooks/useEspecies';
+import { TIPO_MODELO_LABEL, type TipoModelo } from '../../prediction/types';
 import type { FincaResponse, InfraestructuraResponse, RegistrarInfraestructuraDTO, EditarInfraestructuraDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { iconoTipoArea } from '../iconos';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 
 // ── Constants ────────────────────────────────────────────────────────────────
-
-// Mapeo best-effort para los 5 tipos por defecto; un tipo agregado por el
-// Administrador desde el catálogo (RF-20) no tiene emoji y usa el fallback.
-const TIPO_EMOJI: Record<string, string> = {
-  'Galpón': '🏚️',
-  'Corral': '🐄',
-  'Potrero': '🌿',
-  'Estanque': '🐟',
-  'Invernadero': '🌱',
-};
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
@@ -32,7 +30,7 @@ const TH: React.CSSProperties = {
   padding: 'var(--s2) var(--s4)',
   textAlign: 'left',
   fontFamily: 'var(--font-mono)',
-  fontSize: '10px',
+  fontSize: 'var(--fs-label-sm)',
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
@@ -43,19 +41,6 @@ const TH: React.CSSProperties = {
 const TD: React.CSSProperties = {
   padding: 'var(--s3) var(--s4)',
   borderBottom: '1px solid var(--surface-border)',
-};
-
-const SELECT_STYLE: React.CSSProperties = {
-  width: '100%',
-  padding: 'var(--s3)',
-  borderRadius: 'var(--r-md)',
-  border: '1.5px solid var(--surface-border)',
-  background: 'var(--surface-card)',
-  color: 'var(--text-primary)',
-  fontSize: '14px',
-  fontFamily: 'var(--font-sans)',
-  outline: 'none',
-  cursor: 'pointer',
 };
 
 function formatFecha(iso: string | null | undefined): string {
@@ -69,24 +54,29 @@ function formatFecha(iso: string | null | undefined): string {
 
 // ── Confirm modal ─────────────────────────────────────────────────────────────
 
-function ConfirmModal({ titulo, mensaje, confirmLabel, saving, onCancel, onConfirm }: {
+function ConfirmModal({ titulo, mensaje, confirmLabel, saving, onCancel, onConfirm, variante = 'danger' }: {
   titulo: string; mensaje: string; confirmLabel: string;
-  saving: boolean; onCancel: () => void; onConfirm: () => void;
+  saving: boolean; onCancel: () => void; onConfirm: () => void; variante?: 'danger' | 'primary';
 }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
+  // Sin aria-labelledby el lector anuncia "diálogo" sin decir cuál (WCAG 4.1.2, TC-DIS-52).
+  const tituloId = useId();
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 'var(--s4)' }}
+      aria-labelledby={tituloId}
+      className="ds-modal" style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo}</h2>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
+        <h2 id={tituloId} style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo}</h2>
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
           <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('infraestructurasection.cancelar')}</Button>
-          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{confirmLabel}</Button>
+          <Button variant={variante} size="md" loading={saving} onClick={onConfirm}>{confirmLabel}</Button>
         </div>
       </div>
     </div>
@@ -100,7 +90,14 @@ interface FormValues {
   nombre_infraestructura: string;
   superficie: number;
   descripcion_infraestructura: string;
+  // RF-20 v1.1 (RFC-009): los <select> devuelven string; se convierte al enviar.
+  especie_id: string;
+  tipo_modelo_asignado: TipoModelo | '';
 }
+
+const CAMPOS = [
+  'tipo_area', 'nombre_infraestructura', 'superficie', 'descripcion_infraestructura', 'especie_id', 'tipo_modelo_asignado',
+] as const;
 
 interface InfraModalProps {
   infra: InfraestructuraResponse | null;
@@ -113,12 +110,34 @@ interface InfraModalProps {
 }
 
 function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onEditar }: InfraModalProps) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = infra !== null;
   const titulo = modoEditar ? `Editar área — ${infra.nombre_infraestructura}` : 'Registrar área productiva';
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({ mode: 'onBlur' });
+  const { register, handleSubmit, reset, watch, setError, setValue, formState: { errors } } = useForm<FormValues>({ mode: 'onBlur' });
   const desc = watch('descripcion_infraestructura', '');
+  const alertaGeneral = useErroresDeServidor(saveError, setError, CAMPOS);
+
+  // RF-20 v1.1: el modelo de IA del área solo puede ser la familia de su especie.
+  const { especies, cargar: cargarEspecies } = useEspecies();
+  useEffect(() => { cargarEspecies(false); }, [cargarEspecies]);
+  const especiesCargadas = especies.length > 0;
+  const especiesOpciones = especies.filter((e) => (e.es_activo && !e.pendienteSync) || e.id_especie === infra?.especie_id);
+  const especieId = watch('especie_id');
+  const tipoModelo = watch('tipo_modelo_asignado');
+  const familia = especies.find((e) => String(e.id_especie) === especieId)?.tipo_modelo ?? null;
+  const modelosOpciones = [...new Set([familia, infra?.tipo_modelo_asignado].filter((m): m is TipoModelo => !!m))];
+  useEffect(() => {
+    if (tipoModelo && familia && tipoModelo !== familia) setValue('tipo_modelo_asignado', '');
+  }, [familia]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // #189: el nombre duplicado (409) se anuncia en su campo, no en una alerta suelta.
+  useEffect(() => {
+    if (saveError?.status === 409) {
+      setError('nombre_infraestructura', { message: saveError.message }, { shouldFocus: true });
+    }
+  }, [saveError, setError]);
 
   const { tipos, cargar: cargarTipos } = useTiposArea();
   useEffect(() => { cargarTipos(true); }, [cargarTipos]);
@@ -130,11 +149,20 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
         nombre_infraestructura: infra.nombre_infraestructura,
         superficie: infra.superficie,
         descripcion_infraestructura: infra.descripcion_infraestructura ?? '',
+        especie_id: infra.especie_id ? String(infra.especie_id) : '',
+        tipo_modelo_asignado: infra.tipo_modelo_asignado ?? '',
       });
     } else {
-      reset({ tipo_area: tipos[0]?.nombre ?? '', nombre_infraestructura: '', superficie: 0, descripcion_infraestructura: '' });
+      reset({
+        tipo_area: tipos[0]?.nombre ?? '', nombre_infraestructura: '', superficie: 0, descripcion_infraestructura: '',
+        especie_id: '', tipo_modelo_asignado: '',
+      });
     }
-  }, [infra, reset, tipos]);
+    // Si las especies llegan después del área, el <select> aún no tenía la opción
+    // y quedaba en "Selecciona una especie"; se repite el reset una vez, con las
+    // opciones ya pintadas (TC-DIS-53). Booleano y no el arreglo: así no depende
+    // de que la referencia de `especies` sea estable.
+  }, [infra, reset, tipos, especiesCargadas]);
 
   const onSubmit = async (data: FormValues) => {
     const payload = {
@@ -143,6 +171,8 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
       superficie: Number(data.superficie),
       finca_id: finca.id_finca,
       descripcion_infraestructura: data.descripcion_infraestructura.trim() || undefined,
+      especie_id: Number(data.especie_id),
+      tipo_modelo_asignado: data.tipo_modelo_asignado || null,
     };
     let ok: boolean;
     if (modoEditar && infra) {
@@ -155,13 +185,15 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="infra-modal-title"
-      style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', padding: 'var(--s6) var(--s4)', overflowY: 'auto' }}
+      className="ds-modal"
+      style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', width: '100%', maxWidth: 520, boxShadow: 'var(--shadow-lg)', marginBottom: 'var(--s6)' }}>
+      <div className="ds-modal__panel">
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)' }}>
           <h2 id="infra-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
@@ -173,7 +205,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
         </div>
 
         <div style={{ padding: 'var(--s6)' }}>
-          {saveError && (
+          {saveError && saveError.status !== 409 && alertaGeneral && (
             <Alert
               variant="error"
               title={saveError.status === 412 ? t('infraestructurasection.conflicto_de_edicion') : t('infraestructurasection.error_al_guardar')}
@@ -185,7 +217,7 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
           )}
 
           {/* Finca readonly */}
-          <div style={{ padding: 'var(--s3) var(--s4)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', marginBottom: 'var(--s5)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+          <div style={{ padding: 'var(--s3) var(--s4)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', marginBottom: 'var(--s5)', fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('infraestructurasection.finca')}</span>
             <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: 'var(--s1)' }}>{finca.nombre}</div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -196,22 +228,41 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             {/* Tipo de área */}
             <div style={{ marginBottom: 'var(--s4)' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.tipo_de_area')}<span aria-hidden="true" style={{ color: 'var(--sem-error)' }}>*</span>
-              </label>
-              <select
-                aria-required="true"
-                style={SELECT_STYLE}
+              <Select
+                id="infra-tipo-area"
+                label={t('infraestructurasection.tipo_de_area')}
+                required
+                error={errors.tipo_area?.message}
                 {...register('tipo_area', { required: t('infraestructurasection.selecciona_un_tipo_de_area') })}
               >
                 {tipos.map((tipo) => (
-                  <option key={tipo.id_tipo_area} value={tipo.nombre}>{TIPO_EMOJI[tipo.nombre] ?? '🏗️'} {tipo.nombre}</option>
+                  <option key={tipo.id_tipo_area} value={tipo.nombre}>{tipo.nombre}</option>
                 ))}
-              </select>
-              {errors.tipo_area && (
-                <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
-                  {errors.tipo_area.message}
-                </p>
-              )}
+              </Select>
+            </div>
+
+            {/* Especie y modelo de IA (RF-20 v1.1) */}
+            <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
+              <Select
+                id="infra-especie"
+                label={t('infraestructurasection.especie')}
+                required
+                error={errors.especie_id?.message}
+                {...register('especie_id', { required: t('infraestructurasection.selecciona_una_especie') })}
+              >
+                <option value="">{t('infraestructurasection.selecciona_una_especie')}</option>
+                {especiesOpciones.map((e) => <option key={e.id_especie} value={e.id_especie}>{e.nombre}</option>)}
+              </Select>
+              <Select
+                id="infra-modelo"
+                label={t('infraestructurasection.modelo_de_ia')}
+                hint={especieId && !familia ? t('infraestructurasection.la_especie_no_tiene_familia_de_modelo') : undefined}
+                error={errors.tipo_modelo_asignado?.message}
+                {...register('tipo_modelo_asignado')}
+              >
+                <option value="">{t('infraestructurasection.sin_modelo_asignado')}</option>
+                {modelosOpciones.map((m) => <option key={m} value={m}>{TIPO_MODELO_LABEL[m]}</option>)}
+              </Select>
             </div>
 
             {/* Nombre */}
@@ -249,11 +300,14 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
 
             {/* Descripción */}
             <div style={{ marginBottom: 'var(--s5)' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.descripcion')}<span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span>
+              <label htmlFor="infra-descripcion" style={{ display: 'block', fontSize: 'var(--fs-body-md)', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('infraestructurasection.descripcion')}<span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <textarea
+                  id="infra-descripcion"
                   rows={3}
+                  aria-invalid={!!errors.descripcion_infraestructura}
+                  aria-describedby={errors.descripcion_infraestructura ? 'infra-descripcion-err' : undefined}
                   placeholder={t('infraestructurasection.descripcion_breve_del_area')}
                   style={{
                     width: '100%',
@@ -277,14 +331,14 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
                 </span>
               </div>
               {errors.descripcion_infraestructura && (
-                <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
+                <p id="infra-descripcion-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>
                   {errors.descripcion_infraestructura.message}
                 </p>
               )}
             </div>
 
             {modoEditar && infra && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s5)', padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s5)', padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 <div>
                   <div style={{ fontWeight: 600, marginBottom: 2 }}>{t('infraestructurasection.actualizado')}</div>
                   <div>{infra.fecha_actualizacion ? formatearFechaHora(infra.fecha_actualizacion) : '—'}</div>
@@ -337,31 +391,10 @@ function FincaSelectorInfra({ fincas, loading, onSelect }: FincaSelectorProps) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--s4)' }}>
       {activas.map((f) => (
-        <button
-          key={f.id_finca}
-          type="button"
-          onClick={() => onSelect(f)}
-          style={{
-            background: 'var(--surface-card)',
-            border: '1.5px solid var(--surface-border)',
-            borderRadius: 'var(--r-lg)',
-            padding: 'var(--s4)',
-            textAlign: 'left',
-            cursor: 'pointer',
-            transition: 'border-color 0.15s, box-shadow 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)';
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)';
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
-          }}
-        >
+        <OptionCard key={f.id_finca} onClick={() => onSelect(f)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
             <Warehouse size={16} color="var(--brand-500)" aria-hidden />
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
+            <span style={{ fontSize: 'var(--fs-body-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
             {f.ubicacion.departamento}, {f.ubicacion.municipio}
@@ -369,7 +402,7 @@ function FincaSelectorInfra({ fincas, loading, onSelect }: FincaSelectorProps) {
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
             {f.tamano_h > 0 ? `${f.tamano_h} ha` : '—'}
           </div>
-        </button>
+        </OptionCard>
       ))}
     </div>
   );
@@ -381,7 +414,8 @@ type ModalState =
   | { tipo: 'ninguno' }
   | { tipo: 'crear' }
   | { tipo: 'editar'; infra: InfraestructuraResponse }
-  | { tipo: 'desactivar'; infra: InfraestructuraResponse };
+  | { tipo: 'desactivar'; infra: InfraestructuraResponse }
+  | { tipo: 'reactivar'; infra: InfraestructuraResponse };
 
 export function InfraestructuraSection() {
   const { t } = useT('configuration');
@@ -391,7 +425,7 @@ export function InfraestructuraSection() {
   const puedeDesact = usePermission(10, 4);
 
   const { fincas, loading: loadingFincas, cargar: cargarFincas } = useFincas();
-  const { infraestructuras, loading, saving, error, saveError, cargar, registrar, editar, desactivar } = useInfraestructuras();
+  const { infraestructuras, loading, saving, error, saveError, cargar, registrar, editar, desactivar, reactivar } = useInfraestructuras();
 
   const [fincaSeleccionada, setFincaSeleccionada] = useState<FincaResponse | null>(null);
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
@@ -405,10 +439,10 @@ export function InfraestructuraSection() {
 
   const cerrar = () => setModal({ tipo: 'ninguno' });
 
-  const handleDesactivar = async (infra: InfraestructuraResponse) => {
+  const handleCambiarEstado = async (infra: InfraestructuraResponse, accion: typeof desactivar) => {
     setAccionError(null);
-    const ok = await desactivar(infra.id_infraestructura);
-    if (!ok) setAccionError(saveError?.message ?? 'Error al desactivar.');
+    const ok = await accion(infra.id_infraestructura);
+    if (!ok) setAccionError(saveError?.message ?? 'Error al cambiar el estado del área.');
     else cerrar();
   };
 
@@ -416,7 +450,7 @@ export function InfraestructuraSection() {
   const inactivas = infraestructuras.length - activas;
 
   return (
-    <div style={{ marginTop: 'var(--s7)', borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
+    <div>
       {/* Section heading */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
         <Warehouse size={18} color="var(--brand-500)" aria-hidden />
@@ -428,7 +462,7 @@ export function InfraestructuraSection() {
 
       {!fincaSeleccionada ? (
         <>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('infraestructurasection.selecciona_una_finca_para_gestionar_sus')}</p>
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('infraestructurasection.selecciona_una_finca_para_gestionar_sus')}</p>
           <FincaSelectorInfra fincas={fincas} loading={loadingFincas} onSelect={setFincaSeleccionada} />
         </>
       ) : (
@@ -443,7 +477,7 @@ export function InfraestructuraSection() {
                 aria-label={t('infraestructurasection.cambiar_finca')}
               >
                 <ChevronLeft size={16} aria-hidden />{t('infraestructurasection.cambiar_finca')}</Button>
-              <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>·</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-body-md)' }}>·</span>
               <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{fincaSeleccionada.nombre}</span>
               {!loading && (
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -486,75 +520,89 @@ export function InfraestructuraSection() {
             </div>
           ) : (
             <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <ScrollRegion label={t('infraestructurasection.infraestructura_productiva')}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-                      {['#', 'Tipo', 'Nombre', 'Superficie', 'Estado', 'Actualización', 'Acciones'].map((h) => (
+                      {['#', 'Tipo', 'Nombre', 'Superficie', 'Modelo IA', 'Estado', 'Actualización', 'Acciones'].map((h) => (
                         <th key={h} style={TH}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {infraestructuras.map((infra) => (
-                      <tr key={infra.id_infraestructura} style={{ background: 'var(--surface-card)' }}>
-                        <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                          #{infra.id_infraestructura}
-                        </td>
-                        <td style={TD}>
-                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                            {TIPO_EMOJI[infra.tipo_area] ?? '🏗️'} {infra.tipo_area}
-                          </span>
-                        </td>
-                        <td style={TD}>
-                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{infra.nombre_infraestructura}</div>
-                          {infra.descripcion_infraestructura && (
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {infra.descripcion_infraestructura}
+                    {infraestructuras.map((infra) => {
+                      // Componente en variable y no React.createElement con tipo dinamico: el
+                      // icono sale de un mapa cerrado de Lucide (Bearer CWE-79).
+                      const IconoArea = iconoTipoArea(infra.tipo_area);
+                      return (
+                        <tr key={infra.id_infraestructura} style={{ background: 'var(--surface-card)' }}>
+                          <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
+                            #{infra.id_infraestructura}
+                          </td>
+                          <td style={TD}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                              <IconoArea size={16} strokeWidth={1.5} aria-hidden />
+                              {infra.tipo_area}
+                            </span>
+                          </td>
+                          <td style={TD}>
+                            <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{infra.nombre_infraestructura}</div>
+                            {infra.descripcion_infraestructura && (
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {infra.descripcion_infraestructura}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ ...TD, whiteSpace: 'nowrap' }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-mono-md)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                              {formatearNumero(infra.superficie)}
+                            </span>
+                            <span style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-muted)', marginLeft: 4 }}>m²</span>
+                          </td>
+                          <td style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            {infra.tipo_modelo_asignado ? TIPO_MODELO_LABEL[infra.tipo_modelo_asignado] : '—'}
+                          </td>
+                          <td style={TD}>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)',
+                              padding: '2px var(--s2)', borderRadius: 'var(--r-full)',
+                              fontSize: '11px', fontWeight: 600,
+                              background: infra.es_activo ? 'var(--sem-success-bg)' : 'var(--surface-hover)',
+                              color: infra.es_activo ? 'var(--sem-success)' : 'var(--text-muted)',
+                              border: `1px solid ${infra.es_activo ? 'var(--sem-success-border)' : 'var(--surface-border)'}`,
+                            }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: infra.es_activo ? 'var(--sem-success)' : 'var(--text-muted)' }} />
+                              {infra.es_activo ? 'Activa' : 'Inactiva'}
+                            </span>
+                          </td>
+                          <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                            {formatFecha(infra.fecha_actualizacion)}
+                          </td>
+                          <td style={TD}>
+                            <div style={{ display: 'flex', gap: 'var(--s2)' }}>
+                              {puedeEditar && online && infra.es_activo && (
+                                <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'editar', infra })} aria-label={`Editar ${infra.nombre_infraestructura}`}>
+                                  <Pencil size={15} aria-hidden />
+                                </Button>
+                              )}
+                              {puedeDesact && infra.es_activo && online && (
+                                <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'desactivar', infra })} aria-label={`Desactivar ${infra.nombre_infraestructura}`}>
+                                  <PowerOff size={15} aria-hidden style={{ color: 'var(--sem-error)' }} />
+                                </Button>
+                              )}
+                              {puedeDesact && !infra.es_activo && online && (
+                                <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'reactivar', infra })} aria-label={`${t('infraestructurasection.reactivar')} ${infra.nombre_infraestructura}`}>
+                                  <Power size={15} aria-hidden style={{ color: 'var(--sem-success)' }} />
+                                </Button>
+                              )}
                             </div>
-                          )}
-                        </td>
-                        <td style={{ ...TD, whiteSpace: 'nowrap' }}>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                            {formatearFechaHora(infra.superficie)}
-                          </span>
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 4 }}>m²</span>
-                        </td>
-                        <td style={TD}>
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)',
-                            padding: '2px var(--s2)', borderRadius: 'var(--r-full)',
-                            fontSize: '11px', fontWeight: 600,
-                            background: infra.es_activo ? 'var(--sem-success-bg)' : 'var(--surface-hover)',
-                            color: infra.es_activo ? 'var(--sem-success)' : 'var(--text-muted)',
-                            border: `1px solid ${infra.es_activo ? 'var(--sem-success-border)' : 'var(--surface-border)'}`,
-                          }}>
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: infra.es_activo ? 'var(--sem-success)' : 'var(--text-muted)' }} />
-                            {infra.es_activo ? 'Activa' : 'Inactiva'}
-                          </span>
-                        </td>
-                        <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                          {formatFecha(infra.fecha_actualizacion)}
-                        </td>
-                        <td style={TD}>
-                          <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-                            {puedeEditar && online && infra.es_activo && (
-                              <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'editar', infra })} aria-label={`Editar ${infra.nombre_infraestructura}`}>
-                                <Pencil size={15} aria-hidden />
-                              </Button>
-                            )}
-                            {puedeDesact && infra.es_activo && online && (
-                              <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'desactivar', infra })} aria-label={`Desactivar ${infra.nombre_infraestructura}`}>
-                                <PowerOff size={15} aria-hidden style={{ color: 'var(--sem-error)' }} />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
-              </div>
+              </ScrollRegion>
             </div>
           )}
 
@@ -577,7 +625,18 @@ export function InfraestructuraSection() {
               confirmLabel="Desactivar"
               saving={saving}
               onCancel={cerrar}
-              onConfirm={() => handleDesactivar(modal.infra)}
+              onConfirm={() => handleCambiarEstado(modal.infra, desactivar)}
+            />
+          )}
+          {modal.tipo === 'reactivar' && (
+            <ConfirmModal
+              titulo={t('infraestructurasection.reactivar_area')}
+              mensaje={t('infraestructurasection.confirmar_reactivar', { nombre: modal.infra.nombre_infraestructura })}
+              confirmLabel={t('infraestructurasection.reactivar')}
+              variante="primary"
+              saving={saving}
+              onCancel={cerrar}
+              onConfirm={() => handleCambiarEstado(modal.infra, reactivar)}
             />
           )}
         </>

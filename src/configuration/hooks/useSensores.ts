@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { sensoresDispositivoApi, sensorAreaApi } from '../api/iotApi';
-import type { SensorResponse, AsociarSensorAreaDTO, RegistrarSensorDTO } from '../types';
+import type { SensorResponse, AsociarSensorAreaDTO, AsociarSensorAreaResponse, RegistrarSensorDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 export function useSensores() {
@@ -24,15 +24,16 @@ export function useSensores() {
     }
   }, []);
 
-  const asociar = useCallback(async (idSensor: number, dto: AsociarSensorAreaDTO): Promise<boolean> => {
+  // Devuelve la respuesta (null si falló): la de una reasignación trae las
+  // asociaciones sensor→activo que quedaron superadas (#290).
+  const asociar = useCallback(async (idSensor: number, dto: AsociarSensorAreaDTO): Promise<AsociarSensorAreaResponse | null> => {
     setSaving(true);
     setSaveError(null);
     try {
-      await sensorAreaApi.asociar(idSensor, dto);
-      return true;
+      return await sensorAreaApi.asociar(idSensor, dto);
     } catch (e) {
       setSaveError(e as ApiError);
-      return false;
+      return null;
     } finally {
       setSaving(false);
     }

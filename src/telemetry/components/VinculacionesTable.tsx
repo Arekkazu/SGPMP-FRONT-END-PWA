@@ -5,6 +5,7 @@ import { EstadoVinculacionPill } from './EstadoVinculacionPill';
 import { MecanismoPill } from './MecanismoPill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
 import type { VinculacionLecturaSchema } from '../types';
+import { alActivarConTeclado } from '../../shared/lib/teclado';
 
 const COLS = ['ID Vinc.', 'Lectura', 'Modelo manejo', 'Activo', 'Infra', 'Mecanismo', 'Estado', ''];
 
@@ -46,10 +47,10 @@ export function VinculacionesTable({ items, loading, onAbrir }: Props) {
           {items.map((v) => (
             <tr
               key={v.id_vinculacion_lectura}
+              className="ds-fila-accion"
+              tabIndex={0}
               onClick={() => onAbrir(v)}
-              style={{ background: 'var(--surface-card)', cursor: 'pointer' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-card)')}
+              onKeyDown={alActivarConTeclado(() => onAbrir(v))}
             >
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 600 }}>#{v.id_vinculacion_lectura}</td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>#{v.id_telemetria}</td>

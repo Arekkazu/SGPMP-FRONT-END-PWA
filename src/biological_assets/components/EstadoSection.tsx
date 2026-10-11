@@ -60,7 +60,7 @@ export function EstadoSection({ idActivo, estadoActual, identificador, onChanged
     <div style={CARD}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--s4)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('estadosection.estado_actual')}</span>
+          <span style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)' }}>{t('estadosection.estado_actual')}</span>
           <EstadoPill estado={estadoActual} size="md" />
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
@@ -76,7 +76,7 @@ export function EstadoSection({ idActivo, estadoActual, identificador, onChanged
       </div>
 
       {bloqueado && (
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 'var(--s4) 0 0' }}>
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', margin: 'var(--s4) 0 0' }}>
           El activo está {estadoActual?.toLowerCase()}. No admite cierre de ciclo
           {(estadoActual ?? '').toUpperCase() === 'BAJA' ? ' ni más transiciones (estado terminal)' : ''}.
         </p>

@@ -4,12 +4,14 @@ import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useCiclosBiologicos } from '../hooks/useCiclosBiologicos';
 import type { CicloBiologicoResponse } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface Props {
   idEspecie: number;
@@ -70,6 +72,7 @@ function CicloModal({
   onRegistrar: (dto: import('../types').RegistrarCicloDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarCicloDTO) => Promise<boolean>;
 }) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = ciclo !== null;
   const {
@@ -107,13 +110,14 @@ function CicloModal({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="ciclo-modal-title"
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 480, boxShadow: 'var(--shadow-lg)' }}>
+      <div className="ds-modal__panel" style={{ padding: 'var(--s6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
           <h2 id="ciclo-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {modoEditar ? `Editar ciclo — ${ciclo!.nombre}` : 'Nuevo ciclo biológico'}
@@ -189,15 +193,17 @@ function CicloModal({
 }
 
 function ConfirmDesactivar({ ciclo, saving, onCancel, onConfirm }: { ciclo: CicloBiologicoResponse; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('ciclossection.confirmar_desactivacion')}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>
           ¿Deseas desactivar el ciclo "{ciclo.nombre}"? Los datos históricos permanecerán accesibles.
@@ -281,7 +287,7 @@ export function CiclosSection({ idEspecie }: Props) {
       ) : ciclos.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('ciclossection.no_hay_ciclos_registrados_para_esta_especie')}</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <ScrollRegion label={t('ciclossection.ciclos_biologicos')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
@@ -310,7 +316,7 @@ export function CiclosSection({ idEspecie }: Props) {
                         {c.es_activo ? 'Activo' : 'Inactivo'}
                       </span>
                       {c.pendienteSync && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: 'var(--sem-warning-bg, #fff8e6)', color: '#b06000', border: '1px solid #e8c840' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: 'var(--sem-warning-bg)', color: 'var(--sem-warning)', border: '1px solid var(--sem-warning-border)' }}>
                           {t('ciclossection.pendiente_de_sincronizacion')}
                         </span>
                       )}
@@ -335,7 +341,7 @@ export function CiclosSection({ idEspecie }: Props) {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       )}
 
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (

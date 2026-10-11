@@ -65,3 +65,30 @@ export function diasAtrasLocal(dias: number): string {
   fecha.setDate(fecha.getDate() - dias);
   return hoyLocal(fecha);
 }
+
+/**
+ * `<input type="date">` para un campo que el backend compara contra su día **UTC**
+ * (`fecha_baja`, RF-45): si el usuario eligió su hoy local, viaja el hoy UTC.
+ *
+ * El backend guarda "hoy" con la hora real y cualquier otro día como el fin de ese
+ * día UTC. En UTC-5, de 19:00 a 24:00 el hoy local ya es "ayer" en UTC: la baja
+ * quedaba a las 18:59 locales, antes de un activo creado esa misma noche, y el
+ * trigger de coherencia la rechazaba con 400 FECHA_INVALIDA (#130).
+ */
+export function diaParaBackendUtc(valor: string, ahora: Date = new Date()): string {
+  return valor === hoyLocal(ahora) ? ahora.toISOString().slice(0, 10) : valor;
+}
+
+/**
+ * Instante UTC para un `<input type="date">` que el backend guarda como
+ * `timestamptz` y valida contra el registro del activo y el último evento
+ * (eventos de M02, cambio de fase, asociación de sensor).
+ *
+ * `new Date('2026-10-07').toISOString()` —lo que se enviaba— es la medianoche
+ * UTC, es decir las 19:00 del *día anterior* en UTC-5: un activo creado hoy
+ * rechazaba cualquier evento fechado hoy (#289). Hoy viaja como el instante
+ * actual; otro día, como el final de ese día local.
+ */
+export function instanteParaEvento(valor: string, ahora: Date = new Date()): string | undefined {
+  return valor === hoyLocal(ahora) ? ahora.toISOString() : finDelDiaUtc(valor);
+}

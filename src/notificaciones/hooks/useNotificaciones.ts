@@ -233,6 +233,24 @@ export function useNotificaciones(idUsuario: number | null) {
     }
   }, [idUsuario, notificaciones]);
 
+  // T-08: con más de 100 avisos de "inicio de sesión" no había forma de vaciar
+  // la bandeja salvo uno por uno. Se recarga después para dejar caché y
+  // contador como los tiene el servidor.
+  const [marcandoTodas, setMarcandoTodas] = useState(false);
+  const marcarTodasLeidas = useCallback(async (): Promise<void> => {
+    if (idUsuario == null) return;
+    setMarcandoTodas(true);
+    setError(null);
+    try {
+      await notificacionesApi.marcarTodasLeidas();
+      await cargar(true);
+    } catch (requestError) {
+      setError(comoApiError(requestError));
+    } finally {
+      setMarcandoTodas(false);
+    }
+  }, [idUsuario, cargar]);
+
   const clearError = useCallback(() => setError(null), []);
 
   return {
@@ -248,6 +266,8 @@ export function useNotificaciones(idUsuario: number | null) {
     cargar,
     cargarMas,
     marcarComoLeida,
+    marcarTodasLeidas,
+    marcandoTodas,
     clearError,
   };
 }

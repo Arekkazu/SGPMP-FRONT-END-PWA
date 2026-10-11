@@ -7,6 +7,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { DispositivoIotResponse, RegistrarSensorDTO, CategoriaSensor } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 const CATEGORIAS: CategoriaSensor[] = ['HUMEDAD', 'TEMPERATURA', 'OXIGENO', 'PH', 'AMONIACO', 'SALINIDAD', 'LUMINOSIDAD'];
 
@@ -37,6 +38,7 @@ interface Props {
 }
 
 export function SensorModal({ dispositivo, saving, saveError, onClose, onRegistrar }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const {
     register,
@@ -59,22 +61,14 @@ export function SensorModal({ dispositivo, saving, saveError, onClose, onRegistr
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="sensor-modal-title"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1010,
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.5)',
-        padding: 'var(--s6) var(--s4)', overflowY: 'auto',
-      }}
+      className="ds-modal" style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
-        background: 'var(--surface-card)', borderRadius: 'var(--r-xl)',
-        border: '1px solid var(--surface-border)', width: '100%', maxWidth: 480,
-        boxShadow: 'var(--shadow-lg)', marginBottom: 'var(--s6)',
-      }}>
+      <div className="ds-modal__panel">
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>

@@ -40,7 +40,9 @@ export function BienvenidaSinFinca() {
       <Link
         to="/perfil"
         style={{
-          color: 'var(--brand-500)',
+          // #134: brand-500 sobre --surface-bg da 4.35:1, por debajo del 4.5:1
+          // de WCAG 1.4.3 AA. brand-600 da 6.29:1.
+          color: 'var(--brand-600)',
           fontWeight: 600,
           fontSize: 'var(--fs-label-md)',
           textDecoration: 'none',

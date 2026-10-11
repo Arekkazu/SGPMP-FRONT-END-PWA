@@ -14,8 +14,7 @@ export function useInfraestructuras() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await infraestructurasApi.listarPorFinca(fincaId, soloActivas);
-      const data: InfraestructuraResponse[] = Array.isArray(raw) ? raw : (raw as any)?.items ?? [];
+      const data = await infraestructurasApi.listarPorFinca(fincaId, soloActivas);
       setInfraestructuras(data);
     } catch (e) {
       setError(e as ApiError);
@@ -54,11 +53,11 @@ export function useInfraestructuras() {
     }
   }, []);
 
-  const desactivar = useCallback(async (id: number): Promise<boolean> => {
+  const cambiarEstado = useCallback(async (id: number, accion: 'desactivar' | 'reactivar'): Promise<boolean> => {
     setSaving(true);
     setSaveError(null);
     try {
-      const actualizada = await infraestructurasApi.desactivar(id);
+      const actualizada = await infraestructurasApi[accion](id);
       setInfraestructuras((prev) => prev.map((i) => (i.id_infraestructura === id ? actualizada : i)));
       return true;
     } catch (e) {
@@ -69,5 +68,8 @@ export function useInfraestructuras() {
     }
   }, []);
 
-  return { infraestructuras, loading, saving, error, saveError, cargar, registrar, editar, desactivar };
+  const desactivar = useCallback((id: number) => cambiarEstado(id, 'desactivar'), [cambiarEstado]);
+  const reactivar = useCallback((id: number) => cambiarEstado(id, 'reactivar'), [cambiarEstado]);
+
+  return { infraestructuras, loading, saving, error, saveError, cargar, registrar, editar, desactivar, reactivar };
 }

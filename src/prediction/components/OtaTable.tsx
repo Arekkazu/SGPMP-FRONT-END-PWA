@@ -48,7 +48,7 @@ export function OtaTable({ despliegues, loading, onVer }: Props) {
           {despliegues.map((d) => (
             <tr key={d.id_despliegue_ota}>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>#{d.id_despliegue_ota}</td>
-              <td style={TD}>{TIPO_MODELO_LABEL[d.tipo_modelo] ?? d.tipo_modelo}</td>
+              <td style={TD}>{TIPO_MODELO_LABEL[d.tipo_modelo] ?? d.tipo_modelo}{d.componente && ` · ${d.componente}`}</td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>v{d.id_version_modelo}</td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>#{d.id_dispositivo_iot}</td>
               <td style={TD}>{d.modo_distribucion || '—'}</td>

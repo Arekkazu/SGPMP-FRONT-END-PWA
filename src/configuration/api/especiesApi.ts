@@ -5,8 +5,9 @@ const BASE = '/configuracion/especies';
 
 export const especiesApi = {
   async listar(soloActivas = false): Promise<EspecieResponse[]> {
-    const res = await http.get<EspecieResponse[]>(BASE, { params: { solo_activas: soloActivas } });
-    return res.data;
+    // El backend responde { total, items }, no un arreglo.
+    const res = await http.get<{ items: EspecieResponse[] }>(BASE, { params: { solo_activas: soloActivas } });
+    return res.data.items;
   },
 
   async registrar(dto: RegistrarEspecieDTO): Promise<EspecieResponse> {

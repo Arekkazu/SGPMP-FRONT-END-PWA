@@ -16,6 +16,7 @@ export function useIndicadores(idActivo: number) {
         const res = await consultasApi.indicadores(idActivo, filtros);
         setData(res);
       } catch (e) {
+        setData(null);  // TC-DIS-140: no dejar a la vista el resultado de la consulta anterior
         setError(e as ApiError);
       } finally {
         setLoading(false);

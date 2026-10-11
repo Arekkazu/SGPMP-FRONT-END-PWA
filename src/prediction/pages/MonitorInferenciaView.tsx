@@ -94,7 +94,7 @@ export function MonitorInferenciaView() {
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('monitorinferenciaview.estado_del_motor_de_prediccion_sanitaria')}</p>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         <DatosSimuladosBanner detalle="El motor de inferencia es del equipo IoT/IA y aún no expone endpoints; esta vista usa datos de ejemplo" />
 
         <EstadoMotor />

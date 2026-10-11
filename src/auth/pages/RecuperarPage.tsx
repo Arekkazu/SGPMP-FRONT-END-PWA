@@ -8,6 +8,7 @@ import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import './AuthPages.css';
+import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
 
 interface FormFields {
   correo_electronico: string;
@@ -29,13 +30,13 @@ export function RecuperarPage() {
   if (sent) {
     return (
       <div className="auth-bg">
+        <SelectorIdioma />
         <div className="auth-card auth-center">
           <div className="auth-success-icon">
             <CheckCircle size={28} color="var(--sem-success)" aria-hidden />
           </div>
           <h1 className="auth-title">{t('recuperarpage.correo_enviado')}</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>{t('recuperarpage.si_el_correo')}<strong>{getValues('correo_electronico')}</strong> está registrado, recibirás
-            un enlace para restablecer tu contraseña. Revisa también la carpeta de spam.
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>{t('recuperarpage.si_el_correo')}{' '}<strong>{getValues('correo_electronico')}</strong>{' '}{t('recuperarpage.esta_registrado_recibiras_enlace')}
           </p>
           <Link to="/login" className="auth-link">{t('recuperarpage.volver_al_inicio_de_sesion')}</Link>
         </div>
@@ -45,6 +46,7 @@ export function RecuperarPage() {
 
   return (
     <div className="auth-bg">
+      <SelectorIdioma />
       <div className="auth-card">
         <div className="auth-logo" aria-hidden="true">
           <Mail size={24} color="white" />

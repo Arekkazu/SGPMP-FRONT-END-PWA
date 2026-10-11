@@ -3,12 +3,14 @@ import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Plus, RefreshCw, Pencil, PowerOff, RotateCcw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
 import { FincaModal } from './FincaModal';
 import type { FincaResponse } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 type ModalState =
   | { tipo: 'ninguno' }
@@ -21,7 +23,7 @@ const TH: React.CSSProperties = {
   padding: 'var(--s2) var(--s4)',
   textAlign: 'left',
   fontFamily: 'var(--font-mono)',
-  fontSize: '10px',
+  fontSize: 'var(--fs-label-sm)',
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
@@ -48,15 +50,17 @@ function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, o
   confirmVariant: 'danger' | 'primary'; saving: boolean;
   onCancel: () => void; onConfirm: () => void;
 }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
@@ -124,7 +128,7 @@ export function FincasTable() {
               placeholder={t('fincastable.buscar_por_nombre')}
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              style={{ padding: 'var(--s2) var(--s3)', paddingLeft: 'var(--s7)', borderRadius: 'var(--r-md)', border: '1.5px solid var(--surface-border)', background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: '13px', fontFamily: 'var(--font-sans)', outline: 'none', width: 200 }}
+              style={{ padding: 'var(--s2) var(--s3)', paddingLeft: 'var(--s7)', borderRadius: 'var(--r-md)', border: '1.5px solid var(--surface-border)', background: 'var(--surface-card)', color: 'var(--text-primary)', fontSize: 'var(--fs-body-md)', fontFamily: 'var(--font-sans)', outline: 'none', width: 200 }}
               aria-label={t('fincastable.buscar_fincas')}
             />
             <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
@@ -165,8 +169,8 @@ export function FincasTable() {
               {activas} activas · {inactivas} inactivas
             </span>
           </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <ScrollRegion label={t('fincastable.fincas_registradas')}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
                   {['#', 'Nombre', 'Ubicación', 'Tamaño', 'Productor', 'Estado', 'Actualización', 'Acciones'].map((h) => (
@@ -179,8 +183,8 @@ export function FincasTable() {
                   <tr key={f.id_finca} style={{ background: 'var(--surface-card)' }}>
                     <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>#{f.id_finca}</td>
                     <td style={TD}>
-                      <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>{f.nombre}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+                      <div style={{ fontWeight: 700, fontSize: 'var(--fs-body-md)', color: 'var(--text-primary)' }}>{f.nombre}</div>
+                      <div style={{ fontSize: 'var(--fs-mono-md)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                         vereda: {f.ubicacion.vereda || '—'}
                       </div>
                     </td>
@@ -188,13 +192,13 @@ export function FincasTable() {
                       <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)' }}>
                         {f.ubicacion.departamento}, {f.ubicacion.municipio}
                       </div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+                      <div style={{ fontSize: 'var(--fs-mono-md)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                         {Number(f.ubicacion.latitud).toFixed(6)}, {Number(f.ubicacion.longitud).toFixed(6)}
                       </div>
                     </td>
                     <td style={{ ...TD, whiteSpace: 'nowrap' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{f.tamano_h}</span>
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 4 }}>ha</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-mono-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{f.tamano_h}</span>
+                      <span style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-muted)', marginLeft: 4 }}>ha</span>
                     </td>
                     <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
                       {f.id_usuario != null ? `#${f.id_usuario}` : '—'}
@@ -231,7 +235,7 @@ export function FincasTable() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollRegion>
         </div>
       )}
 

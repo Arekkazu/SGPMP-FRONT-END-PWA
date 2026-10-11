@@ -245,3 +245,102 @@ describe('useAuditoria.exportarTodos', () => {
     expect(result.current.exportError).toBeNull();
   });
 });
+
+describe('useAuditoria: ancla temporal de la paginación (INC-M01-57-G71)', () => {
+  const ANCLA = '2026-09-26T18:00:00.123456+00:00';
+  const ANCLA_NUEVA = '2026-09-26T18:05:00.654321+00:00';
+
+  const pagina = (fecha_hasta?: string) => ({
+    total: 100, pagina: 1, tamano: 20, items: [], fecha_hasta,
+  });
+
+  const llamadas = () => api.consultar.mock.calls;
+
+  async function cargarPrimeraPagina() {
+    const hook = renderHook(() => useAuditoria());
+    await act(async () => { await hook.result.current.cargar(); });
+    return hook;
+  }
+
+  it('la primera carga no envía ancla: la fija el backend', async () => {
+    api.consultar.mockResolvedValue(pagina(ANCLA));
+
+    await cargarPrimeraPagina();
+
+    expect(llamadas()[0]).toHaveLength(1);
+  });
+
+  it('al cambiar de página reenvía el ancla que devolvió la primera, tal cual', async () => {
+    api.consultar.mockResolvedValue(pagina(ANCLA));
+    const { result } = await cargarPrimeraPagina();
+
+    act(() => result.current.actualizarFiltros({ pagina: 2 }));
+    await waitFor(() => expect(api.consultar).toHaveBeenCalledTimes(2));
+
+    expect(api.consultar).toHaveBeenLastCalledWith(expect.objectContaining({ pagina: 2 }), ANCLA);
+
+    // y en la siguiente navegación sigue siendo la misma, no una nueva
+    act(() => result.current.actualizarFiltros({ pagina: 3 }));
+    await waitFor(() => expect(api.consultar).toHaveBeenCalledTimes(3));
+    expect(api.consultar).toHaveBeenLastCalledWith(expect.objectContaining({ pagina: 3 }), ANCLA);
+  });
+
+  it('un cambio de filtros vuelve a la página 1 y toma un ancla nueva', async () => {
+    api.consultar
+      .mockResolvedValueOnce(pagina(ANCLA))
+      .mockResolvedValueOnce(pagina(ANCLA))
+      .mockResolvedValue(pagina(ANCLA_NUEVA));
+    const { result } = await cargarPrimeraPagina();
+
+    act(() => result.current.actualizarFiltros({ pagina: 2 }));
+    await waitFor(() => expect(api.consultar).toHaveBeenCalledTimes(2));
+
+    act(() => result.current.actualizarFiltros({ tipo_evento: 1 }));
+    await waitFor(() => expect(api.consultar).toHaveBeenCalledTimes(3));
+    expect(llamadas()[2][0]).toMatchObject({ pagina: 1, tipo_evento: 1 });
+    expect(llamadas()[2]).toHaveLength(1); // sin ancla: es una consulta nueva
+
+    act(() => result.current.actualizarFiltros({ pagina: 2 }));
+    await waitFor(() => expect(api.consultar).toHaveBeenCalledTimes(4));
+    expect(api.consultar).toHaveBeenLastCalledWith(expect.objectContaining({ pagina: 2 }), ANCLA_NUEVA);
+  });
+
+  it('refrescar toma un ancla nueva para ver lo que llegó desde entonces', async () => {
+    api.consultar
+      .mockResolvedValueOnce(pagina(ANCLA))
+      .mockResolvedValue(pagina(ANCLA_NUEVA));
+    const { result } = await cargarPrimeraPagina();
+
+    await act(async () => { await result.current.cargar(); });
+
+    expect(llamadas()[1]).toHaveLength(1);
+
+    act(() => result.current.actualizarFiltros({ pagina: 2 }));
+    await waitFor(() => expect(api.consultar).toHaveBeenCalledTimes(3));
+    expect(api.consultar).toHaveBeenLastCalledWith(expect.objectContaining({ pagina: 2 }), ANCLA_NUEVA);
+  });
+
+  it('si el backend no devuelve ancla, paginar sigue funcionando sin ella', async () => {
+    api.consultar.mockResolvedValue(pagina(undefined));
+    const { result } = await cargarPrimeraPagina();
+
+    act(() => result.current.actualizarFiltros({ pagina: 2 }));
+    await waitFor(() => expect(api.consultar).toHaveBeenCalledTimes(2));
+
+    expect(llamadas()[1]).toHaveLength(1);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('`cargar` es estable: navegar no la recrea ni provoca un segundo pedido de la página', async () => {
+    // La página la usa en un efecto `[puedeVer, cargar]`; si cambiara con los
+    // filtros, cada navegación pediría la misma página otra vez con un ancla nueva.
+    api.consultar.mockResolvedValue(pagina(ANCLA));
+    const { result } = await cargarPrimeraPagina();
+    const cargarInicial = result.current.cargar;
+
+    act(() => result.current.actualizarFiltros({ pagina: 2 }));
+    await waitFor(() => expect(result.current.filtros.pagina).toBe(2));
+
+    expect(result.current.cargar).toBe(cargarInicial);
+  });
+});

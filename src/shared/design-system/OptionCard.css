@@ -1,0 +1,64 @@
+.ds-option {
+  font: inherit;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  background: var(--surface-card);
+  border: 1.5px solid var(--surface-border);
+  min-height: var(--s9);
+  transition:
+    border-color 0.15s ease-out,
+    background-color 0.15s ease-out,
+    box-shadow 0.15s ease-out;
+}
+
+.ds-option--card {
+  display: block;
+  width: 100%;
+  padding: var(--s4);
+  border-radius: var(--r-lg);
+}
+
+.ds-option--pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: var(--s2) var(--s4);
+  border-radius: var(--r-full);
+  font-size: var(--fs-label-md);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ds-option:hover {
+  border-color: var(--brand-400);
+  background: var(--brand-50);
+  box-shadow: var(--shadow-sm);
+}
+
+/* El teclado recibe la misma senal que el mouse, mas el anillo de foco. */
+.ds-option:focus-visible {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.ds-option[aria-pressed='true'] {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+/* Contenedor del icono de dominio dentro de una tarjeta. */
+.ds-option__icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-full);
+  background: var(--brand-100);
+  color: var(--brand-600);
+}

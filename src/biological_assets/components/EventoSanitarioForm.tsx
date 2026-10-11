@@ -4,8 +4,9 @@ import { useForm } from 'react-hook-form';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { hoyLocal, instanteParaEvento } from '../../shared/lib/fecha';
 import { ModalShell } from './ModalShell';
-import { FormSelect, FormTextArea, FORM_COL } from './formControls';
+import { AnuncioCampos, FormSelect, FormTextArea, FORM_COL } from './formControls';
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarEventoSanitarioDTO, TipoEventoSanitario } from '../types';
 
@@ -36,7 +37,7 @@ export function EventoSanitarioForm({ patologias, patologiasLoading, saving, sav
   const { t } = useT('biologicalAssets');
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { tipo: 'DIAGNOSTICO', solicitar_estado: '' },
+    defaultValues: { tipo: 'DIAGNOSTICO', solicitar_estado: '', fecha: hoyLocal() },
   });
 
   const tipo = watch('tipo');
@@ -45,11 +46,18 @@ export function EventoSanitarioForm({ patologias, patologiasLoading, saving, sav
   const esDiagnostico = tipo === 'DIAGNOSTICO';
   const esControl = tipo === 'CONTROL_PREVENTIVO';
   const permiteSolicitarEstado = tipo === 'TRATAMIENTO' || tipo === 'CONTROL_PREVENTIVO';
+  const camposVisibles = [
+    esDiagnostico && t('eventosanitarioform.diagnostico'),
+    requiereMedicamento && `${t('eventosanitarioform.medicamento')}, ${t('eventosanitarioform.dosis')}`,
+    esTratamiento && 'Frecuencia, Duración',
+    esControl && t('eventosanitarioform.observaciones'),
+    permiteSolicitarEstado && t('eventosanitarioform.solicitar_cambio_de_estado'),
+  ].filter(Boolean).join(', ');
 
   const submit = async (v: FormValues) => {
     const dto: RegistrarEventoSanitarioDTO = {
       tipo: v.tipo,
-      fecha: v.fecha ? new Date(v.fecha).toISOString() : null,
+      fecha: v.fecha ? instanteParaEvento(v.fecha) : null,
       descripcion: v.descripcion.trim() || null,
     };
     if (esDiagnostico) dto.diagnostico = v.diagnostico.trim();
@@ -80,6 +88,7 @@ export function EventoSanitarioForm({ patologias, patologiasLoading, saving, sav
         />
       )}
       <form onSubmit={handleSubmit(submit)} noValidate>
+        <AnuncioCampos texto={camposVisibles ? `${t('eventosanitarioform.campos_para_el_tipo')}: ${camposVisibles}` : ''} />
         <div style={FORM_COL}>
           <FormSelect label={t('eventosanitarioform.tipo')} required {...register('tipo')}>
             <option value="DIAGNOSTICO">{t('eventosanitarioform.diagnostico')}</option>
@@ -159,7 +168,7 @@ export function EventoSanitarioForm({ patologias, patologiasLoading, saving, sav
             </FormSelect>
           )}
 
-          <Input label={t('eventosanitarioform.fecha')} type="date" {...register('fecha')} />
+          <Input label={t('eventosanitarioform.fecha')} type="date" max={hoyLocal()} {...register('fecha')} />
           <FormTextArea label={t('eventosanitarioform.descripcion')} placeholder={t('eventosanitarioform.opcional')} {...register('descripcion')} />
         </div>
 

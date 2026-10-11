@@ -58,7 +58,7 @@ export function ModelosTable({ modelos, loading, onVer }: Props) {
                   {m.esta_produccion && <BadgeCheck size={14} aria-label={t('modelostable.en_produccion')} style={{ color: 'var(--sem-success)' }} />}
                 </span>
               </td>
-              <td style={TD}>{TIPO_MODELO_LABEL[m.tipo_modelo] ?? m.tipo_modelo}</td>
+              <td style={TD}>{TIPO_MODELO_LABEL[m.tipo_modelo] ?? m.tipo_modelo}{m.componente && ` · ${m.componente}`}</td>
               <td style={TD}><EstadoModeloPill estado={m.estado_version} /></td>
               <td style={{ ...TD, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{fmtPct(m.f1_score)}</td>
               <td style={{ ...TD, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{fmtPct(m.recall_clase_riesgo_alto)}</td>

@@ -94,12 +94,21 @@ describe('ContextoProvider', () => {
   });
 
   it('finca sin especies configuradas se distingue de finca sin asignar', async () => {
-    // Segundo flujo alterno: la finca existe, faltan especies y areas productivas.
-    api.obtener.mockResolvedValue({ ...CONTEXTO, especies_configuradas: [] });
+    // Segundo flujo alterno: la finca existe, faltan especies y areas productivas. El
+    // backend responde 204 sin cuerpo, que la capa API entrega como `null`.
+    api.obtener.mockResolvedValue(null);
     const { result } = renderHook(() => useContexto(), { wrapper: envoltorio });
 
     await waitFor(() => expect(result.current.sinEspecies).toBe(true));
     expect(result.current.sinFinca).toBe(false);
+  });
+
+  it('finca con areas pero sin especies no es el flujo alterno: el backend responde 200', async () => {
+    api.obtener.mockResolvedValue({ ...CONTEXTO, especies_configuradas: [] });
+    const { result } = renderHook(() => useContexto(), { wrapper: envoltorio });
+
+    await waitFor(() => expect(result.current.contexto).not.toBeNull());
+    expect(result.current.sinEspecies).toBe(false);
   });
 
   it('un fallo de carga no afirma que el usuario no tenga finca', async () => {

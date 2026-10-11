@@ -6,6 +6,7 @@ import { FlagChips } from './FlagChips';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
 import { horaCaptura } from '../lib/sensorEscala';
 import type { TelemetriaCalidadSchema } from '../types';
+import { alActivarConTeclado } from '../../shared/lib/teclado';
 
 const COLS = ['Lectura', 'Sensor', 'Índice', 'Clasificación', 'Apto IA', 'Apto NIC41', 'Flags', 'Evaluada', ''];
 
@@ -53,10 +54,10 @@ export function CalidadTable({ items, loading, onAbrir }: Props) {
           {items.map((c) => (
             <tr
               key={c.id_evaluacion}
+              className="ds-fila-accion"
+              tabIndex={0}
               onClick={() => onAbrir(c)}
-              style={{ background: 'var(--surface-card)', cursor: 'pointer' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-card)')}
+              onKeyDown={alActivarConTeclado(() => onAbrir(c))}
             >
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 600 }}>#{c.id_telemetria}</td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>#{c.id_sensor}</td>

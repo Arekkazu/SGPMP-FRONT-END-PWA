@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { fasesApi } from '../api/fasesApi';
-import type { GestionFaseResponse, CambiarFaseDTO } from '../types';
+import type { CicloProductivoAsignable, GestionFaseResponse, CambiarFaseDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 export function useFases(idActivo: number) {
@@ -9,6 +9,8 @@ export function useFases(idActivo: number) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
+  const [ciclos, setCiclos] = useState<CicloProductivoAsignable[]>([]);
+  const [ciclosLoading, setCiclosLoading] = useState(false);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -20,6 +22,19 @@ export function useFases(idActivo: number) {
       setError(e as ApiError);
     } finally {
       setLoading(false);
+    }
+  }, [idActivo]);
+
+  // #288: los ciclos salen del activo (filtrados por su especie), no de los
+  // ciclos biológicos de M09, cuyo ID no es un id_ciclo_productiva.
+  const cargarCiclos = useCallback(async () => {
+    setCiclosLoading(true);
+    try {
+      setCiclos(await fasesApi.ciclosProductivos(idActivo));
+    } catch (e) {
+      setSaveError(e as ApiError);
+    } finally {
+      setCiclosLoading(false);
     }
   }, [idActivo]);
 
@@ -40,5 +55,5 @@ export function useFases(idActivo: number) {
     [idActivo]
   );
 
-  return { fases, loading, saving, error, saveError, cargar, cambiarFase, setSaveError };
+  return { fases, loading, saving, error, saveError, cargar, cambiarFase, setSaveError, ciclos, ciclosLoading, cargarCiclos };
 }

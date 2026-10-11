@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { AxiosError } from 'axios';
-import { mapToApiError } from './errors';
+import { bloqueoEnHoraLocal, mapToApiError } from './errors';
+import { formatearHora } from '../i18n/formato';
 
 function axiosError(status: number, data: unknown): AxiosError {
   return { response: { status, data } } as AxiosError;
@@ -25,6 +26,11 @@ describe('mapToApiError', () => {
     );
     expect(err.code).toBe('VAL_ENTRADA');
     expect(err.field).toBe('confirmar_contrasena');
+    // Sin la etiqueta: cada mensaje va debajo de su propio input.
+    expect(err.fields).toEqual([
+      { field: 'confirmar_contrasena', message: 'Campo obligatorio.' },
+      { field: 'numero_identificacion', message: 'Solo dígitos.' },
+    ]);
   });
 
   it('no antepone la etiqueta cuando el campo solo repite el message del backend', () => {
@@ -136,5 +142,27 @@ describe('mapToApiError', () => {
       'You do not have permission to perform this action.'
     );
     await i18n.changeLanguage('es-CO');
+  });
+});
+
+describe('bloqueoEnHoraLocal', () => {
+  const msg = (hora: string) => `Cuenta bloqueada ... nuevamente a las ${hora} (dentro de 15 minutos exactos).`;
+
+  it('lee la hora del backend como UTC y la muestra en la hora del usuario', () => {
+    const texto = bloqueoEnHoraLocal(msg('05:34:25'), new Date('2026-10-11T05:22:00Z'));
+    expect(texto).toContain(formatearHora(new Date('2026-10-11T05:34:25Z')));
+    expect(texto).toContain('13 min');
+  });
+
+  it('pasada la medianoche UTC, la hora es del dia siguiente', () => {
+    const texto = bloqueoEnHoraLocal(msg('00:05:00'), new Date('2026-10-11T23:50:00Z'));
+    expect(texto).toContain(formatearHora(new Date('2026-10-12T00:05:00Z')));
+    expect(texto).toContain('15 min');
+  });
+
+  it('sin hora reconocible deja el mensaje del backend', () => {
+    expect(bloqueoEnHoraLocal('Cuenta bloqueada.')).toBeNull();
+    const err = mapToApiError(axiosError(423, { error_code: 'CUENTA_BLOQUEADA', message: 'Cuenta bloqueada.' }));
+    expect(err.message).toBe('Cuenta bloqueada.');
   });
 });

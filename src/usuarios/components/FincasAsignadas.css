@@ -1,0 +1,109 @@
+/* Fincas de un usuario: buscador + lista de asignadas (UsuarioModal). */
+
+.fincas-asignadas {
+  margin: 0 0 var(--s4);
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.fincas-asignadas__titulo {
+  padding: 0;
+  margin-bottom: var(--s3);
+  font-size: var(--fs-body-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* El botón se alinea con el campo, no con la etiqueta ni con la ayuda de
+   abajo. Para que no dependa de la fuente, aquí se fijan el alto de línea de
+   la etiqueta (18px + 6px de separación de .ds-field = 24px) y un alto común
+   de 44px para el campo y el botón. */
+.fincas-asignadas__buscador {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+
+.fincas-asignadas__buscador .ds-field__label {
+  line-height: 18px;
+}
+
+.fincas-asignadas__buscador .ds-field__input {
+  height: 44px;
+  box-sizing: border-box;
+}
+
+.fincas-asignadas__buscador > button {
+  margin-top: var(--s6);
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.fincas-asignadas__campo {
+  flex: 1;
+  min-width: 0;
+}
+
+.fincas-asignadas__conteo {
+  margin: var(--s3) 0 var(--s2);
+  font-size: var(--fs-body-sm);
+  color: var(--text-secondary);
+}
+
+/* Con muchas fincas la lista crece hacia los lados y, pasado un alto, hace
+   scroll propio: el modal no se estira. */
+.fincas-asignadas__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  max-height: 168px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fincas-asignadas__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  max-width: 100%;
+  padding: var(--s1) var(--s1) var(--s1) var(--s3);
+  border: 1px solid var(--brand-200);
+  border-radius: var(--r-full);
+  background: var(--brand-50);
+  font-size: var(--fs-body-md);
+  color: var(--text-primary);
+}
+
+.fincas-asignadas__item > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 32px de área táctil dentro de la píldora; el foco no depende del color. */
+.fincas-asignadas__quitar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--s7);
+  height: var(--s7);
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--r-full);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.fincas-asignadas__quitar:hover {
+  background: var(--brand-100);
+  color: var(--text-primary);
+}
+
+.fincas-asignadas__quitar:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}

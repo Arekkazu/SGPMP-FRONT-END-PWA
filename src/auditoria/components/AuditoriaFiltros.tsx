@@ -4,6 +4,7 @@ import { Search } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Button } from '../../shared/design-system/Button';
+import { UsuarioCombobox, idDeUsuario } from '../../usuarios/components/UsuarioCombobox';
 import type { FiltrosAuditoria, TipoEvento } from '../types';
 
 
@@ -17,14 +18,21 @@ interface Props {
 
 export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
   const { t } = useT('auditoria');
-  const [idUsuario, setIdUsuario] = useState('');
+  // Usuario por nombre, correo o ID (antes solo un campo numérico de ID).
+  const [usuario, setUsuario] = useState('');
+  const [usuarioError, setUsuarioError] = useState<string>();
   const [tipoEvento, setTipoEvento] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
 
   const buscar = () => {
+    const idUsuario = idDeUsuario(usuario);
+    if (idUsuario === null) {
+      setUsuarioError(t('auditoriafiltros.usuario_no_encontrado'));
+      return;
+    }
     onBuscar({
-      id_usuario: idUsuario ? parseInt(idUsuario, 10) : undefined,
+      id_usuario: idUsuario,
       tipo_evento: tipoEvento ? parseInt(tipoEvento, 10) : undefined,
       fecha_desde: fechaDesde || undefined,
       fecha_hasta: fechaHasta || undefined,
@@ -32,7 +40,8 @@ export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
   };
 
   const limpiar = () => {
-    setIdUsuario('');
+    setUsuario('');
+    setUsuarioError(undefined);
     setTipoEvento('');
     setFechaDesde('');
     setFechaHasta('');
@@ -44,13 +53,14 @@ export function AuditoriaFiltros({ onBuscar, onReset, tiposEvento }: Props) {
       onSubmit={(e) => { e.preventDefault(); buscar(); }}
       style={{ display: 'flex', gap: 'var(--s3)', flexWrap: 'wrap', marginBottom: 'var(--s5)', alignItems: 'flex-end' }}
     >
-      <div style={{ flex: '1 1 130px' }}>
-        <Input
-          label={t('auditoriafiltros.id_de_usuario')}
-          type="number"
-          placeholder="Ej. 42"
-          value={idUsuario}
-          onChange={(e) => setIdUsuario(e.target.value)}
+      <div style={{ flex: '1 1 220px' }}>
+        <UsuarioCombobox
+          id="auditoria-usuario"
+          label={t('auditoriafiltros.usuario')}
+          value={usuario}
+          onChange={(v) => { setUsuario(v); setUsuarioError(undefined); }}
+          hint={t('auditoriafiltros.usuario_hint')}
+          error={usuarioError}
         />
       </div>
       <div style={{ flex: '1 1 180px' }}>

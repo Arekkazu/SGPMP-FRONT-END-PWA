@@ -23,6 +23,10 @@ export interface AuditoriaPaginadaResponse {
   pagina: number;
   tamano: number;
   items: AuditoriaItemResponse[];
+  // Ancla temporal efectiva de la consulta (la enviada o, si no se envió, la que
+  // fijó el backend). Reenviarla al pedir las páginas siguientes mantiene estable
+  // el conjunto y evita registros repetidos entre páginas (INC-M01-57-G71).
+  fecha_hasta?: string;
 }
 
 // El CSV lo genera el backend; `total`/`exportados` vienen en las cabeceras
