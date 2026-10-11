@@ -1,3 +1,9 @@
+## [1.0.0-rc.52](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.51...v1.0.0-rc.52) (2026-10-11)
+
+### Bug Fixes
+
+* **i18n:** selector de idioma compacto en la esquina del acceso ([a778d0f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a778d0f18cf3003d9e27e146fb683199afe15ba5))
+
 ## [1.0.0-rc.51](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.50...v1.0.0-rc.51) (2026-10-11)
 
 ### Features
