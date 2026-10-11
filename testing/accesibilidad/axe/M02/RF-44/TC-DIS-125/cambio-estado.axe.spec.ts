@@ -33,6 +33,10 @@
  * 404 ACTIVO_NO_ENCONTRADO en los 4) en vez de TEST_PRODUCTOR_EMAIL, la cuenta real dueña
  * de #296/288/468/471. Se corrige a TEST_PRODUCTOR_EMAIL/PASSWORD. Confirmado por curl que
  * los 4 activos existen con el estado exacto que este TC espera.
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * Sin cambios de datos ni de criterio. Un GET previo confirmó otra vez los estados (#296
+ * ACTIVO, #288 CERRADO, #468 INACTIVO, #471 BAJA); ningún activo cambia de estado.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
