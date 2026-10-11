@@ -314,6 +314,15 @@ function AuthedRoute({
   );
 }
 
+// "/" es el start_url del manifest: la PWA instalada siempre abre aquí. Redirigir
+// a /login sin mirar la sesión mandaba al login a quien tenía la cookie de refresco
+// vigente, y sin red ni siquiera llegaba a usar la sesión offline guardada.
+function RutaRaiz() {
+  const { token, sesionOffline, isBootstrapping } = useAuth();
+  if (isBootstrapping) return null;
+  return <Redirect to={token || sesionOffline ? '/dashboard' : '/login'} />;
+}
+
 function AppRoutes() {
   return (
     <IonRouterOutlet>
@@ -341,9 +350,7 @@ function AppRoutes() {
       <PrivateRoute path="/prediccion" component={PrediccionPage} />
 
       {/* Default */}
-      <Route exact path="/">
-        <Redirect to="/login" />
-      </Route>
+      <Route exact path="/" component={RutaRaiz} />
     </IonRouterOutlet>
   );
 }
