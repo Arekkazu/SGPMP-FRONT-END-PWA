@@ -1,3 +1,13 @@
+## [1.0.0-rc.53](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.52...v1.0.0-rc.53) (2026-10-11)
+
+### Features
+
+* **sync:** sesion offline hasta recuperar la red con reenvio de la cola ([60afde9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/60afde987fa39366b27e11141c7a9b9569868d89))
+
+### Bug Fixes
+
+* **auth:** detectar la sesion rechazada cuando el refresh devuelve ApiError ([cbb93a8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cbb93a8c8b2b3b8d5eecabf5a1a1b3260e1a353a))
+
 ## [1.0.0-rc.52](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.51...v1.0.0-rc.52) (2026-10-11)
 
 ### Bug Fixes
