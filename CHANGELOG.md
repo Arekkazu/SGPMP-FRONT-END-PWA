@@ -1,3 +1,10 @@
+## [1.0.0-rc.56](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.55...v1.0.0-rc.56) (2026-10-11)
+
+### Bug Fixes
+
+* **auditoria:** alinear los filtros pese al hint del campo usuario ([88c8f58](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/88c8f5838b3f8b90a775c6f83697e7b62b6d778d))
+* **usuarios:** omitir opcionales vacios al guardar y resolver el rol sin id ([5021e23](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5021e23eb65b58e24bda2916ecf079d5fe67dea9)), closes [#undefined](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/undefined)
+
 ## [1.0.0-rc.55](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.54...v1.0.0-rc.55) (2026-10-11)
 
 ### Bug Fixes
