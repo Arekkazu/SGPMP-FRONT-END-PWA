@@ -57,11 +57,17 @@ export function consumirAvisoSesionCerrada(): boolean {
   return avisar;
 }
 
+function statusDe(error: unknown): number | undefined {
+  // El interceptor entrega `ApiError` (`status`); un error crudo de Axios trae `response`.
+  const e = error as { response?: { status?: number }; status?: number } | undefined;
+  return e?.response?.status ?? e?.status;
+}
+
 // INC-M02-51-G44: solo un 401/410 del refresh significa que la sesion murio.
 // Ante un 5xx o un fallo de red el backend hace rollback y la cookie sigue
 // vigente: cerrar la sesion ahi la pierde sin motivo.
 export function refrescoRechazoLaSesion(error: unknown): boolean {
-  const status = (error as AxiosError | undefined)?.response?.status;
+  const status = statusDe(error);
   return status === 401 || status === 410;
 }
 
