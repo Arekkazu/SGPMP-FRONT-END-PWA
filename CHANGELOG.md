@@ -1,3 +1,9 @@
+## [1.0.0-rc.57](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.56...v1.0.0-rc.57) (2026-10-11)
+
+### Bug Fixes
+
+* **usuarios:** no usar la respuesta del PATCH como detalle del usuario ([f8e6301](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f8e6301375b4066221e1d925de94299bd2760ab6))
+
 ## [1.0.0-rc.56](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.55...v1.0.0-rc.56) (2026-10-11)
 
 ### Bug Fixes
