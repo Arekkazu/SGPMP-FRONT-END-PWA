@@ -129,6 +129,7 @@ describe('CatalogoTab — conflicto de sincronización offline (#450, RF-15)', (
 
     await user.click(screen.getByRole('button', { name: /nueva especie/i }));
     await user.type(screen.getByRole('textbox', { name: /^nombre/i }), 'Caprino');
+    await user.selectOptions(screen.getByRole('combobox', { name: /grupo de manejo/i }), 'ESPECIES_MEDIANAS');
     await user.click(screen.getByRole('button', { name: 'Registrar especie' }));
 
     expect(await screen.findByText('Especie 1')).toBeInTheDocument();
