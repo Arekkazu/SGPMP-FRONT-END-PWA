@@ -34,6 +34,14 @@
  * El script leía TEST_USER_EMAIL (cuenta Admin, sin el lote #296) en vez de
  * TEST_PRODUCTOR_EMAIL, la dueña real. Se corrige. El bug de backend en
  * POST /sesiones/refresh para esta cuenta (ver TC-DIS-125) ya estaba corregido.
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * El defecto de etiquetas de la ronda anterior está corregido: las cuatro usan .ds-field__label.
+ * Con las etiquetas igualadas queda a la vista otra diferencia en el mismo formulario, que se
+ * verifica ahora antes de capturar (verificarMarcaObligatorio): el asterisco de "Fecha de baja"
+ * es el del DS (.ds-field__req, --sem-error, rojo) y el de "Tipo de baja" y "Motivo de la baja"
+ * (FormSelect/FormTextarea de formControls.tsx) hereda el color de la etiqueta. DEFECTO: sin
+ * baseline del formulario total ni parcial; la confirmación conserva la suya.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
@@ -149,6 +157,33 @@ async function verificarEtiquetas(page: Page) {
   ).toEqual([]);
 }
 
+/**
+ * DEFECTO si el asterisco de los campos obligatorios no es el del DS (.ds-field__req, color
+ * --sem-error): un mismo formulario no puede marcar los obligatorios con dos estilos.
+ */
+async function verificarMarcaObligatorio(page: Page) {
+  const resultado = await dialogo(page).evaluate((d, campos) => {
+    const ref = document.createElement('span');
+    ref.style.color = 'var(--sem-error)';
+    document.body.appendChild(ref);
+    const error = getComputedStyle(ref).color;
+    ref.remove();
+    return campos.flatMap((campo) => {
+      const label = [...d.querySelectorAll('label')].find((l) => (l.textContent ?? '').replace('*', '').trim() === campo);
+      const marca = label ? [...label.querySelectorAll('span')].find((s) => (s.textContent ?? '').trim() === '*') : undefined;
+      if (!marca) return [];
+      const color = getComputedStyle(marca).color;
+      return [{ campo, color, ok: color === error }];
+    });
+  }, CAMPOS);
+  test.info().annotations.push({ type: 'Asterisco de obligatorio', description: resultado.map((r) => `"${r.campo}" ${r.color}`).join(' · ') });
+  const distintas = resultado.filter((r) => !r.ok);
+  expect.soft(
+    distintas.map((r) => r.campo),
+    `DEFECTO: el asterisco de obligatorio de ${distintas.map((r) => `"${r.campo}"`).join(', ')} no usa el estilo del DS (.ds-field__req, --sem-error) y se ve del color de la etiqueta, mientras el de los demás campos es rojo; en el mismo formulario conviven dos marcas de obligatorio`,
+  ).toEqual([]);
+}
+
 /** DEFECTO si el texto del resumen de confirmación usa un tamaño fuera de la escala del DS v2.0. */
 async function verificarResumen(page: Page) {
   const tamanos = await dialogo(page).locator('dl dt, dl dd').evaluateAll((els) => [...new Set(els.map((e) => parseFloat(getComputedStyle(e).fontSize)))]);
@@ -200,6 +235,7 @@ test.describe('TC-DIS-129 - Consistencia visual - Registro de baja (RF-45)', () 
     await llenar(page, '');
     await verificarBreakpoint(page);
     await verificarEtiquetas(page);
+    await verificarMarcaObligatorio(page);
     await capturar(page, 'registro-baja-total.png');
   });
 
@@ -208,6 +244,7 @@ test.describe('TC-DIS-129 - Consistencia visual - Registro de baja (RF-45)', () 
     await llenar(page, '3');
     await verificarBreakpoint(page);
     await verificarEtiquetas(page);
+    await verificarMarcaObligatorio(page);
     await capturar(page, 'registro-baja-parcial.png');
   });
 
