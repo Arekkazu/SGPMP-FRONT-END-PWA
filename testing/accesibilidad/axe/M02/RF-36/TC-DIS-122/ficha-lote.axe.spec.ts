@@ -31,6 +31,10 @@
  * cuerpo completo entre el envío por Enter y por clic, incluido `fecha` (generado con
  * `new Date().toISOString()` en cada envío) — nunca iba a coincidir al milisegundo. Ahora se
  * compara aparte.
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * El DEFECTO 1.3.1 de la ronda anterior está corregido (commit 2b7b44e): la ficha del lote
+ * presenta los pares etiqueta/valor en <dl>/<dt>/<dd>. Mismo lote #353, sin cambios de criterio.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
