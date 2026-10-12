@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { umbralesApi } from '../api/especiesConfigApi';
 import type { UmbralAmbientalResponse, RegistrarUmbralDTO, EditarUmbralDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { avisarExito } from '../../shared/hooks/useToast';
 
 export function useUmbralesAmbientales() {
   const [umbrales, setUmbrales] = useState<UmbralAmbientalResponse[]>([]);
@@ -29,6 +30,7 @@ export function useUmbralesAmbientales() {
     try {
       const nuevo = await umbralesApi.registrar(dto);
       setUmbrales((prev) => [...prev, nuevo]);
+      avisarExito('registrado');
       return true;
     } catch (e) {
       setSaveError(e as ApiError);
@@ -44,6 +46,7 @@ export function useUmbralesAmbientales() {
     try {
       const actualizado = await umbralesApi.editar(id, dto);
       setUmbrales((prev) => prev.map((u) => (u.id_umbral_ambiental === id ? actualizado : u)));
+      avisarExito('guardado');
       return true;
     } catch (e) {
       setSaveError(e as ApiError);
@@ -59,6 +62,7 @@ export function useUmbralesAmbientales() {
     try {
       const actualizado = await umbralesApi.desactivar(id);
       setUmbrales((prev) => prev.map((u) => (u.id_umbral_ambiental === id ? actualizado : u)));
+      avisarExito('desactivado');
       return true;
     } catch (e) {
       setSaveError(e as ApiError);

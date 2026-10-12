@@ -4,6 +4,8 @@ import { useT } from '../../shared/i18n/useT';
 import { Plus, RefreshCw, Pencil, PowerOff, RotateCcw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+import { usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -105,6 +107,7 @@ export function FincasTable() {
   const fincasFiltradas = fincas.filter((f) =>
     f.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(fincasFiltradas, busqueda);
   const activas   = fincas.filter((f) => f.es_activo).length;
   const inactivas = fincas.length - activas;
 
@@ -179,7 +182,7 @@ export function FincasTable() {
                 </tr>
               </thead>
               <tbody>
-                {fincasFiltradas.map((f) => (
+                {enPagina.map((f) => (
                   <tr key={f.id_finca} style={{ background: 'var(--surface-card)' }}>
                     <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>#{f.id_finca}</td>
                     <td style={TD}>
@@ -237,6 +240,9 @@ export function FincasTable() {
             </table>
           </ScrollRegion>
         </div>
+      )}
+      {!loading && fincasFiltradas.length > 0 && (
+        <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={fincasFiltradas.length} onCambiar={setPagina} />
       )}
 
       {/* Modales */}

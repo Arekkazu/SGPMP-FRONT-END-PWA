@@ -319,7 +319,7 @@ export interface EditarCicloDTO {
   nombre: string;
   descripcion?: string;
   duracion_dias: number;
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 // =====================================================================
@@ -344,7 +344,7 @@ export interface RegistrarPatologiaDTO {
 export interface EditarPatologiaDTO {
   nombre: string;
   descripcion?: string;
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 // =====================================================================
@@ -408,7 +408,7 @@ export interface EditarMetricaDTO {
   es_obligatorio: boolean;
   valor_min: number | null;
   valor_max: number | null;
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 // =====================================================================
@@ -446,7 +446,7 @@ export interface EditarUmbralDTO {
   valor_min: number;
   valor_max: number;
   niveles: NivelAlertaDTO[];
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 /** Catálogo de variables ambientales (`GET /configuracion/variables-ambientales`). */

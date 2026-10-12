@@ -35,6 +35,11 @@ export const ciclosApi = {
     const res = await http.patch<CicloBiologicoResponse>(`/configuracion/ciclos/${id}/desactivar`);
     return res.data;
   },
+
+  async reactivar(id: number): Promise<CicloBiologicoResponse> {
+    const res = await http.patch<CicloBiologicoResponse>(`/configuracion/ciclos/${id}/reactivar`);
+    return res.data;
+  },
 };
 
 export const patologiasApi = {
