@@ -1,3 +1,9 @@
+## [1.0.0-rc.62](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.61...v1.0.0-rc.62) (2026-10-12)
+
+### Bug Fixes
+
+* **sesiones:** coordinar el refresco del token entre pestanas para no disparar el reuso (RF-02) ([a5e77db](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a5e77db07b55785e150cab4e96da640f7a150540))
+
 ## [1.0.0-rc.61](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.60...v1.0.0-rc.61) (2026-10-12)
 
 ### Bug Fixes
