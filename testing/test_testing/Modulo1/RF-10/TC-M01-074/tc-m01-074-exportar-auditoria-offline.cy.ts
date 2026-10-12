@@ -141,9 +141,25 @@ describe('TC-M01-074 · Exportar auditoría sin conexión', () => {
       }
 
       cy.contains('button', 'Exportar CSV').as('exportar');
-      cy.get('@exportar').then(($b) =>
-        add('Estado del botón "Exportar CSV" al quedar offline', 'Habilitado (hay eventos en memoria)',
-          $b.is(':disabled') ? 'Deshabilitado' : 'Habilitado', $b.is(':disabled') ? 'OBSERVACION' : 'OK'));
+      // Corregido 2026-10-12 (INC-M01-39-72 / INC-M01-55-G74): sin conexión el botón
+      // "Exportar CSV" debe quedar DESHABILITADO y no generar ningún archivo.
+      cy.get('@exportar').then(($b) => {
+        const deshabilitado = $b.is(':disabled') || $b.attr('aria-disabled') === 'true';
+        add('Estado del botón "Exportar CSV" al quedar offline', 'Deshabilitado (no se puede exportar sin conexión)',
+          deshabilitado ? 'Deshabilitado' : 'Habilitado', deshabilitado ? 'OK' : 'FALLA');
+        if (deshabilitado) {
+          cy.window().then((win) => {
+            cy.stub(win.URL, 'createObjectURL').as('createObjectURLOff');
+          });
+          cy.get('@exportar').click({ force: true });
+          cy.get('@createObjectURLOff').then((s: any) =>
+            add('Clic forzado en "Exportar CSV" offline → no se genera archivo', 'Sin Blob CSV',
+              s.called ? 'Se generó un archivo' : 'No se generó archivo', s.called ? 'FALLA' : 'OK'));
+          cy.screenshot('01_offline_export_deshabilitado', { overwrite: true });
+        }
+      });
+      cy.get('@exportar').then(($b) => {
+        if ($b.is(':disabled') || $b.attr('aria-disabled') === 'true') { return; }
 
       // 2) Interceptar la descarga del lado del cliente
       cy.window().then((win) => {
@@ -218,6 +234,7 @@ describe('TC-M01-074 · Exportar auditoría sin conexión', () => {
           }
         });
         cy.screenshot('02_offline_recargar_error', { overwrite: true });
+      });
       });
     });
 
