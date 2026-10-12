@@ -21,7 +21,8 @@ export function normalizar(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }
 
-export const POR_PAGINA = 20;
+/** Filas por página en todos los listados de configuración: más se vuelve una lista saturada. */
+export const POR_PAGINA = 15;
 
 /**
  * Paginación en el cliente para listas que el backend entrega completas (y que

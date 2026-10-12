@@ -56,16 +56,16 @@ describe('CatalogoTab — búsqueda y paginación (RF-15)', () => {
     mockEspecies(Array.from({ length: 55 }, (_, i) => especie(i + 1)));
   });
 
-  it('pagina el catálogo a 50 filas y permite avanzar a la siguiente página', async () => {
+  it('pagina el catálogo a 15 filas y permite avanzar a la siguiente página', async () => {
     const user = userEvent.setup();
     render(<CatalogoTab />);
 
     expect(await screen.findByText('Especie 1')).toBeInTheDocument();
-    expect(screen.queryByText('Especie 51')).not.toBeInTheDocument();
+    expect(screen.queryByText('Especie 16')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /siguiente/i }));
 
-    expect(await screen.findByText('Especie 51')).toBeInTheDocument();
+    expect(await screen.findByText('Especie 16')).toBeInTheDocument();
     expect(screen.queryByText('Especie 1')).not.toBeInTheDocument();
   });
 
@@ -125,7 +125,7 @@ describe('CatalogoTab — conflicto de sincronización offline (#450, RF-15)', (
     });
     render(<CatalogoTab />);
     await user.click(await screen.findByRole('button', { name: /siguiente/i }));
-    expect(await screen.findByText('Especie 51')).toBeInTheDocument();
+    expect(await screen.findByText('Especie 16')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /nueva especie/i }));
     await user.type(screen.getByRole('textbox', { name: /^nombre/i }), 'Caprino');
@@ -133,6 +133,6 @@ describe('CatalogoTab — conflicto de sincronización offline (#450, RF-15)', (
     await user.click(screen.getByRole('button', { name: 'Registrar especie' }));
 
     expect(await screen.findByText('Especie 1')).toBeInTheDocument();
-    expect(screen.queryByText('Especie 51')).not.toBeInTheDocument();
+    expect(screen.queryByText('Especie 16')).not.toBeInTheDocument();
   });
 });
