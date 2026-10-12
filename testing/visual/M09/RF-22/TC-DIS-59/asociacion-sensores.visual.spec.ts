@@ -131,7 +131,10 @@ async function iniciarSesionAdmin(page: Page) {
 
 async function servirFixtures(page: Page) {
   const json = (cuerpo: unknown) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(cuerpo) });
-  await page.route(porRuta(RUTA_FINCAS), (r) => (r.request().method() === 'GET' ? r.fulfill(json(FINCAS_FIXTURE)) : r.fallback()));
+  // 2026-10-12: GET /configuracion/fincas responde { total, items }, no un arreglo (mismo
+  // contrato ya corregido en TC-DIS-50/56); el fixture servía un arreglo plano y el crash
+  // lo atrapaba LimiteDeError, dejando el botón de sub-pestaña en loop de detach/retry.
+  await page.route(porRuta(RUTA_FINCAS), (r) => (r.request().method() === 'GET' ? r.fulfill(json({ total: FINCAS_FIXTURE.length, items: FINCAS_FIXTURE })) : r.fallback()));
   await page.route(porRuta(RUTA_DISPOSITIVOS), (r) => (r.request().method() === 'GET' ? r.fulfill(json(DISPOSITIVOS_FIXTURE)) : r.fallback()));
   await page.route(porRuta(RUTA_AREAS), (r) => {
     if (r.request().method() !== 'GET') return r.fallback();
@@ -170,6 +173,11 @@ function tarjeta(sec: Locator, texto: string): Locator {
 async function abrirAsociacion(page: Page): Promise<Locator> {
   await page.goto('/configuracion');
   await page.getByRole('button', { name: 'IoT', exact: true }).click();
+  // 2026-10-10: la pestaña "IoT" ahora tiene sub-pestañas propias (Dispositivos / Asociación
+  // de sensores / Configuración remota / Calibración) y abre por defecto en "Dispositivos";
+  // antes "Asociación de Sensores a Áreas" aparecía directo al entrar a IoT.
+  await page.getByRole('navigation', { name: 'Subsecciones de IoT' })
+    .getByRole('button', { name: 'Asociación de sensores', exact: true }).click();
   const titulo = page.getByRole('heading', { name: 'Asociación de Sensores a Áreas' });
   await titulo.scrollIntoViewIfNeeded();
   await expect(titulo).toBeVisible();
