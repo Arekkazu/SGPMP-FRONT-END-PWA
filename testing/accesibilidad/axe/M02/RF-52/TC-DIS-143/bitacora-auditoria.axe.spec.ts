@@ -21,6 +21,15 @@
  * GET /configuracion/personalizacion/tema(/global) (cuerpo real de TEST).
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_143_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * Se corrigen dos verificaciones desactualizadas que daban falsos positivos:
+ *   - Filtro por usuario: la vista lo tiene desde rc.46 como campo numérico "ID usuario"
+ *     (spinbutton); el test solo buscaba combobox o textbox.
+ *   - Valores del evento: detalle_tecnico se muestra en un desplegable "Detalle técnico"
+ *     (<details> con <dl>) dentro de la fila, no en una columna; ahora se exige un desplegable
+ *     por cada registro de la página que trae detalle_tecnico.
+ * Sin cambios en el resto del criterio.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -169,7 +178,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Bitácora de auditoría (R
       expect(encabezados, `DEFECTO: 1.3.1: la tabla debe tener el encabezado "${h}" (timestamp / tipo_operacion / resultado)`).toContain(h);
     }
     expect.soft(encabezados.some((h) => /usuario|responsable/.test(h)), 'DEFECTO: 1.3.1: la tabla no tiene columna de usuario (la respuesta trae id_usuario_responsable)').toBe(true);
-    expect.soft(encabezados.some((h) => /anterior|nuevo|valores|detalle/.test(h)), 'DEFECTO: 1.3.1: la tabla no muestra valores anteriores / nuevos (la respuesta trae detalle_tecnico)').toBe(true);
+    // Valores del evento (detalle_tecnico): desde rc.46 van en un desplegable "Detalle técnico"
+    // dentro de la fila (<details> con <dl>), no en una columna propia
+    const conDetalle = (cuerpo.registros as { detalle_tecnico: Record<string, unknown> | null }[])
+      .filter((ev) => ev.detalle_tecnico && Object.keys(ev.detalle_tecnico).length > 0).length;
+    const desplegables = tabla(page).locator('details:has(> summary):has(dl dt)');
+    testInfo.annotations.push({ type: 'Detalle técnico', description: `registros con detalle_tecnico en la página: ${conDetalle} · desplegables con <dl> en la tabla: ${await desplegables.count()}` });
+    expect.soft(await desplegables.count(), 'DEFECTO: 1.3.1: la tabla no muestra los valores del evento (detalle_tecnico) de cada registro que los trae').toBe(conDetalle);
     const nombreTabla = await tabla(page).evaluate((t) => !!t.querySelector('caption') || t.hasAttribute('aria-label') || t.hasAttribute('aria-labelledby'));
     expect.soft(nombreTabla, 'DEFECTO: 1.3.1: la tabla no tiene nombre accesible (caption/aria-label)').toBe(true);
 
@@ -184,7 +199,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Bitácora de auditoría (R
     await f.resultado.selectOption('FALLIDO');
     await expect(f.resultado, 'DEFECTO: 4.1.2: el value del select debe reflejar la opción').toHaveValue('FALLIDO');
     await f.resultado.selectOption('');
-    expect.soft(await page.getByRole('combobox', { name: /usuario/i }).or(page.getByRole('textbox', { name: /usuario/i })).count(), 'DEFECTO: Filtro por usuario ausente: el caso pide filtrar por tipo de operación / usuario / fecha').toBeGreaterThan(0);
+    // Filtro por usuario: desde rc.46 es un campo numérico "ID usuario" (spinbutton)
+    const filtroUsuario = page.getByRole('spinbutton', { name: /usuario/i })
+      .or(page.getByRole('combobox', { name: /usuario/i }))
+      .or(page.getByRole('textbox', { name: /usuario/i }));
+    expect.soft(await filtroUsuario.count(), 'DEFECTO: Filtro por usuario ausente: el caso pide filtrar por tipo de operación / usuario / fecha').toBeGreaterThan(0);
 
     await escanear(page, 'listado', testInfo);
   });
