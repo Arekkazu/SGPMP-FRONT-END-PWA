@@ -36,6 +36,10 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_137_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * Sin cambios de datos ni de criterio: lote #130 en "Estanque-01", dispositivo #1 con sus 3
+ * sensores reales (oxígeno, pH, temperatura) y #466 sigue en BAJA.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
