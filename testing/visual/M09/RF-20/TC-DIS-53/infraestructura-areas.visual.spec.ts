@@ -286,12 +286,15 @@ test.describe('TC-DIS-53 - Consistencia visual - Infraestructura Productiva / Á
     await iniciarSesionAdmin(page);
   });
 
-  test('0. Precondición - el ambiente entrega fincas, tipos de área y áreas (con una inactiva)', async ({ page }, testInfo) => {
+  test('0. Precondición - el ambiente entrega fincas y áreas (con una inactiva)', async ({ page }, testInfo) => {
+    // 2026-10-12: GET /configuracion/tipos-area NO se dispara al entrar a "Infraestructura" —
+    // cargarTipos(true) vive dentro de InfraModal (el modal de Registrar/Editar área), no en
+    // InfraestructuraSection. Confirmado con tráfico de red real: entrar a la sección solo
+    // dispara fincas y, al elegir una finca, infraestructuras; tipos-area nunca aparece hasta
+    // abrir el modal. La espera aquí nunca se cumplía y colgaba el test 120s por intento.
     const fincas = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_FINCAS.test(new URL(r.url()).pathname));
-    const tipos = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_TIPOS.test(new URL(r.url()).pathname));
     await abrirSeccion(page);
     expect((await fincas).status(), 'GET /configuracion/fincas debe responder 200').toBe(200);
-    expect((await tipos).status(), 'GET /configuracion/tipos-area debe responder 200').toBe(200);
 
     const areas = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_AREAS.test(new URL(r.url()).pathname));
     await botonFinca(page, FINCA_1).click();
