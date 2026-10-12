@@ -1,3 +1,9 @@
+## [1.0.0-rc.65](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.64...v1.0.0-rc.65) (2026-10-12)
+
+### Bug Fixes
+
+* **pwa:** recargar con la version nueva cuando falta un chunk tras un despliegue ([4d7c3b8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4d7c3b8e97dd16cc153a2151e2ef7d1db200f370))
+
 ## [1.0.0-rc.64](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.63...v1.0.0-rc.64) (2026-10-12)
 
 ### Bug Fixes
