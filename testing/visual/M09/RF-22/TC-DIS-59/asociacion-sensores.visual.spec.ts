@@ -335,6 +335,11 @@ test.describe('TC-DIS-59 - Consistencia visual - Asociación de Sensores (RF-22)
     const dispositivos = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_DISPOSITIVOS.test(new URL(r.url()).pathname), { timeout: 40_000 });
     await page.goto('/configuracion');
     await page.getByRole('button', { name: 'IoT', exact: true }).click();
+    // 2026-10-12: a diferencia de abrirAsociacion(), esta precondición navegaba sin pasar por la
+    // sub-pestaña "Asociación de sensores" — por eso nunca llegaba a la vista que pide el listado
+    // de dispositivos y el waitForResponse agotaba los 40s. No era un bloqueo del entorno real.
+    await page.getByRole('navigation', { name: 'Subsecciones de IoT' })
+      .getByRole('button', { name: 'Asociación de sensores', exact: true }).click();
     // En móvil y tablet el listado se pide cuando la sección entra en pantalla
     await page.getByRole('heading', { name: 'Asociación de Sensores a Áreas' }).scrollIntoViewIfNeeded();
     expect(
