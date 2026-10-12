@@ -1,7 +1,7 @@
 /**
  * TC-DIS-52 — Accesibilidad WCAG 2.1 AA del listado y formulario de Infraestructura Productiva (Áreas)
  * RF-20 v1.1 · CU-04 Gestionar Infraestructura Productiva · Rol: Administrador
- * Configuración → Fincas → sección "Infraestructura Productiva" → finca → áreas
+ * Configuración → Fincas → subpestaña "Infraestructura" ("Infraestructura Productiva") → finca → áreas
  *
  * Cambio del RF (2026-10-05, RFC-009): el formulario agrega las listas de especie y modelo
  * de IA; se anuncian tres errores 422 nuevos (incoherencia de modelo, especie inactiva y
@@ -16,9 +16,10 @@
  * ambos en ./resultados. Una auditoría fallida de Lighthouse es un defecto aunque tenga
  * peso 0 en el puntaje.
  *
- * Datos: finca "Finca Acuícola El Remanso" (#1) con sus áreas reales. En TEST ninguna
- * especie tiene familia de modelo de IA, así que GET /configuracion/especies se sirve con
- * la respuesta real y "Tilapia Roja" con tipo_modelo MODELO_ACUICULTURA (SIMULADO). Si la
+ * Datos: finca "Finca Acuícola El Remanso" (#1) con sus áreas reales. GET
+ * /configuracion/especies se sirve con la respuesta real y "Tilapia Roja" con tipo_modelo
+ * MODELO_ACUICULTURA (SIMULADO, familia fija para el test). La especie "sin familia" se toma
+ * de la misma respuesta real (la primera activa con tipo_modelo null). Si la
  * finca no tiene un área inactiva para reactivar, la última área del listado real se sirve
  * como inactiva (SIMULADO).
  *
@@ -32,6 +33,14 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_52_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * - Navegación: desde rc.47 la pestaña Fincas muestra una subsección a la vez (SubPestanas);
+ *   se entra por la subpestaña "Infraestructura" dentro de la navegación "Subsecciones de Fincas".
+ * - Datos: otras pruebas del ambiente asignaron familia de modelo a "Ave Qa Je" (MODELO_AVES), que
+ *   el test tomaba como la especie sin familia; ahora la especie sin familia se lee de la
+ *   respuesta real. La respuesta del catálogo sin `items` (errores) se deja pasar sin ajustar.
+ * Sin cambios de criterio.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Request, type TestInfo } from '@playwright/test';
@@ -59,6 +68,10 @@ const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 // page.route compara la URL completa (con query): se filtra por pathname
 const RUTA_FINCAS = /\/configuracion\/fincas$/;
 const RUTA_ESPECIES = /\/configuracion\/especies$/;
+
+interface Especie { nombre: string; tipo_modelo: string | null; es_activo?: boolean }
+/** Nombres de especies activas sin familia de modelo, leídos de la respuesta real del catálogo. */
+const especiesSinFamilia = new Set<string>();
 const RUTA_AREAS = /\/configuracion\/infraestructuras$/;
 const URL_AREAS = (url: URL) => /\/configuracion\/infraestructuras(\/\d+(\/\w+)?)?$/.test(url.pathname);
 
@@ -122,8 +135,12 @@ async function prepararDatos(page: Page, { areaInactiva = false } = {}) {
     if (req.method() !== 'GET' || !['xhr', 'fetch'].includes(req.resourceType())) return route.fallback();
     const res = await route.fetch();
     const cuerpo = await res.json();
-    const ajustar = (e: { nombre: string }) => (e.nombre === ESPECIE_CON_FAMILIA ? { ...e, tipo_modelo: FAMILIA } : e);
-    return route.fulfill({ response: res, json: Array.isArray(cuerpo) ? cuerpo.map(ajustar) : { ...cuerpo, items: cuerpo.items.map(ajustar) } });
+    const lista: Especie[] | null = Array.isArray(cuerpo) ? cuerpo : Array.isArray(cuerpo?.items) ? cuerpo.items : null;
+    if (!lista) return route.fulfill({ response: res, json: cuerpo }); // error u otra forma: sin ajustar
+    // Especies reales sin familia de modelo (otras pruebas del ambiente van asignando familias)
+    for (const e of lista) if (e.es_activo !== false && !e.tipo_modelo && e.nombre !== ESPECIE_CON_FAMILIA) especiesSinFamilia.add(e.nombre);
+    const ajustar = (e: Especie) => (e.nombre === ESPECIE_CON_FAMILIA ? { ...e, tipo_modelo: FAMILIA } : e);
+    return route.fulfill({ response: res, json: Array.isArray(cuerpo) ? lista.map(ajustar) : { ...cuerpo, items: lista.map(ajustar) } });
   });
 
   return { fijarModo: (m: Modo) => { modo = m; }, intentos, estado };
@@ -143,7 +160,9 @@ async function iniciarSesionAdmin(page: Page) {
 async function abrirSeccionInfraestructura(page: Page) {
   await page.goto('/configuracion');
   const fincas = page.waitForResponse((r) => r.request().method() === 'GET' && RUTA_FINCAS.test(new URL(r.url()).pathname));
-  await page.getByRole('button', { name: 'Fincas', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Secciones de configuración' }).getByRole('button', { name: 'Fincas', exact: true }).click();
+  // rc.47: la pestaña Fincas muestra una subsección a la vez (SubPestanas); Infraestructura es la tercera
+  await page.getByRole('navigation', { name: 'Subsecciones de Fincas' }).getByRole('button', { name: 'Infraestructura', exact: true }).click();
   const res = await fincas;
   const seccion = page.getByRole('heading', { name: 'Infraestructura Productiva' });
   await seccion.scrollIntoViewIfNeeded();
@@ -287,7 +306,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
   });
 
   test('3. Formulario "Registrar área" - especie y modelo de IA con label y name/role/value (1.3.1, 4.1.2)', async ({ page }, testInfo) => {
-    testInfo.annotations.push({ type: 'Datos simulados', description: `"${ESPECIE_CON_FAMILIA}" servida con tipo_modelo ${FAMILIA}: en TEST ninguna especie tiene familia de modelo.` });
+    testInfo.annotations.push({ type: 'Datos simulados', description: `"${ESPECIE_CON_FAMILIA}" servida con tipo_modelo ${FAMILIA} (familia fija para el test; las familias reales cambian con otras pruebas del ambiente).` });
     await prepararDatos(page);
     await iniciarSesionAdmin(page);
     await abrirAreasDeFinca(page);
@@ -315,8 +334,10 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Infraestructura Productiva
     await escanear(page, 'formulario', testInfo);
 
     // Especie sin familia: el aviso debe estar asociado al select de modelo (1.3.1)
-    const sinFamilia = await form.especie.locator('option').evaluateAll((os, conFamilia) =>
-      os.map((o) => o.textContent?.trim() ?? '').find((t) => t && t !== conFamilia && !t.startsWith('Selecciona')), ESPECIE_CON_FAMILIA);
+    const opcionesEspecie = await form.especie.locator('option').evaluateAll((os) => os.map((o) => o.textContent?.trim() ?? ''));
+    const sinFamilia = opcionesEspecie.find((t) => especiesSinFamilia.has(t));
+    expect(sinFamilia, 'Precondición: el catálogo real debe tener al menos una especie activa sin familia de modelo').toBeTruthy();
+    testInfo.annotations.push({ type: 'Especie sin familia (real)', description: sinFamilia! });
     await form.especie.selectOption({ label: sinFamilia! });
     const aviso = form.dialogo.getByText('La especie no tiene familia de modelo configurada', { exact: false });
     await expect(aviso, `Con "${sinFamilia}" (sin familia) se muestra el aviso`).toBeVisible();
