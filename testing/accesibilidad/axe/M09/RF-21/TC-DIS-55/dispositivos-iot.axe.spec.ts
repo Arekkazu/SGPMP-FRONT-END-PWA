@@ -33,6 +33,15 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_55_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * - El select "Tipo de dispositivo" muestra el código humanizado ("Camara vision", "Sensor
+ *   ambiental"; shared/lib/etiquetas.ts) en vez del crudo; el test elige por esa etiqueta.
+ * - Anuncio de los campos de cámara: la región role="status" ya existe vacía antes de elegir el
+ *   tipo y se llena con "Se agregaron los campos de cámara…" (lo correcto). El test exigía que
+ *   aumentara el número de regiones vivas y lo marcaba como DEFECTO; ahora acepta la región previa.
+ * DEFECTO confirmado (3 viewports): la etiqueta "FPS" no indica el rango 1–60 (solo aparece en el
+ * mensaje de error).
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -47,7 +56,10 @@ const FINCA = 'Finca Acuícola El Remanso';
 const AREA = 'Estanque-01';
 const SERIAL_EXISTENTE = process.env.TC_DIS_55_SERIAL_EXISTENTE ?? 'IOT-EST01-HLA-001';
 const TIPO_CAMARA = 'CAMARA_VISION';
+// rc.48: el select muestra el código humanizado (shared/lib/etiquetas.ts) en vez del crudo
+const ETIQUETA_CAMARA = 'Camara vision';
 const TIPO_SENSOR = 'SENSOR_AMBIENTAL';
+const ETIQUETA_SENSOR = 'Sensor ambiental'; // humanizado, igual que ETIQUETA_CAMARA
 
 const VIEWPORTS_HABILITADOS = (process.env.TC_DIS_55_VIEWPORTS ?? 'movil,tablet,escritorio')
   .split(',')
@@ -163,14 +175,14 @@ async function abrirFormulario(page: Page): Promise<Formulario> {
     descripcion: dialogo.getByRole('textbox', { name: /^Descripción/ }),
     registrar: dialogo.getByRole('button', { name: 'Registrar dispositivo' }),
   };
-  await expect(form.tipo.locator('option', { hasText: TIPO_CAMARA })).toHaveCount(1, { timeout: 20_000 });
+  await expect(form.tipo.locator('option', { hasText: ETIQUETA_CAMARA })).toHaveCount(1, { timeout: 20_000 });
   return form;
 }
 
 /** Formulario válido con tipo cámara, sin Gateway Edge. */
 async function llenarCamara(form: Formulario, serial: string) {
   await form.serial.fill(serial);
-  await form.tipo.selectOption({ label: TIPO_CAMARA });
+  await form.tipo.selectOption({ label: ETIQUETA_CAMARA });
   if (await form.gateway.count()) await form.gateway.selectOption({ index: 0 });
   await form.resolucion.fill('1920x1080');
   await form.fps.fill('25');
@@ -266,7 +278,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
 
     // Región viva que exista ANTES de elegir el tipo: solo así el lector anuncia el cambio
     const regionesVivas = await form.dialogo.locator('[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"]').count();
-    await form.tipo.selectOption({ label: TIPO_CAMARA });
+    await form.tipo.selectOption({ label: ETIQUETA_CAMARA });
     await expect(form.resolucion, 'Al elegir CAMARA aparecen los campos de visión').toBeVisible();
     await expect(form.fps).toBeVisible();
     await expect(form.cobertura).toBeVisible();
@@ -277,7 +289,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
       const dialogo = input.closest('[role="dialog"]')!;
       const despues = dialogo.querySelectorAll('[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"]').length;
       const textos = [...dialogo.querySelectorAll('[aria-live]:not([aria-live="off"]), [role="status"]')].map((e) => e.textContent ?? '').join(' ');
-      return { dentroDeRegionViva: !!vivo, avisoNuevo: despues > antes && /c[aá]mara|resoluci|visi[oó]n/i.test(textos) };
+      // rc.48: la región role="status" ya existe vacía antes de elegir el tipo (lo correcto para que el
+      // lector anuncie el cambio) y se llena con el aviso; basta con que exista y anuncie la cámara
+      return { dentroDeRegionViva: !!vivo, avisoNuevo: (antes > 0 || despues > antes) && /c[aá]mara|resoluci|visi[oó]n/i.test(textos) };
     }, regionesVivas);
     testInfo.annotations.push({ type: 'Anuncio de los campos de cámara', description: JSON.stringify(anuncio) });
     expect.soft(anuncio.dentroDeRegionViva || anuncio.avisoNuevo, 'DEFECTO: 4.1.3: los campos de cámara aparecen sin anunciarse (no están en una región aria-live ni hay un aviso de estado al elegir el tipo CAMARA)').toBe(true);
@@ -292,7 +306,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
     await escanear(page, 'campos-camara', testInfo);
 
     // Al cambiar a un tipo SENSOR los campos desaparecen
-    await form.tipo.selectOption({ label: TIPO_SENSOR });
+    await form.tipo.selectOption({ label: ETIQUETA_SENSOR });
     await expect(form.resolucion, 'Con un tipo SENSOR los campos de visión no se muestran').toHaveCount(0);
   });
 
@@ -335,7 +349,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
     await expect(page.locator('table tbody tr').filter({ hasText: SERIAL_EXISTENTE }), `Precondición: "${SERIAL_EXISTENTE}" debe existir para que el POST sea un duplicado (si no, no se envía)`).toHaveCount(1);
     const form = await abrirFormulario(page);
     await form.serial.fill(SERIAL_EXISTENTE);
-    await form.tipo.selectOption({ label: TIPO_SENSOR });
+    await form.tipo.selectOption({ label: ETIQUETA_SENSOR });
     if (await form.gateway.count()) await form.gateway.selectOption({ index: 0 });
     await form.descripcion.fill('Prueba QA serial duplicado');
     fijarModo({ tipo: 'redirigir', cuerpo: (enviado) => enviado });
@@ -408,7 +422,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Dispositivos IoT (RF-21)`,
     const form = await abrirFormulario(page);
     await form.tipo.focus();
     await page.keyboard.press('ArrowDown');
-    await expect(form.tipo.locator('option:checked')).toHaveText(TIPO_CAMARA);
+    await expect(form.tipo.locator('option:checked')).toHaveText(ETIQUETA_CAMARA);
     await expect(form.resolucion).toBeVisible();
     for (let i = 0; i < 6 && !(await form.resolucion.evaluate((el) => el === document.activeElement)); i++) {
       await page.keyboard.press('Tab');
