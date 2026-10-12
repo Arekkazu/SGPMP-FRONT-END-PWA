@@ -30,6 +30,9 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar. Solo lecturas.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_144_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * Sin cambios de datos ni de criterio; las 12 baselines vigentes coinciden sin regenerarlas.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import fixture from './bitacora.fixture.json';
