@@ -45,6 +45,61 @@ describe('refreshAccessToken', () => {
   });
 });
 
+// REUSO_TOKEN_REFRESCO_DETECTADO: la cookie del refresh token es de todas las pestañas.
+describe('refreshAccessToken entre pestañas', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    tokenStore.clear();
+    delete (navigator as { locks?: unknown }).locks;
+  });
+
+  function conCandado(antes?: () => void) {
+    const request = vi.fn(async (_nombre: string, fn: () => Promise<unknown>) => {
+      antes?.();
+      return fn();
+    });
+    Object.defineProperty(navigator, 'locks', { configurable: true, value: { request } });
+    return request;
+  }
+
+  it('refresca dentro del candado compartido del navegador', async () => {
+    const request = conCandado();
+    vi.spyOn(http, 'post').mockResolvedValue({ data: { token: 'nuevo' } });
+
+    await expect(refreshAccessToken()).resolves.toBe('nuevo');
+    expect(request).toHaveBeenCalledWith('sigab-refresh-token', expect.any(Function));
+  });
+
+  it('si otra pestaña refrescó mientras esperaba el candado, usa ese token sin rotar otra vez', async () => {
+    conCandado(() => tokenStore.set('de-otra-pestana'));
+    const postSpy = vi.spyOn(http, 'post');
+
+    await expect(refreshAccessToken()).resolves.toBe('de-otra-pestana');
+    expect(postSpy).not.toHaveBeenCalled();
+  });
+
+  it('un 401 con un token ya reemplazado por otra pestaña reintenta con el vigente', async () => {
+    tokenStore.set('vigente');
+    const postSpy = vi.spyOn(http, 'post');
+
+    await expect(refreshAccessToken('viejo')).resolves.toBe('vigente');
+    expect(postSpy).not.toHaveBeenCalled();
+  });
+
+  it('reparte el token nuevo a las demás pestañas y toma el que ellas reparten', async () => {
+    const otraPestana = new BroadcastChannel('sigab-sesion');
+    const recibido = new Promise<unknown>((r) => otraPestana.addEventListener('message', (e) => r((e as MessageEvent).data), { once: true }));
+    vi.spyOn(http, 'post').mockResolvedValue({ data: { token: 'repartido' } });
+
+    await refreshAccessToken();
+    await expect(recibido).resolves.toBe('repartido');
+
+    otraPestana.postMessage('desde-otra-pestana');
+    await vi.waitFor(() => expect(tokenStore.get()).toBe('desde-otra-pestana'));
+    otraPestana.close();
+  });
+});
+
 describe('interceptor 401', () => {
   let replaceSpy: ReturnType<typeof vi.fn>;
   const adapterOriginal = http.defaults.adapter;
