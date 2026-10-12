@@ -1,3 +1,13 @@
+## [1.0.0-rc.63](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.62...v1.0.0-rc.63) (2026-10-12)
+
+### Bug Fixes
+
+* **m09:** buscador y paginacion en los listados de configuracion y roles ([3806fde](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3806fdee5aa8485a3a4c5e86eeb6d5088fadf4c7))
+* **rf02:** indicar que se esta cerrando la sesion ([cae3601](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cae360116a1ef2f54ea8fc00cf2fc6446eabeaeb))
+* **rf06:** mostrar en solo lectura el detalle de un usuario eliminado ([32ba89a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/32ba89a428ad45f386eb053499b16e30533dc612))
+* **rf16:** editar ciclos, patologias, metricas y umbrales nunca editados sin falso 412 ([db4bbdf](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/db4bbdf0ea4f6155bfa0f4b4369a08a3863e0b37))
+* **rf16:** reactivar etapas del ciclo, avisos de exito y buscador con paginacion ([73709e7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/73709e70e6329c5e6138880aa87ab4421605d2f8))
+
 ## [1.0.0-rc.62](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.61...v1.0.0-rc.62) (2026-10-12)
 
 ### Bug Fixes
