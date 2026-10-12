@@ -5,6 +5,8 @@ import type {
   ActualizarActivoIndividualDTO,
   ListarActivosFiltros,
   PaginaActivos,
+  ParametroEspecie,
+  TipoActivo,
 } from '../types';
 
 const BASE = '/activos-biologicos';
@@ -22,6 +24,13 @@ export const activosApi = {
 
   async registrar(dto: RegistrarActivoDTO): Promise<ActivoBiologicoResponse> {
     const res = await http.post<ActivoBiologicoResponse>(BASE, dto);
+    return res.data;
+  },
+
+  async parametrosEspecie(idEspecie: number, tipoActivo: TipoActivo): Promise<ParametroEspecie[]> {
+    const res = await http.get<ParametroEspecie[]>(`${BASE}/parametros-especie`, {
+      params: { id_especie: idEspecie, tipo_activo: tipoActivo },
+    });
     return res.data;
   },
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
-import { useT } from '../../shared/i18n/useT';
+import { useT, useNombreModulo } from '../../shared/i18n/useT';
 import { Button } from '../../shared/design-system/Button';
 import { ModalShell } from './ModalShell';
 import { SeveridadAuditoriaPill } from './SeveridadAuditoriaPill';
@@ -31,6 +31,7 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
 
 export function EventoAuditoriaModal({ evento, loading, correlacionados, onClose }: Props) {
   const { t } = useT('prediction');
+  const nombreModulo = useNombreModulo();
   return (
     <ModalShell
       title={evento ? evento.tipo_evento : t('eventoauditoriamodal.evento_de_auditoria')}
@@ -50,7 +51,7 @@ export function EventoAuditoriaModal({ evento, loading, correlacionados, onClose
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--s4)' }}>
             <Fila label={t('eventoauditoriamodal.fecha')}>{fmt(evento.fecha_evento)}</Fila>
-            <Fila label={t('eventoauditoriamodal.modulo')}>{evento.modulo}</Fila>
+            <Fila label={t('eventoauditoriamodal.modulo')}>{nombreModulo(evento.modulo)}</Fila>
             <Fila label={t('eventoauditoriamodal.correlacion')}>{evento.correlacion_id ?? '—'}</Fila>
             <Fila label={t('eventoauditoriamodal.referencia')}>{evento.entidad_referencia ?? '—'}{evento.id_referencia ? ` · ${evento.id_referencia}` : ''}</Fila>
             <Fila label={t('eventoauditoriamodal.version_modelo')}>{evento.version_modelo ?? '—'}</Fila>

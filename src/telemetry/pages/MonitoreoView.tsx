@@ -125,7 +125,7 @@ export function MonitoreoView() {
         </div>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {!online && (
           <Alert variant="warning" title={t('monitoreoview.sin_conexion')} description={t('monitoreoview.mostrando_el_ultimo_dashboard_cacheado_el')} style={{ marginBottom: 'var(--s4)' }} />
         )}

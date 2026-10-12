@@ -44,28 +44,26 @@
   outline-offset: 1px;
 }
 
+/* Los cuatro roles semanticos ya tienen valor propio en cada tema (>=5:1
+   sobre su -bg), asi que el texto sale del token: antes cada variante
+   repetia un hex claro y otro oscuro que habian que mantener a mano. */
 .ds-alert--success {
   background: var(--sem-success-bg);
   border-color: var(--sem-success-border);
-  color: var(--brand-700);
+  color: var(--sem-success);
 }
 .ds-alert--warning {
   background: var(--sem-warning-bg);
   border-color: var(--sem-warning-border);
-  color: #7a4a00;
+  color: var(--sem-warning);
 }
 .ds-alert--error {
   background: var(--sem-error-bg);
   border-color: var(--sem-error-border);
-  color: #8a1a04;
+  color: var(--sem-error);
 }
 .ds-alert--info {
   background: var(--sem-info-bg);
   border-color: var(--sem-info-border);
-  color: #1a3878;
+  color: var(--sem-info);
 }
-
-[data-theme="dark"] .ds-alert--success { color: #6aba60; }
-[data-theme="dark"] .ds-alert--warning  { color: #c09020; }
-[data-theme="dark"] .ds-alert--error    { color: #e06050; }
-[data-theme="dark"] .ds-alert--info     { color: #6890e0; }

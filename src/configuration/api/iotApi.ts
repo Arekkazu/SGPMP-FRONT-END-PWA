@@ -3,8 +3,9 @@ import type {
   DispositivoIotResponse, RegistrarDispositivoIotDTO,
   SensorResponse, RegistrarSensorDTO,
   ConfiguracionRemotaResponse, ConfigurarRemotamenteDTO,
-  SensorAreaResponse, AsociarSensorAreaDTO,
-  CalibracionResponse, RegistrarCalibracionDTO,
+  SensorAreaResponse, AsociarSensorAreaDTO, AsociarSensorAreaResponse,
+  CalibracionResponse, RegistrarCalibracionDTO, TipoDispositivoIotResponse,
+  CredencialMqttResponse, EstadoCredencialMqttResponse,
 } from '../types';
 
 const DISP = '/configuracion/dispositivos-iot';
@@ -29,6 +30,21 @@ export const dispositivosApi = {
   async desactivar(id: number): Promise<DispositivoIotResponse> {
     const res = await http.patch<DispositivoIotResponse>(`${DISP}/${id}/desactivar`);
     return res.data;
+  },
+
+  /** RF-21: asigna, cambia o quita (null) el Gateway Edge del dispositivo. */
+  async asignarGateway(id: number, idGateway: number | null): Promise<DispositivoIotResponse> {
+    const res = await http.patch<DispositivoIotResponse>(`${DISP}/${id}/gateway`, {
+      id_dispositivo_gateway: idGateway,
+    });
+    return res.data;
+  },
+};
+
+export const tiposDispositivoApi = {
+  async listar(): Promise<TipoDispositivoIotResponse[]> {
+    const res = await http.get<{ items: TipoDispositivoIotResponse[] }>('/configuracion/tipos-dispositivo-iot');
+    return res.data.items;
   },
 };
 
@@ -59,11 +75,47 @@ export const configuracionRemotaApi = {
     const res = await http.get<{ items: ConfiguracionRemotaResponse[] }>(`${DISP}/${idDispositivo}/configuraciones`);
     return res.data.items;
   },
+
+  /** Reenvía una configuración PENDIENTE o NO_CONF; espera el ACK igual que `configurar`. */
+  async reintentar(idDispositivo: number, idConfiguracion: number): Promise<ConfiguracionRemotaResponse> {
+    const res = await http.post<ConfiguracionRemotaResponse>(
+      `${DISP}/${idDispositivo}/configuraciones/${idConfiguracion}/reintentar`,
+      undefined,
+      { timeout: 40000 },
+    );
+    return res.data;
+  },
+
+  async cancelar(idDispositivo: number, idConfiguracion: number): Promise<ConfiguracionRemotaResponse> {
+    const res = await http.patch<ConfiguracionRemotaResponse>(
+      `${DISP}/${idDispositivo}/configuraciones/${idConfiguracion}/cancelar`,
+    );
+    return res.data;
+  },
+};
+
+// RF-23 / TC-M09-250/251. Sin caché ni syncQueue a propósito: la respuesta del
+// POST trae la contraseña una sola vez y sin conexión la operación debe fallar,
+// no quedar en cola.
+export const credencialMqttApi = {
+  async consultar(idDispositivo: number): Promise<EstadoCredencialMqttResponse> {
+    const res = await http.get<EstadoCredencialMqttResponse>(`${DISP}/${idDispositivo}/credencial-mqtt`);
+    return res.data;
+  },
+
+  async emitir(idDispositivo: number): Promise<CredencialMqttResponse> {
+    const res = await http.post<CredencialMqttResponse>(`${DISP}/${idDispositivo}/credencial-mqtt`);
+    return res.data;
+  },
+
+  async revocar(idDispositivo: number): Promise<void> {
+    await http.delete(`${DISP}/${idDispositivo}/credencial-mqtt`);
+  },
 };
 
 export const sensorAreaApi = {
-  async asociar(idSensor: number, dto: AsociarSensorAreaDTO): Promise<SensorAreaResponse> {
-    const res = await http.post<SensorAreaResponse>(`${SENS}/${idSensor}/asociar`, dto);
+  async asociar(idSensor: number, dto: AsociarSensorAreaDTO): Promise<AsociarSensorAreaResponse> {
+    const res = await http.post<AsociarSensorAreaResponse>(`${SENS}/${idSensor}/asociar`, dto);
     return res.data;
   },
 
@@ -73,14 +125,21 @@ export const sensorAreaApi = {
   },
 };
 
+// #251: el backend serializa los Decimal como texto ("12.5000"); el tipo de
+// dominio es numero y la vista hacia aritmetica sobre el, asi que se convierte
+// aqui, en el borde, y la pantalla de calibracion ya no queda en blanco.
+function aCalibracion(c: CalibracionResponse): CalibracionResponse {
+  return { ...c, valor_referencia: Number(c.valor_referencia) };
+}
+
 export const calibracionApi = {
   async calibrar(idSensor: number, dto: RegistrarCalibracionDTO): Promise<CalibracionResponse> {
     const res = await http.post<CalibracionResponse>(`${SENS}/${idSensor}/calibrar`, dto);
-    return res.data;
+    return aCalibracion(res.data);
   },
 
   async listarCalibraciones(idSensor: number): Promise<CalibracionResponse[]> {
     const res = await http.get<{ items: CalibracionResponse[] }>(`${SENS}/${idSensor}/calibraciones`);
-    return res.data.items;
+    return res.data.items.map(aCalibracion);
   },
 };

@@ -47,3 +47,9 @@ test('no muestra el aviso de sesión cerrada en un login normal', () => {
 
   expect(screen.queryByText(/sesión cerrada/i)).toBeNull();
 });
+
+test('no muestra el botón de AgroFusion', () => {
+  renderConError(null);
+
+  expect(screen.queryByRole('button', { name: /continuar con agrofusion/i })).toBeNull();
+});

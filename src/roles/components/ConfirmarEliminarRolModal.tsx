@@ -23,29 +23,15 @@ export function ConfirmarEliminarRolModal({ rol, eliminando, error, onCancelar, 
       role="dialog"
       aria-modal="true"
       aria-labelledby="eliminar-rol-title"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.45)',
-        backdropFilter: 'blur(3px)',
-        padding: 'var(--s4)',
-      }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onCancelar(); }}
     >
       <div
         ref={panelRef}
-        style={{
-          background: 'var(--surface-card)',
-          borderRadius: 'var(--r-xl)',
-          border: '1px solid var(--surface-border)',
-          padding: 'var(--s6)',
-          maxWidth: 400,
-          width: '100%',
-          boxShadow: 'var(--shadow-lg)',
-        }}
+        className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}
       >
         <h2 id="eliminar-rol-title" style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 700, marginBottom: 'var(--s3)', color: 'var(--text-primary)' }}>{t('rolespage.eliminar_rol')}</h2>
-        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>{t('rolespage.confirmas_que_deseas_eliminar_el_rol')}<strong>{rol.nombre_rol}</strong>{t('rolespage.esta_accion_no_se_puede_deshacer')}</p>
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s5)' }}>{t('rolespage.confirmas_que_deseas_eliminar_el_rol')}{' '}<strong>{rol.nombre_rol}</strong>{t('rolespage.esta_accion_no_se_puede_deshacer')}</p>
         {error && (
           <Alert variant="error" title={t('rolespage.no_se_pudo_eliminar_el_rol')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
         )}

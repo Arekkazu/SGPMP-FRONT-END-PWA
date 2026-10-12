@@ -25,7 +25,10 @@ export interface ContextoValue {
   cargando: boolean;
   /** El usuario no tiene ninguna finca vinculada: vista de bienvenida del RF-25. */
   sinFinca: boolean;
-  /** La finca existe pero no hay especies productivas configuradas. */
+  /**
+   * La finca existe pero no tiene especies **ni** áreas productivas: el backend lo
+   * señala con 204 (RF-25). Una finca con áreas y sin especies, o al revés, es 200.
+   */
   sinEspecies: boolean;
   recargar: () => Promise<void>;
   /**
@@ -53,6 +56,7 @@ export function ContextoProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
   const [contexto, setContexto] = useState<ContextoInterfazResponse | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [sinCatalogo, setSinCatalogo] = useState(false);
   const [identidadPrevia, setIdentidadPrevia] = useState<{
     identidad_visual: IdentidadVisualContexto;
     accesibilidad: AccesibilidadResponse | null;
@@ -61,10 +65,14 @@ export function ContextoProvider({ children }: { children: React.ReactNode }) {
   const cargar = useCallback(async () => {
     setCargando(true);
     try {
-      setContexto(await contextoApi.obtener());
+      const leido = await contextoApi.obtener();
+      setContexto(leido);
+      setSinCatalogo(leido === null);
     } catch {
-      // Sin permiso R sobre el recurso 22, sin red o sin fila: la aplicación sigue.
+      // Sin permiso R sobre el recurso 22, sin red, 504 por timeout o sin fila: la
+      // aplicación sigue.
       setContexto(null);
+      setSinCatalogo(false);
     } finally {
       setCargando(false);
     }
@@ -73,6 +81,7 @@ export function ContextoProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!token) {
       setContexto(null);
+      setSinCatalogo(false);
       setIdentidadPrevia(null);
       return;
     }
@@ -97,11 +106,10 @@ export function ContextoProvider({ children }: { children: React.ReactNode }) {
     // Solo se afirma "sin finca" con un contexto cargado: mientras no haya respuesta, un
     // fallo de red mostraría la bienvenida a un productor que sí tiene finca.
     sinFinca: contexto !== null && contexto.id_finca === null,
-    sinEspecies: contexto !== null && contexto.id_finca !== null
-      && contexto.especies_configuradas.length === 0,
+    sinEspecies: sinCatalogo,
     recargar: cargar,
     aplicarIdentidadPrevia,
-  }), [contextoConOverlay, contexto, cargando, cargar, aplicarIdentidadPrevia]);
+  }), [contextoConOverlay, contexto, cargando, sinCatalogo, cargar, aplicarIdentidadPrevia]);
 
   return <ContextoContext.Provider value={valor}>{children}</ContextoContext.Provider>;
 }

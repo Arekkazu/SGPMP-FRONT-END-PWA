@@ -3,6 +3,7 @@ import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Pencil, PowerOff, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import type { EspecieResponse } from '../types';
 
 interface Props {
@@ -82,7 +83,7 @@ export function EspeciesTable({
   }
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <ScrollRegion label={t('configurationpage.catalogo_de_especies')}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
@@ -109,37 +110,57 @@ export function EspeciesTable({
                 </span>
               </td>
               <td style={TD}>
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 'var(--s1)',
-                    padding: '2px var(--s2)',
-                    borderRadius: 'var(--r-full)',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    background: e.es_activo ? 'var(--sem-success-bg)' : 'var(--surface-hover)',
-                    color: e.es_activo ? 'var(--sem-success)' : 'var(--text-muted)',
-                    border: `1px solid ${e.es_activo ? 'var(--sem-success-border)' : 'var(--surface-border)'}`,
-                  }}
-                >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
                   <span
                     style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: e.es_activo ? 'var(--sem-success)' : 'var(--text-muted)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 'var(--s1)',
+                      padding: '2px var(--s2)',
+                      borderRadius: 'var(--r-full)',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      background: e.es_activo ? 'var(--sem-success-bg)' : 'var(--surface-hover)',
+                      color: e.es_activo ? 'var(--sem-success)' : 'var(--text-muted)',
+                      border: `1px solid ${e.es_activo ? 'var(--sem-success-border)' : 'var(--surface-border)'}`,
                     }}
-                  />
-                  {e.es_activo ? 'Activo' : 'Inactivo'}
-                </span>
+                  >
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: e.es_activo ? 'var(--sem-success)' : 'var(--text-muted)',
+                      }}
+                    />
+                    {e.es_activo ? 'Activo' : 'Inactivo'}
+                  </span>
+                  {e.pendienteSync && (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 'var(--s1)',
+                        padding: '2px var(--s2)',
+                        borderRadius: 'var(--r-full)',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        background: 'var(--sem-warning-bg)',
+                        color: 'var(--sem-warning)',
+                        border: '1px solid var(--sem-warning-border)',
+                      }}
+                    >
+                      {t('especiestable.pendiente_de_sincronizacion')}
+                    </span>
+                  )}
+                </div>
               </td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                 {formatFecha(e.fecha_actualizacion)}
               </td>
               <td style={TD}>
                 <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center' }}>
-                  {puedeEditar && (
+                  {puedeEditar && !e.pendienteSync && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -149,7 +170,7 @@ export function EspeciesTable({
                       <Pencil size={15} aria-hidden />
                     </Button>
                   )}
-                  {puedeDesactivar && e.es_activo && (
+                  {puedeDesactivar && e.es_activo && !e.pendienteSync && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -159,7 +180,7 @@ export function EspeciesTable({
                       <PowerOff size={15} aria-hidden style={{ color: 'var(--sem-error)' }} />
                     </Button>
                   )}
-                  {puedeDesactivar && !e.es_activo && (
+                  {puedeDesactivar && !e.es_activo && !e.pendienteSync && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -175,6 +196,6 @@ export function EspeciesTable({
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }

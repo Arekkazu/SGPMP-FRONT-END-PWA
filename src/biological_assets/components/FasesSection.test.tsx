@@ -20,6 +20,7 @@ vi.mock('../hooks/useFases', () => ({
   useFases: () => ({
     fases: [], loading: false, saving: false, error: null, saveError: null,
     cargar: vi.fn(), cambiarFase: vi.fn(), setSaveError: vi.fn(),
+    ciclos: [], ciclosLoading: false, cargarCiclos: vi.fn(),
   }),
 }));
 

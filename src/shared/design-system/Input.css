@@ -37,6 +37,12 @@
   color: var(--text-muted);
 }
 
+/* DS v2.0 "Inputs — todos los estados": faltaba el hover, el unico estado que
+   indica que el campo es editable antes de tocarlo. */
+.ds-field__input:hover:not(:focus):not(:disabled):not(.ds-field__input--err) {
+  border-color: var(--neutral-400);
+}
+
 .ds-field__input:focus {
   border-color: var(--brand-400);
 }
@@ -49,8 +55,11 @@
   outline-offset: 1px;
 }
 
+/* El fondo del estado de error lo pide el DS v2.0 ademas del borde: WCAG
+   1.4.1 — el color del borde no puede ser el unico indicador. */
 .ds-field__input--err {
   border-color: var(--sem-error) !important;
+  background: var(--sem-error-bg);
   box-shadow: 0 0 0 3px rgba(192, 40, 10, 0.08) !important;
 }
 

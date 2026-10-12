@@ -11,6 +11,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
+import type { AccionCuenta } from '../types';
 
 type ModalState =
   | { tipo: 'ninguno' }
@@ -25,6 +26,7 @@ export function UsuariosPage() {
   const online = useOnlineStatus();
   const { usuarios, total, loading, error, filtros, fromCache, cargar, actualizarFiltros } = useUsuarios();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
+  const [accionConfirmada, setAccionConfirmada] = useState<{ accion: AccionCuenta; nombre: string } | null>(null);
   const [busquedaNombre, setBusquedaNombre] = useState('');
   const [busquedaCorreo, setBusquedaCorreo] = useState('');
   const [busquedaRol, setBusquedaRol] = useState('');
@@ -54,7 +56,7 @@ export function UsuariosPage() {
 
   if (!puedeVer) {
     return (
-      <div style={{ padding: 'var(--s7)', textAlign: 'center' }}>
+      <div style={{ padding: 'var(--page-pad)', textAlign: 'center' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('usuariospage.no_tienes_permiso_para_ver_esta_seccion')}</p>
       </div>
     );
@@ -82,7 +84,7 @@ export function UsuariosPage() {
   const totalPages = Math.ceil(total / filtros.tamano);
 
   return (
-    <div style={{ padding: 'var(--s6)', maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: 'var(--page-pad)', maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <div>
           <h1 style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{t('usuariospage.usuarios')}</h1>
@@ -116,6 +118,19 @@ export function UsuariosPage() {
 
       {error && !fromCache && (
         <Alert variant="error" title={t('usuariospage.error_al_cargar_usuarios')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
+      )}
+
+      {accionConfirmada && (
+        <Alert
+          key={`${accionConfirmada.accion}-${accionConfirmada.nombre}`}
+          variant="success"
+          title={t('gestionarmodal.accion_realizada', {
+            accion: t(`gestionarmodal.${accionConfirmada.accion}`),
+            usuario: accionConfirmada.nombre,
+          })}
+          onDismiss={() => setAccionConfirmada(null)}
+          style={{ marginBottom: 'var(--s4)' }}
+        />
       )}
 
       {/* Filtros */}
@@ -209,7 +224,11 @@ export function UsuariosPage() {
           nombreUsuario={modal.nombre}
           estadoActual={modal.estadoActual}
           onClose={cerrarModal}
-          onDone={() => { cerrarModal(); cargar(); }}
+          onDone={(accion) => {
+            setAccionConfirmada({ accion, nombre: modal.nombre });
+            cerrarModal();
+            cargar();
+          }}
         />
       )}
     </div>

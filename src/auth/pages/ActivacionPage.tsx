@@ -5,6 +5,7 @@ import { CheckCircle, AlertTriangle, XCircle, Loader2 } from 'lucide-react';
 import { authApi } from '../api/authApi';
 import type { ApiError } from '../../shared/api/errors';
 import './AuthPages.css';
+import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
 
 type Estado = 'cargando' | 'exitoso' | 'expirado' | 'invalido' | 'sin-token';
 
@@ -64,6 +65,7 @@ export function ActivacionPage() {
 
   return (
     <div className="auth-bg">
+      <SelectorIdioma />
       <div className="auth-card auth-center">
         <div
           className="auth-success-icon"

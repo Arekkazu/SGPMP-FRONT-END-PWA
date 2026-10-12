@@ -39,7 +39,10 @@ const TAB_BTN: React.CSSProperties = {
   padding: 'var(--s3) var(--s4)',
   background: 'none',
   border: 'none',
-  borderBottom: '2px solid transparent',
+  // Longhands: la pestaña activa sobrescribe borderBottomColor y React avisa si se mezcla con el shorthand.
+  borderBottomWidth: 2,
+  borderBottomStyle: 'solid',
+  borderBottomColor: 'transparent',
   color: 'var(--text-secondary)',
   fontWeight: 400,
   fontSize: '14px',
@@ -77,7 +80,7 @@ export function ActivoDetallePage() {
 
   if (!idValido) {
     return (
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         <Alert variant="error" title={t('activodetallepage.activo_invalido')} description={t('activodetallepage.el_identificador_de_la_ruta_no_es_valido')} />
       </div>
     );
@@ -103,7 +106,9 @@ export function ActivoDetallePage() {
           <Alert
             variant="error"
             title={t('activodetallepage.no_se_pudo_cargar_el_activo')}
-            description={error.status === 404 ? t('activodetallepage.el_activo_no_existe_o_fue_eliminado') : error.message}
+            description={error.status === 404
+              ? t('activodetallepage.el_activo_no_existe_o_fue_eliminado')
+              : error.status === 403 ? t('fichaintegralview.sin_permiso_e02') : error.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
         )}
@@ -139,8 +144,15 @@ export function ActivoDetallePage() {
       </nav>
 
       {/* Contenido */}
-      <div style={{ padding: 'var(--s7)' }}>
-        {tab === 'ficha' && <FichaIntegralView ficha={ficha} loading={fichaLoading || loading} error={fichaError} />}
+      <div style={{ padding: 'var(--page-pad)' }}>
+        {tab === 'ficha' && (
+          <FichaIntegralView
+            ficha={ficha}
+            loading={fichaLoading || loading}
+            error={fichaError}
+            onIrA={(pestana) => setTab(pestana as TabId)}
+          />
+        )}
         {tab === 'datos' && (
           <DatosActivoSection
             activo={activo}
@@ -159,13 +171,16 @@ export function ActivoDetallePage() {
             onChanged={refrescar}
           />
         )}
-        {tab === 'fases' && <FasesSection idActivo={idActivo} idEspecie={activo?.id_especie ?? null} estadoActual={estado} onChanged={refrescar} />}
+        {tab === 'fases' && <FasesSection idActivo={idActivo} estadoActual={estado} onChanged={refrescar} />}
         {tab === 'eventos' && (
           <EventosSection
             idActivo={idActivo}
             idEspecie={activo?.id_especie ?? null}
             tipo={String(tipo)}
             estadoActual={estado}
+            cantidadDisponible={ficha?.cantidad_actual ?? null}
+            sinFase={!!ficha && !ficha.fase_productiva_activa}
+            onIrAFases={() => setTab('fases')}
             onChanged={refrescar}
           />
         )}

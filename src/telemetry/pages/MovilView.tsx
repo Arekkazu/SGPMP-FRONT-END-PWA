@@ -51,8 +51,8 @@ export function MovilView() {
     <div style={{ minHeight: '100%', maxWidth: 520, margin: '0 auto' }}>
       <div style={{ padding: 'var(--s5) var(--s5) 0' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          <Smartphone size={18} aria-hidden />{t('movilview.sgp_campo')}</h1>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s1) 0 var(--s4)' }}>{t('movilview.monitoreo_y_alertas_modulo_03')}</p>
+          <Smartphone size={18} aria-hidden />{t('movilview.nombre_de_la_vista')}</h1>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s1) 0 var(--s4)' }}>{t('movilview.monitoreo_y_alertas')}</p>
 
         {/* Segmented control */}
         <div role="tablist" style={{ display: 'flex', gap: 'var(--s1)', background: 'var(--surface-hover)', borderRadius: 'var(--r-full)', padding: 3, marginBottom: 'var(--s4)' }}>

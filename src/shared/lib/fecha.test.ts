@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   aInstanteUtc,
+  diaParaBackendUtc,
   diasAtrasLocal,
   finDelDiaUtc,
   hoyLocal,
   inicioDelDiaUtc,
+  instanteParaEvento,
 } from './fecha';
 
 // Los tests se comparan contra el mismo cálculo en vez de contra literales, para
@@ -64,5 +66,28 @@ describe('diasAtrasLocal', () => {
     const hace7 = new Date();
     hace7.setDate(hace7.getDate() - 7);
     expect(diasAtrasLocal(7)).toBe(hoyLocal(hace7));
+  });
+});
+
+describe('diaParaBackendUtc', () => {
+  it('#130: el hoy local viaja como el hoy UTC, que el backend guarda con la hora real', () => {
+    // 22:00 local: en UTC-5 ya es el día siguiente en UTC.
+    const noche = new Date(2026, 0, 1, 22, 0);
+    expect(diaParaBackendUtc('2026-01-01', noche)).toBe(noche.toISOString().slice(0, 10));
+  });
+
+  it('un día pasado viaja tal cual', () => {
+    expect(diaParaBackendUtc('2025-12-30', new Date(2026, 0, 1, 22, 0))).toBe('2025-12-30');
+  });
+});
+
+describe('instanteParaEvento', () => {
+  it('#289: el hoy local viaja como el instante actual, no como la medianoche UTC', () => {
+    const noche = new Date(2026, 9, 7, 20, 5);
+    expect(instanteParaEvento('2026-10-07', noche)).toBe(noche.toISOString());
+  });
+
+  it('un día pasado viaja como el final de ese día local', () => {
+    expect(instanteParaEvento('2026-10-05', new Date(2026, 9, 7, 20, 5))).toBe(finDelDiaUtc('2026-10-05'));
   });
 });

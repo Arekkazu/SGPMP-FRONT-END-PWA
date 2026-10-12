@@ -65,6 +65,10 @@ export function EditarActivoModal({ activo, saving, saveError, onClose, onGuarda
       setFormError('Debes modificar al menos un campo.');
       return;
     }
+    // INC-M02-G22: sin esto, tras la primera edición el backend responde 412
+    // a toda edición siguiente. Se reenvía el string sin pasar por Date: el
+    // backend compara con microsegundos y Date trunca a milisegundos.
+    dto.fecha_actualizacion = activo.fecha_actualizacion ?? null;
     const ok = await onGuardar(dto);
     if (ok) onClose();
   };
@@ -88,11 +92,11 @@ export function EditarActivoModal({ activo, saving, saveError, onClose, onGuarda
           <Input label={t('editaractivomodal.raza')} placeholder={t('editaractivomodal.ej_holstein')} error={errors.raza?.message} {...register('raza')} />
 
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="edit-sexo">{t('editaractivomodal.sexo')}</label>
+            <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="edit-sexo">{t('editaractivomodal.sexo')}</label>
             <select id="edit-sexo" style={SELECT} {...register('sexo')}>
               <option value="">{t('editaractivomodal.sin_especificar')}</option>
-              <option value="MACHO">{t('editaractivomodal.macho')}</option>
-              <option value="HEMBRA">{t('editaractivomodal.hembra')}</option>
+              <option value="Macho">{t('editaractivomodal.macho')}</option>
+              <option value="Hembra">{t('editaractivomodal.hembra')}</option>
             </select>
           </div>
 

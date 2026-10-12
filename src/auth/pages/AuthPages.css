@@ -31,7 +31,8 @@
   width: 52px;
   height: 52px;
   border-radius: var(--r-lg);
-  background: var(--brand-500);
+  /* Fijo en los dos temas, como el favicon: --brand-500 se aclara en oscuro. */
+  background: var(--brand-cta);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,6 +84,15 @@
   content: '';
   flex: 1;
   border-top: 1px solid var(--surface-border);
+}
+
+/* Motivo por el que un boton de la tarjeta esta deshabilitado. Va debajo del
+   boton, no en una alerta global: explica ese control y nada mas. */
+.auth-hint {
+  margin-top: var(--s2);
+  text-align: center;
+  font-size: var(--fs-label-sm);
+  color: var(--text-muted);
 }
 
 .auth-links {
@@ -236,4 +246,14 @@
   .auth-card {
     padding: var(--s5);
   }
+}
+
+/* Selector de idioma: esquina superior derecha de la pantalla. Va en el flujo
+   (no absolute) para no taparle el borde a una tarjeta larga en móvil; el
+   margen negativo lo deja a la misma distancia del borde superior y del derecho. */
+.auth-bg > .ds-idioma {
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-top: -1rem;
+  margin-bottom: var(--s2);
 }

@@ -28,7 +28,7 @@ export function MotorView() {
   const online = useOnlineStatus();
 
   const { configs, versiones, loading, saving, error, saveError, fromCache, cargar, guardar, limpiarSaveError } = useMotor();
-  const [tipo, setTipo] = useState<TipoModelo>('ESPECIES_PEQUEÑAS');
+  const [tipo, setTipo] = useState<TipoModelo>('MODELO_AVES');
 
   useEffect(() => { if (puedeVer) cargar(); }, [puedeVer, cargar]);
 
@@ -57,7 +57,7 @@ export function MotorView() {
         </Button>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {!online && <Alert variant="warning" title={t('motorview.sin_conexion')} description={t('motorview.mostrando_configuracion_cacheada_los')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('motorview.datos_desde_cache')} description="No se pudo conectar; se muestra la última configuración disponible." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('motorview.sin_acceso_a_la_configuracion') : t('motorview.error_al_cargar_la_configuracion')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
@@ -65,15 +65,15 @@ export function MotorView() {
 
         {/* Tabs por tipo de modelo */}
         <div role="tablist" aria-label={t('motorview.tipo_de_modelo')} style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
-          {TIPOS_MODELO.map((tipo) => {
-            const activo = tipo === tipo;
-            const tieneConfig = configs.some((c) => c.tipo_modelo === tipo);
+          {TIPOS_MODELO.map((opcion) => {
+            const activo = opcion === tipo;
+            const tieneConfig = configs.some((c) => c.tipo_modelo === opcion);
             return (
               <button
-                key={tipo}
+                key={opcion}
                 role="tab"
                 aria-selected={activo}
-                onClick={() => setTipo(tipo)}
+                onClick={() => setTipo(opcion)}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)',
                   padding: 'var(--s2) var(--s4)', borderRadius: 'var(--r-full)',
@@ -83,7 +83,7 @@ export function MotorView() {
                   fontSize: '13px', fontWeight: activo ? 700 : 600, cursor: 'pointer', minHeight: 38,
                 }}
               >
-                {TIPO_MODELO_LABEL[tipo]}
+                {TIPO_MODELO_LABEL[opcion]}
                 {tieneConfig && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)' }} aria-label="configurado" />}
               </button>
             );

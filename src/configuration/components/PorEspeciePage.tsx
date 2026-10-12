@@ -23,7 +23,10 @@ const TAB_BTN: React.CSSProperties = {
   padding: 'var(--s2) var(--s4)',
   background: 'none',
   border: 'none',
-  borderBottom: '2px solid transparent',
+  // Longhands: la pestaña activa sobrescribe borderBottomColor y React avisa si se mezcla con el shorthand.
+  borderBottomWidth: 2,
+  borderBottomStyle: 'solid',
+  borderBottomColor: 'transparent',
   color: 'var(--text-secondary)',
   fontWeight: 400,
   fontSize: '13px',
@@ -89,7 +92,8 @@ export function PorEspeciePage() {
 
       {/* Sub-tabs */}
       <nav
-        style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s6)', overflowX: 'auto' }}
+        className="ds-tabs"
+        style={{ marginBottom: 'var(--s6)' }}
         aria-label={t('porespeciepage.secciones_de_la_especie')}
       >
         {SUB_TABS.map((tab) => (

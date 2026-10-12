@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { patologiasApi } from '../api/especiesConfigApi';
 import type { PatologiaEspecieItemResponse, RegistrarPatologiaDTO, EditarPatologiaDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { avisarExito } from '../../shared/hooks/useToast';
 
 export function usePatologias() {
   const [patologias, setPatologias] = useState<PatologiaEspecieItemResponse[]>([]);
@@ -14,8 +15,7 @@ export function usePatologias() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await patologiasApi.listar(idEspecie, soloActivas);
-      const data: PatologiaEspecieItemResponse[] = Array.isArray(raw) ? raw : (raw as any)?.items ?? [];
+      const data = await patologiasApi.listar(idEspecie, soloActivas);
       setPatologias(data);
     } catch (e) {
       setError(e as ApiError);
@@ -29,7 +29,8 @@ export function usePatologias() {
     setSaveError(null);
     try {
       const nueva = await patologiasApi.registrar(dto);
-      setPatologias((prev) => [...prev, nueva]);
+      setPatologias((prev) => [nueva, ...prev]);
+      avisarExito('registrado', nueva.nombre);
       return true;
     } catch (e) {
       setSaveError(e as ApiError);

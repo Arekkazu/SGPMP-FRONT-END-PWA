@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { Cpu, RefreshCw, Plus, PowerOff, ChevronLeft, Warehouse, Radio } from 'lucide-react';
+import { Cpu, RefreshCw, Plus, PowerOff, ChevronLeft, Warehouse, Radio, KeyRound, Network } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Alert } from '../../shared/design-system/Alert';
+import { OptionCard } from '../../shared/design-system/OptionCard';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
@@ -12,7 +14,12 @@ import { useDispositivosIot } from '../hooks/useDispositivosIot';
 import { useSensores } from '../hooks/useSensores';
 import { DispositivoModal } from './DispositivoModal';
 import { SensorModal } from './SensorModal';
+import { CredencialMqttModal } from './CredencialMqttModal';
+import { CambiarGatewayModal } from './CambiarGatewayModal';
 import type { FincaResponse, InfraestructuraResponse, DispositivoIotResponse } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda } from '../../shared/hooks/useBusqueda';
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
@@ -20,7 +27,7 @@ const TH: React.CSSProperties = {
   padding: 'var(--s2) var(--s4)',
   textAlign: 'left',
   fontFamily: 'var(--font-mono)',
-  fontSize: '10px',
+  fontSize: 'var(--fs-label-sm)',
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
@@ -46,15 +53,17 @@ function ConfirmModal({ titulo, mensaje, saving, onCancel, onConfirm }: {
   titulo: string; mensaje: string; saving: boolean;
   onCancel: () => void; onConfirm: () => void;
 }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 1010, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 'var(--s4)' }}
+      className="ds-modal" style={{ zIndex: 1010 }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>{mensaje}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
@@ -71,6 +80,7 @@ function ConfirmModal({ titulo, mensaje, saving, onCancel, onConfirm }: {
 function FincaSelector({ fincas, loading, onSelect }: { fincas: FincaResponse[]; loading: boolean; onSelect: (f: FincaResponse) => void }) {
   const { t } = useT('configuration');
   const activas = fincas.filter((f) => f.es_activo);
+  const busqueda = useBusqueda(activas, (f) => `${f.nombre} ${f.ubicacion?.municipio ?? ''} ${f.ubicacion?.departamento ?? ''}`);
 
   if (loading) {
     return (
@@ -86,24 +96,22 @@ function FincaSelector({ fincas, loading, onSelect }: { fincas: FincaResponse[];
     return <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('dispositivostable.no_hay_fincas_activas_registra_una_finca')}</p>;
   }
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 'var(--s4)' }}>
-      {activas.map((f) => (
-        <button
-          key={f.id_finca}
-          type="button"
-          onClick={() => onSelect(f)}
-          style={{ background: 'var(--surface-card)', border: '1.5px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none'; }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
-            <Warehouse size={15} color="var(--brand-500)" aria-hidden />
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{f.ubicacion.departamento}, {f.ubicacion.municipio}</div>
-        </button>
-      ))}
-    </div>
+    <>
+      {busqueda.conBuscador && (
+        <Buscador id="buscar-finca-iot" label={t('busqueda.buscar_finca', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 'var(--s4)' }}>
+        {busqueda.filtrados.map((f) => (
+          <OptionCard key={f.id_finca} onClick={() => onSelect(f)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
+              <Warehouse size={15} color="var(--brand-500)" aria-hidden />
+              <span style={{ fontSize: 'var(--fs-body-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{f.nombre}</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{f.ubicacion.departamento}, {f.ubicacion.municipio}</div>
+          </OptionCard>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -122,7 +130,7 @@ function AreaSelector({ infras, loading, onSelect, onBack }: {
         <Button variant="ghost" size="sm" onClick={onBack} aria-label={t('dispositivostable.volver_a_fincas')}>
           <ChevronLeft size={16} aria-hidden />{t('dispositivostable.cambiar_finca')}</Button>
       </div>
-      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('dispositivostable.selecciona_el_area_productiva_donde_esta')}</p>
+      <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('dispositivostable.selecciona_el_area_productiva_donde_esta')}</p>
       {loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 'var(--s3)' }}>
           {Array.from({ length: 3 }).map((_, i) => (
@@ -135,19 +143,12 @@ function AreaSelector({ infras, loading, onSelect, onBack }: {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 'var(--s3)' }}>
           {activas.map((infra) => (
-            <button
-              key={infra.id_infraestructura}
-              type="button"
-              onClick={() => onSelect(infra)}
-              style={{ background: 'var(--surface-card)', border: '1.5px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', textAlign: 'left', cursor: 'pointer', transition: 'border-color 0.15s' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-500)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--surface-border)'; }}
-            >
-              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{infra.nombre_infraestructura}</div>
+            <OptionCard key={infra.id_infraestructura} onClick={() => onSelect(infra)}>
+              <div style={{ fontSize: 'var(--fs-body-md)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{infra.nombre_infraestructura}</div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                {infra.tipo_area} · {formatearFechaHora(infra.superficie)} m²
+                {infra.tipo_area} · {formatearNumero(infra.superficie)} m²
               </div>
-            </button>
+            </OptionCard>
           ))}
         </div>
       )}
@@ -162,17 +163,23 @@ type ModalState =
   | { tipo: 'ninguno' }
   | { tipo: 'crear' }
   | { tipo: 'desactivar'; id: number; serial: string }
-  | { tipo: 'sensor'; dispositivo: DispositivoIotResponse };
+  | { tipo: 'sensor'; dispositivo: DispositivoIotResponse }
+  | { tipo: 'credencial'; dispositivo: DispositivoIotResponse }
+  | { tipo: 'gateway'; dispositivo: DispositivoIotResponse };
 
 export function DispositivosTable() {
   const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeCrear  = usePermission(11, 1);
+  const puedeLeer   = usePermission(11, 2);
+  const puedeEditar = usePermission(11, 3);
   const puedeDesact = usePermission(11, 4);
 
   const { fincas, loading: loadingFincas, cargar: cargarFincas } = useFincas();
   const { infraestructuras, loading: loadingInfras, cargar: cargarInfras } = useInfraestructuras();
-  const { dispositivos, loading, saving, error, saveError, cargar, registrar, desactivar } = useDispositivosIot();
+  const {
+    dispositivos, loading, saving, error, saveError, cargar, registrar, desactivar, asignarGateway, esGatewayEdge,
+  } = useDispositivosIot();
   const { saving: savingSensor, saveError: saveErrorSensor, registrar: registrarSensor } = useSensores();
 
   const [step, setStep] = useState<Step>('finca');
@@ -222,6 +229,23 @@ export function DispositivosTable() {
   const activos   = dispositivosDelArea.filter((d) => d.es_activo).length;
   const inactivos = dispositivosDelArea.length - activos;
 
+  // RF-21: Gateway Edge de la finca (un Edge atiende dispositivos de cualquier
+  // área de su finca) y dispositivos activos que atiende cada uno.
+  const areasDeLaFinca = new Set(infraestructuras.map((i) => i.id_infraestructura));
+  const edgesDeLaFinca = dispositivos.filter(
+    (d) => esGatewayEdge(d) && d.es_activo && areasDeLaFinca.has(d.id_infraestructura),
+  );
+  const porId = new Map(dispositivos.map((d) => [d.id_dispositivo_iot, d]));
+  const atendidosPor = (idEdge: number) =>
+    dispositivos.filter((d) => d.id_dispositivo_gateway === idEdge && d.es_activo);
+
+  const mensajeDesactivar = (id: number, serial: string) => {
+    const atendidos = atendidosPor(id);
+    const base = `¿Desactivar el dispositivo "${serial}"? Los datos históricos de sus sensores seguirán accesibles.`;
+    if (atendidos.length === 0) return base;
+    return `${base} ${t('dispositivostable.cascada_edge', { seriales: atendidos.map((d) => d.serial).join(', ') })}`;
+  };
+
   return (
     <div>
       {/* Header */}
@@ -236,7 +260,7 @@ export function DispositivosTable() {
       {/* Step 1: Finca */}
       {step === 'finca' && (
         <>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('dispositivostable.paso_1_selecciona_la_finca')}</p>
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s4)' }}>{t('dispositivostable.paso_1_selecciona_la_finca')}</p>
           <FincaSelector fincas={fincas} loading={loadingFincas} onSelect={handleSelectFinca} />
         </>
       )}
@@ -244,7 +268,7 @@ export function DispositivosTable() {
       {/* Step 2: Area */}
       {step === 'area' && finca && (
         <>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivostable.paso_2_selecciona_el_area_de')}<strong>{finca.nombre}</strong>:
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', marginBottom: 'var(--s2)' }}>{t('dispositivostable.paso_2_selecciona_el_area_de')}{' '}<strong>{finca.nombre}</strong>:
           </p>
           <AreaSelector
             infras={infraestructuras}
@@ -261,18 +285,19 @@ export function DispositivosTable() {
           {/* Breadcrumb / context */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--s5)', flexWrap: 'wrap', gap: 'var(--s3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
-              <Button variant="ghost" size="sm" onClick={handleBackToFinca} aria-label={t('dispositivostable.cambiar_finca')}>
+              {/* Sin aria-label: el nombre accesible es el texto visible, el que dice quien usa control por voz (WCAG 2.5.3, TC-DIS-55). */}
+              <Button variant="ghost" size="sm" onClick={handleBackToFinca}>
                 <ChevronLeft size={16} aria-hidden />{t('dispositivostable.fincas')}</Button>
               <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>›</span>
               <button
                 type="button"
                 onClick={handleBackToArea}
-                style={{ background: 'none', border: 'none', padding: 'var(--s1) var(--s2)', cursor: 'pointer', fontSize: '13px', color: 'var(--brand-600)', fontWeight: 600 }}
+                style={{ background: 'none', border: 'none', padding: 'var(--s1) var(--s2)', cursor: 'pointer', fontSize: 'var(--fs-body-md)', color: 'var(--brand-600)', fontWeight: 600 }}
               >
                 {finca.nombre}
               </button>
               <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>›</span>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{area.nombre_infraestructura}</span>
+              <span style={{ fontSize: 'var(--fs-body-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{area.nombre_infraestructura}</span>
               {!loading && (
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                   {activos} activos · {inactivos} inactivos
@@ -314,11 +339,11 @@ export function DispositivosTable() {
             </div>
           ) : (
             <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <ScrollRegion label={t('dispositivostable.dispositivos_iot')}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-                      {['ID', 'Serial físico', 'Descripción', 'Área → Finca', 'Estado', 'Registro', 'Acciones'].map((h) => (
+                      {['ID', 'Serial físico', 'Descripción', t('dispositivostable.gateway_edge'), 'Área → Finca', 'Estado', 'Registro', 'Acciones'].map((h) => (
                         <th key={h} style={TH}>{h}</th>
                       ))}
                     </tr>
@@ -336,6 +361,18 @@ export function DispositivosTable() {
                           <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
                             {d.descripcion}
                           </div>
+                        </td>
+                        <td style={{ ...TD, fontSize: '12px', whiteSpace: 'nowrap' }}>
+                          {esGatewayEdge(d) ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', fontWeight: 700, color: 'var(--brand-600)' }}>
+                              <Network size={13} aria-hidden />
+                              {t('dispositivostable.es_gateway_edge', { n: atendidosPor(d.id_dispositivo_iot).length })}
+                            </span>
+                          ) : (
+                            <span style={{ fontFamily: 'var(--font-mono)', color: d.id_dispositivo_gateway ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                              {d.id_dispositivo_gateway ? porId.get(d.id_dispositivo_gateway)?.serial ?? `#${d.id_dispositivo_gateway}` : '—'}
+                            </span>
+                          )}
                         </td>
                         <td style={TD}>
                           <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>{area.nombre_infraestructura}</div>
@@ -358,7 +395,27 @@ export function DispositivosTable() {
                           {formatFecha(d.fecha_creacion)}
                         </td>
                         <td style={{ ...TD, display: 'flex', gap: 'var(--s1)' }}>
-                          {puedeCrear && d.es_activo && online && (
+                          {esGatewayEdge(d) && puedeLeer && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setModal({ tipo: 'credencial', dispositivo: d })}
+                              aria-label={`${t('dispositivostable.credencial_mqtt')} ${d.serial}`}
+                            >
+                              <KeyRound size={15} aria-hidden style={{ color: 'var(--brand-500)' }} />
+                            </Button>
+                          )}
+                          {!esGatewayEdge(d) && puedeEditar && d.es_activo && online && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setModal({ tipo: 'gateway', dispositivo: d })}
+                              aria-label={`${t('dispositivostable.cambiar_gateway_edge')} ${d.serial}`}
+                            >
+                              <Network size={15} aria-hidden style={{ color: 'var(--brand-500)' }} />
+                            </Button>
+                          )}
+                          {!esGatewayEdge(d) && puedeCrear && d.es_activo && online && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -383,7 +440,7 @@ export function DispositivosTable() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollRegion>
             </div>
           )}
 
@@ -391,6 +448,7 @@ export function DispositivosTable() {
           {modal.tipo === 'crear' && (
             <DispositivoModal
               area={area}
+              edges={edgesDeLaFinca}
               saving={saving}
               saveError={saveError}
               onClose={cerrar}
@@ -400,10 +458,23 @@ export function DispositivosTable() {
           {modal.tipo === 'desactivar' && (
             <ConfirmModal
               titulo="Desactivar dispositivo"
-              mensaje={`¿Desactivar el dispositivo "${modal.serial}"? Los datos históricos de sus sensores seguirán accesibles.`}
+              mensaje={mensajeDesactivar(modal.id, modal.serial)}
               saving={saving}
               onCancel={cerrar}
               onConfirm={() => handleDesactivar(modal.id)}
+            />
+          )}
+          {modal.tipo === 'credencial' && (
+            <CredencialMqttModal dispositivo={modal.dispositivo} onClose={cerrar} />
+          )}
+          {modal.tipo === 'gateway' && (
+            <CambiarGatewayModal
+              dispositivo={modal.dispositivo}
+              edges={edgesDeLaFinca}
+              saving={saving}
+              saveError={saveError}
+              onClose={cerrar}
+              onAsignar={(idGateway) => asignarGateway(modal.dispositivo.id_dispositivo_iot, idGateway)}
             />
           )}
           {modal.tipo === 'sensor' && (

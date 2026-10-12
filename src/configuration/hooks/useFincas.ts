@@ -16,8 +16,7 @@ export function useFincas() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await fincasApi.listar(soloActivas);
-      const data: FincaResponse[] = Array.isArray(raw) ? raw : (raw as any)?.items ?? [];
+      const data = await fincasApi.listar(soloActivas);
       setFincas(data);
       setFromCache(false);
       const now = Date.now();

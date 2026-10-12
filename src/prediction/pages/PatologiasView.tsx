@@ -117,7 +117,7 @@ export function PatologiasView() {
         </div>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         {!online && <Alert variant="warning" title={t('patologiasview.sin_conexion')} description={t('patologiasview.mostrando_catalogo_cacheado_la_edicion_esta')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('patologiasview.datos_desde_cache')} description="No se pudo conectar; se muestra el último catálogo disponible." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('patologiasview.sin_acceso_al_catalogo') : t('patologiasview.error_al_cargar_patologias')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
@@ -166,7 +166,7 @@ export function PatologiasView() {
           <div style={{ display: 'flex', gap: 'var(--s3)', alignItems: 'flex-start' }}>
             <AlertTriangle size={20} aria-hidden style={{ color: 'var(--sem-warning)', flexShrink: 0, marginTop: 2 }} />
             <div>
-              <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>{t('patologiasview.se_inactivara')}<strong>{aDesactivar.nombre_patologia}</strong>{t('patologiasview.dejara_de_estar_disponible_para_nuevas')}</p>
+              <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>{t('patologiasview.se_inactivara')}{' '}<strong>{aDesactivar.nombre_patologia}</strong>{t('patologiasview.dejara_de_estar_disponible_para_nuevas')}</p>
               {saveError && <p role="alert" style={{ margin: 'var(--s3) 0 0', fontSize: '13px', color: 'var(--sem-error)' }}>{saveError.message}</p>}
             </div>
           </div>

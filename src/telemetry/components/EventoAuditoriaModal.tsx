@@ -1,5 +1,5 @@
 import React from 'react';
-import { useT } from '../../shared/i18n/useT';
+import { useT, useNombreModulo } from '../../shared/i18n/useT';
 import { Fingerprint } from 'lucide-react';
 import { ModalShell } from './ModalShell';
 import { SeveridadLogPill } from './SeveridadLogPill';
@@ -18,6 +18,7 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
 
 export function EventoAuditoriaModal({ evento, onClose }: { evento: EventoAuditoriaIotSchema; onClose: () => void }) {
   const { t } = useT('telemetry');
+  const nombreModulo = useNombreModulo();
   const detalle = evento.accion_detallada ? JSON.stringify(evento.accion_detallada, null, 2) : null;
   return (
     <ModalShell title={`Evento de auditoría · ${evento.tipo_evento}`} onClose={onClose} maxWidth={600}>
@@ -29,7 +30,7 @@ export function EventoAuditoriaModal({ evento, onClose }: { evento: EventoAudito
         {evento.registro_incompleto && <Pill tono="warning">{t('eventoauditoriamodal.registro_incompleto')}</Pill>}
       </div>
 
-      <Fila label={t('eventoauditoriamodal.modulo')}>{evento.modulo}</Fila>
+      <Fila label={t('eventoauditoriamodal.modulo')}>{nombreModulo(evento.modulo)}</Fila>
       <Fila label={t('eventoauditoriamodal.resultado')}>{evento.resultado}</Fila>
       <Fila label={t('eventoauditoriamodal.fecha_hora')}>{evento.fecha_hora?.slice(0, 10)} {horaCaptura(evento.fecha_hora)}</Fila>
       <Fila label={t('eventoauditoriamodal.usuario')}>{evento.nombre_usuario ?? (evento.id_usuario != null ? `#${evento.id_usuario}` : '—')}</Fila>

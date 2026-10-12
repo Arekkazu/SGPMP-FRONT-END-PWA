@@ -57,6 +57,8 @@ interface NotificationTrayProps {
   onRefresh: () => void;
   onLoadMore: () => void;
   onMarkAsRead: (idNotificacion: number) => Promise<boolean>;
+  onMarkAllAsRead?: () => Promise<void>;
+  markingAll?: boolean;
   onEnablePush: () => Promise<void>;
   onDismissError: () => void;
 }
@@ -95,6 +97,8 @@ export function NotificationTray({
   onRefresh,
   onLoadMore,
   onMarkAsRead,
+  onMarkAllAsRead,
+  markingAll = false,
   onEnablePush,
   onDismissError,
 }: NotificationTrayProps) {
@@ -127,6 +131,11 @@ export function NotificationTray({
           <div>
             <h2 id="notification-tray-title">{t('notificationtray.notificaciones')}</h2>
             <p>{noLeidas} sin leer de {total}</p>
+            {onMarkAllAsRead && noLeidas > 0 && !fromCache && (
+              <Button type="button" variant="ghost" size="sm" loading={markingAll} onClick={() => void onMarkAllAsRead()}>
+                {t('notificationtray.marcar_todas_leidas')}
+              </Button>
+            )}
           </div>
           <div className="notification-tray__actions">
             <Button

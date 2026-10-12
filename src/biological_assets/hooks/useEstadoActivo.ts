@@ -7,6 +7,7 @@ import type {
   CierreActivoResponse,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { avisarExito } from '../../shared/hooks/useToast';
 
 export function useEstadoActivo(idActivo: number) {
   const [saving, setSaving] = useState(false);
@@ -17,7 +18,9 @@ export function useEstadoActivo(idActivo: number) {
       setSaving(true);
       setError(null);
       try {
-        return await estadoApi.cambiarEstado(idActivo, dto);
+        const res = await estadoApi.cambiarEstado(idActivo, dto);
+        avisarExito('estado');  // M2-13
+        return res;
       } catch (e) {
         setError(e as ApiError);
         return null;
@@ -33,7 +36,9 @@ export function useEstadoActivo(idActivo: number) {
       setSaving(true);
       setError(null);
       try {
-        return await estadoApi.cerrarCiclo(idActivo, dto);
+        const res = await estadoApi.cerrarCiclo(idActivo, dto);
+        avisarExito('estado');
+        return res;
       } catch (e) {
         setError(e as ApiError);
         return null;

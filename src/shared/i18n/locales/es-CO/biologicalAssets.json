@@ -17,14 +17,17 @@
     "todos": "Todos"
   },
   "activostable": {
-    "no_hay_activos_biologicos_que_coincidan_con": "No hay activos biológicos que coincidan con los filtros."
+    "no_hay_activos_biologicos_que_coincidan_con": "No hay activos biológicos que coincidan con los filtros.",
+    "aun_no_hay_activos": "Aún no hay activos biológicos registrados en tus fincas."
   },
   "asociarsensormodal": {
     "ambiental": "Ambiental",
     "asociar_sensor": "Asociar sensor",
     "asociar_sensor_iot": "Asociar sensor IoT",
     "cancelar": "Cancelar",
+    "cargando": "Cargando…",
     "directa": "Directa",
+    "dispositivo_iot": "Dispositivo IoT",
     "el_dispositivo_es_obligatorio": "El dispositivo es obligatorio.",
     "el_sensor_es_obligatorio": "El sensor es obligatorio.",
     "fecha_de_inicio": "Fecha de inicio",
@@ -33,13 +36,16 @@
     "id_invalido": "ID inválido.",
     "id_sensor": "ID sensor",
     "individual": "Individual",
+    "infraestructura_del_activo": "Infraestructura del activo",
     "la_infraestructura_es_obligatoria": "La infraestructura es obligatoria.",
     "lote": "Lote",
     "motivo": "Motivo",
     "no_se_pudo_asociar_el_sensor": "No se pudo asociar el sensor",
     "opcional": "Opcional",
     "poblacional": "Poblacional",
-    "solo_administrador_e_ingeniero_pueden": "Solo Administrador e Ingeniero pueden asociar sensores.",
+    "seleccionar": "Seleccionar…",
+    "sensor": "Sensor",
+    "solo_administrador_e_ingeniero_pueden": "No tiene permiso para asociar sensores a este activo.",
     "tipo_de_activo": "Tipo de activo",
     "tipo_de_asociacion": "Tipo de asociación"
   },
@@ -49,6 +55,7 @@
     "bitacora_de_eventos_del_modulo_de_activos": "Bitácora de eventos del módulo de activos biológicos",
     "clasificacion": "Clasificación",
     "desde": "Desde",
+    "detalle_tecnico": "Detalle técnico",
     "error": "Error",
     "error_al_cargar_la_bitacora": "Error al cargar la bitácora",
     "exitoso": "Exitoso",
@@ -66,7 +73,10 @@
     "todas": "Todas",
     "todos": "Todos",
     "volver_a_la_lista": "Volver a la lista",
-    "warning": "Warning"
+    "warning": "Warning",
+    "usuario": "Usuario",
+    "usuario_hint": "Nombre, correo o ID",
+    "usuario_no_encontrado": "Elige un usuario de la lista o escribe su ID."
   },
   "cambiarestadomodal": {
     "cambiar_estado": "Cambiar estado",
@@ -87,12 +97,12 @@
     "sin_transiciones_disponibles": "Sin transiciones disponibles"
   },
   "cerrarciclomodal": {
-    "accion_dificilmente_reversible": "Acción difícilmente reversible",
+    "accion_dificilmente_reversible": "Esta acción no se puede deshacer",
     "cancelar": "Cancelar",
     "cerrar_ciclo": "Cerrar ciclo",
     "descripcion_adicional": "Descripción adicional",
     "ej_venta_fin_de_ciclo_productivo": "Ej: Venta, fin de ciclo productivo…",
-    "el_cierre_marca_el_activo_como_cerrado_y": "El cierre marca el activo como CERRADO y finaliza su ciclo productivo. Desde CERRADO solo se puede pasar a BAJA.",
+    "el_cierre_marca_el_activo_como_cerrado_y": "El activo quedará cerrado: no podrás registrarle más eventos ni cambiarle la fase. Después solo podrás darlo de baja.",
     "el_motivo_es_obligatorio": "El motivo es obligatorio.",
     "fecha_de_cierre": "Fecha de cierre",
     "la_fecha_de_cierre_es_obligatoria": "La fecha de cierre es obligatoria.",
@@ -111,6 +121,7 @@
     "editar_activo": "Editar activo",
     "fecha_de_inicio_de_ciclo": "Fecha de inicio de ciclo",
     "fecha_de_nacimiento": "Fecha de nacimiento",
+    "metricas_calculadas": "Métricas calculadas",
     "origen_financiero": "Origen financiero",
     "origen_y_procedencia": "Origen y procedencia",
     "peso_inicial": "Peso inicial",
@@ -120,7 +131,8 @@
     "raza": "Raza",
     "sexo": "Sexo",
     "sin_detalle_disponible": "Sin detalle disponible.",
-    "soporte_documental": "Soporte documental"
+    "soporte_documental": "Soporte documental",
+    "valores_iniciales": "Valores iniciales"
   },
   "datosanaliticossection": {
     "datos_consolidados": "Datos consolidados",
@@ -180,6 +192,7 @@
     "tipo_de_agregacion": "Tipo de agregación",
     "tipo_de_medicion": "Tipo de medición",
     "unidad_de_medida": "Unidad de medida",
+    "unidades_disponibles": "Unidades disponibles",
     "valor": "Valor"
   },
   "eventoproductivoform": {
@@ -206,12 +219,11 @@
     "cancelar": "Cancelar",
     "categoria": "Categoría",
     "descripcion": "Descripción",
-    "diagnostico": "Diagnóstico",
+    "diagnostico": "Diagnóstico de preñez",
     "exitoso": "Exitoso",
     "fallido": "Fallido",
     "fecha": "Fecha",
     "id_madre": "ID madre",
-    "id_padre": "ID padre",
     "inseminacion": "Inseminación",
     "nacimiento": "Nacimiento",
     "no_se_pudo_registrar": "No se pudo registrar",
@@ -221,9 +233,18 @@
     "registrar": "Registrar",
     "registrar_evento_reproductivo": "Registrar evento reproductivo",
     "resultado": "Resultado",
-    "servicio": "Servicio"
+    "servicio": "Servicio",
+    "secuencia": "Orden del proceso: servicio o inseminación → diagnóstico de preñez → parto.",
+    "padre": "Padre (reproductor)",
+    "padre_de_la_cria": "Padre de la cría",
+    "sin_candidatos_padre": "No hay otros animales individuales de esta especie registrados.",
+    "padre_obligatorio": "Elige el padre: este evento lo requiere.",
+    "sin_especificar": "Sin especificar",
+    "seleccionar": "Seleccionar…",
+    "al_menos_una_cria": "Debe haber al menos 1 cría."
   },
   "eventosanitarioform": {
+    "campos_para_el_tipo": "Campos para el tipo elegido",
     "cancelar": "Cancelar",
     "control_preventivo": "Control preventivo",
     "describe_el_diagnostico": "Describe el diagnóstico…",
@@ -261,8 +282,10 @@
     "historial_de_eventos": "Historial de eventos",
     "registrado_se_aplico_un_cambio_de_estado": "Registrado. Se aplicó un cambio de estado.",
     "registrado_se_avanzo_de_fase_automaticamente": "Registrado. Se avanzó de fase automáticamente.",
-    "registrar_evento": "Registrar evento",
-    "sin_eventos_registrados": "Sin eventos registrados."
+    "registrar_evento": "Registrar evento biológico",
+    "sin_eventos_registrados": "Sin eventos registrados.",
+    "requiere_fase": "Crecimiento, reproductivo y productivo necesitan una fase activa. Asígnala en la pestaña Fases.",
+    "ir_a_fases": "Ir a Fases"
   },
   "fasessection": {
     "activa": "ACTIVA",
@@ -273,27 +296,32 @@
     "error_al_cargar_fases": "Error al cargar fases",
     "este_activo_no_tiene_fases_registradas": "Este activo no tiene fases registradas.",
     "fecha_de_inicio": "Fecha de inicio",
-    "id_del_ciclo_productivo": "ID del ciclo productivo",
     "id_invalido": "ID inválido.",
     "motivo_del_cambio": "Motivo del cambio",
     "no_se_pudo_cambiar_la_fase": "No se pudo cambiar la fase",
     "opcional": "Opcional",
-    "secuencia_de_fases": "Secuencia de fases"
+    "secuencia_de_fases": "Secuencia de fases",
+    "ciclo_productivo": "Ciclo productivo",
+    "cargando_ciclos": "Cargando ciclos…",
+    "seleccionar_ciclo": "Selecciona un ciclo productivo",
+    "sin_ciclos": "La especie de este activo no tiene ciclos productivos configurados en Configuración.",
+    "ayuda_ciclo": "Se asigna la siguiente fase del ciclo elegido."
   },
   "fichaintegralview": {
+    "accesos_directos": "Accesos directos",
     "advertencias": "Advertencias",
     "biomasa_total": "Biomasa total",
     "cantidad_actual": "Cantidad actual",
     "datos_del_activo": "Datos del activo",
     "densidad": "Densidad",
     "dias_en_sistema": "Días en sistema",
+    "error_al_cargar_la_ficha_integral": "Error al cargar la ficha integral",
     "especie": "Especie",
     "estado_actual": "Estado actual",
     "eventos_de_crecimiento": "Eventos de crecimiento",
     "eventos_productivos": "Eventos productivos",
     "eventos_reproductivos": "Eventos reproductivos",
     "eventos_sanitarios": "Eventos sanitarios",
-    "error_al_cargar_la_ficha_integral": "Error al cargar la ficha integral",
     "fase_productiva": "Fase productiva",
     "fecha_de_nacimiento": "Fecha de nacimiento",
     "fecha_de_registro": "Fecha de registro",
@@ -305,6 +333,7 @@
     "peso_promedio": "Peso promedio",
     "raza": "Raza",
     "sexo": "Sexo",
+    "sin_permiso_e02": "No tiene permisos para visualizar la ficha de este activo.",
     "tipo": "Tipo",
     "ultimo_pesaje": "Último pesaje"
   },
@@ -315,24 +344,48 @@
     "hasta": "Hasta",
     "historial_consolidado": "Historial consolidado",
     "sin_registros_para_los_filtros_seleccionados": "Sin registros para los filtros seleccionados.",
-    "todas": "Todas"
+    "todas": "Todas",
+    "cat_creacion": "Registro",
+    "cat_estado": "Cambio de estado",
+    "cat_fase": "Fase productiva",
+    "cat_fase_productiva": "Fase productiva",
+    "cat_evento_biologico": "Evento biológico",
+    "cat_crecimiento": "Crecimiento",
+    "cat_sanitario": "Sanitario",
+    "cat_reproductivo": "Reproductivo",
+    "cat_productivo": "Productivo",
+    "cat_baja": "Baja",
+    "cat_transferencia": "Transferencia",
+    "cat_ingreso": "Ingreso",
+    "cat_indicador": "Indicador"
   },
   "indicadoressection": {
     "advertencias": "Advertencias",
+    "causa_datos_insuficientes": "Datos insuficientes",
+    "causa_no_aplica_individual": "No aplica a un activo individual",
+    "causa_outlier_critico": "Valor atípico crítico",
     "desde": "Desde",
     "error_al_cargar_indicadores": "Error al cargar indicadores",
     "hasta": "Hasta",
+    "ind_conversion_alimenticia": "Conversión alimenticia",
+    "ind_ganancia_peso": "Ganancia de peso",
+    "ind_produccion_promedio": "Producción promedio",
+    "ind_tasa_morbilidad": "Tasa de morbilidad",
+    "ind_tasa_mortalidad": "Tasa de mortalidad",
     "indicadores_zootecnicos": "Indicadores zootécnicos",
     "no_disponible": "No disponible",
     "no_hay_indicadores_para_los_filtros": "No hay indicadores para los filtros seleccionados.",
-    "tipo": "Tipo"
+    "tipo": "Tipo",
+    "unidad_kg_alimento_kg_ganancia": "kg de alimento / kg de ganancia"
   },
   "infraestructurasection": {
     "actual": "ACTUAL",
     "error_al_cargar_la_asociacion": "Error al cargar la asociación",
+    "historial_con_inconsistencias": "El historial de ubicaciones tiene inconsistencias",
     "historial_de_ubicaciones": "Historial de ubicaciones",
     "sin_historial_de_ubicaciones": "Sin historial de ubicaciones.",
     "sin_infraestructura_asociada_actualmente": "Sin infraestructura asociada actualmente.",
+    "transferencia_realizada": "Transferencia realizada.",
     "transferir": "Transferir",
     "ubicacion_actual": "Ubicación actual"
   },
@@ -341,9 +394,11 @@
   },
   "paginacion": {
     "anterior": "Anterior",
+    "paginacion": "Paginación",
     "siguiente": "Siguiente"
   },
   "registraractivoform": {
+    "atributos_de_la_especie": "Atributos de la especie",
     "cancelar": "Cancelar",
     "cantidad_inicial": "Cantidad inicial",
     "compra": "Compra",
@@ -356,16 +411,15 @@
     "donacion": "Donación",
     "ej_bov_2024_001": "Ej: BOV-2024-001",
     "ej_factura_n_o_00123": "Ej: Factura N.º 00123",
-    "ej_holstein": "Ej: Holstein",
+    "ej_holstein": "Escribe la raza",
     "el_costo_es_obligatorio_para_compra_donacion": "El costo es obligatorio para compra/donación.",
     "el_identificador_es_obligatorio_para": "El identificador es obligatorio para activos individuales.",
     "el_soporte_documental_es_obligatorio": "El soporte documental es obligatorio.",
     "en_nacimiento_no_se_registra_costo_ni": "En nacimiento no se registra costo ni soporte documental.",
+    "este_atributo_es_obligatorio": "Este atributo es obligatorio para la especie.",
     "fecha_de_inicio_de_ciclo": "Fecha de inicio de ciclo",
     "fecha_de_nacimiento": "Fecha de nacimiento",
     "hembra": "Hembra",
-    "id_de_especie": "ID de especie",
-    "id_de_infraestructura": "ID de infraestructura",
     "id_invalido": "ID inválido.",
     "identificador": "Identificador",
     "la_cantidad_inicial_es_obligatoria_para": "La cantidad inicial es obligatoria para lotes.",
@@ -388,7 +442,19 @@
     "sexo": "Sexo",
     "soporte_documental": "Soporte documental",
     "tipo_de_activo": "Tipo de activo",
-    "transferencia_interna": "Transferencia interna"
+    "transferencia_interna": "Transferencia interna",
+    "especie": "Especie",
+    "finca": "Finca",
+    "infraestructura": "Infraestructura",
+    "cargando": "Cargando…",
+    "sin_fincas": "No tienes fincas asignadas. Pídele al administrador que te asigne una.",
+    "sin_infraestructuras_compatibles": "Esta finca no tiene áreas activas para esa especie.",
+    "lote_sin_densidad_titulo": "Esta especie todavía no permite registrar lotes",
+    "lote_sin_densidad_detalle": "A {{especie}} le falta configurar la densidad máxima. Pídeselo al administrador, o registra un animal individual.",
+    "especie_hint": "Escribe el nombre o el ID de la especie.",
+    "finca_hint": "Opcional: filtra las infraestructuras sugeridas.",
+    "infraestructura_hint": "Escribe el nombre o el ID. Elige una finca para ver sugerencias.",
+    "opcion_no_valida": "Elige una opción de la lista o escribe el ID."
   },
   "registraractivopage": {
     "alta_de_un_ejemplar_individual_o_de_un_lote": "Alta de un ejemplar individual o de un lote poblacional",
@@ -396,8 +462,14 @@
     "volver_a_la_lista": "Volver a la lista"
   },
   "registrarbajamodal": {
+    "accion_irreversible": "La baja es definitiva y no se puede deshacer.",
+    "baja_total_del_lote": "Baja total del lote",
     "cancelar": "Cancelar",
     "cantidad_afectada": "Cantidad afectada",
+    "cantidad_maxima": "La cantidad no puede superar la disponible en el lote ({{max}}).",
+    "cantidad_minima": "La cantidad debe ser un número entero mayor que cero.",
+    "confirma_la_baja": "Confirma la baja",
+    "confirmar_baja": "Confirmar baja",
     "descarte_sanitario": "Descarte sanitario",
     "describe_el_motivo": "Describe el motivo…",
     "el_motivo_es_obligatorio": "El motivo es obligatorio.",
@@ -411,7 +483,8 @@
     "registro_de_baja": "Registro de baja",
     "sacrificio": "Sacrificio",
     "tipo_de_baja": "Tipo de baja",
-    "venta": "Venta"
+    "venta": "Venta",
+    "volver": "Volver"
   },
   "registryview": {
     "auditoria": "Auditoría",
@@ -422,7 +495,9 @@
     "no_se_pudo_conectar_con_el_servidor_se": "No se pudo conectar con el servidor. Se muestran los últimos datos disponibles.",
     "recargar_lista": "Recargar lista",
     "registrar_activo": "Registrar activo",
-    "sin_conexion": "Sin conexión"
+    "sin_conexion": "Sin conexión",
+    "coincidencias_en_pagina_one": "{{count}} de {{total}} activos de esta página coincide. La búsqueda solo revisa la página actual.",
+    "coincidencias_en_pagina_other": "{{count}} de {{total}} activos de esta página coinciden. La búsqueda solo revisa la página actual."
   },
   "sensoressection": {
     "asociacion_creada_con_advertencia": "Asociación creada con advertencia",
@@ -431,6 +506,9 @@
   },
   "transferenciawizard": {
     "cancelar": "Cancelar",
+    "confirma_la_transferencia": "Confirma la transferencia",
+    "confirmar_transferencia": "Confirmar transferencia",
+    "criterio_destinos": "Solo se listan infraestructuras activas de la misma finca, compatibles con la especie y con cupo para este activo.",
     "describe_el_motivo": "Describe el motivo…",
     "destino": "Destino",
     "el_motivo_es_obligatorio": "El motivo es obligatorio.",
@@ -442,9 +520,12 @@
     "no_se_pudieron_cargar_los_destinos": "No se pudieron cargar los destinos",
     "no_se_pudo_determinar_la_infraestructura": "No se pudo determinar la infraestructura actual del activo. Recarga la asociación e intenta de nuevo.",
     "no_se_pudo_transferir": "No se pudo transferir",
+    "ocupacion": "ocupación",
+    "origen": "Origen",
     "selecciona_el_destino": "Selecciona el destino.",
     "sin_infraestructura_de_origen": "Sin infraestructura de origen",
     "transferencia_interna": "Transferencia interna",
-    "transferir": "Transferir"
+    "transferir": "Transferir",
+    "volver": "Volver"
   }
 }

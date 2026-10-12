@@ -1,15 +1,18 @@
 import type { AxiosError } from 'axios';
 
 import i18n from '../i18n';
+import { formatearHora } from '../i18n/formato';
 
 export interface ApiError {
   code: string;
   message: string;
   field?: string;
   status: number;
+  /** Cada campo que fallo, con su mensaje sin la etiqueta. `field` vacio = error de modelo. */
+  fields?: BackendFieldError[];
 }
 
-interface BackendFieldError {
+export interface BackendFieldError {
   field: string;
   message: string;
 }
@@ -20,10 +23,16 @@ export function mapToApiError(error: AxiosError): ApiError {
 
   const code = (data?.error_code as string) ?? (data?.code as string) ?? (data?.detail as string) ?? `HTTP_${status}`;
   const fields = data?.fields as BackendFieldError[] | undefined;
-  const message = traducirPorCodigo(code, resolveMessage(status, data, fields));
+  const mensajeBackend = resolveMessage(status, data, fields);
+  const message = (code === 'CUENTA_BLOQUEADA' && bloqueoEnHoraLocal(mensajeBackend))
+    || traducirPorCodigo(code, mensajeBackend);
   const field = fields?.[0]?.field ?? (data?.field as string | undefined);
+  const porCampo = fields?.map((f) => ({
+    field: f.field ?? '',
+    message: f.message === data?.message ? message : mensajeDeCampo(f.message),
+  }));
 
-  return { code, message, field, status };
+  return { code, message, field, status, fields: porCampo?.length ? porCampo : undefined };
 }
 
 function stripPydanticPrefix(msg: string): string {
@@ -54,6 +63,27 @@ function traducirPorCodigo(code: string | undefined, mensajeBackend: string): st
   });
 }
 
+/**
+ * El backend escribe la hora de desbloqueo como `HH:MM:SS` en UTC dentro del
+ * texto, sin fecha: un usuario en UTC-5 leia las 05:34 a la medianoche. Se
+ * pasa a la hora local y se recalculan los minutos, que el backend fija en 15
+ * aunque el bloqueo ya lleve un rato. Sin hora reconocible, `null`.
+ */
+export function bloqueoEnHoraLocal(mensaje: string, ahora = new Date()): string | null {
+  const m = mensaje.match(/(\d{2}):(\d{2}):(\d{2})/);
+  if (!m) return null;
+  const hasta = new Date(ahora);
+  hasta.setUTCHours(Number(m[1]), Number(m[2]), Number(m[3]), 0);
+  // Pasada la medianoche UTC, `HH:MM:SS` es del dia siguiente.
+  if (hasta.getTime() < ahora.getTime() - 60_000) hasta.setUTCDate(hasta.getUTCDate() + 1);
+  const minutos = Math.max(1, Math.ceil((hasta.getTime() - ahora.getTime()) / 60_000));
+  return i18n.t('errores.cuenta_bloqueada_hasta', {
+    ns: 'common',
+    hora: formatearHora(hasta),
+    minutos,
+  });
+}
+
 /** Texto por status HTTP, traducido; cae al espanol si falta la clave. */
 function mensajePorStatus(status: number, porDefecto: string): string {
   return i18n.t(`errores.por_status.${status}`, { ns: 'common', defaultValue: porDefecto });
@@ -65,11 +95,15 @@ const PYDANTIC_ES: Record<string, string> = {
   'Field required': 'validacion.campo_obligatorio',
 };
 
-function describeField({ field, message }: BackendFieldError): string {
+function mensajeDeCampo(message: string): string {
   const clave = PYDANTIC_ES[message];
-  const msg = clave
+  return clave
     ? i18n.t(clave, { ns: 'common', defaultValue: 'Campo obligatorio.' })
     : stripPydanticPrefix(message);
+}
+
+function describeField({ field, message }: BackendFieldError): string {
+  const msg = mensajeDeCampo(message);
   if (!field) return msg;
   const label = field.replace(/_/g, ' ');
   return `${label.charAt(0).toUpperCase()}${label.slice(1)}: ${msg}`;

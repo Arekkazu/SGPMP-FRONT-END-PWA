@@ -50,7 +50,7 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
         <Alert variant="success" title={t('perfilform.cambios_guardados')} description={t('perfilform.tu_perfil_ha_sido_actualizado_exitosamente')} style={{ marginBottom: 'var(--s4)' }} />
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
+      <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
         <div>
           <Input
             label={t('perfilform.nombres')}

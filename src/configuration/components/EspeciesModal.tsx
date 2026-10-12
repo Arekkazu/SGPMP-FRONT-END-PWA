@@ -4,15 +4,22 @@ import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
-import type { EspecieResponse, RegistrarEspecieDTO } from '../types';
+import type { EditarEspecieDTO, EspecieResponse, RegistrarEspecieDTO } from '../types';
+import { TIPOS_MODELO_ASIGNABLES, TIPO_MODELO_LABEL, type TipoModelo } from '../../prediction/types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 
 interface FormValues {
   nombre: string;
   descripcion: string;
+  tipo_modelo: TipoModelo | '';
 }
+
+const CAMPOS = ['nombre', 'descripcion', 'tipo_modelo'] as const;
 
 interface Props {
   especie: EspecieResponse | null;
@@ -20,7 +27,7 @@ interface Props {
   saveError: ApiError | null;
   onClose: () => void;
   onRegistrar: (dto: RegistrarEspecieDTO) => Promise<boolean>;
-  onEditar: (id: number, dto: { nombre: string; descripcion?: string; fecha_actualizacion: string }) => Promise<boolean>;
+  onEditar: (id: number, dto: EditarEspecieDTO) => Promise<boolean>;
 }
 
 const TEXTAREA: React.CSSProperties = {
@@ -40,6 +47,7 @@ const TEXTAREA: React.CSSProperties = {
 const NOMBRE_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 
 export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar, onEditar }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = especie !== null;
   const titulo = modoEditar ? `Editar especie — ${especie.nombre}` : 'Nueva especie';
@@ -49,31 +57,37 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
     handleSubmit,
     reset,
     watch,
+    setError,
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
+  const alertaGeneral = useErroresDeServidor(saveError, setError, CAMPOS);
 
   const descValue = watch('descripcion', '');
 
   useEffect(() => {
     if (especie) {
-      reset({ nombre: especie.nombre, descripcion: especie.descripcion ?? '' });
+      reset({ nombre: especie.nombre, descripcion: especie.descripcion ?? '', tipo_modelo: especie.tipo_modelo ?? '' });
     } else {
-      reset({ nombre: '', descripcion: '' });
+      reset({ nombre: '', descripcion: '', tipo_modelo: '' });
     }
   }, [especie, reset]);
 
   const onSubmit = async (data: FormValues) => {
     const descripcion = data.descripcion.trim() || undefined;
+    const tipo_modelo = data.tipo_modelo || null;
     let ok: boolean;
 
     if (modoEditar && especie) {
       ok = await onEditar(especie.id_especie, {
         nombre: data.nombre.trim(),
         descripcion,
-        fecha_actualizacion: especie.fecha_actualizacion ?? new Date().toISOString(),
+        tipo_modelo,
+        // Tal cual vino del GET, null incluido: una hora del cliente nunca coincide
+        // con la de la BD y el backend lo rechazaba con 412 (#231).
+        fecha_actualizacion: especie.fecha_actualizacion,
       });
     } else {
-      ok = await onRegistrar({ nombre: data.nombre.trim(), descripcion });
+      ok = await onRegistrar({ nombre: data.nombre.trim(), descripcion, tipo_modelo });
     }
 
     if (ok) onClose();
@@ -81,32 +95,14 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="especie-modal-title"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)',
-        padding: 'var(--s4)',
-      }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div
-        style={{
-          background: 'var(--surface-card)',
-          borderRadius: 'var(--r-xl)',
-          border: '1px solid var(--surface-border)',
-          padding: 'var(--s6)',
-          width: '100%',
-          maxWidth: 480,
-          boxShadow: 'var(--shadow-lg)',
-        }}
-      >
+      <div className="ds-modal__panel" style={{ padding: 'var(--s6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
           <h2 id="especie-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {titulo}
@@ -116,9 +112,9 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
           </Button>
         </div>
 
-        {saveError && (
+        {saveError && alertaGeneral && (
           <Alert
-            variant={saveError.status === 412 ? 'error' : 'error'}
+            variant="error"
             title={saveError.status === 412 ? t('especiesmodal.conflicto_de_edicion') : t('especiesmodal.error_al_guardar')}
             description={saveError.message}
             style={{ marginBottom: 'var(--s4)' }}
@@ -132,6 +128,8 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
               required
               aria-required="true"
               placeholder={t('especiesmodal.ej_bovino_avicola_porcino')}
+              // M9-07: la regla se veía solo al fallar.
+              hint={t('especiesmodal.regla_nombre')}
               error={errors.nombre?.message}
               {...register('nombre', {
                 required: t('especiesmodal.el_nombre_es_obligatorio'),
@@ -144,10 +142,12 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
             <div>
               <label
                 htmlFor="especie-desc"
-                style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}
+                style={{ display: 'block', fontSize: 'var(--fs-body-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}
               >{t('especiesmodal.descripcion')}</label>
               <textarea
                 id="especie-desc"
+                aria-invalid={!!errors.descripcion}
+                aria-describedby={errors.descripcion ? 'especie-desc-err' : undefined}
                 style={TEXTAREA}
                 placeholder={t('especiesmodal.descripcion_opcional_de_la_especie')}
                 {...register('descripcion', {
@@ -156,7 +156,7 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--s1)' }}>
                 {errors.descripcion ? (
-                  <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)' }}>
+                  <p id="especie-desc-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)' }}>
                     {errors.descripcion.message}
                   </p>
                 ) : (
@@ -167,6 +167,17 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
                 </span>
               </div>
             </div>
+
+            <Select
+              id="especie-tipo-modelo"
+              label={t('especiesmodal.familia_de_modelo_ia')}
+              hint={t('especiesmodal.ayuda_familia_de_modelo')}
+              error={errors.tipo_modelo?.message}
+              {...register('tipo_modelo')}
+            >
+              <option value="">{t('especiesmodal.sin_familia_de_modelo')}</option>
+              {TIPOS_MODELO_ASIGNABLES.map((tm) => <option key={tm} value={tm}>{TIPO_MODELO_LABEL[tm]}</option>)}
+            </Select>
 
             {modoEditar && especie && (
               <div style={{ padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>

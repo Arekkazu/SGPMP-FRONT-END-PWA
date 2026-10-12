@@ -91,7 +91,7 @@ export function DispositivosView() {
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('dispositivosview.consulta_el_estado_y_las_transiciones_de_un')}</p>
       </div>
 
-      <div style={{ padding: 'var(--s7)', display: 'flex', flexDirection: 'column', gap: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)', display: 'flex', flexDirection: 'column', gap: 'var(--s7)' }}>
         {/* Consulta de dispositivo */}
         <section>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--s3)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>

@@ -79,7 +79,7 @@ export function ReevaluarModal({ saving, saveError, reevaluacion, onConfirm, onC
         <>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('reevaluarmodal.re_evalua_la_calidad_de_las_lecturas_de_un')}</p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
+          <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={LABEL} htmlFor="re-sensor">{t('reevaluarmodal.id_sensor')}</label>
               <input id="re-sensor" type="number" style={{ ...INPUT, borderColor: touched && faltaSensor ? 'var(--sem-error)' : 'var(--surface-border)' }} value={idSensor} onChange={(e) => setIdSensor(e.target.value)} aria-required aria-invalid={touched && faltaSensor} />

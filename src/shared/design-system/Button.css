@@ -67,6 +67,25 @@
   border-color: var(--surface-border);
 }
 
+/* DS v2.0 "Estados interactivos": cada variante define los 5 estados. Faltaba
+   :active — un click sostenido no daba ningun feedback. */
+.ds-btn:active:not(:disabled) { transform: scale(0.98); }
+.ds-btn--primary:active:not(:disabled) {
+  background: var(--brand-cta-active);
+  border-color: var(--brand-cta-active);
+}
+.ds-btn--danger:active:not(:disabled) {
+  background: #801404;
+  border-color: #801404;
+}
+.ds-btn--secondary:active:not(:disabled),
+.ds-btn--ghost:active:not(:disabled) { background: var(--brand-100); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-btn { transition: none; }
+  .ds-btn:active:not(:disabled) { transform: none; }
+}
+
 .ds-btn:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;

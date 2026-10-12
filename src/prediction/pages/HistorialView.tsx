@@ -93,7 +93,7 @@ export function HistorialView() {
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('historialview.evolucion_del_riesgo_sanitario_y')}</p>
       </div>
 
-      <div style={{ padding: 'var(--s7)' }}>
+      <div style={{ padding: 'var(--page-pad)' }}>
         <Alert variant="info" title="Registro inmutable (NIC-41)" description={t('historialview.los_resultados_de_inferencia_no_se')} style={{ marginBottom: 'var(--s5)' }} />
 
         {retroOk && <Alert variant="success" title={t('historialview.retroalimentacion_registrada')} description={t('historialview.gracias_la_evaluacion_clinica_quedo')} style={{ marginBottom: 'var(--s4)' }} />}

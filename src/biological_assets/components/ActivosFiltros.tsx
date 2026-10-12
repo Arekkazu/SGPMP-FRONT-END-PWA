@@ -21,7 +21,7 @@ const SELECT: React.CSSProperties = {
   border: '1.5px solid var(--surface-border)',
   background: 'var(--surface-card)',
   color: 'var(--text-primary)',
-  fontSize: '13px',
+  fontSize: 'var(--fs-body-md)',
   fontFamily: 'var(--font-sans)',
   minWidth: 150,
   height: 38,
