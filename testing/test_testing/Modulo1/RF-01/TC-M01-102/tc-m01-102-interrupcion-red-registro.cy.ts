@@ -13,7 +13,7 @@ import './commands';
  * Ambiente: front TEST / backend TEST desplegado. Resultados: RESULTADOS/TC-M01-102/
  */
 
-const DIR = 'RESULTADOS/TC-M01-102';
+const DIR = 'evidencias';
 
 type Estado = 'OK' | 'FALLA' | 'OBSERVACION';
 interface Check { paso: string; esperado: string; obtenido: string; estado: Estado; }
