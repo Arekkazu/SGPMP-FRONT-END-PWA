@@ -1,7 +1,7 @@
 /**
  * TC-DIS-58 — Accesibilidad WCAG 2.1 AA del flujo por pasos de Asociación de Sensores
  * RF-22 v1.1 · CU-05 Gestionar Dispositivos IoT · Rol: Administrador
- * Configuración → IoT → "Asociación de Sensores a Áreas":
+ * Configuración → IoT → subpestaña "Asociación de sensores" ("Asociación de Sensores a Áreas"):
  *   Paso 1 dispositivo → Paso 2 sensor → Paso 3 área destino → Paso 4 punto de instalación
  *
  * Reejecución sobre la release 1.0.0-rc.40.
@@ -30,6 +30,11 @@
  *
  * Navegación directa por URL (page.goto), sin sidebar.
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_58_VIEWPORTS=escritorio
+ *
+ * ── Reejecución 2026-10-10 (rc.48) ──────────────────────────────────────────
+ * Navegación: desde rc.47 la pestaña IoT muestra una subsección a la vez (SubPestanas); se
+ * entra por la subpestaña "Asociación de sensores". Mismos datos (sensor #3 sigue en el área
+ * #1) y sin cambios de criterio.
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page, type Request, type TestInfo } from '@playwright/test';
@@ -148,7 +153,9 @@ function tarjeta(sec: Locator, texto: string): Locator {
 
 async function abrirAsociacion(page: Page): Promise<Locator> {
   await page.goto('/configuracion');
-  await page.getByRole('button', { name: 'IoT', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Secciones de configuración' }).getByRole('button', { name: 'IoT', exact: true }).click();
+  // rc.47: la pestaña IoT muestra una subsección a la vez (SubPestanas)
+  await page.getByRole('navigation', { name: 'Subsecciones de IoT' }).getByRole('button', { name: 'Asociación de sensores', exact: true }).click();
   const titulo = page.getByRole('heading', { name: 'Asociación de Sensores a Áreas' });
   await titulo.scrollIntoViewIfNeeded();
   await expect(titulo).toBeVisible();
