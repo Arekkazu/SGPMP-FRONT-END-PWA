@@ -58,12 +58,12 @@ describe('CiclosSection (RF-16)', () => {
     expect(reactivar).toHaveBeenCalledWith(14);
   });
 
-  it('busca por nombre y pagina de 20 en 20', async () => {
+  it('busca por nombre y pagina de 15 en 15', async () => {
     mockCiclos(Array.from({ length: 25 }, (_, i) => ciclo(i + 1)));
     render(<CiclosSection idEspecie={3} />);
 
-    expect(screen.getByText('Fase 20')).toBeTruthy();
-    expect(screen.queryByText('Fase 21')).toBeNull();
+    expect(screen.getByText('Fase 15')).toBeTruthy();
+    expect(screen.queryByText('Fase 16')).toBeNull();
 
     await userEvent.type(screen.getByRole('searchbox'), 'fase 25');
     expect(screen.getByText('Fase 25')).toBeTruthy();
