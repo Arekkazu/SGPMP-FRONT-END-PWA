@@ -131,7 +131,9 @@ async function iniciarSesionAdmin(page: Page) {
 
 async function servirFixtures(page: Page) {
   const json = (cuerpo: unknown) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(cuerpo) });
-  await page.route(porRuta(RUTA_FINCAS), (r) => (r.request().method() === 'GET' ? r.fulfill(json(FINCAS_FIXTURE)) : r.fallback()));
+  // 2026-10-12: GET /configuracion/fincas responde { total, items }, no un arreglo (fincasApi.ts
+  // ya espera res.data.items); el fixture servía un arreglo plano y el crash lo atrapaba LimiteDeError.
+  await page.route(porRuta(RUTA_FINCAS), (r) => (r.request().method() === 'GET' ? r.fulfill(json({ total: FINCAS_FIXTURE.length, items: FINCAS_FIXTURE })) : r.fallback()));
   await page.route(porRuta(RUTA_DISPOSITIVOS), (r) => (r.request().method() === 'GET' ? r.fulfill(json(DISPOSITIVOS_FIXTURE)) : r.fallback()));
   await page.route(porRuta(RUTA_TIPOS), (r) => (r.request().method() === 'GET' ? r.fulfill(json(tiposDispositivo)) : r.fallback()));
   await page.route(porRuta(RUTA_AREAS), (r) => {
@@ -235,6 +237,14 @@ async function capturarModal(page: Page, dialogo: Locator, nombre: string) {
   await expect(tarjetaModal(dialogo)).toHaveScreenshot(nombre, { animations: 'disabled', caret: 'hide' });
 }
 
+// 2026-10-12: el <option> ya no muestra el código crudo del backend ("SENSOR_AMBIENTAL"),
+// sino humanizar(tipo.nombre) (DispositivoModal.tsx) — "Sensor ambiental". Se replica esa
+// misma transformación (src/shared/lib/etiquetas.ts) para ubicar la opción correcta.
+function humanizar(codigo: string): string {
+  const texto = codigo.replace(/[_\s]+/g, ' ').trim().toLowerCase();
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 async function abrirFormulario(page: Page, tipo: string) {
   await abrirArea(page, AREA_FORM.nombre_infraestructura);
   await page.getByRole('button', { name: 'Nuevo dispositivo' }).click();
@@ -242,8 +252,9 @@ async function abrirFormulario(page: Page, tipo: string) {
   await expect(dialogo).toBeVisible();
   await expect(dialogo.getByText(`Estanque — ${AREA_FORM.nombre_infraestructura}`)).toBeVisible();
   const select = dialogo.getByRole('combobox', { name: 'Tipo de dispositivo' });
-  await expect(select.locator('option', { hasText: tipo })).toHaveCount(1);
-  await select.selectOption({ label: tipo });
+  const etiqueta = humanizar(tipo);
+  await expect(select.locator('option', { hasText: etiqueta })).toHaveCount(1);
+  await select.selectOption({ label: etiqueta });
   return dialogo;
 }
 

@@ -134,6 +134,11 @@ async function iniciarSesionAdmin(page: Page) {
 async function abrirSeccion(page: Page) {
   await page.goto('/configuracion');
   await page.getByRole('button', { name: 'Fincas', exact: true }).click();
+  // 2026-10-10: la pestaña "Fincas" ahora tiene sub-pestañas propias (Fincas / Tipos de
+  // área / Infraestructura); antes "Infraestructura Productiva" aparecía directo al entrar
+  // a "Fincas". Hace falta un clic adicional en la sub-pestaña "Infraestructura".
+  await page.getByRole('navigation', { name: 'Subsecciones de Fincas' })
+    .getByRole('button', { name: 'Infraestructura', exact: true }).click();
   const titulo = page.getByRole('heading', { name: 'Infraestructura Productiva' });
   await titulo.scrollIntoViewIfNeeded();
   await expect(titulo).toBeVisible();

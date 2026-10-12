@@ -19,6 +19,9 @@
  * a uno de ellos (igual que TC-DIS-120). El historial y la asociación activa de abajo
  * siguen siendo simulados (page.route), independientes del historial real del activo.
  *
+ * 2026-10-10: reejecución sobre la release 1.0.0-rc.48. Sin cambios de datos ni de
+ * criterio; las 6 baselines vigentes coinciden sin regenerarlas.
+ *
  * Una baseline solo se guarda si la vista no tiene defectos: el alto del selector de
  * vista (touch target --s9 = 48px), el tamaño de su texto y el de la marca "ACTUAL"
  * (escala tipográfica del DS v2.0) se verifican antes de capturar y fallan como DEFECTO.
