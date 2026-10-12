@@ -40,6 +40,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
   // Rol con autocompletado: «Nombre (#id)», el nombre exacto o el ID.
   const [rolTexto, setRolTexto] = useState('');
   const [rolError, setRolError] = useState<string>();
+  const [guardado, setGuardado] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EditarPerfilAdminDTO>({ mode: 'onBlur' });
 
@@ -93,6 +94,7 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
       setRolError(t('usuariomodal.rol_no_encontrado'));
       return;
     }
+    setGuardado(false);
     // Un opcional vacío se omite: el backend valida '' y lo rechaza.
     const ok = await editar(idUsuario, {
       ...data,
@@ -104,10 +106,14 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
     });
     if (!ok) return;
     const okFincas = await asignarFincas(idUsuario, { ids_fincas: Array.from(idsFincas) });
-    if (okFincas) onSaved();
-    // El perfil ya se guardó: sin recargar, reintentar mandaría la version
-    // vieja y el backend respondería 412.
-    else cargar(idUsuario);
+    // Recargar siempre: el perfil ya se guardó y sin la version nueva el
+    // siguiente guardado respondería 412. El modal queda abierto con la
+    // confirmación, igual que en Mi perfil.
+    cargar(idUsuario);
+    if (okFincas) {
+      setGuardado(true);
+      onSaved();
+    }
   };
 
   return (
@@ -143,6 +149,10 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
 
         {saveError && (
           <Alert variant="error" title={t('usuariomodal.error_al_guardar')} description={saveError.message} className="mb" />
+        )}
+
+        {guardado && !saveError && (
+          <Alert variant="success" title={t('usuariomodal.cambios_guardados')} description={t('usuariomodal.usuario_actualizado_exitosamente')} className="mb" />
         )}
 
         {detalle && !loading && (

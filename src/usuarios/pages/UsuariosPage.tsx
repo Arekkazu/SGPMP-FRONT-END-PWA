@@ -213,7 +213,7 @@ export function UsuariosPage() {
         <UsuarioModal
           idUsuario={modal.idUsuario}
           onClose={cerrarModal}
-          onSaved={() => { cerrarModal(); cargar(); }}
+          onSaved={cargar}
           puedeEditar={puedeEditar && online}
         />
       )}
