@@ -17,7 +17,8 @@ import { useSensores } from '../hooks/useSensores';
 import { useCalibracion } from '../hooks/useCalibracion';
 import type { DispositivoIotResponse, SensorResponse, CalibracionResponse } from '../types';
 import { Buscador } from '../../shared/design-system/Buscador';
-import { useBusqueda } from '../../shared/hooks/useBusqueda';
+import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -129,6 +130,7 @@ function SensorSelector({ sensores, loading, error, onSelect, onBack }: {
 
 function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibraciones: CalibracionResponse[]; loading: boolean; sensor: SensorResponse }) {
   const { t } = useT('configuration');
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(calibraciones);
   if (loading) {
     return <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)', marginTop: 'var(--s4)' }}>{Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ height: 36, borderRadius: 'var(--r-md)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }} />)}<style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style></div>;
   }
@@ -151,7 +153,7 @@ function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibracio
               </tr>
             </thead>
             <tbody>
-              {calibraciones.map((c) => (
+              {enPagina.map((c) => (
                 <tr key={c.id_calibracion} style={{ background: 'var(--surface-card)' }}>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatTs(c.fecha_calibracion)}</td>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{formatearNumero(c.valor_referencia, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</td>
@@ -163,6 +165,9 @@ function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibracio
           </table>
         </ScrollRegion>
       )}
+      <div style={{ padding: '0 var(--s5) var(--s3)' }}>
+        <Paginacion pagina={pagina} totalPaginas={totalPaginas} onCambiar={setPagina} />
+      </div>
     </div>
   );
 }

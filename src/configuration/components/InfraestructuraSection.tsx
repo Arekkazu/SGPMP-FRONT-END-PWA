@@ -5,6 +5,9 @@ import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, Power, X, ChevronLeft, Warehouse } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
@@ -370,6 +373,7 @@ interface FincaSelectorProps {
 function FincaSelectorInfra({ fincas, loading, onSelect }: FincaSelectorProps) {
   const { t } = useT('configuration');
   const activas = fincas.filter((f) => f.es_activo);
+  const busqueda = useBusqueda(activas, (f) => `${f.nombre} ${f.ubicacion.municipio}`);
 
   if (loading) {
     return (
@@ -389,8 +393,12 @@ function FincaSelectorInfra({ fincas, loading, onSelect }: FincaSelectorProps) {
   }
 
   return (
+    <>
+    {busqueda.conBuscador && (
+      <Buscador id="buscar-finca-areas" label={t('busqueda.buscar_finca', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+    )}
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--s4)' }}>
-      {activas.map((f) => (
+      {busqueda.filtrados.map((f) => (
         <OptionCard key={f.id_finca} onClick={() => onSelect(f)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
             <Warehouse size={16} color="var(--brand-500)" aria-hidden />
@@ -405,6 +413,7 @@ function FincaSelectorInfra({ fincas, loading, onSelect }: FincaSelectorProps) {
         </OptionCard>
       ))}
     </div>
+    </>
   );
 }
 
@@ -436,6 +445,9 @@ export function InfraestructuraSection() {
   useEffect(() => {
     if (fincaSeleccionada) cargar(fincaSeleccionada.id_finca);
   }, [fincaSeleccionada, cargar]);
+
+  const busqueda = useBusqueda(infraestructuras, (i) => `${i.nombre_infraestructura} ${i.tipo_area}`);
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(busqueda.filtrados, busqueda.consulta);
 
   const cerrar = () => setModal({ tipo: 'ninguno' });
 
@@ -519,6 +531,11 @@ export function InfraestructuraSection() {
               )}
             </div>
           ) : (
+            <>
+            <Buscador id="buscar-area" label={t('busqueda.por_nombre', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+            {busqueda.filtrados.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('busqueda.sin_coincidencias', { ns: 'common' })}</p>
+            ) : (
             <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
               <ScrollRegion label={t('infraestructurasection.infraestructura_productiva')}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
@@ -530,7 +547,7 @@ export function InfraestructuraSection() {
                     </tr>
                   </thead>
                   <tbody>
-                    {infraestructuras.map((infra) => {
+                    {enPagina.map((infra) => {
                       // Componente en variable y no React.createElement con tipo dinamico: el
                       // icono sale de un mapa cerrado de Lucide (Bearer CWE-79).
                       const IconoArea = iconoTipoArea(infra.tipo_area);
@@ -604,6 +621,9 @@ export function InfraestructuraSection() {
                 </table>
               </ScrollRegion>
             </div>
+            )}
+            <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
+            </>
           )}
 
           {/* Modals */}

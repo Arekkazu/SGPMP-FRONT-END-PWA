@@ -13,7 +13,8 @@ import { useDispositivosIot } from '../hooks/useDispositivosIot';
 import { useConfiguracionRemota } from '../hooks/useConfiguracionRemota';
 import type { DispositivoIotResponse, ConfiguracionRemotaResponse, ConfigurarRemotamenteDTO } from '../types';
 import { Buscador } from '../../shared/design-system/Buscador';
-import { useBusqueda } from '../../shared/hooks/useBusqueda';
+import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -118,6 +119,7 @@ function Historial({ historial, loading, acciones, esCamara }: {
   historial: ConfiguracionRemotaResponse[]; loading: boolean; acciones: AccionesHistorial; esCamara: boolean;
 }) {
   const { t } = useT('configuration');
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(historial);
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)', marginTop: 'var(--s4)' }}>
@@ -132,6 +134,7 @@ function Historial({ historial, loading, acciones, esCamara }: {
     return <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: 'var(--s5) 0' }}>{t('configuracionremotasection.sin_historial_de_configuraciones')}</p>;
   }
   return (
+    <>
     <ScrollRegion label={t('configuracionremotasection.tabla_historial')}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
@@ -148,7 +151,7 @@ function Historial({ historial, loading, acciones, esCamara }: {
           </tr>
         </thead>
         <tbody>
-          {historial.map((c, i) => (
+          {enPagina.map((c, i) => (
             <tr key={c.id_configuracion_remota} style={{ background: 'var(--surface-card)' }}>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatTs(c.fecha_creacion)}</td>
               {esCamara ? (
@@ -164,7 +167,7 @@ function Historial({ historial, loading, acciones, esCamara }: {
               <td style={{ ...TD, whiteSpace: 'nowrap' }}>
                 {acciones.habilitadas && SIN_APLICAR.includes(c.estado?.toUpperCase()) && (
                   <div style={{ display: 'flex', gap: 'var(--s1)' }}>
-                    {i === 0 && (
+                    {pagina === 1 && i === 0 && (
                       <Button variant="ghost" size="sm" disabled={acciones.saving} onClick={() => acciones.onReintentar(c.id_configuracion_remota)}>
                         <RotateCw size={13} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('configuracionremotasection.reintentar')}</Button>
                     )}
@@ -178,6 +181,8 @@ function Historial({ historial, loading, acciones, esCamara }: {
         </tbody>
       </table>
     </ScrollRegion>
+    <Paginacion pagina={pagina} totalPaginas={totalPaginas} onCambiar={setPagina} />
+    </>
   );
 }
 

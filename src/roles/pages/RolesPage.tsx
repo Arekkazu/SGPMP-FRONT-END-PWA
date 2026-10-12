@@ -11,6 +11,8 @@ import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import type { RolConPermisosResponse, CrearRolDTO, EditarRolDTO, PermisoResponse } from '../types';
+import { usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from '../../configuration/components/Paginacion';
 
 type ModalState =
   | { tipo: 'ninguno' }
@@ -36,6 +38,11 @@ export function RolesPage() {
     if (puedeVer) cargar();
   }, [puedeVer, cargar]);
 
+  const rolesFiltrados = busqueda.trim()
+    ? roles.filter((r) => r.nombre_rol.toLowerCase().includes(busqueda.toLowerCase()))
+    : roles;
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(rolesFiltrados, busqueda);
+
   if (!puedeVer) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
@@ -45,9 +52,6 @@ export function RolesPage() {
     );
   }
 
-  const rolesFiltrados = busqueda.trim()
-    ? roles.filter((r) => r.nombre_rol.toLowerCase().includes(busqueda.toLowerCase()))
-    : roles;
 
   const handleSave = async (data: CrearRolDTO | { id: number; dto: EditarRolDTO; permisos: PermisoResponse[] }) => {
     setSaving(true);
@@ -135,13 +139,16 @@ export function RolesPage() {
         </div>
 
         <RolesTable
-          roles={rolesFiltrados}
+          roles={enPagina}
           loading={loading}
           puedeEditar={puedeEditar && online}
           puedeEliminar={puedeEliminar && online}
           onEditar={(rol) => setModal({ tipo: 'editar', rol })}
           onEliminar={(rol) => { limpiarError(); setModal({ tipo: 'confirmar-eliminar', rol }); }}
         />
+        <div style={{ padding: '0 var(--s5) var(--s4)' }}>
+          <Paginacion pagina={pagina} totalPaginas={totalPaginas} onCambiar={setPagina} />
+        </div>
       </div>
 
       {/* Modal crear/editar */}

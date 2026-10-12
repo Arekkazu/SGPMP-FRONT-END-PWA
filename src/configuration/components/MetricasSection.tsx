@@ -5,6 +5,9 @@ import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -409,6 +412,9 @@ export function MetricasSection({ idEspecie }: Props) {
 
   useEffect(() => { cargar(idEspecie); }, [cargar, idEspecie]);
 
+  const busqueda = useBusqueda(metricas, (m) => m.nombre);
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(busqueda.filtrados, busqueda.consulta);
+
   const cerrar = () => setModal({ tipo: 'ninguno' });
 
   const handleDesactivar = async (m: MetricaProduccionResponse) => {
@@ -462,6 +468,11 @@ export function MetricasSection({ idEspecie }: Props) {
       ) : metricas.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('metricassection.no_hay_metricas_registradas_para_esta')}</p>
       ) : (
+        <>
+        <Buscador id="buscar-metricas" label={t('busqueda.por_nombre', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+        {busqueda.filtrados.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('busqueda.sin_coincidencias', { ns: 'common' })}</p>
+        ) : (
         <ScrollRegion label={t('metricassection.metricas_de_produccion')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
@@ -472,7 +483,7 @@ export function MetricasSection({ idEspecie }: Props) {
               </tr>
             </thead>
             <tbody>
-              {metricas.map((m) => (
+              {enPagina.map((m) => (
                 <tr key={m.id_metrica_produccion} style={{ background: 'var(--surface-card)' }}>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>#{m.id_metrica_produccion}</td>
                   <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{m.nombre}</td>
@@ -514,6 +525,9 @@ export function MetricasSection({ idEspecie }: Props) {
             </tbody>
           </table>
         </ScrollRegion>
+        )}
+        <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
+        </>
       )}
 
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (

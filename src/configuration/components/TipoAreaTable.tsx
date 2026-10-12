@@ -3,6 +3,9 @@ import { useT } from '../../shared/i18n/useT';
 import { PowerOff } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 import type { TipoAreaResponse } from '../types';
 
 interface Props {
@@ -31,6 +34,8 @@ const TD: React.CSSProperties = {
 
 export function TipoAreaTable({ tipos, loading, puedeDesactivar, onDesactivar }: Props) {
   const { t } = useT('configuration');
+  const busqueda = useBusqueda(tipos, (tipo) => tipo.nombre);
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(busqueda.filtrados, busqueda.consulta);
 
   if (loading) {
     return (
@@ -50,6 +55,11 @@ export function TipoAreaTable({ tipos, loading, puedeDesactivar, onDesactivar }:
   }
 
   return (
+    <>
+    <Buscador id="buscar-tipo-area" label={t('busqueda.por_nombre', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+    {busqueda.filtrados.length === 0 ? (
+      <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s6) 0', fontSize: '13px' }}>{t('busqueda.sin_coincidencias', { ns: 'common' })}</p>
+    ) : (
     <ScrollRegion label={t('configurationpage.tipos_de_area')}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
@@ -60,7 +70,7 @@ export function TipoAreaTable({ tipos, loading, puedeDesactivar, onDesactivar }:
           </tr>
         </thead>
         <tbody>
-          {tipos.map((tipo) => (
+          {enPagina.map((tipo) => (
             <tr key={tipo.id_tipo_area} style={{ background: 'var(--surface-card)' }}>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
                 #{tipo.id_tipo_area}
@@ -98,5 +108,8 @@ export function TipoAreaTable({ tipos, loading, puedeDesactivar, onDesactivar }:
         </tbody>
       </table>
     </ScrollRegion>
+    )}
+    <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
+    </>
   );
 }
