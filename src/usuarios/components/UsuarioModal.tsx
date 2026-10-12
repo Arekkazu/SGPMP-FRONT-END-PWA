@@ -43,6 +43,10 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
   const [guardado, setGuardado] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EditarPerfilAdminDTO>({ mode: 'onBlur' });
+  // RF-06: la eliminación es irreversible; el backend ya rechaza editar (410), así
+  // que el modal pasa a solo lectura en vez de dejar llenar un formulario inútil.
+  const eliminado = detalle?.estado_cuenta.toUpperCase() === 'ELIMINADO';
+  const editable = puedeEditar && !eliminado;
 
   useEffect(() => {
     cargar(idUsuario);
@@ -162,7 +166,11 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
               <Badge variant={varianteEstado(detalle.estado_cuenta)}>{detalle.estado_cuenta}</Badge>
             </div>
 
-            {puedeEditar ? (
+            {eliminado && (
+              <Alert variant="info" title={t('usuariomodal.usuario_eliminado')} description={t('usuariomodal.usuario_eliminado_detalle')} className="mb" />
+            )}
+
+            {editable ? (
               <form onSubmit={handleSubmit(onSubmit)} noValidate>
                 <input type="hidden" {...register('version')} />
                 <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
