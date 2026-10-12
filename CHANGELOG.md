@@ -1,3 +1,9 @@
+## [1.0.0-rc.64](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.63...v1.0.0-rc.64) (2026-10-12)
+
+### Bug Fixes
+
+* **rf15:** paginar de 15 en 15 todos los listados de configuracion ([7ae7645](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7ae76458271bf4a1d84d9690604e03b480ad68ba))
+
 ## [1.0.0-rc.63](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.62...v1.0.0-rc.63) (2026-10-12)
 
 ### Bug Fixes
