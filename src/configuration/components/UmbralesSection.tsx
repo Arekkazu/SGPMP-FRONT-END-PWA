@@ -288,7 +288,7 @@ function UmbralModal({
         valor_min: Number(data.valor_min),
         valor_max: Number(data.valor_max),
         niveles,
-        fecha_actualizacion: umbral.fecha_actualizacion ?? new Date().toISOString(),
+        fecha_actualizacion: umbral.fecha_actualizacion,
       });
     } else {
       ok = await onRegistrar({

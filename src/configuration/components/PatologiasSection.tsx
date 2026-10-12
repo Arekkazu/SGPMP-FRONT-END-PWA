@@ -99,7 +99,7 @@ function PatologiaModal({
       ok = await onEditar(patologia.id_especies_patologias, {
         nombre: data.nombre.trim(),
         descripcion,
-        fecha_actualizacion: patologia.fecha_actualizacion ?? new Date().toISOString(),
+        fecha_actualizacion: patologia.fecha_actualizacion,
       });
     } else {
       ok = await onRegistrar({ id_especie: idEspecie, nombre: data.nombre.trim(), descripcion });

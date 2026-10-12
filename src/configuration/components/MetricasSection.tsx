@@ -167,7 +167,7 @@ function MetricaModal({
         tipo_medicion: data.tipo_medicion,
         aplica_a_tipo_activo: data.aplica_a_tipo_activo,
         ...atributos,
-        fecha_actualizacion: metrica.fecha_actualizacion ?? new Date().toISOString(),
+        fecha_actualizacion: metrica.fecha_actualizacion,
       });
     } else {
       ok = await onRegistrar({

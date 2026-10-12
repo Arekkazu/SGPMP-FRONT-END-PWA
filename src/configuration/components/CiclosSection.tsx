@@ -100,7 +100,7 @@ function CicloModal({
         nombre: data.nombre.trim(),
         descripcion,
         duracion_dias,
-        fecha_actualizacion: ciclo.fecha_actualizacion ?? new Date().toISOString(),
+        fecha_actualizacion: ciclo.fecha_actualizacion,
       });
     } else {
       ok = await onRegistrar({ id_especie: idEspecie, nombre: data.nombre.trim(), descripcion, duracion_dias });
