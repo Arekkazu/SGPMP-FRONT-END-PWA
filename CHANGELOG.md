@@ -1,3 +1,9 @@
+## [1.0.0-rc.61](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.60...v1.0.0-rc.61) (2026-10-12)
+
+### Bug Fixes
+
+* **usuarios:** confirmar «Cambios guardados» al editar un usuario como admin (RF-05) ([57af4c6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/57af4c666d488ba108c80b58deac981375eeacd6))
+
 ## [1.0.0-rc.60](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.59...v1.0.0-rc.60) (2026-10-11)
 
 ### Bug Fixes
