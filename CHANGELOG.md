@@ -1,3 +1,9 @@
+## [1.3.2-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.2-rc.1...v1.3.2-rc.2) (2026-10-13)
+
+### Bug Fixes
+
+* **rf16-mod9:** campos numericos que no aceptan letras al registrar metricas y demas formularios ([80b939b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/80b939b11a5e6fa80b6eb770fdab608debaddc59))
+
 ## [1.3.2-rc.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.1...v1.3.2-rc.1) (2026-10-13)
 
 ### Bug Fixes
