@@ -365,6 +365,13 @@ export const UNIDADES_POR_TIPO_MEDICION: Record<Exclude<TipoMedicion, 'OTRO'>, s
   CONTEO: ['unidades'],
 };
 
+/** Ciclo productivo de la especie y si la métrica es producto en él (RF-43 E-04). */
+export interface CicloMetrica {
+  id_ciclo_productivo: number;
+  nombre: string;
+  habilitada: boolean;
+}
+
 export interface MetricaProduccionResponse {
   id_metrica_produccion: number;
   nombre: string;
