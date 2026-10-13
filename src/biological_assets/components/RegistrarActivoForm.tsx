@@ -15,6 +15,8 @@ import { humanizar } from '../../shared/lib/etiquetas';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useCatalogoRegistro } from '../hooks/useCatalogoRegistro';
 import { idDeCatalogo } from '../../shared/lib/catalogo';
+import { usePermission } from '../../shared/rbac/usePermission';
+import { Link } from 'react-router-dom';
 import type { InfraestructuraResponse } from '../../configuration/types';
 
 export { idDeCatalogo };
@@ -163,11 +165,16 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   // La finca tiene áreas, pero de otra especie: se dice cuáles en vez de "Sin coincidencias".
   const nombreEspecie = (id: number | null) => especies.find((e) => e.id_especie === id)?.nombre ?? `#${id}`;
   const otrasEspecies = [...new Set(infraestructuras.map((i) => nombreEspecie(i.especie_id)))].join(', ');
-  const sinInfraCompatibles = idFinca && !cargandoInfra && infraCompatibles.length === 0
+  // RF-20: solo el Administrador crea/edita áreas; el resto debe pedírselo.
+  const puedeCrearAreas = usePermission(10, 1);
+  const motivoSinInfra = idFinca && !cargandoInfra && infraCompatibles.length === 0
     ? (infraestructuras.length > 0
       ? t('registraractivoform.areas_de_otra_especie', { especie: especie?.nombre ?? '', otras: otrasEspecies })
       : t('registraractivoform.sin_infraestructuras_compatibles'))
     : undefined;
+  const sinInfraCompatibles = motivoSinInfra && !puedeCrearAreas
+    ? `${motivoSinInfra} ${t('registraractivoform.contacta_administrador_area')}`
+    : motivoSinInfra;
   // #298 1.1: sin densidad máxima el backend rechaza el lote al final; se avisa antes.
   // `=== null` y no `== null`: una especie cacheada sin el campo no debe bloquear el registro.
   const loteSinDensidad = !esIndividual && !!especie && especie.densidad_maxima_por_especie === null;
@@ -311,36 +318,43 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
             <option value="">{cargando ? t('registraractivoform.cargando') : t('registraractivoform.seleccionar')}</option>
             {fincas.map((f) => <option key={f.id_finca} value={f.id_finca}>{f.nombre}</option>)}
           </Select>
-          <Controller
-            name="id_infraestructura"
-            control={control}
-            rules={{
-              required: t('registraractivoform.la_infraestructura_es_obligatoria'),
-              validate: (v) => {
-                const id = idDeCatalogo(v, opcInfra);
-                if (id === null) return t('registraractivoform.opcion_no_valida');
-                // Regla C1: escribir el ID de un área de otra especie no salta el filtro.
-                const area = infraestructuras.find((i) => i.id_infraestructura === id);
-                return !area || esCompatible(area) || t('registraractivoform.area_de_otra_especie', {
-                  area: area.nombre_infraestructura, especie: nombreEspecie(area.especie_id),
-                });
-              },
-            }}
-            render={({ field }) => (
-              <Combobox
-                id="registro-infraestructura" label={t('registraractivoform.infraestructura')} required
-                name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref}
-                opciones={infraCompatibles.map((i) => ({
-                  valor: `${i.nombre_infraestructura} (#${i.id_infraestructura})`,
-                  detalle: `${i.tipo_area} · ${formatearNumero(i.superficie)} m²`,
-                }))}
-                placeholder={cargandoInfra ? t('registraractivoform.cargando') : undefined}
-                hint={sinInfraCompatibles ?? t('registraractivoform.infraestructura_hint')}
-                vacio={sinInfraCompatibles}
-                error={errors.id_infraestructura?.message}
-              />
+          <div>
+            <Controller
+              name="id_infraestructura"
+              control={control}
+              rules={{
+                required: t('registraractivoform.la_infraestructura_es_obligatoria'),
+                validate: (v) => {
+                  const id = idDeCatalogo(v, opcInfra);
+                  if (id === null) return t('registraractivoform.opcion_no_valida');
+                  // Regla C1: escribir el ID de un área de otra especie no salta el filtro.
+                  const area = infraestructuras.find((i) => i.id_infraestructura === id);
+                  return !area || esCompatible(area) || t('registraractivoform.area_de_otra_especie', {
+                    area: area.nombre_infraestructura, especie: nombreEspecie(area.especie_id),
+                  });
+                },
+              }}
+              render={({ field }) => (
+                <Combobox
+                  id="registro-infraestructura" label={t('registraractivoform.infraestructura')} required
+                  name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref}
+                  opciones={infraCompatibles.map((i) => ({
+                    valor: `${i.nombre_infraestructura} (#${i.id_infraestructura})`,
+                    detalle: `${i.tipo_area} · ${formatearNumero(i.superficie)} m²`,
+                  }))}
+                  placeholder={cargandoInfra ? t('registraractivoform.cargando') : undefined}
+                  hint={sinInfraCompatibles ?? t('registraractivoform.infraestructura_hint')}
+                  vacio={sinInfraCompatibles}
+                  error={errors.id_infraestructura?.message}
+                />
+              )}
+            />
+            {sinInfraCompatibles && puedeCrearAreas && (
+              <Link to="/configuracion" style={{ color: 'var(--brand-600)', fontWeight: 600, fontSize: 'var(--fs-label-md)' }}>
+                {t('registraractivoform.ir_a_crear_area')}
+              </Link>
             )}
-          />
+          </div>
           <Input
             label={t('registraractivoform.fecha_de_inicio_de_ciclo')} required type="date" max={HOY}
             error={errors.fecha_inicio_ciclo?.message}
