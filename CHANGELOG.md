@@ -1,3 +1,32 @@
+## [1.3.0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.2.0...v1.3.0) (2026-10-13)
+
+### Features
+
+* **rf06:** accion desbloquear para cuentas bloqueadas en la gestion de usuarios ([68d660d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/68d660df79c284b9300536247f9031e90fc63bb4)), closes [#568](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/568)
+* **rf15-mod9:** grupo de manejo obligatorio en el formulario de especies (RF-15 v1.1) ([7cdb7a5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7cdb7a571c62345f1298495938ebd21cfa69a4f3))
+* **rf43-mod9:** elegir en que ciclos productivos una metrica es producto ([7cb0b7e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7cb0b7e1211ad549594719360685af9310a1821b))
+
+### Bug Fixes
+
+* **auditoria:** alinear los filtros pese al hint del campo usuario ([88c8f58](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/88c8f5838b3f8b90a775c6f83697e7b62b6d778d))
+* **auth:** mostrar el contador de intentos solo con el conteo real del backend (RF-02) ([69d2500](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/69d25009cf09feffd456b02047b1ed617a3dcfeb))
+* **m09:** buscador y paginacion en los listados de configuracion y roles ([3806fde](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3806fdee5aa8485a3a4c5e86eeb6d5088fadf4c7))
+* **pwa:** recargar con la version nueva cuando falta un chunk tras un despliegue ([4d7c3b8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4d7c3b8e97dd16cc153a2151e2ef7d1db200f370))
+* **rf02:** indicar que se esta cerrando la sesion ([cae3601](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cae360116a1ef2f54ea8fc00cf2fc6446eabeaeb))
+* **rf06:** mostrar en solo lectura el detalle de un usuario eliminado ([32ba89a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/32ba89a428ad45f386eb053499b16e30533dc612))
+* **rf06:** mostrar que la sesion termino por un cambio de estado de la cuenta ([e1a4cd1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e1a4cd106beb2461dbf4b7c10447ad87a20eecaa)), closes [#569](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/569)
+* **rf15:** paginar de 15 en 15 todos los listados de configuracion ([7ae7645](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7ae76458271bf4a1d84d9690604e03b480ad68ba))
+* **rf16:** editar ciclos, patologias, metricas y umbrales nunca editados sin falso 412 ([db4bbdf](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/db4bbdf0ea4f6155bfa0f4b4369a08a3863e0b37))
+* **rf16:** reactivar etapas del ciclo, avisos de exito y buscador con paginacion ([73709e7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/73709e70e6329c5e6138880aa87ab4421605d2f8))
+* **rf17-rf16:** borrar el aviso de error del intento anterior al cambiar los datos (CU-M09-03) ([972b768](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/972b7680def76cdbbc31b6f39fd6afb76e0fd3b8))
+* **rf18-rf19:** confirmar el guardado de parametros y mostrar el usuario por nombre ([a46dccf](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a46dccfad3e93468425c2f3d2050382c7a83dc89))
+* **rf41-mod2:** cargar las patologias del evento sanitario con el permiso de activos ([d8a1022](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d8a1022c8f33c9ba3c00d969317e970a10256a0d)), closes [Arekkazu/sgpmp-backend#578](https://github.com/Arekkazu/sgpmp-backend/issues/578)
+* **rf43-mod2:** elegir el producto del evento productivo de la lista de la fase activa ([5a816b1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5a816b1856e7fa399e9c6484fd8e8816ec0603d0))
+* **sesiones:** coordinar el refresco del token entre pestanas para no disparar el reuso (RF-02) ([a5e77db](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a5e77db07b55785e150cab4e96da640f7a150540))
+* **usuarios:** confirmar «Cambios guardados» al editar un usuario como admin (RF-05) ([57af4c6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/57af4c666d488ba108c80b58deac981375eeacd6))
+* **usuarios:** no usar la respuesta del PATCH como detalle del usuario ([f8e6301](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f8e6301375b4066221e1d925de94299bd2760ab6))
+* **usuarios:** omitir opcionales vacios al guardar y resolver el rol sin id ([5021e23](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5021e23eb65b58e24bda2916ecf079d5fe67dea9)), closes [#undefined](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/undefined)
+
 ## [1.3.0-rc.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.2.0...v1.3.0-rc.1) (2026-10-13)
 
 ### Features
