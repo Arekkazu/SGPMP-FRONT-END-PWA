@@ -33,6 +33,8 @@ interface ComboboxProps {
   placeholder?: string;
   hint?: string;
   error?: string;
+  /** Texto de la lista vacía; por defecto, "Sin coincidencias. Puedes escribir el ID." */
+  vacio?: string;
 }
 
 /**
@@ -43,7 +45,7 @@ interface ComboboxProps {
  */
 export function Combobox({
   id, label, opciones, value, onChange, onSelect, onEnter, onBlur, inputRef, name,
-  required, disabled, placeholder, hint, error,
+  required, disabled, placeholder, hint, error, vacio,
 }: ComboboxProps) {
   const { t } = useT('common');
   const input = useRef<HTMLInputElement | null>(null);
@@ -140,7 +142,7 @@ export function Combobox({
         {mostrar && (
           <ul id={listaId} role="listbox" aria-label={label} className="ds-combobox__lista">
             {visibles.length === 0 ? (
-              <li role="presentation" className="ds-combobox__vacio">{t('combobox.sin_coincidencias')}</li>
+              <li role="presentation" className="ds-combobox__vacio">{vacio ?? t('combobox.sin_coincidencias')}</li>
             ) : (
               visibles.map((o, i) => (
                 <li
