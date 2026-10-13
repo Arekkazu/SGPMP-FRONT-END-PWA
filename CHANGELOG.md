@@ -1,3 +1,16 @@
+## [1.0.0-rc.66](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.65...v1.0.0-rc.66) (2026-10-13)
+
+### Features
+
+* **rf43-mod9:** elegir en que ciclos productivos una metrica es producto ([7cb0b7e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7cb0b7e1211ad549594719360685af9310a1821b))
+
+### Bug Fixes
+
+* **rf17-rf16:** borrar el aviso de error del intento anterior al cambiar los datos (CU-M09-03) ([972b768](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/972b7680def76cdbbc31b6f39fd6afb76e0fd3b8))
+* **rf18-rf19:** confirmar el guardado de parametros y mostrar el usuario por nombre ([a46dccf](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a46dccfad3e93468425c2f3d2050382c7a83dc89))
+* **rf41-mod2:** cargar las patologias del evento sanitario con el permiso de activos ([d8a1022](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d8a1022c8f33c9ba3c00d969317e970a10256a0d)), closes [Arekkazu/sgpmp-backend#578](https://github.com/Arekkazu/sgpmp-backend/issues/578)
+* **rf43-mod2:** elegir el producto del evento productivo de la lista de la fase activa ([5a816b1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5a816b1856e7fa399e9c6484fd8e8816ec0603d0))
+
 ## [1.0.0-rc.65](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.0.0-rc.64...v1.0.0-rc.65) (2026-10-12)
 
 ### Bug Fixes

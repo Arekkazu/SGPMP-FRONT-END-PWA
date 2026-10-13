@@ -10,6 +10,7 @@ import type {
   RegistrarEventoReproductivoDTO,
   RegistrarEventoReproductivoResponse,
   EventoActivoResponse,
+  MetricaActivo,
 } from '../types';
 
 const BASE = '/activos-biologicos';
@@ -19,6 +20,18 @@ export const eventosApi = {
   async listar(idActivo: number): Promise<HistorialEventosResponse> {
     const res = await http.get<HistorialEventosResponse>(`${BASE}/${idActivo}/eventos`);
     return res.data;
+  },
+
+  /** Métricas de la especie del activo, bajo el permiso de activos (el Productor no lee M09). */
+  async metricas(idActivo: number): Promise<MetricaActivo[]> {
+    const res = await http.get<{ items: MetricaActivo[] }>(`${BASE}/${idActivo}/metricas`);
+    return res.data.items;
+  },
+
+  /** Patologías de la especie del activo para el evento sanitario (RF-41), con el permiso de activos. */
+  async patologias(idActivo: number): Promise<{ id_patologia: number; nombre: string }[]> {
+    const res = await http.get<{ items: { id_patologia: number; nombre: string }[] }>(`${BASE}/${idActivo}/patologias`);
+    return res.data.items;
   },
 
   async crecimiento(
