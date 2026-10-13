@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
-import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
+import { Plus, RefreshCw, Pencil, PowerOff, X, ListChecks } from 'lucide-react';
+import { CiclosMetricaModal } from './CiclosMetricaModal';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Buscador } from '../../shared/design-system/Buscador';
@@ -26,7 +27,8 @@ type ModalState =
   | { tipo: 'ninguno' }
   | { tipo: 'crear' }
   | { tipo: 'editar'; metrica: MetricaProduccionResponse }
-  | { tipo: 'desactivar'; metrica: MetricaProduccionResponse };
+  | { tipo: 'desactivar'; metrica: MetricaProduccionResponse }
+  | { tipo: 'ciclos'; metrica: MetricaProduccionResponse };
 
 interface FormValues {
   nombre: string;
@@ -513,6 +515,16 @@ export function MetricasSection({ idEspecie }: Props) {
                           <Pencil size={15} aria-hidden />
                         </Button>
                       )}
+                      {puedeEditar && m.es_activo && online && (
+                        <Button
+                          variant="ghost" size="sm"
+                          onClick={() => setModal({ tipo: 'ciclos', metrica: m })}
+                          aria-label={t('metricassection.ciclos_de', { nombre: m.nombre })}
+                          title={t('metricassection.ciclos_productivos')}
+                        >
+                          <ListChecks size={15} aria-hidden />
+                        </Button>
+                      )}
                       {puedeDesact && m.es_activo && online && (
                         <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'desactivar', metrica: m })} aria-label={`Desactivar ${m.nombre}`}>
                           <PowerOff size={15} aria-hidden style={{ color: 'var(--sem-error)' }} />
@@ -541,6 +553,7 @@ export function MetricasSection({ idEspecie }: Props) {
           onEditar={editar}
         />
       )}
+      {modal.tipo === 'ciclos' && <CiclosMetricaModal metrica={modal.metrica} onClose={cerrar} />}
       {modal.tipo === 'desactivar' && (
         <ConfirmDesactivar
           metrica={modal.metrica}

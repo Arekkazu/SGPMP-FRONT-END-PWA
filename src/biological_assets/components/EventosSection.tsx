@@ -16,8 +16,8 @@ import { EventoProductivoForm } from './EventoProductivoForm';
 import { RegistrarBajaModal } from './RegistrarBajaModal';
 import { RECURSO_ACTIVOS, ACCION_C } from '../rbac';
 import { ESTADOS_PERMITEN_EVENTOS } from '../types';
-import type { EstadoActivoNombre, EventoActivoResponse } from '../types';
-import { metricasApi, patologiasApi } from '../../configuration/api/especiesConfigApi';
+import type { EstadoActivoNombre, EventoActivoResponse, MetricaActivo } from '../types';
+import { eventosApi } from '../api/eventosApi';
 import { activosApi } from '../api/activosApi';
 
 type ModalTipo = 'ninguno' | 'crecimiento' | 'sanitario' | 'reproductivo' | 'productivo' | 'baja';
@@ -34,6 +34,9 @@ interface Props {
   onIrAFases?: () => void;
   onChanged: () => void;
 }
+
+/** Categorías de M09 que acepta el evento de crecimiento (RF-40). */
+const TIPOS_CRECIMIENTO = ['PESO', 'LONGITUD'];
 
 const CARD: React.CSSProperties = {
   background: 'var(--surface-card)',
@@ -88,7 +91,9 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
   const [aviso, setAviso] = useState<string | null>(null);
   const [configLoading, setConfigLoading] = useState(false);
   const [patologias, setPatologias] = useState<{ id_patologia: number; nombre: string }[]>([]);
-  const [metricas, setMetricas] = useState<{ id_metrica_produccion: number; nombre: string; tipo_medicion: string; unidad_medida: string }[]>([]);
+  const [metricas, setMetricas] = useState<MetricaActivo[]>([]);
+  const [metricasLoading, setMetricasLoading] = useState(false);
+  const [metricasError, setMetricasError] = useState(false);
   // #290 §3: el padre se elige entre los individuales de la misma especie, no por número.
   const [candidatosPadre, setCandidatosPadre] = useState<{ id: number; etiqueta: string }[]>([]);
   useEffect(() => {
@@ -102,22 +107,29 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
   useEffect(() => {
     if (esPoblacional) cargar();
   }, [esPoblacional, cargar]);
+  // RF-41: Productor e Ingeniero de campo registran eventos sanitarios pero no
+  // leen la configuración de M09; las patologías salen del endpoint de activos.
   useEffect(() => {
-    if (idEspecie == null || modal === 'ninguno') return;
+    if (modal !== 'sanitario') return;
     setConfigLoading(true);
-    Promise.all([
-      patologiasApi.listar(idEspecie, true),
-      metricasApi.listar(idEspecie, true),
-    ]).then(([patologiasData, metricasData]) => {
-      setPatologias(patologiasData.map((p) => ({ id_patologia: p.id_patologia, nombre: p.nombre })));
-      setMetricas(metricasData.map((m) => ({
-        id_metrica_produccion: m.id_metrica_produccion,
-        nombre: m.nombre,
-        tipo_medicion: m.tipo_medicion,
-        unidad_medida: m.unidad_medida,
-      })));
-    }).finally(() => setConfigLoading(false));
-  }, [idEspecie, modal]);
+    eventosApi.patologias(idActivo)
+      .then(setPatologias)
+      .catch(() => setPatologias([]))
+      .finally(() => setConfigLoading(false));
+  }, [idActivo, modal]);
+  // RF-40/RF-43: con el permiso de activos, no el de configuración de M09 (que el
+  // Productor no tiene), y marcadas según la fase activa.
+  const cargarMetricas = useCallback(() => {
+    setMetricasLoading(true);
+    setMetricasError(false);
+    eventosApi.metricas(idActivo)
+      .then(setMetricas)
+      .catch(() => { setMetricas([]); setMetricasError(true); })
+      .finally(() => setMetricasLoading(false));
+  }, [idActivo]);
+  useEffect(() => {
+    if (modal === 'crecimiento' || modal === 'productivo') cargarMetricas();
+  }, [modal, cargarMetricas]);
 
   const refrescar = useCallback(async () => {
     if (esPoblacional) await cargar();
@@ -216,8 +228,8 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
       {/* Modales */}
       {modal === 'crecimiento' && (
         <EventoCrecimientoForm
-          metricas={metricas}
-          metricasLoading={configLoading}
+          metricas={metricas.filter((m) => TIPOS_CRECIMIENTO.includes(m.tipo_medicion))}
+          metricasLoading={metricasLoading}
           esPoblacional={esPoblacional}
           saving={saving}
           saveError={saveError}
@@ -259,6 +271,10 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
       )}
       {modal === 'productivo' && (
         <EventoProductivoForm
+          metricas={metricas}
+          metricasLoading={metricasLoading}
+          metricasError={metricasError}
+          onReintentar={cargarMetricas}
           saving={saving}
           saveError={saveError}
           onClose={cerrar}
