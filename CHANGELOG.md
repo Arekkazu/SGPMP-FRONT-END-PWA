@@ -1,3 +1,9 @@
+## [1.3.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.1...v1.3.2) (2026-10-13)
+
+### Bug Fixes
+
+* **rf33-mod2:** indicar a quien pedir el area cuando la finca no tiene una para la especie ([0ceb441](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0ceb4413308ff18d6fce3dbfa3b4793016c9095a))
+
 ## [1.3.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.0...v1.3.1) (2026-10-13)
 
 ### Bug Fixes
