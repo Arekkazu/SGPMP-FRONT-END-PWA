@@ -140,7 +140,7 @@ export function ParametrosSection() {
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)' }} />{t('parametrossection.configuracion_activa')}</span>
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: 2 }}>
-              Última actualización por usuario #{config.id_usuario}
+              {t('parametrossection.actualizado_por', { usuario: config.nombre_usuario ?? `#${config.id_usuario}` })}
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>

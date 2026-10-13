@@ -203,8 +203,11 @@ export function FincasTable() {
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-mono-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{f.tamano_h}</span>
                       <span style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-muted)', marginLeft: 4 }}>ha</span>
                     </td>
-                    <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      {f.id_usuario != null ? `#${f.id_usuario}` : '—'}
+                    {/* RF-19: el productor por nombre; el #id queda solo si el backend no lo resuelve. */}
+                    <td style={f.nombre_usuario
+                      ? { ...TD, color: 'var(--text-secondary)' }
+                      : { ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {f.nombre_usuario ?? (f.id_usuario != null ? `#${f.id_usuario}` : '—')}
                     </td>
                     <td style={TD}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: f.es_activo ? 'var(--sem-success-bg)' : 'var(--surface-hover)', color: f.es_activo ? 'var(--sem-success)' : 'var(--text-muted)', border: `1px solid ${f.es_activo ? 'var(--sem-success-border)' : 'var(--surface-border)'}` }}>
