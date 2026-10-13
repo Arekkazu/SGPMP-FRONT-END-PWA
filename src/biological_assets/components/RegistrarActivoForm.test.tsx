@@ -72,6 +72,9 @@ describe('RegistrarActivoForm — áreas de otra especie (regla C1)', () => {
     await userEvent.selectOptions(screen.getByLabelText(/Finca/), '15');
     await userEvent.click(screen.getByRole('button', { name: /Mostrar opciones de Infraestructura/ }));
     expect(screen.getAllByText(/son para otra especie \(Mojarra Plateada\), no para Cachama Blanca/).length).toBeGreaterThan(0);
+    // RF-20: sin permiso para crear áreas (sesión sin permisos = Productor) se indica a quién pedirlo.
+    expect(screen.getAllByText(/Contacta a un Administrador para que cree el área/).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('link', { name: /Crear área en Configuración/ })).not.toBeInTheDocument();
 
     await userEvent.type(screen.getByRole('combobox', { name: /Infraestructura/ }), '16');
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
