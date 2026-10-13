@@ -72,5 +72,7 @@ export function useUmbralesAmbientales() {
     }
   }, []);
 
-  return { umbrales, loading, saving, error, saveError, cargar, registrar, editar, desactivar };
+  const limpiarSaveError = useCallback(() => setSaveError(null), []);
+
+  return { umbrales, loading, saving, error, saveError, cargar, registrar, editar, desactivar, limpiarSaveError };
 }

@@ -105,6 +105,7 @@ function MetricaModal({
   saving,
   saveError,
   onClose,
+  onLimpiarError,
   onRegistrar,
   onEditar,
 }: {
@@ -113,6 +114,8 @@ function MetricaModal({
   saving: boolean;
   saveError: import('../../shared/api/errors').ApiError | null;
   onClose: () => void;
+  /** Borra el error del intento anterior; se llama cuando el usuario cambia los datos. */
+  onLimpiarError: () => void;
   onRegistrar: (dto: import('../types').RegistrarMetricaDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarMetricaDTO) => Promise<boolean>;
 }) {
@@ -129,6 +132,13 @@ function MetricaModal({
   } = useForm<FormValues>({ mode: 'onBlur' });
   const tipoDato = watch('tipo_dato');
   const conRango = tipoDato !== '' && TIPOS_DATO_CON_RANGO.includes(tipoDato);
+
+  // CU-M09-03: el aviso de un intento anterior seguía visible tras cambiar los
+  // datos. Cualquier cambio lo borra.
+  useEffect(() => {
+    const sub = watch(() => { onLimpiarError(); });
+    return () => sub.unsubscribe();
+  }, [watch, onLimpiarError]);
 
   // RF-16: unidad_medida coherente con tipo_medicion — mismo patron que
   // UNIDADES_POR_MEDICION en EventoCrecimientoForm. OTRO no restringe (backend
@@ -406,7 +416,7 @@ export function MetricasSection({ idEspecie }: Props) {
   const puedeEditar = usePermission(19, 3);
   const puedeDesact = usePermission(19, 4);
 
-  const { metricas, loading, saving, error, saveError, cargar, registrar, editar, desactivar } = useMetricasProduccion();
+  const { metricas, loading, saving, error, saveError, cargar, registrar, editar, desactivar, limpiarSaveError } = useMetricasProduccion();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
 
@@ -415,7 +425,7 @@ export function MetricasSection({ idEspecie }: Props) {
   const busqueda = useBusqueda(metricas, (m) => m.nombre);
   const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(busqueda.filtrados, busqueda.consulta);
 
-  const cerrar = () => setModal({ tipo: 'ninguno' });
+  const cerrar = () => { limpiarSaveError(); setModal({ tipo: 'ninguno' }); };
 
   const handleDesactivar = async (m: MetricaProduccionResponse) => {
     setAccionError(null);
@@ -537,6 +547,7 @@ export function MetricasSection({ idEspecie }: Props) {
           saving={saving}
           saveError={saveError}
           onClose={cerrar}
+          onLimpiarError={limpiarSaveError}
           onRegistrar={registrar}
           onEditar={editar}
         />
