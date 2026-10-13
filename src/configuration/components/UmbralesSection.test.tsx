@@ -172,3 +172,22 @@ describe('UmbralesSection — validación cruzada RF-17', () => {
     });
   });
 });
+
+describe('UmbralesSection — error del intento anterior (CU-M09-03)', () => {
+  it('borra el aviso del servidor cuando el usuario cambia los datos', async () => {
+    umbrales.registrar.mockRejectedValueOnce({
+      code: 'RANGO_FISICO_EXCEDIDO', status: 422, field: null,
+      message: 'El rango supera el rango físico permitido para Temperatura del agua.',
+    });
+    const user = userEvent.setup();
+    render(<UmbralesSection idEspecie={3} />);
+    await abrirModal(user);
+    await user.selectOptions(screen.getByLabelText(/variable ambiental/i), '2');
+    await llenarNiveles(user, { min: 0, max: 14, normal: [6, 8], precaucion: [8, 14], critico: [0, 6] });
+    await user.click(screen.getByRole('button', { name: /registrar umbral/i }));
+    expect(await screen.findByText(/rango físico permitido para Temperatura/)).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText(/variable ambiental/i), '1');
+    expect(screen.queryByText(/rango físico permitido para Temperatura/)).not.toBeInTheDocument();
+  });
+});

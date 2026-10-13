@@ -61,6 +61,8 @@ export interface FincaResponse {
   fecha_creacion: string;
   fecha_actualizacion: string;
   id_usuario: number | null;
+  /** Nombre del productor (RF-19); null si el backend no lo puede resolver. */
+  nombre_usuario?: string | null;
 }
 
 export interface RegistrarFincaDTO {
@@ -474,6 +476,8 @@ export interface ConfiguracionGlobalResponse {
   heartbeat: number;
   fecha_actualizacion: string;
   id_usuario: number;
+  /** Quién hizo la última actualización (RF-18). */
+  nombre_usuario?: string | null;
   es_activo: boolean;
 }
 

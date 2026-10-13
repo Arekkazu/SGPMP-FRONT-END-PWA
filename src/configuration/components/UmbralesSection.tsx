@@ -199,6 +199,7 @@ function UmbralModal({
   saving,
   saveError,
   onClose,
+  onLimpiarError,
   onRegistrar,
   onEditar,
 }: {
@@ -209,6 +210,8 @@ function UmbralModal({
   saving: boolean;
   saveError: import('../../shared/api/errors').ApiError | null;
   onClose: () => void;
+  /** Borra el error del intento anterior; se llama cuando el usuario cambia los datos. */
+  onLimpiarError: () => void;
   onRegistrar: (dto: import('../types').RegistrarUmbralDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarUmbralDTO) => Promise<boolean>;
 }) {
@@ -223,6 +226,13 @@ function UmbralModal({
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
   const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
+
+  // CU-M09-03: el aviso de un intento anterior seguía visible tras cambiar los
+  // datos (p. ej. el rango físico de otra variable). Cualquier cambio lo borra.
+  useEffect(() => {
+    const sub = watch(() => { onLimpiarError(); setErrorValidacion(null); });
+    return () => sub.unsubscribe();
+  }, [watch, onLimpiarError]);
 
   const varSelId = watch('id_variable_ambiental');
   const varSel = getVar(variables, Number(varSelId));
@@ -540,7 +550,7 @@ export function UmbralesSection({ idEspecie }: Props) {
   const puedeEditar = usePermission(20, 3);
   const puedeDesact = usePermission(20, 4);
 
-  const { umbrales, loading, saving, error, saveError, cargar, registrar, editar, desactivar } = useUmbralesAmbientales();
+  const { umbrales, loading, saving, error, saveError, cargar, registrar, editar, desactivar, limpiarSaveError } = useUmbralesAmbientales();
   const { variables, cargar: cargarVariables } = useVariablesAmbientales();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
@@ -551,7 +561,7 @@ export function UmbralesSection({ idEspecie }: Props) {
   const busqueda = useBusqueda(umbrales, (u) => `${getVar(variables, u.id_variable_ambiental).nombre} ${u.unidad_medida}`);
   const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(busqueda.filtrados, busqueda.consulta);
 
-  const cerrar = () => setModal({ tipo: 'ninguno' });
+  const cerrar = () => { limpiarSaveError(); setModal({ tipo: 'ninguno' }); };
 
   const handleDesactivar = async (u: UmbralAmbientalResponse) => {
     setAccionError(null);
@@ -677,6 +687,7 @@ export function UmbralesSection({ idEspecie }: Props) {
           saving={saving}
           saveError={saveError}
           onClose={cerrar}
+          onLimpiarError={limpiarSaveError}
           onRegistrar={registrar}
           onEditar={editar}
         />
