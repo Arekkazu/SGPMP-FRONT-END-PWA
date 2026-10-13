@@ -68,16 +68,14 @@ describe('EventoProductivoForm', () => {
   });
 
   it('respeta el tipo de dato entero de la métrica', async () => {
-    const onConfirmar = renderizar([PESO_VIVO, ALEVINES]);
+    renderizar([PESO_VIVO, ALEVINES]);
 
     // La flecha del campo muestra todas las opciones sin escribir nada.
     await userEvent.click(screen.getByRole('button', { name: /opciones/i }));
     await userEvent.click(screen.getByRole('option', { name: /alevines producidos/ }));
+    // Un campo entero no admite el punto: "2.5" queda en 25.
     await userEvent.type(screen.getByRole('spinbutton'), '2.5');
-    await userEvent.click(screen.getByRole('button', { name: 'Registrar' }));
-
-    expect(onConfirmar).not.toHaveBeenCalled();
-    expect(screen.getByRole('spinbutton')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('spinbutton')).toHaveValue(25);
   });
 
   it('sin productos habilitados en la fase explica por qué en vez de mostrar el formulario', () => {
