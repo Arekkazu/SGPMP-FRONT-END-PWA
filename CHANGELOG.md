@@ -1,3 +1,9 @@
+## [1.3.0-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.0-rc.1...v1.3.0-rc.2) (2026-10-13)
+
+### Bug Fixes
+
+* **rf33-mod2:** explicar por que una finca no muestra areas para la especie elegida ([9631a2d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9631a2db564b1b6b748228bfaaa77e7fa3fffd5d))
+
 ## [1.3.0-rc.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.2.0...v1.3.0-rc.1) (2026-10-13)
 
 ### Features
