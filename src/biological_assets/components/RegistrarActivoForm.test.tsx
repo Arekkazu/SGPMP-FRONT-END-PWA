@@ -53,3 +53,24 @@ describe('RegistrarActivoForm — atributos dinámicos de la especie', () => {
     expect(await screen.findByLabelText(/Peso al nacer \(kg\)/)).toHaveAttribute('aria-invalid', 'true');
   });
 });
+
+describe('RegistrarActivoForm — finca sin áreas para la especie (RF-20)', () => {
+  it('dice para qué especies son sus áreas y pide contactar al Administrador', async () => {
+    parametrosEspecie.mockResolvedValue([]);
+    Object.assign(catalogo, {
+      fincas: [{ id_finca: 15, nombre: 'Finca Contador' }],
+      infraestructuras: [{ id_infraestructura: 16, nombre_infraestructura: 'Estanque sur', especie_id: 5 }],
+      especies: [...catalogo.especies, { id_especie: 5, nombre: 'Mojarra Plateada', es_activo: true, densidad_maxima_por_especie: '5' }],
+    });
+    render(<RegistrarActivoForm saving={false} saveError={null} onSubmit={vi.fn()} onCancel={vi.fn()} />);
+
+    await userEvent.selectOptions(screen.getByLabelText(/Finca/), '15');
+    expect(screen.getByText(/Elige primero la especie/)).toBeInTheDocument();
+
+    await userEvent.type(screen.getByRole('combobox', { name: /Especie/ }), 'Bovino');
+    expect(await screen.findByText(
+      'Finca Contador no tiene áreas para Bovino. Sus áreas son para: Mojarra Plateada. '
+      + 'Contacta a un Administrador para que cree el área para esta especie.',
+    )).toBeInTheDocument();
+  });
+});
