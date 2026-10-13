@@ -1,3 +1,9 @@
+## [1.3.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.0...v1.3.1) (2026-10-13)
+
+### Bug Fixes
+
+* **rf33:** mostrar las areas de la finca aunque sean de otra especie al registrar activo ([87f408f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/87f408f62710821dd65e6474714c85aa8445bf82))
+
 ## [1.3.0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.2.0...v1.3.0) (2026-10-13)
 
 ### Features
