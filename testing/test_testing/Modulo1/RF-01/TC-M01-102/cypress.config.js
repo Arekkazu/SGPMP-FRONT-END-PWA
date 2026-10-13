@@ -8,8 +8,8 @@ module.exports = defineConfig({
     specPattern: '**/*.cy.ts',
     supportFile: './commands.ts',
     video: true,
-    videosFolder: 'RESULTADOS/videos',
-    screenshotsFolder: 'RESULTADOS/screenshots',
+    videosFolder: 'evidencias/videos',
+    screenshotsFolder: 'evidencias/screenshots',
     viewportWidth: 1280,
     viewportHeight: 900,
     retries: {
