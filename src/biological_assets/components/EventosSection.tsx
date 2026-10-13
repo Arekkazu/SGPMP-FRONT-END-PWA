@@ -17,7 +17,6 @@ import { RegistrarBajaModal } from './RegistrarBajaModal';
 import { RECURSO_ACTIVOS, ACCION_C } from '../rbac';
 import { ESTADOS_PERMITEN_EVENTOS } from '../types';
 import type { EstadoActivoNombre, EventoActivoResponse, MetricaActivo } from '../types';
-import { patologiasApi } from '../../configuration/api/especiesConfigApi';
 import { eventosApi } from '../api/eventosApi';
 import { activosApi } from '../api/activosApi';
 
@@ -108,13 +107,16 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
   useEffect(() => {
     if (esPoblacional) cargar();
   }, [esPoblacional, cargar]);
+  // RF-41: Productor e Ingeniero de campo registran eventos sanitarios pero no
+  // leen la configuración de M09; las patologías salen del endpoint de activos.
   useEffect(() => {
-    if (idEspecie == null || modal !== 'sanitario') return;
+    if (modal !== 'sanitario') return;
     setConfigLoading(true);
-    patologiasApi.listar(idEspecie, true)
-      .then((data) => setPatologias(data.map((p) => ({ id_patologia: p.id_patologia, nombre: p.nombre }))))
+    eventosApi.patologias(idActivo)
+      .then(setPatologias)
+      .catch(() => setPatologias([]))
       .finally(() => setConfigLoading(false));
-  }, [idEspecie, modal]);
+  }, [idActivo, modal]);
   // RF-40/RF-43: con el permiso de activos, no el de configuración de M09 (que el
   // Productor no tiene), y marcadas según la fase activa.
   const cargarMetricas = useCallback(() => {

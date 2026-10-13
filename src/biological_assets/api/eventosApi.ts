@@ -28,6 +28,12 @@ export const eventosApi = {
     return res.data.items;
   },
 
+  /** Patologías de la especie del activo para el evento sanitario (RF-41), con el permiso de activos. */
+  async patologias(idActivo: number): Promise<{ id_patologia: number; nombre: string }[]> {
+    const res = await http.get<{ items: { id_patologia: number; nombre: string }[] }>(`${BASE}/${idActivo}/patologias`);
+    return res.data.items;
+  },
+
   async crecimiento(
     idActivo: number,
     dto: RegistrarEventoCrecimientoDTO
