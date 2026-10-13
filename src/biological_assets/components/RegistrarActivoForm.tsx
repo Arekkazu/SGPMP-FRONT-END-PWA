@@ -17,6 +17,7 @@ import { useCatalogoRegistro } from '../hooks/useCatalogoRegistro';
 import { idDeCatalogo } from '../../shared/lib/catalogo';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { Link } from 'react-router-dom';
+import type { InfraestructuraResponse } from '../../configuration/types';
 
 export { idDeCatalogo };
 
@@ -157,25 +158,23 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   const idEspecie = idDeCatalogo(watch('id_especie'), opcEspecies) ?? 0;
   const especie = especies.find((e) => e.id_especie === idEspecie);
   // RF-20 v1.1: el área declara su especie; las anteriores al cambio no (null).
-  const infraCompatibles = infraestructuras.filter((i) => i.especie_id == null || i.especie_id === idEspecie);
+  // Sin especie elegida aún no se filtra: antes la lista salía vacía y parecía que la finca no tenía áreas.
+  const esCompatible = (i: InfraestructuraResponse) => !idEspecie || i.especie_id == null || i.especie_id === idEspecie;
+  const infraCompatibles = infraestructuras.filter(esCompatible);
   const opcInfra = infraCompatibles.map((i) => ({ id: i.id_infraestructura, nombre: i.nombre_infraestructura }));
+  // La finca tiene áreas, pero de otra especie: se dice cuáles en vez de "Sin coincidencias".
+  const nombreEspecie = (id: number | null) => especies.find((e) => e.id_especie === id)?.nombre ?? `#${id}`;
+  const otrasEspecies = [...new Set(infraestructuras.map((i) => nombreEspecie(i.especie_id)))].join(', ');
   // RF-20: solo el Administrador crea/edita áreas; el resto debe pedírselo.
   const puedeCrearAreas = usePermission(10, 1);
-  const sinAreas = !!idFinca && !cargandoInfra && infraCompatibles.length === 0;
-  const hintInfra = (() => {
-    if (!sinAreas) return t('registraractivoform.infraestructura_hint');
-    if (!especie && infraestructuras.length > 0) return t('registraractivoform.elige_especie_para_ver_areas');
-    const otras = [...new Set(infraestructuras.map((i) =>
-      especies.find((e) => e.id_especie === i.especie_id)?.nombre ?? `#${i.especie_id}`))];
-    const aviso = otras.length === 0
-      ? t('registraractivoform.finca_sin_areas')
-      : t('registraractivoform.areas_de_otra_especie', {
-        finca: fincas.find((f) => f.id_finca === idFinca)?.nombre ?? '',
-        especie: especie?.nombre ?? '',
-        otras: otras.join(', '),
-      });
-    return puedeCrearAreas ? aviso : `${aviso} ${t('registraractivoform.contacta_administrador_area')}`;
-  })();
+  const motivoSinInfra = idFinca && !cargandoInfra && infraCompatibles.length === 0
+    ? (infraestructuras.length > 0
+      ? t('registraractivoform.areas_de_otra_especie', { especie: especie?.nombre ?? '', otras: otrasEspecies })
+      : t('registraractivoform.sin_infraestructuras_compatibles'))
+    : undefined;
+  const sinInfraCompatibles = motivoSinInfra && !puedeCrearAreas
+    ? `${motivoSinInfra} ${t('registraractivoform.contacta_administrador_area')}`
+    : motivoSinInfra;
   // #298 1.1: sin densidad máxima el backend rechaza el lote al final; se avisa antes.
   // `=== null` y no `== null`: una especie cacheada sin el campo no debe bloquear el registro.
   const loteSinDensidad = !esIndividual && !!especie && especie.densidad_maxima_por_especie === null;
@@ -325,7 +324,15 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
               control={control}
               rules={{
                 required: t('registraractivoform.la_infraestructura_es_obligatoria'),
-                validate: (v) => idDeCatalogo(v, opcInfra) !== null || t('registraractivoform.opcion_no_valida'),
+                validate: (v) => {
+                  const id = idDeCatalogo(v, opcInfra);
+                  if (id === null) return t('registraractivoform.opcion_no_valida');
+                  // Regla C1: escribir el ID de un área de otra especie no salta el filtro.
+                  const area = infraestructuras.find((i) => i.id_infraestructura === id);
+                  return !area || esCompatible(area) || t('registraractivoform.area_de_otra_especie', {
+                    area: area.nombre_infraestructura, especie: nombreEspecie(area.especie_id),
+                  });
+                },
               }}
               render={({ field }) => (
                 <Combobox
@@ -336,12 +343,13 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                     detalle: `${i.tipo_area} · ${formatearNumero(i.superficie)} m²`,
                   }))}
                   placeholder={cargandoInfra ? t('registraractivoform.cargando') : undefined}
-                  hint={hintInfra}
+                  hint={sinInfraCompatibles ?? t('registraractivoform.infraestructura_hint')}
+                  vacio={sinInfraCompatibles}
                   error={errors.id_infraestructura?.message}
                 />
               )}
             />
-            {sinAreas && puedeCrearAreas && (especie || infraestructuras.length === 0) && (
+            {sinInfraCompatibles && puedeCrearAreas && (
               <Link to="/configuracion" style={{ color: 'var(--brand-600)', fontWeight: 600, fontSize: 'var(--fs-label-md)' }}>
                 {t('registraractivoform.ir_a_crear_area')}
               </Link>
