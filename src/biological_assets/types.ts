@@ -343,8 +343,21 @@ export interface RegistrarEventoSanitarioResponse {
   cambio_estado: HistoricoEstadoResponse | null;
 }
 
+/** Métrica de la especie del activo (`GET /activos-biologicos/{id}/metricas`, RF-40/RF-43). */
+export interface MetricaActivo {
+  id_metrica_produccion: number;
+  nombre: string;
+  tipo_medicion: string;
+  unidad_medida: string;
+  tipo_dato: string | null;
+  valor_min: string | number | null;
+  valor_max: string | number | null;
+  /** El ciclo de la fase activa la admite en un evento productivo. */
+  habilitada_en_fase: boolean;
+}
+
 export interface RegistrarEventoProductivoDTO {
-  tipo_producto: string;
+  id_metrica_produccion: number;
   cantidad_producida: number;
   unidad_medida: string;
   fecha_evento: string;                    // date

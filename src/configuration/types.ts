@@ -1,5 +1,11 @@
 import type { TipoModelo } from '../prediction/types';
 
+/** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
+export type GrupoManejo = 'AVES' | 'PORCINOS' | 'ACUICULTURA' | 'ESPECIES_MEDIANAS' | 'ESPECIES_GRANDES';
+export const GRUPOS_MANEJO: readonly GrupoManejo[] = [
+  'AVES', 'PORCINOS', 'ACUICULTURA', 'ESPECIES_MEDIANAS', 'ESPECIES_GRANDES',
+];
+
 // =====================================================================
 // Especies
 // =====================================================================
@@ -10,7 +16,9 @@ export interface EspecieResponse {
   es_activo: boolean;
   fecha_creacion: string;
   fecha_actualizacion: string | null;
-  /** RFC-009: familia de modelo de IA de la especie; RF-20 exige que el modelo del área coincida. */
+  /** RF-15 v1.1: obligatorio al registrar; null solo en especies previas sin clasificar. */
+  grupo_manejo?: GrupoManejo | null;
+  /** Derivado de grupo_manejo (solo lectura); RF-20 exige que el modelo del área coincida. */
   tipo_modelo?: TipoModelo | null;
   /** RF-36: límite de densidad del lote; null = sin configurar (el registro de lotes falla). Decimal → texto. */
   densidad_maxima_por_especie?: number | string | null;
@@ -22,13 +30,13 @@ export interface EspecieResponse {
 export interface RegistrarEspecieDTO {
   nombre: string;
   descripcion?: string;
-  tipo_modelo?: TipoModelo | null;
+  grupo_manejo: GrupoManejo;
 }
 
 export interface EditarEspecieDTO {
   nombre: string;
   descripcion?: string;
-  tipo_modelo?: TipoModelo | null;
+  grupo_manejo: GrupoManejo;
   /** Concurrencia optimista: el valor del último GET; null si nunca se editó (#231). */
   fecha_actualizacion: string | null;
 }
@@ -53,6 +61,8 @@ export interface FincaResponse {
   fecha_creacion: string;
   fecha_actualizacion: string;
   id_usuario: number | null;
+  /** Nombre del productor (RF-19); null si el backend no lo puede resolver. */
+  nombre_usuario?: string | null;
 }
 
 export interface RegistrarFincaDTO {
@@ -311,7 +321,7 @@ export interface EditarCicloDTO {
   nombre: string;
   descripcion?: string;
   duracion_dias: number;
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 // =====================================================================
@@ -336,7 +346,7 @@ export interface RegistrarPatologiaDTO {
 export interface EditarPatologiaDTO {
   nombre: string;
   descripcion?: string;
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 // =====================================================================
@@ -356,6 +366,13 @@ export const UNIDADES_POR_TIPO_MEDICION: Record<Exclude<TipoMedicion, 'OTRO'>, s
   LONGITUD: ['cm', 'm'],
   CONTEO: ['unidades'],
 };
+
+/** Ciclo productivo de la especie y si la métrica es producto en él (RF-43 E-04). */
+export interface CicloMetrica {
+  id_ciclo_productivo: number;
+  nombre: string;
+  habilitada: boolean;
+}
 
 export interface MetricaProduccionResponse {
   id_metrica_produccion: number;
@@ -400,7 +417,7 @@ export interface EditarMetricaDTO {
   es_obligatorio: boolean;
   valor_min: number | null;
   valor_max: number | null;
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 // =====================================================================
@@ -438,7 +455,7 @@ export interface EditarUmbralDTO {
   valor_min: number;
   valor_max: number;
   niveles: NivelAlertaDTO[];
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 /** Catálogo de variables ambientales (`GET /configuracion/variables-ambientales`). */
@@ -459,6 +476,8 @@ export interface ConfiguracionGlobalResponse {
   heartbeat: number;
   fecha_actualizacion: string;
   id_usuario: number;
+  /** Quién hizo la última actualización (RF-18). */
+  nombre_usuario?: string | null;
   es_activo: boolean;
 }
 

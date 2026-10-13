@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { parametrosApi } from '../api/parametrosApi';
 import type { ConfiguracionGlobalResponse, CrearConfiguracionGlobalDTO, ActualizarConfiguracionGlobalDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { avisarExito } from '../../shared/hooks/useToast';
 
 export function useParametrosGlobales() {
   const [config, setConfig] = useState<ConfiguracionGlobalResponse | null>(null);
@@ -28,6 +29,8 @@ export function useParametrosGlobales() {
     setSaveError(null);
     try {
       const nueva = await parametrosApi.crear(dto);
+      // RF-18 (Salida): "Confirmación del guardado de la configuración".
+      avisarExito('registrado');
       setConfig(nueva);
       return true;
     } catch (e) {
@@ -43,6 +46,7 @@ export function useParametrosGlobales() {
     setSaveError(null);
     try {
       const actualizada = await parametrosApi.actualizar(id, dto);
+      avisarExito('guardado');
       setConfig(actualizada);
       return true;
     } catch (e) {

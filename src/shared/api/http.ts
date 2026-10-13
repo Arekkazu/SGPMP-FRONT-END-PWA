@@ -51,10 +51,24 @@ export const PERMISOS_POSIBLEMENTE_DESACTUALIZADOS = 'sgpmp:permisos-posiblement
 // invalida esta). LoginPage lee esta bandera una sola vez para explicarlo.
 const SESION_CERRADA_KEY = 'sgpmp:sesion-cerrada';
 
-export function consumirAvisoSesionCerrada(): boolean {
-  const avisar = sessionStorage.getItem(SESION_CERRADA_KEY) === '1';
-  if (avisar) sessionStorage.removeItem(SESION_CERRADA_KEY);
-  return avisar;
+/** Por qué se cerró la sesión: `cambio_estado` es el aviso propio de RF-06. */
+export type MotivoSesionCerrada = 'generica' | 'cambio_estado';
+
+// RF-06: "Su sesión ha sido finalizada debido a un cambio en el estado de su
+// cuenta." El backend lo señala con este código cuando la cuenta pasó a
+// INACTIVO, BLOQUEADO o ELIMINADO. No se intenta refresh: la sesión ya no vuelve.
+const CODIGO_SESION_FINALIZADA_POR_ESTADO = 'SESION_FINALIZADA_CAMBIO_ESTADO';
+
+export function consumirAvisoSesionCerrada(): MotivoSesionCerrada | null {
+  const valor = sessionStorage.getItem(SESION_CERRADA_KEY);
+  if (valor === null) return null;
+  sessionStorage.removeItem(SESION_CERRADA_KEY);
+  return valor === 'cambio_estado' ? 'cambio_estado' : 'generica';
+}
+
+function esSesionFinalizadaPorEstado(error: { response?: { data?: unknown } }): boolean {
+  const data = error.response?.data as Record<string, unknown> | undefined;
+  return data?.error_code === CODIGO_SESION_FINALIZADA_POR_ESTADO;
 }
 
 function statusDe(error: unknown): number | undefined {
@@ -76,12 +90,12 @@ export function esFalloDeRed(error: unknown): boolean {
   return !statusDe(error);
 }
 
-export function marcarSesionCerrada(): void {
-  sessionStorage.setItem(SESION_CERRADA_KEY, '1');
+export function marcarSesionCerrada(motivo: MotivoSesionCerrada = 'generica'): void {
+  sessionStorage.setItem(SESION_CERRADA_KEY, motivo);
 }
 
-function forzarLogout(): void {
-  marcarSesionCerrada();
+function forzarLogout(motivo: MotivoSesionCerrada = 'generica'): void {
+  marcarSesionCerrada(motivo);
   tokenStore.clear();
   window.location.replace('/login');
 }
@@ -92,17 +106,39 @@ function forzarLogout(): void {
 // token ya rotado por la primera y el backend lo trate como robo (mata la sesión).
 let refreshPromise: Promise<string> | null = null;
 
-export function refreshAccessToken(): Promise<string> {
+// La promesa solo cubre una pestaña, pero la cookie del refresh token es de todas:
+// al abrir o recargar varias a la vez cada una refrescaba con la misma cookie y el
+// backend registraba REUSO_TOKEN_REFRESCO_DETECTADO. El candado del navegador
+// serializa el refresco entre pestañas y el canal reparte el access token nuevo,
+// para que las demás no roten otra vez (cada rotación revoca el access anterior).
+const CANDADO_REFRESH = 'sigab-refresh-token';
+const canalSesion = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('sigab-sesion') : null;
+canalSesion?.addEventListener('message', (e: MessageEvent<unknown>) => {
+  if (typeof e.data === 'string') tokenStore.set(e.data);
+});
+
+/** Ejecuta `fn` con el candado de refresco compartido por todas las pestañas (sin Web Locks, directo). */
+async function entrePestanas<T>(fn: () => Promise<T>): Promise<T> {
+  if (typeof navigator !== 'undefined' && navigator.locks) return navigator.locks.request(CANDADO_REFRESH, fn);
+  return fn();
+}
+
+/** `tokenRechazado`: el access token del 401; si otra pestaña ya lo reemplazó, se usa el vigente. */
+export function refreshAccessToken(tokenRechazado?: string | null): Promise<string> {
+  const vigente = tokenStore.get();
+  if (tokenRechazado && vigente && vigente !== tokenRechazado) return Promise.resolve(vigente);
   if (!refreshPromise) {
-    refreshPromise = http
-      .post<{ token: string }>('/sesiones/refresh')
-      .then((res) => {
-        tokenStore.set(res.data.token);
-        return res.data.token;
-      })
-      .finally(() => {
-        refreshPromise = null;
-      });
+    refreshPromise = entrePestanas(async () => {
+      // Mientras se esperaba el candado otra pestaña pudo refrescar y repartir su token.
+      const actual = tokenStore.get();
+      if (actual && actual !== vigente) return actual;
+      const res = await http.post<{ token: string }>('/sesiones/refresh');
+      tokenStore.set(res.data.token);
+      canalSesion?.postMessage(res.data.token);
+      return res.data.token;
+    }).finally(() => {
+      refreshPromise = null;
+    });
   }
   return refreshPromise;
 }
@@ -112,6 +148,11 @@ http.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const isPublicAuthEndpoint = PUBLIC_AUTH_ENDPOINTS.includes(originalRequest?.url ?? '');
+
+    if (error.response?.status === 401 && !isPublicAuthEndpoint && esSesionFinalizadaPorEstado(error)) {
+      forzarLogout('cambio_estado');
+      return Promise.reject(mapToApiError(error));
+    }
 
     // QA TC-DIS-22/24/27: ante CUALQUIER 401 no-público se intenta el refresh
     // silencioso una vez antes de decidir. Antes solo se refrescaba con
@@ -127,7 +168,8 @@ http.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       try {
-        const newToken = await refreshAccessToken();
+        const rechazado = String(originalRequest.headers?.Authorization ?? '').replace(/^Bearer /, '');
+        const newToken = await refreshAccessToken(rechazado || null);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return http(originalRequest);
       } catch (refreshError) {

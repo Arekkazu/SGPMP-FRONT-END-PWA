@@ -40,8 +40,13 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
   // Rol con autocompletado: «Nombre (#id)», el nombre exacto o el ID.
   const [rolTexto, setRolTexto] = useState('');
   const [rolError, setRolError] = useState<string>();
+  const [guardado, setGuardado] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EditarPerfilAdminDTO>({ mode: 'onBlur' });
+  // RF-06: la eliminación es irreversible; el backend ya rechaza editar (410), así
+  // que el modal pasa a solo lectura en vez de dejar llenar un formulario inútil.
+  const eliminado = detalle?.estado_cuenta.toUpperCase() === 'ELIMINADO';
+  const editable = puedeEditar && !eliminado;
 
   useEffect(() => {
     cargar(idUsuario);
@@ -67,7 +72,8 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
         id_rol: detalle.id_rol,
       });
       setIdsFincas(new Set((detalle.fincas ?? []).map((f) => f.id_finca)));
-      setRolTexto(etiquetaDeCatalogo(detalle.nombre_rol, detalle.id_rol));
+      // El detalle del backend no trae id_rol: sin él, el nombre exacto basta.
+      setRolTexto(detalle.id_rol != null ? etiquetaDeCatalogo(detalle.nombre_rol, detalle.id_rol) : detalle.nombre_rol);
       setRolError(undefined);
     }
   }, [detalle, reset]);
@@ -92,10 +98,26 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
       setRolError(t('usuariomodal.rol_no_encontrado'));
       return;
     }
-    const ok = await editar(idUsuario, { ...data, id_rol: idRol, version: detalle.version });
+    setGuardado(false);
+    // Un opcional vacío se omite: el backend valida '' y lo rechaza.
+    const ok = await editar(idUsuario, {
+      ...data,
+      correo_electronico: data.correo_electronico || undefined,
+      telefono: data.telefono || undefined,
+      direccion: data.direccion || undefined,
+      id_rol: idRol,
+      version: detalle.version,
+    });
     if (!ok) return;
     const okFincas = await asignarFincas(idUsuario, { ids_fincas: Array.from(idsFincas) });
-    if (okFincas) onSaved();
+    // Recargar siempre: el perfil ya se guardó y sin la version nueva el
+    // siguiente guardado respondería 412. El modal queda abierto con la
+    // confirmación, igual que en Mi perfil.
+    cargar(idUsuario);
+    if (okFincas) {
+      setGuardado(true);
+      onSaved();
+    }
   };
 
   return (
@@ -133,6 +155,10 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
           <Alert variant="error" title={t('usuariomodal.error_al_guardar')} description={saveError.message} className="mb" />
         )}
 
+        {guardado && !saveError && (
+          <Alert variant="success" title={t('usuariomodal.cambios_guardados')} description={t('usuariomodal.usuario_actualizado_exitosamente')} className="mb" />
+        )}
+
         {detalle && !loading && (
           <>
             <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
@@ -140,7 +166,11 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
               <Badge variant={varianteEstado(detalle.estado_cuenta)}>{detalle.estado_cuenta}</Badge>
             </div>
 
-            {puedeEditar ? (
+            {eliminado && (
+              <Alert variant="info" title={t('usuariomodal.usuario_eliminado')} description={t('usuariomodal.usuario_eliminado_detalle')} className="mb" />
+            )}
+
+            {editable ? (
               <form onSubmit={handleSubmit(onSubmit)} noValidate>
                 <input type="hidden" {...register('version')} />
                 <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>

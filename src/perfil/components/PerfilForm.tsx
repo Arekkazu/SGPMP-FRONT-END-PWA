@@ -31,7 +31,8 @@ export function PerfilForm({ perfil, saving, saveError, saveSuccess, onSave }: P
   }, [perfil, reset]);
 
   const onSubmit = (data: EditarPerfilDTO) => {
-    onSave({ ...data, version: perfil.version });
+    // Un opcional vacío se omite: el backend valida '' y lo rechaza.
+    onSave({ ...data, telefono: data.telefono || undefined, direccion: data.direccion || undefined, version: perfil.version });
   };
 
   return (

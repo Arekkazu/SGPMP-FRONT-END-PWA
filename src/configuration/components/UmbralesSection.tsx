@@ -5,6 +5,9 @@ import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, X, CircleCheck, TriangleAlert, OctagonAlert, Gauge, type LucideIcon } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -196,6 +199,7 @@ function UmbralModal({
   saving,
   saveError,
   onClose,
+  onLimpiarError,
   onRegistrar,
   onEditar,
 }: {
@@ -206,6 +210,8 @@ function UmbralModal({
   saving: boolean;
   saveError: import('../../shared/api/errors').ApiError | null;
   onClose: () => void;
+  /** Borra el error del intento anterior; se llama cuando el usuario cambia los datos. */
+  onLimpiarError: () => void;
   onRegistrar: (dto: import('../types').RegistrarUmbralDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarUmbralDTO) => Promise<boolean>;
 }) {
@@ -220,6 +226,13 @@ function UmbralModal({
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
   const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
+
+  // CU-M09-03: el aviso de un intento anterior seguía visible tras cambiar los
+  // datos (p. ej. el rango físico de otra variable). Cualquier cambio lo borra.
+  useEffect(() => {
+    const sub = watch(() => { onLimpiarError(); setErrorValidacion(null); });
+    return () => sub.unsubscribe();
+  }, [watch, onLimpiarError]);
 
   const varSelId = watch('id_variable_ambiental');
   const varSel = getVar(variables, Number(varSelId));
@@ -288,7 +301,7 @@ function UmbralModal({
         valor_min: Number(data.valor_min),
         valor_max: Number(data.valor_max),
         niveles,
-        fecha_actualizacion: umbral.fecha_actualizacion ?? new Date().toISOString(),
+        fecha_actualizacion: umbral.fecha_actualizacion,
       });
     } else {
       ok = await onRegistrar({
@@ -537,7 +550,7 @@ export function UmbralesSection({ idEspecie }: Props) {
   const puedeEditar = usePermission(20, 3);
   const puedeDesact = usePermission(20, 4);
 
-  const { umbrales, loading, saving, error, saveError, cargar, registrar, editar, desactivar } = useUmbralesAmbientales();
+  const { umbrales, loading, saving, error, saveError, cargar, registrar, editar, desactivar, limpiarSaveError } = useUmbralesAmbientales();
   const { variables, cargar: cargarVariables } = useVariablesAmbientales();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
@@ -545,7 +558,10 @@ export function UmbralesSection({ idEspecie }: Props) {
   useEffect(() => { cargar(idEspecie); }, [cargar, idEspecie]);
   useEffect(() => { cargarVariables(); }, [cargarVariables]);
 
-  const cerrar = () => setModal({ tipo: 'ninguno' });
+  const busqueda = useBusqueda(umbrales, (u) => `${getVar(variables, u.id_variable_ambiental).nombre} ${u.unidad_medida}`);
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(busqueda.filtrados, busqueda.consulta);
+
+  const cerrar = () => { limpiarSaveError(); setModal({ tipo: 'ninguno' }); };
 
   const handleDesactivar = async (u: UmbralAmbientalResponse) => {
     setAccionError(null);
@@ -592,6 +608,11 @@ export function UmbralesSection({ idEspecie }: Props) {
       ) : umbrales.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('umbralessection.no_hay_umbrales_configurados_para_esta')}</p>
       ) : (
+        <>
+        <Buscador id="buscar-umbrales" label={t('busqueda.por_nombre', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+        {busqueda.filtrados.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('busqueda.sin_coincidencias', { ns: 'common' })}</p>
+        ) : (
         <ScrollRegion label={t('umbralessection.umbrales_ambientales')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
@@ -602,7 +623,7 @@ export function UmbralesSection({ idEspecie }: Props) {
               </tr>
             </thead>
             <tbody>
-              {umbrales.map((u) => {
+              {enPagina.map((u) => {
                 const v = getVar(variables, u.id_variable_ambiental);
                 return (
                   <tr key={u.id_umbral_ambiental} style={{ background: 'var(--surface-card)' }}>
@@ -652,6 +673,9 @@ export function UmbralesSection({ idEspecie }: Props) {
             </tbody>
           </table>
         </ScrollRegion>
+        )}
+        <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
+        </>
       )}
 
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (
@@ -663,6 +687,7 @@ export function UmbralesSection({ idEspecie }: Props) {
           saving={saving}
           saveError={saveError}
           onClose={cerrar}
+          onLimpiarError={limpiarSaveError}
           onRegistrar={registrar}
           onEditar={editar}
         />

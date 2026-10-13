@@ -7,8 +7,7 @@ import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
-import type { EditarEspecieDTO, EspecieResponse, RegistrarEspecieDTO } from '../types';
-import { TIPOS_MODELO_ASIGNABLES, TIPO_MODELO_LABEL, type TipoModelo } from '../../prediction/types';
+import { GRUPOS_MANEJO, type EditarEspecieDTO, type EspecieResponse, type GrupoManejo, type RegistrarEspecieDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
@@ -16,10 +15,10 @@ import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 interface FormValues {
   nombre: string;
   descripcion: string;
-  tipo_modelo: TipoModelo | '';
+  grupo_manejo: GrupoManejo | '';
 }
 
-const CAMPOS = ['nombre', 'descripcion', 'tipo_modelo'] as const;
+const CAMPOS = ['nombre', 'descripcion', 'grupo_manejo'] as const;
 
 interface Props {
   especie: EspecieResponse | null;
@@ -66,28 +65,29 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
 
   useEffect(() => {
     if (especie) {
-      reset({ nombre: especie.nombre, descripcion: especie.descripcion ?? '', tipo_modelo: especie.tipo_modelo ?? '' });
+      reset({ nombre: especie.nombre, descripcion: especie.descripcion ?? '', grupo_manejo: especie.grupo_manejo ?? '' });
     } else {
-      reset({ nombre: '', descripcion: '', tipo_modelo: '' });
+      reset({ nombre: '', descripcion: '', grupo_manejo: '' });
     }
   }, [especie, reset]);
 
   const onSubmit = async (data: FormValues) => {
     const descripcion = data.descripcion.trim() || undefined;
-    const tipo_modelo = data.tipo_modelo || null;
+    // La validación del formulario garantiza que no llegue vacío (RF-15 v1.1: obligatorio).
+    const grupo_manejo = data.grupo_manejo as GrupoManejo;
     let ok: boolean;
 
     if (modoEditar && especie) {
       ok = await onEditar(especie.id_especie, {
         nombre: data.nombre.trim(),
         descripcion,
-        tipo_modelo,
+        grupo_manejo,
         // Tal cual vino del GET, null incluido: una hora del cliente nunca coincide
         // con la de la BD y el backend lo rechazaba con 412 (#231).
         fecha_actualizacion: especie.fecha_actualizacion,
       });
     } else {
-      ok = await onRegistrar({ nombre: data.nombre.trim(), descripcion, tipo_modelo });
+      ok = await onRegistrar({ nombre: data.nombre.trim(), descripcion, grupo_manejo });
     }
 
     if (ok) onClose();
@@ -169,14 +169,15 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
             </div>
 
             <Select
-              id="especie-tipo-modelo"
-              label={t('especiesmodal.familia_de_modelo_ia')}
-              hint={t('especiesmodal.ayuda_familia_de_modelo')}
-              error={errors.tipo_modelo?.message}
-              {...register('tipo_modelo')}
+              id="especie-grupo-manejo"
+              label={t('especiesmodal.grupo_de_manejo')}
+              required
+              hint={t('especiesmodal.ayuda_grupo_de_manejo')}
+              error={errors.grupo_manejo?.message}
+              {...register('grupo_manejo', { required: t('especiesmodal.el_grupo_de_manejo_es_obligatorio') })}
             >
-              <option value="">{t('especiesmodal.sin_familia_de_modelo')}</option>
-              {TIPOS_MODELO_ASIGNABLES.map((tm) => <option key={tm} value={tm}>{TIPO_MODELO_LABEL[tm]}</option>)}
+              <option value="" disabled>{t('especiesmodal.selecciona_grupo_de_manejo')}</option>
+              {GRUPOS_MANEJO.map((g) => <option key={g} value={g}>{t(`especiesmodal.grupos_manejo.${g}`)}</option>)}
             </Select>
 
             {modoEditar && especie && (

@@ -29,7 +29,7 @@ export interface UsuarioDetalleResponse {
   fecha_nacimiento: string;
   fecha_registro: string;
   nombre_rol: string;
-  id_rol: number;
+  id_rol?: number;
   estado_cuenta: string;
   id_estado_cuenta: number;
   telefono?: string;
@@ -57,7 +57,7 @@ export interface EditarPerfilAdminDTO {
   id_rol?: number;
 }
 
-export type AccionCuenta = 'activar' | 'inactivar' | 'bloquear' | 'eliminar';
+export type AccionCuenta = 'activar' | 'inactivar' | 'bloquear' | 'desbloquear' | 'eliminar';
 
 export interface GestionarCuentaDTO {
   accion_cuenta: AccionCuenta;

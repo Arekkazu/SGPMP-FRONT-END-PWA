@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { LoginPage } from './LoginPage';
@@ -52,4 +53,32 @@ test('no muestra el botón de AgroFusion', () => {
   renderConError(null);
 
   expect(screen.queryByRole('button', { name: /continuar con agrofusion/i })).toBeNull();
+});
+
+// El contador refleja el "Intento N de 5" del backend, no un conteo local.
+const CONTADOR = /intentos fallidos/i;
+
+test('el contador muestra el intento que reporta el backend', () => {
+  renderConError({
+    code: 'CREDENCIALES_INVALIDAS',
+    message: 'Credenciales incorrectas. Intento 3 de 5. Tras el quinto intento fallido, su cuenta será bloqueada por 15 minutos por seguridad.',
+    status: 401,
+  });
+
+  expect(screen.getByText('Intentos fallidos (3 de 5)')).toBeInTheDocument();
+});
+
+test.each([
+  ['acceso restringido', { code: 'CUENTA_INACTIVA', message: 'Acceso restringido.', status: 403 }],
+  ['cuenta pendiente de activación', { code: 'CUENTA_PENDIENTE', message: 'Su cuenta no ha sido activada.', status: 403 }],
+  ['cuenta bloqueada', { code: 'CUENTA_BLOQUEADA', message: 'Cuenta bloqueada por seguridad.', status: 423 }],
+  ['correo inexistente (sin número de intento)', { code: 'CREDENCIALES_INVALIDAS', message: 'Credenciales incorrectas. Verifica tu correo electrónico y contraseña.', status: 401 }],
+])('no muestra contador con %s', async (_caso, error) => {
+  renderConError(error as ApiError);
+  // Antes cualquier envío fallido sumaba un intento local, fuera cual fuera el error.
+  await userEvent.type(screen.getByLabelText(/correo electrónico/i), 'usuario@dominio.com');
+  await userEvent.type(screen.getByLabelText(/^contraseña/i), 'Clave#2026');
+  await userEvent.click(screen.getByRole('button', { name: /^ingresar/i }));
+
+  expect(screen.queryByText(CONTADOR)).toBeNull();
 });

@@ -13,11 +13,20 @@ import type { LoginDTO } from '../types';
 import './AuthPages.css';
 import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
 
+// El backend cuenta los intentos y lo dice en el mensaje de CREDENCIALES_INVALIDAS
+// ("Intento 2 de 5") solo cuando la cuenta existe. Otros errores (cuenta pendiente,
+// acceso restringido, bloqueo, correo inexistente) no suman intentos.
+const INTENTO = /Intento (\d+) de (\d+)/;
+
+function intentosDelBackend(error: { code: string; message: string } | null) {
+  const m = error?.code === 'CREDENCIALES_INVALIDAS' ? INTENTO.exec(error.message) : null;
+  return m ? { usados: Number(m[1]), total: Number(m[2]) } : null;
+}
+
 export function LoginPage() {
   const { t } = useT('auth');
   const { login, loading, error, online, pendientes } = useLogin();
   const [showPw, setShowPw] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0);
   // El interceptor de http.ts deja esta bandera antes de un `location.replace`
   // a /login, asi que se lee una sola vez, al montar tras esa recarga completa.
   const [sesionCerrada] = useState(() => consumirAvisoSesionCerrada());
@@ -29,12 +38,8 @@ export function LoginPage() {
     formState: { errors },
   } = useForm<LoginDTO>({ mode: 'onBlur' });
 
-  const onSubmit = async (data: LoginDTO) => {
-    const ok = await login(data);
-    if (!ok && online) {
-      setFailedAttempts((n) => Math.min(n + 1, 5));
-    }
-  };
+  const intentos = intentosDelBackend(error);
+
 
   return (
     <div className="auth-bg">
@@ -57,7 +62,11 @@ export function LoginPage() {
           <Alert
             variant="warning"
             title={t('loginpage.sesion_cerrada')}
-            description={t('loginpage.sesion_cerrada_descripcion')}
+            description={
+              sesionCerrada === 'cambio_estado'
+                ? t('loginpage.sesion_finalizada_cambio_estado')
+                : t('loginpage.sesion_cerrada_descripcion')
+            }
             className="auth-alert"
           />
         )}
@@ -95,20 +104,20 @@ export function LoginPage() {
           </>
         )}
 
-        {failedAttempts > 0 && (
+        {intentos && (
           <div style={{ marginBottom: 'var(--s4)' }}>
             <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--sem-error)', fontWeight: 700, marginBottom: 6 }}>
-              {t('loginpage.intentos_fallidos', { count: failedAttempts })}
+              {t('loginpage.intentos_fallidos', { count: intentos.usados, total: intentos.total })}
             </p>
-            <div className="auth-attempts-bar" role="img" aria-label={t('loginpage.intentos_fallidos', { count: failedAttempts })}>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className={`auth-att-dot ${i <= failedAttempts ? 'auth-att-dot--used' : ''}`} />
+            <div className="auth-attempts-bar" role="img" aria-label={t('loginpage.intentos_fallidos', { count: intentos.usados, total: intentos.total })}>
+              {Array.from({ length: intentos.total }, (_, i) => (
+                <div key={i} className={`auth-att-dot ${i < intentos.usados ? 'auth-att-dot--used' : ''}`} />
               ))}
             </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <form onSubmit={handleSubmit(login)} noValidate>
           <div className="auth-field">
             <Input
               label={t('loginpage.correo_electronico')}

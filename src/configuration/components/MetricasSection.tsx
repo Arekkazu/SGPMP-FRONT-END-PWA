@@ -2,9 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
-import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
+import { Plus, RefreshCw, Pencil, PowerOff, X, ListChecks } from 'lucide-react';
+import { CiclosMetricaModal } from './CiclosMetricaModal';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -23,7 +27,8 @@ type ModalState =
   | { tipo: 'ninguno' }
   | { tipo: 'crear' }
   | { tipo: 'editar'; metrica: MetricaProduccionResponse }
-  | { tipo: 'desactivar'; metrica: MetricaProduccionResponse };
+  | { tipo: 'desactivar'; metrica: MetricaProduccionResponse }
+  | { tipo: 'ciclos'; metrica: MetricaProduccionResponse };
 
 interface FormValues {
   nombre: string;
@@ -102,6 +107,7 @@ function MetricaModal({
   saving,
   saveError,
   onClose,
+  onLimpiarError,
   onRegistrar,
   onEditar,
 }: {
@@ -110,6 +116,8 @@ function MetricaModal({
   saving: boolean;
   saveError: import('../../shared/api/errors').ApiError | null;
   onClose: () => void;
+  /** Borra el error del intento anterior; se llama cuando el usuario cambia los datos. */
+  onLimpiarError: () => void;
   onRegistrar: (dto: import('../types').RegistrarMetricaDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarMetricaDTO) => Promise<boolean>;
 }) {
@@ -126,6 +134,13 @@ function MetricaModal({
   } = useForm<FormValues>({ mode: 'onBlur' });
   const tipoDato = watch('tipo_dato');
   const conRango = tipoDato !== '' && TIPOS_DATO_CON_RANGO.includes(tipoDato);
+
+  // CU-M09-03: el aviso de un intento anterior seguía visible tras cambiar los
+  // datos. Cualquier cambio lo borra.
+  useEffect(() => {
+    const sub = watch(() => { onLimpiarError(); });
+    return () => sub.unsubscribe();
+  }, [watch, onLimpiarError]);
 
   // RF-16: unidad_medida coherente con tipo_medicion — mismo patron que
   // UNIDADES_POR_MEDICION en EventoCrecimientoForm. OTRO no restringe (backend
@@ -167,7 +182,7 @@ function MetricaModal({
         tipo_medicion: data.tipo_medicion,
         aplica_a_tipo_activo: data.aplica_a_tipo_activo,
         ...atributos,
-        fecha_actualizacion: metrica.fecha_actualizacion ?? new Date().toISOString(),
+        fecha_actualizacion: metrica.fecha_actualizacion,
       });
     } else {
       ok = await onRegistrar({
@@ -403,13 +418,16 @@ export function MetricasSection({ idEspecie }: Props) {
   const puedeEditar = usePermission(19, 3);
   const puedeDesact = usePermission(19, 4);
 
-  const { metricas, loading, saving, error, saveError, cargar, registrar, editar, desactivar } = useMetricasProduccion();
+  const { metricas, loading, saving, error, saveError, cargar, registrar, editar, desactivar, limpiarSaveError } = useMetricasProduccion();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
 
   useEffect(() => { cargar(idEspecie); }, [cargar, idEspecie]);
 
-  const cerrar = () => setModal({ tipo: 'ninguno' });
+  const busqueda = useBusqueda(metricas, (m) => m.nombre);
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(busqueda.filtrados, busqueda.consulta);
+
+  const cerrar = () => { limpiarSaveError(); setModal({ tipo: 'ninguno' }); };
 
   const handleDesactivar = async (m: MetricaProduccionResponse) => {
     setAccionError(null);
@@ -462,6 +480,11 @@ export function MetricasSection({ idEspecie }: Props) {
       ) : metricas.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('metricassection.no_hay_metricas_registradas_para_esta')}</p>
       ) : (
+        <>
+        <Buscador id="buscar-metricas" label={t('busqueda.por_nombre', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+        {busqueda.filtrados.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('busqueda.sin_coincidencias', { ns: 'common' })}</p>
+        ) : (
         <ScrollRegion label={t('metricassection.metricas_de_produccion')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
@@ -472,7 +495,7 @@ export function MetricasSection({ idEspecie }: Props) {
               </tr>
             </thead>
             <tbody>
-              {metricas.map((m) => (
+              {enPagina.map((m) => (
                 <tr key={m.id_metrica_produccion} style={{ background: 'var(--surface-card)' }}>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>#{m.id_metrica_produccion}</td>
                   <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{m.nombre}</td>
@@ -502,6 +525,16 @@ export function MetricasSection({ idEspecie }: Props) {
                           <Pencil size={15} aria-hidden />
                         </Button>
                       )}
+                      {puedeEditar && m.es_activo && online && (
+                        <Button
+                          variant="ghost" size="sm"
+                          onClick={() => setModal({ tipo: 'ciclos', metrica: m })}
+                          aria-label={t('metricassection.ciclos_de', { nombre: m.nombre })}
+                          title={t('metricassection.ciclos_productivos')}
+                        >
+                          <ListChecks size={15} aria-hidden />
+                        </Button>
+                      )}
                       {puedeDesact && m.es_activo && online && (
                         <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'desactivar', metrica: m })} aria-label={`Desactivar ${m.nombre}`}>
                           <PowerOff size={15} aria-hidden style={{ color: 'var(--sem-error)' }} />
@@ -514,6 +547,9 @@ export function MetricasSection({ idEspecie }: Props) {
             </tbody>
           </table>
         </ScrollRegion>
+        )}
+        <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
+        </>
       )}
 
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (
@@ -523,10 +559,12 @@ export function MetricasSection({ idEspecie }: Props) {
           saving={saving}
           saveError={saveError}
           onClose={cerrar}
+          onLimpiarError={limpiarSaveError}
           onRegistrar={registrar}
           onEditar={editar}
         />
       )}
+      {modal.tipo === 'ciclos' && <CiclosMetricaModal metrica={modal.metrica} onClose={cerrar} />}
       {modal.tipo === 'desactivar' && (
         <ConfirmDesactivar
           metrica={modal.metrica}
