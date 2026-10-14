@@ -26,6 +26,21 @@ export default defineConfig({
   workers: 1,
   reporter: 'html',
 
+  // Tolerancia visual común a todos los casos (decisión del subequipo):
+  // absorbe el ruido de renderizado entre ejecuciones (suavizado de fuentes
+  // y bordes) sin dejar pasar cambios de color, posición o elementos
+  // faltantes. Tope fijo en píxeles y no porcentaje: con fullPage un % crece
+  // con el alto de la página. Las zonas con datos variables se enmascaran
+  // por caso con `mask`, no subiendo este número.
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixels: 500,
+      threshold: 0.25,
+      animations: 'disabled',
+      caret: 'hide',
+    },
+  },
+
   use: {
     /* Es buena práctica incluir la diagonal final */
     baseURL: 'https://api.inmero.co/',
