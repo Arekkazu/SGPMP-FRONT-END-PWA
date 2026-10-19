@@ -97,7 +97,7 @@ export function marcarSesionCerrada(motivo: MotivoSesionCerrada = 'generica'): v
 function forzarLogout(motivo: MotivoSesionCerrada = 'generica'): void {
   marcarSesionCerrada(motivo);
   tokenStore.clear();
-  window.location.replace('/login');
+  window.location.replace(`${import.meta.env.BASE_URL}login`);
 }
 
 // Refrescos concurrentes (varias peticiones 401 a la vez) comparten esta misma
