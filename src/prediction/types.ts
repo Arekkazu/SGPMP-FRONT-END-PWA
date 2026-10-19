@@ -272,6 +272,60 @@ export interface DespliegueOtaResponse {
   fecha_inicio: string | null;
   fecha_fin: string | null;
   motivo_fallo: string | null;
+  /** DEV-15 (DB-04): distribución y fase del rollout a la que pertenece. */
+  id_distribucion_ota?: number | null;
+  fase_rollout?: FaseRollout | null;
+  fecha_expiracion_url?: string | null;
+  id_mensaje_notify?: string | null;
+}
+
+// RF-70 · Orquestador OTA (DEV-15, D6 de AIOT-DEV-03) — FE-01b
+/** Rollout por fases: 1 nodo canary, luego 20–30 % (parcial), luego el resto (total). */
+export type FaseRollout = 'CANARY' | 'PARCIAL' | 'TOTAL';
+export const FASES_ROLLOUT: FaseRollout[] = ['CANARY', 'PARCIAL', 'TOTAL'];
+export type EstadoDistribucion = 'EN_CURSO' | 'COMPLETADA' | 'DETENIDA';
+export type ModoDistribucion = 'INMEDIATO' | 'PROGRAMADO' | 'POR_LOTES';
+export const MODOS_DISTRIBUCION: ModoDistribucion[] = ['INMEDIATO', 'PROGRAMADO', 'POR_LOTES'];
+
+/** `POST /prediccion/ota/distribuciones`. El orden de los dispositivos decide el rollout: el primero es el canary. */
+export interface CrearDistribucionOtaDTO {
+  id_version_modelo: number;
+  lista_dispositivos_objetivo: number[];
+  modo_distribucion: ModoDistribucion;
+  ventana_inicio?: string | null;
+  ventana_fin?: string | null;
+  nivel_bateria_minimo?: number | null;
+  tamano_fragmento_bytes: number;
+  max_reintentos_descarga: number;
+  porcentaje_parcial: number;
+}
+
+export interface DistribucionOtaResponse {
+  id_distribucion_ota: number;
+  id_version_modelo: number;
+  tipo_modelo: TipoModelo;
+  componente: Componente | null;
+  modo_distribucion: ModoDistribucion;
+  ventana_inicio: string | null;
+  ventana_fin: string | null;
+  nivel_bateria_minimo: number | null;
+  tamano_fragmento_bytes: number;
+  max_reintentos_descarga: number;
+  porcentaje_parcial: number;
+  fase_rollout: FaseRollout;
+  estado_distribucion: EstadoDistribucion;
+  id_usuario: number;
+  fecha_creacion: string | null;
+  fecha_actualizacion: string | null;
+  despliegues: DespliegueOtaResponse[];
+}
+
+/** Dispositivo IoT que se puede elegir como objetivo (GET /configuracion/dispositivos-iot). */
+export interface DispositivoObjetivoOta {
+  id_dispositivo_iot: number;
+  serial: string;
+  descripcion: string;
+  es_activo: boolean;
 }
 
 export interface OtaStatusResponse {
