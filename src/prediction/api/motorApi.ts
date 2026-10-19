@@ -3,6 +3,8 @@ import type {
   ConfiguracionMotorIAListResponse,
   ConfiguracionMotorIAResponse,
   ConfigurarMotorDTO,
+  ResultadoGuardarMotor,
+  SincronizacionMotor,
 } from '../types';
 
 const BASE = '/prediccion/motor-ia';
@@ -66,9 +68,32 @@ export const motorApi = {
     return mapConfiguracion(res.data);
   },
 
-  /** Upsert por `tipo_modelo`: 201 si crea, 200 si actualiza (ambos éxito). */
-  async configurar(dto: ConfigurarMotorDTO): Promise<ConfiguracionMotorIAResponse> {
-    const res = await http.post<ConfiguracionMotorIARaw>(BASE, dto);
-    return mapConfiguracion(res.data);
+  /**
+   * Upsert por `tipo_modelo` y envío a los nodos Edge (RF-65, DEV-09).
+   *
+   * 201/200: guardada y aplicada (o sin nodos). 202: guardada, algún nodo quedó
+   * PENDIENTE (desconectado, E7) o FALLIDA (sin ACK, E8). 409: guardada, algún nodo
+   * confirmó otra `config_version` (E10). El 409 trae la configuración y los nodos
+   * en el cuerpo, no un error: se acepta aquí para que no lo convierta el interceptor.
+   */
+  async configurar(dto: ConfigurarMotorDTO): Promise<ResultadoGuardarMotor> {
+    const res = await http.post<ConfiguracionMotorIARaw & { sincronizacion?: SincronizacionMotor }>(BASE, dto, {
+      validateStatus: (status) => (status >= 200 && status < 300) || status === 409,
+    });
+    const { sincronizacion, ...config } = res.data;
+    return {
+      config: mapConfiguracion(config),
+      sincronizacion: sincronizacion ?? SIN_NODOS,
+      status: res.status as ResultadoGuardarMotor['status'],
+    };
+  },
+
+  /** Estado vigente de la configuración en cada nodo Edge (DEV-09). */
+  async obtenerSincronizacion(tipoModelo: string): Promise<SincronizacionMotor> {
+    const res = await http.get<SincronizacionMotor>(`${BASE}/${encodeURIComponent(tipoModelo)}/sincronizacion`);
+    return res.data;
   },
 };
+
+/** Respuesta de un backend anterior a DEV-09, sin bloque de sincronización. */
+const SIN_NODOS: SincronizacionMotor = { estado: 'APLICADA', mensaje: '', nodos: [] };
