@@ -17,12 +17,12 @@ self.addEventListener('push', (event) => {
       const title = notification.title || data.title || 'Notificación';
       const options = {
         body: notification.body || data.body || '',
-        icon: notification.icon || '/favicon.png',
-        badge: '/favicon.png',
+        icon: notification.icon || 'favicon.png',
+        badge: 'favicon.png',
         tag: data.id_notificacion
           ? `notificacion-${data.id_notificacion}`
           : 'sgpmp-notificacion',
-        data: { ...data, url: data.url || '/dashboard' },
+        data: { ...data, url: data.url || 'dashboard' },
       };
 
       const windows = await self.clients.matchAll({
@@ -41,10 +41,12 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const requestedUrl = event.notification.data?.url || '/dashboard';
-  let targetUrl = new URL('/dashboard', self.location.origin).href;
+  // Relativo al scope del SW: la app puede vivir bajo una subruta (VITE_BASE_PATH).
+  const scope = self.registration.scope;
+  const requestedUrl = event.notification.data?.url || 'dashboard';
+  let targetUrl = new URL('dashboard', scope).href;
   try {
-    const parsedUrl = new URL(requestedUrl, self.location.origin);
+    const parsedUrl = new URL(requestedUrl, scope);
     if (parsedUrl.origin === self.location.origin) targetUrl = parsedUrl.href;
   } catch {
     // Mantiene el destino seguro por defecto.

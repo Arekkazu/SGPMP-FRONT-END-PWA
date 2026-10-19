@@ -1,3 +1,22 @@
+## [1.3.2-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.2-rc.1...v1.3.2-rc.2) (2026-10-13)
+
+### Bug Fixes
+
+* **rf16-mod9:** campos numericos que no aceptan letras al registrar metricas y demas formularios ([80b939b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/80b939b11a5e6fa80b6eb770fdab608debaddc59))
+
+## [1.3.2-rc.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.1...v1.3.2-rc.1) (2026-10-13)
+
+### Bug Fixes
+
+* **rf33-mod2:** explicar por que una finca no muestra areas para la especie elegida ([9631a2d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9631a2db564b1b6b748228bfaaa77e7fa3fffd5d))
+* **rf33-mod2:** indicar a quien pedir el area cuando la finca no tiene una para la especie ([0ceb441](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0ceb4413308ff18d6fce3dbfa3b4793016c9095a))
+
+## [1.3.0-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.0-rc.1...v1.3.0-rc.2) (2026-10-13)
+
+### Bug Fixes
+
+* **rf33-mod2:** explicar por que una finca no muestra areas para la especie elegida ([9631a2d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9631a2db564b1b6b748228bfaaa77e7fa3fffd5d))
+
 ## [1.3.3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.2...v1.3.3) (2026-10-13)
 
 ### Bug Fixes

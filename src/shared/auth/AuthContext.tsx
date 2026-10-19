@@ -110,6 +110,13 @@ const RUTAS_PUBLICAS = [
   '/sso/callback',
 ];
 
+// El AuthProvider vive fuera del router, así que ve la URL con la subruta del
+// proxy (VITE_BASE_PATH, p. ej. /sigab-dev/login): se quita para comparar.
+function rutaSinBase(pathname: string): string {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  return base && pathname.startsWith(base) ? pathname.slice(base.length) || '/' : pathname;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const storedToken = tokenStore.get();
   const storedClaims = storedToken ? decodeJwtPayload(storedToken) : null;
@@ -220,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // autenticado", intenta un refresh silencioso con la cookie httpOnly.
   useEffect(() => {
     if (validStored) return;
-    if (RUTAS_PUBLICAS.includes(window.location.pathname)) {
+    if (RUTAS_PUBLICAS.includes(rutaSinBase(window.location.pathname))) {
       setIsBootstrapping(false);
       return;
     }

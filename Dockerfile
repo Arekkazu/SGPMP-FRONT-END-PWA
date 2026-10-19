@@ -10,6 +10,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 ARG VITE_API_BASE_URL
+ARG VITE_BASE_PATH=/
 ARG VITE_RECAPTCHA_SITE_KEY
 ARG VITE_FIREBASE_API_KEY
 ARG VITE_FIREBASE_AUTH_DOMAIN
@@ -20,6 +21,7 @@ ARG VITE_FIREBASE_APP_ID
 ARG VITE_VAPID_KEY
 
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_BASE_PATH=$VITE_BASE_PATH \
     VITE_RECAPTCHA_SITE_KEY=$VITE_RECAPTCHA_SITE_KEY \
     VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY \
     VITE_FIREBASE_AUTH_DOMAIN=$VITE_FIREBASE_AUTH_DOMAIN \
@@ -37,12 +39,19 @@ FROM nginx:1.27-alpine AS prod
 # Vite hornea en el bundle; con un valor vacío o relativo queda en blanco y la
 # API cae bajo 'self'. Solo se sustituye ${API_ORIGIN}: $uri y demás son de nginx.
 ARG VITE_API_BASE_URL
+# Subruta del proxy (la misma que Vite usó como base). Si el proxy la reenvía sin
+# quitarla (stripPath desactivado en Dokploy), nginx la recorta antes de buscar el
+# archivo: así sirve igual con o sin stripPath. Con "/" no hace falta nada.
+ARG VITE_BASE_PATH=/
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /tmp/default.conf.template
 RUN API_ORIGIN="$(printf '%s' "$VITE_API_BASE_URL" | sed -nE 's#^(https?://[^/]+).*#\1#p')" \
     envsubst '${API_ORIGIN}' < /tmp/default.conf.template > /etc/nginx/conf.d/default.conf \
- && rm /tmp/default.conf.template
+ && rm /tmp/default.conf.template \
+ && BASE_PATH="$(printf '%s' "$VITE_BASE_PATH" | sed -E 's#/?$#/#')" \
+ && if [ "$BASE_PATH" = "/" ]; then : > /etc/nginx/subruta.conf; \
+    else printf 'location ^~ %s {\n    rewrite ^%s(.*)$ /$1 last;\n}\n' "$BASE_PATH" "$BASE_PATH" > /etc/nginx/subruta.conf; fi
 
 EXPOSE 80
 
