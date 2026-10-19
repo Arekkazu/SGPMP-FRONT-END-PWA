@@ -8,7 +8,6 @@ import { Button } from '../../shared/design-system/Button';
 import { useOta } from '../hooks/useOta';
 import { OtaTable } from '../components/OtaTable';
 import { DespliegueDetalleModal } from '../components/DespliegueDetalleModal';
-import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { INPUT, LABEL, FILTER_GRID } from '../components/tableStyles';
@@ -31,10 +30,11 @@ export function DistribucionOtaView() {
   const puedeVer = usePermission(RECURSO_OTA, ACCION_R);
   const online = useOnlineStatus();
 
-  const { despliegues, paginacion, loading, error, fromCache, cargar } = useOta();
+  const { despliegues, paginacion, loading, error, fromCache, cargar, cargarPorVersion, versiones, cargarVersiones } = useOta();
 
   const [fEstado, setFEstado] = useState('');
   const [fTipo, setFTipo] = useState('');
+  const [fVersion, setFVersion] = useState('');
   const [sel, setSel] = useState<DespliegueOtaResponse | null>(null);
 
   const build = useCallback((): ListarDesplieguesFiltros => {
@@ -43,7 +43,17 @@ export function DistribucionOtaView() {
     return api;
   }, [fEstado]);
 
-  useEffect(() => { if (puedeVer) cargar({}, 1); }, [puedeVer, cargar]);
+  /** Con versión: estado OTA de esa versión (`ota-status`); sin versión: listado paginado. */
+  const consultar = useCallback((pagina: number) => {
+    if (fVersion) cargarPorVersion(Number(fVersion), fEstado || undefined);
+    else cargar(build(), pagina);
+  }, [fVersion, fEstado, cargarPorVersion, cargar, build]);
+
+  useEffect(() => {
+    if (!puedeVer) return;
+    cargar({}, 1);
+    cargarVersiones();
+  }, [puedeVer, cargar, cargarVersiones]);
 
   const visibles = useMemo(
     () => (fTipo ? despliegues.filter((d) => d.tipo_modelo === fTipo) : despliegues),
@@ -73,7 +83,7 @@ export function DistribucionOtaView() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <Button variant="ghost" size="sm" onClick={() => cargar(build(), paginacion.pagina)} aria-label={t('distribucionotaview.recargar')}>
+          <Button variant="ghost" size="sm" onClick={() => consultar(paginacion.pagina)} aria-label={t('distribucionotaview.recargar')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
           <Button variant="primary" size="sm" disabled title="La creación de despliegues es gestionada por el motor de distribución (equipo IoT/IA)">
@@ -82,8 +92,6 @@ export function DistribucionOtaView() {
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
-        <DatosSimuladosBanner detalle="La creación de despliegues y el monitor en vivo son del motor de distribución OTA (equipo IoT/IA). Esta vista muestra el estado real de lectura; el asistente de creación no está disponible" />
-
         {!online && <Alert variant="warning" title={t('distribucionotaview.sin_conexion')} description={t('distribucionotaview.mostrando_despliegues_cacheados')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('distribucionotaview.datos_desde_cache')} description="No se pudo conectar; se muestran los últimos despliegues disponibles." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('distribucionotaview.sin_acceso_a_la_distribucion') : t('distribucionotaview.error_al_cargar_despliegues')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
@@ -97,6 +105,17 @@ export function DistribucionOtaView() {
 
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', marginBottom: 'var(--s5)' }}>
           <div style={FILTER_GRID}>
+            <div>
+              <label style={LABEL} htmlFor="ota-version">{t('distribucionotaview.version')}</label>
+              <select id="ota-version" style={INPUT} value={fVersion} onChange={(e) => setFVersion(e.target.value)}>
+                <option value="">{t('distribucionotaview.todas')}</option>
+                {versiones.map((v) => (
+                  <option key={v.id_version_modelo} value={v.id_version_modelo}>
+                    {`${v.nombre_version} · ${TIPO_MODELO_LABEL[v.tipo_modelo] ?? v.tipo_modelo}${v.componente ? ` · ${v.componente}` : ''}`}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label style={LABEL} htmlFor="ota-tipo">{t('distribucionotaview.tipo_de_modelo')}</label>
               <select id="ota-tipo" style={INPUT} value={fTipo} onChange={(e) => setFTipo(e.target.value)}>
@@ -116,7 +135,7 @@ export function DistribucionOtaView() {
               </select>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <Button variant="secondary" size="sm" onClick={() => cargar(build(), 1)}>{t('distribucionotaview.aplicar')}</Button>
+              <Button variant="secondary" size="sm" onClick={() => consultar(1)}>{t('distribucionotaview.aplicar')}</Button>
             </div>
           </div>
         </div>
@@ -127,7 +146,7 @@ export function DistribucionOtaView() {
           pagina={paginacion.pagina}
           totalPaginas={paginacion.totalPaginas}
           totalRegistros={paginacion.totalRegistros}
-          onCambiar={(p) => cargar(build(), p)}
+          onCambiar={(p) => consultar(p)}
         />
       </div>
 
