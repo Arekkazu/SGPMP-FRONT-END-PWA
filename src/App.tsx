@@ -378,7 +378,7 @@ const App: React.FC = () => (
     <AuthProvider>
       <SessionManager />
       <ContextoProvider>
-        <IonReactRouter>
+        <IonReactRouter basename={import.meta.env.BASE_URL}>
           <AppRoutes />
         </IonReactRouter>
         <ToastHost />

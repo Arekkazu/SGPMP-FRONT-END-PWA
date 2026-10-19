@@ -37,10 +37,10 @@ function permisoInicial(): PushPermission {
   return Notification.permission;
 }
 
-// En el build, /sw.js (vite-plugin-pwa) precachea la app e importa el push de
-// firebase-messaging-sw.js: los dos comparten scope "/" y solo cabe uno. En `vite dev`
-// no se genera /sw.js, así que se registra el de push directamente.
-const SERVICE_WORKER_URL = import.meta.env.PROD ? '/sw.js' : '/firebase-messaging-sw.js';
+// En el build, sw.js (vite-plugin-pwa) precachea la app e importa el push de
+// firebase-messaging-sw.js: los dos comparten el scope de la base y solo cabe uno.
+// En `vite dev` no se genera sw.js, así que se registra el de push directamente.
+const SERVICE_WORKER_URL = `${import.meta.env.BASE_URL}${import.meta.env.PROD ? 'sw.js' : 'firebase-messaging-sw.js'}`;
 
 async function registrarServiceWorker(): Promise<ServiceWorkerRegistration> {
   return navigator.serviceWorker.register(SERVICE_WORKER_URL);
