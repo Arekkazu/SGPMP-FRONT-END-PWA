@@ -1,9 +1,11 @@
 import { useState, useCallback } from 'react';
 import { otaApi } from '../api/otaApi';
+import { modelosApi } from '../api/modelosApi';
 import { cacheDespliegues, getDesplieguesCache } from '../db/prediccionTables';
 import type {
   DespliegueOtaResponse,
   ListarDesplieguesFiltros,
+  VersionModeloResponse,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -16,12 +18,14 @@ interface PaginacionState {
 }
 
 /**
- * RF-70 · Estado OTA / distribución de modelos (read-only).
- * Lista de despliegues con caché read-only. La creación y el monitor en vivo
- * son responsabilidad del equipo IoT/IA (ver TASKS.md § Pendientes).
+ * RF-70 · Estado OTA / distribución de modelos (lectura, FE-01a).
+ * Datos reales de `GET /prediccion/despliegues` (paginado, con caché read-only) y,
+ * filtrando por versión, de `GET /prediccion/modelos/{id}/ota-status`. Los dos
+ * respondían 500 hasta DEV-03 (auditoría M04 con valores fuera del enum).
  */
 export function useOta() {
   const [despliegues, setDespliegues] = useState<DespliegueOtaResponse[]>([]);
+  const [versiones, setVersiones] = useState<VersionModeloResponse[]>([]);
   const [paginacion, setPaginacion] = useState<PaginacionState>({ pagina: 1, totalPaginas: 1, totalRegistros: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
@@ -85,5 +89,37 @@ export function useOta() {
     }
   }, []);
 
-  return { despliegues, paginacion, loading, error, fromCache, cargar };
+  /**
+   * Despliegues de una versión con `GET /prediccion/modelos/{id}/ota-status` (RF-70).
+   * El endpoint devuelve todos los de la versión, así que es una sola página.
+   */
+  const cargarPorVersion = useCallback(async (idVersion: number, estado?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await otaApi.estadoPorVersion(idVersion, estado ? { estado } : {});
+      const items = data.despliegues ?? [];
+      setDespliegues(items);
+      setPaginacion({ pagina: 1, totalPaginas: 1, totalRegistros: data.total ?? items.length });
+      setFromCache(false);
+    } catch (e) {
+      setDespliegues([]);
+      setPaginacion({ pagina: 1, totalPaginas: 1, totalRegistros: 0 });
+      setError(e as ApiError);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /** Versiones para el filtro (best-effort: sin ellas la vista sigue funcionando). */
+  const cargarVersiones = useCallback(async () => {
+    try {
+      const data = await modelosApi.listar({ limit: 100 });
+      setVersiones(data.items ?? []);
+    } catch {
+      setVersiones([]);
+    }
+  }, []);
+
+  return { despliegues, paginacion, loading, error, fromCache, cargar, cargarPorVersion, versiones, cargarVersiones };
 }
