@@ -4,6 +4,7 @@ import { ChevronRight, BellRing } from 'lucide-react';
 import { SeveridadBadge } from './SeveridadBadge';
 import { EstadoAlertaPill } from './EstadoAlertaPill';
 import { OrigenPill } from './OrigenPill';
+import { TipoAlertaTecnicaPill } from './TipoAlertaTecnicaPill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
 import { horaCaptura } from '../lib/sensorEscala';
 import type { AlertaSchema } from '../types';
@@ -55,7 +56,7 @@ export function AlertasTable({ alertas, loading, onAbrir }: Props) {
               onKeyDown={alActivarConTeclado(() => onAbrir(a.id_alerta))}
             >
               <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{a.tipo_alerta}</td>
-              <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>{a.tipo_variable}</td>
+              <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}><TipoAlertaTecnicaPill tipo={a.tipo_variable} /></td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                 {a.valor != null ? `${a.valor}${a.unidad ? ` ${a.unidad}` : ''}` : '—'}
               </td>

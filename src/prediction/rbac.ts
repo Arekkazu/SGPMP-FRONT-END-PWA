@@ -14,7 +14,7 @@ export const RECURSO_MOTOR = 41;
 export const RECURSO_HISTORIAL = 42;
 /** Recurso 43 — ciclo de vida de versiones de modelos (RF-69). Admin/Vet: R,U,E. */
 export const RECURSO_MODELOS = 43;
-/** Recurso 44 — estado OTA / distribución (RF-70). Admin/Ing: R. */
+/** Recurso 44 — estado OTA / distribución (RF-70). Admin/Ing: R · Admin: E (lanzar distribución, DB-04). */
 export const RECURSO_OTA = 44;
 /** Recurso 45 — retroalimentación clínica (RF-72). Vet: C · Admin/Vet: R. */
 export const RECURSO_RETRO = 45;
