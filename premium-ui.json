@@ -1,0 +1,14 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["src"],
+  "locale": "es-CO",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Form", "Toast", "CRUD", "Scrollbar"],
+  "requiredCommands": ["typecheck", "unit", "lint", "build"],
+  "commands": {
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
+    "unit": "npm run test.unit -- --run",
+    "lint": "npm run lint",
+    "build": "npm run build"
+  }
+}

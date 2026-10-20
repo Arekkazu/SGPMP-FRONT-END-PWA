@@ -473,6 +473,9 @@ export interface VariableAmbientalCatalogo {
 export interface ConfiguracionGlobalResponse {
   id_configuracion_global: number;
   frecuencia_muestreo: number;
+  /** RF-18 / DEV-14: nombre canónico, en minutos. Ausente en servidores anteriores. */
+  umbral_sin_senal?: number;
+  /** Alias de compatibilidad de umbral_sin_senal; no es intervalo_heartbeat. */
   heartbeat: number;
   fecha_actualizacion: string;
   id_usuario: number;

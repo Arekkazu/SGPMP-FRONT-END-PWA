@@ -12,6 +12,13 @@ import { Input } from './Input';
 const tecla = (campo: HTMLElement, key: string, extra = {}) => fireEvent.keyDown(campo, { key, ...extra });
 
 describe('Input type="number"', () => {
+  it('al validar, aria-describedby solo referencia el error y ayudas realmente visibles', () => {
+    render(<Input id="umbral" label="Umbral" hint="Ayuda" error="Revisa el valor" />);
+    const campo = screen.getByLabelText('Umbral');
+    expect(campo).toHaveAttribute('aria-describedby', 'umbral-err');
+    expect(document.getElementById('umbral-err')).toHaveTextContent('Revisa el valor');
+    expect(document.getElementById('umbral-hint')).toBeNull();
+  });
   it('decimal: rechaza letras y acepta dígitos, punto y signo', () => {
     render(<Input label="Decimal" type="number" step="any" />);
     const campo = screen.getByLabelText('Decimal');
