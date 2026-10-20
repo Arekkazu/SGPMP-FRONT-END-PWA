@@ -437,6 +437,8 @@ export function ConfigurationPage() {
       ));
 
   const [activeTab, setActiveTab] = useState<TabId>('catalogo');
+  const [parametrosEditState, setParametrosEditState] = useState({ dirty: false, busy: false });
+  const [tabPendiente, setTabPendiente] = useState<TabId | null>(null);
   // Sub-pestaña elegida por pestaña: volver a IoT regresa a la que se dejó.
   const [subActiva, setSubActiva] = useState<Partial<Record<TabId, string>>>({});
   const subs = SUBPESTANAS[activeTab];
@@ -474,7 +476,14 @@ export function ConfigurationPage() {
             key={tab.id}
             type="button"
             style={activeTab === tab.id ? TAB_BTN_ACTIVE : TAB_BTN}
-            onClick={() => setActiveTab(tab.id)}
+            disabled={parametrosEditState.busy}
+            onClick={() => {
+              if (activeTab === 'sistema' && parametrosEditState.dirty && tab.id !== activeTab) {
+                setTabPendiente(tab.id);
+              } else {
+                setActiveTab(tab.id);
+              }
+            }}
             aria-current={activeTab === tab.id ? 'page' : undefined}
           >
             {t(tab.claveLabel)}
@@ -497,9 +506,18 @@ export function ConfigurationPage() {
             {sub.contenido()}
           </>
         )}
-        {activeTab === 'sistema' && <ParametrosSection />}
+        {activeTab === 'sistema' && <ParametrosSection onEditStateChange={setParametrosEditState} />}
         {activeTab === 'plantillas' && <PlantillasTable />}
       </div>
+      {tabPendiente && <ConfirmModal
+        titulo={t('parametrossection.cambios_sin_guardar')}
+        mensaje={t('parametrossection.descartar_descripcion')}
+        confirmLabel={t('parametrossection.descartar_continuar')}
+        confirmVariant="primary"
+        saving={false}
+        onCancel={() => setTabPendiente(null)}
+        onConfirm={() => { setActiveTab(tabPendiente); setTabPendiente(null); }}
+      />}
     </div>
   );
 }
