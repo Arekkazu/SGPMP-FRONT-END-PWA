@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
+import { Loader2 } from 'lucide-react';
 import { IonReactRouter } from '@ionic/react-router';
 import { useLogout } from './auth/hooks/useLogout';
 import { useSessionTimeout } from './auth/hooks/useSessionTimeout';
@@ -144,7 +145,12 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
     });
   }, [notificaciones.cargar, notificaciones.loading]);
 
+  // El DELETE responde rápido, pero la recarga completa hacia /login tarda
+  // unos segundos: sin aviso parecía que el clic no había hecho nada.
+  const [saliendo, setSaliendo] = useState(false);
   const handleLogout = () => {
+    if (saliendo) return;
+    setSaliendo(true);
     void logout();
   };
 
@@ -161,6 +167,18 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
         }}
       >{t('saltar_al_contenido')}</a>
       <Sidebar open={sidebarOpen} onLogout={handleLogout} onNavigate={() => setSidebarOpen(false)} />
+      {saliendo && (
+        <div className="ds-modal" style={{ alignItems: 'center' }}>
+          <div
+            role="status"
+            className="ds-modal__panel"
+            style={{ padding: 'var(--s6)', display: 'flex', alignItems: 'center', gap: 'var(--s3)', width: 'auto' }}
+          >
+            <Loader2 size={20} className="ds-btn__spinner" aria-hidden />
+            {t('cerrando_sesion')}
+          </div>
+        </div>
+      )}
       {sidebarOpen && (
         <div
           // Por encima de la AppBar (z-100) y por debajo del drawer (z-150):
@@ -360,7 +378,7 @@ const App: React.FC = () => (
     <AuthProvider>
       <SessionManager />
       <ContextoProvider>
-        <IonReactRouter>
+        <IonReactRouter basename={import.meta.env.BASE_URL}>
           <AppRoutes />
         </IonReactRouter>
         <ToastHost />

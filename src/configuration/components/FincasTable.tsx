@@ -4,6 +4,8 @@ import { useT } from '../../shared/i18n/useT';
 import { Plus, RefreshCw, Pencil, PowerOff, RotateCcw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+import { usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -105,6 +107,7 @@ export function FincasTable() {
   const fincasFiltradas = fincas.filter((f) =>
     f.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(fincasFiltradas, busqueda);
   const activas   = fincas.filter((f) => f.es_activo).length;
   const inactivas = fincas.length - activas;
 
@@ -179,7 +182,7 @@ export function FincasTable() {
                 </tr>
               </thead>
               <tbody>
-                {fincasFiltradas.map((f) => (
+                {enPagina.map((f) => (
                   <tr key={f.id_finca} style={{ background: 'var(--surface-card)' }}>
                     <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>#{f.id_finca}</td>
                     <td style={TD}>
@@ -200,8 +203,11 @@ export function FincasTable() {
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-mono-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{f.tamano_h}</span>
                       <span style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-muted)', marginLeft: 4 }}>ha</span>
                     </td>
-                    <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      {f.id_usuario != null ? `#${f.id_usuario}` : '—'}
+                    {/* RF-19: el productor por nombre; el #id queda solo si el backend no lo resuelve. */}
+                    <td style={f.nombre_usuario
+                      ? { ...TD, color: 'var(--text-secondary)' }
+                      : { ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {f.nombre_usuario ?? (f.id_usuario != null ? `#${f.id_usuario}` : '—')}
                     </td>
                     <td style={TD}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: f.es_activo ? 'var(--sem-success-bg)' : 'var(--surface-hover)', color: f.es_activo ? 'var(--sem-success)' : 'var(--text-muted)', border: `1px solid ${f.es_activo ? 'var(--sem-success-border)' : 'var(--surface-border)'}` }}>
@@ -237,6 +243,9 @@ export function FincasTable() {
             </table>
           </ScrollRegion>
         </div>
+      )}
+      {!loading && fincasFiltradas.length > 0 && (
+        <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={fincasFiltradas.length} onCambiar={setPagina} />
       )}
 
       {/* Modales */}

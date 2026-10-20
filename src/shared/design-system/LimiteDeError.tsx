@@ -2,6 +2,7 @@ import React from 'react';
 import { useT } from '../i18n/useT';
 import { Alert } from './Alert';
 import { Button } from './Button';
+import { recargarConVersionNueva } from '../lib/recargaTrasDespliegue';
 
 function ErrorDePagina() {
   const { t } = useT('common');
@@ -10,8 +11,9 @@ function ErrorDePagina() {
       <Alert variant="error" title={t('errores.pagina_titulo')} description={t('errores.pagina_detalle')} />
       <div style={{ marginTop: 'var(--s4)' }}>
         {/* Recargar y no solo re-renderizar: React.lazy guarda el chunk que no se
-            pudo descargar y volveria a fallar igual. */}
-        <Button variant="secondary" size="md" onClick={() => window.location.reload()}>
+            pudo descargar y volveria a fallar igual. Tras un despliegue hay que
+            esperar al service worker nuevo o se recarga la version vieja. */}
+        <Button variant="secondary" size="md" onClick={() => void recargarConVersionNueva()}>
           {t('acciones.reintentar')}
         </Button>
       </div>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 /** Con más opciones que esto, una cuadrícula de tarjetas deja de escanearse (T-06). */
 export const UMBRAL_BUSCADOR = 8;
@@ -19,4 +19,26 @@ export function useBusqueda<T>(items: T[], texto: (item: T) => string) {
 
 export function normalizar(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+
+/** Filas por página en todos los listados de configuración: más se vuelve una lista saturada. */
+export const POR_PAGINA = 15;
+
+/**
+ * Paginación en el cliente para listas que el backend entrega completas (y que
+ * se cachean enteras para el modo offline). Vuelve a la página 1 cuando cambia
+ * `reinicio` —normalmente la consulta del buscador— y nunca queda en una página
+ * vacía si la lista se acorta.
+ */
+export function usePaginado<T>(items: T[], reinicio?: unknown, porPagina = POR_PAGINA) {
+  const [pagina, setPagina] = useState(1);
+  useEffect(() => { setPagina(1); }, [reinicio]);
+  const totalPaginas = Math.max(1, Math.ceil(items.length / porPagina));
+  const actual = Math.min(pagina, totalPaginas);
+  return {
+    pagina: actual,
+    setPagina,
+    totalPaginas,
+    enPagina: items.slice((actual - 1) * porPagina, actual * porPagina),
+  };
 }

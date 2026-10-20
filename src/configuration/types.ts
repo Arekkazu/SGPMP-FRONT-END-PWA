@@ -61,6 +61,8 @@ export interface FincaResponse {
   fecha_creacion: string;
   fecha_actualizacion: string;
   id_usuario: number | null;
+  /** Nombre del productor (RF-19); null si el backend no lo puede resolver. */
+  nombre_usuario?: string | null;
 }
 
 export interface RegistrarFincaDTO {
@@ -319,7 +321,7 @@ export interface EditarCicloDTO {
   nombre: string;
   descripcion?: string;
   duracion_dias: number;
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 // =====================================================================
@@ -344,7 +346,7 @@ export interface RegistrarPatologiaDTO {
 export interface EditarPatologiaDTO {
   nombre: string;
   descripcion?: string;
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 // =====================================================================
@@ -364,6 +366,13 @@ export const UNIDADES_POR_TIPO_MEDICION: Record<Exclude<TipoMedicion, 'OTRO'>, s
   LONGITUD: ['cm', 'm'],
   CONTEO: ['unidades'],
 };
+
+/** Ciclo productivo de la especie y si la métrica es producto en él (RF-43 E-04). */
+export interface CicloMetrica {
+  id_ciclo_productivo: number;
+  nombre: string;
+  habilitada: boolean;
+}
 
 export interface MetricaProduccionResponse {
   id_metrica_produccion: number;
@@ -408,7 +417,7 @@ export interface EditarMetricaDTO {
   es_obligatorio: boolean;
   valor_min: number | null;
   valor_max: number | null;
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 // =====================================================================
@@ -446,7 +455,7 @@ export interface EditarUmbralDTO {
   valor_min: number;
   valor_max: number;
   niveles: NivelAlertaDTO[];
-  fecha_actualizacion?: string;
+  fecha_actualizacion?: string | null;
 }
 
 /** Catálogo de variables ambientales (`GET /configuracion/variables-ambientales`). */
@@ -467,6 +476,8 @@ export interface ConfiguracionGlobalResponse {
   heartbeat: number;
   fecha_actualizacion: string;
   id_usuario: number;
+  /** Quién hizo la última actualización (RF-18). */
+  nombre_usuario?: string | null;
   es_activo: boolean;
 }
 

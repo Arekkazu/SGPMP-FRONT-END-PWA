@@ -5,6 +5,9 @@ import { useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -99,7 +102,7 @@ function PatologiaModal({
       ok = await onEditar(patologia.id_especies_patologias, {
         nombre: data.nombre.trim(),
         descripcion,
-        fecha_actualizacion: patologia.fecha_actualizacion ?? new Date().toISOString(),
+        fecha_actualizacion: patologia.fecha_actualizacion,
       });
     } else {
       ok = await onRegistrar({ id_especie: idEspecie, nombre: data.nombre.trim(), descripcion });
@@ -218,6 +221,9 @@ export function PatologiasSection({ idEspecie }: Props) {
 
   useEffect(() => { cargar(idEspecie); }, [cargar, idEspecie]);
 
+  const busqueda = useBusqueda(patologias, (p) => p.nombre);
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(busqueda.filtrados, busqueda.consulta);
+
   const cerrar = () => setModal({ tipo: 'ninguno' });
 
   const handleDesactivar = async (p: PatologiaEspecieItemResponse) => {
@@ -271,6 +277,11 @@ export function PatologiasSection({ idEspecie }: Props) {
       ) : patologias.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('patologiassection.no_hay_patologias_registradas_para_esta')}</p>
       ) : (
+        <>
+        <Buscador id="buscar-patologias" label={t('busqueda.por_nombre', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+        {busqueda.filtrados.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('busqueda.sin_coincidencias', { ns: 'common' })}</p>
+        ) : (
         <ScrollRegion label={t('patologiassection.patologias')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
@@ -281,7 +292,7 @@ export function PatologiasSection({ idEspecie }: Props) {
               </tr>
             </thead>
             <tbody>
-              {patologias.map((p) => (
+              {enPagina.map((p) => (
                 <tr key={p.id_especies_patologias} style={{ background: 'var(--surface-card)' }}>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>#{p.id_especies_patologias}</td>
                   <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{p.nombre}</td>
@@ -316,6 +327,9 @@ export function PatologiasSection({ idEspecie }: Props) {
             </tbody>
           </table>
         </ScrollRegion>
+        )}
+        <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
+        </>
       )}
 
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (

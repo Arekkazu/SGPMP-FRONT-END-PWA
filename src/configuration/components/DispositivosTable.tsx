@@ -19,7 +19,8 @@ import { CambiarGatewayModal } from './CambiarGatewayModal';
 import type { FincaResponse, InfraestructuraResponse, DispositivoIotResponse } from '../types';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 import { Buscador } from '../../shared/design-system/Buscador';
-import { useBusqueda } from '../../shared/hooks/useBusqueda';
+import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
@@ -228,6 +229,8 @@ export function DispositivosTable() {
 
   const activos   = dispositivosDelArea.filter((d) => d.es_activo).length;
   const inactivos = dispositivosDelArea.length - activos;
+  const busquedaDisp = useBusqueda(dispositivosDelArea, (d) => `${d.serial} ${d.descripcion ?? ''}`);
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(busquedaDisp.filtrados, busquedaDisp.consulta);
 
   // RF-21: Gateway Edge de la finca (un Edge atiende dispositivos de cualquier
   // área de su finca) y dispositivos activos que atiende cada uno.
@@ -338,6 +341,11 @@ export function DispositivosTable() {
               )}
             </div>
           ) : (
+            <>
+            <Buscador id="buscar-dispositivo-area" label={t('busqueda.buscar_dispositivo', { ns: 'common' })} value={busquedaDisp.consulta} onChange={busquedaDisp.setConsulta} resultados={busquedaDisp.filtrados.length} />
+            {busquedaDisp.filtrados.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('busqueda.sin_coincidencias', { ns: 'common' })}</p>
+            ) : (
             <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
               <ScrollRegion label={t('dispositivostable.dispositivos_iot')}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
@@ -349,7 +357,7 @@ export function DispositivosTable() {
                     </tr>
                   </thead>
                   <tbody>
-                    {dispositivosDelArea.map((d) => (
+                    {enPagina.map((d) => (
                       <tr key={d.id_dispositivo_iot} style={{ background: 'var(--surface-card)' }}>
                         <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
                           #{d.id_dispositivo_iot}
@@ -442,6 +450,9 @@ export function DispositivosTable() {
                 </table>
               </ScrollRegion>
             </div>
+            )}
+            <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busquedaDisp.filtrados.length} onCambiar={setPagina} />
+            </>
           )}
 
           {/* Modals */}

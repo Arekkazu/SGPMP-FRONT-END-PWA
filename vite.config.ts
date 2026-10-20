@@ -7,6 +7,11 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Subruta donde el proxy publica la app (p. ej. /sigab-dev/ en api.inmero.co).
+  // Vite la antepone a cada asset y queda en import.meta.env.BASE_URL para el
+  // router y el service worker. Sin barra final Vite la agrega, pero el
+  // Dockerfile también la usa en nginx, así que se normaliza aquí y allá.
+  base: (process.env.VITE_BASE_PATH || "/").replace(/\/?$/, "/"),
   plugins: [
     react(),
     legacy(),
@@ -19,7 +24,7 @@ export default defineConfig({
       // Ya existe public/manifest.json.
       manifest: false,
       workbox: {
-        // Un solo service worker por scope "/": el de push (public/) se importa
+        // Un solo service worker por scope (la base): el de push (public/) se importa
         // dentro de este en vez de competir por el mismo scope.
         importScripts: ["firebase-messaging-sw.js"],
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],

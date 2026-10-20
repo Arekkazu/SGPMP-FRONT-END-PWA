@@ -30,6 +30,7 @@ import { DashboardLayoutSection } from '../components/DashboardLayoutSection';
 import { PlantillasTable } from '../components/PlantillasTable';
 import type { EspecieResponse, TipoAreaResponse } from '../types';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { POR_PAGINA } from '../../shared/hooks/useBusqueda';
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
 type TabId = 'catalogo' | 'por-especie' | 'fincas' | 'iot' | 'sistema' | 'personalizacion' | 'plantillas';
@@ -114,7 +115,8 @@ type ModalState =
 // #53 (RF-15): CU-01 exige búsqueda por nombre y paginación en el catálogo. Ambas
 // son client-side — la lista ya llega completa en un solo GET — así que basta con
 // filtrar/paginar el arreglo que trae `useEspecies`, sin tocar la capa API.
-const ESPECIES_POR_PAGINA = 50;
+// Mismo tamaño que el resto de listados de configuración (usePaginado).
+const ESPECIES_POR_PAGINA = POR_PAGINA;
 
 // ── Catálogo tab ─────────────────────────────────────────────────────────────
 // Exportado para poder testear la búsqueda/paginación (#53, RF-15) sin montar

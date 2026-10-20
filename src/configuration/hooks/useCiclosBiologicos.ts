@@ -4,6 +4,7 @@ import { cacheCiclos, getCiclosCache } from '../db/ciclosTable';
 import { enqueue, registerSyncHandler } from '../../shared/sync/syncQueue';
 import type { CicloBiologicoResponse, RegistrarCicloDTO, EditarCicloDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { avisarExito } from '../../shared/hooks/useToast';
 
 // #54 (RF-16): CU-03 exige almacenamiento local y sincronización diferida al
 // reconectar para este módulo — "Nuevo ciclo" estaba deshabilitado offline sin
@@ -91,12 +92,14 @@ export function useCiclosBiologicos() {
         fecha_actualizacion: null,
         pendienteSync: true,
       }]);
+      avisarExito('pendiente_sync', dto.nombre);
       setSaving(false);
       return true;
     }
     try {
       const nuevo = await ciclosApi.registrar(dto);
       setCiclos((prev) => [...prev, nuevo]);
+      avisarExito('registrado', nuevo.nombre);
       return true;
     } catch (e) {
       setSaveError(e as ApiError);
@@ -120,6 +123,7 @@ export function useCiclosBiologicos() {
     try {
       const actualizado = await ciclosApi.editar(id, dto);
       setCiclos((prev) => prev.map((c) => (c.id_ciclo_biologico === id ? actualizado : c)));
+      avisarExito('guardado', actualizado.nombre);
       return true;
     } catch (e) {
       setSaveError(e as ApiError);
@@ -141,6 +145,7 @@ export function useCiclosBiologicos() {
     try {
       const actualizado = await ciclosApi.desactivar(id);
       setCiclos((prev) => prev.map((c) => (c.id_ciclo_biologico === id ? actualizado : c)));
+      avisarExito('desactivado', actualizado.nombre);
       return true;
     } catch (e) {
       setSaveError(e as ApiError);
@@ -150,5 +155,25 @@ export function useCiclosBiologicos() {
     }
   }, []);
 
-  return { ciclos, loading, saving, error, saveError, fromCache, cargar, registrar, editar, desactivar };
+  // Una etapa inactiva no se puede editar y su nombre sigue ocupado: sin esto
+  // quedaba bloqueada para siempre. Solo en línea, como en especies.
+  const reactivar = useCallback(async (id: number): Promise<boolean> => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const actualizado = await ciclosApi.reactivar(id);
+      setCiclos((prev) => prev.map((c) => (c.id_ciclo_biologico === id ? actualizado : c)));
+      avisarExito('reactivado', actualizado.nombre);
+      return true;
+    } catch (e) {
+      setSaveError(e as ApiError);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  const limpiarSaveError = useCallback(() => setSaveError(null), []);
+
+  return { ciclos, loading, saving, error, saveError, fromCache, cargar, registrar, editar, desactivar, reactivar, limpiarSaveError };
 }

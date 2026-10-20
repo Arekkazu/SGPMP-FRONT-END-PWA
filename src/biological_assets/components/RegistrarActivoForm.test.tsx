@@ -53,3 +53,32 @@ describe('RegistrarActivoForm — atributos dinámicos de la especie', () => {
     expect(await screen.findByLabelText(/Peso al nacer \(kg\)/)).toHaveAttribute('aria-invalid', 'true');
   });
 });
+
+describe('RegistrarActivoForm — áreas de otra especie (regla C1)', () => {
+  it('explica que las áreas de la finca son de otra especie y no deja usar su ID', async () => {
+    parametrosEspecie.mockResolvedValue([]);
+    Object.assign(catalogo, {
+      especies: [
+        { id_especie: 4, nombre: 'Cachama Blanca', es_activo: true, densidad_maxima_por_especie: '10' },
+        { id_especie: 5, nombre: 'Mojarra Plateada', es_activo: true, densidad_maxima_por_especie: '10' },
+      ],
+      fincas: [{ id_finca: 15, nombre: 'Finca Contador' }],
+      infraestructuras: [{ id_infraestructura: 16, nombre_infraestructura: 'Estanque sur', especie_id: 5, tipo_area: 'Estanque', superficie: 49 }],
+    });
+    const onSubmit = vi.fn();
+    render(<RegistrarActivoForm saving={false} onSubmit={onSubmit} onCancel={vi.fn()} saveError={null} />);
+
+    await userEvent.type(screen.getByRole('combobox', { name: /Especie/ }), 'Cachama Blanca');
+    await userEvent.selectOptions(screen.getByLabelText(/Finca/), '15');
+    await userEvent.click(screen.getByRole('button', { name: /Mostrar opciones de Infraestructura/ }));
+    expect(screen.getAllByText(/son para otra especie \(Mojarra Plateada\), no para Cachama Blanca/).length).toBeGreaterThan(0);
+    // RF-20: sin permiso para crear áreas (sesión sin permisos = Productor) se indica a quién pedirlo.
+    expect(screen.getAllByText(/Contacta a un Administrador para que cree el área/).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('link', { name: /Crear área en Configuración/ })).not.toBeInTheDocument();
+
+    await userEvent.type(screen.getByRole('combobox', { name: /Infraestructura/ }), '16');
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+    expect(await screen.findByText(/Estanque sur es un área para Mojarra Plateada/)).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+});

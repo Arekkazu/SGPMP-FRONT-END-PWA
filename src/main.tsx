@@ -5,6 +5,9 @@ import App from './App';
 // asi el primer render ya sale en el idioma correcto (incluido el login,
 // donde todavia no hay JWT para consultar la preferencia al backend).
 import './shared/i18n';
+import { instalarRecargaTrasDespliegue } from './shared/lib/recargaTrasDespliegue';
+
+instalarRecargaTrasDespliegue();
 
 const container = document.getElementById('root');
 const root = createRoot(container!);

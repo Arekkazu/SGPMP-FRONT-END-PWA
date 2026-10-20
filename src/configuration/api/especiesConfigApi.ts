@@ -2,7 +2,7 @@ import { http } from '../../shared/api/http';
 import type {
   CicloBiologicoResponse, RegistrarCicloDTO, EditarCicloDTO,
   PatologiaEspecieItemResponse, RegistrarPatologiaDTO, EditarPatologiaDTO,
-  MetricaProduccionResponse, RegistrarMetricaDTO, EditarMetricaDTO,
+  MetricaProduccionResponse, RegistrarMetricaDTO, EditarMetricaDTO, CicloMetrica,
   UmbralAmbientalResponse, RegistrarUmbralDTO, EditarUmbralDTO,
   VariableAmbientalCatalogo,
   SnapshotEspecie,
@@ -33,6 +33,11 @@ export const ciclosApi = {
 
   async desactivar(id: number): Promise<CicloBiologicoResponse> {
     const res = await http.patch<CicloBiologicoResponse>(`/configuracion/ciclos/${id}/desactivar`);
+    return res.data;
+  },
+
+  async reactivar(id: number): Promise<CicloBiologicoResponse> {
+    const res = await http.patch<CicloBiologicoResponse>(`/configuracion/ciclos/${id}/reactivar`);
     return res.data;
   },
 };
@@ -66,6 +71,21 @@ export const metricasApi = {
     const res = await http.get<Listado<MetricaProduccionResponse>>('/configuracion/metricas', {
       params: { id_especie: idEspecie, solo_activas: soloActivas },
     });
+    return res.data.items;
+  },
+
+  /** RF-43 E-04: ciclos productivos de la especie en los que la métrica es producto. */
+  async ciclos(idMetrica: number): Promise<CicloMetrica[]> {
+    const res = await http.get<{ items: CicloMetrica[] }>(`/configuracion/metricas/${idMetrica}/ciclos-productivos`);
+    return res.data.items;
+  },
+
+  /** Reemplaza los ciclos en que la métrica está habilitada (lista vacía = ninguno). */
+  async asignarCiclos(idMetrica: number, idsCiclos: number[]): Promise<CicloMetrica[]> {
+    const res = await http.put<{ items: CicloMetrica[] }>(
+      `/configuracion/metricas/${idMetrica}/ciclos-productivos`,
+      { ids_ciclos_productivos: idsCiclos },
+    );
     return res.data.items;
   },
 
