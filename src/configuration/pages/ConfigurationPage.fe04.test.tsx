@@ -62,7 +62,9 @@ describe('FE-04 — borrador al navegar entre pestañas M09', () => {
     api.patch.mockReturnValue(new Promise((resolve) => { resolver = resolve; }));
     await editar(); fireEvent.click(screen.getByRole('button', { name: 'Guardar configuración' }));
     await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
-    expect(catalogo()).toBeDisabled(); expect(sistema()).toBeDisabled();
+    // El estado "guardando" llega a la página en el render siguiente a la llamada.
+    await waitFor(() => expect(catalogo()).toBeDisabled());
+    expect(sistema()).toBeDisabled();
     await act(async () => { resolver({ data: { ...config, frecuencia_muestreo: 8 } }); });
     await waitFor(() => expect(catalogo()).not.toBeDisabled());
   });

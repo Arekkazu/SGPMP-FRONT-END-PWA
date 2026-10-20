@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useForm, type FieldError } from 'react-hook-form';
 import { RefreshCw, Clock, Activity, Globe } from 'lucide-react';
 import { formatearFechaHora, formatearNumero, useT } from '../../shared/i18n/useT';
@@ -18,6 +18,8 @@ interface FormValues {
   heartbeat: number;
 }
 const CAMPOS = ['frecuencia_muestreo', 'heartbeat'] as const;
+// reset() ignora los undefined y deja el valor anterior en el input; null lo vacía.
+const SIN_VALORES = { frecuencia_muestreo: null, heartbeat: null } as unknown as FormValues;
 const enteroPositivo = (v: number) => Number.isSafeInteger(v) && v > 0;
 
 interface ParametrosSectionProps {
@@ -60,11 +62,13 @@ export function ParametrosSection({ onEditStateChange }: ParametrosSectionProps 
   const mostrarErrorGeneral = useErroresDeServidor(errorFormulario, setError, CAMPOS);
 
   useEffect(() => { if (puedeLeer) void cargar(); }, [cargar, puedeLeer]);
-  useEffect(() => {
+  // Antes del pintado: con useEffect el formulario se mostraba un instante vacío
+  // antes de recibir los valores cargados.
+  useLayoutEffect(() => {
     if (loading || error) return;
     reset(config
       ? { frecuencia_muestreo: config.frecuencia_muestreo, heartbeat: config.heartbeat }
-      : { frecuencia_muestreo: undefined, heartbeat: undefined });
+      : SIN_VALORES);
   }, [config, loading, error, reset]);
   useEffect(() => {
     onEditStateChange?.({ dirty: isDirty, busy: saving });
