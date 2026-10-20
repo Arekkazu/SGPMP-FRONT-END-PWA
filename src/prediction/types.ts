@@ -166,6 +166,45 @@ export interface ConfigurarMotorDTO {
   densidad_maxima_config?: number | null;
 }
 
+/**
+ * RF-65 E7/E8/E10 (DEV-09): estado de la configuración en cada nodo Edge.
+ * - APLICADA: el nodo confirmó la misma `config_version`.
+ * - PENDIENTE: el nodo estaba desconectado; se aplicará al reconectar (E7).
+ * - FALLIDA: el nodo no confirmó (sin ACK) (E8).
+ * - DESINCRONIZADO: el nodo confirmó otra `config_version` (E10).
+ */
+export type EstadoSincronizacionNodo = 'APLICADA' | 'PENDIENTE' | 'FALLIDA' | 'DESINCRONIZADO';
+
+export interface SincronizacionNodo {
+  id_dispositivo_iot: number;
+  serial: string;
+  config_version_servidor: number;
+  config_version_nodo: number | null;
+  estado_sincronizacion: EstadoSincronizacionNodo;
+  intentos_sincronizacion: number;
+  fecha_ultimo_intento: string | null;
+  fecha_aplicacion: string | null;
+  motivo_fallo: string | null;
+}
+
+export interface SincronizacionMotor {
+  /** Consolidado: el peor estado entre los nodos (APLICADA si no hay nodos). */
+  estado: EstadoSincronizacionNodo;
+  mensaje: string;
+  nodos: SincronizacionNodo[];
+}
+
+/**
+ * Resultado de `POST /prediccion/motor-ia`. En los cuatro códigos la configuración
+ * quedó guardada; el código solo dice si llegó a los nodos:
+ * 201/200 aplicada (o sin nodos) · 202 algún nodo PENDIENTE o FALLIDA · 409 DESINCRONIZADO.
+ */
+export interface ResultadoGuardarMotor {
+  config: ConfiguracionMotorIAResponse;
+  sincronizacion: SincronizacionMotor;
+  status: 200 | 201 | 202 | 409;
+}
+
 // =====================================================================
 // RF-67 · Historial Diagnóstico — /prediccion/historial (recurso 42)
 // =====================================================================

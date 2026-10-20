@@ -5,6 +5,8 @@ import { cacheMotor, getMotorCache } from '../db/prediccionTables';
 import type {
   ConfiguracionMotorIAResponse,
   ConfigurarMotorDTO,
+  ResultadoGuardarMotor,
+  SincronizacionMotor,
   VersionModeloResponse,
 } from '../types';
 import { PARADIGMA_POR_TIPO } from '../types';
@@ -23,6 +25,9 @@ export function useMotor() {
   const [error, setError] = useState<ApiError | null>(null);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
   const [fromCache, setFromCache] = useState(false);
+  const [sincronizacion, setSincronizacion] = useState<SincronizacionMotor | null>(null);
+  const [syncError, setSyncError] = useState<ApiError | null>(null);
+  const [ultimoGuardado, setUltimoGuardado] = useState<ResultadoGuardarMotor | null>(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -90,16 +95,24 @@ export function useMotor() {
     }
   }, []);
 
-  const guardar = useCallback(async (dto: ConfigurarMotorDTO): Promise<ConfiguracionMotorIAResponse | null> => {
+  /**
+   * Guarda y devuelve también el resultado de la sincronización con los nodos
+   * (DEV-09): 202 y 409 son configuraciones guardadas que no llegaron igual a todos.
+   */
+  const guardar = useCallback(async (dto: ConfigurarMotorDTO): Promise<ResultadoGuardarMotor | null> => {
     setSaving(true);
     setSaveError(null);
+    setUltimoGuardado(null);
     try {
-      const actualizada = await motorApi.configurar(dto);
+      const resultado = await motorApi.configurar(dto);
+      const actualizada = resultado.config;
       setConfigs((prev) => {
         const resto = prev.filter((c) => c.tipo_modelo !== actualizada.tipo_modelo);
         return [...resto, actualizada];
       });
-      return actualizada;
+      setUltimoGuardado(resultado);
+      setSincronizacion(resultado.sincronizacion);
+      return resultado;
     } catch (e) {
       setSaveError(e as ApiError);
       return null;
@@ -108,7 +121,27 @@ export function useMotor() {
     }
   }, []);
 
-  const limpiarSaveError = useCallback(() => setSaveError(null), []);
+  /**
+   * Estado de la configuración de `tipoModelo` en cada nodo Edge. Sin configuración
+   * guardada (404) no hay nodos que mostrar; otros fallos quedan en `syncError`.
+   */
+  const cargarSincronizacion = useCallback(async (tipoModelo: string) => {
+    setSyncError(null);
+    try {
+      setSincronizacion(await motorApi.obtenerSincronizacion(tipoModelo));
+    } catch (e) {
+      setSincronizacion(null);
+      if ((e as ApiError).status !== 404) setSyncError(e as ApiError);
+    }
+  }, []);
 
-  return { configs, versiones, loading, saving, error, saveError, fromCache, cargar, guardar, limpiarSaveError };
+  const limpiarSaveError = useCallback(() => {
+    setSaveError(null);
+    setUltimoGuardado(null);
+  }, []);
+
+  return {
+    configs, versiones, loading, saving, error, saveError, fromCache, cargar, guardar, limpiarSaveError,
+    sincronizacion, syncError, ultimoGuardado, cargarSincronizacion,
+  };
 }
