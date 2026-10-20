@@ -6,13 +6,16 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useOta } from '../hooks/useOta';
+import { useDistribucionOta } from '../hooks/useDistribucionOta';
 import { OtaTable } from '../components/OtaTable';
 import { DespliegueDetalleModal } from '../components/DespliegueDetalleModal';
+import { DistribucionOtaFormModal } from '../components/DistribucionOtaFormModal';
+import { DistribucionOtaProgreso } from '../components/DistribucionOtaProgreso';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { INPUT, LABEL, FILTER_GRID } from '../components/tableStyles';
-import { RECURSO_OTA, ACCION_R } from '../rbac';
-import { TIPOS_MODELO, TIPO_MODELO_LABEL, type ListarDesplieguesFiltros, type DespliegueOtaResponse } from '../types';
+import { RECURSO_OTA, ACCION_R, ACCION_E } from '../rbac';
+import { TIPOS_MODELO, TIPO_MODELO_LABEL, type ListarDesplieguesFiltros, type DespliegueOtaResponse, type CrearDistribucionOtaDTO } from '../types';
 
 function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: number; etiqueta: string; color: string }) {
   return (
@@ -28,9 +31,27 @@ function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: n
 export function DistribucionOtaView() {
   const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_OTA, ACCION_R);
+  // DEV-15: lanzar una distribución exige Ejecutar sobre el recurso 44 (Administrador).
+  const puedeLanzar = usePermission(RECURSO_OTA, ACCION_E);
   const online = useOnlineStatus();
 
   const { despliegues, paginacion, loading, error, fromCache, cargar, cargarPorVersion, versiones, cargarVersiones } = useOta();
+  const ota = useDistribucionOta(online);
+  const [formAbierto, setFormAbierto] = useState(false);
+
+  const abrirForm = () => {
+    ota.limpiarLanzarError();
+    void ota.cargarOpciones();
+    setFormAbierto(true);
+  };
+
+  const onLanzar = async (dto: CrearDistribucionOtaDTO) => {
+    const creada = await ota.lanzar(dto);
+    if (creada) {
+      setFormAbierto(false);
+      consultar(1);
+    }
+  };
 
   const [fEstado, setFEstado] = useState('');
   const [fTipo, setFTipo] = useState('');
@@ -86,12 +107,26 @@ export function DistribucionOtaView() {
           <Button variant="ghost" size="sm" onClick={() => consultar(paginacion.pagina)} aria-label={t('distribucionotaview.recargar')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
-          <Button variant="primary" size="sm" disabled title="La creación de despliegues es gestionada por el motor de distribución (equipo IoT/IA)">
-            <Plus size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('distribucionotaview.nuevo_despliegue')}</Button>
+          {puedeLanzar && (
+            <Button variant="primary" size="sm" onClick={abrirForm} disabled={!online}>
+              <Plus size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('distribucionotaview.nuevo_despliegue')}</Button>
+          )}
         </div>
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
+        {ota.distribucion && (
+          <>
+            {ota.seguimientoError && <Alert variant="warning" title={t('distribucionprogreso.error_seguimiento')} description={ota.seguimientoError.message} style={{ marginBottom: 'var(--s4)' }} />}
+            <DistribucionOtaProgreso
+              distribucion={ota.distribucion}
+              componentesPorNodo={ota.componentesPorNodo}
+              dispositivos={ota.dispositivos}
+              versiones={ota.versiones}
+            />
+          </>
+        )}
+
         {!online && <Alert variant="warning" title={t('distribucionotaview.sin_conexion')} description={t('distribucionotaview.mostrando_despliegues_cacheados')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('distribucionotaview.datos_desde_cache')} description="No se pudo conectar; se muestran los últimos despliegues disponibles." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('distribucionotaview.sin_acceso_a_la_distribucion') : t('distribucionotaview.error_al_cargar_despliegues')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
@@ -151,6 +186,17 @@ export function DistribucionOtaView() {
       </div>
 
       {sel && <DespliegueDetalleModal despliegue={sel} onClose={() => setSel(null)} />}
+      {formAbierto && (
+        <DistribucionOtaFormModal
+          versiones={ota.versiones}
+          dispositivos={ota.dispositivos}
+          lanzando={ota.lanzando}
+          lanzarError={ota.lanzarError ?? ota.opcionesError}
+          online={online}
+          onLanzar={onLanzar}
+          onClose={() => setFormAbierto(false)}
+        />
+      )}
     </div>
   );
 }
