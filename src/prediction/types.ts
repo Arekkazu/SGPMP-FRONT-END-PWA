@@ -166,6 +166,45 @@ export interface ConfigurarMotorDTO {
   densidad_maxima_config?: number | null;
 }
 
+/**
+ * RF-65 E7/E8/E10 (DEV-09): estado de la configuración en cada nodo Edge.
+ * - APLICADA: el nodo confirmó la misma `config_version`.
+ * - PENDIENTE: el nodo estaba desconectado; se aplicará al reconectar (E7).
+ * - FALLIDA: el nodo no confirmó (sin ACK) (E8).
+ * - DESINCRONIZADO: el nodo confirmó otra `config_version` (E10).
+ */
+export type EstadoSincronizacionNodo = 'APLICADA' | 'PENDIENTE' | 'FALLIDA' | 'DESINCRONIZADO';
+
+export interface SincronizacionNodo {
+  id_dispositivo_iot: number;
+  serial: string;
+  config_version_servidor: number;
+  config_version_nodo: number | null;
+  estado_sincronizacion: EstadoSincronizacionNodo;
+  intentos_sincronizacion: number;
+  fecha_ultimo_intento: string | null;
+  fecha_aplicacion: string | null;
+  motivo_fallo: string | null;
+}
+
+export interface SincronizacionMotor {
+  /** Consolidado: el peor estado entre los nodos (APLICADA si no hay nodos). */
+  estado: EstadoSincronizacionNodo;
+  mensaje: string;
+  nodos: SincronizacionNodo[];
+}
+
+/**
+ * Resultado de `POST /prediccion/motor-ia`. En los cuatro códigos la configuración
+ * quedó guardada; el código solo dice si llegó a los nodos:
+ * 201/200 aplicada (o sin nodos) · 202 algún nodo PENDIENTE o FALLIDA · 409 DESINCRONIZADO.
+ */
+export interface ResultadoGuardarMotor {
+  config: ConfiguracionMotorIAResponse;
+  sincronizacion: SincronizacionMotor;
+  status: 200 | 201 | 202 | 409;
+}
+
 // =====================================================================
 // RF-67 · Historial Diagnóstico — /prediccion/historial (recurso 42)
 // =====================================================================
@@ -272,6 +311,60 @@ export interface DespliegueOtaResponse {
   fecha_inicio: string | null;
   fecha_fin: string | null;
   motivo_fallo: string | null;
+  /** DEV-15 (DB-04): distribución y fase del rollout a la que pertenece. */
+  id_distribucion_ota?: number | null;
+  fase_rollout?: FaseRollout | null;
+  fecha_expiracion_url?: string | null;
+  id_mensaje_notify?: string | null;
+}
+
+// RF-70 · Orquestador OTA (DEV-15, D6 de AIOT-DEV-03) — FE-01b
+/** Rollout por fases: 1 nodo canary, luego 20–30 % (parcial), luego el resto (total). */
+export type FaseRollout = 'CANARY' | 'PARCIAL' | 'TOTAL';
+export const FASES_ROLLOUT: FaseRollout[] = ['CANARY', 'PARCIAL', 'TOTAL'];
+export type EstadoDistribucion = 'EN_CURSO' | 'COMPLETADA' | 'DETENIDA';
+export type ModoDistribucion = 'INMEDIATO' | 'PROGRAMADO' | 'POR_LOTES';
+export const MODOS_DISTRIBUCION: ModoDistribucion[] = ['INMEDIATO', 'PROGRAMADO', 'POR_LOTES'];
+
+/** `POST /prediccion/ota/distribuciones`. El orden de los dispositivos decide el rollout: el primero es el canary. */
+export interface CrearDistribucionOtaDTO {
+  id_version_modelo: number;
+  lista_dispositivos_objetivo: number[];
+  modo_distribucion: ModoDistribucion;
+  ventana_inicio?: string | null;
+  ventana_fin?: string | null;
+  nivel_bateria_minimo?: number | null;
+  tamano_fragmento_bytes: number;
+  max_reintentos_descarga: number;
+  porcentaje_parcial: number;
+}
+
+export interface DistribucionOtaResponse {
+  id_distribucion_ota: number;
+  id_version_modelo: number;
+  tipo_modelo: TipoModelo;
+  componente: Componente | null;
+  modo_distribucion: ModoDistribucion;
+  ventana_inicio: string | null;
+  ventana_fin: string | null;
+  nivel_bateria_minimo: number | null;
+  tamano_fragmento_bytes: number;
+  max_reintentos_descarga: number;
+  porcentaje_parcial: number;
+  fase_rollout: FaseRollout;
+  estado_distribucion: EstadoDistribucion;
+  id_usuario: number;
+  fecha_creacion: string | null;
+  fecha_actualizacion: string | null;
+  despliegues: DespliegueOtaResponse[];
+}
+
+/** Dispositivo IoT que se puede elegir como objetivo (GET /configuracion/dispositivos-iot). */
+export interface DispositivoObjetivoOta {
+  id_dispositivo_iot: number;
+  serial: string;
+  descripcion: string;
+  es_activo: boolean;
 }
 
 export interface OtaStatusResponse {

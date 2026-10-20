@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { parametrosApi } from '../api/parametrosApi';
 import type { ConfiguracionGlobalResponse, CrearConfiguracionGlobalDTO, ActualizarConfiguracionGlobalDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
@@ -6,56 +6,65 @@ import { avisarExito } from '../../shared/hooks/useToast';
 
 export function useParametrosGlobales() {
   const [config, setConfig] = useState<ConfiguracionGlobalResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
+  const consultando = useRef(false);
+  const guardando = useRef(false);
+  const revision = useRef(0);
 
   const cargar = useCallback(async () => {
+    if (consultando.current || guardando.current) return;
+    consultando.current = true;
+    const actual = ++revision.current;
     setLoading(true);
     setError(null);
     try {
       const data = await parametrosApi.obtener();
-      setConfig(data);
+      if (actual === revision.current) {
+        setConfig(data);
+        setSaveError(null);
+      }
     } catch (e) {
-      setError(e as ApiError);
+      if (actual === revision.current) setError(e as ApiError);
     } finally {
-      setLoading(false);
+      consultando.current = false;
+      if (actual === revision.current) setLoading(false);
     }
   }, []);
 
-  const crear = useCallback(async (dto: CrearConfiguracionGlobalDTO): Promise<boolean> => {
+  const guardar = useCallback(async (
+    operacion: () => Promise<ConfiguracionGlobalResponse>,
+    exito: 'registrado' | 'guardado',
+  ): Promise<boolean> => {
+    // El ref también cubre dos activaciones antes del siguiente render.
+    if (guardando.current) return false;
+    guardando.current = true;
+    ++revision.current;
+    setLoading(false);
     setSaving(true);
     setSaveError(null);
     try {
-      const nueva = await parametrosApi.crear(dto);
-      // RF-18 (Salida): "Confirmación del guardado de la configuración".
-      avisarExito('registrado');
+      const nueva = await operacion();
       setConfig(nueva);
+      setError(null);
+      avisarExito(exito);
       return true;
     } catch (e) {
       setSaveError(e as ApiError);
       return false;
     } finally {
+      guardando.current = false;
       setSaving(false);
     }
   }, []);
 
-  const actualizar = useCallback(async (id: number, dto: ActualizarConfiguracionGlobalDTO): Promise<boolean> => {
-    setSaving(true);
-    setSaveError(null);
-    try {
-      const actualizada = await parametrosApi.actualizar(id, dto);
-      avisarExito('guardado');
-      setConfig(actualizada);
-      return true;
-    } catch (e) {
-      setSaveError(e as ApiError);
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  }, []);
+  const crear = useCallback((dto: CrearConfiguracionGlobalDTO) =>
+    guardar(() => parametrosApi.crear(dto), 'registrado'), [guardar]);
+
+  const actualizar = useCallback((id: number, dto: ActualizarConfiguracionGlobalDTO) =>
+    guardar(() => parametrosApi.actualizar(id, dto), 'guardado'), [guardar]);
 
   return { config, loading, saving, error, saveError, cargar, crear, actualizar };
 }

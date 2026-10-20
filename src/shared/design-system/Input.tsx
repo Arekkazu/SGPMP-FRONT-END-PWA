@@ -76,7 +76,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           aria-required={required}
           aria-invalid={!!error}
           aria-describedby={
-            [error ? `${inputId}-err` : '', hint ? `${inputId}-hint` : '', ariaDescribedBy ?? '']
+            [error ? `${inputId}-err` : '', !error && hint ? `${inputId}-hint` : '', ariaDescribedBy ?? '']
               .filter(Boolean)
               .join(' ') || undefined
           }

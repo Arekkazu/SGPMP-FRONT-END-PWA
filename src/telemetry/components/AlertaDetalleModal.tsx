@@ -7,6 +7,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { SeveridadBadge } from './SeveridadBadge';
 import { EstadoAlertaPill } from './EstadoAlertaPill';
 import { OrigenPill } from './OrigenPill';
+import { TipoAlertaTecnicaPill } from './TipoAlertaTecnicaPill';
 import { horaCaptura } from '../lib/sensorEscala';
 import type { AlertaDetalleSchema, NuevoEstadoAlerta } from '../types';
 import type { ApiError } from '../../shared/api/errors';
@@ -93,7 +94,7 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, on
             <OrigenPill origen={detalle.origen_evento} />
           </div>
 
-          <Fila label={t('alertadetallemodal.variable')}>{detalle.tipo_variable}</Fila>
+          <Fila label={t('alertadetallemodal.variable')}><TipoAlertaTecnicaPill tipo={detalle.tipo_variable} /></Fila>
           <Fila label={t('alertadetallemodal.valor')}>{detalle.valor != null ? `${detalle.valor}${detalle.unidad ? ` ${detalle.unidad}` : ''}` : '—'}</Fila>
           <Fila label={t('alertadetallemodal.generada')}>{detalle.fecha_generacion?.slice(0, 10)} {horaCaptura(detalle.fecha_generacion)}</Fila>
           <Fila label={t('alertadetallemodal.evento')}>{detalle.fecha_evento?.slice(0, 10)} {horaCaptura(detalle.fecha_evento)}</Fila>
