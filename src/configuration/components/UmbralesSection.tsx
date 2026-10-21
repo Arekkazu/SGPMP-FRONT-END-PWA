@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-20 | Arekkazu | FE-09 RF-17: interruptor es_critica por variable, solo para el Administrador (RFC-016) |
 import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -542,6 +545,66 @@ function formatFecha(iso: string | null): string {
   catch { return iso; }
 }
 
+// ── Variables críticas (RFC-016 B.7) ──────────────────────────────────────────
+// Una lectura de una variable crítica entra como crítica en la cola del broker bajo
+// saturación (RF-53 E15). Solo el Administrador la cambia; el resto la ve.
+function VariablesCriticas({ variables, editable, guardando, error, onCambiar }: {
+  variables: VariableAmbientalCatalogo[];
+  editable: boolean;
+  guardando: number | null;
+  error: string | null;
+  onCambiar: (id: number, esCritica: boolean) => void;
+}) {
+  const { t } = useT('configuration');
+  if (variables.length === 0) return null;
+  return (
+    <section aria-labelledby="variables-criticas-titulo" style={{ marginTop: 'var(--s6)' }}>
+      <h4 id="variables-criticas-titulo" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+        {t('umbralessection.variables_criticas')}
+      </h4>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s1) 0 var(--s3)' }}>
+        {t('umbralessection.variables_criticas_ayuda')}
+      </p>
+      {error && <Alert variant="error" title={t('umbralessection.error')} description={error} style={{ marginBottom: 'var(--s3)' }} />}
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
+        {variables.map((v) => {
+          const critica = !!v.es_critica;
+          return (
+            <li key={v.id_variable_ambiental} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--s3)', minHeight: 36 }}>
+              <span id={`variable-critica-${v.id_variable_ambiental}`} style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+                {v.nombre} <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>({v.unidad})</span>
+              </span>
+              {editable ? (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={critica}
+                  aria-labelledby={`variable-critica-${v.id_variable_ambiental}`}
+                  disabled={guardando !== null}
+                  onClick={() => onCambiar(v.id_variable_ambiental, !critica)}
+                  style={{
+                    minWidth: 72, minHeight: 32, padding: '0 var(--s3)', borderRadius: 'var(--r-full)', fontSize: '12px', fontWeight: 600,
+                    cursor: guardando !== null ? 'wait' : 'pointer',
+                    border: `1.5px solid ${critica ? 'var(--sem-error)' : 'var(--surface-border)'}`,
+                    background: critica ? 'var(--sem-error-bg)' : 'var(--surface-card)',
+                    color: critica ? 'var(--sem-error)' : 'var(--text-secondary)',
+                  }}
+                >
+                  {critica ? t('umbralessection.critica_si') : t('umbralessection.critica_no')}
+                </button>
+              ) : (
+                <span style={{ fontSize: '12px', fontWeight: 600, color: critica ? 'var(--sem-error)' : 'var(--text-muted)' }}>
+                  {critica ? t('umbralessection.critica_si') : t('umbralessection.critica_no')}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 export function UmbralesSection({ idEspecie }: Props) {
   const { t } = useT('configuration');
@@ -551,7 +614,7 @@ export function UmbralesSection({ idEspecie }: Props) {
   const puedeDesact = usePermission(20, 4);
 
   const { umbrales, loading, saving, error, saveError, cargar, registrar, editar, desactivar, limpiarSaveError } = useUmbralesAmbientales();
-  const { variables, cargar: cargarVariables } = useVariablesAmbientales();
+  const { variables, cargar: cargarVariables, marcarCritica, guardando, errorCritica } = useVariablesAmbientales();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
 
@@ -677,6 +740,14 @@ export function UmbralesSection({ idEspecie }: Props) {
         <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
         </>
       )}
+
+      <VariablesCriticas
+        variables={variables}
+        editable={puedeEditar && online}
+        guardando={guardando}
+        error={errorCritica?.message ?? null}
+        onCambiar={(id, esCritica) => { void marcarCritica(id, esCritica); }}
+      />
 
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (
         <UmbralModal
