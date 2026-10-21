@@ -1,7 +1,10 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-20 | Arekkazu | FE-06 RF-20: varias especies del mismo grupo, nivel_criticidad y capacidad derivada (RFC-012/016) |
 import React, { useEffect, useId, useState } from 'react';
 import { formatearFecha, formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { Plus, RefreshCw, Pencil, PowerOff, Power, X, ChevronLeft, Warehouse } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
@@ -19,7 +22,7 @@ import { useInfraestructuras } from '../hooks/useInfraestructuras';
 import { useTiposArea } from '../hooks/useTiposArea';
 import { useEspecies } from '../hooks/useEspecies';
 import { TIPO_MODELO_LABEL, type TipoModelo } from '../../prediction/types';
-import type { FincaResponse, InfraestructuraResponse, RegistrarInfraestructuraDTO, EditarInfraestructuraDTO } from '../types';
+import { NIVELES_CRITICIDAD, type EspecieResponse, type FincaResponse, type InfraestructuraResponse, type NivelCriticidad, type RegistrarInfraestructuraDTO, type EditarInfraestructuraDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { iconoTipoArea } from '../iconos';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
@@ -93,14 +96,24 @@ interface FormValues {
   nombre_infraestructura: string;
   superficie: number;
   descripcion_infraestructura: string;
-  // RF-20 v1.1 (RFC-009): los <select> devuelven string; se convierte al enviar.
-  especie_id: string;
+  // RFC-012: ids de las especies elegidas, en el orden en que se marcaron.
+  especies: number[];
   tipo_modelo_asignado: TipoModelo | '';
+  nivel_criticidad: NivelCriticidad;
 }
 
 const CAMPOS = [
-  'tipo_area', 'nombre_infraestructura', 'superficie', 'descripcion_infraestructura', 'especie_id', 'tipo_modelo_asignado',
+  'tipo_area', 'nombre_infraestructura', 'superficie', 'descripcion_infraestructura', 'especies', 'tipo_modelo_asignado',
+  'nivel_criticidad',
 ] as const;
+
+/** RFC-012: capacidad_efectiva = floor(MIN densidad ind/m² × superficie); null si falta alguna densidad. */
+export function estimarCapacidad(superficie: number, especies: EspecieResponse[]): number | null {
+  // El backend devuelve la densidad con los dos nombres (RFC-012); este es el de siempre.
+  const densidades = especies.map((e) => e.densidad_maxima_por_especie);
+  if (!especies.length || !(superficie > 0) || densidades.some((d) => d === null || d === undefined)) return null;
+  return Math.floor(Math.min(...densidades.map(Number)) * superficie);
+}
 
 interface InfraModalProps {
   infra: InfraestructuraResponse | null;
@@ -118,18 +131,29 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
   const modoEditar = infra !== null;
   const titulo = modoEditar ? `Editar área — ${infra.nombre_infraestructura}` : 'Registrar área productiva';
 
-  const { register, handleSubmit, reset, watch, setError, setValue, formState: { errors } } = useForm<FormValues>({ mode: 'onBlur' });
+  const { register, control, handleSubmit, reset, watch, setError, setValue, formState: { errors } } = useForm<FormValues>({
+    mode: 'onBlur', defaultValues: { especies: [], nivel_criticidad: 'MEDIA' },
+  });
   const desc = watch('descripcion_infraestructura', '');
   const alertaGeneral = useErroresDeServidor(saveError, setError, CAMPOS);
 
-  // RF-20 v1.1: el modelo de IA del área solo puede ser la familia de su especie.
+  // RFC-012: varias especies, todas del grupo de manejo de la primera elegida; el
+  // modelo de IA del área solo puede ser la familia de ese grupo (RF-20 v1.1).
   const { especies, cargar: cargarEspecies } = useEspecies();
   useEffect(() => { cargarEspecies(false); }, [cargarEspecies]);
   const especiesCargadas = especies.length > 0;
-  const especiesOpciones = especies.filter((e) => (e.es_activo && !e.pendienteSync) || e.id_especie === infra?.especie_id);
-  const especieId = watch('especie_id');
+  const especiesDelArea = infra?.especies ?? (infra?.especie_id ? [infra.especie_id] : []);
+  const elegidas = watch('especies') ?? [];
+  const primera = especies.find((e) => e.id_especie === elegidas[0]);
+  const especiesOpciones = especies.filter((e) =>
+    elegidas.includes(e.id_especie) || especiesDelArea.includes(e.id_especie)
+    || (e.es_activo && !e.pendienteSync && (!primera || (e.grupo_manejo ?? null) === (primera.grupo_manejo ?? null))));
   const tipoModelo = watch('tipo_modelo_asignado');
-  const familia = especies.find((e) => String(e.id_especie) === especieId)?.tipo_modelo ?? null;
+  const familia = primera?.tipo_modelo ?? null;
+  const capacidadEstimada = estimarCapacidad(
+    Number(watch('superficie')),
+    elegidas.map((id) => especies.find((e) => e.id_especie === id)).filter((e): e is EspecieResponse => !!e),
+  );
   const modelosOpciones = [...new Set([familia, infra?.tipo_modelo_asignado].filter((m): m is TipoModelo => !!m))];
   useEffect(() => {
     if (tipoModelo && familia && tipoModelo !== familia) setValue('tipo_modelo_asignado', '');
@@ -152,13 +176,14 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
         nombre_infraestructura: infra.nombre_infraestructura,
         superficie: infra.superficie,
         descripcion_infraestructura: infra.descripcion_infraestructura ?? '',
-        especie_id: infra.especie_id ? String(infra.especie_id) : '',
+        especies: especiesDelArea,
         tipo_modelo_asignado: infra.tipo_modelo_asignado ?? '',
+        nivel_criticidad: infra.nivel_criticidad ?? 'MEDIA',
       });
     } else {
       reset({
         tipo_area: tipos[0]?.nombre ?? '', nombre_infraestructura: '', superficie: 0, descripcion_infraestructura: '',
-        especie_id: '', tipo_modelo_asignado: '',
+        especies: [], tipo_modelo_asignado: '', nivel_criticidad: 'MEDIA',
       });
     }
     // Si las especies llegan después del área, el <select> aún no tenía la opción
@@ -174,8 +199,9 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
       superficie: Number(data.superficie),
       finca_id: finca.id_finca,
       descripcion_infraestructura: data.descripcion_infraestructura.trim() || undefined,
-      especie_id: Number(data.especie_id),
+      especies: data.especies,
       tipo_modelo_asignado: data.tipo_modelo_asignado || null,
+      nivel_criticidad: data.nivel_criticidad,
     };
     let ok: boolean;
     if (modoEditar && infra) {
@@ -244,27 +270,65 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
               </Select>
             </div>
 
-            {/* Especie y modelo de IA (RF-20 v1.1) */}
+            {/* Especies (RFC-012), modelo de IA (RF-20 v1.1) y criticidad (RFC-016) */}
+            <Controller
+              name="especies"
+              control={control}
+              rules={{ validate: (v) => v.length > 0 || t('infraestructurasection.selecciona_una_especie') }}
+              render={({ field, fieldState }) => (
+                <fieldset
+                  aria-describedby="infra-especies-ayuda"
+                  aria-invalid={!!fieldState.error}
+                  style={{ border: '1.5px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s3) var(--s4)', margin: '0 0 var(--s4)' }}
+                >
+                  <legend style={{ fontSize: 'var(--fs-body-md)', fontWeight: 600, color: 'var(--text-primary)', padding: '0 var(--s1)' }}>
+                    {t('infraestructurasection.especies')}<span aria-hidden="true"> *</span>
+                  </legend>
+                  <p id="infra-especies-ayuda" style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 var(--s2)' }}>
+                    {primera
+                      ? t('infraestructurasection.especies_del_grupo', { grupo: primera.grupo_manejo ?? '—' })
+                      : t('infraestructurasection.especies_ayuda')}
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2) var(--s4)' }}>
+                    {especiesOpciones.map((e) => (
+                      <label key={e.id_especie} style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', color: 'var(--text-primary)', minHeight: 32 }}>
+                        <input
+                          type="checkbox"
+                          checked={field.value.includes(e.id_especie)}
+                          onChange={(ev) => field.onChange(ev.target.checked
+                            ? [...field.value, e.id_especie]
+                            : field.value.filter((id) => id !== e.id_especie))}
+                          onBlur={field.onBlur}
+                        />
+                        {e.nombre}
+                      </label>
+                    ))}
+                  </div>
+                  {fieldState.error && (
+                    <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s2) 0 0' }}>{fieldState.error.message}</p>
+                  )}
+                </fieldset>
+              )}
+            />
             <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
-              <Select
-                id="infra-especie"
-                label={t('infraestructurasection.especie')}
-                required
-                error={errors.especie_id?.message}
-                {...register('especie_id', { required: t('infraestructurasection.selecciona_una_especie') })}
-              >
-                <option value="">{t('infraestructurasection.selecciona_una_especie')}</option>
-                {especiesOpciones.map((e) => <option key={e.id_especie} value={e.id_especie}>{e.nombre}</option>)}
-              </Select>
               <Select
                 id="infra-modelo"
                 label={t('infraestructurasection.modelo_de_ia')}
-                hint={especieId && !familia ? t('infraestructurasection.la_especie_no_tiene_grupo_de_manejo') : undefined}
+                hint={primera && !familia ? t('infraestructurasection.la_especie_no_tiene_grupo_de_manejo') : undefined}
                 error={errors.tipo_modelo_asignado?.message}
                 {...register('tipo_modelo_asignado')}
               >
                 <option value="">{t('infraestructurasection.sin_modelo_asignado')}</option>
                 {modelosOpciones.map((m) => <option key={m} value={m}>{TIPO_MODELO_LABEL[m]}</option>)}
+              </Select>
+              <Select
+                id="infra-criticidad"
+                label={t('infraestructurasection.nivel_criticidad')}
+                hint={t('infraestructurasection.nivel_criticidad_ayuda')}
+                error={errors.nivel_criticidad?.message}
+                {...register('nivel_criticidad')}
+              >
+                {NIVELES_CRITICIDAD.map((n) => <option key={n} value={n}>{t(`infraestructurasection.criticidad.${n}`)}</option>)}
               </Select>
             </div>
 
@@ -300,6 +364,13 @@ function InfraModal({ infra, finca, saving, saveError, onClose, onRegistrar, onE
                 })}
               />
             </div>
+
+            {/* Capacidad derivada (RFC-012): no se edita */}
+            <p aria-live="polite" style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>
+              {capacidadEstimada !== null
+                ? t('infraestructurasection.capacidad_estimada', { capacidad: formatearNumero(capacidadEstimada) })
+                : t('infraestructurasection.capacidad_sin_densidad')}
+            </p>
 
             {/* Descripción */}
             <div style={{ marginBottom: 'var(--s5)' }}>
@@ -541,7 +612,7 @@ export function InfraestructuraSection() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-                      {['#', 'Tipo', 'Nombre', 'Superficie', 'Modelo IA', 'Estado', 'Actualización', 'Acciones'].map((h) => (
+                      {['#', 'Tipo', 'Nombre', 'Superficie', 'Capacidad', 'Modelo IA', 'Estado', 'Actualización', 'Acciones'].map((h) => (
                         <th key={h} style={TH}>{h}</th>
                       ))}
                     </tr>
@@ -575,6 +646,9 @@ export function InfraestructuraSection() {
                               {formatearNumero(infra.superficie)}
                             </span>
                             <span style={{ fontSize: 'var(--fs-label-sm)', color: 'var(--text-muted)', marginLeft: 4 }}>m²</span>
+                          </td>
+                          <td style={{ ...TD, whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-mono-md)' }}>
+                            {infra.capacidad_maxima != null ? formatearNumero(infra.capacidad_maxima) : '—'}
                           </td>
                           <td style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>
                             {infra.tipo_modelo_asignado ? TIPO_MODELO_LABEL[infra.tipo_modelo_asignado] : '—'}

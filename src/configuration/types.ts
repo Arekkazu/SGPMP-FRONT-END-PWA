@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-20 | Arekkazu | FE-06 RF-20: especies (1..N), nivel_criticidad y capacidad_maxima del área (RFC-012/016) |
 import type { TipoModelo } from '../prediction/types';
 
 /** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
@@ -103,10 +106,19 @@ export interface InfraestructuraResponse {
   descripcion_infraestructura: string | null;
   es_activo: boolean;
   fecha_actualizacion: string | null;
-  /** RF-20 v1.1 (RFC-009). null en áreas registradas antes del cambio. */
+  /** Deprecado (RFC-012): la especie si el área tiene una sola; usar `especies`. */
   especie_id: number | null;
+  /** RFC-012: 1..N especies del mismo grupo de manejo, en orden de asociación. */
+  especies?: number[];
   tipo_modelo_asignado: TipoModelo | null;
+  /** RFC-016: criticidad operativa del área (priorización bajo saturación). */
+  nivel_criticidad?: NivelCriticidad;
+  /** RFC-012: derivada, floor(MIN densidad ind/m² × superficie); null si alguna especie no tiene densidad. */
+  capacidad_maxima?: number | null;
 }
+
+export type NivelCriticidad = 'ALTA' | 'MEDIA' | 'BAJA';
+export const NIVELES_CRITICIDAD: readonly NivelCriticidad[] = ['ALTA', 'MEDIA', 'BAJA'];
 
 export interface RegistrarInfraestructuraDTO {
   nombre_infraestructura: string;
@@ -114,9 +126,11 @@ export interface RegistrarInfraestructuraDTO {
   superficie: number;
   finca_id: number;
   descripcion_infraestructura?: string;
-  especie_id: number;
-  /** Debe coincidir con la familia de modelo de la especie (422 si no). */
+  /** RFC-012: al menos una, todas del mismo grupo de manejo (422 si no). */
+  especies: number[];
+  /** Debe coincidir con la familia de modelo del grupo común (422 si no). */
   tipo_modelo_asignado?: TipoModelo | null;
+  nivel_criticidad?: NivelCriticidad;
 }
 
 export interface EditarInfraestructuraDTO extends RegistrarInfraestructuraDTO {
