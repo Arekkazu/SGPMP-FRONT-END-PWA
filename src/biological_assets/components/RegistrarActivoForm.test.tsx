@@ -1,6 +1,11 @@
+// | Fecha      | Nombre       | Que se hizo                                                        |
+// |------------|--------------|--------------------------------------------------------------------|
+// | 2026-10-21 | destroyerban | RF-33: pruebas de validación y carga de atributos dinámicos        |
 /**
  * #194 (RF-33 FA-07): al indicar la especie, el formulario muestra sus atributos
  * dinámicos y marca en su campo el error del backend `atributos_dinamicos.<nombre>`.
+ * RF-33 (RFC-004): valida tipo, obligatoriedad y rango como el backend, y no deja
+ * registrar sin la configuración de la especie.
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
@@ -16,7 +21,36 @@ const catalogo = vi.hoisted(() => ({
 }));
 vi.mock('../hooks/useCatalogoRegistro', () => ({ useCatalogoRegistro: () => catalogo }));
 
-import { RegistrarActivoForm, idDeCatalogo } from './RegistrarActivoForm';
+import { RegistrarActivoForm, idDeCatalogo, errorAtributo } from './RegistrarActivoForm';
+import type { ParametroEspecie } from '../types';
+
+const param = (p: Partial<ParametroEspecie>): ParametroEspecie => ({
+  nombre: 'x', tipo_dato: 'NUMERICO', es_obligatorio: false, unidad_medida: null, valor_min: null, valor_max: null, ...p,
+});
+
+describe('errorAtributo — mismas reglas que el backend (RF-33 RFC-004)', () => {
+  it('exige el obligatorio y deja vacío el opcional', () => {
+    expect(errorAtributo(param({ es_obligatorio: true }), '  ')?.clave).toBe('registraractivoform.este_atributo_es_obligatorio');
+    expect(errorAtributo(param({ tipo_dato: 'TEXTO', es_obligatorio: true }), '')?.clave).toBe('registraractivoform.este_atributo_es_obligatorio');
+    expect(errorAtributo(param({}), '')).toBeNull();
+    expect(errorAtributo(param({ tipo_dato: 'BOOLEANO', es_obligatorio: true }), false)).toBeNull();
+  });
+
+  it('valida el tipo de dato', () => {
+    expect(errorAtributo(param({ tipo_dato: 'ENTERO' }), '2.5')?.clave).toBe('registraractivoform.atributo_debe_ser_entero');
+    expect(errorAtributo(param({ tipo_dato: 'ENTERO' }), '3')).toBeNull();
+    expect(errorAtributo(param({}), 'abc')?.clave).toBe('registraractivoform.atributo_debe_ser_numero');
+    expect(errorAtributo(param({ tipo_dato: 'TEXTO' }), 'Holstein')).toBeNull();
+  });
+
+  it('valida el rango inclusive', () => {
+    const p = param({ valor_min: '1.5', valor_max: '40' });
+    expect(errorAtributo(p, '1.5')).toBeNull();
+    expect(errorAtributo(p, '40')).toBeNull();
+    expect(errorAtributo(p, '1.4')?.clave).toBe('registraractivoform.atributo_minimo');
+    expect(errorAtributo(p, '40.1')?.clave).toBe('registraractivoform.atributo_maximo');
+  });
+});
 
 describe('idDeCatalogo', () => {
   const opciones = [{ id: 4, nombre: 'Cachama Blanca' }];
@@ -51,6 +85,41 @@ describe('RegistrarActivoForm — atributos dinámicos de la especie', () => {
       />
     );
     expect(await screen.findByLabelText(/Peso al nacer \(kg\)/)).toHaveAttribute('aria-invalid', 'true');
+  });
+});
+
+describe('RegistrarActivoForm — validación contra la configuración de la especie', () => {
+  it('muestra el rango y rechaza en el campo un valor fuera de él, sin enviar', async () => {
+    parametrosEspecie.mockResolvedValue([
+      { nombre: 'numero_crias', tipo_dato: 'ENTERO', es_obligatorio: true, unidad_medida: null, valor_min: '1', valor_max: '10' },
+    ]);
+    const onSubmit = vi.fn();
+    render(<RegistrarActivoForm saving={false} onSubmit={onSubmit} onCancel={vi.fn()} saveError={null} />);
+
+    await userEvent.type(screen.getByRole('combobox', { name: /Especie/ }), 'Bovino');
+    const campo = await screen.findByLabelText(/Numero crias/i, {}, { timeout: 2000 });
+    expect(screen.getByText('Entre 1 y 10.')).toBeInTheDocument();
+
+    await userEvent.type(campo, '12');
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+    expect(await screen.findByText('Debe ser menor o igual a 10.')).toBeInTheDocument();
+    expect(campo).toHaveAttribute('aria-invalid', 'true');
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('si la configuración no carga avisa, bloquea el registro y deja reintentar', async () => {
+    parametrosEspecie.mockRejectedValueOnce({ status: 500, message: 'Error' }).mockResolvedValueOnce([
+      { nombre: 'Peso al nacer', tipo_dato: 'NUMERICO', es_obligatorio: true, unidad_medida: 'kg', valor_min: null, valor_max: null },
+    ]);
+    render(<RegistrarActivoForm saving={false} onSubmit={vi.fn()} onCancel={vi.fn()} saveError={null} />);
+
+    await userEvent.type(screen.getByRole('combobox', { name: /Especie/ }), 'Bovino');
+    expect(await screen.findByText('No se pudieron cargar los atributos de la especie', {}, { timeout: 2000 })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Registrar/ })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(await screen.findByLabelText(/Peso al nacer \(kg\)/, {}, { timeout: 2000 })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Registrar/ })).toBeEnabled();
   });
 });
 

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo                                                        |
+// |------------|--------------|--------------------------------------------------------------------|
+// | 2026-10-21 | destroyerban | RF-33: valida atributos dinámicos (tipo, rango) y su carga         |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Controller, useForm } from 'react-hook-form';
@@ -120,6 +123,31 @@ function valorAtributo(p: ParametroEspecie, v: string | boolean | undefined): un
   return String(v).trim();
 }
 
+/**
+ * RF-33 (RFC-004): mismas reglas que el backend contra la configuración RF-16
+ * (obligatoriedad, tipo de dato y rango inclusive), para avisar en el campo antes
+ * del 422. Devuelve la clave i18n del error o null si el valor es válido.
+ */
+export function errorAtributo(
+  p: ParametroEspecie,
+  v: string | boolean | undefined,
+): { clave: string; params?: Record<string, string> } | null {
+  if (p.tipo_dato === 'BOOLEANO') return null;
+  const texto = typeof v === 'string' ? v.trim() : '';
+  if (texto === '') return p.es_obligatorio ? { clave: 'registraractivoform.este_atributo_es_obligatorio' } : null;
+  if (p.tipo_dato !== 'NUMERICO' && p.tipo_dato !== 'ENTERO') return null;
+  const numero = Number(texto);
+  if (!Number.isFinite(numero)) return { clave: 'registraractivoform.atributo_debe_ser_numero' };
+  if (p.tipo_dato === 'ENTERO' && !Number.isInteger(numero)) return { clave: 'registraractivoform.atributo_debe_ser_entero' };
+  if (p.valor_min !== null && numero < Number(p.valor_min)) {
+    return { clave: 'registraractivoform.atributo_minimo', params: { min: formatearNumero(p.valor_min) } };
+  }
+  if (p.valor_max !== null && numero > Number(p.valor_max)) {
+    return { clave: 'registraractivoform.atributo_maximo', params: { max: formatearNumero(p.valor_max) } };
+  }
+  return null;
+}
+
 function etiquetaAtributo(p: ParametroEspecie): string {
   const nombre = humanizar(p.nombre);
   return p.unidad_medida && p.unidad_medida !== 'N/A' ? `${nombre} (${p.unidad_medida})` : nombre;
@@ -179,18 +207,45 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   // `=== null` y no `== null`: una especie cacheada sin el campo no debe bloquear el registro.
   const loteSinDensidad = !esIndividual && !!especie && especie.densidad_maxima_por_especie === null;
   const [parametros, setParametros] = useState<ParametroEspecie[]>([]);
+  // Sin la configuración de la especie el registro saldría sin sus atributos y el
+  // backend lo rechazaría (422) sin un campo donde corregirlo: se espera o se reintenta.
+  const [estadoParametros, setEstadoParametros] = useState<'listo' | 'cargando' | 'error'>('listo');
+  const [intentoParametros, setIntentoParametros] = useState(0);
   useEffect(() => {
     if (!Number.isInteger(idEspecie) || idEspecie < 1) {
       setParametros([]);
+      setEstadoParametros('listo');
       return;
     }
+    let vigente = true;
+    setEstadoParametros('cargando');
     const temporizador = setTimeout(() => {
       activosApi.parametrosEspecie(idEspecie, tipo)
-        .then((lista) => { setValue('atrib', []); setParametros(lista); })
-        .catch(() => setParametros([]));
+        .then((lista) => {
+          if (!vigente) return;
+          setValue('atrib', []);
+          setParametros(lista);
+          setEstadoParametros('listo');
+        })
+        .catch(() => {
+          if (!vigente) return;
+          setParametros([]);
+          setEstadoParametros('error');
+        });
     }, 400);
-    return () => clearTimeout(temporizador);
-  }, [idEspecie, tipo, setValue]);
+    return () => { vigente = false; clearTimeout(temporizador); };
+  }, [idEspecie, tipo, setValue, intentoParametros]);
+
+  // El rango configurado se muestra de antemano, no solo cuando el valor ya es inválido.
+  const rango = (p: ParametroEspecie): string | undefined => {
+    if (p.tipo_dato !== 'NUMERICO' && p.tipo_dato !== 'ENTERO') return undefined;
+    const min = p.valor_min !== null ? formatearNumero(p.valor_min) : null;
+    const max = p.valor_max !== null ? formatearNumero(p.valor_max) : null;
+    if (min && max) return t('registraractivoform.atributo_rango', { min, max });
+    if (min) return t('registraractivoform.atributo_minimo', { min });
+    if (max) return t('registraractivoform.atributo_maximo', { max });
+    return undefined;
+  };
 
   // El backend señala el atributo con field="atributos_dinamicos.<nombre>".
   useEffect(() => {
@@ -493,6 +548,26 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
         </div>
       )}
 
+      {estadoParametros === 'cargando' && (
+        <p role="status" style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 var(--s6)' }}>
+          {t('registraractivoform.cargando_atributos')}
+        </p>
+      )}
+
+      {estadoParametros === 'error' && (
+        <div style={{ marginBottom: 'var(--s6)' }}>
+          <Alert
+            variant="error"
+            title={t('registraractivoform.atributos_no_cargados_titulo')}
+            description={t('registraractivoform.atributos_no_cargados_detalle')}
+            style={{ marginBottom: 'var(--s3)' }}
+          />
+          <Button type="button" variant="secondary" size="sm" onClick={() => setIntentoParametros((n) => n + 1)}>
+            {t('registraractivoform.reintentar')}
+          </Button>
+        </div>
+      )}
+
       {parametros.length > 0 && (
         <div style={{ marginBottom: 'var(--s6)' }}>
           <span style={SECTION_TITLE}>{t('registraractivoform.atributos_de_la_especie')}</span>
@@ -527,9 +602,13 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                   min={p.valor_min ?? undefined}
                   max={p.valor_max ?? undefined}
                   placeholder={p.es_obligatorio ? undefined : t('registraractivoform.opcional')}
+                  hint={rango(p)}
                   error={msg}
                   {...register(`atrib.${i}`, {
-                    required: p.es_obligatorio ? t('registraractivoform.este_atributo_es_obligatorio') : false,
+                    validate: (v) => {
+                      const e = errorAtributo(p, v);
+                      return e ? t(e.clave, e.params) : true;
+                    },
                   })}
                 />
               );
@@ -540,7 +619,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
         <Button type="button" variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('registraractivoform.cancelar')}</Button>
-        <Button type="submit" variant="primary" size="md" loading={saving} disabled={loteSinDensidad}>{t('registraractivoform.registrar_activo')}</Button>
+        <Button type="submit" variant="primary" size="md" loading={saving} disabled={loteSinDensidad || estadoParametros !== 'listo'}>{t('registraractivoform.registrar_activo')}</Button>
       </div>
     </form>
   );
