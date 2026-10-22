@@ -1,6 +1,10 @@
+// | Fecha      | Nombre       | Que se hizo                                                        |
+// |------------|--------------|--------------------------------------------------------------------|
+// | 2026-10-21 | destroyerban | #69 RF-33: pruebas de especie/infraestructura del catálogo activo  |
 /**
  * #194 (RF-33 FA-07): al indicar la especie, el formulario muestra sus atributos
  * dinámicos y marca en su campo el error del backend `atributos_dinamicos.<nombre>`.
+ * #69 (RF-33): especie e infraestructura solo valen si están en el catálogo activo.
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
@@ -13,6 +17,7 @@ vi.mock('../api/activosApi', () => ({ activosApi: { parametrosEspecie } }));
 const catalogo = vi.hoisted(() => ({
   especies: [{ id_especie: 1, nombre: 'Bovino', es_activo: true, densidad_maxima_por_especie: '10' }],
   fincas: [], infraestructuras: [], cargando: false, cargandoInfra: false, cargarInfraestructuras: () => Promise.resolve(),
+  errorCatalogo: false, errorInfra: false, reintentarCatalogo: vi.fn(),
 }));
 vi.mock('../hooks/useCatalogoRegistro', () => ({ useCatalogoRegistro: () => catalogo }));
 
@@ -51,6 +56,58 @@ describe('RegistrarActivoForm — atributos dinámicos de la especie', () => {
       />
     );
     expect(await screen.findByLabelText(/Peso al nacer \(kg\)/)).toHaveAttribute('aria-invalid', 'true');
+  });
+});
+
+describe('RegistrarActivoForm — especie e infraestructura del catálogo activo (#69)', () => {
+  const base = {
+    especies: [{ id_especie: 1, nombre: 'Bovino', es_activo: true, densidad_maxima_por_especie: '10' }],
+    fincas: [{ id_finca: 15, nombre: 'Finca Norte' }],
+    infraestructuras: [{ id_infraestructura: 16, nombre_infraestructura: 'Potrero 1', especie_id: 1, tipo_area: 'Potrero', superficie: 100 }],
+    errorCatalogo: false, errorInfra: false,
+  };
+
+  it('rechaza el ID de una especie que no está en el catálogo activo y no pide sus atributos', async () => {
+    Object.assign(catalogo, base);
+    parametrosEspecie.mockClear();
+    parametrosEspecie.mockResolvedValue([]);
+    const onSubmit = vi.fn();
+    render(<RegistrarActivoForm saving={false} onSubmit={onSubmit} onCancel={vi.fn()} saveError={null} />);
+
+    await userEvent.type(screen.getByRole('combobox', { name: /Especie/ }), '99');
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+    expect(await screen.findByText('Esa especie no existe o está inactiva. Elige una de la lista.')).toBeInTheDocument();
+    await new Promise((r) => setTimeout(r, 500));
+    expect(parametrosEspecie).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('valida la infraestructura contra las áreas activas de la finca elegida', async () => {
+    Object.assign(catalogo, base);
+    const onSubmit = vi.fn();
+    render(<RegistrarActivoForm saving={false} onSubmit={onSubmit} onCancel={vi.fn()} saveError={null} />);
+    const infra = screen.getByRole('combobox', { name: /Infraestructura/ });
+
+    await userEvent.type(infra, '16');
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+    expect(await screen.findByText('Elige primero la finca para validar la infraestructura.')).toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByLabelText(/Finca/), '15');
+    await userEvent.type(screen.getByRole('combobox', { name: /Infraestructura/ }), '77');
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+    expect(await screen.findByText('Esa infraestructura no existe, está inactiva o no es de la finca elegida.')).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('si los catálogos no cargan avisa, bloquea el registro y deja reintentar', async () => {
+    Object.assign(catalogo, { ...base, especies: [], fincas: [], infraestructuras: [], errorCatalogo: true });
+    render(<RegistrarActivoForm saving={false} onSubmit={vi.fn()} onCancel={vi.fn()} saveError={null} />);
+
+    expect(screen.getByText('No se pudieron cargar las especies y fincas')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Registrar/ })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(catalogo.reintentarCatalogo).toHaveBeenCalled();
+    Object.assign(catalogo, { errorCatalogo: false });
   });
 });
 
