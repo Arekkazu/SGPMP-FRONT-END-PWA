@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo                                                        |
+// |------------|--------------|--------------------------------------------------------------------|
+// | 2026-10-21 | destroyerban | #73 RF-37: fase destino y confirmación no estándar en CambiarFase  |
 // =====================================================================
 // Módulo 2 — Activos Biológicos · Tipos de dominio
 // Contrato: do-it/biological_assets/.../api_reference_m02_activos_biologicos.md
@@ -208,12 +211,19 @@ export interface CambiarFaseDTO {
   id_ciclo_productiva: number;
   motivo_cambio?: string | null;
   fecha_inicio?: string | null;            // datetime
+  /** #73 (RF-37): fase del ciclo (`id_ciclos_productivo_biologico`); sin ella el backend avanza a la siguiente. */
+  fase_destino_id?: number | null;
+  /** Obligatorio en true si `fase_destino_id` no es la siguiente de la secuencia (salto o retroceso). */
+  confirmacion_no_estandar?: boolean;
 }
 
 export interface GestionFaseResponse {
   id_gestion_fases: number | null;
   id_activo_biologico: number;
   id_ciclo_productiva: number;
+  /** Fase del ciclo en la que está (o estuvo) el activo. */
+  id_ciclos_productivo_biologico?: number | null;
+  es_transicion_no_estandar?: boolean;
   nombre_ciclo: string;
   nombre_fase_actual: string | null;
   paso_actual: number | null;
