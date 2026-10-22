@@ -1,28 +1,37 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: historial de cambios, aviso de modo de campo sin nodos y nodos sin confirmar |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { SlidersHorizontal, RefreshCw, Cpu } from 'lucide-react';
+import { SlidersHorizontal, RefreshCw, Cpu, History } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useMotor } from '../hooks/useMotor';
 import { MotorConfigForm } from '../components/MotorConfigForm';
+import { MotorHistorialModal } from '../components/MotorHistorialModal';
+import { ModalShell } from '../components/ModalShell';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { AvisoSincronizacionGuardado, SincronizacionNodosPanel } from '../components/SincronizacionNodosPanel';
-import { RECURSO_MOTOR, ACCION_R, ACCION_C } from '../rbac';
+import { RECURSO_MOTOR, RECURSO_AUDITORIA, ACCION_R, ACCION_C } from '../rbac';
 import { TIPOS_MODELO, TIPO_MODELO_LABEL, type TipoModelo, type ConfigurarMotorDTO } from '../types';
 
 export function MotorView() {
   const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_MOTOR, ACCION_R);
   const puedeEditar = usePermission(RECURSO_MOTOR, ACCION_C);
+  // El historial sale de la bitácora M04: sin lectura de auditoría no hay de dónde leerlo.
+  const puedeVerHistorial = usePermission(RECURSO_AUDITORIA, ACCION_R);
   const online = useOnlineStatus();
 
   const {
     configs, versiones, loading, saving, error, saveError, fromCache, cargar, guardar, limpiarSaveError,
     sincronizacion, syncError, ultimoGuardado, cargarSincronizacion,
+    historial, historialLoading, historialError, cargarHistorial,
   } = useMotor();
   const [tipo, setTipo] = useState<TipoModelo>('MODELO_AVES');
+  const [verHistorial, setVerHistorial] = useState(false);
 
   useEffect(() => { if (puedeVer) cargar(); }, [puedeVer, cargar]);
   // DEV-09: el estado por nodo es de la configuración de la pestaña visible.
@@ -30,6 +39,13 @@ export function MotorView() {
 
   const configActual = configs.find((c) => c.tipo_modelo === tipo) ?? null;
   const guardadoDeEstaPestana = ultimoGuardado?.config.tipo_modelo === tipo ? ultimoGuardado : null;
+  const nodosSinConfirmar = (sincronizacion?.nodos ?? []).filter((n) => n.estado_sincronizacion !== 'APLICADA').map((n) => n.serial);
+
+  const abrirHistorial = () => {
+    if (!configActual) return;
+    cargarHistorial(configActual.id_configuracion_motor);
+    setVerHistorial(true);
+  };
 
   const onGuardar = async (dto: ConfigurarMotorDTO) => {
     const ok = await guardar(dto);
@@ -45,13 +61,19 @@ export function MotorView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <SlidersHorizontal size={20} aria-hidden />{t('motorview.configuracion_del_motor_de_prediccion')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            Umbrales, ventana de análisis y modo por tipo de modelo
-            {fromCache && ' · desde caché'}
+            {t('motorview.descripcion_v2')}
+            {fromCache && ` · ${t('motorview.desde_cache')}`}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => { limpiarSaveError(); cargar(); }} aria-label={t('motorview.recargar')}>
-          <RefreshCw size={15} aria-hidden />
-        </Button>
+        <div style={{ display: 'flex', gap: 'var(--s2)' }}>
+          {puedeVerHistorial && (
+            <Button variant="secondary" size="sm" onClick={abrirHistorial} disabled={!configActual || !online}>
+              <History size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('motorview.ver_historial')}</Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => { limpiarSaveError(); cargar(); }} aria-label={t('motorview.recargar')}>
+            <RefreshCw size={15} aria-hidden />
+          </Button>
+        </div>
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
@@ -104,6 +126,7 @@ export function MotorView() {
               saveError={saveError}
               online={online}
               puedeEditar={puedeEditar}
+              nodosSinConfirmar={nodosSinConfirmar}
               onGuardar={onGuardar}
             />
           </>
@@ -116,6 +139,23 @@ export function MotorView() {
           <SincronizacionNodosPanel sincronizacion={sincronizacion} error={syncError} />
         </section>
       </div>
+
+      {verHistorial && (
+        <MotorHistorialModal eventos={historial} loading={historialLoading} error={historialError} onClose={() => setVerHistorial(false)} />
+      )}
+
+      {/* FA-08 / E3: modo de campo sin nodos con el modelo disponible */}
+      {saveError?.code === 'MODO_EDGE_SIN_NODOS' && (
+        <ModalShell
+          title={t('motorview.edge_sin_modelo_titulo')}
+          onClose={limpiarSaveError}
+          maxWidth={440}
+          footer={<Button variant="primary" onClick={limpiarSaveError}>{t('motorview.entendido')}</Button>}
+        >
+          <p style={{ margin: '0 0 var(--s3)', fontSize: '14px', color: 'var(--text-primary)' }}>{saveError.message}</p>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>{t('motorview.edge_sin_modelo_sugerencia')}</p>
+        </ModalShell>
+      )}
     </div>
   );
 }

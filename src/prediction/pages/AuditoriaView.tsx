@@ -1,6 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-73: pestaña por RF de origen, búsqueda en la página y aviso de evidencia verificable |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { ClipboardList, RefreshCw, Download, ListChecks, AlertOctagon, Layers } from 'lucide-react';
+import { ClipboardList, RefreshCw, Download, ListChecks, AlertOctagon, Layers, ShieldCheck } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
@@ -15,8 +18,10 @@ import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_AUDITORIA, ACCION_R, ACCION_E } from '../rbac';
 import type { ListarAuditoriaFiltros, EventoAuditoriaM04Response } from '../types';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
+import { INPUT, LABEL } from '../components/tableStyles';
+import { RF_ORIGEN, rfDeEvento } from '../lib/rfOrigen';
 
-type TabId = 'todos' | 'criticos' | 'tipo';
+type TabId = 'todos' | 'criticos' | 'tipo' | 'rf';
 
 function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: number | null; etiqueta: string; color: string }) {
   return (
@@ -43,6 +48,7 @@ export function AuditoriaView() {
   const [sel, setSel] = useState<EventoAuditoriaM04Response | null>(null);
   const [selLoading, setSelLoading] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
 
   const build = useCallback((f: AuditoriaFiltrosState, pagina = 1): ListarAuditoriaFiltros => {
     const api: ListarAuditoriaFiltros = { pagina, por_pagina: 50 };
@@ -69,10 +75,24 @@ export function AuditoriaView() {
     setSelLoading(false);
   };
 
+  // CA-12: el backend no busca por texto; se busca dentro de la página cargada.
+  const buscados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return eventos;
+    return eventos.filter((e) => [e.tipo_evento, e.id_referencia, e.entidad_referencia, e.id_sistema, e.codigo_error, e.descripcion_error, e.correlacion_id, rfDeEvento(e.tipo_evento)]
+      .some((c) => c?.toLowerCase().includes(q)));
+  }, [eventos, busqueda]);
+
   const visibles = useMemo(() => {
-    if (tab === 'criticos') return eventos.filter((e) => e.severidad_evento === 'ERROR' || e.severidad_evento === 'CRITICAL');
-    return eventos;
-  }, [eventos, tab]);
+    if (tab === 'criticos') return buscados.filter((e) => e.severidad_evento === 'ERROR' || e.severidad_evento === 'CRITICAL');
+    return buscados;
+  }, [buscados, tab]);
+
+  const porRf = useMemo(() => {
+    const map = new Map<string, number>();
+    buscados.forEach((e) => { const rf = rfDeEvento(e.tipo_evento) ?? '—'; map.set(rf, (map.get(rf) ?? 0) + 1); });
+    return [...RF_ORIGEN, '—'].filter((rf) => map.has(rf)).map((rf) => [rf, map.get(rf) ?? 0] as const);
+  }, [buscados]);
 
   const correlacionados = useMemo(() => {
     if (!sel?.correlacion_id) return [];
@@ -83,9 +103,9 @@ export function AuditoriaView() {
 
   const porTipo = useMemo(() => {
     const map = new Map<string, number>();
-    eventos.forEach((e) => map.set(e.tipo_evento, (map.get(e.tipo_evento) ?? 0) + 1));
+    buscados.forEach((e) => map.set(e.tipo_evento, (map.get(e.tipo_evento) ?? 0) + 1));
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
-  }, [eventos]);
+  }, [buscados]);
 
   const criticosCount = (resumen?.errores ?? 0) + (resumen?.criticos ?? 0);
 
@@ -95,6 +115,7 @@ export function AuditoriaView() {
     { id: 'todos', label: t('auditoriaview.todos_los_eventos') },
     { id: 'criticos', label: t('auditoriaview.eventos_criticos'), badge: criticosCount },
     { id: 'tipo', label: t('auditoriaview.por_tipo_de_evento') },
+    { id: 'rf', label: t('auditoriaview.por_rf_origen') },
   ];
 
   return (
@@ -104,8 +125,8 @@ export function AuditoriaView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <ClipboardList size={20} aria-hidden />{t('auditoriaview.bitacora_de_auditoria')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            Registro inmutable de eventos del módulo de predicción
-            {fromCache && ' · desde caché'}
+            {t('auditoriaview.descripcion')}
+            {fromCache && ` · ${t('auditoriaview.desde_cache')}`}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
@@ -129,7 +150,17 @@ export function AuditoriaView() {
           <Kpi icon={<AlertOctagon size={18} aria-hidden />} valor={resumen?.criticos ?? null} etiqueta="Críticos" color="var(--sem-error)" />
         </div>
 
+        <div role="note" style={{ display: 'flex', gap: 'var(--s2)', padding: 'var(--s3) var(--s4)', marginBottom: 'var(--s5)', borderRadius: 'var(--r-md)', border: '1px solid var(--sem-info-border)', background: 'var(--sem-info-bg)', color: 'var(--text-primary)', fontSize: '13px' }}>
+          <ShieldCheck size={16} aria-hidden style={{ color: 'var(--sem-info)', flexShrink: 0, marginTop: 1 }} />
+          <span><strong>{t('auditoriaview.evidencia_titulo')}</strong> {t('auditoriaview.evidencia_texto')}</span>
+        </div>
+
         <AuditoriaFiltros value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} />
+
+        <div style={{ maxWidth: 360, marginBottom: 'var(--s4)' }}>
+          <label style={LABEL} htmlFor="aud-buscar">{t('auditoriaview.buscar')}</label>
+          <input id="aud-buscar" type="search" style={INPUT} value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder={t('auditoriaview.buscar_placeholder')} />
+        </div>
 
         {/* Tabs */}
         <div role="tablist" aria-label={t('auditoriaview.vista_de_eventos')} style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
@@ -157,7 +188,19 @@ export function AuditoriaView() {
           })}
         </div>
 
-        {tab === 'tipo' ? (
+        {tab === 'rf' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
+            {porRf.length === 0 && <div style={{ padding: 'var(--page-pad)', textAlign: 'center', color: 'var(--text-muted)' }}>{t('auditoriaview.sin_eventos_en_esta_pagina')}</div>}
+            {porRf.map(([rf, count]) => (
+              <div key={rf} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--s3) var(--s4)', background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)' }}>{rf}</span>{rf !== '—' && <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}> · {t(`auditoriaview.rf_${rf.replace('-', '')}`)}</span>}
+                </span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-secondary)' }}>{count}</span>
+              </div>
+            ))}
+          </div>
+        ) : tab === 'tipo' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
             {porTipo.length === 0 && <div style={{ padding: 'var(--page-pad)', textAlign: 'center', color: 'var(--text-muted)' }}>{t('auditoriaview.sin_eventos_en_esta_pagina')}</div>}
             {porTipo.map(([tipo, count]) => (

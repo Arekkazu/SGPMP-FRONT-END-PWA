@@ -1,10 +1,15 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: historial de cambios de la configuración desde la bitácora M04 (RF-73) |
 import { useState, useCallback } from 'react';
 import { motorApi } from '../api/motorApi';
 import { modelosApi } from '../api/modelosApi';
+import { auditoriaApi } from '../api/auditoriaApi';
 import { cacheMotor, getMotorCache } from '../db/prediccionTables';
 import type {
   ConfiguracionMotorIAResponse,
   ConfigurarMotorDTO,
+  EventoAuditoriaM04Response,
   ResultadoGuardarMotor,
   SincronizacionMotor,
   VersionModeloResponse,
@@ -28,6 +33,9 @@ export function useMotor() {
   const [sincronizacion, setSincronizacion] = useState<SincronizacionMotor | null>(null);
   const [syncError, setSyncError] = useState<ApiError | null>(null);
   const [ultimoGuardado, setUltimoGuardado] = useState<ResultadoGuardarMotor | null>(null);
+  const [historial, setHistorial] = useState<EventoAuditoriaM04Response[]>([]);
+  const [historialLoading, setHistorialLoading] = useState(false);
+  const [historialError, setHistorialError] = useState<ApiError | null>(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -135,6 +143,29 @@ export function useMotor() {
     }
   }, []);
 
+  /**
+   * Cambios anteriores de una configuración (solo lectura). No hay endpoint propio:
+   * cada guardado deja un CONFIGURACION_MOTOR_CAMBIADA inmutable en la bitácora M04,
+   * así que pide lectura de auditoría (recurso 46).
+   */
+  const cargarHistorial = useCallback(async (idConfiguracion: number) => {
+    setHistorialLoading(true);
+    setHistorialError(null);
+    try {
+      const data = await auditoriaApi.listar({
+        tipo_evento: 'CONFIGURACION_MOTOR_CAMBIADA',
+        id_referencia: String(idConfiguracion),
+        por_pagina: 100,
+      });
+      setHistorial(data.items ?? []);
+    } catch (e) {
+      setHistorial([]);
+      setHistorialError(e as ApiError);
+    } finally {
+      setHistorialLoading(false);
+    }
+  }, []);
+
   const limpiarSaveError = useCallback(() => {
     setSaveError(null);
     setUltimoGuardado(null);
@@ -143,5 +174,6 @@ export function useMotor() {
   return {
     configs, versiones, loading, saving, error, saveError, fromCache, cargar, guardar, limpiarSaveError,
     sincronizacion, syncError, ultimoGuardado, cargarSincronizacion,
+    historial, historialLoading, historialError, cargarHistorial,
   };
 }
