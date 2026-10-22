@@ -1,6 +1,6 @@
 // | Fecha      | Nombre       | Que se hizo                                                        |
 // |------------|--------------|--------------------------------------------------------------------|
-// | 2026-10-21 | destroyerban | RF-33: pruebas de validación y carga de atributos dinámicos        |
+// | 2026-10-21 | destroyerban | #66 RF-33: pruebas de validación y carga de atributos dinámicos    |
 /**
  * #194 (RF-33 FA-07): al indicar la especie, el formulario muestra sus atributos
  * dinámicos y marca en su campo el error del backend `atributos_dinamicos.<nombre>`.

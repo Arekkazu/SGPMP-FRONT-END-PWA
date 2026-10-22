@@ -1,6 +1,6 @@
 // | Fecha      | Nombre       | Que se hizo                                                        |
 // |------------|--------------|--------------------------------------------------------------------|
-// | 2026-10-21 | destroyerban | RF-33: valida atributos dinámicos (tipo, rango) y su carga         |
+// | 2026-10-21 | destroyerban | #66 RF-33: valida atributos dinámicos (tipo, rango) y su carga     |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Controller, useForm } from 'react-hook-form';
