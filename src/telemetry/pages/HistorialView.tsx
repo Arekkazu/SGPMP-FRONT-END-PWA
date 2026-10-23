@@ -1,6 +1,3 @@
-// | Fecha      | Nombre   | Que se hizo |
-// |------------|----------|-------------|
-// | 2026-10-23 | Arekkazu | FE-11 RF-59: aviso de truncado e intervalos sin lecturas |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { History } from 'lucide-react';
@@ -14,7 +11,6 @@ import { HistorialTable } from '../components/HistorialTable';
 import { ExportarModal } from '../components/ExportarModal';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
-import { HistorialAvisos } from '../components/HistorialAvisos';
 import { RECURSO_HISTORIAL, ACCION_R, ACCION_E } from '../rbac';
 import type { HistorialFiltros as HistorialFiltrosDTO, EstadoDato, OrigenDato, FormatoExportHistorial } from '../types';
 
@@ -23,7 +19,7 @@ export function HistorialView() {
   const puedeVer = usePermission(RECURSO_HISTORIAL, ACCION_R);
   const puedeExportar = usePermission(RECURSO_HISTORIAL, ACCION_E);
 
-  const { items, estadisticas, paginacion, truncado, vacios, loading, error, exportando, exportError, cargar, exportar } = useHistorial();
+  const { items, estadisticas, paginacion, loading, error, exportando, exportError, cargar, exportar } = useHistorial();
   const [filtros, setFiltros] = useState<HistorialFiltrosState>(HISTORIAL_FILTROS_DEFAULT);
   const [modalExport, setModalExport] = useState(false);
 
@@ -86,15 +82,6 @@ export function HistorialView() {
           onExportar={() => setModalExport(true)}
           puedeExportar={puedeExportar}
         />
-
-        {!loading && !error && (
-          <HistorialAvisos
-            truncado={truncado.truncado}
-            totalEncontrado={truncado.totalEncontrado}
-            mostrados={paginacion.totalRegistros}
-            vacios={vacios}
-          />
-        )}
 
         {!loading && items.length > 0 && (
           <>

@@ -1,6 +1,3 @@
-// | Fecha      | Nombre   | Que se hizo |
-// |------------|----------|-------------|
-// | 2026-10-23 | Arekkazu | FE-11 RF-59: expone truncado y vacíos temporales |
 import { useState, useCallback } from 'react';
 import { monitoreoApi } from '../api/monitoreoApi';
 import type {
@@ -8,7 +5,6 @@ import type {
   ResumenEstadisticoSchema,
   HistorialFiltros,
   FormatoExportHistorial,
-  VacioTemporalSchema,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -25,9 +21,6 @@ export function useHistorial() {
   const [paginacion, setPaginacion] = useState<PaginacionState>({ pagina: 1, totalPaginas: 1, totalRegistros: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
-  // RF-59 E6/E7 (DEV-38): truncado a 10 000 y huecos sin lecturas.
-  const [truncado, setTruncado] = useState({ truncado: false, totalEncontrado: 0 });
-  const [vacios, setVacios] = useState<VacioTemporalSchema[]>([]);
 
   const [exportando, setExportando] = useState(false);
   const [exportError, setExportError] = useState<ApiError | null>(null);
@@ -40,8 +33,6 @@ export function useHistorial() {
       setItems(data.items ?? []);
       setEstadisticas(data.estadisticas ?? []);
       setRangoReal(data.rango_real_datos ?? {});
-      setTruncado({ truncado: !!data.truncado, totalEncontrado: data.total_encontrado ?? data.total ?? 0 });
-      setVacios(data.vacios_temporales ?? []);
       setPaginacion({
         pagina: data.pagina ?? 1,
         totalPaginas: data.paginas_totales ?? 1,
@@ -51,8 +42,6 @@ export function useHistorial() {
       setError(e as ApiError);
       setItems([]);
       setEstadisticas([]);
-      setTruncado({ truncado: false, totalEncontrado: 0 });
-      setVacios([]);
     } finally {
       setLoading(false);
     }
@@ -87,5 +76,5 @@ export function useHistorial() {
     []
   );
 
-  return { items, estadisticas, rangoReal, paginacion, truncado, vacios, loading, error, exportando, exportError, cargar, exportar };
+  return { items, estadisticas, rangoReal, paginacion, loading, error, exportando, exportError, cargar, exportar };
 }
