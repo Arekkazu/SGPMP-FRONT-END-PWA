@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | FE-12 RF-57: Descartar solo con permiso D y transiciones como el backend |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -17,6 +20,8 @@ interface Props {
   loading: boolean;
   error: ApiError | null;
   puedeGestionar: boolean;
+  /** FE-12 (RF-57 E11): descartar exige D sobre alertas operativas, aparte de U. */
+  puedeDescartar: boolean;
   online: boolean;
   onAccion: (estado: NuevoEstadoAlerta) => void;
   onClose: () => void;
@@ -31,10 +36,12 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function accionesDisponibles(estado: string): NuevoEstadoAlerta[] {
+/** Mismas transiciones que el backend y el trigger de RF-57: ACTIVA → EN_ATENCION o
+ *  DESCARTADA; EN_ATENCION → RESUELTA. Ofrecer otra solo terminaba en 422. */
+export function accionesDisponibles(estado: string, puedeDescartar: boolean): NuevoEstadoAlerta[] {
   const up = estado.toUpperCase();
-  if (up === 'ACTIVA') return ['EN_ATENCION', 'RESUELTA', 'DESCARTADA'];
-  if (up === 'EN_ATENCION') return ['RESUELTA', 'DESCARTADA'];
+  if (up === 'ACTIVA') return puedeDescartar ? ['EN_ATENCION', 'DESCARTADA'] : ['EN_ATENCION'];
+  if (up === 'EN_ATENCION') return ['RESUELTA'];
   return [];
 }
 
@@ -45,9 +52,9 @@ const ACCION_META: Record<NuevoEstadoAlerta, { label: string; variant: 'primary'
   VENCIDA: { label: 'Vencida', variant: 'secondary', icon: null },
 };
 
-export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, online, onAccion, onClose }: Props) {
+export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, puedeDescartar, online, onAccion, onClose }: Props) {
   const { t } = useT('telemetry');
-  const acciones = detalle ? accionesDisponibles(detalle.estado_alerta) : [];
+  const acciones = detalle ? accionesDisponibles(detalle.estado_alerta, puedeDescartar) : [];
 
   return (
     <ModalShell

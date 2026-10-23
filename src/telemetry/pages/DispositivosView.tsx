@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | FE-12 RF-57: Descartar depende del permiso D |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, Search, Wrench, AlertTriangle } from 'lucide-react';
@@ -16,7 +19,7 @@ import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { INPUT, LABEL } from '../components/tableStyles';
-import { RECURSO_INFRAESTRUCTURA, RECURSO_ALERTAS_TECNICAS, ACCION_R, ACCION_U } from '../rbac';
+import { RECURSO_INFRAESTRUCTURA, RECURSO_ALERTAS, RECURSO_ALERTAS_TECNICAS, ACCION_R, ACCION_U, ACCION_D } from '../rbac';
 import type { ListarAlertasFiltros, NuevoEstadoAlerta } from '../types';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
@@ -26,6 +29,8 @@ export function DispositivosView() {
   const puedeMantenimiento = usePermission(RECURSO_INFRAESTRUCTURA, ACCION_U);
   const puedeVerTecnicas = usePermission(RECURSO_ALERTAS_TECNICAS, ACCION_R);
   const puedeGestionarTecnicas = usePermission(RECURSO_ALERTAS_TECNICAS, ACCION_U);
+  // El backend exige D sobre alertas operativas para cualquier descarte (DEV-30).
+  const puedeDescartar = usePermission(RECURSO_ALERTAS, ACCION_D);
   const online = useOnlineStatus();
 
   const dispositivo = useDispositivo();
@@ -176,6 +181,7 @@ export function DispositivosView() {
           loading={false}
           error={null}
           puedeGestionar={puedeGestionarTecnicas}
+          puedeDescartar={puedeDescartar}
           online={online}
           onAccion={setAccion}
           onClose={() => setSelId(null)}

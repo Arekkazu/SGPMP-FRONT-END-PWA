@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | FE-12 RF-57: acción D (descartar alertas) |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · IDs de recursos y acciones RBAC
 // Espeja modulo1.recursos / modulo1.acciones del backend.
@@ -24,4 +27,5 @@ export const RECURSO_BITACORA = 39;
 
 export const ACCION_R = 2; // Leer (listar / detalle)
 export const ACCION_U = 3; // Actualizar (cambiar estado / resolver / corregir)
+export const ACCION_D = 4; // Desactivar — en alertas: descartar (DB-08: Administrador y Veterinario)
 export const ACCION_E = 5; // Ejecutar (exportar / evaluar / reevaluar / verificar)
