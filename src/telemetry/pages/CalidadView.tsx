@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-62: sección simulada de observaciones de visión y su índice |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ShieldCheck, RefreshCcw, CheckCircle2, AlertTriangle, XCircle, HelpCircle } from 'lucide-react';
@@ -10,6 +13,7 @@ import { CalidadFiltros, CALIDAD_FILTROS_VACIO, type CalidadFiltrosState } from 
 import { CalidadTable } from '../components/CalidadTable';
 import { CalidadDetalleModal } from '../components/CalidadDetalleModal';
 import { ReevaluarModal } from '../components/ReevaluarModal';
+import { CalidadVisionPanel } from '../components/CalidadVisionPanel';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_CALIDAD, ACCION_R, ACCION_E } from '../rbac';
@@ -105,6 +109,9 @@ export function CalidadView() {
         <CalidadTable items={items} loading={loading} onAbrir={setSeleccionada} />
 
         <Paginacion pagina={paginacion.pagina} totalPaginas={paginacion.totalPaginas} totalRegistros={paginacion.totalRegistros} onCambiar={(p) => cargar(build(p))} />
+
+        {/* Visión (RFC-011): sin endpoint aún, datos simulados */}
+        <CalidadVisionPanel />
       </div>
 
       {seleccionada && (

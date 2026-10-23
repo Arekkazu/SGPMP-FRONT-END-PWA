@@ -1,3 +1,41 @@
+## [1.4.0-rc.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.3...v1.4.0-rc.1) (2026-10-23)
+
+### Features
+
+* **m03:** prototipos v2 de RF-53, RF-55, RF-56, RF-60 y RF-62 (RFC-011, RFC-016) ([333bc4f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/333bc4ff71a7ab91ecf34662b94c8de6e6a75e39))
+* **m04:** prototipos v2 de RF-65, RF-66, RF-68, RF-69, RF-70, RF-71 y RF-73 (RFC-009) ([33d8cef](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/33d8cefc18a97cfcffedf5fa610a867a0c95ae98))
+* **rf29-i18n:** traduccion de los codigos de error nuevos de RFC-012..016 conservando los datos del mensaje ([b432ec4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b432ec4406610fa5bd8c31632a64bce0d6d15f0c))
+* **rf33-mod2:** validar atributos dinamicos contra la configuracion de la especie ([9e8b15f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9e8b15f455322a4c264e7e7d5015fd7d5ed90992)), closes [#194](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/194)
+* **rf33-mod2:** validar especie e infraestructura contra el catalogo activo ([#69](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/69)) ([96609cc](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/96609cca35a4130295151f8757065f2040f960f5))
+* **rf33-rf48-biological-assets:** registro y transferencia multiespecie, fecha de nacimiento opcional y aviso de edad (FE-07) ([6b00c29](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6b00c29b6d471adbbd8a822974aadb82d14868d8))
+* **rf37-mod2:** elegir la fase destino del ciclo y validar que sea distinta a la actual ([#73](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/73)) ([6c4d335](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6c4d335f76abf57ba3172737787b9b596a6ec451)), closes [#288](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/288)
+* **rf41-mod2:** bloquear tratamiento y vacunacion sin diagnostico previo ([#71](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/71)) ([c99fc5a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c99fc5ad60a6334a2d650522648e578107898e71))
+* **rf42-mod2:** campos y etiquetas por categoria reproductiva ([#72](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/72)) ([e99fcbd](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e99fcbd83c447a59ff660f48eb11bd971c9ed76c)), closes [#298](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/298)
+* **rf58-telemetry:** dashboard con estado GRIS sin umbral e indicador de anomalia (FE-10) ([13ba5b4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/13ba5b45f825afa4df0d44655445a8e81e60fc67))
+* **rf59-telemetry:** historial con aviso de truncado y marca de intervalos vacios (FE-11) ([ef45554](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ef4555491a740570d8c61e5be879612d89f65783))
+* **rf60:** etiquetas e i18n de los tipos nuevos de alerta tecnica (FE-03) ([f6021fc](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f6021fce8d6b533978e13118ad638c7ac57ace2f))
+* **rf65-mod4:** avisar la sincronizacion pendiente y desincronizada del motor con los nodos (FE-02) ([7ad7686](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7ad76862e4bcf6336a055c9b5b85b2da2101e75c))
+* **rf65-prediction:** el formulario del motor envia la config_version leida para la concurrencia optimista (DEV-36) ([1d36801](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1d36801a054e21b75560bc5010939380a4264307))
+* **rf70-mod4:** DistribucionOtaView con datos reales y estado OTA por version (FE-01a) ([c98598c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c98598cbcdfbc00d4f4909dd60520058b52e67c1))
+* **rf70-mod4:** lanzar distribucion OTA y ver el estado por nodo y componente (FE-01b) ([c7255dc](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c7255dc38fe77b9fadc883b968434ee9b6dbd7ae))
+* **rf70-prediction:** la distribucion OTA lista versiones APROBADO (FE-08) ([6b7a08f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6b7a08f860c694a8441592032befd875a797f0ec))
+* **rf74-rf81-supplies:** modulo de suministros (M05) en el frontend contra los endpoints de la integracion ([d1422e1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d1422e1556a9e55198e8f49a807fb0346b754c69))
+* **rf75-supplies:** el registro de consumo elige el alimento del catalogo ([184894c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/184894cec01740c0d9aca9f394c0d979962c7e9d)), closes [#667](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/667)
+* **rfc012-rf15:** densidad y esperanza de vida opcionales en el formulario de especie (FE-05) ([ec66aff](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ec66affce2ccd3de51d7ab1b032b2042f1571cb9))
+* **rfc012-rf20:** areas con varias especies, criticidad y capacidad derivada (FE-06) ([5403879](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5403879a3e9da05d895e26b935b530a6497fbd73))
+* **rfc013-rf01:** traduccion del codigo EDAD_FUERA_DE_RANGO (DEV-18) ([6ef0f3c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6ef0f3c41ae0f13dd679c3bdc6df6b43ca9a8dd1))
+* **rfc016-rf17:** marcar variables ambientales como criticas, solo Administrador (FE-09) ([4c962c2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4c962c217704a4f976e240dd6935f78a3defd691))
+
+### Bug Fixes
+
+* **configuration:** adaptar parametros RF-18 al contrato DEV-14 ([585d470](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/585d4707a67c5b310730cacfd8170aabd9636393)), closes [#3533](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/3533)
+* **deploy:** servir la app bajo una subruta del proxy con VITE_BASE_PATH ([8589b80](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8589b8096e3fa674c2bcbcd04d8925a33ee4133b))
+* **rf16-mod9:** campos numericos que no aceptan letras al registrar metricas y demas formularios ([80b939b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/80b939b11a5e6fa80b6eb770fdab608debaddc59))
+* **rf18-configuration:** el formulario de parametros muestra los valores cargados desde el primer render y se vacia sin configuracion (FE-04) ([caecb9b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/caecb9ba86b666b8c8bd65804a3e34e8f86b9a71))
+* **rf33-mod2:** explicar por que una finca no muestra areas para la especie elegida ([9631a2d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9631a2db564b1b6b748228bfaaa77e7fa3fffd5d))
+* **rfc016-rf17:** el interruptor es_critica depende del recurso variables_ambientales_criticas, no de editar umbrales (FE-09) ([6c67120](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6c671200f8ba13893ec8d25dc9b0a6b898da898e))
+* **telemetry:** rf-57 fe-12 controlar descarte por permisos y transiciones ([184131b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/184131b75bd5d7e24f1d1fb1426051a0ecdedc9f)), closes [#3694](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/3694) [#3781](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/3781) [#3782](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/3782)
+
 ## [1.3.2-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.2-rc.1...v1.3.2-rc.2) (2026-10-13)
 
 ### Bug Fixes

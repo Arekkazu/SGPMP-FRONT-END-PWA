@@ -1,12 +1,30 @@
+// | Fecha      | Nombre       | Que se hizo                                           |
+// |------------|--------------|-------------------------------------------------------|
+// | 2026-10-23 | destroyerban | FE-08 RF-70: la OTA lista versiones APROBADO          |
 // RF-70 · Lógica pura de la distribución OTA por componente (FE-01b, DEV-15).
 import type {
   CrearDistribucionOtaDTO,
   DespliegueOtaResponse,
   DistribucionOtaResponse,
+  EstadoVersion,
   FaseRollout,
   ModoDistribucion,
+  VersionModeloResponse,
 } from '../types';
 import { FASES_ROLLOUT } from '../types';
+
+/**
+ * Estados que se pueden distribuir por OTA (FE-08, RFC-015 C3): la versión APROBADO se
+ * distribuye y el Veterinario la activa después del despliegue (RF-69); la ACTIVO también,
+ * para nodos nuevos (P-2, igual que el backend en DEV-26). APROBADO va primero.
+ */
+export const ESTADOS_VERSION_DISTRIBUIBLES: readonly EstadoVersion[] = ['APROBADO', 'ACTIVO'];
+
+/** Une las versiones de cada estado distribuible en una sola lista, sin repetir ninguna. */
+export function unirVersionesDistribuibles(listas: VersionModeloResponse[][]): VersionModeloResponse[] {
+  const vistas = new Set<number>();
+  return listas.flat().filter((v) => !vistas.has(v.id_version_modelo) && vistas.add(v.id_version_modelo));
+}
 
 /** Los modelos INDIVIDUAL y META no tienen componente: se muestran como modelo completo. */
 export const COMPONENTE_COMPLETO = 'COMPLETO';

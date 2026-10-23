@@ -1,3 +1,7 @@
+// | Fecha      | Nombre  | Que se hizo |
+// |------------|---------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-60: sección simulada de cámaras y parámetros de heartbeat por categoría |
+// | 2026-10-22 | Leandro | FE-12 RF-57: conserva autorización técnica al reutilizar modales |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, Search, Wrench, AlertTriangle } from 'lucide-react';
@@ -9,6 +13,7 @@ import { useDispositivo } from '../hooks/useDispositivo';
 import { useAlertas } from '../hooks/useAlertas';
 import { DispositivoEstadoPanel } from '../components/DispositivoEstadoPanel';
 import { AplicarMantenimientoModal } from '../components/AplicarMantenimientoModal';
+import { CamarasVisionPanel } from '../components/CamarasVisionPanel';
 import { AlertasFiltros, ALERTAS_FILTROS_VACIO, type AlertasFiltrosState } from '../components/AlertasFiltros';
 import { AlertasTable } from '../components/AlertasTable';
 import { AlertaDetalleModal } from '../components/AlertaDetalleModal';
@@ -168,6 +173,9 @@ export function DispositivosView() {
             </>
           )}
         </section>
+
+        {/* Cámaras (RFC-011) y parámetros por categoría: sin endpoint aún, datos simulados */}
+        <CamarasVisionPanel />
       </div>
 
       {seleccionada && (
@@ -176,8 +184,9 @@ export function DispositivosView() {
           loading={false}
           error={null}
           puedeGestionar={puedeGestionarTecnicas}
+          puedeDescartar={puedeGestionarTecnicas}
           online={online}
-          onAccion={setAccion}
+          onAccion={(estado) => { tecnicas.limpiarSaveError(); setAccion(estado); }}
           onClose={() => setSelId(null)}
         />
       )}
@@ -187,6 +196,7 @@ export function DispositivosView() {
           alerta={seleccionada}
           estado={accion}
           saving={tecnicas.saving}
+          autorizada={online && puedeGestionarTecnicas}
           saveError={tecnicas.saveError}
           onConfirm={confirmarCambio}
           onClose={() => setAccion(null)}

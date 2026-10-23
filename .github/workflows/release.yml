@@ -34,8 +34,16 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Node 24 trae npm 11. Con Node 20 (npm 10.8.2) el arborist se cae
+          # con "Cannot read properties of null (reading 'edgesOut')" al
+          # resolver los peers de semantic-release junto al package.json
+          # del proyecto; npm 11 ya trae ese bug corregido.
+          node-version: 24
 
+      # El preset va fijo en @9: el 10.x exige conventional-changelog-writer@9,
+      # pero @semantic-release/release-notes-generator todavia trae el writer@8
+      # y generateNotes se cae con "Missing helper". Subirlo cuando el
+      # generador de notas pase a writer@9.
       - name: Instalar dependencias de release
         run: |
           npm install --no-save \
@@ -46,7 +54,7 @@ jobs:
             @semantic-release/exec \
             @semantic-release/git \
             @semantic-release/github \
-            conventional-changelog-conventionalcommits
+            conventional-changelog-conventionalcommits@9
 
       - name: Ejecutar semantic-release
         env:

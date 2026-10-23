@@ -1,3 +1,8 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: excluye vencimiento de acciones manuales |
+// | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
+// | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -123,7 +128,7 @@ export interface ListarAlertasFiltros {
 }
 
 /** Nuevo estado permitido al actualizar una alerta (PATCH …/estado). */
-export type NuevoEstadoAlerta = 'EN_ATENCION' | 'RESUELTA' | 'DESCARTADA' | 'VENCIDA';
+export type NuevoEstadoAlerta = 'EN_ATENCION' | 'RESUELTA' | 'DESCARTADA';
 
 export interface ActualizarEstadoAlertaDTO {
   nuevo_estado: NuevoEstadoAlerta;
@@ -169,9 +174,17 @@ export interface EstadoSensorSchema {
   nombre_infraestructura: string;
   id_finca: number;
   nombre_finca: string;
-  nivel_bateria_pct: number | null;      // forzado a null para rol Productor
+  nivel_bateria_pct: number | null;      // null sin el permiso datos_tecnicos_dashboard (DEV-39)
   calidad_senal_rssi: number | null;
   calidad_senal_snr: number | null;
+  /** RF-58 E7 (DEV-39): GRIS porque la variable no tiene umbral configurado en M09. */
+  sin_umbral?: boolean;
+  /** RF-58 R2/E2: lectura FUERA_DE_RANGO o ERROR_CALIBRACION. */
+  indicador_anomalia?: boolean;
+  /** false si la lectura no es LECTURA_VALIDA (no es un valor operativo normal). */
+  es_valor_operativo?: boolean;
+  /** Etiqueta del backend en español; la UI la traduce con `estadoLectura`. */
+  etiqueta_estado?: string | null;
 }
 
 export interface DashboardResponseSchema {
@@ -225,8 +238,23 @@ export interface ResumenEstadisticoSchema {
   total_alertas_en_periodo: number;
 }
 
+/** RF-59 E7 / CA-17 (DEV-38): intervalo sin lecturas > 3 × la frecuencia de muestreo. */
+export interface VacioTemporalSchema {
+  sensor_id: number;
+  tipo_variable: string;
+  desde: string;                          // datetime ISO: última lectura antes del hueco
+  hasta: string;                          // datetime ISO: primera lectura después del hueco
+  duracion_min: number;
+  frecuencia_esperada_min: number;
+}
+
 export interface HistorialPageSchema {
+  /** Registros navegables (como mucho 10 000, CA-19). */
   total: number;
+  /** DEV-38: registros que cumplen los filtros; si supera 10 000, `truncado` y `aviso`. */
+  total_encontrado?: number;
+  truncado?: boolean;
+  aviso?: string | null;
   pagina: number;
   por_pagina: number;
   paginas_totales: number;
@@ -234,6 +262,7 @@ export interface HistorialPageSchema {
   rango_real_datos: Record<string, unknown>;
   items: LecturaHistoricaSchema[];
   estadisticas: ResumenEstadisticoSchema[];
+  vacios_temporales?: VacioTemporalSchema[];
 }
 
 export type OrdenHistorial = 'ASC' | 'DESC';

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { History } from 'lucide-react';
@@ -19,7 +22,7 @@ export function HistorialView() {
   const puedeVer = usePermission(RECURSO_HISTORIAL, ACCION_R);
   const puedeExportar = usePermission(RECURSO_HISTORIAL, ACCION_E);
 
-  const { items, estadisticas, paginacion, loading, error, exportando, exportError, cargar, exportar } = useHistorial();
+  const { items, estadisticas, paginacion, truncado, vacios, loading, error, exportando, exportError, cargar, exportar } = useHistorial();
   const [filtros, setFiltros] = useState<HistorialFiltrosState>(HISTORIAL_FILTROS_DEFAULT);
   const [modalExport, setModalExport] = useState(false);
 
@@ -61,7 +64,11 @@ export function HistorialView() {
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
           <History size={20} aria-hidden />{t('historialview.historial_de_lecturas')}</h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          {loading ? 'Cargando…' : `${paginacion.totalRegistros} lectura(s)`}
+          {loading
+            ? 'Cargando…'
+            : truncado.truncado
+              ? t('historialview.lecturas_truncadas', { mostradas: paginacion.totalRegistros, total: truncado.totalEncontrado })
+              : `${paginacion.totalRegistros} lectura(s)`}
         </p>
       </div>
 
@@ -71,6 +78,25 @@ export function HistorialView() {
             variant={error.status === 403 ? 'warning' : 'error'}
             title={error.status === 403 ? t('historialview.sin_acceso_al_historial') : error.status === 400 ? t('historialview.parametros_invalidos') : t('historialview.error_al_cargar_el_historial')}
             description={error.message}
+            style={{ marginBottom: 'var(--s4)' }}
+          />
+        )}
+
+        {/* RF-59 E6 / CA-19 (FE-11): más de 10 000 registros llegan truncados con aviso. */}
+        {!loading && truncado.truncado && (
+          <Alert
+            variant="warning"
+            title={t('historialview.resultado_truncado')}
+            description={t('historialview.resultado_truncado_detalle', { total: truncado.totalEncontrado, mostradas: paginacion.totalRegistros })}
+            style={{ marginBottom: 'var(--s4)' }}
+          />
+        )}
+        {/* RF-59 E7 / CA-17: el periodo tiene intervalos sin lecturas. */}
+        {!loading && vacios.length > 0 && (
+          <Alert
+            variant="info"
+            title={t('historialview.periodo_con_vacios', { count: vacios.length })}
+            description={t('historialview.periodo_con_vacios_detalle')}
             style={{ marginBottom: 'var(--s4)' }}
           />
         )}
@@ -86,11 +112,11 @@ export function HistorialView() {
         {!loading && items.length > 0 && (
           <>
             <EstadisticasCards estadisticas={estadisticas} />
-            <HistorialChart items={items} unidad={unidadChart} />
+            <HistorialChart items={items} unidad={unidadChart} vacios={vacios} />
           </>
         )}
 
-        <HistorialTable items={items} loading={loading} />
+        <HistorialTable items={items} loading={loading} vacios={vacios} />
 
         <Paginacion
           pagina={paginacion.pagina}

@@ -1,5 +1,8 @@
-// | Fecha      | Nombre   | Que se hizo |
-// |------------|----------|-------------|
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-21 | destroyerban | #66 RF-33: valida atributos dinámicos (tipo, rango) y su carga     |
+// | 2026-10-21 | destroyerban | #69 RF-33: especie e infraestructura solo del catálogo activo      |
+// | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
@@ -122,6 +125,31 @@ function valorAtributo(p: ParametroEspecie, v: string | boolean | undefined): un
   return String(v).trim();
 }
 
+/**
+ * RF-33 (RFC-004): mismas reglas que el backend contra la configuración RF-16
+ * (obligatoriedad, tipo de dato y rango inclusive), para avisar en el campo antes
+ * del 422. Devuelve la clave i18n del error o null si el valor es válido.
+ */
+export function errorAtributo(
+  p: ParametroEspecie,
+  v: string | boolean | undefined,
+): { clave: string; params?: Record<string, string> } | null {
+  if (p.tipo_dato === 'BOOLEANO') return null;
+  const texto = typeof v === 'string' ? v.trim() : '';
+  if (texto === '') return p.es_obligatorio ? { clave: 'registraractivoform.este_atributo_es_obligatorio' } : null;
+  if (p.tipo_dato !== 'NUMERICO' && p.tipo_dato !== 'ENTERO') return null;
+  const numero = Number(texto);
+  if (!Number.isFinite(numero)) return { clave: 'registraractivoform.atributo_debe_ser_numero' };
+  if (p.tipo_dato === 'ENTERO' && !Number.isInteger(numero)) return { clave: 'registraractivoform.atributo_debe_ser_entero' };
+  if (p.valor_min !== null && numero < Number(p.valor_min)) {
+    return { clave: 'registraractivoform.atributo_minimo', params: { min: formatearNumero(p.valor_min) } };
+  }
+  if (p.valor_max !== null && numero > Number(p.valor_max)) {
+    return { clave: 'registraractivoform.atributo_maximo', params: { max: formatearNumero(p.valor_max) } };
+  }
+  return null;
+}
+
 function etiquetaAtributo(p: ParametroEspecie): string {
   const nombre = humanizar(p.nombre);
   return p.unidad_medida && p.unidad_medida !== 'N/A' ? `${nombre} (${p.unidad_medida})` : nombre;
@@ -148,7 +176,10 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   const requiereSoporte = origen === 'compra' || origen === 'donacion';
   const esNacimiento = origen === 'nacimiento';
 
-  const { especies, fincas, infraestructuras, cargando, cargandoInfra, cargarInfraestructuras } = useCatalogoRegistro();
+  const {
+    especies, fincas, infraestructuras, cargando, cargandoInfra, cargarInfraestructuras,
+    errorCatalogo, errorInfra, reintentarCatalogo,
+  } = useCatalogoRegistro();
   const idFinca = Number(watch('id_finca')) || null;
   const opcEspecies = especies.map((e) => ({ id: e.id_especie, nombre: e.nombre }));
   useEffect(() => {
@@ -157,19 +188,30 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   }, [idFinca, cargarInfraestructuras, resetField]);
 
   // #194 (RF-33 FA-07): atributos dinámicos que la especie exige al registrar.
-  const idEspecie = idDeCatalogo(watch('id_especie'), opcEspecies) ?? 0;
-  const especie = especies.find((e) => e.id_especie === idEspecie);
-  // RF-20 v1.1: el área declara su especie; las anteriores al cambio no (null).
-  // Sin especie elegida aún no se filtra: antes la lista salía vacía y parecía que la finca no tenía áreas.
-  const esCompatible = (i: InfraestructuraResponse) => !idEspecie || i.especie_id == null || i.especie_id === idEspecie;
+  // #69: solo cuenta una especie del catálogo activo; un ID escrito que no está en él no carga atributos.
+  const idEscrito = idDeCatalogo(watch('id_especie'), opcEspecies);
+  const especie = especies.find((e) => e.id_especie === idEscrito);
+  const idEspecie = especie?.id_especie ?? 0;
+  // RFC-012 (FE-07): un área aloja varias especies del mismo grupo de manejo; si la del
+  // activo no está, el backend la asocia. Sin especie elegida aún no se filtra.
+  const especiesDelArea = (i: InfraestructuraResponse) => i.especies ?? (i.especie_id != null ? [i.especie_id] : []);
+  const grupoDe = (id: number) => especies.find((e) => e.id_especie === id)?.grupo_manejo ?? null;
+  const esCompatible = (i: InfraestructuraResponse) => {
+    const ids = especiesDelArea(i);
+    if (!idEspecie || ids.length === 0 || ids.includes(idEspecie)) return true;
+    const grupo = especie?.grupo_manejo;
+    // Grupo desconocido (especie inactiva o sin cargar): decide el backend (422 si difiere).
+    return !grupo || ids.every((id) => { const g = grupoDe(id); return g == null || g === grupo; });
+  };
   const infraCompatibles = infraestructuras.filter(esCompatible);
   const opcInfra = infraCompatibles.map((i) => ({ id: i.id_infraestructura, nombre: i.nombre_infraestructura }));
-  // La finca tiene áreas, pero de otra especie: se dice cuáles en vez de "Sin coincidencias".
-  const nombreEspecie = (id: number | null) => especies.find((e) => e.id_especie === id)?.nombre ?? `#${id}`;
-  const otrasEspecies = [...new Set(infraestructuras.map((i) => nombreEspecie(i.especie_id)))].join(', ');
+  // La finca tiene áreas, pero de otro grupo: se dice cuáles en vez de "Sin coincidencias".
+  const nombreGrupo = (i: InfraestructuraResponse) =>
+    [...new Set(especiesDelArea(i).map((id) => grupoDe(id)).filter(Boolean))].map((g) => humanizar(String(g))).join(', ');
+  const otrasEspecies = [...new Set(infraestructuras.map(nombreGrupo).filter(Boolean))].join(', ');
   // RF-20: solo el Administrador crea/edita áreas; el resto debe pedírselo.
   const puedeCrearAreas = usePermission(10, 1);
-  const motivoSinInfra = idFinca && !cargandoInfra && infraCompatibles.length === 0
+  const motivoSinInfra = idFinca && !cargandoInfra && !errorInfra && infraCompatibles.length === 0
     ? (infraestructuras.length > 0
       ? t('registraractivoform.areas_de_otra_especie', { especie: especie?.nombre ?? '', otras: otrasEspecies })
       : t('registraractivoform.sin_infraestructuras_compatibles'))
@@ -177,22 +219,60 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   const sinInfraCompatibles = motivoSinInfra && !puedeCrearAreas
     ? `${motivoSinInfra} ${t('registraractivoform.contacta_administrador_area')}`
     : motivoSinInfra;
-  // #298 1.1: sin densidad máxima el backend rechaza el lote al final; se avisa antes.
+  // #298 1.1 / RFC-012 (FE-07): sin densidad máxima el backend rechaza el registro (422,
+  // la capacidad del área se calcula con ella), también de un individual; se avisa antes.
   // `=== null` y no `== null`: una especie cacheada sin el campo no debe bloquear el registro.
-  const loteSinDensidad = !esIndividual && !!especie && especie.densidad_maxima_por_especie === null;
+  const densidadEspecie = especie
+    ? (especie.densidad_poblacional_max !== undefined ? especie.densidad_poblacional_max : especie.densidad_maxima_por_especie)
+    : undefined;
+  const especieSinDensidad = !!especie && densidadEspecie === null;
   const [parametros, setParametros] = useState<ParametroEspecie[]>([]);
+  // Sin la configuración de la especie el registro saldría sin sus atributos y el
+  // backend lo rechazaría (422) sin un campo donde corregirlo: se espera o se reintenta.
+  const [estadoParametros, setEstadoParametros] = useState<'listo' | 'cargando' | 'error'>('listo');
+  const [intentoParametros, setIntentoParametros] = useState(0);
   useEffect(() => {
     if (!Number.isInteger(idEspecie) || idEspecie < 1) {
       setParametros([]);
+      setEstadoParametros('listo');
       return;
     }
+    let vigente = true;
+    setEstadoParametros('cargando');
     const temporizador = setTimeout(() => {
       activosApi.parametrosEspecie(idEspecie, tipo)
-        .then((lista) => { setValue('atrib', []); setParametros(lista); })
-        .catch(() => setParametros([]));
+        .then((lista) => {
+          if (!vigente) return;
+          setValue('atrib', []);
+          setParametros(lista);
+          setEstadoParametros('listo');
+        })
+        .catch(() => {
+          if (!vigente) return;
+          setParametros([]);
+          setEstadoParametros('error');
+        });
     }, 400);
-    return () => clearTimeout(temporizador);
-  }, [idEspecie, tipo, setValue]);
+    return () => { vigente = false; clearTimeout(temporizador); };
+  }, [idEspecie, tipo, setValue, intentoParametros]);
+
+  // El rango configurado se muestra de antemano, no solo cuando el valor ya es inválido.
+  const rango = (p: ParametroEspecie): string | undefined => {
+    if (p.tipo_dato !== 'NUMERICO' && p.tipo_dato !== 'ENTERO') return undefined;
+    const min = p.valor_min !== null ? formatearNumero(p.valor_min) : null;
+    const max = p.valor_max !== null ? formatearNumero(p.valor_max) : null;
+    if (min && max) return t('registraractivoform.atributo_rango', { min, max });
+    if (min) return t('registraractivoform.atributo_minimo', { min });
+    if (max) return t('registraractivoform.atributo_maximo', { max });
+    return undefined;
+  };
+
+  // RFC-012 (FE-07): los 422 de capacidad y de grupo de manejo señalan el área.
+  useEffect(() => {
+    if (saveError?.field === 'id_infraestructura') {
+      setError('id_infraestructura', { message: saveError.message }, { shouldFocus: true });
+    }
+  }, [saveError, setError]);
 
   // El backend señala el atributo con field="atributos_dinamicos.<nombre>".
   useEffect(() => {
@@ -288,6 +368,21 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
         </div>
       </div>
 
+      {/* #69: sin los catálogos no se puede validar especie ni infraestructura. */}
+      {errorCatalogo && (
+        <div style={{ marginBottom: 'var(--s6)' }}>
+          <Alert
+            variant="error"
+            title={t('registraractivoform.catalogos_no_cargados_titulo')}
+            description={t('registraractivoform.catalogos_no_cargados_detalle')}
+            style={{ marginBottom: 'var(--s3)' }}
+          />
+          <Button type="button" variant="secondary" size="sm" onClick={reintentarCatalogo}>
+            {t('registraractivoform.reintentar')}
+          </Button>
+        </div>
+      )}
+
       {/* Datos generales */}
       <div style={{ marginBottom: 'var(--s6)' }}>
         <span style={SECTION_TITLE}>{t('registraractivoform.datos_generales')}</span>
@@ -297,7 +392,12 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
             control={control}
             rules={{
               required: t('registraractivoform.la_especie_es_obligatoria'),
-              validate: (v) => idDeCatalogo(v, opcEspecies) !== null || t('registraractivoform.opcion_no_valida'),
+              // #69 (RF-33): la especie debe existir y estar activa en el catálogo de configuración (RF-15).
+              validate: (v) => {
+                const id = idDeCatalogo(v, opcEspecies);
+                if (id === null) return t('registraractivoform.opcion_no_valida');
+                return especies.some((e) => e.id_especie === id) || t('registraractivoform.especie_no_disponible');
+              },
             }}
             render={({ field }) => (
               <Combobox
@@ -329,10 +429,14 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                 validate: (v) => {
                   const id = idDeCatalogo(v, opcInfra);
                   if (id === null) return t('registraractivoform.opcion_no_valida');
-                  // Regla C1: escribir el ID de un área de otra especie no salta el filtro.
+                  // #69 (RF-33): el área debe existir, estar activa y ser de la finca elegida (RF-20);
+                  // sin finca no hay contra qué validarla.
+                  if (!idFinca) return t('registraractivoform.elige_finca_primero');
                   const area = infraestructuras.find((i) => i.id_infraestructura === id);
-                  return !area || esCompatible(area) || t('registraractivoform.area_de_otra_especie', {
-                    area: area.nombre_infraestructura, especie: nombreEspecie(area.especie_id),
+                  if (!area) return t('registraractivoform.infraestructura_no_disponible');
+                  // Regla C1: escribir el ID de un área de otro grupo de manejo no salta el filtro.
+                  return esCompatible(area) || t('registraractivoform.area_de_otra_especie', {
+                    area: area.nombre_infraestructura, especie: nombreGrupo(area),
                   });
                 },
               }}
@@ -342,7 +446,9 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                   name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref}
                   opciones={infraCompatibles.map((i) => ({
                     valor: `${i.nombre_infraestructura} (#${i.id_infraestructura})`,
-                    detalle: `${i.tipo_area} · ${formatearNumero(i.superficie)} m²`,
+                    detalle: `${i.tipo_area} · ${formatearNumero(i.superficie)} m²${i.capacidad_maxima != null
+                      ? ` · ${t('registraractivoform.capacidad_area', { capacidad: formatearNumero(i.capacidad_maxima) })}`
+                      : ''}`,
                   }))}
                   placeholder={cargandoInfra ? t('registraractivoform.cargando') : undefined}
                   hint={sinInfraCompatibles ?? t('registraractivoform.infraestructura_hint')}
@@ -351,6 +457,14 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                 />
               )}
             />
+            {errorInfra && (
+              <div role="alert" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap', marginTop: 'var(--s2)' }}>
+                <span style={{ fontSize: '12px', color: 'var(--sem-error)' }}>{t('registraractivoform.infraestructuras_no_cargadas')}</span>
+                <Button type="button" variant="secondary" size="sm" onClick={() => cargarInfraestructuras(idFinca)}>
+                  {t('registraractivoform.reintentar')}
+                </Button>
+              </div>
+            )}
             {sinInfraCompatibles && puedeCrearAreas && (
               <Link to="/configuracion" style={{ color: 'var(--brand-600)', fontWeight: 600, fontSize: 'var(--fs-label-md)' }}>
                 {t('registraractivoform.ir_a_crear_area')}
@@ -372,7 +486,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
         </div>
       </div>
 
-      {loteSinDensidad && (
+      {especieSinDensidad && (
         <Alert
           variant="warning"
           title={t('registraractivoform.lote_sin_densidad_titulo')}
@@ -458,12 +572,13 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
               </select>
               <FieldError msg={errors.sexo?.message} />
             </div>
+            {/* RFC-014 (FE-07): opcional; con fecha, el backend avisa si la edad alcanza la esperanza de vida. */}
             <Input
-              label={t('registraractivoform.fecha_de_nacimiento')} required type="date" max={hoyLocal()}
+              label={t('registraractivoform.fecha_de_nacimiento')} type="date" max={hoyLocal()}
+              hint={t('registraractivoform.fecha_nacimiento_hint')}
               error={errors.fecha_nacimiento?.message}
               {...register('fecha_nacimiento', {
-                required: t('registraractivoform.la_fecha_de_nacimiento_es_obligatoria'),
-                validate: (val) => val <= hoyLocal() || 'No puede ser una fecha futura.',
+                validate: (val) => !val || val <= hoyLocal() || 'No puede ser una fecha futura.',
               })}
             />
             <Input
@@ -492,6 +607,26 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
               {...register('peso_promedio_inicial')}
             />
           </div>
+        </div>
+      )}
+
+      {estadoParametros === 'cargando' && (
+        <p role="status" style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 var(--s6)' }}>
+          {t('registraractivoform.cargando_atributos')}
+        </p>
+      )}
+
+      {estadoParametros === 'error' && (
+        <div style={{ marginBottom: 'var(--s6)' }}>
+          <Alert
+            variant="error"
+            title={t('registraractivoform.atributos_no_cargados_titulo')}
+            description={t('registraractivoform.atributos_no_cargados_detalle')}
+            style={{ marginBottom: 'var(--s3)' }}
+          />
+          <Button type="button" variant="secondary" size="sm" onClick={() => setIntentoParametros((n) => n + 1)}>
+            {t('registraractivoform.reintentar')}
+          </Button>
         </div>
       )}
 
@@ -529,9 +664,13 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                   min={p.valor_min ?? undefined}
                   max={p.valor_max ?? undefined}
                   placeholder={p.es_obligatorio ? undefined : t('registraractivoform.opcional')}
+                  hint={rango(p)}
                   error={msg}
                   {...register(`atrib.${i}`, {
-                    required: p.es_obligatorio ? t('registraractivoform.este_atributo_es_obligatorio') : false,
+                    validate: (v) => {
+                      const e = errorAtributo(p, v);
+                      return e ? t(e.clave, e.params) : true;
+                    },
                   })}
                 />
               );
@@ -542,7 +681,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
         <Button type="button" variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('registraractivoform.cancelar')}</Button>
-        <Button type="submit" variant="primary" size="md" loading={saving} disabled={loteSinDensidad}>{t('registraractivoform.registrar_activo')}</Button>
+        <Button type="submit" variant="primary" size="md" loading={saving} disabled={especieSinDensidad || estadoParametros !== 'listo' || cargando || errorCatalogo}>{t('registraractivoform.registrar_activo')}</Button>
       </div>
     </form>
   );

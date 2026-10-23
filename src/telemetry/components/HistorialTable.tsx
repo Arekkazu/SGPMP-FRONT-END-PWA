@@ -1,18 +1,26 @@
-// | Fecha      | Nombre   | Que se hizo |
-// |------------|----------|-------------|
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { History } from 'lucide-react';
+import { CircleSlash, History } from 'lucide-react';
 import { SemaforoPill } from './SemaforoPill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
 import { fechaHoraCaptura } from '../lib/sensorEscala';
-import type { LecturaHistoricaSchema } from '../types';
+import { duracionLegible, vacioTrasLectura, vaciosPorLecturaPosterior } from '../lib/vaciosTemporales';
+import type { LecturaHistoricaSchema, VacioTemporalSchema } from '../types';
 
 const COLS = ['Capturado', 'Sensor', 'Variable', 'Valor', 'Ajustado', 'Semáforo', 'Estado', 'Origen', 'Alerta'];
 
-export function HistorialTable({ items, loading }: { items: LecturaHistoricaSchema[]; loading: boolean }) {
+export function HistorialTable({ items, loading, vacios = [] }: {
+  items: LecturaHistoricaSchema[];
+  loading: boolean;
+  vacios?: VacioTemporalSchema[];
+}) {
   const { t } = useT('telemetry');
+  // RF-59 E7 / CA-17 (FE-11): con orden DESC, el vacío va justo después de la lectura que lo cierra.
+  const porLectura = useMemo(() => vaciosPorLecturaPosterior(vacios), [vacios]);
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -40,8 +48,11 @@ export function HistorialTable({ items, loading }: { items: LecturaHistoricaSche
           <tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} style={TH}>{h}</th>)}</tr>
         </thead>
         <tbody>
-          {items.map((it) => (
-            <tr key={it.id_telemetria} style={{ background: 'var(--surface-card)' }}>
+          {items.map((it) => {
+            const vacio = vacioTrasLectura(porLectura, it);
+            return (
+            <React.Fragment key={it.id_telemetria}>
+            <tr style={{ background: 'var(--surface-card)' }}>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                 {fechaHoraCaptura(it.timestamp_captura)}
               </td>
@@ -60,7 +71,23 @@ export function HistorialTable({ items, loading }: { items: LecturaHistoricaSche
                 {it.id_alerta != null ? `#${it.id_alerta}` : '—'}
               </td>
             </tr>
-          ))}
+            {vacio && (
+              <tr data-testid="fila-vacio" style={{ background: 'var(--surface-hover)' }}>
+                <td colSpan={COLS.length} style={{ ...TD, fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)' }}>
+                    <CircleSlash size={13} aria-hidden />
+                    {t('historialtable.vacio_temporal', {
+                      ...duracionLegible(vacio.duracion_min),
+                      desde: fechaHoraCaptura(vacio.desde),
+                      frecuencia: vacio.frecuencia_esperada_min,
+                    })}
+                  </span>
+                </td>
+              </tr>
+            )}
+            </React.Fragment>
+            );
+          })}
         </tbody>
       </table>
     </div>

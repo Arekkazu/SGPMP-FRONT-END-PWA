@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | DEV-36 RF-65: config_version en ConfigurarMotorDTO |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -164,6 +167,8 @@ export interface ConfigurarMotorDTO {
   hr_min_config?: number | null;
   hr_max_config?: number | null;
   densidad_maxima_config?: number | null;
+  /** DEV-36 (RF-65 CA-9): config_version leída; obligatoria al editar (412 si cambió). */
+  config_version?: number | null;
 }
 
 /**
