@@ -1,8 +1,11 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { BatteryMedium, SignalHigh, TrendingUp, TrendingDown, Minus, BellRing } from 'lucide-react';
 import { Gauge } from '../../shared/design-system/Gauge';
-import { SemaforoPill } from './SemaforoPill';
+import { EstadoSensorPills } from './EstadoLecturaPill';
 import { semaforoToGauge, escalaNominal, horaCaptura } from '../lib/sensorEscala';
 import type { EstadoSensorSchema } from '../types';
 import { OptionCard } from '../../shared/design-system/OptionCard';
@@ -51,7 +54,8 @@ export function SensorCard({ sensor, onAbrir }: Props) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <SemaforoPill estado={sensor.estado_semaforo} />
+        {/* FE-10 (RF-58 E7/R2/E2): GRIS sin umbral e indicador de anomalía. */}
+        <EstadoSensorPills sensor={sensor} />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', gap: 'var(--s2)', flexWrap: 'wrap' }}>

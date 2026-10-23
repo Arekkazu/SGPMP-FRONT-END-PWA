@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Radio, BellRing, Smartphone, BatteryMedium, SignalHigh } from 'lucide-react';
@@ -7,7 +10,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useMonitoreo } from '../hooks/useMonitoreo';
 import { useAlertas } from '../hooks/useAlertas';
-import { SemaforoPill } from '../components/SemaforoPill';
+import { EstadoSensorPills } from '../components/EstadoLecturaPill';
 import { SeveridadBadge } from '../components/SeveridadBadge';
 import { EstadoAlertaPill } from '../components/EstadoAlertaPill';
 import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal';
@@ -97,7 +100,7 @@ export function MovilView() {
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {s.ultimo_valor ?? '—'}<span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 2 }}>{s.ultima_unidad}</span>
                   </div>
-                  <SemaforoPill estado={s.estado_semaforo} />
+                  <EstadoSensorPills sensor={s} />
                 </div>
               </div>
             ))}

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -169,9 +172,17 @@ export interface EstadoSensorSchema {
   nombre_infraestructura: string;
   id_finca: number;
   nombre_finca: string;
-  nivel_bateria_pct: number | null;      // forzado a null para rol Productor
+  nivel_bateria_pct: number | null;      // null sin el permiso datos_tecnicos_dashboard (DEV-39)
   calidad_senal_rssi: number | null;
   calidad_senal_snr: number | null;
+  /** RF-58 E7 (DEV-39): GRIS porque la variable no tiene umbral configurado en M09. */
+  sin_umbral?: boolean;
+  /** RF-58 R2/E2: lectura FUERA_DE_RANGO o ERROR_CALIBRACION. */
+  indicador_anomalia?: boolean;
+  /** false si la lectura no es LECTURA_VALIDA (no es un valor operativo normal). */
+  es_valor_operativo?: boolean;
+  /** Etiqueta del backend en español; la UI la traduce con `estadoLectura`. */
+  etiqueta_estado?: string | null;
 }
 
 export interface DashboardResponseSchema {
