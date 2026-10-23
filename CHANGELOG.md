@@ -1,3 +1,11 @@
+## [1.4.0-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.1...v1.4.0-rc.2) (2026-10-23)
+
+### Bug Fixes
+
+* **rf33-mod2:** la fecha de nacimiento del activo viaja como dia calendario YYYY-MM-DD ([b6b6d9f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b6b6d9fd2300c8c82dcdbb90a245ea5a315aa445)), closes [#667](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/667)
+* **shared:** dias y horas en la zona local del usuario, no en UTC ([f84063d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f84063d937772192a3761c87debd6c5f4bae9f58))
+* **shared:** envia la zona horaria del navegador en X-Zona-Horaria ([975c367](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/975c367c271e70b18c78c80e1fe46c2b70015d5a))
+
 ## [1.4.0-rc.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.3...v1.4.0-rc.1) (2026-10-23)
 
 ### Features
