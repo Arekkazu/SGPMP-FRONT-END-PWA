@@ -60,6 +60,14 @@ export interface RegistrarConsumoPayload {
   observaciones?: string | null;
 }
 
+export interface TipoAlimento {
+  id_tipo_alimento: number;
+  nombre: string;
+  unidad_medida: string;
+  costo_unitario: Decimal;
+  estado: string | null;
+}
+
 export interface FiltrosRegistros {
   id_activo_biologico?: number;
   fecha_desde?: string;

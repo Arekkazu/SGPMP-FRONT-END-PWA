@@ -13,6 +13,7 @@ import { AlimentacionView } from './pages/AlimentacionView';
 import { ConsumoFormModal } from './components/ConsumoFormModal';
 import { reportesApi } from './api/reportesApi';
 import { historialApi } from './api/historialApi';
+import { suministrosApi } from './api/suministrosApi';
 import { nuevaClaveIdempotencia } from './lib/idempotencia';
 
 // Permisos efectivos explícitos (recurso, acción); nunca se infieren del rol.
@@ -96,22 +97,36 @@ describe('AlimentacionView (RF-75)', () => {
 
 describe('ConsumoFormModal (RF-75)', () => {
   const activos = [{ id_activo_biologico: 5, tipo: 'POBLACIONAL', identificador: 'Lote norte', nombre_especie: 'Tilapia', nombre_infraestructura: 'Estanque 1', nombre_estado: 'Activo' }];
+  const tipos = [{ id_tipo_alimento: 3, nombre: 'Concentrado inicio', unidad_medida: 'kg', costo_unitario: '2500.0000', estado: 'ACTIVO' }];
+  const formulario = (onGuardar = vi.fn()) => {
+    render(<ConsumoFormModal activos={activos} cargandoActivos={false} tiposAlimento={tipos} cargandoTipos={false}
+      enviando={false} error={null} onGuardar={onGuardar} onCerrar={vi.fn()} />);
+    return onGuardar;
+  };
 
-  it('no envía sin activo y normaliza los decimales escritos con coma', async () => {
-    const onGuardar = vi.fn();
-    render(<ConsumoFormModal activos={activos} cargandoActivos={false} enviando={false} error={null} onGuardar={onGuardar} onCerrar={vi.fn()} />);
+  it('no envía sin activo ni alimento y acepta el ID escrito, normalizando los decimales', async () => {
+    const onGuardar = formulario();
     fireEvent.click(screen.getByRole('button', { name: 'Guardar registro' }));
     expect(await screen.findByText('Elige un activo de la lista o escribe su ID.')).toBeInTheDocument();
+    expect(screen.getByText('Elige un alimento de la lista o escribe su ID.')).toBeInTheDocument();
     expect(onGuardar).not.toHaveBeenCalled();
 
     await userEvent.type(screen.getByRole('combobox', { name: /Activo biológico/ }), '5');
-    await userEvent.type(screen.getByLabelText(/Tipo de alimento/), '1');
+    await userEvent.type(screen.getByRole('combobox', { name: /Tipo de alimento/ }), '3');
     await userEvent.type(screen.getByLabelText(/Cantidad suministrada/), '12.5');
     await userEvent.type(screen.getByLabelText(/Costo por unidad/), '2000');
     fireEvent.click(screen.getByRole('button', { name: 'Guardar registro' }));
     await waitFor(() => expect(onGuardar).toHaveBeenCalledWith(expect.objectContaining({
-      id_activo_biologico: 5, id_tipo_alimento: 1, cantidad_alimento: '12.5', costo_unitario: '2000', hora_suministro: null,
+      id_activo_biologico: 5, id_tipo_alimento: 3, cantidad_alimento: '12.5', costo_unitario: '2000', hora_suministro: null,
     })));
+  });
+
+  it('al elegir el alimento del catálogo sugiere su costo y muestra su unidad', async () => {
+    formulario();
+    await userEvent.click(screen.getByRole('button', { name: /Mostrar opciones de Tipo de alimento/ }));
+    await userEvent.click(screen.getByRole('option', { name: /Concentrado inicio/ }));
+    expect(screen.getByLabelText(/Costo por unidad/)).toHaveValue(2500);
+    expect(screen.getByLabelText(/Cantidad suministrada \(kg\)/)).toBeInTheDocument();
   });
 });
 
@@ -120,6 +135,11 @@ describe('contrato de API M05', () => {
     respuestas['POST /suministros/reportes-gastos'] = { status: 202, data: { id_cola: 4, estado: 'PENDIENTE', fecha_solicitud: null, mensaje: 'En cola' } };
     const r = await reportesApi.generar({ fecha_inicio_reporte: '2026-01-01', fecha_fin_reporte: '2026-10-01', tipo_periodo: 'MENSUAL' });
     expect(r).toEqual({ tipo: 'trabajo', trabajo: expect.objectContaining({ id_cola: 4 }) });
+  });
+
+  it('el catálogo de alimentos sale de /consumo-alimentos/tipos-alimento', async () => {
+    respuestas['GET /suministros/consumo-alimentos/tipos-alimento'] = { data: { total: 1, items: [{ id_tipo_alimento: 3, nombre: 'Maíz', unidad_medida: 'kg', costo_unitario: '900', estado: 'ACTIVO' }] } };
+    expect((await suministrosApi.tiposAlimento()).map((a) => a.nombre)).toEqual(['Maíz']);
   });
 
   it('GET /historial con 202 devuelve la consulta asíncrona en lugar de la página', async () => {

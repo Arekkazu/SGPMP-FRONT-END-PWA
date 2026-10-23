@@ -4,7 +4,7 @@
 import { http } from '../../shared/api/http';
 import type {
   ConsumoAlimento, FiltrosRegistros, Lista, Medicamento, RegistrarConsumoPayload,
-  RegistrarMedicamentoPayload, RegistroMedicamentoRespuesta,
+  RegistrarMedicamentoPayload, RegistroMedicamentoRespuesta, TipoAlimento,
 } from '../types';
 
 const CONSUMOS = '/suministros/consumo-alimentos';
@@ -14,6 +14,10 @@ const MEDICAMENTOS = '/suministros/medicamentos';
 export const suministrosApi = {
   async listarConsumos(filtros: FiltrosRegistros): Promise<Lista<ConsumoAlimento>> {
     return (await http.get<Lista<ConsumoAlimento>>(CONSUMOS, { params: filtros })).data;
+  },
+  /** Solo los ACTIVO: son los únicos que admite el registro. */
+  async tiposAlimento(): Promise<TipoAlimento[]> {
+    return (await http.get<Lista<TipoAlimento>>(`${CONSUMOS}/tipos-alimento`)).data.items;
   },
   async registrarConsumo(payload: RegistrarConsumoPayload): Promise<ConsumoAlimento> {
     return (await http.post<ConsumoAlimento>(CONSUMOS, payload)).data;

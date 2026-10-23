@@ -32,7 +32,7 @@ export function AlimentacionView() {
   const puedeAnular = usePermission(RECURSO_CONSUMO, ACCION_D);
   const online = useOnlineStatus();
   const { activos, cargando: cargandoActivos } = useActivosSuministros();
-  const { lista, registro, anulacion } = useConsumos();
+  const { lista, tipos, registro, anulacion } = useConsumos();
   const [filtros, setFiltros] = useState<FiltrosRegistros>({});
   const [formAbierto, setFormAbierto] = useState(false);
   const [aAnular, setAAnular] = useState<ConsumoAlimento | null>(null);
@@ -51,7 +51,7 @@ export function AlimentacionView() {
         titulo={t('consumo.titulo')}
         descripcion={t('consumo.descripcion')}
         acciones={puedeCrear && (
-          <Button variant="primary" size="md" disabled={!online} onClick={() => { registro.limpiar(); setFormAbierto(true); }}>
+          <Button variant="primary" size="md" disabled={!online} onClick={() => { registro.limpiar(); tipos.ejecutar(); setFormAbierto(true); }}>
             <Plus size={18} aria-hidden />{t('consumo.registrar')}
           </Button>
         )}
@@ -116,6 +116,8 @@ export function AlimentacionView() {
         <ConsumoFormModal
           activos={activos}
           cargandoActivos={cargandoActivos}
+          tiposAlimento={tipos.data ?? []}
+          cargandoTipos={tipos.cargando}
           enviando={registro.cargando}
           error={registro.error}
           onCerrar={() => setFormAbierto(false)}

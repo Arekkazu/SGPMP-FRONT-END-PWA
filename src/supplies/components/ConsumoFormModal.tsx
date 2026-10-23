@@ -1,18 +1,20 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-75: formulario de registro de consumo de alimento |
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
+import { Combobox } from '../../shared/design-system/Combobox';
 import { Alert } from '../../shared/design-system/Alert';
 import { useT } from '../../shared/i18n/useT';
 import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 import { hoyLocal } from '../../shared/lib/fecha';
+import { etiquetaDeCatalogo, idDeCatalogo } from '../../shared/lib/catalogo';
 import type { ApiError } from '../../shared/api/errors';
 import { decimalPositivo, formatoMoneda } from '../lib/formato';
-import type { ActivoOpcion, RegistrarConsumoPayload } from '../types';
+import type { ActivoOpcion, RegistrarConsumoPayload, TipoAlimento } from '../types';
 import { SelectorActivo } from './SelectorActivo';
 import { AreaTexto } from './AreaTexto';
 
@@ -31,20 +33,28 @@ const CAMPOS = ['id_tipo_alimento', 'fecha_consumo', 'hora_suministro', 'cantida
 interface Props {
   activos: ActivoOpcion[];
   cargandoActivos: boolean;
+  tiposAlimento: TipoAlimento[];
+  cargandoTipos: boolean;
   enviando: boolean;
   error: ApiError | null;
   onGuardar: (payload: RegistrarConsumoPayload) => void;
   onCerrar: () => void;
 }
 
-export function ConsumoFormModal({ activos, cargandoActivos, enviando, error, onGuardar, onCerrar }: Props) {
+export function ConsumoFormModal({ activos, cargandoActivos, tiposAlimento, cargandoTipos, enviando, error, onGuardar, onCerrar }: Props) {
   const { t } = useT('supplies');
   const [idActivo, setIdActivo] = useState<number | null>(null);
-  const { register, control, handleSubmit, watch, setError, formState: { errors } } = useForm<Form>({
+  const catalogo = useMemo(() => tiposAlimento.map((a) => ({ id: a.id_tipo_alimento, nombre: a.nombre })), [tiposAlimento]);
+  const opcionesAlimento = useMemo(() => tiposAlimento.map((a) => ({
+    valor: etiquetaDeCatalogo(a.nombre, a.id_tipo_alimento),
+    detalle: `${formatoMoneda(a.costo_unitario)} / ${a.unidad_medida}`,
+  })), [tiposAlimento]);
+  const { register, control, handleSubmit, watch, setError, getValues, setValue, formState: { errors } } = useForm<Form>({
     mode: 'onBlur',
     defaultValues: { activo: '', id_tipo_alimento: '', fecha_consumo: hoyLocal(), hora_suministro: '', cantidad_alimento: '', costo_unitario: '', observaciones: '' },
   });
   const alertaGeneral = useErroresDeServidor(error, setError, CAMPOS);
+  const alimento = tiposAlimento.find((a) => a.id_tipo_alimento === idDeCatalogo(watch('id_tipo_alimento'), catalogo));
   const cantidad = decimalPositivo(watch('cantidad_alimento'));
   const costo = decimalPositivo(watch('costo_unitario'));
   // Vista previa: el costo total autoritativo lo calcula la BD (trigger) al guardar.
@@ -52,7 +62,7 @@ export function ConsumoFormModal({ activos, cargandoActivos, enviando, error, on
 
   const enviar = (f: Form) => onGuardar({
     id_activo_biologico: idActivo as number,
-    id_tipo_alimento: Number(f.id_tipo_alimento),
+    id_tipo_alimento: idDeCatalogo(f.id_tipo_alimento, catalogo) as number,
     fecha_consumo: f.fecha_consumo,
     hora_suministro: f.hora_suministro || null,
     cantidad_alimento: decimalPositivo(f.cantidad_alimento) as string,
@@ -90,13 +100,29 @@ export function ConsumoFormModal({ activos, cargandoActivos, enviando, error, on
             />
           )}
         />
-        <Input
-          id="consumo-tipo"
-          label={t('consumo.tipo_alimento')}
-          type="number" step={1} min={1} required
-          hint={t('consumo.tipo_alimento_hint')}
-          error={errors.id_tipo_alimento?.message}
-          {...register('id_tipo_alimento', { validate: (v) => Number.isInteger(Number(v)) && Number(v) > 0 || t('consumo.tipo_alimento_invalido') })}
+        <Controller
+          name="id_tipo_alimento"
+          control={control}
+          rules={{ validate: (v) => idDeCatalogo(v, catalogo) !== null || t('consumo.tipo_alimento_invalido') }}
+          render={({ field }) => (
+            <Combobox
+              id="consumo-tipo"
+              label={t('consumo.tipo_alimento')}
+              opciones={opcionesAlimento}
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              onSelect={(o) => {
+                // El costo del catálogo es solo una sugerencia: el RF pide registrar el precio real.
+                const elegido = tiposAlimento.find((a) => a.id_tipo_alimento === idDeCatalogo(o.valor, catalogo));
+                if (elegido && !getValues('costo_unitario')) setValue('costo_unitario', String(Number(elegido.costo_unitario)));
+              }}
+              required
+              placeholder={cargandoTipos ? t('comun.cargando') : undefined}
+              hint={!cargandoTipos && tiposAlimento.length === 0 ? t('consumo.sin_tipos') : t('consumo.tipo_alimento_hint')}
+              error={errors.id_tipo_alimento?.message}
+            />
+          )}
         />
         <div className="ds-fg2" style={{ display: 'grid', gap: 'var(--s4)' }}>
           <Input
@@ -109,7 +135,7 @@ export function ConsumoFormModal({ activos, cargandoActivos, enviando, error, on
           />
           <Input id="consumo-hora" label={t('consumo.hora')} type="time" hint={t('comun.opcional')} {...register('hora_suministro')} />
           <Input
-            id="consumo-cantidad" label={t('consumo.cantidad')} type="number" step="any" min={0} required
+            id="consumo-cantidad" label={t('consumo.cantidad', { unidad: alimento?.unidad_medida ?? 'kg' })} type="number" step="any" min={0} required
             error={errors.cantidad_alimento?.message}
             {...register('cantidad_alimento', { validate: (v) => !!decimalPositivo(v) || t('comun.mayor_que_cero') })}
           />

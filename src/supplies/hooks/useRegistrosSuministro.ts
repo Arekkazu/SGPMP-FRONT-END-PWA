@@ -8,6 +8,7 @@ import { useAsync } from './useAsync';
 export function useConsumos() {
   return {
     lista: useAsync(suministrosApi.listarConsumos),
+    tipos: useAsync(suministrosApi.tiposAlimento),
     registro: useAsync(suministrosApi.registrarConsumo),
     anulacion: useAsync(suministrosApi.anularConsumo),
   };
