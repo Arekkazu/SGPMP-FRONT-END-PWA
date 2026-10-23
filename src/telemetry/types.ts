@@ -1,5 +1,6 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: excluye vencimiento de acciones manuales |
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
@@ -126,7 +127,7 @@ export interface ListarAlertasFiltros {
 }
 
 /** Nuevo estado permitido al actualizar una alerta (PATCH …/estado). */
-export type NuevoEstadoAlerta = 'EN_ATENCION' | 'RESUELTA' | 'DESCARTADA' | 'VENCIDA';
+export type NuevoEstadoAlerta = 'EN_ATENCION' | 'RESUELTA' | 'DESCARTADA';
 
 export interface ActualizarEstadoAlertaDTO {
   nuevo_estado: NuevoEstadoAlerta;

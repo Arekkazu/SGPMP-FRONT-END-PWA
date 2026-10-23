@@ -1,5 +1,6 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: conserva mensaje público de rechazos |
 // | 2026-10-23 | Arekkazu | RF-29: el mensaje del backend se interpola en los códigos con datos variables |
 import type { AxiosError } from 'axios';
 
@@ -9,6 +10,8 @@ import { formatearHora } from '../i18n/formato';
 export interface ApiError {
   code: string;
   message: string;
+  /** Mensaje público original para consumidores con contrato específico (403/422). */
+  backendMessage?: string;
   field?: string;
   status: number;
   /** Cada campo que fallo, con su mensaje sin la etiqueta. `field` vacio = error de modelo. */
@@ -35,7 +38,9 @@ export function mapToApiError(error: AxiosError): ApiError {
     message: f.message === data?.message ? message : mensajeDeCampo(f.message),
   }));
 
-  return { code, message, field, status, fields: porCampo?.length ? porCampo : undefined };
+  const backendMessage = (status === 403 || status === 422) && typeof data?.message === 'string'
+    ? data.message.trim() || undefined : undefined;
+  return { code, message, backendMessage, field, status, fields: porCampo?.length ? porCampo : undefined };
 }
 
 function stripPydanticPrefix(msg: string): string {
