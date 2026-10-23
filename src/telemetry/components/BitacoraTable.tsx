@@ -1,10 +1,13 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT, useNombreModulo } from '../../shared/i18n/useT';
 import { ClipboardList } from 'lucide-react';
 import { SeveridadLogPill } from './SeveridadLogPill';
 import { Pill, type Tono } from './Pill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { EventoAuditoriaIotSchema } from '../types';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
 
@@ -72,7 +75,7 @@ export function BitacoraTable({ items, loading, onAbrir }: Props) {
                 onKeyDown={alActivarConTeclado(() => onAbrir(ev))}
               >
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                  {ev.fecha_hora?.slice(0, 10)} {horaCaptura(ev.fecha_hora)}
+                  {fechaHoraCaptura(ev.fecha_hora)}
                 </td>
                 <td style={{ ...TD, color: 'var(--text-primary)', fontWeight: 600, fontSize: '12px' }}>{ev.tipo_evento}</td>
                 <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>{nombreModulo(ev.modulo)}</td>

@@ -1,10 +1,13 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, ShieldCheck, Check, X } from 'lucide-react';
 import { ClasificacionCalidadPill } from './ClasificacionCalidadPill';
 import { FlagChips } from './FlagChips';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { TelemetriaCalidadSchema } from '../types';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
 
@@ -67,7 +70,7 @@ export function CalidadTable({ items, loading, onAbrir }: Props) {
               <td style={{ ...TD, textAlign: 'center' }}><Apto ok={c.apto_para_nic41} /></td>
               <td style={TD}><FlagChips flags={c.flags_detectados} max={2} /></td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                {c.timestamp_evaluacion?.slice(0, 10)} {horaCaptura(c.timestamp_evaluacion)}
+                {fechaHoraCaptura(c.timestamp_evaluacion)}
               </td>
               <td style={{ ...TD, textAlign: 'right', color: 'var(--text-muted)' }}><ChevronRight size={16} aria-hidden /></td>
             </tr>

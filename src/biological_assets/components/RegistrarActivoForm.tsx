@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Controller, useForm } from 'react-hook-form';
@@ -10,7 +13,7 @@ import { Button } from '../../shared/design-system/Button';
 import type { ApiError } from '../../shared/api/errors';
 import type { ParametroEspecie, RegistrarActivoDTO, TipoActivo, OrigenFinanciero } from '../types';
 import { activosApi } from '../api/activosApi';
-import { hoyLocal } from '../../shared/lib/fecha';
+import { hoyLocal, inicioDelDiaUtc } from '../../shared/lib/fecha';
 import { humanizar } from '../../shared/lib/etiquetas';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useCatalogoRegistro } from '../hooks/useCatalogoRegistro';
@@ -111,7 +114,6 @@ function FieldError({ msg }: { msg?: string }) {
   );
 }
 
-const HOY = hoyLocal();
 
 function valorAtributo(p: ParametroEspecie, v: string | boolean | undefined): unknown {
   if (p.tipo_dato === 'BOOLEANO') return Boolean(v);
@@ -226,7 +228,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
       dto.identificador = v.identificador.trim();
       dto.raza = v.raza.trim();
       dto.sexo = v.sexo;
-      dto.fecha_nacimiento = v.fecha_nacimiento ? new Date(v.fecha_nacimiento).toISOString() : null;
+      dto.fecha_nacimiento = v.fecha_nacimiento ? inicioDelDiaUtc(v.fecha_nacimiento) ?? null : null;
       dto.peso_inicial = v.peso_inicial ? Number(v.peso_inicial) : null;
     } else {
       dto.cantidad_inicial = Number(v.cantidad_inicial);
@@ -356,12 +358,12 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
             )}
           </div>
           <Input
-            label={t('registraractivoform.fecha_de_inicio_de_ciclo')} required type="date" max={HOY}
+            label={t('registraractivoform.fecha_de_inicio_de_ciclo')} required type="date" max={hoyLocal()}
             error={errors.fecha_inicio_ciclo?.message}
             {...register('fecha_inicio_ciclo', {
               required: t('registraractivoform.la_fecha_de_inicio_es_obligatoria'),
               validate: (val) => {
-                if (val > HOY) return t('registraractivoform.no_puede_ser_una_fecha_futura');
+                if (val > hoyLocal()) return t('registraractivoform.no_puede_ser_una_fecha_futura');
                 if (val < '1970-01-01') return t('registraractivoform.no_puede_ser_anterior_a_1970');
                 return true;
               },
@@ -457,11 +459,11 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
               <FieldError msg={errors.sexo?.message} />
             </div>
             <Input
-              label={t('registraractivoform.fecha_de_nacimiento')} required type="date" max={HOY}
+              label={t('registraractivoform.fecha_de_nacimiento')} required type="date" max={hoyLocal()}
               error={errors.fecha_nacimiento?.message}
               {...register('fecha_nacimiento', {
                 required: t('registraractivoform.la_fecha_de_nacimiento_es_obligatoria'),
-                validate: (val) => val <= HOY || 'No puede ser una fecha futura.',
+                validate: (val) => val <= hoyLocal() || 'No puede ser una fecha futura.',
               })}
             />
             <Input

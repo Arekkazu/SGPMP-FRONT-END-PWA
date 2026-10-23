@@ -1,10 +1,13 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT, useNombreModulo } from '../../shared/i18n/useT';
 import { Fingerprint } from 'lucide-react';
 import { ModalShell } from './ModalShell';
 import { SeveridadLogPill } from './SeveridadLogPill';
 import { Pill } from './Pill';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { EventoAuditoriaIotSchema } from '../types';
 
 function Fila({ label, children }: { label: string; children: React.ReactNode }) {
@@ -32,7 +35,7 @@ export function EventoAuditoriaModal({ evento, onClose }: { evento: EventoAudito
 
       <Fila label={t('eventoauditoriamodal.modulo')}>{nombreModulo(evento.modulo)}</Fila>
       <Fila label={t('eventoauditoriamodal.resultado')}>{evento.resultado}</Fila>
-      <Fila label={t('eventoauditoriamodal.fecha_hora')}>{evento.fecha_hora?.slice(0, 10)} {horaCaptura(evento.fecha_hora)}</Fila>
+      <Fila label={t('eventoauditoriamodal.fecha_hora')}>{fechaHoraCaptura(evento.fecha_hora)}</Fila>
       <Fila label={t('eventoauditoriamodal.usuario')}>{evento.nombre_usuario ?? (evento.id_usuario != null ? `#${evento.id_usuario}` : '—')}</Fila>
       {evento.descripcion && <Fila label={t('eventoauditoriamodal.descripcion')}>{evento.descripcion}</Fila>}
       {(evento.entidad_afectada_tipo || evento.entidad_afectada_id) && (

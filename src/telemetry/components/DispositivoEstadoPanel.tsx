@@ -1,9 +1,12 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, History } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { EstadoDispositivoPill } from './EstadoDispositivoPill';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { EstadoDispositivoIoTSchema, HistoricoTransicionSchema } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -26,7 +29,7 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
 
 function fechaHora(iso: string | null | undefined): string {
   if (!iso) return '—';
-  return `${iso.slice(0, 10)} ${horaCaptura(iso)}`;
+  return fechaHoraCaptura(iso);
 }
 
 export function DispositivoEstadoPanel({ idConsultado, estado, historial, loading, error }: Props) {

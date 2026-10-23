@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -25,14 +28,13 @@ interface Props {
   onDone: () => void;
 }
 
-const HOY = hoyLocal();
 
 export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose, onDone }: Props) {
   const { t } = useT('biologicalAssets');
   const { disponibles, loadingDisponibles, errorDisponibles, saving, saveError, cargarDisponibles, registrar } = useTransferencias(idActivo);
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { fecha_transferencia: HOY },
+    defaultValues: { fecha_transferencia: hoyLocal() },
   });
   // Resumen origen → destino antes de enviar (TC-DIS-134).
   const [pendiente, setPendiente] = useState<RegistrarTransferenciaDTO | null>(null);
@@ -140,11 +142,11 @@ export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose,
           )}
 
           <Input
-            label={t('transferenciawizard.fecha_de_transferencia')} required type="date" max={HOY}
+            label={t('transferenciawizard.fecha_de_transferencia')} required type="date" max={hoyLocal()}
             error={errors.fecha_transferencia?.message ?? errorServidor(saveError, 'fecha_transferencia')}
             {...register('fecha_transferencia', {
               required: t('transferenciawizard.la_fecha_es_obligatoria'),
-              validate: (val) => val <= HOY || 'No puede ser posterior a hoy.',
+              validate: (val) => val <= hoyLocal() || 'No puede ser posterior a hoy.',
             })}
           />
 

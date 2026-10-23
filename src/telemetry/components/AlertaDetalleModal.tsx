@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -8,7 +11,7 @@ import { SeveridadBadge } from './SeveridadBadge';
 import { EstadoAlertaPill } from './EstadoAlertaPill';
 import { OrigenPill } from './OrigenPill';
 import { TipoAlertaTecnicaPill } from './TipoAlertaTecnicaPill';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { AlertaDetalleSchema, NuevoEstadoAlerta } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -96,9 +99,9 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, on
 
           <Fila label={t('alertadetallemodal.variable')}><TipoAlertaTecnicaPill tipo={detalle.tipo_variable} /></Fila>
           <Fila label={t('alertadetallemodal.valor')}>{detalle.valor != null ? `${detalle.valor}${detalle.unidad ? ` ${detalle.unidad}` : ''}` : '—'}</Fila>
-          <Fila label={t('alertadetallemodal.generada')}>{detalle.fecha_generacion?.slice(0, 10)} {horaCaptura(detalle.fecha_generacion)}</Fila>
-          <Fila label={t('alertadetallemodal.evento')}>{detalle.fecha_evento?.slice(0, 10)} {horaCaptura(detalle.fecha_evento)}</Fila>
-          {detalle.fecha_vencimiento && <Fila label={t('alertadetallemodal.vence')}>{detalle.fecha_vencimiento?.slice(0, 10)} {horaCaptura(detalle.fecha_vencimiento)}</Fila>}
+          <Fila label={t('alertadetallemodal.generada')}>{fechaHoraCaptura(detalle.fecha_generacion)}</Fila>
+          <Fila label={t('alertadetallemodal.evento')}>{fechaHoraCaptura(detalle.fecha_evento)}</Fila>
+          {detalle.fecha_vencimiento && <Fila label={t('alertadetallemodal.vence')}>{fechaHoraCaptura(detalle.fecha_vencimiento)}</Fila>}
           <Fila label={t('alertadetallemodal.reglas_activadas')}>{Array.isArray(detalle.reglas_activas) && detalle.reglas_activas.length > 0 ? detalle.reglas_activas.map(String).join(', ') : '—'}</Fila>
           {detalle.accion_sugerida && <Fila label={t('alertadetallemodal.accion_sugerida')}>{detalle.accion_sugerida}</Fila>}
           {detalle.diagnostico && <Fila label={t('alertadetallemodal.diagnostico')}>{detalle.diagnostico}</Fila>}
@@ -116,7 +119,7 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, on
                 {detalle.historico_estados.map((h, i) => (
                   <li key={h.id_historico_estado_alerta ?? i} style={{ display: 'flex', gap: 'var(--s2)', fontSize: '12px', color: 'var(--text-secondary)' }}>
                     <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      {h.fecha_cambio?.slice(0, 10)} {horaCaptura(h.fecha_cambio)}
+                      {fechaHoraCaptura(h.fecha_cambio)}
                     </span>
                     <span>
                       <strong>{h.estado_anterior}</strong> → <strong>{h.estado_nuevo}</strong>

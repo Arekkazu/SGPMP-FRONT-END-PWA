@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import type { AxiosError } from 'axios';
 
 import i18n from '../i18n';
@@ -64,18 +67,18 @@ function traducirPorCodigo(code: string | undefined, mensajeBackend: string): st
 }
 
 /**
- * El backend escribe la hora de desbloqueo como `HH:MM:SS` en UTC dentro del
- * texto, sin fecha: un usuario en UTC-5 leia las 05:34 a la medianoche. Se
- * pasa a la hora local y se recalculan los minutos, que el backend fija en 15
- * aunque el bloqueo ya lleve un rato. Sin hora reconocible, `null`.
+ * El backend escribe la hora de desbloqueo como `HH:MM:SS` en la zona que le
+ * envia el navegador (`X-Zona-Horaria`), sin fecha. Se le pone fecha y se
+ * recalculan los minutos, que el backend fija en 15 aunque el bloqueo ya lleve
+ * un rato. Sin hora reconocible, `null`.
  */
 export function bloqueoEnHoraLocal(mensaje: string, ahora = new Date()): string | null {
   const m = mensaje.match(/(\d{2}):(\d{2}):(\d{2})/);
   if (!m) return null;
   const hasta = new Date(ahora);
-  hasta.setUTCHours(Number(m[1]), Number(m[2]), Number(m[3]), 0);
-  // Pasada la medianoche UTC, `HH:MM:SS` es del dia siguiente.
-  if (hasta.getTime() < ahora.getTime() - 60_000) hasta.setUTCDate(hasta.getUTCDate() + 1);
+  hasta.setHours(Number(m[1]), Number(m[2]), Number(m[3]), 0);
+  // Pasada la medianoche, `HH:MM:SS` es del dia siguiente.
+  if (hasta.getTime() < ahora.getTime() - 60_000) hasta.setDate(hasta.getDate() + 1);
   const minutos = Math.max(1, Math.ceil((hasta.getTime() - ahora.getTime()) / 60_000));
   return i18n.t('errores.cuenta_bloqueada_hasta', {
     ns: 'common',

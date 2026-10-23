@@ -1,9 +1,12 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { History } from 'lucide-react';
 import { SemaforoPill } from './SemaforoPill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { LecturaHistoricaSchema } from '../types';
 
 const COLS = ['Capturado', 'Sensor', 'Variable', 'Valor', 'Ajustado', 'Semáforo', 'Estado', 'Origen', 'Alerta'];
@@ -40,7 +43,7 @@ export function HistorialTable({ items, loading }: { items: LecturaHistoricaSche
           {items.map((it) => (
             <tr key={it.id_telemetria} style={{ background: 'var(--surface-card)' }}>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                {it.timestamp_captura?.slice(0, 10)} {horaCaptura(it.timestamp_captura)}
+                {fechaHoraCaptura(it.timestamp_captura)}
               </td>
               <td style={{ ...TD, color: 'var(--text-primary)', fontSize: '12px' }}>{it.nombre_sensor}</td>
               <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>{it.tipo_variable}</td>

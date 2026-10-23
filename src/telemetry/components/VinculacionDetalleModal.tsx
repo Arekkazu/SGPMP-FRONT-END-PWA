@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { GitFork, Pencil, ShieldCheck } from 'lucide-react';
@@ -5,7 +8,7 @@ import { ModalShell } from './ModalShell';
 import { Button } from '../../shared/design-system/Button';
 import { EstadoVinculacionPill } from './EstadoVinculacionPill';
 import { MecanismoPill } from './MecanismoPill';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { VinculacionLecturaSchema } from '../types';
 
 interface Props {
@@ -28,7 +31,7 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
 
 function fechaHora(iso: string | null | undefined): string {
   if (!iso) return '—';
-  return `${iso.slice(0, 10)} ${horaCaptura(iso)}`;
+  return fechaHoraCaptura(iso);
 }
 
 export function VinculacionDetalleModal({ vinc, puedeGestionar, online, onResolver, onCorregir, onClose }: Props) {
