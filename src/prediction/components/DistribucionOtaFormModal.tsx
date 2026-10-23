@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo                                           |
+// |------------|--------------|-------------------------------------------------------|
+// | 2026-10-23 | destroyerban | FE-08 RF-70: la OTA lista versiones APROBADO          |
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -90,13 +93,13 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
             <option value="">{t('distribucionform.elige_version')}</option>
             {versiones.map((v) => (
               <option key={v.id_version_modelo} value={v.id_version_modelo}>
-                {`${v.nombre_version} · ${TIPO_MODELO_LABEL[v.tipo_modelo] ?? v.tipo_modelo}${v.componente ? ` · ${v.componente}` : ''}`}
+                {`${v.nombre_version} · ${TIPO_MODELO_LABEL[v.tipo_modelo] ?? v.tipo_modelo}${v.componente ? ` · ${v.componente}` : ''} · ${t(v.estado_version === 'APROBADO' ? 'distribucionform.estado_aprobado' : 'distribucionform.estado_activo')}`}
               </option>
             ))}
           </select>
           {errorDe('idVersion')
             ? <span role="alert" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--sem-error)' }}>{errorDe('idVersion')}</span>
-            : <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('distribucionform.solo_activas')}</span>}
+            : <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('distribucionform.estados_distribuibles')}</span>}
         </div>
 
         <fieldset style={{ border: 0, padding: 0, margin: 0 }}>

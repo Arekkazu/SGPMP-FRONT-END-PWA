@@ -1,14 +1,19 @@
+// | Fecha      | Nombre       | Que se hizo                                           |
+// |------------|--------------|-------------------------------------------------------|
+// | 2026-10-23 | destroyerban | FE-08 RF-70: la OTA lista versiones APROBADO          |
 /** FE-01b (RF-70, D6): lógica pura de la distribución OTA por componente. */
 import { describe, expect, it } from 'vitest';
 import {
+  ESTADOS_VERSION_DISTRIBUIBLES,
   FORM_DISTRIBUCION_INICIAL,
   aDTO,
   alternarDispositivo,
   estadoDeFases,
   ultimoPorComponente,
+  unirVersionesDistribuibles,
   validarDistribucion,
 } from './distribucionOta';
-import type { DespliegueOtaResponse } from '../types';
+import type { DespliegueOtaResponse, VersionModeloResponse } from '../types';
 
 const despliegue = (id: number, componente: DespliegueOtaResponse['componente'], version: number, estado: DespliegueOtaResponse['estado_despliegue']) =>
   ({ id_despliegue_ota: id, componente, id_version_modelo: version, estado_despliegue: estado }) as DespliegueOtaResponse;
@@ -84,5 +89,19 @@ describe('aDTO y orden de los dispositivos', () => {
     sel = alternarDispositivo(sel, 2);
     expect(sel).toEqual([3, 1, 2]);
     expect(alternarDispositivo(sel, 3)).toEqual([1, 2]);
+  });
+});
+
+describe('versiones distribuibles (FE-08, RFC-015 C3)', () => {
+  const v = (id: number) => ({ id_version_modelo: id }) as VersionModeloResponse;
+
+  it('se distribuyen APROBADO y ACTIVO, APROBADO primero', () => {
+    expect(ESTADOS_VERSION_DISTRIBUIBLES).toEqual(['APROBADO', 'ACTIVO']);
+  });
+
+  it('une las listas por estado conservando el orden y sin repetir versiones', () => {
+    expect(unirVersionesDistribuibles([[v(40), v(41)], [v(35), v(40)]]).map((x) => x.id_version_modelo))
+      .toEqual([40, 41, 35]);
+    expect(unirVersionesDistribuibles([[], []])).toEqual([]);
   });
 });
