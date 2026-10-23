@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Controller, useForm } from 'react-hook-form';
@@ -157,14 +160,23 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   // #194 (RF-33 FA-07): atributos dinámicos que la especie exige al registrar.
   const idEspecie = idDeCatalogo(watch('id_especie'), opcEspecies) ?? 0;
   const especie = especies.find((e) => e.id_especie === idEspecie);
-  // RF-20 v1.1: el área declara su especie; las anteriores al cambio no (null).
-  // Sin especie elegida aún no se filtra: antes la lista salía vacía y parecía que la finca no tenía áreas.
-  const esCompatible = (i: InfraestructuraResponse) => !idEspecie || i.especie_id == null || i.especie_id === idEspecie;
+  // RFC-012 (FE-07): un área aloja varias especies del mismo grupo de manejo; si la del
+  // activo no está, el backend la asocia. Sin especie elegida aún no se filtra.
+  const especiesDelArea = (i: InfraestructuraResponse) => i.especies ?? (i.especie_id != null ? [i.especie_id] : []);
+  const grupoDe = (id: number) => especies.find((e) => e.id_especie === id)?.grupo_manejo ?? null;
+  const esCompatible = (i: InfraestructuraResponse) => {
+    const ids = especiesDelArea(i);
+    if (!idEspecie || ids.length === 0 || ids.includes(idEspecie)) return true;
+    const grupo = especie?.grupo_manejo;
+    // Grupo desconocido (especie inactiva o sin cargar): decide el backend (422 si difiere).
+    return !grupo || ids.every((id) => { const g = grupoDe(id); return g == null || g === grupo; });
+  };
   const infraCompatibles = infraestructuras.filter(esCompatible);
   const opcInfra = infraCompatibles.map((i) => ({ id: i.id_infraestructura, nombre: i.nombre_infraestructura }));
-  // La finca tiene áreas, pero de otra especie: se dice cuáles en vez de "Sin coincidencias".
-  const nombreEspecie = (id: number | null) => especies.find((e) => e.id_especie === id)?.nombre ?? `#${id}`;
-  const otrasEspecies = [...new Set(infraestructuras.map((i) => nombreEspecie(i.especie_id)))].join(', ');
+  // La finca tiene áreas, pero de otro grupo: se dice cuáles en vez de "Sin coincidencias".
+  const nombreGrupo = (i: InfraestructuraResponse) =>
+    [...new Set(especiesDelArea(i).map((id) => grupoDe(id)).filter(Boolean))].map((g) => humanizar(String(g))).join(', ');
+  const otrasEspecies = [...new Set(infraestructuras.map(nombreGrupo).filter(Boolean))].join(', ');
   // RF-20: solo el Administrador crea/edita áreas; el resto debe pedírselo.
   const puedeCrearAreas = usePermission(10, 1);
   const motivoSinInfra = idFinca && !cargandoInfra && infraCompatibles.length === 0
@@ -175,9 +187,13 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   const sinInfraCompatibles = motivoSinInfra && !puedeCrearAreas
     ? `${motivoSinInfra} ${t('registraractivoform.contacta_administrador_area')}`
     : motivoSinInfra;
-  // #298 1.1: sin densidad máxima el backend rechaza el lote al final; se avisa antes.
+  // #298 1.1 / RFC-012 (FE-07): sin densidad máxima el backend rechaza el registro (422,
+  // la capacidad del área se calcula con ella), también de un individual; se avisa antes.
   // `=== null` y no `== null`: una especie cacheada sin el campo no debe bloquear el registro.
-  const loteSinDensidad = !esIndividual && !!especie && especie.densidad_maxima_por_especie === null;
+  const densidadEspecie = especie
+    ? (especie.densidad_poblacional_max !== undefined ? especie.densidad_poblacional_max : especie.densidad_maxima_por_especie)
+    : undefined;
+  const especieSinDensidad = !!especie && densidadEspecie === null;
   const [parametros, setParametros] = useState<ParametroEspecie[]>([]);
   useEffect(() => {
     if (!Number.isInteger(idEspecie) || idEspecie < 1) {
@@ -191,6 +207,13 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
     }, 400);
     return () => clearTimeout(temporizador);
   }, [idEspecie, tipo, setValue]);
+
+  // RFC-012 (FE-07): los 422 de capacidad y de grupo de manejo señalan el área.
+  useEffect(() => {
+    if (saveError?.field === 'id_infraestructura') {
+      setError('id_infraestructura', { message: saveError.message }, { shouldFocus: true });
+    }
+  }, [saveError, setError]);
 
   // El backend señala el atributo con field="atributos_dinamicos.<nombre>".
   useEffect(() => {
@@ -327,10 +350,10 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                 validate: (v) => {
                   const id = idDeCatalogo(v, opcInfra);
                   if (id === null) return t('registraractivoform.opcion_no_valida');
-                  // Regla C1: escribir el ID de un área de otra especie no salta el filtro.
+                  // Regla C1: escribir el ID de un área de otro grupo de manejo no salta el filtro.
                   const area = infraestructuras.find((i) => i.id_infraestructura === id);
                   return !area || esCompatible(area) || t('registraractivoform.area_de_otra_especie', {
-                    area: area.nombre_infraestructura, especie: nombreEspecie(area.especie_id),
+                    area: area.nombre_infraestructura, especie: nombreGrupo(area),
                   });
                 },
               }}
@@ -340,7 +363,9 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                   name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref}
                   opciones={infraCompatibles.map((i) => ({
                     valor: `${i.nombre_infraestructura} (#${i.id_infraestructura})`,
-                    detalle: `${i.tipo_area} · ${formatearNumero(i.superficie)} m²`,
+                    detalle: `${i.tipo_area} · ${formatearNumero(i.superficie)} m²${i.capacidad_maxima != null
+                      ? ` · ${t('registraractivoform.capacidad_area', { capacidad: formatearNumero(i.capacidad_maxima) })}`
+                      : ''}`,
                   }))}
                   placeholder={cargandoInfra ? t('registraractivoform.cargando') : undefined}
                   hint={sinInfraCompatibles ?? t('registraractivoform.infraestructura_hint')}
@@ -370,7 +395,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
         </div>
       </div>
 
-      {loteSinDensidad && (
+      {especieSinDensidad && (
         <Alert
           variant="warning"
           title={t('registraractivoform.lote_sin_densidad_titulo')}
@@ -456,12 +481,13 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
               </select>
               <FieldError msg={errors.sexo?.message} />
             </div>
+            {/* RFC-014 (FE-07): opcional; con fecha, el backend avisa si la edad alcanza la esperanza de vida. */}
             <Input
-              label={t('registraractivoform.fecha_de_nacimiento')} required type="date" max={HOY}
+              label={t('registraractivoform.fecha_de_nacimiento')} type="date" max={HOY}
+              hint={t('registraractivoform.fecha_nacimiento_hint')}
               error={errors.fecha_nacimiento?.message}
               {...register('fecha_nacimiento', {
-                required: t('registraractivoform.la_fecha_de_nacimiento_es_obligatoria'),
-                validate: (val) => val <= HOY || 'No puede ser una fecha futura.',
+                validate: (val) => !val || val <= HOY || 'No puede ser una fecha futura.',
               })}
             />
             <Input
@@ -540,7 +566,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
         <Button type="button" variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('registraractivoform.cancelar')}</Button>
-        <Button type="submit" variant="primary" size="md" loading={saving} disabled={loteSinDensidad}>{t('registraractivoform.registrar_activo')}</Button>
+        <Button type="submit" variant="primary" size="md" loading={saving} disabled={especieSinDensidad}>{t('registraractivoform.registrar_activo')}</Button>
       </div>
     </form>
   );

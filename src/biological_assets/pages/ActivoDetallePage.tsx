@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useHistory, useParams } from 'react-router-dom';
@@ -7,6 +10,7 @@ import { Button } from '../../shared/design-system/Button';
 import { useActivoDetalle } from '../hooks/useActivoDetalle';
 import { useFichaIntegral } from '../hooks/useFichaIntegral';
 import { ActivoHeader } from '../components/ActivoHeader';
+import { AvisoEdadRegistro } from '../components/AvisoEdadRegistro';
 import { FichaIntegralView } from '../components/FichaIntegralView';
 import { DatosActivoSection } from '../components/DatosActivoSection';
 import { EstadoSection } from '../components/EstadoSection';
@@ -101,6 +105,9 @@ export function ActivoDetallePage() {
           style={{ marginBottom: 'var(--s3)' }}
         >
           <ArrowLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('activodetallepage.volver_a_la_lista')}</Button>
+
+        {/* RFC-014 (FE-07): advertencia de edad que deja el registro (RegistrarActivoPage). */}
+        <AvisoEdadRegistro />
 
         {error && (
           <Alert
