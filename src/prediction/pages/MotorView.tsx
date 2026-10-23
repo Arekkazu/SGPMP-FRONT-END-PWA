@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | DEV-36 RF-65: envía la config_version leída (concurrencia optimista) |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { SlidersHorizontal, RefreshCw, Cpu } from 'lucide-react';
@@ -32,7 +35,8 @@ export function MotorView() {
   const guardadoDeEstaPestana = ultimoGuardado?.config.tipo_modelo === tipo ? ultimoGuardado : null;
 
   const onGuardar = async (dto: ConfigurarMotorDTO) => {
-    const ok = await guardar(dto);
+    // DEV-36 (RF-65 CA-9): la versión leída; si otro usuario guardó antes, el backend responde 412.
+    const ok = await guardar({ ...dto, config_version: configActual?.config_version ?? null });
     if (ok) cargar();
   };
 
