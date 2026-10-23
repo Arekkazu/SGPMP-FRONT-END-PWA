@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -225,8 +228,23 @@ export interface ResumenEstadisticoSchema {
   total_alertas_en_periodo: number;
 }
 
+/** RF-59 E7 / CA-17 (DEV-38): intervalo sin lecturas > 3 × la frecuencia de muestreo. */
+export interface VacioTemporalSchema {
+  sensor_id: number;
+  tipo_variable: string;
+  desde: string;                          // datetime ISO: última lectura antes del hueco
+  hasta: string;                          // datetime ISO: primera lectura después del hueco
+  duracion_min: number;
+  frecuencia_esperada_min: number;
+}
+
 export interface HistorialPageSchema {
+  /** Registros navegables (como mucho 10 000, CA-19). */
   total: number;
+  /** DEV-38: registros que cumplen los filtros; si supera 10 000, `truncado` y `aviso`. */
+  total_encontrado?: number;
+  truncado?: boolean;
+  aviso?: string | null;
   pagina: number;
   por_pagina: number;
   paginas_totales: number;
@@ -234,6 +252,7 @@ export interface HistorialPageSchema {
   rango_real_datos: Record<string, unknown>;
   items: LecturaHistoricaSchema[];
   estadisticas: ResumenEstadisticoSchema[];
+  vacios_temporales?: VacioTemporalSchema[];
 }
 
 export type OrdenHistorial = 'ASC' | 'DESC';
