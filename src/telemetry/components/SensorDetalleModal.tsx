@@ -1,7 +1,10 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ModalShell } from './ModalShell';
-import { SemaforoPill } from './SemaforoPill';
+import { EstadoSensorPills } from './EstadoLecturaPill';
 import { SeveridadBadge } from './SeveridadBadge';
 import { Pill } from './Pill';
 import { horaCaptura, sinReporte } from '../lib/sensorEscala';
@@ -30,7 +33,7 @@ export function SensorDetalleModal({ sensor, onClose }: Props) {
           {sensor.ultimo_valor ?? '—'}
         </span>
         <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{sensor.ultima_unidad}</span>
-        <span style={{ marginLeft: 'auto' }}><SemaforoPill estado={sensor.estado_semaforo} /></span>
+        <span style={{ marginLeft: 'auto' }}><EstadoSensorPills sensor={sensor} /></span>
       </div>
 
       <div>
