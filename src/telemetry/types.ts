@@ -1,6 +1,7 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
+// | 2026-10-23 | Arekkazu | FE-11 RF-59: truncado y vacíos temporales del historial (DEV-38) |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -236,8 +237,24 @@ export interface ResumenEstadisticoSchema {
   total_alertas_en_periodo: number;
 }
 
+/** RF-59 E7 (CA-17, DEV-38): intervalo sin lecturas mayor que 3 × la frecuencia de muestreo. */
+export interface VacioTemporalSchema {
+  sensor_id: number;
+  tipo_variable: string;
+  desde: string;
+  hasta: string;
+  duracion_min: number;
+  frecuencia_esperada_min: number;
+}
+
 export interface HistorialPageSchema {
+  /** Registros navegables (como mucho 10 000, CA-19). */
   total: number;
+  /** DEV-38: registros que cumplen los filtros; si supera a `total`, `truncado`. */
+  total_encontrado?: number;
+  truncado?: boolean;
+  aviso?: string | null;
+  vacios_temporales?: VacioTemporalSchema[];
   pagina: number;
   por_pagina: number;
   paginas_totales: number;
