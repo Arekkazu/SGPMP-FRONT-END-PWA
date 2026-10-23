@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-20 | Arekkazu | FE-05 RF-15: densidad_poblacional_max y esperanza_vida_dias en especie (RFC-012/014) |
 import type { TipoModelo } from '../prediction/types';
 
 /** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
@@ -20,8 +23,12 @@ export interface EspecieResponse {
   grupo_manejo?: GrupoManejo | null;
   /** Derivado de grupo_manejo (solo lectura); RF-20 exige que el modelo del área coincida. */
   tipo_modelo?: TipoModelo | null;
-  /** RF-36: límite de densidad del lote; null = sin configurar (el registro de lotes falla). Decimal → texto. */
+  /** RFC-012: densidad poblacional máxima en ind/m²; null = sin configurar. Decimal → texto. */
+  densidad_poblacional_max?: number | string | null;
+  /** Deprecado (RFC-012): mismo valor que `densidad_poblacional_max`. */
   densidad_maxima_por_especie?: number | string | null;
+  /** RFC-014: esperanza de vida en días; null = no definida. */
+  esperanza_vida_dias?: number | null;
   /** #115 (RF-15): solo en cliente — true mientras la creación offline que lo generó
    *  sigue en syncQueue. No lo emite el backend. */
   pendienteSync?: boolean;
@@ -31,12 +38,20 @@ export interface RegistrarEspecieDTO {
   nombre: string;
   descripcion?: string;
   grupo_manejo: GrupoManejo;
+  /** RFC-012: ind/m², > 0, máximo 2 decimales. */
+  densidad_poblacional_max?: string | null;
+  /** RFC-014: días, entero > 0. */
+  esperanza_vida_dias?: number | null;
 }
 
 export interface EditarEspecieDTO {
   nombre: string;
   descripcion?: string;
   grupo_manejo: GrupoManejo;
+  /** null borra el valor (RFC-012). */
+  densidad_poblacional_max?: string | null;
+  /** null borra el valor (RFC-014). */
+  esperanza_vida_dias?: number | null;
   /** Concurrencia optimista: el valor del último GET; null si nunca se editó (#231). */
   fecha_actualizacion: string | null;
 }
