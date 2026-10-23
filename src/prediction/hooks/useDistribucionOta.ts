@@ -1,7 +1,10 @@
+// | Fecha      | Nombre       | Que se hizo                                           |
+// |------------|--------------|-------------------------------------------------------|
+// | 2026-10-23 | destroyerban | FE-08 RF-70: la OTA lista versiones APROBADO          |
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { otaApi } from '../api/otaApi';
 import { modelosApi } from '../api/modelosApi';
-import { ultimoPorComponente } from '../lib/distribucionOta';
+import { ESTADOS_VERSION_DISTRIBUIBLES, ultimoPorComponente, unirVersionesDistribuibles } from '../lib/distribucionOta';
 import type {
   CrearDistribucionOtaDTO,
   DespliegueOtaResponse,
@@ -17,8 +20,8 @@ export const INTERVALO_REFRESCO_MS = 10_000;
 /**
  * RF-70 · Lanzar una distribución OTA y seguir su rollout (FE-01b, DEV-15).
  *
- * - Opciones del formulario: versiones ACTIVO (AN-2: solo ACTIVO se distribuye) y
- *   dispositivos activos.
+ * - Opciones del formulario: versiones APROBADO y ACTIVO (FE-08, RFC-015 C3: se distribuye
+ *   la APROBADO y se activa después; ACTIVO, para nodos nuevos) y dispositivos activos.
  * - Seguimiento: la distribución (fase y estado de cada nodo) y, por nodo, el
  *   último despliegue de cada componente, para ver DETECTOR v3 junto a ANOMALIAS v1 (D-05).
  *   Mientras la distribución esté EN_CURSO y haya red, se refresca sola.
@@ -37,11 +40,12 @@ export function useDistribucionOta(online: boolean) {
   const cargarOpciones = useCallback(async () => {
     setOpcionesError(null);
     try {
-      const [vers, disp] = await Promise.all([
-        modelosApi.listar({ estado: 'ACTIVO', limit: 100 }),
+      // El filtro `estado` del backend admite un solo valor: una consulta por estado.
+      const [porEstado, disp] = await Promise.all([
+        Promise.all(ESTADOS_VERSION_DISTRIBUIBLES.map((estado) => modelosApi.listar({ estado, limit: 100 }))),
         otaApi.listarDispositivosObjetivo(),
       ]);
-      setVersiones(vers.items ?? []);
+      setVersiones(unirVersionesDistribuibles(porEstado.map((r) => r.items ?? [])));
       setDispositivos(disp);
     } catch (e) {
       setOpcionesError(e as ApiError);

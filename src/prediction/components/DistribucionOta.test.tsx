@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo                                           |
+// |------------|--------------|-------------------------------------------------------|
+// | 2026-10-23 | destroyerban | FE-08 RF-70: la OTA lista versiones APROBADO          |
 /**
  * FE-01b (RF-70, D6): el Administrador lanza una distribución y ve, en cada nodo,
  * la versión y el estado de cada componente.
@@ -16,6 +19,7 @@ import type {
 } from '../types';
 
 const VERSIONES = [
+  { id_version_modelo: 40, nombre_version: 'DETECTOR v4', tipo_modelo: 'MODELO_AVES', componente: 'DETECTOR', estado_version: 'APROBADO' },
   { id_version_modelo: 35, nombre_version: 'DETECTOR v3', tipo_modelo: 'MODELO_AVES', componente: 'DETECTOR', estado_version: 'ACTIVO' },
   { id_version_modelo: 34, nombre_version: 'ANOMALIAS v1', tipo_modelo: 'MODELO_AVES', componente: 'ANOMALIAS', estado_version: 'ACTIVO' },
 ] as VersionModeloResponse[];
@@ -46,6 +50,19 @@ describe('DistribucionOtaFormModal — lanzar distribución', () => {
       id_version_modelo: 35, lista_dispositivos_objetivo: [1, 38], modo_distribucion: 'INMEDIATO',
       nivel_bateria_minimo: 30, tamano_fragmento_bytes: 65536, max_reintentos_descarga: 3, porcentaje_parcial: 25,
     }));
+  });
+
+  it('FE-08: una versión APROBADO aparece en el selector, marcada como aprobada, y se distribuye', () => {
+    const onLanzar = renderForm();
+    const opcion = screen.getByRole('option', { name: /DETECTOR v4/ });
+    expect(opcion.textContent).toContain('Aprobada');
+    expect(screen.getByRole('option', { name: /DETECTOR v3/ }).textContent).toContain('Activa');
+    expect(screen.getByText(/Se distribuyen versiones aprobadas/)).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText(/Versión del modelo/), { target: { value: '40' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: /EDGE-38/ }));
+    fireEvent.click(screen.getByText('Lanzar distribución'));
+    expect(onLanzar).toHaveBeenCalledWith(expect.objectContaining({ id_version_modelo: 40, lista_dispositivos_objetivo: [38] }));
   });
 
   it('no lanza sin versión ni dispositivos y lo explica en cada campo', () => {
