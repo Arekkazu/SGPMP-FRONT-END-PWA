@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | RF-29: código con datos variables en es-CO y en-US |
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { AxiosError } from 'axios';
@@ -168,15 +169,16 @@ describe('mapToApiError', () => {
 describe('bloqueoEnHoraLocal', () => {
   const msg = (hora: string) => `Cuenta bloqueada ... nuevamente a las ${hora} (dentro de 15 minutos exactos).`;
 
-  it('lee la hora del backend como UTC y la muestra en la hora del usuario', () => {
-    const texto = bloqueoEnHoraLocal(msg('05:34:25'), new Date('2026-10-11T05:22:00Z'));
-    expect(texto).toContain(formatearHora(new Date('2026-10-11T05:34:25Z')));
+  // El backend ya escribe la hora en la zona del navegador (X-Zona-Horaria).
+  it('lee la hora del backend como hora local y recalcula los minutos', () => {
+    const texto = bloqueoEnHoraLocal(msg('05:34:25'), new Date(2026, 9, 11, 5, 22, 0));
+    expect(texto).toContain(formatearHora(new Date(2026, 9, 11, 5, 34, 25)));
     expect(texto).toContain('13 min');
   });
 
-  it('pasada la medianoche UTC, la hora es del dia siguiente', () => {
-    const texto = bloqueoEnHoraLocal(msg('00:05:00'), new Date('2026-10-11T23:50:00Z'));
-    expect(texto).toContain(formatearHora(new Date('2026-10-12T00:05:00Z')));
+  it('pasada la medianoche, la hora es del dia siguiente', () => {
+    const texto = bloqueoEnHoraLocal(msg('00:05:00'), new Date(2026, 9, 11, 23, 50, 0));
+    expect(texto).toContain(formatearHora(new Date(2026, 9, 12, 0, 5, 0)));
     expect(texto).toContain('15 min');
   });
 

@@ -2,6 +2,7 @@
 // |------------|--------------|-------------|
 // | 2026-10-21 | destroyerban | #73 RF-37: fase destino y confirmación no estándar en CambiarFase  |
 // | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // =====================================================================
 // Módulo 2 — Activos Biológicos · Tipos de dominio
 // Contrato: do-it/biological_assets/.../api_reference_m02_activos_biologicos.md
@@ -57,7 +58,7 @@ export interface DetalleIndividualResponse {
   raza: string;
   sexo: string;
   /** RFC-014: opcional (null si no se informó). */
-  fecha_nacimiento: string | null;      // datetime ISO
+  fecha_nacimiento: string | null;      // día calendario YYYY-MM-DD
   peso_inicial: number | null;
   fecha_creacion: string | null;
 }
@@ -111,7 +112,7 @@ export interface RegistrarActivoDTO {
   identificador?: string | null;
   raza?: string | null;
   sexo?: string | null;
-  fecha_nacimiento?: string | null;        // datetime
+  fecha_nacimiento?: string | null;        // día calendario YYYY-MM-DD
   peso_inicial?: number | null;
   // POBLACIONAL
   cantidad_inicial?: number | null;
@@ -131,7 +132,7 @@ export interface ParametroEspecie {
 export interface ActualizarActivoIndividualDTO {
   raza?: string | null;
   sexo?: string | null;
-  fecha_nacimiento?: string | null;        // datetime
+  fecha_nacimiento?: string | null;        // día calendario YYYY-MM-DD
   peso_inicial?: number | null;
   // Concurrencia optimista (RF-35): el valor tal cual vino del último GET.
   fecha_actualizacion?: string | null;

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
+// | 2026-10-23 | Arekkazu | PR-667: el vacío se muestra en el día local, no en el de UTC |
 /**
  * FE-11 (RF-59 E6 / CA-19 y E7 / CA-17): con la respuesta de DEV-38, el historial avisa
  * cuando el resultado se truncó y marca los intervalos sin datos.
@@ -17,6 +18,7 @@ vi.mock('../../shared/rbac/usePermission', () => ({ usePermission: () => true })
 
 import { HistorialView } from './HistorialView';
 import { duracionLegible, zonasDelGrafico } from '../lib/vaciosTemporales';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 
 function lectura(id: number, ts: string): LecturaHistoricaSchema {
   return {
@@ -82,7 +84,8 @@ describe('HistorialView — E7 / CA-17: intervalos vacíos', () => {
     const filas = screen.getAllByRole('row').slice(1); // sin el encabezado
     const marca = screen.getByTestId('fila-vacio');
     expect(filas.indexOf(marca)).toBe(2); // tras la lectura 2 (04:00), antes de la 3 (01:59:30)
-    expect(within(marca).getByText(/Sin datos por 2 h desde 2026-10-20/)).toBeInTheDocument();
+    // Día y hora locales: 01:59:30Z en America/Bogota es el 19 a las 20:59.
+    expect(marca).toHaveTextContent(`Sin datos por 2 h desde ${fechaHoraCaptura(VACIO.desde)}`);
     expect(within(marca).getByText(/frecuencia esperada: 1 min/)).toBeInTheDocument();
   });
 

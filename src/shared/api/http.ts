@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: envía la zona horaria del navegador en X-Zona-Horaria |
 import axios, { type AxiosError } from 'axios';
 import { tokenStore } from '../auth/tokenStore';
 import { mapToApiError } from './errors';
@@ -6,6 +9,9 @@ const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000',
   timeout: 15000,
   withCredentials: true,
+  // Zona IANA del navegador: el backend la usa para "hoy" y los días calendario.
+  // Sin ella trabaja en UTC (src/shared/fechas.py del backend).
+  headers: { 'X-Zona-Horaria': Intl.DateTimeFormat().resolvedOptions().timeZone },
 });
 
 // El backend mide el timeout de inactividad de 30 min sobre `cuenta.ultimo_acceso`,

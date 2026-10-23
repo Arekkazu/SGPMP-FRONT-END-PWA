@@ -3,6 +3,7 @@
 // | 2026-10-21 | destroyerban | #66 RF-33: valida atributos dinámicos (tipo, rango) y su carga     |
 // | 2026-10-21 | destroyerban | #69 RF-33: especie e infraestructura solo del catálogo activo      |
 // | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Controller, useForm } from 'react-hook-form';
@@ -116,7 +117,6 @@ function FieldError({ msg }: { msg?: string }) {
   );
 }
 
-const HOY = hoyLocal();
 
 function valorAtributo(p: ParametroEspecie, v: string | boolean | undefined): unknown {
   if (p.tipo_dato === 'BOOLEANO') return Boolean(v);
@@ -308,7 +308,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
       dto.identificador = v.identificador.trim();
       dto.raza = v.raza.trim();
       dto.sexo = v.sexo;
-      dto.fecha_nacimiento = v.fecha_nacimiento ? new Date(v.fecha_nacimiento).toISOString() : null;
+      dto.fecha_nacimiento = v.fecha_nacimiento || null;  // día calendario YYYY-MM-DD
       dto.peso_inicial = v.peso_inicial ? Number(v.peso_inicial) : null;
     } else {
       dto.cantidad_inicial = Number(v.cantidad_inicial);
@@ -472,12 +472,12 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
             )}
           </div>
           <Input
-            label={t('registraractivoform.fecha_de_inicio_de_ciclo')} required type="date" max={HOY}
+            label={t('registraractivoform.fecha_de_inicio_de_ciclo')} required type="date" max={hoyLocal()}
             error={errors.fecha_inicio_ciclo?.message}
             {...register('fecha_inicio_ciclo', {
               required: t('registraractivoform.la_fecha_de_inicio_es_obligatoria'),
               validate: (val) => {
-                if (val > HOY) return t('registraractivoform.no_puede_ser_una_fecha_futura');
+                if (val > hoyLocal()) return t('registraractivoform.no_puede_ser_una_fecha_futura');
                 if (val < '1970-01-01') return t('registraractivoform.no_puede_ser_anterior_a_1970');
                 return true;
               },
@@ -574,11 +574,11 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
             </div>
             {/* RFC-014 (FE-07): opcional; con fecha, el backend avisa si la edad alcanza la esperanza de vida. */}
             <Input
-              label={t('registraractivoform.fecha_de_nacimiento')} type="date" max={HOY}
+              label={t('registraractivoform.fecha_de_nacimiento')} type="date" max={hoyLocal()}
               hint={t('registraractivoform.fecha_nacimiento_hint')}
               error={errors.fecha_nacimiento?.message}
               {...register('fecha_nacimiento', {
-                validate: (val) => !val || val <= HOY || 'No puede ser una fecha futura.',
+                validate: (val) => !val || val <= hoyLocal() || 'No puede ser una fecha futura.',
               })}
             />
             <Input

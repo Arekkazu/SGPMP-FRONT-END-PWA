@@ -1,5 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import type { GaugeStatus } from '../../shared/design-system/Gauge';
 import { formatearHora } from '../../shared/i18n/formato';
+import { diaLocal } from '../../shared/lib/fecha';
 
 /** Mapea el semáforo del backend al estado de color del Gauge. */
 export function semaforoToGauge(estado: string | null | undefined): GaugeStatus {
@@ -37,6 +41,11 @@ export function horaCaptura(iso: string | null | undefined): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso).slice(11, 19) || '—';
   return formatearHora(d, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+/** `YYYY-MM-DD HH:MM:SS` en hora local: el día también, no el de UTC. */
+export function fechaHoraCaptura(iso: string | null | undefined): string {
+  return iso ? `${diaLocal(iso) || iso.slice(0, 10)} ${horaCaptura(iso)}` : '—';
 }
 
 /** "hace N min/s" a partir de minutos sin reporte. */

@@ -1,12 +1,13 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React, { useMemo } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { CircleSlash, History } from 'lucide-react';
 import { SemaforoPill } from './SemaforoPill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import { duracionLegible, vacioTrasLectura, vaciosPorLecturaPosterior } from '../lib/vaciosTemporales';
 import type { LecturaHistoricaSchema, VacioTemporalSchema } from '../types';
 
@@ -53,7 +54,7 @@ export function HistorialTable({ items, loading, vacios = [] }: {
             <React.Fragment key={it.id_telemetria}>
             <tr style={{ background: 'var(--surface-card)' }}>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                {it.timestamp_captura?.slice(0, 10)} {horaCaptura(it.timestamp_captura)}
+                {fechaHoraCaptura(it.timestamp_captura)}
               </td>
               <td style={{ ...TD, color: 'var(--text-primary)', fontSize: '12px' }}>{it.nombre_sensor}</td>
               <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>{it.tipo_variable}</td>
@@ -77,7 +78,7 @@ export function HistorialTable({ items, loading, vacios = [] }: {
                     <CircleSlash size={13} aria-hidden />
                     {t('historialtable.vacio_temporal', {
                       ...duracionLegible(vacio.duracion_min),
-                      desde: `${vacio.desde.slice(0, 10)} ${horaCaptura(vacio.desde)}`,
+                      desde: fechaHoraCaptura(vacio.desde),
                       frecuencia: vacio.frecuencia_esperada_min,
                     })}
                   </span>

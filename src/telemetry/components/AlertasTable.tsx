@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, BellRing } from 'lucide-react';
@@ -6,7 +9,7 @@ import { EstadoAlertaPill } from './EstadoAlertaPill';
 import { OrigenPill } from './OrigenPill';
 import { TipoAlertaTecnicaPill } from './TipoAlertaTecnicaPill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { AlertaSchema } from '../types';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
 
@@ -67,7 +70,7 @@ export function AlertasTable({ alertas, loading, onAbrir }: Props) {
               <td style={TD}><OrigenPill origen={a.origen_evento} /></td>
               <td style={TD}><EstadoAlertaPill estado={a.estado_alerta} /></td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                {a.fecha_generacion?.slice(0, 10)} {horaCaptura(a.fecha_generacion)}
+                {fechaHoraCaptura(a.fecha_generacion)}
               </td>
               <td style={{ ...TD, textAlign: 'right', color: 'var(--text-muted)' }}><ChevronRight size={16} aria-hidden /></td>
             </tr>
