@@ -1,6 +1,3 @@
-// | Fecha      | Nombre   | Que se hizo |
-// |------------|----------|-------------|
-// | 2026-10-23 | Arekkazu | FE-12 RF-57: Descartar depende del permiso D |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { BellRing, Clock, TimerOff, CheckCircle2, RefreshCw } from 'lucide-react';
@@ -16,7 +13,7 @@ import { AlertaDetalleModal } from '../components/AlertaDetalleModal';
 import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
-import { RECURSO_ALERTAS, ACCION_R, ACCION_U, ACCION_D } from '../rbac';
+import { RECURSO_ALERTAS, ACCION_R, ACCION_U } from '../rbac';
 import type { ListarAlertasFiltros, NuevoEstadoAlerta } from '../types';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
@@ -36,7 +33,6 @@ export function AlertasView() {
   const { t } = useT('telemetry');
   const puedeVer = usePermission(RECURSO_ALERTAS, ACCION_R);
   const puedeGestionar = usePermission(RECURSO_ALERTAS, ACCION_U);
-  const puedeDescartar = usePermission(RECURSO_ALERTAS, ACCION_D);
   const online = useOnlineStatus();
 
   const { alertas, paginacion, loading, saving, error, saveError, fromCache, resumen, cargar, cargarResumen, cambiarEstado } = useAlertas();
@@ -131,7 +127,6 @@ export function AlertasView() {
           loading={detalleHook.loading}
           error={detalleHook.error}
           puedeGestionar={puedeGestionar}
-          puedeDescartar={puedeDescartar}
           online={online}
           onAccion={setAccion}
           onClose={cerrarDetalle}

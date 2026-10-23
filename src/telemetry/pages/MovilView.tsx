@@ -1,7 +1,6 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
-// | 2026-10-23 | Arekkazu | FE-12 RF-57: Descartar con permiso D; Resolver solo desde EN_ATENCION |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Radio, BellRing, Smartphone, BatteryMedium, SignalHigh } from 'lucide-react';
@@ -17,7 +16,7 @@ import { EstadoAlertaPill } from '../components/EstadoAlertaPill';
 import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { horaCaptura } from '../lib/sensorEscala';
-import { RECURSO_MONITOREO, RECURSO_ALERTAS, ACCION_R, ACCION_U, ACCION_D } from '../rbac';
+import { RECURSO_MONITOREO, RECURSO_ALERTAS, ACCION_R, ACCION_U } from '../rbac';
 import type { AlertaSchema, NuevoEstadoAlerta } from '../types';
 
 type Tab = 'monitoreo' | 'alertas';
@@ -27,7 +26,6 @@ export function MovilView() {
   const puedeMonitoreo = usePermission(RECURSO_MONITOREO, ACCION_R);
   const puedeAlertas = usePermission(RECURSO_ALERTAS, ACCION_R);
   const puedeGestionar = usePermission(RECURSO_ALERTAS, ACCION_U);
-  const puedeDescartar = usePermission(RECURSO_ALERTAS, ACCION_D);
   const online = useOnlineStatus();
 
   const monitoreo = useMonitoreo();
@@ -126,14 +124,9 @@ export function MovilView() {
                   <EstadoAlertaPill estado={a.estado_alerta} />
                   {puedeGestionar && (
                     <div style={{ display: 'flex', gap: 'var(--s1)' }}>
-                      {/* RF-57: desde ACTIVA solo se toma o se descarta; resolver es desde EN_ATENCION. */}
                       <Button variant="secondary" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('EN_ATENCION'); }}>{t('movilview.tomar')}</Button>
-                      {a.estado_alerta === 'EN_ATENCION' && (
-                        <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('RESUELTA'); }}>{t('movilview.resolver')}</Button>
-                      )}
-                      {puedeDescartar && a.estado_alerta === 'ACTIVA' && (
-                        <Button variant="danger" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('DESCARTADA'); }}>{t('movilview.descartar')}</Button>
-                      )}
+                      <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('RESUELTA'); }}>{t('movilview.resolver')}</Button>
+                      <Button variant="danger" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('DESCARTADA'); }}>{t('movilview.descartar')}</Button>
                     </div>
                   )}
                 </div>
