@@ -1,15 +1,18 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-21 | destroyerban | #66 RF-33: pruebas de validación y carga de atributos dinámicos    |
+// | 2026-10-21 | destroyerban | #69 RF-33: pruebas de especie/infraestructura del catálogo activo  |
 // | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
+// | 2026-10-23 | Arekkazu     | Integración RFC-012..016: FE-07 espera la carga de atributos (#66) antes de registrar |
 /**
  * #194 (RF-33 FA-07): al indicar la especie, el formulario muestra sus atributos
  * dinámicos y marca en su campo el error del backend `atributos_dinamicos.<nombre>`.
  * RF-33 (RFC-004): valida tipo, obligatoriedad y rango como el backend, y no deja
  * registrar sin la configuración de la especie.
+ * #69 (RF-33): especie e infraestructura solo valen si están en el catálogo activo.
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -19,6 +22,7 @@ vi.mock('../api/activosApi', () => ({ activosApi: { parametrosEspecie } }));
 const catalogo = vi.hoisted(() => ({
   especies: [{ id_especie: 1, nombre: 'Bovino', es_activo: true, densidad_maxima_por_especie: '10' }],
   fincas: [], infraestructuras: [], cargando: false, cargandoInfra: false, cargarInfraestructuras: () => Promise.resolve(),
+  errorCatalogo: false, errorInfra: false, reintentarCatalogo: vi.fn(),
 }));
 vi.mock('../hooks/useCatalogoRegistro', () => ({ useCatalogoRegistro: () => catalogo }));
 
@@ -124,6 +128,58 @@ describe('RegistrarActivoForm — validación contra la configuración de la esp
   });
 });
 
+describe('RegistrarActivoForm — especie e infraestructura del catálogo activo (#69)', () => {
+  const base = {
+    especies: [{ id_especie: 1, nombre: 'Bovino', es_activo: true, densidad_maxima_por_especie: '10' }],
+    fincas: [{ id_finca: 15, nombre: 'Finca Norte' }],
+    infraestructuras: [{ id_infraestructura: 16, nombre_infraestructura: 'Potrero 1', especie_id: 1, tipo_area: 'Potrero', superficie: 100 }],
+    errorCatalogo: false, errorInfra: false,
+  };
+
+  it('rechaza el ID de una especie que no está en el catálogo activo y no pide sus atributos', async () => {
+    Object.assign(catalogo, base);
+    parametrosEspecie.mockClear();
+    parametrosEspecie.mockResolvedValue([]);
+    const onSubmit = vi.fn();
+    render(<RegistrarActivoForm saving={false} onSubmit={onSubmit} onCancel={vi.fn()} saveError={null} />);
+
+    await userEvent.type(screen.getByRole('combobox', { name: /Especie/ }), '99');
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+    expect(await screen.findByText('Esa especie no existe o está inactiva. Elige una de la lista.')).toBeInTheDocument();
+    await new Promise((r) => setTimeout(r, 500));
+    expect(parametrosEspecie).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('valida la infraestructura contra las áreas activas de la finca elegida', async () => {
+    Object.assign(catalogo, base);
+    const onSubmit = vi.fn();
+    render(<RegistrarActivoForm saving={false} onSubmit={onSubmit} onCancel={vi.fn()} saveError={null} />);
+    const infra = screen.getByRole('combobox', { name: /Infraestructura/ });
+
+    await userEvent.type(infra, '16');
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+    expect(await screen.findByText('Elige primero la finca para validar la infraestructura.')).toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByLabelText(/Finca/), '15');
+    await userEvent.type(screen.getByRole('combobox', { name: /Infraestructura/ }), '77');
+    await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
+    expect(await screen.findByText('Esa infraestructura no existe, está inactiva o no es de la finca elegida.')).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('si los catálogos no cargan avisa, bloquea el registro y deja reintentar', async () => {
+    Object.assign(catalogo, { ...base, especies: [], fincas: [], infraestructuras: [], errorCatalogo: true });
+    render(<RegistrarActivoForm saving={false} onSubmit={vi.fn()} onCancel={vi.fn()} saveError={null} />);
+
+    expect(screen.getByText('No se pudieron cargar las especies y fincas')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Registrar/ })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(catalogo.reintentarCatalogo).toHaveBeenCalled();
+    Object.assign(catalogo, { errorCatalogo: false });
+  });
+});
+
 // RFC-012 (FE-07): la compatibilidad es por grupo de manejo, no por especie única.
 const ESPECIES_GRUPOS = [
   { id_especie: 4, nombre: 'Cachama Blanca', es_activo: true, grupo_manejo: 'ACUICULTURA', densidad_maxima_por_especie: '10' },
@@ -187,11 +243,13 @@ describe('RegistrarActivoForm — fecha de nacimiento opcional (RFC-014)', () =>
     await userEvent.type(screen.getByLabelText(/Raza/), 'Roja');
     await userEvent.selectOptions(screen.getByLabelText(/^Sexo/), 'Hembra');
     expect(screen.getByLabelText(/Fecha de nacimiento/)).not.toHaveAttribute('aria-required', 'true');
+    // #66: el registro espera a que carguen los atributos de la especie.
+    await waitFor(() => expect(screen.getByRole('button', { name: /Registrar/ })).toBeEnabled());
     await userEvent.click(screen.getByRole('button', { name: /Registrar/ }));
 
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       tipo_activo: 'INDIVIDUAL', id_especie: 4, id_infraestructura: 17, fecha_nacimiento: null,
-    }));
+    })));
   });
 
   it('una especie sin densidad bloquea también el registro de un individual', async () => {

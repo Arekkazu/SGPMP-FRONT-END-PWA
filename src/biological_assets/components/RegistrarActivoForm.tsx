@@ -1,6 +1,7 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-21 | destroyerban | #66 RF-33: valida atributos dinámicos (tipo, rango) y su carga     |
+// | 2026-10-21 | destroyerban | #69 RF-33: especie e infraestructura solo del catálogo activo      |
 // | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
@@ -175,7 +176,10 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   const requiereSoporte = origen === 'compra' || origen === 'donacion';
   const esNacimiento = origen === 'nacimiento';
 
-  const { especies, fincas, infraestructuras, cargando, cargandoInfra, cargarInfraestructuras } = useCatalogoRegistro();
+  const {
+    especies, fincas, infraestructuras, cargando, cargandoInfra, cargarInfraestructuras,
+    errorCatalogo, errorInfra, reintentarCatalogo,
+  } = useCatalogoRegistro();
   const idFinca = Number(watch('id_finca')) || null;
   const opcEspecies = especies.map((e) => ({ id: e.id_especie, nombre: e.nombre }));
   useEffect(() => {
@@ -184,8 +188,10 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   }, [idFinca, cargarInfraestructuras, resetField]);
 
   // #194 (RF-33 FA-07): atributos dinámicos que la especie exige al registrar.
-  const idEspecie = idDeCatalogo(watch('id_especie'), opcEspecies) ?? 0;
-  const especie = especies.find((e) => e.id_especie === idEspecie);
+  // #69: solo cuenta una especie del catálogo activo; un ID escrito que no está en él no carga atributos.
+  const idEscrito = idDeCatalogo(watch('id_especie'), opcEspecies);
+  const especie = especies.find((e) => e.id_especie === idEscrito);
+  const idEspecie = especie?.id_especie ?? 0;
   // RFC-012 (FE-07): un área aloja varias especies del mismo grupo de manejo; si la del
   // activo no está, el backend la asocia. Sin especie elegida aún no se filtra.
   const especiesDelArea = (i: InfraestructuraResponse) => i.especies ?? (i.especie_id != null ? [i.especie_id] : []);
@@ -205,7 +211,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
   const otrasEspecies = [...new Set(infraestructuras.map(nombreGrupo).filter(Boolean))].join(', ');
   // RF-20: solo el Administrador crea/edita áreas; el resto debe pedírselo.
   const puedeCrearAreas = usePermission(10, 1);
-  const motivoSinInfra = idFinca && !cargandoInfra && infraCompatibles.length === 0
+  const motivoSinInfra = idFinca && !cargandoInfra && !errorInfra && infraCompatibles.length === 0
     ? (infraestructuras.length > 0
       ? t('registraractivoform.areas_de_otra_especie', { especie: especie?.nombre ?? '', otras: otrasEspecies })
       : t('registraractivoform.sin_infraestructuras_compatibles'))
@@ -362,6 +368,21 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
         </div>
       </div>
 
+      {/* #69: sin los catálogos no se puede validar especie ni infraestructura. */}
+      {errorCatalogo && (
+        <div style={{ marginBottom: 'var(--s6)' }}>
+          <Alert
+            variant="error"
+            title={t('registraractivoform.catalogos_no_cargados_titulo')}
+            description={t('registraractivoform.catalogos_no_cargados_detalle')}
+            style={{ marginBottom: 'var(--s3)' }}
+          />
+          <Button type="button" variant="secondary" size="sm" onClick={reintentarCatalogo}>
+            {t('registraractivoform.reintentar')}
+          </Button>
+        </div>
+      )}
+
       {/* Datos generales */}
       <div style={{ marginBottom: 'var(--s6)' }}>
         <span style={SECTION_TITLE}>{t('registraractivoform.datos_generales')}</span>
@@ -371,7 +392,12 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
             control={control}
             rules={{
               required: t('registraractivoform.la_especie_es_obligatoria'),
-              validate: (v) => idDeCatalogo(v, opcEspecies) !== null || t('registraractivoform.opcion_no_valida'),
+              // #69 (RF-33): la especie debe existir y estar activa en el catálogo de configuración (RF-15).
+              validate: (v) => {
+                const id = idDeCatalogo(v, opcEspecies);
+                if (id === null) return t('registraractivoform.opcion_no_valida');
+                return especies.some((e) => e.id_especie === id) || t('registraractivoform.especie_no_disponible');
+              },
             }}
             render={({ field }) => (
               <Combobox
@@ -403,9 +429,13 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                 validate: (v) => {
                   const id = idDeCatalogo(v, opcInfra);
                   if (id === null) return t('registraractivoform.opcion_no_valida');
-                  // Regla C1: escribir el ID de un área de otro grupo de manejo no salta el filtro.
+                  // #69 (RF-33): el área debe existir, estar activa y ser de la finca elegida (RF-20);
+                  // sin finca no hay contra qué validarla.
+                  if (!idFinca) return t('registraractivoform.elige_finca_primero');
                   const area = infraestructuras.find((i) => i.id_infraestructura === id);
-                  return !area || esCompatible(area) || t('registraractivoform.area_de_otra_especie', {
+                  if (!area) return t('registraractivoform.infraestructura_no_disponible');
+                  // Regla C1: escribir el ID de un área de otro grupo de manejo no salta el filtro.
+                  return esCompatible(area) || t('registraractivoform.area_de_otra_especie', {
                     area: area.nombre_infraestructura, especie: nombreGrupo(area),
                   });
                 },
@@ -427,6 +457,14 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
                 />
               )}
             />
+            {errorInfra && (
+              <div role="alert" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap', marginTop: 'var(--s2)' }}>
+                <span style={{ fontSize: '12px', color: 'var(--sem-error)' }}>{t('registraractivoform.infraestructuras_no_cargadas')}</span>
+                <Button type="button" variant="secondary" size="sm" onClick={() => cargarInfraestructuras(idFinca)}>
+                  {t('registraractivoform.reintentar')}
+                </Button>
+              </div>
+            )}
             {sinInfraCompatibles && puedeCrearAreas && (
               <Link to="/configuracion" style={{ color: 'var(--brand-600)', fontWeight: 600, fontSize: 'var(--fs-label-md)' }}>
                 {t('registraractivoform.ir_a_crear_area')}
@@ -643,7 +681,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
         <Button type="button" variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('registraractivoform.cancelar')}</Button>
-        <Button type="submit" variant="primary" size="md" loading={saving} disabled={especieSinDensidad || estadoParametros !== 'listo'}>{t('registraractivoform.registrar_activo')}</Button>
+        <Button type="submit" variant="primary" size="md" loading={saving} disabled={especieSinDensidad || estadoParametros !== 'listo' || cargando || errorCatalogo}>{t('registraractivoform.registrar_activo')}</Button>
       </div>
     </form>
   );
