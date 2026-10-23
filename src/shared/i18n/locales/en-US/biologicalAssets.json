@@ -5,7 +5,8 @@
     "el_identificador_de_la_ruta_no_es_valido": "The identifier in the URL is not valid.",
     "no_se_pudo_cargar_el_activo": "The asset could not be loaded",
     "secciones_del_activo": "Asset sections",
-    "volver_a_la_lista": "Back to the list"
+    "volver_a_la_lista": "Back to the list",
+    "advertencia_edad_titulo": "Asset registered with an age warning"
   },
   "activosfiltros": {
     "buscar": "Search",
@@ -442,7 +443,6 @@
     "la_cantidad_inicial_es_obligatoria_para": "The initial quantity is required for batches.",
     "la_especie_es_obligatoria": "The species is required.",
     "la_fecha_de_inicio_es_obligatoria": "The start date is required.",
-    "la_fecha_de_nacimiento_es_obligatoria": "The date of birth is required.",
     "la_infraestructura_es_obligatoria": "The infrastructure is required.",
     "la_raza_es_obligatoria": "The breed is required.",
     "macho": "Male",
@@ -466,16 +466,18 @@
     "cargando": "Loading…",
     "sin_fincas": "You have no farms assigned. Ask the administrator to assign one.",
     "sin_infraestructuras_compatibles": "This farm has no active areas for that species.",
-    "areas_de_otra_especie": "This farm's areas are for another species ({{otras}}), not for {{especie}}.",
-    "area_de_otra_especie": "{{area}} is an area for {{especie}}. Choose one compatible with the asset's species.",
+    "areas_de_otra_especie": "This farm's areas host species of another management group ({{otras}}), which do not accept {{especie}}.",
+    "area_de_otra_especie": "{{area}} hosts species of another management group ({{especie}}). Choose an area of the same group as the asset's species.",
     "contacta_administrador_area": "Contact an Administrator to create the area for this species.",
     "ir_a_crear_area": "Create area in Configuration",
-    "lote_sin_densidad_titulo": "This species cannot register batches yet",
-    "lote_sin_densidad_detalle": "{{especie}} is missing its maximum density. Ask the administrator, or register an individual animal.",
+    "lote_sin_densidad_titulo": "This species cannot register assets yet",
+    "lote_sin_densidad_detalle": "{{especie}} is missing its maximum density (ind/m²), used to compute the area's capacity. Ask the administrator.",
     "especie_hint": "Type the species name or ID.",
     "finca_hint": "Optional: filters the suggested infrastructures.",
     "infraestructura_hint": "Type the name or ID. Choose a farm to see suggestions.",
-    "opcion_no_valida": "Choose an option from the list or type the ID."
+    "opcion_no_valida": "Choose an option from the list or type the ID.",
+    "fecha_nacimiento_hint": "Optional. If the age reaches the species' life expectancy, the asset is still registered and you will see a warning.",
+    "capacidad_area": "capacity {{capacidad}}"
   },
   "registraractivopage": {
     "alta_de_un_ejemplar_individual_o_de_un_lote": "Register a single animal or a population batch",
@@ -529,7 +531,7 @@
     "cancelar": "Cancel",
     "confirma_la_transferencia": "Confirm the transfer",
     "confirmar_transferencia": "Confirm transfer",
-    "criterio_destinos": "Only active facilities on the same farm, compatible with the species and with room for this asset are listed.",
+    "criterio_destinos": "Only active areas on the same farm that host or accept the species' management group and have room for this asset are listed (capacity uses the lowest density of its species, including the asset's).",
     "describe_el_motivo": "Describe the reason…",
     "destino": "Destination",
     "el_motivo_es_obligatorio": "A reason is required.",
@@ -547,6 +549,7 @@
     "sin_infraestructura_de_origen": "No source infrastructure",
     "transferencia_interna": "Internal transfer",
     "transferir": "Transfer",
-    "volver": "Back"
+    "volver": "Back",
+    "libres": "free: {{libres}}"
   }
 }

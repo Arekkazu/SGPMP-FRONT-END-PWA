@@ -5,7 +5,8 @@
     "el_identificador_de_la_ruta_no_es_valido": "El identificador de la ruta no es válido.",
     "no_se_pudo_cargar_el_activo": "No se pudo cargar el activo",
     "secciones_del_activo": "Secciones del activo",
-    "volver_a_la_lista": "Volver a la lista"
+    "volver_a_la_lista": "Volver a la lista",
+    "advertencia_edad_titulo": "Activo registrado con una advertencia de edad"
   },
   "activosfiltros": {
     "buscar": "Buscar",
@@ -442,7 +443,6 @@
     "la_cantidad_inicial_es_obligatoria_para": "La cantidad inicial es obligatoria para lotes.",
     "la_especie_es_obligatoria": "La especie es obligatoria.",
     "la_fecha_de_inicio_es_obligatoria": "La fecha de inicio es obligatoria.",
-    "la_fecha_de_nacimiento_es_obligatoria": "La fecha de nacimiento es obligatoria.",
     "la_infraestructura_es_obligatoria": "La infraestructura es obligatoria.",
     "la_raza_es_obligatoria": "La raza es obligatoria.",
     "macho": "Macho",
@@ -466,16 +466,18 @@
     "cargando": "Cargando…",
     "sin_fincas": "No tienes fincas asignadas. Pídele al administrador que te asigne una.",
     "sin_infraestructuras_compatibles": "Esta finca no tiene áreas activas para esa especie.",
-    "areas_de_otra_especie": "Las áreas de esta finca son para otra especie ({{otras}}), no para {{especie}}.",
-    "area_de_otra_especie": "{{area}} es un área para {{especie}}. Elige una compatible con la especie del activo.",
+    "areas_de_otra_especie": "Las áreas de esta finca alojan especies de otro grupo de manejo ({{otras}}), que no admiten a {{especie}}.",
+    "area_de_otra_especie": "{{area}} aloja especies de otro grupo de manejo ({{especie}}). Elige un área del mismo grupo que la especie del activo.",
     "contacta_administrador_area": "Contacta a un Administrador para que cree el área para esta especie.",
     "ir_a_crear_area": "Crear área en Configuración",
-    "lote_sin_densidad_titulo": "Esta especie todavía no permite registrar lotes",
-    "lote_sin_densidad_detalle": "A {{especie}} le falta configurar la densidad máxima. Pídeselo al administrador, o registra un animal individual.",
+    "lote_sin_densidad_titulo": "Esta especie todavía no permite registrar activos",
+    "lote_sin_densidad_detalle": "A {{especie}} le falta configurar la densidad máxima (ind/m²), con la que se calcula la capacidad del área. Pídeselo al administrador.",
     "especie_hint": "Escribe el nombre o el ID de la especie.",
     "finca_hint": "Opcional: filtra las infraestructuras sugeridas.",
     "infraestructura_hint": "Escribe el nombre o el ID. Elige una finca para ver sugerencias.",
-    "opcion_no_valida": "Elige una opción de la lista o escribe el ID."
+    "opcion_no_valida": "Elige una opción de la lista o escribe el ID.",
+    "fecha_nacimiento_hint": "Opcional. Si la edad alcanza la esperanza de vida de la especie, el activo se registra igual y verás un aviso.",
+    "capacidad_area": "capacidad {{capacidad}}"
   },
   "registraractivopage": {
     "alta_de_un_ejemplar_individual_o_de_un_lote": "Alta de un ejemplar individual o de un lote poblacional",
@@ -529,7 +531,7 @@
     "cancelar": "Cancelar",
     "confirma_la_transferencia": "Confirma la transferencia",
     "confirmar_transferencia": "Confirmar transferencia",
-    "criterio_destinos": "Solo se listan infraestructuras activas de la misma finca, compatibles con la especie y con cupo para este activo.",
+    "criterio_destinos": "Solo se listan áreas activas de la misma finca, que alojan o aceptan el grupo de manejo de la especie y con cupo para este activo (la capacidad usa la densidad más baja de sus especies, incluida la del activo).",
     "describe_el_motivo": "Describe el motivo…",
     "destino": "Destino",
     "el_motivo_es_obligatorio": "El motivo es obligatorio.",
@@ -547,6 +549,7 @@
     "sin_infraestructura_de_origen": "Sin infraestructura de origen",
     "transferencia_interna": "Transferencia interna",
     "transferir": "Transferir",
-    "volver": "Volver"
+    "volver": "Volver",
+    "libres": "libres: {{libres}}"
   }
 }
