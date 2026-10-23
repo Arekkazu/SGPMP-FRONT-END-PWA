@@ -1,8 +1,11 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | M05 RF-74..81: módulo de suministros (entrada en el menú) |
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Shield, ClipboardList,
-  User, LogOut, Lock, Settings, Sprout, Activity, BrainCircuit
+  User, LogOut, Lock, Settings, Sprout, Activity, BrainCircuit, Package
 } from 'lucide-react';
 import { useT } from '../i18n/useT';
 import { useAuth } from '../auth/useAuth';
@@ -25,6 +28,8 @@ const NAV_ITEMS: NavItem[] = [
   { claveLabel: 'modulos.activos_biologicos', path: '/activos-biologicos', icon: <Sprout size={16} aria-hidden />, requirePermission: [29, 2] },
   { claveLabel: 'modulos.telemetria', path: '/telemetria', icon: <Activity size={16} aria-hidden />, requirePermission: [33, 2] },
   { claveLabel: 'modulos.prediccion', path: '/prediccion', icon: <BrainCircuit size={16} aria-hidden />, requirePermission: [18, 2] },
+  // M05: historial de suministros (52) es el recurso que comparten todos los roles del módulo.
+  { claveLabel: 'modulos.suministros', path: '/suministros', icon: <Package size={16} aria-hidden />, requirePermission: [52, 2] },
   { claveLabel: 'modulos.usuarios', path: '/usuarios', icon: <Users size={16} aria-hidden />, requirePermission: [1, 2] },
   { claveLabel: 'modulos.roles', path: '/roles', icon: <Shield size={16} aria-hidden />, requirePermission: [2, 2] },
   { claveLabel: 'modulos.auditoria', path: '/auditoria', icon: <ClipboardList size={16} aria-hidden />, requirePermission: [6, 2] },
