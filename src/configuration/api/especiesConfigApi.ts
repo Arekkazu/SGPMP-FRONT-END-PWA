@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-20 | Arekkazu | FE-09 RF-17: PATCH es_critica de la variable ambiental (RFC-016) |
 import { http } from '../../shared/api/http';
 import type {
   CicloBiologicoResponse, RegistrarCicloDTO, EditarCicloDTO,
@@ -135,6 +138,11 @@ export const variablesAmbientalesApi = {
       '/configuracion/variables-ambientales'
     );
     return res.data.items;
+  },
+  /** RFC-016 B.7: solo el Administrador (U sobre umbrales_ambientales). */
+  async marcarCritica(id: number, es_critica: boolean): Promise<VariableAmbientalCatalogo> {
+    const res = await http.patch<VariableAmbientalCatalogo>(`/configuracion/variables-ambientales/${id}`, { es_critica });
+    return res.data;
   },
 };
 
