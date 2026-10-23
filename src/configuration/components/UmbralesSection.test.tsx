@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | FE-09 RF-17: el mock incluye usePermissionPorNombre |
 /**
  * RF-17 — validación cruzada de umbrales ambientales (#1667).
  *
@@ -14,7 +17,7 @@ import userEvent from '@testing-library/user-event';
 import { UmbralesSection } from './UmbralesSection';
 import { umbralesApi, variablesAmbientalesApi } from '../api/especiesConfigApi';
 
-vi.mock('../../shared/rbac/usePermission', () => ({ usePermission: () => true }));
+vi.mock('../../shared/rbac/usePermission', () => ({ usePermission: () => true, usePermissionPorNombre: () => true }));
 vi.mock('../../shared/hooks/useOnlineStatus', () => ({ useOnlineStatus: () => true }));
 
 vi.mock('../api/especiesConfigApi', () => ({

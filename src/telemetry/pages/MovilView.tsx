@@ -1,3 +1,7 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: aplica permisos y transiciones en móvil |
+// | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Radio, BellRing, Smartphone, BatteryMedium, SignalHigh } from 'lucide-react';
@@ -6,14 +10,17 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useMonitoreo } from '../hooks/useMonitoreo';
+import { useAccionesAlerta } from '../hooks/useAccionesAlerta';
+import { useAlertaDetalle } from '../hooks/useAlertaDetalle';
+import { accionesAlerta } from '../lib/accionesAlerta';
 import { useAlertas } from '../hooks/useAlertas';
-import { SemaforoPill } from '../components/SemaforoPill';
+import { EstadoSensorPills } from '../components/EstadoLecturaPill';
 import { SeveridadBadge } from '../components/SeveridadBadge';
 import { EstadoAlertaPill } from '../components/EstadoAlertaPill';
 import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { horaCaptura } from '../lib/sensorEscala';
-import { RECURSO_MONITOREO, RECURSO_ALERTAS, ACCION_R, ACCION_U } from '../rbac';
+import { RECURSO_MONITOREO, RECURSO_ALERTAS, ACCION_R } from '../rbac';
 import type { AlertaSchema, NuevoEstadoAlerta } from '../types';
 
 type Tab = 'monitoreo' | 'alertas';
@@ -22,11 +29,12 @@ export function MovilView() {
   const { t } = useT('telemetry');
   const puedeMonitoreo = usePermission(RECURSO_MONITOREO, ACCION_R);
   const puedeAlertas = usePermission(RECURSO_ALERTAS, ACCION_R);
-  const puedeGestionar = usePermission(RECURSO_ALERTAS, ACCION_U);
+  const permisosAcciones = useAccionesAlerta();
   const online = useOnlineStatus();
 
   const monitoreo = useMonitoreo();
   const alertas = useAlertas();
+  const detalleHook = useAlertaDetalle();
   const [tab, setTab] = useState<Tab>(puedeMonitoreo ? 'monitoreo' : 'alertas');
   const [sel, setSel] = useState<AlertaSchema | null>(null);
   const [accion, setAccion] = useState<NuevoEstadoAlerta | null>(null);
@@ -34,8 +42,21 @@ export function MovilView() {
   useEffect(() => { if (puedeMonitoreo) monitoreo.cargar(); }, [puedeMonitoreo]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (puedeAlertas) alertas.cargar({ estado: 'ACTIVA', por_pagina: 50 }); }, [puedeAlertas]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const idSeleccionada = sel?.id_alerta;
+  useEffect(() => {
+    if (alertas.saveError?.status === 422 && idSeleccionada != null) {
+      void detalleHook.cargar(idSeleccionada, true).then((actual) => { if (actual) setSel(actual); });
+    }
+  }, [alertas.saveError, idSeleccionada, detalleHook.cargar]);
+
+  const elegirAccion = (a: AlertaSchema, estado: NuevoEstadoAlerta) => {
+    if (!online || alertas.saving || !accionesAlerta(a.estado_alerta, permisosAcciones).includes(estado)) return;
+    detalleHook.limpiar(); alertas.limpiarSaveError(); setSel(a); setAccion(estado);
+  };
+
   const confirmar = async (dto: Parameters<typeof alertas.cambiarEstado>[1]) => {
-    if (!sel) return;
+    if (!sel || !online || alertas.saving || detalleHook.loading
+      || !accionesAlerta(sel.estado_alerta, permisosAcciones).includes(dto.nuevo_estado)) return;
     const ok = await alertas.cambiarEstado(sel.id_alerta, dto);
     if (ok) { setAccion(null); setSel(null); alertas.cargar({ estado: 'ACTIVA', por_pagina: 50 }); }
   };
@@ -97,7 +118,7 @@ export function MovilView() {
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {s.ultimo_valor ?? '—'}<span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: 2 }}>{s.ultima_unidad}</span>
                   </div>
-                  <SemaforoPill estado={s.estado_semaforo} />
+                  <EstadoSensorPills sensor={s} />
                 </div>
               </div>
             ))}
@@ -119,13 +140,13 @@ export function MovilView() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'var(--s3)', gap: 'var(--s2)', flexWrap: 'wrap' }}>
                   <EstadoAlertaPill estado={a.estado_alerta} />
-                  {puedeGestionar && (
-                    <div style={{ display: 'flex', gap: 'var(--s1)' }}>
-                      <Button variant="secondary" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('EN_ATENCION'); }}>{t('movilview.tomar')}</Button>
-                      <Button variant="primary" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('RESUELTA'); }}>{t('movilview.resolver')}</Button>
-                      <Button variant="danger" size="sm" disabled={!online} onClick={() => { setSel(a); setAccion('DESCARTADA'); }}>{t('movilview.descartar')}</Button>
-                    </div>
-                  )}
+                  <div style={{ display: 'flex', gap: 'var(--s1)' }}>
+                    {accionesAlerta(a.estado_alerta, permisosAcciones).map((estado) => (
+                      <Button key={estado} variant={estado === 'DESCARTADA' ? 'danger' : estado === 'RESUELTA' ? 'primary' : 'secondary'} size="sm" disabled={!online || alertas.saving} onClick={() => elegirAccion(a, estado)}>
+                        {t(estado === 'DESCARTADA' ? 'movilview.descartar' : estado === 'RESUELTA' ? 'movilview.resolver' : 'movilview.tomar')}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -135,7 +156,7 @@ export function MovilView() {
       </div>
 
       {accion && sel && (
-        <CambiarEstadoAlertaModal alerta={sel} estado={accion} saving={alertas.saving} saveError={alertas.saveError} onConfirm={confirmar} onClose={() => setAccion(null)} />
+        <CambiarEstadoAlertaModal alerta={sel} estado={accion} saving={alertas.saving} autorizada={online && !detalleHook.loading && accionesAlerta(sel.estado_alerta, permisosAcciones).includes(accion)} saveError={alertas.saveError} onConfirm={confirmar} onClose={() => { detalleHook.limpiar(); setAccion(null); }} />
       )}
     </div>
   );

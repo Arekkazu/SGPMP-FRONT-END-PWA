@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | RF-29: código con datos variables en es-CO y en-US |
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { AxiosError } from 'axios';
@@ -120,6 +123,23 @@ describe('mapToApiError', () => {
     );
     expect(err.code).toBe('IDIOMA_NO_DISPONIBLE');
     expect(err.message).toContain('Language unavailable');
+    await i18n.changeLanguage('es-CO');
+  });
+
+  it('en es-CO conserva los datos del mensaje del backend y en en-US lo traduce (RFC-012)', async () => {
+    const respuesta = {
+      error_code: 'CAPACIDAD_EXCEDIDA',
+      message: "Capacidad excedida: la carga del área 'Estanque 3' superaría su capacidad efectiva (80 individuos).",
+      fields: [{ field: 'id_infraestructura', message: "Capacidad excedida: la carga del área 'Estanque 3' superaría su capacidad efectiva (80 individuos)." }],
+    };
+    await i18n.changeLanguage('es-CO');
+    const es = mapToApiError(axiosError(422, respuesta));
+    expect(es.message).toBe(respuesta.message);
+    expect(es.fields?.[0].message).toBe(respuesta.message);
+    await i18n.changeLanguage('en-US');
+    const en = mapToApiError(axiosError(422, respuesta));
+    expect(en.message).toContain('Capacity exceeded');
+    expect(en.fields?.[0].message).toBe(en.message);
     await i18n.changeLanguage('es-CO');
   });
 

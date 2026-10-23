@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -120,8 +123,11 @@ export function TransferenciaWizard({ idActivo, origenId, origenNombre, onClose,
             </option>
             {disponibles.map((d) => (
               <option key={d.id_infraestructura} value={d.id_infraestructura}>
+                {/* RFC-012 (FE-07): el backend ya filtra por grupo de manejo y capacidad efectiva
+                    (MIN densidad, incluida la del activo); aquí se muestra el cupo derivado. */}
                 {d.nombre} · {d.tipo}{d.capacidad_maxima != null
-                  ? ` (${t('transferenciawizard.ocupacion')}: ${d.ocupacion_actual ?? '?'}/${d.capacidad_maxima})`
+                  ? ` (${t('transferenciawizard.ocupacion')}: ${d.ocupacion_actual ?? '?'}/${d.capacidad_maxima}`
+                    + `${d.ocupacion_actual != null ? ` · ${t('transferenciawizard.libres', { libres: Math.max(0, d.capacidad_maxima - d.ocupacion_actual) })}` : ''})`
                   : ''}
               </option>
             ))}

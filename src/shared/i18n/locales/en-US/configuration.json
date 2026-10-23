@@ -339,7 +339,16 @@
       "ACUICULTURA": "Aquaculture",
       "ESPECIES_MEDIANAS": "Medium-sized species",
       "ESPECIES_GRANDES": "Large species"
-    }
+    },
+    "densidad": "Maximum density (ind/m²)",
+    "densidad_placeholder": "E.g. 80",
+    "densidad_ayuda": "Optional. Sets how many individuals fit per m² in an area; without it the capacity cannot be calculated.",
+    "densidad_dos_decimales": "Use a number with at most 2 decimals.",
+    "densidad_mayor_a_cero": "Density must be greater than zero.",
+    "esperanza_vida": "Life expectancy (days)",
+    "esperanza_vida_placeholder": "E.g. 730",
+    "esperanza_vida_ayuda": "Optional. Used to warn when an asset exceeds it at registration.",
+    "esperanza_vida_entera": "Use a whole number of days greater than zero."
   },
   "especiestable": {
     "no_hay_especies_registradas": "No species registered.",
@@ -490,7 +499,19 @@
     "reactivar": "Reactivate",
     "reactivar_area": "Reactivate area",
     "confirmar_reactivar": "Do you want to reactivate the area \"{{nombre}}\"? It will be available again in the operational modules.",
-    "la_especie_no_tiene_grupo_de_manejo": "The species has no management group; set it in Species to choose a model."
+    "la_especie_no_tiene_grupo_de_manejo": "The species has no management group; set it in Species to choose a model.",
+    "especies": "Species",
+    "especies_ayuda": "Select one or more species. All must belong to the same management group.",
+    "especies_del_grupo": "Only species of group {{grupo}} are shown, the group of the first one you selected.",
+    "nivel_criticidad": "Criticality level",
+    "nivel_criticidad_ayuda": "Under saturation, data from the most critical areas is processed first.",
+    "criticidad": {
+      "ALTA": "High",
+      "MEDIA": "Medium",
+      "BAJA": "Low"
+    },
+    "capacidad_estimada": "Area capacity: {{capacidad}} individuals (lowest density of its species × surface).",
+    "capacidad_sin_densidad": "Capacity not calculated: a selected species has no maximum density (ind/m²) set."
   },
   "metricassection": {
     "aplica_a_tipo_de_activo": "Applies to asset type",
@@ -847,7 +868,11 @@
     "umbrales_ambientales": "Environmental Thresholds",
     "variable_ambiental": "Environmental variable",
     "ya_existe_un_umbral_activo_para": "There is already an active threshold for this variable in this species.",
-    "ya_no_estara_vigente_para_las_alertas": "? It will no longer apply to alerts."
+    "ya_no_estara_vigente_para_las_alertas": "? It will no longer apply to alerts.",
+    "variables_criticas": "Critical variables",
+    "variables_criticas_ayuda": "Readings of a critical variable are processed first when ingestion is saturated, regardless of their alert level. Only the Administrator can change them.",
+    "critica_si": "Critical",
+    "critica_no": "Not critical"
   },
   "subpestanas": {
     "fincas": "Farms",

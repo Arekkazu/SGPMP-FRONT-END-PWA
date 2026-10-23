@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo                                                        |
+// |------------|--------------|--------------------------------------------------------------------|
+// | 2026-10-21 | destroyerban | #71 RF-41: el historial de eventos sirve también para individuales |
 import { http } from '../../shared/api/http';
 import type {
   HistorialEventosResponse,
@@ -16,7 +19,10 @@ import type {
 const BASE = '/activos-biologicos';
 
 export const eventosApi = {
-  /** Historial de eventos "en lote" — solo aplica a POBLACIONAL (backend lanza 409/BusinessRuleError si INDIVIDUAL). */
+  /**
+   * Historial de eventos del activo (RF-39), individual o lote. Sin permiso clínico
+   * el backend oculta el detalle sanitario pero conserva `sanitario.tipo` (#413).
+   */
   async listar(idActivo: number): Promise<HistorialEventosResponse> {
     const res = await http.get<HistorialEventosResponse>(`${BASE}/${idActivo}/eventos`);
     return res.data;

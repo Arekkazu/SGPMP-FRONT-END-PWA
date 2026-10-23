@@ -1,3 +1,7 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-21 | destroyerban | #73 RF-37: fase destino y confirmación no estándar en CambiarFase  |
+// | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
 // =====================================================================
 // Módulo 2 — Activos Biológicos · Tipos de dominio
 // Contrato: do-it/biological_assets/.../api_reference_m02_activos_biologicos.md
@@ -52,7 +56,8 @@ export interface DetalleIndividualResponse {
   id_detalle: number | null;
   raza: string;
   sexo: string;
-  fecha_nacimiento: string;      // datetime ISO
+  /** RFC-014: opcional (null si no se informó). */
+  fecha_nacimiento: string | null;      // datetime ISO
   peso_inicial: number | null;
   fecha_creacion: string | null;
 }
@@ -86,6 +91,8 @@ export interface ActivoBiologicoResponse {
   fecha_creacion: string | null;
   fecha_actualizacion: string | null;
   detalle_individual: DetalleIndividualResponse | null;
+  /** RFC-014: solo en la respuesta del registro (201); la edad alcanza la esperanza de vida. */
+  advertencia_edad?: string | null;
   detalle_poblacional: DetallePoblacionalResponse | null;
 }
 
@@ -208,12 +215,19 @@ export interface CambiarFaseDTO {
   id_ciclo_productiva: number;
   motivo_cambio?: string | null;
   fecha_inicio?: string | null;            // datetime
+  /** #73 (RF-37): fase del ciclo (`id_ciclos_productivo_biologico`); sin ella el backend avanza a la siguiente. */
+  fase_destino_id?: number | null;
+  /** Obligatorio en true si `fase_destino_id` no es la siguiente de la secuencia (salto o retroceso). */
+  confirmacion_no_estandar?: boolean;
 }
 
 export interface GestionFaseResponse {
   id_gestion_fases: number | null;
   id_activo_biologico: number;
   id_ciclo_productiva: number;
+  /** Fase del ciclo en la que está (o estuvo) el activo. */
+  id_ciclos_productivo_biologico?: number | null;
+  es_transicion_no_estandar?: boolean;
   nombre_ciclo: string;
   nombre_fase_actual: string | null;
   paso_actual: number | null;
@@ -473,6 +487,7 @@ export interface InfraestructuraDisponibleResponse {
   id_infraestructura: number;
   nombre: string;
   tipo: string;
+  /** RFC-012: derivada = floor(MIN densidad ind/m² × superficie) del destino. */
   capacidad_maxima: number | null;
   ocupacion_actual?: number | null;
   id_especie: number | null;
