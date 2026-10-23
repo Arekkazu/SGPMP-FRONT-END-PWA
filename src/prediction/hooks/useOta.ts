@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-70: totales por estado de toda la flota, no solo de la página |
 import { useState, useCallback } from 'react';
 import { otaApi } from '../api/otaApi';
 import { modelosApi } from '../api/modelosApi';
@@ -23,6 +26,8 @@ interface PaginacionState {
  * filtrando por versión, de `GET /prediccion/modelos/{id}/ota-status`. Los dos
  * respondían 500 hasta DEV-03 (auditoría M04 con valores fuera del enum).
  */
+export interface ResumenOta { total: number; completados: number; errores: number; pendientes: number }
+
 export function useOta() {
   const [despliegues, setDespliegues] = useState<DespliegueOtaResponse[]>([]);
   const [versiones, setVersiones] = useState<VersionModeloResponse[]>([]);
@@ -30,6 +35,7 @@ export function useOta() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [fromCache, setFromCache] = useState(false);
+  const [resumen, setResumen] = useState<ResumenOta | null>(null);
 
   const cargar = useCallback(async (filtros: ListarDesplieguesFiltros = {}, pagina = 1) => {
     setLoading(true);
@@ -121,5 +127,18 @@ export function useOta() {
     }
   }, []);
 
-  return { despliegues, paginacion, loading, error, fromCache, cargar, cargarPorVersion, versiones, cargarVersiones };
+  /** Totales por estado con `limit: 1`: el listado devuelve el total aunque traiga un solo ítem. */
+  const cargarResumen = useCallback(async () => {
+    try {
+      const total = async (estado?: string) => (await otaApi.listarDespliegues({ ...(estado ? { estado } : {}), limit: 1 })).total ?? 0;
+      const [todos, exitosos, sinCambios, fallidos, pendientes, enProceso] = await Promise.all(
+        [undefined, 'EXITOSO', 'SIN_CAMBIOS', 'FALLIDO', 'PENDIENTE', 'EN_PROCESO'].map(total),
+      );
+      setResumen({ total: todos, completados: exitosos + sinCambios, errores: fallidos, pendientes: pendientes + enProceso });
+    } catch {
+      setResumen(null);
+    }
+  }, []);
+
+  return { despliegues, paginacion, loading, error, fromCache, cargar, cargarPorVersion, versiones, cargarVersiones, resumen, cargarResumen };
 }
