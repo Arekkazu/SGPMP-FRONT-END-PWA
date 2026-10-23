@@ -10,7 +10,7 @@ import { Button } from '../../shared/design-system/Button';
 import { ModalShell } from './ModalShell';
 import type { ApiError } from '../../shared/api/errors';
 import type { ActivoBiologicoResponse, ActualizarActivoIndividualDTO } from '../types';
-import { diaLocal, hoyLocal, inicioDelDiaUtc } from '../../shared/lib/fecha';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   raza: string;
@@ -50,7 +50,7 @@ export function EditarActivoModal({ activo, saving, saveError, onClose, onGuarda
     defaultValues: {
       raza: det?.raza ?? '',
       sexo: det?.sexo ?? '',
-      fecha_nacimiento: diaLocal(det?.fecha_nacimiento),
+      fecha_nacimiento: det?.fecha_nacimiento ?? '',  // día calendario YYYY-MM-DD
       peso_inicial: det?.peso_inicial != null ? String(det.peso_inicial) : '',
     },
   });
@@ -60,7 +60,7 @@ export function EditarActivoModal({ activo, saving, saveError, onClose, onGuarda
     const dto: ActualizarActivoIndividualDTO = {};
     if (v.raza.trim()) dto.raza = v.raza.trim();
     if (v.sexo) dto.sexo = v.sexo;
-    if (v.fecha_nacimiento) dto.fecha_nacimiento = inicioDelDiaUtc(v.fecha_nacimiento);
+    if (v.fecha_nacimiento) dto.fecha_nacimiento = v.fecha_nacimiento;
     if (v.peso_inicial !== '') dto.peso_inicial = Number(v.peso_inicial);
 
     if (Object.keys(dto).length === 0) {

@@ -13,7 +13,7 @@ import { Button } from '../../shared/design-system/Button';
 import type { ApiError } from '../../shared/api/errors';
 import type { ParametroEspecie, RegistrarActivoDTO, TipoActivo, OrigenFinanciero } from '../types';
 import { activosApi } from '../api/activosApi';
-import { hoyLocal, inicioDelDiaUtc } from '../../shared/lib/fecha';
+import { hoyLocal } from '../../shared/lib/fecha';
 import { humanizar } from '../../shared/lib/etiquetas';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useCatalogoRegistro } from '../hooks/useCatalogoRegistro';
@@ -228,7 +228,7 @@ export function RegistrarActivoForm({ saving, saveError, onSubmit, onCancel }: P
       dto.identificador = v.identificador.trim();
       dto.raza = v.raza.trim();
       dto.sexo = v.sexo;
-      dto.fecha_nacimiento = v.fecha_nacimiento ? inicioDelDiaUtc(v.fecha_nacimiento) ?? null : null;
+      dto.fecha_nacimiento = v.fecha_nacimiento || null;  // día calendario YYYY-MM-DD
       dto.peso_inicial = v.peso_inicial ? Number(v.peso_inicial) : null;
     } else {
       dto.cantidad_inicial = Number(v.cantidad_inicial);
