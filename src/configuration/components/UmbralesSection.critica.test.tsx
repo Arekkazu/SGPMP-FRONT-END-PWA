@@ -1,9 +1,11 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-20 | Arekkazu | FE-09 RF-17: interruptor es_critica solo para quien puede editar umbrales |
+// | 2026-10-23 | Arekkazu | FE-09 RF-17: el interruptor sigue al recurso variables_ambientales_criticas |
 /**
  * FE-09 (RFC-016 B.7): el Administrador marca una variable ambiental como crítica.
- * Sin permiso de edición el estado se ve, pero no se puede cambiar.
+ * Sin U sobre `variables_ambientales_criticas` (DB-08) el estado se ve, pero no se puede
+ * cambiar, aunque se puedan editar umbrales (el Veterinario).
  */
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,9 +14,11 @@ import userEvent from '@testing-library/user-event';
 import { UmbralesSection } from './UmbralesSection';
 import { umbralesApi, variablesAmbientalesApi } from '../api/especiesConfigApi';
 
-const permisos = vi.hoisted(() => ({ editar: true }));
+const permisos = vi.hoisted(() => ({ editar: true, critica: true }));
 vi.mock('../../shared/rbac/usePermission', () => ({
   usePermission: (_recurso: number, accion: number) => (accion === 3 ? permisos.editar : true),
+  usePermissionPorNombre: (recurso: string, accion: number) =>
+    recurso === 'variables_ambientales_criticas' && accion === 3 && permisos.critica,
 }));
 vi.mock('../../shared/hooks/useOnlineStatus', () => ({ useOnlineStatus: () => true }));
 vi.mock('../api/especiesConfigApi', () => ({
@@ -30,10 +34,11 @@ beforeEach(() => {
   api.listar.mockResolvedValue([AMONIACO]);
   api.marcarCritica.mockReset();
   permisos.editar = true;
+  permisos.critica = true;
 });
 
 describe('UmbralesSection — variables críticas (RFC-016 B.7)', () => {
-  it('quien puede editar umbrales marca la variable como crítica', async () => {
+  it('el Administrador marca la variable como crítica', async () => {
     api.marcarCritica.mockResolvedValue({ ...AMONIACO, es_critica: true });
     render(<UmbralesSection idEspecie={1} />);
     const interruptor = await screen.findByRole('switch', { name: /Amoniaco/ });
@@ -45,8 +50,8 @@ describe('UmbralesSection — variables críticas (RFC-016 B.7)', () => {
     await waitFor(() => expect(screen.getByRole('switch', { name: /Amoniaco/ }).getAttribute('aria-checked')).toBe('true'));
   });
 
-  it('sin permiso de edición solo se ve el estado', async () => {
-    permisos.editar = false;
+  it('quien edita umbrales pero no tiene el recurso de críticas solo ve el estado', async () => {
+    permisos.critica = false;
     render(<UmbralesSection idEspecie={1} />);
     expect(await screen.findByText('No crítica')).toBeTruthy();
     expect(screen.queryByRole('switch')).toBeNull();

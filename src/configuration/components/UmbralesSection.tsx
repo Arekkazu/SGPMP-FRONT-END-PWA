@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-20 | Arekkazu | FE-09 RF-17: interruptor es_critica por variable, solo para el Administrador (RFC-016) |
+// | 2026-10-23 | Arekkazu | FE-09 RF-17: el interruptor depende de variables_ambientales_criticas (DB-08) |
 import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -13,7 +14,7 @@ import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
 import { Paginacion } from './Paginacion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
-import { usePermission } from '../../shared/rbac/usePermission';
+import { usePermission, usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useUmbralesAmbientales } from '../hooks/useUmbralesAmbientales';
 import { useVariablesAmbientales } from '../hooks/useVariablesAmbientales';
@@ -612,6 +613,8 @@ export function UmbralesSection({ idEspecie }: Props) {
   const puedeCrear  = usePermission(20, 1);
   const puedeEditar = usePermission(20, 3);
   const puedeDesact = usePermission(20, 4);
+  // RFC-016: es_critica es del Administrador (recurso propio de DB-08); el Veterinario edita umbrales, no esto.
+  const puedeMarcarCritica = usePermissionPorNombre('variables_ambientales_criticas', 3);
 
   const { umbrales, loading, saving, error, saveError, cargar, registrar, editar, desactivar, limpiarSaveError } = useUmbralesAmbientales();
   const { variables, cargar: cargarVariables, marcarCritica, guardando, errorCritica } = useVariablesAmbientales();
@@ -743,7 +746,7 @@ export function UmbralesSection({ idEspecie }: Props) {
 
       <VariablesCriticas
         variables={variables}
-        editable={puedeEditar && online}
+        editable={puedeMarcarCritica && online}
         guardando={guardando}
         error={errorCritica?.message ?? null}
         onCambiar={(id, esCritica) => { void marcarCritica(id, esCritica); }}

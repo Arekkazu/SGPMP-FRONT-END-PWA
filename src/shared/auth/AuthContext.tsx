@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | FE-09 RF-17: nombre_recurso en los permisos del usuario |
 import React, { createContext, useState, useCallback, useEffect } from 'react';
 import { tokenStore } from './tokenStore';
 import {
@@ -36,6 +39,8 @@ export interface UserInfo {
 export interface PermisoUsuario {
   id_recurso: number;
   id_accion: number;
+  /** Para recursos cuyo id cambia entre ambientes (sembrados por migraciones recientes). */
+  nombre_recurso?: string | null;
 }
 
 interface AuthContextValue {
