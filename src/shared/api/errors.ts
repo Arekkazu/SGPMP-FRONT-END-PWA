@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | RF-29: el mensaje del backend se interpola en los códigos con datos variables |
 import type { AxiosError } from 'axios';
 
 import i18n from '../i18n';
@@ -57,9 +60,13 @@ function traducirPorCodigo(code: string | undefined, mensajeBackend: string): st
   // avisos de clave faltante por algo que nunca va a estar ahi; el texto de esos
   // casos ya sale traducido de `mensajePorStatus`.
   if (!code || code.startsWith('HTTP_')) return mensajeBackend;
+  // `mensaje` permite que es-CO use "{{mensaje}}" en los códigos cuyo texto lleva los
+  // datos de la operación (área, cantidades, ids): en español se ve el del backend
+  // completo y en inglés la traducción del catálogo.
   return i18n.t(`errores.por_codigo.${code}`, {
     ns: 'common',
     defaultValue: mensajeBackend,
+    mensaje: mensajeBackend,
   });
 }
 
