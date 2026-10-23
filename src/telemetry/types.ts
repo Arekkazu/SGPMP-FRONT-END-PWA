@@ -1,3 +1,6 @@
+// | Fecha      | Nombre  | Que se hizo |
+// |------------|---------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: excluye vencimiento de acciones manuales |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -123,7 +126,7 @@ export interface ListarAlertasFiltros {
 }
 
 /** Nuevo estado permitido al actualizar una alerta (PATCH …/estado). */
-export type NuevoEstadoAlerta = 'EN_ATENCION' | 'RESUELTA' | 'DESCARTADA' | 'VENCIDA';
+export type NuevoEstadoAlerta = 'EN_ATENCION' | 'RESUELTA' | 'DESCARTADA';
 
 export interface ActualizarEstadoAlertaDTO {
   nuevo_estado: NuevoEstadoAlerta;

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre  | Que se hizo |
+// |------------|---------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: filtra acciones por permiso y estado |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -7,6 +10,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { SeveridadBadge } from './SeveridadBadge';
 import { EstadoAlertaPill } from './EstadoAlertaPill';
 import { OrigenPill } from './OrigenPill';
+import { accionesAlerta } from '../lib/accionesAlerta';
 import { horaCaptura } from '../lib/sensorEscala';
 import type { AlertaDetalleSchema, NuevoEstadoAlerta } from '../types';
 import type { ApiError } from '../../shared/api/errors';
@@ -16,6 +20,7 @@ interface Props {
   loading: boolean;
   error: ApiError | null;
   puedeGestionar: boolean;
+  puedeDescartar: boolean;
   online: boolean;
   onAccion: (estado: NuevoEstadoAlerta) => void;
   onClose: () => void;
@@ -30,23 +35,15 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function accionesDisponibles(estado: string): NuevoEstadoAlerta[] {
-  const up = estado.toUpperCase();
-  if (up === 'ACTIVA') return ['EN_ATENCION', 'RESUELTA', 'DESCARTADA'];
-  if (up === 'EN_ATENCION') return ['RESUELTA', 'DESCARTADA'];
-  return [];
-}
-
 const ACCION_META: Record<NuevoEstadoAlerta, { label: string; variant: 'primary' | 'secondary' | 'danger'; icon: React.ReactNode }> = {
-  EN_ATENCION: { label: 'Tomar en atención', variant: 'secondary', icon: <Clock size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
-  RESUELTA: { label: 'Resolver', variant: 'primary', icon: <CheckCircle2 size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
-  DESCARTADA: { label: 'Falso positivo', variant: 'danger', icon: <XCircle size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
-  VENCIDA: { label: 'Vencida', variant: 'secondary', icon: null },
+  EN_ATENCION: { label: 'tomar', variant: 'secondary', icon: <Clock size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
+  RESUELTA: { label: 'resolver', variant: 'primary', icon: <CheckCircle2 size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
+  DESCARTADA: { label: 'descartar', variant: 'danger', icon: <XCircle size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
 };
 
-export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, online, onAccion, onClose }: Props) {
+export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, puedeDescartar, online, onAccion, onClose }: Props) {
   const { t } = useT('telemetry');
-  const acciones = detalle ? accionesDisponibles(detalle.estado_alerta) : [];
+  const acciones = detalle ? accionesAlerta(detalle.estado_alerta, { puedeGestionar, puedeDescartar }) : [];
 
   return (
     <ModalShell
@@ -64,10 +61,10 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, on
                   variant={m.variant}
                   size="sm"
                   disabled={!puedeGestionar || !online}
-                  title={!puedeGestionar ? t('alertadetallemodal.sin_permiso') : !online ? t('alertadetallemodal.sin_conexion') : m.label}
+                  title={!puedeGestionar ? t('alertadetallemodal.sin_permiso') : !online ? t('alertadetallemodal.sin_conexion') : t(`fe12.${m.label}`)}
                   onClick={() => onAccion(a)}
                 >
-                  {m.icon}{m.label}
+                  {m.icon}{t(`fe12.${m.label}`)}
                 </Button>
               );
             })}

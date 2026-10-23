@@ -1,3 +1,6 @@
+// | Fecha      | Nombre  | Que se hizo |
+// |------------|---------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: conserva autorización técnica al reutilizar modales |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, Search, Wrench, AlertTriangle } from 'lucide-react';
@@ -176,8 +179,9 @@ export function DispositivosView() {
           loading={false}
           error={null}
           puedeGestionar={puedeGestionarTecnicas}
+          puedeDescartar={puedeGestionarTecnicas}
           online={online}
-          onAccion={setAccion}
+          onAccion={(estado) => { tecnicas.limpiarSaveError(); setAccion(estado); }}
           onClose={() => setSelId(null)}
         />
       )}
@@ -187,6 +191,7 @@ export function DispositivosView() {
           alerta={seleccionada}
           estado={accion}
           saving={tecnicas.saving}
+          autorizada={online && puedeGestionarTecnicas}
           saveError={tecnicas.saveError}
           onConfirm={confirmarCambio}
           onClose={() => setAccion(null)}
