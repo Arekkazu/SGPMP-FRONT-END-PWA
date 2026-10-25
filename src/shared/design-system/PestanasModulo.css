@@ -1,0 +1,74 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-10-24 | Arekkazu | USAB-M03-M04 T-07: fila desplazable sin barra visible y con degradado |  */
+
+.ds-pestanas-modulo {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 0 var(--page-pad);
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-card);
+  overflow-x: auto;
+  /* T-07: sin barra nativa con flechas; el degradado avisa que hay más. El
+     degradado cae sobre el padding derecho, así que no tapa nada cuando cabe. */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--page-pad)), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--page-pad)), transparent);
+}
+
+.ds-pestanas-modulo::-webkit-scrollbar {
+  display: none;
+}
+
+.ds-pestanas-modulo__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  flex-shrink: 0;
+  min-height: var(--s9);
+  padding: var(--s2) var(--s3);
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ds-pestanas-modulo__item:hover:not([aria-current='page']) {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
+.ds-pestanas-modulo__item:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* Activa: borde más grueso, negrita y color de acento a la vez (13.1, WCAG 1.4.1). */
+.ds-pestanas-modulo__item[aria-current='page'] {
+  border-bottom-color: var(--brand-500);
+  color: var(--brand-600);
+  font-weight: 700;
+}
+
+.ds-pestanas-modulo__separador {
+  flex-shrink: 0;
+  width: 1px;
+  height: 22px;
+  margin: 0 var(--s2);
+  background: var(--surface-border);
+}
+
+.ds-pestanas-modulo__grupo {
+  flex-shrink: 0;
+  font-size: var(--fs-label-sm);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wider);
+}
