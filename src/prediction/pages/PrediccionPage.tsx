@@ -1,14 +1,17 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-07/T-20: pestañas compartidas, ocultas sin permiso |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { Switch, Route, Redirect, useHistory, useLocation } from 'react-router-dom';
+import { Switch, Route, Redirect } from 'react-router-dom';
 import {
   Activity, ShieldAlert, Stethoscope, SlidersHorizontal, History, MessageSquareText,
-  Boxes, DownloadCloud, RefreshCw, ClipboardList, Lock,
+  Boxes, DownloadCloud, RefreshCw, ClipboardList,
 } from 'lucide-react';
-import { usePermission } from '../../shared/rbac/usePermission';
+import { PestanasModulo, type PestanaModulo } from '../../shared/design-system/PestanasModulo';
 import {
   RECURSO_PATOLOGIAS, RECURSO_MOTOR, RECURSO_HISTORIAL, RECURSO_MODELOS,
-  RECURSO_OTA, RECURSO_RETRO, RECURSO_AUDITORIA, ACCION_R,
+  RECURSO_OTA, RECURSO_RETRO, RECURSO_AUDITORIA, ACCION_R, ACCION_E,
 } from '../rbac';
 
 import { MonitorInferenciaView } from './MonitorInferenciaView';
@@ -22,94 +25,37 @@ import { DistribucionOtaView } from './DistribucionOtaView';
 import { ReentrenamientoView } from './ReentrenamientoView';
 import { AuditoriaView } from './AuditoriaView';
 
-interface Tab {
-  label: string;
-  path: string;
-  icon: React.ReactNode;
-  recurso?: number; // sin recurso → siempre visible (pantallas IoT/IA simuladas)
-}
-
-const TABS_PRINCIPAL: Tab[] = [
+const TABS_PRINCIPAL: PestanaModulo[] = [
   { label: 'Monitor', path: '/prediccion/monitor', icon: <Activity size={15} aria-hidden /> },
   { label: 'Contagio', path: '/prediccion/contagio', icon: <ShieldAlert size={15} aria-hidden /> },
-  { label: 'Patologías', path: '/prediccion/patologias', icon: <Stethoscope size={15} aria-hidden />, recurso: RECURSO_PATOLOGIAS },
-  { label: 'Motor', path: '/prediccion/motor', icon: <SlidersHorizontal size={15} aria-hidden />, recurso: RECURSO_MOTOR },
-  { label: 'Historial', path: '/prediccion/historial', icon: <History size={15} aria-hidden />, recurso: RECURSO_HISTORIAL },
-  { label: 'Retroalimentación', path: '/prediccion/retroalimentacion', icon: <MessageSquareText size={15} aria-hidden />, recurso: RECURSO_RETRO },
+  { label: 'Patologías', path: '/prediccion/patologias', icon: <Stethoscope size={15} aria-hidden />, permiso: [RECURSO_PATOLOGIAS, ACCION_R] },
+  { label: 'Motor', path: '/prediccion/motor', icon: <SlidersHorizontal size={15} aria-hidden />, permiso: [RECURSO_MOTOR, ACCION_R] },
+  { label: 'Historial', path: '/prediccion/historial', icon: <History size={15} aria-hidden />, permiso: [RECURSO_HISTORIAL, ACCION_R] },
+  { label: 'Retroalimentación', path: '/prediccion/retroalimentacion', icon: <MessageSquareText size={15} aria-hidden />, permiso: [RECURSO_RETRO, ACCION_R] },
 ];
 
-const TABS_MODELOS: Tab[] = [
-  { label: 'Modelos IA', path: '/prediccion/modelos', icon: <Boxes size={15} aria-hidden />, recurso: RECURSO_MODELOS },
-  { label: 'Distribución', path: '/prediccion/distribucion', icon: <DownloadCloud size={15} aria-hidden />, recurso: RECURSO_OTA },
-  { label: 'Reentrenamiento', path: '/prediccion/reentrenamiento', icon: <RefreshCw size={15} aria-hidden /> },
-  { label: 'Auditoría', path: '/prediccion/auditoria', icon: <ClipboardList size={15} aria-hidden />, recurso: RECURSO_AUDITORIA },
+const TABS_MODELOS: PestanaModulo[] = [
+  { label: 'Modelos IA', path: '/prediccion/modelos', icon: <Boxes size={15} aria-hidden />, permiso: [RECURSO_MODELOS, ACCION_R] },
+  { label: 'Distribución', path: '/prediccion/distribucion', icon: <DownloadCloud size={15} aria-hidden />, permiso: [RECURSO_OTA, ACCION_R] },
+  { label: 'Reentrenamiento', path: '/prediccion/reentrenamiento', icon: <RefreshCw size={15} aria-hidden />, permiso: [RECURSO_MODELOS, ACCION_E] },
+  { label: 'Auditoría', path: '/prediccion/auditoria', icon: <ClipboardList size={15} aria-hidden />, permiso: [RECURSO_AUDITORIA, ACCION_R] },
 ];
-
-function TabLink({ tab }: { tab: Tab }) {
-  const history = useHistory();
-  const { pathname } = useLocation();
-  const hasPermission = usePermission(tab.recurso ?? 0, ACCION_R);
-  const locked = tab.recurso ? !hasPermission : false;
-  const active = pathname.startsWith(tab.path);
-
-  return (
-    <button
-      type="button"
-      onClick={() => { if (!locked) history.push(tab.path); }}
-      aria-current={active ? 'page' : undefined}
-      aria-disabled={locked}
-      title={locked ? 'Sin permiso para esta sección' : tab.label}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 'var(--s1)',
-        padding: 'var(--s2) var(--s3)',
-        border: 'none',
-        borderBottom: `2px solid ${active ? 'var(--brand-500)' : 'transparent'}`,
-        background: 'transparent',
-        color: active ? 'var(--brand-600)' : locked ? 'var(--text-muted)' : 'var(--text-secondary)',
-        fontSize: '13px',
-        fontWeight: active ? 700 : 600,
-        cursor: locked ? 'not-allowed' : 'pointer',
-        opacity: locked ? 0.55 : 1,
-        whiteSpace: 'nowrap',
-        minHeight: 44,
-      }}
-    >
-      {tab.icon}
-      {tab.label}
-      {locked && <Lock size={11} aria-hidden />}
-    </button>
-  );
-}
 
 /**
  * Shell del módulo Predicción / IA (RF-64…RF-73).
- * Sub-navegación por tabs (gateadas por permiso) + rutas anidadas.
- * Las pantallas IoT/IA (Monitor, Contagio, Reentrenamiento) no tienen recurso
- * porque son simuladas (ver do-it/prediction/TASKS.md § Pendientes).
+ * Sub-navegación por tabs (solo las que el rol puede abrir) + rutas anidadas.
+ * Monitor y Contagio son simuladas y no tienen recurso propio. Reentrenamiento
+ * tampoco, pero RF-71 lo reserva a Admin/Vet: se gatea con E sobre versiones de
+ * modelo (43), el mismo permiso que activa una versión (M4-08).
  */
 export function PrediccionPage() {
   const { t } = useT('prediction');
   return (
     <div style={{ minHeight: '100%', background: 'var(--surface-bg)' }}>
-      <nav
-        aria-label={t('prediccionpage.secciones_de_prediccion')}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--s2)',
-          padding: '0 var(--s7)',
-          borderBottom: '1px solid var(--surface-border)',
-          background: 'var(--surface-card)',
-          overflowX: 'auto',
-        }}
-      >
-        {TABS_PRINCIPAL.map((tab) => <TabLink key={tab.path} tab={tab} />)}
-        <span style={{ width: 1, height: 22, background: 'var(--surface-border)', margin: '0 var(--s2)', flexShrink: 0 }} aria-hidden />
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>{t('prediccionpage.modelos_ia')}</span>
-        {TABS_MODELOS.map((tab) => <TabLink key={tab.path} tab={tab} />)}
-      </nav>
+      <PestanasModulo
+        ariaLabel={t('prediccionpage.secciones_de_prediccion')}
+        grupos={[{ pestanas: TABS_PRINCIPAL }, { titulo: t('prediccionpage.modelos_ia'), pestanas: TABS_MODELOS }]}
+      />
 
       <Switch>
         <Route exact path="/prediccion/monitor" component={MonitorInferenciaView} />

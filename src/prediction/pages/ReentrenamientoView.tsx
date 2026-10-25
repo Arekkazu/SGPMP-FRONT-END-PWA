@@ -2,13 +2,17 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-71: monitoreo de degradación, historial con versión en RF-69 y formulario v2 |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-08 RF-71: solo Admin/Vet (permiso E sobre versiones de modelo) |
 import React, { useState } from 'react';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { RefreshCw, Play, CheckCircle2, XCircle, Loader2, Cpu, Terminal, TrendingDown, Circle, Info } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
+import { usePermission } from '../../shared/rbac/usePermission';
 import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
+import { PermissionDenied } from '../components/PermissionDenied';
+import { RECURSO_MODELOS, ACCION_E } from '../rbac';
 import { EstadoModeloPill } from '../components/EstadoModeloPill';
 import { ModalShell } from '../components/ModalShell';
 import { ProgressBar } from '../components/ProgressBar';
@@ -181,6 +185,10 @@ export function ReentrenamientoView() {
   const [monitor, setMonitor] = useState<ProcesoReentrenamiento | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
 
+  // M4-08: RF-71 reserva el reentrenamiento a Admin/Vet. No tiene recurso propio;
+  // se usa E sobre versiones de modelo, el mismo que activa una versión.
+  const puedeReentrenar = usePermission(RECURSO_MODELOS, ACCION_E);
+
   const contar = (e: EstadoProceso) => PROCESOS_REENTRENAMIENTO.filter((p) => p.estado === e).length;
   const kpis: [string, number, string, React.ReactNode][] = [
     [t('reentrenamiento.kpi_ejecutando'), contar('EJECUTANDO'), 'var(--sem-info)', <Loader2 size={18} aria-hidden key="e" />],
@@ -188,6 +196,8 @@ export function ReentrenamientoView() {
     [t('reentrenamiento.kpi_fallidos'), contar('FALLIDO') + contar('INTERRUMPIDO'), 'var(--sem-error)', <XCircle size={18} aria-hidden key="f" />],
     [t('reentrenamiento.kpi_degradados'), DEGRADACION.filter((d) => d.degradado).length, 'var(--sem-warning)', <TrendingDown size={18} aria-hidden key="d" />],
   ];
+
+  if (!puedeReentrenar) return <PermissionDenied seccion="Reentrenamiento de modelos" />;
 
   return (
     <div style={{ minHeight: '100%' }}>
