@@ -60,16 +60,12 @@ describe('Sidebar — #132 marcado semántico y navegación móvil', () => {
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
 
-  it('un item sin permiso queda marcado aria-disabled y no dispara onNavigate', async () => {
+  it('un módulo sin permiso no aparece en el menú (M9-10)', () => {
     permisoConcedido = false;
-    const onNavigate = vi.fn();
-    renderSidebar({ onNavigate });
+    renderSidebar();
 
-    const item = screen.getByRole('link', { name: /usuarios/i });
-    expect(item).toHaveAttribute('aria-disabled', 'true');
-
-    await userEvent.click(item);
-
-    expect(onNavigate).not.toHaveBeenCalled();
+    expect(screen.queryByRole('link', { name: /usuarios/i })).not.toBeInTheDocument();
+    // Lo que no exige permiso sigue visible.
+    expect(screen.getByRole('link', { name: /dashboard|panel/i })).toBeInTheDocument();
   });
 });
