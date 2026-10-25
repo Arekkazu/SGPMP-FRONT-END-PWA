@@ -1,3 +1,12 @@
+## [1.4.0-rc.3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.2...v1.4.0-rc.3) (2026-10-25)
+
+### Bug Fixes
+
+* **m03-m04:** etiqueta DEMO discreta en las vistas con datos simulados (T-21) ([c61f192](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c61f192ad82d0e64789e89c84e7fe3844713b25a))
+* **m03-m04:** pestañas de modulo ocultas sin permiso y sin barra de scroll visible (T-07, T-20) ([08ca34c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/08ca34c857bd4f02424030c39c1ea84aecbc557b))
+* **rf71-prediction:** reentrenamiento solo para Administrador y Veterinario (M4-08) ([09dcf2a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/09dcf2a7acaa7fdba6c43d2f27a25c9f30e0c2ef))
+* **shared:** menu lateral sin modulos bloqueados y aviso unico de sin acceso (M9-10, T-20) ([663a5e0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/663a5e0f4cfb31ba2e605e75b987aef3ce01f839))
+
 ## [1.4.0-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.1...v1.4.0-rc.2) (2026-10-23)
 
 ### Bug Fixes
