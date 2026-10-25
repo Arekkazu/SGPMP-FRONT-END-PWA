@@ -1,6 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-11 RF-64: la fila base dice por qué no se edita |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { Eye, Pencil, Ban } from 'lucide-react';
+import { Eye, Pencil, Ban, Lock } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { EstadoActivoPill, TipoPatologiaPill } from './PatologiaPills';
 import { nombreEspecie, nombreVariable } from '../lib/catalogos';
@@ -78,26 +81,36 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
                   <Button variant="ghost" size="sm" onClick={() => onVer(p)} aria-label={`Ver ${p.nombre_patologia}`} title={t('patologiastable.ver_detalle')}>
                     <Eye size={16} aria-hidden />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={!puedeEditar || bloqueada}
-                    onClick={() => onEditar(p)}
-                    aria-label={`Editar ${p.nombre_patologia}`}
-                    title={bloqueada ? t('patologiastable.las_patologias_base_no_se_pueden_editar') : 'Editar'}
-                  >
-                    <Pencil size={16} aria-hidden />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={!puedeDesactivar || bloqueada || !p.es_activo}
-                    onClick={() => onDesactivar(p)}
-                    aria-label={`Inactivar ${p.nombre_patologia}`}
-                    title={bloqueada ? t('patologiastable.las_patologias_base_no_se_pueden_inactivar') : 'Inactivar'}
-                  >
-                    <Ban size={16} aria-hidden />
-                  </Button>
+                  {bloqueada ? (
+                    // M4-11: el motivo se lee en la fila. Un `title` en un botón deshabilitado
+                    // no aparece al pasar el cursor ni lo anuncia el lector de pantalla.
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', marginLeft: 'var(--s2)', fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      <Lock size={14} aria-hidden />{t('patologiastable.base_no_editable')}
+                    </span>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!puedeEditar}
+                        onClick={() => onEditar(p)}
+                        aria-label={`Editar ${p.nombre_patologia}`}
+                        title="Editar"
+                      >
+                        <Pencil size={16} aria-hidden />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!puedeDesactivar || !p.es_activo}
+                        onClick={() => onDesactivar(p)}
+                        aria-label={`Inactivar ${p.nombre_patologia}`}
+                        title="Inactivar"
+                      >
+                        <Ban size={16} aria-hidden />
+                      </Button>
+                    </>
+                  )}
                 </td>
               </tr>
             );

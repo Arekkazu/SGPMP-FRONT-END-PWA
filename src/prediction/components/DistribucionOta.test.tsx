@@ -3,6 +3,7 @@
 // | 2026-10-21 | Arekkazu     | PROTO-V2 RF-70: el formulario se recorre en 3 pasos |
 // | 2026-10-23 | destroyerban | FE-08 RF-70: la OTA lista versiones APROBADO          |
 // | 2026-10-23 | Arekkazu     | Integración RFC-012..016: FE-08 sobre el asistente en 3 pasos |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-05: "canary" se lee "Piloto" |
 /**
  * FE-01b (RF-70, D6): el Administrador lanza una distribución y ve, en cada nodo,
  * la versión y el estado de cada componente.
@@ -49,7 +50,7 @@ describe('DistribucionOtaFormModal — lanzar distribución en 3 pasos', () => {
     siguiente();
     fireEvent.click(screen.getByRole('checkbox', { name: /EDGE-01/ }));
     fireEvent.click(screen.getByRole('checkbox', { name: /EDGE-38/ }));
-    expect(screen.getByRole('checkbox', { name: /EDGE-01/ }).closest('label')?.textContent).toContain('Canary');
+    expect(screen.getByRole('checkbox', { name: /EDGE-01/ }).closest('label')?.textContent).toContain('Piloto');
     fireEvent.click(screen.getByText('Lanzar distribución'));
 
     expect(onLanzar).toHaveBeenCalledWith(expect.objectContaining({
@@ -148,7 +149,7 @@ describe('DistribucionOtaProgreso — estado por nodo y por componente', () => {
   it('muestra el avance de las fases y el estado de la distribución', () => {
     render(<DistribucionOtaProgreso distribucion={distribucion()} dispositivos={DISPOSITIVOS} versiones={VERSIONES} componentesPorNodo={{}} />);
     const fases = screen.getByRole('list', { name: 'Fases del rollout' });
-    expect(fases.textContent).toContain('Canary · completada');
+    expect(fases.textContent).toContain('Piloto · completada');
     expect(fases.textContent).toContain('Parcial · en curso');
     expect(fases.textContent).toContain('Total · pendiente');
     expect(screen.getByText('En curso')).toBeTruthy();

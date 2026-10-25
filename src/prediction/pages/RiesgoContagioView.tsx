@@ -1,7 +1,9 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-68: estado del motor, alertas, filtros y detalle con factores, reglas e historial |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-10 RF-68: pesos del cálculo en palabras y porcentaje |
 import React, { useMemo, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { ShieldAlert, BellRing, Info } from 'lucide-react';
 import { SubPestanas } from '../../shared/design-system/SubPestanas';
@@ -192,7 +194,14 @@ export function RiesgoContagioView() {
         <section aria-labelledby="ctg-motor" style={{ ...CARD, padding: 'var(--s5)', marginBottom: 'var(--s5)' }}>
           <h2 id="ctg-motor" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {t('contagio.motor')} <Pill tono="success">{t('contagio.operando')}</Pill>
-            <span style={{ ...MONO, fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }}>W<sub>fs</sub> {m.w_fs} · W<sub>fa</sub> {m.w_fa} · W<sub>fd</sub> {m.w_fd}</span>
+            {/* M4-10: los pesos en palabras y en porcentaje, no "W fs 0.5". */}
+            <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }} title={t('contagio.pesos_ayuda')}>
+              {t('contagio.pesos', {
+                fs: formatearNumero(m.w_fs, { style: 'percent' }),
+                fa: formatearNumero(m.w_fa, { style: 'percent' }),
+                fd: formatearNumero(m.w_fd, { style: 'percent' }),
+              })}
+            </span>
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s4)', marginTop: 'var(--s4)' }}>
             {motor.map(([label, valor]) => (

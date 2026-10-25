@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-70: KPIs con los totales reales de la flota y textos traducidos |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { DownloadCloud, RefreshCw, Plus, CheckCircle2, XCircle, Clock, Package } from 'lucide-react';
@@ -18,7 +19,7 @@ import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { INPUT, LABEL, FILTER_GRID } from '../components/tableStyles';
 import { RECURSO_OTA, ACCION_R, ACCION_E } from '../rbac';
-import { TIPOS_MODELO, TIPO_MODELO_LABEL, type ListarDesplieguesFiltros, type DespliegueOtaResponse, type CrearDistribucionOtaDTO } from '../types';
+import { TIPOS_MODELO, TIPO_MODELO_LABEL, type ListarDesplieguesFiltros, type DespliegueOtaResponse, type CrearDistribucionOtaDTO, etiquetaTipoModelo } from '../types';
 
 function Kpi({ icon, valor, etiqueta, sub, color }: { icon: React.ReactNode; valor: number | string; etiqueta: string; sub?: string; color: string }) {
   return (
@@ -144,7 +145,7 @@ export function DistribucionOtaView() {
                 <option value="">{t('distribucionotaview.todas')}</option>
                 {versiones.map((v) => (
                   <option key={v.id_version_modelo} value={v.id_version_modelo}>
-                    {`${v.nombre_version} · ${TIPO_MODELO_LABEL[v.tipo_modelo] ?? v.tipo_modelo}${v.componente ? ` · ${v.componente}` : ''}`}
+                    {`${v.nombre_version} · ${etiquetaTipoModelo(v.tipo_modelo)}${v.componente ? ` · ${v.componente}` : ''}`}
                   </option>
                 ))}
               </select>

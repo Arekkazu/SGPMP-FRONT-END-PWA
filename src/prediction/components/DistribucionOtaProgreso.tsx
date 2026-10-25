@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 import React from 'react';
 import { CheckCircle2, Clock, Loader2, OctagonX } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -9,11 +12,11 @@ import { COMPONENTE_COMPLETO, estadoDeFases, type EstadoFase } from '../lib/dist
 import {
   COMPONENTES,
   FASES_ROLLOUT,
-  TIPO_MODELO_LABEL,
   type DespliegueOtaResponse,
   type DispositivoObjetivoOta,
   type DistribucionOtaResponse,
   type VersionModeloResponse,
+  etiquetaTipoModelo,
 } from '../types';
 
 const FASE: Record<EstadoFase, { tono: Tono; icono: React.ReactNode }> = {
@@ -54,7 +57,7 @@ export function DistribucionOtaProgreso({ distribucion, componentesPorNodo, disp
             {t('distribucionprogreso.titulo', { id: distribucion.id_distribucion_ota })}
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 'var(--s1) 0 0' }}>
-            {nombreVersion(distribucion.id_version_modelo)} · {TIPO_MODELO_LABEL[distribucion.tipo_modelo] ?? distribucion.tipo_modelo}
+            {nombreVersion(distribucion.id_version_modelo)} · {etiquetaTipoModelo(distribucion.tipo_modelo)}
             {' · '}{distribucion.componente ?? t('distribucionprogreso.modelo_completo')}
           </p>
         </div>
