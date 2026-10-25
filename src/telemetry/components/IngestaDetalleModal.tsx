@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-53: detalle de lectura con fases, vector de visión y prioridad E15 |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional |
 import React from 'react';
 import { CheckCircle2, XCircle, Circle, Info } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -10,6 +11,7 @@ import { TipoDatoPill } from './TipoDatoPill';
 import { OrigenDatoPill } from './OrigenDatoPill';
 import { VectorComportamientoPanel } from './VectorComportamientoPanel';
 import { FASES_INGESTA, ESTADOS_PERSISTIDOS, type EstadoIngesta, type LecturaIngestaMock } from '../mocks/ingestaMock';
+import { valorConUnidad } from '../lib/sensorEscala';
 
 export const ESTADO_INGESTA_TONO: Record<EstadoIngesta, Tono> = {
   LECTURA_VALIDA: 'success', FUERA_DE_RANGO: 'warning', ERROR_CALIBRACION: 'warning', ERROR_DUPLICADO: 'neutral',
@@ -71,7 +73,7 @@ export function IngestaDetalleModal({ lectura: l, onClose }: Props) {
           <div className="ds-fg3" style={{ gap: 'var(--s4)' }}>
             <Campo rotulo={t('ingesta.valor_crudo')}>
               <span style={{ fontFamily: 'var(--font-mono)' }}>
-                {esVision ? t('ingesta.valor_vector') : l.valor != null ? `${l.valor} ${l.unidad}` : t('ingesta.no_disponible')}
+                {esVision ? t('ingesta.valor_vector') : l.valor != null ? valorConUnidad(l.valor, l.unidad) : t('ingesta.no_disponible')}
               </span>
             </Campo>
             <Campo rotulo={t('ingesta.valor_ajustado')}>

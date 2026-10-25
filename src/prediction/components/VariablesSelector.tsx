@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { CATALOGO_VARIABLES } from '../lib/catalogos';
@@ -53,14 +56,14 @@ export function VariablesSelector({ seleccionadas, onChange, error, disabled }: 
               }}
             >
               {v.nombre}
-              {v.unidad && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', opacity: 0.7 }}>{v.unidad}</span>}
+              {v.unidad && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)' }}>{v.unidad}</span>}
             </button>
           );
         })}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--s2)' }}>
         <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-          {seleccionadas.length} seleccionada(s) · se requieren entre 2 y 6
+          {t('variablesselector.seleccionadas', { count: seleccionadas.length, n: seleccionadas.length })}
         </span>
       </div>
       {error && (

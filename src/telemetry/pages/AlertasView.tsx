@@ -1,7 +1,9 @@
 // | Fecha      | Nombre  | Que se hizo |
 // |------------|---------|-------------|
 // | 2026-10-22 | Leandro | FE-12 RF-57: comparte permisos y recupera transiciones rechazadas |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { BellRing, Clock, TimerOff, CheckCircle2, RefreshCw } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -99,7 +101,7 @@ export function AlertasView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <BellRing size={20} aria-hidden />{t('alertasview.alertas_ambientales_y_sanitarias')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : `${paginacion.totalRegistros} alerta(s)`}
+            {loading ? 'Cargando…' : t('conteo.alertas', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
             {fromCache && ' · desde caché'}
           </p>
         </div>

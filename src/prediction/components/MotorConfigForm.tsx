@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: modo como tarjetas, pesos solo META, contrato del modelo y confirmaciones |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Save, Server, Cpu, Shuffle, Info } from 'lucide-react';
@@ -309,7 +310,7 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
             </>
           )}
         >
-          <p style={{ margin: '0 0 var(--s3)', fontSize: '14px', color: 'var(--text-primary)' }}>{t('motorconfigform.pendientes_texto', { n: nodosSinConfirmar.length })}</p>
+          <p style={{ margin: '0 0 var(--s3)', fontSize: '14px', color: 'var(--text-primary)' }}>{t('motorconfigform.pendientes_texto', { count: nodosSinConfirmar.length, n: nodosSinConfirmar.length })}</p>
           <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)' }}>{nodosSinConfirmar.join(' · ')}</p>
         </ModalShell>
       )}

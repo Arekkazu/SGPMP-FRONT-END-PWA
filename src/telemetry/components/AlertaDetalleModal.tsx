@@ -2,6 +2,7 @@
 // |------------|---------|-------------|
 // | 2026-10-22 | Leandro | FE-12 RF-57: filtra acciones por permiso y estado |
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional + T-19 códigos legibles |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -13,9 +14,10 @@ import { EstadoAlertaPill } from './EstadoAlertaPill';
 import { OrigenPill } from './OrigenPill';
 import { TipoAlertaTecnicaPill } from './TipoAlertaTecnicaPill';
 import { accionesAlerta } from '../lib/accionesAlerta';
-import { fechaHoraCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura, valorConUnidad } from '../lib/sensorEscala';
 import type { AlertaDetalleSchema, NuevoEstadoAlerta } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 interface Props {
   detalle: AlertaDetalleSchema | null;
@@ -49,7 +51,7 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, pu
 
   return (
     <ModalShell
-      title={detalle ? `Alerta #${detalle.id_alerta} · ${detalle.tipo_alerta}` : 'Detalle de alerta'}
+      title={detalle ? `Alerta #${detalle.id_alerta} · ${etiquetaCodigo(detalle.tipo_alerta)}` : 'Detalle de alerta'}
       onClose={onClose}
       maxWidth={560}
       footer={
@@ -93,7 +95,7 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, pu
           </div>
 
           <Fila label={t('alertadetallemodal.variable')}><TipoAlertaTecnicaPill tipo={detalle.tipo_variable} /></Fila>
-          <Fila label={t('alertadetallemodal.valor')}>{detalle.valor != null ? `${detalle.valor}${detalle.unidad ? ` ${detalle.unidad}` : ''}` : '—'}</Fila>
+          <Fila label={t('alertadetallemodal.valor')}>{valorConUnidad(detalle.valor, detalle.unidad)}</Fila>
           <Fila label={t('alertadetallemodal.generada')}>{fechaHoraCaptura(detalle.fecha_generacion)}</Fila>
           <Fila label={t('alertadetallemodal.evento')}>{fechaHoraCaptura(detalle.fecha_evento)}</Fila>
           {detalle.fecha_vencimiento && <Fila label={t('alertadetallemodal.vence')}>{fechaHoraCaptura(detalle.fecha_vencimiento)}</Fila>}

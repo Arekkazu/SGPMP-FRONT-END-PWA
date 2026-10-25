@@ -1,7 +1,9 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores + T-19 códigos legibles |
 import React from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT, useNombreModulo } from '../../shared/i18n/useT';
 import { Fingerprint } from 'lucide-react';
 import { ModalShell } from './ModalShell';
@@ -9,6 +11,7 @@ import { SeveridadLogPill } from './SeveridadLogPill';
 import { Pill } from './Pill';
 import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { EventoAuditoriaIotSchema } from '../types';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 function Fila({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -24,11 +27,11 @@ export function EventoAuditoriaModal({ evento, onClose }: { evento: EventoAudito
   const nombreModulo = useNombreModulo();
   const detalle = evento.accion_detallada ? JSON.stringify(evento.accion_detallada, null, 2) : null;
   return (
-    <ModalShell title={`Evento de auditoría · ${evento.tipo_evento}`} onClose={onClose} maxWidth={600}>
+    <ModalShell title={`Evento de auditoría · ${etiquetaCodigo(evento.tipo_evento)}`} onClose={onClose} maxWidth={600}>
       <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center', marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>
         <SeveridadLogPill severidad={evento.severidad_log} />
         <Pill tono={evento.clasificacion_registro?.toUpperCase().includes('NIC') ? 'info' : 'neutral'}>
-          {evento.clasificacion_registro} · {evento.retencion_aplicable} año(s)
+          {evento.clasificacion_registro} · {t('conteo.anios', { count: evento.retencion_aplicable, n: formatearNumero(evento.retencion_aplicable) })}
         </Pill>
         {evento.registro_incompleto && <Pill tono="warning">{t('eventoauditoriamodal.registro_incompleto')}</Pill>}
       </div>
