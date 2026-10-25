@@ -1,13 +1,14 @@
 // | Fecha      | Nombre  | Que se hizo |
 // |------------|---------|-------------|
 // | 2026-10-22 | Leandro | FE-12 RF-57: bloquea envíos simultáneos y conserva rechazos |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-08 RF-57: resueltas hoy por fecha de resolución |
 import { useState, useCallback, useRef } from 'react';
 import { alertasApi } from '../api/alertasApi';
 import { cacheAlertas, getAlertasCache } from '../db/telemetriaTables';
 import type { AlertaSchema, ListarAlertasFiltros, ActualizarEstadoAlertaDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { errorEstadoAlerta } from '../lib/errorEstadoAlerta';
-import { hoyLocal } from '../../shared/lib/fecha';
+import { hoyLocal, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 interface PaginacionState {
   pagina: number;
@@ -127,7 +128,9 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
         listar({ estado: 'ACTIVA', por_pagina: 1 }),
         listar({ estado: 'EN_ATENCION', por_pagina: 1 }),
         listar({ estado: 'VENCIDA', por_pagina: 1 }),
-        listar({ estado: 'RESUELTA', fecha_desde: hoyLocal(), por_pagina: 1 }),
+        // M3-08: "hoy" por la fecha de resolución y en el día del usuario; antes filtraba
+        // por fecha de generación y una alerta de ayer resuelta hoy no contaba.
+        listar({ estado: 'RESUELTA', fecha_resolucion_desde: inicioDelDiaUtc(hoyLocal()), por_pagina: 1 }),
       ]);
       setResumen({
         activas: act.total ?? 0,

@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-68: estado del motor, alertas, filtros y detalle con factores, reglas e historial |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-10 RF-68: pesos del cálculo en palabras y porcentaje |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 import React, { useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -93,7 +94,7 @@ function LoteDetalle({ lote, onClose }: { lote: LoteContagio; onClose: () => voi
         )}
 
         {tab === 'reglas' && (
-          <div style={TABLE_WRAP}>
+          <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de factores del lote">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <caption className="sr-only">{t('contagio.reglas_caption')}</caption>
               <thead><tr style={THEAD_ROW}>{[t('contagio.col_regla'), t('contagio.col_valor'), t('contagio.col_resultado'), t('contagio.col_origen')].map((h) => <th key={h} style={TH}>{h}</th>)}</tr></thead>
@@ -121,7 +122,7 @@ function LoteDetalle({ lote, onClose }: { lote: LoteContagio; onClose: () => voi
               referencias={[{ y: 65, label: t('contagio.nivel_ALTO'), color: 'var(--sem-error)' }, { y: 40, label: t('contagio.nivel_MEDIO'), color: 'var(--sem-warning)' }]}
               height={200}
             />
-            <div style={TABLE_WRAP}>
+            <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Historial del lote">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <thead>
                   <tr style={THEAD_ROW}>

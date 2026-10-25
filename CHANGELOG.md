@@ -1,3 +1,18 @@
+## [1.4.0-rc.5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.4...v1.4.0-rc.5) (2026-10-25)
+
+### Features
+
+* **rf60-telemetry:** lista de dispositivos de la finca con estado, bateria, senal y ultimo contacto (M3-10) ([e35e255](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e35e2552ac8e8ce58269729730b171326159e056)), closes [#703](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/703)
+
+### Bug Fixes
+
+* **m03-m04:** tablas con scroll horizontal enfocables y con nombre (a11y 2.1.1, 1.3.1) ([ec6a1f0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ec6a1f0a984f41d878d82dab073b770887379367))
+* **m04:** matriz de confusion con ejes y clases, y retroalimentacion sin UUID ni Ninguna al marcar Incorrecto (M4-03, M4-07) ([e81c9b4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e81c9b47d822a0172bc26c459b69ca9f6b5fb6a7))
+* **rf57-telemetry:** alertas con ubicacion, historial legible con autor y resueltas hoy por fecha de resolucion (M3-05, M3-06, M3-08) ([d2d8366](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d2d8366ca95a8a2b05041dc2f0b5956faeb933d0))
+* **rf59-telemetry:** historial con 7 dias por defecto, rangos rapidos que consultan y exportacion deshabilitada con motivo (M3-01, M3-13) ([e49d13e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e49d13e889f30bc70554ff34681ef7f9364a3313))
+* **rf61-telemetry:** resolver y corregir vinculacion eligen entre los activos de la infraestructura (M3-03) ([5400241](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5400241dca6f8886d61dd1db1af62c6225967407))
+* **rf65-prediction:** el motor solo ofrece versiones aprobadas o activas y la alerta critica va de 0,50 a 0,95 (M4-04) ([8f28514](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8f28514db343bee9cb9ba7d3dec26558eb573455))
+
 ## [1.4.0-rc.4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.3...v1.4.0-rc.4) (2026-10-25)
 
 ### Bug Fixes

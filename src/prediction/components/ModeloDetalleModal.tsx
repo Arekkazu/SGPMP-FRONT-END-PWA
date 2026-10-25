@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: requisitos para activar, estado OTA, transiciones y notas inmutables |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-07 RF-69: matriz de confusión con ejes Real/Predicho y clases |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Rocket, Save, CheckCircle2, XCircle, Info } from 'lucide-react';
@@ -121,10 +122,23 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
             <div>
               <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>{t('modelodetallemodal.matriz_de_confusion')}</h3>
               <div style={{ overflowX: 'auto' }}>
+                {/* M4-07: ejes y clases con nombre; antes era una cuadrícula de números sin contexto. */}
                 <table style={{ borderCollapse: 'collapse', fontSize: '12px', fontFamily: 'var(--font-mono)' }}>
+                  <caption style={{ captionSide: 'top', textAlign: 'left', fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--s2)' }}>
+                    {t('modelodetallemodal.matriz_ejes')}
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" style={{ padding: 'var(--s2)', fontFamily: 'var(--font-sans)', color: 'var(--text-muted)', fontWeight: 600 }}>{t('modelodetallemodal.real_predicho')}</th>
+                      {modelo.matriz_confusion[0].map((_, j) => (
+                        <th key={j} scope="col" style={{ padding: 'var(--s2)', fontFamily: 'var(--font-sans)', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('modelodetallemodal.clase', { n: j + 1 })}</th>
+                      ))}
+                    </tr>
+                  </thead>
                   <tbody>
                     {modelo.matriz_confusion.map((fila, i) => (
                       <tr key={i}>
+                        <th scope="row" style={{ padding: 'var(--s2)', fontFamily: 'var(--font-sans)', color: 'var(--text-secondary)', fontWeight: 600, textAlign: 'left' }}>{t('modelodetallemodal.clase', { n: i + 1 })}</th>
                         {fila.map((celda, j) => (
                           <td key={j} style={{ border: '1px solid var(--surface-border)', padding: 'var(--s2) var(--s3)', textAlign: 'center', color: i === j ? 'var(--sem-success)' : 'var(--text-secondary)', fontWeight: i === j ? 700 : 400 }}>
                             {celda}

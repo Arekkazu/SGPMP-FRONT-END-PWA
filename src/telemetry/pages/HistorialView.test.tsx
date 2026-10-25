@@ -3,12 +3,14 @@
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 // | 2026-10-23 | Arekkazu | PR-667: el vacío se muestra en el día local, no en el de UTC |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: conteos con plural y separador de miles |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01: 7 días por defecto y el rango rápido consulta |
 /**
  * FE-11 (RF-59 E6 / CA-19 y E7 / CA-17): con la respuesta de DEV-38, el historial avisa
  * cuando el resultado se truncó y marca los intervalos sin datos.
  */
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n, { LOCALE_DEFAULT } from '../../shared/i18n';
 import type { HistorialPageSchema, LecturaHistoricaSchema, VacioTemporalSchema } from '../types';
@@ -97,6 +99,21 @@ describe('HistorialView — E7 / CA-17: intervalos vacíos', () => {
     expect(screen.queryByTestId('fila-vacio')).not.toBeInTheDocument();
     expect(screen.queryByText(/intervalo sin datos/)).not.toBeInTheDocument();
   });
+});
+
+describe('HistorialView — M3-01: rango por defecto y rangos rápidos', () => {
+  it('carga 7 días por defecto y un rango rápido vuelve a consultar', async () => {
+    historial.mockResolvedValue(respuesta());
+    render(<HistorialView />);
+    await screen.findByText('3 lecturas');
+    const primera = historial.mock.calls[0][0];
+    const dias = (Date.parse(primera.fecha_fin) - Date.parse(primera.fecha_inicio)) / 86_400_000;
+    expect(dias).toBe(7);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Últimos 30 días' }));
+    expect(historial).toHaveBeenCalledTimes(2);
+  });
+
 });
 
 describe('vaciosTemporales', () => {

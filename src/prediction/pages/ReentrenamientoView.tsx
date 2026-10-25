@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-71: monitoreo de degradación, historial con versión en RF-69 y formulario v2 |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-08 RF-71: solo Admin/Vet (permiso E sobre versiones de modelo) |
 import React, { useState } from 'react';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
@@ -227,7 +228,7 @@ export function ReentrenamientoView() {
             <TrendingDown size={18} aria-hidden />{t('reentrenamiento.degradacion_titulo')}
           </h2>
           <p style={{ margin: '0 0 var(--s4)', fontSize: '13px', color: 'var(--text-secondary)' }}>{t('reentrenamiento.degradacion_ayuda')}</p>
-          <div style={TABLE_WRAP}>
+          <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de degradación de modelos">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead><tr style={THEAD_ROW}>{[t('reentrenamiento.col_tipo'), t('reentrenamiento.col_version'), t('reentrenamiento.col_evaluacion'), t('reentrenamiento.col_datos'), t('reentrenamiento.col_criterio'), t('reentrenamiento.col_resultado')].map((h) => <th key={h} style={TH}>{h}</th>)}</tr></thead>
               <tbody>
@@ -247,7 +248,7 @@ export function ReentrenamientoView() {
         </section>
 
         <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>{t('reentrenamiento.historial_titulo')}</h2>
-        <div style={TABLE_WRAP}>
+        <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de procesos de reentrenamiento">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={THEAD_ROW}>

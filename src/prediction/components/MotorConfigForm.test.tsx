@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: confirmar el cambio de versión y suma de pesos obligatoria |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-04: alerta crítica 0,70 por defecto y sin versiones rechazadas |
 /**
  * RF-65 v2.0 (RFC-009): el formulario envía los campos del paradigma del modelo —
  * umbral de anomalía y versión por componente para POBLACIONAL, umbrales de
@@ -13,10 +14,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { MotorConfigForm } from './MotorConfigForm';
 import type { TipoModelo, VersionModeloResponse } from '../types';
 
-const version = (id: number, tipo: TipoModelo, componente: VersionModeloResponse['componente']) =>
-  ({ id_version_modelo: id, nombre_version: `v${id}`, tipo_modelo: tipo, componente, estado_version: 'ACTIVO' }) as VersionModeloResponse;
+const version = (id: number, tipo: TipoModelo, componente: VersionModeloResponse['componente'], estado = 'ACTIVO') =>
+  ({ id_version_modelo: id, nombre_version: `v${id}`, tipo_modelo: tipo, componente, estado_version: estado }) as VersionModeloResponse;
 
-const VERSIONES = [version(10, 'MODELO_AVES', 'DETECTOR'), version(11, 'MODELO_AVES', 'ANOMALIAS'), version(20, 'MODELO_ESPECIES_GRANDES', null)];
+const VERSIONES = [version(10, 'MODELO_AVES', 'DETECTOR'), version(11, 'MODELO_AVES', 'ANOMALIAS'), version(20, 'MODELO_ESPECIES_GRANDES', null), version(21, 'MODELO_ESPECIES_GRANDES', null, 'RECHAZADO')];
 
 function renderForm(tipoModelo: TipoModelo) {
   const onGuardar = vi.fn();
@@ -49,8 +50,15 @@ describe('MotorConfigForm — campos por paradigma (RFC-009)', () => {
     fireEvent.click(screen.getByText('Guardar configuración'));
 
     const dto = onGuardar.mock.calls[0][0];
-    expect(dto).toMatchObject({ umbral_riesgo_alto: 0.7, umbral_alerta_critica: 0.85, id_version_modelo_activa: 20 });
+    expect(dto).toMatchObject({ umbral_riesgo_alto: 0.7, umbral_alerta_critica: 0.7, id_version_modelo_activa: 20 });
     expect(dto).not.toHaveProperty('umbral_score_anomalia');
+  });
+
+  it('no ofrece versiones rechazadas (M4-04)', () => {
+    renderForm('MODELO_ESPECIES_GRANDES');
+    const opciones = Array.from((screen.getByLabelText('Versión del modelo activo') as HTMLSelectElement).options).map((o) => o.value);
+    expect(opciones).toContain('20');
+    expect(opciones).not.toContain('21');
   });
 
   it('cancelar la confirmación deja la versión sin cambiar', () => {

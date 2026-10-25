@@ -3,6 +3,8 @@
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional + T-19 códigos legibles |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 4.1.3 RF-59: "sin lecturas" se anuncia (role=status) |
 import React, { useMemo } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { CircleSlash, History } from 'lucide-react';
@@ -36,7 +38,7 @@ export function HistorialTable({ items, loading, vacios = [] }: {
 
   if (items.length === 0) {
     return (
-      <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s8) var(--s4)', fontSize: '14px', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
+      <div role="status" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s8) var(--s4)', fontSize: '14px', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
         <History size={32} aria-hidden style={{ opacity: 0.5, marginBottom: 'var(--s3)' }} />
         <p style={{ margin: 0 }}>{t('historialtable.sin_lecturas_para_el_rango_y_filtros')}</p>
       </div>
@@ -44,7 +46,7 @@ export function HistorialTable({ items, loading, vacios = [] }: {
   }
 
   return (
-    <div style={TABLE_WRAP}>
+    <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de lecturas">
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} style={TH}>{h}</th>)}</tr>
