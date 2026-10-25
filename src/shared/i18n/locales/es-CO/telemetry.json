@@ -6,17 +6,18 @@
     "evento": "Evento",
     "generada": "Generada",
     "historico_de_estados": "Histórico de estados",
-    "infraestructura": "Infraestructura",
     "motivo_de_descarte": "Motivo de descarte",
     "no_se_pudo_cargar_el_detalle": "No se pudo cargar el detalle",
     "reglas_activadas": "Reglas activadas",
-    "sensor": "Sensor",
     "sin_cambios_de_estado_registrados": "Sin cambios de estado registrados.",
     "sin_conexion": "Sin conexión",
     "sin_permiso": "Sin permiso",
     "valor": "Valor",
     "variable": "Variable",
-    "vence": "Vence"
+    "vence": "Vence",
+    "creada": "Creada",
+    "usuario_id": "Usuario #{{id}}",
+    "ubicacion": "Ubicación"
   },
   "alertasfiltros": {
     "activa": "Activa",
@@ -157,11 +158,8 @@
     "confirmar_correccion": "Confirmar corrección",
     "esta_accion_crea_una_nueva_vinculacion": "Esta acción crea una nueva vinculación",
     "este_campo_es_obligatorio": "Este campo es obligatorio.",
-    "ingresa_un_id_valido": "Ingresa un ID válido.",
     "minimo_5_caracteres": "Mínimo 5 caracteres.",
-    "modelo_de_manejo": "Modelo de manejo *",
     "no_se_pudo_corregir_la_vinculacion": "No se pudo corregir la vinculación",
-    "nuevo_activo_biologico_correcto": "Nuevo activo biológico correcto *",
     "sin_permiso_para_corregir": "Sin permiso para corregir"
   },
   "datossimuladosbanner": {
@@ -173,7 +171,7 @@
     "causa_primaria": "Causa primaria",
     "dispositivo_no_encontrado": "Dispositivo no encontrado",
     "error_al_consultar_el_dispositivo": "Error al consultar el dispositivo",
-    "ingresa_el_id_de_un_dispositivo_para": "Ingresa el ID de un dispositivo para consultar su estado e historial de transiciones.",
+    "ingresa_el_id_de_un_dispositivo_para": "Elige un dispositivo de la lista para ver su estado y sus transiciones.",
     "sin_acceso_al_estado_del_dispositivo": "Sin acceso al estado del dispositivo",
     "sin_transiciones_registradas": "Sin transiciones registradas.",
     "tiempo_sin_contacto": "Tiempo sin contacto",
@@ -184,11 +182,9 @@
   "dispositivosview": {
     "acceso_restringido": "Acceso restringido",
     "alertas_tecnicas": "Alertas técnicas",
-    "consulta_el_estado_y_las_transiciones_de_un": "Consulta el estado y las transiciones de un dispositivo, y gestiona las alertas técnicas.",
-    "consultar": "Consultar",
+    "consulta_el_estado_y_las_transiciones_de_un": "Revisa cómo están los dispositivos de tus fincas; elige uno para ver sus transiciones y gestionar su mantenimiento.",
     "error_al_cargar_alertas_tecnicas": "Error al cargar alertas técnicas",
     "estado_de_dispositivos_iot": "Estado de Dispositivos IoT",
-    "id_de_dispositivo": "ID de dispositivo",
     "la_gestion_de_alertas_tecnicas_esta": "La gestión de alertas técnicas está deshabilitada.",
     "las_alertas_tecnicas_solo_estan_disponibles": "Las alertas técnicas solo están disponibles para Administrador e Ingeniero de Campo.",
     "requiere_conexion": "Requiere conexión.",
@@ -264,7 +260,8 @@
     "todas": "Todas",
     "todos": "Todos",
     "validas": "Válidas",
-    "variable": "Variable"
+    "variable": "Variable",
+    "exportar_no_disponible": "Disponible cuando se integre el módulo de Reportes."
   },
   "historialtable": {
     "sin_lecturas_para_el_rango_y_filtros": "Sin lecturas para el rango y filtros seleccionados.",
@@ -344,11 +341,7 @@
     "asigna_el_activo_biologico_correcto_para_la": "Asigna el activo biológico correcto para la lectura",
     "cancelar": "Cancelar",
     "confirmar_vinculacion": "Confirmar vinculación",
-    "ej_individual_lote": "Ej: INDIVIDUAL / LOTE",
     "este_campo_es_obligatorio": "Este campo es obligatorio.",
-    "id_activo_biologico": "ID activo biológico *",
-    "ingresa_un_id_valido": "Ingresa un ID válido.",
-    "modelo_de_manejo": "Modelo de manejo *",
     "no_se_pudo_resolver_la_vinculacion": "No se pudo resolver la vinculación",
     "sin_permiso_para_resolver": "Sin permiso para resolver"
   },
@@ -810,6 +803,47 @@
     "HEARTBEAT": "Sin heartbeat",
     "EVALUACION_PERIODICA": "Evaluación periódica",
     "CONVERSION_ALIMENTICIA": "Conversión alimenticia",
-    "TEMPERATURA_AMBIENTAL": "Temperatura ambiental"
+    "TEMPERATURA_AMBIENTAL": "Temperatura ambiental",
+    "ACTIVA": "Activa",
+    "EN_ATENCION": "En atención",
+    "RESUELTA": "Resuelta",
+    "DESCARTADA": "Descartada",
+    "VENCIDA": "Vencida",
+    "PENDIENTE_SINCRONIZACION": "Pendiente de sincronizar"
+  },
+  "camposvinculacion": {
+    "activo_biologico": "Activo biológico",
+    "candidatos_ayuda_one": "{{count}} activo en esta infraestructura. También puedes escribir el ID.",
+    "candidatos_ayuda_other": "{{count}} activos en esta infraestructura. También puedes escribir el ID.",
+    "sin_candidatos_ayuda": "No hay activos para listar en esta infraestructura; escribe el ID del activo.",
+    "elige_un_activo": "Elige un activo de la lista o escribe su ID.",
+    "individual": "Individual",
+    "poblacional": "Poblacional (lote)",
+    "modelo_de_manejo": "Modelo de manejo"
+  },
+  "dispositivoslista": {
+    "buscar": "Buscar dispositivo, área o finca",
+    "estado": "Estado",
+    "todos": "Todos",
+    "estado_SIN_SENAL": "Sin señal",
+    "estado_INACTIVO": "Inactivo",
+    "estado_BUFFER_ACTIVO": "Modo buffer",
+    "estado_EN_MANTENIMIENTO": "Mantenimiento",
+    "estado_ACTIVO": "Activo",
+    "cargando": "Cargando dispositivos…",
+    "vacio": "Tus fincas aún no tienen dispositivos registrados. Se registran en Configuración › IoT.",
+    "sin_coincidencias": "Ningún dispositivo coincide con la búsqueda o el estado elegido.",
+    "tabla": "Dispositivos de tus fincas",
+    "col_dispositivo": "Dispositivo",
+    "col_ubicacion": "Ubicación",
+    "col_estado": "Estado",
+    "col_bateria": "Batería",
+    "col_senal": "Señal",
+    "col_ultimo_contacto": "Último contacto",
+    "senal_buena": "Buena",
+    "senal_regular": "Regular",
+    "senal_debil": "Débil",
+    "error": "No se pudo cargar la lista de dispositivos",
+    "ver_detalle": "Ver estado de {{nombre}}"
   }
 }

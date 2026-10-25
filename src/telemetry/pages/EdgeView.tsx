@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-55: pestaña de visión por ventana y tiempo de proceso contra su presupuesto |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 import React, { useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, Sliders, AlertTriangle, Database, CheckCircle2, Timer } from 'lucide-react';
@@ -79,7 +80,7 @@ function EventosEdge() {
         </select>
       </div>
 
-      <div style={TABLE_WRAP}>
+      <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de eventos Edge">
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead><tr style={THEAD_ROW}>{cols.map((h, i) => <th key={i} style={TH}>{h}</th>)}</tr></thead>
           <tbody>
@@ -157,7 +158,7 @@ function VisionPorVentana() {
 
       <section>
         <h2 style={{ ...H2, marginBottom: 'var(--s3)' }}>{t('edge.ultimas_ventanas')}</h2>
-        <div style={TABLE_WRAP}>
+        <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de reglas del Edge">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead><tr style={THEAD_ROW}>{cols.map((h) => <th key={h} style={TH}>{h}</th>)}</tr></thead>
             <tbody>

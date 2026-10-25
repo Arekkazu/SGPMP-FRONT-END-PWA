@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: intentos de registro de versiones no admitidos (E1b, E2a) |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 import React from 'react';
 import { ShieldX } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -28,7 +29,7 @@ export function IntentosRegistroTable({ intentos, error }: { intentos: EventoAud
       ) : intentos.length === 0 ? (
         <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>{t('intentos.vacio')}</p>
       ) : (
-        <div style={TABLE_WRAP}>
+        <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de intentos de registro">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead><tr style={THEAD_ROW}>{cols.map((h) => <th key={h} style={TH}>{h}</th>)}</tr></thead>
             <tbody>

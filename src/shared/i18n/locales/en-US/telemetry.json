@@ -6,17 +6,18 @@
     "evento": "Event",
     "generada": "Raised",
     "historico_de_estados": "Status history",
-    "infraestructura": "Infrastructure",
     "motivo_de_descarte": "Dismissal reason",
     "no_se_pudo_cargar_el_detalle": "The details could not be loaded",
     "reglas_activadas": "Triggered rules",
-    "sensor": "Sensor",
     "sin_cambios_de_estado_registrados": "No status changes recorded.",
     "sin_conexion": "Offline",
     "sin_permiso": "No permission",
     "valor": "Value",
     "variable": "Variable",
-    "vence": "Expires"
+    "vence": "Expires",
+    "creada": "Created",
+    "usuario_id": "User #{{id}}",
+    "ubicacion": "Location"
   },
   "alertasfiltros": {
     "activa": "Active",
@@ -157,11 +158,8 @@
     "confirmar_correccion": "Confirm correction",
     "esta_accion_crea_una_nueva_vinculacion": "This action creates a new link",
     "este_campo_es_obligatorio": "This field is required.",
-    "ingresa_un_id_valido": "Enter a valid ID.",
     "minimo_5_caracteres": "At least 5 characters.",
-    "modelo_de_manejo": "Management model *",
     "no_se_pudo_corregir_la_vinculacion": "The link could not be corrected",
-    "nuevo_activo_biologico_correcto": "New correct biological asset *",
     "sin_permiso_para_corregir": "No permission to correct"
   },
   "datossimuladosbanner": {
@@ -173,7 +171,7 @@
     "causa_primaria": "Primary cause",
     "dispositivo_no_encontrado": "Device not found",
     "error_al_consultar_el_dispositivo": "Failed to query the device",
-    "ingresa_el_id_de_un_dispositivo_para": "Enter a device ID to look up its status and transition history.",
+    "ingresa_el_id_de_un_dispositivo_para": "Pick a device from the list to see its status and transitions.",
     "sin_acceso_al_estado_del_dispositivo": "No access to the device status",
     "sin_transiciones_registradas": "No transitions recorded.",
     "tiempo_sin_contacto": "Time without contact",
@@ -184,11 +182,9 @@
   "dispositivosview": {
     "acceso_restringido": "Access restricted",
     "alertas_tecnicas": "Technical alerts",
-    "consulta_el_estado_y_las_transiciones_de_un": "Look up a device's status and transitions, and manage its technical alerts.",
-    "consultar": "Look up",
+    "consulta_el_estado_y_las_transiciones_de_un": "Check the status of the devices on your farms; pick one to see its transitions and manage maintenance.",
     "error_al_cargar_alertas_tecnicas": "Failed to load technical alerts",
     "estado_de_dispositivos_iot": "IoT Device Status",
-    "id_de_dispositivo": "Device ID",
     "la_gestion_de_alertas_tecnicas_esta": "Technical alert management is disabled.",
     "las_alertas_tecnicas_solo_estan_disponibles": "Technical alerts are available only to the Administrator and the Field Engineer.",
     "requiere_conexion": "Requires a connection.",
@@ -264,7 +260,8 @@
     "todas": "All",
     "todos": "All",
     "validas": "Valid",
-    "variable": "Variable"
+    "variable": "Variable",
+    "exportar_no_disponible": "Available once the Reports module is integrated."
   },
   "historialtable": {
     "sin_lecturas_para_el_rango_y_filtros": "No readings for the selected range and filters.",
@@ -344,11 +341,7 @@
     "asigna_el_activo_biologico_correcto_para_la": "Assign the correct biological asset for the reading",
     "cancelar": "Cancel",
     "confirmar_vinculacion": "Confirm link",
-    "ej_individual_lote": "e.g. INDIVIDUAL / LOTE",
     "este_campo_es_obligatorio": "This field is required.",
-    "id_activo_biologico": "Biological asset ID *",
-    "ingresa_un_id_valido": "Enter a valid ID.",
-    "modelo_de_manejo": "Management model *",
     "no_se_pudo_resolver_la_vinculacion": "The link could not be resolved",
     "sin_permiso_para_resolver": "No permission to resolve"
   },
@@ -810,6 +803,47 @@
     "HEARTBEAT": "Missing heartbeat",
     "EVALUACION_PERIODICA": "Periodic assessment",
     "CONVERSION_ALIMENTICIA": "Feed conversion",
-    "TEMPERATURA_AMBIENTAL": "Ambient temperature"
+    "TEMPERATURA_AMBIENTAL": "Ambient temperature",
+    "ACTIVA": "Active",
+    "EN_ATENCION": "In progress",
+    "RESUELTA": "Resolved",
+    "DESCARTADA": "Dismissed",
+    "VENCIDA": "Expired",
+    "PENDIENTE_SINCRONIZACION": "Pending sync"
+  },
+  "camposvinculacion": {
+    "activo_biologico": "Biological asset",
+    "candidatos_ayuda_one": "{{count}} asset in this infrastructure. You can also type the ID.",
+    "candidatos_ayuda_other": "{{count}} assets in this infrastructure. You can also type the ID.",
+    "sin_candidatos_ayuda": "No assets to list in this infrastructure; type the asset ID.",
+    "elige_un_activo": "Pick an asset from the list or type its ID.",
+    "individual": "Individual",
+    "poblacional": "Population (batch)",
+    "modelo_de_manejo": "Management model"
+  },
+  "dispositivoslista": {
+    "buscar": "Search device, area or farm",
+    "estado": "Status",
+    "todos": "All",
+    "estado_SIN_SENAL": "No signal",
+    "estado_INACTIVO": "Inactive",
+    "estado_BUFFER_ACTIVO": "Buffer mode",
+    "estado_EN_MANTENIMIENTO": "Maintenance",
+    "estado_ACTIVO": "Active",
+    "cargando": "Loading devices…",
+    "vacio": "Your farms have no registered devices yet. Register them in Settings › IoT.",
+    "sin_coincidencias": "No device matches the search or the selected status.",
+    "tabla": "Devices on your farms",
+    "col_dispositivo": "Device",
+    "col_ubicacion": "Location",
+    "col_estado": "Status",
+    "col_bateria": "Battery",
+    "col_senal": "Signal",
+    "col_ultimo_contacto": "Last contact",
+    "senal_buena": "Good",
+    "senal_regular": "Fair",
+    "senal_debil": "Weak",
+    "error": "Could not load the device list",
+    "ver_detalle": "View status of {{nombre}}"
   }
 }
