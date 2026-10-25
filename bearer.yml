@@ -1,0 +1,17 @@
+# Configuración de Bearer SAST para Frontend (TypeScript / React PWA)
+# Referencia: docs-sgpmp/seguridad/GUIA-OPERACION-SAST-CI-CD.md
+report:
+    fail-on-severity: critical,high
+    severity: critical,high,medium,low,warning
+scan:
+    scanner:
+        - sast
+        - secrets
+    skip-test: true
+    skip-path:
+        - "node_modules/**"
+        - "dist/**"
+        - "build/**"
+        - "coverage/**"
+        - "**/*.test.ts"
+        - "**/*.test.tsx"

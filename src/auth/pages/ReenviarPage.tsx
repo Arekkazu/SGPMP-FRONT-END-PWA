@@ -10,6 +10,8 @@ import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import './AuthPages.css';
+import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
+import { Isotipo } from '../../shared/design-system/Isotipo';
 
 interface FormFields {
   correo_electronico: string;
@@ -50,13 +52,13 @@ export function ReenviarPage() {
   if (sent) {
     return (
       <div className="auth-bg">
+        <SelectorIdioma />
         <div className="auth-card auth-center">
           <div className="auth-success-icon">
             <CheckCircle size={28} color="var(--sem-success)" aria-hidden />
           </div>
           <h1 className="auth-title">{t('reenviarpage.correo_enviado')}</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>{t('reenviarpage.si_el_correo')}<strong>{getValues('correo_electronico')}</strong> tiene una cuenta pendiente de
-            activación, recibirás un nuevo enlace. Revisa también la carpeta de spam.
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: 'var(--s5)', lineHeight: '1.6' }}>{t('reenviarpage.si_el_correo')}{' '}<strong>{getValues('correo_electronico')}</strong>{' '}{t('reenviarpage.tiene_cuenta_pendiente')}
           </p>
           <Link to="/login" className="auth-link">{t('reenviarpage.ir_a_iniciar_sesion')}</Link>
         </div>
@@ -66,14 +68,10 @@ export function ReenviarPage() {
 
   return (
     <div className="auth-bg">
+      <SelectorIdioma />
       <div className="auth-card">
         <div className="auth-logo" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <path d="M8 22C8 16 12 11 16 11C20 11 24 16 24 22" stroke="white" strokeWidth="2"/>
-            <circle cx="12" cy="17" r="2" fill="white" opacity=".8"/>
-            <circle cx="20" cy="17" r="2" fill="white" opacity=".8"/>
-            <path d="M13 21C13 19.5 14.3 18.5 16 18.5C17.7 18.5 19 19.5 19 21" stroke="white" strokeWidth="1.5"/>
-          </svg>
+          <Isotipo size={30} />
         </div>
         <h1 className="auth-title">{t('reenviarpage.reenviar_activacion')}</h1>
         <p className="auth-sub">{t('reenviarpage.ingresa_tu_correo_para_recibir_un_nuevo')}</p>

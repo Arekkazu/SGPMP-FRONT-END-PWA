@@ -9,14 +9,6 @@ import type { ApiError } from '../../shared/api/errors';
 const useLoginMock = vi.fn();
 vi.mock('../hooks/useLogin', () => ({ useLogin: () => useLoginMock() }));
 
-// `ssoConfigurado` se resuelve al importar el modulo desde import.meta.env, asi
-// que la unica forma de cubrir los dos ambientes (con y sin URL) es mockearlo.
-const sso = vi.hoisted(() => ({
-  agrofusionLoginUrl: 'https://identidad.agrofusion.test/login',
-  ssoConfigurado: true,
-}));
-vi.mock('../config/sso', () => sso);
-
 function renderConError(error: ApiError | null) {
   useLoginMock.mockReturnValue({ login: vi.fn(), loading: false, error, online: true });
   return render(
@@ -57,34 +49,36 @@ test('no muestra el aviso de sesión cerrada en un login normal', () => {
   expect(screen.queryByText(/sesión cerrada/i)).toBeNull();
 });
 
-// TC-DIS-05: el botón y el separador estaban en la línea base visual y no se
-// renderizaban, pese a que el canje del token SSO ya existía.
-describe('SSO con AgroFusion', () => {
-  const BOTON = /continuar con agrofusion/i;
+test('no muestra el botón de AgroFusion', () => {
+  renderConError(null);
 
-  afterEach(() => {
-    sso.ssoConfigurado = true;
+  expect(screen.queryByRole('button', { name: /continuar con agrofusion/i })).toBeNull();
+});
+
+// El contador refleja el "Intento N de 5" del backend, no un conteo local.
+const CONTADOR = /intentos fallidos/i;
+
+test('el contador muestra el intento que reporta el backend', () => {
+  renderConError({
+    code: 'CREDENCIALES_INVALIDAS',
+    message: 'Credenciales incorrectas. Intento 3 de 5. Tras el quinto intento fallido, su cuenta será bloqueada por 15 minutos por seguridad.',
+    status: 401,
   });
 
-  test('lleva al proveedor de identidad al pulsarlo', async () => {
-    const asignarHref = vi.fn();
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { set href(v: string) { asignarHref(v); }, replace: vi.fn() },
-    });
+  expect(screen.getByText('Intentos fallidos (3 de 5)')).toBeInTheDocument();
+});
 
-    renderConError(null);
-    await userEvent.click(screen.getByRole('button', { name: BOTON }));
+test.each([
+  ['acceso restringido', { code: 'CUENTA_INACTIVA', message: 'Acceso restringido.', status: 403 }],
+  ['cuenta pendiente de activación', { code: 'CUENTA_PENDIENTE', message: 'Su cuenta no ha sido activada.', status: 403 }],
+  ['cuenta bloqueada', { code: 'CUENTA_BLOQUEADA', message: 'Cuenta bloqueada por seguridad.', status: 423 }],
+  ['correo inexistente (sin número de intento)', { code: 'CREDENCIALES_INVALIDAS', message: 'Credenciales incorrectas. Verifica tu correo electrónico y contraseña.', status: 401 }],
+])('no muestra contador con %s', async (_caso, error) => {
+  renderConError(error as ApiError);
+  // Antes cualquier envío fallido sumaba un intento local, fuera cual fuera el error.
+  await userEvent.type(screen.getByLabelText(/correo electrónico/i), 'usuario@dominio.com');
+  await userEvent.type(screen.getByLabelText(/^contraseña/i), 'Clave#2026');
+  await userEvent.click(screen.getByRole('button', { name: /^ingresar/i }));
 
-    expect(asignarHref).toHaveBeenCalledWith(sso.agrofusionLoginUrl);
-  });
-
-  test('sin URL configurada queda deshabilitado y dice por qué', () => {
-    sso.ssoConfigurado = false;
-
-    renderConError(null);
-
-    expect(screen.getByRole('button', { name: BOTON })).toBeDisabled();
-    expect(screen.getByText(/configuración pendiente/i)).toBeInTheDocument();
-  });
+  expect(screen.queryByText(CONTADOR)).toBeNull();
 });

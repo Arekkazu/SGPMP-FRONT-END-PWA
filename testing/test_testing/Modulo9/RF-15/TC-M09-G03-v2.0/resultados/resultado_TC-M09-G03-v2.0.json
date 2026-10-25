@@ -1,0 +1,73 @@
+{
+  "tc": "TC-M09-G03-v2.0",
+  "ambiente": "https://api.inmero.co",
+  "fecha": "2026-10-06T23:20:41.877Z",
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "esperado": "Inicio de sesión exitoso como Administrador y redirección a /dashboard",
+      "obtenido": "Autenticación correcta y llegada a /dashboard",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "esperado": "Navegación a /configuracion respetando el estado de permisos del menú lateral (sin clase ds-sidebar__item--locked)",
+      "obtenido": "Llegada a /configuracion tras desbloqueo de permisos",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "esperado": "Apertura del modal de edición con nombre y descripción precargados",
+      "obtenido": "Modal abierto para especie ID #4 con nombre \"Cachama Blanca\" precargado",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "esperado": "Envío de formulario con datos válidos produce PATCH HTTP 200",
+      "obtenido": "PATCH respondió HTTP 200 (wrapper detectado: \"objeto directo\")",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "esperado": "El campo fecha_actualizacion (o fecha_actualizacion_especie) se actualiza automáticamente con un nuevo timestamp",
+      "obtenido": "Timestamp actualizado correctamente (fecha_actualizacion): de \"2026-10-06T23:17:44.328977Z\" a \"2026-10-06T23:19:55.915489Z\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "esperado": "400 (propuesto, no normativo)",
+      "obtenido": "control grupo_manejo ausente en formulario de edición",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-06",
+      "esperado": "El campo grupo_manejo permanece sin cambios tras la edición de nombre y descripción verificado vía API",
+      "obtenido": "campo grupo_manejo ausente en respuesta del catálogo",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "NW-01",
+      "esperado": "Login admin (200)",
+      "obtenido": "Aserción cumplida satisfactoriamente",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-02",
+      "esperado": "GET /configuracion/especies?solo_activas=false y localizacion de especie candidata valida",
+      "obtenido": "Aserción cumplida satisfactoriamente",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-03",
+      "esperado": "PATCH con grupo_manejo=REPTILES responde 400 (propuesto, no normativo)",
+      "obtenido": "Aserción cumplida satisfactoriamente",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-04",
+      "esperado": "GET /configuracion/especies?solo_activas=false confirma que grupo_manejo conserva valor previo",
+      "obtenido": "campo grupo_manejo ausente en respuesta del catálogo: expected false to be true",
+      "estado": "FALLA"
+    }
+  ]
+}

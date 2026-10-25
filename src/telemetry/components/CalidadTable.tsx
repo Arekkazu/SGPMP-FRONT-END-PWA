@@ -1,11 +1,16 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre; encabezado de la columna de acción |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, ShieldCheck, Check, X } from 'lucide-react';
 import { ClasificacionCalidadPill } from './ClasificacionCalidadPill';
 import { FlagChips } from './FlagChips';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { TelemetriaCalidadSchema } from '../types';
+import { alActivarConTeclado } from '../../shared/lib/teclado';
 
 const COLS = ['Lectura', 'Sensor', 'Índice', 'Clasificación', 'Apto IA', 'Apto NIC41', 'Flags', 'Evaluada', ''];
 
@@ -44,19 +49,19 @@ export function CalidadTable({ items, loading, onAbrir }: Props) {
   }
 
   return (
-    <div style={TABLE_WRAP}>
+    <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de evaluaciones de calidad">
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
-          <tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} style={TH}>{h}</th>)}</tr>
+          <tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} style={TH}>{h || <span className="ds-sr-only">Ver detalle</span>}</th>)}</tr>
         </thead>
         <tbody>
           {items.map((c) => (
             <tr
               key={c.id_evaluacion}
+              className="ds-fila-accion"
+              tabIndex={0}
               onClick={() => onAbrir(c)}
-              style={{ background: 'var(--surface-card)', cursor: 'pointer' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-card)')}
+              onKeyDown={alActivarConTeclado(() => onAbrir(c))}
             >
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 600 }}>#{c.id_telemetria}</td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>#{c.id_sensor}</td>
@@ -66,7 +71,7 @@ export function CalidadTable({ items, loading, onAbrir }: Props) {
               <td style={{ ...TD, textAlign: 'center' }}><Apto ok={c.apto_para_nic41} /></td>
               <td style={TD}><FlagChips flags={c.flags_detectados} max={2} /></td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                {c.timestamp_evaluacion?.slice(0, 10)} {horaCaptura(c.timestamp_evaluacion)}
+                {fechaHoraCaptura(c.timestamp_evaluacion)}
               </td>
               <td style={{ ...TD, textAlign: 'right', color: 'var(--text-muted)' }}><ChevronRight size={16} aria-hidden /></td>
             </tr>

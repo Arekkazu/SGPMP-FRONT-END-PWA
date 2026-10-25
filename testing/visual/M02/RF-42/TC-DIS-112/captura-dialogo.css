@@ -1,0 +1,18 @@
+/*
+ * Solo se aplica durante toHaveScreenshot del diálogo (opción stylePath, junto con captura-completa.css);
+ * la app no cambia. La tarjeta de ModalShell tiene max-height: 90vh con scroll interno: en móvil (667 px de
+ * alto) el diálogo con el error 409 no cabe y la captura del elemento se cortaba antes de los botones.
+ * Aquí la tarjeta crece a su alto real y el overlay (position: fixed, alto del viewport) pasa a absolute y
+ * alinea arriba, para que la tarjeta completa quede dentro del documento.
+ */
+[role='dialog'][aria-modal='true'] {
+  position: absolute !important;
+  align-items: flex-start !important;
+  bottom: auto !important;
+  min-height: 100% !important;
+}
+
+[role='dialog'][aria-modal='true'] > div {
+  max-height: none !important;
+  overflow: visible !important;
+}

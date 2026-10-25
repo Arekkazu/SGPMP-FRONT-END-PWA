@@ -1,5 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-10 RF-60: listado de dispositivos de la finca con estado |
 import { http } from '../../shared/api/http';
 import type {
+  DispositivoConEstadoSchema,
   EstadoDispositivoDetalleSchema,
   EstadoDispositivoIoTSchema,
   HistoricoTransicionSchema,
@@ -9,6 +13,12 @@ import type {
 const BASE = '/iot/dispositivos';
 
 export const dispositivosApi = {
+  /** M3-10: dispositivos de las fincas del usuario con estado, batería y señal. Recurso 35 (R). */
+  async listar(estado?: string): Promise<DispositivoConEstadoSchema[]> {
+    const res = await http.get<DispositivoConEstadoSchema[]>(BASE, { params: estado ? { estado } : {} });
+    return res.data;
+  },
+
   /** Estado actual + historial reciente de un dispositivo (RF-60). Recurso 35. */
   async estado(idDispositivo: number, limiteHistorial = 20): Promise<EstadoDispositivoDetalleSchema> {
     const res = await http.get<EstadoDispositivoDetalleSchema>(`${BASE}/${idDispositivo}/estado`, {

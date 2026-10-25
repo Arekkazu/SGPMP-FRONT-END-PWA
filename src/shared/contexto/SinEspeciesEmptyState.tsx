@@ -10,9 +10,15 @@ import { Link } from 'react-router-dom';
 import { Sprout } from 'lucide-react';
 
 import { useT } from '../i18n/useT';
+import { usePermission } from '../rbac/usePermission';
 
 export function SinEspeciesEmptyState() {
   const { t } = useT('nav');
+  // T-11: Veterinario y Contador veían "Ir a Configuración" sin poder configurar
+  // nada. Recurso 8 = especies, 10 = infraestructuras; acción 1 = Crear.
+  const puedeEspecies = usePermission(8, 1);
+  const puedeAreas = usePermission(10, 1);
+  const puedeConfigurar = puedeEspecies || puedeAreas;
 
   return (
     <div
@@ -36,19 +42,25 @@ export function SinEspeciesEmptyState() {
       <p style={{ fontSize: 'var(--fs-body-lg)', color: 'var(--text-secondary)', margin: 0 }}>
         {t('sin_especies.mensaje')}
       </p>
-      <Link
-        to="/configuracion"
-        style={{
-          /* DS v2.0: brand-500 nunca como texto normal sobre fondo claro
-             (4.2–4.6:1 en los tres fondos probados). brand-600 da >=6:1. */
-          color: 'var(--brand-600)',
-          fontWeight: 600,
-          fontSize: 'var(--fs-label-md)',
-          textDecoration: 'none',
-        }}
-      >
-        {t('sin_especies.ir_a_configuracion')}
-      </Link>
+      {!puedeConfigurar ? (
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', margin: 0 }}>
+          {t('sin_especies.pidelo_al_administrador')}
+        </p>
+      ) : (
+        <Link
+          to="/configuracion"
+          style={{
+            /* DS v2.0: brand-500 nunca como texto normal sobre fondo claro
+               (4.2–4.6:1 en los tres fondos probados). brand-600 da >=6:1. */
+            color: 'var(--brand-600)',
+            fontWeight: 600,
+            fontSize: 'var(--fs-label-md)',
+            textDecoration: 'none',
+          }}
+        >
+          {t('sin_especies.ir_a_configuracion')}
+        </Link>
+      )}
     </div>
   );
 }

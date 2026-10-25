@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, X } from 'lucide-react';
@@ -5,6 +8,7 @@ import { Button } from '../../shared/design-system/Button';
 import { NIVEL_RIESGO_LABEL } from '../lib/riesgo';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
 import type { ActivoSelectorItem } from '../types';
+import { diasAtrasLocal, hoyLocal } from '../../shared/lib/fecha';
 
 export interface HistorialFiltrosState {
   idActivo: string;
@@ -16,10 +20,7 @@ export interface HistorialFiltrosState {
 }
 
 export function historialFiltrosVacio(): HistorialFiltrosState {
-  const hoy = new Date();
-  const hace30 = new Date(hoy.getTime() - 30 * 86400000);
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
-  return { idActivo: '', fecha_inicio: iso(hace30), fecha_fin: iso(hoy), nivel_riesgo: '', id_patologia: '', incluir_alertas: false };
+  return { idActivo: '', fecha_inicio: diasAtrasLocal(30), fecha_fin: hoyLocal(), nivel_riesgo: '', id_patologia: '', incluir_alertas: false };
 }
 
 interface Props {

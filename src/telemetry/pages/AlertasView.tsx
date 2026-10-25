@@ -1,10 +1,18 @@
+// | Fecha      | Nombre  | Que se hizo |
+// |------------|---------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: comparte permisos y recupera transiciones rechazadas |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 4.1.3 RF-57: contadores de alertas en región aria-live |
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { BellRing, Clock, TimerOff, CheckCircle2, RefreshCw } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { useAccionesAlerta } from '../hooks/useAccionesAlerta';
+import { accionesAlerta } from '../lib/accionesAlerta';
 import { useAlertas } from '../hooks/useAlertas';
 import { useAlertaDetalle } from '../hooks/useAlertaDetalle';
 import { AlertasFiltros, ALERTAS_FILTROS_VACIO, type AlertasFiltrosState } from '../components/AlertasFiltros';
@@ -13,7 +21,7 @@ import { AlertaDetalleModal } from '../components/AlertaDetalleModal';
 import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
-import { RECURSO_ALERTAS, ACCION_R, ACCION_U } from '../rbac';
+import { RECURSO_ALERTAS, ACCION_R } from '../rbac';
 import type { ListarAlertasFiltros, NuevoEstadoAlerta } from '../types';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
@@ -32,10 +40,11 @@ function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: n
 export function AlertasView() {
   const { t } = useT('telemetry');
   const puedeVer = usePermission(RECURSO_ALERTAS, ACCION_R);
-  const puedeGestionar = usePermission(RECURSO_ALERTAS, ACCION_U);
+  const permisosAcciones = useAccionesAlerta();
+  const { puedeGestionar, puedeDescartar } = permisosAcciones;
   const online = useOnlineStatus();
 
-  const { alertas, paginacion, loading, saving, error, saveError, fromCache, resumen, cargar, cargarResumen, cambiarEstado } = useAlertas();
+  const { alertas, paginacion, loading, saving, error, saveError, fromCache, resumen, cargar, cargarResumen, cambiarEstado, limpiarSaveError } = useAlertas();
   const detalleHook = useAlertaDetalle();
 
   const [filtros, setFiltros] = useState<AlertasFiltrosState>(ALERTAS_FILTROS_VACIO);
@@ -63,8 +72,18 @@ export function AlertasView() {
   const abrir = (id: number) => { setSelectedId(id); detalleHook.cargar(id); };
   const cerrarDetalle = () => { setSelectedId(null); detalleHook.limpiar(); };
 
+  useEffect(() => {
+    if (saveError?.status === 422 && selectedId != null) void detalleHook.cargar(selectedId, true);
+  }, [saveError, selectedId, detalleHook.cargar]);
+
+  const elegirAccion = (estado: NuevoEstadoAlerta) => {
+    if (!online || saving || !detalleHook.detalle || !accionesAlerta(detalleHook.detalle.estado_alerta, permisosAcciones).includes(estado)) return;
+    limpiarSaveError(); setAccion(estado);
+  };
+
   const confirmarCambio = async (dto: Parameters<typeof cambiarEstado>[1]) => {
-    if (selectedId == null) return;
+    if (selectedId == null || saving || !online || detalleHook.loading || !detalleHook.detalle
+      || !accionesAlerta(detalleHook.detalle.estado_alerta, permisosAcciones).includes(dto.nuevo_estado)) return;
     const ok = await cambiarEstado(selectedId, dto);
     if (ok) {
       setAccion(null);
@@ -83,7 +102,7 @@ export function AlertasView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <BellRing size={20} aria-hidden />{t('alertasview.alertas_ambientales_y_sanitarias')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : `${paginacion.totalRegistros} alerta(s)`}
+            {loading ? 'Cargando…' : t('conteo.alertas', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
             {fromCache && ' · desde caché'}
           </p>
         </div>
@@ -97,7 +116,8 @@ export function AlertasView() {
         {fromCache && online && <Alert variant="info" title={t('alertasview.datos_desde_cache')} description="No se pudo conectar; se muestran las últimas alertas disponibles." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('alertasview.sin_acceso_a_las_alertas') : t('alertasview.error_al_cargar_alertas')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
-        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
+        {/* a11y 4.1.3 (TC-DIS-150): los contadores se anuncian al cambiar, así una alerta nueva no pasa inadvertida. */}
+        <div aria-live="polite" style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
           <Kpi icon={<BellRing size={18} aria-hidden />} valor={resumen?.activas ?? null} etiqueta="Activas ahora" color="var(--sem-error)" />
           <Kpi icon={<Clock size={18} aria-hidden />} valor={resumen?.enAtencion ?? null} etiqueta="En atención" color="var(--sem-warning)" />
           <Kpi icon={<TimerOff size={18} aria-hidden />} valor={resumen?.vencidas ?? null} etiqueta="Vencidas" color="var(--sem-error)" />
@@ -127,8 +147,9 @@ export function AlertasView() {
           loading={detalleHook.loading}
           error={detalleHook.error}
           puedeGestionar={puedeGestionar}
+          puedeDescartar={puedeDescartar}
           online={online}
-          onAccion={setAccion}
+          onAccion={elegirAccion}
           onClose={cerrarDetalle}
         />
       )}
@@ -138,6 +159,7 @@ export function AlertasView() {
           alerta={detalleHook.detalle}
           estado={accion}
           saving={saving}
+          autorizada={online && !detalleHook.loading && accionesAlerta(detalleHook.detalle.estado_alerta, permisosAcciones).includes(accion)}
           saveError={saveError}
           onConfirm={confirmarCambio}
           onClose={() => setAccion(null)}

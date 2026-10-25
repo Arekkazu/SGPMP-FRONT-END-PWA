@@ -58,10 +58,10 @@ export function VerificarIntegridadModal({ verificando, verificacion, verificarE
         <div style={{ border: `1px solid ${comprometido ? 'var(--sem-error-border)' : 'var(--sem-success-border)'}`, background: comprometido ? 'var(--sem-error-bg)' : 'var(--sem-success-bg)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', color: comprometido ? 'var(--sem-error)' : 'var(--sem-success)', fontWeight: 700, fontSize: '14px' }}>
             {comprometido ? <ShieldAlert size={18} aria-hidden /> : <ShieldCheck size={18} aria-hidden />}
-            {comprometido ? 'Se detectaron registros comprometidos' : 'Integridad verificada'}
+            {comprometido ? t('verificarintegridadmodal.registros_comprometidos') : t('verificarintegridadmodal.integridad_verificada')}
           </div>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: 'var(--s2)' }}>
-            Verificados: <strong>{verificacion.total_verificados}</strong>{t('verificarintegridadmodal.comprometidos')}<strong>{verificacion.comprometidos}</strong>
+            {t('verificarintegridadmodal.verificados')}{' '}<strong>{verificacion.total_verificados}</strong>{' '}{t('verificarintegridadmodal.comprometidos')}{' '}<strong>{verificacion.comprometidos}</strong>
           </div>
           {verificacion.ids_comprometidos.length > 0 && (
             <div style={{ marginTop: 'var(--s2)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--sem-error)', wordBreak: 'break-all' }}>

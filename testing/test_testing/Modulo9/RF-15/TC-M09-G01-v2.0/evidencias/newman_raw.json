@@ -1,0 +1,38 @@
+{
+  "executions": [
+    {
+      "item": "01 - Login Administrativo (NW-01)",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-01: Login admin (200)",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "02 - Crear Especie con Grupo de Manejo (NW-02, NW-03)",
+      "codigo": 201,
+      "assertions": [
+        {
+          "assertion": "NW-02: POST /configuracion/especies con \"Gallina QA API\" + grupo_manejo AVES: éxito (201 o 200)",
+          "error": null
+        },
+        {
+          "assertion": "NW-03: Body de respuesta con id, activo=true, grupo_manejo=AVES y fechas",
+          "error": "grupo_manejo es AVES: expected undefined to deeply equal 'AVES'"
+        }
+      ]
+    },
+    {
+      "item": "03 - Consultar Catálogo para Confirmar Persistencia (NW-04)",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-04: GET /configuracion/especies?solo_activas=false confirma persistencia de grupo_manejo=AVES y activo=true",
+          "error": "Especie creada encontrada en listado: expected undefined to be an object"
+        }
+      ]
+    }
+  ]
+}

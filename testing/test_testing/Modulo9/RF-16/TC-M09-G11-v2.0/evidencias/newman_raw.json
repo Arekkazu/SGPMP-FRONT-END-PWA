@@ -1,0 +1,134 @@
+{
+  "executions": [
+    {
+      "item": "NW-01: Login y autenticacion",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-01: Login exitoso y captura de token",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-02: Preflight especie objetivo",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-02: Preflight confirma Trucha Arcoiris id 2 activa",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-03a: Preflight nombre ciclo libre",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-03: Preflight nombre ciclo Newman inexistente",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-03b: Preflight nombre patologia libre",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-03: Preflight nombre patologia Newman inexistente",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-03c: Preflight nombre metrica libre",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-03: Preflight nombre metrica Newman inexistente",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-04: Registrar etapa/ciclo biologico",
+      "codigo": 201,
+      "assertions": [
+        {
+          "assertion": "NW-04: Crear etapa responde 200/201 con datos correctos",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-05: Registrar patologia",
+      "codigo": 201,
+      "assertions": [
+        {
+          "assertion": "NW-05: Crear patologia responde 200/201 con descripcion preservada",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-06: Registrar metrica productiva con bloque RFC-004",
+      "codigo": 201,
+      "assertions": [
+        {
+          "assertion": "NW-06: Crear metrica con RFC-004 responde 200/201 (no rechaza campos)",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-07: Respuesta metrica contiene atributos RFC-004",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-07: Body de metrica devuelve tipo_dato, es_obligatorio, valor_min, valor_max",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-08: Persistencia metrica RFC-004 en GET posterior",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-08: GET /metricas persiste tipo_dato, es_obligatorio y rango",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-09a: Teardown desactivar ciclo",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-09a: Teardown desactiva ciclo de Newman",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-09b: Teardown desactivar patologia",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-09b: Teardown desactiva patologia de Newman",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "NW-09c: Teardown desactivar metrica",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-09c: Teardown desactiva metrica de Newman",
+          "error": null
+        }
+      ]
+    }
+  ]
+}

@@ -14,15 +14,17 @@ export function Paginacion({ pagina, totalPaginas, totalRegistros, onCambiar }: 
   const { t } = useT('biologicalAssets');
   if (totalPaginas <= 1) {
     return totalRegistros != null ? (
-      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 'var(--s4)' }}>
+      <div role="status" style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 'var(--s4)' }}>
         {totalRegistros} registro(s)
       </div>
     ) : null;
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s3)', marginTop: 'var(--s5)', flexWrap: 'wrap' }}>
-      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+    // <nav> con nombre: el lector de pantalla identifica los controles como grupo de navegación (TC-DIS-131).
+    <nav aria-label={t('paginacion.paginacion')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s3)', marginTop: 'var(--s5)', flexWrap: 'wrap' }}>
+      {/* role="status": el cambio de página y el conteo se anuncian (WCAG 4.1.3, TC-DIS-131/143). */}
+      <span role="status" style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
         Página {pagina} de {totalPaginas}
         {totalRegistros != null ? ` · ${totalRegistros} registro(s)` : ''}
       </span>
@@ -32,6 +34,6 @@ export function Paginacion({ pagina, totalPaginas, totalRegistros, onCambiar }: 
         <Button variant="secondary" size="sm" disabled={pagina >= totalPaginas} onClick={() => onCambiar(pagina + 1)}>{t('paginacion.siguiente')}<ChevronRight size={15} aria-hidden style={{ marginLeft: 'var(--s1)' }} />
         </Button>
       </div>
-    </div>
+    </nav>
   );
 }

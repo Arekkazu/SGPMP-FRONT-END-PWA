@@ -1,4 +1,7 @@
 :root {
+  /* T-15: los controles nativos (checkbox, date picker, scrollbar) siguen el tema.
+     Sin esto, en oscuro se pintaban con el aspecto claro del navegador. */
+  color-scheme: light;
   /* Brand */
   --brand-50: #f0f7ee;
   --brand-100: #d8ecda;
@@ -152,6 +155,8 @@
 
   /* Velo de los paneles flotantes (bandeja, drawer) */
   --overlay: rgba(20, 22, 16, 0.18);
+  /* Velo de los modales: mas opaco porque bloquea la pagina (.ds-modal) */
+  --overlay-modal: rgba(0, 0, 0, 0.5);
 
   /* Layout */
   --sidebar-w: 240px;
@@ -169,12 +174,21 @@
      oscurecida del primario. */
   --brand-nav: var(--neutral-900);
 
+  /* Ionic pinta <body> con --ion-text-color, que por defecto es negro en los
+     dos temas: todo texto sin color explicito quedaba negro sobre la
+     superficie oscura (1.19:1, #116 y #244). Se ata al rol de texto. */
+  --ion-text-color: var(--text-primary);
+
   /* QA M01 2.4: relleno solido de boton primario con texto blanco. Fijo en
      ambos temas (no sigue la rampa --brand-500/600, que se invierte en dark y
      baja el contraste a 3.21:1) — siempre >=4.5:1 con #fff. */
   --brand-cta: #226a28;
   --brand-cta-hover: #1a521f;
   --brand-cta-active: #133d17;
+
+  /* Antenas del isotipo (Isotipo.tsx). Decorativo, sobre el verde de marca en
+     los dos temas: no es texto ni sigue la rampa. */
+  --brand-isotipo-acento: #a8d8a8;
 }
 
 /* Escalado responsive del DS v2.0 ("Tipografia > Escalado responsive por
@@ -202,6 +216,7 @@
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
   --brand-50: #0d2a10;
   --brand-100: #133d17;
   --brand-200: #1a521f;

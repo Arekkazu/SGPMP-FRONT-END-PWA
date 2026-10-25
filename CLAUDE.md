@@ -1,5 +1,9 @@
 # CLAUDE.md — SGPMP Frontend
 
+**Nombre del producto: SIGAB** (Sistema de Gestión Pecuaria Multiespecie de Precisión con Modelado
+Predictivo de Patologías e Integración Contable de Activos Biológicos). `sgpmp` es solo el código interno
+del proyecto (repos, claves de storage, base Dexie, eventos): todo texto visible usa SIGAB, nunca SGP/SGPMP.
+
 ---
 
 ## Convención de commits (obligatoria en `dev`)
@@ -9,6 +13,28 @@ de commits para calcular versión y `CHANGELOG.md`. **Todo commit generado
 en este repo — incluido por una IA — debe seguir el formato de
 `CONTRIBUTING.md`** (`tipo(scope): descripción`). Un commit sin ese formato
 es válido para Git pero invisible para el pipeline.
+
+---
+
+## Tabla de seguimiento en cabecera (obligatoria desde 2026-10-20)
+
+**Todo archivo de código que se cree o edite — incluido por una IA — debe
+llevar al inicio, en comentarios, una tabla de seguimiento**, y se actualiza
+al terminar el cambio, antes del commit:
+
+```tsx
+// | Fecha      | Nombre           | Que se hizo                                        |
+// |------------|------------------|----------------------------------------------------|
+// | 2026-10-20 | usuario-git      | FE-05 RF-15: densidad y esperanza de vida opcionales |
+import { useState } from 'react'
+```
+
+- **Fecha** del cambio (`YYYY-MM-DD`), **Nombre**: el usuario de git de quien hace el cambio (`git config user.name` en esa máquina, nunca un nombre fijo) y **Que se hizo**: ID de la tarea + RF + una frase corta. Es un rastro rápido de qué ha sufrido el archivo, no el contenido del PR.
+- Una fila por tarea y por archivo (no una por cada edición); la fila nueva va al final.
+- Solo hacia adelante: un archivo sin tabla la recibe la primera vez que se toca; no se reconstruye historial de git.
+- Aplica a `.ts`, `.tsx`, `.js` y `.css` (en CSS con `/* … */`). Si el archivo empieza con una directiva (`'use client'`, `/// <reference …>`), la tabla va debajo.
+- No aplica a archivos que no admiten comentarios o que se generan solos: JSON (incluidos los locales de i18n), lockfiles, `CHANGELOG.md`.
+- En conflictos de merge sobre la tabla se conservan las filas de ambos lados.
 
 ---
 
@@ -65,14 +91,21 @@ src/
 │   ├── design-system/             # Tokens CSS + componentes base
 │   │   ├── tokens.css             # CSS custom properties del sistema de diseño
 │   │   ├── tokens.contraste.test.ts  # Calcula el contraste WCAG de tokens.css
-│   │   ├── Layout.css             # Rejillas responsive (.ds-fg2 / .ds-fg3)
+│   │   ├── Layout.css             # Rejillas responsive (.ds-fg2 / .ds-fg3) + modal (.ds-modal)
 │   │   ├── Button.tsx
 │   │   ├── Input.tsx
 │   │   ├── Select.tsx
+│   │   ├── Combobox.tsx
+│   │   ├── SubPestanas.tsx
 │   │   ├── Badge.tsx
 │   │   ├── Alert.tsx
 │   │   ├── PasswordStrength.tsx
 │   │   ├── Gauge.tsx
+│   │   ├── Stepper.tsx
+│   │   ├── OptionCard.tsx
+│   │   ├── ScrollRegion.tsx
+│   │   ├── ModalShell.tsx
+│   │   ├── LimiteDeError.tsx
 │   │   ├── Sidebar.tsx
 │   │   └── AppBar.tsx
 │   ├── db/                        # Instancia Dexie central
@@ -275,12 +308,20 @@ de esos solo `Gauge` está implementado — los demás siguen siendo especificac
 | `Button`           | primary · secondary · danger · ghost; sm · md · lg; los 5 estados (default/hover/focus/active/disabled) |
 | `Input`            | default · hover · focus · error · disabled; icono leading/trailing; toggle contraseña |
 | `Select`           | mismo `.ds-field__input` con flecha propia                              |
+| `Combobox`         | lista desplegable + escritura libre que filtra (ARIA 1.2); conserva el texto fuera de la lista |
+| `SubPestanas`      | navegación secundaria en píldoras (`aria-current`); una tarea a la vez dentro de una pestaña |
 | `Badge`            | Rol: admin/productor/vet/contador/ingeniero; Estado: success/warning/error/info/neutral |
 | `Alert`            | success · warning · error · info; color de texto desde el token semántico |
 | `PasswordStrength` | medidor de fortaleza (única validación que corre en `onChange`)          |
 | `Gauge`            | ok · warning · critical · placeholder                                   |
 | `Sidebar`          | 240px fixed en ≥1024px · drawer off-canvas por debajo                   |
 | `AppBar`           | 64px mínimo; logo, toggle de tema, badge de notificaciones              |
+| `Stepper`          | done · active (`aria-current="step"`) · pending; pasos de un asistente   |
+| `OptionCard`       | card · pill; hover, focus-visible y `selected` (`aria-pressed`) por CSS |
+| `ScrollRegion`     | scroll horizontal de tablas; enfocable (`tabIndex=0`) y con nombre (`role="region"`) |
+| `ModalShell`       | marco de modal: título, cerrar, footer; `maxWidth` → variante sm · default · wide |
+| `LimiteDeError`    | error boundary por página: aviso + recargar, sin desmontar la app (también chunk que no carga) |
+| `Isotipo`         | figura blanca del isotipo SIGAB; el contenedor pone el fondo de marca (login, sidebar). Mismos trazos que `public/favicon.svg` |
 
 ### Reglas no negociables del sistema de diseño
 
@@ -347,6 +388,12 @@ deja menos de 800px de contenido y las tablas de datos empiezan a desbordar.
 Cambiarlo requiere rehacer esas tablas primero.
 
 Modales: bottom sheet a ancho completo en xs/sm, max 480px en md, max 560px en lg.
+Se obtiene con `className="ds-modal"` en el overlay y `ds-modal__panel` en el
+panel (`Layout.css`), o con `ModalShell` del design system; no con `maxWidth`
+inline, que no puede llevar media query. `--sm` (400px) es para confirmaciones
+cortas. `--wide` (720px) es una excepción registrada, como la grilla del
+dashboard: solo para detalles con tablas o matrices (matriz de confusión,
+payload de auditoría, permisos de un rol, niveles de umbral) que no caben en 560px.
 
 **Touch targets:** el DS v2.0 pide 44px de altura mínima en móvil y 40px en
 escritorio. Este repo usa `--s9` (48px) en todos los anchos — más estricto que
@@ -691,7 +738,9 @@ Todas las variables comienzan con `VITE_` para ser expuestas por Vite al bundle.
 El mismo código se despliega como PWA (navegador) y como app nativa (Capacitor). Las APIs nativas (push notifications, haptics, status bar) se acceden vía plugins de Capacitor que degradan gracefully en web. Nunca usar `import ... from '@capacitor/...'` en `shared/design-system/` ni en lógica de negocio; solo en adaptadores dedicados dentro de `shared/hooks/` o `shared/sync/`.
 
 **Service Worker y Vite**
-El SW se registra en `main.tsx`. En desarrollo (`vite dev`) el SW está desactivado por defecto; usar `vite preview` o build con `VITE_SW=true` para testear comportamiento offline.
+`vite-plugin-pwa` genera `/sw.js` en el build: precachea la app para que la PWA abra sin red e importa
+`public/firebase-messaging-sw.js` (push), porque solo cabe un SW por scope `/`. Se registra solo
+(`registerSW.js`, `autoUpdate`). En `vite dev` no hay `/sw.js`: para probar offline, `pnpm build && pnpm preview`.
 
 **`root_path="/api"` del backend**
 En producción, el proxy inverso agrega el prefijo `/api`. `VITE_API_BASE_URL` en producción apuntará a la URL con ese prefijo ya incluido. Localmente, apunta directamente al puerto de uvicorn.

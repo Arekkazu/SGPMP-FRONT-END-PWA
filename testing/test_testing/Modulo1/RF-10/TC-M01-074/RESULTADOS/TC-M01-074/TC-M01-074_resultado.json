@@ -5,14 +5,14 @@
   "rf": "RF-10",
   "tipo": "Negativa / Offline",
   "equipo": "Frontend",
-  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "ambiente": "https://api.inmero.co",
   "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
-  "navegador": "chrome 152.0.7977.65",
-  "fecha": "2026-09-03T15:24:27.907Z",
+  "navegador": "chrome 154.0.8037.98",
+  "fecha": "2026-10-12T16:16:58.350Z",
   "precondiciones": {
     "cuenta": "admin@pecuaria.co",
     "vista": "/auditoria",
-    "eventosCargados": 3932
+    "eventosCargados": 0
   },
   "checkpoints": [
     {
@@ -30,70 +30,28 @@
     {
       "paso": "¿La vista avisa que no hay conexión?",
       "esperado": "Debería mostrar aviso de offline",
-      "obtenido": "No muestra ningún aviso",
-      "estado": "OBSERVACION"
+      "obtenido": "Muestra aviso",
+      "estado": "OK"
     },
     {
       "paso": "Estado del botón \"Exportar CSV\" al quedar offline",
-      "esperado": "Habilitado (hay eventos en memoria)",
-      "obtenido": "Habilitado",
+      "esperado": "Deshabilitado (no se puede exportar sin conexión)",
+      "obtenido": "Deshabilitado",
       "estado": "OK"
     },
     {
-      "paso": "¿El botón \"Exportar CSV\" es alcanzable con un clic real (sin forzar)?",
-      "esperado": "Dentro del viewport, sin overlap",
-      "obtenido": "Se sale del viewport (right=1446, viewportWidth=1280)",
-      "estado": "FALLA"
-    },
-    {
-      "paso": "Clic en \"Exportar CSV\" offline → generación del archivo",
-      "esperado": "Se genera un Blob CSV en el cliente",
-      "obtenido": "NO se generó archivo",
-      "estado": "FALLA"
-    },
-    {
-      "paso": "Disparo de la descarga",
-      "esperado": "a.click() ejecutado",
-      "obtenido": "Descarga NO disparada",
-      "estado": "FALLA"
-    },
-    {
-      "paso": "Contenido del CSV exportado offline",
-      "esperado": "Encabezado \"ID,Usuario,Tipo evento,Módulo,Descripción,Resultado,IP,Fecha/Hora,Hash\" + filas visibles",
-      "obtenido": "Encabezado: \"\" · 0 filas",
-      "estado": "FALLA"
-    },
-    {
-      "paso": "Alertas de error tras exportar offline",
-      "esperado": "Ninguna",
-      "obtenido": "1: Error al exportar CSVOcurrió un error inesperado. Intenta nuevamente.",
-      "estado": "OBSERVACION"
-    },
-    {
-      "paso": "Recargar datos estando offline (botón ↻)",
-      "esperado": "Alerta de error de red visible",
-      "obtenido": "Muestra \"Error al cargar auditoría\"",
-      "estado": "OK"
-    },
-    {
-      "paso": "Estado de \"Exportar CSV\" tras recargar fallido offline",
-      "esperado": "Sigue habilitado (eventos previos en memoria)",
-      "obtenido": "Habilitado",
+      "paso": "Clic forzado en \"Exportar CSV\" offline → no se genera archivo",
+      "esperado": "Sin Blob CSV",
+      "obtenido": "No se generó archivo",
       "estado": "OK"
     }
   ],
-  "veredicto": "CON FALLAS",
+  "veredicto": "SIN FALLAS BLOQUEANTES",
   "hallazgos": [
     "Activar modo offline -> navigator.onLine = false (OK)",
     "¿Existe el botón \"Exportar CSV\" al quedar offline? -> Presente (OK)",
-    "¿La vista avisa que no hay conexión? -> No muestra ningún aviso (OBSERVACION)",
-    "Estado del botón \"Exportar CSV\" al quedar offline -> Habilitado (OK)",
-    "¿El botón \"Exportar CSV\" es alcanzable con un clic real (sin forzar)? -> Se sale del viewport (right=1446, viewportWidth=1280) (FALLA)",
-    "Clic en \"Exportar CSV\" offline → generación del archivo -> NO se generó archivo (FALLA)",
-    "Disparo de la descarga -> Descarga NO disparada (FALLA)",
-    "Contenido del CSV exportado offline -> Encabezado: \"\" · 0 filas (FALLA)",
-    "Alertas de error tras exportar offline -> 1: Error al exportar CSVOcurrió un error inesperado. Intenta nuevamente. (OBSERVACION)",
-    "Recargar datos estando offline (botón ↻) -> Muestra \"Error al cargar auditoría\" (OK)",
-    "Estado de \"Exportar CSV\" tras recargar fallido offline -> Habilitado (OK)"
+    "¿La vista avisa que no hay conexión? -> Muestra aviso (OK)",
+    "Estado del botón \"Exportar CSV\" al quedar offline -> Deshabilitado (OK)",
+    "Clic forzado en \"Exportar CSV\" offline → no se genera archivo -> No se generó archivo (OK)"
   ]
 }

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -6,6 +9,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { ModalShell } from './ModalShell';
 import { EstadoPill } from './EstadoPill';
+import { errorServidor } from './formControls';
 import { TRANSICIONES_VALIDAS } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import type { CambiarEstadoDTO, EstadoActivoNombre } from '../types';
@@ -55,7 +59,6 @@ const ESTADO_LABEL: Record<EstadoActivoNombre, string> = {
   AISLADO: 'Aislado', CERRADO: 'Cerrado', BAJA: 'Baja',
 };
 
-const HOY = hoyLocal();
 
 function normalizar(estado: string | null | undefined): EstadoActivoNombre | null {
   if (!estado) return null;
@@ -73,8 +76,13 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { estado_nuevo: '', fecha_cambio_estado: HOY, motivo_cambio: '' },
+    defaultValues: { estado_nuevo: '', fecha_cambio_estado: hoyLocal(), motivo_cambio: '' },
   });
+
+  const errEstado = errors.estado_nuevo?.message ?? errorServidor(error, 'estado_nuevo');
+  const errMotivo = errors.motivo_cambio?.message ?? errorServidor(error, 'motivo_cambio');
+  // El error con campo ya va debajo de su control: repetirlo en la alerta lo anuncia dos veces (TC-DIS-125).
+  const errorEnCampo = !!(errorServidor(error, 'estado_nuevo') || errorServidor(error, 'motivo_cambio'));
 
   const submit = async (v: FormValues) => {
     if (!v.estado_nuevo) return;
@@ -88,7 +96,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
 
   return (
     <ModalShell title={t('cambiarestadomodal.cambiar_estado_del_activo')} onClose={onClose}>
-      {error && (
+      {error && !errorEnCampo && (
         <Alert
           variant={error.status >= 500 ? 'error' : 'warning'}
           title={t('cambiarestadomodal.no_se_pudo_cambiar_el_estado')}
@@ -98,7 +106,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s5)' }}>
-        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('cambiarestadomodal.estado_actual')}</span>
+        <span style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)' }}>{t('cambiarestadomodal.estado_actual')}</span>
         <EstadoPill estado={estadoActual} size="md" />
       </div>
 
@@ -112,11 +120,14 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
         <form onSubmit={handleSubmit(submit)} noValidate>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="estado-nuevo">{t('cambiarestadomodal.nuevo_estado')}<span aria-hidden="true">*</span>
+              <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="estado-nuevo">{t('cambiarestadomodal.nuevo_estado')}<span aria-hidden="true">*</span>
               </label>
               <select
                 id="estado-nuevo"
                 style={SELECT}
+                aria-required="true"
+                aria-invalid={!!errEstado}
+                aria-describedby={errEstado ? 'estado-nuevo-err' : undefined}
                 {...register('estado_nuevo', { required: t('cambiarestadomodal.selecciona_el_nuevo_estado') })}
               >
                 <option value="">{t('cambiarestadomodal.seleccionar')}</option>
@@ -124,37 +135,40 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
                   <option key={e} value={e}>{ESTADO_LABEL[e]}</option>
                 ))}
               </select>
-              {errors.estado_nuevo && (
-                <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
-                  {errors.estado_nuevo.message}
+              {errEstado && (
+                <p id="estado-nuevo-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+                  {errEstado}
                 </p>
               )}
             </div>
 
             <Input
-              label={t('cambiarestadomodal.fecha_del_cambio')} required type="date" max={HOY}
-              error={errors.fecha_cambio_estado?.message}
+              label={t('cambiarestadomodal.fecha_del_cambio')} required type="date" max={hoyLocal()}
+              error={errors.fecha_cambio_estado?.message ?? errorServidor(error, 'fecha_cambio_estado')}
               {...register('fecha_cambio_estado', {
                 required: t('cambiarestadomodal.la_fecha_es_obligatoria'),
-                validate: (val) => val <= HOY || 'No puede ser una fecha futura.',
+                validate: (val) => val <= hoyLocal() || 'No puede ser una fecha futura.',
               })}
             />
 
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-cambio">{t('cambiarestadomodal.motivo_del_cambio')}<span aria-hidden="true">*</span>
+              <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-cambio">{t('cambiarestadomodal.motivo_del_cambio')}<span aria-hidden="true">*</span>
               </label>
               <textarea
                 id="motivo-cambio"
                 style={TEXTAREA}
+                aria-required="true"
+                aria-invalid={!!errMotivo}
+                aria-describedby={errMotivo ? 'motivo-cambio-err' : undefined}
                 placeholder={t('cambiarestadomodal.describe_la_razon_del_cambio_de_estado')}
                 {...register('motivo_cambio', {
                   required: t('cambiarestadomodal.el_motivo_es_obligatorio'),
                   validate: (val) => val.trim().length > 0 || 'El motivo no puede estar vacío.',
                 })}
               />
-              {errors.motivo_cambio && (
-                <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
-                  {errors.motivo_cambio.message}
+              {errMotivo && (
+                <p id="motivo-cambio-err" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+                  {errMotivo}
                 </p>
               )}
             </div>

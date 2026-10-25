@@ -1,14 +1,19 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | M05 RF-74..81: módulo de suministros (entrada en el menú) |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M9-10/T-20: se ocultan los módulos sin permiso |
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Shield, ClipboardList,
-  User, LogOut, Lock, Settings, Sprout, Activity, BrainCircuit
+  User, LogOut, Settings, Sprout, Activity, BrainCircuit, Package
 } from 'lucide-react';
 import { useT } from '../i18n/useT';
 import { useAuth } from '../auth/useAuth';
 import { usePermission } from '../rbac/usePermission';
 import { useContexto } from '../contexto/useContexto';
 import { resolverLogoUrl } from '../identidad/identidad';
+import { Isotipo } from './Isotipo';
 import './Sidebar.css';
 
 interface NavItem {
@@ -24,6 +29,8 @@ const NAV_ITEMS: NavItem[] = [
   { claveLabel: 'modulos.activos_biologicos', path: '/activos-biologicos', icon: <Sprout size={16} aria-hidden />, requirePermission: [29, 2] },
   { claveLabel: 'modulos.telemetria', path: '/telemetria', icon: <Activity size={16} aria-hidden />, requirePermission: [33, 2] },
   { claveLabel: 'modulos.prediccion', path: '/prediccion', icon: <BrainCircuit size={16} aria-hidden />, requirePermission: [18, 2] },
+  // M05: historial de suministros (52) es el recurso que comparten todos los roles del módulo.
+  { claveLabel: 'modulos.suministros', path: '/suministros', icon: <Package size={16} aria-hidden />, requirePermission: [52, 2] },
   { claveLabel: 'modulos.usuarios', path: '/usuarios', icon: <Users size={16} aria-hidden />, requirePermission: [1, 2] },
   { claveLabel: 'modulos.roles', path: '/roles', icon: <Shield size={16} aria-hidden />, requirePermission: [2, 2] },
   { claveLabel: 'modulos.auditoria', path: '/auditoria', icon: <ClipboardList size={16} aria-hidden />, requirePermission: [6, 2] },
@@ -41,6 +48,11 @@ interface SidebarProps {
   onNavigate?: () => void;
 }
 
+/** "juan veterinario" → "Juan Veterinario" (T-12). */
+function capitalizar(nombre: string): string {
+  return nombre.trim().toLowerCase().replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase());
+}
+
 function NavItemComponent({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
   const { t } = useT('nav');
   const { pathname } = useLocation();
@@ -49,26 +61,23 @@ function NavItemComponent({ item, onNavigate }: { item: NavItem; onNavigate?: ()
     item.requirePermission?.[1] ?? 0
   );
 
-  const locked = item.requirePermission ? !hasPermission : false;
+  // M9-10 / T-20: un módulo sin permiso no se muestra. Antes quedaba con candado y
+  // el Veterinario veía Usuarios, Roles y Auditoría que nunca iba a poder abrir.
+  if (item.requirePermission && !hasPermission) return null;
+
   const active = pathname === item.path;
   const label = t(item.claveLabel);
 
   return (
     <Link
       to={item.path}
-      className={['ds-sidebar__item', active ? 'ds-sidebar__item--active' : '', locked ? 'ds-sidebar__item--locked' : ''].filter(Boolean).join(' ')}
-      onClick={(e) => { if (locked) { e.preventDefault(); return; } onNavigate?.(); }}
+      className={['ds-sidebar__item', active ? 'ds-sidebar__item--active' : ''].filter(Boolean).join(' ')}
+      onClick={() => onNavigate?.()}
       aria-current={active ? 'page' : undefined}
-      aria-disabled={locked}
-      title={locked ? t('aria.sin_permiso') : label}
+      title={label}
     >
       <span className="ds-sidebar__item-icon">{item.icon}</span>
       <span className="ds-sidebar__item-label">{label}</span>
-      {locked && (
-        <span className="ds-sidebar__item-lock" aria-hidden="true">
-          <Lock size={11} />
-        </span>
-      )}
     </Link>
   );
 }
@@ -77,13 +86,17 @@ export function Sidebar({ onLogout, open, onNavigate }: SidebarProps) {
   const { t } = useT('nav');
   const { userInfo } = useAuth();
   // RF-26: la marca de la finca activa sustituye a la del producto cuando existe.
-  // Sin identidad configurada se conserva la de SGP, que es el comportamiento previo.
+  // Sin identidad configurada se conserva la de SIGAB, que es el comportamiento previo.
   const { contexto } = useContexto();
   const identidad = contexto?.identidad_visual ?? null;
-  const logoUrl = resolverLogoUrl(identidad?.logo_path);
+  // M9-09: si el logo no carga se vuelve a la marca por defecto, no a una imagen rota.
+  const [logoRoto, setLogoRoto] = React.useState(false);
+  React.useEffect(() => setLogoRoto(false), [identidad?.logo_path]);
+  const logoUrl = logoRoto ? null : resolverLogoUrl(identidad?.logo_path);
   const nombreOrg = identidad?.org_display_name || t('marca.nombre');
   const subtitulo = contexto?.finca_activa || t('marca.descripcion');
 
+  const nombreUsuario = userInfo ? capitalizar(`${userInfo.nombre} ${userInfo.apellidos}`) : '';
   const initials =
     userInfo?.nombre && userInfo?.apellidos
       ? `${userInfo.nombre.charAt(0)}${userInfo.apellidos.charAt(0)}`
@@ -97,15 +110,11 @@ export function Sidebar({ onLogout, open, onNavigate }: SidebarProps) {
             <img
               src={logoUrl}
               alt={nombreOrg}
+              onError={() => setLogoRoto(true)}
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           ) : (
-            <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-              <path d="M8 22C8 16 12 11 16 11C20 11 24 16 24 22" stroke="white" strokeWidth="2"/>
-              <circle cx="12" cy="17" r="2" fill="white" opacity=".8"/>
-              <circle cx="20" cy="17" r="2" fill="white" opacity=".8"/>
-              <path d="M13 21C13 19.5 14.3 18.5 16 18.5C17.7 18.5 19 19.5 19 21" stroke="white" strokeWidth="1.5"/>
-            </svg>
+            <Isotipo size={20} />
           )}
         </div>
         <div>
@@ -133,8 +142,9 @@ export function Sidebar({ onLogout, open, onNavigate }: SidebarProps) {
       <div className="ds-sidebar__footer">
         <div className="ds-sidebar__avatar" aria-hidden="true">{initials}</div>
         <div className="ds-sidebar__user-info">
-          <span className="ds-sidebar__user-name">
-            {userInfo ? `${userInfo.nombre} ${userInfo.apellidos}` : '—'}
+          {/* T-12: el nombre se trunca con elipsis; el title conserva el completo. */}
+          <span className="ds-sidebar__user-name" title={nombreUsuario || undefined}>
+            {nombreUsuario || '—'}
           </span>
           <span className="ds-sidebar__user-role">{userInfo?.nombre_rol ?? ''}</span>
         </div>

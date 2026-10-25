@@ -1,6 +1,10 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-20: aviso único de sin acceso (AccesoDenegado) |
 import React, { useEffect, useState } from 'react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
+import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
 import { RefreshCw, Download, Archive, X, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useAuditoria } from '../hooks/useAuditoria';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -48,13 +52,7 @@ export function AuditoriaPage() {
     if (puedeVer) cargar();
   }, [puedeVer, cargar]);
 
-  if (!puedeVer) {
-    return (
-      <div style={{ padding: 'var(--page-pad)', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('auditoriapage.no_tienes_permiso_para_ver_esta_seccion')}</p>
-      </div>
-    );
-  }
+  if (!puedeVer) return <AccesoDenegado seccion={t('auditoriapage.seccion')} />;
 
   const handleExportarCsv = async () => {
     setExportacionAviso(null);
@@ -72,8 +70,8 @@ export function AuditoriaPage() {
     enlace.remove();
     URL.revokeObjectURL(url);
 
-    const exportados = formatearFechaHora(resultado.exportados);
-    const disponibles = formatearFechaHora(resultado.total);
+    const exportados = formatearNumero(resultado.exportados);
+    const disponibles = formatearNumero(resultado.total);
     if (resultado.truncado) {
       setExportacionAviso({
         variant: 'warning',
@@ -111,8 +109,11 @@ export function AuditoriaPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
-          <Button variant="secondary" size="sm" onClick={handleSimularArchivado} disabled={eventos.length === 0}>
-            <Archive size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriapage.simular_archivado')}</Button>
+          {/* M1-02: herramienta de prueba del archivado; no se muestra fuera de desarrollo. */}
+          {import.meta.env.DEV && (
+            <Button variant="secondary" size="sm" onClick={handleSimularArchivado} disabled={eventos.length === 0}>
+              <Archive size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriapage.simular_archivado')}</Button>
+          )}
           <Button
             variant="secondary"
             size="sm"

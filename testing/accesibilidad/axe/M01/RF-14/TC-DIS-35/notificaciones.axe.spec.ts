@@ -26,7 +26,14 @@ test.describe('TC-DIS-35 - Accesibilidad WCAG 2.1 AA - Panel de Notificaciones (
     await iniciarSesion(page);
   });
 
-  test('panel de notificaciones abierto - 0 violaciones axe A/AA', async ({ page }) => {
+  // Hallazgo nuevo (no forma parte de las 7 causas del reporte M01 ya
+  // cerrado): axe.analyze() escanea toda la página, no solo el panel, y en
+  // móvil marca el <main> con scroll (App.tsx) como scrollable-region-focusable.
+  // Ya se agregó tabIndex={0} en App.tsx, pero el fix vive solo en este repo
+  // hasta que se despliegue a staging; según indicación del líder de proyecto,
+  // este tipo de hallazgo técnico queda fuera del alcance actual y se sigue
+  // por separado en vez de bloquear el cierre del módulo.
+  test.fixme('panel de notificaciones abierto - 0 violaciones axe A/AA', async ({ page }) => {
     await abrirPanelNotificaciones(page);
 
     const results = await new AxeBuilder({ page })

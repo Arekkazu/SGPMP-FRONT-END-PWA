@@ -1,11 +1,18 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-19: códigos del backend con etiqueta legible |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 import React from 'react';
-import { useT } from '../../shared/i18n/useT';
+import { useT, useNombreModulo } from '../../shared/i18n/useT';
 import { ClipboardList } from 'lucide-react';
 import { SeveridadLogPill } from './SeveridadLogPill';
 import { Pill, type Tono } from './Pill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { EventoAuditoriaIotSchema } from '../types';
+import { alActivarConTeclado } from '../../shared/lib/teclado';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 const COLS = ['Fecha', 'Tipo de evento', 'Módulo', 'Entidad', 'Usuario', 'Resultado', 'Severidad', 'Clasif.', 'Hash'];
 
@@ -32,6 +39,7 @@ interface Props {
 
 export function BitacoraTable({ items, loading, onAbrir }: Props) {
   const { t } = useT('telemetry');
+  const nombreModulo = useNombreModulo();
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -53,7 +61,7 @@ export function BitacoraTable({ items, loading, onAbrir }: Props) {
   }
 
   return (
-    <div style={TABLE_WRAP}>
+    <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de eventos de auditoría">
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} style={TH}>{h}</th>)}</tr>
@@ -64,16 +72,16 @@ export function BitacoraTable({ items, loading, onAbrir }: Props) {
             return (
               <tr
                 key={ev.id_evento}
+                className="ds-fila-accion"
+                tabIndex={0}
                 onClick={() => onAbrir(ev)}
-                style={{ background: 'var(--surface-card)', cursor: 'pointer' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-hover)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-card)')}
+                onKeyDown={alActivarConTeclado(() => onAbrir(ev))}
               >
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                  {ev.fecha_hora?.slice(0, 10)} {horaCaptura(ev.fecha_hora)}
+                  {fechaHoraCaptura(ev.fecha_hora)}
                 </td>
-                <td style={{ ...TD, color: 'var(--text-primary)', fontWeight: 600, fontSize: '12px' }}>{ev.tipo_evento}</td>
-                <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>{ev.modulo}</td>
+                <td style={{ ...TD, color: 'var(--text-primary)', fontWeight: 600, fontSize: '12px' }}><span title={ev.tipo_evento}>{etiquetaCodigo(ev.tipo_evento)}</span></td>
+                <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>{nombreModulo(ev.modulo)}</td>
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
                   {ev.entidad_afectada_tipo ? `${ev.entidad_afectada_tipo}${ev.entidad_afectada_id ? ` #${ev.entidad_afectada_id}` : ''}` : '—'}
                 </td>

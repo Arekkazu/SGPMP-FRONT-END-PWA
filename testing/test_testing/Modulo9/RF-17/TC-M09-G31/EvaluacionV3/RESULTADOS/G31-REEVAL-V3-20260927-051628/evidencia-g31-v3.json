@@ -1,0 +1,1015 @@
+{
+  "grupo": "TC-M09-G31",
+  "rf": "RF-17",
+  "cu": "CU-03",
+  "casos": [
+    "TC-M09-66",
+    "TC-M09-67",
+    "TC-M09-68"
+  ],
+  "tipo": "REEVALUACION V3",
+  "runId": "G31-REEVAL-V3-20260927-051628",
+  "environment": "TEST",
+  "fecha": "2026-09-27T10:17:01.580Z",
+  "preflight": {
+    "health": 200,
+    "logins": [
+      {
+        "correo": "administador.dev@gmail.com",
+        "status": 200,
+        "rol": "Administrador",
+        "recurso_37": true
+      }
+    ]
+  },
+  "actor": {
+    "correo": "administador.dev@gmail.com",
+    "id_usuario": 104,
+    "rol": "Administrador",
+    "estado": "Activo",
+    "fincas": 0
+  },
+  "discovery": {
+    "umbralesCandidatos": [
+      {
+        "id": 56,
+        "especie": "Equina",
+        "variable": "Temperatura Corporal",
+        "codigo_ingesta": "TEMPERATURA_CORPORAL",
+        "niveles": [
+          {
+            "nivel": "normal",
+            "limite_inferior": "37.00",
+            "limite_superior": "39.00"
+          },
+          {
+            "nivel": "precaucion",
+            "limite_inferior": "39.00",
+            "limite_superior": "41.00"
+          },
+          {
+            "nivel": "critico",
+            "limite_inferior": "41.00",
+            "limite_superior": "43.00"
+          }
+        ],
+        "activos": 0,
+        "prioridad": 2
+      },
+      {
+        "id": 55,
+        "especie": "Equino",
+        "variable": "Temperatura Corporal",
+        "codigo_ingesta": "TEMPERATURA_CORPORAL",
+        "niveles": [
+          {
+            "nivel": "normal",
+            "limite_inferior": "37.00",
+            "limite_superior": "39.00"
+          },
+          {
+            "nivel": "precaucion",
+            "limite_inferior": "39.00",
+            "limite_superior": "41.00"
+          },
+          {
+            "nivel": "critico",
+            "limite_inferior": "41.00",
+            "limite_superior": "43.00"
+          }
+        ],
+        "activos": 0,
+        "prioridad": 2
+      },
+      {
+        "id": 46,
+        "especie": "Trucha Arcoíris",
+        "variable": "Temperatura Ambiental",
+        "codigo_ingesta": "TEMPERATURA_AMBIENTAL",
+        "niveles": [
+          {
+            "nivel": "normal",
+            "limite_inferior": "10.00",
+            "limite_superior": "20.00"
+          },
+          {
+            "nivel": "precaucion",
+            "limite_inferior": "20.00",
+            "limite_superior": "30.00"
+          },
+          {
+            "nivel": "critico",
+            "limite_inferior": "30.00",
+            "limite_superior": "40.00"
+          }
+        ],
+        "activos": 11,
+        "prioridad": 2
+      }
+    ],
+    "catalogoIngesta": {
+      "nota": "Solo TEMPERATURA_AMBIENTAL (variable 9) y TEMPERATURA_CORPORAL (variable 13) son ingeribles (CATALOGO_I3P1). La variable 1 \"Temperatura del agua\" no tiene codigo de ingesta.",
+      "variables": {
+        "9": {
+          "codigo": "TEMPERATURA_AMBIENTAL",
+          "unidad": "°C"
+        },
+        "13": {
+          "codigo": "TEMPERATURA_CORPORAL",
+          "unidad": "°C"
+        }
+      }
+    }
+  },
+  "cadena": {
+    "sensor": {
+      "id": 1,
+      "nombre": "Sensor temperatura estanque-01"
+    },
+    "dispositivo": {
+      "id": 1,
+      "access_key": "[REDACTED_ACCESS_KEY]"
+    },
+    "infraestructura": 1,
+    "activo_biologico": {
+      "id_activo_biologico": 616,
+      "identificador": "G33-1790408888466",
+      "modelo_manejo": null
+    },
+    "especie": {
+      "id": 2,
+      "nombre": "Trucha Arcoíris"
+    },
+    "umbral": {
+      "id_umbral_ambiental": 46,
+      "variable": "Temperatura Ambiental",
+      "id_variable_ambiental": 9,
+      "general": [
+        "10.00",
+        "40.00"
+      ],
+      "niveles": [
+        {
+          "nivel": "normal",
+          "limite_inferior": "10.00",
+          "limite_superior": "20.00"
+        },
+        {
+          "nivel": "precaucion",
+          "limite_inferior": "20.00",
+          "limite_superior": "30.00"
+        },
+        {
+          "nivel": "critico",
+          "limite_inferior": "30.00",
+          "limite_superior": "40.00"
+        }
+      ],
+      "fecha_actualizacion": null
+    },
+    "calibracion": {
+      "id_calibracion": 8,
+      "ganancia": "1.0000",
+      "offset": "25.5000",
+      "fecha_calibracion": "2026-06-21T10:00:00Z"
+    }
+  },
+  "fixture": {
+    "prioridad": 2,
+    "justificacion": "PRIORIDAD 2: 36/38/40 no son interiores a las bandas vigentes del umbral seleccionado, asi que se usan valores interiores equivalentes (parametrizacion del fixture, no una prueba nueva).",
+    "compensacionCalibracion": "El backend clasifica COALESCE(valor_ajustado, valor_crudo) y valor_ajustado = crudo*1.0000 + 25.5000, por lo que el valor enviado se compensa para que el valor clasificado caiga dentro de la banda.",
+    "casos": {
+      "TC-M09-66": {
+        "nivel": "normal",
+        "clase": "NORMAL",
+        "esperado": "VERDE",
+        "preferido": "36.00",
+        "banda": [
+          "10.00",
+          "20.00"
+        ],
+        "usaValorPreferido": false,
+        "valor_objetivo_clasificado": "15.00",
+        "valor_crudo_a_enviar": "-10.50",
+        "valor_ajustado_esperado": "15.00"
+      },
+      "TC-M09-67": {
+        "nivel": "precaucion",
+        "clase": "PRECAUCION",
+        "esperado": "AMARILLO",
+        "preferido": "38.00",
+        "banda": [
+          "20.00",
+          "30.00"
+        ],
+        "usaValorPreferido": false,
+        "valor_objetivo_clasificado": "25.00",
+        "valor_crudo_a_enviar": "-0.50",
+        "valor_ajustado_esperado": "25.00"
+      },
+      "TC-M09-68": {
+        "nivel": "critico",
+        "clase": "CRITICO",
+        "esperado": "ROJO",
+        "preferido": "40.00",
+        "banda": [
+          "30.00",
+          "40.00"
+        ],
+        "usaValorPreferido": false,
+        "valor_objetivo_clasificado": "35.00",
+        "valor_crudo_a_enviar": "9.50",
+        "valor_ajustado_esperado": "35.00"
+      }
+    }
+  },
+  "pre": {
+    "dashboard": {
+      "status": 200,
+      "sensor": {
+        "id_sensor": 1,
+        "tipo_variable": "Temperatura Ambiental",
+        "ultimo_valor": "35.0000",
+        "ultimo_timestamp_captura": "2026-09-27T09:27:03.390000Z",
+        "estado_semaforo": "GRIS",
+        "dato_desactualizado": true,
+        "id_alerta": null,
+        "severidad_alerta": null
+      }
+    },
+    "historial": {
+      "status": 200,
+      "total": 3,
+      "semaforos": [
+        "GRIS"
+      ]
+    }
+  },
+  "por_caso": {
+    "TC-M09-66": {
+      "caso": "TC-M09-66",
+      "plan": {
+        "nivel": "normal",
+        "clase": "NORMAL",
+        "esperado": "VERDE",
+        "preferido": "36.00",
+        "banda": [
+          "10.00",
+          "20.00"
+        ],
+        "usaValorPreferido": false,
+        "valor_objetivo_clasificado": "15.00",
+        "valor_crudo_a_enviar": "-10.50",
+        "valor_ajustado_esperado": "15.00"
+      },
+      "orden": 1,
+      "request": {
+        "endpoint": "POST /iot/telemetria",
+        "device_id": 1,
+        "sensor_id": 1,
+        "tipo_variable": "TEMPERATURA_AMBIENTAL",
+        "valor": "-10.50",
+        "unidad": "°C",
+        "timestamp_captura": "2026-09-27T10:15:03.439Z",
+        "access_key": "[REDACTED_ACCESS_KEY]",
+        "origen": "TIEMPO_REAL"
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id_telemetria": 52,
+          "estado_calidad": "LECTURA_VALIDA",
+          "timestamp_procesamiento": "2026-09-27T10:16:33.233027Z",
+          "latencia_procesamiento_ms": null
+        }
+      },
+      "id_telemetria": 52,
+      "vinculacion": {
+        "status": 200,
+        "total": 0,
+        "items": []
+      },
+      "precondicion": {
+        "endpoint": null,
+        "status": "NO_APLICABLE",
+        "motivo": "La ingesta no creo ninguna fila de vinculacion (ni SIN_VINCULAR): no hay nada que resolver ni corregir"
+      },
+      "dashboard": {
+        "status": 200,
+        "sensor": {
+          "id_sensor": 1,
+          "tipo_variable": "Temperatura Ambiental",
+          "ultimo_valor": "15.0000",
+          "ultimo_timestamp_captura": "2026-09-27T10:15:03.439000Z",
+          "estado_semaforo": "VERDE",
+          "dato_desactualizado": false,
+          "id_alerta": null,
+          "severidad_alerta": null
+        }
+      },
+      "historial": {
+        "status": 200,
+        "lectura": {
+          "id_telemetria": 52,
+          "valor": "15.0000",
+          "valor_ajustado": "15.0000",
+          "unidad_medida": "°C",
+          "timestamp_captura": "2026-09-27T10:15:03.439000Z",
+          "estado_calidad": "LECTURA_VALIDA",
+          "estado_semaforo_historico": "GRIS",
+          "id_activo_biologico": null,
+          "id_especie": null,
+          "especie": null,
+          "id_umbral_ambiental": null,
+          "valor_min_umbral": null,
+          "valor_max_umbral": null,
+          "id_alerta": null
+        }
+      },
+      "resultado": {
+        "clasificacion_esperada": "VERDE",
+        "clasificacion_api_dashboard": "VERDE",
+        "clasificacion_api_historial": "GRIS",
+        "valor_clasificado": "15.0000",
+        "valor_dentro_de_banda": true,
+        "id_umbral_ambiental_usado": null,
+        "aprobado": false
+      }
+    },
+    "TC-M09-67": {
+      "caso": "TC-M09-67",
+      "plan": {
+        "nivel": "precaucion",
+        "clase": "PRECAUCION",
+        "esperado": "AMARILLO",
+        "preferido": "38.00",
+        "banda": [
+          "20.00",
+          "30.00"
+        ],
+        "usaValorPreferido": false,
+        "valor_objetivo_clasificado": "25.00",
+        "valor_crudo_a_enviar": "-0.50",
+        "valor_ajustado_esperado": "25.00"
+      },
+      "orden": 2,
+      "request": {
+        "endpoint": "POST /iot/telemetria",
+        "device_id": 1,
+        "sensor_id": 1,
+        "tipo_variable": "TEMPERATURA_AMBIENTAL",
+        "valor": "-0.50",
+        "unidad": "°C",
+        "timestamp_captura": "2026-09-27T10:15:03.943Z",
+        "access_key": "[REDACTED_ACCESS_KEY]",
+        "origen": "TIEMPO_REAL"
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id_telemetria": 53,
+          "estado_calidad": "LECTURA_VALIDA",
+          "timestamp_procesamiento": "2026-09-27T10:16:33.737664Z",
+          "latencia_procesamiento_ms": null
+        }
+      },
+      "id_telemetria": 53,
+      "vinculacion": {
+        "status": 200,
+        "total": 0,
+        "items": []
+      },
+      "precondicion": {
+        "endpoint": null,
+        "status": "NO_APLICABLE",
+        "motivo": "La ingesta no creo ninguna fila de vinculacion (ni SIN_VINCULAR): no hay nada que resolver ni corregir"
+      },
+      "dashboard": {
+        "status": 200,
+        "sensor": {
+          "id_sensor": 1,
+          "tipo_variable": "Temperatura Ambiental",
+          "ultimo_valor": "25.0000",
+          "ultimo_timestamp_captura": "2026-09-27T10:15:03.943000Z",
+          "estado_semaforo": "VERDE",
+          "dato_desactualizado": false,
+          "id_alerta": null,
+          "severidad_alerta": null
+        }
+      },
+      "historial": {
+        "status": 200,
+        "lectura": {
+          "id_telemetria": 53,
+          "valor": "25.0000",
+          "valor_ajustado": "25.0000",
+          "unidad_medida": "°C",
+          "timestamp_captura": "2026-09-27T10:15:03.943000Z",
+          "estado_calidad": "LECTURA_VALIDA",
+          "estado_semaforo_historico": "GRIS",
+          "id_activo_biologico": null,
+          "id_especie": null,
+          "especie": null,
+          "id_umbral_ambiental": null,
+          "valor_min_umbral": null,
+          "valor_max_umbral": null,
+          "id_alerta": null
+        }
+      },
+      "resultado": {
+        "clasificacion_esperada": "AMARILLO",
+        "clasificacion_api_dashboard": "VERDE",
+        "clasificacion_api_historial": "GRIS",
+        "valor_clasificado": "25.0000",
+        "valor_dentro_de_banda": true,
+        "id_umbral_ambiental_usado": null,
+        "aprobado": false
+      }
+    },
+    "TC-M09-68": {
+      "caso": "TC-M09-68",
+      "plan": {
+        "nivel": "critico",
+        "clase": "CRITICO",
+        "esperado": "ROJO",
+        "preferido": "40.00",
+        "banda": [
+          "30.00",
+          "40.00"
+        ],
+        "usaValorPreferido": false,
+        "valor_objetivo_clasificado": "35.00",
+        "valor_crudo_a_enviar": "9.50",
+        "valor_ajustado_esperado": "35.00"
+      },
+      "orden": 3,
+      "request": {
+        "endpoint": "POST /iot/telemetria",
+        "device_id": 1,
+        "sensor_id": 1,
+        "tipo_variable": "TEMPERATURA_AMBIENTAL",
+        "valor": "9.50",
+        "unidad": "°C",
+        "timestamp_captura": "2026-09-27T10:15:04.446Z",
+        "access_key": "[REDACTED_ACCESS_KEY]",
+        "origen": "TIEMPO_REAL"
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "id_telemetria": 54,
+          "estado_calidad": "LECTURA_VALIDA",
+          "timestamp_procesamiento": "2026-09-27T10:16:34.235409Z",
+          "latencia_procesamiento_ms": null
+        }
+      },
+      "id_telemetria": 54,
+      "vinculacion": {
+        "status": 200,
+        "total": 0,
+        "items": []
+      },
+      "precondicion": {
+        "endpoint": null,
+        "status": "NO_APLICABLE",
+        "motivo": "La ingesta no creo ninguna fila de vinculacion (ni SIN_VINCULAR): no hay nada que resolver ni corregir"
+      },
+      "dashboard": {
+        "status": 200,
+        "sensor": {
+          "id_sensor": 1,
+          "tipo_variable": "Temperatura Ambiental",
+          "ultimo_valor": "35.0000",
+          "ultimo_timestamp_captura": "2026-09-27T10:15:04.446000Z",
+          "estado_semaforo": "VERDE",
+          "dato_desactualizado": false,
+          "id_alerta": null,
+          "severidad_alerta": null
+        }
+      },
+      "historial": {
+        "status": 200,
+        "lectura": {
+          "id_telemetria": 54,
+          "valor": "35.0000",
+          "valor_ajustado": "35.0000",
+          "unidad_medida": "°C",
+          "timestamp_captura": "2026-09-27T10:15:04.446000Z",
+          "estado_calidad": "LECTURA_VALIDA",
+          "estado_semaforo_historico": "GRIS",
+          "id_activo_biologico": null,
+          "id_especie": null,
+          "especie": null,
+          "id_umbral_ambiental": null,
+          "valor_min_umbral": null,
+          "valor_max_umbral": null,
+          "id_alerta": null
+        }
+      },
+      "resultado": {
+        "clasificacion_esperada": "ROJO",
+        "clasificacion_api_dashboard": "VERDE",
+        "clasificacion_api_historial": "GRIS",
+        "valor_clasificado": "35.0000",
+        "valor_dentro_de_banda": true,
+        "id_umbral_ambiental_usado": null,
+        "aprobado": false
+      }
+    }
+  },
+  "escrituras": [
+    {
+      "caso": "TC-M09-66",
+      "endpoint": "POST /iot/telemetria",
+      "status": 201,
+      "reintento": false
+    },
+    {
+      "caso": "TC-M09-67",
+      "endpoint": "POST /iot/telemetria",
+      "status": 201,
+      "reintento": false
+    },
+    {
+      "caso": "TC-M09-68",
+      "endpoint": "POST /iot/telemetria",
+      "status": 201,
+      "reintento": false
+    }
+  ],
+  "threshold_config_after": {
+    "igualAntes": true
+  },
+  "test_vs_dev": {
+    "ejecutado": true,
+    "tipo": "SOLO_LECTURA",
+    "actor": {
+      "correo": "admin.dev@gmail.com",
+      "id_usuario": 50,
+      "rol": "Administrador",
+      "estado": "Activo",
+      "fincas": 0
+    },
+    "logins": [
+      {
+        "correo": "admin.dev@gmail.com",
+        "status": 200,
+        "rol": "Administrador",
+        "recurso_37": true
+      }
+    ],
+    "umbralesCandidatos": [],
+    "dashboard": {
+      "status": 200,
+      "semaforos": [
+        "GRIS"
+      ]
+    },
+    "historial": {
+      "status": 200,
+      "total": 0,
+      "semaforos": [],
+      "conEspecie": 0
+    },
+    "vinculaciones": {
+      "status": 200,
+      "total": 6,
+      "porEstado": {
+        "VINCULADA": 6
+      },
+      "porMecanismo": {
+        "AUTOMATICA": 6
+      }
+    }
+  },
+  "codigo_causa_raiz": {
+    "clasificadorPresente": [
+      "HEAD:src/telemetry/application/use_cases/monitoreo/consultar_historial_use_case.py:122:        return SemaforoCalculator.calcular_por_niveles(",
+      "HEAD:src/telemetry/application/use_cases/monitoreo/reclasificar_semaforo_use_case.py:21:    `SemaforoCalculator.calcular_por_niveles` que ya usa el historial (RF-59) —",
+      "HEAD:src/telemetry/application/use_cases/monitoreo/reclasificar_semaforo_use_case.py:67:        estado = SemaforoCalculator.calcular_por_niveles(valor=valor, niveles=umbral['niveles'])",
+      "HEAD:src/telemetry/domain/entities/monitoreo.py:165:    def calcular_por_niveles("
+    ],
+    "invocacionesReclasificar": [
+      "HEAD:src/telemetry/application/use_cases/infraestructura/corregir_vinculacion_use_case.py:78:                self.reclasificar_semaforo_use_case.execute(",
+      "HEAD:src/telemetry/application/use_cases/infraestructura/resolver_vinculacion_use_case.py:53:                self.reclasificar_semaforo_use_case.execute(",
+      "HEAD:src/telemetry/application/use_cases/ingesta/ingerir_telemetria_use_case.py:247:                            self.reclasificar_semaforo_use_case.execute("
+    ],
+    "stubActivoBiologico": [
+      "class ActivoBiologicoStubAdapter(ActivoBiologicoDependencyPort):",
+      "Retorna lista vacía → las vinculaciones quedan en estado SIN_VINCULAR.",
+      "return []"
+    ],
+    "ramaVinculacionSinActivos": [
+      "HEAD:src/telemetry/application/use_cases/infraestructura/vincular_lectura_activo_use_case.py:43:                estado = 'SIN_VINCULAR'",
+      "HEAD:src/telemetry/application/use_cases/infraestructura/vincular_lectura_activo_use_case.py-44-                id_activo = None",
+      "HEAD:src/telemetry/application/use_cases/infraestructura/vincular_lectura_activo_use_case.py-45-                modelo_manejo = 'INDIVIDUAL'",
+      "HEAD:src/telemetry/application/use_cases/infraestructura/vincular_lectura_activo_use_case.py-46-            elif len(activos) == 1:"
+    ],
+    "restriccionTablaVinculaciones": [
+      "HEAD:alembic/baseline/esquema_baseline.sql:21869:    CONSTRAINT chk_vinculacion_modelo CHECK ((((modelo_manejo = 'INDIVIDUAL'::modulo3.enum_modelo_manejo) AND (id_activo_biologico IS NOT NULL)) OR ((modelo_manejo = 'POBLACIONAL'::modulo3.enum_modelo_manejo) AND (id_activo_biologico IS NULL))))"
+    ],
+    "fallaSilenciosa": [
+      "HEAD:src/telemetry/application/use_cases/ingesta/ingerir_telemetria_use_case.py:259:                        'RF-61: fallo en vinculación automática para telemetría %s.',"
+    ]
+  },
+  "newman": {
+    "html": "newman-g31-v3.html",
+    "json": "newman-g31-v3.json",
+    "stats": {
+      "total": 35,
+      "pending": 0,
+      "failed": 16
+    },
+    "aserciones": [
+      {
+        "request": "Actor",
+        "test": "Precondicion: /usuarios/me 200",
+        "ok": true
+      },
+      {
+        "request": "Actor",
+        "test": "Precondicion: actor autorizado y activo",
+        "ok": true
+      },
+      {
+        "request": "THRESHOLD_CONFIG",
+        "test": "Precondicion: GET RF-17 200",
+        "ok": true
+      },
+      {
+        "request": "THRESHOLD_CONFIG",
+        "test": "Precondicion: configuracion activa con normal/precaucion/critico",
+        "ok": true
+      },
+      {
+        "request": "THRESHOLD_CONFIG",
+        "test": "Precondicion: niveles sin solapamiento y cada uno con amplitud positiva",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-66 precondicion vinculacion RF-61",
+        "test": "TC-M09-66 precondicion: GET vinculaciones 200",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-66 precondicion vinculacion RF-61",
+        "test": "TC-M09-66 precondicion: la lectura ingerida tiene fila de vinculacion RF-61",
+        "ok": false,
+        "detalle": "filas de vinculacion para la lectura: expected +0 to be above +0"
+      },
+      {
+        "request": "TC-M09-66 precondicion vinculacion RF-61",
+        "test": "TC-M09-66 precondicion: la vinculacion vigente resuelve un activo biologico",
+        "ok": false,
+        "detalle": "vinculacion vigente: expected +0 to be above +0"
+      },
+      {
+        "request": "TC-M09-66 NORMAL -> VERDE",
+        "test": "TC-M09-66: GET historial 200",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-66 NORMAL -> VERDE",
+        "test": "TC-M09-66: la medicion ingerida esta en el historial",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-66 NORMAL -> VERDE",
+        "test": "TC-M09-66: el valor clasificado es el del fixture",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-66 NORMAL -> VERDE",
+        "test": "TC-M09-66: la lectura resuelve especie (requisito del clasificador RF-17)",
+        "ok": false,
+        "detalle": "id_especie: expected null not to be null"
+      },
+      {
+        "request": "TC-M09-66 NORMAL -> VERDE",
+        "test": "TC-M09-66: se clasifico contra el umbral RF-17 del fixture",
+        "ok": false,
+        "detalle": "expected null to deeply equal 46"
+      },
+      {
+        "request": "TC-M09-66 NORMAL -> VERDE",
+        "test": "TC-M09-66: valor en zona NORMAL clasificado VERDE",
+        "ok": false,
+        "detalle": "expected 'GRIS' to deeply equal 'VERDE'"
+      },
+      {
+        "request": "TC-M09-67 precondicion vinculacion RF-61",
+        "test": "TC-M09-67 precondicion: GET vinculaciones 200",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-67 precondicion vinculacion RF-61",
+        "test": "TC-M09-67 precondicion: la lectura ingerida tiene fila de vinculacion RF-61",
+        "ok": false,
+        "detalle": "filas de vinculacion para la lectura: expected +0 to be above +0"
+      },
+      {
+        "request": "TC-M09-67 precondicion vinculacion RF-61",
+        "test": "TC-M09-67 precondicion: la vinculacion vigente resuelve un activo biologico",
+        "ok": false,
+        "detalle": "vinculacion vigente: expected +0 to be above +0"
+      },
+      {
+        "request": "TC-M09-67 PRECAUCION -> AMARILLO",
+        "test": "TC-M09-67: GET historial 200",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-67 PRECAUCION -> AMARILLO",
+        "test": "TC-M09-67: la medicion ingerida esta en el historial",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-67 PRECAUCION -> AMARILLO",
+        "test": "TC-M09-67: el valor clasificado es el del fixture",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-67 PRECAUCION -> AMARILLO",
+        "test": "TC-M09-67: la lectura resuelve especie (requisito del clasificador RF-17)",
+        "ok": false,
+        "detalle": "id_especie: expected null not to be null"
+      },
+      {
+        "request": "TC-M09-67 PRECAUCION -> AMARILLO",
+        "test": "TC-M09-67: se clasifico contra el umbral RF-17 del fixture",
+        "ok": false,
+        "detalle": "expected null to deeply equal 46"
+      },
+      {
+        "request": "TC-M09-67 PRECAUCION -> AMARILLO",
+        "test": "TC-M09-67: valor en zona PRECAUCION clasificado AMARILLO",
+        "ok": false,
+        "detalle": "expected 'GRIS' to deeply equal 'AMARILLO'"
+      },
+      {
+        "request": "TC-M09-68 precondicion vinculacion RF-61",
+        "test": "TC-M09-68 precondicion: GET vinculaciones 200",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-68 precondicion vinculacion RF-61",
+        "test": "TC-M09-68 precondicion: la lectura ingerida tiene fila de vinculacion RF-61",
+        "ok": false,
+        "detalle": "filas de vinculacion para la lectura: expected +0 to be above +0"
+      },
+      {
+        "request": "TC-M09-68 precondicion vinculacion RF-61",
+        "test": "TC-M09-68 precondicion: la vinculacion vigente resuelve un activo biologico",
+        "ok": false,
+        "detalle": "vinculacion vigente: expected +0 to be above +0"
+      },
+      {
+        "request": "TC-M09-68 CRITICO -> ROJO",
+        "test": "TC-M09-68: GET historial 200",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-68 CRITICO -> ROJO",
+        "test": "TC-M09-68: la medicion ingerida esta en el historial",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-68 CRITICO -> ROJO",
+        "test": "TC-M09-68: el valor clasificado es el del fixture",
+        "ok": true
+      },
+      {
+        "request": "TC-M09-68 CRITICO -> ROJO",
+        "test": "TC-M09-68: la lectura resuelve especie (requisito del clasificador RF-17)",
+        "ok": false,
+        "detalle": "id_especie: expected null not to be null"
+      },
+      {
+        "request": "TC-M09-68 CRITICO -> ROJO",
+        "test": "TC-M09-68: se clasifico contra el umbral RF-17 del fixture",
+        "ok": false,
+        "detalle": "expected null to deeply equal 46"
+      },
+      {
+        "request": "TC-M09-68 CRITICO -> ROJO",
+        "test": "TC-M09-68: valor en zona CRITICO clasificado ROJO",
+        "ok": false,
+        "detalle": "expected 'GRIS' to deeply equal 'ROJO'"
+      },
+      {
+        "request": "Monitoreo dashboard (ultima medicion)",
+        "test": "Precondicion: API Monitoreo dashboard 200",
+        "ok": true
+      },
+      {
+        "request": "Monitoreo dashboard (ultima medicion)",
+        "test": "El sensor del fixture aparece en el dashboard",
+        "ok": true
+      },
+      {
+        "request": "Monitoreo dashboard (ultima medicion)",
+        "test": "Oraculo G31: el estado del sensor refleja la clasificacion RF-17 de su ultima medicion",
+        "ok": false,
+        "detalle": "expected 'VERDE' to deeply equal 'ROJO'"
+      }
+    ]
+  },
+  "veredicto_por_caso": {
+    "TC-M09-66": {
+      "threshold_config_id": 46,
+      "especie": "Trucha Arcoíris",
+      "variable": "Temperatura Ambiental",
+      "measurement_id": 52,
+      "measurement_value": "15.0000",
+      "expected_classification": "NORMAL / VERDE",
+      "api_classification_dashboard": "VERDE",
+      "api_classification_historial": "GRIS",
+      "result": "NO APROBADO"
+    },
+    "TC-M09-67": {
+      "threshold_config_id": 46,
+      "especie": "Trucha Arcoíris",
+      "variable": "Temperatura Ambiental",
+      "measurement_id": 53,
+      "measurement_value": "25.0000",
+      "expected_classification": "PRECAUCION / AMARILLO",
+      "api_classification_dashboard": "VERDE",
+      "api_classification_historial": "GRIS",
+      "result": "NO APROBADO"
+    },
+    "TC-M09-68": {
+      "threshold_config_id": 46,
+      "especie": "Trucha Arcoíris",
+      "variable": "Temperatura Ambiental",
+      "measurement_id": 54,
+      "measurement_value": "35.0000",
+      "expected_classification": "CRITICO / ROJO",
+      "api_classification_dashboard": "VERDE",
+      "api_classification_historial": "GRIS",
+      "result": "NO APROBADO"
+    }
+  },
+  "complemento_solo_lectura": {
+    "fecha": "2026-09-27T10:20:10.886Z",
+    "proposito": "Consultas GET agregadas al cierre, dentro del MISMO RUN_ID: censo de vinculaciones en TEST y DEV para determinar si alguna fila fue creada por la API de ingesta o si todas provienen de siembra.",
+    "vinculaciones": {
+      "TEST": {
+        "actor": "administador.dev@gmail.com",
+        "rol": "Administrador",
+        "status": 200,
+        "total": 6,
+        "porEstado": {
+          "VINCULADA": 6
+        },
+        "porMecanismo": {
+          "AUTOMATICA": 6
+        },
+        "rangoIdTelemetria": [
+          31,
+          35
+        ],
+        "rangoFechaCreacion": [
+          "2024-06-01T08:00:03Z",
+          "2026-05-12T20:07:04.714049Z"
+        ],
+        "filas": [
+          {
+            "id_vinculacion_lectura": 18,
+            "id_telemetria": 31,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": 1,
+            "modelo_manejo": "INDIVIDUAL",
+            "fecha_creacion": "2026-05-12T20:07:04.714049Z"
+          },
+          {
+            "id_vinculacion_lectura": 15,
+            "id_telemetria": 35,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": 1,
+            "modelo_manejo": "INDIVIDUAL",
+            "fecha_creacion": "2024-06-01T09:15:05Z"
+          },
+          {
+            "id_vinculacion_lectura": 16,
+            "id_telemetria": 34,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": 46,
+            "modelo_manejo": "INDIVIDUAL",
+            "fecha_creacion": "2024-06-01T08:15:04Z"
+          },
+          {
+            "id_vinculacion_lectura": 14,
+            "id_telemetria": 33,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": null,
+            "modelo_manejo": "POBLACIONAL",
+            "fecha_creacion": "2024-06-01T08:10:05Z"
+          },
+          {
+            "id_vinculacion_lectura": 13,
+            "id_telemetria": 32,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": null,
+            "modelo_manejo": "POBLACIONAL",
+            "fecha_creacion": "2024-06-01T08:05:04Z"
+          },
+          {
+            "id_vinculacion_lectura": 12,
+            "id_telemetria": 31,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": null,
+            "modelo_manejo": "POBLACIONAL",
+            "fecha_creacion": "2024-06-01T08:00:03Z"
+          }
+        ]
+      },
+      "DEV": {
+        "actor": "admin.dev@gmail.com",
+        "rol": "Administrador",
+        "status": 200,
+        "total": 6,
+        "porEstado": {
+          "VINCULADA": 6
+        },
+        "porMecanismo": {
+          "AUTOMATICA": 6
+        },
+        "rangoIdTelemetria": [
+          31,
+          35
+        ],
+        "rangoFechaCreacion": [
+          "2024-06-01T08:00:03Z",
+          "2026-05-12T20:07:04.714049Z"
+        ],
+        "filas": [
+          {
+            "id_vinculacion_lectura": 18,
+            "id_telemetria": 31,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": 1,
+            "modelo_manejo": "INDIVIDUAL",
+            "fecha_creacion": "2026-05-12T20:07:04.714049Z"
+          },
+          {
+            "id_vinculacion_lectura": 15,
+            "id_telemetria": 35,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": 1,
+            "modelo_manejo": "INDIVIDUAL",
+            "fecha_creacion": "2024-06-01T09:15:05Z"
+          },
+          {
+            "id_vinculacion_lectura": 16,
+            "id_telemetria": 34,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": 46,
+            "modelo_manejo": "INDIVIDUAL",
+            "fecha_creacion": "2024-06-01T08:15:04Z"
+          },
+          {
+            "id_vinculacion_lectura": 14,
+            "id_telemetria": 33,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": null,
+            "modelo_manejo": "POBLACIONAL",
+            "fecha_creacion": "2024-06-01T08:10:05Z"
+          },
+          {
+            "id_vinculacion_lectura": 13,
+            "id_telemetria": 32,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": null,
+            "modelo_manejo": "POBLACIONAL",
+            "fecha_creacion": "2024-06-01T08:05:04Z"
+          },
+          {
+            "id_vinculacion_lectura": 12,
+            "id_telemetria": 31,
+            "estado_vinculacion": "VINCULADA",
+            "mecanismo_vinculacion": "AUTOMATICA",
+            "id_activo_biologico": null,
+            "modelo_manejo": "POBLACIONAL",
+            "fecha_creacion": "2024-06-01T08:00:03Z"
+          }
+        ]
+      }
+    },
+    "lecturas_de_este_run": {
+      "TC-M09-66": 52,
+      "TC-M09-67": 53,
+      "TC-M09-68": 54
+    }
+  }
+}

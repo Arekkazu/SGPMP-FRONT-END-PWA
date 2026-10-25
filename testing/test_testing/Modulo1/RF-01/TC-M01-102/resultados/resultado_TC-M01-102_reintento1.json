@@ -1,0 +1,65 @@
+{
+  "caso": "TC-M01-102",
+  "tc": "TC-M01-102",
+  "tipo_evaluacion": "REEVALUACION_V2",
+  "titulo": "Interrupción de conexión a internet durante el registro de usuario (Validación de Resiliencia, Protección Offline y Reintento con reCAPTCHA)",
+  "cu": "CU-Registro - Registro de Usuarios",
+  "rf": "RF-01",
+  "tipo": "Pruebas Extremas / Resiliencia y Manejo de Red / Validación Híbrida (UI + Verificación Manual)",
+  "severidad": "Media",
+  "responsable": "QA Team",
+  "testEmail": "test@test.com",
+  "ambiente": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "backend": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "navegador": "Google Chrome (Validación Híbrida Cypress + Manual DevTools)",
+  "fecha": "2026-10-12T18:35:00.000Z",
+  "incidente_asociado": "INC-M01-13 (reCAPTCHA en ambiente TEST)",
+  "metodo_validacion": "Reevaluación presencial ante bloqueo de bot automatizado Cypress por reCAPTCHA activo en backend TEST. Se comprobó la captura del fallo de red en UI, la alerta contextual 'Sin conexión', la persistencia de datos en memoria del cliente, el bloqueo preventivo del botón de envío, y la culminación satisfactoria del registro (HTTP 201 Created) tras restaurar la conectividad y resolver el desafío de seguridad manualmente.",
+  "checkpoints": [
+    {
+      "paso": "CP-01: Verificación Inicial del Correo en BD TEST",
+      "esperado": "El correo test@test.com no existe previamente en la BD del servidor TEST",
+      "obtenido": "Registros previos encontrados en BD con este correo: 0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02: Diligenciamiento de Formulario de Registro (Pasos 1 y 2)",
+      "esperado": "Formulario completado en UI con los datos requeridos y validación de cliente exitosa",
+      "obtenido": "Formulario validado y completo en cliente (correo, contraseña de alta fortaleza, confirmación)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03: Simulación de Corte de Red y Reacción de UI (Fase 1 Interrupción)",
+      "esperado": "El cliente captura el fallo de red, muestra alerta contextual 'Sin conexión', bloquea botón submit y preserva todos los campos",
+      "obtenido": "Alerta visible 'El registro y la verificación CAPTCHA requieren conexión a internet', botón 'Registrarse' deshabilitado y datos retenidos (evidencia 05)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04: Verificación de Ausencia de Registros Huérfanos Post-Corte (Fase 1)",
+      "esperado": "El servidor NO creó ningún usuario parcial o huérfano durante la interrupción de red",
+      "obtenido": "Registros huérfanos en BD tras el corte de red: 0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05: Reintento de Registro tras Restablecer Conexión y Resolver reCAPTCHA (Fase 2 Reintento)",
+      "esperado": "Al recuperar conexión y resolver verificación de seguridad reCAPTCHA, el servidor responde HTTP 201 Created completando el registro",
+      "obtenido": "Conexión restablecida, reCAPTCHA validado exitosamente en navegador y cuenta creada satisfactoriamente en backend TEST (HTTP 201 Created)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06: Verificación Estricta de No Duplicidad en Base de Datos",
+      "esperado": "Existencia de exactamente 1 registro en BD tras el registro exitoso (sin duplicados >= 2)",
+      "obtenido": "Conteo final en BD para test@test.com: 1 registro encontrado (0 duplicados)",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "APROBADO",
+  "veredicto_global": "APROBADO",
+  "hallazgos": [
+    "Detección y resiliencia offline: La UI detectó el estado offline de forma reactiva mediante el sistema de diseño y hooks de conexión.",
+    "Preservación de estado de formulario: Correo, contraseñas y medidores de fortaleza se mantuvieron intactos sin recarga o blanqueo de campos.",
+    "Protección proactiva contra envíos huérfanos: El botón 'Registrarse' quedó deshabilitado mientras persistió la condición offline.",
+    "Resolución de INC-M01-13 para QA: El fallo original de Cypress en CP-05 correspondió a un bloqueo intencional de bot por parte de reCAPTCHA en el backend. Al interactuar manualmente como humano, el reintento se ejecutó sin trabas y culminó con HTTP 201 Created.",
+    "Integridad en Base de Datos: Confirmada la creación de exactamente 1 registro sin duplicación transaccional."
+  ]
+}

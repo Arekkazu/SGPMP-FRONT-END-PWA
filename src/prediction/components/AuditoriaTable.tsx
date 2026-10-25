@@ -1,3 +1,7 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-73: columna de RF de origen |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -5,6 +9,7 @@ import { Eye, User, Cpu, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { SeveridadAuditoriaPill } from './SeveridadAuditoriaPill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
+import { rfDeEvento } from '../lib/rfOrigen';
 import type { EventoAuditoriaM04Response } from '../types';
 
 function fmt(dt: string): string {
@@ -30,12 +35,13 @@ export function AuditoriaTable({ eventos, loading, onVer }: Props) {
   }
 
   return (
-    <div style={TABLE_WRAP}>
+    <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de eventos de auditoría">
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={THEAD_ROW}>
             <th style={TH}>{t('auditoriatable.timestamp')}</th>
             <th style={TH}>{t('auditoriatable.tipo_de_evento')}</th>
+            <th style={TH}>{t('auditoriatable.rf_origen')}</th>
             <th style={TH}>{t('auditoriatable.severidad')}</th>
             <th style={TH}>{t('auditoriatable.resultado')}</th>
             <th style={TH}>{t('auditoriatable.actor')}</th>
@@ -51,6 +57,7 @@ export function AuditoriaTable({ eventos, loading, onVer }: Props) {
               <tr key={e.id_evento}>
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', whiteSpace: 'nowrap' }}>{fmt(e.fecha_evento)}</td>
                 <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{e.tipo_evento}</td>
+                <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)' }}>{rfDeEvento(e.tipo_evento) ?? '—'}</td>
                 <td style={TD}><SeveridadAuditoriaPill severidad={e.severidad_evento} /></td>
                 <td style={TD}>
                   {e.resultado_operacion ? (

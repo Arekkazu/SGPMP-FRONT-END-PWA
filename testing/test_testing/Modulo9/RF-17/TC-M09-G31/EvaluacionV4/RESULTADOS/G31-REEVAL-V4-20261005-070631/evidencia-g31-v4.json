@@ -1,0 +1,341 @@
+{
+  "grupo": "TC-M09-G31",
+  "tipo": "CUARTA EVALUACION (V4)",
+  "runId": "G31-REEVAL-V4-20261005-070631",
+  "rf": "RF-17",
+  "cu": "CU-03",
+  "responsableQa": "Juan Esteban",
+  "fecha": "2026-10-05T07:12:28.119Z",
+  "ambienteDecisorio": "TEST",
+  "baseUrl": "https://api.inmero.co/back-sigab-test",
+  "git": {
+    "inicial": {
+      "frontend": {
+        "rama": "qa/juan-esteban-cuarta-evaluacion-M09-y-M02",
+        "head": "cd3af47c07302f7310b17e6800642aab2253f479",
+        "status": "?? testing/test_testing/Modulo9/RF-17/TC-M09-G31/EvaluacionV4/",
+        "indice": "(vacio)",
+        "diff": "(vacio)",
+        "head_vs_origin_test": "2\t0"
+      },
+      "backend": {
+        "rama": "qa/juan-esteban-cuarta-evaluacion-M09-y-M02",
+        "head": "0371f2ec1d97ddfe7f3f33526d0db071d016e6ea",
+        "status": "?? tests/Test_Testing/Test_Modulo2/RF-50/TC-M02-G92/EvaluacionV4/\n?? tests/Test_Testing/Test_Modulo9/RF-17/TC-M09-G29/EvaluacionV4/",
+        "indice": "(vacio)",
+        "diff": "(vacio)",
+        "head_vs_origin_test": "0\t0"
+      }
+    },
+    "final": {
+      "frontend": {
+        "rama": "qa/juan-esteban-cuarta-evaluacion-M09-y-M02",
+        "head": "cd3af47c07302f7310b17e6800642aab2253f479",
+        "status": "?? testing/test_testing/Modulo9/RF-17/TC-M09-G31/EvaluacionV4/",
+        "indice": "(vacio)",
+        "diff": "(vacio)",
+        "head_vs_origin_test": "2\t0"
+      },
+      "backend": {
+        "rama": "qa/juan-esteban-cuarta-evaluacion-M09-y-M02",
+        "head": "0371f2ec1d97ddfe7f3f33526d0db071d016e6ea",
+        "status": "?? tests/Test_Testing/Test_Modulo2/RF-50/TC-M02-G92/EvaluacionV4/\n?? tests/Test_Testing/Test_Modulo9/RF-17/TC-M09-G29/EvaluacionV4/",
+        "indice": "(vacio)",
+        "diff": "(vacio)",
+        "head_vs_origin_test": "0\t0"
+      }
+    }
+  },
+  "actor": {
+    "correo": "administador.dev@gmail.com",
+    "id_usuario": 104,
+    "rol": "Administrador",
+    "estado": "Activo",
+    "tokenPersistido": false
+  },
+  "fixture": {
+    "id_sensor": 1,
+    "nombre_sensor": "Sensor temperatura estanque-01",
+    "id_dispositivo_iot": 1,
+    "id_infraestructura": 1,
+    "id_activo_biologico": 616,
+    "id_especie": 2,
+    "especie": "Trucha Arcoiris",
+    "id_umbral_ambiental": 46,
+    "id_variable": 9,
+    "codigo_ingesta": "TEMPERATURA_AMBIENTAL",
+    "unidad": "°C",
+    "revalidadoDeV3": true,
+    "umbral_rf17": {
+      "id_umbral_ambiental": 46,
+      "id_variable_ambiental": 9,
+      "unidad_medida": "°C",
+      "valor_min": "10.00",
+      "valor_max": "40.00",
+      "es_activo": true,
+      "niveles": [
+        {
+          "nivel": "normal",
+          "limite_inferior": "10.00",
+          "limite_superior": "20.00"
+        },
+        {
+          "nivel": "precaucion",
+          "limite_inferior": "20.00",
+          "limite_superior": "30.00"
+        },
+        {
+          "nivel": "critico",
+          "limite_inferior": "30.00",
+          "limite_superior": "40.00"
+        }
+      ]
+    },
+    "calibracion_vigente": {
+      "id_calibracion": 8,
+      "ganancia": "1.0000",
+      "offset": "25.5000",
+      "fecha_calibracion": "2026-06-21T10:00:00Z"
+    },
+    "access_key": "[REDACTED_ACCESS_KEY]"
+  },
+  "relojServidor": {
+    "servidor": 1791184346000,
+    "cliente": 1791184347876,
+    "desfaseMs": 1876,
+    "fuente": "cabecera Date de /health",
+    "margenAplicadoMs": 30000,
+    "nota": "El trigger RF-53 fn_validar_timestamp_telemetria rechaza timestamp_captura > now() del servidor. La captura se ancla al reloj del servidor con margen para que quede en su pasado."
+  },
+  "intentoDescartadoPorDesfaseDeReloj": {
+    "caso": "TC-M09-66",
+    "endpoint": "POST /iot/telemetria",
+    "timestamp_captura_enviado": "2026-10-05T07:08:34.558Z",
+    "http": 500,
+    "error_code": "ERROR_INTERNO",
+    "mensaje": "Error inesperado en base de datos",
+    "causa": "El timestamp_captura se derivo del reloj de este equipo, que iba 1-2 s adelantado respecto del servidor; el trigger RF-53 fn_validar_timestamp_telemetria lo rechazo por ser posterior a now() y el error afloro como 500 generico.",
+    "reconciliacion": "GET /iot/monitoreo/historial (sensor 1, 2026-09-01 a 2026-10-05): la lectura no aparece. El historial solo contiene las telemetrias 49-54 de V3. 0 filas persistidas.",
+    "persistio": false,
+    "reintentoDeLaMismaEscritura": false,
+    "nota": "Defecto de la automatizacion, no del producto ni de la clasificacion RF-17. Se corrigio el anclaje del reloj dentro del mismo RUN; no se abrio un segundo RUN."
+  },
+  "alertasM03": {
+    "id_alerta": null,
+    "severidad_alerta": null,
+    "alertas_activas_count": 0,
+    "oraculoContaminado": false
+  },
+  "dashboardPrevio": {
+    "ultimo_valor": "35.0000",
+    "ultimo_timestamp_captura": "2026-09-27T10:15:04.446000Z",
+    "estado_semaforo": "GRIS"
+  },
+  "targets": [
+    {
+      "caso": "TC-M09-66",
+      "clase": "NORMAL",
+      "objetivo": "15.00",
+      "esperado": "VERDE"
+    },
+    {
+      "caso": "TC-M09-67",
+      "clase": "PRECAUCION",
+      "objetivo": "25.00",
+      "esperado": "AMARILLO"
+    },
+    {
+      "caso": "TC-M09-68",
+      "clase": "CRITICO",
+      "objetivo": "35.00",
+      "esperado": "ROJO"
+    }
+  ],
+  "casos": {
+    "TC-M09-66": {
+      "caso": "TC-M09-66",
+      "clase": "NORMAL",
+      "nivel_rf17": "normal",
+      "color_esperado": "VERDE",
+      "banda_rf17": {
+        "limite_inferior": "10.00",
+        "limite_superior": "20.00"
+      },
+      "valor_efectivo_objetivo": "15.00",
+      "calibracion_aplicada": {
+        "id_calibracion": 8,
+        "ganancia": "1.0000",
+        "offset": "25.5000",
+        "fecha_calibracion": "2026-06-21T10:00:00Z"
+      },
+      "valor_crudo_enviado": "-10.50",
+      "valor_ajustado_esperado": "15.00",
+      "timestamp_captura": "2026-10-05T07:11:57.000Z",
+      "request": {
+        "endpoint": "POST /iot/telemetria",
+        "device_id": 1,
+        "sensor_id": 1,
+        "tipo_variable": "TEMPERATURA_AMBIENTAL",
+        "valor": "-10.50",
+        "unidad": "°C",
+        "timestamp_captura": "2026-10-05T07:11:57.000Z",
+        "origen": "TIEMPO_REAL",
+        "access_key": "[REDACTED_ACCESS_KEY]"
+      },
+      "response": {
+        "status": 201,
+        "ms": 137,
+        "body": {
+          "id_telemetria": 56,
+          "estado_calidad": "LECTURA_VALIDA",
+          "timestamp_procesamiento": "2026-10-05T07:12:27.168529Z",
+          "latencia_procesamiento_ms": null
+        }
+      },
+      "id_telemetria": 56,
+      "estado_calidad": "LECTURA_VALIDA",
+      "valor_ajustado_observado": null,
+      "vinculacion": {
+        "consulta": "GET /iot/vinculaciones?id_telemetria=56",
+        "status": 200,
+        "total_devuelto": 0,
+        "filas_de_esta_lectura": 0,
+        "estado_inicial": null,
+        "items": []
+      },
+      "accion_vinculacion": {
+        "endpoint": null,
+        "status": "NO_APLICABLE",
+        "motivo": "La ingesta no creo ninguna fila de vinculacion para esta lectura (ni SIN_VINCULAR ni AMBIGUA): no hay nada que resolver ni corregir."
+      },
+      "resultado": {
+        "clasificacion_api_dashboard": null,
+        "clasificacion_api_historial": null,
+        "id_activo_biologico": null,
+        "id_especie": null,
+        "id_umbral_ambiental": null,
+        "veredicto": "BLOQUEADO / NO VERIFICABLE",
+        "motivo": "Sin vinculacion lectura->activo no hay especie, por lo que el clasificador RF-17 no llega a ejecutarse."
+      }
+    }
+  },
+  "detencion": {
+    "enCaso": "TC-M09-66",
+    "motivo": "La lectura ingerida no genero registro de vinculacion. Seccion 24-D: se detiene el RUN y no se envian los casos restantes para no repetir la misma causa.",
+    "casosNoEjecutados": [
+      "TC-M09-67",
+      "TC-M09-68"
+    ]
+  },
+  "escrituras": {
+    "detalle": [
+      {
+        "caso": "TC-M09-66",
+        "endpoint": "POST /iot/telemetria",
+        "status": 201,
+        "reintento": false
+      }
+    ],
+    "ingestas": 1,
+    "vinculacionesManuales": 0,
+    "total": 1,
+    "sqlWrite": 0,
+    "reintentos": 0
+  },
+  "oraculo": {
+    "total": 3,
+    "superadas": 2,
+    "fallidas": 1,
+    "items": [
+      {
+        "caso": "TC-M09-66",
+        "descripcion": "el valor efectivo 15.00 es interior a la banda normal del umbral RF-17",
+        "cumple": true,
+        "observado": "10.00..20.00"
+      },
+      {
+        "caso": "TC-M09-66",
+        "descripcion": "la ingesta de la medicion responde HTTP 201",
+        "cumple": true,
+        "observado": 201
+      },
+      {
+        "caso": "TC-M09-66",
+        "descripcion": "la ingesta genera un registro de vinculacion para la lectura",
+        "cumple": false,
+        "observado": "ninguna fila"
+      }
+    ]
+  },
+  "reconciliacionPosteriorALaDetencion": {
+    "nota": "Comprobaciones de solo lectura hechas despues de la parada, sin escrituras adicionales.",
+    "id_telemetria": 56,
+    "historial": {
+      "valor": "15.0000",
+      "valor_ajustado": "15.0000",
+      "unidad_medida": "°C",
+      "timestamp_captura": "2026-10-05T07:11:57Z",
+      "estado_calidad": "LECTURA_VALIDA",
+      "estado_semaforo_historico": "GRIS",
+      "id_activo_biologico": null,
+      "id_especie": null,
+      "especie": null,
+      "id_umbral_ambiental": null,
+      "valor_min_umbral": null,
+      "valor_max_umbral": null,
+      "version_umbral": null,
+      "id_alerta": null
+    },
+    "dashboard": {
+      "ultimo_valor": "15.0000",
+      "ultimo_timestamp_captura": "2026-10-05T07:11:57Z",
+      "estado_semaforo": "VERDE",
+      "estado_calidad": "LECTURA_VALIDA",
+      "id_alerta": null
+    },
+    "vinculaciones": {
+      "total": 6,
+      "ids_telemetria": [
+        31,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "incluyeLaLecturaDeEsteRun": false
+    },
+    "lectura": {
+      "valorEfectivoAlcanzado": "15.0000",
+      "compensacionDeCalibracionCorrecta": true,
+      "especieResuelta": false,
+      "umbralAplicado": false,
+      "colorDelDashboard": "VERDE",
+      "colorDelHistorial": "GRIS",
+      "coincidenciaAccidental": true,
+      "interpretacion": "El VERDE del dashboard lo fija el trigger de ingesta fn_actualizar_estado_sensor, no la clasificacion RF-17: la lectura no tiene especie ni umbral aplicado y el historial la deja en GRIS. Coincide con el color esperado de TC-M09-66 por azar, de modo que no constituye aprobacion (seccion 26 del paquete)."
+    }
+  },
+  "seguridad": {
+    "archivosEscaneados": 3,
+    "archivos": [
+      "RESULTADOS/G31-REEVAL-V4-20261005-070631/evidencia-g31-v4.json",
+      "RESULTADOS/G31-REEVAL-V4-20261005-070631/TC-M09-G31_reevaluacion_V4.md",
+      "run-v4.cjs"
+    ],
+    "hallazgos": [],
+    "secretosPersistidos": false,
+    "nota": "La contrasena del actor y el access_key del dispositivo se tomaron de variables de proceso o de una lectura autorizada y se sustituyeron por marcadores antes de escribir la evidencia."
+  },
+  "cierre": {
+    "v1Intacta": true,
+    "v2Intacta": true,
+    "v3Intacta": true,
+    "indiceIntactoEnAmbos": true,
+    "soloCambiosEnEvaluacionV4DelFrontend": true,
+    "gitAdd": false,
+    "commit": false,
+    "push": false,
+    "deploy": false
+  }
+}

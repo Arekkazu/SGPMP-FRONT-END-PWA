@@ -1,5 +1,8 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 import React from 'react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Layers, Cpu, Database, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
@@ -24,7 +27,7 @@ export function BufferView() {
       <div style={{ padding: 'var(--s5) var(--s7)', borderBottom: '1px solid var(--surface-border)' }}>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
           <Layers size={20} aria-hidden />{t('bufferview.buffer_y_sincronizacion')}</h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('bufferview.rf_54_flujo_c')}</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('bufferview.descripcion')}</p>
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
@@ -34,7 +37,7 @@ export function BufferView() {
           <KpiCard icon={<Cpu size={18} aria-hidden />} valor={BUFFER_KPIS.activos} etiqueta="Dispositivos activos" />
           <KpiCard icon={<Database size={18} aria-hidden />} valor={BUFFER_KPIS.enBuffer} etiqueta="En modo buffer" sub="sin conexión al backend" color="var(--sem-info)" />
           <KpiCard icon={<Layers size={18} aria-hidden />} valor={BUFFER_KPIS.pendientes} etiqueta="Datos pendientes" color="var(--sem-warning)" />
-          <KpiCard icon={<RefreshCw size={18} aria-hidden />} valor={formatearFechaHora(BUFFER_KPIS.sincronizadosHoy)} etiqueta="Sincronizados hoy" color="var(--sem-success)" />
+          <KpiCard icon={<RefreshCw size={18} aria-hidden />} valor={formatearNumero(BUFFER_KPIS.sincronizadosHoy)} etiqueta="Sincronizados hoy" color="var(--sem-success)" />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)' }}>
@@ -53,7 +56,7 @@ export function BufferView() {
           ))}
         </div>
 
-        <div style={TABLE_WRAP}>
+        <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla del buffer local">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead><tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} style={TH}>{h}</th>)}</tr></thead>
             <tbody>

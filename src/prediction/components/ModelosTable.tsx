@@ -1,15 +1,37 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: métricas según paradigma y quién registró la versión |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 import React from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Eye, BadgeCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { EstadoModeloPill } from './EstadoModeloPill';
-import { TIPO_MODELO_LABEL } from '../types';
+import { etiquetaTipoModelo } from '../types';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
 import type { VersionModeloResponse } from '../types';
 
 function fmtPct(v: number | null): string {
   return v == null ? '—' : `${(v * 100).toFixed(1)}%`;
+}
+
+/** POBLACIONAL se evalúa con métricas propias; INDIVIDUAL/META con F1 y sensibilidad de riesgo alto. */
+function Metricas({ m }: { m: VersionModeloResponse }) {
+  const { t } = useT('prediction');
+  const pob = m.metricas_poblacionales;
+  const filas: [string, string][] = pob
+    ? [
+      [t('modelostable.fp_rutina'), fmtPct(typeof pob.tasa_falsos_positivos_rutina === 'number' ? pob.tasa_falsos_positivos_rutina : null)],
+      [t('modelostable.deteccion_clinica'), fmtPct(typeof pob.tasa_deteccion_eventos_clinicos === 'number' ? pob.tasa_deteccion_eventos_clinicos : null)],
+    ]
+    : [[t('modelostable.f1_global'), fmtPct(m.f1_score)], [t('modelostable.sensib_riesgo'), fmtPct(m.recall_clase_riesgo_alto)]];
+  return (
+    <span style={{ display: 'grid', gap: 2, fontSize: '12px' }}>
+      {filas.map(([k, v]) => <span key={k}><span style={{ color: 'var(--text-muted)' }}>{k}</span> <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{v}</span></span>)}
+    </span>
+  );
 }
 
 function fmtFecha(dt: string | null): string {
@@ -36,16 +58,15 @@ export function ModelosTable({ modelos, loading, onVer }: Props) {
   }
 
   return (
-    <div style={TABLE_WRAP}>
+    <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de versiones de modelos">
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={THEAD_ROW}>
             <th style={TH}>{t('modelostable.version')}</th>
-            <th style={TH}>{t('modelostable.tipo_de_modelo')}</th>
+            <th style={TH}>{t('modelostable.tipo_componente')}</th>
             <th style={TH}>{t('modelostable.estado')}</th>
-            <th style={{ ...TH, textAlign: 'right' }}>{t('modelostable.f1_global')}</th>
-            <th style={{ ...TH, textAlign: 'right' }}>{t('modelostable.sensib_riesgo')}</th>
-            <th style={TH}>{t('modelostable.entrenado')}</th>
+            <th style={TH}>{t('modelostable.metricas')}</th>
+            <th style={TH}>{t('modelostable.registrado')}</th>
             <th style={{ ...TH, textAlign: 'right' }}>{t('modelostable.acciones')}</th>
           </tr>
         </thead>
@@ -58,11 +79,15 @@ export function ModelosTable({ modelos, loading, onVer }: Props) {
                   {m.esta_produccion && <BadgeCheck size={14} aria-label={t('modelostable.en_produccion')} style={{ color: 'var(--sem-success)' }} />}
                 </span>
               </td>
-              <td style={TD}>{TIPO_MODELO_LABEL[m.tipo_modelo] ?? m.tipo_modelo}</td>
+              <td style={TD}>{etiquetaTipoModelo(m.tipo_modelo)}{m.componente && ` · ${m.componente}`}</td>
               <td style={TD}><EstadoModeloPill estado={m.estado_version} /></td>
-              <td style={{ ...TD, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{fmtPct(m.f1_score)}</td>
-              <td style={{ ...TD, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{fmtPct(m.recall_clase_riesgo_alto)}</td>
-              <td style={TD}>{fmtFecha(m.fecha_entrenamiento)}</td>
+              <td style={TD}><Metricas m={m} /></td>
+              <td style={TD}>
+                {fmtFecha(m.fecha_registro ?? m.fecha_entrenamiento)}
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  {m.id_proceso_rf71 ? t('modelostable.por_rf71', { proceso: m.id_proceso_rf71.slice(0, 8) }) : '—'}
+                </div>
+              </td>
               <td style={{ ...TD, textAlign: 'right' }}>
                 <Button variant="ghost" size="sm" onClick={() => onVer(m)} aria-label={`Ver ${m.nombre_version}`} title={t('modelostable.ver_detalle')}>
                   <Eye size={16} aria-hidden />

@@ -1,0 +1,91 @@
+{
+  "tc": "TC-M09-G07-v2.0",
+  "ambiente": "https://api.inmero.co",
+  "fecha": "2026-10-07T00:16:08.396Z",
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "esperado": "Llamada POST a /sesiones/ responde HTTP 200/201 con token JWT y redirige a la aplicación",
+      "obtenido": "Sesión establecida correctamente con token JWT en memoria",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "esperado": "Navegación fluida a /configuracion con renderizado del Catálogo de Especies sin force:true",
+      "obtenido": "Catálogo de especies visible en /configuracion",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "esperado": "Banner offline visible y botón \"Nueva especie\" habilitado para permitir creación diferida en Dexie",
+      "obtenido": "Banner offline visible y botón Nueva especie habilitado correctamente",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "esperado": "Especie \"Pavo Conflicto HNNWBQ\" encolada en syncQueue (IndexedDB) y mostrada optimistamente en la tabla",
+      "obtenido": "la UI no insertó fila optimista tras submit offline",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-05",
+      "esperado": "Creación concurrente server-side de \"Pavo Conflicto HNNWBQ\" responde HTTP 201/200 OK con ID asignado",
+      "obtenido": "HTTP 201 OK con id_especie=98",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "esperado": "Alerta de conflicto con texto bilingüe y botón Descartar",
+      "obtenido": "Alerta de conflicto renderizada reactivamente con texto bilingüe",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "esperado": "El registro base en el servidor (#98) conserva nombre, descripción y estado activo sin sobrescritura",
+      "obtenido": "Discrepancia o registro alterado en backend para id #98",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-08",
+      "esperado": "Especie \"Pavo Real HNNWBQ\" encolada en syncQueue con campo grupo_manejo=AVES",
+      "obtenido": "campo grupo_manejo ausente en el payload offline enviado por la UI",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-09",
+      "esperado": "Especie \"Pavo Real HNNWBQ\" persistida en servidor tras sync automático con grupo_manejo=AVES",
+      "obtenido": "Especie no encontrada en el servidor tras la reconexión",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "NW-01",
+      "esperado": "Login administrativo responde status HTTP 200 con token JWT",
+      "obtenido": "Aserción cumplida satisfactoriamente",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-02",
+      "esperado": "Preflight confirma que los nombres con run_id NO existen",
+      "obtenido": "ningún nombre preexistente debe coincidir: expected [ { id_especie: 98, …(7) }, …(1) ] to have a length of +0 but got 2",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "NW-03",
+      "esperado": "Rechazo de especie duplicada responde exactamente HTTP 409 Conflict",
+      "obtenido": "Aserción cumplida satisfactoriamente",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-04",
+      "esperado": "El registro de Pavo Conflicto conserva sus atributos y no fue alterado por el POST 409",
+      "obtenido": "expected 'Pavo Conflicto Hnnwbq' to deeply equal 'Pavo Conflicto HNNWBQ'",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "NW-05",
+      "esperado": "Pavo Real sincronizado existe en servidor y posee grupo_manejo=AVES",
+      "obtenido": "expected { id_especie: 99, …(7) } to have property 'grupo_manejo'",
+      "estado": "FALLA"
+    }
+  ]
+}

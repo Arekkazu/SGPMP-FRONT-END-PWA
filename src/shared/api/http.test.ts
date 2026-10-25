@@ -45,6 +45,61 @@ describe('refreshAccessToken', () => {
   });
 });
 
+// REUSO_TOKEN_REFRESCO_DETECTADO: la cookie del refresh token es de todas las pestañas.
+describe('refreshAccessToken entre pestañas', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    tokenStore.clear();
+    delete (navigator as { locks?: unknown }).locks;
+  });
+
+  function conCandado(antes?: () => void) {
+    const request = vi.fn(async (_nombre: string, fn: () => Promise<unknown>) => {
+      antes?.();
+      return fn();
+    });
+    Object.defineProperty(navigator, 'locks', { configurable: true, value: { request } });
+    return request;
+  }
+
+  it('refresca dentro del candado compartido del navegador', async () => {
+    const request = conCandado();
+    vi.spyOn(http, 'post').mockResolvedValue({ data: { token: 'nuevo' } });
+
+    await expect(refreshAccessToken()).resolves.toBe('nuevo');
+    expect(request).toHaveBeenCalledWith('sigab-refresh-token', expect.any(Function));
+  });
+
+  it('si otra pestaña refrescó mientras esperaba el candado, usa ese token sin rotar otra vez', async () => {
+    conCandado(() => tokenStore.set('de-otra-pestana'));
+    const postSpy = vi.spyOn(http, 'post');
+
+    await expect(refreshAccessToken()).resolves.toBe('de-otra-pestana');
+    expect(postSpy).not.toHaveBeenCalled();
+  });
+
+  it('un 401 con un token ya reemplazado por otra pestaña reintenta con el vigente', async () => {
+    tokenStore.set('vigente');
+    const postSpy = vi.spyOn(http, 'post');
+
+    await expect(refreshAccessToken('viejo')).resolves.toBe('vigente');
+    expect(postSpy).not.toHaveBeenCalled();
+  });
+
+  it('reparte el token nuevo a las demás pestañas y toma el que ellas reparten', async () => {
+    const otraPestana = new BroadcastChannel('sigab-sesion');
+    const recibido = new Promise<unknown>((r) => otraPestana.addEventListener('message', (e) => r((e as MessageEvent).data), { once: true }));
+    vi.spyOn(http, 'post').mockResolvedValue({ data: { token: 'repartido' } });
+
+    await refreshAccessToken();
+    await expect(recibido).resolves.toBe('repartido');
+
+    otraPestana.postMessage('desde-otra-pestana');
+    await vi.waitFor(() => expect(tokenStore.get()).toBe('desde-otra-pestana'));
+    otraPestana.close();
+  });
+});
+
 describe('interceptor 401', () => {
   let replaceSpy: ReturnType<typeof vi.fn>;
   const adapterOriginal = http.defaults.adapter;
@@ -103,7 +158,24 @@ describe('interceptor 401', () => {
     expect(tokenStore.get()).toBeNull();
     // QA M09 (hallazgo #2): la redirección forzada debe dejar una bandera para
     // que LoginPage explique por qué se cerró la sesión.
-    expect(consumirAvisoSesionCerrada()).toBe(true);
+    expect(consumirAvisoSesionCerrada()).toBe('generica');
+  });
+
+  it('RF-06: una sesion finalizada por cambio de estado cierra sin refresh y deja su propio aviso', async () => {
+    tokenStore.set('access-viejo');
+    const postSpy = vi.spyOn(http, 'post');
+
+    const error = {
+      config: { url: '/usuarios/me', headers: {} },
+      response: { status: 401, data: { error_code: 'SESION_FINALIZADA_CAMBIO_ESTADO' } },
+    };
+
+    await expect(onRejected()(error)).rejects.toBeTruthy();
+    // La cuenta quedo INACTIVA/BLOQUEADA/ELIMINADA: refrescar no la recupera.
+    expect(postSpy).not.toHaveBeenCalled();
+    expect(replaceSpy).toHaveBeenCalledWith('/login');
+    expect(tokenStore.get()).toBeNull();
+    expect(consumirAvisoSesionCerrada()).toBe('cambio_estado');
   });
 
   it('INC-M02-51-G44: un 5xx o un fallo de red en el refresh no cierra la sesion', async () => {
@@ -123,7 +195,7 @@ describe('interceptor 401', () => {
       await expect(onRejected()({ ...error, config: { ...error.config } })).rejects.toBeTruthy();
       expect(replaceSpy).not.toHaveBeenCalled();
       expect(tokenStore.get()).toBe('access-viejo');
-      expect(consumirAvisoSesionCerrada()).toBe(false);
+      expect(consumirAvisoSesionCerrada()).toBeNull();
     }
   });
 

@@ -7,6 +7,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { RegistrarTipoAreaDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface FormValues {
   nombre: string;
@@ -22,6 +23,7 @@ interface Props {
 const NOMBRE_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 
 export function TipoAreaModal({ saving, saveError, onClose, onRegistrar }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const {
     register,
@@ -41,21 +43,14 @@ export function TipoAreaModal({ saving, saveError, onClose, onRegistrar }: Props
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="tipo-area-modal-title"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)',
-      }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
-        background: 'var(--surface-card)', borderRadius: 'var(--r-xl)',
-        border: '1px solid var(--surface-border)', padding: 'var(--s6)',
-        width: '100%', maxWidth: 420, boxShadow: 'var(--shadow-lg)',
-      }}>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
           <h2 id="tipo-area-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {t('tipoareamodal.registrar_tipo_de_area')}

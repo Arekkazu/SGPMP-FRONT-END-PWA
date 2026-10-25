@@ -51,6 +51,7 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
           error={errors.contrasena_actual?.message}
           trailingIcon={showActual ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
           onTrailingClick={() => setShowActual((v) => !v)}
+          trailingPressed={showActual}
           {...register('contrasena_actual', { required: t('cambiarcontrasenaform.la_contrasena_actual_es_obligatoria') })}
         />
 
@@ -63,6 +64,7 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
           error={errors.nueva_contrasena?.message}
           trailingIcon={showNueva ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
           onTrailingClick={() => setShowNueva((v) => !v)}
+          trailingPressed={showNueva}
           {...register('nueva_contrasena', {
             required: t('cambiarcontrasenaform.la_nueva_contrasena_es_obligatoria'),
             pattern: { value: PW_REGEX, message: t('cambiarcontrasenaform.minimo_8_caracteres_una_mayuscula_un_numero') },
@@ -78,6 +80,7 @@ export function CambiarContrasenaForm({ saving, pwError, pwSuccess, onSave }: Pr
           error={errors.confirmar_nueva_contrasena?.message}
           trailingIcon={showConfirm ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
           onTrailingClick={() => setShowConfirm((v) => !v)}
+          trailingPressed={showConfirm}
           {...register('confirmar_nueva_contrasena', {
             required: t('cambiarcontrasenaform.confirma_tu_nueva_contrasena'),
             validate: (v) => v === getValues('nueva_contrasena') || t('validacion.las_contrasenas_no_coinciden', { ns: 'common' }),

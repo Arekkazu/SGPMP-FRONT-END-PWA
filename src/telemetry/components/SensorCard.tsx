@@ -1,10 +1,16 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11: el último dato muestra el día cuando no es de hoy + T-19 códigos legibles |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { BatteryMedium, SignalHigh, TrendingUp, TrendingDown, Minus, BellRing } from 'lucide-react';
 import { Gauge } from '../../shared/design-system/Gauge';
-import { SemaforoPill } from './SemaforoPill';
-import { semaforoToGauge, escalaNominal, horaCaptura } from '../lib/sensorEscala';
+import { EstadoSensorPills } from './EstadoLecturaPill';
+import { semaforoToGauge, escalaNominal, momentoCaptura } from '../lib/sensorEscala';
 import type { EstadoSensorSchema } from '../types';
+import { OptionCard } from '../../shared/design-system/OptionCard';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 interface Props {
   sensor: EstadoSensorSchema;
@@ -29,30 +35,16 @@ export function SensorCard({ sensor, onAbrir }: Props) {
   const status = semaforoToGauge(sensor.estado_semaforo);
 
   return (
-    <button
-      type="button"
+    <OptionCard
       onClick={() => onAbrir(sensor)}
-      style={{
-        textAlign: 'left',
-        background: 'var(--surface-card)',
-        border: '1px solid var(--surface-border)',
-        borderRadius: 'var(--r-lg)',
-        padding: 'var(--s4)',
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--s3)',
-        minWidth: 0,
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-400)')}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--surface-border)')}
+      style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)', minWidth: 0 }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s2)' }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {sensor.nombre_sensor}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{sensor.tipo_variable}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{etiquetaCodigo(sensor.tipo_variable)}</div>
         </div>
         {sensor.id_alerta != null && (
           <BellRing size={14} aria-label={t('sensorcard.alerta_activa_asociada')} style={{ color: 'var(--sem-error)', flexShrink: 0 }} />
@@ -64,7 +56,8 @@ export function SensorCard({ sensor, onAbrir }: Props) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <SemaforoPill estado={sensor.estado_semaforo} />
+        {/* FE-10 (RF-58 E7/R2/E2): GRIS sin umbral e indicador de anomalía. */}
+        <EstadoSensorPills sensor={sensor} />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', gap: 'var(--s2)', flexWrap: 'wrap' }}>
@@ -82,9 +75,9 @@ export function SensorCard({ sensor, onAbrir }: Props) {
       </div>
 
       <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textAlign: 'center' }}>
-        {horaCaptura(sensor.ultimo_timestamp_captura)}
+        {momentoCaptura(sensor.ultimo_timestamp_captura)}
         {sensor.dato_desactualizado && ' · desactualizado'}
       </div>
-    </button>
+    </OptionCard>
   );
 }

@@ -1,9 +1,12 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-03 RF-61: activos candidatos de la infraestructura al resolver |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ModalShell } from './ModalShell';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
-import { INPUT, LABEL } from './tableStyles';
+import { CampoActivoCandidato, CampoModeloManejo, idDeTextoActivo } from './CamposVinculacion';
 import type { VinculacionLecturaSchema, ResolverVinculacionDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -17,17 +20,18 @@ interface Props {
 
 export function ResolverVinculacionModal({ vinc, saving, saveError, onConfirm, onClose }: Props) {
   const { t } = useT('telemetry');
-  const [idActivo, setIdActivo] = useState('');
+  const [textoActivo, setTextoActivo] = useState('');
   const [modelo, setModelo] = useState(vinc.modelo_manejo ?? '');
   const [touched, setTouched] = useState(false);
 
-  const faltaActivo = !idActivo.trim() || Number(idActivo) <= 0;
+  const idActivo = idDeTextoActivo(textoActivo);
+  const faltaActivo = !(idActivo > 0);
   const faltaModelo = !modelo.trim();
 
   const confirmar = () => {
     setTouched(true);
     if (faltaActivo || faltaModelo) return;
-    onConfirm({ id_activo_biologico: Number(idActivo), modelo_manejo: modelo.trim() });
+    onConfirm({ id_activo_biologico: idActivo, modelo_manejo: modelo.trim() });
   };
 
   return (
@@ -42,20 +46,16 @@ export function ResolverVinculacionModal({ vinc, saving, saveError, onConfirm, o
         </>
       }
     >
-      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('resolvervinculacionmodal.asigna_el_activo_biologico_correcto_para_la')}<strong>#{vinc.id_telemetria}</strong>.
+      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('resolvervinculacionmodal.asigna_el_activo_biologico_correcto_para_la')}{' '}<strong>#{vinc.id_telemetria}</strong>.
       </p>
 
       <div style={{ marginBottom: 'var(--s4)' }}>
-        <label style={LABEL} htmlFor="rv-activo">{t('resolvervinculacionmodal.id_activo_biologico')}</label>
-        <input id="rv-activo" type="number" style={{ ...INPUT, borderColor: touched && faltaActivo ? 'var(--sem-error)' : 'var(--surface-border)' }} value={idActivo} onChange={(e) => setIdActivo(e.target.value)} aria-required aria-invalid={touched && faltaActivo} />
-        {touched && faltaActivo && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>{t('resolvervinculacionmodal.ingresa_un_id_valido')}</p>}
+        <CampoActivoCandidato id="rv-activo" idInfraestructura={vinc.id_infraestructura} value={textoActivo} onChange={setTextoActivo}
+          error={touched && faltaActivo ? t('camposvinculacion.elige_un_activo') : undefined} />
       </div>
 
-      <div>
-        <label style={LABEL} htmlFor="rv-modelo">{t('resolvervinculacionmodal.modelo_de_manejo')}</label>
-        <input id="rv-modelo" style={{ ...INPUT, borderColor: touched && faltaModelo ? 'var(--sem-error)' : 'var(--surface-border)' }} value={modelo} onChange={(e) => setModelo(e.target.value)} aria-required aria-invalid={touched && faltaModelo} placeholder={t('resolvervinculacionmodal.ej_individual_lote')} />
-        {touched && faltaModelo && <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>{t('resolvervinculacionmodal.este_campo_es_obligatorio')}</p>}
-      </div>
+      <CampoModeloManejo id="rv-modelo" fijo={vinc.modelo_manejo} value={modelo} onChange={setModelo}
+        error={touched && faltaModelo ? t('resolvervinculacionmodal.este_campo_es_obligatorio') : undefined} />
 
       {saveError && (
         <Alert variant={saveError.status === 403 ? 'warning' : 'error'} title={saveError.status === 403 ? t('resolvervinculacionmodal.sin_permiso_para_resolver') : t('resolvervinculacionmodal.no_se_pudo_resolver_la_vinculacion')} description={saveError.message} style={{ marginTop: 'var(--s4)' }} />

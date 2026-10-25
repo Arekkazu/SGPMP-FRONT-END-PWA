@@ -10,6 +10,7 @@ import { useActivos } from '../hooks/useActivos';
 import { ActivosFiltros, type FiltrosState } from '../components/ActivosFiltros';
 import { ActivosTable } from '../components/ActivosTable';
 import { Paginacion } from '../components/Paginacion';
+import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
 import { ESTADO_ID } from '../types';
 import type { ListarActivosFiltros } from '../types';
 import { RECURSO_ACTIVOS, RECURSO_AUDITORIA_M02, ACCION_C, ACCION_R } from '../rbac';
@@ -40,16 +41,21 @@ export function RegistryView() {
     cargar(params);
   }, [filtros.tipo, filtros.estado, pagina, cargar]);
 
-  // Búsqueda cliente-side (identificador / especie).
+  // Búsqueda cliente-side sobre la página cargada. #290 §2.3: también por el
+  // número que se ve en pantalla ("#749"), que es lo único que tienen los lotes.
+  const busqueda = filtros.busqueda.trim().toLowerCase();
   const visibles = useMemo(() => {
-    const q = filtros.busqueda.trim().toLowerCase();
-    if (!q) return activos;
+    if (!busqueda) return activos;
+    const numero = busqueda.replace(/^#/, '');
     return activos.filter(
       (a) =>
-        (a.identificador ?? '').toLowerCase().includes(q) ||
-        (a.nombre_especie ?? '').toLowerCase().includes(q)
+        String(a.id_activo_biologico) === numero ||
+        (a.identificador ?? '').toLowerCase().includes(busqueda) ||
+        (a.nombre_especie ?? '').toLowerCase().includes(busqueda) ||
+        (a.nombre_infraestructura ?? '').toLowerCase().includes(busqueda)
     );
-  }, [activos, filtros.busqueda]);
+  }, [activos, busqueda]);
+  const hayFiltros = !!(busqueda || filtros.tipo || filtros.estado);
 
   const recargar = () => {
     const params: ListarActivosFiltros = { pagina };
@@ -74,7 +80,7 @@ export function RegistryView() {
       >
         <div>
           <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('registryview.gestion_de_activos_biologicos')}</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
+          <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : `${paginacion.totalRegistros} activo(s)`}
             {fromCache && ' · desde caché'}
           </p>
@@ -121,29 +127,44 @@ export function RegistryView() {
             style={{ marginBottom: 'var(--s4)' }}
           />
         )}
-        {error && !fromCache && (
-          <Alert
-            variant="error"
-            title={t('registryview.error_al_cargar_activos')}
-            description={`${error.message}${error.status === 404 ? ' (verificar el endpoint de listado — ver TASKS.md)' : ''}`}
-            style={{ marginBottom: 'var(--s4)' }}
-          />
+        {/* T-10 / M2-11: sin permiso se muestra el aviso único, no la página con filtros vacíos. */}
+        {error?.status === 403 && !fromCache ? (
+          <AccesoDenegado seccion={t('registryview.gestion_de_activos_biologicos')} />
+        ) : (
+          <>
+            {error && !fromCache && (
+              <Alert
+                variant="error"
+                title={t('registryview.error_al_cargar_activos')}
+                description={error.message}
+                style={{ marginBottom: 'var(--s4)' }}
+              />
+            )}
+
+            <ActivosFiltros value={filtros} onChange={cambiarFiltros} />
+
+            {/* #290 §2.2/2.4: el contador viene del servidor; se aclara qué cubre la búsqueda. */}
+            {busqueda && !loading && (
+              <p role="status" style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-secondary)', margin: '0 0 var(--s3)' }}>
+                {t('registryview.coincidencias_en_pagina', { count: visibles.length, total: activos.length })}
+              </p>
+            )}
+
+            <ActivosTable
+              activos={visibles}
+              loading={loading}
+              hayFiltros={hayFiltros}
+              onAbrir={(id) => history.push(`/activos-biologicos/${id}`)}
+            />
+
+            <Paginacion
+              pagina={paginacion.pagina}
+              totalPaginas={paginacion.totalPaginas}
+              totalRegistros={paginacion.totalRegistros}
+              onCambiar={setPagina}
+            />
+          </>
         )}
-
-        <ActivosFiltros value={filtros} onChange={cambiarFiltros} />
-
-        <ActivosTable
-          activos={visibles}
-          loading={loading}
-          onAbrir={(id) => history.push(`/activos-biologicos/${id}`)}
-        />
-
-        <Paginacion
-          pagina={paginacion.pagina}
-          totalPaginas={paginacion.totalPaginas}
-          totalRegistros={paginacion.totalRegistros}
-          onCambiar={setPagina}
-        />
       </div>
     </div>
   );

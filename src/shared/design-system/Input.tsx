@@ -11,6 +11,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   leadingIcon?: React.ReactNode;
   trailingIcon?: React.ReactNode;
   onTrailingClick?: () => void;
+  /** Estado toggle del botón trailing (ej. mostrar/ocultar contraseña). */
+  trailingPressed?: boolean;
+  /** aria-label del botón trailing; por defecto "Acción del campo". */
+  trailingLabel?: string;
   required?: boolean;
 }
 
@@ -23,6 +27,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     leadingIcon,
     trailingIcon,
     onTrailingClick,
+    trailingPressed,
+    trailingLabel,
     required,
     id,
     className = '',
@@ -32,6 +38,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 ) {
   const { t } = useT('common');
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+  // Firefox deja escribir letras en type="number" y el campo entrega "": el
+  // formulario lo guardaba como vacío. Se rechazan al escribir o pegar; con
+  // step entero tampoco se admite el punto decimal.
+  const entero = rest.step === 1 || rest.step === '1';
+  const permitido = rest.type !== 'number' ? null : entero ? /^[0-9-]*$/ : /^[0-9.-]*$/;
+  const rechazar = (texto: string, e: React.SyntheticEvent) => {
+    if (permitido && !permitido.test(texto)) e.preventDefault();
+  };
 
   return (
     <div className="ds-field">
@@ -62,18 +76,29 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           aria-required={required}
           aria-invalid={!!error}
           aria-describedby={
-            [error ? `${inputId}-err` : '', hint ? `${inputId}-hint` : '', ariaDescribedBy ?? '']
+            [error ? `${inputId}-err` : '', !error && hint ? `${inputId}-hint` : '', ariaDescribedBy ?? '']
               .filter(Boolean)
               .join(' ') || undefined
           }
+          inputMode={permitido ? (entero ? 'numeric' : 'decimal') : undefined}
           {...rest}
+          onKeyDown={(e) => {
+            // Solo teclas que escriben un carácter; flechas, borrar y atajos pasan.
+            if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) rechazar(e.key, e);
+            rest.onKeyDown?.(e);
+          }}
+          onPaste={(e) => {
+            rechazar(e.clipboardData.getData('text'), e);
+            rest.onPaste?.(e);
+          }}
         />
         {trailingIcon && (
           <button
             type="button"
             className="ds-field__icon ds-field__icon--trail"
             onClick={onTrailingClick}
-            aria-label={t('input.accion_del_campo')}
+            aria-label={trailingLabel ?? t('input.accion_del_campo')}
+            aria-pressed={trailingPressed}
           >
             {trailingIcon}
           </button>

@@ -1,0 +1,20 @@
+{
+  "name": "tc-m09-g07-v2.0",
+  "version": "2.0.0",
+  "description": "TC-M09-G07-v2.0: Sincronización offline y resolución de conflicto de nombres (RF-15 v1.1 - CU-01)",
+  "private": true,
+  "scripts": {
+    "cy:run": "cypress run --project . --browser chrome --headless",
+    "newman:run": "node run-newman.cjs",
+    "consolidar": "node consolidar-resultados.cjs",
+    "verificar-login": "node verificar-login.cjs",
+    "tsc": "tsc --noEmit",
+    "test": "npm run cy:run && npm run newman:run && npm run consolidar"
+  },
+  "devDependencies": {
+    "cypress": "^13.0.0",
+    "newman": "^6.0.0",
+    "newman-reporter-htmlextra": "^1.23.1",
+    "typescript": "^5.0.0"
+  }
+}

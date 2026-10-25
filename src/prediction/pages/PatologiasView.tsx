@@ -1,4 +1,8 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Stethoscope, Plus, RefreshCw, AlertTriangle } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -104,7 +108,7 @@ export function PatologiasView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <Stethoscope size={20} aria-hidden />{t('patologiasview.catalogo_de_patologias')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : `${total} patología(s)`}
+            {loading ? 'Cargando…' : t('conteo.patologias', { count: total, n: formatearNumero(total) })}
             {fromCache && ' · desde caché'}
           </p>
         </div>
@@ -166,7 +170,7 @@ export function PatologiasView() {
           <div style={{ display: 'flex', gap: 'var(--s3)', alignItems: 'flex-start' }}>
             <AlertTriangle size={20} aria-hidden style={{ color: 'var(--sem-warning)', flexShrink: 0, marginTop: 2 }} />
             <div>
-              <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>{t('patologiasview.se_inactivara')}<strong>{aDesactivar.nombre_patologia}</strong>{t('patologiasview.dejara_de_estar_disponible_para_nuevas')}</p>
+              <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>{t('patologiasview.se_inactivara')}{' '}<strong>{aDesactivar.nombre_patologia}</strong>{t('patologiasview.dejara_de_estar_disponible_para_nuevas')}</p>
               {saveError && <p role="alert" style={{ margin: 'var(--s3) 0 0', fontSize: '13px', color: 'var(--sem-error)' }}>{saveError.message}</p>}
             </div>
           </div>

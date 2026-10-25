@@ -1,0 +1,87 @@
+{
+  "run_id": "G31-REEVAL-V5-20261008-170709",
+  "id_sensor": 53,
+  "id_infraestructura": 268,
+  "casos": {
+    "TC-M09-66": {
+      "id_telemetria": 60,
+      "valor": "36.0000",
+      "valor_ajustado": "36.0000",
+      "unidad": "°C",
+      "esperado": "VERDE",
+      "etiqueta_ui_que_corresponde": "Normal",
+      "api_historial": "VERDE",
+      "id_umbral_ambiental": 63,
+      "id_especie": 109,
+      "id_activo_biologico": 755,
+      "especie": "Qa Semaforo Geuno Baaibhahaj",
+      "id_alerta": null
+    },
+    "TC-M09-67": {
+      "id_telemetria": 61,
+      "valor": "38.0000",
+      "valor_ajustado": "38.0000",
+      "unidad": "°C",
+      "esperado": "AMARILLO",
+      "etiqueta_ui_que_corresponde": "Advertencia",
+      "api_historial": "AMARILLO",
+      "id_umbral_ambiental": 63,
+      "id_especie": 109,
+      "id_activo_biologico": 755,
+      "especie": "Qa Semaforo Geuno Baaibhahaj",
+      "id_alerta": null
+    },
+    "TC-M09-68": {
+      "id_telemetria": 62,
+      "valor": "40.0000",
+      "valor_ajustado": "40.0000",
+      "unidad": "°C",
+      "esperado": "ROJO",
+      "etiqueta_ui_que_corresponde": "Fuera de rango",
+      "api_historial": "ROJO",
+      "id_umbral_ambiental": 63,
+      "id_especie": 109,
+      "id_activo_biologico": 755,
+      "especie": "Qa Semaforo Geuno Baaibhahaj",
+      "id_alerta": null
+    }
+  },
+  "autenticacion": {
+    "ok": true,
+    "backend": "https://api.inmero.co/back-sigab-test"
+  },
+  "monitoreo": {
+    "id_sensor": 53,
+    "ultimo_valor": "40.0000",
+    "ultimo_timestamp_captura": "2026-10-08T17:13:33Z",
+    "estado_semaforo_api": "ROJO",
+    "etiqueta_ui_esperada": "Fuera de rango",
+    "esperado_por_rf17": "ROJO",
+    "id_alerta": null,
+    "correlacion": "el ultimo valor y timestamp del sensor corresponden a la lectura de TC-M09-68"
+  },
+  "captura_tc68": "Campo (movil): fila del sensor con su valor y su pastilla",
+  "historial_api": {
+    "total": 13,
+    "lecturas_devueltas": 13,
+    "tipos_en_estadisticas": [
+      {
+        "tipo_variable": "string",
+        "valor_minimo": "string",
+        "valor_maximo": "string",
+        "valor_promedio": "string",
+        "total_lecturas": "number",
+        "pct_dentro_rango": "number",
+        "pct_fuera_rango": "number",
+        "total_alertas_en_periodo": "number"
+      }
+    ]
+  },
+  "historial_tabla_renderizada": false,
+  "historial_error_boundary": true,
+  "historial_defecto_frontend": {
+    "sintoma": "la vista Historial sustituye su contenido por el error boundary \"No se pudo mostrar esta seccion\" en cuanto la consulta devuelve lecturas",
+    "causa_probable": "EstadisticasCards.fmt() llama n.toFixed(2) sobre valores que la API serializa como string (valor_minimo, valor_maximo, valor_promedio)",
+    "consecuencia": "la tabla con el semaforo por lectura no se renderiza, de modo que la UI no puede mostrar el color de cada medicion"
+  }
+}

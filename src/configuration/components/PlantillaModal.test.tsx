@@ -176,6 +176,38 @@ function renderVersionado(onVersionar = vi.fn().mockResolvedValue(true)) {
   return onVersionar;
 }
 
+describe('PlantillaModal — accesibilidad (TC-DIS-61)', () => {
+  it('lleva el 409 de nombre duplicado al campo, sin repetirlo en la alerta general', () => {
+    render(
+      <PlantillaModal
+        saving={false}
+        saveError={{
+          code: 'PLANTILLA_DUPLICADA', status: 409, message: 'Ya existe una plantilla con ese nombre.',
+          field: 'template_name', fields: [{ field: 'template_name', message: 'Ya existe una plantilla con ese nombre.' }],
+        }}
+        onClose={vi.fn()}
+        onRegistrar={vi.fn()}
+      />,
+    );
+    const nombre = screen.getByLabelText(/nombre de la plantilla/i);
+    expect(nombre).toHaveAttribute('aria-invalid', 'true');
+    expect(nombre).toHaveAccessibleDescription(/ya existe una plantilla con ese nombre/i);
+    expect(screen.queryByText(/error al crear/i)).not.toBeInTheDocument();
+  });
+
+  it('nombra cada casilla con su etiqueta visible y deja el conteo como descripción', async () => {
+    const user = userEvent.setup();
+    renderModal();
+    await elegirTilapia(user);
+    const casillas = await screen.findAllByRole('checkbox');
+    for (const casilla of casillas) {
+      const etiqueta = casilla.querySelector('[id^="tpl-cat-"]:not([id$="-conteo"])')?.textContent;
+      expect(casilla).toHaveAccessibleName(etiqueta ?? '');
+      expect(casilla.getAttribute('aria-describedby')).toMatch(/-conteo$/);
+    }
+  });
+});
+
 describe('PlantillaModal — versionar', () => {
   it('lee la configuración de la especie base sin que el usuario la elija', async () => {
     renderVersionado();

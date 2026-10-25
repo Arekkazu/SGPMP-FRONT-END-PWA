@@ -1,41 +1,56 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: historial de cambios, aviso de modo de campo sin nodos y nodos sin confirmar |
+// | 2026-10-23 | Arekkazu | DEV-36 RF-65: envía la config_version leída (concurrencia optimista) |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { SlidersHorizontal, RefreshCw, Cpu } from 'lucide-react';
+import { SlidersHorizontal, RefreshCw, Cpu, History } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useMotor } from '../hooks/useMotor';
 import { MotorConfigForm } from '../components/MotorConfigForm';
-import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
+import { MotorHistorialModal } from '../components/MotorHistorialModal';
+import { ModalShell } from '../components/ModalShell';
 import { PermissionDenied } from '../components/PermissionDenied';
-import { Pill } from '../components/Pill';
-import { TH, TD, TABLE_WRAP, THEAD_ROW } from '../components/tableStyles';
-import { RECURSO_MOTOR, ACCION_R, ACCION_C } from '../rbac';
+import { AvisoSincronizacionGuardado, SincronizacionNodosPanel } from '../components/SincronizacionNodosPanel';
+import { RECURSO_MOTOR, RECURSO_AUDITORIA, ACCION_R, ACCION_C } from '../rbac';
 import { TIPOS_MODELO, TIPO_MODELO_LABEL, type TipoModelo, type ConfigurarMotorDTO } from '../types';
-
-// Nodos Edge simulados — el backend solo modela el estado PENDIENTE (ver TASKS.md § Pendientes).
-const NODOS_EDGE_MOCK = [
-  { id: 'EDGE-001', ubicacion: 'Finca La Esperanza · Galpón 3', sync: 'hace 4 min', estado: 'SINCRONIZADO' },
-  { id: 'EDGE-002', ubicacion: 'Finca La Esperanza · Estanque 1', sync: 'hace 12 min', estado: 'SINCRONIZADO' },
-  { id: 'EDGE-003', ubicacion: 'Finca El Roble · Corral 2', sync: 'hace 2 h', estado: 'PENDIENTE' },
-];
 
 export function MotorView() {
   const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_MOTOR, ACCION_R);
   const puedeEditar = usePermission(RECURSO_MOTOR, ACCION_C);
+  // El historial sale de la bitácora M04: sin lectura de auditoría no hay de dónde leerlo.
+  const puedeVerHistorial = usePermission(RECURSO_AUDITORIA, ACCION_R);
   const online = useOnlineStatus();
 
-  const { configs, versiones, loading, saving, error, saveError, fromCache, cargar, guardar, limpiarSaveError } = useMotor();
-  const [tipo, setTipo] = useState<TipoModelo>('ESPECIES_PEQUEÑAS');
+  const {
+    configs, versiones, loading, saving, error, saveError, fromCache, cargar, guardar, limpiarSaveError,
+    sincronizacion, syncError, ultimoGuardado, cargarSincronizacion,
+    historial, historialLoading, historialError, cargarHistorial,
+  } = useMotor();
+  const [tipo, setTipo] = useState<TipoModelo>('MODELO_AVES');
+  const [verHistorial, setVerHistorial] = useState(false);
 
   useEffect(() => { if (puedeVer) cargar(); }, [puedeVer, cargar]);
+  // DEV-09: el estado por nodo es de la configuración de la pestaña visible.
+  useEffect(() => { if (puedeVer && online) cargarSincronizacion(tipo); }, [puedeVer, online, tipo, cargarSincronizacion]);
 
   const configActual = configs.find((c) => c.tipo_modelo === tipo) ?? null;
+  const guardadoDeEstaPestana = ultimoGuardado?.config.tipo_modelo === tipo ? ultimoGuardado : null;
+  const nodosSinConfirmar = (sincronizacion?.nodos ?? []).filter((n) => n.estado_sincronizacion !== 'APLICADA').map((n) => n.serial);
+
+  const abrirHistorial = () => {
+    if (!configActual) return;
+    cargarHistorial(configActual.id_configuracion_motor);
+    setVerHistorial(true);
+  };
 
   const onGuardar = async (dto: ConfigurarMotorDTO) => {
-    const ok = await guardar(dto);
+    // DEV-36 (RF-65 CA-9): la versión leída; si otro usuario guardó antes, el backend responde 412.
+    const ok = await guardar({ ...dto, config_version: configActual?.config_version ?? null });
     if (ok) cargar();
   };
 
@@ -48,13 +63,19 @@ export function MotorView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <SlidersHorizontal size={20} aria-hidden />{t('motorview.configuracion_del_motor_de_prediccion')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            Umbrales, ventana de análisis y modo por tipo de modelo
-            {fromCache && ' · desde caché'}
+            {t('motorview.descripcion_v2')}
+            {fromCache && ` · ${t('motorview.desde_cache')}`}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => { limpiarSaveError(); cargar(); }} aria-label={t('motorview.recargar')}>
-          <RefreshCw size={15} aria-hidden />
-        </Button>
+        <div style={{ display: 'flex', gap: 'var(--s2)' }}>
+          {puedeVerHistorial && (
+            <Button variant="secondary" size="sm" onClick={abrirHistorial} disabled={!configActual || !online}>
+              <History size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('motorview.ver_historial')}</Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => { limpiarSaveError(); cargar(); }} aria-label={t('motorview.recargar')}>
+            <RefreshCw size={15} aria-hidden />
+          </Button>
+        </div>
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
@@ -65,15 +86,15 @@ export function MotorView() {
 
         {/* Tabs por tipo de modelo */}
         <div role="tablist" aria-label={t('motorview.tipo_de_modelo')} style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
-          {TIPOS_MODELO.map((tipo) => {
-            const activo = tipo === tipo;
-            const tieneConfig = configs.some((c) => c.tipo_modelo === tipo);
+          {TIPOS_MODELO.map((opcion) => {
+            const activo = opcion === tipo;
+            const tieneConfig = configs.some((c) => c.tipo_modelo === opcion);
             return (
               <button
-                key={tipo}
+                key={opcion}
                 role="tab"
                 aria-selected={activo}
-                onClick={() => setTipo(tipo)}
+                onClick={() => setTipo(opcion)}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)',
                   padding: 'var(--s2) var(--s4)', borderRadius: 'var(--r-full)',
@@ -83,7 +104,7 @@ export function MotorView() {
                   fontSize: '13px', fontWeight: activo ? 700 : 600, cursor: 'pointer', minHeight: 38,
                 }}
               >
-                {TIPO_MODELO_LABEL[tipo]}
+                {TIPO_MODELO_LABEL[opcion]}
                 {tieneConfig && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)' }} aria-label="configurado" />}
               </button>
             );
@@ -97,6 +118,7 @@ export function MotorView() {
             {!configActual && (
               <Alert variant="info" title={t('motorview.sin_configuracion')} description={`No hay una configuración guardada para "${TIPO_MODELO_LABEL[tipo]}". Ajusta los valores por defecto y guarda para crearla.`} style={{ marginBottom: 'var(--s4)' }} />
             )}
+            {guardadoDeEstaPestana && <AvisoSincronizacionGuardado resultado={guardadoDeEstaPestana} />}
             <MotorConfigForm
               key={tipo}
               tipoModelo={tipo}
@@ -106,44 +128,36 @@ export function MotorView() {
               saveError={saveError}
               online={online}
               puedeEditar={puedeEditar}
+              nodosSinConfirmar={nodosSinConfirmar}
               onGuardar={onGuardar}
             />
           </>
         )}
 
-        {/* Panel de nodos Edge — simulado */}
+        {/* Estado de la configuración en cada nodo Edge (DEV-09) */}
         <section style={{ marginTop: 'var(--s7)' }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
             <Cpu size={18} aria-hidden />{t('motorview.sincronizacion_de_nodos_edge')}</h2>
-          <DatosSimuladosBanner detalle="La sincronización de nodos Edge se muestra con datos de ejemplo" />
-          <div style={TABLE_WRAP}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={THEAD_ROW}>
-                  <th style={TH}>{t('motorview.dispositivo')}</th>
-                  <th style={TH}>{t('motorview.ubicacion')}</th>
-                  <th style={TH}>{t('motorview.ultima_sincronizacion')}</th>
-                  <th style={TH}>{t('motorview.estado')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {NODOS_EDGE_MOCK.map((n) => (
-                  <tr key={n.id}>
-                    <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{n.id}</td>
-                    <td style={TD}>{n.ubicacion}</td>
-                    <td style={TD}>{n.sync}</td>
-                    <td style={TD}>
-                      {n.estado === 'SINCRONIZADO'
-                        ? <Pill tono="success">{t('motorview.sincronizado')}</Pill>
-                        : <Pill tono="warning">{t('motorview.pendiente')}</Pill>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SincronizacionNodosPanel sincronizacion={sincronizacion} error={syncError} />
         </section>
       </div>
+
+      {verHistorial && (
+        <MotorHistorialModal eventos={historial} loading={historialLoading} error={historialError} onClose={() => setVerHistorial(false)} />
+      )}
+
+      {/* FA-08 / E3: modo de campo sin nodos con el modelo disponible */}
+      {saveError?.code === 'MODO_EDGE_SIN_NODOS' && (
+        <ModalShell
+          title={t('motorview.edge_sin_modelo_titulo')}
+          onClose={limpiarSaveError}
+          maxWidth={440}
+          footer={<Button variant="primary" onClick={limpiarSaveError}>{t('motorview.entendido')}</Button>}
+        >
+          <p style={{ margin: '0 0 var(--s3)', fontSize: '14px', color: 'var(--text-primary)' }}>{saveError.message}</p>
+          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>{t('motorview.edge_sin_modelo_sugerencia')}</p>
+        </ModalShell>
+      )}
     </div>
   );
 }

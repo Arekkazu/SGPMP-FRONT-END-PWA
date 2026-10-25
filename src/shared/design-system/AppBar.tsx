@@ -28,6 +28,8 @@ export function AppBar({
     userInfo?.nombre && userInfo?.apellidos
       ? `${userInfo.nombre.charAt(0)}${userInfo.apellidos.charAt(0)}`
       : '??';
+  // El nombre accesible repite el texto visible del badge (WCAG 2.5.3).
+  const badge = notificationCount > 99 ? '99+' : String(notificationCount);
 
   return (
     <header className="ds-appbar" role="banner">
@@ -64,7 +66,7 @@ export function AppBar({
           aria-controls="notification-tray"
           aria-label={
             notificationCount > 0
-              ? t('aria.notificaciones_sin_leer', { count: notificationCount })
+              ? t('aria.notificaciones_sin_leer', { count: badge })
               : t('aria.notificaciones')
           }
           aria-expanded={notificationsOpen}
@@ -73,7 +75,7 @@ export function AppBar({
           <Bell size={18} aria-hidden />
           {notificationCount > 0 && (
             <span className="ds-appbar__notif-badge" aria-hidden="true">
-              {notificationCount > 99 ? '99+' : notificationCount}
+              {badge}
             </span>
           )}
         </button>

@@ -1,0 +1,665 @@
+{
+  "grupo": "TC-M09-G22",
+  "rf": "RF-17",
+  "tipo": "REEVALUACION V3",
+  "entorno": "TEST",
+  "rama": "qa/juan-esteban-tercera-evaluacion-M09",
+  "base": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "runId": "G22-REEVAL-V3-20260925-223414",
+  "fecha": "2026-09-26T03:46:07.904Z",
+  "caso": "TC-M09-47",
+  "intento": 1,
+  "resultado": "FAIL",
+  "ambiente": "TEST",
+  "actor": {
+    "correo_electronico": "administador.dev@gmail.com",
+    "id_usuario": 104,
+    "nombre_rol": "Administrador",
+    "estado_cuenta": "Activo",
+    "permisosRecurso20": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "permisosV2": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "permisosIgualesQueV2": true,
+    "mismoActorQueV2": true
+  },
+  "preflight": [
+    {
+      "url": "http://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/health",
+      "status": 404,
+      "location": null,
+      "nota": "URL HTTP suministrada; el ambiente decisorio es HTTPS"
+    },
+    {
+      "url": "http://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/login",
+      "status": 301,
+      "location": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/login",
+      "nota": "URL HTTP suministrada; el ambiente decisorio es HTTPS"
+    },
+    {
+      "url": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io/login",
+      "status": 200
+    },
+    {
+      "url": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/health",
+      "status": 200
+    },
+    {
+      "url": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/openapi.json",
+      "status": 200
+    },
+    {
+      "contrato": "POST /configuracion/umbrales",
+      "respuestasDeclaradas": [
+        "201",
+        "401",
+        "403",
+        "404",
+        "409",
+        "422"
+      ],
+      "exitoDeclarado": [
+        "201"
+      ],
+      "dto": "RegistrarUmbralDTO",
+      "dtoRequerido": [
+        "id_especie",
+        "id_variable_ambiental",
+        "valor_min",
+        "valor_max",
+        "niveles"
+      ],
+      "dtoPropiedades": [
+        "id_especie",
+        "id_variable_ambiental",
+        "valor_min",
+        "valor_max",
+        "niveles"
+      ],
+      "nivelDtoRequerido": [
+        "nivel",
+        "limite_inferior",
+        "limite_superior"
+      ],
+      "erroresDeclarados": [
+        "401",
+        "403",
+        "404",
+        "409",
+        "422"
+      ],
+      "umbralResponse": [
+        "id_umbral_ambiental",
+        "id_especie",
+        "id_variable_ambiental",
+        "unidad_medida",
+        "valor_min",
+        "valor_max",
+        "es_activo",
+        "fecha_actualizacion",
+        "niveles",
+        "estado_sincronizacion",
+        "fecha_ultima_sincronizacion",
+        "motivo_fallo_sincronizacion"
+      ]
+    }
+  ],
+  "replanificado": false,
+  "especie": {
+    "id": 61,
+    "nombre": "Especie Acuatica Prueba",
+    "es_activo": true,
+    "esFixtureQA": true
+  },
+  "variable": {
+    "id": 1,
+    "nombre": "Temperatura del agua",
+    "unidad": "°C",
+    "catalogoActivo": true,
+    "fisicoMin": "0",
+    "fisicoMax": "45",
+    "semantica": "Temperatura",
+    "coincidePatron": true,
+    "idResueltoPorNombre": true,
+    "idHistorico": 1
+  },
+  "limitesFisicos": {
+    "min": "0",
+    "max": "45",
+    "efectivoMin": "0",
+    "efectivoMax": "45"
+  },
+  "rangoElegido": {
+    "valor_min": "18.00",
+    "valor_max": "27.00",
+    "origen": "rango exacto de V2 (mismo criterio: intervalo interior 40%-60% del rango fisico, niveles en tercios)",
+    "efectivoMin": "0",
+    "efectivoMax": "45"
+  },
+  "equivalenciaV2": {
+    "idUmbralV2": 39,
+    "especieV2": {
+      "id": 10,
+      "nombre": "Tilapia"
+    },
+    "variableIdHistorico": 1,
+    "variableIdActual": 1,
+    "variableIdSinCambios": true,
+    "nombreVariableV2": "Temperatura del agua",
+    "nombreVariableActual": "Temperatura del agua",
+    "limiteFisicoHistorico": [
+      "0",
+      "45"
+    ],
+    "limiteFisicoActual": [
+      "0",
+      "45"
+    ],
+    "limiteFisicoSinCambios": true,
+    "puntosV2": [
+      "18.00",
+      "21.00",
+      "24.00",
+      "27.00"
+    ],
+    "puntosRecalculados": [
+      "18.00",
+      "21.00",
+      "24.00",
+      "27.00"
+    ],
+    "mismaVariable": true,
+    "mismoRango": true,
+    "mismosNiveles": true,
+    "rangoV2DentroDeLimitesActuales": true,
+    "criterio": "V3 reproduce variable, rango y niveles de V2; solo se sustituye la especie por unicidad (especie, variable)"
+  },
+  "datoModificadoRespectoV2": "solo especie",
+  "tipoEspecieEsperado": "ACUATICA",
+  "tipoEspecieCoincide": true,
+  "snapshotPre": {
+    "especie": {
+      "id": 61,
+      "nombre": "Especie Acuatica Prueba",
+      "es_activo": true,
+      "esFixtureQA": true
+    },
+    "variable": {
+      "id": 1,
+      "nombre": "Temperatura del agua",
+      "unidad": "°C",
+      "catalogoActivo": true,
+      "fisicoMin": "0",
+      "fisicoMax": "45",
+      "semantica": "Temperatura",
+      "coincidePatron": true,
+      "idResueltoPorNombre": true,
+      "idHistorico": 1
+    },
+    "limitesFisicos": {
+      "min": "0",
+      "max": "45"
+    },
+    "valor_min": "18.00",
+    "valor_max": "27.00",
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "18.00",
+        "limite_superior": "21.00"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "21.00",
+        "limite_superior": "24.00"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "24.00",
+        "limite_superior": "27.00"
+      }
+    ],
+    "combinacionLibre": true,
+    "umbralesActualesDeLaEspecie": 1,
+    "idsExistentesDeLaEspecie": [
+      50
+    ],
+    "fixture61": {
+      "id": 61,
+      "esperado": "Especie Acuatica Prueba",
+      "presente": true,
+      "nombre": "Especie Acuatica Prueba",
+      "nombreCoincide": true,
+      "es_activo": true,
+      "densidad_maxima_por_especie": null,
+      "totalUmbrales": 1,
+      "umbrales": [
+        {
+          "id": 50,
+          "id_variable_ambiental": 3,
+          "es_activo": true
+        }
+      ],
+      "oxigenoLibre": false,
+      "temperaturaAguaLibre": true
+    },
+    "datosV2": {
+      "ids": [
+        38,
+        39,
+        40,
+        41
+      ],
+      "todosPresentes": true,
+      "detalle": {
+        "TC-M09-46": {
+          "idUmbralV2": 38,
+          "presente": true,
+          "especieEsperada": {
+            "id": 5,
+            "nombre": "Mojarra Plateada"
+          },
+          "especieReal": 5,
+          "variableReal": 3,
+          "valor_min": "8.00",
+          "valor_max": "12.00",
+          "es_activo": true,
+          "niveles": [
+            "normal 8.00-9.33",
+            "precaucion 9.33-10.66",
+            "critico 10.66-12.00"
+          ]
+        },
+        "TC-M09-47": {
+          "idUmbralV2": 39,
+          "presente": true,
+          "especieEsperada": {
+            "id": 10,
+            "nombre": "Tilapia"
+          },
+          "especieReal": 10,
+          "variableReal": 1,
+          "valor_min": "18.00",
+          "valor_max": "27.00",
+          "es_activo": true,
+          "niveles": [
+            "normal 18.00-21.00",
+            "precaucion 21.00-24.00",
+            "critico 24.00-27.00"
+          ]
+        },
+        "TC-M09-48": {
+          "idUmbralV2": 40,
+          "presente": true,
+          "especieEsperada": {
+            "id": 39,
+            "nombre": "Bovino"
+          },
+          "especieReal": 39,
+          "variableReal": 10,
+          "valor_min": "40.00",
+          "valor_max": "60.00",
+          "es_activo": false,
+          "niveles": [
+            "normal 40.00-46.66",
+            "precaucion 46.66-53.32",
+            "critico 53.32-60.00"
+          ]
+        },
+        "TC-M09-49": {
+          "idUmbralV2": 41,
+          "presente": true,
+          "especieEsperada": {
+            "id": 3,
+            "nombre": "Camaron Blanco"
+          },
+          "especieReal": 3,
+          "variableReal": 2,
+          "valor_min": "5.60",
+          "valor_max": "8.40",
+          "es_activo": true,
+          "niveles": [
+            "normal 5.60-6.53",
+            "precaucion 6.53-7.46",
+            "critico 7.46-8.40"
+          ]
+        }
+      }
+    }
+  },
+  "combinacionLibrePrevia": true,
+  "umbralesPrevios": [
+    {
+      "id": 50,
+      "id_variable_ambiental": 3
+    }
+  ],
+  "payloadEnviado": {
+    "id_especie": 61,
+    "id_variable_ambiental": 1,
+    "valor_min": "18.00",
+    "valor_max": "27.00",
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "18.00",
+        "limite_superior": "21.00"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "21.00",
+        "limite_superior": "24.00"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "24.00",
+        "limite_superior": "27.00"
+      }
+    ]
+  },
+  "cuerpoEnviado": "{\"id_especie\":61,\"id_variable_ambiental\":1,\"valor_min\":18.00,\"valor_max\":27.00,\"niveles\":[{\"nivel\":\"normal\",\"limite_inferior\":18.00,\"limite_superior\":21.00},{\"nivel\":\"precaucion\",\"limite_inferior\":21.00,\"limite_superior\":24.00},{\"nivel\":\"critico\",\"limite_inferior\":24.00,\"limite_superior\":27.00}]}",
+  "endpoint": "POST /configuracion/umbrales",
+  "status": 500,
+  "errorCode": "FALLO_SINCRONIZACION_EDGE",
+  "respuesta": {
+    "error_code": "FALLO_SINCRONIZACION_EDGE",
+    "message": "Configuración guardada en la base de datos, pero falló la actualización de los nodos Edge. Es posible que las alertas en campo sigan operando con los valores anteriores hasta que se restablezca la conexión.",
+    "fields": [],
+    "timestamp": "2026-09-26T03:46:06.538517+00:00"
+  },
+  "idCreado": null,
+  "getPosterior": {
+    "endpoint": "GET /configuracion/umbrales?id_especie=61",
+    "status": 200,
+    "total": 2,
+    "ids": [
+      51,
+      50
+    ]
+  },
+  "persistencia": {
+    "persistio": true,
+    "idPersistido": 51,
+    "persistioPeseAlError": true,
+    "registrosDeLaCombinacion": 1,
+    "previosConservados": true,
+    "detalle": {
+      "id": 51,
+      "id_especie": 61,
+      "id_variable_ambiental": 1,
+      "valor_min": "18.00",
+      "valor_max": "27.00",
+      "es_activo": true,
+      "niveles": [
+        {
+          "nivel": "normal",
+          "limite_inferior": "18.00",
+          "limite_superior": "21.00"
+        },
+        {
+          "nivel": "precaucion",
+          "limite_inferior": "21.00",
+          "limite_superior": "24.00"
+        },
+        {
+          "nivel": "critico",
+          "limite_inferior": "24.00",
+          "limite_superior": "27.00"
+        }
+      ]
+    }
+  },
+  "datosV2Antes": {
+    "ids": [
+      38,
+      39,
+      40,
+      41
+    ],
+    "todosPresentes": true,
+    "detalle": {
+      "TC-M09-46": {
+        "idUmbralV2": 38,
+        "presente": true,
+        "especieEsperada": {
+          "id": 5,
+          "nombre": "Mojarra Plateada"
+        },
+        "especieReal": 5,
+        "variableReal": 3,
+        "valor_min": "8.00",
+        "valor_max": "12.00",
+        "es_activo": true,
+        "niveles": [
+          "normal 8.00-9.33",
+          "precaucion 9.33-10.66",
+          "critico 10.66-12.00"
+        ]
+      },
+      "TC-M09-47": {
+        "idUmbralV2": 39,
+        "presente": true,
+        "especieEsperada": {
+          "id": 10,
+          "nombre": "Tilapia"
+        },
+        "especieReal": 10,
+        "variableReal": 1,
+        "valor_min": "18.00",
+        "valor_max": "27.00",
+        "es_activo": true,
+        "niveles": [
+          "normal 18.00-21.00",
+          "precaucion 21.00-24.00",
+          "critico 24.00-27.00"
+        ]
+      },
+      "TC-M09-48": {
+        "idUmbralV2": 40,
+        "presente": true,
+        "especieEsperada": {
+          "id": 39,
+          "nombre": "Bovino"
+        },
+        "especieReal": 39,
+        "variableReal": 10,
+        "valor_min": "40.00",
+        "valor_max": "60.00",
+        "es_activo": false,
+        "niveles": [
+          "normal 40.00-46.66",
+          "precaucion 46.66-53.32",
+          "critico 53.32-60.00"
+        ]
+      },
+      "TC-M09-49": {
+        "idUmbralV2": 41,
+        "presente": true,
+        "especieEsperada": {
+          "id": 3,
+          "nombre": "Camaron Blanco"
+        },
+        "especieReal": 3,
+        "variableReal": 2,
+        "valor_min": "5.60",
+        "valor_max": "8.40",
+        "es_activo": true,
+        "niveles": [
+          "normal 5.60-6.53",
+          "precaucion 6.53-7.46",
+          "critico 7.46-8.40"
+        ]
+      }
+    }
+  },
+  "datosV2Despues": {
+    "ids": [
+      38,
+      39,
+      40,
+      41
+    ],
+    "todosPresentes": true,
+    "detalle": {
+      "TC-M09-46": {
+        "idUmbralV2": 38,
+        "presente": true,
+        "especieEsperada": {
+          "id": 5,
+          "nombre": "Mojarra Plateada"
+        },
+        "especieReal": 5,
+        "variableReal": 3,
+        "valor_min": "8.00",
+        "valor_max": "12.00",
+        "es_activo": true,
+        "niveles": [
+          "normal 8.00-9.33",
+          "precaucion 9.33-10.66",
+          "critico 10.66-12.00"
+        ]
+      },
+      "TC-M09-47": {
+        "idUmbralV2": 39,
+        "presente": true,
+        "especieEsperada": {
+          "id": 10,
+          "nombre": "Tilapia"
+        },
+        "especieReal": 10,
+        "variableReal": 1,
+        "valor_min": "18.00",
+        "valor_max": "27.00",
+        "es_activo": true,
+        "niveles": [
+          "normal 18.00-21.00",
+          "precaucion 21.00-24.00",
+          "critico 24.00-27.00"
+        ]
+      },
+      "TC-M09-48": {
+        "idUmbralV2": 40,
+        "presente": true,
+        "especieEsperada": {
+          "id": 39,
+          "nombre": "Bovino"
+        },
+        "especieReal": 39,
+        "variableReal": 10,
+        "valor_min": "40.00",
+        "valor_max": "60.00",
+        "es_activo": false,
+        "niveles": [
+          "normal 40.00-46.66",
+          "precaucion 46.66-53.32",
+          "critico 53.32-60.00"
+        ]
+      },
+      "TC-M09-49": {
+        "idUmbralV2": 41,
+        "presente": true,
+        "especieEsperada": {
+          "id": 3,
+          "nombre": "Camaron Blanco"
+        },
+        "especieReal": 3,
+        "variableReal": 2,
+        "valor_min": "5.60",
+        "valor_max": "8.40",
+        "es_activo": true,
+        "niveles": [
+          "normal 5.60-6.53",
+          "precaucion 6.53-7.46",
+          "critico 7.46-8.40"
+        ]
+      }
+    }
+  },
+  "eventos": [
+    {
+      "metodo": "POST",
+      "status": 500,
+      "cuerpo": "{\"id_especie\":61,\"id_variable_ambiental\":1,\"valor_min\":18.00,\"valor_max\":27.00,\"niveles\":[{\"nivel\":\"normal\",\"limite_inferior\":18.00,\"limite_superior\":21.00},{\"nivel\":\"precaucion\",\"limite_inferior\":21.00,\"limite_superior\":24.00},{\"nivel\":\"critico\",\"limite_inferior\":24.00,\"limite_superior\":27.00}]}",
+      "respuesta": {
+        "error_code": "FALLO_SINCRONIZACION_EDGE",
+        "message": "Configuración guardada en la base de datos, pero falló la actualización de los nodos Edge. Es posible que las alertas en campo sigan operando con los valores anteriores hasta que se restablezca la conexión.",
+        "fields": [],
+        "timestamp": "2026-09-26T03:46:06.538517+00:00"
+      },
+      "transportError": false
+    },
+    {
+      "metodo": "GET",
+      "status": 200,
+      "transportError": false
+    }
+  ],
+  "assertions": {
+    "total": 24,
+    "pending": 0,
+    "failed": 12
+  },
+  "failures": [
+    {
+      "test": "HTTP exactamente 201 segun el contrato",
+      "message": "expected response to have status code 201 but got 500"
+    },
+    {
+      "test": "La respuesta no contiene un error funcional",
+      "message": "expected { …(4) } to not have property 'error_code'"
+    },
+    {
+      "test": "ID de configuracion valido",
+      "message": "expected undefined to be a number"
+    },
+    {
+      "test": "Asociado a la especie y la variable correctas",
+      "message": "expected undefined to deeply equal 61"
+    },
+    {
+      "test": "valor_min y valor_max almacenados sin alteracion",
+      "message": "expected NaN to deeply equal 18"
+    },
+    {
+      "test": "Configuracion activa",
+      "message": "expected undefined to deeply equal true"
+    },
+    {
+      "test": "Niveles persistidos: cantidad y valores",
+      "message": "Target cannot be null or undefined."
+    },
+    {
+      "test": "El registro creado esta presente exactamente una vez",
+      "message": "expected [] to have a length of 1 but got +0"
+    },
+    {
+      "test": "Valores persistidos coinciden con los enviados",
+      "message": "Cannot read properties of undefined (reading 'valor_min')"
+    },
+    {
+      "test": "Asociacion especie-variable correcta en el registro persistido",
+      "message": "Cannot read properties of undefined (reading 'id_especie')"
+    },
+    {
+      "test": "Niveles persistidos correctamente",
+      "message": "Cannot read properties of undefined (reading 'niveles')"
+    },
+    {
+      "test": "Los registros historicos de V2 (38-41) siguen existiendo y V3 no los modifica",
+      "message": "el registro creado en V3 no reutiliza un id de V2: expected NaN to be above 41"
+    }
+  ],
+  "duracionMs": 757,
+  "newman": "6.2.2",
+  "reporter": "newman-reporter-htmlextra 1.23.1",
+  "html": "newman/newman-TC-M09-47-v3-intento1.html",
+  "reporteJson": "newman/newman-TC-M09-47-v3-intento1.json"
+}

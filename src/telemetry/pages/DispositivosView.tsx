@@ -1,21 +1,27 @@
+// | Fecha      | Nombre  | Que se hizo |
+// |------------|---------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-60: sección simulada de cámaras y parámetros de heartbeat por categoría |
+// | 2026-10-22 | Leandro | FE-12 RF-57: conserva autorización técnica al reutilizar modales |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-10 RF-60: lista de dispositivos en vez del campo de ID |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { Cpu, Search, Wrench, AlertTriangle } from 'lucide-react';
+import { Cpu, Wrench, AlertTriangle } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
-import { useDispositivo } from '../hooks/useDispositivo';
+import { useDispositivo, useDispositivos } from '../hooks/useDispositivo';
+import { DispositivosLista } from '../components/DispositivosLista';
 import { useAlertas } from '../hooks/useAlertas';
 import { DispositivoEstadoPanel } from '../components/DispositivoEstadoPanel';
 import { AplicarMantenimientoModal } from '../components/AplicarMantenimientoModal';
+import { CamarasVisionPanel } from '../components/CamarasVisionPanel';
 import { AlertasFiltros, ALERTAS_FILTROS_VACIO, type AlertasFiltrosState } from '../components/AlertasFiltros';
 import { AlertasTable } from '../components/AlertasTable';
 import { AlertaDetalleModal } from '../components/AlertaDetalleModal';
 import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
-import { INPUT, LABEL } from '../components/tableStyles';
 import { RECURSO_INFRAESTRUCTURA, RECURSO_ALERTAS_TECNICAS, ACCION_R, ACCION_U } from '../rbac';
 import type { ListarAlertasFiltros, NuevoEstadoAlerta } from '../types';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
@@ -29,7 +35,7 @@ export function DispositivosView() {
   const online = useOnlineStatus();
 
   const dispositivo = useDispositivo();
-  const [idInput, setIdInput] = useState('');
+  const lista = useDispositivos(puedeVerInfra);
   const [mantAbierto, setMantAbierto] = useState(false);
 
   const tecnicas = useAlertas({ tecnicas: true });
@@ -55,14 +61,9 @@ export function DispositivosView() {
     if (puedeVerTecnicas) tecnicas.cargar({ pagina: 1, por_pagina: 50 });
   }, [puedeVerTecnicas, tecnicas.cargar]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const consultar = () => {
-    const id = Number(idInput.trim());
-    if (id > 0) dispositivo.cargar(id);
-  };
-
   const confirmarMantenimiento = async (dto: Parameters<typeof dispositivo.aplicarMantenimiento>[0]) => {
     const ok = await dispositivo.aplicarMantenimiento(dto);
-    if (ok) setMantAbierto(false);
+    if (ok) { setMantAbierto(false); void lista.cargar(); }
   };
 
   const enMantenimiento = (dispositivo.estado?.estado_actual ?? '').toUpperCase() === 'EN_MANTENIMIENTO';
@@ -94,23 +95,15 @@ export function DispositivosView() {
       <div style={{ padding: 'var(--page-pad)', display: 'flex', flexDirection: 'column', gap: 'var(--s7)' }}>
         {/* Consulta de dispositivo */}
         <section>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--s3)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
-            <div style={{ maxWidth: 220 }}>
-              <label style={LABEL} htmlFor="disp-id">{t('dispositivosview.id_de_dispositivo')}</label>
-              <input
-                id="disp-id"
-                type="number"
-                style={INPUT}
-                value={idInput}
-                onChange={(e) => setIdInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') consultar(); }}
-                placeholder="Ej: 12"
-              />
-            </div>
-            <Button variant="primary" size="sm" onClick={consultar} disabled={!idInput.trim()}>
-              <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('dispositivosview.consultar')}</Button>
-          </div>
+          <DispositivosLista
+            items={lista.items}
+            loading={lista.loading}
+            error={lista.error}
+            seleccionado={dispositivo.idConsultado}
+            onSeleccionar={(id) => dispositivo.cargar(id)}
+          />
 
+          <div style={{ marginTop: 'var(--s5)' }} aria-live="polite">
           <DispositivoEstadoPanel
             idConsultado={dispositivo.idConsultado}
             estado={dispositivo.estado}
@@ -118,6 +111,7 @@ export function DispositivosView() {
             loading={dispositivo.loading}
             error={dispositivo.error}
           />
+          </div>
 
           {dispositivo.estado && puedeMantenimiento && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', flexWrap: 'wrap', marginTop: 'var(--s4)' }}>
@@ -168,6 +162,9 @@ export function DispositivosView() {
             </>
           )}
         </section>
+
+        {/* Cámaras (RFC-011) y parámetros por categoría: sin endpoint aún, datos simulados */}
+        <CamarasVisionPanel />
       </div>
 
       {seleccionada && (
@@ -176,8 +173,9 @@ export function DispositivosView() {
           loading={false}
           error={null}
           puedeGestionar={puedeGestionarTecnicas}
+          puedeDescartar={puedeGestionarTecnicas}
           online={online}
-          onAccion={setAccion}
+          onAccion={(estado) => { tecnicas.limpiarSaveError(); setAccion(estado); }}
           onClose={() => setSelId(null)}
         />
       )}
@@ -187,6 +185,7 @@ export function DispositivosView() {
           alerta={seleccionada}
           estado={accion}
           saving={tecnicas.saving}
+          autorizada={online && puedeGestionarTecnicas}
           saveError={tecnicas.saveError}
           onConfirm={confirmarCambio}
           onClose={() => setAccion(null)}

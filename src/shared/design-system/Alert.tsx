@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n/useT';
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 import './Alert.css';
@@ -24,11 +24,23 @@ interface AlertProps {
   onDismiss?: () => void;
   className?: string;
   style?: React.CSSProperties;
+  id?: string;
 }
 
-export function Alert({ variant, title, description, onDismiss, className = '', style }: AlertProps) {
+export function Alert({ variant, title, description, onDismiss, className = '', style, id }: AlertProps) {
   const { t } = useT('common');
   const [visible, setVisible] = useState(true);
+  const ref = useRef<HTMLDivElement>(null);
+  const urgente = variant === 'error' || variant === 'warning';
+
+  // T-03 (reporte UAT): el error del servidor salía arriba del formulario mientras
+  // el usuario estaba abajo, junto al botón, y parecía que no pasaba nada. Un
+  // error o advertencia se trae a la vista; `nearest` no mueve nada si ya se ve.
+  useEffect(() => {
+    if (!urgente) return;
+    const reducido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    ref.current?.scrollIntoView?.({ block: 'nearest', behavior: reducido ? 'auto' : 'smooth' });
+  }, [urgente, title, description]);
 
   useEffect(() => {
     const delay = AUTO_DISMISS[variant];
@@ -44,6 +56,8 @@ export function Alert({ variant, title, description, onDismiss, className = '', 
 
   return (
     <div
+      id={id}
+      ref={ref}
       role="alert"
       aria-live="assertive"
       className={['ds-alert', `ds-alert--${variant}`, className].filter(Boolean).join(' ')}
@@ -52,7 +66,9 @@ export function Alert({ variant, title, description, onDismiss, className = '', 
       <span className="ds-alert__icon">{ICONS[variant]}</span>
       <div className="ds-alert__body">
         <span className="ds-alert__title">{title}</span>
-        {description && <span className="ds-alert__desc">{description}</span>}
+        {/* El espacio separa título y detalle en el texto que lee el lector de pantalla
+            ("Error al guardarError inesperado…", #189); en la columna flex no se ve. */}
+        {description && <>{' '}<span className="ds-alert__desc">{description}</span></>}
       </div>
       {onDismiss && (
         <button

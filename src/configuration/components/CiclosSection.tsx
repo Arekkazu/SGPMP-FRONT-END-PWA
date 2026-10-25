@@ -2,14 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
-import { Plus, RefreshCw, Pencil, PowerOff, X } from 'lucide-react';
+import { Plus, RefreshCw, Pencil, PowerOff, Power, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
+import { Paginacion } from './Paginacion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useCiclosBiologicos } from '../hooks/useCiclosBiologicos';
 import type { CicloBiologicoResponse } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
 interface Props {
   idEspecie: number;
@@ -19,7 +24,8 @@ type ModalState =
   | { tipo: 'ninguno' }
   | { tipo: 'crear' }
   | { tipo: 'editar'; ciclo: CicloBiologicoResponse }
-  | { tipo: 'desactivar'; ciclo: CicloBiologicoResponse };
+  | { tipo: 'desactivar'; ciclo: CicloBiologicoResponse }
+  | { tipo: 'reactivar'; ciclo: CicloBiologicoResponse };
 
 interface FormValues {
   nombre: string;
@@ -70,6 +76,7 @@ function CicloModal({
   onRegistrar: (dto: import('../types').RegistrarCicloDTO) => Promise<boolean>;
   onEditar: (id: number, dto: import('../types').EditarCicloDTO) => Promise<boolean>;
 }) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = ciclo !== null;
   const {
@@ -97,7 +104,7 @@ function CicloModal({
         nombre: data.nombre.trim(),
         descripcion,
         duracion_dias,
-        fecha_actualizacion: ciclo.fecha_actualizacion ?? new Date().toISOString(),
+        fecha_actualizacion: ciclo.fecha_actualizacion,
       });
     } else {
       ok = await onRegistrar({ id_especie: idEspecie, nombre: data.nombre.trim(), descripcion, duracion_dias });
@@ -107,13 +114,14 @@ function CicloModal({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="ciclo-modal-title"
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 480, boxShadow: 'var(--shadow-lg)' }}>
+      <div className="ds-modal__panel" style={{ padding: 'var(--s6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
           <h2 id="ciclo-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {modoEditar ? `Editar ciclo — ${ciclo!.nombre}` : 'Nuevo ciclo biológico'}
@@ -188,23 +196,27 @@ function CicloModal({
   );
 }
 
-function ConfirmDesactivar({ ciclo, saving, onCancel, onConfirm }: { ciclo: CicloBiologicoResponse; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
+function ConfirmDesactivar({ ciclo, reactivar = false, saving, onCancel, onConfirm }: { ciclo: CicloBiologicoResponse; reactivar?: boolean; saving: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('configuration');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', padding: 'var(--s4)' }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', padding: 'var(--s6)', width: '100%', maxWidth: 400, boxShadow: 'var(--shadow-lg)' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('ciclossection.confirmar_desactivacion')}</h2>
+      <div className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t(reactivar ? 'ciclossection.confirmar_reactivacion' : 'ciclossection.confirmar_desactivacion')}</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>
-          ¿Deseas desactivar el ciclo "{ciclo.nombre}"? Los datos históricos permanecerán accesibles.
+          {reactivar
+            ? t('ciclossection.reactivar_texto', { nombre: ciclo.nombre })
+            : `¿Deseas desactivar el ciclo "${ciclo.nombre}"? Los datos históricos permanecerán accesibles.`}
         </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
           <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('ciclossection.cancelar')}</Button>
-          <Button variant="danger" size="md" loading={saving} onClick={onConfirm}>{t('ciclossection.desactivar')}</Button>
+          <Button variant={reactivar ? 'primary' : 'danger'} size="md" loading={saving} onClick={onConfirm}>{t(reactivar ? 'ciclossection.reactivar' : 'ciclossection.desactivar')}</Button>
         </div>
       </div>
     </div>
@@ -218,18 +230,29 @@ export function CiclosSection({ idEspecie }: Props) {
   const puedeEditar = usePermission(17, 3);
   const puedeDesact = usePermission(17, 4);
 
-  const { ciclos, loading, saving, error, saveError, fromCache, cargar, registrar, editar, desactivar } = useCiclosBiologicos();
+  const { ciclos, loading, saving, error, saveError, fromCache, cargar, registrar, editar, desactivar, reactivar, limpiarSaveError } = useCiclosBiologicos();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
 
   useEffect(() => { cargar(idEspecie); }, [cargar, idEspecie]);
 
-  const cerrar = () => setModal({ tipo: 'ninguno' });
+  const busqueda = useBusqueda(ciclos, (c) => c.nombre);
+  const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(busqueda.filtrados, busqueda.consulta);
+
+  // El error de un guardado fallido no debe reaparecer al abrir otro ciclo (#231).
+  const cerrar = () => { limpiarSaveError(); setModal({ tipo: 'ninguno' }); };
 
   const handleDesactivar = async (ciclo: CicloBiologicoResponse) => {
     setAccionError(null);
     const ok = await desactivar(ciclo.id_ciclo_biologico);
     if (!ok) setAccionError(saveError?.message ?? 'Error al desactivar.');
+    else cerrar();
+  };
+
+  const handleReactivar = async (ciclo: CicloBiologicoResponse) => {
+    setAccionError(null);
+    const ok = await reactivar(ciclo.id_ciclo_biologico);
+    if (!ok) setAccionError(saveError?.message ?? 'Error al reactivar.');
     else cerrar();
   };
 
@@ -281,7 +304,12 @@ export function CiclosSection({ idEspecie }: Props) {
       ) : ciclos.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('ciclossection.no_hay_ciclos_registrados_para_esta_especie')}</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <>
+        <Buscador id="buscar-ciclo" label={t('busqueda.por_nombre', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
+        {busqueda.filtrados.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7) 0', fontSize: '14px' }}>{t('busqueda.sin_coincidencias', { ns: 'common' })}</p>
+        ) : (
+        <ScrollRegion label={t('ciclossection.ciclos_biologicos')}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
@@ -291,7 +319,7 @@ export function CiclosSection({ idEspecie }: Props) {
               </tr>
             </thead>
             <tbody>
-              {ciclos.map((c) => (
+              {enPagina.map((c) => (
                 <tr key={c.id_ciclo_biologico} style={{ background: 'var(--surface-card)' }}>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>#{c.id_ciclo_biologico}</td>
                   <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{c.nombre}</td>
@@ -310,7 +338,7 @@ export function CiclosSection({ idEspecie }: Props) {
                         {c.es_activo ? 'Activo' : 'Inactivo'}
                       </span>
                       {c.pendienteSync && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: 'var(--sem-warning-bg, #fff8e6)', color: '#b06000', border: '1px solid #e8c840' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', fontSize: '11px', fontWeight: 600, background: 'var(--sem-warning-bg)', color: 'var(--sem-warning)', border: '1px solid var(--sem-warning-border)' }}>
                           {t('ciclossection.pendiente_de_sincronizacion')}
                         </span>
                       )}
@@ -319,7 +347,8 @@ export function CiclosSection({ idEspecie }: Props) {
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatFecha(c.fecha_actualizacion)}</td>
                   <td style={TD}>
                     <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center' }}>
-                      {puedeEditar && !c.pendienteSync && (
+                      {/* Una etapa inactiva no se edita (422 ETAPA_INACTIVA): se reactiva. */}
+                      {puedeEditar && c.es_activo && !c.pendienteSync && (
                         <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'editar', ciclo: c })} aria-label={`Editar ${c.nombre}`}>
                           <Pencil size={15} aria-hidden />
                         </Button>
@@ -329,13 +358,21 @@ export function CiclosSection({ idEspecie }: Props) {
                           <PowerOff size={15} aria-hidden style={{ color: 'var(--sem-error)' }} />
                         </Button>
                       )}
+                      {puedeDesact && online && !c.es_activo && !c.pendienteSync && (
+                        <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'reactivar', ciclo: c })} aria-label={`${t('ciclossection.reactivar')} ${c.nombre}`}>
+                          <Power size={15} aria-hidden style={{ color: 'var(--sem-success)' }} />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
+        )}
+        <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
+        </>
       )}
 
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (
@@ -355,6 +392,15 @@ export function CiclosSection({ idEspecie }: Props) {
           saving={saving}
           onCancel={cerrar}
           onConfirm={() => handleDesactivar(modal.ciclo)}
+        />
+      )}
+      {modal.tipo === 'reactivar' && (
+        <ConfirmDesactivar
+          ciclo={modal.ciclo}
+          reactivar
+          saving={saving}
+          onCancel={cerrar}
+          onConfirm={() => handleReactivar(modal.ciclo)}
         />
       )}
     </div>

@@ -1,0 +1,62 @@
+{
+  "tc": "TC-M09-G07",
+  "rf": "RF-15",
+  "issue": "INC-M09-54-G07",
+  "fecha": "2026-10-03",
+  "entorno": "TEST",
+  "ambiente": "https://api.inmero.co",
+  "backend": "https://api.inmero.co/back-sigab-test",
+  "navegador": "electron 118.0.5993.159",
+  "peticionInfo": "POST inicial \"Gallina QA TEJDUY\" -> HTTP 201",
+  "contexto": {
+    "totalCatalogoServidor": 36,
+    "postReplayContador": 1,
+    "descartePeticionesContador": 0,
+    "d4b_estado": "D4-b NO EVALUABLE: total=36 <= 50"
+  },
+  "veredicto": "APROBADO",
+  "checkpoints": [
+    {
+      "paso": "CP-0: Sesión autenticada en la UI",
+      "esperado": "Llamada POST a /sesiones/ responde HTTP 200/201 con token JWT y redirige fuera de /login",
+      "obtenido": "Sesión establecida con éxito (POST https://api.inmero.co/back-sigab-test/sesiones/ -> HTTP 200). Token JWT emitido.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-1: Precondición de conflicto (Especie base online en servidor)",
+      "esperado": "HTTP 201/200 OK con ID asignado para reservar el nombre colisionante",
+      "obtenido": "HTTP 201 OK - ID base #68",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-2: Habilitación de botón Nueva especie en modo offline (RF-15)",
+      "esperado": "El botón \"Nueva especie\" debe permanecer habilitado sin conexión para permitir creación diferida en Dexie",
+      "obtenido": "Botón habilitado correctamente en modo offline (disabled={!online} removido).",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-3a: Inserción de fila optimista al inicio de página 1 sin buscador (D4)",
+      "esperado": "La fila recién creada \"Gallina QA TEJDUY\" debe aparecer como la primera fila de la tabla con badge de pendiente",
+      "obtenido": "Fila optimista renderizada en la primera posición con badge pendienteSync.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-4: Reactividad tras reconexión y texto literal exacto RF-15 (D2)",
+      "esperado": "Alerta de error con título bilingüe, botón Descartar y texto literal del RF-15 interpolando \"Gallina QA TEJDUY\"",
+      "obtenido": "Alerta renderizada reactivamente sin recarga. Idioma: es-CO. Texto verificado.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-4b: No sobrescritura de especie existente en el servidor (G-03)",
+      "esperado": "Los datos de la especie base en el backend deben permanecer idénticos tras el conflicto 409",
+      "obtenido": "Especie base #68 intacta en backend con datos originales.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-5: Resolución por Descartar sin llamadas a la API y retiro de fila",
+      "esperado": "Al descartar, se desmonta la alerta, se retira la fila temporal y NO se envían peticiones a la API",
+      "obtenido": "Descarte local exitoso. Fila temporal removida. Peticiones API emitidas: 0.",
+      "estado": "OK"
+    }
+  ]
+}

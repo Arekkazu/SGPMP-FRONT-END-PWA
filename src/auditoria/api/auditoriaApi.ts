@@ -40,10 +40,15 @@ function leerConteos(headers: Record<string, unknown>, filas: number) {
 }
 
 export const auditoriaApi = {
-  async consultar(filtros: FiltrosAuditoria): Promise<AuditoriaPaginadaResponse> {
-    const res = await http.get<AuditoriaPaginadaResponse>('/auditoria/', {
-      params: { ...construirParams(filtros), pagina: filtros.pagina, tamano: filtros.tamano },
-    });
+  /**
+   * `ancla` es el `fecha_hasta` que devolvió la primera página. Va tal cual, con
+   * sus microsegundos: pasarla por `Date` la recortaría a milisegundos y podría
+   * dejar fuera o meter registros respecto de la página anterior.
+   */
+  async consultar(filtros: FiltrosAuditoria, ancla?: string): Promise<AuditoriaPaginadaResponse> {
+    const params: Params = { ...construirParams(filtros), pagina: filtros.pagina, tamano: filtros.tamano };
+    if (ancla) params.fecha_hasta = ancla;
+    const res = await http.get<AuditoriaPaginadaResponse>('/auditoria/', { params });
     return res.data;
   },
 

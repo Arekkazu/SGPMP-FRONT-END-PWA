@@ -9,9 +9,9 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { sensoresDispositivoApi } from '../api/iotApi';
+import { sensorAreaApi, sensoresDispositivoApi } from '../api/iotApi';
 import type { ApiError } from '../../shared/api/errors';
-import type { SensorResponse } from '../types';
+import type { AsociarSensorAreaResponse, SensorResponse } from '../types';
 import { useSensores } from './useSensores';
 
 vi.mock('../api/iotApi', () => ({
@@ -20,6 +20,7 @@ vi.mock('../api/iotApi', () => ({
 }));
 
 const api = vi.mocked(sensoresDispositivoApi);
+const areaApi = vi.mocked(sensorAreaApi);
 
 const NUEVO_SENSOR: SensorResponse = {
   id_sensores: 9,
@@ -61,5 +62,36 @@ describe('useSensores.registrar', () => {
     expect(ok).toBe(false);
     expect(result.current.saveError?.code).toBe('VAL_ENTRADA');
     expect(result.current.sensores).toEqual([]);
+  });
+});
+
+describe('useSensores.asociar', () => {
+  // #290: el wizard necesita la respuesta (no solo un booleano) para avisar qué
+  // asociaciones sensor→activo cerró la reasignación.
+  it('devuelve la respuesta del backend con las asociaciones superadas', async () => {
+    const respuesta: AsociarSensorAreaResponse = {
+      id_sensores_area_asociada: 2, id_sensor: 9, id_dispositivo_iot: 3, id_infraestructura: 20,
+      punto_instalacion: 'Borde sur', tiene_estado: true, fecha_asociacion: '', fecha_finalizacion: null, id_usuario: 1,
+      asociaciones_activo_superadas: [{ id_asociacion_activo_sensor: 14, id_activo_biologico: 279, tipo: 'ambiental' }],
+    };
+    areaApi.asociar.mockResolvedValue(respuesta);
+    const { result } = renderHook(() => useSensores());
+
+    let res: AsociarSensorAreaResponse | null = null;
+    await act(async () => { res = await result.current.asociar(9, { id_dispositivo_iot: 3, id_infraestructura: 20, punto_instalacion: 'Borde sur', confirmar: true }); });
+
+    expect(res).toEqual(respuesta);
+    expect(result.current.saveError).toBeNull();
+  });
+
+  it('un rechazo devuelve null y deja el saveError', async () => {
+    areaApi.asociar.mockRejectedValue(error('REASIGNACION_REQUIERE_CONFIRMACION', 409));
+    const { result } = renderHook(() => useSensores());
+
+    let res: AsociarSensorAreaResponse | null = null;
+    await act(async () => { res = await result.current.asociar(9, { id_dispositivo_iot: 3, id_infraestructura: 20, punto_instalacion: 'Borde sur' }); });
+
+    expect(res).toBeNull();
+    expect(result.current.saveError?.code).toBe('REASIGNACION_REQUIERE_CONFIRMACION');
   });
 });

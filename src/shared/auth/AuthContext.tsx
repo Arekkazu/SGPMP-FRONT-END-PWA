@@ -1,12 +1,21 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | FE-09 RF-17: nombre_recurso en los permisos del usuario |
 import React, { createContext, useState, useCallback, useEffect } from 'react';
 import { tokenStore } from './tokenStore';
 import {
   http,
   refreshAccessToken,
   refrescoRechazoLaSesion,
+  esFalloDeRed,
+  marcarSesionCerrada,
   PERMISOS_POSIBLEMENTE_DESACTUALIZADOS,
 } from '../api/http';
 import { sonPermisosIguales } from './compararPermisos';
+import { borrarSesionOffline, guardarSesionOffline, leerSesionOffline, type SesionOffline } from './sesionOffline';
+import { setUsuarioSync } from '../sync/syncQueue';
+import { pushToast } from '../hooks/useToast';
+import i18n from '../i18n';
 
 export interface JwtClaims {
   sub: string;
@@ -30,6 +39,8 @@ export interface UserInfo {
 export interface PermisoUsuario {
   id_recurso: number;
   id_accion: number;
+  /** Para recursos cuyo id cambia entre ambientes (sembrados por migraciones recientes). */
+  nombre_recurso?: string | null;
 }
 
 interface AuthContextValue {
@@ -42,6 +53,12 @@ interface AuthContextValue {
   /** El refresh al recargar fallo por el servidor o la red, no porque la sesion muriera. */
   errorRestaurandoSesion: boolean;
   reintentarRestaurarSesion: () => void;
+  /**
+   * La app abrió sin red: no hay JWT, pero sí la identidad de la última sesión. Las
+   * pantallas leen la caché de Dexie y las escrituras van a la cola. Dura hasta que
+   * vuelve la red: ahí se renueva la sesión o se pide iniciarla de nuevo.
+   */
+  sesionOffline: boolean;
   /** Timestamp de la ultima vez que se detecto un cambio real de permisos en sesion (RF-25). */
   permisosActualizadosEn: number | null;
   setSession: (token: string) => void;
@@ -58,6 +75,7 @@ export const AuthContext = createContext<AuthContextValue>({
   isBootstrapping: true,
   errorRestaurandoSesion: false,
   reintentarRestaurarSesion: () => {},
+  sesionOffline: false,
   permisosActualizadosEn: null,
   setSession: () => {},
   clearSession: () => {},
@@ -97,6 +115,13 @@ const RUTAS_PUBLICAS = [
   '/sso/callback',
 ];
 
+// El AuthProvider vive fuera del router, así que ve la URL con la subruta del
+// proxy (VITE_BASE_PATH, p. ej. /sigab-dev/login): se quita para comparar.
+function rutaSinBase(pathname: string): string {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  return base && pathname.startsWith(base) ? pathname.slice(base.length) || '/' : pathname;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const storedToken = tokenStore.get();
   const storedClaims = storedToken ? decodeJwtPayload(storedToken) : null;
@@ -111,10 +136,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isBootstrapping, setIsBootstrapping] = useState(!validStored);
   const [errorRestaurandoSesion, setErrorRestaurandoSesion] = useState(false);
   const [permisosActualizadosEn, setPermisosActualizadosEn] = useState<number | null>(null);
+  const [sesionOffline, setSesionOffline] = useState(false);
 
   // Mantiene el contexto sincronizado cuando el interceptor renueva o limpia
   // el JWT fuera de los hooks de login/logout.
   useEffect(() => tokenStore.subscribe((nextToken) => {
+    // `clear()` solo avisa si había token: la sesión terminó (logout, 401 sin
+    // refresco posible), así que su copia offline ya no debe abrir la app.
+    if (!nextToken) void borrarSesionOffline();
     const nextClaims = nextToken ? decodeJwtPayload(nextToken) : null;
     if (nextToken && !isTokenValid(nextClaims)) {
       tokenStore.clear();
@@ -126,26 +155,84 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // `refreshAccessToken` guarda el token en tokenStore; el listener de arriba
   // sincroniza el contexto.
+  const entrarOffline = useCallback((copia: SesionOffline) => {
+    setClaims(copia.claims);
+    setUserInfo(copia.userInfo);
+    setPermisos(copia.permisos);
+    setPerfilIncompleto(copia.userInfo.estado_cuenta === 'Pendiente Datos');
+    setSesionOffline(true);
+  }, []);
+
+  const salirOffline = useCallback(() => {
+    setSesionOffline(false);
+    setClaims(null);
+    setUserInfo(null);
+    setPermisos(null);
+    setPerfilIncompleto(null);
+  }, []);
+
   const restaurarSesion = useCallback(() => {
     setErrorRestaurandoSesion(false);
     setIsBootstrapping(true);
     refreshAccessToken()
-      .catch((error) => {
+      .catch(async (error) => {
         // 401/410: sin sesión que recuperar, la ruta protegida redirige a /login.
+        if (refrescoRechazoLaSesion(error)) {
+          void borrarSesionOffline();
+          return;
+        }
+        // Sin red y con una sesión previa: se trabaja con la caché hasta reconectar.
+        const copia = esFalloDeRed(error) ? await leerSesionOffline() : undefined;
+        if (copia) {
+          entrarOffline(copia);
+          return;
+        }
         // INC-M02-51-G44: un 5xx o un fallo de red no dice nada de la sesión (la
         // cookie sigue vigente), así que se ofrece reintentar en vez de mandar
         // al usuario al login sin explicación.
-        if (!refrescoRechazoLaSesion(error)) setErrorRestaurandoSesion(true);
+        setErrorRestaurandoSesion(true);
       })
       .finally(() => setIsBootstrapping(false));
-  }, []);
+  }, [entrarOffline]);
+
+  // Al volver la red se renueva la sesión con la cookie httpOnly. Si sigue viva, el
+  // token nuevo dispara la cola (useSyncOnReconnect). Si el servidor ya la cerró, a
+  // /login: la cola queda en Dexie y se envía al iniciar sesión otra vez. El intervalo
+  // cubre el servidor caído con el dispositivo en línea, donde no llega `online`.
+  useEffect(() => {
+    if (!sesionOffline) return;
+    const reintentar = () => {
+      if (!navigator.onLine) return;
+      refreshAccessToken()
+        .then(() => {
+          setSesionOffline(false);
+          pushToast(
+            'success',
+            i18n.t('sesion_offline.conexion_recuperada', { ns: 'common' }),
+            i18n.t('sesion_offline.sincronizando', { ns: 'common' }),
+          );
+        })
+        .catch((error) => {
+          if (!refrescoRechazoLaSesion(error)) return;
+          marcarSesionCerrada();
+          void borrarSesionOffline();
+          salirOffline();
+        });
+    };
+    window.addEventListener('online', reintentar);
+    const intervalo = window.setInterval(reintentar, 30_000);
+    return () => {
+      window.removeEventListener('online', reintentar);
+      window.clearInterval(intervalo);
+    };
+  }, [sesionOffline, salirOffline]);
 
   // Recarga de página (F5, pestaña nueva): el JWT solo vive en memoria
   // (tokenStore) por diseño (R-12), así que se pierde. Antes de decidir "no
   // autenticado", intenta un refresh silencioso con la cookie httpOnly.
   useEffect(() => {
     if (validStored) return;
-    if (RUTAS_PUBLICAS.includes(window.location.pathname)) {
+    if (RUTAS_PUBLICAS.includes(rutaSinBase(window.location.pathname))) {
       setIsBootstrapping(false);
       return;
     }
@@ -176,6 +263,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => setPermisos([]));
   }, [token, fetchUserInfo]);
 
+  useEffect(() => {
+    if (token && claims && userInfo && permisos) void guardarSesionOffline({ claims, userInfo, permisos });
+  }, [token, claims, userInfo, permisos]);
+
+  useEffect(() => setUsuarioSync(claims?.sub ?? null), [claims]);
+
   // RF-25, flujo alterno "cambio de permisos en sesion activa": el interceptor de
   // http.ts dispara este evento en cualquier 403. Se reconsulta `permisos` y solo se
   // avisa si de verdad cambio, para no mostrar un aviso enganoso en un 403 normal de
@@ -205,12 +298,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearSession = useCallback(() => {
     tokenStore.clear();
+    void borrarSesionOffline();
     setToken(null);
-    setClaims(null);
-    setUserInfo(null);
-    setPermisos(null);
-    setPerfilIncompleto(null);
-  }, []);
+    salirOffline();
+  }, [salirOffline]);
 
   return (
     <AuthContext.Provider
@@ -223,6 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isBootstrapping,
         errorRestaurandoSesion,
         reintentarRestaurarSesion: restaurarSesion,
+        sesionOffline,
         permisosActualizadosEn,
         setSession,
         clearSession,

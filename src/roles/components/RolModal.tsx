@@ -31,6 +31,9 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
   const { t } = useT('roles');
   const panelRef = useModalA11y(onClose);
   const [permisos, setPermisos] = useState<PermisoResponse[]>(rol?.permisos ?? []);
+  // M1-04: el aviso de "sin permisos" esperaba al usuario antes de que hiciera nada.
+  const [intentoEnviar, setIntentoEnviar] = useState(false);
+  const faltanPermisos = intentoEnviar && permisos.length === 0;
   const { register, handleSubmit, formState: { errors } } = useForm<FormFields>({
     mode: 'onBlur',
     defaultValues: { nombre_rol: rol?.nombre_rol ?? '', descripcion: rol?.descripcion ?? '' },
@@ -72,6 +75,8 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
   };
 
   const onSubmit = (data: FormFields) => {
+    setIntentoEnviar(true);
+    if (permisos.length === 0) return;
     if (modo === 'crear') {
       const dto: CrearRolDTO = {
         nombre_rol: data.nombre_rol,
@@ -93,27 +98,12 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
       role="dialog"
       aria-modal="true"
       aria-labelledby="rol-modal-title"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)',
-        padding: 'var(--s4)',
-      }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         ref={panelRef}
-        style={{
-          background: 'var(--surface-card)',
-          borderRadius: 'var(--r-xl)',
-          border: '1px solid var(--surface-border)',
-          padding: 'var(--s6)',
-          width: '100%',
-          maxWidth: 700,
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          boxShadow: 'var(--shadow-lg)',
-        }}
+        className="ds-modal__panel ds-modal__panel--wide" style={{ padding: 'var(--s6)' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
           <h2 id="rol-modal-title" style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -128,7 +118,7 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
           <Alert variant="error" title={t('rolmodal.error')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <form onSubmit={(e) => { setIntentoEnviar(true); return handleSubmit(onSubmit)(e); }} noValidate>
           <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s5)' }}>
             <div>
               <Input
@@ -151,8 +141,8 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
           <div style={{ marginBottom: 'var(--s5)' }}>
             <p style={{ fontSize: 'var(--fs-label-md)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s3)' }}>
               {t('rolmodal.permisos')}
-              {permisos.length === 0 && (
-                <span style={{ color: 'var(--sem-error)', fontWeight: 400, marginLeft: 'var(--s2)' }}>{t('rolmodal.selecciona_al_menos_un_permiso')}</span>
+              {faltanPermisos && (
+                <span role="alert" style={{ color: 'var(--sem-error)', fontWeight: 400, marginLeft: 'var(--s2)' }}>{t('rolmodal.selecciona_al_menos_un_permiso')}</span>
               )}
             </p>
             <PermisosMatrix
@@ -171,7 +161,6 @@ export function RolModal({ modo, rol, recursos, acciones, error, saving, onSave,
               variant="primary"
               size="md"
               loading={saving}
-              disabled={permisos.length === 0}
             >
               {modo === 'crear' ? t('rolmodal.crear_rol') : t('rolmodal.guardar')}
             </Button>

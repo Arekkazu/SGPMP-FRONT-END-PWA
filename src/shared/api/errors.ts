@@ -1,15 +1,25 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: conserva mensaje público de rechazos |
+// | 2026-10-23 | Arekkazu | RF-29: el mensaje del backend se interpola en los códigos con datos variables |
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import type { AxiosError } from 'axios';
 
 import i18n from '../i18n';
+import { formatearHora } from '../i18n/formato';
 
 export interface ApiError {
   code: string;
   message: string;
+  /** Mensaje público original para consumidores con contrato específico (403/422). */
+  backendMessage?: string;
   field?: string;
   status: number;
+  /** Cada campo que fallo, con su mensaje sin la etiqueta. `field` vacio = error de modelo. */
+  fields?: BackendFieldError[];
 }
 
-interface BackendFieldError {
+export interface BackendFieldError {
   field: string;
   message: string;
 }
@@ -20,10 +30,18 @@ export function mapToApiError(error: AxiosError): ApiError {
 
   const code = (data?.error_code as string) ?? (data?.code as string) ?? (data?.detail as string) ?? `HTTP_${status}`;
   const fields = data?.fields as BackendFieldError[] | undefined;
-  const message = traducirPorCodigo(code, resolveMessage(status, data, fields));
+  const mensajeBackend = resolveMessage(status, data, fields);
+  const message = (code === 'CUENTA_BLOQUEADA' && bloqueoEnHoraLocal(mensajeBackend))
+    || traducirPorCodigo(code, mensajeBackend);
   const field = fields?.[0]?.field ?? (data?.field as string | undefined);
+  const porCampo = fields?.map((f) => ({
+    field: f.field ?? '',
+    message: f.message === data?.message ? message : mensajeDeCampo(f.message),
+  }));
 
-  return { code, message, field, status };
+  const backendMessage = (status === 403 || status === 422) && typeof data?.message === 'string'
+    ? data.message.trim() || undefined : undefined;
+  return { code, message, backendMessage, field, status, fields: porCampo?.length ? porCampo : undefined };
 }
 
 function stripPydanticPrefix(msg: string): string {
@@ -48,9 +66,34 @@ function traducirPorCodigo(code: string | undefined, mensajeBackend: string): st
   // avisos de clave faltante por algo que nunca va a estar ahi; el texto de esos
   // casos ya sale traducido de `mensajePorStatus`.
   if (!code || code.startsWith('HTTP_')) return mensajeBackend;
+  // `mensaje` permite que es-CO use "{{mensaje}}" en los códigos cuyo texto lleva los
+  // datos de la operación (área, cantidades, ids): en español se ve el del backend
+  // completo y en inglés la traducción del catálogo.
   return i18n.t(`errores.por_codigo.${code}`, {
     ns: 'common',
     defaultValue: mensajeBackend,
+    mensaje: mensajeBackend,
+  });
+}
+
+/**
+ * El backend escribe la hora de desbloqueo como `HH:MM:SS` en la zona que le
+ * envia el navegador (`X-Zona-Horaria`), sin fecha. Se le pone fecha y se
+ * recalculan los minutos, que el backend fija en 15 aunque el bloqueo ya lleve
+ * un rato. Sin hora reconocible, `null`.
+ */
+export function bloqueoEnHoraLocal(mensaje: string, ahora = new Date()): string | null {
+  const m = mensaje.match(/(\d{2}):(\d{2}):(\d{2})/);
+  if (!m) return null;
+  const hasta = new Date(ahora);
+  hasta.setHours(Number(m[1]), Number(m[2]), Number(m[3]), 0);
+  // Pasada la medianoche, `HH:MM:SS` es del dia siguiente.
+  if (hasta.getTime() < ahora.getTime() - 60_000) hasta.setDate(hasta.getDate() + 1);
+  const minutos = Math.max(1, Math.ceil((hasta.getTime() - ahora.getTime()) / 60_000));
+  return i18n.t('errores.cuenta_bloqueada_hasta', {
+    ns: 'common',
+    hora: formatearHora(hasta),
+    minutos,
   });
 }
 
@@ -65,11 +108,15 @@ const PYDANTIC_ES: Record<string, string> = {
   'Field required': 'validacion.campo_obligatorio',
 };
 
-function describeField({ field, message }: BackendFieldError): string {
+function mensajeDeCampo(message: string): string {
   const clave = PYDANTIC_ES[message];
-  const msg = clave
+  return clave
     ? i18n.t(clave, { ns: 'common', defaultValue: 'Campo obligatorio.' })
     : stripPydanticPrefix(message);
+}
+
+function describeField({ field, message }: BackendFieldError): string {
+  const msg = mensajeDeCampo(message);
   if (!field) return msg;
   const label = field.replace(/_/g, ' ');
   return `${label.charAt(0).toUpperCase()}${label.slice(1)}: ${msg}`;

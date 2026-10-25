@@ -1,0 +1,318 @@
+{
+  "run_id": "G31-REEVAL-V5-20261008-170709",
+  "fase": "oficial",
+  "ambiente": "TEST",
+  "fixture": {
+    "FIXTURE_READY": true,
+    "SENSOR_ID": 53,
+    "DEVICE_ID": 203,
+    "INFRA_ID": 268,
+    "ACTIVO_OBJETIVO": 755,
+    "ESPECIE_ID": 109,
+    "UMBRAL_ID": 63,
+    "VARIABLE_ID": 9,
+    "CALIBRACION_ID": 23,
+    "codigo_ingesta": "TEMPERATURA_AMBIENTAL",
+    "unidad": "°C",
+    "ganancia": "1",
+    "offset": "0",
+    "crudos": {
+      "TC-M09-66": "36.00",
+      "TC-M09-67": "38.00",
+      "TC-M09-68": "40.00"
+    },
+    "nombre_sensor": "Sensor QA G31 V5 1008170709",
+    "creado_por_qa": true
+  },
+  "casos_reejecutados_en_este_run": [
+    "TC-M09-68"
+  ],
+  "escrituras_oficiales": [
+    {
+      "caso": "TC-M09-66",
+      "endpoint": "POST /iot/telemetria",
+      "status": 201,
+      "reintento": false
+    },
+    {
+      "caso": "TC-M09-67",
+      "endpoint": "POST /iot/telemetria",
+      "status": 201,
+      "reintento": false
+    },
+    {
+      "caso": "TC-M09-68",
+      "endpoint": "POST /iot/telemetria",
+      "status": 201,
+      "reintento": false
+    }
+  ],
+  "transiciones": {
+    "secuencia_dashboard": [
+      "VERDE",
+      "AMARILLO",
+      "ROJO"
+    ],
+    "secuencia_historial": [
+      "VERDE",
+      "AMARILLO",
+      "ROJO"
+    ],
+    "esperada": [
+      "VERDE",
+      "AMARILLO",
+      "ROJO"
+    ],
+    "cumple": true
+  },
+  "oraculo": [
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "la ingesta de la medicion responde HTTP 201",
+      "cumple": true,
+      "observado": 201
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "la lectura queda LECTURA_VALIDA",
+      "cumple": true,
+      "observado": "LECTURA_VALIDA"
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "la ingesta genera un registro de vinculacion para la lectura",
+      "cumple": true,
+      "observado": "total=1"
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "la lectura queda VINCULADA",
+      "cumple": true,
+      "observado": "VINCULADA"
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "la lectura queda vinculada al ACTIVO_OBJETIVO congelado",
+      "cumple": true,
+      "observado": 755
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "el valor efectivo de la lectura es 36.00",
+      "cumple": true,
+      "observado": "36.0000"
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "el historial atribuye la lectura al ACTIVO_OBJETIVO",
+      "cumple": true,
+      "observado": 755
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "el historial resuelve la ESPECIE_ID congelada",
+      "cumple": true,
+      "observado": 109
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "el historial aplica el UMBRAL_ID congelado",
+      "cumple": true,
+      "observado": 63
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "el historial clasifica la lectura como NORMAL/VERDE",
+      "cumple": true,
+      "observado": "VERDE"
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "el dashboard refleja la lectura de este caso (correlacion por timestamp)",
+      "cumple": true,
+      "observado": "2026-10-08T17:11:55Z"
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "el dashboard muestra VERDE para el sensor",
+      "cumple": true,
+      "observado": "VERDE"
+    },
+    {
+      "caso": "TC-M09-66",
+      "descripcion": "el color del dashboard no proviene de una alerta M03",
+      "cumple": true,
+      "observado": "sin alerta"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "la ingesta de la medicion responde HTTP 201",
+      "cumple": true,
+      "observado": 201
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "la lectura queda LECTURA_VALIDA",
+      "cumple": true,
+      "observado": "LECTURA_VALIDA"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "la ingesta genera un registro de vinculacion para la lectura",
+      "cumple": true,
+      "observado": "total=1"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "la lectura queda VINCULADA",
+      "cumple": true,
+      "observado": "VINCULADA"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "la lectura queda vinculada al ACTIVO_OBJETIVO congelado",
+      "cumple": true,
+      "observado": 755
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el valor efectivo de la lectura es 38.00",
+      "cumple": true,
+      "observado": "38.0000"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el historial atribuye la lectura al ACTIVO_OBJETIVO",
+      "cumple": true,
+      "observado": 755
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el historial resuelve la ESPECIE_ID congelada",
+      "cumple": true,
+      "observado": 109
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el historial aplica el UMBRAL_ID congelado",
+      "cumple": true,
+      "observado": 63
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el historial clasifica la lectura como PRECAUCION/AMARILLO",
+      "cumple": true,
+      "observado": "AMARILLO"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el dashboard refleja la lectura de este caso (correlacion por timestamp)",
+      "cumple": true,
+      "observado": "2026-10-08T17:11:56Z"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el dashboard muestra AMARILLO para el sensor",
+      "cumple": true,
+      "observado": "AMARILLO"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el color del dashboard no proviene de una alerta M03",
+      "cumple": true,
+      "observado": "sin alerta"
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "la ingesta de la medicion responde HTTP 201",
+      "cumple": true,
+      "observado": 201
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "la lectura queda LECTURA_VALIDA",
+      "cumple": true,
+      "observado": "LECTURA_VALIDA"
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "la ingesta genera un registro de vinculacion para la lectura",
+      "cumple": true,
+      "observado": "total=1"
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "la lectura queda VINCULADA",
+      "cumple": true,
+      "observado": "VINCULADA"
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "la lectura queda vinculada al ACTIVO_OBJETIVO congelado",
+      "cumple": true,
+      "observado": 755
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "el valor efectivo de la lectura es 40.00",
+      "cumple": true,
+      "observado": "40.0000"
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "el historial atribuye la lectura al ACTIVO_OBJETIVO",
+      "cumple": true,
+      "observado": 755
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "el historial resuelve la ESPECIE_ID congelada",
+      "cumple": true,
+      "observado": 109
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "el historial aplica el UMBRAL_ID congelado",
+      "cumple": true,
+      "observado": 63
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "el historial clasifica la lectura como CRITICO/ROJO",
+      "cumple": true,
+      "observado": "ROJO"
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "el dashboard refleja la lectura de este caso (correlacion por timestamp)",
+      "cumple": true,
+      "observado": "2026-10-08T17:13:33Z"
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "el dashboard muestra ROJO para el sensor",
+      "cumple": true,
+      "observado": "ROJO"
+    },
+    {
+      "caso": "TC-M09-68",
+      "descripcion": "el color del dashboard no proviene de una alerta M03",
+      "cumple": true,
+      "observado": "sin alerta"
+    },
+    {
+      "caso": "TC-M09-G31",
+      "descripcion": "el dashboard recorre VERDE -> AMARILLO -> ROJO en los tres casos",
+      "cumple": true,
+      "observado": "VERDE -> AMARILLO -> ROJO"
+    }
+  ],
+  "resumen_oraculo": {
+    "total": 40,
+    "superadas": 40,
+    "fallidas": 0
+  },
+  "detencion": null,
+  "resultado_grupo": "APROBADO",
+  "terminado": "2026-10-08T17:14:04.985Z"
+}

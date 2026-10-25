@@ -1,0 +1,348 @@
+{
+  "grupo": "TC-M09-G31",
+  "casos": [
+    "TC-M09-66",
+    "TC-M09-67",
+    "TC-M09-68"
+  ],
+  "rf": "RF-17",
+  "tipo": "REEVALUACION V2",
+  "runId": "G31-REEVAL-V2-20260913-103722",
+  "environment": "TEST",
+  "fecha": "2026-09-13T15:39:38.156Z",
+  "preflight": [
+    {
+      "url": "http://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/health",
+      "status": 404
+    },
+    {
+      "url": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/health",
+      "status": 200
+    }
+  ],
+  "actor": {
+    "correo": "administador.dev@gmail.com",
+    "id_usuario": 104,
+    "rol": "Administrador",
+    "estado": "Activo",
+    "fincas": 0,
+    "intentosLogin": [
+      {
+        "correo": "administador.dev@gmail.com",
+        "status": 200
+      }
+    ]
+  },
+  "threshold_config_before": {
+    "id_umbral_ambiental": 44,
+    "especie": {
+      "id": 39,
+      "nombre": "Bovino",
+      "es_activo": true
+    },
+    "variable": {
+      "id": 13,
+      "nombre": "Temperatura Corporal",
+      "unidad": "°C"
+    },
+    "general": {
+      "min": "37.00",
+      "max": "43.00"
+    },
+    "normal": {
+      "nivel": "normal",
+      "limite_inferior": "37.00",
+      "limite_superior": "39.00"
+    },
+    "precaucion": {
+      "nivel": "precaucion",
+      "limite_inferior": "39.00",
+      "limite_superior": "41.00"
+    },
+    "critico": {
+      "nivel": "critico",
+      "limite_inferior": "41.00",
+      "limite_superior": "43.00"
+    },
+    "es_activo": true,
+    "fecha_actualizacion": "2026-09-13T07:06:24.186751Z"
+  },
+  "valores_planificados_no_enviados": {
+    "TC-M09-66": {
+      "esperado": "NORMAL / VERDE",
+      "valor": "38.00",
+      "zona": [
+        "37.00",
+        "39.00"
+      ]
+    },
+    "TC-M09-67": {
+      "esperado": "PRECAUCION / AMARILLO",
+      "valor": "40.00",
+      "zona": [
+        "39.00",
+        "41.00"
+      ]
+    },
+    "TC-M09-68": {
+      "esperado": "CRITICO / ROJO",
+      "valor": "42.00",
+      "zona": [
+        "41.00",
+        "43.00"
+      ]
+    }
+  },
+  "monitoreo": {
+    "dashboard": {
+      "status": 200,
+      "total": 5,
+      "campos": [
+        "id_sensor",
+        "id_dispositivo_iot",
+        "nombre_sensor",
+        "tipo_variable",
+        "categoria_variable",
+        "ultimo_valor",
+        "ultima_unidad",
+        "ultimo_timestamp_captura",
+        "estado_semaforo",
+        "estado_calidad",
+        "estado_desviacion",
+        "estado_conectividad",
+        "tiempo_sin_reporte_min",
+        "dato_desactualizado",
+        "id_alerta",
+        "severidad_alerta",
+        "tendencia",
+        "id_infraestructura",
+        "nombre_infraestructura",
+        "id_finca",
+        "nombre_finca",
+        "nivel_bateria_pct",
+        "calidad_senal_rssi",
+        "calidad_senal_snr"
+      ],
+      "sensores": [
+        {
+          "id_sensor": 1,
+          "tipo_variable": "Temperatura del agua",
+          "ultimo_valor": "48.5000",
+          "estado_semaforo": "GRIS",
+          "dato_desactualizado": true,
+          "id_alerta": null,
+          "severidad_alerta": null
+        },
+        {
+          "id_sensor": 2,
+          "tipo_variable": "pH del agua",
+          "ultimo_valor": "62.1000",
+          "estado_semaforo": "GRIS",
+          "dato_desactualizado": true,
+          "id_alerta": null,
+          "severidad_alerta": null
+        },
+        {
+          "id_sensor": 3,
+          "tipo_variable": "Oxígeno disuelto",
+          "ultimo_valor": "16.5000",
+          "estado_semaforo": "GRIS",
+          "dato_desactualizado": true,
+          "id_alerta": null,
+          "severidad_alerta": null
+        },
+        {
+          "id_sensor": 4,
+          "tipo_variable": "Amoniaco total",
+          "ultimo_valor": "1248.5000",
+          "estado_semaforo": "GRIS",
+          "dato_desactualizado": true,
+          "id_alerta": null,
+          "severidad_alerta": null
+        },
+        {
+          "id_sensor": 5,
+          "tipo_variable": "Nitrito",
+          "ultimo_valor": "18.4700",
+          "estado_semaforo": "GRIS",
+          "dato_desactualizado": false,
+          "id_alerta": null,
+          "severidad_alerta": null
+        }
+      ]
+    },
+    "historial": {
+      "status": 200,
+      "ventana": [
+        "2026-08-14",
+        "2026-09-13"
+      ],
+      "total": 5,
+      "semaforos": [
+        "GRIS"
+      ],
+      "lecturasConEspecie": 0
+    },
+    "rutasOpenApiRelacionadas": [
+      "/iot/monitoreo/dashboard",
+      "/iot/monitoreo/dashboard/{id_infraestructura}",
+      "/iot/monitoreo/historial/exportar",
+      "/iot/monitoreo/historial",
+      "/iot/calidad/{id_telemetria}/evaluar",
+      "/iot/calidad/reevaluar"
+    ]
+  },
+  "correlacion": {
+    "clasificadorBasadoEnNivelesRF17": false,
+    "motivo": "La ingesta fija VERDE; AMARILLO/ROJO provienen de alertas M03 por severidad; el historial usa stub (GRIS); ningun componente lee niveles RF-17",
+    "semaforosDashboard": [
+      "GRIS"
+    ],
+    "semaforosHistorial": [
+      "GRIS"
+    ],
+    "configuracionSinCambios": true
+  },
+  "threshold_config_after": {
+    "igualABefore": true
+  },
+  "medicionesGeneradas": 0,
+  "motivoSinMediciones": "Checklist §156: item 6 (clasificador RF-17 identificado) = No. Enviar mediciones no produciria una clasificacion basada en RF-17 y escribiria telemetria sin oraculo.",
+  "por_caso": {
+    "TC-M09-66": {
+      "threshold_config_id": 44,
+      "especie": "Bovino",
+      "variable": "Temperatura Corporal",
+      "measurement_id": null,
+      "measurement_value": "38.00",
+      "expected_classification": "NORMAL / VERDE",
+      "api_classification": null,
+      "ui_classification": null,
+      "persistence_correlation": "No aplica: medicion no generada",
+      "result": "DESAPROBADO — FUNCIONALIDAD NO IMPLEMENTADA"
+    },
+    "TC-M09-67": {
+      "threshold_config_id": 44,
+      "especie": "Bovino",
+      "variable": "Temperatura Corporal",
+      "measurement_id": null,
+      "measurement_value": "40.00",
+      "expected_classification": "PRECAUCION / AMARILLO",
+      "api_classification": null,
+      "ui_classification": null,
+      "persistence_correlation": "No aplica: medicion no generada",
+      "result": "DESAPROBADO — FUNCIONALIDAD NO IMPLEMENTADA"
+    },
+    "TC-M09-68": {
+      "threshold_config_id": 44,
+      "especie": "Bovino",
+      "variable": "Temperatura Corporal",
+      "measurement_id": null,
+      "measurement_value": "42.00",
+      "expected_classification": "CRITICO / ROJO",
+      "api_classification": null,
+      "ui_classification": null,
+      "persistence_correlation": "No aplica: medicion no generada",
+      "result": "DESAPROBADO — FUNCIONALIDAD NO IMPLEMENTADA"
+    }
+  },
+  "codigo": {
+    "backend": {
+      "rama": "qa/juan-esteban-re-evaluacion-M02",
+      "head": "ff5f6c9f6161e46c94d3d6f325a7d07d80d84aa0",
+      "originDev": "5d39b366ffccfad93153cb86e7081f1be742da24",
+      "diffSrcHeadVsOriginDev": "(sin diferencias)",
+      "triggerIngestaSemaforo": [
+        "origin/dev:alembic/baseline/esquema_baseline.sql:6204:        'VERDE', NEW.estado_calidad,",
+        "origin/dev:alembic/baseline/esquema_baseline.sql:42549:CREATE TRIGGER trg_rf58_01_cache_estado_sensor AFTER INSERT ON modulo3.telemetrias FOR EACH ROW EXECUTE FUNCTION modulo3.fn_actualizar_estado_sensor();"
+      ],
+      "triggerAlertaSemaforo": [
+        "origin/dev:alembic/baseline/esquema_baseline.sql:7470:                WHEN 'CRITICO'  THEN 'ROJO'",
+        "origin/dev:alembic/baseline/esquema_baseline.sql:42430:CREATE TRIGGER trg_aux_03_alerta_en_sensor_insert AFTER INSERT ON modulo3.alertas FOR EACH ROW EXECUTE FUNCTION modulo3.fn_sincronizar_alerta_en_sensor();",
+        "origin/dev:alembic/baseline/esquema_baseline.sql:42437:CREATE TRIGGER trg_aux_03_alerta_en_sensor_update AFTER UPDATE ON modulo3.alertas FOR EACH ROW WHEN ((old.estado_alerta IS DISTINCT FROM new.estado_alerta)) EXECUTE FUNCTION modulo3.fn_sincronizar_alerta_en_sensor();"
+      ],
+      "umbralHistoricoStub": [
+        "class UmbralHistoricoM09Adapter(UmbralHistoricoPort):",
+        "\"\"\"Stub: M09 aún no expone umbrales versionados con vigencia temporal (RF-59 Restricción 16).",
+        "Mientras tanto todos los semáforos históricos quedan en GRIS.",
+        "return None"
+      ],
+      "semaforoCalculator": [
+        "estado_semaforo: str        # VERDE / AMARILLO / ROJO / GRIS",
+        "_ORDEN_SEMAFORO = {'ROJO': 4, 'AMARILLO': 3, 'GRIS': 2, 'VERDE': 1, 'SIN_DATOS': 0}",
+        "def calcular(",
+        "tolerancia_pct: float = 10.0,",
+        "if umbral_min <= valor <= umbral_max:",
+        "return 'AMARILLO'"
+      ],
+      "lecturaNivelesRF17FueraDeConfiguration": [],
+      "migracionesRedefinenTrigger": []
+    },
+    "frontend": {
+      "rama": "qa/juan-esteban-re-evaluacion-M02",
+      "head": "49966d244673eb44d0be61e7df25c27d460b2c1c",
+      "semaforoUI": [
+        "HEAD:src/telemetry/components/SensorCard.tsx:29:  const status = semaforoToGauge(sensor.estado_semaforo);",
+        "HEAD:src/telemetry/components/SensorCard.tsx:67:        <SemaforoPill estado={sensor.estado_semaforo} />"
+      ],
+      "usoNivelesRF17EnTelemetriaUI": []
+    }
+  },
+  "newman": {
+    "html": "newman/newman-TC-M09-66-67-68-v2-TEST.html",
+    "assertions": {
+      "total": 9,
+      "pending": 0,
+      "failed": 2
+    },
+    "aserciones": [
+      {
+        "request": "Actor",
+        "test": "Precondicion: /usuarios/me 200",
+        "ok": true
+      },
+      {
+        "request": "Actor",
+        "test": "Precondicion: Administrador o Veterinario activo",
+        "ok": true
+      },
+      {
+        "request": "THRESHOLD_CONFIG",
+        "test": "Precondicion: GET RF-17 200",
+        "ok": true
+      },
+      {
+        "request": "THRESHOLD_CONFIG",
+        "test": "Precondicion: configuracion activa con normal/precaucion/critico",
+        "ok": true
+      },
+      {
+        "request": "THRESHOLD_CONFIG",
+        "test": "Precondicion: niveles sin solapamiento y cada uno con amplitud positiva",
+        "ok": true
+      },
+      {
+        "request": "Monitoreo dashboard",
+        "test": "Precondicion: API Monitoreo dashboard 200",
+        "ok": true
+      },
+      {
+        "request": "Monitoreo dashboard",
+        "test": "Oraculo G31: el estado del sensor referencia el umbral/nivel RF-17 con que se clasifico",
+        "ok": false,
+        "detalle": "campos: id_sensor,id_dispositivo_iot,nombre_sensor,tipo_variable,categoria_variable,ultimo_valor,ultima_unidad,ultimo_timestamp_captura,estado_semaforo,estado_calidad,estado_desviacion,estado_conectividad,tiempo_sin_reporte_min,dato_desactualizado,id_alerta,severidad_alerta,tendencia,id_infraestruct"
+      },
+      {
+        "request": "Monitoreo historial",
+        "test": "Precondicion: API Monitoreo historial 200",
+        "ok": true
+      },
+      {
+        "request": "Monitoreo historial",
+        "test": "Oraculo G31: la clasificacion historica se calcula con umbral (no todo GRIS)",
+        "ok": false,
+        "detalle": "semaforos: GRIS: expected false to deeply equal true"
+      }
+    ]
+  }
+}

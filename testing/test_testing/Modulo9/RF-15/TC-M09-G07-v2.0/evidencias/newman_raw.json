@@ -1,0 +1,54 @@
+{
+  "executions": [
+    {
+      "item": "01 - Iniciar Sesión Administrativa",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-01: Login administrativo responde status HTTP 200 con token JWT",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "02 - Preflight: Comprobar que run_id no colisiona",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-02: Preflight confirma que los nombres con run_id NO existen",
+          "error": "ningún nombre preexistente debe coincidir: expected [ { id_especie: 98, …(7) }, …(1) ] to have a length of +0 but got 2"
+        }
+      ]
+    },
+    {
+      "item": "03 - POST duplicado: Forzar conflicto 409",
+      "codigo": 409,
+      "assertions": [
+        {
+          "assertion": "NW-03: Rechazo de especie duplicada responde exactamente HTTP 409 Conflict",
+          "error": null
+        }
+      ]
+    },
+    {
+      "item": "04 - GET: Verificar no sobrescritura de especie en conflicto",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-04: El registro de Pavo Conflicto conserva sus atributos y no fue alterado por el POST 409",
+          "error": "expected 'Pavo Conflicto Hnnwbq' to deeply equal 'Pavo Conflicto HNNWBQ'"
+        }
+      ]
+    },
+    {
+      "item": "05 - GET: Verificar persistencia de especie sincronizada exitosamente",
+      "codigo": 200,
+      "assertions": [
+        {
+          "assertion": "NW-05: Pavo Real sincronizado existe en servidor y posee grupo_manejo=AVES",
+          "error": "expected { id_especie: 99, …(7) } to have property 'grupo_manejo'"
+        }
+      ]
+    }
+  ]
+}

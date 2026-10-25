@@ -1,0 +1,42 @@
+{
+  "attempt": 1,
+  "payload": {
+    "id_especie": 44,
+    "id_variable_ambiental": 1,
+    "valor_min": "35.57",
+    "valor_max": "39.23",
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "35.57",
+        "limite_superior": "37.00"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "37.00",
+        "limite_superior": "38.00"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "38.00",
+        "limite_superior": "39.23"
+      }
+    ]
+  },
+  "http_status": 500,
+  "http_esperado_contrato": 201,
+  "response": {
+    "error_code": "FALLO_SINCRONIZACION_EDGE",
+    "message": "Configuración guardada en la base de datos, pero falló la actualización de los nodos Edge. Es posible que las alertas en campo sigan operando con los valores anteriores hasta que se restablezca la conexión.",
+    "fields": [],
+    "timestamp": "2026-09-26T05:51:55.817125+00:00"
+  },
+  "error_code": "FALLO_SINCRONIZACION_EDGE",
+  "automatic_retries": 0,
+  "flujo_alterno_edge": true,
+  "persistio": true,
+  "ids_de_la_combinacion_tras_el_post": [
+    54
+  ],
+  "nota": "El endpoint respondio 500 FALLO_SINCRONIZACION_EDGE habiendo guardado el registro: mismo comportamiento documentado en G22 V3. No se reintenta el POST."
+}

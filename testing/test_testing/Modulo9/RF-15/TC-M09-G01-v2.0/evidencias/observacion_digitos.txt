@@ -1,0 +1,12 @@
+OBSERVACIÓN DE CAMPO / DISCREPANCIA FUNCIONAL: RECHAZO DE DÍGITOS EN NOMBRE DE ESPECIE
+
+1. En la ejecución inicial de prueba, el formulario del frontend desplegado (EspeciesModal.tsx) rechazó el dato "Gallina QA2" con el mensaje en rojo:
+   "Solo letras y espacios."
+   Regla en código cliente: NOMBRE_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/
+
+2. La especificación RF-15 v1.1 prohíbe "símbolos especiales" sin mencionar restricción de dígitos (0-9).
+   Queda registrada como discrepancia funcional / requerimiento a validar con la líder técnica.
+
+3. Por decisión de ejecución autorizada:
+   - UI (Cypress): "Gallina QA"
+   - API (Newman): "Gallina QA API"

@@ -1,3 +1,9 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: excluye vencimiento de acciones manuales |
+// | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
+// | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-05/M3-06/M3-10: autor del historial, ubicación de la alerta y listado de dispositivos |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -24,6 +30,20 @@ export type OrigenDato = 'TIEMPO_REAL' | 'BUFFER_LOCAL' | 'EDGE_AGREGADO';
 export type EstadoSemaforo = 'VERDE' | 'AMARILLO' | 'ROJO' | 'GRIS';
 
 /** Estado del ciclo de vida de un dispositivo IoT (RF-60). */
+/** Fila de GET /iot/dispositivos (M3-10). */
+export interface DispositivoConEstadoSchema {
+  id_dispositivo_iot: number;
+  serial: string;
+  descripcion: string | null;
+  id_infraestructura: number;
+  nombre_infraestructura: string;
+  nombre_finca: string;
+  estado_actual: string;
+  fecha_ultimo_contacto: string | null;
+  nivel_bateria_pct: number | string | null;
+  calidad_senal_rssi: number | string | null;
+}
+
 export type EstadoDispositivo =
   | 'ACTIVO' | 'SIN_SEÑAL' | 'BUFFER_ACTIVO' | 'EN_MANTENIMIENTO' | 'INACTIVO';
 
@@ -77,6 +97,10 @@ export interface AlertaSchema {
   tiene_contexto_incompleto: boolean;
   tiene_generada_por_reevaluacion: boolean;
   id_sensor: number | null;
+  /** M3-06/T-18: nombres para la ubicación; opcionales hasta que el backend los exponga en todos los ambientes. */
+  nombre_sensor?: string | null;
+  nombre_infraestructura?: string | null;
+  nombre_finca?: string | null;
   id_dispositivo_ioit: number | null;
   id_activo_biologico: number | null;
   id_infraestructura: number | null;
@@ -95,6 +119,8 @@ export interface HistoricoEstadoAlertaSchema {
   estado_nuevo: string;
   fecha_cambio: string;
   id_usuario: number | null;
+  /** M3-05: quién hizo el cambio; null en transiciones automáticas o backend sin el campo. */
+  nombre_usuario?: string | null;
   motivo: string | null;
 }
 
@@ -118,12 +144,14 @@ export interface ListarAlertasFiltros {
   origen_evento?: string;
   fecha_desde?: string;
   fecha_hasta?: string;
+  /** M3-08: alertas resueltas/cerradas desde este instante (filtra fecha_resolucion). */
+  fecha_resolucion_desde?: string;
   pagina?: number;
   por_pagina?: number;
 }
 
 /** Nuevo estado permitido al actualizar una alerta (PATCH …/estado). */
-export type NuevoEstadoAlerta = 'EN_ATENCION' | 'RESUELTA' | 'DESCARTADA' | 'VENCIDA';
+export type NuevoEstadoAlerta = 'EN_ATENCION' | 'RESUELTA' | 'DESCARTADA';
 
 export interface ActualizarEstadoAlertaDTO {
   nuevo_estado: NuevoEstadoAlerta;
@@ -169,9 +197,17 @@ export interface EstadoSensorSchema {
   nombre_infraestructura: string;
   id_finca: number;
   nombre_finca: string;
-  nivel_bateria_pct: number | null;      // forzado a null para rol Productor
+  nivel_bateria_pct: number | null;      // null sin el permiso datos_tecnicos_dashboard (DEV-39)
   calidad_senal_rssi: number | null;
   calidad_senal_snr: number | null;
+  /** RF-58 E7 (DEV-39): GRIS porque la variable no tiene umbral configurado en M09. */
+  sin_umbral?: boolean;
+  /** RF-58 R2/E2: lectura FUERA_DE_RANGO o ERROR_CALIBRACION. */
+  indicador_anomalia?: boolean;
+  /** false si la lectura no es LECTURA_VALIDA (no es un valor operativo normal). */
+  es_valor_operativo?: boolean;
+  /** Etiqueta del backend en español; la UI la traduce con `estadoLectura`. */
+  etiqueta_estado?: string | null;
 }
 
 export interface DashboardResponseSchema {
@@ -225,8 +261,23 @@ export interface ResumenEstadisticoSchema {
   total_alertas_en_periodo: number;
 }
 
+/** RF-59 E7 / CA-17 (DEV-38): intervalo sin lecturas > 3 × la frecuencia de muestreo. */
+export interface VacioTemporalSchema {
+  sensor_id: number;
+  tipo_variable: string;
+  desde: string;                          // datetime ISO: última lectura antes del hueco
+  hasta: string;                          // datetime ISO: primera lectura después del hueco
+  duracion_min: number;
+  frecuencia_esperada_min: number;
+}
+
 export interface HistorialPageSchema {
+  /** Registros navegables (como mucho 10 000, CA-19). */
   total: number;
+  /** DEV-38: registros que cumplen los filtros; si supera 10 000, `truncado` y `aviso`. */
+  total_encontrado?: number;
+  truncado?: boolean;
+  aviso?: string | null;
   pagina: number;
   por_pagina: number;
   paginas_totales: number;
@@ -234,6 +285,7 @@ export interface HistorialPageSchema {
   rango_real_datos: Record<string, unknown>;
   items: LecturaHistoricaSchema[];
   estadisticas: ResumenEstadisticoSchema[];
+  vacios_temporales?: VacioTemporalSchema[];
 }
 
 export type OrdenHistorial = 'ASC' | 'DESC';

@@ -1,0 +1,21 @@
+{
+  "name": "tc-m09-g11-v2.0",
+  "version": "2.0.0",
+  "description": "TC-M09-G11-v2.0: Configuracion de etapas productivas, patologias y metricas productivas (RFC-004) por especie (RF-16 v1.2 - CU-02)",
+  "private": true,
+  "scripts": {
+    "cypress:open": "cypress open --project .",
+    "cypress:run": "cypress run --project . --browser chrome --headless",
+    "newman": "node run-newman.cjs",
+    "consolidar": "node consolidar-resultados.cjs",
+    "verificar-login": "node verificar-login.cjs",
+    "tsc": "tsc --noEmit",
+    "test": "npm run cypress:run && npm run newman && npm run consolidar"
+  },
+  "devDependencies": {
+    "cypress": "^13.0.0",
+    "newman": "^6.0.0",
+    "newman-reporter-htmlextra": "^1.23.1",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "RUN_ID": "run-20260913-functional-v2",
+  "ambiente": "TEST HTTPS",
+  "actor": {
+    "id_usuario": 104,
+    "correo_electronico": "administador.dev@gmail.com",
+    "nombre_rol": "Administrador"
+  },
+  "ID": 43,
+  "especie": {
+    "id": 41,
+    "nombre": "Ave Qa Je"
+  },
+  "variable": {
+    "id": 1,
+    "nombre": "Temperatura del agua"
+  },
+  "input_min": "35.57",
+  "input_max": "39.23",
+  "api_min": "35.57",
+  "api_max": "39.23",
+  "db_min": "35.57",
+  "db_max": "39.23",
+  "tipo_BD": "numeric(8,2)",
+  "resultado_TC60": "APROBADO",
+  "nueva_sesion": {
+    "loginA": {
+      "authentication_successful": true,
+      "actor": {
+        "id_usuario": 104,
+        "nombre_rol": "Administrador"
+      }
+    },
+    "logout": true,
+    "loginB": {
+      "authentication_successful": true,
+      "actor": {
+        "id_usuario": 104,
+        "nombre_rol": "Administrador"
+      }
+    },
+    "token_distinto": true
+  },
+  "api_after_session": {
+    "id_umbral_ambiental": 43,
+    "id_especie": 41,
+    "id_variable_ambiental": 1,
+    "unidad_medida": "°C",
+    "valor_min": "35.57",
+    "valor_max": "39.23",
+    "es_activo": true,
+    "fecha_actualizacion": null,
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "35.57",
+        "limite_superior": "37.00"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "37.00",
+        "limite_superior": "38.00"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "38.00",
+        "limite_superior": "39.23"
+      }
+    ]
+  },
+  "db_after_session": {
+    "id_umbral_ambiental": 43,
+    "id_especie": 41,
+    "id_variable_ambiental": 1,
+    "valor_min": "35.57",
+    "valor_max": "39.23",
+    "es_activo": true,
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "35.57",
+        "limite_superior": "37.00"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "37.00",
+        "limite_superior": "38.00"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "38.00",
+        "limite_superior": "39.23"
+      }
+    ]
+  },
+  "resultado_TC61": "APROBADO",
+  "post_configuracion_total": 1,
+  "reintentos_post": 0,
+  "cypress_recorridos": 2,
+  "cleanup": false
+}

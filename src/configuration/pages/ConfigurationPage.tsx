@@ -7,6 +7,7 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
+import { SubPestanas } from '../../shared/design-system/SubPestanas';
 import { useEspecies } from '../hooks/useEspecies';
 import { EspeciesTable } from '../components/EspeciesTable';
 import { Paginacion } from '../components/Paginacion';
@@ -28,6 +29,8 @@ import { IdiomaSection } from '../components/IdiomaSection';
 import { DashboardLayoutSection } from '../components/DashboardLayoutSection';
 import { PlantillasTable } from '../components/PlantillasTable';
 import type { EspecieResponse, TipoAreaResponse } from '../types';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { POR_PAGINA } from '../../shared/hooks/useBusqueda';
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
 type TabId = 'catalogo' | 'por-especie' | 'fincas' | 'iot' | 'sistema' | 'personalizacion' | 'plantillas';
@@ -47,6 +50,28 @@ const TABS: { id: TabId; claveLabel: string; recurso: number }[] = [
   { id: 'plantillas', claveLabel: 'tabs.plantillas', recurso: 28 },       // plantillas
 ];
 
+// Pestañas con varias tareas independientes (cada una con su propio asistente):
+// se muestra una a la vez bajo sub-pestañas en vez de apilarlas en un scroll largo.
+const SUBPESTANAS: Partial<Record<TabId, { id: string; claveLabel: string; contenido: () => React.ReactNode }[]>> = {
+  fincas: [
+    { id: 'fincas', claveLabel: 'subpestanas.fincas', contenido: () => <FincasTable /> },
+    { id: 'tipos-area', claveLabel: 'subpestanas.tipos_area', contenido: () => <TiposAreaSubSection /> },
+    { id: 'infraestructura', claveLabel: 'subpestanas.infraestructura', contenido: () => <InfraestructuraSection /> },
+  ],
+  iot: [
+    { id: 'dispositivos', claveLabel: 'subpestanas.dispositivos', contenido: () => <DispositivosTable /> },
+    { id: 'sensores', claveLabel: 'subpestanas.sensores', contenido: () => <SensoresSection /> },
+    { id: 'remota', claveLabel: 'subpestanas.configuracion_remota', contenido: () => <ConfiguracionRemotaSection /> },
+    { id: 'calibracion', claveLabel: 'subpestanas.calibracion', contenido: () => <CalibracionSection /> },
+  ],
+  personalizacion: [
+    { id: 'identidad', claveLabel: 'subpestanas.identidad_visual', contenido: () => <IdentidadVisualSection /> },
+    { id: 'tema', claveLabel: 'subpestanas.tema', contenido: () => <TemaVisualSection /> },
+    { id: 'idioma', claveLabel: 'subpestanas.idioma', contenido: () => <IdiomaSection /> },
+    { id: 'dashboard', claveLabel: 'subpestanas.dashboard', contenido: () => <DashboardLayoutSection /> },
+  ],
+};
+
 // QA M09 (hallazgo #3): con solo padding vertical el boton medía ~40px, por
 // debajo del touch target minimo de 48px (--s9) del sistema de diseño, y en
 // viewport movil (nav con overflow-x) los flex items sin flex-shrink:0 podian
@@ -59,7 +84,10 @@ const TAB_BTN: React.CSSProperties = {
   padding: '0 var(--s4)',
   background: 'none',
   border: 'none',
-  borderBottom: '2px solid transparent',
+  // Longhands: la pestaña activa sobrescribe borderBottomColor y React avisa si se mezcla con el shorthand.
+  borderBottomWidth: 2,
+  borderBottomStyle: 'solid',
+  borderBottomColor: 'transparent',
   color: 'var(--text-secondary)',
   fontWeight: 400,
   fontSize: '14px',
@@ -87,7 +115,8 @@ type ModalState =
 // #53 (RF-15): CU-01 exige búsqueda por nombre y paginación en el catálogo. Ambas
 // son client-side — la lista ya llega completa en un solo GET — así que basta con
 // filtrar/paginar el arreglo que trae `useEspecies`, sin tocar la capa API.
-const ESPECIES_POR_PAGINA = 50;
+// Mismo tamaño que el resto de listados de configuración (usePaginado).
+const ESPECIES_POR_PAGINA = POR_PAGINA;
 
 // ── Catálogo tab ─────────────────────────────────────────────────────────────
 // Exportado para poder testear la búsqueda/paginación (#53, RF-15) sin montar
@@ -99,7 +128,7 @@ export function CatalogoTab() {
   const puedeEditar = usePermission(8, 3);
   const puedeDesact = usePermission(8, 4);
 
-  const { especies, loading, saving, error, saveError, fromCache, conflictos, cargar, registrar, editar, desactivar, reactivar, resolverConflicto } = useEspecies();
+  const { especies, loading, saving, error, saveError, fromCache, conflictos, cargar, registrar, editar, desactivar, reactivar, resolverConflicto, limpiarSaveError } = useEspecies();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
@@ -115,7 +144,8 @@ export function CatalogoTab() {
   const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ESPECIES_POR_PAGINA));
   const enPagina = filtradas.slice((pagina - 1) * ESPECIES_POR_PAGINA, pagina * ESPECIES_POR_PAGINA);
 
-  const cerrar = () => setModal({ tipo: 'ninguno' });
+  // El error de un guardado fallido no debe aparecer al abrir otra especie (#231).
+  const cerrar = () => { limpiarSaveError(); setModal({ tipo: 'ninguno' }); };
 
   const handleDesactivar = async (especie: EspecieResponse) => {
     setAccionError(null);
@@ -193,7 +223,12 @@ export function CatalogoTab() {
           <Alert
             variant="error"
             title={t('configurationpage.conflicto_de_sincronizacion')}
-            description={op.error ?? t('configurationpage.no_se_pudo_sincronizar_esta_especie')}
+            description={
+              // #450: texto exigido por el FA "Error de sincronización en modo offline" del RF-15.
+              op.accion === 'crear' && op.status === 409
+                ? t('configurationpage.especie_offline_ya_existe', { nombre: (op.payload as { dto: { nombre: string } }).dto.nombre })
+                : op.error ?? t('configurationpage.no_se_pudo_sincronizar_esta_especie')
+            }
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--s2)' }}>
             <Button variant="secondary" size="sm" onClick={() => resolverConflicto(op)}>
@@ -236,7 +271,13 @@ export function CatalogoTab() {
           saving={saving}
           saveError={saveError}
           onClose={cerrar}
-          onRegistrar={registrar}
+          onRegistrar={async (dto) => {
+            const ok = await registrar(dto);
+            // #450: la especie nueva queda al inicio de la lista; volver a la página 1
+            // para que el usuario la vea aunque estuviera en otra página al crearla.
+            if (ok) setPagina(1);
+            return ok;
+          }}
           onEditar={(id, dto) => editar(id, dto)}
         />
       )}
@@ -295,7 +336,7 @@ function TiposAreaSubSection() {
   };
 
   return (
-    <div style={{ marginTop: 'var(--s7)', borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('configurationpage.tipos_de_area')}</h2>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
@@ -350,34 +391,19 @@ interface ConfirmProps {
 }
 
 function ConfirmModal({ titulo, mensaje, confirmLabel, confirmVariant, saving, onCancel, onConfirm }: ConfirmProps) {
+  const dialogRef = useModalA11y(onCancel);
   const { t } = useT('common');
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)',
-        padding: 'var(--s4)',
-      }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <div
-        style={{
-          background: 'var(--surface-card)',
-          borderRadius: 'var(--r-xl)',
-          border: '1px solid var(--surface-border)',
-          padding: 'var(--s6)',
-          width: '100%',
-          maxWidth: 400,
-          boxShadow: 'var(--shadow-lg)',
-        }}
+        className="ds-modal__panel ds-modal__panel--sm" style={{ padding: 'var(--s6)' }}
       >
         <h2 id="confirm-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
           {titulo}
@@ -411,6 +437,13 @@ export function ConfigurationPage() {
       ));
 
   const [activeTab, setActiveTab] = useState<TabId>('catalogo');
+  const [parametrosEditState, setParametrosEditState] = useState({ dirty: false, busy: false });
+  const [tabPendiente, setTabPendiente] = useState<TabId | null>(null);
+  // Sub-pestaña elegida por pestaña: volver a IoT regresa a la que se dejó.
+  const [subActiva, setSubActiva] = useState<Partial<Record<TabId, string>>>({});
+  const subs = SUBPESTANAS[activeTab];
+  const sub = subs?.find((s) => s.id === subActiva[activeTab]) ?? subs?.[0];
+  const tabActual = visibles.find((tab) => tab.id === activeTab);
 
   // Si la pestana activa no esta permitida (o deja de estarlo tras un cambio de rol), se
   // cae a la primera visible en vez de dejar el panel en blanco.
@@ -434,7 +467,8 @@ export function ConfigurationPage() {
 
       {/* Tab bar */}
       <nav
-        style={{ display: 'flex', borderBottom: '1px solid var(--surface-border)', padding: '0 var(--s7)', overflowX: 'auto' }}
+        className="ds-tabs"
+        style={{ padding: '0 var(--s7)' }}
         aria-label={t('pagina.aria_secciones')}
       >
         {visibles.map((tab) => (
@@ -442,7 +476,14 @@ export function ConfigurationPage() {
             key={tab.id}
             type="button"
             style={activeTab === tab.id ? TAB_BTN_ACTIVE : TAB_BTN}
-            onClick={() => setActiveTab(tab.id)}
+            disabled={parametrosEditState.busy}
+            onClick={() => {
+              if (activeTab === 'sistema' && parametrosEditState.dirty && tab.id !== activeTab) {
+                setTabPendiente(tab.id);
+              } else {
+                setActiveTab(tab.id);
+              }
+            }}
             aria-current={activeTab === tab.id ? 'page' : undefined}
           >
             {t(tab.claveLabel)}
@@ -454,38 +495,29 @@ export function ConfigurationPage() {
       <div style={{ padding: 'var(--page-pad)' }}>
         {activeTab === 'catalogo' && <CatalogoTab />}
         {activeTab === 'por-especie' && <PorEspeciePage />}
-        {activeTab === 'fincas' && (
+        {subs && sub && (
           <>
-            <FincasTable />
-            <TiposAreaSubSection />
-            <InfraestructuraSection />
+            <SubPestanas
+              pestanas={subs.map((x) => ({ id: x.id, label: t(x.claveLabel) }))}
+              activa={sub.id}
+              onCambiar={(id) => setSubActiva((prev) => ({ ...prev, [activeTab]: id }))}
+              ariaLabel={t('pagina.aria_subsecciones', { seccion: tabActual ? t(tabActual.claveLabel) : '' })}
+            />
+            {sub.contenido()}
           </>
         )}
-        {activeTab === 'iot' && (
-          <>
-            <DispositivosTable />
-            <SensoresSection />
-            <ConfiguracionRemotaSection />
-            <CalibracionSection />
-          </>
-        )}
-        {activeTab === 'sistema' && <ParametrosSection />}
-        {activeTab === 'personalizacion' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s8)' }}>
-            <IdentidadVisualSection />
-            <div style={{ borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
-              <TemaVisualSection />
-            </div>
-            <div style={{ borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
-              <IdiomaSection />
-            </div>
-            <div style={{ borderTop: '2px solid var(--surface-border)', paddingTop: 'var(--s6)' }}>
-              <DashboardLayoutSection />
-            </div>
-          </div>
-        )}
+        {activeTab === 'sistema' && <ParametrosSection onEditStateChange={setParametrosEditState} />}
         {activeTab === 'plantillas' && <PlantillasTable />}
       </div>
+      {tabPendiente && <ConfirmModal
+        titulo={t('parametrossection.cambios_sin_guardar')}
+        mensaje={t('parametrossection.descartar_descripcion')}
+        confirmLabel={t('parametrossection.descartar_continuar')}
+        confirmVariant="primary"
+        saving={false}
+        onCancel={() => setTabPendiente(null)}
+        onConfirm={() => { setActiveTab(tabPendiente); setTabPendiente(null); }}
+      />}
     </div>
   );
 }

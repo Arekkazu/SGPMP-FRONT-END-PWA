@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <style>
+            .card-header .btn-link {
+                color: #2557a7;
+            }
+            .violationCard {
+                width: 100%;
+                margin-bottom: 1rem;
+            }
+            .violationCardLine {
+                display: flex;
+                justify-content: space-between;
+                align-items: start;
+                font-weight: 500;
+                line-height: 1.2;
+            }
+            .card-title {
+                font-size: 1.25rem;
+            }
+            .violationCardTitleItem {
+                font-size: 1rem;
+                font-weight: 500;
+            }
+            .card-text {
+                font-size: 0.95rem;
+                font-weight: 300;
+            }
+            .learnMore {
+                margin-bottom: 0.75rem;
+                white-space: nowrap;
+                color: #2557a7;
+            }
+            .card-link {
+                color: #2557a7;
+            }
+            .violationNode {
+                font-size: 0.85rem;
+            }
+            .wrapBreakWord {
+                word-break: break-word;
+            }
+            .summary {
+                font-size: 1rem;
+            }
+            .summarySection {
+                margin: 0.5rem 0;
+            }
+            .hljs {
+                white-space: pre-wrap;
+                width: 100%;
+                background: #f0f0f0;
+            }
+            p {
+                margin-top: 0.3rem;
+            }
+            li {
+                line-height: 1.618;
+            }
+        </style>
+        <!-- Bootstrap CSS -->
+        <link
+            rel="stylesheet"
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+            integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+            crossorigin="anonymous"
+        />
+        <script
+            src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+            integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"
+        ></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/stackoverflow-light.min.css"
+        />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+        <title>Axe-core® Accessibility Results</title>
+    </head>
+    <main role="main">
+        <div style="padding: 2rem">
+            <h1>
+                Axe-core® Accessibility Results for TC-DIS-72 project
+            </h1>
+            <div class="summarySection">
+                <div class="summary">
+<h3>Resumen de ejecución — TC-DIS-72 (RF-26, Identidad Visual)</h3>
+<ul>
+  <li><strong>Ambiente:</strong> TEST (api.inmero.co) · <strong>Fecha:</strong> 06/10/2026 · cuenta con rol id 1 (Administrador).</li>
+  <li><strong>Tema:</strong> oscuro — preferencia guardada de la cuenta (el test no fuerza tema).</li>
+  <li><strong>Finca fija:</strong> "QA DIS Santiago Accesibilidad" (por nombre, dentro de &lt;main&gt;). Toda escritura sobre
+    /configuracion/identidad-visual/** y /configuracion/personalizacion/** se abortó (ningún logo subido ni color guardado).</li>
+  <li><strong>Test 1 (selector de finca, vista inicial):</strong> 0 violaciones de axe en móvil, tablet y escritorio.</li>
+  <li><strong>Formulario de identidad:</strong> verificado manualmente: el formulario carga (breadcrumb, "Vista previa en vivo",
+    Color primario #1e6b4a). En la ejecución automatizada el test espera la tarjeta de la finca dentro de la sección y aplica la
+    opción (b): axe corre con el formulario abierto, antes del assert del heading.</li>
+  <li><strong>Test 2 (formulario):</strong> móvil — axe con el formulario abierto: 0 violaciones; falla después en el assert del
+    heading (hallazgo 1.3.1). Tablet — no medido: la tarjeta de la finca no apareció en 30 s (carga de la lista). Escritorio —
+    no medido: la página de login no mostró el campo de correo en 300 s (ambiente; sin intento de login).</li>
+  <li><strong>Test 3 (logo):</strong> el formulario cargó en los 3 viewports; el test falla en el assert del heading antes de
+    llegar al logo (se deja tal cual).</li>
+  <li><strong>Hallazgos por código (no medidos en esta ejecución):</strong>
+    <ul>
+      <li>Zona "Arrastra un logo o haz clic para seleccionar" es un &lt;div&gt; con onClick sin role/tabIndex/onKeyDown y el
+        &lt;input type="file"&gt; está oculto: no operable por teclado (WCAG 2.1.1).</li>
+      <li>"Vista previa en vivo" es un &lt;div&gt; con estilo de título (IdentidadVisualSection.tsx:469), no un heading (WCAG 1.3.1).</li>
+    </ul></li>
+  <li><strong>Lighthouse</strong> audita la pestaña Personalización tal como carga (sin finca elegida); no cubre el formulario.
+    Este reporte: accesibilidad 100 / best-practices 100.</li>
+  <li><strong>Hallazgo fuera del alcance de RF-26, en la misma pestaña (intermitente según el momento del escaneo):</strong>
+    un snapshot de Lighthouse anterior del mismo día (06/10) marcó <code>color-contrast</code> en la insignia "Global" de los
+    paneles de Tema e Idioma: #7c3aed sobre #171a15 = 3,08:1 (requerido 4,5:1, 11px; accesibilidad 96). Color fijo
+    <code>global: '#7c3aed'</code> sin token ni variante oscura (TemaVisualSection.tsx:44, IdiomaSection.tsx:41).
+    Corresponde a RF-27/RF-29. Ni el axe del test 1 ni este último Lighthouse lo capturaron: la insignia aparece al
+    terminar de cargar la preferencia.</li>
+</ul>
+<table border="1" cellpadding="4" style="border-collapse:collapse">
+  <thead><tr><th>Prueba (viewport · título)</th><th>Violaciones axe</th></tr></thead>
+  <tbody><tr><td>movil · selector de finca (vista inicial) no tiene violaciones de accesibilidad</td><td>0</td></tr><tr><td>movil · formulario de identidad — campos de color y nombre correctamente asociados</td><td>0</td></tr><tr><td>tablet · selector de finca (vista inicial) no tiene violaciones de accesibilidad</td><td>0</td></tr><tr><td>escritorio · selector de finca (vista inicial) no tiene violaciones de accesibilidad</td><td>0</td></tr></tbody>
+</table></div>
+            </div>
+            <h2>axe-core found <span class="badge badge-success">0</span> violations</h2>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <script>
+            hljs.initHighlightingOnLoad();
+        </script>
+    </main>
+</html>

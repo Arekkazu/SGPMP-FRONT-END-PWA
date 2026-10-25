@@ -1,6 +1,11 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: avisos de registro automático y solo lectura, intentos de registro no admitidos |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { Boxes, RefreshCw, Rocket, AlertTriangle } from 'lucide-react';
+import { Boxes, RefreshCw, Rocket, AlertTriangle, Info } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
@@ -12,7 +17,8 @@ import { ModeloDetalleModal } from '../components/ModeloDetalleModal';
 import { ModalShell } from '../components/ModalShell';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
-import { RECURSO_MODELOS, ACCION_R, ACCION_U, ACCION_E } from '../rbac';
+import { IntentosRegistroTable } from '../components/IntentosRegistroTable';
+import { RECURSO_MODELOS, RECURSO_AUDITORIA, RECURSO_OTA, ACCION_R, ACCION_U, ACCION_E } from '../rbac';
 import type { ListarModelosFiltros, VersionModeloResponse } from '../types';
 
 export function ModelosView() {
@@ -20,9 +26,11 @@ export function ModelosView() {
   const puedeVer = usePermission(RECURSO_MODELOS, ACCION_R);
   const puedeEditar = usePermission(RECURSO_MODELOS, ACCION_U);
   const puedeEjecutar = usePermission(RECURSO_MODELOS, ACCION_E);
+  const puedeVerAuditoria = usePermission(RECURSO_AUDITORIA, ACCION_R);
+  const puedeVerOta = usePermission(RECURSO_OTA, ACCION_R);
   const online = useOnlineStatus();
 
-  const { modelos, paginacion, loading, saving, error, saveError, fromCache, cargar, detalle, guardarNotas, activar, limpiarSaveError } = useModelos();
+  const { modelos, paginacion, loading, saving, error, saveError, fromCache, cargar, detalle, guardarNotas, activar, limpiarSaveError, intentos, intentosError, cargarIntentos, transiciones, despliegues, cargarContexto } = useModelos();
 
   const [filtros, setFiltros] = useState<ModelosFiltrosState>(MODELOS_FILTROS_VACIO);
   const [detalleSel, setDetalleSel] = useState<VersionModeloResponse | null>(null);
@@ -37,6 +45,7 @@ export function ModelosView() {
   }, []);
 
   useEffect(() => { if (puedeVer) cargar({}, 1); }, [puedeVer, cargar]);
+  useEffect(() => { if (puedeVer && puedeVerAuditoria && online) cargarIntentos(); }, [puedeVer, puedeVerAuditoria, online, cargarIntentos]);
 
   const visibles = useMemo(() => {
     if (!filtros.busqueda.trim()) return modelos;
@@ -51,6 +60,7 @@ export function ModelosView() {
     limpiarSaveError();
     setDetalleSel(m);
     setDetalleLoading(true);
+    if (online) cargarContexto(m.id_version_modelo, { auditoria: puedeVerAuditoria, ota: puedeVerOta });
     const full = await detalle(m.id_version_modelo);
     if (full) setDetalleSel(full);
     setDetalleLoading(false);
@@ -77,7 +87,7 @@ export function ModelosView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <Boxes size={20} aria-hidden />{t('modelosview.gestion_de_modelos_de_ia')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : `${paginacion.totalRegistros} versión(es)`}
+            {loading ? 'Cargando…' : t('conteo.versiones', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
             {fromCache && ' · desde caché'}
           </p>
         </div>
@@ -91,6 +101,14 @@ export function ModelosView() {
         {fromCache && online && <Alert variant="info" title={t('modelosview.datos_desde_cache')} description="No se pudo conectar; se muestran las últimas versiones disponibles." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('modelosview.sin_acceso_a_los_modelos') : t('modelosview.error_al_cargar_versiones')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
+        <div role="note" style={{ display: 'flex', gap: 'var(--s2)', padding: 'var(--s3) var(--s4)', marginBottom: 'var(--s4)', borderRadius: 'var(--r-md)', border: '1px solid var(--sem-info-border)', background: 'var(--sem-info-bg)', color: 'var(--text-primary)', fontSize: '13px' }}>
+          <Info size={16} aria-hidden style={{ color: 'var(--sem-info)', flexShrink: 0, marginTop: 1 }} />
+          <span>
+            <strong>{t('modelosview.registro_automatico_titulo')}</strong> {t('modelosview.registro_automatico_texto')}
+            {!puedeEditar && !puedeEjecutar && <> {t('modelosview.solo_lectura_texto')}</>}
+          </span>
+        </div>
+
         <ModelosFiltros value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} />
 
         <ModelosTable modelos={visibles} loading={loading} onVer={abrirDetalle} />
@@ -101,6 +119,8 @@ export function ModelosView() {
           totalRegistros={paginacion.totalRegistros}
           onCambiar={(p) => cargar(build(filtros), p)}
         />
+
+        {puedeVerAuditoria && online && <IntentosRegistroTable intentos={intentos} error={intentosError} />}
       </div>
 
       {detalleSel && (
@@ -112,6 +132,8 @@ export function ModelosView() {
           online={online}
           saving={saving}
           saveError={saveError}
+          transiciones={transiciones}
+          despliegues={despliegues}
           onGuardarNotas={onGuardarNotas}
           onSolicitarActivar={() => setConfirmarActivar(true)}
           onClose={() => { setDetalleSel(null); setConfirmarActivar(false); }}
@@ -135,7 +157,7 @@ export function ModelosView() {
             <AlertTriangle size={20} aria-hidden style={{ color: 'var(--sem-warning)', flexShrink: 0, marginTop: 2 }} />
             <div>
               <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>
-                <strong>{detalleSel.nombre_version}</strong>{t('modelosview.pasara_a_produccion_y_reemplazara_la')}</p>
+                <strong>{detalleSel.nombre_version}</strong>{' '}{t('modelosview.pasara_a_produccion_y_reemplazara_la')}</p>
               {saveError && <p role="alert" style={{ margin: 'var(--s3) 0 0', fontSize: '13px', color: 'var(--sem-error)' }}>{saveError.message}</p>}
             </div>
           </div>

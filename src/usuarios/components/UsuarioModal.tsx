@@ -4,7 +4,7 @@ import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
-import { Select } from '../../shared/design-system/Select';
+import { Combobox } from '../../shared/design-system/Combobox';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { Badge } from '../../shared/design-system/Badge';
@@ -14,6 +14,8 @@ import { mascararId } from '../../shared/lib/mascararId';
 import { varianteRol, varianteEstado } from '../../shared/lib/varianteBadge';
 import { fincasApi } from '../../configuration/api/fincasApi';
 import { rolesApi } from '../../roles/api/rolesApi';
+import { etiquetaDeCatalogo, idDeCatalogo } from '../../shared/lib/catalogo';
+import { FincasAsignadas } from './FincasAsignadas';
 import type { FincaResponse } from '../../configuration/types';
 import type { EditarPerfilAdminDTO } from '../types';
 
@@ -34,9 +36,17 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
   const [fincas, setFincas] = useState<FincaResponse[]>([]);
   const [fincasLoading, setFincasLoading] = useState(false);
   const [idsFincas, setIdsFincas] = useState<Set<number>>(new Set());
-  const [rolOptions, setRolOptions] = useState<{ value: number; label: string }[]>([]);
+  const [roles, setRoles] = useState<{ id: number; nombre: string }[]>([]);
+  // Rol con autocompletado: «Nombre (#id)», el nombre exacto o el ID.
+  const [rolTexto, setRolTexto] = useState('');
+  const [rolError, setRolError] = useState<string>();
+  const [guardado, setGuardado] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EditarPerfilAdminDTO>({ mode: 'onBlur' });
+  // RF-06: la eliminación es irreversible; el backend ya rechaza editar (410), así
+  // que el modal pasa a solo lectura en vez de dejar llenar un formulario inútil.
+  const eliminado = detalle?.estado_cuenta.toUpperCase() === 'ELIMINADO';
+  const editable = puedeEditar && !eliminado;
 
   useEffect(() => {
     cargar(idUsuario);
@@ -46,8 +56,8 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
     if (!puedeEditar) return;
     rolesApi
       .listar()
-      .then((roles) => setRolOptions(roles.map((r) => ({ value: r.id_rol, label: r.nombre_rol }))))
-      .catch(() => setRolOptions([]));
+      .then((lista) => setRoles(lista.map((r) => ({ id: r.id_rol, nombre: r.nombre_rol }))))
+      .catch(() => setRoles([]));
   }, [puedeEditar]);
 
   useEffect(() => {
@@ -62,6 +72,9 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
         id_rol: detalle.id_rol,
       });
       setIdsFincas(new Set((detalle.fincas ?? []).map((f) => f.id_finca)));
+      // El detalle del backend no trae id_rol: sin él, el nombre exacto basta.
+      setRolTexto(detalle.id_rol != null ? etiquetaDeCatalogo(detalle.nombre_rol, detalle.id_rol) : detalle.nombre_rol);
+      setRolError(undefined);
     }
   }, [detalle, reset]);
 
@@ -80,21 +93,31 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
 
   const onSubmit = async (data: EditarPerfilAdminDTO) => {
     if (!detalle) return;
-    const ok = await editar(idUsuario, { ...data, version: detalle.version });
+    const idRol = idDeCatalogo(rolTexto, roles);
+    if (idRol == null) {
+      setRolError(t('usuariomodal.rol_no_encontrado'));
+      return;
+    }
+    setGuardado(false);
+    // Un opcional vacío se omite: el backend valida '' y lo rechaza.
+    const ok = await editar(idUsuario, {
+      ...data,
+      correo_electronico: data.correo_electronico || undefined,
+      telefono: data.telefono || undefined,
+      direccion: data.direccion || undefined,
+      id_rol: idRol,
+      version: detalle.version,
+    });
     if (!ok) return;
     const okFincas = await asignarFincas(idUsuario, { ids_fincas: Array.from(idsFincas) });
-    if (okFincas) onSaved();
-  };
-
-  // INC-M02-61-G52 (#97): el acceso a fincas es M:N. Una finca con otro dueño
-  // también se asigna: el Veterinario atiende fincas que no son suyas.
-  const toggleFinca = (id: number) => {
-    setIdsFincas((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    // Recargar siempre: el perfil ya se guardó y sin la version nueva el
+    // siguiente guardado respondería 412. El modal queda abierto con la
+    // confirmación, igual que en Mi perfil.
+    cargar(idUsuario);
+    if (okFincas) {
+      setGuardado(true);
+      onSaved();
+    }
   };
 
   return (
@@ -102,27 +125,12 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
       role="dialog"
       aria-modal="true"
       aria-labelledby="usuario-modal-title"
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.4)',
-        padding: 'var(--s4)',
-      }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         ref={panelRef}
-        style={{
-          background: 'var(--surface-card)',
-          borderRadius: 'var(--r-xl)',
-          border: '1px solid var(--surface-border)',
-          padding: 'var(--s6)',
-          width: '100%',
-          maxWidth: 560,
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          boxShadow: 'var(--shadow-lg)',
-        }}
+        className="ds-modal__panel" style={{ padding: 'var(--s6)' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
           <h2 id="usuario-modal-title" style={{ fontSize: 'var(--fs-heading-md)', fontWeight: 700, color: 'var(--text-primary)' }}>{t('usuariomodal.detalle_de_usuario')}</h2>
@@ -147,6 +155,10 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
           <Alert variant="error" title={t('usuariomodal.error_al_guardar')} description={saveError.message} className="mb" />
         )}
 
+        {guardado && !saveError && (
+          <Alert variant="success" title={t('usuariomodal.cambios_guardados')} description={t('usuariomodal.usuario_actualizado_exitosamente')} className="mb" />
+        )}
+
         {detalle && !loading && (
           <>
             <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
@@ -154,7 +166,11 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
               <Badge variant={varianteEstado(detalle.estado_cuenta)}>{detalle.estado_cuenta}</Badge>
             </div>
 
-            {puedeEditar ? (
+            {eliminado && (
+              <Alert variant="info" title={t('usuariomodal.usuario_eliminado')} description={t('usuariomodal.usuario_eliminado_detalle')} className="mb" />
+            )}
+
+            {editable ? (
               <form onSubmit={handleSubmit(onSubmit)} noValidate>
                 <input type="hidden" {...register('version')} />
                 <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
@@ -205,51 +221,25 @@ export function UsuarioModal({ idUsuario, onClose, onSaved, puedeEditar }: Props
                     <Input label={t('usuariomodal.direccion')} {...register('direccion')} />
                   </div>
                   <div>
-                    <Select label={t('usuariomodal.rol')} {...register('id_rol', { valueAsNumber: true })}>
-                      {rolOptions.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </Select>
+                    <Combobox
+                      id="usuario-rol"
+                      label={t('usuariomodal.rol')}
+                      opciones={roles.map((r) => ({ valor: etiquetaDeCatalogo(r.nombre, r.id) }))}
+                      value={rolTexto}
+                      onChange={(v) => { setRolTexto(v); setRolError(undefined); }}
+                      hint={t('usuariomodal.rol_hint')}
+                      error={rolError}
+                    />
                   </div>
                 </div>
-                <div style={{ marginBottom: 'var(--s4)' }}>
-                  <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--s3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    {t('usuariomodal.fincas_asignadas')}
-                  </p>
-                  {fincasLoading && (
-                    <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-muted)' }}>{t('usuariomodal.cargando_fincas')}</p>
-                  )}
-                  {!fincasLoading && fincas.length === 0 && (
-                    <p style={{ fontSize: 'var(--fs-body-sm)', color: 'var(--text-muted)' }}>{t('usuariomodal.sin_fincas')}</p>
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-                    {fincas.map((f) => {
-                      const checked = idsFincas.has(f.id_finca);
-                      return (
-                        <label
-                          key={f.id_finca}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--s3)',
-                            padding: 'var(--s2) var(--s3)',
-                            borderRadius: 'var(--r-md)',
-                            border: `1px solid ${checked ? 'var(--brand-400)' : 'var(--surface-border)'}`,
-                            background: checked ? 'var(--brand-50)' : 'var(--surface-card)',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleFinca(f.id_finca)}
-                          />
-                          <span style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-primary)' }}>{f.nombre}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
+                {/* INC-M02-61-G52 (#97): el acceso a fincas es M:N. Una finca con otro
+                    dueño también se asigna: el Veterinario atiende fincas ajenas. */}
+                <FincasAsignadas
+                  fincas={fincas}
+                  seleccionadas={idsFincas}
+                  onChange={setIdsFincas}
+                  cargando={fincasLoading}
+                />
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
                   <Button type="button" variant="secondary" size="md" onClick={onClose}>{t('usuariomodal.cancelar')}</Button>
                   <Button type="submit" variant="primary" size="md" loading={saving}>{t('usuariomodal.guardar')}</Button>

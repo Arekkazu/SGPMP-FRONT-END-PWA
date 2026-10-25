@@ -208,12 +208,14 @@ describe('TC-M09-G110 v2.0 - Retest: creacion exitosa de una plantilla con nombr
             );
           });
 
-          cy.contains('div[style*="border-radius: var(--r-xl)"]', NOMBRE_PLANTILLA, { timeout: 15000 })
-            .should('exist')
-            .within(() => {
-              cy.contains(NOMBRE_PLANTILLA);
-              cy.contains('v1');
-            })
+          // Actualizado 2026-10-11: el listado de plantillas ya no son tarjetas con estilo en
+          // linea (div[style*="border-radius"]) sino filas de lista; se ubica la fila por su nombre
+          // y se comprueba que la version v1 aparece junto a el.
+          cy.contains(NOMBRE_PLANTILLA, { timeout: 15000 })
+            .should('be.visible')
+            .parent()
+            .invoke('text')
+            .should('match', /v1/)
             .then(() => {
               cy.screenshot('03_plantilla_creada_en_listado', { overwrite: true });
               add(

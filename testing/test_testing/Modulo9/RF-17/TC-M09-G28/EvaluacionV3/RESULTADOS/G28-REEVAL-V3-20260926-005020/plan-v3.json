@@ -1,0 +1,131 @@
+{
+  "run_id": "G28-REEVAL-V3-20260926-005020",
+  "entorno": "TEST",
+  "base_api": "https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test",
+  "frontend": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
+  "rama": "qa/juan-esteban-tercera-evaluacion-M09",
+  "head_frontend": "ad2b1e59bb872491bae368ae812993a3ded08d63",
+  "head_backend": "91f7738667a934a4eaf3db5519a57d7cf4803b0e",
+  "actor": {
+    "id_usuario": 104,
+    "correo_electronico": "administador.dev@gmail.com",
+    "nombre_rol": "Administrador",
+    "estado_cuenta": "Activo",
+    "permisos_recurso_20": [
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "especie": {
+    "id": 44,
+    "nombre": "Equino Test Qa",
+    "es_activo": true,
+    "es_fixture_qa": true
+  },
+  "variable": {
+    "id": 1,
+    "nombre": "Temperatura del agua",
+    "unidad": "°C",
+    "fisico_min": "0",
+    "fisico_max": "45",
+    "id_historico_v2": 1,
+    "id_sin_cambios": true,
+    "limite_historico_v2": [
+      "0.00",
+      "45.00"
+    ],
+    "limite_sin_cambios": true
+  },
+  "combinacion_libre": true,
+  "umbrales_previos_de_la_especie": [],
+  "valor_min": "35.57",
+  "valor_max": "39.23",
+  "niveles": [
+    {
+      "nivel": "normal",
+      "limite_inferior": "35.57",
+      "limite_superior": "37.00"
+    },
+    {
+      "nivel": "precaucion",
+      "limite_inferior": "37.00",
+      "limite_superior": "38.00"
+    },
+    {
+      "nivel": "critico",
+      "limite_inferior": "38.00",
+      "limite_superior": "39.23"
+    }
+  ],
+  "payload": {
+    "id_especie": 44,
+    "id_variable_ambiental": 1,
+    "valor_min": "35.57",
+    "valor_max": "39.23",
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "35.57",
+        "limite_superior": "37.00"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "37.00",
+        "limite_superior": "38.00"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "38.00",
+        "limite_superior": "39.23"
+      }
+    ]
+  },
+  "metadata_postgres_inicial": {
+    "disponible": true,
+    "session": [
+      {
+        "read_only": "on",
+        "database": "sgpmp_test"
+      }
+    ],
+    "show_transaction_read_only": [
+      {
+        "transaction_read_only": "on"
+      }
+    ],
+    "columns": [
+      {
+        "column_name": "valor_max",
+        "data_type": "numeric",
+        "numeric_precision": 5,
+        "numeric_scale": 2
+      },
+      {
+        "column_name": "valor_min",
+        "data_type": "numeric",
+        "numeric_precision": 5,
+        "numeric_scale": 2
+      }
+    ],
+    "tipo_observado": {
+      "valor_max": "numeric(5,2)",
+      "valor_min": "numeric(5,2)"
+    },
+    "tipo_observado_v2": "numeric(8,2)"
+  },
+  "criterio_tc60": "Los decimales 35.57 y 39.23 y los limites de los tres niveles se conservan exactos entre input, API, PostgreSQL y UI, comparados con Decimal (nunca float).",
+  "criterio_tc61": "La MISMA configuracion (mismo id) conserva especie, variable, valores, niveles y estado tras logout real, descarte del token y una sesion nueva, verificado por API, UI y SELECT.",
+  "presupuesto_escritura": "1 POST /configuracion/umbrales para todo G28 V3",
+  "referencia_v2": {
+    "id_umbral": 43,
+    "especie": {
+      "id": 41,
+      "nombre": "Ave Qa Je"
+    },
+    "valor_min": "35.57",
+    "valor_max": "39.23",
+    "http": 201
+  }
+}

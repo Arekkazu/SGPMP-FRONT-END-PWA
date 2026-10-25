@@ -1,6 +1,7 @@
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import type { RecursoResponse, AccionResponse, PermisoResponse } from '../types';
+import { humanizar } from '../../shared/lib/etiquetas';
 
 interface Props {
   recursos: RecursoResponse[];
@@ -45,7 +46,7 @@ export function PermisosMatrix({ recursos, acciones, permisos, onChange, readonl
           {recursos.map((r) => (
             <tr key={r.id_recurso} style={{ borderBottom: '1px solid var(--surface-border)' }}>
               <td style={{ padding: 'var(--s2) var(--s3)', color: 'var(--text-primary)', fontWeight: 500 }}>
-                {r.nombre_recurso}
+                {humanizar(r.nombre_recurso)}
                 {r.descripcion && (
                   <span style={{ display: 'block', fontSize: 'var(--fs-label-sm)', color: 'var(--text-secondary)', fontWeight: 400 }}>{r.descripcion}</span>
                 )}
@@ -62,7 +63,7 @@ export function PermisosMatrix({ recursos, acciones, permisos, onChange, readonl
                       type="checkbox"
                       checked={checked}
                       disabled={deshabilitado}
-                      aria-label={`${a.codigo} para ${r.nombre_recurso}`}
+                      aria-label={`${a.descripcion ?? a.codigo} — ${humanizar(r.nombre_recurso)}`}
                       title={ejecutarBloqueado ? t('permisosmatrix.accion_ejecutar_solo_disponible_para') : deshabilitado && checked ? t('permisosmatrix.minimo_un_permiso_requerido') : undefined}
                       onChange={(e) => {
                         if (e.target.checked) {
@@ -72,10 +73,10 @@ export function PermisosMatrix({ recursos, acciones, permisos, onChange, readonl
                         }
                       }}
                       style={{
-                        width: 16,
-                        height: 16,
+                        width: 18,
+                        height: 18,
                         cursor: deshabilitado ? 'not-allowed' : 'pointer',
-                        accentColor: 'var(--brand-500)',
+                        accentColor: 'var(--brand-cta)',
                       }}
                     />
                   </td>

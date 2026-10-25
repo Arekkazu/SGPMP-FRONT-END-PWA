@@ -1,0 +1,268 @@
+{
+  "info": {
+    "name": "TC-M09-G07-v2.0 - Conflicto y Sincronización Especies (RF-15 v1.1)",
+    "description": "Verifica unicidad de nombres, rechazo HTTP 409 y preservación de registros existentes sin sobrescritura.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Iniciar Sesión Administrativa",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = {};",
+              "try { jsonData = pm.response.json(); } catch(e) {}",
+              "var token = jsonData.token || jsonData.access_token || (jsonData.data && jsonData.data.token) || '';",
+              "if (token) { pm.environment.set('bearer_token', token); }",
+              "",
+              "pm.test('NW-01: Login administrativo responde status HTTP 200 con token JWT', function () {",
+              "    pm.expect(pm.response.code).to.eql(200);",
+              "    pm.expect(token).to.be.a('string').and.not.empty;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"correo_electronico\": \"{{admin_email}}\",\n  \"contrasena\": \"{{admin_password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{api_url}}/sesiones/",
+          "host": [
+            "{{api_url}}"
+          ],
+          "path": [
+            "sesiones",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Preflight: Comprobar que run_id no colisiona",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var runId = pm.environment.get('run_id');",
+              "var jsonData = [];",
+              "try { jsonData = pm.response.json(); } catch(e) {}",
+              "var items = Array.isArray(jsonData) ? jsonData : (jsonData.items || []);",
+              "var nombre1 = 'Pavo Conflicto ' + runId;",
+              "var nombre2 = 'Pavo Real ' + runId;",
+              "var encontrados = items.filter(function(i) {",
+              "    var n = (i.nombre || '').trim().toLowerCase();",
+              "    return n === nombre1.toLowerCase() || n === nombre2.toLowerCase();",
+              "});",
+              "",
+              "pm.test('NW-02: Preflight confirma que los nombres con run_id NO existen', function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(items, 'items debe ser array').to.be.an('array');",
+              "    pm.expect(encontrados, 'ningún nombre preexistente debe coincidir').to.have.lengthOf(0);",
+              "    pm.environment.set('preflight_ok', true);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearer_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/especies?solo_activas=false",
+          "host": [
+            "{{api_url}}"
+          ],
+          "path": [
+            "configuracion",
+            "especies"
+          ],
+          "query": [
+            {
+              "key": "solo_activas",
+              "value": "false"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - POST duplicado: Forzar conflicto 409",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var runId = pm.environment.get('run_id');",
+              "var jsonData = {};",
+              "try { jsonData = pm.response.json(); } catch(e) {}",
+              "var status = pm.response.code;",
+              "pm.environment.set('last_post_status', status);",
+              "",
+              "pm.test('NW-03: Rechazo de especie duplicada responde exactamente HTTP 409 Conflict', function () {",
+              "    pm.expect(pm.response.code).to.eql(409);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearer_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Pavo Conflicto {{run_id}}\",\n  \"descripcion\": \"Intento colisionante desde Newman\",\n  \"grupo_manejo\": \"AVES\"\n}"
+        },
+        "url": {
+          "raw": "{{api_url}}/configuracion/especies",
+          "host": [
+            "{{api_url}}"
+          ],
+          "path": [
+            "configuracion",
+            "especies"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - GET: Verificar no sobrescritura de especie en conflicto",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var runId = pm.environment.get('run_id');",
+              "var jsonData = [];",
+              "try { jsonData = pm.response.json(); } catch(e) {}",
+              "var items = Array.isArray(jsonData) ? jsonData : (jsonData.items || []);",
+              "var nombreConflicto = 'Pavo Conflicto ' + runId;",
+              "var itemEncontrado = items.find(function(i) { return (i.nombre || '').trim().toLowerCase() === nombreConflicto.toLowerCase(); });",
+              "if (itemEncontrado) { pm.environment.set('id_server_conflicto', itemEncontrado.id_especie || itemEncontrado.id); }",
+              "",
+              "pm.test('NW-04: El registro de Pavo Conflicto conserva sus atributos y no fue alterado por el POST 409', function () {",
+              "    pm.expect(pm.response.code).to.eql(200);",
+              "    pm.expect(itemEncontrado, 'La especie original debe existir en el servidor').to.be.an('object');",
+              "    pm.expect(itemEncontrado.nombre).to.eql(nombreConflicto);",
+              "    pm.expect(itemEncontrado.es_activo).to.eql(true);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearer_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/especies?solo_activas=false",
+          "host": [
+            "{{api_url}}"
+          ],
+          "path": [
+            "configuracion",
+            "especies"
+          ],
+          "query": [
+            {
+              "key": "solo_activas",
+              "value": "false"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - GET: Verificar persistencia de especie sincronizada exitosamente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var runId = pm.environment.get('run_id');",
+              "var jsonData = [];",
+              "try { jsonData = pm.response.json(); } catch(e) {}",
+              "var items = Array.isArray(jsonData) ? jsonData : (jsonData.items || []);",
+              "var nombreExitoso = 'Pavo Real ' + runId;",
+              "var itemSync = items.find(function(i) { return (i.nombre || '').trim().toLowerCase() === nombreExitoso.toLowerCase(); });",
+              "if (itemSync) { pm.environment.set('id_server_exitoso', itemSync.id_especie || itemSync.id); }",
+              "",
+              "pm.test('NW-05: Pavo Real sincronizado existe en servidor y posee grupo_manejo=AVES', function () {",
+              "    pm.expect(pm.response.code).to.eql(200);",
+              "    pm.expect(itemSync, 'La especie sincronizada debe existir en el servidor').to.be.an('object');",
+              "    pm.expect(itemSync).to.have.property('grupo_manejo');",
+              "    pm.expect(itemSync.grupo_manejo).to.not.be.null;",
+              "    pm.expect(String(itemSync.grupo_manejo).toUpperCase()).to.eql('AVES');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearer_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/especies?solo_activas=false",
+          "host": [
+            "{{api_url}}"
+          ],
+          "path": [
+            "configuracion",
+            "especies"
+          ],
+          "query": [
+            {
+              "key": "solo_activas",
+              "value": "false"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,3 +1,8 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-21 | destroyerban | #73 RF-37: fase destino y confirmación no estándar en CambiarFase  |
+// | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // =====================================================================
 // Módulo 2 — Activos Biológicos · Tipos de dominio
 // Contrato: do-it/biological_assets/.../api_reference_m02_activos_biologicos.md
@@ -52,7 +57,8 @@ export interface DetalleIndividualResponse {
   id_detalle: number | null;
   raza: string;
   sexo: string;
-  fecha_nacimiento: string;      // datetime ISO
+  /** RFC-014: opcional (null si no se informó). */
+  fecha_nacimiento: string | null;      // día calendario YYYY-MM-DD
   peso_inicial: number | null;
   fecha_creacion: string | null;
 }
@@ -86,6 +92,8 @@ export interface ActivoBiologicoResponse {
   fecha_creacion: string | null;
   fecha_actualizacion: string | null;
   detalle_individual: DetalleIndividualResponse | null;
+  /** RFC-014: solo en la respuesta del registro (201); la edad alcanza la esperanza de vida. */
+  advertencia_edad?: string | null;
   detalle_poblacional: DetallePoblacionalResponse | null;
 }
 
@@ -104,17 +112,27 @@ export interface RegistrarActivoDTO {
   identificador?: string | null;
   raza?: string | null;
   sexo?: string | null;
-  fecha_nacimiento?: string | null;        // datetime
+  fecha_nacimiento?: string | null;        // día calendario YYYY-MM-DD
   peso_inicial?: number | null;
   // POBLACIONAL
   cantidad_inicial?: number | null;
   peso_promedio_inicial?: number | null;
 }
 
+/** Atributo dinámico que la especie exige o admite al registrar (RF-33 FA-07, #194). */
+export interface ParametroEspecie {
+  nombre: string;
+  tipo_dato: 'NUMERICO' | 'ENTERO' | 'TEXTO' | 'BOOLEANO' | string;
+  es_obligatorio: boolean;
+  unidad_medida: string | null;
+  valor_min: string | null;
+  valor_max: string | null;
+}
+
 export interface ActualizarActivoIndividualDTO {
   raza?: string | null;
   sexo?: string | null;
-  fecha_nacimiento?: string | null;        // datetime
+  fecha_nacimiento?: string | null;        // día calendario YYYY-MM-DD
   peso_inicial?: number | null;
   // Concurrencia optimista (RF-35): el valor tal cual vino del último GET.
   fecha_actualizacion?: string | null;
@@ -198,12 +216,19 @@ export interface CambiarFaseDTO {
   id_ciclo_productiva: number;
   motivo_cambio?: string | null;
   fecha_inicio?: string | null;            // datetime
+  /** #73 (RF-37): fase del ciclo (`id_ciclos_productivo_biologico`); sin ella el backend avanza a la siguiente. */
+  fase_destino_id?: number | null;
+  /** Obligatorio en true si `fase_destino_id` no es la siguiente de la secuencia (salto o retroceso). */
+  confirmacion_no_estandar?: boolean;
 }
 
 export interface GestionFaseResponse {
   id_gestion_fases: number | null;
   id_activo_biologico: number;
   id_ciclo_productiva: number;
+  /** Fase del ciclo en la que está (o estuvo) el activo. */
+  id_ciclos_productivo_biologico?: number | null;
+  es_transicion_no_estandar?: boolean;
   nombre_ciclo: string;
   nombre_fase_actual: string | null;
   paso_actual: number | null;
@@ -217,6 +242,13 @@ export interface GestionFaseResponse {
 export interface HistorialFasesResponse {
   id_activo_biologico: number;
   fases: GestionFaseResponse[];
+}
+
+/** GET /activos-biologicos/{id}/ciclos-productivos (#288): ciclos de la especie del activo. */
+export interface CicloProductivoAsignable {
+  id_ciclo_productivo: number;
+  nombre: string;
+  fases: { id_ciclos_productivo_biologico: number; id_ciclo_biologico: number; nombre_fase: string; duracion_dias: number }[];
 }
 
 // ── Eventos ──────────────────────────────────────────────────────────
@@ -326,8 +358,21 @@ export interface RegistrarEventoSanitarioResponse {
   cambio_estado: HistoricoEstadoResponse | null;
 }
 
+/** Métrica de la especie del activo (`GET /activos-biologicos/{id}/metricas`, RF-40/RF-43). */
+export interface MetricaActivo {
+  id_metrica_produccion: number;
+  nombre: string;
+  tipo_medicion: string;
+  unidad_medida: string;
+  tipo_dato: string | null;
+  valor_min: string | number | null;
+  valor_max: string | number | null;
+  /** El ciclo de la fase activa la admite en un evento productivo. */
+  habilitada_en_fase: boolean;
+}
+
 export interface RegistrarEventoProductivoDTO {
-  tipo_producto: string;
+  id_metrica_produccion: number;
   cantidad_producida: number;
   unidad_medida: string;
   fecha_evento: string;                    // date
@@ -372,6 +417,7 @@ export interface ConsultaAsociacionResponse {
   id_activo_biologico: number;
   asociacion_activa: AsociacionInfraestructuraResponse | null;
   historial: AsociacionInfraestructuraResponse[] | null;
+  advertencia_integridad?: string | null;
 }
 
 export interface ConsultarHistorialFiltros {
@@ -400,6 +446,16 @@ export interface HistorialActivoResponse {
   registros: RegistroHistorialResponse[];
 }
 
+/** RF-47 Sección 8: acción que el rol del usuario puede ejecutar desde la ficha. */
+export interface AccesoDirecto {
+  codigo: string;
+  nombre: string;
+  metodo: string;
+  ruta: string;
+  rf_origen: string;
+  tipos_evento?: string[] | null;
+}
+
 export interface FichaIntegralResponse {
   id_activo_biologico: number;
   identificador: string | null;
@@ -425,13 +481,16 @@ export interface FichaIntegralResponse {
   eventos_reproductivos: Record<string, unknown>[];
   indicadores: Record<string, unknown>[];
   advertencias: string[];
+  accesos_directos?: AccesoDirecto[];
 }
 
 export interface InfraestructuraDisponibleResponse {
   id_infraestructura: number;
   nombre: string;
   tipo: string;
+  /** RFC-012: derivada = floor(MIN densidad ind/m² × superficie) del destino. */
   capacidad_maxima: number | null;
+  ocupacion_actual?: number | null;
   id_especie: number | null;
 }
 
@@ -546,6 +605,7 @@ export interface ConsultarBitacoraFiltros {
   fecha_fin?: string;                      // datetime ISO
   pagina?: number;
   page_size?: number;
+  id_usuario_responsable?: number;
 }
 
 export interface EventoAuditoriaResponse {

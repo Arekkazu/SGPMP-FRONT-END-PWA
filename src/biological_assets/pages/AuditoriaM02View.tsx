@@ -4,10 +4,12 @@ import { useHistory } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck, Search } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { useAuditoriaM02 } from '../hooks/useAuditoriaM02';
 import { Paginacion } from '../components/Paginacion';
 import type { ConsultarBitacoraFiltros, EventoAuditoriaResponse } from '../types';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
+import { UsuarioCombobox, idDeUsuario } from '../../usuarios/components/UsuarioCombobox';
 
 const INPUT: React.CSSProperties = {
   width: '100%',
@@ -16,7 +18,7 @@ const INPUT: React.CSSProperties = {
   border: '1.5px solid var(--surface-border)',
   background: 'var(--surface-card)',
   color: 'var(--text-primary)',
-  fontSize: '13px',
+  fontSize: 'var(--fs-body-md)',
   height: 38,
 };
 
@@ -27,7 +29,7 @@ const LABEL: React.CSSProperties = {
 
 const TH: React.CSSProperties = {
   padding: 'var(--s2) var(--s4)', textAlign: 'left', fontFamily: 'var(--font-mono)',
-  fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+  fontSize: 'var(--fs-label-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
   color: 'var(--text-muted)', whiteSpace: 'nowrap',
 };
 
@@ -71,16 +73,25 @@ interface FiltrosState {
   clasificacion_biologica: string;
   resultado: string;
   severidad_log: string;
+  id_usuario_responsable: string;
   fecha_inicio: string;
   fecha_fin: string;
 }
 
 const VACIO: FiltrosState = {
   rf_origen: '', tipo_evento: '', id_activo_biologico: '', clasificacion_biologica: '',
-  resultado: '', severidad_log: '', fecha_inicio: '', fecha_fin: '',
+  resultado: '', severidad_log: '', id_usuario_responsable: '', fecha_inicio: '', fecha_fin: '',
 };
 
+/** Valor legible de un campo de `detalle_tecnico` (TC-DIS-143). */
+function valorDetalle(v: unknown): string {
+  if (v == null) return '—';
+  return typeof v === 'object' ? JSON.stringify(v) : String(v);
+}
+
 function Row({ ev }: { ev: EventoAuditoriaResponse }) {
+  const { t } = useT('biologicalAssets');
+  const detalle = ev.detalle_tecnico ? Object.entries(ev.detalle_tecnico) : [];
   return (
     <tr style={{ background: 'var(--surface-card)' }}>
       <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
@@ -96,11 +107,28 @@ function Row({ ev }: { ev: EventoAuditoriaResponse }) {
       </td>
       <td style={TD}>{pill(ev.resultado, tonoResultado(ev.resultado))}</td>
       <td style={TD}>{pill(ev.severidad_log, tonoSeveridad(ev.severidad_log))}</td>
-      <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px', maxWidth: 260 }}>
+      <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-secondary)' }}>
+        {ev.id_usuario_responsable != null ? `#${ev.id_usuario_responsable}` : '—'}
+      </td>
+      {/* TC-DIS-145: un motivo largo sin espacios ensanchaba la tabla en móvil/tablet. */}
+      <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px', maxWidth: 260, overflowWrap: 'anywhere' }}>
         {ev.descripcion ?? '—'}
         {ev.registro_incompleto && <div>{pill('INCOMPLETO', 'warning')}</div>}
+        {detalle.length > 0 && (
+          <details style={{ marginTop: 'var(--s1)' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '11px' }}>{t('auditoriam02view.detalle_tecnico')}</summary>
+            <dl style={{ margin: 'var(--s1) 0 0', fontSize: '11px' }}>
+              {detalle.map(([k, v]) => (
+                <div key={k}>
+                  <dt style={{ display: 'inline', fontWeight: 600 }}>{k.replace(/_/g, ' ')}: </dt>
+                  <dd style={{ display: 'inline', margin: 0 }}>{valorDetalle(v)}</dd>
+                </div>
+              ))}
+            </dl>
+          </details>
+        )}
       </td>
-      <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)' }} title={ev.hash_integridad}>
+      <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-label-sm)', color: 'var(--text-muted)' }} title={ev.hash_integridad}>
         {ev.hash_integridad ? `${ev.hash_integridad.slice(0, 10)}…` : '—'}
       </td>
     </tr>
@@ -112,6 +140,7 @@ export function AuditoriaM02View() {
   const history = useHistory();
   const { registros, paginacion, loading, error, cargar } = useAuditoriaM02();
   const [filtros, setFiltros] = useState<FiltrosState>(VACIO);
+  const [usuarioError, setUsuarioError] = useState<string>();
 
   const consultar = useCallback(
     (pagina: number) => {
@@ -122,11 +151,18 @@ export function AuditoriaM02View() {
       if (filtros.clasificacion_biologica) f.clasificacion_biologica = filtros.clasificacion_biologica.trim();
       if (filtros.resultado) f.resultado = filtros.resultado;
       if (filtros.severidad_log) f.severidad_log = filtros.severidad_log;
+      // Usuario por nombre, correo o ID (antes solo el ID numérico).
+      const idUsuario = idDeUsuario(filtros.id_usuario_responsable);
+      if (idUsuario === null) {
+        setUsuarioError(t('auditoriam02view.usuario_no_encontrado'));
+        return;
+      }
+      if (idUsuario) f.id_usuario_responsable = idUsuario;
       if (filtros.fecha_inicio) f.fecha_inicio = inicioDelDiaUtc(filtros.fecha_inicio);
       if (filtros.fecha_fin) f.fecha_fin = finDelDiaUtc(filtros.fecha_fin);
       cargar(f);
     },
-    [filtros, cargar]
+    [filtros, cargar, t]
   );
 
   // Carga inicial (sin filtros).
@@ -142,11 +178,12 @@ export function AuditoriaM02View() {
           <ArrowLeft size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriam02view.volver_a_la_lista')}</Button>
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
           <ShieldCheck size={20} aria-hidden />{t('auditoriam02view.auditoria_y_trazabilidad')}</h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('auditoriam02view.bitacora_de_eventos_del_modulo_de_activos')}</p>
+        <p style={{ fontSize: 'var(--fs-body-md)', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>{t('auditoriam02view.bitacora_de_eventos_del_modulo_de_activos')}</p>
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
-        {/* Filtros */}
+        {/* Filtros — en un <form> para que Enter aplique la búsqueda (TC-DIS-143). */}
+        <form onSubmit={(e) => { e.preventDefault(); consultar(1); }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
           <div><label style={LABEL} htmlFor="a-rf">{t('auditoriam02view.rf_origen')}</label><input id="a-rf" style={INPUT} placeholder="Ej: RF40" value={filtros.rf_origen} onChange={set('rf_origen')} /></div>
           <div><label style={LABEL} htmlFor="a-tipo">{t('auditoriam02view.tipo_de_evento')}</label><input id="a-tipo" style={INPUT} value={filtros.tipo_evento} onChange={set('tipo_evento')} /></div>
@@ -169,14 +206,23 @@ export function AuditoriaM02View() {
               <option value="ERROR">{t('auditoriam02view.error')}</option>
             </select>
           </div>
+          <UsuarioCombobox
+            id="a-usuario"
+            label={t('auditoriam02view.usuario')}
+            value={filtros.id_usuario_responsable}
+            onChange={(v) => { setFiltros((prev) => ({ ...prev, id_usuario_responsable: v })); setUsuarioError(undefined); }}
+            hint={t('auditoriam02view.usuario_hint')}
+            error={usuarioError}
+          />
           <div><label style={LABEL} htmlFor="a-desde">{t('auditoriam02view.desde')}</label><input id="a-desde" type="date" style={INPUT} value={filtros.fecha_inicio} onChange={set('fecha_inicio')} /></div>
           <div><label style={LABEL} htmlFor="a-hasta">{t('auditoriam02view.hasta')}</label><input id="a-hasta" type="date" style={INPUT} value={filtros.fecha_fin} onChange={set('fecha_fin')} /></div>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)' }}>
-          <Button variant="primary" size="sm" onClick={() => consultar(1)}>
+          <Button type="submit" variant="primary" size="sm">
             <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriam02view.aplicar_filtros')}</Button>
-          <Button variant="ghost" size="sm" onClick={() => { setFiltros(VACIO); cargar({ pagina: 1, page_size: 20 }); }}>{t('auditoriam02view.limpiar')}</Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => { setFiltros(VACIO); setUsuarioError(undefined); cargar({ pagina: 1, page_size: 20 }); }}>{t('auditoriam02view.limpiar')}</Button>
         </div>
+        </form>
 
         {error && (
           <Alert
@@ -191,29 +237,32 @@ export function AuditoriaM02View() {
           <div style={{ height: 200, borderRadius: 'var(--r-lg)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }}>
             <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
           </div>
-        ) : registros.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('auditoriam02view.sin_registros_de_auditoria_para_los_filtros')}</p>
+        ) : error ? null : registros.length === 0 ? (
+          // Un 403 no debe leerse como "sin registros" (TC-DIS-143).
+          <p role="status" style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('auditoriam02view.sin_registros_de_auditoria_para_los_filtros')}</p>
         ) : (
-          <div style={{ overflowX: 'auto', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
+            <ScrollRegion label={t('auditoriam02view.auditoria_y_trazabilidad')}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-                  {['Fecha', 'RF', 'Evento', 'Activo', 'Resultado', 'Severidad', 'Descripción', 'Hash'].map((h) => <th key={h} style={TH}>{h}</th>)}
+                  {['Fecha', 'RF', 'Evento', 'Activo', 'Resultado', 'Severidad', 'Usuario', 'Descripción', 'Hash'].map((h) => <th key={h} scope="col" style={TH}>{h}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {registros.map((ev) => <Row key={ev.id_bitacora} ev={ev} />)}
               </tbody>
             </table>
+            </ScrollRegion>
           </div>
         )}
 
-        <Paginacion
+        {!error && <Paginacion
           pagina={paginacion.pagina}
           totalPaginas={paginacion.totalPaginas}
           totalRegistros={paginacion.totalRegistros}
           onCambiar={consultar}
-        />
+        />}
       </div>
     </div>
   );

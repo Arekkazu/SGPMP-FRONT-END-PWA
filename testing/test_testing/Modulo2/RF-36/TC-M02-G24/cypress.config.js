@@ -1,6 +1,10 @@
 import { defineConfig } from 'cypress';
-import { writeFileSync, mkdirSync } from 'fs';
-import { dirname, resolve } from 'path';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   e2e: {
@@ -16,20 +20,21 @@ export default defineConfig({
     retries: { runMode: 2, openMode: 0 },
     // Al crear EvaluacionV<n+1>, actualizar estas rutas a la nueva carpeta 
     // con su RUN_ID correspondiente.
-    videosFolder: 'EvaluacionV2/RESULTADOS/G24-REEVAL-V2-20260914-010334/cypress_video',
-    screenshotsFolder: 'EvaluacionV2/RESULTADOS/G24-REEVAL-V2-20260914-010334/cypress_screenshots',
+    videosFolder: 'EvaluacionV2/RESULTADOS/G24-REEVAL-V3-20260924-231800/cypress_video',
+    screenshotsFolder: 'EvaluacionV2/RESULTADOS/G24-REEVAL-V3-20260924-231800/cypress_screenshots',
     trashAssetsBeforeRuns: false,
     setupNodeEvents(on, config) {
       on('task', {
         writeResult({ file, content }) {
-          const abs = resolve(config.projectRoot ?? process.cwd(), file);
-          mkdirSync(dirname(abs), { recursive: true });
-          writeFileSync(abs, content, 'utf8');
-          console.log('  [writeResult] ->', abs);
-          return abs;
+          const full = path.resolve(__dirname, file);
+          fs.mkdirSync(path.dirname(full), { recursive: true });
+          fs.writeFileSync(full, content, 'utf-8');
+          console.log('  [writeResult] ->', full);
+          return null;
         },
       });
       return config;
     },
   },
 });
+

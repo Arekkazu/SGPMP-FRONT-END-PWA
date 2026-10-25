@@ -1,3 +1,6 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-10-24 | Arekkazu | USAB-M03-M04 M9-10: sin estilos de módulo bloqueado (ya no se muestra) | */
 .ds-sidebar {
   position: fixed;
   top: 0;
@@ -51,10 +54,14 @@
   line-height: 1.2;
 }
 
+/* RF-27 (TC-M09-179): #97b68f es el texto mas tenue del sidebar (logo-sub,
+   section-label, user-role, logout). El #7d9a75 anterior daba 3.64:1 sobre el
+   nav de la variante oscura #249453; `oscurecerParaNav` (identidad.ts) garantiza
+   4.5:1 contra este color, asi que si se cambia aqui hay que cambiarlo alli. */
 .ds-sidebar__logo-sub {
   font-family: var(--font-mono);
   font-size: 9px;
-  color: #7d9a75;
+  color: #97b68f;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -68,7 +75,7 @@
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #7d9a75;
+  color: #97b68f;
   padding: var(--s2) var(--s5) var(--s1);
   display: block;
 }
@@ -109,16 +116,6 @@
   font-weight: 600;
 }
 
-.ds-sidebar__item--locked {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.ds-sidebar__item--locked:hover {
-  color: #a3c49a;
-  background: none;
-}
-
 .ds-sidebar__item-icon {
   width: 16px;
   flex-shrink: 0;
@@ -138,12 +135,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.ds-sidebar__item-lock {
-  margin-left: auto;
-  opacity: 0.5;
-  display: flex;
 }
 
 .ds-sidebar__divider {
@@ -192,7 +183,7 @@
 
 .ds-sidebar__user-role {
   font-size: 10px;
-  color: #7d9a75;
+  color: #97b68f;
   display: block;
 }
 
@@ -200,7 +191,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #7d9a75;
+  color: #97b68f;
   transition: color 0.12s;
   flex-shrink: 0;
   display: flex;

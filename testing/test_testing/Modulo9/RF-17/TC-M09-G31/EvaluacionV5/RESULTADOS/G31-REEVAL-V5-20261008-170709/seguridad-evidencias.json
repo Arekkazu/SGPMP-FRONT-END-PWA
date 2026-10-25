@@ -1,0 +1,38 @@
+{
+  "run_id": "G31-REEVAL-V5-20261008-170709",
+  "momento": "2026-10-08T17:42:01.776Z",
+  "archivos_revisados": [
+    "TC-M09-G31_reevaluacion_V5.md",
+    "cleanup.json",
+    "fixture-congelado.json",
+    "fixture-created.json",
+    "git-final.json",
+    "oficial.json",
+    "preflight.json",
+    "record.json",
+    "seguridad-evidencias.json",
+    "tc66.json",
+    "tc67.json",
+    "tc68.json",
+    "ui/historial-defecto-frontend.png",
+    "ui/monitoreo-dashboard.png",
+    "ui/tc68.png",
+    "ui/ui-evidence.json"
+  ],
+  "patrones_buscados": [
+    "contrasena literal",
+    "JWT",
+    "cabecera Authorization con valor",
+    "cookie de sesion",
+    "campo contrasena con valor",
+    "access_key con valor"
+  ],
+  "hallazgos": [],
+  "secretos_persistidos": false,
+  "marcadores_usados": [
+    "[REDACTED_PASSWORD]",
+    "[REDACTED_TOKEN]",
+    "[REDACTED_ACCESS_KEY]"
+  ],
+  "nota": "La contrasena del actor se tomo de una variable de proceso y el access_key (serial del dispositivo QA) se leyo por la API oficial; ninguno se persiste. El paquete con credenciales no se versiona."
+}

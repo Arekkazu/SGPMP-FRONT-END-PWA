@@ -76,7 +76,7 @@ export function EstadoPill({ estado, size = 'sm' }: Props) {
         gap: 'var(--s1)',
         padding: size === 'md' ? '4px var(--s3)' : '2px var(--s2)',
         borderRadius: 'var(--r-full)',
-        fontSize: size === 'md' ? '13px' : '11px',
+        fontSize: size === 'md' ? 'var(--fs-body-md)' : '11px',
         fontWeight: 600,
         whiteSpace: 'nowrap',
         color: meta.fg,

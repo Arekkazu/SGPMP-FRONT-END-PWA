@@ -1,0 +1,471 @@
+{
+  "run_id": "G31-REEVAL-V5-20261008-170709",
+  "fase": "preflight",
+  "paquete": "TC-M09-G31 REEVALUACION V5 (RUN limpio + provision de fixture por API)",
+  "iniciado": "2026-10-08T17:08:21.165Z",
+  "git_inicial": {
+    "frontend": {
+      "rama": "qa/juan-esteban-quinta-evaluacion-M09",
+      "head": "ca8d415d5270f442973da56d4432ba1cccdc8307",
+      "status": "?? testing/test_testing/Modulo9/RF-17/TC-M09-G31/EvaluacionV5/",
+      "indice": "(vacio)",
+      "diff": "(vacio)",
+      "origin_test": "ca8d415d5270f442973da56d4432ba1cccdc8307",
+      "origin_dev": "72a966b418f533f5a204856128eab3e76fcaea90",
+      "head_vs_origin_test": "0\t0"
+    },
+    "backend": {
+      "rama": "qa/juan-esteban-quinta-evaluacion-M09",
+      "head": "15121f3f5a69c6126b6613f2dcf1cecd4cf6aa7c",
+      "status": "?? tests/Test_Testing/Test_Modulo9/RF-17/TC-M09-G29/EvaluacionV5/",
+      "indice": "(vacio)",
+      "diff": "(vacio)",
+      "origin_test": "b78ef659d36a8de6bb5781ee4db300b6227a7593",
+      "origin_dev": "6382796c224a1da2835a81022eb01956af799e18",
+      "head_vs_origin_test": "0\t7"
+    }
+  },
+  "runtime_test": {
+    "frontend": {
+      "url": "https://api.inmero.co/",
+      "status": 200
+    },
+    "health": {
+      "url": "https://api.inmero.co/back-sigab-test/health",
+      "status": 200,
+      "body": {
+        "status": "ok",
+        "message": "API funcionando correctamente"
+      }
+    },
+    "openapi": {
+      "url": "https://api.inmero.co/back-sigab-test/openapi.json",
+      "status": 200,
+      "version": "1.0.0",
+      "rutas": 210
+    }
+  },
+  "reloj": {
+    "servidor_iso": "2026-10-08T17:08:22.000Z",
+    "servidor": 1791479302000,
+    "cliente": 1791479303296,
+    "desfase_ms": 1296,
+    "fuente": "cabecera Date de /health"
+  },
+  "actor": {
+    "correo": "administador.dev@gmail.com",
+    "contrasena": "[REDACTED_PASSWORD]",
+    "login_status": 200,
+    "id_usuario": 104,
+    "rol": "Administrador",
+    "es_activo": null
+  },
+  "endpoints_previstos": [
+    {
+      "metodo": "GET",
+      "ruta": "/configuracion/variables-ambientales",
+      "para": "discovery de la variable de temperatura",
+      "en_openapi": true
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/configuracion/especies",
+      "para": "discovery de especies activas",
+      "en_openapi": true
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/configuracion/umbrales",
+      "para": "discovery de umbrales RF-17 por especie",
+      "en_openapi": true
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/configuracion/infraestructuras",
+      "para": "discovery de areas de la finca",
+      "en_openapi": true
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/configuracion/dispositivos-iot",
+      "para": "discovery de dispositivos IoT",
+      "en_openapi": true
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/activos-biologicos",
+      "para": "censo de activos por area",
+      "en_openapi": true
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/configuracion/especies",
+      "para": "crear especie QA si no hay una adecuada",
+      "en_openapi": true
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/configuracion/umbrales",
+      "para": "crear el umbral RF-17 de la especie QA",
+      "en_openapi": true
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/configuracion/infraestructuras",
+      "para": "crear el area QA si ninguna area con dispositivo tiene un solo activo operativo",
+      "en_openapi": true
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/configuracion/dispositivos-iot",
+      "para": "crear el dispositivo IoT QA del area",
+      "en_openapi": true
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/configuracion/dispositivos-iot/{id_dispositivo_iot}/sensores",
+      "para": "crear el sensor de temperatura QA",
+      "en_openapi": true
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/infraestructuras/{id_infraestructura}/sensores",
+      "para": "asociar el sensor al area",
+      "en_openapi": true
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/configuracion/sensores/{id_sensor}/calibrar",
+      "para": "calibrar el sensor QA",
+      "en_openapi": true
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/activos-biologicos",
+      "para": "crear el activo biologico QA",
+      "en_openapi": true
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/iot/telemetria",
+      "para": "ingesta oficial de cada caso",
+      "en_openapi": true
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/iot/vinculaciones",
+      "para": "vinculacion de cada lectura",
+      "en_openapi": true
+    },
+    {
+      "metodo": "PATCH",
+      "ruta": "/iot/vinculaciones/{id_vinculacion_lectura}/resolver",
+      "para": "resolucion unica si la vinculacion queda AMBIGUA",
+      "en_openapi": true
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/iot/monitoreo/historial",
+      "para": "oraculo de clasificacion por lectura",
+      "en_openapi": true
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/iot/monitoreo/dashboard/{id_infraestructura}",
+      "para": "oraculo de color del sensor",
+      "en_openapi": true
+    },
+    {
+      "metodo": "PATCH",
+      "ruta": "/configuracion/umbrales/{id_umbral_ambiental}/desactivar",
+      "para": "reversion del umbral QA",
+      "en_openapi": true
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/activos-biologicos/{id_activo}/cierre",
+      "para": "reversion del activo QA",
+      "en_openapi": true
+    },
+    {
+      "metodo": "PATCH",
+      "ruta": "/configuracion/especies/{id_especie}/desactivar",
+      "para": "reversion de la especie QA",
+      "en_openapi": true
+    },
+    {
+      "metodo": "PATCH",
+      "ruta": "/configuracion/dispositivos-iot/{id_dispositivo_iot}/desactivar",
+      "para": "reversion del dispositivo QA",
+      "en_openapi": true
+    },
+    {
+      "metodo": "PATCH",
+      "ruta": "/configuracion/infraestructuras/{id_infraestructura}/desactivar",
+      "para": "reversion del area QA",
+      "en_openapi": true
+    }
+  ],
+  "endpoints_faltantes": [],
+  "discovery": {
+    "variable_temperatura": {
+      "id_variable_ambiental": 9,
+      "nombre": "Temperatura Ambiental",
+      "unidad": "°C",
+      "valor_fisico_min": "-50",
+      "valor_fisico_max": "100"
+    },
+    "rango_calibracion_temperatura": {
+      "categoria": "TEMPERATURA",
+      "valor_min": 0,
+      "valor_max": 45
+    },
+    "especies_activas": 38,
+    "dispositivos_activos": 135,
+    "areas_activas_finca_1": [
+      {
+        "id": 3,
+        "nombre": "Alevinera-01",
+        "tipo_area": "Estanque",
+        "especie_id": null
+      },
+      {
+        "id": 1,
+        "nombre": "Estanque-01",
+        "tipo_area": "Estanque",
+        "especie_id": null
+      },
+      {
+        "id": 2,
+        "nombre": "Estanque-02",
+        "tipo_area": "Estanque",
+        "especie_id": null
+      }
+    ],
+    "areas_con_dispositivo_activo": [
+      {
+        "id_infraestructura": 1,
+        "total_registros": 49,
+        "censo_completo": true,
+        "operativos": 42,
+        "especies_operativas": [
+          2,
+          4,
+          1,
+          3,
+          10
+        ],
+        "muestra": [
+          {
+            "id": 705,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 2
+          },
+          {
+            "id": 618,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 2
+          },
+          {
+            "id": 617,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 2
+          },
+          {
+            "id": 616,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 2
+          },
+          {
+            "id": 463,
+            "tipo": "POBLACIONAL",
+            "estado": "ACTIVO",
+            "id_especie": 4
+          }
+        ]
+      },
+      {
+        "id_infraestructura": 2,
+        "total_registros": 4,
+        "censo_completo": true,
+        "operativos": 3,
+        "especies_operativas": [
+          1,
+          2
+        ],
+        "muestra": [
+          {
+            "id": 57,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 1
+          },
+          {
+            "id": 45,
+            "tipo": "POBLACIONAL",
+            "estado": "ACTIVO",
+            "id_especie": 2
+          },
+          {
+            "id": 1,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 1
+          }
+        ]
+      },
+      {
+        "id_infraestructura": 3,
+        "total_registros": 230,
+        "censo_completo": true,
+        "operativos": 77,
+        "especies_operativas": [
+          4,
+          10
+        ],
+        "muestra": [
+          {
+            "id": 707,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 4
+          },
+          {
+            "id": 706,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 10
+          },
+          {
+            "id": 502,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 4
+          },
+          {
+            "id": 476,
+            "tipo": "POBLACIONAL",
+            "estado": "ACTIVO",
+            "id_especie": 4
+          },
+          {
+            "id": 439,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 10
+          }
+        ]
+      },
+      {
+        "id_infraestructura": 6,
+        "total_registros": 207,
+        "censo_completo": true,
+        "operativos": 189,
+        "especies_operativas": [
+          40,
+          4,
+          3,
+          2,
+          41
+        ],
+        "muestra": [
+          {
+            "id": 754,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 40
+          },
+          {
+            "id": 751,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 4
+          },
+          {
+            "id": 750,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 4
+          },
+          {
+            "id": 746,
+            "tipo": "INDIVIDUAL",
+            "estado": "AISLADO",
+            "id_especie": 3
+          },
+          {
+            "id": 745,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 4
+          }
+        ]
+      },
+      {
+        "id_infraestructura": 7,
+        "total_registros": 1,
+        "censo_completo": true,
+        "operativos": 1,
+        "especies_operativas": [
+          4
+        ],
+        "muestra": [
+          {
+            "id": 499,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 4
+          }
+        ]
+      },
+      {
+        "id_infraestructura": 22,
+        "total_registros": 2,
+        "censo_completo": true,
+        "operativos": 2,
+        "especies_operativas": [
+          4
+        ],
+        "muestra": [
+          {
+            "id": 236,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 4
+          },
+          {
+            "id": 235,
+            "tipo": "INDIVIDUAL",
+            "estado": "ACTIVO",
+            "id_especie": 4
+          }
+        ]
+      },
+      {
+        "id_infraestructura": 222,
+        "total_registros": 0,
+        "censo_completo": true,
+        "operativos": 0,
+        "especies_operativas": [],
+        "muestra": []
+      }
+    ],
+    "candidatos_fixture_natural": [
+      {
+        "id_infraestructura": 7,
+        "id_especie": 4,
+        "id_activo_biologico": 499,
+        "umbral": null,
+        "clasifica": null,
+        "sirve": false
+      }
+    ],
+    "fixture_natural_encontrado": false,
+    "conclusion": "no existe combinacion natural: se provisiona el fixture minimo por endpoints publicos (seccion 9)"
+  },
+  "terminado": "2026-10-08T17:08:27.039Z"
+}

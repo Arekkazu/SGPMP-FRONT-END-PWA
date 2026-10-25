@@ -1,9 +1,14 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-70: totales por estado de toda la flota, no solo de la página |
 import { useState, useCallback } from 'react';
 import { otaApi } from '../api/otaApi';
+import { modelosApi } from '../api/modelosApi';
 import { cacheDespliegues, getDesplieguesCache } from '../db/prediccionTables';
 import type {
   DespliegueOtaResponse,
   ListarDesplieguesFiltros,
+  VersionModeloResponse,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -16,16 +21,21 @@ interface PaginacionState {
 }
 
 /**
- * RF-70 · Estado OTA / distribución de modelos (read-only).
- * Lista de despliegues con caché read-only. La creación y el monitor en vivo
- * son responsabilidad del equipo IoT/IA (ver TASKS.md § Pendientes).
+ * RF-70 · Estado OTA / distribución de modelos (lectura, FE-01a).
+ * Datos reales de `GET /prediccion/despliegues` (paginado, con caché read-only) y,
+ * filtrando por versión, de `GET /prediccion/modelos/{id}/ota-status`. Los dos
+ * respondían 500 hasta DEV-03 (auditoría M04 con valores fuera del enum).
  */
+export interface ResumenOta { total: number; completados: number; errores: number; pendientes: number }
+
 export function useOta() {
   const [despliegues, setDespliegues] = useState<DespliegueOtaResponse[]>([]);
+  const [versiones, setVersiones] = useState<VersionModeloResponse[]>([]);
   const [paginacion, setPaginacion] = useState<PaginacionState>({ pagina: 1, totalPaginas: 1, totalRegistros: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [fromCache, setFromCache] = useState(false);
+  const [resumen, setResumen] = useState<ResumenOta | null>(null);
 
   const cargar = useCallback(async (filtros: ListarDesplieguesFiltros = {}, pagina = 1) => {
     setLoading(true);
@@ -65,6 +75,7 @@ export function useOta() {
             id_version_modelo: c.id_version_modelo,
             id_dispositivo_iot: c.id_dispositivo_iot,
             tipo_modelo: c.tipo_modelo as DespliegueOtaResponse['tipo_modelo'],
+            paradigma: null, componente: null,
             modo_distribucion: '',
             estado_despliegue: c.estado_despliegue as DespliegueOtaResponse['estado_despliegue'],
             hash_modelo_sha256: null, resultado_validacion_hash: null, id_version_modelo_anterior: null,
@@ -84,5 +95,50 @@ export function useOta() {
     }
   }, []);
 
-  return { despliegues, paginacion, loading, error, fromCache, cargar };
+  /**
+   * Despliegues de una versión con `GET /prediccion/modelos/{id}/ota-status` (RF-70).
+   * El endpoint devuelve todos los de la versión, así que es una sola página.
+   */
+  const cargarPorVersion = useCallback(async (idVersion: number, estado?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await otaApi.estadoPorVersion(idVersion, estado ? { estado } : {});
+      const items = data.despliegues ?? [];
+      setDespliegues(items);
+      setPaginacion({ pagina: 1, totalPaginas: 1, totalRegistros: data.total ?? items.length });
+      setFromCache(false);
+    } catch (e) {
+      setDespliegues([]);
+      setPaginacion({ pagina: 1, totalPaginas: 1, totalRegistros: 0 });
+      setError(e as ApiError);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /** Versiones para el filtro (best-effort: sin ellas la vista sigue funcionando). */
+  const cargarVersiones = useCallback(async () => {
+    try {
+      const data = await modelosApi.listar({ limit: 100 });
+      setVersiones(data.items ?? []);
+    } catch {
+      setVersiones([]);
+    }
+  }, []);
+
+  /** Totales por estado con `limit: 1`: el listado devuelve el total aunque traiga un solo ítem. */
+  const cargarResumen = useCallback(async () => {
+    try {
+      const total = async (estado?: string) => (await otaApi.listarDespliegues({ ...(estado ? { estado } : {}), limit: 1 })).total ?? 0;
+      const [todos, exitosos, sinCambios, fallidos, pendientes, enProceso] = await Promise.all(
+        [undefined, 'EXITOSO', 'SIN_CAMBIOS', 'FALLIDO', 'PENDIENTE', 'EN_PROCESO'].map(total),
+      );
+      setResumen({ total: todos, completados: exitosos + sinCambios, errores: fallidos, pendientes: pendientes + enProceso });
+    } catch {
+      setResumen(null);
+    }
+  }, []);
+
+  return { despliegues, paginacion, loading, error, fromCache, cargar, cargarPorVersion, versiones, cargarVersiones, resumen, cargarResumen };
 }

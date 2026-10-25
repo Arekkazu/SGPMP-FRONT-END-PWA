@@ -1,3 +1,7 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | DEV-36 RF-65: config_version en ConfigurarMotorDTO |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: etiquetaTipoModelo muestra "Sin tipo", nunca "null" |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -9,8 +13,16 @@
 // =====================================================================
 
 // ── Enums (uniones const) ────────────────────────────────────────────
+/** RFC-009: eje tipo de manejo (6 modelos en 3 paradigmas), ya no tamaño del animal. */
 export type TipoModelo =
-  | 'ESPECIES_PEQUEÑAS' | 'ESPECIES_MEDIANAS' | 'ESPECIES_GRANDES' | 'CONTAGIO';
+  | 'MODELO_AVES' | 'MODELO_PORCINOS' | 'MODELO_ACUICULTURA'
+  | 'MODELO_ESPECIES_MEDIANAS' | 'MODELO_ESPECIES_GRANDES' | 'MODELO_RIESGO_CONTAGIO';
+
+/** Lo deriva el backend del tipo_modelo; decide umbrales, métricas y componente. */
+export type Paradigma = 'POBLACIONAL' | 'INDIVIDUAL' | 'META';
+
+/** RF-69/RF-70: los modelos POBLACIONAL se versionan y despliegan por componente. */
+export type Componente = 'DETECTOR' | 'SEGUIMIENTO' | 'METRICAS' | 'ANOMALIAS';
 
 export type ModoEjecucion = 'EDGE' | 'SERVIDOR' | 'HIBRIDO';
 
@@ -29,17 +41,40 @@ export type SeveridadEvento = 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
 
 export type TipoActor = 'USUARIO' | 'SISTEMA';
 
-/** Etiquetas legibles para `tipo_modelo` (la ñ requiere URL-encode como path param). */
+/** Etiquetas legibles para `tipo_modelo`. */
 export const TIPO_MODELO_LABEL: Record<TipoModelo, string> = {
-  ESPECIES_PEQUEÑAS: 'Especies pequeñas',
-  ESPECIES_MEDIANAS: 'Especies medianas',
-  ESPECIES_GRANDES: 'Especies grandes',
-  CONTAGIO: 'Riesgo de contagio',
+  MODELO_AVES: 'Aves',
+  MODELO_PORCINOS: 'Porcinos',
+  MODELO_ACUICULTURA: 'Acuicultura',
+  MODELO_ESPECIES_MEDIANAS: 'Especies medianas',
+  MODELO_ESPECIES_GRANDES: 'Especies grandes',
+  MODELO_RIESGO_CONTAGIO: 'Riesgo de contagio',
 };
 
-export const TIPOS_MODELO: TipoModelo[] = [
-  'ESPECIES_PEQUEÑAS', 'ESPECIES_MEDIANAS', 'ESPECIES_GRANDES', 'CONTAGIO',
-];
+/**
+ * M4-09: hay versiones sin `tipo_modelo` en la BD y el `?? tipo` las pintaba
+ * como "· null" en los filtros de Distribución.
+ */
+export function etiquetaTipoModelo(tipo: string | null | undefined): string {
+  if (!tipo) return 'Sin tipo';
+  return TIPO_MODELO_LABEL[tipo as TipoModelo] ?? tipo;
+}
+
+export const PARADIGMA_POR_TIPO: Record<TipoModelo, Paradigma> = {
+  MODELO_AVES: 'POBLACIONAL',
+  MODELO_PORCINOS: 'POBLACIONAL',
+  MODELO_ACUICULTURA: 'POBLACIONAL',
+  MODELO_ESPECIES_MEDIANAS: 'INDIVIDUAL',
+  MODELO_ESPECIES_GRANDES: 'INDIVIDUAL',
+  MODELO_RIESGO_CONTAGIO: 'META',
+};
+
+export const TIPOS_MODELO = Object.keys(PARADIGMA_POR_TIPO) as TipoModelo[];
+
+/** RF-20: el meta-modelo de contagio no se asigna a un área ni es familia de una especie. */
+export const TIPOS_MODELO_ASIGNABLES = TIPOS_MODELO.filter((t) => PARADIGMA_POR_TIPO[t] !== 'META');
+
+export const COMPONENTES: Componente[] = ['DETECTOR', 'SEGUIMIENTO', 'METRICAS', 'ANOMALIAS'];
 
 // =====================================================================
 // RF-64 · Catálogo de Patologías — /prediccion/patologias (recurso 18)
@@ -95,8 +130,14 @@ export interface EditarPatologiaDTO {
 export interface ConfiguracionMotorIAResponse {
   id_configuracion_motor: number;
   tipo_modelo: TipoModelo;
-  umbral_riesgo_alto: number;
-  umbral_alerta_critica: number;
+  paradigma: Paradigma;
+  /** INDIVIDUAL/META; null en POBLACIONAL. */
+  umbral_riesgo_alto: number | null;
+  umbral_alerta_critica: number | null;
+  /** POBLACIONAL; null en INDIVIDUAL/META. */
+  umbral_score_anomalia: number | null;
+  /** POBLACIONAL: componente -> id_version ACTIVO (reemplaza id_version_modelo_activa). */
+  versiones_activas_por_componente: Partial<Record<Componente, number>> | null;
   ventana_temporal_min: number;
   modo_ejecucion: ModoEjecucion;
   id_version_modelo_activa: number | null;
@@ -121,8 +162,10 @@ export interface ConfiguracionMotorIAListResponse {
 
 export interface ConfigurarMotorDTO {
   tipo_modelo: TipoModelo;
-  umbral_riesgo_alto: number;
-  umbral_alerta_critica: number;
+  umbral_riesgo_alto?: number | null;
+  umbral_alerta_critica?: number | null;
+  umbral_score_anomalia?: number | null;
+  versiones_activas_por_componente?: Partial<Record<Componente, number>> | null;
   ventana_temporal_min: number;
   modo_ejecucion: ModoEjecucion;
   w_factor_sanitario: number;
@@ -134,6 +177,47 @@ export interface ConfigurarMotorDTO {
   hr_min_config?: number | null;
   hr_max_config?: number | null;
   densidad_maxima_config?: number | null;
+  /** DEV-36 (RF-65 CA-9): config_version leída; obligatoria al editar (412 si cambió). */
+  config_version?: number | null;
+}
+
+/**
+ * RF-65 E7/E8/E10 (DEV-09): estado de la configuración en cada nodo Edge.
+ * - APLICADA: el nodo confirmó la misma `config_version`.
+ * - PENDIENTE: el nodo estaba desconectado; se aplicará al reconectar (E7).
+ * - FALLIDA: el nodo no confirmó (sin ACK) (E8).
+ * - DESINCRONIZADO: el nodo confirmó otra `config_version` (E10).
+ */
+export type EstadoSincronizacionNodo = 'APLICADA' | 'PENDIENTE' | 'FALLIDA' | 'DESINCRONIZADO';
+
+export interface SincronizacionNodo {
+  id_dispositivo_iot: number;
+  serial: string;
+  config_version_servidor: number;
+  config_version_nodo: number | null;
+  estado_sincronizacion: EstadoSincronizacionNodo;
+  intentos_sincronizacion: number;
+  fecha_ultimo_intento: string | null;
+  fecha_aplicacion: string | null;
+  motivo_fallo: string | null;
+}
+
+export interface SincronizacionMotor {
+  /** Consolidado: el peor estado entre los nodos (APLICADA si no hay nodos). */
+  estado: EstadoSincronizacionNodo;
+  mensaje: string;
+  nodos: SincronizacionNodo[];
+}
+
+/**
+ * Resultado de `POST /prediccion/motor-ia`. En los cuatro códigos la configuración
+ * quedó guardada; el código solo dice si llegó a los nodos:
+ * 201/200 aplicada (o sin nodos) · 202 algún nodo PENDIENTE o FALLIDA · 409 DESINCRONIZADO.
+ */
+export interface ResultadoGuardarMotor {
+  config: ConfiguracionMotorIAResponse;
+  sincronizacion: SincronizacionMotor;
+  status: 200 | 201 | 202 | 409;
 }
 
 // =====================================================================
@@ -172,6 +256,10 @@ export interface VersionModeloResponse {
   id_version_modelo: number;
   nombre_version: string;
   tipo_modelo: TipoModelo;
+  paradigma: Paradigma | null;
+  componente: Componente | null;
+  /** POBLACIONAL: calibracion_completada, tasa_falsos_positivos_rutina, tasa_deteccion_eventos_clinicos. */
+  metricas_poblacionales: Record<string, number | boolean> | null;
   estado_version: EstadoVersion;
   formato_artefacto: string | null;
   tamanio_artefacto_bytes: number | null;
@@ -219,6 +307,8 @@ export interface DespliegueOtaResponse {
   id_version_modelo: number;
   id_dispositivo_iot: number;
   tipo_modelo: TipoModelo;
+  paradigma: Paradigma | null;
+  componente: Componente | null;
   modo_distribucion: string;
   estado_despliegue: EstadoOta;
   hash_modelo_sha256: string | null;
@@ -236,6 +326,60 @@ export interface DespliegueOtaResponse {
   fecha_inicio: string | null;
   fecha_fin: string | null;
   motivo_fallo: string | null;
+  /** DEV-15 (DB-04): distribución y fase del rollout a la que pertenece. */
+  id_distribucion_ota?: number | null;
+  fase_rollout?: FaseRollout | null;
+  fecha_expiracion_url?: string | null;
+  id_mensaje_notify?: string | null;
+}
+
+// RF-70 · Orquestador OTA (DEV-15, D6 de AIOT-DEV-03) — FE-01b
+/** Rollout por fases: 1 nodo canary, luego 20–30 % (parcial), luego el resto (total). */
+export type FaseRollout = 'CANARY' | 'PARCIAL' | 'TOTAL';
+export const FASES_ROLLOUT: FaseRollout[] = ['CANARY', 'PARCIAL', 'TOTAL'];
+export type EstadoDistribucion = 'EN_CURSO' | 'COMPLETADA' | 'DETENIDA';
+export type ModoDistribucion = 'INMEDIATO' | 'PROGRAMADO' | 'POR_LOTES';
+export const MODOS_DISTRIBUCION: ModoDistribucion[] = ['INMEDIATO', 'PROGRAMADO', 'POR_LOTES'];
+
+/** `POST /prediccion/ota/distribuciones`. El orden de los dispositivos decide el rollout: el primero es el canary. */
+export interface CrearDistribucionOtaDTO {
+  id_version_modelo: number;
+  lista_dispositivos_objetivo: number[];
+  modo_distribucion: ModoDistribucion;
+  ventana_inicio?: string | null;
+  ventana_fin?: string | null;
+  nivel_bateria_minimo?: number | null;
+  tamano_fragmento_bytes: number;
+  max_reintentos_descarga: number;
+  porcentaje_parcial: number;
+}
+
+export interface DistribucionOtaResponse {
+  id_distribucion_ota: number;
+  id_version_modelo: number;
+  tipo_modelo: TipoModelo;
+  componente: Componente | null;
+  modo_distribucion: ModoDistribucion;
+  ventana_inicio: string | null;
+  ventana_fin: string | null;
+  nivel_bateria_minimo: number | null;
+  tamano_fragmento_bytes: number;
+  max_reintentos_descarga: number;
+  porcentaje_parcial: number;
+  fase_rollout: FaseRollout;
+  estado_distribucion: EstadoDistribucion;
+  id_usuario: number;
+  fecha_creacion: string | null;
+  fecha_actualizacion: string | null;
+  despliegues: DespliegueOtaResponse[];
+}
+
+/** Dispositivo IoT que se puede elegir como objetivo (GET /configuracion/dispositivos-iot). */
+export interface DispositivoObjetivoOta {
+  id_dispositivo_iot: number;
+  serial: string;
+  descripcion: string;
+  es_activo: boolean;
 }
 
 export interface OtaStatusResponse {

@@ -33,11 +33,27 @@ export function useAuditoria() {
   const [tiposEvento, setTiposEvento] = useState<TipoEvento[]>([]);
   const [fromCache, setFromCache] = useState(false);
 
-  const cargar = useCallback(async (f: FiltrosAuditoria = filtros) => {
+  // Ancla temporal de la paginación (INC-M01-57-G71). El backend ordena por
+  // fecha descendente y pagina por offset, así que un evento nuevo entre dos
+  // páginas desplaza las filas y el último de una página reaparece como primero
+  // de la siguiente. Se fija con el `fecha_hasta` que devuelve toda carga que no
+  // sea un cambio de página (primera carga, filtros, reset, refrescar) y se
+  // reenvía solo al paginar. Vive en una ref: no debe re-renderizar ni ser filtro.
+  const anclaRef = useRef<string | null>(null);
+
+  // `cargar` lee los filtros de una ref para tener identidad estable: si dependiera
+  // de `filtros`, el efecto de la página (`[puedeVer, cargar]`) se re-ejecutaría en
+  // cada navegación y pediría la misma página una segunda vez, con un ancla nueva.
+  const filtrosRef = useRef(filtros);
+  filtrosRef.current = filtros;
+
+  const cargar = useCallback(async (f: FiltrosAuditoria = filtrosRef.current, paginando = false) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await auditoriaApi.consultar(f);
+      const ancla = paginando ? anclaRef.current : null;
+      const res = ancla ? await auditoriaApi.consultar(f, ancla) : await auditoriaApi.consultar(f);
+      if (!ancla) anclaRef.current = res.fecha_hasta ?? null;
       setEventos(res.items);
       setTotal(res.total);
       setFromCache(false);
@@ -64,7 +80,7 @@ export function useAuditoria() {
     } finally {
       setLoading(false);
     }
-  }, [filtros]);
+  }, []);
 
   // El catálogo cambia poquísimo: se pide una vez por montaje. Si falla, la
   // tabla y el filtro caen al id numérico en vez de romperse.
@@ -80,7 +96,9 @@ export function useAuditoria() {
   const actualizarFiltros = useCallback((nuevos: Partial<FiltrosAuditoria>) => {
     const actualizados = { ...filtros, ...nuevos, pagina: nuevos.pagina ?? 1 };
     setFiltros(actualizados);
-    cargar(actualizados);
+    // Con `pagina` explícita es navegación (misma ancla); sin ella es un filtro
+    // nuevo: vuelve a la página 1 y toma un ancla nueva.
+    cargar(actualizados, nuevos.pagina !== undefined);
   }, [filtros, cargar]);
 
   const resetFiltros = useCallback(() => {

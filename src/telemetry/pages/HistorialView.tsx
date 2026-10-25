@@ -1,4 +1,10 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01/M3-13 RF-59: 7 días por defecto, rangos rápidos consultan, exportación deshabilitada con motivo |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { History } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -19,12 +25,12 @@ export function HistorialView() {
   const puedeVer = usePermission(RECURSO_HISTORIAL, ACCION_R);
   const puedeExportar = usePermission(RECURSO_HISTORIAL, ACCION_E);
 
-  const { items, estadisticas, paginacion, loading, error, exportando, exportError, cargar, exportar } = useHistorial();
-  const [filtros, setFiltros] = useState<HistorialFiltrosState>(HISTORIAL_FILTROS_DEFAULT);
+  const { items, estadisticas, paginacion, truncado, vacios, loading, error, exportando, exportError, cargar, exportar } = useHistorial();
+  const [filtrosActuales, setFiltros] = useState<HistorialFiltrosState>(HISTORIAL_FILTROS_DEFAULT);
   const [modalExport, setModalExport] = useState(false);
 
   const build = useCallback(
-    (pagina: number): HistorialFiltrosDTO => {
+    (pagina: number, filtros: HistorialFiltrosState = filtrosActuales): HistorialFiltrosDTO => {
       const f: HistorialFiltrosDTO = {
         fecha_inicio: filtros.fecha_inicio,
         fecha_fin: filtros.fecha_fin,
@@ -41,7 +47,7 @@ export function HistorialView() {
       if (filtros.origen_dato) f.origen_dato = filtros.origen_dato as OrigenDato;
       return f;
     },
-    [filtros]
+    [filtrosActuales]
   );
 
   useEffect(() => { if (puedeVer) cargar(build(1)); }, [puedeVer]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -61,7 +67,13 @@ export function HistorialView() {
         <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
           <History size={20} aria-hidden />{t('historialview.historial_de_lecturas')}</h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-          {loading ? 'Cargando…' : `${paginacion.totalRegistros} lectura(s)`}
+          {loading
+            ? 'Cargando…'
+            : error
+              ? '—'
+              : truncado.truncado
+                ? t('historialview.lecturas_truncadas', { mostradas: formatearNumero(paginacion.totalRegistros), total: formatearNumero(truncado.totalEncontrado) })
+                : t('conteo.lecturas', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
         </p>
       </div>
 
@@ -75,10 +87,29 @@ export function HistorialView() {
           />
         )}
 
+        {/* RF-59 E6 / CA-19 (FE-11): más de 10 000 registros llegan truncados con aviso. */}
+        {!loading && truncado.truncado && (
+          <Alert
+            variant="warning"
+            title={t('historialview.resultado_truncado')}
+            description={t('historialview.resultado_truncado_detalle', { total: truncado.totalEncontrado, mostradas: paginacion.totalRegistros })}
+            style={{ marginBottom: 'var(--s4)' }}
+          />
+        )}
+        {/* RF-59 E7 / CA-17: el periodo tiene intervalos sin lecturas. */}
+        {!loading && vacios.length > 0 && (
+          <Alert
+            variant="info"
+            title={t('historialview.periodo_con_vacios', { count: vacios.length })}
+            description={t('historialview.periodo_con_vacios_detalle')}
+            style={{ marginBottom: 'var(--s4)' }}
+          />
+        )}
+
         <HistorialFiltros
-          value={filtros}
+          value={filtrosActuales}
           onChange={setFiltros}
-          onAplicar={() => cargar(build(1))}
+          onAplicar={(v) => cargar(build(1, v))}
           onExportar={() => setModalExport(true)}
           puedeExportar={puedeExportar}
         />
@@ -86,11 +117,12 @@ export function HistorialView() {
         {!loading && items.length > 0 && (
           <>
             <EstadisticasCards estadisticas={estadisticas} />
-            <HistorialChart items={items} unidad={unidadChart} />
+            <HistorialChart items={items} unidad={unidadChart} vacios={vacios} />
           </>
         )}
 
-        <HistorialTable items={items} loading={loading} />
+        {/* M3-01: con error no se muestra además "Sin lecturas para el rango". */}
+        {!error && <HistorialTable items={items} loading={loading} vacios={vacios} />}
 
         <Paginacion
           pagina={paginacion.pagina}

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual TC-DIS-88</title>
+<style>
+  :root { --bg:#f7f7f5; --card:#fff; --tx:#1c1c1a; --tx2:#55554f; --bd:#dcdcd6; --ok:#1d6b34; --okbg:#e7f4ea; --warn:#8a5a00; --warnbg:#fdf3dc; --err:#a3261c; --errbg:#fbe9e7; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141413; --card:#1e1e1c; --tx:#ededea; --tx2:#b3b3ad; --bd:#3a3a36; --ok:#7fd49a; --okbg:#1b3323; --warn:#f0c46a; --warnbg:#3a2f14; --err:#f19a90; --errbg:#3d1d1a; } }
+  body { margin:0; background:var(--bg); color:var(--tx); font:14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:1200px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:17px; margin:28px 0 8px; } h3 { font-size:15px; margin:0 0 4px; }
+  .sub { color:var(--tx2); margin:0 0 16px; }
+  table.meta { border-collapse:collapse; background:var(--card); border:1px solid var(--bd); border-radius:8px; }
+  table.meta td { padding:6px 12px; border-bottom:1px solid var(--bd); vertical-align:top; } table.meta td:first-child { color:var(--tx2); white-space:nowrap; }
+  .pill { display:inline-block; padding:1px 10px; border-radius:999px; font-weight:600; font-size:12px; }
+  .ok { color:var(--ok); background:var(--okbg); } .warn { color:var(--warn); background:var(--warnbg); } .err { color:var(--err); background:var(--errbg); }
+  .estado { background:var(--card); border:1px solid var(--bd); border-radius:10px; padding:16px; margin:12px 0; }
+  .detalle { color:var(--tx2); margin:0 0 12px; }
+  .fila { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; align-items:start; }
+  figure { margin:0; } figcaption { font-size:12px; color:var(--tx2); margin-bottom:4px; }
+  img { width:100%; height:auto; border:1px solid var(--bd); border-radius:6px; background:#fff; }
+  .vacia p { border:1px dashed var(--bd); border-radius:6px; padding:24px 12px; color:var(--tx2); text-align:center; margin:0; }
+  .nada { color:var(--tx2); }
+</style>
+</head>
+<body>
+<main>
+  <h1>TC-DIS-88 — Consistencia visual</h1>
+  <p class="sub">Configuración → Plantillas → wizard «Aplicar Plantilla» (página completa) · RF-32 · Aplicación de Plantilla · Pareja de accesibilidad TC-DIS-87</p>
+  <table class="meta">
+    <tr><td>Fecha de ejecución</td><td>2026-09-29 (baseline y estabilidad, noche)</td></tr>
+    <tr><td>Ambiente</td><td>TEST (https://api.inmero.co/)</td></tr>
+    <tr><td>Rol usado</td><td>Administrador (cuenta compartida de QA)</td></tr>
+    <tr><td>Herramienta</td><td>Playwright toHaveScreenshot · fullPage + captura-completa.css · workers=1</td></tr>
+    <tr><td>Viewports</td><td>movil 375×667 · tablet 768×1024 · escritorio 1440×900</td></tr>
+    <tr><td>Estabilidad</td><td><span class="pill ok">Estable</span> Primera baseline inestable en la zona del badge de notificaciones (555 px en tablet: el badge llegaba o no según el GET). Corregido fijando el GET de notificaciones y esperando el badge. Baseline final 9/9 y dos corridas 9/9 con 0 diferencias.</td></tr>
+    <tr><td>Estado del caso</td><td><span class="pill ok">Completo</span></td></tr>
+    <tr><td>Lecturas fijadas</td><td>GET de plantillas (3 semilla + QA-Inmutable v3, como TC-DIS-62), especies, tema (Claro) y notificaciones, con cuerpos reales de TEST. POST /plantillas/{id}/aplicar y demás escrituras abortadas; el botón «Aplicar plantilla» nunca se pulsa (se sale con Atrás + Cancelar).</td></tr>
+  </table>
+  <h2>Hallazgos</h2>
+  <ul><li>Accesibilidad (de TC-DIS-87): el wizard no cierra con Escape.</li><li>Móvil 375 px: la etiqueta «Inmutable» de las tarjetas del fondo se parte a mitad de palabra (igual que TC-DIS-85).</li></ul>
+  <h2>Bloqueos</h2>
+  <p class="nada">Sin bloqueos.</p>
+  <h2>Capturas por estado y viewport</h2>
+  <section class="estado"><h3>Paso 1: selección de especie destino (sin elegir)</h3><div class="fila"><figure><figcaption>Móvil 375×667 · 375×1267 px</figcaption><a href="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-movil-win32.png" target="_blank" rel="noopener"><img src="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-movil-win32.png" alt="Paso 1: selección de especie destino (sin elegir) — Móvil 375×667" loading="lazy"></a></figure>
+<figure><figcaption>Tablet 768×1024 · 768×1024 px</figcaption><a href="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-tablet-win32.png" target="_blank" rel="noopener"><img src="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-tablet-win32.png" alt="Paso 1: selección de especie destino (sin elegir) — Tablet 768×1024" loading="lazy"></a></figure>
+<figure><figcaption>Escritorio 1440×900 · 1440×900 px</figcaption><a href="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-escritorio-win32.png" target="_blank" rel="noopener"><img src="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-escritorio-win32.png" alt="Paso 1: selección de especie destino (sin elegir) — Escritorio 1440×900" loading="lazy"></a></figure></div></section>
+<section class="estado"><h3>Paso 1: especie destino «Especie Acuatica Prueba» elegida</h3><div class="fila"><figure><figcaption>Móvil 375×667 · 375×1267 px</figcaption><a href="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-elegida-movil-win32.png" target="_blank" rel="noopener"><img src="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-elegida-movil-win32.png" alt="Paso 1: especie destino «Especie Acuatica Prueba» elegida — Móvil 375×667" loading="lazy"></a></figure>
+<figure><figcaption>Tablet 768×1024 · 768×1024 px</figcaption><a href="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-elegida-tablet-win32.png" target="_blank" rel="noopener"><img src="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-elegida-tablet-win32.png" alt="Paso 1: especie destino «Especie Acuatica Prueba» elegida — Tablet 768×1024" loading="lazy"></a></figure>
+<figure><figcaption>Escritorio 1440×900 · 1440×900 px</figcaption><a href="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-elegida-escritorio-win32.png" target="_blank" rel="noopener"><img src="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso1-especie-elegida-escritorio-win32.png" alt="Paso 1: especie destino «Especie Acuatica Prueba» elegida — Escritorio 1440×900" loading="lazy"></a></figure></div></section>
+<section class="estado"><h3>Paso 2: previsualización con advertencia de irreversibilidad</h3><p class="detalle">La línea «ID · Creada …» de la especie destino va enmascarada.</p><div class="fila"><figure><figcaption>Móvil 375×667 · 375×1267 px</figcaption><a href="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso2-previsualizacion-movil-win32.png" target="_blank" rel="noopener"><img src="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso2-previsualizacion-movil-win32.png" alt="Paso 2: previsualización con advertencia de irreversibilidad — Móvil 375×667" loading="lazy"></a></figure>
+<figure><figcaption>Tablet 768×1024 · 768×1024 px</figcaption><a href="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso2-previsualizacion-tablet-win32.png" target="_blank" rel="noopener"><img src="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso2-previsualizacion-tablet-win32.png" alt="Paso 2: previsualización con advertencia de irreversibilidad — Tablet 768×1024" loading="lazy"></a></figure>
+<figure><figcaption>Escritorio 1440×900 · 1440×900 px</figcaption><a href="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso2-previsualizacion-escritorio-win32.png" target="_blank" rel="noopener"><img src="../aplicacion-plantilla.visual.spec.ts-snapshots/aplicar-paso2-previsualizacion-escritorio-win32.png" alt="Paso 2: previsualización con advertencia de irreversibilidad — Escritorio 1440×900" loading="lazy"></a></figure></div></section>
+</main>
+</body>
+</html>

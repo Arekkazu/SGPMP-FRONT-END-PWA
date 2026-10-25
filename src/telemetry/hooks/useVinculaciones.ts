@@ -1,5 +1,8 @@
-import { useState, useCallback } from 'react';
-import { vinculacionesApi } from '../api/vinculacionesApi';
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-03 RF-61: activos candidatos de la infraestructura al resolver |
+import { useState, useCallback, useEffect } from 'react';
+import { vinculacionesApi, type CandidatoVinculacion } from '../api/vinculacionesApi';
 import type {
   VinculacionLecturaSchema,
   VinculacionesFiltros,
@@ -73,4 +76,21 @@ export function useVinculaciones() {
   }, []);
 
   return { items, paginacion, loading, saving, error, saveError, cargar, resolver, corregir };
+}
+
+/**
+ * M3-03: activos de la infraestructura de la lectura, para elegir en vez de
+ * escribir el ID. Si el rol no puede listar activos queda vacío y el campo
+ * sigue aceptando el ID escrito.
+ */
+export function useCandidatosVinculacion(idInfraestructura: number) {
+  const [candidatos, setCandidatos] = useState<CandidatoVinculacion[]>([]);
+  useEffect(() => {
+    let vigente = true;
+    vinculacionesApi.candidatos(idInfraestructura)
+      .then((c) => { if (vigente) setCandidatos(c); })
+      .catch(() => { if (vigente) setCandidatos([]); });
+    return () => { vigente = false; };
+  }, [idInfraestructura]);
+  return candidatos;
 }

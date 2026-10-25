@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01/M3-13 RF-59: 7 días por defecto, rangos rápidos consultan, exportación deshabilitada con motivo |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, Download } from 'lucide-react';
@@ -17,8 +20,10 @@ export interface HistorialFiltrosState {
 }
 
 
+// M3-01: con 30 días el backend respondía 422 VOLUMEN_EXCESIVO en fincas con
+// muchos sensores, justo en la primera carga. 7 días cabe en el límite.
 export const HISTORIAL_FILTROS_DEFAULT: HistorialFiltrosState = {
-  fecha_inicio: diasAtrasLocal(30),
+  fecha_inicio: diasAtrasLocal(7),
   fecha_fin: hoyLocal(),
   tipo_variable: '', categoria_variable: '', id_infraestructura: '', especie: '',
   estado_dato: '', origen_dato: '',
@@ -29,7 +34,8 @@ const RANGOS = [7, 30, 60, 90];
 interface Props {
   value: HistorialFiltrosState;
   onChange: (v: HistorialFiltrosState) => void;
-  onAplicar: () => void;
+  /** Con `v`, consulta con esos filtros (los rangos rápidos no esperan al re-render). */
+  onAplicar: (v?: HistorialFiltrosState) => void;
   onExportar: () => void;
   puedeExportar: boolean;
 }
@@ -39,7 +45,12 @@ export function HistorialFiltros({ value, onChange, onAplicar, onExportar, puede
   const set = (k: keyof HistorialFiltrosState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     onChange({ ...value, [k]: e.target.value });
 
-  const aplicarRango = (n: number) => onChange({ ...value, fecha_inicio: diasAtrasLocal(n), fecha_fin: hoyLocal() });
+  // M3-01: el rango rápido también consulta; antes solo cambiaba las fechas.
+  const aplicarRango = (n: number) => {
+    const v = { ...value, fecha_inicio: diasAtrasLocal(n), fecha_fin: hoyLocal() };
+    onChange(v);
+    onAplicar(v);
+  };
 
   return (
     <>
@@ -100,11 +111,17 @@ export function HistorialFiltros({ value, onChange, onAplicar, onExportar, puede
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
-        <Button variant="primary" size="sm" onClick={onAplicar}>
+        <Button variant="primary" size="sm" onClick={() => onAplicar()}>
           <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('historialfiltros.consultar')}</Button>
         {puedeExportar && (
-          <Button variant="secondary" size="sm" onClick={onExportar}>
-            <Download size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('historialfiltros.exportar')}</Button>
+          // M3-13: el backend responde siempre 503 hasta que exista el módulo de Reportes
+          // (M08). El motivo va en texto visible; un `title` en un botón deshabilitado no se ve.
+          // ponytail: deshabilitado fijo; habilitar cuando M08 exponga la exportación.
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
+            <Button variant="secondary" size="sm" onClick={onExportar} disabled aria-describedby="h-exportar-motivo">
+              <Download size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('historialfiltros.exportar')}</Button>
+            <span id="h-exportar-motivo" style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('historialfiltros.exportar_no_disponible')}</span>
+          </span>
         )}
       </div>
     </>

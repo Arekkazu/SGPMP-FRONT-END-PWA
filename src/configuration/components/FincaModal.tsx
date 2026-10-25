@@ -1,13 +1,18 @@
 import React, { useEffect } from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { X, MapPin } from 'lucide-react';
 import { Input } from '../../shared/design-system/Input';
+import { Combobox } from '../../shared/design-system/Combobox';
+import { idDeCatalogo } from '../../shared/lib/catalogo';
+import { useUsuariosAsignables } from '../hooks/useUsuariosAsignables';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import type { FincaResponse, RegistrarFincaDTO, EditarFincaDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 
 interface FormValues {
   nombre: string;
@@ -20,6 +25,8 @@ interface FormValues {
   longitud: number;
 }
 
+const CAMPOS = ['nombre', 'tamano_h', 'id_usuario', 'departamento', 'municipio', 'vereda', 'latitud', 'longitud'] as const;
+
 interface Props {
   finca: FincaResponse | null;
   saving: boolean;
@@ -28,6 +35,9 @@ interface Props {
   onRegistrar: (dto: RegistrarFincaDTO) => Promise<boolean>;
   onEditar: (id: number, dto: EditarFincaDTO) => Promise<boolean>;
 }
+
+/** Lo que queda escrito al elegir un usuario; `idDeCatalogo` recupera el ID. */
+const etiquetaUsuario = (u: { id_usuario: number; nombre_usuario: string }) => `${u.nombre_usuario} (#${u.id_usuario})`;
 
 const NOMBRE_REGEX = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
 const TEXTO_REGEX  = /^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s]+$/;
@@ -43,6 +53,7 @@ const SECTION_LABEL: React.CSSProperties = {
 };
 
 export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onEditar }: Props) {
+  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const modoEditar = finca !== null;
   const titulo = modoEditar ? `Editar finca — ${finca.nombre}` : 'Registrar nueva finca';
@@ -51,8 +62,15 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
     register,
     handleSubmit,
     reset,
+    setError,
+    control,
+    getValues,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({ mode: 'onBlur' });
+  const alertaGeneral = useErroresDeServidor(saveError, setError, CAMPOS);
+  const { usuarios, cargando: cargandoUsuarios } = useUsuariosAsignables();
+  const opcUsuarios = usuarios.map((u) => ({ id: u.id_usuario, nombre: u.nombre_usuario }));
 
   useEffect(() => {
     if (finca) {
@@ -71,6 +89,13 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
     }
   }, [finca, reset]);
 
+  // Al editar llega solo el ID; cuando carga la lista se muestra con su nombre.
+  useEffect(() => {
+    const actual = getValues('id_usuario');
+    const u = /^\d+$/.test(actual ?? '') ? usuarios.find((x) => x.id_usuario === Number(actual)) : undefined;
+    if (u) setValue('id_usuario', etiquetaUsuario(u));
+  }, [usuarios, finca, getValues, setValue]);
+
   const onSubmit = async (data: FormValues) => {
     const ubicacion = {
       departamento: data.departamento.trim(),
@@ -79,7 +104,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
       latitud: Number(data.latitud),
       longitud: Number(data.longitud),
     };
-    const id_usuario = data.id_usuario ? Number(data.id_usuario) : undefined;
+    const id_usuario = idDeCatalogo(data.id_usuario, opcUsuarios) ?? undefined;
     let ok: boolean;
 
     if (modoEditar && finca) {
@@ -98,13 +123,14 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="finca-modal-title"
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', padding: 'var(--s6) var(--s4)', overflowY: 'auto' }}
+      className="ds-modal"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: 'var(--surface-card)', borderRadius: 'var(--r-xl)', border: '1px solid var(--surface-border)', width: '100%', maxWidth: 600, boxShadow: 'var(--shadow-lg)', marginBottom: 'var(--s6)' }}>
+      <div className="ds-modal__panel">
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--s5) var(--s6)', borderBottom: '1px solid var(--surface-border)' }}>
           <h2 id="finca-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
@@ -116,7 +142,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
         </div>
 
         <div style={{ padding: 'var(--s6)' }}>
-          {saveError && (
+          {saveError && alertaGeneral && (
             <Alert
               variant="error"
               title={saveError.status === 412 ? t('fincamodal.conflicto_de_edicion') : t('fincamodal.error_al_guardar')}
@@ -157,14 +183,22 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   min: { value: 0.01, message: t('fincamodal.debe_ser_mayor_a_0') },
                 })}
               />
-              <Input
-                label={t('fincamodal.id_productor_asignado')}
-                type="number"
-                placeholder={t('fincamodal.id_del_usuario_productor')}
-                error={errors.id_usuario?.message}
-                {...register('id_usuario', {
-                  min: { value: 1, message: t('fincamodal.id_invalido') },
-                })}
+              <Controller
+                name="id_usuario"
+                control={control}
+                rules={{
+                  validate: (v) => !v.trim() || idDeCatalogo(v, opcUsuarios) !== null || t('fincamodal.productor_no_valido'),
+                }}
+                render={({ field }) => (
+                  <Combobox
+                    id="finca-productor" label={t('fincamodal.productor_asignado')}
+                    name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref}
+                    opciones={usuarios.map((u) => ({ valor: etiquetaUsuario(u), detalle: u.nombre_rol }))}
+                    placeholder={cargandoUsuarios ? t('fincamodal.cargando') : undefined}
+                    hint={t('fincamodal.productor_hint')}
+                    error={errors.id_usuario?.message}
+                  />
+                )}
               />
             </div>
 
@@ -179,6 +213,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   required
                   aria-required="true"
                   placeholder={t('fincamodal.ej_antioquia')}
+                  ariaDescribedBy="finca-ubicacion-ayuda"
                   error={errors.departamento?.message}
                   {...register('departamento', {
                     required: 'Requerido.',
@@ -192,6 +227,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   required
                   aria-required="true"
                   placeholder={t('fincamodal.ej_rionegro')}
+                  ariaDescribedBy="finca-ubicacion-ayuda"
                   error={errors.municipio?.message}
                   {...register('municipio', {
                     required: 'Requerido.',
@@ -205,6 +241,7 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   required
                   aria-required="true"
                   placeholder={t('fincamodal.ej_la_mosquitera')}
+                  ariaDescribedBy="finca-ubicacion-ayuda"
                   error={errors.vereda?.message}
                   {...register('vereda', {
                     required: 'Requerido.',
@@ -214,44 +251,40 @@ export function FincaModal({ finca, saving, saveError, onClose, onRegistrar, onE
                   })}
                 />
               </div>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 'var(--s4)' }}>
+              <p id="finca-ubicacion-ayuda" style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: 'var(--s4)' }}>
                 Solo letras (A–Z, tildes, ñ) y espacios. Sin números ni símbolos.
               </p>
               <div className="ds-fg2" style={{ gap: 'var(--s4)' }}>
-                <div>
-                  <Input
-                    label={t('fincamodal.latitud')}
-                    type="number"
-                    required
-                    aria-required="true"
-                    placeholder="Ej: 6.152438"
-                    error={errors.latitud?.message}
-                    {...register('latitud', {
-                      required: 'Requerida.',
-                      valueAsNumber: true,
-                      min: { value: -90, message: t('fincamodal.min_90') },
-                      max: { value: 90,  message: t('fincamodal.max_90') },
-                    })}
-                  />
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('fincamodal.rango_90_a_90')}</p>
-                </div>
-                <div>
-                  <Input
-                    label={t('fincamodal.longitud')}
-                    type="number"
-                    required
-                    aria-required="true"
-                    placeholder="Ej: -75.374908"
-                    error={errors.longitud?.message}
-                    {...register('longitud', {
-                      required: 'Requerida.',
-                      valueAsNumber: true,
-                      min: { value: -180, message: t('fincamodal.min_180') },
-                      max: { value: 180,  message: t('fincamodal.max_180') },
-                    })}
-                  />
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{t('fincamodal.rango_180_a_180')}</p>
-                </div>
+                <Input
+                  label={t('fincamodal.latitud')}
+                  type="number"
+                  required
+                  aria-required="true"
+                  placeholder="Ej: 6.152438"
+                  hint={t('fincamodal.rango_90_a_90')}
+                  error={errors.latitud?.message}
+                  {...register('latitud', {
+                    required: 'Requerida.',
+                    valueAsNumber: true,
+                    min: { value: -90, message: t('fincamodal.min_90') },
+                    max: { value: 90,  message: t('fincamodal.max_90') },
+                  })}
+                />
+                <Input
+                  label={t('fincamodal.longitud')}
+                  type="number"
+                  required
+                  aria-required="true"
+                  placeholder="Ej: -75.374908"
+                  hint={t('fincamodal.rango_180_a_180')}
+                  error={errors.longitud?.message}
+                  {...register('longitud', {
+                    required: 'Requerida.',
+                    valueAsNumber: true,
+                    min: { value: -180, message: t('fincamodal.min_180') },
+                    max: { value: 180,  message: t('fincamodal.max_180') },
+                  })}
+                />
               </div>
             </div>
 

@@ -1,4 +1,14 @@
 import React, { forwardRef } from 'react';
+import type { ApiError } from '../../shared/api/errors';
+import '../../shared/design-system/Input.css';
+
+/**
+ * Mensaje del error del servidor cuando apunta a `campo` (`ApiError.field`), para
+ * mostrarlo junto al control y marcarlo con aria-invalid (WCAG 3.3.1, TC-DIS-125/128/134/137).
+ */
+export function errorServidor(error: ApiError | null | undefined, campo: string): string | undefined {
+  return error?.field === campo ? error.message : undefined;
+}
 
 const CONTROL: React.CSSProperties = {
   width: '100%',
@@ -12,18 +22,30 @@ const CONTROL: React.CSSProperties = {
   outline: 'none',
 };
 
+// Tipografía y color salen de .ds-field__label, la misma etiqueta del Input del DS:
+// así un select o textarea no se ve distinto a los inputs del mismo formulario (TC-DIS-129).
 const LABEL: React.CSSProperties = {
   display: 'block',
-  fontSize: '13px',
-  fontWeight: 600,
-  color: 'var(--text-primary)',
   marginBottom: 'var(--s1)',
 };
 
-export function FieldError({ msg }: { msg?: string }) {
+/** Une la descripción propia del control con el id de su error (WCAG 3.3.1, TC-DIS-134/137). */
+function describedBy(propia: string | undefined, errorId: string | undefined): string | undefined {
+  return [propia, errorId].filter(Boolean).join(' ') || undefined;
+}
+
+/**
+ * Anuncia a lectores de pantalla los campos que aparecen al elegir una opción
+ * (WCAG 4.1.3, TC-DIS-102/108). Vacío no anuncia nada.
+ */
+export function AnuncioCampos({ texto }: { texto: string }) {
+  return <p role="status" className="ds-sr-only">{texto}</p>;
+}
+
+export function FieldError({ msg, id }: { msg?: string; id?: string }) {
   if (!msg) return null;
   return (
-    <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+    <p id={id} role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
       {msg}
     </p>
   );
@@ -36,13 +58,14 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export const FormSelect = forwardRef<HTMLSelectElement, SelectProps>(function FormSelect(
-  { label, required, error, id, children, ...rest }, ref
+  { label, required, error, id, children, 'aria-describedby': descripcion, ...rest }, ref
 ) {
   const controlId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+  const errorId = error && controlId ? `${controlId}-error` : undefined;
   return (
     <div>
       {label && (
-        <label style={LABEL} htmlFor={controlId}>
+        <label className="ds-field__label" style={LABEL} htmlFor={controlId}>
           {label}{required && <span aria-hidden="true"> *</span>}
         </label>
       )}
@@ -52,11 +75,12 @@ export const FormSelect = forwardRef<HTMLSelectElement, SelectProps>(function Fo
         style={{ ...CONTROL, height: 44, cursor: 'pointer', borderColor: error ? 'var(--sem-error)' : 'var(--surface-border)' }}
         aria-required={required}
         aria-invalid={!!error}
+        aria-describedby={describedBy(descripcion, errorId)}
         {...rest}
       >
         {children}
       </select>
-      <FieldError msg={error} />
+      <FieldError id={errorId} msg={error} />
     </div>
   );
 });
@@ -68,13 +92,14 @@ interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 }
 
 export const FormTextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function FormTextArea(
-  { label, required, error, id, ...rest }, ref
+  { label, required, error, id, 'aria-describedby': descripcion, ...rest }, ref
 ) {
   const controlId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+  const errorId = error && controlId ? `${controlId}-error` : undefined;
   return (
     <div>
       {label && (
-        <label style={LABEL} htmlFor={controlId}>
+        <label className="ds-field__label" style={LABEL} htmlFor={controlId}>
           {label}{required && <span aria-hidden="true"> *</span>}
         </label>
       )}
@@ -84,9 +109,10 @@ export const FormTextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(funct
         style={{ ...CONTROL, minHeight: 68, resize: 'vertical', borderColor: error ? 'var(--sem-error)' : 'var(--surface-border)' }}
         aria-required={required}
         aria-invalid={!!error}
+        aria-describedby={describedBy(descripcion, errorId)}
         {...rest}
       />
-      <FieldError msg={error} />
+      <FieldError id={errorId} msg={error} />
     </div>
   );
 });

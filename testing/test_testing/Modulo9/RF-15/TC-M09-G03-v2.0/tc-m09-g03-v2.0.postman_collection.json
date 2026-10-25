@@ -1,0 +1,228 @@
+{
+  "info": {
+    "_postman_id": "tc-m09-g03-v2.0-postman-collection",
+    "name": "TC-M09-G03-v2.0 · RF-15 v1.1 - Edición de Especie y Validación de Grupo de Manejo",
+    "description": "Colección Newman para TC-M09-G03-v2.0. Evalúa login, búsqueda exacta de la misma especie activa, intento de edición con grupo_manejo fuera de conjunto admisible ('REPTILES') y verificación de conservación de grupo_manejo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Login Administrativo (NW-01)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "var token = jsonData.token || jsonData.access_token || (jsonData.data && jsonData.data.token);",
+              "if (token) {",
+              "    pm.environment.set('bearer_token', token);",
+              "}",
+              "",
+              "pm.test('NW-01: Login admin (200)', function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(token, 'Access token presente').to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"correo_electronico\": \"{{admin_email}}\",\n  \"contrasena\": \"{{admin_password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{api_url}}/sesiones/",
+          "host": ["{{api_url}}"],
+          "path": ["sesiones", ""]
+        }
+      }
+    },
+    {
+      "name": "02 - Localizar Especie Objetivo y Capturar Datos (NW-02)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var raw = pm.response.json();",
+              "var lista = [];",
+              "if (Array.isArray(raw)) {",
+              "    lista = raw;",
+              "} else if (Array.isArray(raw.items)) {",
+              "    lista = raw.items;",
+              "} else if (Array.isArray(raw.data)) {",
+              "    lista = raw.data;",
+              "} else if (Array.isArray(raw.especies)) {",
+              "    lista = raw.especies;",
+              "}",
+              "",
+              "// Buscar candidata según reglas duras: activa, sin dígitos, sin Editado, sin token Qa, no Ovino QA2, fecha_actualizacion != null",
+              "var candidata = lista.find(function(it) {",
+              "    var act = it.activo !== undefined ? it.activo : it.es_activo;",
+              "    if (!act) return false;",
+              "    var nom = (it.nombre || '').trim();",
+              "    if (/^ovino\\s+qa2$/i.test(nom)) return false;",
+              "    if (/\\d/.test(nom)) return false;",
+              "    if (/editado/i.test(nom)) return false;",
+              "    if (/\\bqa\\b/i.test(nom)) return false;",
+              "    var fa = it.fecha_actualizacion !== undefined ? it.fecha_actualizacion : it.fecha_actualizacion_especie;",
+              "    if (fa === null || fa === undefined || String(fa).trim() === '') return false;",
+              "    return true;",
+              "});",
+              "",
+              "// Variables asignadas AL INICIO antes de cualquier aserción",
+              "if (candidata) {",
+              "    var tid = candidata.id_especie || candidata.id;",
+              "    pm.environment.set('target_especie_id', tid);",
+              "    pm.environment.set('target_especie_nombre', candidata.nombre);",
+              "    pm.environment.set('target_especie_grupo_original', candidata.grupo_manejo || '');",
+              "    pm.environment.set('target_especie_fecha_act', candidata.fecha_actualizacion || candidata.fecha_actualizacion_especie || '');",
+              "}",
+              "",
+              "pm.test('NW-02: GET /configuracion/especies?solo_activas=false y localizacion de especie candidata valida', function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(candidata, 'Candidata valida activa con fecha_actualizacion no nula localizada').to.be.an('object');",
+              "    pm.expect(pm.environment.get('target_especie_id'), 'target_especie_id capturado').to.be.ok;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{bearer_token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/especies?solo_activas=false",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "especies"],
+          "query": [
+            { "key": "solo_activas", "value": "false" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "03 - Intentar Edición con grupo_manejo Fuera de Conjunto (NW-03)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var targetId = pm.environment.get('target_especie_id');",
+              "if (!targetId) {",
+              "    if (typeof pm.execution !== 'undefined' && typeof pm.execution.skipRequest === 'function') {",
+              "        pm.execution.skipRequest();",
+              "    } else if (typeof postman !== 'undefined' && typeof postman.setNextRequest === 'function') {",
+              "        postman.setNextRequest(null);",
+              "    }",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var code = pm.response.code;",
+              "var responseText = pm.response.text();",
+              "pm.environment.set('nw03_status_code', code);",
+              "pm.environment.set('nw03_response_body', responseText);",
+              "",
+              "// Ajuste I: Nombre de aserción fijo y limpio sin volcar body crudo en el nombre",
+              "pm.test('NW-03: PATCH con grupo_manejo=REPTILES responde 400 (propuesto, no normativo)', function () {",
+              "    pm.expect(code, 'Respuesta HTTP obtenida: ' + code).to.eql(400);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{bearer_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"grupo_manejo\": \"REPTILES\"\n}"
+        },
+        "url": {
+          "raw": "{{api_url}}/configuracion/especies/{{target_especie_id}}",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "especies", "{{target_especie_id}}"]
+        }
+      }
+    },
+    {
+      "name": "04 - Confirmar Conservación de grupo_manejo en Catálogo (NW-04)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var raw = pm.response.json();",
+              "var lista = [];",
+              "if (Array.isArray(raw)) {",
+              "    lista = raw;",
+              "} else if (Array.isArray(raw.items)) {",
+              "    lista = raw.items;",
+              "} else if (Array.isArray(raw.data)) {",
+              "    lista = raw.data;",
+              "} else if (Array.isArray(raw.especies)) {",
+              "    lista = raw.especies;",
+              "}",
+              "",
+              "var targetId = parseInt(pm.environment.get('target_especie_id'), 10);",
+              "var encontrado = lista.find(function(it) {",
+              "    var idIt = it.id_especie || it.id;",
+              "    return idIt === targetId;",
+              "});",
+              "",
+              "// Ajuste C: verificar presencia del campo y fallar con mensaje estipulado si ausente",
+              "pm.test('NW-04: GET /configuracion/especies?solo_activas=false confirma que grupo_manejo conserva valor previo', function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(encontrado, 'Especie objetivo localizada en listado').to.be.an('object');",
+              "",
+              "    var tieneCampo = encontrado && Object.prototype.hasOwnProperty.call(encontrado, 'grupo_manejo') && encontrado.grupo_manejo !== null && encontrado.grupo_manejo !== undefined;",
+              "    pm.expect(tieneCampo, 'campo grupo_manejo ausente en respuesta del catálogo').to.be.true;",
+              "",
+              "    var grupoEsperado = pm.environment.get('target_especie_grupo_original') || '';",
+              "    var grupoActual = String(encontrado.grupo_manejo).trim();",
+              "",
+              "    pm.expect(grupoActual, 'grupo_manejo no debe ser REPTILES').to.not.eql('REPTILES');",
+              "    pm.expect(grupoActual, 'grupo_manejo conserva su valor previo').to.eql(grupoEsperado);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{bearer_token}}" }
+        ],
+        "url": {
+          "raw": "{{api_url}}/configuracion/especies?solo_activas=false",
+          "host": ["{{api_url}}"],
+          "path": ["configuracion", "especies"],
+          "query": [
+            { "key": "solo_activas", "value": "false" }
+          ]
+        }
+      }
+    }
+  ]
+}

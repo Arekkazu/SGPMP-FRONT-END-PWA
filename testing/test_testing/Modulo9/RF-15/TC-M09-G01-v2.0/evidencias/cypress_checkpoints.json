@@ -1,0 +1,62 @@
+[
+  {
+    "paso": "CP-01",
+    "esperado": "La ruta final no es /login, HTTP 200 y se capturó access token en memoria",
+    "obtenido": "Login HTTP 200, ruta destino: /dashboard, token en memoria capturado",
+    "estado": "OK"
+  },
+  {
+    "paso": "CP-02",
+    "esperado": "Navegación a Configuración > Especies y apertura del formulario de nueva especie",
+    "obtenido": "Acceso a /configuracion y modal de nueva especie visible",
+    "estado": "OK"
+  },
+  {
+    "paso": "CP-03",
+    "esperado": "El formulario expone un control grupo_manejo con los 5 valores admisibles (AVES, PORCINOS, ACUICULTURA, ESPECIES_MEDIANAS, ESPECIES_GRANDES)",
+    "obtenido": "control grupo_manejo ausente en el formulario",
+    "estado": "FALLA"
+  },
+  {
+    "paso": "CP-04",
+    "esperado": "Envío con los datos del caso: respuesta exitosa (registrar el código real)",
+    "obtenido": "HTTP 201 devuelto por el backend",
+    "estado": "OK"
+  },
+  {
+    "paso": "CP-05",
+    "esperado": "Id generado (entero > 0)",
+    "obtenido": "id_especie: 91 (directo)",
+    "estado": "OK"
+  },
+  {
+    "paso": "CP-06",
+    "esperado": "activo = true",
+    "obtenido": "es_activo: true",
+    "estado": "OK"
+  },
+  {
+    "paso": "CP-07",
+    "esperado": "grupo_manejo = \"AVES\" en la respuesta",
+    "obtenido": "grupo_manejo obtenido: \"null/undefined\"",
+    "estado": "FALLA"
+  },
+  {
+    "paso": "CP-08",
+    "esperado": "nombre (sin distinguir mayúsculas) y descripcion coinciden con lo enviado",
+    "obtenido": "nombre literal: \"Gallina Qa\", descripcion: \"Especie avícola de postura (QA v2.0)\"",
+    "estado": "OK"
+  },
+  {
+    "paso": "CP-09",
+    "esperado": "Fechas de creación y actualización presentes y en formato ISO válido",
+    "obtenido": "Faltan fechas válidas: actualización inválida o ausente (\"null\")",
+    "estado": "FALLA"
+  },
+  {
+    "paso": "CP-10",
+    "esperado": "La especie aparece en el catálogo de la UI (búsqueda por nombre) como activa",
+    "obtenido": "Fila exacta encontrada: \"#91Gallina QaEspecie avícola de postura (QA v2.0)Activo—\"",
+    "estado": "OK"
+  }
+]

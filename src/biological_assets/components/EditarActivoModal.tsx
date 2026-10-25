@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -36,7 +39,6 @@ const SELECT: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-const HOY = hoyLocal();
 
 export function EditarActivoModal({ activo, saving, saveError, onClose, onGuardar }: Props) {
   const { t } = useT('biologicalAssets');
@@ -48,7 +50,7 @@ export function EditarActivoModal({ activo, saving, saveError, onClose, onGuarda
     defaultValues: {
       raza: det?.raza ?? '',
       sexo: det?.sexo ?? '',
-      fecha_nacimiento: det?.fecha_nacimiento ? det.fecha_nacimiento.slice(0, 10) : '',
+      fecha_nacimiento: det?.fecha_nacimiento ?? '',  // día calendario YYYY-MM-DD
       peso_inicial: det?.peso_inicial != null ? String(det.peso_inicial) : '',
     },
   });
@@ -58,7 +60,7 @@ export function EditarActivoModal({ activo, saving, saveError, onClose, onGuarda
     const dto: ActualizarActivoIndividualDTO = {};
     if (v.raza.trim()) dto.raza = v.raza.trim();
     if (v.sexo) dto.sexo = v.sexo;
-    if (v.fecha_nacimiento) dto.fecha_nacimiento = new Date(v.fecha_nacimiento).toISOString();
+    if (v.fecha_nacimiento) dto.fecha_nacimiento = v.fecha_nacimiento;
     if (v.peso_inicial !== '') dto.peso_inicial = Number(v.peso_inicial);
 
     if (Object.keys(dto).length === 0) {
@@ -92,19 +94,19 @@ export function EditarActivoModal({ activo, saving, saveError, onClose, onGuarda
           <Input label={t('editaractivomodal.raza')} placeholder={t('editaractivomodal.ej_holstein')} error={errors.raza?.message} {...register('raza')} />
 
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="edit-sexo">{t('editaractivomodal.sexo')}</label>
+            <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="edit-sexo">{t('editaractivomodal.sexo')}</label>
             <select id="edit-sexo" style={SELECT} {...register('sexo')}>
               <option value="">{t('editaractivomodal.sin_especificar')}</option>
-              <option value="MACHO">{t('editaractivomodal.macho')}</option>
-              <option value="HEMBRA">{t('editaractivomodal.hembra')}</option>
+              <option value="Macho">{t('editaractivomodal.macho')}</option>
+              <option value="Hembra">{t('editaractivomodal.hembra')}</option>
             </select>
           </div>
 
           <Input
-            label={t('editaractivomodal.fecha_de_nacimiento')} type="date" max={HOY}
+            label={t('editaractivomodal.fecha_de_nacimiento')} type="date" max={hoyLocal()}
             error={errors.fecha_nacimiento?.message}
             {...register('fecha_nacimiento', {
-              validate: (val) => !val || val <= HOY || 'No puede ser una fecha futura.',
+              validate: (val) => !val || val <= hoyLocal() || 'No puede ser una fecha futura.',
             })}
           />
           <Input label="Peso inicial (kg)" type="number" min={0} step="0.01" placeholder={t('editaractivomodal.opcional')} {...register('peso_inicial')} />

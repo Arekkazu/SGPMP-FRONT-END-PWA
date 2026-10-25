@@ -2,20 +2,38 @@
   "caso": "TC-M01-088",
   "titulo": "Verificar que el perfil no exponga el ID del usuario en la URL",
   "rf": "RF-13",
-  "fecha": "2026-09-15T02:23:45.491Z",
-  "ambiente": "https://sigab-frontendtest-6aqrny-d2b730-158-69-200-27.sslip.io",
-  "navegador": "electron 118.0.5993.159",
+  "fecha": "2026-10-11T13:58:45.797Z",
+  "ambiente": "https://api.inmero.co",
+  "navegador": "chrome 154.0.8037.98",
   "checkpoints": [
     {
       "paso": "Login",
       "esperado": "HTTP 200 y JWT válido para iniciar la navegación autenticada",
-      "obtenido": "POST https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/sesiones/ -> HTTP 200",
+      "obtenido": "POST https://api.inmero.co/back-sigab-test/sesiones/ -> HTTP 200",
+      "estado": "OK"
+    },
+    {
+      "paso": "GET /usuarios/me",
+      "esperado": "Los datos del perfil provienen del endpoint autenticado, no de un ID en la URL",
+      "obtenido": "GET https://api.inmero.co/back-sigab-test/usuarios/me -> HTTP 200",
+      "estado": "OK"
+    },
+    {
+      "paso": "URL de perfil",
+      "esperado": "La URL debe ser exactamente /perfil, sin /perfil/{id}",
+      "obtenido": "URL actual: /perfil",
+      "estado": "OK"
+    },
+    {
+      "paso": "Enlaces de navegación",
+      "esperado": "No debe existir un enlace dinámico /perfil/{id}",
+      "obtenido": "No se encontró ningún enlace con ID en la ruta del perfil",
       "estado": "OK"
     }
   ],
   "veredicto": "SIN FALLAS BLOQUEANTES",
-  "origenDatos": "No determinado",
+  "origenDatos": "GET https://api.inmero.co/back-sigab-test/usuarios/me con header Authorization Bearer; respuesta HTTP 200.",
   "loginStatus": "200",
-  "profileRequestUrl": "No ejecutada",
-  "profileStatus": "No ejecutado"
+  "profileRequestUrl": "https://api.inmero.co/back-sigab-test/usuarios/me",
+  "profileStatus": "200"
 }

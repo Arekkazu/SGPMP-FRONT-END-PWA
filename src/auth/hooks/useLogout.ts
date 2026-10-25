@@ -13,7 +13,7 @@ export function useLogout() {
       // o la sesión ya haya expirado.
     } finally {
       clearSession();
-      window.location.replace('/login');
+      window.location.replace(`${import.meta.env.BASE_URL}login`);
     }
   }, [clearSession]);
 }

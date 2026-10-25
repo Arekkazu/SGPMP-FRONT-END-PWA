@@ -1,0 +1,139 @@
+{
+  "tc": "TC-M09-G07",
+  "rf": "RF-15",
+  "issue": "INC-M09-54-G07",
+  "fecha": "2026-10-03",
+  "entorno": "TEST",
+  "caso": "TC-M09-G07",
+  "titulo": "CU-01 - Sincronización offline y conflicto de nombres de especie (RF-15)",
+  "cu": "CU-01 - Gestionar Catálogo de Especies Productivas",
+  "tipo": "Funcional (UI, PWA y API)",
+  "equipo": "Frontend y QA",
+  "ambiente": "https://api.inmero.co",
+  "backend": "https://api.inmero.co/back-sigab-test",
+  "navegador": "electron 118.0.5993.159",
+  "build_declarado": "v1.0.0-rc.34+ (ff4fafc)",
+  "contexto": {
+    "totalCatalogoServidor": 36,
+    "postReplayContador": 1,
+    "descartePeticionesContador": 0,
+    "d4b_estado": "D4-b NO EVALUABLE: total=36 <= 50"
+  },
+  "checkpoints": [
+    {
+      "paso": "NW-1: 01 - Iniciar Sesión Administrativa -> Status code es 200 o 201 (Login exitoso)",
+      "esperado": "Status code es 200 o 201 (Login exitoso)",
+      "obtenido": "Aserción evaluada OK en backend",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-1: 01 - Iniciar Sesión Administrativa -> Respuesta contiene token JWT",
+      "esperado": "Respuesta contiene token JWT",
+      "obtenido": "Aserción evaluada OK en backend",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-2: 02 - Registro Base de Especie (Online) -> Status code es 201 o 200 (Especie creada)",
+      "esperado": "Status code es 201 o 200 (Especie creada)",
+      "obtenido": "Aserción evaluada OK en backend",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-2: 02 - Registro Base de Especie (Online) -> Especie contiene identificador asignado",
+      "esperado": "Especie contiene identificador asignado",
+      "obtenido": "Aserción evaluada OK en backend",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-3: 03 - Rechazo de Especie Duplicada (HTTP 409) -> Status code es exactamente 409 Conflict",
+      "esperado": "Status code es exactamente 409 Conflict",
+      "obtenido": "Aserción evaluada OK en backend",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-3: 03 - Rechazo de Especie Duplicada (HTTP 409) -> Cuerpo detalla error ESPECIE_DUPLICADA",
+      "esperado": "Cuerpo detalla error ESPECIE_DUPLICADA",
+      "obtenido": "Aserción evaluada OK en backend",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-4: 03b - Rechazo de Especie Duplicada Case-Insensitive (HTTP 409) -> Status code es exactamente 409 Conflict ante variacion de mayusculas",
+      "esperado": "Status code es exactamente 409 Conflict ante variacion de mayusculas",
+      "obtenido": "Aserción evaluada OK en backend",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-4: 03b - Rechazo de Especie Duplicada Case-Insensitive (HTTP 409) -> Cuerpo detalla error ESPECIE_DUPLICADA para case-insensitive",
+      "esperado": "Cuerpo detalla error ESPECIE_DUPLICADA para case-insensitive",
+      "obtenido": "Aserción evaluada OK en backend",
+      "estado": "OK"
+    },
+    {
+      "paso": "NW-5: 04 - Teardown: Desactivar Especie Creada -> Teardown respondio exitosamente (HTTP 200)",
+      "esperado": "Teardown respondio exitosamente (HTTP 200)",
+      "obtenido": "Aserción evaluada OK en backend",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-0: Sesión autenticada en la UI",
+      "esperado": "Llamada POST a /sesiones/ responde HTTP 200/201 con token JWT y redirige fuera de /login",
+      "obtenido": "Sesión establecida con éxito (POST https://api.inmero.co/back-sigab-test/sesiones/ -> HTTP 200). Token JWT emitido.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-1: Precondición de conflicto (Especie base online en servidor)",
+      "esperado": "HTTP 201/200 OK con ID asignado para reservar el nombre colisionante",
+      "obtenido": "HTTP 201 OK - ID base #68",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-2: Habilitación de botón Nueva especie en modo offline (RF-15)",
+      "esperado": "El botón \"Nueva especie\" debe permanecer habilitado sin conexión para permitir creación diferida en Dexie",
+      "obtenido": "Botón habilitado correctamente en modo offline (disabled={!online} removido).",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-3a: Inserción de fila optimista al inicio de página 1 sin buscador (D4)",
+      "esperado": "La fila recién creada \"Gallina QA TEJDUY\" debe aparecer como la primera fila de la tabla con badge de pendiente",
+      "obtenido": "Fila optimista renderizada en la primera posición con badge pendienteSync.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-4: Reactividad tras reconexión y texto literal exacto RF-15 (D2)",
+      "esperado": "Alerta de error con título bilingüe, botón Descartar y texto literal del RF-15 interpolando \"Gallina QA TEJDUY\"",
+      "obtenido": "Alerta renderizada reactivamente sin recarga. Idioma: es-CO. Texto verificado.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-4b: No sobrescritura de especie existente en el servidor (G-03)",
+      "esperado": "Los datos de la especie base en el backend deben permanecer idénticos tras el conflicto 409",
+      "obtenido": "Especie base #68 intacta en backend con datos originales.",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-5: Resolución por Descartar sin llamadas a la API y retiro de fila",
+      "esperado": "Al descartar, se desmonta la alerta, se retira la fila temporal y NO se envían peticiones a la API",
+      "obtenido": "Descarte local exitoso. Fila temporal removida. Peticiones API emitidas: 0.",
+      "estado": "OK"
+    }
+  ],
+  "veredicto": "APROBADO",
+  "hallazgos": [
+    "NW-1: 01 - Iniciar Sesión Administrativa -> Status code es 200 o 201 (Login exitoso) -> Aserción evaluada OK en backend (OK)",
+    "NW-1: 01 - Iniciar Sesión Administrativa -> Respuesta contiene token JWT -> Aserción evaluada OK en backend (OK)",
+    "NW-2: 02 - Registro Base de Especie (Online) -> Status code es 201 o 200 (Especie creada) -> Aserción evaluada OK en backend (OK)",
+    "NW-2: 02 - Registro Base de Especie (Online) -> Especie contiene identificador asignado -> Aserción evaluada OK en backend (OK)",
+    "NW-3: 03 - Rechazo de Especie Duplicada (HTTP 409) -> Status code es exactamente 409 Conflict -> Aserción evaluada OK en backend (OK)",
+    "NW-3: 03 - Rechazo de Especie Duplicada (HTTP 409) -> Cuerpo detalla error ESPECIE_DUPLICADA -> Aserción evaluada OK en backend (OK)",
+    "NW-4: 03b - Rechazo de Especie Duplicada Case-Insensitive (HTTP 409) -> Status code es exactamente 409 Conflict ante variacion de mayusculas -> Aserción evaluada OK en backend (OK)",
+    "NW-4: 03b - Rechazo de Especie Duplicada Case-Insensitive (HTTP 409) -> Cuerpo detalla error ESPECIE_DUPLICADA para case-insensitive -> Aserción evaluada OK en backend (OK)",
+    "NW-5: 04 - Teardown: Desactivar Especie Creada -> Teardown respondio exitosamente (HTTP 200) -> Aserción evaluada OK en backend (OK)",
+    "CP-0: Sesión autenticada en la UI -> Sesión establecida con éxito (POST https://api.inmero.co/back-sigab-test/sesiones/ -> HTTP 200). Token JWT emitido. (OK)",
+    "CP-1: Precondición de conflicto (Especie base online en servidor) -> HTTP 201 OK - ID base #68 (OK)",
+    "CP-2: Habilitación de botón Nueva especie en modo offline (RF-15) -> Botón habilitado correctamente en modo offline (disabled={!online} removido). (OK)",
+    "CP-3a: Inserción de fila optimista al inicio de página 1 sin buscador (D4) -> Fila optimista renderizada en la primera posición con badge pendienteSync. (OK)",
+    "CP-4: Reactividad tras reconexión y texto literal exacto RF-15 (D2) -> Alerta renderizada reactivamente sin recarga. Idioma: es-CO. Texto verificado. (OK)",
+    "CP-4b: No sobrescritura de especie existente en el servidor (G-03) -> Especie base #68 intacta en backend con datos originales. (OK)",
+    "CP-5: Resolución por Descartar sin llamadas a la API y retiro de fila -> Descarte local exitoso. Fila temporal removida. Peticiones API emitidas: 0. (OK)"
+  ]
+}

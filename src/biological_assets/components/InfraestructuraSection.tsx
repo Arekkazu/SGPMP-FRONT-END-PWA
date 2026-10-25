@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
 import { MapPin, ArrowLeftRight } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
@@ -26,9 +27,13 @@ const TAB: React.CSSProperties = {
   padding: 'var(--s2) var(--s3)',
   background: 'none',
   border: 'none',
-  borderBottom: '2px solid transparent',
+  // Longhands: la pestaña activa sobrescribe borderBottomColor y React avisa si se mezcla con el shorthand.
+  borderBottomWidth: 2,
+  borderBottomStyle: 'solid',
+  borderBottomColor: 'transparent',
   color: 'var(--text-secondary)',
-  fontSize: '13px',
+  fontSize: 'var(--fs-body-md)',
+  minHeight: 'var(--s9)',
   cursor: 'pointer',
 };
 
@@ -58,11 +63,11 @@ function AsociacionCard({ a, activa }: { a: AsociacionInfraestructuraResponse; a
         <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>{a.nombre_infraestructura}</div>
         <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{a.tipo_infraestructura}</div>
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-          {a.fecha_inicio?.slice(0, 10)}{a.fecha_fin ? ` → ${a.fecha_fin.slice(0, 10)}` : ' → vigente'}
+          {formatearFecha(a.fecha_inicio, FECHA_NUMERICA)}{a.fecha_fin ? ` → ${formatearFecha(a.fecha_fin, FECHA_NUMERICA)}` : ' → vigente'}
         </div>
       </div>
       {activa && (
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--brand-600)' }}>{t('infraestructurasection.actual')}</span>
+        <span style={{ fontSize: 'var(--fs-label-sm)', fontWeight: 700, color: 'var(--brand-600)' }}>{t('infraestructurasection.actual')}</span>
       )}
     </div>
   );
@@ -77,6 +82,8 @@ export function InfraestructuraSection({ idActivo, onChanged }: Props) {
   const [view, setView] = useState<'ACTIVA' | 'HISTORIAL'>('ACTIVA');
   const [origen, setOrigen] = useState<{ id: number; nombre: string } | null>(null);
   const [transferir, setTransferir] = useState(false);
+  // Contador y no booleano: cada transferencia remonta la alerta para que se anuncie de nuevo (TC-DIS-134).
+  const [transferencias, setTransferencias] = useState(0);
 
   useEffect(() => { cargar(view); }, [view, cargar]);
 
@@ -86,14 +93,15 @@ export function InfraestructuraSection({ idActivo, onChanged }: Props) {
     }
   }, [data]);
 
-  const handleDone = () => { setView('ACTIVA'); cargar('ACTIVA'); onChanged(); };
+  const handleDone = () => { setView('ACTIVA'); cargar('ACTIVA'); onChanged(); setTransferencias((n) => n + 1); };
 
   return (
     <div style={CARD}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--s3)', marginBottom: 'var(--s4)' }}>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
-          <button type="button" style={view === 'ACTIVA' ? TAB_ACTIVE : TAB} onClick={() => setView('ACTIVA')}>{t('infraestructurasection.ubicacion_actual')}</button>
-          <button type="button" style={view === 'HISTORIAL' ? TAB_ACTIVE : TAB} onClick={() => setView('HISTORIAL')}>{t('infraestructurasection.historial_de_ubicaciones')}</button>
+          {/* aria-pressed expone cuál vista está activa, no solo el subrayado (TC-DIS-120). */}
+          <button type="button" aria-pressed={view === 'ACTIVA'} style={view === 'ACTIVA' ? TAB_ACTIVE : TAB} onClick={() => setView('ACTIVA')}>{t('infraestructurasection.ubicacion_actual')}</button>
+          <button type="button" aria-pressed={view === 'HISTORIAL'} style={view === 'HISTORIAL' ? TAB_ACTIVE : TAB} onClick={() => setView('HISTORIAL')}>{t('infraestructurasection.historial_de_ubicaciones')}</button>
         </div>
         {puedeTransferir && (
           <Button variant="primary" size="sm" disabled={!online} onClick={() => setTransferir(true)}>
@@ -101,7 +109,13 @@ export function InfraestructuraSection({ idActivo, onChanged }: Props) {
         )}
       </div>
 
+      {transferencias > 0 && (
+        <Alert key={transferencias} variant="success" title={t('infraestructurasection.transferencia_realizada')} style={{ marginBottom: 'var(--s4)' }} />
+      )}
       {error && <Alert variant="error" title={t('infraestructurasection.error_al_cargar_la_asociacion')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      {data?.advertencia_integridad && (
+        <Alert variant="warning" title={t('infraestructurasection.historial_con_inconsistencias')} description={data.advertencia_integridad} style={{ marginBottom: 'var(--s4)' }} />
+      )}
 
       {loading ? (
         <div style={{ height: 80, borderRadius: 'var(--r-md)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }}>
@@ -115,11 +129,13 @@ export function InfraestructuraSection({ idActivo, onChanged }: Props) {
         )
       ) : (
         (data?.historial && data.historial.length > 0) ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
+          <ol aria-label={t('infraestructurasection.historial_de_ubicaciones')} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)', listStyle: 'none', margin: 0, padding: 0 }}>
             {data.historial.map((a) => (
-              <AsociacionCard key={a.id_historial} a={a} activa={a.fecha_fin == null} />
+              <li key={a.id_historial}>
+                <AsociacionCard a={a} activa={a.fecha_fin == null} />
+              </li>
             ))}
-          </div>
+          </ol>
         ) : (
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('infraestructurasection.sin_historial_de_ubicaciones')}</p>
         )

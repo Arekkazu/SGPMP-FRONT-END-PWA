@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual TC-DIS-79</title>
+<style>
+  :root { --bg:#f7f7f5; --card:#fff; --tx:#1c1c1a; --tx2:#55554f; --bd:#dcdcd6; --ok:#1d6b34; --okbg:#e7f4ea; --warn:#8a5a00; --warnbg:#fdf3dc; --err:#a3261c; --errbg:#fbe9e7; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141413; --card:#1e1e1c; --tx:#ededea; --tx2:#b3b3ad; --bd:#3a3a36; --ok:#7fd49a; --okbg:#1b3323; --warn:#f0c46a; --warnbg:#3a2f14; --err:#f19a90; --errbg:#3d1d1a; } }
+  body { margin:0; background:var(--bg); color:var(--tx); font:14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:1200px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:17px; margin:28px 0 8px; } h3 { font-size:15px; margin:0 0 4px; }
+  .sub { color:var(--tx2); margin:0 0 16px; }
+  table.meta { border-collapse:collapse; background:var(--card); border:1px solid var(--bd); border-radius:8px; }
+  table.meta td { padding:6px 12px; border-bottom:1px solid var(--bd); vertical-align:top; } table.meta td:first-child { color:var(--tx2); white-space:nowrap; }
+  .pill { display:inline-block; padding:1px 10px; border-radius:999px; font-weight:600; font-size:12px; }
+  .ok { color:var(--ok); background:var(--okbg); } .warn { color:var(--warn); background:var(--warnbg); } .err { color:var(--err); background:var(--errbg); }
+  .estado { background:var(--card); border:1px solid var(--bd); border-radius:10px; padding:16px; margin:12px 0; }
+  .detalle { color:var(--tx2); margin:0 0 12px; }
+  .fila { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; align-items:start; }
+  figure { margin:0; } figcaption { font-size:12px; color:var(--tx2); margin-bottom:4px; }
+  img { width:100%; height:auto; border:1px solid var(--bd); border-radius:6px; background:#fff; }
+  .vacia p { border:1px dashed var(--bd); border-radius:6px; padding:24px 12px; color:var(--tx2); text-align:center; margin:0; }
+  .nada { color:var(--tx2); }
+</style>
+</head>
+<body>
+<main>
+  <h1>TC-DIS-79 — Consistencia visual</h1>
+  <p class="sub">Configuración → Personalización → Dashboard Personalizable (página completa) · RF-28 · Personalización del Dashboard · Pareja de accesibilidad TC-DIS-78</p>
+  <table class="meta">
+    <tr><td>Fecha de ejecución</td><td>2026-09-29 (baseline y estabilidad, noche)</td></tr>
+    <tr><td>Ambiente</td><td>TEST (https://api.inmero.co/)</td></tr>
+    <tr><td>Rol usado</td><td>Administrador (cuenta compartida de QA)</td></tr>
+    <tr><td>Herramienta</td><td>Playwright toHaveScreenshot · fullPage + captura-completa.css · workers=1</td></tr>
+    <tr><td>Viewports</td><td>movil 375×667 · tablet 768×1024 · escritorio 1440×900</td></tr>
+    <tr><td>Estabilidad</td><td><span class="pill ok">Estable</span> Baseline 9/9. Primera estabilidad: 1 flaky en tablet por navegación (el drawer se cerró tras el login; no fue diferencia visual). Corregido con reintento de irAOpcionMenu; dos corridas posteriores 9/9 con 0 diferencias y sin reintentos. Re-generada tras fijar el GET de notificaciones (el badge llegaba asíncrono; flake visto en TC-DIS-88): baseline y dos corridas sin diferencias.</td></tr>
+    <tr><td>Estado del caso</td><td><span class="pill ok">Completo</span></td></tr>
+    <tr><td>Lecturas fijadas</td><td>GET de tema (Claro), idioma, layout del dashboard, catálogo de widgets y datos, con cuerpos reales de TEST. PATCH de personalización interceptado: nada se escribe en la cuenta. Notificaciones fijadas (cada login crea una).</td></tr>
+  </table>
+  <h2>Hallazgos</h2>
+  <ul><li>Móvil 375 px: la cabecera de «Dashboard Personalizable» desborda el ancho; el botón «Guardar configuración» queda cortado en el borde derecho y la grilla 4×3 llega al borde. Se deja en la baseline sin ocultar.</li><li>Accesibilidad (de TC-DIS-78): la celda objetivo anuncia el identificador interno del widget, no su nombre visible; el modal «Restaurar predeterminado» no cierra con Escape.</li></ul>
+  <h2>Bloqueos</h2>
+  <p class="nada">Sin bloqueos.</p>
+  <h2>Capturas por estado y viewport</h2>
+  <section class="estado"><h3>Vista inicial: grilla guardada y catálogo de widgets</h3><p class="detalle">En móvil se ve el desborde de la cabecera (hallazgo).</p><div class="fila"><figure><figcaption>Móvil 375×667 · 375×3446 px</figcaption><a href="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-vista-inicial-movil-win32.png" target="_blank" rel="noopener"><img src="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-vista-inicial-movil-win32.png" alt="Vista inicial: grilla guardada y catálogo de widgets — Móvil 375×667" loading="lazy"></a></figure>
+<figure><figcaption>Tablet 768×1024 · 768×2188 px</figcaption><a href="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-vista-inicial-tablet-win32.png" target="_blank" rel="noopener"><img src="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-vista-inicial-tablet-win32.png" alt="Vista inicial: grilla guardada y catálogo de widgets — Tablet 768×1024" loading="lazy"></a></figure>
+<figure><figcaption>Escritorio 1440×900 · 1440×2206 px</figcaption><a href="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-vista-inicial-escritorio-win32.png" target="_blank" rel="noopener"><img src="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-vista-inicial-escritorio-win32.png" alt="Vista inicial: grilla guardada y catálogo de widgets — Escritorio 1440×900" loading="lazy"></a></figure></div></section>
+<section class="estado"><h3>Modal «Restaurar predeterminado» (se cierra con Cancelar)</h3><div class="fila"><figure><figcaption>Móvil 375×667 · 375×3446 px</figcaption><a href="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-modal-restaurar-movil-win32.png" target="_blank" rel="noopener"><img src="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-modal-restaurar-movil-win32.png" alt="Modal «Restaurar predeterminado» (se cierra con Cancelar) — Móvil 375×667" loading="lazy"></a></figure>
+<figure><figcaption>Tablet 768×1024 · 768×2188 px</figcaption><a href="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-modal-restaurar-tablet-win32.png" target="_blank" rel="noopener"><img src="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-modal-restaurar-tablet-win32.png" alt="Modal «Restaurar predeterminado» (se cierra con Cancelar) — Tablet 768×1024" loading="lazy"></a></figure>
+<figure><figcaption>Escritorio 1440×900 · 1440×2206 px</figcaption><a href="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-modal-restaurar-escritorio-win32.png" target="_blank" rel="noopener"><img src="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-modal-restaurar-escritorio-win32.png" alt="Modal «Restaurar predeterminado» (se cierra con Cancelar) — Escritorio 1440×900" loading="lazy"></a></figure></div></section>
+<section class="estado"><h3>Widget del catálogo seleccionado: celdas vacías en modo «Colocar»</h3><p class="detalle">Estado local; nunca se pulsa «Guardar configuración».</p><div class="fila"><figure><figcaption>Móvil 375×667 · 375×3571 px</figcaption><a href="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-widget-seleccionado-movil-win32.png" target="_blank" rel="noopener"><img src="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-widget-seleccionado-movil-win32.png" alt="Widget del catálogo seleccionado: celdas vacías en modo «Colocar» — Móvil 375×667" loading="lazy"></a></figure>
+<figure><figcaption>Tablet 768×1024 · 768×2278 px</figcaption><a href="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-widget-seleccionado-tablet-win32.png" target="_blank" rel="noopener"><img src="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-widget-seleccionado-tablet-win32.png" alt="Widget del catálogo seleccionado: celdas vacías en modo «Colocar» — Tablet 768×1024" loading="lazy"></a></figure>
+<figure><figcaption>Escritorio 1440×900 · 1440×2296 px</figcaption><a href="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-widget-seleccionado-escritorio-win32.png" target="_blank" rel="noopener"><img src="../personalizacion-dashboard.visual.spec.ts-snapshots/dashboard-widget-seleccionado-escritorio-win32.png" alt="Widget del catálogo seleccionado: celdas vacías en modo «Colocar» — Escritorio 1440×900" loading="lazy"></a></figure></div></section>
+</main>
+</body>
+</html>

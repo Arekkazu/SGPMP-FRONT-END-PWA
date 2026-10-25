@@ -1,0 +1,219 @@
+{
+  "caso": "TC-M09-67",
+  "run_id": "G31-REEVAL-V5-20261008-170709",
+  "ambiente": "TEST",
+  "objetivo_efectivo": "38.00",
+  "nivel_esperado": "precaucion",
+  "color_esperado": "AMARILLO",
+  "fixture": {
+    "FIXTURE_READY": true,
+    "SENSOR_ID": 53,
+    "DEVICE_ID": 203,
+    "INFRA_ID": 268,
+    "ACTIVO_OBJETIVO": 755,
+    "ESPECIE_ID": 109,
+    "UMBRAL_ID": 63,
+    "VARIABLE_ID": 9,
+    "CALIBRACION_ID": 23,
+    "codigo_ingesta": "TEMPERATURA_AMBIENTAL",
+    "unidad": "°C",
+    "ganancia": "1",
+    "offset": "0",
+    "crudos": {
+      "TC-M09-66": "36.00",
+      "TC-M09-67": "38.00",
+      "TC-M09-68": "40.00"
+    },
+    "nombre_sensor": "Sensor QA G31 V5 1008170709",
+    "creado_por_qa": true
+  },
+  "reloj": {
+    "servidor_iso": "2026-10-08T17:12:26.000Z",
+    "servidor": 1791479546000,
+    "cliente": 1791479546667,
+    "desfase_ms": 667,
+    "fuente": "cabecera Date de /health"
+  },
+  "calibracion": {
+    "ganancia": "1",
+    "offset": "0",
+    "valor_crudo": "38.00",
+    "formula": "valor_crudo = (objetivo - offset) / ganancia"
+  },
+  "request": {
+    "endpoint": "POST /iot/telemetria",
+    "device_id": 203,
+    "sensor_id": 53,
+    "tipo_variable": "TEMPERATURA_AMBIENTAL",
+    "valor": "38.00",
+    "unidad": "°C",
+    "timestamp_captura": "2026-10-08T17:11:56.000Z",
+    "origen": "TIEMPO_REAL",
+    "access_key": "[REDACTED_ACCESS_KEY]"
+  },
+  "response": {
+    "status": 201,
+    "ms": 133,
+    "body": {
+      "id_telemetria": 61,
+      "estado_calidad": "LECTURA_VALIDA",
+      "timestamp_procesamiento": "2026-10-08T17:12:26.618440Z",
+      "latencia_procesamiento_ms": null
+    }
+  },
+  "id_telemetria": 61,
+  "estado_calidad": "LECTURA_VALIDA",
+  "valor_ajustado_respuesta": null,
+  "vinculacion": {
+    "consulta": "GET /iot/vinculaciones?id_telemetria=61",
+    "status": 200,
+    "total": 1,
+    "filas": [
+      {
+        "id_vinculacion_lectura": 23,
+        "estado_vinculacion": "VINCULADA",
+        "mecanismo_vinculacion": "AUTOMATICA",
+        "id_activo_biologico": 755,
+        "modelo_manejo": "INDIVIDUAL"
+      }
+    ],
+    "estado_final": "VINCULADA",
+    "id_activo_final": 755
+  },
+  "resolucion": {
+    "aplicada": false,
+    "motivo": "la vinculacion automatica quedo VINCULADA: no hay nada que resolver"
+  },
+  "historial": {
+    "id_telemetria": 61,
+    "valor": "38.0000",
+    "valor_ajustado": "38.0000",
+    "unidad_medida": "°C",
+    "estado_calidad": "LECTURA_VALIDA",
+    "estado_semaforo_historico": "AMARILLO",
+    "id_activo_biologico": 755,
+    "id_especie": 109,
+    "especie": "Qa Semaforo Geuno Baaibhahaj",
+    "id_umbral_ambiental": 63,
+    "valor_min_umbral": "35.00",
+    "valor_max_umbral": "41.00",
+    "version_umbral": null,
+    "id_alerta": null
+  },
+  "dashboard": {
+    "id_sensor": 53,
+    "ultimo_valor": "38.0000",
+    "ultimo_timestamp_captura": "2026-10-08T17:11:56Z",
+    "estado_semaforo": "AMARILLO",
+    "id_alerta": null,
+    "severidad_alerta": null
+  },
+  "umbral_aplicado": {
+    "id": 63,
+    "min": "35.00",
+    "max": "41.00",
+    "niveles": [
+      {
+        "nivel": "normal",
+        "limite_inferior": "35.00",
+        "limite_superior": "37.00"
+      },
+      {
+        "nivel": "precaucion",
+        "limite_inferior": "37.00",
+        "limite_superior": "39.00"
+      },
+      {
+        "nivel": "critico",
+        "limite_inferior": "39.00",
+        "limite_superior": "41.00"
+      }
+    ]
+  },
+  "oraculo": [
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "la ingesta de la medicion responde HTTP 201",
+      "cumple": true,
+      "observado": 201
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "la lectura queda LECTURA_VALIDA",
+      "cumple": true,
+      "observado": "LECTURA_VALIDA"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "la ingesta genera un registro de vinculacion para la lectura",
+      "cumple": true,
+      "observado": "total=1"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "la lectura queda VINCULADA",
+      "cumple": true,
+      "observado": "VINCULADA"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "la lectura queda vinculada al ACTIVO_OBJETIVO congelado",
+      "cumple": true,
+      "observado": 755
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el valor efectivo de la lectura es 38.00",
+      "cumple": true,
+      "observado": "38.0000"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el historial atribuye la lectura al ACTIVO_OBJETIVO",
+      "cumple": true,
+      "observado": 755
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el historial resuelve la ESPECIE_ID congelada",
+      "cumple": true,
+      "observado": 109
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el historial aplica el UMBRAL_ID congelado",
+      "cumple": true,
+      "observado": 63
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el historial clasifica la lectura como PRECAUCION/AMARILLO",
+      "cumple": true,
+      "observado": "AMARILLO"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el dashboard refleja la lectura de este caso (correlacion por timestamp)",
+      "cumple": true,
+      "observado": "2026-10-08T17:11:56Z"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el dashboard muestra AMARILLO para el sensor",
+      "cumple": true,
+      "observado": "AMARILLO"
+    },
+    {
+      "caso": "TC-M09-67",
+      "descripcion": "el color del dashboard no proviene de una alerta M03",
+      "cumple": true,
+      "observado": "sin alerta"
+    }
+  ],
+  "resumen_oraculo": {
+    "total": 13,
+    "superadas": 13,
+    "fallidas": 0
+  },
+  "resultado": "APROBADO"
+}

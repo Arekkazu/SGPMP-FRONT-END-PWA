@@ -27,8 +27,9 @@ export function useUsuarioDetalle() {
     setSaving(true);
     setSaveError(null);
     try {
-      const res = await usuariosApi.editar(id, dto);
-      setDetalle(res);
+      // El PATCH devuelve UsuarioResponse, sin nombre_rol ni estado_cuenta: no
+      // sirve como detalle. Quien llama recarga o cierra el modal.
+      await usuariosApi.editar(id, dto);
       return true;
     } catch (e) {
       setSaveError(e as ApiError);
