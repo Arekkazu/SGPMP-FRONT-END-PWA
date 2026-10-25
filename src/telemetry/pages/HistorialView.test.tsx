@@ -2,6 +2,7 @@
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 // | 2026-10-23 | Arekkazu | PR-667: el vacío se muestra en el día local, no en el de UTC |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: conteos con plural y separador de miles |
 /**
  * FE-11 (RF-59 E6 / CA-19 y E7 / CA-17): con la respuesta de DEV-38, el historial avisa
  * cuando el resultado se truncó y marca los intervalos sin datos.
@@ -57,13 +58,13 @@ describe('HistorialView — E6 / CA-19: resultado truncado', () => {
     render(<HistorialView />);
     expect(await screen.findByText('Resultado truncado')).toBeInTheDocument();
     expect(screen.getByText(/encontró 12000 lecturas y solo se muestran las primeras 10000/)).toBeInTheDocument();
-    expect(screen.getByText('10000 de 12000 lectura(s)')).toBeInTheDocument();
+    expect(screen.getByText('10.000 de 12.000 lecturas')).toBeInTheDocument();
   });
 
   it('sin truncado no hay aviso', async () => {
     historial.mockResolvedValue(respuesta());
     render(<HistorialView />);
-    expect(await screen.findByText('3 lectura(s)')).toBeInTheDocument();
+    expect(await screen.findByText('3 lecturas')).toBeInTheDocument();
     expect(screen.queryByText('Resultado truncado')).not.toBeInTheDocument();
   });
 
@@ -92,7 +93,7 @@ describe('HistorialView — E7 / CA-17: intervalos vacíos', () => {
   it('sin vacíos no hay marca ni aviso', async () => {
     historial.mockResolvedValue(respuesta());
     render(<HistorialView />);
-    await screen.findByText('3 lectura(s)');
+    await screen.findByText('3 lecturas');
     expect(screen.queryByTestId('fila-vacio')).not.toBeInTheDocument();
     expect(screen.queryByText(/intervalo sin datos/)).not.toBeInTheDocument();
   });

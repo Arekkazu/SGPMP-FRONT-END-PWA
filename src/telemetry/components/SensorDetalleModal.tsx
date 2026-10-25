@@ -1,14 +1,16 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11: el último dato muestra el día cuando no es de hoy + T-19 códigos legibles |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ModalShell } from './ModalShell';
 import { EstadoSensorPills } from './EstadoLecturaPill';
 import { SeveridadBadge } from './SeveridadBadge';
 import { Pill } from './Pill';
-import { horaCaptura, sinReporte } from '../lib/sensorEscala';
+import { momentoCaptura, sinReporte } from '../lib/sensorEscala';
 import type { EstadoSensorSchema } from '../types';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 interface Props {
   sensor: EstadoSensorSchema;
@@ -37,8 +39,8 @@ export function SensorDetalleModal({ sensor, onClose }: Props) {
       </div>
 
       <div>
-        <Fila label={t('sensordetallemodal.variable_medida')}>{sensor.tipo_variable}</Fila>
-        <Fila label={t('sensordetallemodal.categoria')}>{sensor.categoria_variable}</Fila>
+        <Fila label={t('sensordetallemodal.variable_medida')}>{etiquetaCodigo(sensor.tipo_variable)}</Fila>
+        <Fila label={t('sensordetallemodal.categoria')}>{etiquetaCodigo(sensor.categoria_variable)}</Fila>
         <Fila label={t('sensordetallemodal.estado_de_calidad')}>{sensor.estado_calidad || '—'}</Fila>
         <Fila label={t('sensordetallemodal.estado_de_desviacion')}>{sensor.estado_desviacion || '—'}</Fila>
         <Fila label={t('sensordetallemodal.conectividad')}>{sensor.estado_conectividad || '—'}</Fila>
@@ -46,7 +48,7 @@ export function SensorDetalleModal({ sensor, onClose }: Props) {
         <Fila label="Señal LoRaWAN (RSSI)">{sensor.calidad_senal_rssi != null ? `${sensor.calidad_senal_rssi} dBm` : '—'}</Fila>
         <Fila label={t('sensordetallemodal.snr')}>{sensor.calidad_senal_snr != null ? `${sensor.calidad_senal_snr} dB` : '—'}</Fila>
         <Fila label={t('sensordetallemodal.tendencia')}>{sensor.tendencia ?? '—'}</Fila>
-        <Fila label={t('sensordetallemodal.ultima_lectura')}>{horaCaptura(sensor.ultimo_timestamp_captura)}</Fila>
+        <Fila label={t('sensordetallemodal.ultima_lectura')}>{momentoCaptura(sensor.ultimo_timestamp_captura)}</Fila>
         <Fila label={t('sensordetallemodal.sin_reporte')}>{sinReporte(sensor.tiempo_sin_reporte_min)}</Fila>
         <Fila label={t('sensordetallemodal.unidad_productiva')}>{sensor.nombre_infraestructura}</Fila>
         <Fila label={t('sensordetallemodal.finca')}>{sensor.nombre_finca}</Fila>

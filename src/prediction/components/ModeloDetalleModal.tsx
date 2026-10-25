@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: requisitos para activar, estado OTA, transiciones y notas inmutables |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Rocket, Save, CheckCircle2, XCircle, Info } from 'lucide-react';
@@ -10,7 +11,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { ModalShell } from './ModalShell';
 import { EstadoModeloPill } from './EstadoModeloPill';
 import { Pill } from './Pill';
-import { TIPO_MODELO_LABEL } from '../types';
+import { etiquetaTipoModelo } from '../types';
 import type { DespliegueOtaResponse, EventoAuditoriaM04Response, VersionModeloResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -80,7 +81,7 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
           <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', alignItems: 'center' }}>
             <EstadoModeloPill estado={modelo.estado_version} />
-            <Pill tono="neutral">{TIPO_MODELO_LABEL[modelo.tipo_modelo] ?? modelo.tipo_modelo}</Pill>
+            <Pill tono="neutral">{etiquetaTipoModelo(modelo.tipo_modelo)}</Pill>
             {modelo.paradigma && <Pill tono="neutral">{modelo.paradigma}</Pill>}
             {modelo.componente && <Pill tono="neutral">{modelo.componente}</Pill>}
             {modelo.esta_produccion && <Pill tono="success">{t('modelodetallemodal.en_produccion')}</Pill>}

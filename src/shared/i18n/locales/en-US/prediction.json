@@ -82,7 +82,7 @@
   },
   "distribucionform": {
     "bateria_minima": "Minimum battery (%)",
-    "canary": "Canary",
+    "canary": "Pilot",
     "cancelar": "Cancel",
     "dispositivos": "Target devices",
     "elige_version": "Choose a version",
@@ -103,7 +103,7 @@
     "modo_por_lotes": "In batches",
     "modo_programado": "Scheduled",
     "no_se_pudo_lanzar": "The distribution could not be launched",
-    "orden_rollout": "The first one you check is the canary; then the partial percentage, and finally the rest.",
+    "orden_rollout": "The first one you check is the pilot device: it gets the version before anyone else. Then the partial percentage, and finally the rest.",
     "porcentaje_parcial": "Partial phase (%)",
     "porcentaje_parcial_hint": "Between 20% and 30% of the nodes.",
     "reintentos": "Download retries",
@@ -135,10 +135,11 @@
     "modo_inmediato_ayuda": "Starts as soon as it is launched, in device order.",
     "modo_programado_ayuda": "It only runs inside the update window; outside it, it stays pending.",
     "modo_por_lotes_ayuda": "Groups devices into batches processed one after another, so the channel is not saturated.",
-    "seleccionados": "{{n}} device(s) selected",
     "seleccionar_todos": "Select all enabled",
     "deseleccionar": "Clear all",
-    "inactivo": "inactive"
+    "inactivo": "inactive",
+    "seleccionados_one": "{{n}} device selected",
+    "seleccionados_other": "{{n}} devices selected"
   },
   "distribucionotaview": {
     "aplicar": "Apply",
@@ -177,7 +178,7 @@
     "estado_en_curso": "In progress",
     "este_despliegue": "This distribution",
     "fase": "Phase",
-    "fase_canary": "Canary",
+    "fase_canary": "Pilot",
     "fase_estado_completada": "completed",
     "fase_estado_detenida": "stopped",
     "fase_estado_en_curso": "in progress",
@@ -392,8 +393,9 @@
     "confirmar_cambio": "Confirm change",
     "cancelar": "Cancel",
     "pendientes_titulo": "Some field devices have not confirmed",
-    "pendientes_texto": "{{n}} device(s) have not applied the current configuration yet. If you save, they will get the new one when they sync again.",
-    "guardar_igual": "Save anyway"
+    "guardar_igual": "Save anyway",
+    "pendientes_texto_one": "{{n}} device has not applied the current configuration yet. If you save, it will receive the new one when it syncs again.",
+    "pendientes_texto_other": "{{n}} devices have not applied the current configuration yet. If you save, they will receive the new one when they sync again."
   },
   "motorview": {
     "aviso_aplicada_desc": "All Edge nodes confirmed version {{version}}.",
@@ -505,14 +507,13 @@
     "cargando_patologias": "Loading pathologies…",
     "especie": "Species",
     "estado": "Status",
-    "las_patologias_base_no_se_pueden_editar": "Base pathologies cannot be edited",
-    "las_patologias_base_no_se_pueden_inactivar": "Base pathologies cannot be deactivated",
     "no_hay_patologias_que_coincidan_con_los": "No pathologies match the filters.",
     "nombre": "Name",
     "tipo": "Type",
     "variable_critica": "Critical variable",
     "variables_asociadas": "Associated variables",
-    "ver_detalle": "View details"
+    "ver_detalle": "View details",
+    "base_no_editable": "Base pathology: not editable"
   },
   "patologiasview": {
     "cancelar": "Cancel",
@@ -601,7 +602,9 @@
     "riesgo_de_contagio": "Contagion Risk"
   },
   "variablesselector": {
-    "variables_sensoricas_asociadas": "Associated sensor variables"
+    "variables_sensoricas_asociadas": "Associated sensor variables",
+    "seleccionadas_one": "{{n}} selected · between 2 and 6 required",
+    "seleccionadas_other": "{{n}} selected · between 2 and 6 required"
   },
   "motorhistorial": {
     "titulo": "Configuration history",
@@ -776,7 +779,9 @@
     "col_hora": "Time",
     "col_disparador": "Trigger",
     "col_ejecucion": "Run",
-    "col_prob": "Probability"
+    "col_prob": "Probability",
+    "pesos": "Health {{fs}} · Environment {{fa}} · Density {{fd}}",
+    "pesos_ayuda": "Weight of each factor in the contagion risk: herd health status, environmental conditions and animal density."
   },
   "intentos": {
     "titulo": "Rejected registration attempts",
@@ -861,5 +866,13 @@
     "semilla_ayuda": "For reproducibility (RNF-04) · default 42",
     "sin_activacion_titulo": "No automatic activation.",
     "sin_activacion_texto": "The process computes metrics and hands the version to RF-69. It does not decide whether the model is good: RF-69 sets Approved or Rejected, and activating it is always a human decision."
+  },
+  "conteo": {
+    "registros_one": "{{n}} record",
+    "registros_other": "{{n}} records",
+    "patologias_one": "{{n}} pathology",
+    "patologias_other": "{{n}} pathologies",
+    "versiones_one": "{{n}} version",
+    "versiones_other": "{{n}} versions"
   }
 }

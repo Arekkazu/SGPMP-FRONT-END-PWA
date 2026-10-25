@@ -2,6 +2,8 @@
 // |------------|--------------|-------------|
 // | 2026-10-21 | Arekkazu     | PROTO-V2 RF-70: asistente en 3 pasos (versión, configuración, dispositivos) |
 // | 2026-10-23 | destroyerban | FE-08 RF-70: la OTA lista versiones APROBADO          |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 import React, { useMemo, useState } from 'react';
 import { Send, ChevronLeft, ChevronRight, PackageX } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -23,11 +25,11 @@ import {
   COMPONENTES,
   MODOS_DISTRIBUCION,
   PARADIGMA_POR_TIPO,
-  TIPO_MODELO_LABEL,
   type CrearDistribucionOtaDTO,
   type DispositivoObjetivoOta,
   type TipoModelo,
   type VersionModeloResponse,
+  etiquetaTipoModelo,
 } from '../types';
 
 interface Props {
@@ -143,7 +145,7 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
                 <label style={LABEL} htmlFor="ota-form-tipo">{t('distribucionform.tipo_modelo')}</label>
                 <select id="ota-form-tipo" style={INPUT} value={tipo} onChange={(e) => { setTipo(e.target.value as TipoModelo | ''); setComponente(''); set('idVersion', ''); }}>
                   <option value="">{t('distribucionform.todos_los_tipos')}</option>
-                  {tipos.map((tm) => <option key={tm} value={tm}>{TIPO_MODELO_LABEL[tm] ?? tm}</option>)}
+                  {tipos.map((tm) => <option key={tm} value={tm}>{etiquetaTipoModelo(tm)}</option>)}
                 </select>
               </div>
               {poblacional && (
@@ -168,7 +170,7 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
                 <option value="">{t('distribucionform.elige_version')}</option>
                 {candidatas.map((v) => (
                   <option key={v.id_version_modelo} value={v.id_version_modelo}>
-                    {`${v.nombre_version} · ${TIPO_MODELO_LABEL[v.tipo_modelo] ?? v.tipo_modelo}${v.componente ? ` · ${v.componente}` : ''} · ${t(v.estado_version === 'APROBADO' ? 'distribucionform.estado_aprobado' : 'distribucionform.estado_activo')}`}
+                    {`${v.nombre_version} · ${etiquetaTipoModelo(v.tipo_modelo)}${v.componente ? ` · ${v.componente}` : ''} · ${t(v.estado_version === 'APROBADO' ? 'distribucionform.estado_aprobado' : 'distribucionform.estado_activo')}`}
                   </option>
                 ))}
               </select>
@@ -178,7 +180,7 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
             {elegida && (
               <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--s3)', margin: 0, padding: 'var(--s4)', background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', fontSize: '12px' }}>
                 {[
-                  [t('distribucionform.info_tipo'), `${TIPO_MODELO_LABEL[elegida.tipo_modelo] ?? elegida.tipo_modelo}${elegida.componente ? ` · ${elegida.componente}` : ''}`],
+                  [t('distribucionform.info_tipo'), `${etiquetaTipoModelo(elegida.tipo_modelo)}${elegida.componente ? ` · ${elegida.componente}` : ''}`],
                   [t('distribucionform.info_estado'), elegida.estado_version],
                   [t('distribucionform.info_formato'), elegida.formato_artefacto ?? '—'],
                   [t('distribucionform.info_tamano'), elegida.tamanio_artefacto_bytes ? `${(elegida.tamanio_artefacto_bytes / 1_048_576).toFixed(1)} MB` : '—'],
@@ -242,7 +244,7 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
           <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
             <legend style={LABEL}>{t('distribucionform.dispositivos')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></legend>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s2)', flexWrap: 'wrap', marginBottom: 'var(--s2)' }}>
-              <span aria-live="polite" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('distribucionform.seleccionados', { n: form.dispositivos.length })}</span>
+              <span aria-live="polite" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('distribucionform.seleccionados', { count: form.dispositivos.length, n: form.dispositivos.length })}</span>
               <span style={{ display: 'flex', gap: 'var(--s2)' }}>
                 <Button variant="ghost" size="sm" disabled={habilitados.length === 0} onClick={() => { set('dispositivos', habilitados.map((d) => d.id_dispositivo_iot)); marcar('dispositivos'); }}>{t('distribucionform.seleccionar_todos')}</Button>
                 <Button variant="ghost" size="sm" disabled={form.dispositivos.length === 0} onClick={() => { set('dispositivos', []); marcar('dispositivos'); }}>{t('distribucionform.deseleccionar')}</Button>

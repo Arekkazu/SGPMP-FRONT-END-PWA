@@ -1,13 +1,14 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: métricas según paradigma y quién registró la versión |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 import React from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Eye, BadgeCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { EstadoModeloPill } from './EstadoModeloPill';
-import { TIPO_MODELO_LABEL } from '../types';
+import { etiquetaTipoModelo } from '../types';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
 import type { VersionModeloResponse } from '../types';
 
@@ -77,7 +78,7 @@ export function ModelosTable({ modelos, loading, onVer }: Props) {
                   {m.esta_produccion && <BadgeCheck size={14} aria-label={t('modelostable.en_produccion')} style={{ color: 'var(--sem-success)' }} />}
                 </span>
               </td>
-              <td style={TD}>{TIPO_MODELO_LABEL[m.tipo_modelo] ?? m.tipo_modelo}{m.componente && ` · ${m.componente}`}</td>
+              <td style={TD}>{etiquetaTipoModelo(m.tipo_modelo)}{m.componente && ` · ${m.componente}`}</td>
               <td style={TD}><EstadoModeloPill estado={m.estado_version} /></td>
               <td style={TD}><Metricas m={m} /></td>
               <td style={TD}>

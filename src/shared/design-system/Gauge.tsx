@@ -1,4 +1,8 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional |
 import React from 'react';
+import { formatearNumero } from '../i18n/formato';
 
 export type GaugeStatus = 'ok' | 'warning' | 'critical' | 'placeholder';
 
@@ -57,7 +61,7 @@ export function Gauge({
     <div
       style={{ width: w, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
       role="img"
-      aria-label={`${label ? `${label}: ` : ''}${isEmpty ? 'sin dato' : `${value}${unit ? ` ${unit}` : ''}`}`}
+      aria-label={`${label ? `${label}: ` : ''}${isEmpty ? 'sin dato' : `${formatearNumero(value, { maximumFractionDigits: 2 })}${unit ? ` ${unit}` : ''}`}`}
     >
       <svg width={w} height={cy + stroke} viewBox={`0 0 ${w} ${cy + stroke}`}>
         <path
@@ -90,7 +94,7 @@ export function Gauge({
             lineHeight: 1.1,
           }}
         >
-          {isEmpty ? '—' : value}
+          {isEmpty ? '—' : formatearNumero(value, { maximumFractionDigits: 2 })}
           {!isEmpty && unit && (
             <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', marginLeft: 2 }}>
               {unit}

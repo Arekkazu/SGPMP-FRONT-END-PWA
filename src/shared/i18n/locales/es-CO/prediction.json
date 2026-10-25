@@ -82,7 +82,7 @@
   },
   "distribucionform": {
     "bateria_minima": "Batería mínima (%)",
-    "canary": "Canary",
+    "canary": "Piloto",
     "cancelar": "Cancelar",
     "dispositivos": "Dispositivos objetivo",
     "elige_version": "Elige una versión",
@@ -103,7 +103,7 @@
     "modo_por_lotes": "Por lotes",
     "modo_programado": "Programado",
     "no_se_pudo_lanzar": "No se pudo lanzar la distribución",
-    "orden_rollout": "El primero que marques es el canary; luego entra el porcentaje parcial y por último el resto.",
+    "orden_rollout": "El primero que marques es el dispositivo piloto: recibe la versión antes que nadie. Luego entra el porcentaje parcial y por último el resto.",
     "porcentaje_parcial": "Fase parcial (%)",
     "porcentaje_parcial_hint": "Entre 20 % y 30 % de los nodos.",
     "reintentos": "Reintentos de descarga",
@@ -135,10 +135,11 @@
     "modo_inmediato_ayuda": "Empieza apenas se lanza, en el orden de los dispositivos.",
     "modo_programado_ayuda": "Solo corre dentro de la ventana de actualización; fuera de ella queda pendiente.",
     "modo_por_lotes_ayuda": "Agrupa los dispositivos en lotes que se procesan uno tras otro, para no saturar el canal.",
-    "seleccionados": "{{n}} dispositivo(s) seleccionado(s)",
     "seleccionar_todos": "Seleccionar todos los habilitados",
     "deseleccionar": "Quitar todos",
-    "inactivo": "inactivo"
+    "inactivo": "inactivo",
+    "seleccionados_one": "{{n}} dispositivo seleccionado",
+    "seleccionados_other": "{{n}} dispositivos seleccionados"
   },
   "distribucionotaview": {
     "aplicar": "Aplicar",
@@ -177,7 +178,7 @@
     "estado_en_curso": "En curso",
     "este_despliegue": "Esta distribución",
     "fase": "Fase",
-    "fase_canary": "Canary",
+    "fase_canary": "Piloto",
     "fase_estado_completada": "completada",
     "fase_estado_detenida": "detenida",
     "fase_estado_en_curso": "en curso",
@@ -392,8 +393,9 @@
     "confirmar_cambio": "Confirmar cambio",
     "cancelar": "Cancelar",
     "pendientes_titulo": "Hay dispositivos de campo sin confirmar",
-    "pendientes_texto": "{{n}} dispositivo(s) todavía no aplican la configuración vigente. Si guardas, recibirán la nueva cuando vuelvan a sincronizar.",
-    "guardar_igual": "Guardar de todas formas"
+    "guardar_igual": "Guardar de todas formas",
+    "pendientes_texto_one": "{{n}} dispositivo todavía no aplica la configuración vigente. Si guardas, recibirá la nueva cuando vuelva a sincronizar.",
+    "pendientes_texto_other": "{{n}} dispositivos todavía no aplican la configuración vigente. Si guardas, recibirán la nueva cuando vuelvan a sincronizar."
   },
   "motorview": {
     "aviso_aplicada_desc": "Todos los nodos Edge confirmaron la versión {{version}}.",
@@ -505,14 +507,13 @@
     "cargando_patologias": "Cargando patologías…",
     "especie": "Especie",
     "estado": "Estado",
-    "las_patologias_base_no_se_pueden_editar": "Las patologías base no se pueden editar",
-    "las_patologias_base_no_se_pueden_inactivar": "Las patologías base no se pueden inactivar",
     "no_hay_patologias_que_coincidan_con_los": "No hay patologías que coincidan con los filtros.",
     "nombre": "Nombre",
     "tipo": "Tipo",
     "variable_critica": "Variable crítica",
     "variables_asociadas": "Variables asociadas",
-    "ver_detalle": "Ver detalle"
+    "ver_detalle": "Ver detalle",
+    "base_no_editable": "Patología base: no editable"
   },
   "patologiasview": {
     "cancelar": "Cancelar",
@@ -601,7 +602,9 @@
     "riesgo_de_contagio": "Riesgo de Contagio"
   },
   "variablesselector": {
-    "variables_sensoricas_asociadas": "Variables sensóricas asociadas"
+    "variables_sensoricas_asociadas": "Variables sensóricas asociadas",
+    "seleccionadas_one": "{{n}} seleccionada · se requieren entre 2 y 6",
+    "seleccionadas_other": "{{n}} seleccionadas · se requieren entre 2 y 6"
   },
   "motorhistorial": {
     "titulo": "Historial de configuración",
@@ -776,7 +779,9 @@
     "col_hora": "Hora",
     "col_disparador": "Disparador",
     "col_ejecucion": "Ejecución",
-    "col_prob": "Probabilidad"
+    "col_prob": "Probabilidad",
+    "pesos": "Sanitario {{fs}} · Ambiental {{fa}} · Densidad {{fd}}",
+    "pesos_ayuda": "Peso de cada factor en el riesgo de contagio: estado sanitario del lote, condiciones ambientales y densidad de animales."
   },
   "intentos": {
     "titulo": "Intentos de registro no admitidos",
@@ -861,5 +866,13 @@
     "semilla_ayuda": "Para reproducibilidad (RNF-04) · por defecto 42",
     "sin_activacion_titulo": "Sin activación automática.",
     "sin_activacion_texto": "El proceso calcula métricas y entrega la versión a RF-69. No decide si el modelo sirve: RF-69 asigna Aprobado o Rechazado, y activarlo siempre es una decisión humana."
+  },
+  "conteo": {
+    "registros_one": "{{n}} registro",
+    "registros_other": "{{n}} registros",
+    "patologias_one": "{{n}} patología",
+    "patologias_other": "{{n}} patologías",
+    "versiones_one": "{{n}} versión",
+    "versiones_other": "{{n}} versiones"
   }
 }

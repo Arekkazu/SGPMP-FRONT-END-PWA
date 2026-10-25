@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -8,7 +11,7 @@ import { ModalShell } from './ModalShell';
 import { EstadoOtaPill } from './EstadoOtaPill';
 import { ProgressBar } from './ProgressBar';
 import { Pill } from './Pill';
-import { TIPO_MODELO_LABEL } from '../types';
+import { etiquetaTipoModelo } from '../types';
 import type { DespliegueOtaResponse } from '../types';
 
 interface Props {
@@ -44,7 +47,7 @@ export function DespliegueDetalleModal({ despliegue, onClose }: Props) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
         <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', alignItems: 'center' }}>
           <EstadoOtaPill estado={d.estado_despliegue} />
-          <Pill tono="neutral">{TIPO_MODELO_LABEL[d.tipo_modelo] ?? d.tipo_modelo}</Pill>
+          <Pill tono="neutral">{etiquetaTipoModelo(d.tipo_modelo)}</Pill>
           {d.componente && <Pill tono="neutral">{d.componente}</Pill>}
           {d.rollback_ejecutado && <Pill tono="warning" icon={<RotateCcw size={12} aria-hidden />}>{t('desplieguedetallemodal.rollback_ejecutado')}</Pill>}
         </div>

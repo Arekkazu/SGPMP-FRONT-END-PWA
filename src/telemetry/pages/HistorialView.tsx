@@ -1,7 +1,9 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { History } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -67,8 +69,8 @@ export function HistorialView() {
           {loading
             ? 'Cargando…'
             : truncado.truncado
-              ? t('historialview.lecturas_truncadas', { mostradas: paginacion.totalRegistros, total: truncado.totalEncontrado })
-              : `${paginacion.totalRegistros} lectura(s)`}
+              ? t('historialview.lecturas_truncadas', { mostradas: formatearNumero(paginacion.totalRegistros), total: formatearNumero(truncado.totalEncontrado) })
+              : t('conteo.lecturas', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
         </p>
       </div>
 

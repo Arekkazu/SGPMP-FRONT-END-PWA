@@ -1,7 +1,9 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-62: sección simulada de observaciones de visión y su índice |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { ShieldCheck, RefreshCcw, CheckCircle2, AlertTriangle, XCircle, HelpCircle } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -79,7 +81,7 @@ export function CalidadView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <ShieldCheck size={20} aria-hidden />{t('calidadview.calidad_de_datos_de_telemetria')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : `${paginacion.totalRegistros} evaluación(es)`}
+            {loading ? 'Cargando…' : t('conteo.evaluaciones', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
           </p>
         </div>
         {puedeEjecutar && (

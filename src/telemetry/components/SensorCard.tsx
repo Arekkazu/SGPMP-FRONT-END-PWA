@@ -1,14 +1,16 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11: el último dato muestra el día cuando no es de hoy + T-19 códigos legibles |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { BatteryMedium, SignalHigh, TrendingUp, TrendingDown, Minus, BellRing } from 'lucide-react';
 import { Gauge } from '../../shared/design-system/Gauge';
 import { EstadoSensorPills } from './EstadoLecturaPill';
-import { semaforoToGauge, escalaNominal, horaCaptura } from '../lib/sensorEscala';
+import { semaforoToGauge, escalaNominal, momentoCaptura } from '../lib/sensorEscala';
 import type { EstadoSensorSchema } from '../types';
 import { OptionCard } from '../../shared/design-system/OptionCard';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 interface Props {
   sensor: EstadoSensorSchema;
@@ -42,7 +44,7 @@ export function SensorCard({ sensor, onAbrir }: Props) {
           <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {sensor.nombre_sensor}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{sensor.tipo_variable}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{etiquetaCodigo(sensor.tipo_variable)}</div>
         </div>
         {sensor.id_alerta != null && (
           <BellRing size={14} aria-label={t('sensorcard.alerta_activa_asociada')} style={{ color: 'var(--sem-error)', flexShrink: 0 }} />
@@ -73,7 +75,7 @@ export function SensorCard({ sensor, onAbrir }: Props) {
       </div>
 
       <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textAlign: 'center' }}>
-        {horaCaptura(sensor.ultimo_timestamp_captura)}
+        {momentoCaptura(sensor.ultimo_timestamp_captura)}
         {sensor.dato_desactualizado && ' · desactualizado'}
       </div>
     </OptionCard>

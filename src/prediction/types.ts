@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | DEV-36 RF-65: config_version en ConfigurarMotorDTO |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: etiquetaTipoModelo muestra "Sin tipo", nunca "null" |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -49,6 +50,15 @@ export const TIPO_MODELO_LABEL: Record<TipoModelo, string> = {
   MODELO_ESPECIES_GRANDES: 'Especies grandes',
   MODELO_RIESGO_CONTAGIO: 'Riesgo de contagio',
 };
+
+/**
+ * M4-09: hay versiones sin `tipo_modelo` en la BD y el `?? tipo` las pintaba
+ * como "· null" en los filtros de Distribución.
+ */
+export function etiquetaTipoModelo(tipo: string | null | undefined): string {
+  if (!tipo) return 'Sin tipo';
+  return TIPO_MODELO_LABEL[tipo as TipoModelo] ?? tipo;
+}
 
 export const PARADIGMA_POR_TIPO: Record<TipoModelo, Paradigma> = {
   MODELO_AVES: 'POBLACIONAL',

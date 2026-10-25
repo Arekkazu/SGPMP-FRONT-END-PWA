@@ -2,6 +2,7 @@
 // |------------|--------------|-------------|
 // | 2026-10-22 | Leandro | FE-12 RF-57: aplica permisos y transiciones en móvil |
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11: el último dato muestra el día cuando no es de hoy + T-19 códigos legibles |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Radio, BellRing, Smartphone, BatteryMedium, SignalHigh } from 'lucide-react';
@@ -19,9 +20,10 @@ import { SeveridadBadge } from '../components/SeveridadBadge';
 import { EstadoAlertaPill } from '../components/EstadoAlertaPill';
 import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal';
 import { PermissionDenied } from '../components/PermissionDenied';
-import { horaCaptura } from '../lib/sensorEscala';
+import { momentoCaptura, valorConUnidad } from '../lib/sensorEscala';
 import { RECURSO_MONITOREO, RECURSO_ALERTAS, ACCION_R } from '../rbac';
 import type { AlertaSchema, NuevoEstadoAlerta } from '../types';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 type Tab = 'monitoreo' | 'alertas';
 
@@ -111,7 +113,7 @@ export function MovilView() {
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: 'var(--s2)' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}><BatteryMedium size={12} aria-hidden />{s.nivel_bateria_pct != null ? `${s.nivel_bateria_pct}%` : '—'}</span>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}><SignalHigh size={12} aria-hidden />{s.calidad_senal_rssi != null ? `${s.calidad_senal_rssi}` : '—'}</span>
-                    <span>{horaCaptura(s.ultimo_timestamp_captura)}</span>
+                    <span>{momentoCaptura(s.ultimo_timestamp_captura)}</span>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -133,8 +135,8 @@ export function MovilView() {
               <div key={a.id_alerta} style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s2)' }}>
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{a.tipo_alerta}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{a.tipo_variable} · {a.valor != null ? `${a.valor} ${a.unidad ?? ''}` : '—'}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{etiquetaCodigo(a.tipo_alerta)}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{etiquetaCodigo(a.tipo_variable)} · {valorConUnidad(a.valor, a.unidad)}</div>
                   </div>
                   <SeveridadBadge severidad={a.severidad} />
                 </div>

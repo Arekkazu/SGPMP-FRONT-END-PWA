@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-53: filtros, tipo de dato, orden por prioridad E15 y detalle de lectura |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional |
 import React, { useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { DownloadCloud, CheckCircle2, AlertTriangle, XCircle, ChevronRight, ListOrdered } from 'lucide-react';
@@ -13,6 +14,7 @@ import { IngestaDetalleModal, ESTADO_INGESTA_TONO, latenciaTexto } from '../comp
 import { TH, TD, TABLE_WRAP, THEAD_ROW, INPUT, LABEL, FILTER_GRID } from '../components/tableStyles';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
 import { INGESTA_KPIS, INGESTA_LECTURAS, compararPrioridad, type EstadoIngesta, type LecturaIngestaMock } from '../mocks/ingestaMock';
+import { valorConUnidad } from '../lib/sensorEscala';
 
 const ESTADOS: EstadoIngesta[] = [
   'LECTURA_VALIDA', 'FUERA_DE_RANGO', 'ERROR_CALIBRACION', 'ERROR_ESTRUCTURA', 'ERROR_AUTENTICACION',
@@ -21,7 +23,7 @@ const ESTADOS: EstadoIngesta[] = [
 
 function valorTexto(l: LecturaIngestaMock): string {
   if (l.tipoDato === 'VECTOR_COMPORTAMIENTO') return l.vision ? `ρ ${l.vision.densidad.toFixed(2)} · n=${l.vision.individuos}` : '—';
-  return l.valor != null ? `${l.valor} ${l.unidad}` : '—';
+  return valorConUnidad(l.valor, l.unidad);
 }
 
 export function IngestaView() {

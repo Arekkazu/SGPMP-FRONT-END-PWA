@@ -1,10 +1,13 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Eye } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { EstadoOtaPill } from './EstadoOtaPill';
-import { TIPO_MODELO_LABEL } from '../types';
+import { etiquetaTipoModelo } from '../types';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
 import type { DespliegueOtaResponse } from '../types';
 
@@ -48,7 +51,7 @@ export function OtaTable({ despliegues, loading, onVer }: Props) {
           {despliegues.map((d) => (
             <tr key={d.id_despliegue_ota}>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>#{d.id_despliegue_ota}</td>
-              <td style={TD}>{TIPO_MODELO_LABEL[d.tipo_modelo] ?? d.tipo_modelo}{d.componente && ` · ${d.componente}`}</td>
+              <td style={TD}>{etiquetaTipoModelo(d.tipo_modelo)}{d.componente && ` · ${d.componente}`}</td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>v{d.id_version_modelo}</td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>#{d.id_dispositivo_iot}</td>
               <td style={TD}>{d.modo_distribucion || '—'}</td>
