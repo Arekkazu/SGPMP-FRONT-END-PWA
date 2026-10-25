@@ -1,9 +1,13 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useHistory } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { useActivos } from '../hooks/useActivos';
+import type { EstadoRegistroActivo } from '../components/AvisoEdadRegistro';
 import { RegistrarActivoForm } from '../components/RegistrarActivoForm';
 import type { RegistrarActivoDTO } from '../types';
 
@@ -15,7 +19,9 @@ export function RegistrarActivoPage() {
   const handleSubmit = async (dto: RegistrarActivoDTO): Promise<boolean> => {
     const nuevo = await registrar(dto);
     if (nuevo) {
-      history.replace(`/activos-biologicos/${nuevo.id_activo_biologico}`);
+      // RFC-014 (FE-07): el 201 puede traer advertencia_edad; se muestra en el detalle.
+      const estado: EstadoRegistroActivo = { advertenciaEdad: nuevo.advertencia_edad ?? null };
+      history.replace(`/activos-biologicos/${nuevo.id_activo_biologico}`, estado);
       return true;
     }
     return false;

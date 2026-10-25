@@ -1,4 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-62: sección simulada de observaciones de visión y su índice |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { ShieldCheck, RefreshCcw, CheckCircle2, AlertTriangle, XCircle, HelpCircle } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -10,6 +15,7 @@ import { CalidadFiltros, CALIDAD_FILTROS_VACIO, type CalidadFiltrosState } from 
 import { CalidadTable } from '../components/CalidadTable';
 import { CalidadDetalleModal } from '../components/CalidadDetalleModal';
 import { ReevaluarModal } from '../components/ReevaluarModal';
+import { CalidadVisionPanel } from '../components/CalidadVisionPanel';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_CALIDAD, ACCION_R, ACCION_E } from '../rbac';
@@ -75,7 +81,7 @@ export function CalidadView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <ShieldCheck size={20} aria-hidden />{t('calidadview.calidad_de_datos_de_telemetria')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : `${paginacion.totalRegistros} evaluación(es)`}
+            {loading ? 'Cargando…' : t('conteo.evaluaciones', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
           </p>
         </div>
         {puedeEjecutar && (
@@ -105,6 +111,9 @@ export function CalidadView() {
         <CalidadTable items={items} loading={loading} onAbrir={setSeleccionada} />
 
         <Paginacion pagina={paginacion.pagina} totalPaginas={paginacion.totalPaginas} totalRegistros={paginacion.totalRegistros} onCambiar={(p) => cargar(build(p))} />
+
+        {/* Visión (RFC-011): sin endpoint aún, datos simulados */}
+        <CalidadVisionPanel />
       </div>
 
       {seleccionada && (

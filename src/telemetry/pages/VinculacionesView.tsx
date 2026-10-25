@@ -1,4 +1,8 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Link2, RefreshCw } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -67,7 +71,7 @@ export function VinculacionesView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <Link2 size={20} aria-hidden />{t('vinculacionesview.vinculacion_de_lecturas_con_activos')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : `${paginacion.totalRegistros} vinculación(es)`}
+            {loading ? 'Cargando…' : t('conteo.vinculaciones', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={() => cargar(build(paginacion.pagina))} aria-label={t('vinculacionesview.recargar')}><RefreshCw size={15} aria-hidden /></Button>

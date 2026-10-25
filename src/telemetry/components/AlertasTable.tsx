@@ -1,3 +1,7 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional + T-19 códigos legibles |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, BellRing } from 'lucide-react';
@@ -6,9 +10,10 @@ import { EstadoAlertaPill } from './EstadoAlertaPill';
 import { OrigenPill } from './OrigenPill';
 import { TipoAlertaTecnicaPill } from './TipoAlertaTecnicaPill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura, valorConUnidad } from '../lib/sensorEscala';
 import type { AlertaSchema } from '../types';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 interface Props {
   alertas: AlertaSchema[];
@@ -55,10 +60,10 @@ export function AlertasTable({ alertas, loading, onAbrir }: Props) {
               onClick={() => onAbrir(a.id_alerta)}
               onKeyDown={alActivarConTeclado(() => onAbrir(a.id_alerta))}
             >
-              <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{a.tipo_alerta}</td>
+              <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{etiquetaCodigo(a.tipo_alerta)}</td>
               <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}><TipoAlertaTecnicaPill tipo={a.tipo_variable} /></td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                {a.valor != null ? `${a.valor}${a.unidad ? ` ${a.unidad}` : ''}` : '—'}
+                {valorConUnidad(a.valor, a.unidad)}
               </td>
               <td style={TD}><SeveridadBadge severidad={a.severidad} /></td>
               <td style={{ ...TD, fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -67,7 +72,7 @@ export function AlertasTable({ alertas, loading, onAbrir }: Props) {
               <td style={TD}><OrigenPill origen={a.origen_evento} /></td>
               <td style={TD}><EstadoAlertaPill estado={a.estado_alerta} /></td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                {a.fecha_generacion?.slice(0, 10)} {horaCaptura(a.fecha_generacion)}
+                {fechaHoraCaptura(a.fecha_generacion)}
               </td>
               <td style={{ ...TD, textAlign: 'right', color: 'var(--text-muted)' }}><ChevronRight size={16} aria-hidden /></td>
             </tr>

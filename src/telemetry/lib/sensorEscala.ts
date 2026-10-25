@@ -1,5 +1,10 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11: el último dato muestra el día cuando no es de hoy |
 import type { GaugeStatus } from '../../shared/design-system/Gauge';
-import { formatearHora } from '../../shared/i18n/formato';
+import { formatearFechaHora, formatearHora, formatearNumero } from '../../shared/i18n/formato';
+import { diaLocal, hoyLocal } from '../../shared/lib/fecha';
 
 /** Mapea el semáforo del backend al estado de color del Gauge. */
 export function semaforoToGauge(estado: string | null | undefined): GaugeStatus {
@@ -31,12 +36,38 @@ export function escalaNominal(tipoVariable: string | null | undefined): { min: n
   return { min: 0, max: 100 };
 }
 
+/**
+ * Valor de una lectura con su unidad (T-22): máximo 2 decimales y el separador
+ * del idioma activo. Antes salía tal cual del backend ("11.8300 mg/L") y en otra
+ * pantalla con coma.
+ */
+export function valorConUnidad(valor: number | string | null | undefined, unidad?: string | null): string {
+  if (valor == null || valor === '') return '—';
+  const n = formatearNumero(valor, { maximumFractionDigits: 2 });
+  return unidad ? `${n} ${unidad}` : n;
+}
+
 /** Hora legible (HH:MM:SS) de un timestamp ISO. */
 export function horaCaptura(iso: string | null | undefined): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso).slice(11, 19) || '—';
   return formatearHora(d, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+/**
+ * Momento del último dato de un sensor o área (M3-11): solo la hora si es de hoy;
+ * si no, también el día. "último dato 11:48 a. m." escondía que el dato tenía días.
+ */
+export function momentoCaptura(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  if (diaLocal(iso) === hoyLocal()) return horaCaptura(iso);
+  return formatearFechaHora(iso, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+/** `YYYY-MM-DD HH:MM:SS` en hora local: el día también, no el de UTC. */
+export function fechaHoraCaptura(iso: string | null | undefined): string {
+  return iso ? `${diaLocal(iso) || iso.slice(0, 10)} ${horaCaptura(iso)}` : '—';
 }
 
 /** "hace N min/s" a partir de minutos sin reporte. */

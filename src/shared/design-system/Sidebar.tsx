@@ -1,8 +1,12 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | M05 RF-74..81: módulo de suministros (entrada en el menú) |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M9-10/T-20: se ocultan los módulos sin permiso |
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Shield, ClipboardList,
-  User, LogOut, Lock, Settings, Sprout, Activity, BrainCircuit
+  User, LogOut, Settings, Sprout, Activity, BrainCircuit, Package
 } from 'lucide-react';
 import { useT } from '../i18n/useT';
 import { useAuth } from '../auth/useAuth';
@@ -25,6 +29,8 @@ const NAV_ITEMS: NavItem[] = [
   { claveLabel: 'modulos.activos_biologicos', path: '/activos-biologicos', icon: <Sprout size={16} aria-hidden />, requirePermission: [29, 2] },
   { claveLabel: 'modulos.telemetria', path: '/telemetria', icon: <Activity size={16} aria-hidden />, requirePermission: [33, 2] },
   { claveLabel: 'modulos.prediccion', path: '/prediccion', icon: <BrainCircuit size={16} aria-hidden />, requirePermission: [18, 2] },
+  // M05: historial de suministros (52) es el recurso que comparten todos los roles del módulo.
+  { claveLabel: 'modulos.suministros', path: '/suministros', icon: <Package size={16} aria-hidden />, requirePermission: [52, 2] },
   { claveLabel: 'modulos.usuarios', path: '/usuarios', icon: <Users size={16} aria-hidden />, requirePermission: [1, 2] },
   { claveLabel: 'modulos.roles', path: '/roles', icon: <Shield size={16} aria-hidden />, requirePermission: [2, 2] },
   { claveLabel: 'modulos.auditoria', path: '/auditoria', icon: <ClipboardList size={16} aria-hidden />, requirePermission: [6, 2] },
@@ -55,28 +61,23 @@ function NavItemComponent({ item, onNavigate }: { item: NavItem; onNavigate?: ()
     item.requirePermission?.[1] ?? 0
   );
 
-  const locked = item.requirePermission ? !hasPermission : false;
+  // M9-10 / T-20: un módulo sin permiso no se muestra. Antes quedaba con candado y
+  // el Veterinario veía Usuarios, Roles y Auditoría que nunca iba a poder abrir.
+  if (item.requirePermission && !hasPermission) return null;
+
   const active = pathname === item.path;
   const label = t(item.claveLabel);
 
   return (
     <Link
       to={item.path}
-      className={['ds-sidebar__item', active ? 'ds-sidebar__item--active' : '', locked ? 'ds-sidebar__item--locked' : ''].filter(Boolean).join(' ')}
-      onClick={(e) => { if (locked) { e.preventDefault(); return; } onNavigate?.(); }}
+      className={['ds-sidebar__item', active ? 'ds-sidebar__item--active' : ''].filter(Boolean).join(' ')}
+      onClick={() => onNavigate?.()}
       aria-current={active ? 'page' : undefined}
-      aria-disabled={locked}
-      // T-09: el nombre accesible y el tooltip dicen de qué sección se trata.
-      aria-label={locked ? t('aria.sin_permiso_modulo', { modulo: label }) : undefined}
-      title={locked ? t('aria.sin_permiso_tooltip', { modulo: label }) : label}
+      title={label}
     >
       <span className="ds-sidebar__item-icon">{item.icon}</span>
       <span className="ds-sidebar__item-label">{label}</span>
-      {locked && (
-        <span className="ds-sidebar__item-lock" aria-hidden="true">
-          <Lock size={11} />
-        </span>
-      )}
     </Link>
   );
 }

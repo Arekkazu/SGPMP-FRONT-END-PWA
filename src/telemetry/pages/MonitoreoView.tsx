@@ -1,4 +1,8 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { RefreshCw, Radio, CheckCircle2, AlertTriangle, AlertOctagon, CircleOff, Filter } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -97,7 +101,7 @@ export function MonitoreoView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <Radio size={20} aria-hidden />{t('monitoreoview.monitoreo_en_tiempo_real')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : `${kpis.total} sensor(es)`}
+            {loading ? 'Cargando…' : t('conteo.sensores', { count: kpis.total, n: formatearNumero(kpis.total) })}
             {actualizadoEn && ` · actualizado ${horaCaptura(new Date(actualizadoEn).toISOString())}`}
             {refreshing && ' · refrescando…'}
             {fromCache && ' · desde caché'}

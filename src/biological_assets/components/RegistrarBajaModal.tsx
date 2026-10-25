@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -8,7 +11,7 @@ import { ModalShell } from './ModalShell';
 import { FormSelect, FormTextArea, FORM_COL, errorServidor } from './formControls';
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarEventoBajaDTO, TipoBaja } from '../types';
-import { diaParaBackendUtc, hoyLocal } from '../../shared/lib/fecha';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   tipo_baja: TipoBaja;
@@ -27,13 +30,12 @@ interface Props {
   onConfirmar: (dto: RegistrarEventoBajaDTO) => Promise<boolean>;
 }
 
-const HOY = hoyLocal();
 
 export function RegistrarBajaModal({ esPoblacional, cantidadDisponible, saving, saveError, onClose, onConfirmar }: Props) {
   const { t } = useT('biologicalAssets');
   const { register, handleSubmit, getValues, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { tipo_baja: 'muerte', fecha_baja: HOY },
+    defaultValues: { tipo_baja: 'muerte', fecha_baja: hoyLocal() },
   });
   // La baja es irreversible: el envío pasa por un resumen que hay que confirmar (TC-DIS-128/129).
   const [pendiente, setPendiente] = useState<RegistrarEventoBajaDTO | null>(null);
@@ -52,7 +54,7 @@ export function RegistrarBajaModal({ esPoblacional, cantidadDisponible, saving, 
   const submit = async (v: FormValues) => {
     const dto: RegistrarEventoBajaDTO = {
       tipo_baja: v.tipo_baja,
-      fecha_baja: diaParaBackendUtc(v.fecha_baja),
+      fecha_baja: v.fecha_baja,
       motivo_baja: v.motivo_baja.trim(),
     };
     if (esPoblacional && v.cantidad_afectada) {
@@ -115,7 +117,7 @@ export function RegistrarBajaModal({ esPoblacional, cantidadDisponible, saving, 
           </FormSelect>
 
           <Input
-            label={t('registrarbajamodal.fecha_de_baja')} required type="date" max={HOY}
+            label={t('registrarbajamodal.fecha_de_baja')} required type="date" max={hoyLocal()}
             error={errors.fecha_baja?.message ?? errorServidor(saveError, 'fecha_baja')}
             {...register('fecha_baja', { required: t('registrarbajamodal.la_fecha_es_obligatoria') })}
           />

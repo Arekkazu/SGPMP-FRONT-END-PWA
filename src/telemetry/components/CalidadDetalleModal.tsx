@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { RefreshCcw } from 'lucide-react';
@@ -6,7 +9,7 @@ import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { ClasificacionCalidadPill } from './ClasificacionCalidadPill';
 import { FlagChips } from './FlagChips';
-import { horaCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { TelemetriaCalidadSchema } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -68,7 +71,7 @@ export function CalidadDetalleModal({ item, puedeEjecutar, online, saving, saveE
       </div>
 
       <Fila label={t('calidaddetallemodal.sensor')}>#{item.id_sensor}</Fila>
-      <Fila label={t('calidaddetallemodal.evaluada')}>{item.timestamp_evaluacion?.slice(0, 10)} {horaCaptura(item.timestamp_evaluacion)}</Fila>
+      <Fila label={t('calidaddetallemodal.evaluada')}>{fechaHoraCaptura(item.timestamp_evaluacion)}</Fila>
       <Fila label={t('calidaddetallemodal.apto_para_ia')}>{item.apto_para_ia ? 'Sí' : 'No'}</Fila>
       <Fila label={t('calidaddetallemodal.apto_para_nic_41')}>{item.apto_para_nic41 ? 'Sí' : 'No'}</Fila>
       <Fila label={t('calidaddetallemodal.estado')}>{item.estado_evaluacion}</Fila>

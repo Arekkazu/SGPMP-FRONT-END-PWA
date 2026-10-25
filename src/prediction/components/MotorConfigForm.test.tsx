@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: confirmar el cambio de versión y suma de pesos obligatoria |
 /**
  * RF-65 v2.0 (RFC-009): el formulario envía los campos del paradigma del modelo —
  * umbral de anomalía y versión por componente para POBLACIONAL, umbrales de
@@ -19,7 +22,7 @@ function renderForm(tipoModelo: TipoModelo) {
   const onGuardar = vi.fn();
   render(
     <MotorConfigForm tipoModelo={tipoModelo} config={null} versiones={VERSIONES} saving={false}
-      saveError={null} online puedeEditar onGuardar={onGuardar} />,
+      saveError={null} online puedeEditar nodosSinConfirmar={[]} onGuardar={onGuardar} />,
   );
   return onGuardar;
 }
@@ -27,8 +30,9 @@ function renderForm(tipoModelo: TipoModelo) {
 describe('MotorConfigForm — campos por paradigma (RFC-009)', () => {
   it('POBLACIONAL envía umbral de anomalía y versión por componente, sin umbrales de riesgo', () => {
     const onGuardar = renderForm('MODELO_AVES');
-    expect(screen.queryByText('Umbral de riesgo alto')).toBeNull();
+    expect(screen.queryByRole('slider', { name: 'Umbral de riesgo alto' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Versión activa · DETECTOR'), { target: { value: '10' } });
+    fireEvent.click(screen.getByText('Confirmar cambio'));
     fireEvent.click(screen.getByText('Guardar configuración'));
 
     const dto = onGuardar.mock.calls[0][0];
@@ -41,10 +45,27 @@ describe('MotorConfigForm — campos por paradigma (RFC-009)', () => {
     const onGuardar = renderForm('MODELO_ESPECIES_GRANDES');
     expect(screen.queryByText('Umbral de score de anomalía')).toBeNull();
     fireEvent.change(screen.getByLabelText('Versión del modelo activo'), { target: { value: '20' } });
+    fireEvent.click(screen.getByText('Confirmar cambio'));
     fireEvent.click(screen.getByText('Guardar configuración'));
 
     const dto = onGuardar.mock.calls[0][0];
     expect(dto).toMatchObject({ umbral_riesgo_alto: 0.7, umbral_alerta_critica: 0.85, id_version_modelo_activa: 20 });
     expect(dto).not.toHaveProperty('umbral_score_anomalia');
+  });
+
+  it('cancelar la confirmación deja la versión sin cambiar', () => {
+    const onGuardar = renderForm('MODELO_ESPECIES_GRANDES');
+    fireEvent.change(screen.getByLabelText('Versión del modelo activo'), { target: { value: '20' } });
+    fireEvent.click(screen.getByText('Cancelar'));
+    fireEvent.click(screen.getByText('Guardar configuración'));
+    expect(onGuardar.mock.calls[0][0]).toMatchObject({ id_version_modelo_activa: null });
+  });
+
+  it('META no deja guardar si los pesos no suman 1', () => {
+    const onGuardar = renderForm('MODELO_RIESGO_CONTAGIO');
+    fireEvent.change(screen.getByRole('slider', { name: 'Factor densidad' }), { target: { value: '0.5' } });
+    expect(screen.getByRole('alert').textContent).toContain('1.00');
+    fireEvent.click(screen.getByText('Guardar configuración'));
+    expect(onGuardar).not.toHaveBeenCalled();
   });
 });

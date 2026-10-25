@@ -1,3 +1,8 @@
+// | Fecha      | Nombre  | Que se hizo |
+// |------------|---------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: filtra acciones por permiso y estado |
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional + T-19 códigos legibles |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -8,15 +13,18 @@ import { SeveridadBadge } from './SeveridadBadge';
 import { EstadoAlertaPill } from './EstadoAlertaPill';
 import { OrigenPill } from './OrigenPill';
 import { TipoAlertaTecnicaPill } from './TipoAlertaTecnicaPill';
-import { horaCaptura } from '../lib/sensorEscala';
+import { accionesAlerta } from '../lib/accionesAlerta';
+import { fechaHoraCaptura, valorConUnidad } from '../lib/sensorEscala';
 import type { AlertaDetalleSchema, NuevoEstadoAlerta } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 interface Props {
   detalle: AlertaDetalleSchema | null;
   loading: boolean;
   error: ApiError | null;
   puedeGestionar: boolean;
+  puedeDescartar: boolean;
   online: boolean;
   onAccion: (estado: NuevoEstadoAlerta) => void;
   onClose: () => void;
@@ -31,27 +39,19 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function accionesDisponibles(estado: string): NuevoEstadoAlerta[] {
-  const up = estado.toUpperCase();
-  if (up === 'ACTIVA') return ['EN_ATENCION', 'RESUELTA', 'DESCARTADA'];
-  if (up === 'EN_ATENCION') return ['RESUELTA', 'DESCARTADA'];
-  return [];
-}
-
 const ACCION_META: Record<NuevoEstadoAlerta, { label: string; variant: 'primary' | 'secondary' | 'danger'; icon: React.ReactNode }> = {
-  EN_ATENCION: { label: 'Tomar en atención', variant: 'secondary', icon: <Clock size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
-  RESUELTA: { label: 'Resolver', variant: 'primary', icon: <CheckCircle2 size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
-  DESCARTADA: { label: 'Falso positivo', variant: 'danger', icon: <XCircle size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
-  VENCIDA: { label: 'Vencida', variant: 'secondary', icon: null },
+  EN_ATENCION: { label: 'tomar', variant: 'secondary', icon: <Clock size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
+  RESUELTA: { label: 'resolver', variant: 'primary', icon: <CheckCircle2 size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
+  DESCARTADA: { label: 'descartar', variant: 'danger', icon: <XCircle size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
 };
 
-export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, online, onAccion, onClose }: Props) {
+export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, puedeDescartar, online, onAccion, onClose }: Props) {
   const { t } = useT('telemetry');
-  const acciones = detalle ? accionesDisponibles(detalle.estado_alerta) : [];
+  const acciones = detalle ? accionesAlerta(detalle.estado_alerta, { puedeGestionar, puedeDescartar }) : [];
 
   return (
     <ModalShell
-      title={detalle ? `Alerta #${detalle.id_alerta} · ${detalle.tipo_alerta}` : 'Detalle de alerta'}
+      title={detalle ? `Alerta #${detalle.id_alerta} · ${etiquetaCodigo(detalle.tipo_alerta)}` : 'Detalle de alerta'}
       onClose={onClose}
       maxWidth={560}
       footer={
@@ -65,10 +65,10 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, on
                   variant={m.variant}
                   size="sm"
                   disabled={!puedeGestionar || !online}
-                  title={!puedeGestionar ? t('alertadetallemodal.sin_permiso') : !online ? t('alertadetallemodal.sin_conexion') : m.label}
+                  title={!puedeGestionar ? t('alertadetallemodal.sin_permiso') : !online ? t('alertadetallemodal.sin_conexion') : t(`fe12.${m.label}`)}
                   onClick={() => onAccion(a)}
                 >
-                  {m.icon}{m.label}
+                  {m.icon}{t(`fe12.${m.label}`)}
                 </Button>
               );
             })}
@@ -95,10 +95,10 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, on
           </div>
 
           <Fila label={t('alertadetallemodal.variable')}><TipoAlertaTecnicaPill tipo={detalle.tipo_variable} /></Fila>
-          <Fila label={t('alertadetallemodal.valor')}>{detalle.valor != null ? `${detalle.valor}${detalle.unidad ? ` ${detalle.unidad}` : ''}` : '—'}</Fila>
-          <Fila label={t('alertadetallemodal.generada')}>{detalle.fecha_generacion?.slice(0, 10)} {horaCaptura(detalle.fecha_generacion)}</Fila>
-          <Fila label={t('alertadetallemodal.evento')}>{detalle.fecha_evento?.slice(0, 10)} {horaCaptura(detalle.fecha_evento)}</Fila>
-          {detalle.fecha_vencimiento && <Fila label={t('alertadetallemodal.vence')}>{detalle.fecha_vencimiento?.slice(0, 10)} {horaCaptura(detalle.fecha_vencimiento)}</Fila>}
+          <Fila label={t('alertadetallemodal.valor')}>{valorConUnidad(detalle.valor, detalle.unidad)}</Fila>
+          <Fila label={t('alertadetallemodal.generada')}>{fechaHoraCaptura(detalle.fecha_generacion)}</Fila>
+          <Fila label={t('alertadetallemodal.evento')}>{fechaHoraCaptura(detalle.fecha_evento)}</Fila>
+          {detalle.fecha_vencimiento && <Fila label={t('alertadetallemodal.vence')}>{fechaHoraCaptura(detalle.fecha_vencimiento)}</Fila>}
           <Fila label={t('alertadetallemodal.reglas_activadas')}>{Array.isArray(detalle.reglas_activas) && detalle.reglas_activas.length > 0 ? detalle.reglas_activas.map(String).join(', ') : '—'}</Fila>
           {detalle.accion_sugerida && <Fila label={t('alertadetallemodal.accion_sugerida')}>{detalle.accion_sugerida}</Fila>}
           {detalle.diagnostico && <Fila label={t('alertadetallemodal.diagnostico')}>{detalle.diagnostico}</Fila>}
@@ -116,7 +116,7 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, on
                 {detalle.historico_estados.map((h, i) => (
                   <li key={h.id_historico_estado_alerta ?? i} style={{ display: 'flex', gap: 'var(--s2)', fontSize: '12px', color: 'var(--text-secondary)' }}>
                     <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      {h.fecha_cambio?.slice(0, 10)} {horaCaptura(h.fecha_cambio)}
+                      {fechaHoraCaptura(h.fecha_cambio)}
                     </span>
                     <span>
                       <strong>{h.estado_anterior}</strong> → <strong>{h.estado_nuevo}</strong>

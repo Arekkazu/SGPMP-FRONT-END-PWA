@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -56,7 +59,6 @@ const ESTADO_LABEL: Record<EstadoActivoNombre, string> = {
   AISLADO: 'Aislado', CERRADO: 'Cerrado', BAJA: 'Baja',
 };
 
-const HOY = hoyLocal();
 
 function normalizar(estado: string | null | undefined): EstadoActivoNombre | null {
   if (!estado) return null;
@@ -74,7 +76,7 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { estado_nuevo: '', fecha_cambio_estado: HOY, motivo_cambio: '' },
+    defaultValues: { estado_nuevo: '', fecha_cambio_estado: hoyLocal(), motivo_cambio: '' },
   });
 
   const errEstado = errors.estado_nuevo?.message ?? errorServidor(error, 'estado_nuevo');
@@ -141,11 +143,11 @@ export function CambiarEstadoModal({ estadoActual, saving, error, onClose, onCon
             </div>
 
             <Input
-              label={t('cambiarestadomodal.fecha_del_cambio')} required type="date" max={HOY}
+              label={t('cambiarestadomodal.fecha_del_cambio')} required type="date" max={hoyLocal()}
               error={errors.fecha_cambio_estado?.message ?? errorServidor(error, 'fecha_cambio_estado')}
               {...register('fecha_cambio_estado', {
                 required: t('cambiarestadomodal.la_fecha_es_obligatoria'),
-                validate: (val) => val <= HOY || 'No puede ser una fecha futura.',
+                validate: (val) => val <= hoyLocal() || 'No puede ser una fecha futura.',
               })}
             />
 

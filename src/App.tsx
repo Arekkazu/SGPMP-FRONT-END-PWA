@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | M05 RF-74..81: módulo de suministros (ruta /suministros) |
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
@@ -70,6 +73,7 @@ const ConfigurationPage = lazy(() => import('./configuration/pages/Configuration
 const ActivosBiologicosPage = lazy(() => import('./biological_assets/pages/ActivosBiologicosPage').then((m) => ({ default: m.ActivosBiologicosPage })));
 const TelemetryPage = lazy(() => import('./telemetry/pages/TelemetryPage').then((m) => ({ default: m.TelemetryPage })));
 const PrediccionPage = lazy(() => import('./prediction/pages/PrediccionPage').then((m) => ({ default: m.PrediccionPage })));
+const SuministrosPage = lazy(() => import('./supplies/pages/SuministrosPage').then((m) => ({ default: m.SuministrosPage })));
 
 /** Mientras llega el chunk de la pagina: anuncio para el lector, sin salto visual. */
 function CargandoPagina() {
@@ -366,6 +370,7 @@ function AppRoutes() {
       <PrivateRoute path="/activos-biologicos" component={ActivosBiologicosPage} />
       <PrivateRoute path="/telemetria" component={TelemetryPage} />
       <PrivateRoute path="/prediccion" component={PrediccionPage} />
+      <PrivateRoute path="/suministros" component={SuministrosPage} />
 
       {/* Default */}
       <Route exact path="/" component={RutaRaiz} />

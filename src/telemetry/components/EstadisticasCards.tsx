@@ -1,11 +1,13 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional + T-19 códigos legibles |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import type { ResumenEstadisticoSchema } from '../types';
+import { valorConUnidad } from '../lib/sensorEscala';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
-function fmt(n: number | null | undefined): string {
-  if (n == null) return '—';
-  return Number.isInteger(n) ? String(n) : n.toFixed(2);
-}
+const fmt = (n: number | null | undefined) => valorConUnidad(n);
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
@@ -23,7 +25,7 @@ export function EstadisticasCards({ estadisticas }: { estadisticas: ResumenEstad
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s6)' }}>
       {estadisticas.map((e) => (
         <div key={e.tipo_variable} style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s3)' }}>{e.tipo_variable}</div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--s3)' }}>{etiquetaCodigo(e.tipo_variable)}</div>
           <div className="ds-fg3" style={{ gap: 'var(--s3)' }}>
             <Metric label={t('estadisticascards.minimo')} value={fmt(e.valor_minimo)} />
             <Metric label={t('estadisticascards.maximo')} value={fmt(e.valor_maximo)} />

@@ -1,8 +1,12 @@
-import { useState, useCallback } from 'react';
+// | Fecha      | Nombre  | Que se hizo |
+// |------------|---------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: bloquea envíos simultáneos y conserva rechazos |
+import { useState, useCallback, useRef } from 'react';
 import { alertasApi } from '../api/alertasApi';
 import { cacheAlertas, getAlertasCache } from '../db/telemetriaTables';
 import type { AlertaSchema, ListarAlertasFiltros, ActualizarEstadoAlertaDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { errorEstadoAlerta } from '../lib/errorEstadoAlerta';
 import { hoyLocal } from '../../shared/lib/fecha';
 
 interface PaginacionState {
@@ -26,6 +30,8 @@ interface Opciones {
 
 
 export function useAlertas({ tecnicas = false }: Opciones = {}) {
+  const enviando = useRef(false);
+  const limpiarSaveError = useCallback(() => setSaveError(null), []);
   const [alertas, setAlertas] = useState<AlertaSchema[]>([]);
   const [paginacion, setPaginacion] = useState<PaginacionState>({ pagina: 1, totalPaginas: 1, totalRegistros: 0, porPagina: 50 });
   const [loading, setLoading] = useState(false);
@@ -136,16 +142,23 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
 
   const cambiarEstado = useCallback(
     async (idAlerta: number, dto: ActualizarEstadoAlertaDTO): Promise<AlertaSchema | null> => {
+      if (enviando.current) return null;
+      enviando.current = true;
       setSaving(true);
       setSaveError(null);
       try {
         const actualizada = await patchEstado(idAlerta, dto);
         setAlertas((prev) => prev.map((a) => (a.id_alerta === idAlerta ? actualizada : a)));
+        if (!tecnicas) {
+          try { await cacheAlertas([{ ...actualizada, cachedAt: Date.now() }]); }
+          catch { /* La caché no invalida una mutación ya confirmada por el servidor. */ }
+        }
         return actualizada;
       } catch (e) {
-        setSaveError(e as ApiError);
+        setSaveError(errorEstadoAlerta(e as ApiError));
         return null;
       } finally {
+        enviando.current = false;
         setSaving(false);
       }
     },
@@ -154,6 +167,6 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
 
   return {
     alertas, paginacion, loading, saving, error, saveError, fromCache, resumen,
-    cargar, cargarResumen, cambiarEstado,
+    cargar, cargarResumen, cambiarEstado, limpiarSaveError,
   };
 }
