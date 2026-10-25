@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-19: códigos del backend con etiqueta legible |
 import React from 'react';
 import { useT, useNombreModulo } from '../../shared/i18n/useT';
 import { ClipboardList } from 'lucide-react';
@@ -10,6 +11,7 @@ import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
 import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { EventoAuditoriaIotSchema } from '../types';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 const COLS = ['Fecha', 'Tipo de evento', 'Módulo', 'Entidad', 'Usuario', 'Resultado', 'Severidad', 'Clasif.', 'Hash'];
 
@@ -77,7 +79,7 @@ export function BitacoraTable({ items, loading, onAbrir }: Props) {
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                   {fechaHoraCaptura(ev.fecha_hora)}
                 </td>
-                <td style={{ ...TD, color: 'var(--text-primary)', fontWeight: 600, fontSize: '12px' }}>{ev.tipo_evento}</td>
+                <td style={{ ...TD, color: 'var(--text-primary)', fontWeight: 600, fontSize: '12px' }}><span title={ev.tipo_evento}>{etiquetaCodigo(ev.tipo_evento)}</span></td>
                 <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>{nombreModulo(ev.modulo)}</td>
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>
                   {ev.entidad_afectada_tipo ? `${ev.entidad_afectada_tipo}${ev.entidad_afectada_id ? ` #${ev.entidad_afectada_id}` : ''}` : '—'}

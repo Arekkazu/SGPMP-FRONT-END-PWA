@@ -1,6 +1,7 @@
 // | Fecha      | Nombre  | Que se hizo |
 // |------------|---------|-------------|
 // | 2026-10-22 | Leandro | FE-12 RF-57: verifica permisos, transiciones y rechazos HTTP |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-19: la fila muestra el tipo de alerta legible |
 import React, { useContext } from 'react';
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -210,7 +211,7 @@ describe.each([['detalle', AlertasView], ['móvil', MovilView]] as const)('FE-12
   async function abrir() {
     render(<Vista />, { wrapper: Wrapper });
     if (Vista === AlertasView) {
-      const fila = await screen.findByText('TEMPERATURA_CRITICA');
+      const fila = await screen.findByText('Temperatura critica');
       fireEvent.click(fila.closest('tr')!);
       await screen.findByRole('dialog');
     }

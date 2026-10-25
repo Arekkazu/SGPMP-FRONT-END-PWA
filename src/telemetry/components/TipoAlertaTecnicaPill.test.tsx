@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-19: el subtipo sin catálogo se humaniza |
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -29,9 +32,9 @@ describe('TipoAlertaTecnicaPill', () => {
     expect(screen.getByText(enUS)).toBeInTheDocument();
   });
 
-  it('un subtipo sin etiqueta se muestra tal cual llega', () => {
+  it('un subtipo sin etiqueta se humaniza, no sale el código (T-19)', () => {
     render(<TipoAlertaTecnicaPill tipo="BATERIA_BAJA" />);
-    expect(screen.getByText('BATERIA_BAJA')).toBeInTheDocument();
+    expect(screen.getByText('Bateria baja')).toBeInTheDocument();
   });
 
   it('sin tipo muestra un guion', () => {

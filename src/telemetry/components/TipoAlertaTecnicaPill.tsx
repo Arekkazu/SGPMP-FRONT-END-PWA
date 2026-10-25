@@ -1,7 +1,11 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-19: códigos del backend con etiqueta legible |
 import React from 'react';
 import { CloudDownload, DatabaseZap, FileWarning, ThermometerSun, Unplug } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
 import { Pill, type Tono } from './Pill';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 // RF-60: el subtipo de una alerta TECNICA viaja en `tipo_variable`. Estos son los
 // que agregan el aviso de buffer del Edge (DEV-11, RF-54) y el heartbeat ampliado
@@ -19,7 +23,7 @@ const META: Record<string, { clave: string; tono: Tono; icon: React.ReactNode }>
 export function TipoAlertaTecnicaPill({ tipo }: { tipo: string | null | undefined }) {
   const { t } = useT('telemetry');
   const meta = META[(tipo ?? '').toUpperCase()];
-  if (!meta) return <>{tipo ?? '—'}</>;
+  if (!meta) return <>{etiquetaCodigo(tipo)}</>;
   return (
     <Pill tono={meta.tono} icon={meta.icon} title={tipo ?? undefined}>
       {t(`tipoalertatecnica.${meta.clave}`)}

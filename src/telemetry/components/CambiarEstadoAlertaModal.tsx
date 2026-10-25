@@ -1,6 +1,7 @@
 // | Fecha      | Nombre  | Que se hizo |
 // |------------|---------|-------------|
 // | 2026-10-22 | Leandro | FE-12 RF-57: conserva formulario ante errores y cambios de permiso |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-19: códigos del backend con etiqueta legible |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ModalShell } from './ModalShell';
@@ -9,6 +10,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import type { AlertaSchema, ActualizarEstadoAlertaDTO, NuevoEstadoAlerta } from '../types';
 import { accionesAlerta } from '../lib/accionesAlerta';
 import type { ApiError } from '../../shared/api/errors';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 interface Meta {
   titulo: string;
@@ -76,7 +78,7 @@ export function CambiarEstadoAlertaModal({ alerta, estado, saving, autorizada, s
         </>
       }
     >
-      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('cambiarestadoalertamodal.alerta')}{' '}<strong>#{alerta.id_alerta}</strong> · {alerta.tipo_alerta} · {alerta.tipo_variable}
+      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 var(--s4)' }}>{t('cambiarestadoalertamodal.alerta')}{' '}<strong>#{alerta.id_alerta}</strong> · {etiquetaCodigo(alerta.tipo_alerta)} · {etiquetaCodigo(alerta.tipo_variable)}
       </p>
 
       <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-alerta">
