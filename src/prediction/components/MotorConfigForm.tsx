@@ -2,8 +2,10 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: modo como tarjetas, pesos solo META, contrato del modelo y confirmaciones |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-04 RF-65: solo versiones APROBADO/ACTIVO; alerta crítica 0,50–0,95 con 0,70 por defecto |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { humanizar as etiquetaEstadoVersion } from '../../shared/lib/etiquetas';
 import { Save, Server, Cpu, Shuffle, Info } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
@@ -80,7 +82,7 @@ interface CambioVersion { componente: Componente | null; valor: number }
 export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveError, online, puedeEditar, nodosSinConfirmar, onGuardar }: Props) {
   const { t } = useT('prediction');
   const [riesgoAlto, setRiesgoAlto] = useState(0.7);
-  const [alertaCritica, setAlertaCritica] = useState(0.85);
+  const [alertaCritica, setAlertaCritica] = useState(0.7);
   const [ventana, setVentana] = useState(10);
   const [modo, setModo] = useState<ModoEjecucion>('SERVIDOR');
   const [version, setVersion] = useState<number | ''>('');
@@ -97,7 +99,7 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
 
   useEffect(() => {
     setRiesgoAlto(config?.umbral_riesgo_alto ?? 0.7);
-    setAlertaCritica(config?.umbral_alerta_critica ?? 0.85);
+    setAlertaCritica(config?.umbral_alerta_critica ?? 0.7);
     setVentana(config?.ventana_temporal_min ?? 10);
     setModo((config?.modo_ejecucion as ModoEjecucion) ?? 'SERVIDOR');
     setVersion(config?.id_version_modelo_activa ?? '');
@@ -140,7 +142,11 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
     else enviar();
   };
 
-  const versionesTipo = versiones.filter((v) => v.tipo_modelo === tipoModelo);
+  // M4-04: solo se ofrecen versiones APROBADO o ACTIVO (E2 de RF-65); antes salía
+  // una RECHAZADO. La que ya está asignada se conserva para que el select la muestre.
+  const asignadas = new Set([version, ...Object.values(versionesComp)].filter(Boolean).map(String));
+  const versionesTipo = versiones.filter((v) => v.tipo_modelo === tipoModelo
+    && (['APROBADO', 'ACTIVO'].includes(v.estado_version) || asignadas.has(String(v.id_version_modelo))));
   const nombreVersion = (id: number | undefined | '') => versionesTipo.find((v) => v.id_version_modelo === id)?.nombre_version ?? (id ? `#${id}` : '');
 
   // Cambiar la versión activa pide confirmación: aplica a los ciclos nuevos, no a los que corren.
@@ -196,7 +202,7 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
           ) : (
             <>
               <RangoCampo label={t('motorconfigform.umbral_de_riesgo_alto')} valor={riesgoAlto} min={0.5} max={0.95} step={0.01} disabled={!puedeEditar} onChange={setRiesgoAlto} />
-              <RangoCampo label={t('motorconfigform.umbral_de_alerta_critica')} valor={alertaCritica} min={0.5} max={0.99} step={0.01} disabled={!puedeEditar} onChange={setAlertaCritica} />
+              <RangoCampo label={t('motorconfigform.umbral_de_alerta_critica')} valor={alertaCritica} min={0.5} max={0.95} step={0.01} disabled={!puedeEditar} onChange={setAlertaCritica} />
               <ThresholdStrip riesgoAlto={riesgoAlto} alertaCritica={alertaCritica} />
             </>
           )}
@@ -249,7 +255,7 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
                 <option value="">{t('motorconfigform.sin_asignar')}</option>
                 {versionesTipo.filter((v) => v.componente === c).map((v) => (
                   <option key={v.id_version_modelo} value={v.id_version_modelo}>
-                    {v.nombre_version} · {v.estado_version}
+                    {v.nombre_version} · {etiquetaEstadoVersion(v.estado_version)}
                   </option>
                 ))}
               </select>
@@ -261,7 +267,7 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
                 <option value="">{t('motorconfigform.sin_asignar')}</option>
                 {versionesTipo.map((v) => (
                   <option key={v.id_version_modelo} value={v.id_version_modelo}>
-                    {v.nombre_version} · {v.estado_version}
+                    {v.nombre_version} · {etiquetaEstadoVersion(v.estado_version)}
                   </option>
                 ))}
               </select>
