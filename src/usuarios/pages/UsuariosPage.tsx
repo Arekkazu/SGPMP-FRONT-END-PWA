@@ -1,5 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-20: aviso único de sin acceso (AccesoDenegado) |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
 import { Search, RefreshCw } from 'lucide-react';
 import { useUsuarios } from '../hooks/useUsuarios';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -54,13 +58,7 @@ export function UsuariosPage() {
     if (puedeVer) cargar();
   }, [puedeVer, cargar]);
 
-  if (!puedeVer) {
-    return (
-      <div style={{ padding: 'var(--page-pad)', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('usuariospage.no_tienes_permiso_para_ver_esta_seccion')}</p>
-      </div>
-    );
-  }
+  if (!puedeVer) return <AccesoDenegado seccion={t('usuariospage.seccion')} />;
 
   const buscar = () => actualizarFiltros({
     nombre: busquedaNombre || undefined,
