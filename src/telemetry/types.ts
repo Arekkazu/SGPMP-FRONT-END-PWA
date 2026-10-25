@@ -3,7 +3,7 @@
 // | 2026-10-22 | Leandro | FE-12 RF-57: excluye vencimiento de acciones manuales |
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
-// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-05/M3-06: nombre_usuario en el historial y nombres de ubicación en la alerta |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-05/M3-06/M3-10: autor del historial, ubicación de la alerta y listado de dispositivos |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -30,6 +30,20 @@ export type OrigenDato = 'TIEMPO_REAL' | 'BUFFER_LOCAL' | 'EDGE_AGREGADO';
 export type EstadoSemaforo = 'VERDE' | 'AMARILLO' | 'ROJO' | 'GRIS';
 
 /** Estado del ciclo de vida de un dispositivo IoT (RF-60). */
+/** Fila de GET /iot/dispositivos (M3-10). */
+export interface DispositivoConEstadoSchema {
+  id_dispositivo_iot: number;
+  serial: string;
+  descripcion: string | null;
+  id_infraestructura: number;
+  nombre_infraestructura: string;
+  nombre_finca: string;
+  estado_actual: string;
+  fecha_ultimo_contacto: string | null;
+  nivel_bateria_pct: number | string | null;
+  calidad_senal_rssi: number | string | null;
+}
+
 export type EstadoDispositivo =
   | 'ACTIVO' | 'SIN_SEÑAL' | 'BUFFER_ACTIVO' | 'EN_MANTENIMIENTO' | 'INACTIVO';
 
