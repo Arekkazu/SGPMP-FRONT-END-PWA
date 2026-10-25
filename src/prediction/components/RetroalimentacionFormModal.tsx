@@ -1,4 +1,8 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-03 RF-72: inferencia por fecha, sin Ninguna al marcar Incorrecto, patologías en grupo con nombre |
 import React, { useState } from 'react';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Check } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -11,8 +15,13 @@ import type { ApiError } from '../../shared/api/errors';
 export interface RetroContexto {
   id_resultado_inferencia: string;
   id_activo_biologico: number;
+  /** M4-03: se muestra "Inferencia del 27/07 08:15"; el UUID no le dice nada al veterinario. */
+  fecha_inferencia?: string;
   resumen?: string;
 }
+
+/** "Ninguna (estado normal)" contradice un "Incorrecto": si la predicción falló, hubo patología. */
+const esNinguna = (nombre: string) => /^ninguna\b/i.test(nombre.trim());
 
 interface PatologiaOpcion { id: number; nombre: string; }
 
@@ -43,12 +52,15 @@ const FUENTES: { valor: FuenteDiagnostico; label: string }[] = [
 export function RetroalimentacionFormModal({ contexto, patologiasOpciones, saving, saveError, online, onSubmit, onClose }: Props) {
   const { t } = useT('prediction');
   const [estado, setEstado] = useState<EstadoRetro | ''>('');
-  const [diagnosticos, setDiagnosticos] = useState<number[]>([]);
+  const [elegidos, setDiagnosticos] = useState<number[]>([]);
   const [fuente, setFuente] = useState<FuenteDiagnostico | ''>('');
   const [observaciones, setObservaciones] = useState('');
   const [touched, setTouched] = useState(false);
 
   const requiereDiagnostico = estado === 'PARCIAL' || estado === 'INCORRECTO';
+  const opciones = patologiasOpciones.filter((p) => estado !== 'INCORRECTO' || !esNinguna(p.nombre));
+  // Si se eligió "Ninguna" y luego se marca Incorrecto, deja de contar aunque ya no se vea.
+  const diagnosticos = elegidos.filter((id) => opciones.some((p) => p.id === id));
   const errEstado = !estado ? 'Selecciona una calificación.' : undefined;
   const errDiagnosticos = requiereDiagnostico && (diagnosticos.length < 1 || diagnosticos.length > 3)
     ? 'Indica entre 1 y 3 diagnósticos reales.'
@@ -92,7 +104,10 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
         {/* Contexto de la inferencia */}
         <div style={{ background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s3)', fontSize: '12px', color: 'var(--text-secondary)' }}>
           <div><strong>{t('retroalimentacionformmodal.activo_biologico')}</strong> {contexto.id_activo_biologico}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}><strong style={{ fontFamily: 'var(--font-sans, inherit)' }}>Inferencia:</strong> {contexto.id_resultado_inferencia}</div>
+          <div title={contexto.id_resultado_inferencia}>
+            <strong>Inferencia:</strong>{' '}
+            {contexto.fecha_inferencia ? `del ${formatearFechaHora(contexto.fecha_inferencia, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : contexto.id_resultado_inferencia}
+          </div>
           {contexto.resumen && <div style={{ marginTop: 'var(--s1)' }}>{contexto.resumen}</div>}
         </div>
 
@@ -128,9 +143,9 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
         {requiereDiagnostico && (
           <div>
             <label style={LABEL}>{t('retroalimentacionformmodal.patologia_del_diagnostico_real')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span> <span style={{ fontWeight: 400, textTransform: 'none' }}>(máx. 3)</span></label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)' }}>
+            <div role="group" aria-label={t('retroalimentacionformmodal.patologia_del_diagnostico_real')} style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)' }}>
               {patologiasOpciones.length === 0 && <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('retroalimentacionformmodal.no_hay_patologias_disponibles')}</span>}
-              {patologiasOpciones.map((p) => {
+              {opciones.map((p) => {
                 const activo = diagnosticos.includes(p.id);
                 return (
                   <button

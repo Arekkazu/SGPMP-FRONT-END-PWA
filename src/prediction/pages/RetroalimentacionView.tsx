@@ -1,3 +1,7 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-03 RF-72: el formulario recibe la fecha de la inferencia |
 import React, { useEffect, useMemo, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -121,7 +125,7 @@ export function RetroalimentacionView() {
           </div>
         </div>
 
-        <div style={TABLE_WRAP}>
+        <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de inferencias por evaluar">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={THEAD_ROW}>
@@ -164,6 +168,7 @@ export function RetroalimentacionView() {
           contexto={{
             id_resultado_inferencia: sel.id_resultado_inferencia,
             id_activo_biologico: sel.id_activo_biologico,
+            fecha_inferencia: sel.fecha_inferencia,
             resumen: `${sel.identificador} · ${sel.patologia_estimada} (${(sel.probabilidad * 100).toFixed(0)}%)`,
           }}
           patologiasOpciones={patologiasOpciones}

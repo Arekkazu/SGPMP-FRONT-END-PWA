@@ -2,6 +2,7 @@
 // |------------|---------|-------------|
 // | 2026-10-22 | Leandro | FE-12 RF-57: comparte permisos y recupera transiciones rechazadas |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 4.1.3 RF-57: contadores de alertas en región aria-live |
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -115,7 +116,8 @@ export function AlertasView() {
         {fromCache && online && <Alert variant="info" title={t('alertasview.datos_desde_cache')} description="No se pudo conectar; se muestran las últimas alertas disponibles." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('alertasview.sin_acceso_a_las_alertas') : t('alertasview.error_al_cargar_alertas')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
-        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
+        {/* a11y 4.1.3 (TC-DIS-150): los contadores se anuncian al cambiar, así una alerta nueva no pasa inadvertida. */}
+        <div aria-live="polite" style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
           <Kpi icon={<BellRing size={18} aria-hidden />} valor={resumen?.activas ?? null} etiqueta="Activas ahora" color="var(--sem-error)" />
           <Kpi icon={<Clock size={18} aria-hidden />} valor={resumen?.enAtencion ?? null} etiqueta="En atención" color="var(--sem-warning)" />
           <Kpi icon={<TimerOff size={18} aria-hidden />} valor={resumen?.vencidas ?? null} etiqueta="Vencidas" color="var(--sem-error)" />
