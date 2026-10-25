@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-53: filtros, tipo de dato, orden por prioridad E15 y detalle de lectura |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 import React, { useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { DownloadCloud, CheckCircle2, AlertTriangle, XCircle, ChevronRight, ListOrdered } from 'lucide-react';
@@ -119,7 +120,7 @@ export function IngestaView() {
             {t('ingesta.sin_resultados')}
           </div>
         ) : (
-          <div style={TABLE_WRAP}>
+          <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de lecturas ingeridas">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead><tr style={THEAD_ROW}>{cols.map((h, i) => <th key={i} style={TH}>{h}</th>)}</tr></thead>
               <tbody>

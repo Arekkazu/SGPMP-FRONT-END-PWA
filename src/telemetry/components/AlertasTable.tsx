@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional + T-19 códigos legibles |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre; encabezado de la columna de acción |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, BellRing } from 'lucide-react';
@@ -46,10 +47,10 @@ export function AlertasTable({ alertas, loading, onAbrir }: Props) {
   }
 
   return (
-    <div style={TABLE_WRAP}>
+    <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de alertas">
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
-          <tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} style={TH}>{h}</th>)}</tr>
+          <tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} style={TH}>{h || <span className="ds-sr-only">Ver detalle</span>}</th>)}</tr>
         </thead>
         <tbody>
           {alertas.map((a) => (
