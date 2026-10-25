@@ -1,3 +1,12 @@
+## [1.4.0-rc.4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.3...v1.4.0-rc.4) (2026-10-25)
+
+### Bug Fixes
+
+* **m03-m04:** plurales, separador de miles y valores con dos decimales (T-22) ([60b2e0f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/60b2e0f9e778df3607bbbeeaba80811b72be45da))
+* **m04:** tipo de modelo vacio, pesos de contagio, patologias base y dispositivo piloto (M4-05, M4-09, M4-10, M4-11) ([e88c569](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e88c569ef837e5e09000736f92f5236d996755f9))
+* **rf54-telemetry:** sincronizados hoy se muestra como numero, no como fecha (T-17) ([866711d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/866711d6af9c7826c01595440a04f8ee4db7a869))
+* **rf58-telemetry:** codigos del backend legibles, semaforo sin GRIS y dia en el ultimo dato (T-19, M3-11) ([1dd4182](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1dd4182d27ae222c70fb6f17acd1306f8791b1fa))
+
 ## [1.4.0-rc.3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.2...v1.4.0-rc.3) (2026-10-25)
 
 ### Bug Fixes
