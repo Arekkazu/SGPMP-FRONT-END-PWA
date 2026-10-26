@@ -102,6 +102,8 @@ export interface AlertaSchema {
   nombre_sensor?: string | null;
   nombre_infraestructura?: string | null;
   nombre_finca?: string | null;
+  /** T-18: identificador del activo o, sin él, su especie. */
+  nombre_activo?: string | null;
   id_dispositivo_ioit: number | null;
   id_activo_biologico: number | null;
   id_infraestructura: number | null;
