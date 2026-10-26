@@ -95,7 +95,7 @@ export function HistorialView() {
           <Alert
             variant="warning"
             title={t('historialview.resultado_truncado')}
-            description={t('historialview.resultado_truncado_detalle', { total: truncado.totalEncontrado, mostradas: paginacion.totalRegistros })}
+            description={t('historialview.resultado_truncado_detalle', { total: formatearNumero(truncado.totalEncontrado), mostradas: formatearNumero(paginacion.totalRegistros) })}
             style={{ marginBottom: 'var(--s4)' }}
           />
         )}

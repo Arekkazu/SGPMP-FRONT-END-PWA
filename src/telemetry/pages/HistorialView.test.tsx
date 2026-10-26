@@ -4,7 +4,7 @@
 // | 2026-10-23 | Arekkazu | PR-667: el vacío se muestra en el día local, no en el de UTC |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: conteos con plural y separador de miles |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01: 7 días por defecto y el rango rápido consulta |
-// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: el mock incluye el dashboard que lista las áreas |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-22: el mock incluye el dashboard de áreas; números con separador |
 /**
  * FE-11 (RF-59 E6 / CA-19 y E7 / CA-17): con la respuesta de DEV-38, el historial avisa
  * cuando el resultado se truncó y marca los intervalos sin datos.
@@ -62,7 +62,8 @@ describe('HistorialView — E6 / CA-19: resultado truncado', () => {
     historial.mockResolvedValue(respuesta({ total: 10_000, total_encontrado: 12_000, truncado: true, paginas_totales: 100 }));
     render(<HistorialView />);
     expect(await screen.findByText('Resultado truncado')).toBeInTheDocument();
-    expect(screen.getByText(/encontró 12000 lecturas y solo se muestran las primeras 10000/)).toBeInTheDocument();
+    // T-22: con separador de miles, como el resto de la pantalla (antes "22253").
+    expect(screen.getByText(/encontró 12\.000 lecturas y solo se muestran las primeras 10\.000/)).toBeInTheDocument();
     expect(screen.getByText('10.000 de 12.000 lecturas')).toBeInTheDocument();
   });
 
