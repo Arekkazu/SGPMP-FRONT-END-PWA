@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-11 RF-64: la fila base dice por qué no se edita |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Eye, Pencil, Ban, Lock } from 'lucide-react';
@@ -54,7 +55,7 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
             return (
               <tr key={p.id_patologia}>
                 <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{p.nombre_patologia}</td>
-                <td style={TD}>{nombreEspecie(p.especie_aplicable)}</td>
+                <td style={TD}>{nombreEspecie(p)}</td>
                 <td style={TD}>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s1)' }}>
                     {p.variables_sensoricas_asociadas.length === 0 && <span style={{ color: 'var(--text-muted)' }}>—</span>}
@@ -71,7 +72,7 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
                           color: 'var(--text-secondary)',
                         }}
                       >
-                        {nombreVariable(v.id_variable_ambiental)}
+                        {nombreVariable(v)}
                       </span>
                     ))}
                   </div>

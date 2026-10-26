@@ -84,12 +84,17 @@ export interface PatologiaVariableResponse {
   id_variable_ambiental: number;
   peso_evidencia: number | null;
   es_variable_critica: boolean;
+  /** M4-02: del catálogo I3P-1; antes se mostraba "Variable 13". */
+  nombre_variable?: string | null;
+  unidad?: string | null;
 }
 
 export interface PatologiaM04Response {
   id_patologia: number;
   nombre_patologia: string;
   especie_aplicable: string;
+  /** M4-02: nombre de la especie; null con TODAS. */
+  nombre_especie?: string | null;
   descripcion_clinica: string;
   es_base: boolean;
   es_activo: boolean;

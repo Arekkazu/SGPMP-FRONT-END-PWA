@@ -1,8 +1,11 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, Filter, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
-import { CATALOGO_ESPECIES } from '../lib/catalogos';
+import { conTodas, type EspecieOpcion } from '../lib/catalogos';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
 
 export interface PatologiasFiltrosState {
@@ -17,13 +20,14 @@ export const PATOLOGIAS_FILTROS_VACIO: PatologiasFiltrosState = {
 };
 
 interface Props {
+  especies: EspecieOpcion[];
   value: PatologiasFiltrosState;
   onChange: (v: PatologiasFiltrosState) => void;
   onAplicar: () => void;
   onLimpiar: () => void;
 }
 
-export function PatologiasFiltros({ value, onChange, onAplicar, onLimpiar }: Props) {
+export function PatologiasFiltros({ especies, value, onChange, onAplicar, onLimpiar }: Props) {
   const { t } = useT('prediction');
   const set = <K extends keyof PatologiasFiltrosState>(k: K, v: PatologiasFiltrosState[K]) =>
     onChange({ ...value, [k]: v });
@@ -50,7 +54,7 @@ export function PatologiasFiltros({ value, onChange, onAplicar, onLimpiar }: Pro
           <label style={LABEL} htmlFor="pat-especie">{t('patologiasfiltros.especie')}</label>
           <select id="pat-especie" style={INPUT} value={value.especie} onChange={(e) => set('especie', e.target.value)}>
             <option value="">{t('patologiasfiltros.todas')}</option>
-            {CATALOGO_ESPECIES.map((e) => <option key={e.valor} value={e.valor}>{e.nombre}</option>)}
+            {conTodas(especies).map((e) => <option key={e.valor} value={e.valor}>{e.nombre}</option>)}
           </select>
         </div>
 

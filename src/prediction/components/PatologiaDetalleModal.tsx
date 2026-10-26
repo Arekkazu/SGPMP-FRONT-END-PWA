@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -47,7 +50,7 @@ export function PatologiaDetalleModal({ patologia, loading, onClose }: Props) {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--s4)' }}>
-            <Fila label={t('patologiadetallemodal.especie_aplicable')}>{nombreEspecie(patologia.especie_aplicable)}</Fila>
+            <Fila label={t('patologiadetallemodal.especie_aplicable')}>{nombreEspecie(patologia)}</Fila>
             <Fila label={t('patologiadetallemodal.version_de_catalogo')}>v{patologia.version_catalogo}</Fila>
             <Fila label="ID">{patologia.id_patologia}</Fila>
           </div>
@@ -74,7 +77,7 @@ export function PatologiaDetalleModal({ patologia, loading, onClose }: Props) {
                     color: 'var(--text-secondary)',
                   }}
                 >
-                  {nombreVariable(v.id_variable_ambiental)}
+                  {nombreVariable(v)}
                   {v.es_variable_critica && <strong style={{ color: 'var(--sem-warning)' }} title={t('patologiadetallemodal.variable_critica')}>★</strong>}
                   {v.peso_evidencia != null && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', opacity: 0.7 }}>{v.peso_evidencia}</span>}
                 </span>
