@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22/M3-11: plurales, contadores con texto, semáforo legible y día del último dato |
+// | 2026-10-26 | Arekkazu | INC-M03-205-G93 RF-58: unidad sin sensores en GRIS con "Sin datos disponibles" |
 import React from 'react';
 import { MapPin, Wifi, WifiOff, AlertOctagon, BellRing } from 'lucide-react';
 import { formatearNumero } from '../../shared/i18n/formato';
@@ -51,12 +52,19 @@ export function UnidadCard({ unidad }: { unidad: ResumenUnidadSchema }) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s4)', flexWrap: 'wrap' }}>
+        {/* RF-58 CU04 E1 (INC-M03-205-G93): la unidad sin sensores no muestra contadores fabricados. */}
+        {unidad.total_sensores === 0 ? (
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {unidad.mensaje_estado ?? t('unidadcard.sin_datos_disponibles')}
+          </span>
+        ) : (<>
         <Contador icon={<Wifi size={14} aria-hidden />} valor={unidad.sensores_online} etiqueta="en línea" color="var(--sem-success)" />
         <Contador icon={<WifiOff size={14} aria-hidden />} valor={unidad.sensores_sin_senal} etiqueta="sin señal" color="var(--text-muted)" />
         <Contador icon={<AlertOctagon size={14} aria-hidden />} valor={unidad.sensores_con_error} etiqueta="con error o fuera de rango" color="var(--sem-error)" />
         {unidad.alertas_activas_count > 0 && (
           <Pill tono="error" icon={<BellRing size={12} aria-hidden />}>{t('conteo.alertas_activas', { count: unidad.alertas_activas_count, n: formatearNumero(unidad.alertas_activas_count) })}</Pill>
         )}
+        </>)}
         <SemaforoPill estado={unidad.estado_general} />
       </div>
     </div>

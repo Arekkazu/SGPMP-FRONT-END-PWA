@@ -4,6 +4,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01/M3-13 RF-59: 7 días por defecto, rangos rápidos consultan, exportación deshabilitada con motivo |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre en el filtro |
+// | 2026-10-26 | Arekkazu | INC-M03-180/184-G111/G113 RF-59: el 422 de parámetros inválidos se muestra como tal |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -84,7 +85,7 @@ export function HistorialView() {
         {error && (
           <Alert
             variant={error.status === 403 ? 'warning' : 'error'}
-            title={error.status === 403 ? t('historialview.sin_acceso_al_historial') : error.status === 400 ? t('historialview.parametros_invalidos') : t('historialview.error_al_cargar_el_historial')}
+            title={error.status === 403 ? t('historialview.sin_acceso_al_historial') : error.status === 400 || error.status === 422 ? t('historialview.parametros_invalidos') : t('historialview.error_al_cargar_el_historial')}
             description={error.message}
             style={{ marginBottom: 'var(--s4)' }}
           />
