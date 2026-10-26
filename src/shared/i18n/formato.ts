@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-10/T-22: tiempo relativo («hace 3 días») para listas |
 /**
  * Formateo de fechas y numeros segun el idioma activo (RF-29).
  *
@@ -66,4 +69,24 @@ export function formatearNumero(
   const numero = Number(valor);
   if (Number.isNaN(numero)) return '—';
   return numero.toLocaleString(locale(), opciones);
+}
+
+const UNIDADES_RELATIVAS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
+  ['day', 86_400_000], ['hour', 3_600_000], ['minute', 60_000],
+];
+
+/**
+ * «hace 12 min», «hace 3 días» (M3-10 / T-22). En listas dice de un vistazo si un
+ * dato está viejo; la fecha exacta va en el `title`. Menos de un minuto: «ahora».
+ */
+export function formatearRelativo(valor: string | number | Date | null | undefined, ahora: number = Date.now()): string {
+  if (valor === null || valor === undefined || valor === '') return '—';
+  const fecha = valor instanceof Date ? valor : new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return '—';
+  const diferencia = fecha.getTime() - ahora;
+  const formato = new Intl.RelativeTimeFormat(locale(), { numeric: 'auto' });
+  for (const [unidad, ms] of UNIDADES_RELATIVAS) {
+    if (Math.abs(diferencia) >= ms) return formato.format(Math.round(diferencia / ms), unidad);
+  }
+  return formato.format(0, 'minute');
 }

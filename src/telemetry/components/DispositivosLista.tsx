@@ -1,17 +1,17 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-10 RF-60: listado de dispositivos con estado, batería, señal y último contacto |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-10/T-19/T-23: orden por problema, contacto relativo, estado legible y tarjetas en móvil |
 import React, { useMemo, useState } from 'react';
 import { BatteryLow, BatteryMedium, BatteryFull } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
-import { formatearNumero } from '../../shared/i18n/formato';
+import { formatearFechaHora, formatearNumero, formatearRelativo } from '../../shared/i18n/formato';
 import { Alert } from '../../shared/design-system/Alert';
 import { Buscador } from '../../shared/design-system/Buscador';
 import { useBusqueda } from '../../shared/hooks/useBusqueda';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
 import { EstadoDispositivoPill } from './EstadoDispositivoPill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW, INPUT, LABEL } from './tableStyles';
-import { momentoCaptura } from '../lib/sensorEscala';
 import type { DispositivoConEstadoSchema } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -36,6 +36,19 @@ function Bateria({ pct }: { pct: number | string | null }) {
 
 const ESTADOS = ['SIN_SEÑAL', 'INACTIVO', 'BUFFER_ACTIVO', 'EN_MANTENIMIENTO', 'ACTIVO'];
 
+// M3-10: los que fallan primero. Lo que no está en la lista (DESCONOCIDO) va antes de
+// los activos: tampoco se sabe si funciona. A igual estado, la batería más baja primero.
+const PRIORIDAD = ['SIN_SEÑAL', 'INACTIVO', 'EN_MANTENIMIENTO', 'BUFFER_ACTIVO'];
+function prioridad(d: DispositivoConEstadoSchema): number {
+  const i = PRIORIDAD.indexOf((d.estado_actual ?? '').toUpperCase().replace('SIN_SENAL', 'SIN_SEÑAL'));
+  if (i >= 0) return i;
+  return d.estado_actual === 'ACTIVO' ? PRIORIDAD.length + 1 : PRIORIDAD.length;
+}
+export function porProblema(a: DispositivoConEstadoSchema, b: DispositivoConEstadoSchema): number {
+  const bateria = (d: DispositivoConEstadoSchema) => (d.nivel_bateria_pct == null || d.nivel_bateria_pct === '' ? 101 : Number(d.nivel_bateria_pct));
+  return prioridad(a) - prioridad(b) || bateria(a) - bateria(b);
+}
+
 interface Props {
   items: DispositivoConEstadoSchema[];
   loading: boolean;
@@ -46,12 +59,15 @@ interface Props {
 
 /**
  * M3-10: antes solo había un campo "ID de dispositivo" (y el ejemplo "12" no
- * existía). La lista viene ordenada por el backend con los que fallan primero.
+ * existía). Los que fallan van primero (porProblema).
  */
 export function DispositivosLista({ items, loading, error, seleccionado, onSeleccionar }: Props) {
   const { t } = useT('telemetry');
   const [estado, setEstado] = useState('');
-  const porEstado = useMemo(() => (estado ? items.filter((d) => d.estado_actual === estado) : items), [items, estado]);
+  const porEstado = useMemo(
+    () => (estado ? items.filter((d) => d.estado_actual === estado) : items).slice().sort(porProblema),
+    [items, estado],
+  );
   const { consulta, setConsulta, filtrados } = useBusqueda(porEstado, (d) => `${d.serial} ${d.descripcion ?? ''} ${d.nombre_infraestructura} ${d.nombre_finca}`);
 
   if (error) {
@@ -79,7 +95,7 @@ export function DispositivosLista({ items, loading, error, seleccionado, onSelec
         </p>
       ) : (
         <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label={t('dispositivoslista.tabla')}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table className="ds-tabla-tarjetas" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={THEAD_ROW}>
                 {['dispositivo', 'ubicacion', 'estado', 'bateria', 'senal', 'ultimo_contacto'].map((c) => <th key={c} style={TH}>{t(`dispositivoslista.col_${c}`)}</th>)}
@@ -100,15 +116,19 @@ export function DispositivosLista({ items, loading, error, seleccionado, onSelec
                     onClick={() => onSeleccionar(d.id_dispositivo_iot)}
                     onKeyDown={alActivarConTeclado(() => onSeleccionar(d.id_dispositivo_iot))}
                   >
-                    <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <td className="ds-celda-titulo" style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)', maxWidth: 280 }}>
                       {d.descripcion || d.serial}
-                      {d.descripcion && <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 400, color: 'var(--text-muted)' }}>{d.serial}</div>}
+                      {/* Códigos de 40+ caracteres ("AAAA…308299") ensanchaban la tabla a 1.388px. */}
+                      {d.descripcion && <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 400, color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{d.serial}</div>}
                     </td>
-                    <td style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>{d.nombre_finca} › {d.nombre_infraestructura}</td>
-                    <td style={TD}><EstadoDispositivoPill estado={d.estado_actual} /></td>
-                    <td style={TD}><Bateria pct={d.nivel_bateria_pct} /></td>
-                    <td style={{ ...TD, fontSize: '12px' }}>{senal ? t(`dispositivoslista.senal_${senal}`) : '—'}</td>
-                    <td style={{ ...TD, fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{momentoCaptura(d.fecha_ultimo_contacto)}</td>
+                    <td data-label={t('dispositivoslista.col_ubicacion')} style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>{d.nombre_finca} › {d.nombre_infraestructura}</td>
+                    <td className="ds-celda-destacada" style={TD}><EstadoDispositivoPill estado={d.estado_actual} /></td>
+                    <td data-label={t('dispositivoslista.col_bateria')} style={TD}><Bateria pct={d.nivel_bateria_pct} /></td>
+                    <td data-label={t('dispositivoslista.col_senal')} style={{ ...TD, fontSize: '12px' }}>{senal ? t(`dispositivoslista.senal_${senal}`) : '—'}</td>
+                    {/* M3-10: "06:03:13 p. m." no decía de qué día; "hace 3 días" sí, y el title da la fecha exacta. */}
+                    <td data-label={t('dispositivoslista.col_ultimo_contacto')} style={{ ...TD, fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }} title={formatearFechaHora(d.fecha_ultimo_contacto)}>
+                      {formatearRelativo(d.fecha_ultimo_contacto)}
+                    </td>
                   </tr>
                 );
               })}

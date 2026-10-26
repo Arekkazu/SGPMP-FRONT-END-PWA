@@ -1,7 +1,11 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-19: estado fuera del catálogo con etiqueta legible |
 import React from 'react';
 import { Wifi, WifiOff, Database, Wrench, PowerOff, HelpCircle } from 'lucide-react';
 import { Pill, type Tono } from './Pill';
 import type { EstadoDispositivo } from '../types';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 interface Meta {
   label: string;
@@ -26,7 +30,8 @@ function normalizar(estado: string | null | undefined): EstadoDispositivo | null
 
 export function EstadoDispositivoPill({ estado }: { estado: string | null | undefined }) {
   const key = normalizar(estado);
-  if (!key) return <Pill tono="neutral" icon={<HelpCircle size={SIZE} aria-hidden />}>{estado ?? '—'}</Pill>;
+  // T-19: un estado que no está en el catálogo (DESCONOCIDO) se muestra legible, no en mayúsculas.
+  if (!key) return <Pill tono="neutral" icon={<HelpCircle size={SIZE} aria-hidden />}>{etiquetaCodigo(estado)}</Pill>;
   const meta = META[key];
   return <Pill tono={meta.tono} icon={meta.icon}>{meta.label}</Pill>;
 }

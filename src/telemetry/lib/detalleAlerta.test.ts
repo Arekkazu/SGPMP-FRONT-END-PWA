@@ -2,7 +2,8 @@
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-05/M3-06: historial sin pasos repetidos y umbral superado |
 import { describe, expect, it } from 'vitest';
-import { sinPasosRepetidos, umbralDeAlerta } from './detalleAlerta';
+import { motivoLegible, sinPasosRepetidos, umbralDeAlerta } from './detalleAlerta';
+import '../../shared/i18n';
 import type { HistoricoEstadoAlertaSchema } from '../types';
 
 const paso = (anterior: string, nuevo: string, extra: Partial<HistoricoEstadoAlertaSchema> = {}): HistoricoEstadoAlertaSchema => ({
@@ -34,5 +35,13 @@ describe('umbralDeAlerta (M3-06)', () => {
     ] })).toEqual({ rangoNormal: ['22', '26'] });
     expect(umbralDeAlerta({ regla: 'CA > 5.0 (CRITICA)' })).toEqual({ regla: 'CA > 5.0 (CRITICA)' });
     expect(umbralDeAlerta({})).toBeNull();
+  });
+});
+
+describe('motivoLegible (T-19)', () => {
+  it('convierte el motivo de alta del trigger en el origen legible y deja los demás', () => {
+    expect(motivoLegible('Alerta creada · origen=BACKEND')).toBe('Servidor');
+    expect(motivoLegible('Revisar aireación')).toBe('Revisar aireación');
+    expect(motivoLegible(null)).toBeNull();
   });
 });

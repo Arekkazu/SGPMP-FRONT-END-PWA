@@ -1,7 +1,8 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
-// | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-05/M3-06: historial sin pasos repetidos y umbral superado |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-05/M3-06/T-19: historial sin pasos repetidos, umbral superado y motivo legible |
 import type { HistoricoEstadoAlertaSchema } from '../types';
+import { etiquetaCodigo } from './etiquetaCodigo';
 
 /**
  * M3-05: "Activa → En atención" aparecía dos veces. El historial es inmutable y
@@ -50,4 +51,16 @@ export function umbralDeAlerta(metadato: Record<string, unknown> | null | undefi
     return { rangoNormal: [String(normal.limite_inferior), String(normal.limite_superior)] };
   }
   return typeof metadato.regla === 'string' && metadato.regla ? { regla: metadato.regla } : null;
+}
+
+const MOTIVO_CREACION = /^Alerta creada · origen=([A-Z_]+)$/;
+
+/**
+ * T-19: el trigger de alta deja "Alerta creada · origen=BACKEND". El paso ya se lee
+ * "Creada"; del motivo queda solo el origen en palabras ("Servidor").
+ */
+export function motivoLegible(motivo: string | null | undefined): string | null {
+  if (!motivo) return null;
+  const m = MOTIVO_CREACION.exec(motivo.trim());
+  return m ? etiquetaCodigo(m[1]) : motivo;
 }

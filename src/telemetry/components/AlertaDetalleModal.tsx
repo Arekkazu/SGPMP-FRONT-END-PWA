@@ -21,7 +21,7 @@ import type { AlertaDetalleSchema, NuevoEstadoAlerta } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 import { ubicacionAlerta } from './AlertasTable';
-import { sinPasosRepetidos, umbralDeAlerta } from '../lib/detalleAlerta';
+import { motivoLegible, sinPasosRepetidos, umbralDeAlerta } from '../lib/detalleAlerta';
 
 interface Props {
   detalle: AlertaDetalleSchema | null;
@@ -137,7 +137,7 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, pu
                       {h.estado_anterior === h.estado_nuevo
                         ? <strong>{t('alertadetallemodal.creada')}</strong>
                         : <><strong>{etiquetaCodigo(h.estado_anterior)}</strong> → <strong>{etiquetaCodigo(h.estado_nuevo)}</strong></>}
-                      {h.motivo ? ` · ${h.motivo}` : ''}
+                      {motivoLegible(h.motivo) ? ` · ${motivoLegible(h.motivo)}` : ''}
                       {(h.nombre_usuario || h.id_usuario != null) && (
                         <span style={{ color: 'var(--text-muted)' }}> · {h.nombre_usuario ?? t('alertadetallemodal.usuario_id', { id: h.id_usuario })}</span>
                       )}
