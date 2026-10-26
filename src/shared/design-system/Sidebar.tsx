@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: módulo de suministros (entrada en el menú) |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M9-10/T-20: se ocultan los módulos sin permiso |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-20: Telemetría y Predicción visibles con cualquiera de sus permisos de lectura |
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -10,7 +11,6 @@ import {
 } from 'lucide-react';
 import { useT } from '../i18n/useT';
 import { useAuth } from '../auth/useAuth';
-import { usePermission } from '../rbac/usePermission';
 import { useContexto } from '../contexto/useContexto';
 import { resolverLogoUrl } from '../identidad/identidad';
 import { Isotipo } from './Isotipo';
@@ -21,20 +21,28 @@ interface NavItem {
   claveLabel: string;
   path: string;
   icon: React.ReactNode;
-  requirePermission?: [number, number];
+  /** Se muestra con cualquiera de estos [id_recurso, id_accion]. Sin valor, siempre. */
+  requirePermission?: Array<[number, number]>;
 }
+
+// T-20: un módulo se ve si el rol puede abrir alguna de sus pestañas. Antes Predicción
+// pedía Patologías (18): el Productor no la veía en el menú pero sí abría su Historial
+// diagnóstico (42) por URL. Lectura (2) de cada recurso de pestaña del módulo.
+const lectura = (...recursos: number[]): Array<[number, number]> => recursos.map((r) => [r, 2]);
 
 const NAV_ITEMS: NavItem[] = [
   { claveLabel: 'modulos.dashboard', path: '/dashboard', icon: <LayoutDashboard size={16} aria-hidden /> },
-  { claveLabel: 'modulos.activos_biologicos', path: '/activos-biologicos', icon: <Sprout size={16} aria-hidden />, requirePermission: [29, 2] },
-  { claveLabel: 'modulos.telemetria', path: '/telemetria', icon: <Activity size={16} aria-hidden />, requirePermission: [33, 2] },
-  { claveLabel: 'modulos.prediccion', path: '/prediccion', icon: <BrainCircuit size={16} aria-hidden />, requirePermission: [18, 2] },
+  { claveLabel: 'modulos.activos_biologicos', path: '/activos-biologicos', icon: <Sprout size={16} aria-hidden />, requirePermission: lectura(29) },
+  // Telemetría: monitoreo, alertas, historial, dispositivos, vinculaciones, calidad, bitácora.
+  { claveLabel: 'modulos.telemetria', path: '/telemetria', icon: <Activity size={16} aria-hidden />, requirePermission: lectura(33, 32, 34, 35, 37, 38, 39) },
+  // Predicción: patologías, motor, historial, modelos, distribución, retroalimentación, auditoría.
+  { claveLabel: 'modulos.prediccion', path: '/prediccion', icon: <BrainCircuit size={16} aria-hidden />, requirePermission: lectura(18, 41, 42, 43, 44, 45, 46) },
   // M05: historial de suministros (52) es el recurso que comparten todos los roles del módulo.
-  { claveLabel: 'modulos.suministros', path: '/suministros', icon: <Package size={16} aria-hidden />, requirePermission: [52, 2] },
-  { claveLabel: 'modulos.usuarios', path: '/usuarios', icon: <Users size={16} aria-hidden />, requirePermission: [1, 2] },
-  { claveLabel: 'modulos.roles', path: '/roles', icon: <Shield size={16} aria-hidden />, requirePermission: [2, 2] },
-  { claveLabel: 'modulos.auditoria', path: '/auditoria', icon: <ClipboardList size={16} aria-hidden />, requirePermission: [6, 2] },
-  { claveLabel: 'modulos.configuracion', path: '/configuracion', icon: <Settings size={16} aria-hidden />, requirePermission: [8, 2] },
+  { claveLabel: 'modulos.suministros', path: '/suministros', icon: <Package size={16} aria-hidden />, requirePermission: lectura(52) },
+  { claveLabel: 'modulos.usuarios', path: '/usuarios', icon: <Users size={16} aria-hidden />, requirePermission: lectura(1) },
+  { claveLabel: 'modulos.roles', path: '/roles', icon: <Shield size={16} aria-hidden />, requirePermission: lectura(2) },
+  { claveLabel: 'modulos.auditoria', path: '/auditoria', icon: <ClipboardList size={16} aria-hidden />, requirePermission: lectura(6) },
+  { claveLabel: 'modulos.configuracion', path: '/configuracion', icon: <Settings size={16} aria-hidden />, requirePermission: lectura(8) },
 ];
 
 const MY_ITEMS: NavItem[] = [
@@ -56,14 +64,14 @@ function capitalizar(nombre: string): string {
 function NavItemComponent({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
   const { t } = useT('nav');
   const { pathname } = useLocation();
-  const hasPermission = usePermission(
-    item.requirePermission?.[0] ?? 0,
-    item.requirePermission?.[1] ?? 0
+  const { permisos } = useAuth();
+  const hasPermission = !item.requirePermission || item.requirePermission.some(
+    ([recurso, accion]) => (permisos ?? []).some((p) => p.id_recurso === recurso && p.id_accion === accion),
   );
 
   // M9-10 / T-20: un módulo sin permiso no se muestra. Antes quedaba con candado y
   // el Veterinario veía Usuarios, Roles y Auditoría que nunca iba a poder abrir.
-  if (item.requirePermission && !hasPermission) return null;
+  if (!hasPermission) return null;
 
   const active = pathname === item.path;
   const label = t(item.claveLabel);
