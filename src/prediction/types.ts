@@ -496,4 +496,6 @@ export interface ActivoSelectorItem {
   identificador: string | null;
   tipo: string;
   nombre_especie: string | null;
+  /** M4-03: para ofrecer solo diagnósticos de su especie. */
+  id_especie?: number | null;
 }
