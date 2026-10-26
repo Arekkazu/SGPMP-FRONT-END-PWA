@@ -1,19 +1,24 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01/M3-13 RF-59: 7 días por defecto, rangos rápidos consultan, exportación deshabilitada con motivo |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre en vez de «ID infraestructura» |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, Download } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
 import { diasAtrasLocal, hoyLocal } from '../../shared/lib/fecha';
+import { SelectorArea } from './SelectorArea';
+import type { AreaTelemetria } from '../hooks/useAreas';
 
 export interface HistorialFiltrosState {
   fecha_inicio: string;   // yyyy-mm-dd (requerido)
   fecha_fin: string;      // yyyy-mm-dd (requerido)
   tipo_variable: string;
   categoria_variable: string;
+  /** ID que se envía; `area` es el texto del Combobox (T-18). */
   id_infraestructura: string;
+  area: string;
   especie: string;
   estado_dato: string;
   origen_dato: string;
@@ -25,13 +30,14 @@ export interface HistorialFiltrosState {
 export const HISTORIAL_FILTROS_DEFAULT: HistorialFiltrosState = {
   fecha_inicio: diasAtrasLocal(7),
   fecha_fin: hoyLocal(),
-  tipo_variable: '', categoria_variable: '', id_infraestructura: '', especie: '',
+  tipo_variable: '', categoria_variable: '', id_infraestructura: '', area: '', especie: '',
   estado_dato: '', origen_dato: '',
 };
 
 const RANGOS = [7, 30, 60, 90];
 
 interface Props {
+  areas: AreaTelemetria[];
   value: HistorialFiltrosState;
   onChange: (v: HistorialFiltrosState) => void;
   /** Con `v`, consulta con esos filtros (los rangos rápidos no esperan al re-render). */
@@ -40,7 +46,7 @@ interface Props {
   puedeExportar: boolean;
 }
 
-export function HistorialFiltros({ value, onChange, onAplicar, onExportar, puedeExportar }: Props) {
+export function HistorialFiltros({ areas, value, onChange, onAplicar, onExportar, puedeExportar }: Props) {
   const { t } = useT('telemetry');
   const set = (k: keyof HistorialFiltrosState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     onChange({ ...value, [k]: e.target.value });
@@ -82,10 +88,12 @@ export function HistorialFiltros({ value, onChange, onAplicar, onExportar, puede
             <option value="ANIMAL">{t('historialfiltros.animal')}</option>
           </select>
         </div>
-        <div>
-          <label style={LABEL} htmlFor="h-infra">{t('historialfiltros.id_infraestructura')}</label>
-          <input id="h-infra" type="number" style={INPUT} value={value.id_infraestructura} onChange={set('id_infraestructura')} />
-        </div>
+        <SelectorArea
+          id="h-infra"
+          areas={areas}
+          value={value.area}
+          onChange={(area, idArea) => onChange({ ...value, area, id_infraestructura: idArea != null ? String(idArea) : '' })}
+        />
         <div>
           <label style={LABEL} htmlFor="h-esp">{t('historialfiltros.especie')}</label>
           <input id="h-esp" style={INPUT} value={value.especie} onChange={set('especie')} />

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -10,6 +11,7 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { usePatologias } from '../hooks/usePatologias';
+import { useCatalogosPatologia } from '../hooks/useCatalogosPatologia';
 import { PatologiasFiltros, PATOLOGIAS_FILTROS_VACIO, type PatologiasFiltrosState } from '../components/PatologiasFiltros';
 import { PatologiasTable } from '../components/PatologiasTable';
 import { PatologiaFormModal, type PatologiaFormValues } from '../components/PatologiaFormModal';
@@ -28,6 +30,7 @@ export function PatologiasView() {
   const online = useOnlineStatus();
 
   const { patologias, total, loading, saving, error, saveError, fromCache, cargar, detalle, crear, editar, desactivar, limpiarSaveError } = usePatologias();
+  const catalogos = useCatalogosPatologia();
 
   const [filtros, setFiltros] = useState<PatologiasFiltrosState>(PATOLOGIAS_FILTROS_VACIO);
   const [formMode, setFormMode] = useState<'crear' | 'editar' | null>(null);
@@ -126,7 +129,7 @@ export function PatologiasView() {
         {fromCache && online && <Alert variant="info" title={t('patologiasview.datos_desde_cache')} description="No se pudo conectar; se muestra el último catálogo disponible." style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('patologiasview.sin_acceso_al_catalogo') : t('patologiasview.error_al_cargar_patologias')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
-        <PatologiasFiltros value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} />
+        <PatologiasFiltros especies={catalogos.especies} value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} />
 
         <PatologiasTable
           patologias={visibles}
@@ -141,6 +144,8 @@ export function PatologiasView() {
 
       {formMode && (
         <PatologiaFormModal
+          catalogoVariables={catalogos.variables}
+          especies={catalogos.especies}
           mode={formMode}
           inicial={editando}
           saving={saving}

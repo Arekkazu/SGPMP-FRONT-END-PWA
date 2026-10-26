@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | DEV-36 RF-65: config_version en ConfigurarMotorDTO |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: etiquetaTipoModelo muestra "Sin tipo", nunca "null" |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M4-02: nombre del usuario en auditoría, de variables y de especie en patologías |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -83,12 +84,17 @@ export interface PatologiaVariableResponse {
   id_variable_ambiental: number;
   peso_evidencia: number | null;
   es_variable_critica: boolean;
+  /** M4-02: del catálogo I3P-1; antes se mostraba "Variable 13". */
+  nombre_variable?: string | null;
+  unidad?: string | null;
 }
 
 export interface PatologiaM04Response {
   id_patologia: number;
   nombre_patologia: string;
   especie_aplicable: string;
+  /** M4-02: nombre de la especie; null con TODAS. */
+  nombre_especie?: string | null;
   descripcion_clinica: string;
   es_base: boolean;
   es_activo: boolean;
@@ -380,6 +386,8 @@ export interface DispositivoObjetivoOta {
   serial: string;
   descripcion: string;
   es_activo: boolean;
+  /** M4-05: SENSOR | CAMARA, para filtrar los 373 equipos del paso 3. */
+  categoria?: string | null;
 }
 
 export interface OtaStatusResponse {
@@ -443,6 +451,8 @@ export interface EventoAuditoriaM04Response {
   severidad_evento: SeveridadEvento;
   origen_registro: string | null;
   id_usuario: number | null;
+  /** T-18: «Usuario 900» no decía quién; null si el backend aún no lo expone. */
+  nombre_usuario?: string | null;
   id_sistema: string | null;
   id_referencia: string | null;
   entidad_referencia: string | null;
@@ -488,4 +498,6 @@ export interface ActivoSelectorItem {
   identificador: string | null;
   tipo: string;
   nombre_especie: string | null;
+  /** M4-03: para ofrecer solo diagnósticos de su especie. */
+  id_especie?: number | null;
 }

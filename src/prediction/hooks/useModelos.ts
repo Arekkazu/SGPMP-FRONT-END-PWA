@@ -1,10 +1,12 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: intentos de registro rechazados que quedan en la bitácora M04 |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 N-02: transiciones del modelo sin consultas ni repetidos |
 import { useState, useCallback } from 'react';
 import { modelosApi } from '../api/modelosApi';
 import { auditoriaApi } from '../api/auditoriaApi';
 import { otaApi } from '../api/otaApi';
+import { transicionesDeEstado } from '../lib/transicionesModelo';
 import { cacheModelos, getModelosCache } from '../db/prediccionTables';
 import type {
   DespliegueOtaResponse,
@@ -167,7 +169,7 @@ export function useModelos() {
     setDespliegues(null);
     await Promise.all([
       permisos.auditoria && auditoriaApi.listar({ id_referencia: String(idVersion), por_pagina: 100 })
-        .then((d) => setTransiciones((d.items ?? []).filter((e) => e.entidad_referencia === 'version_modelo')))
+        .then((d) => setTransiciones(transicionesDeEstado(d.items ?? [])))
         .catch(() => setTransiciones(null)),
       permisos.ota && otaApi.estadoPorVersion(idVersion)
         .then((d) => setDespliegues(d.despliegues ?? []))

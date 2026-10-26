@@ -1,11 +1,14 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { CATALOGO_VARIABLES } from '../lib/catalogos';
+import type { VariableSensorica } from '../lib/catalogos';
 
 interface Props {
+  /** Catálogo I3P-1 real (useCatalogosPatologia). */
+  variables: VariableSensorica[];
   seleccionadas: number[];
   onChange: (ids: number[]) => void;
   error?: string;
@@ -16,7 +19,7 @@ interface Props {
  * Multiselect por chips para las variables sensóricas asociadas (RF-64).
  * Regla del backend: entre 2 y 6 variables. La validación de rango se hace en el form.
  */
-export function VariablesSelector({ seleccionadas, onChange, error, disabled }: Props) {
+export function VariablesSelector({ variables, seleccionadas, onChange, error, disabled }: Props) {
   const { t } = useT('prediction');
   const toggle = (id: number) => {
     if (disabled) return;
@@ -30,7 +33,7 @@ export function VariablesSelector({ seleccionadas, onChange, error, disabled }: 
         aria-label={t('variablesselector.variables_sensoricas_asociadas')}
         style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)' }}
       >
-        {CATALOGO_VARIABLES.map((v) => {
+        {variables.map((v) => {
           const activa = seleccionadas.includes(v.id);
           return (
             <button

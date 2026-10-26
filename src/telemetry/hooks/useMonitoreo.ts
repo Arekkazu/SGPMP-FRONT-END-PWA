@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-08 RF-58: total y conteo del semáforo de todo el alcance, no de la página |
 import { useState, useCallback } from 'react';
 import { monitoreoApi } from '../api/monitoreoApi';
 import { cacheDashboard, getSensoresCache, getUnidadesCache } from '../db/telemetriaTables';
@@ -12,6 +15,9 @@ export function useMonitoreo() {
   const [error, setError] = useState<ApiError | null>(null);
   const [fromCache, setFromCache] = useState(false);
   const [actualizadoEn, setActualizadoEn] = useState<number | null>(null);
+  // M3-08: la vista trae 50 sensores (FA-07); estos son los de todo el alcance.
+  const [total, setTotal] = useState(0);
+  const [conteo, setConteo] = useState<Record<string, number> | null>(null);
 
   const cargar = useCallback(async (filtros: DashboardFiltros = {}, silencioso = false) => {
     if (silencioso) setRefreshing(true);
@@ -23,6 +29,8 @@ export function useMonitoreo() {
       const u = data.resumen_unidades ?? [];
       setSensores(s);
       setUnidades(u);
+      setTotal(data.total ?? s.length);
+      setConteo(data.conteo_semaforo ?? null);
       setFromCache(false);
       setActualizadoEn(Date.now());
 
@@ -108,6 +116,8 @@ export function useMonitoreo() {
             ultimo_dato_recibido: null,
           }))
         );
+        setTotal(cs.length);
+        setConteo(null);
         setFromCache(true);
       } else {
         setError(e as ApiError);
@@ -118,5 +128,5 @@ export function useMonitoreo() {
     }
   }, []);
 
-  return { sensores, unidades, loading, refreshing, error, fromCache, actualizadoEn, cargar };
+  return { sensores, unidades, total, conteo, loading, refreshing, error, fromCache, actualizadoEn, cargar };
 }

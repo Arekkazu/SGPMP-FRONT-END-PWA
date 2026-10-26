@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: motivo del cierre de sesión y vuelta a la pantalla anterior |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -8,7 +11,7 @@ import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Isotipo } from '../../shared/design-system/Isotipo';
-import { consumirAvisoSesionCerrada } from '../../shared/api/http';
+import { leerAvisoSesionCerrada, type MotivoSesionCerrada } from '../../shared/api/http';
 import type { LoginDTO } from '../types';
 import './AuthPages.css';
 import { SelectorIdioma } from '../../shared/design-system/SelectorIdioma';
@@ -23,13 +26,23 @@ function intentosDelBackend(error: { code: string; message: string } | null) {
   return m ? { usados: Number(m[1]), total: Number(m[2]) } : null;
 }
 
+// T-16: el motivo concreto en vez de "posiblemente iniciaste sesión en otro dispositivo".
+const DESCRIPCION_POR_MOTIVO: Record<MotivoSesionCerrada, string> = {
+  generica: 'loginpage.sesion_cerrada_descripcion',
+  cambio_estado: 'loginpage.sesion_finalizada_cambio_estado',
+  otro_dispositivo: 'loginpage.sesion_cerrada_otro_dispositivo',
+  inactividad: 'loginpage.sesion_cerrada_inactividad',
+  expirada: 'loginpage.sesion_cerrada_expirada',
+  seguridad: 'loginpage.sesion_cerrada_seguridad',
+};
+
 export function LoginPage() {
   const { t } = useT('auth');
   const { login, loading, error, online, pendientes } = useLogin();
   const [showPw, setShowPw] = useState(false);
-  // El interceptor de http.ts deja esta bandera antes de un `location.replace`
-  // a /login, asi que se lee una sola vez, al montar tras esa recarga completa.
-  const [sesionCerrada] = useState(() => consumirAvisoSesionCerrada());
+  // El interceptor de http.ts deja esta bandera antes de un `location.replace` a
+  // /login. Se lee sin borrarla: la borra el login exitoso (T-16).
+  const [sesionCerrada] = useState(() => leerAvisoSesionCerrada());
 
   const {
     register,
@@ -62,11 +75,7 @@ export function LoginPage() {
           <Alert
             variant="warning"
             title={t('loginpage.sesion_cerrada')}
-            description={
-              sesionCerrada === 'cambio_estado'
-                ? t('loginpage.sesion_finalizada_cambio_estado')
-                : t('loginpage.sesion_cerrada_descripcion')
-            }
+            description={t(DESCRIPCION_POR_MOTIVO[sesionCerrada])}
             className="auth-alert"
           />
         )}

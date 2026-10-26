@@ -3,6 +3,7 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-60: sección simulada de cámaras y parámetros de heartbeat por categoría |
 // | 2026-10-22 | Leandro | FE-12 RF-57: conserva autorización técnica al reutilizar modales |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-10 RF-60: lista de dispositivos en vez del campo de ID |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: sin filtro de sensor por ID, que el endpoint técnico ignoraba |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, Wrench, AlertTriangle } from 'lucide-react';
@@ -49,7 +50,6 @@ export function DispositivosView() {
       if (filtros.estado) f.estado = filtros.estado;
       if (filtros.severidad) f.severidad = filtros.severidad;
       if (filtros.origen_evento) f.origen_evento = filtros.origen_evento;
-      if (filtros.id_sensor) f.id_sensor = Number(filtros.id_sensor);
       if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
       if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
       return f;

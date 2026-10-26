@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-73: columna de RF de origen |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: nombre del usuario en vez de «Usuario 900» |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -70,7 +71,7 @@ export function AuditoriaTable({ eventos, loading, onVer }: Props) {
                 <td style={TD}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', color: 'var(--text-secondary)' }}>
                     {e.tipo_actor === 'SISTEMA' ? <Cpu size={14} aria-hidden /> : <User size={14} aria-hidden />}
-                    {e.tipo_actor === 'SISTEMA' ? (e.id_sistema ?? 'Sistema') : (e.id_usuario != null ? `Usuario ${e.id_usuario}` : 'Usuario')}
+                    {e.tipo_actor === 'SISTEMA' ? (e.id_sistema ?? 'Sistema') : (e.nombre_usuario ?? (e.id_usuario != null ? `Usuario ${e.id_usuario}` : 'Usuario'))}
                   </span>
                 </td>
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{e.version_modelo ?? '—'}</td>

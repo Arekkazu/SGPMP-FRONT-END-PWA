@@ -1,3 +1,22 @@
+## [1.4.0-rc.6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.5...v1.4.0-rc.6) (2026-10-26)
+
+### Bug Fixes
+
+* **a11y:** fondo inert con un modal abierto y campos numericos del motor con etiqueta (T-24) ([0661b87](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0661b878a04c6ad1f4be93e4e362abe22a65b7da))
+* **m03-m04:** alertas y modelos como tarjetas por debajo de 768px y repeticiones de alerta visibles (T-23, M3-07) ([a7be27b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a7be27bb2a405608d724d13e3a6f540911ac2dff))
+* **m03-m04:** pestanas simuladas y rutas por URL con el mismo permiso, y menu segun las pestanas que el rol abre (T-20, T-21) ([3067beb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3067beb98873fe6407fb1d52bb735795f3e831d5))
+* **m03-telemetry:** dispositivos por problema con contacto relativo, y estados y origenes en palabras (M3-10, T-19, T-23) ([f8193d3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f8193d372a19b56277df336b50c47798e854d5cd))
+* **m03-telemetry:** un solo formato de fecha, numeros con separador y vista Campo agrupada por area (T-22, M3-15) ([9579101](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9579101479552f535bef3aa606cd10fa7d339980))
+* **m03-telemetry:** vinculaciones y filtros con nombres en vez de IDs, y monitoreo con el total real (T-18, M3-08, M3-11, T-23) ([4e38bef](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4e38bef2a42ff3523fcbbe0d80742b2e86b9ac1d)), closes [#115703](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/115703) [#854](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/854) [#391](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/391)
+* **m04-prediction:** historial del modelo solo con cambios de estado y auditoria con el nombre del usuario (N-02, T-18) ([64cae9d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/64cae9db9f75fe69db41c71f50c1695b0df292b8))
+* **pwa:** la version nueva se aplica sola tras un despliegue, sin volver a iniciar sesion (N-01) ([171a546](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/171a5464d09a421838bbc0bd07704ea5a7ca0e1f))
+* **rf57-telemetry:** detalle de alerta sin pasos repetidos, con el umbral superado y el activo por nombre (M3-05, M3-06, T-18) ([4935978](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/49359789b906e504b71575ada3fef12847a37716))
+* **rf57-telemetry:** filtros de alertas por area, animal o lote y tipo con nombre (T-18, T-19) ([4a74524](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4a745243bf2914c4ebb089b2b70cce36edfc0dee))
+* **rf64-prediction:** patologias con variables y especies del catalogo real y sus nombres (M4-02) ([d6d6701](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d6d670197b87886f42bce8c2178a0cabc2fb7890))
+* **rf70-prediction:** paso de dispositivos de la distribucion con buscador y filtro por categoria (M4-05) ([018fcb8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/018fcb8fabea420a87835aa4c6bd6b3a33598136))
+* **rf72-prediction:** retroalimentacion e historial diagnostico ofrecen solo patologias validas de la especie del activo (M4-03, N-03) ([5d5e46b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5d5e46b7afde03b54cd119d0127ca531480930ce))
+* **sesion:** el login explica por que se cerro la sesion y vuelve a la pantalla anterior (T-16) ([3ee266d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3ee266d7ae5b84374d0fe3f659630ebf92f9ac41))
+
 ## [1.4.0-rc.5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.4...v1.4.0-rc.5) (2026-10-25)
 
 ### Features

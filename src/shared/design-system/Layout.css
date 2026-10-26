@@ -1,3 +1,7 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-10-25 | Arekkazu | USAB-M03-M04 T-23: tablas que se vuelven tarjetas por debajo de 768px |  */
+
 /* Rejillas de contenido del DS v2.0 ("Reglas responsive por componente").
  *
  * Existen porque una rejilla escrita como `style={{ gridTemplateColumns:
@@ -122,6 +126,80 @@
 .ds-fila-accion:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
+}
+
+/* T-23: tabla de datos que por debajo de 768px (--bp-md) se vuelve una tarjeta por
+ * fila. Con scroll horizontal, a 375px se veían 3 o 4 columnas y Severidad, Estado y
+ * "Ver detalle" quedaban fuera de la pantalla. Cada <td> lleva su rótulo en
+ * data-label; .ds-celda-destacada (estado, severidad) sube al principio,
+ * .ds-celda-titulo ocupa el ancho completo y .ds-celda-accion queda a la derecha.
+ * Los !important vencen el padding y el borde inline de tableStyles.ts. */
+@media (max-width: 767px) {
+  .ds-tabla-tarjetas,
+  .ds-tabla-tarjetas tbody {
+    display: block;
+  }
+
+  .ds-tabla-tarjetas thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ds-tabla-tarjetas tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--s2) var(--s4);
+    padding: var(--s3) var(--s4);
+    border-bottom: 1px solid var(--surface-border);
+  }
+
+  .ds-tabla-tarjetas td {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: normal !important;
+  }
+
+  .ds-tabla-tarjetas td[data-label]::before {
+    content: attr(data-label);
+    font-size: var(--fs-label-sm);
+    font-weight: 600;
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .ds-tabla-tarjetas .ds-celda-destacada {
+    order: -2;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .ds-tabla-tarjetas .ds-celda-destacada::before {
+    content: none;
+  }
+
+  .ds-tabla-tarjetas .ds-celda-titulo {
+    order: -1;
+    flex-basis: 100%;
+  }
+
+  .ds-tabla-tarjetas .ds-celda-titulo::before {
+    content: none;
+  }
+
+  .ds-tabla-tarjetas .ds-celda-accion {
+    order: -2;
+    margin-left: auto;
+  }
 }
 
 /* Enlace "Saltar al contenido" (WCAG 2.4.1): fuera de pantalla hasta recibir foco. */

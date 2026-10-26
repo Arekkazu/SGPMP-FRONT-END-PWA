@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11: el último dato muestra el día cuando no es de hoy |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-22: un solo formato de fecha y hora en M03 |
 import type { GaugeStatus } from '../../shared/design-system/Gauge';
 import { formatearFechaHora, formatearHora, formatearNumero } from '../../shared/i18n/formato';
 import { diaLocal, hoyLocal } from '../../shared/lib/fecha';
@@ -62,12 +63,16 @@ export function horaCaptura(iso: string | null | undefined): string {
 export function momentoCaptura(iso: string | null | undefined): string {
   if (!iso) return '—';
   if (diaLocal(iso) === hoyLocal()) return horaCaptura(iso);
-  return formatearFechaHora(iso, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return formatearFechaHora(iso);
 }
 
-/** `YYYY-MM-DD HH:MM:SS` en hora local: el día también, no el de UTC. */
+/**
+ * Fecha y hora local de un instante. T-22: había tres formatos ("2026-10-25 09:29 p. m.",
+ * "22 de oct, 03:18 p. m.", "25/10/26, 9:16 p. m."); ahora es el de la app, el mismo
+ * de la auditoría de M04.
+ */
 export function fechaHoraCaptura(iso: string | null | undefined): string {
-  return iso ? `${diaLocal(iso) || iso.slice(0, 10)} ${horaCaptura(iso)}` : '—';
+  return formatearFechaHora(iso);
 }
 
 /** "hace N min/s" a partir de minutos sin reporte. */

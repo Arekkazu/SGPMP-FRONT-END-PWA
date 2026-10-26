@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-24: el resto de la página queda inert mientras el modal está abierto |
 import { useEffect, useRef } from 'react';
 
 const SELECTOR_FOCABLES =
@@ -7,6 +10,28 @@ const SELECTOR_FOCABLES =
 // apilados (p. ej. una confirmación sobre un formulario), Escape cierra el de arriba.
 const pila: HTMLElement[] = [];
 
+// Avisos que deben seguir anunciándose con un modal abierto (toasts, cierre de sesión).
+const FUERA_DEL_INERT = '.ds-toasts, .session-expiration-warning';
+
+/**
+ * T-24: con un modal abierto, el contenido del fondo seguía disponible para el
+ * lector de pantalla. Se marca `inert` todo lo que no está en el camino del modal
+ * hasta <body>; devuelve los elementos marcados para soltarlos al cerrar. Lo que ya
+ * era inert (un modal debajo de otro) no se toca.
+ */
+function inertizarFondo(panel: HTMLElement): HTMLElement[] {
+  const marcados: HTMLElement[] = [];
+  for (let nodo: HTMLElement | null = panel; nodo && nodo !== document.body; nodo = nodo.parentElement) {
+    for (const hermano of Array.from(nodo.parentElement?.children ?? [])) {
+      if (hermano === nodo || !(hermano instanceof HTMLElement)) continue;
+      if (hermano.hasAttribute('inert') || hermano.matches(FUERA_DEL_INERT) || hermano.tagName === 'SCRIPT') continue;
+      hermano.setAttribute('inert', '');
+      marcados.push(hermano);
+    }
+  }
+  return marcados;
+}
+
 function esVisible(el: HTMLElement): boolean {
   return el.getClientRects().length > 0 && !el.hasAttribute('disabled');
 }
@@ -14,7 +39,8 @@ function esVisible(el: HTMLElement): boolean {
 /**
  * Comportamiento accesible para modales (QA TC-DIS-33):
  *
- * - Al montar: mueve el foco al primer elemento enfocable del panel.
+ * - Al montar: mueve el foco al primer elemento enfocable del panel y deja el
+ *   resto de la página `inert` (T-24).
  * - `Escape` cierra el modal.
  * - `Tab` / `Shift+Tab` ciclan el foco dentro del panel (trap).
  * - Al desmontar: devuelve el foco al elemento que lo tenía.
@@ -32,6 +58,7 @@ export function useModalA11y(onClose: () => void) {
     const panel = panelRef.current;
     const focoPrevio = document.activeElement as HTMLElement | null;
     if (panel) pila.push(panel);
+    const inertes = panel ? inertizarFondo(panel) : [];
     panel?.querySelector<HTMLElement>(SELECTOR_FOCABLES)?.focus();
 
     const manejarTecla = (event: KeyboardEvent) => {
@@ -65,6 +92,7 @@ export function useModalA11y(onClose: () => void) {
     return () => {
       document.removeEventListener('keydown', manejarTecla);
       if (panel) pila.splice(pila.indexOf(panel), 1);
+      inertes.forEach((el) => el.removeAttribute('inert'));
       focoPrevio?.focus?.();
     };
   }, []);
