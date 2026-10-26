@@ -1,6 +1,7 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
+// | 2026-10-26 | Arekkazu | INC-M03-193-G121 RF-59: tramos por variable (mismo color, una entrada de leyenda) |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import {
@@ -11,6 +12,9 @@ export interface SerieChart {
   dataKey: string;
   name: string;
   color?: string;
+  /** Tramo de una misma variable tras un vacío: mismo color, sin repetir en la leyenda. */
+  indiceColor?: number;
+  ocultarEnLeyenda?: boolean;
 }
 
 interface Props {
@@ -97,14 +101,15 @@ export function LineChartTelemetria({ data, xKey, series, height = 260, unit, fo
               label={etiquetaSinDatos ? { value: etiquetaSinDatos, position: 'insideTop', fontSize: 11, fill: 'var(--text-muted)' } : undefined}
             />
           ))}
-          {series.length > 1 && <Legend wrapperStyle={{ fontSize: '12px' }} />}
+          {series.filter((s) => !s.ocultarEnLeyenda).length > 1 && <Legend wrapperStyle={{ fontSize: '12px' }} />}
           {series.map((s, i) => (
             <Line
               key={s.dataKey}
               type="monotone"
               dataKey={s.dataKey}
               name={s.name}
-              stroke={s.color ?? PALETA[i % PALETA.length]}
+              stroke={s.color ?? PALETA[(s.indiceColor ?? i) % PALETA.length]}
+              legendType={s.ocultarEnLeyenda ? 'none' : undefined}
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4 }}
