@@ -1,5 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: motivo del cierre y ruta de retorno |
 import { describe, expect, it, vi } from 'vitest';
-import { http, refreshAccessToken, consumirAvisoSesionCerrada } from './http';
+import { http, refreshAccessToken, leerAvisoSesionCerrada } from './http';
+import { tomarRutaRetorno } from '../auth/rutaRetorno';
 import { tokenStore } from '../auth/tokenStore';
 
 function onRejected() {
@@ -108,7 +112,7 @@ describe('interceptor 401', () => {
     replaceSpy = vi.fn();
     Object.defineProperty(window, 'location', {
       configurable: true,
-      value: { replace: replaceSpy, href: '' },
+      value: { replace: replaceSpy, href: '', pathname: '/telemetria/alertas', search: '?estado=ACTIVA' },
     });
   });
 
@@ -156,9 +160,22 @@ describe('interceptor 401', () => {
     await expect(onRejected()(error)).rejects.toBeTruthy();
     expect(replaceSpy).toHaveBeenCalledWith('/login');
     expect(tokenStore.get()).toBeNull();
-    // QA M09 (hallazgo #2): la redirección forzada debe dejar una bandera para
-    // que LoginPage explique por qué se cerró la sesión.
-    expect(consumirAvisoSesionCerrada()).toBe('generica');
+    // QA M09 (hallazgo #2) / T-16: la redirección forzada deja el motivo concreto
+    // para LoginPage y la pantalla a la que se vuelve después del login.
+    expect(leerAvisoSesionCerrada()).toBe('seguridad');
+    expect(tomarRutaRetorno()).toBe('/telemetria/alertas?estado=ACTIVA');
+  });
+
+  it('T-16: otro login con la misma cuenta se explica como sesión abierta en otro dispositivo', async () => {
+    tokenStore.set('access-viejo');
+    vi.spyOn(http, 'post').mockRejectedValue({ response: { status: 401, data: { error_code: 'SESION_INVALIDA' } } });
+
+    const error = { config: { url: '/iot/alertas', headers: {} }, response: { status: 401, data: { error_code: 'TOKEN_REVOCADO' } } };
+
+    await expect(onRejected()(error)).rejects.toBeTruthy();
+    expect(leerAvisoSesionCerrada()).toBe('otro_dispositivo');
+    // Leerlo no lo borra: la primera LoginPage de la SPA lo consumía y la recarga llegaba sin aviso.
+    expect(leerAvisoSesionCerrada()).toBe('otro_dispositivo');
   });
 
   it('RF-06: una sesion finalizada por cambio de estado cierra sin refresh y deja su propio aviso', async () => {
@@ -175,7 +192,7 @@ describe('interceptor 401', () => {
     expect(postSpy).not.toHaveBeenCalled();
     expect(replaceSpy).toHaveBeenCalledWith('/login');
     expect(tokenStore.get()).toBeNull();
-    expect(consumirAvisoSesionCerrada()).toBe('cambio_estado');
+    expect(leerAvisoSesionCerrada()).toBe('cambio_estado');
   });
 
   it('INC-M02-51-G44: un 5xx o un fallo de red en el refresh no cierra la sesion', async () => {
@@ -195,7 +212,7 @@ describe('interceptor 401', () => {
       await expect(onRejected()({ ...error, config: { ...error.config } })).rejects.toBeTruthy();
       expect(replaceSpy).not.toHaveBeenCalled();
       expect(tokenStore.get()).toBe('access-viejo');
-      expect(consumirAvisoSesionCerrada()).toBeNull();
+      expect(leerAvisoSesionCerrada()).toBeNull();
     }
   });
 

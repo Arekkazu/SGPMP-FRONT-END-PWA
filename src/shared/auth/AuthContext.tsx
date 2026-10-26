@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | FE-09 RF-17: nombre_recurso en los permisos del usuario |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: al recargar con la sesión cerrada se explica el motivo |
 import React, { createContext, useState, useCallback, useEffect } from 'react';
 import { tokenStore } from './tokenStore';
 import {
@@ -9,8 +10,10 @@ import {
   refrescoRechazoLaSesion,
   esFalloDeRed,
   marcarSesionCerrada,
+  motivoDeCierre,
   PERMISOS_POSIBLEMENTE_DESACTUALIZADOS,
 } from '../api/http';
+import { RUTAS_PUBLICAS, guardarRutaRetorno, rutaSinBase } from './rutaRetorno';
 import { sonPermisosIguales } from './compararPermisos';
 import { borrarSesionOffline, guardarSesionOffline, leerSesionOffline, type SesionOffline } from './sesionOffline';
 import { setUsuarioSync } from '../sync/syncQueue';
@@ -105,22 +108,7 @@ function isTokenValid(claims: JwtClaims | null): boolean {
 // backend solo permite una sesión activa por cuenta: quien "pierda" esa
 // carrera puede terminar con el JWT/cookie de una sesión que el otro flujo
 // ya invalidó, y la siguiente petición autenticada cae en 401 (bug #1827).
-const RUTAS_PUBLICAS = [
-  '/login',
-  '/registro',
-  '/activar',
-  '/reenviar-activacion',
-  '/recuperar-contrasena',
-  '/restablecer-contrasena',
-  '/sso/callback',
-];
-
-// El AuthProvider vive fuera del router, así que ve la URL con la subruta del
-// proxy (VITE_BASE_PATH, p. ej. /sigab-dev/login): se quita para comparar.
-function rutaSinBase(pathname: string): string {
-  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  return base && pathname.startsWith(base) ? pathname.slice(base.length) || '/' : pathname;
-}
+// (RUTAS_PUBLICAS y rutaSinBase viven en ./rutaRetorno.)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const storedToken = tokenStore.get();
@@ -178,6 +166,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(async (error) => {
         // 401/410: sin sesión que recuperar, la ruta protegida redirige a /login.
         if (refrescoRechazoLaSesion(error)) {
+          // T-16: si el backend dice por qué (otro login, inactividad…), LoginPage lo
+          // explica. Sin cookie (REFRESH_TOKEN_REQUERIDO) no había sesión: sin aviso.
+          const motivo = motivoDeCierre(error);
+          if (motivo) marcarSesionCerrada(motivo);
+          // Enlace directo o recarga sin sesión: se vuelve aquí después del login.
+          else guardarRutaRetorno();
           void borrarSesionOffline();
           return;
         }

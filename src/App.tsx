@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: módulo de suministros (ruta /suministros) |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: cierre por inactividad con motivo y ruta de retorno |
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
@@ -86,7 +87,9 @@ setupIonicReact();
 function SessionManager() {
   const { token } = useAuth();
   const logout = useLogout();
-  const remainingSeconds = useSessionTimeout({ hasSession: token !== null, onTimeout: logout });
+  // T-16: el login explica que fue por inactividad y el reingreso vuelve a la misma pantalla.
+  const cerrarPorInactividad = useCallback(() => { void logout('inactividad'); }, [logout]);
+  const remainingSeconds = useSessionTimeout({ hasSession: token !== null, onTimeout: cerrarPorInactividad });
 
   if (remainingSeconds === null) return null;
   return <SessionExpirationWarning remainingSeconds={remainingSeconds} />;
