@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 N-01: la versión nueva se aplica sola tras un despliegue |
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
@@ -5,9 +8,10 @@ import App from './App';
 // asi el primer render ya sale en el idioma correcto (incluido el login,
 // donde todavia no hay JWT para consultar la preferencia al backend).
 import './shared/i18n';
-import { instalarRecargaTrasDespliegue } from './shared/lib/recargaTrasDespliegue';
+import { instalarRecargaPorVersionNueva, instalarRecargaTrasDespliegue } from './shared/lib/recargaTrasDespliegue';
 
 instalarRecargaTrasDespliegue();
+instalarRecargaPorVersionNueva();
 
 const container = document.getElementById('root');
 const root = createRoot(container!);
