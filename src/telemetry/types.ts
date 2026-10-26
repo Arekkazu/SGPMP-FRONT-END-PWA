@@ -5,6 +5,7 @@
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-05/M3-06/M3-10: autor del historial, ubicación de la alerta y listado de dispositivos |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M3-08: nombres en vinculaciones y conteo del semáforo |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -144,6 +145,8 @@ export interface ListarAlertasFiltros {
   tipo_alerta?: string;
   id_sensor?: number;
   id_activo_biologico?: number;
+  /** T-18: área elegida por nombre. */
+  id_infraestructura?: number;
   origen_evento?: string;
   fecha_desde?: string;
   fecha_hasta?: string;

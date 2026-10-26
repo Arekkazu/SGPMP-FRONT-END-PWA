@@ -3,6 +3,7 @@
 // | 2026-10-22 | Leandro | FE-12 RF-57: comparte permisos y recupera transiciones rechazadas |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 4.1.3 RF-57: contadores de alertas en región aria-live |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -17,6 +18,8 @@ import { useAlertas } from '../hooks/useAlertas';
 import { useAlertaDetalle } from '../hooks/useAlertaDetalle';
 import { AlertasFiltros, ALERTAS_FILTROS_VACIO, type AlertasFiltrosState } from '../components/AlertasFiltros';
 import { AlertasTable } from '../components/AlertasTable';
+import { useAreas } from '../hooks/useAreas';
+import { useActivos } from '../hooks/useActivos';
 import { AlertaDetalleModal } from '../components/AlertaDetalleModal';
 import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal';
 import { Paginacion } from '../components/Paginacion';
@@ -48,6 +51,8 @@ export function AlertasView() {
   const detalleHook = useAlertaDetalle();
 
   const [filtros, setFiltros] = useState<AlertasFiltrosState>(ALERTAS_FILTROS_VACIO);
+  const areas = useAreas();
+  const activos = useActivos();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [accion, setAccion] = useState<NuevoEstadoAlerta | null>(null);
 
@@ -58,7 +63,7 @@ export function AlertasView() {
       if (filtros.severidad) f.severidad = filtros.severidad;
       if (filtros.origen_evento) f.origen_evento = filtros.origen_evento;
       if (filtros.tipo_alerta) f.tipo_alerta = filtros.tipo_alerta.trim();
-      if (filtros.id_sensor) f.id_sensor = Number(filtros.id_sensor);
+      if (filtros.id_infraestructura) f.id_infraestructura = Number(filtros.id_infraestructura);
       if (filtros.id_activo_biologico) f.id_activo_biologico = Number(filtros.id_activo_biologico);
       if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
       if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
@@ -125,6 +130,8 @@ export function AlertasView() {
         </div>
 
         <AlertasFiltros
+          areas={areas}
+          activos={activos}
           value={filtros}
           onChange={setFiltros}
           onAplicar={() => cargar(build(1))}
