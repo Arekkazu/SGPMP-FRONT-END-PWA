@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre en el filtro |
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -10,6 +11,7 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useVinculaciones } from '../hooks/useVinculaciones';
+import { useAreas } from '../hooks/useAreas';
 import { VinculacionesFiltros, VINCULACIONES_FILTROS_VACIO, type VinculacionesFiltrosState } from '../components/VinculacionesFiltros';
 import { VinculacionesTable } from '../components/VinculacionesTable';
 import { VinculacionDetalleModal } from '../components/VinculacionDetalleModal';
@@ -31,6 +33,7 @@ export function VinculacionesView() {
 
   const { items, paginacion, loading, saving, error, saveError, cargar, resolver, corregir } = useVinculaciones();
   const [filtros, setFiltros] = useState<VinculacionesFiltrosState>(VINCULACIONES_FILTROS_VACIO);
+  const areas = useAreas();
   const [seleccionada, setSeleccionada] = useState<VinculacionLecturaSchema | null>(null);
   const [accion, setAccion] = useState<Accion>(null);
 
@@ -82,6 +85,7 @@ export function VinculacionesView() {
         {error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('vinculacionesview.sin_acceso_a_vinculaciones') : t('vinculacionesview.error_al_cargar_vinculaciones')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <VinculacionesFiltros
+          areas={areas}
           value={filtros}
           onChange={setFiltros}
           onAplicar={() => cargar(build(1))}

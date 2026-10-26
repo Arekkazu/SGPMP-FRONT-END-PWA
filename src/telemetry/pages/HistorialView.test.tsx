@@ -4,6 +4,7 @@
 // | 2026-10-23 | Arekkazu | PR-667: el vacío se muestra en el día local, no en el de UTC |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: conteos con plural y separador de miles |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01: 7 días por defecto y el rango rápido consulta |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: el mock incluye el dashboard que lista las áreas |
 /**
  * FE-11 (RF-59 E6 / CA-19 y E7 / CA-17): con la respuesta de DEV-38, el historial avisa
  * cuando el resultado se truncó y marca los intervalos sin datos.
@@ -16,7 +17,9 @@ import i18n, { LOCALE_DEFAULT } from '../../shared/i18n';
 import type { HistorialPageSchema, LecturaHistoricaSchema, VacioTemporalSchema } from '../types';
 
 const historial = vi.hoisted(() => vi.fn());
-vi.mock('../api/monitoreoApi', () => ({ monitoreoApi: { historial, exportarHistorial: vi.fn() } }));
+// T-18: el filtro de área pide las áreas al resumen del dashboard.
+const dashboard = vi.hoisted(() => vi.fn(async () => ({ resumen_unidades: [] })));
+vi.mock('../api/monitoreoApi', () => ({ monitoreoApi: { historial, exportarHistorial: vi.fn(), dashboard } }));
 vi.mock('../../shared/rbac/usePermission', () => ({ usePermission: () => true }));
 
 import { HistorialView } from './HistorialView';

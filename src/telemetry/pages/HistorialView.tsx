@@ -3,6 +3,7 @@
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01/M3-13 RF-59: 7 días por defecto, rangos rápidos consultan, exportación deshabilitada con motivo |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre en el filtro |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -10,6 +11,7 @@ import { History } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { Alert } from '../../shared/design-system/Alert';
 import { useHistorial } from '../hooks/useHistorial';
+import { useAreas } from '../hooks/useAreas';
 import { HistorialFiltros, HISTORIAL_FILTROS_DEFAULT, type HistorialFiltrosState } from '../components/HistorialFiltros';
 import { EstadisticasCards } from '../components/EstadisticasCards';
 import { HistorialChart } from '../components/HistorialChart';
@@ -27,6 +29,7 @@ export function HistorialView() {
 
   const { items, estadisticas, paginacion, truncado, vacios, loading, error, exportando, exportError, cargar, exportar } = useHistorial();
   const [filtrosActuales, setFiltros] = useState<HistorialFiltrosState>(HISTORIAL_FILTROS_DEFAULT);
+  const areas = useAreas();
   const [modalExport, setModalExport] = useState(false);
 
   const build = useCallback(
@@ -107,6 +110,7 @@ export function HistorialView() {
         )}
 
         <HistorialFiltros
+          areas={areas}
           value={filtrosActuales}
           onChange={setFiltros}
           onAplicar={(v) => cargar(build(1, v))}

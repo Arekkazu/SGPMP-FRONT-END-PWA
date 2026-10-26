@@ -4,6 +4,7 @@
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-05/M3-06/M3-10: autor del historial, ubicación de la alerta y listado de dispositivos |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M3-08: nombres en vinculaciones y conteo del semáforo |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -216,6 +217,8 @@ export interface DashboardResponseSchema {
   por_pagina: number;
   resumen_unidades: ResumenUnidadSchema[];
   sensores: EstadoSensorSchema[];
+  /** M3-08: sensores por color de todo el alcance (VERDE/AMARILLO/ROJO/GRIS), no de la página. */
+  conteo_semaforo?: Record<string, number>;
 }
 
 export interface DashboardFiltros {
@@ -367,6 +370,17 @@ export interface VinculacionLecturaSchema {
   motivo_correccion: string | null;
   id_vinculacion_reemplazada: number | null;
   fecha_creacion: string;
+  // T-18: nombres resueltos por el backend; los IDs siguen para filtrar y resolver.
+  nombre_activo?: string | null;
+  especie_activo?: string | null;
+  nombre_infraestructura?: string | null;
+  nombre_finca?: string | null;
+  nombre_variable?: string | null;
+  nombre_sensor?: string | null;
+  valor_lectura?: number | null;
+  unidad_lectura?: string | null;
+  fecha_lectura?: string | null;
+  nombre_usuario?: string | null;
 }
 
 export interface ListaVinculacionesSchema {
