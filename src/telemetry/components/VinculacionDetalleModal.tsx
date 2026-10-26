@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-22: nombres en vez de IDs y un solo formato de fecha |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { GitFork, Pencil, ShieldCheck } from 'lucide-react';
@@ -8,7 +9,9 @@ import { ModalShell } from './ModalShell';
 import { Button } from '../../shared/design-system/Button';
 import { EstadoVinculacionPill } from './EstadoVinculacionPill';
 import { MecanismoPill } from './MecanismoPill';
-import { fechaHoraCaptura } from '../lib/sensorEscala';
+import { formatearFechaHora } from '../../shared/i18n/formato';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
+import { lecturaVinculada, nombreActivoVinculado, ubicacionVinculada } from '../lib/vinculacion';
 import type { VinculacionLecturaSchema } from '../types';
 
 interface Props {
@@ -29,10 +32,7 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function fechaHora(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  return fechaHoraCaptura(iso);
-}
+const fechaHora = (iso: string | null | undefined) => formatearFechaHora(iso);
 
 export function VinculacionDetalleModal({ vinc, puedeGestionar, online, onResolver, onCorregir, onClose }: Props) {
   const { t } = useT('telemetry');
@@ -43,7 +43,7 @@ export function VinculacionDetalleModal({ vinc, puedeGestionar, online, onResolv
 
   return (
     <ModalShell
-      title={`Vinculación #${vinc.id_vinculacion_lectura}`}
+      title={t('vinculaciondetallemodal.titulo', { id: vinc.id_vinculacion_lectura })}
       onClose={onClose}
       maxWidth={520}
       footer={
@@ -66,14 +66,16 @@ export function VinculacionDetalleModal({ vinc, puedeGestionar, online, onResolv
         <MecanismoPill mecanismo={vinc.mecanismo_vinculacion} />
       </div>
 
-      <Fila label="Lectura (telemetría)">#{vinc.id_telemetria}</Fila>
-      <Fila label={t('vinculaciondetallemodal.activo_biologico')}>{vinc.id_activo_biologico != null ? `#${vinc.id_activo_biologico}` : '—'}</Fila>
-      <Fila label={t('vinculaciondetallemodal.modelo_de_manejo')}>{vinc.modelo_manejo || '—'}</Fila>
-      <Fila label={t('vinculaciondetallemodal.infraestructura')}>#{vinc.id_infraestructura}</Fila>
+      <Fila label={t('vinculaciondetallemodal.lectura')}>{lecturaVinculada(vinc)}</Fila>
+      {vinc.nombre_sensor && <Fila label={t('vinculaciondetallemodal.sensor')}>{vinc.nombre_sensor}</Fila>}
+      {vinc.fecha_lectura && <Fila label={t('vinculaciondetallemodal.medida_el')}>{fechaHora(vinc.fecha_lectura)}</Fila>}
+      <Fila label={t('vinculaciondetallemodal.activo_biologico')}>{nombreActivoVinculado(vinc)}</Fila>
+      <Fila label={t('vinculaciondetallemodal.modelo_de_manejo')}>{vinc.modelo_manejo ? etiquetaCodigo(vinc.modelo_manejo) : '—'}</Fila>
+      <Fila label={t('vinculaciondetallemodal.infraestructura')}>{ubicacionVinculada(vinc)}</Fila>
       <Fila label={t('vinculaciondetallemodal.inicio_validez')}>{fechaHora(vinc.fecha_inicio_vinculacion)}</Fila>
       <Fila label={t('vinculaciondetallemodal.fin_validez')}>{fechaHora(vinc.fecha_fin_vinculacion)}</Fila>
       <Fila label={t('vinculaciondetallemodal.creada')}>{fechaHora(vinc.fecha_creacion)}</Fila>
-      {vinc.id_usuario != null && <Fila label={t('vinculaciondetallemodal.usuario')}>#{vinc.id_usuario}</Fila>}
+      {vinc.id_usuario != null && <Fila label={t('vinculaciondetallemodal.usuario')}>{vinc.nombre_usuario ?? `#${vinc.id_usuario}`}</Fila>}
 
       <div style={{ marginTop: 'var(--s5)' }}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s2)' }}>

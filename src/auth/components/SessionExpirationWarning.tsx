@@ -1,4 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: botón «Seguir conectado» |
 import { Alert } from '../../shared/design-system/Alert';
+import { Button } from '../../shared/design-system/Button';
+import { authApi } from '../api/authApi';
 import { useT } from '../../shared/i18n/useT';
 import './SessionExpirationWarning.css';
 
@@ -26,9 +31,16 @@ export function SessionExpirationWarning({ remainingSeconds }: { remainingSecond
             : t('sessionexpirationwarning.quedan_minutos', { count: minutes })
         }
       />
-      <span className="session-expiration-warning__countdown" aria-hidden="true">
-        {formatCountdown(remainingSeconds)}
-      </span>
+      <div className="session-expiration-warning__pie">
+        {/* T-16: el clic ya cuenta como actividad (useSessionTimeout); el keepalive
+            explícito avisa al backend aunque haya habido una petición hace poco. */}
+        <Button variant="secondary" size="sm" onClick={() => void authApi.mantenerSesion().catch(() => {})}>
+          {t('sessionexpirationwarning.seguir_conectado')}
+        </Button>
+        <span className="session-expiration-warning__countdown" aria-hidden="true">
+          {formatCountdown(remainingSeconds)}
+        </span>
+      </div>
     </div>
   );
 }

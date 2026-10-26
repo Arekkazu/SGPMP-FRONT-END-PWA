@@ -1,5 +1,8 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 N-01: la versión nueva se aplica sola tras un despliegue |
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { instalarRecargaTrasDespliegue, recargarConVersionNueva } from './recargaTrasDespliegue';
+import { instalarRecargaPorVersionNueva, instalarRecargaTrasDespliegue, recargarConVersionNueva } from './recargaTrasDespliegue';
 
 const reload = vi.fn();
 const locationOriginal = window.location;
@@ -47,5 +50,26 @@ describe('recarga tras despliegue', () => {
     sw.dispatchEvent(new Event('controllerchange'));
     await recarga;
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('N-01: recarga una vez cuando el service worker nuevo toma el control', () => {
+    const sw = Object.assign(new EventTarget(), { controller: {} });
+    Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: sw });
+
+    instalarRecargaPorVersionNueva();
+    sw.dispatchEvent(new Event('controllerchange'));
+    sw.dispatchEvent(new Event('controllerchange'));
+
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('N-01: la primera instalación (sin controlador previo) no recarga', () => {
+    const sw = Object.assign(new EventTarget(), { controller: null });
+    Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: sw });
+
+    instalarRecargaPorVersionNueva();
+    sw.dispatchEvent(new Event('controllerchange'));
+
+    expect(reload).not.toHaveBeenCalled();
   });
 });

@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: intentos de registro de versiones no admitidos (E1b, E2a) |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: nombre del usuario en vez de «Usuario 900» |
 import React from 'react';
 import { ShieldX } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -36,7 +37,7 @@ export function IntentosRegistroTable({ intentos, error }: { intentos: EventoAud
               {intentos.map((e) => (
                 <tr key={e.id_evento}>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', whiteSpace: 'nowrap' }}>{formatearFechaHora(e.fecha_evento)}</td>
-                  <td style={{ ...TD, fontSize: '12px' }}>{e.id_sistema ?? (e.id_usuario != null ? t('intentos.usuario', { id: e.id_usuario }) : '—')}</td>
+                  <td style={{ ...TD, fontSize: '12px' }}>{e.id_sistema ?? e.nombre_usuario ?? (e.id_usuario != null ? t('intentos.usuario', { id: e.id_usuario }) : '—')}</td>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>{FLUJO[e.tipo_evento] ?? '—'}</td>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{e.codigo_error ?? e.resultado_operacion ?? '—'}</td>
                   <td style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>{e.descripcion_error ?? '—'}</td>

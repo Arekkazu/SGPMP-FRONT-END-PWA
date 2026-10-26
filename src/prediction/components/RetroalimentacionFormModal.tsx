@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-03 RF-72: inferencia por fecha, sin Ninguna al marcar Incorrecto, patologías en grupo con nombre |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-03/N-03 RF-72: diagnósticos de la especie del activo y activo con nombre |
 import React, { useState } from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -15,6 +16,8 @@ import type { ApiError } from '../../shared/api/errors';
 export interface RetroContexto {
   id_resultado_inferencia: string;
   id_activo_biologico: number;
+  /** Identificador del activo; sin él se muestra el número. */
+  nombre_activo?: string | null;
   /** M4-03: se muestra "Inferencia del 27/07 08:15"; el UUID no le dice nada al veterinario. */
   fecha_inferencia?: string;
   resumen?: string;
@@ -103,7 +106,7 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
 
         {/* Contexto de la inferencia */}
         <div style={{ background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s3)', fontSize: '12px', color: 'var(--text-secondary)' }}>
-          <div><strong>{t('retroalimentacionformmodal.activo_biologico')}</strong> {contexto.id_activo_biologico}</div>
+          <div><strong>{t('retroalimentacionformmodal.activo_biologico')}</strong> {contexto.nombre_activo ?? `#${contexto.id_activo_biologico}`}</div>
           <div title={contexto.id_resultado_inferencia}>
             <strong>Inferencia:</strong>{' '}
             {contexto.fecha_inferencia ? `del ${formatearFechaHora(contexto.fecha_inferencia, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : contexto.id_resultado_inferencia}

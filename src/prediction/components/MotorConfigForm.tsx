@@ -3,7 +3,8 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: modo como tarjetas, pesos solo META, contrato del modelo y confirmaciones |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-04 RF-65: solo versiones APROBADO/ACTIVO; alerta crítica 0,50–0,95 con 0,70 por defecto |
-import React, { useEffect, useState } from 'react';
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-24: los campos numéricos con su etiqueta |
+import React, { useEffect, useId, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { humanizar as etiquetaEstadoVersion } from '../../shared/lib/etiquetas';
 import { Save, Server, Cpu, Shuffle, Info } from 'lucide-react';
@@ -43,9 +44,11 @@ const SECCION: React.CSSProperties = { marginBottom: 'var(--s6)', borderTop: '1p
 function RangoCampo({
   label, valor, min, max, step, unidad, disabled, onChange,
 }: { label: string; valor: number; min: number; max: number; step: number; unidad?: string; disabled?: boolean; onChange: (v: number) => void }) {
+  // T-24: el número no tenía nombre accesible y el <label> no apuntaba a ningún campo.
+  const id = useId();
   return (
     <div>
-      <label style={LABEL}>{label}</label>
+      <label style={LABEL} htmlFor={id}>{label}</label>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
         <input
           type="range"
@@ -56,6 +59,7 @@ function RangoCampo({
           aria-label={label}
         />
         <input
+          id={id}
           type="number"
           min={min} max={max} step={step} value={valor}
           disabled={disabled}

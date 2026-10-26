@@ -1,4 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-03/N-03 RF-72: diagnósticos de la especie del activo y activo con nombre |
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { History, ShieldCheck, Download, Clock, TrendingUp } from 'lucide-react';
@@ -13,6 +16,7 @@ import { HistorialFiltros, historialFiltrosVacio, type HistorialFiltrosState } f
 import { HistorialTimeline } from '../components/HistorialTimeline';
 import { LineChartPrediccion } from '../components/LineChartPrediccion';
 import { RetroalimentacionFormModal, type RetroContexto } from '../components/RetroalimentacionFormModal';
+import { diagnosticosPara } from '../lib/diagnosticos';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { extraerNivelRiesgo } from '../lib/riesgo';
 import { RECURSO_HISTORIAL, RECURSO_RETRO, ACCION_R, ACCION_C } from '../rbac';
@@ -39,10 +43,14 @@ export function HistorialView() {
     if (puedeVer) { cargarActivos(); patologiasHook.cargar({ solo_activas: true }); }
   }, [puedeVer, cargarActivos]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const patologiasOpciones = useMemo(
-    () => patologiasHook.patologias.map((p) => ({ id: p.id_patologia, nombre: p.nombre_patologia })),
-    [patologiasHook.patologias]
-  );
+  // M4-03 / N-03: solo las patologías válidas de la especie del activo, en el filtro y
+  // en la retroalimentación (antes: Ich y Vibriosis para un bovino, y las de prueba).
+  const activoDe = useCallback((id: number | string | null | undefined) =>
+    activos.find((a) => String(a.id_activo_biologico) === String(id)), [activos]);
+  const opcionesPara = useCallback((idActivo: number | string | null | undefined) =>
+    diagnosticosPara(patologiasHook.patologias, { id: activoDe(idActivo)?.id_especie })
+      .map((p) => ({ id: p.id_patologia, nombre: p.nombre_patologia })), [patologiasHook.patologias, activoDe]);
+  const patologiasOpciones = useMemo(() => opcionesPara(filtros.idActivo), [opcionesPara, filtros.idActivo]);
 
   const consultarHistorial = () => {
     if (!filtros.idActivo) return;
@@ -162,9 +170,10 @@ export function HistorialView() {
           contexto={{
             id_resultado_inferencia: retroEvento.id_resultado_inferencia,
             id_activo_biologico: retroEvento.id_activo_biologico,
+            nombre_activo: activoDe(retroEvento.id_activo_biologico)?.identificador,
             resumen: `Evento: ${retroEvento.tipo_evento}`,
           } as RetroContexto}
-          patologiasOpciones={patologiasOpciones}
+          patologiasOpciones={opcionesPara(retroEvento.id_activo_biologico)}
           saving={retro.saving}
           saveError={retro.saveError}
           online={online}

@@ -3,6 +3,7 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: requisitos para activar, estado OTA, transiciones y notas inmutables |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-07 RF-69: matriz de confusión con ejes Real/Predicho y clases |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 N-02/T-19: transiciones con nombre del usuario y etiqueta legible |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Rocket, Save, CheckCircle2, XCircle, Info } from 'lucide-react';
@@ -184,8 +185,15 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
                 <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
                   {transiciones.map((e) => (
                     <li key={e.id_evento} style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--s3)', flexWrap: 'wrap', fontSize: '12px' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{e.tipo_evento}</span>
-                      <span style={{ color: 'var(--text-muted)' }}>{e.tipo_actor === 'SISTEMA' ? e.id_sistema ?? 'SISTEMA' : t('modelodetallemodal.usuario', { id: e.id_usuario })} · {formatearFechaHora(e.fecha_evento)}</span>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                        {t(`modelodetallemodal.transicion.${e.tipo_evento}`, { defaultValue: e.tipo_evento })}
+                      </span>
+                      <span style={{ color: 'var(--text-muted)' }}>
+                        {e.tipo_actor === 'SISTEMA'
+                          ? (e.id_sistema ?? t('modelodetallemodal.sistema'))
+                          : (e.nombre_usuario ?? t('modelodetallemodal.usuario', { id: e.id_usuario }))}
+                        {' · '}{formatearFechaHora(e.fecha_evento)}
+                      </span>
                     </li>
                   ))}
                 </ol>

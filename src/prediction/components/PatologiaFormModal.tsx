@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Save } from 'lucide-react';
@@ -6,7 +9,7 @@ import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { ModalShell } from './ModalShell';
 import { VariablesSelector } from './VariablesSelector';
-import { CATALOGO_ESPECIES } from '../lib/catalogos';
+import { conTodas, type EspecieOpcion, type VariableSensorica } from '../lib/catalogos';
 import { INPUT, LABEL } from './tableStyles';
 import type { PatologiaM04Response } from '../types';
 import type { ApiError } from '../../shared/api/errors';
@@ -19,6 +22,9 @@ export interface PatologiaFormValues {
 }
 
 interface Props {
+  /** Catálogos reales (useCatalogosPatologia), M4-02. */
+  catalogoVariables: VariableSensorica[];
+  especies: EspecieOpcion[];
   mode: 'crear' | 'editar';
   inicial: PatologiaM04Response | null;
   saving: boolean;
@@ -30,7 +36,7 @@ interface Props {
 
 const DESC_MIN = 50;
 
-export function PatologiaFormModal({ mode, inicial, saving, saveError, online, onSubmit, onClose }: Props) {
+export function PatologiaFormModal({ catalogoVariables, especies, mode, inicial, saving, saveError, online, onSubmit, onClose }: Props) {
   const { t } = useT('prediction');
   const [nombre, setNombre] = useState(inicial?.nombre_patologia ?? '');
   const [especie, setEspecie] = useState(inicial?.especie_aplicable ?? 'TODAS');
@@ -102,7 +108,7 @@ export function PatologiaFormModal({ mode, inicial, saving, saveError, online, o
             onChange={(e) => setEspecie(e.target.value)}
             disabled={mode === 'editar'}
           >
-            {CATALOGO_ESPECIES.map((op) => <option key={op.valor} value={op.valor}>{op.nombre}</option>)}
+            {conTodas(especies).map((op) => <option key={op.valor} value={op.valor}>{op.nombre}</option>)}
           </select>
           {mode === 'editar' && (
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('patologiaformmodal.la_especie_no_se_modifica_al_editar')}</span>
@@ -134,6 +140,7 @@ export function PatologiaFormModal({ mode, inicial, saving, saveError, online, o
         <div>
           <label style={LABEL}>{t('patologiaformmodal.variables_sensoricas_asociadas')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></label>
           <VariablesSelector
+            variables={catalogoVariables}
             seleccionadas={variables}
             onChange={(ids) => { setVariables(ids); marcar('variables'); }}
             error={fieldError('variables', errVariables) ?? fieldError('variables_sensoricas_asociadas')}

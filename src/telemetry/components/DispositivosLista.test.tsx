@@ -1,12 +1,13 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-10: filtro por estado, señal en palabras y selección de fila |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-10: los que fallan primero |
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import '../../shared/i18n';
-import { DispositivosLista, nivelSenal } from './DispositivosLista';
+import { DispositivosLista, nivelSenal, porProblema } from './DispositivosLista';
 import type { DispositivoConEstadoSchema } from '../types';
 
 const d = (id: number, estado: string, rssi: number | null): DispositivoConEstadoSchema => ({
@@ -34,5 +35,16 @@ describe('DispositivosLista (M3-10)', () => {
 
     await userEvent.click(screen.getByText('Edge 1'));
     expect(onSeleccionar).toHaveBeenCalledWith(1);
+  });
+
+  it('ordena los que fallan primero y, a igual estado, la batería más baja', () => {
+    const lista = [
+      { ...d(1, 'ACTIVO', -60), nivel_bateria_pct: '80' },
+      { ...d(2, 'DESCONOCIDO', null) },
+      { ...d(3, 'ACTIVO', -60), nivel_bateria_pct: '15' },
+      { ...d(4, 'SIN_SEÑAL', -95) },
+    ].sort(porProblema);
+
+    expect(lista.map((x) => x.id_dispositivo_iot)).toEqual([4, 2, 3, 1]);
   });
 });

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-05 RF-70: buscador y filtro por categoría en el paso de dispositivos |
 import { http } from '../../shared/api/http';
 import type {
   OtaStatusResponse,
@@ -50,7 +53,7 @@ export const otaApi = {
       { params: { solo_activos: true } },
     );
     const items = Array.isArray(res.data) ? res.data : res.data.items;
-    return items.map(({ id_dispositivo_iot, serial, descripcion, es_activo }) => ({ id_dispositivo_iot, serial, descripcion, es_activo }));
+    return items.map(({ id_dispositivo_iot, serial, descripcion, es_activo, categoria }) => ({ id_dispositivo_iot, serial, descripcion, es_activo, categoria }));
   },
 };
 

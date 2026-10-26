@@ -1,9 +1,11 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: envía la zona horaria del navegador en X-Zona-Horaria |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: motivo del cierre de sesión y vuelta a la pantalla anterior |
 import axios, { type AxiosError } from 'axios';
 import { tokenStore } from '../auth/tokenStore';
 import { mapToApiError } from './errors';
+import { guardarRutaRetorno } from '../auth/rutaRetorno';
 
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000',
@@ -54,22 +56,65 @@ export const PERMISOS_POSIBLEMENTE_DESACTUALIZADOS = 'sgpmp:permisos-posiblement
 // QA M09 (hallazgo #2): un 401 no recuperable redirigia a /login sin dejar
 // ningun rastro de por que se cerro la sesion (p.ej. el backend solo permite
 // una sesion activa por cuenta, asi que un segundo login en otro dispositivo
-// invalida esta). LoginPage lee esta bandera una sola vez para explicarlo.
+// invalida esta). LoginPage lee esta bandera para explicarlo.
 const SESION_CERRADA_KEY = 'sgpmp:sesion-cerrada';
+// T-16: el aviso se lee sin borrarlo (se borra al iniciar sesión) y caduca solo.
+const VIGENCIA_AVISO_MS = 10 * 60 * 1000;
 
 /** Por qué se cerró la sesión: `cambio_estado` es el aviso propio de RF-06. */
-export type MotivoSesionCerrada = 'generica' | 'cambio_estado';
+export type MotivoSesionCerrada =
+  | 'generica' | 'cambio_estado' | 'otro_dispositivo' | 'inactividad' | 'expirada' | 'seguridad';
+
+// T-16: el código con que el backend rechaza el refresh dice el motivo
+// (identity_access/.../refresh_token_use_case.py). SESION_INVALIDA es la sesión que
+// invalidó otro login con la misma cuenta: el backend admite una sesión por cuenta.
+const MOTIVO_POR_CODIGO: Record<string, MotivoSesionCerrada> = {
+  SESION_INVALIDA: 'otro_dispositivo',
+  SESION_EXPIRADA_INACTIVIDAD: 'inactividad',
+  REFRESH_TOKEN_EXPIRADO: 'expirada',
+  REFRESH_TOKEN_REUTILIZADO: 'seguridad',
+  SESION_FINALIZADA_CAMBIO_ESTADO: 'cambio_estado',
+};
+
+/** El motivo según el código del error; `null` si el código no dice nada (p. ej. sin cookie). */
+export function motivoDeCierre(error: unknown): MotivoSesionCerrada | null {
+  // Llega como `ApiError` (`code`) o como error crudo de Axios (`response.data.error_code`).
+  const e = error as { code?: string; response?: { data?: { error_code?: string } } } | undefined;
+  const codigo = e?.response?.data?.error_code ?? e?.code;
+  return (codigo && MOTIVO_POR_CODIGO[codigo]) || null;
+}
 
 // RF-06: "Su sesión ha sido finalizada debido a un cambio en el estado de su
 // cuenta." El backend lo señala con este código cuando la cuenta pasó a
 // INACTIVO, BLOQUEADO o ELIMINADO. No se intenta refresh: la sesión ya no vuelve.
 const CODIGO_SESION_FINALIZADA_POR_ESTADO = 'SESION_FINALIZADA_CAMBIO_ESTADO';
 
-export function consumirAvisoSesionCerrada(): MotivoSesionCerrada | null {
-  const valor = sessionStorage.getItem(SESION_CERRADA_KEY);
-  if (valor === null) return null;
-  sessionStorage.removeItem(SESION_CERRADA_KEY);
-  return valor === 'cambio_estado' ? 'cambio_estado' : 'generica';
+/**
+ * El motivo pendiente de mostrar, sin borrarlo.
+ *
+ * T-16: antes se borraba al leerlo, y se perdía. `forzarLogout` limpia el token y
+ * llama a `location.replace`; en ese intervalo React ya redirigía a /login dentro
+ * de la SPA, esa primera LoginPage consumía la bandera y la recarga completa
+ * llegaba sin aviso. Ahora se borra al iniciar sesión o caduca a los 10 minutos.
+ */
+export function leerAvisoSesionCerrada(): MotivoSesionCerrada | null {
+  try {
+    const valor = sessionStorage.getItem(SESION_CERRADA_KEY);
+    if (valor === null) return null;
+    const aviso = JSON.parse(valor) as { motivo?: MotivoSesionCerrada; en?: number };
+    if (!aviso.motivo || !aviso.en || Date.now() - aviso.en > VIGENCIA_AVISO_MS) return null;
+    return aviso.motivo;
+  } catch {
+    return null;
+  }
+}
+
+export function descartarAvisoSesionCerrada(): void {
+  try {
+    sessionStorage.removeItem(SESION_CERRADA_KEY);
+  } catch {
+    // nada que descartar
+  }
 }
 
 function esSesionFinalizadaPorEstado(error: { response?: { data?: unknown } }): boolean {
@@ -96,8 +141,14 @@ export function esFalloDeRed(error: unknown): boolean {
   return !statusDe(error);
 }
 
+/** Deja el motivo para LoginPage y la pantalla actual para volver a ella (T-16). */
 export function marcarSesionCerrada(motivo: MotivoSesionCerrada = 'generica'): void {
-  sessionStorage.setItem(SESION_CERRADA_KEY, motivo);
+  try {
+    sessionStorage.setItem(SESION_CERRADA_KEY, JSON.stringify({ motivo, en: Date.now() }));
+  } catch {
+    // Sin almacenamiento el login aparece sin aviso, como antes.
+  }
+  guardarRutaRetorno();
 }
 
 function forzarLogout(motivo: MotivoSesionCerrada = 'generica'): void {
@@ -182,13 +233,13 @@ http.interceptors.response.use(
         if (!refrescoRechazoLaSesion(refreshError)) {
           return Promise.reject(mapToApiError(refreshError as AxiosError));
         }
-        forzarLogout();
+        forzarLogout(motivoDeCierre(refreshError) ?? 'generica');
         return Promise.reject(mapToApiError(error));
       }
     }
 
     if (error.response?.status === 401 && !isPublicAuthEndpoint && !es401DeNegocio(error)) {
-      forzarLogout();
+      forzarLogout(motivoDeCierre(error) ?? 'generica');
     }
 
     // RF-25, flujo alterno "cambio de permisos en sesion activa": el backend siempre

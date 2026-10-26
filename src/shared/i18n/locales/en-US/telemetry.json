@@ -17,7 +17,9 @@
     "vence": "Expires",
     "creada": "Created",
     "usuario_id": "User #{{id}}",
-    "ubicacion": "Location"
+    "ubicacion": "Location",
+    "rango_normal": "Normal range",
+    "umbral_superado": "Threshold exceeded"
   },
   "alertasfiltros": {
     "activa": "Active",
@@ -42,10 +44,21 @@
     "tipo_de_alerta": "Alert type",
     "todas": "All",
     "todos": "All",
-    "vencida": "Expired"
+    "vencida": "Expired",
+    "activo": "Animal or batch"
   },
   "alertastable": {
-    "no_hay_alertas_que_coincidan_con_los_filtros": "No alerts match the filters."
+    "no_hay_alertas_que_coincidan_con_los_filtros": "No alerts match the filters.",
+    "tabla": "Alerts",
+    "ver_detalle": "View details",
+    "col_tipo": "Alert type",
+    "col_ubicacion": "Location",
+    "col_variable": "Variable",
+    "col_valor": "Value",
+    "col_severidad": "Severity",
+    "col_estado": "Status",
+    "col_generada": "Generated",
+    "repeticiones": "Repeated {{n}} times; consolidated into this alert"
   },
   "alertasview": {
     "alertas_ambientales_y_sanitarias": "Environmental and Health Alerts",
@@ -299,7 +312,11 @@
     "no_hay_sensores_para_mostrar_con_los": "No sensors to show with the current filters.",
     "refrescar_ahora": "Refresh now",
     "sin_acceso_al_monitoreo": "No access to monitoring",
-    "sin_conexion": "Offline"
+    "sin_conexion": "Offline",
+    "cargando": "Loading…",
+    "sensores_de_total_one": "{{visibles}} of {{n}} sensor",
+    "sensores_de_total_other": "{{visibles}} of {{n}} sensors",
+    "sin_sensores_en_tus_fincas": "Your farms don't have sensors yet. Register them in Settings › IoT."
   },
   "movilview": {
     "cargando": "Loading…",
@@ -311,7 +328,10 @@
     "sin_conexion": "Offline",
     "sin_sensores": "No sensors.",
     "tomar": "Take",
-    "monitoreo_y_alertas": "Monitoring and alerts · IoT telemetry"
+    "monitoreo_y_alertas": "Monitoring and alerts · IoT telemetry",
+    "buscar": "Search sensor or area",
+    "bateria": "Battery {{valor}}",
+    "senal": "Signal {{nivel}}"
   },
   "paginacion": {
     "anterior": "Previous",
@@ -404,7 +424,11 @@
     "sin_permiso_o_sin_conexion": "No permission or offline",
     "trazabilidad_nic_41": "IAS 41 traceability",
     "usuario": "User",
-    "vinculacion_reemplazada": "Link replaced"
+    "vinculacion_reemplazada": "Link replaced",
+    "titulo": "Link #{{id}}",
+    "lectura": "Reading",
+    "sensor": "Sensor",
+    "medida_el": "Measured on"
   },
   "vinculacionesfiltros": {
     "ambigua": "Ambiguous",
@@ -426,7 +450,15 @@
     "todos": "All"
   },
   "vinculacionestable": {
-    "no_hay_vinculaciones_que_coincidan_con_los": "No links match the filters."
+    "no_hay_vinculaciones_que_coincidan_con_los": "No links match the filters.",
+    "tabla": "Reading links",
+    "ver_detalle": "View details",
+    "col_lectura": "Reading",
+    "col_activo": "Animal or batch",
+    "col_ubicacion": "Location",
+    "col_manejo": "Management",
+    "col_mecanismo": "Mechanism",
+    "col_estado": "Status"
   },
   "vinculacionesview": {
     "error_al_cargar_vinculaciones": "Failed to load links",
@@ -808,7 +840,18 @@
     "RESUELTA": "Resolved",
     "DESCARTADA": "Dismissed",
     "VENCIDA": "Expired",
-    "PENDIENTE_SINCRONIZACION": "Pending sync"
+    "PENDIENTE_SINCRONIZACION": "Pending sync",
+    "INDIVIDUAL": "Individual",
+    "POBLACIONAL": "Population (batch)",
+    "DESCONOCIDO": "Unknown status",
+    "BACKEND": "Server",
+    "EDGE": "Field device",
+    "IA": "AI",
+    "SINDROME_RESPIRATORIO": "Respiratory syndrome",
+    "FIEBRE": "Fever",
+    "INACTIVIDAD_ANORMAL": "Abnormal inactivity",
+    "PREDICCION_PATOLOGIA": "Disease prediction",
+    "TORMENTA_DE_ALERTAS": "Alert storm"
   },
   "camposvinculacion": {
     "activo_biologico": "Biological asset",
@@ -844,5 +887,14 @@
     "senal_debil": "Weak",
     "error": "Could not load the device list",
     "ver_detalle": "View status of {{nombre}}"
+  },
+  "selectorarea": {
+    "area": "Area",
+    "placeholder": "Search by name or type the ID",
+    "vacio": "No matches. You can type the area ID."
+  },
+  "vinculacion": {
+    "sin_activo": "No asset",
+    "lectura_numero": "Reading #{{id}}"
   }
 }

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-07/T-20: pestañas compartidas, ocultas sin permiso |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-20/T-21: Monitor y Contagio (simulados) solo para Admin/Vet, también por URL |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Switch, Route, Redirect } from 'react-router-dom';
@@ -8,7 +9,9 @@ import {
   Activity, ShieldAlert, Stethoscope, SlidersHorizontal, History, MessageSquareText,
   Boxes, DownloadCloud, RefreshCw, ClipboardList,
 } from 'lucide-react';
-import { PestanasModulo, type PestanaModulo } from '../../shared/design-system/PestanasModulo';
+import {
+  PestanasModulo, PestanaProtegida, usePrimeraPestana, type GrupoPestanas, type PestanaModulo,
+} from '../../shared/design-system/PestanasModulo';
 import {
   RECURSO_PATOLOGIAS, RECURSO_MOTOR, RECURSO_HISTORIAL, RECURSO_MODELOS,
   RECURSO_OTA, RECURSO_RETRO, RECURSO_AUDITORIA, ACCION_R, ACCION_E,
@@ -25,9 +28,13 @@ import { DistribucionOtaView } from './DistribucionOtaView';
 import { ReentrenamientoView } from './ReentrenamientoView';
 import { AuditoriaView } from './AuditoriaView';
 
+// T-20/T-21: Monitor y Contagio son simulados y mostraban al Productor fincas y
+// patologías que no son suyas; el Contador los abría por URL. Sin recurso propio, quedan
+// con la lectura de versiones de modelo (Administrador y Veterinario).
+const PERMISO_SIMULADO: [number, number] = [RECURSO_MODELOS, ACCION_R];
 const TABS_PRINCIPAL: PestanaModulo[] = [
-  { label: 'Monitor', path: '/prediccion/monitor', icon: <Activity size={15} aria-hidden /> },
-  { label: 'Contagio', path: '/prediccion/contagio', icon: <ShieldAlert size={15} aria-hidden /> },
+  { label: 'Monitor', path: '/prediccion/monitor', icon: <Activity size={15} aria-hidden />, permiso: PERMISO_SIMULADO },
+  { label: 'Contagio', path: '/prediccion/contagio', icon: <ShieldAlert size={15} aria-hidden />, permiso: PERMISO_SIMULADO },
   { label: 'Patologías', path: '/prediccion/patologias', icon: <Stethoscope size={15} aria-hidden />, permiso: [RECURSO_PATOLOGIAS, ACCION_R] },
   { label: 'Motor', path: '/prediccion/motor', icon: <SlidersHorizontal size={15} aria-hidden />, permiso: [RECURSO_MOTOR, ACCION_R] },
   { label: 'Historial', path: '/prediccion/historial', icon: <History size={15} aria-hidden />, permiso: [RECURSO_HISTORIAL, ACCION_R] },
@@ -50,16 +57,19 @@ const TABS_MODELOS: PestanaModulo[] = [
  */
 export function PrediccionPage() {
   const { t } = useT('prediction');
+  const grupos: GrupoPestanas[] = [{ pestanas: TABS_PRINCIPAL }, { titulo: t('prediccionpage.modelos_ia'), pestanas: TABS_MODELOS }];
+  // El Productor solo tiene el Historial diagnóstico: entra directo ahí.
+  const inicio = usePrimeraPestana(grupos);
   return (
     <div style={{ minHeight: '100%', background: 'var(--surface-bg)' }}>
       <PestanasModulo
         ariaLabel={t('prediccionpage.secciones_de_prediccion')}
-        grupos={[{ pestanas: TABS_PRINCIPAL }, { titulo: t('prediccionpage.modelos_ia'), pestanas: TABS_MODELOS }]}
+        grupos={grupos}
       />
 
       <Switch>
-        <Route exact path="/prediccion/monitor" component={MonitorInferenciaView} />
-        <Route exact path="/prediccion/contagio" component={RiesgoContagioView} />
+        <Route exact path="/prediccion/monitor"><PestanaProtegida pestana={TABS_PRINCIPAL[0]}><MonitorInferenciaView /></PestanaProtegida></Route>
+        <Route exact path="/prediccion/contagio"><PestanaProtegida pestana={TABS_PRINCIPAL[1]}><RiesgoContagioView /></PestanaProtegida></Route>
         <Route exact path="/prediccion/patologias" component={PatologiasView} />
         <Route exact path="/prediccion/motor" component={MotorView} />
         <Route exact path="/prediccion/historial" component={HistorialView} />
@@ -69,7 +79,7 @@ export function PrediccionPage() {
         <Route exact path="/prediccion/reentrenamiento" component={ReentrenamientoView} />
         <Route exact path="/prediccion/auditoria" component={AuditoriaView} />
         <Route path="/prediccion">
-          <Redirect to="/prediccion/patologias" />
+          {inicio && <Redirect to={inicio} />}
         </Route>
       </Switch>
     </div>

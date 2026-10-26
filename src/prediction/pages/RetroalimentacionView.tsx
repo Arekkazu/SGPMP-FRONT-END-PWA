@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-03 RF-72: el formulario recibe la fecha de la inferencia |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-03/N-03 RF-72: diagnósticos de la especie del activo y activo con nombre |
 import React, { useEffect, useMemo, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -14,6 +15,7 @@ import { usePatologias } from '../hooks/usePatologias';
 import { useRetroalimentacion } from '../hooks/useRetroalimentacion';
 import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
 import { RetroalimentacionFormModal } from '../components/RetroalimentacionFormModal';
+import { diagnosticosPara } from '../lib/diagnosticos';
 import { Pill, type Tono } from '../components/Pill';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { TH, TD, TABLE_WRAP, THEAD_ROW, INPUT, LABEL, FILTER_GRID } from '../components/tableStyles';
@@ -59,9 +61,11 @@ export function RetroalimentacionView() {
 
   useEffect(() => { if (puedeVer) patologiasHook.cargar({ solo_activas: true }); }, [puedeVer]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // M4-03 / N-03: solo las patologías válidas de la especie del activo evaluado.
   const patologiasOpciones = useMemo(
-    () => patologiasHook.patologias.map((p) => ({ id: p.id_patologia, nombre: p.nombre_patologia })),
-    [patologiasHook.patologias]
+    () => diagnosticosPara(patologiasHook.patologias, { nombre: sel?.especie })
+      .map((p) => ({ id: p.id_patologia, nombre: p.nombre_patologia })),
+    [patologiasHook.patologias, sel]
   );
 
   const visibles = useMemo(() => RETRO_PENDIENTES_MOCK.filter((r) =>
@@ -168,6 +172,7 @@ export function RetroalimentacionView() {
           contexto={{
             id_resultado_inferencia: sel.id_resultado_inferencia,
             id_activo_biologico: sel.id_activo_biologico,
+            nombre_activo: sel.identificador,
             fecha_inferencia: sel.fecha_inferencia,
             resumen: `${sel.identificador} · ${sel.patologia_estimada} (${(sel.probabilidad * 100).toFixed(0)}%)`,
           }}

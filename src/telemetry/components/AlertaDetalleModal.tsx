@@ -4,6 +4,7 @@
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional + T-19 códigos legibles |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-05/M3-06 RF-57: historial con evento Creada, estados legibles y autor; ubicación con nombres |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-05/M3-06/T-18: sin pasos repetidos, umbral superado y activo con nombre |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -20,6 +21,7 @@ import type { AlertaDetalleSchema, NuevoEstadoAlerta } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 import { ubicacionAlerta } from './AlertasTable';
+import { motivoLegible, sinPasosRepetidos, umbralDeAlerta } from '../lib/detalleAlerta';
 
 interface Props {
   detalle: AlertaDetalleSchema | null;
@@ -50,6 +52,8 @@ const ACCION_META: Record<NuevoEstadoAlerta, { label: string; variant: 'primary'
 export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, puedeDescartar, online, onAccion, onClose }: Props) {
   const { t } = useT('telemetry');
   const acciones = detalle ? accionesAlerta(detalle.estado_alerta, { puedeGestionar, puedeDescartar }) : [];
+  const umbral = umbralDeAlerta(detalle?.metadato_evento);
+  const reglas = Array.isArray(detalle?.reglas_activas) ? detalle!.reglas_activas.map(String) : [];
 
   return (
     <ModalShell
@@ -101,12 +105,21 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, pu
           <Fila label={t('alertadetallemodal.generada')}>{fechaHoraCaptura(detalle.fecha_generacion)}</Fila>
           <Fila label={t('alertadetallemodal.evento')}>{fechaHoraCaptura(detalle.fecha_evento)}</Fila>
           {detalle.fecha_vencimiento && <Fila label={t('alertadetallemodal.vence')}>{fechaHoraCaptura(detalle.fecha_vencimiento)}</Fila>}
-          <Fila label={t('alertadetallemodal.reglas_activadas')}>{Array.isArray(detalle.reglas_activas) && detalle.reglas_activas.length > 0 ? detalle.reglas_activas.map(String).join(', ') : '—'}</Fila>
+          {/* M3-06: qué umbral superó. "Reglas activadas: —" no decía nada y se omite vacío. */}
+          {umbral?.rangoNormal && (
+            <Fila label={t('alertadetallemodal.rango_normal')}>
+              {`${valorConUnidad(umbral.rangoNormal[0])} – ${valorConUnidad(umbral.rangoNormal[1], detalle.unidad)}`}
+            </Fila>
+          )}
+          {umbral?.regla && <Fila label={t('alertadetallemodal.umbral_superado')}>{umbral.regla}</Fila>}
+          {reglas.length > 0 && <Fila label={t('alertadetallemodal.reglas_activadas')}>{reglas.join(', ')}</Fila>}
           {detalle.accion_sugerida && <Fila label={t('alertadetallemodal.accion_sugerida')}>{detalle.accion_sugerida}</Fila>}
           {detalle.diagnostico && <Fila label={t('alertadetallemodal.diagnostico')}>{detalle.diagnostico}</Fila>}
           {detalle.motivo_descarte && <Fila label={t('alertadetallemodal.motivo_de_descarte')}>{detalle.motivo_descarte}</Fila>}
           <Fila label={t('alertadetallemodal.ubicacion')}>{ubicacionAlerta(detalle)}</Fila>
-          {detalle.id_activo_biologico != null && <Fila label={t('alertadetallemodal.activo_biologico')}>#{detalle.id_activo_biologico}</Fila>}
+          {detalle.id_activo_biologico != null && (
+            <Fila label={t('alertadetallemodal.activo_biologico')}>{detalle.nombre_activo ?? `#${detalle.id_activo_biologico}`}</Fila>
+          )}
 
           <div style={{ marginTop: 'var(--s5)' }}>
             <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>{t('alertadetallemodal.historico_de_estados')}</h3>
@@ -114,7 +127,7 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, pu
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>{t('alertadetallemodal.sin_cambios_de_estado_registrados')}</p>
             ) : (
               <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-                {detalle.historico_estados.map((h, i) => (
+                {sinPasosRepetidos(detalle.historico_estados).map((h, i) => (
                   <li key={h.id_historico_estado_alerta ?? i} style={{ display: 'flex', gap: 'var(--s2)', fontSize: '12px', color: 'var(--text-secondary)' }}>
                     <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                       {fechaHoraCaptura(h.fecha_cambio)}
@@ -124,7 +137,7 @@ export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, pu
                       {h.estado_anterior === h.estado_nuevo
                         ? <strong>{t('alertadetallemodal.creada')}</strong>
                         : <><strong>{etiquetaCodigo(h.estado_anterior)}</strong> → <strong>{etiquetaCodigo(h.estado_nuevo)}</strong></>}
-                      {h.motivo ? ` · ${h.motivo}` : ''}
+                      {motivoLegible(h.motivo) ? ` · ${motivoLegible(h.motivo)}` : ''}
                       {(h.nombre_usuario || h.id_usuario != null) && (
                         <span style={{ color: 'var(--text-muted)' }}> · {h.nombre_usuario ?? t('alertadetallemodal.usuario_id', { id: h.id_usuario })}</span>
                       )}

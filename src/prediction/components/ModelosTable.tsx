@@ -3,6 +3,7 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: métricas según paradigma y quién registró la versión |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-23: tarjetas por debajo de 768px, con estado arriba |
 import React from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -59,7 +60,8 @@ export function ModelosTable({ modelos, loading, onVer }: Props) {
 
   return (
     <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de versiones de modelos">
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+      {/* T-23: a 375px Estado y Métricas quedaban fuera de la pantalla (tabla de 787px). */}
+      <table className="ds-tabla-tarjetas" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={THEAD_ROW}>
             <th style={TH}>{t('modelostable.version')}</th>
@@ -73,22 +75,22 @@ export function ModelosTable({ modelos, loading, onVer }: Props) {
         <tbody>
           {modelos.map((m) => (
             <tr key={m.id_version_modelo}>
-              <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>
+              <td className="ds-celda-titulo" style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)' }}>
                   {m.nombre_version}
                   {m.esta_produccion && <BadgeCheck size={14} aria-label={t('modelostable.en_produccion')} style={{ color: 'var(--sem-success)' }} />}
                 </span>
               </td>
-              <td style={TD}>{etiquetaTipoModelo(m.tipo_modelo)}{m.componente && ` · ${m.componente}`}</td>
-              <td style={TD}><EstadoModeloPill estado={m.estado_version} /></td>
-              <td style={TD}><Metricas m={m} /></td>
-              <td style={TD}>
+              <td data-label={t('modelostable.tipo_componente')} style={TD}>{etiquetaTipoModelo(m.tipo_modelo)}{m.componente && ` · ${m.componente}`}</td>
+              <td className="ds-celda-destacada" style={TD}><EstadoModeloPill estado={m.estado_version} /></td>
+              <td data-label={t('modelostable.metricas')} style={TD}><Metricas m={m} /></td>
+              <td data-label={t('modelostable.registrado')} style={TD}>
                 {fmtFecha(m.fecha_registro ?? m.fecha_entrenamiento)}
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                   {m.id_proceso_rf71 ? t('modelostable.por_rf71', { proceso: m.id_proceso_rf71.slice(0, 8) }) : '—'}
                 </div>
               </td>
-              <td style={{ ...TD, textAlign: 'right' }}>
+              <td className="ds-celda-accion" style={{ ...TD, textAlign: 'right' }}>
                 <Button variant="ghost" size="sm" onClick={() => onVer(m)} aria-label={`Ver ${m.nombre_version}`} title={t('modelostable.ver_detalle')}>
                   <Eye size={16} aria-hidden />
                 </Button>

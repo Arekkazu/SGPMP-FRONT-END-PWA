@@ -4,6 +4,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional + T-19 códigos legibles |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre; encabezado de la columna de acción |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-06 RF-57: columna Ubicación en vez de Reglas y Origen |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-23/M3-07: tarjetas por debajo de 768px y repeticiones consolidadas (×N) |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, BellRing } from 'lucide-react';
@@ -24,7 +25,6 @@ interface Props {
 
 // M3-06: "Reglas" siempre decía 0 y "Origen" es técnico (sigue en el detalle).
 // Lo que faltaba era dónde ocurrió.
-const COLS = ['Tipo de alerta', 'Ubicación', 'Variable', 'Valor', 'Severidad', 'Estado', 'Generada', ''];
 
 /** "Finca › Área › Sensor" con los nombres que mande el backend; si no, los IDs. */
 export function ubicacionAlerta(a: AlertaSchema): string {
@@ -38,6 +38,11 @@ export function ubicacionAlerta(a: AlertaSchema): string {
 
 export function AlertasTable({ alertas, loading, onAbrir }: Props) {
   const { t } = useT('telemetry');
+  const col = {
+    tipo: t('alertastable.col_tipo'), ubicacion: t('alertastable.col_ubicacion'), variable: t('alertastable.col_variable'),
+    valor: t('alertastable.col_valor'), severidad: t('alertastable.col_severidad'), estado: t('alertastable.col_estado'),
+    generada: t('alertastable.col_generada'),
+  };
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -59,10 +64,14 @@ export function AlertasTable({ alertas, loading, onAbrir }: Props) {
   }
 
   return (
-    <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de alertas">
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+    <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label={t('alertastable.tabla')}>
+      {/* T-23: a 375px Valor, Severidad, Estado y Ver detalle quedaban fuera de la pantalla. */}
+      <table className="ds-tabla-tarjetas" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
-          <tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} style={TH}>{h || <span className="ds-sr-only">Ver detalle</span>}</th>)}</tr>
+          <tr style={THEAD_ROW}>
+            {[col.tipo, col.ubicacion, col.variable, col.valor, col.severidad, col.estado, col.generada].map((h) => <th key={h} style={TH}>{h}</th>)}
+            <th style={TH}><span className="ds-sr-only">{t('alertastable.ver_detalle')}</span></th>
+          </tr>
         </thead>
         <tbody>
           {alertas.map((a) => (
@@ -73,18 +82,27 @@ export function AlertasTable({ alertas, loading, onAbrir }: Props) {
               onClick={() => onAbrir(a.id_alerta)}
               onKeyDown={alActivarConTeclado(() => onAbrir(a.id_alerta))}
             >
-              <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{etiquetaCodigo(a.tipo_alerta)}</td>
-              <td style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>{ubicacionAlerta(a)}</td>
-              <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}><TipoAlertaTecnicaPill tipo={a.tipo_variable} /></td>
-              <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+              <td className="ds-celda-titulo" style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>
+                {etiquetaCodigo(a.tipo_alerta)}
+                {/* M3-07: las repeticiones consolidadas en la misma alerta (RF-57 CA-4). */}
+                {a.frecuencia_evento > 1 && (
+                  <span style={{ marginLeft: 'var(--s2)', fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}
+                    title={t('alertastable.repeticiones', { n: a.frecuencia_evento })}>
+                    ×{a.frecuencia_evento}
+                  </span>
+                )}
+              </td>
+              <td data-label={col.ubicacion} style={{ ...TD, fontSize: '12px', color: 'var(--text-secondary)' }}>{ubicacionAlerta(a)}</td>
+              <td data-label={col.variable} style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}><TipoAlertaTecnicaPill tipo={a.tipo_variable} /></td>
+              <td data-label={col.valor} style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                 {valorConUnidad(a.valor, a.unidad)}
               </td>
-              <td style={TD}><SeveridadBadge severidad={a.severidad} /></td>
-              <td style={TD}><EstadoAlertaPill estado={a.estado_alerta} /></td>
-              <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              <td className="ds-celda-destacada" style={TD}><SeveridadBadge severidad={a.severidad} /></td>
+              <td className="ds-celda-destacada" style={TD}><EstadoAlertaPill estado={a.estado_alerta} /></td>
+              <td data-label={col.generada} style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                 {fechaHoraCaptura(a.fecha_generacion)}
               </td>
-              <td style={{ ...TD, textAlign: 'right', color: 'var(--text-muted)' }}><ChevronRight size={16} aria-hidden /></td>
+              <td className="ds-celda-accion" style={{ ...TD, textAlign: 'right', color: 'var(--text-muted)' }}><ChevronRight size={16} aria-hidden /></td>
             </tr>
           ))}
         </tbody>
