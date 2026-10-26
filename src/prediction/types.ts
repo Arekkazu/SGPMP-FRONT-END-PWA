@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | DEV-36 RF-65: config_version en ConfigurarMotorDTO |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: etiquetaTipoModelo muestra "Sin tipo", nunca "null" |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M4-02: nombre del usuario en auditoría, de variables y de especie en patologías |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -443,6 +444,8 @@ export interface EventoAuditoriaM04Response {
   severidad_evento: SeveridadEvento;
   origen_registro: string | null;
   id_usuario: number | null;
+  /** T-18: «Usuario 900» no decía quién; null si el backend aún no lo expone. */
+  nombre_usuario?: string | null;
   id_sistema: string | null;
   id_referencia: string | null;
   entidad_referencia: string | null;
