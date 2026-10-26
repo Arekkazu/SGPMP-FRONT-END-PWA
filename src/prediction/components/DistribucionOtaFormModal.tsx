@@ -4,6 +4,7 @@
 // | 2026-10-23 | destroyerban | FE-08 RF-70: la OTA lista versiones APROBADO          |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-05 RF-70: buscador y filtro por categoría en el paso de dispositivos |
 import React, { useMemo, useState } from 'react';
 import { Send, ChevronLeft, ChevronRight, PackageX } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -11,6 +12,8 @@ import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Stepper } from '../../shared/design-system/Stepper';
+import { Buscador } from '../../shared/design-system/Buscador';
+import { useBusqueda } from '../../shared/hooks/useBusqueda';
 import type { ApiError } from '../../shared/api/errors';
 import { ModalShell } from './ModalShell';
 import { INPUT, LABEL } from './tableStyles';
@@ -87,7 +90,13 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
   const poblacional = tipo !== '' && PARADIGMA_POR_TIPO[tipo] === 'POBLACIONAL';
   const candidatas = versiones.filter((v) => (!tipo || v.tipo_modelo === tipo) && (!poblacional || !componente || v.componente === componente));
   const elegida = versiones.find((v) => String(v.id_version_modelo) === form.idVersion);
-  const habilitados = dispositivos.filter((d) => d.es_activo);
+  // M4-05: eran 373 equipos de todas las fincas sin forma de encontrar uno. Buscador
+  // y filtro por categoría; "Seleccionar todos" toma solo los que se están viendo.
+  const [categoria, setCategoria] = useState('');
+  const categorias = useMemo(() => [...new Set(dispositivos.map((d) => d.categoria).filter(Boolean))] as string[], [dispositivos]);
+  const porCategoria = useMemo(() => (categoria ? dispositivos.filter((d) => d.categoria === categoria) : dispositivos), [dispositivos, categoria]);
+  const { consulta, setConsulta, filtrados: visibles } = useBusqueda(porCategoria, (d) => `${d.serial} ${d.descripcion ?? ''}`);
+  const habilitados = visibles.filter((d) => d.es_activo);
 
   /** Marca los campos del paso; si alguno tiene error no avanza. */
   const pasoValido = (p: Paso) => {
@@ -251,9 +260,25 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
               </span>
             </div>
             <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: 'var(--s2)' }}>{t('distribucionform.orden_rollout')}</span>
+            <div style={{ display: 'flex', gap: 'var(--s3)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <Buscador id="ota-buscar" label={t('distribucionform.buscar_dispositivo')} value={consulta} onChange={setConsulta} resultados={visibles.length} />
+              {categorias.length > 1 && (
+                <div style={{ marginBottom: 'var(--s4)', minWidth: 160 }}>
+                  <label style={LABEL} htmlFor="ota-categoria">{t('distribucionform.categoria')}</label>
+                  <select id="ota-categoria" style={INPUT} value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+                    <option value="">{t('distribucionform.todas')}</option>
+                    {categorias.map((c) => <option key={c} value={c}>{t(`distribucionform.categoria_${c}`, { defaultValue: c })}</option>)}
+                  </select>
+                </div>
+              )}
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s1)', maxHeight: 260, overflowY: 'auto', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s2)' }}>
-              {dispositivos.length === 0 && <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('distribucionform.sin_dispositivos')}</span>}
-              {dispositivos.map((d) => {
+              {visibles.length === 0 && (
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  {dispositivos.length === 0 ? t('distribucionform.sin_dispositivos') : t('distribucionform.sin_coincidencias')}
+                </span>
+              )}
+              {visibles.map((d) => {
                 const orden = form.dispositivos.indexOf(d.id_dispositivo_iot);
                 return (
                   <label key={d.id_dispositivo_iot} style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', minHeight: 'var(--s9)', fontSize: '13px', color: d.es_activo ? 'var(--text-primary)' : 'var(--text-muted)', cursor: d.es_activo ? 'pointer' : 'not-allowed' }}>
@@ -261,8 +286,12 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
                       type="checkbox" checked={orden >= 0} disabled={!d.es_activo}
                       onChange={() => { set('dispositivos', alternarDispositivo(form.dispositivos, d.id_dispositivo_iot)); marcar('dispositivos'); }}
                     />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{d.serial}</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>{d.descripcion}</span>
+                    {/* Descripción primero; el serial (hasta 45 caracteres) se parte y no desborda el modal. */}
+                    <span style={{ minWidth: 0 }}>
+                      <span style={{ display: 'block', fontWeight: 600 }}>{d.descripcion || d.serial}</span>
+                      {d.descripcion && <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{d.serial}</span>}
+                    </span>
+                    {d.categoria && <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t(`distribucionform.categoria_${d.categoria}`, { defaultValue: d.categoria })}</span>}
                     {!d.es_activo && <span style={{ fontSize: '11px' }}>{t('distribucionform.inactivo')}</span>}
                     {orden >= 0 && (
                       <span style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>

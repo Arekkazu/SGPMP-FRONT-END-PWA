@@ -386,6 +386,8 @@ export interface DispositivoObjetivoOta {
   serial: string;
   descripcion: string;
   es_activo: boolean;
+  /** M4-05: SENSOR | CAMARA, para filtrar los 373 equipos del paso 3. */
+  categoria?: string | null;
 }
 
 export interface OtaStatusResponse {
