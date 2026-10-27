@@ -37,7 +37,7 @@ const PASOS_LIGHTHOUSE = ['vista', 'exportar', 'error-rango'];
 
 const URL_HISTORIAL = esGet('/iot/monitoreo/historial');
 const SEMAFORO_TEXTO = ['Normal', 'Advertencia', 'Fuera de rango', 'Sin señal'];
-const FILTROS = [/^Desde/, /^Hasta/, /^Variable$/, /^Categoría$/, /^ID infraestructura$/, /^Especie$/, /^Estado de la lectura$/, /^Origen del dato$/];
+const FILTROS = [/^Desde/, /^Hasta/, /^Variable$/, /^Categoría$/, /^Área$/, /^Especie$/, /^Estado de la lectura$/, /^Origen del dato$/];
 const SIN_RESULTADOS = 'Sin lecturas para el rango y filtros seleccionados.';
 const AREA = process.env.TC_DIS_160_AREA ?? '347';
 const DIAS = Number(process.env.TC_DIS_160_DIAS ?? 7);
@@ -65,19 +65,16 @@ async function consultar(page: Page) {
 async function abrirAcotado(page: Page) {
   const inicial = await irA(page, RUTA, TITULO, URL_HISTORIAL);
   await main(page).getByLabel(/^Desde/).fill(fechaHaceDias(DIAS));
-  await main(page).getByLabel(/^ID infraestructura$/).fill(AREA);
+  await main(page).getByLabel(/^Área$/).fill(AREA);
   const acotada = await consultar(page);
   return { inicial, acotada };
 }
 
 test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial de lecturas ambientales (RF-59)`, () => {
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
-
   let contexto: BrowserContext;
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    testInfo.setTimeout(420_000);
     ({ contexto, page } = await abrirSesion(browser, testInfo));
   });
 
@@ -165,32 +162,33 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial de lecturas ambi
     await escanear(page, TC_ID, __dirname, 'sin-resultados', testInfo, PASOS_LIGHTHOUSE);
   });
 
-  test('4. Diálogo de exportación PDF/Excel - name/role/value (4.1.2) y foco al abrir (2.4.3)', async ({}, testInfo) => {
+  test('4. Botón "Exportar" deshabilitado con motivo accesible (4.1.2 / 3.3.1)', async ({}, testInfo) => {
+    // 2026-10-27: M3-13 deshabilitó "Exportar" de forma permanente (el backend
+    // responde 503 hasta que exista el módulo de Reportes, M08) y le agregó el
+    // motivo por aria-describedby — ya no abre un diálogo PDF/Excel.
     await irA(page, RUTA, TITULO, URL_HISTORIAL);
     const exportar = main(page).getByRole('button', { name: 'Exportar', exact: true });
     desviacion(await exportar.isVisible(), 'el botón "Exportar" no aparece (¿la cuenta no tiene permiso E sobre el recurso 34?)');
     if (!(await exportar.isVisible())) return;
 
-    await exportar.focus();
-    await page.keyboard.press('Enter');
-    const dialogo = page.getByRole('dialog', { name: 'Exportar historial de lecturas' });
-    await expect(dialogo, 'Enter sobre "Exportar" debe abrir el diálogo').toBeVisible();
-    const foco = await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'));
-    anotar(testInfo, 'Foco al abrir', foco ? 'dentro del diálogo' : 'fuera del diálogo');
-    expect.soft(foco, '2.4.3: al abrir el diálogo el foco debe entrar en él').toBe(true);
-    await expect.soft(dialogo.getByRole('button', { name: 'PDF', exact: true }), '4.1.2: botón PDF con nombre accesible').toBeVisible();
-    await expect.soft(dialogo.getByRole('button', { name: 'Excel', exact: true }), '4.1.2: botón Excel con nombre accesible').toBeVisible();
+    await expect.soft(exportar, '4.1.2: "Exportar" debe anunciarse como deshabilitado mientras M08 no exista').toBeDisabled();
+    const describedby = await exportar.getAttribute('aria-describedby');
+    expect.soft(describedby, '3.3.1: el motivo de "Exportar" deshabilitado debe estar asociado por aria-describedby').toBeTruthy();
+    if (describedby) {
+      const motivo = page.locator(`#${describedby}`);
+      await expect.soft(motivo, '3.3.1: el motivo debe ser visible, no solo un title').toBeVisible();
+      anotar(testInfo, 'Motivo "Exportar" deshabilitado', (await motivo.innerText()).trim());
+    }
     await escanear(page, TC_ID, __dirname, 'exportar', testInfo, PASOS_LIGHTHOUSE);
-    await page.keyboard.press('Escape');
-    await expect.soft(dialogo, 'Escape debe cerrar el diálogo').toBeHidden();
   });
 
   test('5. Rango de fechas > 90 días - el error se muestra y se anuncia (3.3.1)', async ({}, testInfo) => {
-    // En TEST una consulta larga puede tardar minutos: el GET tiene su propio límite y el test más margen
-    testInfo.setTimeout(540_000);
+    // Confirmado: el backend puede tardar hasta 3 min en responder un rango de
+    // 120 días en vez de rechazarlo de inmediato — margen real, no un cuelgue de test.
+    testInfo.setTimeout(240_000);
     await irA(page, RUTA, TITULO, URL_HISTORIAL);
     // Con el área acotada, el error esperado es el de rango y no el de volumen (VOLUMEN_EXCESIVO)
-    await main(page).getByLabel(/^ID infraestructura$/).fill(AREA);
+    await main(page).getByLabel(/^Área$/).fill(AREA);
     await main(page).getByLabel(/^Desde/).fill(fechaHaceDias(120));
     const res = await consultar(page);
     anotar(testInfo, 'Respuesta', `GET historial con 120 días → HTTP ${res?.status() ?? 'sin respuesta en 3 min'}`);

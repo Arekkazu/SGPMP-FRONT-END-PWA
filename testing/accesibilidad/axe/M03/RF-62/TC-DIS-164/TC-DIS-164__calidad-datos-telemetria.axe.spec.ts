@@ -70,13 +70,10 @@ async function abrirDetalle(page: Page, idTelemetria: number) {
 }
 
 test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Calidad de datos de telemetría (RF-62)`, () => {
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
-
   let contexto: BrowserContext;
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    testInfo.setTimeout(420_000);
     ({ contexto, page } = await abrirSesion(browser, testInfo));
   });
 
