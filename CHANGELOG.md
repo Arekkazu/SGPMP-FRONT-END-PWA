@@ -1,3 +1,9 @@
+## [1.4.0-rc.8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.7...v1.4.0-rc.8) (2026-10-27)
+
+### Bug Fixes
+
+* **rf58-mod3:** distinguir referencia valida y anomalia en dashboard ([#678](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/678)) ([dcbbb57](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/dcbbb573931c446c784ef3683ffe51b3043236ca))
+
 ## [1.4.0-rc.7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.6...v1.4.0-rc.7) (2026-10-27)
 
 ### Bug Fixes
