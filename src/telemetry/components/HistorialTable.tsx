@@ -5,6 +5,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional + T-19 códigos legibles |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 4.1.3 RF-59: "sin lecturas" se anuncia (role=status) |
+// | 2026-10-26 | Arekkazu | INC-M03-191/192-G116 RF-59: mensaje de estado vacío y sugerencia de ampliar filtros |
 import React, { useMemo } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { CircleSlash, History } from 'lucide-react';
@@ -40,7 +41,9 @@ export function HistorialTable({ items, loading, vacios = [] }: {
     return (
       <div role="status" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s8) var(--s4)', fontSize: '14px', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>
         <History size={32} aria-hidden style={{ opacity: 0.5, marginBottom: 'var(--s3)' }} />
-        <p style={{ margin: 0 }}>{t('historialtable.sin_lecturas_para_el_rango_y_filtros')}</p>
+        {/* RF-59 E3 (INC-M03-191/192-G116): estado vacío con orientación, no error. */}
+        <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-secondary)' }}>{t('historialtable.sin_lecturas_para_el_rango_y_filtros')}</p>
+        <p style={{ margin: 'var(--s2) 0 0' }}>{t('historialtable.sugerencia_sin_resultados')}</p>
       </div>
     );
   }

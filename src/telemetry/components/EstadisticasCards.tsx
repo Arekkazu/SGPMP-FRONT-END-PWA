@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional + T-19 códigos legibles |
+// | 2026-10-26 | Arekkazu | INC-M03-188/190-G119 RF-59: desviación estándar y % fuera de rango (contra el umbral) |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import type { ResumenEstadisticoSchema } from '../types';
@@ -30,8 +31,10 @@ export function EstadisticasCards({ estadisticas }: { estadisticas: ResumenEstad
             <Metric label={t('estadisticascards.minimo')} value={fmt(e.valor_minimo)} />
             <Metric label={t('estadisticascards.maximo')} value={fmt(e.valor_maximo)} />
             <Metric label={t('estadisticascards.promedio')} value={fmt(e.valor_promedio)} />
+            <Metric label={t('estadisticascards.desviacion_estandar')} value={fmt(e.desviacion_estandar ?? null)} />
             <Metric label={t('estadisticascards.lecturas')} value={fmt(e.total_lecturas)} />
             <Metric label={t('estadisticascards.en_rango')} value={e.pct_dentro_rango != null ? `${fmt(e.pct_dentro_rango)}%` : '—'} />
+            <Metric label={t('estadisticascards.fuera_rango')} value={e.pct_fuera_rango != null ? `${fmt(e.pct_fuera_rango)}%` : '—'} />
             <Metric label={t('estadisticascards.alertas')} value={fmt(e.total_alertas_en_periodo)} />
           </div>
         </div>
