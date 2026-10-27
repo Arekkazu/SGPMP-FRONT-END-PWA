@@ -84,7 +84,8 @@ async function interceptar(page: Page) {
 async function irAMonitor(page: Page) {
   await page.goto(`${APP}/prediccion/monitor`);
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/inferencia/i, { timeout: 60_000 });
-  await expect(page.getByRole('tab', { name: /activos monitoreados/i })).toBeVisible({ timeout: 60_000 });
+  // 2026-10-27: SubPestanas es un <nav> de botones, no un widget ARIA de tabs.
+  await expect(page.getByRole('button', { name: /activos y áreas monitoreados/i })).toBeVisible({ timeout: 60_000 });
 }
 
 interface Contador {
@@ -145,8 +146,10 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 // ── Pruebas ──────────────────────────────────────────────────────────────────
 
 test.describe('TC-DIS-183 — aria-live en los contadores del Dashboard de Predicción Sanitaria', () => {
-  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
+  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás.
+  // 2026-10-27: igual que TC-182 — login + 2 esperas de hasta 60s cada una exceden el default de
+  // 30s sin que haya ningún selector roto. El test c ya ajusta su propio timeout (45s de espera).
+  test.describe.configure({ mode: 'default', timeout: 60_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_183_VIEWPORTS.`);
@@ -175,11 +178,13 @@ test.describe('TC-DIS-183 — aria-live en los contadores del Dashboard de Predi
   });
 
   test('c. [4.1.3] Actualización automática anunciada sin mover el foco', async ({ page }, testInfo) => {
+    // La prueba observa la vista 45 s en busca de un cambio automático; margen real, no un cuelgue.
+    testInfo.setTimeout(90_000);
     const lecturas = await interceptar(page);
     await iniciarSesion(page);
     await irAMonitor(page);
     // Foco fuera de la región de contadores: en la pestaña "Activos monitoreados"
-    await page.getByRole('tab', { name: /activos monitoreados/i }).focus();
+    await page.getByRole('button', { name: /activos y áreas monitoreados/i }).focus();
     const antes = await leerContadores(page, CONTADORES);
     const desde = Date.now();
     await page.waitForTimeout(OBSERVACION_MS);

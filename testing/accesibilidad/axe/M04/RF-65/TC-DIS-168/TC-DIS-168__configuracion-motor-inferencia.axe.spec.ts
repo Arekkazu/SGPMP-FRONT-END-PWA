@@ -77,13 +77,12 @@ async function simular422(page: Page, cuerpo: object) {
 }
 
 test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Configuración del motor de inferencia (RF-65)`, () => {
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
+  test.describe.configure({ mode: 'default' });
 
   let contexto: BrowserContext;
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    testInfo.setTimeout(420_000);
     ({ contexto, page } = await abrirSesion(browser, testInfo));
   });
 

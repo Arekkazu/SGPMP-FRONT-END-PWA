@@ -72,13 +72,12 @@ async function abrirDetalle(page: Page, v: Version) {
 }
 
 test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Versionado de modelos de IA (RF-69)`, () => {
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
+  test.describe.configure({ mode: 'default' });
 
   let contexto: BrowserContext;
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    testInfo.setTimeout(420_000);
     ({ contexto, page } = await abrirSesion(browser, testInfo));
   });
 
