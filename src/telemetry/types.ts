@@ -6,6 +6,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-05/M3-06/M3-10: autor del historial, ubicación de la alerta y listado de dispositivos |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M3-08: nombres en vinculaciones y conteo del semáforo |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
+// | 2026-10-26 | Leandro | ISSUE-678 G87 RF-58: distinguir la referencia válida de la condición posterior del sensor. |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -191,7 +192,9 @@ export interface EstadoSensorSchema {
   ultima_unidad: string;
   ultimo_timestamp_captura: string;
   estado_semaforo: string;
-  estado_calidad: string;
+  estado_calidad: string | null;
+  estado_calidad_valor_operativo?: string | null;
+  timestamp_estado_actual?: string | null;
   estado_desviacion: string;
   estado_conectividad: string;
   tiempo_sin_reporte_min: number;
