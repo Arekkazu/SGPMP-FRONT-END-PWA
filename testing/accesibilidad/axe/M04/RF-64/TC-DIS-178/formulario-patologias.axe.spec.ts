@@ -147,7 +147,7 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 
 test.describe('TC-DIS-178 — Formulario de Registro y Edición de Patologías', () => {
   // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
+  test.describe.configure({ mode: 'default' });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_178_VIEWPORTS.`);
@@ -298,31 +298,19 @@ test.describe('TC-DIS-178 — Formulario de Registro y Edición de Patologías',
     const base = estado.catalogo.find((p) => p.es_base);
     expect(base, 'Precondición: existe una patología base').toBeTruthy();
     const nombreBase = String(base!.nombre_patologia);
-    const editar = page.getByRole('button', { name: `Editar ${nombreBase}`, exact: true });
-    await expect(editar).toBeVisible();
+    const verBase = page.getByRole('button', { name: `Ver ${nombreBase}`, exact: true });
+    await expect(verBase).toBeVisible();
+    const fila = page.locator('tbody tr').filter({ has: verBase });
 
-    const info = await editar.evaluate((el) => {
-      const ids = (el.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
-      return {
-        disabled: (el as HTMLButtonElement).disabled,
-        ariaDisabled: el.getAttribute('aria-disabled'),
-        title: el.getAttribute('title'),
-        describedby: ids.map((id) => document.getElementById(id)?.textContent ?? '').join(' '),
-        tabindex: (el as HTMLElement).tabIndex,
-      };
-    });
-    testInfo.annotations.push({ type: `Editar "${nombreBase}"`, description: JSON.stringify(info) });
-    expect.soft(info.disabled || info.ariaDisabled === 'true', 'La edición de la patología base está bloqueada').toBe(true);
+    // 2026-10-27 (M4-11, previo a esta evaluación): para es_base=true ya no hay un botón
+    // "Editar X" deshabilitado — se reemplazó por un <span> con ícono de candado y el
+    // motivo como texto visible en la fila (antes el motivo solo estaba en un title).
+    const editar = fila.getByRole('button', { name: `Editar ${nombreBase}`, exact: true });
+    expect.soft(await editar.count(), 'DEFECTO: reapareció un botón "Editar" para una patología base').toBe(0);
+    const motivo = fila.getByText('Patología base: no editable', { exact: true });
+    await expect.soft(motivo, '1.3.1/4.1.2: el motivo de bloqueo debe ser texto visible en la fila, no solo un title').toBeVisible();
 
-    // ¿Llega el teclado al botón y se anuncia el motivo?
-    await page.getByRole('button', { name: `Ver ${nombreBase}`, exact: true }).focus();
-    await page.keyboard.press('Tab');
-    const enfocado = await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
-    testInfo.annotations.push({ type: 'Tras "Ver" + Tab', description: enfocado });
-    expect.soft(enfocado, 'DEFECTO: el control de edición bloqueado no es alcanzable con teclado (disabled), así que su motivo nunca se anuncia').toBe(`Editar ${nombreBase}`);
-    expect.soft(info.describedby, 'DEFECTO 1.3.1/4.1.2: el motivo "las patologías base no se pueden editar" solo está en title, no en el nombre/descripción accesible').toMatch(/base/i);
-    // La fila sí informa el tipo "Base" con texto
-    const fila = page.locator('tbody tr').filter({ has: editar });
+    // La fila sí informa el tipo "Base" con texto (pill de tipo)
     expect.soft(await fila.innerText(), 'La fila indica "Base" con texto').toMatch(/Base/);
     await escanear(page, 'patologia-base', testInfo);
   });

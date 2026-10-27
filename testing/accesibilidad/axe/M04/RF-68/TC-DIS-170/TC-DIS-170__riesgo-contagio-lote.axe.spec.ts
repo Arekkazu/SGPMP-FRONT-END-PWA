@@ -28,13 +28,19 @@ const TITULO = 'Riesgo de Contagio';
 const PASOS_LIGHTHOUSE = ['vista', 'detalle-alto', 'detalle-confianza-baja'];
 
 const NIVELES = ['ALTO', 'MEDIO', 'BAJO'];
-const NIVEL_RE = /\b(ALTO|MEDIO|BAJO)\b/;
+// 2026-10-27: contagio.nivel_ALTO/MEDIO/BAJO traducen a "Riesgo alto/medio/bajo" desde el primer
+// commit del prototipo (33d8cef, anterior a este spec) — nunca fue "ALTO" en mayúsculas sueltas.
+const NIVEL_RE = /Riesgo (alto|medio|bajo)/i;
+const nivelDe = (texto: string) => NIVEL_RE.exec(texto)?.[1]?.toUpperCase();
 const CONFIANZA_BAJA = /confianza baja|datos (incompletos|faltantes)|desincroniz|recalculad/i;
 
 test.use({ locale: 'es-CO', launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
 
 function tarjetas(page: Page) {
-  return main(page).getByRole('heading', { name: 'Lotes monitoreados', exact: true }).locator('xpath=following-sibling::div[1]').getByRole('button');
+  // 2026-10-27: no existe ningún heading "Lotes monitoreados" en RiesgoContagioView — la grilla de
+  // lotes es un <div> sin título que sigue directo a los filtros. Las tarjetas son
+  // <article role="button"> (ni tienen heading encima, ni son un <button> nativo).
+  return main(page).locator('article[role="button"]');
 }
 
 /** Abre con Enter la tarjeta i y devuelve el diálogo de detalle del lote. */
@@ -53,13 +59,12 @@ async function cerrar(page: Page) {
 }
 
 test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Riesgo de contagio del lote (RF-68)`, () => {
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
+  test.describe.configure({ mode: 'default' });
 
   let contexto: BrowserContext;
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    testInfo.setTimeout(420_000);
     ({ contexto, page } = await abrirSesion(browser, testInfo));
   });
 
@@ -75,10 +80,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Riesgo de contagio del lot
     const textos = (await tarjetas(page).allInnerTexts()).map((t) => t.replace(/\s+/g, ' ').trim());
     anotar(testInfo, 'Tarjetas de lote (nombre accesible = texto del botón)', textos.join(' || '));
     expect(textos.length, 'la vista debe listar lotes monitoreados').toBeGreaterThan(0);
+    desviacion(false, '2.4.6/1.3.1: la grilla de tarjetas de lote no tiene ningún heading ni aria-label que la identifique (a diferencia de la sección "Alertas", que sí usa aria-labelledby)');
 
     const sinNivel = textos.filter((t) => !NIVEL_RE.test(t));
     expect.soft(sinNivel, '1.4.1 CRÍTICO / 4.1.2: tarjetas cuyo nivel solo se comunica por color').toEqual([]);
-    const presentes = [...new Set(textos.map((t) => t.match(NIVEL_RE)?.[1]).filter(Boolean))];
+    const presentes = [...new Set(textos.map(nivelDe).filter(Boolean))];
     precondicion(NIVELES.every((n) => presentes.includes(n)), `faltan niveles en los lotes: ${NIVELES.filter((n) => !presentes.includes(n)).join(', ') || 'ninguno'}`);
 
     // Ícono distintivo por nivel (el caso acepta texto o ícono; se registra si hay ícono)
@@ -91,19 +97,23 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Riesgo de contagio del lot
   test('2. Detalle de un lote Alto - nivel con texto, tabla alternativa a la tendencia (1.1.1 / 1.3.1) y foco al cerrar (2.4.3)', async ({}, testInfo) => {
     await irA(page, RUTA, TITULO);
     const textos = await tarjetas(page).allInnerTexts();
-    const i = textos.findIndex((t) => /\bALTO\b/.test(t));
+    const i = textos.findIndex((t) => nivelDe(t) === 'ALTO');
     precondicion(i >= 0, 'no hay ningún lote en nivel Alto');
     if (i < 0) return;
 
     const { tarjeta, dialogo } = await abrirLote(page, i);
-    await expect.soft(dialogo.getByText('ALTO', { exact: true }).first(), '1.4.1: el detalle debe nombrar el nivel como texto').toBeVisible();
+    await expect.soft(dialogo.getByText(/Riesgo alto/i).first(), '1.4.1: el detalle debe nombrar el nivel como texto').toBeVisible();
+    // 2026-10-27: la tabla "Historial del lote" (y su gráfica) solo se pintan en la sub-pestaña
+    // "Historial del lote" del detalle (tab por defecto: "Factores del cálculo"). SubPestanas
+    // (shared/design-system/SubPestanas.tsx) es un <nav> de botones, no un widget ARIA de tabs.
+    await dialogo.getByRole('button', { name: 'Historial del lote', exact: true }).click();
     const historial = dialogo.getByRole('table');
     await expect.soft(historial, '1.1.1: la gráfica "Tendencia de contagio" necesita la tabla "Historial del lote" como alternativa').toBeVisible();
     if (await historial.count()) {
       const a = await auditarTabla(historial);
       anotar(testInfo, 'Historial del lote', `encabezados: ${a.encabezados.join(' | ')} · ${a.filas} fila(s)`);
       expect.soft(a.filasDesalineadas, '1.3.1: filas con un número de celdas distinto al de encabezados').toEqual([]);
-      const niveles = await textosColumna(historial, 'Nivel');
+      const niveles = (await textosColumna(historial, 'Nivel de riesgo de contagio')).map((n) => nivelDe(n) ?? n);
       expect.soft(niveles.filter((n) => !NIVELES.includes(n)), '1.4.1: el nivel de cada hora debe leerse como texto').toEqual([]);
     }
     await escanear(page, TC_ID, __dirname, 'detalle-alto', testInfo, PASOS_LIGHTHOUSE);

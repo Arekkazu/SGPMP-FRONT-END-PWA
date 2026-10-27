@@ -34,7 +34,10 @@ const COLUMNAS_CRITERIO = ['Tipo de modelo', 'Activación', 'Estado', 'Fecha ini
 test.use({ locale: 'es-CO', launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
 
 function tabla(page: Page) {
-  return main(page).getByRole('table');
+  // 2026-10-27: la vista pinta DOS tablas sin pestañas ("Tabla de degradación de modelos" y
+  // "Tabla de procesos de reentrenamiento") — getByRole('table') sin desambiguar revienta en modo
+  // estricto. El historial de ejecuciones es la segunda, dentro de su region con aria-label.
+  return main(page).getByRole('region', { name: 'Tabla de procesos de reentrenamiento' }).getByRole('table');
 }
 
 function botonNuevo(page: Page) {
@@ -42,13 +45,12 @@ function botonNuevo(page: Page) {
 }
 
 test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Reentrenamiento del modelo de predicción (RF-71)`, () => {
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
+  test.describe.configure({ mode: 'default' });
 
   let contexto: BrowserContext;
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    testInfo.setTimeout(420_000);
     ({ contexto, page } = await abrirSesion(browser, testInfo));
   });
 
@@ -87,7 +89,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Reentrenamiento del modelo
     await irA(page, RUTA, TITULO);
     await botonNuevo(page).focus();
     await page.keyboard.press('Enter');
-    const dialogo = page.getByRole('dialog', { name: 'Nuevo reentrenamiento', exact: true });
+    // 2026-10-27: el botón que abre el modal dice "Nuevo reentrenamiento", pero el título del
+    // modal es "Configurar reentrenamiento" (reentrenamiento.configurar_titulo) — no coinciden.
+    const dialogo = page.getByRole('dialog', { name: 'Configurar reentrenamiento', exact: true });
     await expect(dialogo, 'Enter sobre "Nuevo reentrenamiento" debe abrir el formulario').toBeVisible();
 
     expect.soft(await camposSinNombre(dialogo), '1.3.1: controles del formulario sin label').toEqual([]);
@@ -121,14 +125,16 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Reentrenamiento del modelo
     const ver = tabla(page).getByRole('button', { name: 'Ver', exact: true }).first();
     await ver.focus();
     await page.keyboard.press('Enter');
-    const dialogo = page.getByRole('dialog', { name: /^Reentrenamiento #/ });
+    // 2026-10-27: reentrenamiento.monitor_titulo es "Reentrenamiento {{id}}" (sin "#").
+    const dialogo = page.getByRole('dialog', { name: /^Reentrenamiento \d/ });
     await expect(dialogo, 'Enter sobre "Ver" debe abrir el monitor del proceso').toBeVisible();
 
     const barras = await dialogo.getByRole('progressbar').evaluateAll((els) => els.map((e) => `${e.getAttribute('aria-label')}=${e.getAttribute('aria-valuenow')}`));
     anotar(testInfo, 'Barras de progreso', barras.join(' | '));
     expect.soft(barras.filter((b) => b.startsWith('null') || b.endsWith('=null')), '4.1.2: barras de progreso sin nombre o sin valor').toEqual([]);
 
-    const fases = await dialogo.getByRole('heading', { name: 'Fases del proceso', exact: true }).locator('xpath=following-sibling::div[1]/div').allInnerTexts();
+    // 2026-10-27: las fases son <ol><li>, no divs hermanos del heading.
+    const fases = await dialogo.getByRole('heading', { name: 'Fases del proceso', exact: true }).locator('xpath=following-sibling::ol[1]/li').allInnerTexts();
     anotar(testInfo, 'Fases', fases.join(' | '));
     expect.soft(fases.some((f) => /complet|en curso|pendiente/i.test(f)), '1.4.1: el estado de cada fase (completada / en curso / pendiente) solo se distingue por un ícono decorativo (aria-hidden) y el color').toBe(true);
 

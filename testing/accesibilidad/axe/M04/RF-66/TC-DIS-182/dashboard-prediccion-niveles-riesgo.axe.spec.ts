@@ -81,7 +81,9 @@ async function protegerEscrituras(page: Page) {
 async function irAMonitor(page: Page) {
   await page.goto(`${APP}/prediccion/monitor`);
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/inferencia/i, { timeout: 60_000 });
-  await expect(page.getByRole('tab', { name: /activos monitoreados/i })).toBeVisible({ timeout: 60_000 });
+  // 2026-10-27: SubPestanas (shared/design-system/SubPestanas.tsx) es un <nav> con <button
+  // aria-current>, no un widget ARIA de tabs — no hay role="tab" que buscar.
+  await expect(page.getByRole('button', { name: /activos y áreas monitoreados/i })).toBeVisible({ timeout: 60_000 });
 }
 
 interface Tarjeta {
@@ -96,7 +98,9 @@ interface Tarjeta {
 
 /** Tarjetas de activos: botones de la grilla con su badge de nivel. */
 async function leerTarjetas(page: Page): Promise<Tarjeta[]> {
-  return page.locator('main button').filter({ has: page.locator('span[style*="border-radius: var(--r-full)"], span[style*="9999px"]') }).evaluateAll((botones) => {
+  // 2026-10-27: las tarjetas son <article role="button">, no un <button> nativo — 'main button'
+  // (selector CSS por etiqueta) no matchea nada; getByRole('button') sí, por ARIA.
+  return page.locator('main').getByRole('button').filter({ has: page.locator('span[style*="border-radius: var(--r-full)"], span[style*="9999px"]') }).evaluateAll((botones) => {
     const rgb = (c: string) => (c.match(/[\d.]+/g) ?? []).map(Number);
     const lum = ([r, g, b]: number[]) => {
       const f = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
@@ -162,8 +166,11 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 // ── Pruebas ──────────────────────────────────────────────────────────────────
 
 test.describe('TC-DIS-182 — Niveles de riesgo en el Dashboard de Predicción Sanitaria', () => {
-  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
+  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás.
+  // 2026-10-27: confirmado contra el ambiente real — login + goto + 2 esperas de hasta 60s cada
+  // una (heading, luego pestaña) exceden el default de 30s sin que haya ningún selector roto;
+  // 60s de margen alcanza sin llegar a los 300s que antes ocultaban cuelgues reales.
+  test.describe.configure({ mode: 'default', timeout: 60_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_182_VIEWPORTS.`);
@@ -180,10 +187,11 @@ test.describe('TC-DIS-182 — Niveles de riesgo en el Dashboard de Predicción S
     expect.soft(new Set(tarjetas.map((t) => t.badge)).size, 'Precondición: los 4 niveles de riesgo representados').toBe(4);
     expect.soft(simulados, 'BLOQUEO: el dashboard muestra datos fijos de ejemplo (banner "Datos simulados"); las inferencias semilla del backend no se ven').toBe(0);
 
-    // KPI "Paquetes hoy": es un conteo
-    const paquetes = await page.locator('main').getByText('Paquetes hoy', { exact: true }).locator('xpath=..').innerText();
-    testInfo.annotations.push({ type: 'Paquetes hoy', description: paquetes.replace(/\s+/g, ' ') });
-    expect.soft(paquetes, 'DEFECTO: el indicador "Paquetes hoy" muestra una fecha en vez del número de paquetes').not.toMatch(/\d{1,2}\/\d{1,2}\/\d{2,4}|19(69|70)/);
+    // 2026-10-27: la etiqueta real es "Paquetes recibidos" (monitor.paquetes), no "Paquetes hoy"
+    // — y ya pasa por formatearNumero(), no por un formateador de fecha.
+    const paquetes = await page.locator('main').getByText('Paquetes recibidos', { exact: true }).locator('xpath=..').innerText();
+    testInfo.annotations.push({ type: 'Paquetes recibidos', description: paquetes.replace(/\s+/g, ' ') });
+    expect.soft(paquetes, '"Paquetes recibidos" debe mostrar un número, no una fecha').not.toMatch(/\d{1,2}\/\d{1,2}\/\d{2,4}|19(69|70)/);
   });
 
   test('b. [1.4.1] Escaneo del dashboard; cada nivel con badge y etiqueta textual del RF', async ({ page }, testInfo) => {
@@ -217,8 +225,8 @@ test.describe('TC-DIS-182 — Niveles de riesgo en el Dashboard de Predicción S
     const sinContexto = tarjetas.filter((t) => !/riesgo|nivel|cr[ií]tico|normal/i.test(t.nombre)).map((t) => t.badge);
     testInfo.annotations.push({ type: 'Tarjetas cuyo anuncio no dice "riesgo"/"nivel"', description: sinContexto.join(', ') || '(ninguna)' });
 
-    // Pestaña "Feed de inferencias": mismo badge en tabla; las filas abren el detalle
-    await page.getByRole('tab', { name: /feed de inferencias/i }).click();
+    // Pestaña "Feed de inferencias" (SubPestanas: botón, no role="tab"): mismo badge en tabla
+    await page.getByRole('button', { name: /feed de inferencias/i }).click();
     await expect(page.locator('main tbody tr').first()).toBeVisible();
     const filas = await page.locator('main tbody tr').evaluateAll((trs) => trs.map((tr) => ({ tabindex: tr.getAttribute('tabindex'), rol: tr.getAttribute('role'), clic: (tr as HTMLElement).style.cursor === 'pointer' })));
     testInfo.annotations.push({ type: 'Filas del feed', description: JSON.stringify(filas[0]) });

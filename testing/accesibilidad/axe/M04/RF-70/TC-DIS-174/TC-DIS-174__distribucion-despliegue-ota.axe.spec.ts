@@ -25,7 +25,10 @@ import {
 
 const TC_ID = 'TC-DIS-174';
 const RUTA = 'prediccion/distribucion';
-const TITULO = 'Distribución de Modelos (OTA)';
+// 2026-10-27: el heading real usa minúscula en "modelos" (distribucionotaview.titulo);
+// con exact:true el "Modelos" en mayúscula nunca hacía match — esto era la causa real del
+// "cuelgue": irA() nunca encontraba el heading ni el login, y esperaba el timeout completo.
+const TITULO = 'Distribución de modelos (OTA)';
 const PASOS_LIGHTHOUSE = ['listado', 'detalle-fallido', 'filtrado'];
 
 const ESTADO_TEXTO: Record<string, string> = { EXITOSO: 'Exitoso', FALLIDO: 'Fallido', PENDIENTE: 'Pendiente', SIN_CAMBIOS: 'Sin cambios' };
@@ -100,6 +103,10 @@ function tabla(page: Page) {
 /** Abre con teclado el detalle del despliegue #id. */
 async function abrirDetalle(page: Page, id: number) {
   const fila = tabla(page).locator('tbody tr').filter({ hasText: `#${id}` }).first();
+  // 2026-10-27: si la fila no existe, un .focus() sobre un locator sin match reintenta hasta el
+  // timeout del test — en Chromium eso terminaba reportándose como "contexto cerrado" en vez de
+  // un error claro. Se verifica explícito y acotado antes de interactuar.
+  await expect(fila, `Precondición: no hay fila para el despliegue #${id} en el listado`).toBeVisible({ timeout: 15_000 });
   const ver = fila.getByRole('button', { name: 'Ver despliegue' });
   await ver.focus();
   await page.keyboard.press('Enter');
@@ -109,13 +116,12 @@ async function abrirDetalle(page: Page, id: number) {
 }
 
 test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Distribución y despliegue OTA (RF-70)`, () => {
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
+  test.describe.configure({ mode: 'default' });
 
   let contexto: BrowserContext;
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    testInfo.setTimeout(420_000);
     ({ contexto, page } = await abrirSesion(browser, testInfo));
   });
 

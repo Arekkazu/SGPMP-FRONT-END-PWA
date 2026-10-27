@@ -81,7 +81,9 @@ async function protegerEscrituras(page: Page) {
 async function irAMonitor(page: Page) {
   await page.goto(`${APP}/prediccion/monitor`);
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/inferencia/i, { timeout: 60_000 });
-  await expect(page.getByRole('tab', { name: /activos monitoreados/i })).toBeVisible({ timeout: 60_000 });
+  // 2026-10-27: SubPestanas (shared/design-system/SubPestanas.tsx) es un <nav> con <button
+  // aria-current>, no un widget ARIA de tabs — no hay role="tab" que buscar.
+  await expect(page.getByRole('button', { name: /activos y áreas monitoreados/i })).toBeVisible({ timeout: 60_000 });
 }
 
 interface Paso {
@@ -131,8 +133,10 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 // ── Pruebas ──────────────────────────────────────────────────────────────────
 
 test.describe('TC-DIS-184 — Navegación por teclado del Dashboard de Predicción Sanitaria', () => {
-  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
+  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás.
+  // 2026-10-27: igual que TC-182/183 — login + 2 esperas de hasta 60s cada una exceden el default
+  // de 30s sin que haya ningún selector roto.
+  test.describe.configure({ mode: 'default', timeout: 60_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_184_VIEWPORTS.`);
@@ -170,26 +174,31 @@ test.describe('TC-DIS-184 — Navegación por teclado del Dashboard de Predicci�
     expect.soft(recorrido.filter((p) => !p.focoVisible).map((p) => p.descripcion), 'DEFECTO 2.4.7: elementos que reciben foco sin indicador visible').toEqual([]);
 
     // Orden: pestañas antes que tarjetas, y tarjetas en el orden en que se ven
-    const iPestana = recorrido.findIndex((p) => p.descripcion.startsWith('tab '));
+    // 2026-10-27: SubPestanas no expone role="tab" (ver irAMonitor) — se ubica por su texto.
+    const iPestana = recorrido.findIndex((p) => /monitoreados|feed de inferencias/i.test(p.descripcion));
     const iTarjeta = recorrido.findIndex((p) => /^button ".*(BOV|POR|TIL|POL)-\d+/.test(p.descripcion));
     expect.soft(iPestana >= 0 && iTarjeta > iPestana, '2.4.3: el foco pasa por las pestañas antes que por las tarjetas de resultado').toBe(true);
     const tarjetas = recorrido.filter((p) => /(BOV|POR|TIL|POL)-\d+/.test(p.descripcion)).map((p) => p.descripcion.match(/[A-Z]{3}-\d+/)![0]);
-    const visual = await page.locator('main button').filter({ hasText: /[A-Z]{3}-\d+/ }).evaluateAll((bs) => bs
+    // 2026-10-27: las tarjetas son <article role="button">, no <button> nativo.
+    const visual = await page.locator('main').getByRole('button').filter({ hasText: /[A-Z]{3}-\d+/ }).evaluateAll((bs) => bs
       .map((b) => ({ id: (b.textContent ?? '').match(/[A-Z]{3}-\d+/)![0], r: b.getBoundingClientRect() }))
       .sort((x, y) => (Math.abs(x.r.top - y.r.top) > 5 ? x.r.top - y.r.top : x.r.left - y.r.left))
       .map((x) => x.id));
     expect.soft(tarjetas, '2.4.3: el orden de foco de las tarjetas sigue el orden visual').toEqual(visual.slice(0, tarjetas.length));
 
-    // Pestañas: el patrón ARIA de tabs se opera con flechas (se registra)
-    await page.getByRole('tab', { name: /activos monitoreados/i }).focus();
+    // 2026-10-27: SubPestanas no es un widget ARIA de tabs (es un <nav> de botones), así que no
+    // se espera soporte de flechas — se registra el comportamiento real, no se exige.
+    await page.getByRole('button', { name: /activos y áreas monitoreados/i }).focus();
     await page.keyboard.press('ArrowRight');
     const tras = await enfocado(page);
-    testInfo.annotations.push({ type: 'Flecha derecha en las pestañas', description: tras.descripcion });
+    testInfo.annotations.push({ type: 'Flecha derecha en las "pestañas" (SubPestanas, no ARIA tabs)', description: tras.descripcion });
   });
 
   test('c. Abrir por teclado la tarjeta de detalle de un activo y volver', async ({ page }, testInfo) => {
     await irAMonitor(page);
-    const tarjeta = page.locator('main button').filter({ hasText: /BOV-101/ });
+    // 2026-10-27: monitorMock.ts no tiene ninguna unidad "BOV-101" (son BOV-1042/1057/1077,
+    // OV-0231/0245) — se usa BOV-1042 (EMITIDO, nivel 3), que sí existe.
+    const tarjeta = page.locator('main').getByRole('button').filter({ hasText: /BOV-1042/ });
     await tarjeta.focus();
     await page.keyboard.press('Enter');
     const dialogo = page.getByRole('dialog');
@@ -201,7 +210,7 @@ test.describe('TC-DIS-184 — Navegación por teclado del Dashboard de Predicci�
     await expect(dialogo, 'Escape cierra el detalle').toBeHidden({ timeout: 10_000 });
     const vuelta = await enfocado(page);
     testInfo.annotations.push({ type: 'Foco al cerrar', description: vuelta.descripcion });
-    expect.soft(vuelta.descripcion, '2.4.3: al cerrar, el foco vuelve a la tarjeta que abrió el detalle').toMatch(/BOV-101/);
+    expect.soft(vuelta.descripcion, '2.4.3: al cerrar, el foco vuelve a la tarjeta que abrió el detalle').toMatch(/BOV-1042/);
   });
 
   test('d. [2.1.1] Aplicar un filtro por teclado y llegar a un resultado', async ({ page }) => {
