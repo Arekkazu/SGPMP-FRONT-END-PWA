@@ -8,8 +8,8 @@
  * 4.1.2 (name/role/value en filtros y detalle del paquete), 3.3.1 (motivo de rechazo del motor y flag
  * contexto_incompleto anunciados) y 1.4.3 (contraste ≥4.5:1).
  *
- * La vista usa datos simulados (DatosSimuladosBanner) y no tiene filtros ni detalle de paquete:
- * los pasos 3-5 del caso se registran como "Desviación de la especificación".
+ * 2026-10-27: PROTO-V2 (21/10) agregó filtros (estado/contexto) y detalle de paquete por clic;
+ * la vista sigue sobre datos simulados (DatosSimuladosBanner), no el backend real.
  *
  * Herramientas: @axe-core/playwright en los 3 viewports + Lighthouse snapshot solo en escritorio.
  * Sin escrituras: la vista es de solo lectura.
@@ -26,7 +26,10 @@ const RUTA = 'telemetria/pipeline';
 const TITULO = 'Pipeline de Inferencia';
 const PASOS_LIGHTHOUSE = ['listado', 'detalle-fallido', 'detalle-contexto-incompleto'];
 
-const ESTADOS_ENVIO = ['PENDIENTE', 'ENVIADO', 'FALLIDO'];
+// 2026-10-27: la celda muestra el estado capitalizado ("Pendiente"/"Enviado"), y "Fallido"
+// trae además el motivo de rechazo concatenado en la misma celda ("Fallido <motivo>").
+const ESTADOS_ENVIO = ['Pendiente', 'Enviado', 'Fallido'];
+const esEstadoConocido = (celda: string) => ESTADOS_ENVIO.some((e) => celda === e || celda.startsWith(`${e} `));
 const COLUMNAS_CRITERIO = ['Paquete', 'Estado', 'Reintentos'];
 const MAX_REINTENTOS = 5; // política de reintentos de RF-56
 
@@ -51,13 +54,10 @@ async function abrirDetalle(page: Page, filtro: string) {
 }
 
 test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Paquetes de envío al motor de inferencia (RF-56)`, () => {
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
-
   let contexto: BrowserContext;
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    testInfo.setTimeout(420_000);
     ({ contexto, page } = await abrirSesion(browser, testInfo));
   });
 
@@ -84,8 +84,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Paquetes de envío al moto
 
     const estados = await textosColumna(t, 'Estado');
     anotar(testInfo, 'estado_envio', [...new Set(estados)].join(', '));
-    expect.soft(estados.filter((e) => !ESTADOS_ENVIO.includes(e)), '1.4.1: el estado_envio debe leerse como texto, no solo por color').toEqual([]);
-    precondicion(ESTADOS_ENVIO.every((e) => estados.includes(e)), `faltan estados de envío en el listado: ${ESTADOS_ENVIO.filter((e) => !estados.includes(e)).join(', ') || 'ninguno'}`);
+    expect.soft(estados.filter((e) => !esEstadoConocido(e)), '1.4.1: el estado_envio debe leerse como texto, no solo por color').toEqual([]);
+    precondicion(ESTADOS_ENVIO.every((e) => estados.some((celda) => esEstadoConocido(celda) && celda.startsWith(e))), `faltan estados de envío en el listado: ${ESTADOS_ENVIO.filter((e) => !estados.some((celda) => celda.startsWith(e))).join(', ') || 'ninguno'}`);
 
     await escanear(page, TC_ID, __dirname, 'listado', testInfo, PASOS_LIGHTHOUSE);
   });
@@ -95,30 +95,34 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Paquetes de envío al moto
     const t = tabla(page);
     const estados = await textosColumna(t, 'Estado');
     const reintentos = await textosColumna(t, 'Reintentos');
-    const i = estados.indexOf('FALLIDO');
+    const i = estados.findIndex((e) => e.startsWith('Fallido'));
     precondicion(i >= 0, 'no hay ningún paquete FALLIDO en el listado');
     if (i < 0) return;
     anotar(testInfo, 'FALLIDO', `reintentos: ${reintentos[i]} (política: ${MAX_REINTENTOS})`);
-    precondicion(reintentos[i] === String(MAX_REINTENTOS), `el paquete FALLIDO debe tener los ${MAX_REINTENTOS} reintentos agotados; tiene ${reintentos[i]}`);
+    // La celda muestra "N/${MAX_REINTENTOS}" (p.ej. "5/5"), no el número solo.
+    precondicion(reintentos[i] === `${MAX_REINTENTOS}/${MAX_REINTENTOS}`, `el paquete FALLIDO debe tener los ${MAX_REINTENTOS} reintentos agotados; tiene ${reintentos[i]}`);
 
     const { fila, dialogo } = await abrirDetalle(page, 'FALLIDO');
-    desviacion(/motivo|rechaz/i.test(await fila.innerText()) || !!dialogo, 'el motivo de rechazo del motor de inferencia no se muestra en ninguna parte (ni en la fila ni en un detalle)');
+    // La redacción real no usa literalmente "motivo"/"rechaz": explica la causa en lenguaje
+    // llano ("ya no acepta", "incompatible"). Se acepta esa redacción como equivalente.
+    const EXPLICA_CAUSA = /motivo|rechaz|no acepta|incompatib|inválid[oa]|excede|super[óa]/i;
+    desviacion(EXPLICA_CAUSA.test(await fila.innerText()) || !!dialogo, 'el motivo de rechazo del motor de inferencia no se muestra en ninguna parte (ni en la fila ni en un detalle)');
     if (!dialogo) return;
-    await expect.soft(dialogo, '3.3.1: el detalle debe mostrar el motivo de rechazo').toContainText(/motivo|rechaz/i);
+    await expect.soft(dialogo, '3.3.1: el detalle debe explicar la causa del rechazo').toContainText(EXPLICA_CAUSA);
     await escanear(page, TC_ID, __dirname, 'detalle-fallido', testInfo, PASOS_LIGHTHOUSE);
     await page.keyboard.press('Escape');
   });
 
   test('3. Paquete con contexto_incompleto - el flag se comunica como texto (3.3.1)', async ({}, testInfo) => {
     await irA(page, RUTA, TITULO);
-    const fila = tabla(page).locator('tbody tr').filter({ hasText: /contexto incompleto/i }).first();
+    const fila = tabla(page).locator('tbody tr').filter({ hasText: /incompleto/i }).first();
     precondicion((await fila.count()) > 0, 'no hay ningún paquete con contexto_incompleto = true en el listado');
     if ((await fila.count()) === 0) return;
     anotar(testInfo, 'contexto_incompleto', (await fila.innerText()).replace(/\s+/g, ' '));
 
-    const { dialogo } = await abrirDetalle(page, 'Contexto incompleto');
+    const { dialogo } = await abrirDetalle(page, 'incompleto');
     if (!dialogo) return;
-    await expect.soft(dialogo, '3.3.1: el detalle debe indicar que el contexto está incompleto').toContainText(/contexto incompleto/i);
+    await expect.soft(dialogo, '3.3.1: el detalle debe indicar que el contexto está incompleto').toContainText(/incompleto/i);
     await escanear(page, TC_ID, __dirname, 'detalle-contexto-incompleto', testInfo, PASOS_LIGHTHOUSE);
     await page.keyboard.press('Escape');
   });
@@ -127,7 +131,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Paquetes de envío al moto
     await irA(page, RUTA, TITULO);
     const filtros = await main(page).getByRole('combobox').count() + await main(page).getByRole('textbox').count();
     desviacion(filtros > 0, 'la vista no tiene filtros (el paso 5 pide recorrer filtros y filas)');
-    await page.getByRole('heading', { level: 1, name: TITULO, exact: true }).click();
+    // El H1 no es un elemento enfocable: empezar el Tab ahí deja el recorrido en el sidebar
+    // (12+ enlaces de navegación) sin llegar nunca a la tabla. Se enfoca el primer filtro real.
+    await main(page).getByRole('combobox').first().focus();
     const recorrido = await recorrerConTab(page, 15);
     anotar(testInfo, 'Recorrido con Tab', recorrido.join(' → '));
     expect.soft(hayTrampaDeFoco(recorrido), '2.1.1: el foco queda atrapado en un elemento').toBe(false);

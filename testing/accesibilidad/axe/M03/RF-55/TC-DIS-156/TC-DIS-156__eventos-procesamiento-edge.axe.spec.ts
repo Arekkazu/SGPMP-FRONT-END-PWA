@@ -8,9 +8,9 @@
  * LEVE/MODERADO/CRITICO también con texto), 4.1.2 (name/role/value en filtros y detalle),
  * 3.3.1 (evento ERROR_CONFIGURACION anunciado con su causa) y 1.4.3 (contraste ≥4.5:1).
  *
- * La vista usa datos simulados (DatosSimuladosBanner): el equipo AIOT aún no expone endpoints.
- * No tiene filtros ni detalle de evento; los pasos 3-5 del caso quedan como "Desviación de la
- * especificación" en vez de saltarse, para que el reporte diga qué falta.
+ * 2026-10-27: PROTO-V2 (21/10) agregó un filtro por "Clasificación" (no por "Severidad" como
+ * pide el criterio textualmente). La vista sigue sobre datos simulados (DatosSimuladosBanner),
+ * y sus filas no abren detalle (sin tabIndex/onClick, a diferencia de Pipeline).
  *
  * Herramientas: @axe-core/playwright en los 3 viewports (resultados/axe-TC-DIS-156.html/json) +
  * Lighthouse snapshot solo en escritorio. Sin escrituras: la vista es de solo lectura.
@@ -27,9 +27,11 @@ const RUTA = 'telemetria/edge';
 const TITULO = 'Detección de Desviaciones en Campo';
 const PASOS_LIGHTHOUSE = ['listado', 'filtro-severidad', 'detalle-compuesta'];
 
-// Texto que muestra la columna "Clasificación" (tipo_evento con "_" → espacio)
-const TIPOS_EVENTO = ['NORMAL', 'SIMPLE', 'COMPUESTA', 'ERROR CONFIGURACION'];
-const SEVERIDADES = ['Leve', 'Moderado', 'Crítico'];
+// 2026-10-27: etiquetas reales de telemetry.json ("edge.clasif_*"), no el código con "_"→espacio.
+const TIPOS_EVENTO = ['Normal', 'Desviación simple', 'Compuesta', 'Error de configuración'];
+// T-22 (24/10): la severidad se muestra en femenino, igual que en el filtro ("edge.clasif_*" /
+// SeveridadBadge): Leve / Moderada / Crítica, no Moderado/Crítico.
+const SEVERIDADES = ['Leve', 'Moderada', 'Crítica'];
 const COLUMNAS_CRITERIO = ['Clasificación', 'Severidad', 'Variable(s)', 'Origen'];
 
 test.use({ locale: 'es-CO', launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
@@ -39,13 +41,10 @@ function tabla(page: Page) {
 }
 
 test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Eventos de procesamiento Edge (RF-55)`, () => {
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
-
   let contexto: BrowserContext;
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    testInfo.setTimeout(420_000);
     ({ contexto, page } = await abrirSesion(browser, testInfo));
   });
 
@@ -75,7 +74,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Eventos de procesamiento E
     const origen = await textosColumna(t, 'Origen');
     anotar(testInfo, 'Valores', `clasificación: ${[...new Set(clasif)].join(', ')} · severidad: ${[...new Set(sev)].join(', ')} · origen: ${[...new Set(origen)].join(', ')}`);
 
-    expect.soft(sev.filter((s) => !SEVERIDADES.includes(s)), '1.4.1: la severidad debe leerse como texto (Leve/Moderado/Crítico), no solo por color').toEqual([]);
+    // Un evento NORMAL no tiene severidad y la celda muestra "—" (no aplica, no es un defecto).
+    expect.soft(sev.filter((s) => s !== '—' && !SEVERIDADES.includes(s)), '1.4.1: la severidad debe leerse como texto (Leve/Moderada/Crítica), no solo por color').toEqual([]);
     precondicion(TIPOS_EVENTO.every((x) => clasif.includes(x)), `el listado debe tener los 4 tipo_evento; faltan: ${TIPOS_EVENTO.filter((x) => !clasif.includes(x)).join(', ') || 'ninguno'}`);
     precondicion(SEVERIDADES.every((x) => sev.includes(x)), `el listado debe tener las 3 severidades; faltan: ${SEVERIDADES.filter((x) => !sev.includes(x)).join(', ') || 'ninguna'}`);
     desviacion(origen.every((o) => /tiempo real|buffer/i.test(o)), `la columna "Origen" muestra el emisor (${[...new Set(origen)].join(', ')}), no TIEMPO_REAL / BUFFER_LOCAL como pide el criterio`);
@@ -127,7 +127,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Eventos de procesamiento E
 
   test('5. Evento ERROR_CONFIGURACION comunicado con su causa (3.3.1)', async ({}, testInfo) => {
     await irA(page, RUTA, TITULO);
-    const fila = tabla(page).locator('tbody tr').filter({ hasText: 'ERROR CONFIGURACION' }).first();
+    const fila = tabla(page).locator('tbody tr').filter({ hasText: /configuraci[oó]n/i }).first();
     precondicion((await fila.count()) > 0, 'no hay ningún evento ERROR_CONFIGURACION en el listado');
     if ((await fila.count()) === 0) return;
 

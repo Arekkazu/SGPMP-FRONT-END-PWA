@@ -182,7 +182,6 @@ async function abrirDetalle(page: Page, texto: string | RegExp) {
 
 test.describe('TC-DIS-150 — Panel de Alertas en Tiempo Real', () => {
   // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_150_VIEWPORTS.`);
@@ -259,7 +258,13 @@ test.describe('TC-DIS-150 — Panel de Alertas en Tiempo Real', () => {
     const sim = await interceptar(page);
     await irAAlertas(page);
 
-    const fila = page.locator('tbody tr').filter({ hasText: 'Activa' }).first();
+    // 2026-10-27: filtrar las filas por hasText: 'Activa' es substring e insensible a
+    // mayúsculas — puede calzar con una fila que en realidad está DESCARTADA (o cualquier
+    // otra) si "activa" aparece en otra celda. Se ubica la fila ACTIVA real por posición,
+    // igual que ya hace el test 'd' con sim.lista.
+    const idx = sim.lista.findIndex((a) => a.estado_alerta === 'ACTIVA');
+    expect(idx, 'Precondición: al menos 1 alerta ACTIVA del Productor').toBeGreaterThanOrEqual(0);
+    const fila = page.locator('tbody tr').nth(idx);
     const texto = (await fila.locator('td').first().innerText()).trim();
     const fecha = (await fila.locator('td').nth(7).innerText()).trim();
     const filaId = page.locator('tbody tr').filter({ hasText: texto }).filter({ hasText: fecha });

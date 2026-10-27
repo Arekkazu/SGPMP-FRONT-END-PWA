@@ -59,10 +59,25 @@ const ESTADOS_CALIDAD = [
   'ERROR_TIEMPO', 'ERROR_UNIDAD', 'ERROR_SENSOR', 'ERROR_CALIBRACION',
 ];
 
+// 2026-10-27: las etiquetas reales (telemetry.json "ingesta.estado_*") no son el código
+// normalizado — "ERROR_SENSOR" se muestra como "Valor imposible", no "Error sensor" — así que
+// no se pueden reconstruir con norm(). Se compara contra el rótulo real de cada código.
+const ETIQUETA_CALIDAD: Record<string, string> = {
+  LECTURA_VALIDA: 'Válida',
+  FUERA_DE_RANGO: 'Fuera de rango',
+  ERROR_ESTRUCTURA: 'Estructura inválida',
+  ERROR_AUTENTICACION: 'Autenticación fallida',
+  ERROR_DUPLICADO: 'Duplicado',
+  ERROR_TIEMPO: 'Error temporal',
+  ERROR_UNIDAD: 'Unidad inválida',
+  ERROR_SENSOR: 'Valor imposible',
+  ERROR_CALIBRACION: 'Error de calibración',
+};
+
 /** Encabezados que pide el 1.3.1 del caso, con los rótulos aceptables para cada uno. */
 const ENCABEZADOS_ESPERADOS: [string, RegExp][] = [
   ['sensor_id / área', /sensor|área|area/i],
-  ['tipo de dato', /tipo de dato|tipo_dato/i],
+  ['tipo de dato', /^tipo(\s+de\s+dato)?$/i],
   ['tipo_variable', /variable/i],
   ['estado_calidad', /calidad/i],
   ['timestamp', /timestamp|capturad|fecha|hora/i],
@@ -151,7 +166,6 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 
 test.describe('TC-DIS-146 — Estado de Ingesta de Telemetría', () => {
   // Cada test inicia sesión por su cuenta: un bloqueo en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_146_VIEWPORTS.`);
@@ -163,11 +177,11 @@ test.describe('TC-DIS-146 — Estado de Ingesta de Telemetría', () => {
     await irAIngesta(page);
     const simulados = await page.getByRole('note').filter({ hasText: /datos simulados/i }).count();
     const { filas } = await leerTabla(page);
-    const estados = [...new Set(filas.map((f) => norm(f.calidad)))];
-    testInfo.annotations.push({ type: 'Datos', description: `${filas.length} lecturas · calidades presentes: ${estados.join(', ')} · banner "Datos simulados": ${simulados ? 'sí' : 'no'}` });
+    const etiquetas = [...new Set(filas.map((f) => f.calidad.trim()))];
+    testInfo.annotations.push({ type: 'Datos', description: `${filas.length} lecturas · calidades presentes: ${etiquetas.join(', ')} · banner "Datos simulados": ${simulados ? 'sí' : 'no'}` });
 
     expect.soft(simulados, 'BLOQUEO: la vista muestra datos fijos de ejemplo (banner "Datos simulados"); no hay lectura real de la ingesta').toBe(0);
-    const faltantes = ESTADOS_CALIDAD.filter((e) => !estados.includes(e));
+    const faltantes = ESTADOS_CALIDAD.filter((e) => !etiquetas.includes(ETIQUETA_CALIDAD[e]));
     expect.soft(faltantes, 'BLOQUEO: estados de calidad de la precondición que no aparecen en la vista').toEqual([]);
     const vision = filas.filter((f) => f.celdas.some((c) => /visi[oó]n/i.test(c))).length;
     expect.soft(vision, 'BLOQUEO: no hay observaciones de visión a nivel de área (RFC-011)').toBeGreaterThan(0);
@@ -196,7 +210,7 @@ test.describe('TC-DIS-146 — Estado de Ingesta de Telemetría', () => {
     testInfo.annotations.push({ type: 'Ícono en el estado', description: `${filas.filter((f) => f.iconoCalidad).length}/${filas.length} filas` });
 
     // Tipo de dato escalar / visión con texto
-    const tipoDato = encabezados.findIndex((h) => /tipo de dato|tipo_dato/i.test(h));
+    const tipoDato = encabezados.findIndex((h) => /^tipo(\s+de\s+dato)?$|tipo_dato/i.test(h));
     expect.soft(tipoDato, 'DEFECTO 1.4.1: no hay columna "tipo de dato" que distinga escalar / visión').toBeGreaterThanOrEqual(0);
 
     await escanear(page, 'listado', testInfo);

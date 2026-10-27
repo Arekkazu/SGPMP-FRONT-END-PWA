@@ -93,7 +93,9 @@ async function interceptar(page: Page) {
 async function irAMonitoreo(page: Page) {
   await page.goto(`${APP}/telemetria/monitoreo`);
   await expect(page.getByRole('heading', { level: 1, name: 'Monitoreo en Tiempo Real' })).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText(/\d+ sensor\(es\)/)).toBeVisible({ timeout: 60_000 });
+  // 2026-10-27: el conteo ya no usa el literal "(es)" — i18next pluraliza a
+  // "1 sensor" / "N sensores" desde el fix de T-22 (conteo.sensores_one/_other).
+  await expect(page.getByText(/\d+ sensores?/)).toBeVisible({ timeout: 60_000 });
 }
 
 /** Textos de todas las regiones que un lector de pantalla anuncia sin mover el foco. */
@@ -129,7 +131,6 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 
 test.describe('TC-DIS-152 — Dashboard de Monitoreo en Tiempo Real', () => {
   // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_152_VIEWPORTS.`);
