@@ -2,7 +2,9 @@
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11: el último dato muestra el día cuando no es de hoy + T-19 códigos legibles |
+// | 2026-10-26 | Leandro | ISSUE-678 G87 RF-58: distinguir la referencia válida de la condición posterior del sensor. |
 import React from 'react';
+import './ReferenciaValida.css';
 import { useT } from '../../shared/i18n/useT';
 import { BatteryMedium, SignalHigh, TrendingUp, TrendingDown, Minus, BellRing } from 'lucide-react';
 import { Gauge } from '../../shared/design-system/Gauge';
@@ -54,6 +56,10 @@ export function SensorCard({ sensor, onAbrir }: Props) {
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Gauge value={sensor.ultimo_valor} min={min} max={max} unit={sensor.ultima_unidad} status={status} size={120} />
       </div>
+
+      {sensor.indicador_anomalia && sensor.es_valor_operativo && (
+        <small className="sensor-referencia-valida">{t('estadolectura.ultima_lectura_valida')}</small>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         {/* FE-10 (RF-58 E7/R2/E2): GRIS sin umbral e indicador de anomalía. */}

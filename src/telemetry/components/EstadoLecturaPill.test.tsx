@@ -5,17 +5,20 @@
  * FE-10 (RF-58 E7, R2, E2): el dashboard distingue GRIS sin umbral, lectura fuera de
  * rango y error de calibración, con su texto en es-CO y en-US (DEV-39).
  */
+// | 2026-10-26 | Leandro | ISSUE-678 G87 RF-58: distinguir la referencia válida de la condición posterior del sensor. |
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n, { LOCALE_DEFAULT } from '../../shared/i18n';
 import { estadoLectura } from '../lib/estadoLectura';
 import { EstadoSensorPills } from './EstadoLecturaPill';
+import { SensorDetalleModal } from './SensorDetalleModal';
 import { SensorCard } from './SensorCard';
 import type { EstadoSensorSchema } from '../types';
 
 afterEach(async () => {
-  await i18n.changeLanguage(LOCALE_DEFAULT);
+  cleanup();
+  await act(async () => { await i18n.changeLanguage(LOCALE_DEFAULT); });
 });
 
 function sensor(cambios: Partial<EstadoSensorSchema> = {}): EstadoSensorSchema {
@@ -94,5 +97,49 @@ describe('SensorCard (dashboard)', () => {
   it('muestra el estado de la lectura en la tarjeta del sensor', () => {
     render(<SensorCard sensor={SIN_UMBRAL} onAbrir={vi.fn()} />);
     expect(screen.getByText('Sin umbral configurado')).toBeInTheDocument();
+  });
+});
+
+
+describe('G87: referencia válida independiente del estado posterior y del permiso', () => {
+  it.each([
+    ['FUERA_DE_RANGO', 'Lectura fuera de rango', null],
+    ['ERROR_CALIBRACION', 'Requiere calibración', 77],
+    [null, 'En revisión técnica', null],
+  ] as const)('conserva 25 y el indicador %s en tarjeta y detalle', (calidad, etiqueta, bateria) => {
+    const s = sensor({ ultimo_valor: 25, estado_calidad: calidad, indicador_anomalia: true,
+      es_valor_operativo: true, estado_calidad_valor_operativo: 'LECTURA_VALIDA',
+      etiqueta_estado: etiqueta, nivel_bateria_pct: bateria });
+    const card = render(<SensorCard sensor={s} onAbrir={vi.fn()} />);
+    expect(screen.getByText('Última lectura válida')).toBeInTheDocument();
+    expect(screen.getByText(etiqueta)).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
+    if (calidad === null) expect(screen.queryByText(/Requiere calibración|ERROR_CALIBRACION/)).not.toBeInTheDocument();
+    card.unmount();
+    render(<SensorDetalleModal sensor={s} onClose={vi.fn()} />);
+    expect(screen.getByText('Última lectura válida')).toBeInTheDocument();
+    expect(screen.getByText(etiqueta)).toBeInTheDocument();
+    expect(screen.getByText('25')).toBeInTheDocument();
+    if (bateria != null) expect(screen.getByText('77%')).toBeInTheDocument();
+    else expect(screen.queryByText('77%')).not.toBeInTheDocument();
+  });
+
+  it('sin referencia válida no etiqueta un dato inválido como última lectura válida', () => {
+    render(<SensorCard sensor={sensor({ ultimo_valor: null, estado_calidad: null,
+      indicador_anomalia: true, es_valor_operativo: false, etiqueta_estado: 'En revisión técnica' })} onAbrir={vi.fn()} />);
+    expect(screen.getByText('En revisión técnica')).toBeInTheDocument();
+    expect(screen.queryByText('Última lectura válida')).not.toBeInTheDocument();
+  });
+
+  it('al recuperarse muestra el valor nuevo sin conservar el aviso anterior', async () => {
+    await i18n.changeLanguage('en-US');
+    const s = sensor({ ultimo_valor: 25, indicador_anomalia: true, es_valor_operativo: true,
+      estado_calidad: 'FUERA_DE_RANGO', etiqueta_estado: 'Lectura fuera de rango' });
+    const view = render(<SensorCard sensor={s} onAbrir={vi.fn()} />);
+    expect(screen.getByText('Last valid reading')).toBeInTheDocument();
+    view.rerender(<SensorCard sensor={sensor({ ultimo_valor: 26 })} onAbrir={vi.fn()} />);
+    expect(screen.getByText('26')).toBeInTheDocument();
+    expect(screen.queryByText('Last valid reading')).not.toBeInTheDocument();
+    expect(screen.queryByText('Out-of-range reading')).not.toBeInTheDocument();
   });
 });

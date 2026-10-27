@@ -6,6 +6,8 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-05/M3-06/M3-10: autor del historial, ubicación de la alerta y listado de dispositivos |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M3-08: nombres en vinculaciones y conteo del semáforo |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
+// | 2026-10-26 | Leandro | ISSUE-678 G87 RF-58: distinguir la referencia válida de la condición posterior del sensor. |
+// | 2026-10-26 | Arekkazu | INC-M03 lote 26-10 RF-58/59: unidad sin sensores, alertas correlacionadas y desviación estándar |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -179,6 +181,8 @@ export interface ResumenUnidadSchema {
   estado_general: string;
   alertas_activas_count: number;
   ultimo_dato_recibido: string | null;
+  /** RF-58 CU04 E1: "Sin datos disponibles" cuando la unidad no tiene sensores (GRIS). */
+  mensaje_estado?: string | null;
 }
 
 export interface EstadoSensorSchema {
@@ -191,7 +195,9 @@ export interface EstadoSensorSchema {
   ultima_unidad: string;
   ultimo_timestamp_captura: string;
   estado_semaforo: string;
-  estado_calidad: string;
+  estado_calidad: string | null;
+  estado_calidad_valor_operativo?: string | null;
+  timestamp_estado_actual?: string | null;
   estado_desviacion: string;
   estado_conectividad: string;
   tiempo_sin_reporte_min: number;
@@ -267,6 +273,7 @@ export interface ResumenEstadisticoSchema {
   pct_dentro_rango: number | null;
   pct_fuera_rango: number | null;
   total_alertas_en_periodo: number;
+  desviacion_estandar?: number | null;
 }
 
 /** RF-59 E7 / CA-17 (DEV-38): intervalo sin lecturas > 3 × la frecuencia de muestreo. */
@@ -294,6 +301,17 @@ export interface HistorialPageSchema {
   items: LecturaHistoricaSchema[];
   estadisticas: ResumenEstadisticoSchema[];
   vacios_temporales?: VacioTemporalSchema[];
+  /** RF-59 Salida 5: alertas de RF-57 del periodo (con incluir_alertas). */
+  alertas_correlacionadas?: AlertaCorrelacionadaSchema[];
+}
+
+export interface AlertaCorrelacionadaSchema {
+  id_alerta: number;
+  tipo_alerta: string;
+  severidad: string;
+  timestamp_generacion: string | null;
+  variable_afectada: string | null;
+  estado_final: string;
 }
 
 export type OrdenHistorial = 'ASC' | 'DESC';

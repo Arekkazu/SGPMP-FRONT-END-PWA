@@ -2,7 +2,9 @@
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11: el último dato muestra el día cuando no es de hoy + T-19 códigos legibles |
+// | 2026-10-26 | Leandro | ISSUE-678 G87 RF-58: distinguir la referencia válida de la condición posterior del sensor. |
 import React from 'react';
+import './ReferenciaValida.css';
 import { useT } from '../../shared/i18n/useT';
 import { ModalShell } from './ModalShell';
 import { EstadoSensorPills } from './EstadoLecturaPill';
@@ -37,6 +39,10 @@ export function SensorDetalleModal({ sensor, onClose }: Props) {
         <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{sensor.ultima_unidad}</span>
         <span style={{ marginLeft: 'auto' }}><EstadoSensorPills sensor={sensor} /></span>
       </div>
+
+      {sensor.indicador_anomalia && sensor.es_valor_operativo && (
+        <p className="sensor-referencia-valida">{t('estadolectura.ultima_lectura_valida')}</p>
+      )}
 
       <div>
         <Fila label={t('sensordetallemodal.variable_medida')}>{etiquetaCodigo(sensor.tipo_variable)}</Fila>

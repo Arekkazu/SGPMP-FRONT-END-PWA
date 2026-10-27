@@ -1,3 +1,16 @@
+## [1.4.0-rc.8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.7...v1.4.0-rc.8) (2026-10-27)
+
+### Bug Fixes
+
+* **rf58-mod3:** distinguir referencia valida y anomalia en dashboard ([#678](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/678)) ([dcbbb57](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/dcbbb573931c446c784ef3683ffe51b3043236ca))
+
+## [1.4.0-rc.7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.6...v1.4.0-rc.7) (2026-10-27)
+
+### Bug Fixes
+
+* **rf59-rf58:** estado vacio con sugerencia, 422 como parametros invalidos y unidad sin sensores ([7c0fa86](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7c0fa8699d4b52d9fe72588beb3fe078a5d61521))
+* **rf59:** la grafica del historial corta la linea en los vacios temporales (INC-M03-193-G121) ([b16a25b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b16a25bb3797bfa7cb46b6faa24b3e6cbeec8997))
+
 ## [1.4.0-rc.6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.5...v1.4.0-rc.6) (2026-10-26)
 
 ### Bug Fixes
