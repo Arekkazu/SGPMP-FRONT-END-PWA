@@ -3,6 +3,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-174 RF-70 a11y 4.1.2: cada botón dice qué despliegue abre |
+// | 2026-10-29 | Arekkazu | QA-M04-27-10 CU06 H-02 RF-70: nombre de la versión desplegada |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -54,7 +55,7 @@ export function OtaTable({ despliegues, loading, onVer }: Props) {
             <tr key={d.id_despliegue_ota}>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>#{d.id_despliegue_ota}</td>
               <td style={TD}>{etiquetaTipoModelo(d.tipo_modelo)}{d.componente && ` · ${d.componente}`}</td>
-              <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>v{d.id_version_modelo}</td>
+              <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>{d.nombre_version ?? `v${d.id_version_modelo}`}</td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>#{d.id_dispositivo_iot}</td>
               <td style={TD}>{d.modo_distribucion || '—'}</td>
               <td style={TD}><EstadoOtaPill estado={d.estado_despliegue} /></td>

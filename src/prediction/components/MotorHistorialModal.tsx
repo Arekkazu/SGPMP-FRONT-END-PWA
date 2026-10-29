@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: historial de configuración del motor, solo lectura |
+// | 2026-10-29 | Arekkazu | QA-M04-27-10 CU02 H-04 RF-65: responsable y versión por nombre, no por ID |
 import React from 'react';
 import { History } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -9,11 +10,13 @@ import { Alert } from '../../shared/design-system/Alert';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { ModalShell } from './ModalShell';
 import { TH, TD, THEAD_ROW } from './tableStyles';
-import type { EventoAuditoriaM04Response } from '../types';
+import type { EventoAuditoriaM04Response, VersionModeloResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 interface Props {
   eventos: EventoAuditoriaM04Response[];
+  /** CU02 H-04: para mostrar el nombre de la versión en lugar de "#43". */
+  versiones: VersionModeloResponse[];
   loading: boolean;
   error: ApiError | null;
   onClose: () => void;
@@ -26,16 +29,18 @@ function valor(s: Snapshot, k: string): string {
   return v == null || v === '' ? '—' : String(v);
 }
 
-function versiones(s: Snapshot): string {
+function versionesDe(s: Snapshot, nombre: (id: number) => string): string {
   const comp = s.versiones_activas_por_componente as Record<string, number> | null | undefined;
-  if (comp && Object.keys(comp).length) return Object.entries(comp).map(([c, id]) => `${c} #${id}`).join(' · ');
-  return s.id_version_modelo_activa != null ? `#${s.id_version_modelo_activa}` : '—';
+  if (comp && Object.keys(comp).length) return Object.entries(comp).map(([c, id]) => `${c} ${nombre(id)}`).join(' · ');
+  return s.id_version_modelo_activa != null ? nombre(Number(s.id_version_modelo_activa)) : '—';
 }
 
 const MONO: React.CSSProperties = { ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', whiteSpace: 'nowrap' };
 
-export function MotorHistorialModal({ eventos, loading, error, onClose }: Props) {
+export function MotorHistorialModal({ eventos, versiones, loading, error, onClose }: Props) {
   const { t } = useT('prediction');
+  const nombres = new Map(versiones.map((v) => [v.id_version_modelo, v.nombre_version]));
+  const nombre = (id: number) => nombres.get(id) ?? `#${id}`;
   const cols = [t('motorhistorial.col_config'), t('motorhistorial.col_riesgo'), t('motorhistorial.col_alerta'), t('motorhistorial.col_anomalia'), t('motorhistorial.col_ventana'), t('motorhistorial.col_version'), t('motorhistorial.col_modo'), t('motorhistorial.col_responsable'), t('motorhistorial.col_fecha')];
 
   return (
@@ -65,9 +70,9 @@ export function MotorHistorialModal({ eventos, loading, error, onClose }: Props)
                     <td style={MONO}>{valor(s, 'umbral_alerta_critica')}</td>
                     <td style={MONO}>{valor(s, 'umbral_score_anomalia')}</td>
                     <td style={MONO}>{valor(s, 'ventana_temporal_min')} min</td>
-                    <td style={MONO}>{versiones(s)}</td>
+                    <td style={MONO}>{versionesDe(s, nombre)}</td>
                     <td style={MONO}>{valor(s, 'modo_ejecucion')}</td>
-                    <td style={MONO}>{e.id_usuario != null ? `#${e.id_usuario}` : e.id_sistema ?? '—'}</td>
+                    <td style={MONO}>{e.nombre_usuario ?? (e.id_usuario != null ? `#${e.id_usuario}` : e.id_sistema ?? '—')}</td>
                     <td style={MONO}>{formatearFechaHora(e.fecha_evento)}</td>
                   </tr>
                 );

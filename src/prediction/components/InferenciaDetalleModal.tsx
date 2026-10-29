@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-66: detalle de inferencia por área o por activo con trazabilidad |
+// | 2026-10-29 | Arekkazu | PEND-456 RF-66: tipos desde lib/inferencias (datos reales); paquete opcional |
 import React from 'react';
 import { Info } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -9,7 +10,7 @@ import { Pill, type Tono } from './Pill';
 import { ProbBar } from './ProbBar';
 import { nivelRiesgoTono } from '../lib/riesgo';
 import { PARADIGMA_POR_TIPO, TIPO_MODELO_LABEL } from '../types';
-import type { EstadoInferencia, Inferencia } from '../mocks/monitorMock';
+import type { EstadoInferencia, Inferencia } from '../lib/inferencias';
 
 export const ESTADO_INFERENCIA_TONO: Record<EstadoInferencia, Tono> = {
   EMITIDO: 'success', RECHAZADO: 'neutral', DESCARTADO: 'neutral', FALLIDO: 'error', NO_DISPONIBLE: 'error',
@@ -27,7 +28,7 @@ export function InferenciaDetalleModal({ inf, onClose }: { inf: Inferencia; onCl
   const { t } = useT('prediction');
   const poblacional = PARADIGMA_POR_TIPO[inf.tipoModelo] === 'POBLACIONAL';
   const na = <span style={{ color: 'var(--text-muted)' }}>{t('monitor.no_aplica')}</span>;
-  const cadena = [t('monitor.traza_sensor'), 'RF-53', inf.eventoEdge ? `RF-55 · ${inf.eventoEdge}` : 'RF-55', `RF-56 · ${inf.paquete}`, `RF-66 · ${inf.id}`, inf.alerta ? `RF-57 · ${inf.alerta}` : null].filter(Boolean) as string[];
+  const cadena = [t('monitor.traza_sensor'), 'RF-53', inf.eventoEdge ? `RF-55 · ${inf.eventoEdge}` : 'RF-55', inf.paquete ? `RF-56 · ${inf.paquete}` : 'RF-56', `RF-66 · ${inf.id}`, inf.alerta ? `RF-57 · ${inf.alerta}` : null].filter(Boolean) as string[];
 
   return (
     <ModalShell title={`${t('monitor.detalle_titulo')} · ${inf.unidad}`} onClose={onClose} maxWidth={640}>
