@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: historial de cambios, aviso de modo de campo sin nodos y nodos sin confirmar |
 // | 2026-10-23 | Arekkazu | DEV-36 RF-65: envía la config_version leída (concurrencia optimista) |
+// | 2026-10-29 | Arekkazu | TC-DIS-168 RF-65 a11y 4.1.2: pestañas de tipo_modelo controlan su tabpanel |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { SlidersHorizontal, RefreshCw, Cpu, History } from 'lucide-react';
@@ -92,8 +93,11 @@ export function MotorView() {
             return (
               <button
                 key={opcion}
+                id={`motor-tab-${opcion}`}
                 role="tab"
                 aria-selected={activo}
+                aria-controls="motor-panel"
+                tabIndex={activo ? 0 : -1}
                 onClick={() => setTipo(opcion)}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)',
@@ -105,12 +109,13 @@ export function MotorView() {
                 }}
               >
                 {TIPO_MODELO_LABEL[opcion]}
-                {tieneConfig && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)' }} aria-label="configurado" />}
+                {tieneConfig && <><span aria-hidden style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sem-success)' }} /><span className="ds-sr-only">{t('motorview.configurado')}</span></>}
               </button>
             );
           })}
         </div>
 
+        <div id="motor-panel" role="tabpanel" aria-labelledby={`motor-tab-${tipo}`}>
         {loading ? (
           <div style={{ padding: 'var(--s8)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('motorview.cargando_configuracion')}</div>
         ) : (
@@ -133,6 +138,7 @@ export function MotorView() {
             />
           </>
         )}
+        </div>
 
         {/* Estado de la configuración en cada nodo Edge (DEV-09) */}
         <section style={{ marginTop: 'var(--s7)' }}>

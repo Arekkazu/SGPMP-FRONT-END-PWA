@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-174 RF-70 a11y 4.1.2: cada botón dice qué despliegue abre |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -59,7 +60,7 @@ export function OtaTable({ despliegues, loading, onVer }: Props) {
               <td style={TD}><EstadoOtaPill estado={d.estado_despliegue} /></td>
               <td style={{ ...TD, fontSize: '12px', whiteSpace: 'nowrap' }}>{fmt(d.fecha_inicio)}</td>
               <td style={{ ...TD, textAlign: 'right' }}>
-                <Button variant="ghost" size="sm" onClick={() => onVer(d)} aria-label={t('otatable.ver_despliegue')} title={t('otatable.ver_detalle')}>
+                <Button variant="ghost" size="sm" onClick={() => onVer(d)} aria-label={t('otatable.ver_despliegue_de', { version: d.id_version_modelo, nodo: d.id_dispositivo_iot })} title={t('otatable.ver_detalle')}>
                   <Eye size={16} aria-hidden />
                 </Button>
               </td>

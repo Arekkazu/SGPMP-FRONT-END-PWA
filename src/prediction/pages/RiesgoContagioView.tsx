@@ -3,6 +3,7 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-68: estado del motor, alertas, filtros y detalle con factores, reglas e historial |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-10 RF-68: pesos del cálculo en palabras y porcentaje |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-170 RF-68 a11y 2.4.6/1.3.1: la grilla de lotes tiene encabezado |
 import React, { useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -264,10 +265,11 @@ export function RiesgoContagioView() {
           </div>
         </div>
 
+        <h2 id="ctg-lotes" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>{t('contagio.lotes_titulo', { count: lotes.length, n: lotes.length })}</h2>
         {lotes.length === 0 ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)', fontSize: '14px' }}>{t('contagio.sin_resultados')}</p>
+          <p role="status" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)', fontSize: '14px' }}>{t('contagio.sin_resultados')}</p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--s4)' }}>
+          <section aria-labelledby="ctg-lotes" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--s4)' }}>
             {lotes.map((l) => (
               <article key={l.id} role="button" className="ds-fila-accion" tabIndex={0} onClick={() => setSel(l)} onKeyDown={alActivarConTeclado(() => setSel(l))} style={{ ...CARD, cursor: 'pointer' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
@@ -285,7 +287,7 @@ export function RiesgoContagioView() {
                 </div>
               </article>
             ))}
-          </div>
+          </section>
         )}
       </div>
 

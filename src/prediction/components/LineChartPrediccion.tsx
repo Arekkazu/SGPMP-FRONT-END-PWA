@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-29 | Arekkazu | TC-DIS-187 RF-67 a11y 1.1.1: la gráfica lleva título y descripción para el lector |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import {
@@ -19,6 +22,9 @@ interface Props {
   /** Líneas de umbral punteadas (p. ej. alerta/riesgo). */
   referencias?: { y: number; label: string; color?: string }[];
   yDomain?: [number, number];
+  /** 1.1.1: nombre y resumen del SVG; la tabla alternativa va al lado (la pone quien la usa). */
+  titulo?: string;
+  descripcion?: string;
 }
 
 /** Paleta por defecto sobre tokens del sistema de diseño (funciona en light/dark). */
@@ -29,7 +35,7 @@ const AXIS_STYLE = { fontSize: 11, fill: 'var(--text-muted)', fontFamily: 'var(-
  * Wrapper de gráfico de líneas del módulo de predicción (RF-67 tendencia de riesgo).
  * Único punto que consume `recharts` aquí; el resto del módulo no depende de la librería.
  */
-export function LineChartPrediccion({ data, xKey, series, height = 260, unit, referencias, yDomain }: Props) {
+export function LineChartPrediccion({ data, xKey, series, height = 260, unit, referencias, yDomain, titulo, descripcion }: Props) {
   const { t } = useT('prediction');
   if (!data || data.length === 0) {
     return (
@@ -40,7 +46,7 @@ export function LineChartPrediccion({ data, xKey, series, height = 260, unit, re
   return (
     <div style={{ width: '100%', height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 16, bottom: 4, left: 4 }}>
+        <LineChart data={data} margin={{ top: 8, right: 16, bottom: 4, left: 4 }} title={titulo} desc={descripcion}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />
           <XAxis dataKey={xKey} tick={AXIS_STYLE} stroke="var(--surface-border)" minTickGap={24} />
           <YAxis

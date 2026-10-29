@@ -1,7 +1,6 @@
 // | Fecha      | Nombre   | Que se hizo                                              |
 // |------------|----------|----------------------------------------------------------|
 // | 2026-10-29 | Arekkazu | TC-DIS-150/152/166 a11y 4.1.3: región viva solo para lector |
-import './Anunciador.css';
 
 interface AnunciadorProps {
   /** Texto a anunciar; cambiarlo es lo que dispara el anuncio. */

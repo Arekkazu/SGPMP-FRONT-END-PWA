@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-66: resultados por área y por activo, alertas activas y feed con estado del resultado |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-183 RF-66 a11y 4.1.3: contadores de riesgo y alertas en región viva |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { formatearNumero } from '../../shared/i18n/formato';
@@ -90,7 +91,7 @@ export function MonitorInferenciaView() {
           </div>
         </section>
 
-        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
+        <div aria-live="polite" style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
           <Kpi valor={contar((i) => i.nivel === 3)} etiqueta={t('monitor.kpi_alto')} />
           <Kpi valor={contar((i) => i.nivel === 2)} etiqueta={t('monitor.kpi_medio')} />
           <Kpi valor={contar((i) => i.nivel === 0 || i.nivel === 1)} etiqueta={t('monitor.kpi_bajo')} />

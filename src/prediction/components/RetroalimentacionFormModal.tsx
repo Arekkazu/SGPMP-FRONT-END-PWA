@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-03 RF-72: inferencia por fecha, sin Ninguna al marcar Incorrecto, patologías en grupo con nombre |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-03/N-03 RF-72: diagnósticos de la especie del activo y activo con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-191/192 RF-72: radiogroup con nombre, diagnóstico anunciado, E4 asociado y observaciones 0/500 |
 import React, { useState } from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -52,6 +53,9 @@ const FUENTES: { valor: FuenteDiagnostico; label: string }[] = [
   { valor: 'OTRO', label: 'Otro' },
 ];
 
+/** RF-72: observaciones clínicas de hasta 500 caracteres. */
+const MAX_OBSERVACIONES = 500;
+
 export function RetroalimentacionFormModal({ contexto, patologiasOpciones, saving, saveError, online, onSubmit, onClose }: Props) {
   const { t } = useT('prediction');
   const [estado, setEstado] = useState<EstadoRetro | ''>('');
@@ -65,9 +69,11 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
   // Si se eligió "Ninguna" y luego se marca Incorrecto, deja de contar aunque ya no se vea.
   const diagnosticos = elegidos.filter((id) => opciones.some((p) => p.id === id));
   const errEstado = !estado ? 'Selecciona una calificación.' : undefined;
-  const errDiagnosticos = requiereDiagnostico && (diagnosticos.length < 1 || diagnosticos.length > 3)
-    ? 'Indica entre 1 y 3 diagnósticos reales.'
-    : undefined;
+  // RF-72 E4: el texto es el del RF; el máximo de 3 lo impide la selección.
+  const errDiagnosticos = requiereDiagnostico && diagnosticos.length < 1
+    ? 'El diagnóstico clínico es obligatorio para este tipo de retroalimentación.'
+    : requiereDiagnostico && diagnosticos.length > 3 ? 'Indica entre 1 y 3 diagnósticos reales.' : undefined;
+  const diagConError = touched && !!errDiagnosticos;
   const hayError = !!(errEstado || errDiagnosticos);
 
   const toggleDiag = (id: number) => {
@@ -116,8 +122,8 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
 
         {/* Calificación */}
         <div>
-          <label style={LABEL}>{t('retroalimentacionformmodal.como_califica_la_prediccion_del_sistema')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></label>
-          <div role="radiogroup" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s2)' }}>
+          <span id="retro-estado-rotulo" style={{ ...LABEL, display: 'block' }}>{t('retroalimentacionformmodal.como_califica_la_prediccion_del_sistema')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></span>
+          <div role="radiogroup" aria-labelledby="retro-estado-rotulo" aria-required="true" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s2)' }}>
             {ESTADOS.map((op) => {
               const activo = estado === op.valor;
               return (
@@ -142,11 +148,17 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
           {touched && errEstado && <span role="alert" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--sem-error)' }}>{errEstado}</span>}
         </div>
 
-        {/* Diagnósticos reales */}
+        {/* Diagnósticos reales: la región viva ya existe, así se anuncia al aparecer (4.1.3). */}
+        <div aria-live="polite">
         {requiereDiagnostico && (
           <div>
-            <label style={LABEL}>{t('retroalimentacionformmodal.patologia_del_diagnostico_real')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span> <span style={{ fontWeight: 400, textTransform: 'none' }}>(máx. 3)</span></label>
-            <div role="group" aria-label={t('retroalimentacionformmodal.patologia_del_diagnostico_real')} style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)' }}>
+            <span id="retro-diag-rotulo" style={{ ...LABEL, display: 'block' }}>{t('retroalimentacionformmodal.patologia_del_diagnostico_real')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span> <span style={{ fontWeight: 400, textTransform: 'none' }}>(máx. 3)</span></span>
+            <div
+              id="retro-diag" role="group" aria-labelledby="retro-diag-rotulo"
+              aria-describedby={diagConError ? 'retro-diag-error' : undefined}
+              aria-errormessage={diagConError ? 'retro-diag-error' : undefined}
+              style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)' }}
+            >
               {patologiasOpciones.length === 0 && <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('retroalimentacionformmodal.no_hay_patologias_disponibles')}</span>}
               {opciones.map((p) => {
                 const activo = diagnosticos.includes(p.id);
@@ -169,9 +181,10 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
                 );
               })}
             </div>
-            {touched && errDiagnosticos && <span role="alert" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--sem-error)' }}>{errDiagnosticos}</span>}
+            {diagConError && <span id="retro-diag-error" role="alert" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--sem-error)' }}>{errDiagnosticos}</span>}
           </div>
         )}
+        </div>
 
         {/* Fuente */}
         <div>
@@ -188,10 +201,15 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
           <textarea
             id="retro-obs"
             value={observaciones}
+            maxLength={MAX_OBSERVACIONES}
+            aria-describedby="retro-obs-contador"
             onChange={(e) => setObservaciones(e.target.value)}
             placeholder={t('retroalimentacionformmodal.notas_adicionales_sobre_el_caso')}
             style={{ ...INPUT, height: 90, paddingTop: 'var(--s2)', resize: 'vertical', fontFamily: 'inherit' }}
           />
+          <span id="retro-obs-contador" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'right' }}>
+            {observaciones.length}/{MAX_OBSERVACIONES}
+          </span>
         </div>
       </div>
     </ModalShell>

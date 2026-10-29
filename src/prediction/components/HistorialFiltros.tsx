@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-10-29 | Arekkazu | TC-DIS-188 RF-67: el filtro de patología no aplica a un área POBLACIONAL (deshabilitado con motivo) |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, X } from 'lucide-react';
@@ -38,6 +39,8 @@ export function HistorialFiltros({ value, activos, activosError, patologias, onC
   const { t } = useT('prediction');
   const set = <K extends keyof HistorialFiltrosState>(k: K, v: HistorialFiltrosState[K]) => onChange({ ...value, [k]: v });
   const errFechas = value.fecha_inicio && value.fecha_fin && value.fecha_inicio > value.fecha_fin;
+  // TC-DIS-188: un área POBLACIONAL no tiene patología por animal; el filtro no aplica.
+  const poblacional = activos.find((a) => String(a.id_activo_biologico) === String(value.idActivo))?.tipo === 'POBLACIONAL';
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', marginBottom: 'var(--s5)' }}>
@@ -78,10 +81,14 @@ export function HistorialFiltros({ value, activos, activosError, patologias, onC
 
         <div>
           <label style={LABEL} htmlFor="hist-pat">{t('historialfiltros.patologia')}</label>
-          <select id="hist-pat" style={INPUT} value={value.id_patologia} onChange={(e) => set('id_patologia', e.target.value)}>
+          <select
+            id="hist-pat" style={INPUT} value={poblacional ? '' : value.id_patologia} onChange={(e) => set('id_patologia', e.target.value)}
+            disabled={poblacional} aria-disabled={poblacional} aria-describedby={poblacional ? 'hist-pat-motivo' : undefined}
+          >
             <option value="">{t('historialfiltros.todas')}</option>
             {patologias.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
           </select>
+          {poblacional && <p id="hist-pat-motivo" style={{ margin: 'var(--s1) 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{t('historialfiltros.patologia_no_aplica')}</p>}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'flex-end' }}>
