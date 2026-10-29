@@ -3,7 +3,9 @@
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11: el último dato muestra el día cuando no es de hoy + T-19 códigos legibles |
 // | 2026-10-26 | Leandro | ISSUE-678 G87 RF-58: distinguir la referencia válida de la condición posterior del sensor. |
+// | 2026-10-29 | Arekkazu | RFC-020 RF-58/60: conectividad como estado del dispositivo, con su pill |
 import React from 'react';
+import { EstadoDispositivoPill } from './EstadoDispositivoPill';
 import './ReferenciaValida.css';
 import { useT } from '../../shared/i18n/useT';
 import { ModalShell } from './ModalShell';
@@ -49,7 +51,7 @@ export function SensorDetalleModal({ sensor, onClose }: Props) {
         <Fila label={t('sensordetallemodal.categoria')}>{etiquetaCodigo(sensor.categoria_variable)}</Fila>
         <Fila label={t('sensordetallemodal.estado_de_calidad')}>{sensor.estado_calidad || '—'}</Fila>
         <Fila label={t('sensordetallemodal.estado_de_desviacion')}>{sensor.estado_desviacion || '—'}</Fila>
-        <Fila label={t('sensordetallemodal.conectividad')}>{sensor.estado_conectividad || '—'}</Fila>
+        <Fila label={t('sensordetallemodal.conectividad')}><EstadoDispositivoPill estado={sensor.estado_conectividad} /></Fila>
         <Fila label={t('sensordetallemodal.bateria')}>{sensor.nivel_bateria_pct != null ? `${sensor.nivel_bateria_pct}%` : '—'}</Fila>
         <Fila label="Señal LoRaWAN (RSSI)">{sensor.calidad_senal_rssi != null ? `${sensor.calidad_senal_rssi} dBm` : '—'}</Fila>
         <Fila label={t('sensordetallemodal.snr')}>{sensor.calidad_senal_snr != null ? `${sensor.calidad_senal_snr} dB` : '—'}</Fila>

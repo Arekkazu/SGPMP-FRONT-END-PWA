@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-55: pestaña de visión por ventana y tiempo de proceso contra su presupuesto |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-156 RF-55 a11y 2.1.1: filtro por severidad y detalle del evento con teclado |
 import React, { useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, Sliders, AlertTriangle, Database, CheckCircle2, Timer } from 'lucide-react';
@@ -12,6 +13,8 @@ import { SubPestanas } from '../../shared/design-system/SubPestanas';
 import { Pill, type Tono } from '../components/Pill';
 import { SeveridadBadge } from '../components/SeveridadBadge';
 import { OrigenPill } from '../components/OrigenPill';
+import { ModalShell } from '../components/ModalShell';
+import { alActivarConTeclado } from '../../shared/lib/teclado';
 import { TH, TD, TABLE_WRAP, THEAD_ROW, INPUT, LABEL } from '../components/tableStyles';
 import {
   EDGE_KPIS, EDGE_GAUGES, EDGE_EVENTOS, PRESUPUESTO_ESCALAR_MS, VISION_CFG, VENTANAS_VISION, estadoVentana,
@@ -49,12 +52,45 @@ function TiempoProceso({ e }: { e: EventoEdgeMock }) {
   );
 }
 
+function EventoEdgeDetalle({ e, onClose }: { e: EventoEdgeMock; onClose: () => void }) {
+  const { t } = useT('telemetry');
+  const campos: [string, React.ReactNode][] = [
+    [t('edge.col_dispositivo'), e.dispositivo],
+    [t('edge.col_variables'), e.variables],
+    [t('edge.col_valor'), e.valor],
+    [t('edge.col_rama'), t(`edge.rama_${e.rama}`)],
+    [t('edge.col_clasificacion'), t(`edge.clasif_${e.clasificacion}`)],
+    [t('edge.col_regla'), e.regla],
+    [t('edge.col_severidad'), e.clasificacion === 'NORMAL' ? '—' : <SeveridadBadge severidad={e.severidad} />],
+    [t('edge.col_origen'), <OrigenPill origen={e.origen} />],
+    [t('edge.col_tiempo'), <TiempoProceso e={e} />],
+    [t('edge.col_capturado'), e.capturado],
+    [t('edge.col_procesado'), e.procesado],
+  ];
+  return (
+    <ModalShell title={`${t('edge.detalle_titulo')} · ${e.dispositivo}`} onClose={onClose} maxWidth={560}>
+      <dl className="ds-fg2" style={{ gap: 'var(--s4)', margin: 0 }}>
+        {campos.map(([rotulo, valor]) => (
+          <div key={rotulo}>
+            <dt style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 2 }}>{rotulo}</dt>
+            <dd style={{ margin: 0, fontSize: '13px', color: 'var(--text-primary)' }}>{valor}</dd>
+          </div>
+        ))}
+      </dl>
+    </ModalShell>
+  );
+}
+
 function EventosEdge() {
   const { t } = useT('telemetry');
   const [filtro, setFiltro] = useState('');
+  // TC-DIS-156: el criterio pide filtrar por severidad, además de la clasificación.
+  const [severidad, setSeveridad] = useState('');
+  const [abierto, setAbierto] = useState<EventoEdgeMock | null>(null);
   const eventos = useMemo(
-    () => EDGE_EVENTOS.filter((e) => !filtro || (filtro === 'VISION' ? e.rama === 'VISION' : e.clasificacion === filtro)),
-    [filtro],
+    () => EDGE_EVENTOS.filter((e) => (!filtro || (filtro === 'VISION' ? e.rama === 'VISION' : e.clasificacion === filtro))
+      && (!severidad || (e.clasificacion !== 'NORMAL' && e.severidad === severidad))),
+    [filtro, severidad],
   );
   const cols = [t('edge.col_dispositivo'), t('edge.col_variables'), t('edge.col_valor'), t('edge.col_rama'), t('edge.col_clasificacion'), t('edge.col_regla'), t('edge.col_severidad'), t('edge.col_origen'), t('edge.col_tiempo'), t('edge.col_capturado'), t('edge.col_procesado')];
 
@@ -68,7 +104,17 @@ function EventosEdge() {
         ))}
       </div>
 
-      <div style={{ maxWidth: 260, marginBottom: 'var(--s4)' }}>
+      <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s4)' }}>
+      <div style={{ flex: '0 1 260px' }}>
+        <label style={LABEL} htmlFor="edge-severidad">{t('edge.col_severidad')}</label>
+        <select id="edge-severidad" style={INPUT} value={severidad} onChange={(e) => setSeveridad(e.target.value)}>
+          <option value="">{t('edge.todos')}</option>
+          <option value="CRITICO">{t('edge.sev_CRITICO')}</option>
+          <option value="MODERADO">{t('edge.sev_MODERADO')}</option>
+          <option value="LEVE">{t('edge.sev_LEVE')}</option>
+        </select>
+      </div>
+      <div style={{ flex: '0 1 260px' }}>
         <label style={LABEL} htmlFor="edge-filtro">{t('edge.col_clasificacion')}</label>
         <select id="edge-filtro" style={INPUT} value={filtro} onChange={(e) => setFiltro(e.target.value)}>
           <option value="">{t('edge.todos')}</option>
@@ -79,13 +125,14 @@ function EventosEdge() {
           <option value="VISION">{t('edge.rama_VISION')}</option>
         </select>
       </div>
+      </div>
 
       <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de eventos Edge">
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead><tr style={THEAD_ROW}>{cols.map((h, i) => <th key={i} style={TH}>{h}</th>)}</tr></thead>
           <tbody>
             {eventos.map((e) => (
-              <tr key={e.id} style={{ background: 'var(--surface-card)' }}>
+              <tr key={e.id} className="ds-fila-accion" tabIndex={0} onClick={() => setAbierto(e)} onKeyDown={alActivarConTeclado(() => setAbierto(e))}>
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-primary)' }}>{e.dispositivo}</td>
                 <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>{e.variables}</td>
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>{e.valor}</td>
@@ -102,6 +149,7 @@ function EventosEdge() {
           </tbody>
         </table>
       </div>
+      {abierto && <EventoEdgeDetalle e={abierto} onClose={() => setAbierto(null)} />}
     </>
   );
 }
