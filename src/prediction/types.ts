@@ -4,6 +4,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: etiquetaTipoModelo muestra "Sin tipo", nunca "null" |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M4-02: nombre del usuario en auditoría, de variables y de especie en patologías |
 // | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
+// | 2026-10-29 | Arekkazu | QA-M04-27-10 / PEND-456 RF-54/66/68/70: nombres de versión, buffer, inferencias y contagio reales |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -312,6 +313,9 @@ export interface RegistrarNotasVersionDTO {
 export interface DespliegueOtaResponse {
   id_despliegue_ota: number;
   id_version_modelo: number;
+  /** CU06 H-02: nombre de la versión (backend #866); antes solo se veía "v43". */
+  nombre_version?: string | null;
+  nombre_version_anterior?: string | null;
   id_dispositivo_iot: number;
   tipo_modelo: TipoModelo;
   paradigma: Paradigma | null;

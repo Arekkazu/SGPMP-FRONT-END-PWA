@@ -3,6 +3,7 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: historial de cambios, aviso de modo de campo sin nodos y nodos sin confirmar |
 // | 2026-10-23 | Arekkazu | DEV-36 RF-65: envía la config_version leída (concurrencia optimista) |
 // | 2026-10-29 | Arekkazu | TC-DIS-168 RF-65 a11y 4.1.2: pestañas de tipo_modelo controlan su tabpanel |
+// | 2026-10-29 | Arekkazu | QA-M04-27-10 CU02 H-04 RF-65: el historial recibe las versiones para nombrarlas |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { SlidersHorizontal, RefreshCw, Cpu, History } from 'lucide-react';
@@ -149,7 +150,7 @@ export function MotorView() {
       </div>
 
       {verHistorial && (
-        <MotorHistorialModal eventos={historial} loading={historialLoading} error={historialError} onClose={() => setVerHistorial(false)} />
+        <MotorHistorialModal eventos={historial} versiones={versiones} loading={historialLoading} error={historialError} onClose={() => setVerHistorial(false)} />
       )}
 
       {/* FA-08 / E3: modo de campo sin nodos con el modelo disponible */}
