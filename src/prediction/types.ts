@@ -310,6 +310,66 @@ export interface RegistrarNotasVersionDTO {
 // =====================================================================
 // RF-70 · OTA / Distribución — /prediccion (recurso 44)
 // =====================================================================
+/** RF-66: un resultado del motor de inferencia (GET /prediccion/inferencias). */
+export interface InferenciaMonitorResponse {
+  id_resultado_inferencia: string;
+  id_activo_biologico: number;
+  identificador_activo: string | null;
+  nombre_area: string;
+  nombre_finca: string;
+  especie: string | null;
+  tipo_modelo: TipoModelo;
+  paradigma: Paradigma | null;
+  id_version_modelo: number;
+  nombre_version: string | null;
+  nivel_riesgo: number;
+  /** INDIVIDUAL: {"0": p, ..., "3": p}. POBLACIONAL: puede traer score_anomalia y umbral. */
+  probabilidad_riesgo: Record<string, number>;
+  id_patologia: number | null;
+  nombre_patologia: string | null;
+  /** Probabilidad por patología: {nombre o id: p}. */
+  probabilidad_enfermedad: Record<string, number>;
+  confianza_global: number;
+  contexto_incompleto: boolean;
+  latencia_excedida: boolean;
+  modo_ejecucion: ModoEjecucion;
+  latencia_ms: number | null;
+  fecha_inicio_ventana: string | null;
+  fecha_fin_ventana: string | null;
+  fecha_inferencia: string;
+  tiene_alerta_generada: boolean;
+  id_alerta_generada: number | null;
+}
+
+/** RF-68: un cálculo de riesgo de contagio de un lote (GET /prediccion/riesgo-contagio). */
+export interface RiesgoContagioMonitorResponse {
+  id_resultado_contagio: number;
+  id_activo_biologico: number;
+  identificador_activo: string | null;
+  nombre_area: string;
+  nombre_finca: string;
+  especie: string | null;
+  probabilidad_contagio: number;
+  /** 0 BAJO, 1 MEDIO, 2 ALTO. */
+  nivel_riesgo_contagio: number;
+  factor_sanitario_fs: number;
+  factor_ambiental_fa: number | null;
+  factor_densidad_fd: number | null;
+  w_fs_aplicado: number;
+  w_fa_aplicado: number;
+  w_fd_aplicado: number;
+  confianza_baja: boolean;
+  data_quality_score: number | null;
+  factores_ausentes: string[] | null;
+  modo_ejecucion_calculo: string | null;
+  n_enfermos_detectados: number | null;
+  total_activos_lote: number | null;
+  porcentaje_sensores_activos: number | null;
+  fecha_calculo: string;
+  id_alerta_generada: number | null;
+  detalle_calculo: Record<string, unknown> | null;
+}
+
 export interface DespliegueOtaResponse {
   id_despliegue_ota: number;
   id_version_modelo: number;
