@@ -2,7 +2,8 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M3-08/M3-11: área por nombre, contadores de todo el alcance y estado vacío sin filtros |
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+// | 2026-10-29 | Arekkazu | TC-DIS-152 RF-58 R1 / G98 CA-11: degradación nivel 2/3 anunciada y panel de alertas activas |
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { RefreshCw, Radio, CheckCircle2, AlertTriangle, AlertOctagon, CircleOff } from 'lucide-react';
@@ -17,12 +18,15 @@ import { Paginacion } from '../components/Paginacion';
 import { UnidadCard } from '../components/UnidadCard';
 import { SensorCard } from '../components/SensorCard';
 import { SensorDetalleModal } from '../components/SensorDetalleModal';
+import { PanelAlertasActivas } from '../components/PanelAlertasActivas';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { horaCaptura } from '../lib/sensorEscala';
 import { RECURSO_MONITOREO, ACCION_R } from '../rbac';
 import type { EstadoSensorSchema, DashboardFiltros } from '../types';
 
 const REFRESH_MS = 30000;
+/** RF-58 Restricción 1, Nivel 2: el refresco responde, pero tarda más de 2 s. */
+const LATENCIA_RETRASO_MS = 2000;
 /** FA-07: el backend devuelve a lo sumo 50 sensores por vista. */
 const POR_PAGINA = 50;
 
@@ -49,7 +53,7 @@ export function MonitoreoView() {
   const { t } = useT('telemetry');
   const puedeVer = usePermission(RECURSO_MONITOREO, ACCION_R);
   const online = useOnlineStatus();
-  const { sensores, unidades, total, conteo, loading, refreshing, error, fromCache, actualizadoEn, cargar } = useMonitoreo();
+  const { sensores, unidades, total, conteo, panelAlertas, loading, refreshing, error, fromCache, actualizadoEn, cargar } = useMonitoreo();
   const areas = useAreas();
 
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -68,15 +72,28 @@ export function MonitoreoView() {
   const filtrosRef = useRef(filtros);
   filtrosRef.current = filtros;
 
+  const [latenciaMs, setLatenciaMs] = useState(0);
+  const recargar = useCallback(async (silencioso: boolean) => {
+    const inicio = Date.now();
+    await cargar(filtrosRef.current, silencioso);
+    setLatenciaMs(Date.now() - inicio);
+  }, [cargar]);
+
   // Carga inicial + al cambiar filtro de infraestructura.
-  useEffect(() => { if (puedeVer) cargar(filtros); }, [puedeVer, filtros, cargar]);
+  useEffect(() => { if (puedeVer) void recargar(false); }, [puedeVer, filtros, recargar]);
 
   // Polling silencioso (no hay websockets — el "tiempo real" es polling).
   useEffect(() => {
     if (!puedeVer || !autoRefresh || !online) return;
-    const id = window.setInterval(() => cargar(filtrosRef.current, true), REFRESH_MS);
+    const id = window.setInterval(() => { void recargar(true); }, REFRESH_MS);
     return () => window.clearInterval(id);
-  }, [puedeVer, autoRefresh, online, cargar]);
+  }, [puedeVer, autoRefresh, online, recargar]);
+
+  // RF-58 R1: Nivel 3 sin red o sin respuesta del backend (se ve la caché); Nivel 2 con retraso.
+  const nivelDegradacion = !online || fromCache ? 3 : latenciaMs > LATENCIA_RETRASO_MS ? 2 : 0;
+  const ultimoDato = t('monitoreoview.ultimo_dato', {
+    hora: actualizadoEn ? horaCaptura(new Date(actualizadoEn).toISOString()) : '—',
+  });
 
   // M3-08: decía "50 sensores" (el tamaño de la página) en áreas de 60 y 200. El total
   // y el semáforo vienen del backend para todo el alcance; sin ellos (caché) se cuenta
@@ -142,18 +159,19 @@ export function MonitoreoView() {
             <RefreshCw size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />
             Auto {autoRefresh ? 'ON' : 'OFF'}
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => cargar(filtros)} aria-label={t('monitoreoview.refrescar_ahora')}>
+          <Button variant="ghost" size="sm" onClick={() => { void recargar(false); }} aria-label={t('monitoreoview.refrescar_ahora')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
         </div>
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
-        {!online && (
-          <Alert variant="warning" title={t('monitoreoview.sin_conexion')} description={t('monitoreoview.mostrando_el_ultimo_dashboard_cacheado_el')} style={{ marginBottom: 'var(--s4)' }} />
+        {/* role="alert" del Alert: el cambio de nivel se anuncia sin mover el foco (4.1.3). */}
+        {nivelDegradacion === 3 && (
+          <Alert variant="warning" title={t('monitoreoview.trabajando_sin_conexion')} description={`${ultimoDato} ${t('monitoreoview.datos_desde_cache_detalle')}`} style={{ marginBottom: 'var(--s4)' }} />
         )}
-        {fromCache && online && (
-          <Alert variant="info" title={t('monitoreoview.datos_desde_cache')} description="No se pudo actualizar el dashboard; se muestran los últimos datos disponibles." style={{ marginBottom: 'var(--s4)' }} />
+        {nivelDegradacion === 2 && (
+          <Alert variant="info" title={t('monitoreoview.actualizacion_con_retraso')} description={ultimoDato} style={{ marginBottom: 'var(--s4)' }} />
         )}
         {error && !fromCache && (
           <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('monitoreoview.sin_acceso_al_monitoreo') : t('monitoreoview.error_al_cargar_el_dashboard')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
@@ -167,6 +185,8 @@ export function MonitoreoView() {
           <Kpi icon={<AlertOctagon size={18} aria-hidden />} valor={kpis.rojo} etiqueta="Fuera de rango" color="var(--sem-error)" />
           <Kpi icon={<CircleOff size={18} aria-hidden />} valor={kpis.gris} etiqueta="Sin señal" color="var(--text-muted)" />
         </div>
+
+        {panelAlertas && <PanelAlertasActivas panel={panelAlertas} />}
 
         {loading ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 'var(--s4)' }}>

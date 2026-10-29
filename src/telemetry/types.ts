@@ -8,6 +8,8 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
 // | 2026-10-26 | Leandro | ISSUE-678 G87 RF-58: distinguir la referencia válida de la condición posterior del sensor. |
 // | 2026-10-26 | Arekkazu | INC-M03 lote 26-10 RF-58/59: unidad sin sensores, alertas correlacionadas y desviación estándar |
+// | 2026-10-29 | Arekkazu | INC-M03-211-G98 RF-58: panel de alertas activas del dashboard |
+// | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: estado del buffer Edge por dispositivo (GET /iot/buffer) |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -35,6 +37,32 @@ export type EstadoSemaforo = 'VERDE' | 'AMARILLO' | 'ROJO' | 'GRIS';
 
 /** Estado del ciclo de vida de un dispositivo IoT (RF-60). */
 /** Fila de GET /iot/dispositivos (M3-10). */
+/** RF-54 (TC-DIS-148): último reporte del buffer Edge de un dispositivo. */
+export type EstadoOcupacionBuffer = 'NORMAL' | 'WARNING' | 'CRITICO';
+export type PoliticaBuffer = 'POLITICA_RECHAZO' | 'POLITICA_SOBRESCRITURA';
+
+export interface EstadoBufferSchema {
+  id_dispositivo_iot: number;
+  serial: string | null;
+  descripcion: string | null;
+  nombre_infraestructura: string | null;
+  nombre_finca: string | null;
+  estado_dispositivo: string | null;
+  /** Último heartbeat: 'I' sin pendientes, 'A' buffer activo, 'L' lleno; null sin reporte. */
+  estado_local_buffer: 'I' | 'A' | 'L' | null;
+  datos_pendientes: number | null;
+  /** false: el firmware todavía no reporta capacidad; los campos de abajo vienen null. */
+  metricas_disponibles: boolean;
+  capacidad_total: number | null;
+  capacidad_utilizada: number | null;
+  porcentaje_ocupacion: number | null;
+  estado_buffer: EstadoOcupacionBuffer | null;
+  politica_buffer_activa: PoliticaBuffer | null;
+  ultimo_timestamp_pendiente: string | null;
+  fecha_reporte: string | null;
+  fecha_recepcion: string | null;
+}
+
 export interface DispositivoConEstadoSchema {
   id_dispositivo_iot: number;
   serial: string;
@@ -230,6 +258,27 @@ export interface DashboardResponseSchema {
   sensores: EstadoSensorSchema[];
   /** M3-08: sensores por color de todo el alcance (VERDE/AMARILLO/ROJO/GRIS), no de la página. */
   conteo_semaforo?: Record<string, number>;
+  /** G98 (RF-58 CA-11): alertas ACTIVA del alcance; `total` de arriba es de sensores. */
+  panel_alertas_activas?: PanelAlertasActivasSchema;
+}
+
+export interface AlertaActivaPanelSchema {
+  id_alerta: number;
+  tipo_alerta: string;
+  severidad: string | null;
+  tipo_variable: string | null;
+  valor: number | string | null;
+  unidad: string | null;
+  fecha_generacion: string;
+  minutos_transcurridos: number;
+  id_infraestructura: number | null;
+  id_activo_biologico: number | null;
+  identificador_activo: string | null;
+}
+
+export interface PanelAlertasActivasSchema {
+  total: number;
+  alertas: AlertaActivaPanelSchema[];
 }
 
 export interface DashboardFiltros {

@@ -1,3 +1,19 @@
+## [1.4.0-rc.9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.8...v1.4.0-rc.9) (2026-10-29)
+
+### Features
+
+* **rf54-telemetry:** panel del buffer con datos reales de GET /iot/buffer (TC-DIS-148) ([8892916](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/889291663a47f4b07b06a209fe35d0eae3608320))
+* **rf62:** politica de vision configurable en la pestana Sistema de M09 ([3a14b93](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3a14b9365adb924fcec360629402e444e8527be9)), closes [#864](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/864)
+* **rf66-prediction:** monitor de inferencia con datos reales de GET /prediccion/inferencias ([cfd683d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cfd683d8b4466cf59743dc77d1d7c8b239d51444)), closes [#867](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/867)
+* **rf68-prediction:** riesgo de contagio con datos reales de GET /prediccion/riesgo-contagio ([c6f38eb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c6f38eb42102e08350ee2561110332524435e9fb)), closes [#867](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/867)
+
+### Bug Fixes
+
+* **m03:** accesibilidad y validaciones de la segunda evaluacion (RF-57/58/59/60/62/63) ([6491568](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6491568dfbb14e4be98eed065d68cbc1a8edcf0c))
+* **m04-prediction:** nombres de version y usuario, y las notas no figuran como Aprobada (CU02 H-04, CU05 H-09, CU06 H-02) ([3dcd96f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3dcd96f2dd8c9cce3e8d5204a8848bb521258a1c)), closes [#866](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/866) [#126](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/126)
+* **m04:** accesibilidad de la segunda evaluacion (RF-64/65/66/67/68/69/70/71/72/73) ([29426a2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/29426a20c003c4b023e38e23642fc7654a62c8bc))
+* **rf65-prediction:** modo de ejecucion como combobox con nombre (TC-DIS-168) ([73651bd](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/73651bdd042c6dfc817abe05a1ee23710bd010e9))
+
 ## [1.4.0-rc.8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.7...v1.4.0-rc.8) (2026-10-27)
 
 ### Bug Fixes

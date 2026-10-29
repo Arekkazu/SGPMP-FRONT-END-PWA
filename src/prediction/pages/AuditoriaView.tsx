@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-73: pestaña por RF de origen, búsqueda en la página y aviso de evidencia verificable |
+// | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ClipboardList, RefreshCw, Download, ListChecks, AlertOctagon, Layers, ShieldCheck } from 'lucide-react';
@@ -57,6 +58,10 @@ export function AuditoriaView() {
     if (f.id_referencia.trim()) api.id_referencia = f.id_referencia.trim();
     if (f.fecha_desde) api.fecha_desde = inicioDelDiaUtc(f.fecha_desde);
     if (f.fecha_hasta) api.fecha_hasta = finDelDiaUtc(f.fecha_hasta);
+    // Actor: un número es un usuario; cualquier otro texto, el sistema que originó el evento.
+    const actor = f.actor.trim();
+    if (actor) { if (/^\d+$/.test(actor)) api.id_usuario = Number(actor); else api.id_sistema = actor; }
+    if (f.tipo_modelo) api.tipo_modelo = f.tipo_modelo;
     return api;
   }, []);
 

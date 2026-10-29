@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-29 | Arekkazu | H-M3-14 CP107 RF-62: rango invertido no se envía y se avisa en el campo |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { CheckCircle2 } from 'lucide-react';
@@ -38,11 +41,14 @@ export function ReevaluarModal({ saving, saveError, reevaluacion, onConfirm, onC
   const rangoDesde = desde ? inicioDelDiaUtc(desde) : undefined;
   const rangoHasta = hasta ? finDelDiaUtc(hasta) : undefined;
   const faltaFechas = !rangoDesde || !rangoHasta;
+  // H-M3-14: con «Hasta» antes de «Desde» decía "operación completada" sobre un rango vacío.
+  const invertido = !faltaFechas && desde > hasta;
+  const errorFechas = touched && (faltaFechas || invertido);
   const causaInvalida = causa.trim().length < 10;
 
   const confirmar = () => {
     setTouched(true);
-    if (faltaSensor || faltaFechas || causaInvalida) return;
+    if (faltaSensor || faltaFechas || invertido || causaInvalida) return;
     onConfirm({
       id_sensor: Number(idSensor),
       fecha_desde: rangoDesde,
@@ -86,11 +92,16 @@ export function ReevaluarModal({ saving, saveError, reevaluacion, onConfirm, onC
             </div>
             <div>
               <label style={LABEL} htmlFor="re-desde">{t('reevaluarmodal.desde')}</label>
-              <input id="re-desde" type="date" style={{ ...INPUT, borderColor: touched && faltaFechas ? 'var(--sem-error)' : 'var(--surface-border)' }} value={desde} onChange={(e) => setDesde(e.target.value)} aria-required />
+              <input id="re-desde" type="date" style={{ ...INPUT, borderColor: errorFechas ? 'var(--sem-error)' : 'var(--surface-border)' }} value={desde} onChange={(e) => setDesde(e.target.value)} aria-required aria-invalid={errorFechas} aria-describedby={errorFechas ? 're-fechas-error' : undefined} />
             </div>
             <div>
               <label style={LABEL} htmlFor="re-hasta">{t('reevaluarmodal.hasta')}</label>
-              <input id="re-hasta" type="date" style={{ ...INPUT, borderColor: touched && faltaFechas ? 'var(--sem-error)' : 'var(--surface-border)' }} value={hasta} onChange={(e) => setHasta(e.target.value)} aria-required />
+              <input id="re-hasta" type="date" style={{ ...INPUT, borderColor: errorFechas ? 'var(--sem-error)' : 'var(--surface-border)' }} value={hasta} onChange={(e) => setHasta(e.target.value)} aria-required aria-invalid={errorFechas} aria-describedby={errorFechas ? 're-fechas-error' : undefined} />
+              {errorFechas && (
+                <p id="re-fechas-error" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+                  {invertido ? t('filtros.rango_invertido', { ns: 'common' }) : t('filtros.fechas_obligatorias', { ns: 'common' })}
+                </p>
+              )}
             </div>
           </div>
 

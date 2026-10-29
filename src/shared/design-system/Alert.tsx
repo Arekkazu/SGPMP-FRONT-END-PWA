@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-29 | Arekkazu | TC-DIS-162 a11y 3.3.1: solo el éxito se cierra solo; info queda hasta que cambie el estado |
 import React, { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n/useT';
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react';
@@ -5,9 +8,10 @@ import './Alert.css';
 
 export type AlertVariant = 'success' | 'warning' | 'error' | 'info';
 
+// TC-DIS-162: info también lleva motivos de rechazo (404/422) y avisos que siguen vigentes
+// ("datos desde caché"); cerrarlo a los 6 s dejaba al usuario sin poder releerlo.
 const AUTO_DISMISS: Partial<Record<AlertVariant, number>> = {
   success: 4000,
-  info: 6000,
 };
 
 const ICONS: Record<AlertVariant, React.ReactNode> = {

@@ -3,9 +3,10 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-11 RF-64: la fila base dice por qué no se edita |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-179 RF-64 a11y 1.4.1: variable crítica con ícono y texto, no solo color de borde |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { Eye, Pencil, Ban, Lock } from 'lucide-react';
+import { Eye, Pencil, Ban, Lock, AlertTriangle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { EstadoActivoPill, TipoPatologiaPill } from './PatologiaPills';
 import { nombreEspecie, nombreVariable } from '../lib/catalogos';
@@ -72,7 +73,9 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
                           color: 'var(--text-secondary)',
                         }}
                       >
+                        {v.es_variable_critica && <AlertTriangle size={11} aria-hidden style={{ color: 'var(--sem-warning)', marginRight: 2, verticalAlign: '-1px' }} />}
                         {nombreVariable(v)}
+                        {v.es_variable_critica && <span className="ds-sr-only">{` (${t('patologiastable.variable_critica')})`}</span>}
                       </span>
                     ))}
                   </div>

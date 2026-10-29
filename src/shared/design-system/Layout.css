@@ -1,6 +1,7 @@
 /* | Fecha      | Nombre   | Que se hizo |
    |------------|----------|-------------|
-   | 2026-10-25 | Arekkazu | USAB-M03-M04 T-23: tablas que se vuelven tarjetas por debajo de 768px |  */
+   | 2026-10-25 | Arekkazu | USAB-M03-M04 T-23: tablas que se vuelven tarjetas por debajo de 768px |
+   | 2026-10-29 | Arekkazu | TC-DIS-150/179 a11y: clase global .ds-sr-only (solo lector de pantalla) |  */
 
 /* Rejillas de contenido del DS v2.0 ("Reglas responsive por componente").
  *
@@ -270,4 +271,18 @@
     left: auto;
     width: 380px;
   }
+}
+
+/* Solo para lector de pantalla (WCAG 4.1.3 / 1.4.1): región viva de Anunciador o texto que
+   acompaña a un color. Global para que cualquier pantalla pueda usarla. */
+.ds-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }

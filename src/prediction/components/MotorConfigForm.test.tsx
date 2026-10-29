@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: confirmar el cambio de versión y suma de pesos obligatoria |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-04: alerta crítica 0,70 por defecto y sin versiones rechazadas |
+// | 2026-10-29 | Arekkazu | TC-DIS-168 RF-65: modo_ejecucion como combobox con nombre |
 /**
  * RF-65 v2.0 (RFC-009): el formulario envía los campos del paradigma del modelo —
  * umbral de anomalía y versión por componente para POBLACIONAL, umbrales de
@@ -52,6 +53,17 @@ describe('MotorConfigForm — campos por paradigma (RFC-009)', () => {
     const dto = onGuardar.mock.calls[0][0];
     expect(dto).toMatchObject({ umbral_riesgo_alto: 0.7, umbral_alerta_critica: 0.7, id_version_modelo_activa: 20 });
     expect(dto).not.toHaveProperty('umbral_score_anomalia');
+  });
+
+  it('modo de ejecución es un combobox con nombre, valor y la ayuda del modo elegido (TC-DIS-168)', () => {
+    const onGuardar = renderForm('MODELO_ESPECIES_GRANDES');
+    const modo = screen.getByRole('combobox', { name: 'Modo de ejecución' }) as HTMLSelectElement;
+    expect(modo.value).toBe('SERVIDOR');
+    const ayudaServidor = document.getElementById(modo.getAttribute('aria-describedby') ?? '')?.textContent;
+    fireEvent.change(modo, { target: { value: 'HIBRIDO' } });
+    expect(document.getElementById(modo.getAttribute('aria-describedby') ?? '')?.textContent).not.toBe(ayudaServidor);
+    fireEvent.click(screen.getByText('Guardar configuración'));
+    expect(onGuardar.mock.calls[0][0]).toMatchObject({ modo_ejecucion: 'HIBRIDO' });
   });
 
   it('no ofrece versiones rechazadas (M4-04)', () => {

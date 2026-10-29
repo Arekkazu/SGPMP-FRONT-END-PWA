@@ -1,7 +1,8 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-03/N-03 RF-72: diagnósticos de la especie del activo y activo con nombre |
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+// | 2026-10-29 | Arekkazu | TC-DIS-187/188/191/192 RF-67: tablist sin Exportar, tabla alternativa a la gráfica y página anterior |
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { History, ShieldCheck, Download, Clock, TrendingUp } from 'lucide-react';
@@ -9,6 +10,8 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+import { TH, TD, THEAD_ROW } from '../components/tableStyles';
 import { useHistorial } from '../hooks/useHistorial';
 import { usePatologias } from '../hooks/usePatologias';
 import { useRetroalimentacion } from '../hooks/useRetroalimentacion';
@@ -18,7 +21,7 @@ import { LineChartPrediccion } from '../components/LineChartPrediccion';
 import { RetroalimentacionFormModal, type RetroContexto } from '../components/RetroalimentacionFormModal';
 import { diagnosticosPara } from '../lib/diagnosticos';
 import { PermissionDenied } from '../components/PermissionDenied';
-import { extraerNivelRiesgo } from '../lib/riesgo';
+import { NIVEL_RIESGO_LABEL, extraerConfianza, extraerNivelRiesgo, extraerPatologia } from '../lib/riesgo';
 import { RECURSO_HISTORIAL, RECURSO_RETRO, ACCION_R, ACCION_C } from '../rbac';
 import type { ConsultarHistorialFiltros, EventoHistorialResponse } from '../types';
 
@@ -38,6 +41,12 @@ export function HistorialView() {
   const [tab, setTab] = useState<TabId>('timeline');
   const [retroEvento, setRetroEvento] = useState<EventoHistorialResponse | null>(null);
   const [retroOk, setRetroOk] = useState(false);
+  // TC-DIS-188: la paginación por cursor solo agregaba al final; se ve una página a la vez
+  // y se puede volver. `cortes[i]` = índice del primer evento de la página i.
+  const [pagina, setPagina] = useState(0);
+  const [cortes, setCortes] = useState<number[]>([0]);
+  const resultadosRef = useRef<HTMLDivElement>(null);
+  const reiniciarPaginas = () => { setPagina(0); setCortes([0]); };
 
   useEffect(() => {
     if (puedeVer) { cargarActivos(); patologiasHook.cargar({ solo_activas: true }); }
@@ -60,11 +69,39 @@ export function HistorialView() {
       incluir_alertas: filtros.incluir_alertas,
     };
     if (filtros.nivel_riesgo) api.nivel_riesgo = Number(filtros.nivel_riesgo);
-    if (filtros.id_patologia) api.id_patologia = Number(filtros.id_patologia);
+    if (filtros.id_patologia && !poblacional) api.id_patologia = Number(filtros.id_patologia);
+    reiniciarPaginas();
     consultar(Number(filtros.idActivo), api);
   };
 
-  const onLimpiar = () => { setFiltros(historialFiltrosVacio()); limpiar(); };
+  const onLimpiar = () => { setFiltros(historialFiltrosVacio()); reiniciarPaginas(); limpiar(); };
+
+  // 2.4.3: tras cambiar de página el foco queda al inicio de los resultados, no en <body>.
+  const irAPagina = async (destino: number) => {
+    if (destino > pagina && cortes[destino] == null) {
+      const inicio = eventos.length;
+      await cargarMas();
+      setCortes((c) => [...c, inicio]);
+    }
+    setPagina(destino);
+    window.setTimeout(() => resultadosRef.current?.focus(), 0);
+  };
+  const eventosPagina = eventos.slice(cortes[pagina] ?? 0, cortes[pagina + 1] ?? eventos.length);
+  const haySiguiente = cortes[pagina + 1] != null || !!cursor;
+
+  const poblacional = activoDe(filtros.idActivo)?.tipo === 'POBLACIONAL';
+  // 1.1.1 (TC-DIS-187): los mismos puntos de la gráfica, en tabla.
+  const filasTendencia = useMemo(() => [...eventos]
+    .sort((a, b) => a.fecha_evento.localeCompare(b.fecha_evento))
+    .map((e) => ({
+      id: e.id_evento,
+      fecha: formatearFecha(e.fecha_evento),
+      nivel: extraerNivelRiesgo(e.payload),
+      patologia: extraerPatologia(e.payload),
+      confianza: extraerConfianza(e.payload),
+      score: typeof e.payload?.score_anomalia === 'number' ? e.payload.score_anomalia : null,
+    }))
+    .filter((f) => f.nivel != null), [eventos]);
 
   const chartData = useMemo(() => {
     return [...eventos]
@@ -120,38 +157,43 @@ export function HistorialView() {
           loading={loading}
         />
 
-        {/* Tabs */}
-        <div role="tablist" aria-label={t('historialview.vista_de_historial')} style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
-          {([['timeline', 'Línea de tiempo', <Clock size={15} aria-hidden key="i" />], ['tendencia', 'Tendencia de riesgo', <TrendingUp size={15} aria-hidden key="j" />]] as const).map(([id, label, icon]) => {
-            const activo = id === tab;
-            return (
-              <button key={id} role="tab" aria-selected={activo} onClick={() => setTab(id)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)', padding: 'var(--s3) var(--s4)', border: 'none', borderBottom: `2px solid ${activo ? 'var(--brand-500)' : 'transparent'}`, background: 'transparent', color: activo ? 'var(--brand-600)' : 'var(--text-secondary)', fontSize: '13px', fontWeight: activo ? 700 : 600, cursor: 'pointer' }}>
-                {icon}{label}
-              </button>
-            );
-          })}
-          <span style={{ flex: 1 }} />
+        {/* Tabs: Exportar va fuera del tablist (axe aria-required-children, TC-DIS-187/188/191/192). */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--s2)', flexWrap: 'wrap', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
+          <div role="tablist" aria-label={t('historialview.vista_de_historial')} style={{ display: 'flex', gap: 'var(--s2)', flex: 1 }}>
+            {([['timeline', 'Línea de tiempo', <Clock size={15} aria-hidden key="i" />], ['tendencia', 'Tendencia de riesgo', <TrendingUp size={15} aria-hidden key="j" />]] as const).map(([id, label, icon]) => {
+              const activo = id === tab;
+              return (
+                <button key={id} id={`hist-tab-${id}`} role="tab" aria-selected={activo} aria-controls={`hist-panel-${id}`} tabIndex={activo ? 0 : -1} onClick={() => setTab(id)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)', minHeight: 'var(--s9)', padding: 'var(--s3) var(--s4)', border: 'none', borderBottom: `2px solid ${activo ? 'var(--brand-500)' : 'transparent'}`, background: 'transparent', color: activo ? 'var(--brand-600)' : 'var(--text-secondary)', fontSize: '13px', fontWeight: activo ? 700 : 600, cursor: 'pointer' }}>
+                  {icon}{label}
+                </button>
+              );
+            })}
+          </div>
           <Button variant="ghost" size="sm" disabled={eventos.length === 0} onClick={exportarLocal} title="Exportación local (el backend aún no expone exportación de historial)">
             <ShieldCheck size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
             <Download size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('historialview.exportar')}</Button>
         </div>
 
         {tab === 'timeline' ? (
-          <>
-            {loading ? (
-              <div style={{ padding: 'var(--s8)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('historialview.consultando_historial')}</div>
-            ) : (
-              <HistorialTimeline eventos={eventos} puedeRetroalimentar={puedeRetroalimentar && online} onRetroalimentar={setRetroEvento} />
+          <div id="hist-panel-timeline" role="tabpanel" aria-labelledby="hist-tab-timeline">
+            <div ref={resultadosRef} tabIndex={-1} aria-label={t('historialview.resultados_pagina', { n: pagina + 1 })} style={{ outline: 'none' }}>
+              {loading ? (
+                <div style={{ padding: 'var(--s8)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('historialview.consultando_historial')}</div>
+              ) : (
+                <HistorialTimeline eventos={eventosPagina} puedeRetroalimentar={puedeRetroalimentar && online} onRetroalimentar={setRetroEvento} />
+              )}
+            </div>
+            {(pagina > 0 || haySiguiente) && (
+              <nav aria-label={t('historialview.paginacion')} style={{ display: 'flex', justifyContent: 'center', gap: 'var(--s2)', marginTop: 'var(--s5)' }}>
+                <Button variant="ghost" size="sm" disabled={pagina === 0 || loadingMas} onClick={() => { void irAPagina(pagina - 1); }}>{t('historialview.anterior')}</Button>
+                <span style={{ alignSelf: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>{t('historialview.pagina_n', { n: pagina + 1 })}</span>
+                <Button variant="secondary" size="sm" loading={loadingMas} disabled={!haySiguiente || loadingMas} onClick={() => { void irAPagina(pagina + 1); }}>{t('historialview.cargar_mas')}</Button>
+              </nav>
             )}
-            {cursor && (
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--s5)' }}>
-                <Button variant="secondary" size="sm" loading={loadingMas} onClick={cargarMas}>{t('historialview.cargar_mas')}</Button>
-              </div>
-            )}
-          </>
+          </div>
         ) : (
-          <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)' }}>
+          <div id="hist-panel-tendencia" role="tabpanel" aria-labelledby="hist-tab-tendencia" style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)' }}>
             <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('historialview.evolucion_del_nivel_de_riesgo_sanitario')}</h3>
             <LineChartPrediccion
               data={chartData}
@@ -160,7 +202,46 @@ export function HistorialView() {
               yDomain={[0, 3]}
               referencias={[{ y: 2, label: 'Umbral alto', color: 'var(--sem-error)' }]}
               height={280}
+              titulo={t('historialview.evolucion_del_nivel_de_riesgo_sanitario')}
+              descripcion={t('historialview.grafica_descripcion', { n: filasTendencia.length })}
             />
+            {filasTendencia.length > 0 && (
+              <ScrollRegion label={t('historialview.tabla_tendencia')}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', marginTop: 'var(--s4)' }}>
+                  <caption style={{ textAlign: 'left', fontSize: '12px', color: 'var(--text-muted)', padding: '0 0 var(--s2)' }}>{t('historialview.tabla_tendencia')}</caption>
+                  <thead>
+                    <tr style={THEAD_ROW}>
+                      <th scope="col" style={TH}>{t('historialview.col_fecha')}</th>
+                      <th scope="col" style={TH}>{t('historialview.col_nivel')}</th>
+                      {poblacional ? (
+                        <th scope="col" style={TH}>{t('historialview.col_score_anomalia')}</th>
+                      ) : (
+                        <>
+                          <th scope="col" style={TH}>{t('historialview.col_enfermedad')}</th>
+                          <th scope="col" style={TH}>{t('historialview.col_confianza')}</th>
+                        </>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filasTendencia.map((f) => (
+                      <tr key={f.id}>
+                        <td style={TD}>{f.fecha}</td>
+                        <td style={TD}>{NIVEL_RIESGO_LABEL[f.nivel as number] ?? f.nivel}</td>
+                        {poblacional ? (
+                          <td style={TD}>{f.score ?? '—'}</td>
+                        ) : (
+                          <>
+                            <td style={TD}>{f.patologia ?? '—'}</td>
+                            <td style={TD}>{f.confianza != null ? `${Math.round(f.confianza * 100)} %` : '—'}</td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </ScrollRegion>
+            )}
           </div>
         )}
       </div>

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-178 RF-64 a11y 3.3.2: reglas de 50 caracteres y 2-6 variables asociadas a su campo |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Save } from 'lucide-react';
@@ -126,20 +127,25 @@ export function PatologiaFormModal({ catalogoVariables, especies, mode, inicial,
             onBlur={() => marcar('descripcion')}
             aria-required="true"
             aria-invalid={!!(touched.descripcion && errDescripcion)}
+            aria-describedby="pat-form-desc-regla"
             placeholder={t('patologiaformmodal.describe_signos_clinicos_factores_de_riesgo')}
           />
+          {/* Mismo id con o sin error: la regla queda asociada al campo (aria-describedby). */}
           {(fieldError('descripcion', errDescripcion) ?? fieldError('descripcion_clinica')) ? (
-            <span role="alert" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--sem-error)' }}>
+            <span id="pat-form-desc-regla" role="alert" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--sem-error)' }}>
               {fieldError('descripcion', errDescripcion) ?? fieldError('descripcion_clinica')}
             </span>
           ) : (
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{descripcion.trim().length} caracteres</span>
+            <span id="pat-form-desc-regla" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              {t('patologiaformmodal.regla_descripcion', { n: descripcion.trim().length, min: DESC_MIN })}
+            </span>
           )}
         </div>
 
         <div>
-          <label style={LABEL}>{t('patologiaformmodal.variables_sensoricas_asociadas')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></label>
+          <span id="pat-form-vars-rotulo" style={{ ...LABEL, display: 'block' }}>{t('patologiaformmodal.variables_sensoricas_asociadas')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></span>
           <VariablesSelector
+            idRotulo="pat-form-vars-rotulo"
             variables={catalogoVariables}
             seleccionadas={variables}
             onChange={(ids) => { setVariables(ids); marcar('variables'); }}

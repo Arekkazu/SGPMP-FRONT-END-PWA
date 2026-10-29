@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-29 | Arekkazu | INC-M03-82-G192 RF-62: política de visión en la pestaña Sistema |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, RefreshCw, Search } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -14,6 +17,7 @@ import { Paginacion } from '../components/Paginacion';
 import { EspeciesModal } from '../components/EspeciesModal';
 import { PorEspeciePage } from '../components/PorEspeciePage';
 import { ParametrosSection } from '../components/ParametrosSection';
+import { PoliticaVisionSection } from '../components/PoliticaVisionSection';
 import { FincasTable } from '../components/FincasTable';
 import { useTiposArea } from '../hooks/useTiposArea';
 import { TipoAreaTable } from '../components/TipoAreaTable';
@@ -506,7 +510,12 @@ export function ConfigurationPage() {
             {sub.contenido()}
           </>
         )}
-        {activeTab === 'sistema' && <ParametrosSection onEditStateChange={setParametrosEditState} />}
+        {activeTab === 'sistema' && (
+          <>
+            <ParametrosSection onEditStateChange={setParametrosEditState} />
+            <PoliticaVisionSection />
+          </>
+        )}
         {activeTab === 'plantillas' && <PlantillasTable />}
       </div>
       {tabPendiente && <ConfirmModal

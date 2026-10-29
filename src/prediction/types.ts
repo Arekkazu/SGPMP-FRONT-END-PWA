@@ -3,6 +3,8 @@
 // | 2026-10-23 | Arekkazu | DEV-36 RF-65: config_version en ConfigurarMotorDTO |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: etiquetaTipoModelo muestra "Sin tipo", nunca "null" |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M4-02: nombre del usuario en auditoría, de variables y de especie en patologías |
+// | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
+// | 2026-10-29 | Arekkazu | QA-M04-27-10 / PEND-456 RF-54/66/68/70: nombres de versión, buffer, inferencias y contagio reales |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -308,9 +310,72 @@ export interface RegistrarNotasVersionDTO {
 // =====================================================================
 // RF-70 · OTA / Distribución — /prediccion (recurso 44)
 // =====================================================================
+/** RF-66: un resultado del motor de inferencia (GET /prediccion/inferencias). */
+export interface InferenciaMonitorResponse {
+  id_resultado_inferencia: string;
+  id_activo_biologico: number;
+  identificador_activo: string | null;
+  nombre_area: string;
+  nombre_finca: string;
+  especie: string | null;
+  tipo_modelo: TipoModelo;
+  paradigma: Paradigma | null;
+  id_version_modelo: number;
+  nombre_version: string | null;
+  nivel_riesgo: number;
+  /** INDIVIDUAL: {"0": p, ..., "3": p}. POBLACIONAL: puede traer score_anomalia y umbral. */
+  probabilidad_riesgo: Record<string, number>;
+  id_patologia: number | null;
+  nombre_patologia: string | null;
+  /** Probabilidad por patología: {nombre o id: p}. */
+  probabilidad_enfermedad: Record<string, number>;
+  confianza_global: number;
+  contexto_incompleto: boolean;
+  latencia_excedida: boolean;
+  modo_ejecucion: ModoEjecucion;
+  latencia_ms: number | null;
+  fecha_inicio_ventana: string | null;
+  fecha_fin_ventana: string | null;
+  fecha_inferencia: string;
+  tiene_alerta_generada: boolean;
+  id_alerta_generada: number | null;
+}
+
+/** RF-68: un cálculo de riesgo de contagio de un lote (GET /prediccion/riesgo-contagio). */
+export interface RiesgoContagioMonitorResponse {
+  id_resultado_contagio: number;
+  id_activo_biologico: number;
+  identificador_activo: string | null;
+  nombre_area: string;
+  nombre_finca: string;
+  especie: string | null;
+  probabilidad_contagio: number;
+  /** 0 BAJO, 1 MEDIO, 2 ALTO. */
+  nivel_riesgo_contagio: number;
+  factor_sanitario_fs: number;
+  factor_ambiental_fa: number | null;
+  factor_densidad_fd: number | null;
+  w_fs_aplicado: number;
+  w_fa_aplicado: number;
+  w_fd_aplicado: number;
+  confianza_baja: boolean;
+  data_quality_score: number | null;
+  factores_ausentes: string[] | null;
+  modo_ejecucion_calculo: string | null;
+  n_enfermos_detectados: number | null;
+  total_activos_lote: number | null;
+  porcentaje_sensores_activos: number | null;
+  fecha_calculo: string;
+  id_alerta_generada: number | null;
+  detalle_calculo: Record<string, unknown> | null;
+}
+
 export interface DespliegueOtaResponse {
   id_despliegue_ota: number;
   id_version_modelo: number;
+  /** CU06 H-02: nombre de la versión (backend #866); antes solo se veía "v43". */
+  nombre_version?: string | null;
+  nombre_version_anterior?: string | null;
   id_dispositivo_iot: number;
   tipo_modelo: TipoModelo;
   paradigma: Paradigma | null;
@@ -480,6 +545,7 @@ export interface ListarAuditoriaFiltros {
   id_sistema?: string;
   id_referencia?: string;
   severidad_evento?: string;
+  tipo_modelo?: string;
   pagina?: number;
   por_pagina?: number;
 }

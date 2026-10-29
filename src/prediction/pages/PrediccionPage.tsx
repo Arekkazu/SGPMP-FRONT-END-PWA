@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-07/T-20: pestañas compartidas, ocultas sin permiso |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-20/T-21: Monitor y Contagio (simulados) solo para Admin/Vet, también por URL |
+// | 2026-10-29 | Arekkazu | PEND-456 RF-66/RF-68: Monitor y Contagio con el permiso de su endpoint real |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Switch, Route, Redirect } from 'react-router-dom';
@@ -28,13 +29,12 @@ import { DistribucionOtaView } from './DistribucionOtaView';
 import { ReentrenamientoView } from './ReentrenamientoView';
 import { AuditoriaView } from './AuditoriaView';
 
-// T-20/T-21: Monitor y Contagio son simulados y mostraban al Productor fincas y
-// patologías que no son suyas; el Contador los abría por URL. Sin recurso propio, quedan
-// con la lectura de versiones de modelo (Administrador y Veterinario).
-const PERMISO_SIMULADO: [number, number] = [RECURSO_MODELOS, ACCION_R];
+// T-20/T-21 ya no aplica: Monitor y Contagio leen datos reales filtrados por las fincas del
+// usuario (backend #867). Cada pestaña pide el mismo permiso que su endpoint: el monitor el
+// del historial diagnóstico (42 R, los mismos resultados) y contagio el del motor (41 R).
 const TABS_PRINCIPAL: PestanaModulo[] = [
-  { label: 'Monitor', path: '/prediccion/monitor', icon: <Activity size={15} aria-hidden />, permiso: PERMISO_SIMULADO },
-  { label: 'Contagio', path: '/prediccion/contagio', icon: <ShieldAlert size={15} aria-hidden />, permiso: PERMISO_SIMULADO },
+  { label: 'Monitor', path: '/prediccion/monitor', icon: <Activity size={15} aria-hidden />, permiso: [RECURSO_HISTORIAL, ACCION_R] },
+  { label: 'Contagio', path: '/prediccion/contagio', icon: <ShieldAlert size={15} aria-hidden />, permiso: [RECURSO_MOTOR, ACCION_R] },
   { label: 'Patologías', path: '/prediccion/patologias', icon: <Stethoscope size={15} aria-hidden />, permiso: [RECURSO_PATOLOGIAS, ACCION_R] },
   { label: 'Motor', path: '/prediccion/motor', icon: <SlidersHorizontal size={15} aria-hidden />, permiso: [RECURSO_MOTOR, ACCION_R] },
   { label: 'Historial', path: '/prediccion/historial', icon: <History size={15} aria-hidden />, permiso: [RECURSO_HISTORIAL, ACCION_R] },

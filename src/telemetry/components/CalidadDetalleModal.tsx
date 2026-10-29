@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-10-29 | Arekkazu | TC-DIS-164 RF-62: trazabilidad estadística de cada flag (media, desviación, drift) con etiqueta |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { RefreshCcw } from 'lucide-react';
@@ -9,6 +10,7 @@ import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { ClasificacionCalidadPill } from './ClasificacionCalidadPill';
 import { FlagChips } from './FlagChips';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 import { fechaHoraCaptura } from '../lib/sensorEscala';
 import type { TelemetriaCalidadSchema } from '../types';
 import type { ApiError } from '../../shared/api/errors';
@@ -44,6 +46,35 @@ function Params({ dict }: { dict: Record<string, unknown> | null | undefined }) 
         </div>
       ))}
     </div>
+  );
+}
+
+/** Evidencia de cada flag (media_serie, desviacion_estandar, magnitud_drift_porcentaje…); sin `activo`. */
+function TrazabilidadFlags({ flags }: { flags: Record<string, unknown> | null | undefined }) {
+  const { t } = useT('telemetry');
+  const conEvidencia = Object.entries(flags ?? {}).flatMap(([flag, v]) => {
+    if (!v || typeof v !== 'object') return [];
+    const datos = Object.entries(v as Record<string, unknown>).filter(([k, x]) => k !== 'activo' && x != null && typeof x !== 'object');
+    return datos.length ? [[flag, datos] as const] : [];
+  });
+  if (conEvidencia.length === 0) return null;
+  return (
+    <section style={{ marginTop: 'var(--s4)' }} aria-labelledby="calidad-trazabilidad">
+      <h3 id="calidad-trazabilidad" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', margin: '0 0 var(--s2)' }}>{t('calidaddetallemodal.trazabilidad_estadistica')}</h3>
+      {conEvidencia.map(([flag, datos]) => (
+        <div key={flag} style={{ marginBottom: 'var(--s3)' }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }}>{etiquetaCodigo(flag)}</div>
+          <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s2)', margin: 0 }}>
+            {datos.map(([k, x]) => (
+              <div key={k} style={{ background: 'var(--surface-hover)', borderRadius: 'var(--r-sm)', padding: 'var(--s2)' }}>
+                <dt style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{etiquetaCodigo(k)}</dt>
+                <dd style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-primary)' }}>{String(x)}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -83,6 +114,7 @@ export function CalidadDetalleModal({ item, puedeEjecutar, online, saving, saveE
         <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--s2)' }}>{t('calidaddetallemodal.flags_detectados')}</div>
         <FlagChips flags={item.flags_detectados} />
       </div>
+      <TrazabilidadFlags flags={item.flags_detectados} />
 
       <div style={{ marginTop: 'var(--s4)' }}>
         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('calidaddetallemodal.parametros_aplicados')}</div>

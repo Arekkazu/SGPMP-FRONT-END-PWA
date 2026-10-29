@@ -2,19 +2,23 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-66: resultados por área y por activo, alertas activas y feed con estado del resultado |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-183 RF-66 a11y 4.1.3: contadores de riesgo y alertas en región viva |
+// | 2026-10-29 | Arekkazu | PEND-456 RF-66: datos reales de GET /prediccion/inferencias (sin monitorMock) |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { formatearNumero } from '../../shared/i18n/formato';
+import { Alert } from '../../shared/design-system/Alert';
+import { Button } from '../../shared/design-system/Button';
 import { Activity, BellRing, ChevronRight, Clock } from 'lucide-react';
 import { SubPestanas } from '../../shared/design-system/SubPestanas';
-import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
 import { InferenciaDetalleModal, ESTADO_INFERENCIA_TONO } from '../components/InferenciaDetalleModal';
 import { Pill } from '../components/Pill';
 import { nivelRiesgoTono } from '../lib/riesgo';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from '../components/tableStyles';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
 import { PARADIGMA_POR_TIPO, TIPO_MODELO_LABEL } from '../types';
-import { MONITOR_MOTOR, INFERENCIAS, ultimoPorUnidad, type Inferencia } from '../mocks/monitorMock';
+import { latenciaP95, ultimoPorUnidad, type Inferencia } from '../lib/inferencias';
+import { useInferencias } from '../hooks/useMonitor';
 
 type TabId = 'unidades' | 'feed';
 
@@ -53,15 +57,16 @@ export function MonitorInferenciaView() {
   const [tab, setTab] = useState<TabId>('unidades');
   const [sel, setSel] = useState<Inferencia | null>(null);
 
-  const actuales = ultimoPorUnidad();
+  const { inferencias, loading, error, cargar } = useInferencias();
+  const actuales = ultimoPorUnidad(inferencias);
   const contar = (f: (i: Inferencia) => boolean) => actuales.filter(f).length;
-  const alertas = INFERENCIAS.filter((i) => i.alerta);
-  const m = MONITOR_MOTOR;
+  const alertas = inferencias.filter((i) => i.alerta);
+  const p95 = latenciaP95(inferencias);
   const stats = [
-    [t('monitor.paquetes'), formatearNumero(m.paquetesRecibidos)],
-    [t('monitor.latencia_p95'), `${m.latenciaP95Ms} ms`],
-    [t('monitor.cola_max'), String(m.colaMaxNodo)],
-    [t('monitor.sync_hibrida'), `${(m.syncHibridaMs / 1000).toFixed(1)} s`],
+    [t('monitor.resultados'), formatearNumero(inferencias.length)],
+    [t('monitor.latencia_p95'), p95 != null ? `${formatearNumero(p95)} ms` : '—'],
+    [t('monitor.excedidas'), formatearNumero(inferencias.filter((i) => (i.latenciaMs ?? 0) > 2000).length)],
+    [t('monitor.ultima_inferencia'), inferencias[0]?.hora ?? '—'],
   ];
   const cols = [t('monitor.col_id'), t('monitor.activo_area'), t('monitor.tipo_modelo'), t('monitor.nivel'), t('monitor.enfermedad'), t('monitor.col_confianza'), t('monitor.latencia'), t('monitor.col_indicadores'), t('monitor.col_hora'), ''];
 
@@ -74,11 +79,20 @@ export function MonitorInferenciaView() {
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
-        <DatosSimuladosBanner detalle="El motor de inferencia es del equipo IoT/IA y aún no expone endpoints; esta vista usa datos de ejemplo" />
+        {error && (
+          <div style={{ marginBottom: 'var(--s4)' }}>
+            <Alert variant={error.status === 403 ? 'warning' : 'error'} title={t('monitor.error_titulo')} description={error.message} />
+            <Button variant="secondary" size="sm" onClick={cargar} style={{ marginTop: 'var(--s2)' }}>{t('monitor.reintentar')}</Button>
+          </div>
+        )}
+        {loading && <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('monitor.cargando')}</p>}
+        {!loading && !error && inferencias.length === 0 && (
+          <p role="status" style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('monitor.vacio')}</p>
+        )}
 
         <section style={{ ...CARD, padding: 'var(--s5)', marginBottom: 'var(--s5)' }} aria-labelledby="motor-estado">
           <h2 id="motor-estado" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            {t('monitor.motor')} <Pill tono="success">{t('monitor.operando')}</Pill>
+            {t('monitor.motor')}
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s4)', marginTop: 'var(--s4)' }}>
             {stats.map(([label, valor]) => (
@@ -90,7 +104,7 @@ export function MonitorInferenciaView() {
           </div>
         </section>
 
-        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
+        <div aria-live="polite" style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
           <Kpi valor={contar((i) => i.nivel === 3)} etiqueta={t('monitor.kpi_alto')} />
           <Kpi valor={contar((i) => i.nivel === 2)} etiqueta={t('monitor.kpi_medio')} />
           <Kpi valor={contar((i) => i.nivel === 0 || i.nivel === 1)} etiqueta={t('monitor.kpi_bajo')} />
@@ -158,7 +172,7 @@ export function MonitorInferenciaView() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead><tr style={THEAD_ROW}>{cols.map((h, k) => <th key={k} style={TH}>{h}</th>)}</tr></thead>
               <tbody>
-                {INFERENCIAS.map((i) => {
+                {inferencias.map((i) => {
                   const poblacional = PARADIGMA_POR_TIPO[i.tipoModelo] === 'POBLACIONAL';
                   return (
                     <tr key={i.id} className="ds-fila-accion" tabIndex={0} onClick={() => setSel(i)} onKeyDown={alActivarConTeclado(() => setSel(i))}>

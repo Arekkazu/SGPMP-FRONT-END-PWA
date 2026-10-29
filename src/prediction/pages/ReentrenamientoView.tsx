@@ -3,6 +3,7 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-71: monitoreo de degradación, historial con versión en RF-69 y formulario v2 |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-08 RF-71: solo Admin/Vet (permiso E sobre versiones de modelo) |
+// | 2026-10-29 | Arekkazu | TC-DIS-176 RF-71 a11y 1.3.1: columnas Tipo de modelo, Fecha inicio y Fecha fin del criterio |
 import React, { useState } from 'react';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -252,13 +253,14 @@ export function ReentrenamientoView() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={THEAD_ROW}>
-                {[t('reentrenamiento.col_inicio'), t('reentrenamiento.col_tipo'), t('reentrenamiento.col_activacion'), t('reentrenamiento.col_modo'), t('reentrenamiento.col_estado'), t('reentrenamiento.version_rf69'), ''].map((h, i) => <th key={i} style={TH}>{h}</th>)}
+                {[t('reentrenamiento.col_fecha_inicio'), t('reentrenamiento.col_fecha_fin'), t('reentrenamiento.col_tipo_modelo'), t('reentrenamiento.col_activacion'), t('reentrenamiento.col_modo'), t('reentrenamiento.col_estado'), t('reentrenamiento.version_rf69'), t('reentrenamiento.col_acciones')].map((h, i) => <th key={i} scope="col" style={TH}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {PROCESOS_REENTRENAMIENTO.map((p) => (
                 <tr key={p.id}>
                   <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', whiteSpace: 'nowrap' }}>{formatearFechaHora(p.inicio)}</td>
+                  <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', whiteSpace: 'nowrap' }}>{p.fin ? formatearFechaHora(p.fin) : t('reentrenamiento.en_curso')}</td>
                   <td style={TD}>{tipoTexto(p.tipoModelo, p.componente)}</td>
                   <td style={TD}>{t(`reentrenamiento.disparador_${p.disparador}`)}</td>
                   <td style={{ ...TD, fontSize: '12px' }}>{t(`reentrenamiento.modo_${p.modo}`)}</td>
