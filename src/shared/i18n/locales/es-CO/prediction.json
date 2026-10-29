@@ -13,7 +13,10 @@
     "tipo_de_evento": "Tipo de evento",
     "todas": "Todas",
     "todos": "Todos",
-    "warning": "Warning"
+    "warning": "Warning",
+    "actor": "Actor",
+    "actor_ayuda": "ID de usuario o sistema",
+    "tipo_de_modelo": "Tipo de modelo"
   },
   "auditoriatable": {
     "acciones": "Acciones",
@@ -28,7 +31,9 @@
     "ver_detalle": "Ver detalle",
     "ver_evento": "Ver evento",
     "version": "Versión",
-    "rf_origen": "RF origen"
+    "rf_origen": "RF origen",
+    "id_evento": "ID de evento",
+    "ver_evento_de": "Ver evento {{tipo}} {{id}}"
   },
   "auditoriaview": {
     "bitacora_de_auditoria": "Bitácora de Auditoría",
@@ -233,12 +238,13 @@
     "patologia": "Patología",
     "selecciona": "— Selecciona —",
     "todas": "Todas",
-    "todos": "Todos"
+    "todos": "Todos",
+    "patologia_no_aplica": "No aplica a un área POBLACIONAL: su modelo detecta anomalías del grupo, no una patología por animal."
   },
   "historialtimeline": {
     "patologia_estimada": "Patología estimada:",
     "retroalimentar": "Retroalimentar",
-    "sin_eventos_en_el_periodo_consultado": "Sin eventos en el período consultado."
+    "sin_eventos_en_el_periodo_consultado": "No se encontraron registros de diagnóstico para el periodo y filtros seleccionados."
   },
   "historialview": {
     "cargar_mas": "Cargar más",
@@ -255,7 +261,18 @@
     "retroalimentacion_registrada": "Retroalimentación registrada",
     "sin_acceso_al_historial": "Sin acceso al historial",
     "sin_conexion": "Sin conexión",
-    "vista_de_historial": "Vista de historial"
+    "vista_de_historial": "Vista de historial",
+    "resultados_pagina": "Resultados, página {{n}}",
+    "paginacion": "Paginación del historial",
+    "anterior": "Página anterior",
+    "pagina_n": "Página {{n}}",
+    "grafica_descripcion": "Nivel de riesgo (0 a 3) en {{n}} inferencias; los mismos datos están en la tabla de abajo.",
+    "tabla_tendencia": "Historial de tendencia del riesgo",
+    "col_fecha": "Fecha",
+    "col_nivel": "Nivel de riesgo",
+    "col_enfermedad": "Enfermedad estimada",
+    "col_confianza": "Confianza",
+    "col_score_anomalia": "Score de anomalía"
   },
   "linechartprediccion": {
     "sin_datos_para_graficar_en_el_periodo": "Sin datos para graficar en el período seleccionado."
@@ -319,7 +336,8 @@
       "VERSION_RECHAZADA": "Rechazada",
       "VERSION_ACTIVADA": "Activada",
       "VERSION_DEPRECADA": "Deprecada"
-    }
+    },
+    "no_activable_rechazado": "No disponible: una versión RECHAZADO no cumplió las métricas mínimas y no se puede activar."
   },
   "modelosfiltros": {
     "aplicar": "Aplicar",
@@ -454,7 +472,8 @@
     "ver_historial": "Ver historial de cambios",
     "edge_sin_modelo_titulo": "No es posible activar el modo de campo",
     "edge_sin_modelo_sugerencia": "Ve a Distribución OTA para enviar el modelo a los dispositivos antes de activar este modo.",
-    "entendido": "Entendido"
+    "entendido": "Entendido",
+    "configurado": "(configurado)"
   },
   "otatable": {
     "acciones": "Acciones",
@@ -467,7 +486,8 @@
     "tipo_de_modelo": "Tipo de modelo",
     "ver_despliegue": "Ver despliegue",
     "ver_detalle": "Ver detalle",
-    "version": "Versión"
+    "version": "Versión",
+    "ver_despliegue_de": "Ver despliegue de la versión v{{version}} en el nodo #{{nodo}}"
   },
   "paginacion": {
     "anterior": "Anterior",
@@ -496,7 +516,8 @@
     "no_se_puede_guardar_sin_conexion": "No se puede guardar sin conexión.",
     "nombre_de_la_patologia": "Nombre de la patología",
     "sin_conexion": "Sin conexión",
-    "variables_sensoricas_asociadas": "Variables sensóricas asociadas"
+    "variables_sensoricas_asociadas": "Variables sensóricas asociadas",
+    "regla_descripcion": "Mínimo {{min}} caracteres ({{n}}/{{min}})."
   },
   "patologiapills": {
     "activa": "Activa",
@@ -621,7 +642,8 @@
   "variablesselector": {
     "variables_sensoricas_asociadas": "Variables sensóricas asociadas",
     "seleccionadas_one": "{{n}} seleccionada · se requieren entre 2 y 6",
-    "seleccionadas_other": "{{n}} seleccionadas · se requieren entre 2 y 6"
+    "seleccionadas_other": "{{n}} seleccionadas · se requieren entre 2 y 6",
+    "regla": "Selecciona entre 2 y 6 variables ({{n}} seleccionadas)."
   },
   "motorhistorial": {
     "titulo": "Historial de configuración",
@@ -673,9 +695,9 @@
     "latencia_p95": "Latencia P95",
     "cola_max": "Cola máx. por nodo",
     "sync_hibrida": "Sinc. híbrida prom.",
-    "kpi_alto": "Riesgo alto",
-    "kpi_medio": "Riesgo medio",
-    "kpi_bajo": "Riesgo bajo / sin riesgo",
+    "kpi_alto": "Crítico",
+    "kpi_medio": "Riesgo alto",
+    "kpi_bajo": "Normal / riesgo bajo",
     "kpi_parciales": "Datos parciales",
     "kpi_alertas": "Alertas activas",
     "alertas_titulo": "Alertas activas (RF-57 · PREDICCION_PATOLOGIA) · {{n}}",
@@ -714,10 +736,10 @@
     "estado_FALLIDO": "Inferencia fallida",
     "estado_DESCARTADO": "Descartado por sobrecarga",
     "estado_NO_DISPONIBLE": "Motor no disponible",
-    "nivel_0": "Sin riesgo",
+    "nivel_0": "Normal",
     "nivel_1": "Riesgo bajo",
-    "nivel_2": "Riesgo medio",
-    "nivel_3": "Riesgo alto",
+    "nivel_2": "Riesgo alto",
+    "nivel_3": "Crítico",
     "fallback_NODO_DESINCRONIZADO": "Respaldo: nodo desincronizado",
     "fallback_ERROR_MODELO": "Respaldo: error del modelo en campo",
     "fallback_TIMEOUT": "Respaldo: el nodo tardó demasiado",
@@ -732,7 +754,14 @@
     "hibrido_coincide": "Coincide con el resultado en campo.",
     "hibrido_discrepa": "No coincide con el resultado en campo: prevalece el del servidor.",
     "trazabilidad": "Trazabilidad: del sensor al diagnóstico",
-    "traza_sensor": "Sensor / cámara"
+    "traza_sensor": "Sensor / cámara",
+    "resultados": "Resultados recibidos",
+    "excedidas": "Con latencia mayor a 2 s",
+    "ultima_inferencia": "Última inferencia",
+    "error_titulo": "No se pudieron cargar las inferencias",
+    "reintentar": "Reintentar",
+    "cargando": "Cargando…",
+    "vacio": "Todavía no hay resultados del motor de inferencia en tus fincas."
   },
   "contagio": {
     "motor": "Motor de contagio",
@@ -743,10 +772,10 @@
     "alertas_activas": "Alertas activas",
     "kpi_lotes": "Lotes monitoreados",
     "kpi_alto": "Riesgo alto",
-    "kpi_reducida": "Confianza reducida",
+    "kpi_reducida": "Confianza baja",
     "kpi_alertas": "Alertas de contagio",
     "alertas_titulo": "Alertas de contagio activas (RF-57 · RIESGO_CONTAGIO) · {{n}}",
-    "filtro_tipo": "Tipo de modelo del área",
+    "filtro_tipo": "Especie del lote",
     "todos": "Todos",
     "todas": "Todas",
     "sin_resultados": "Ningún lote coincide con los filtros. Quita alguno para ver más.",
@@ -760,7 +789,7 @@
     "calidad": "Calidad de datos",
     "calidad_COMPLETA": "Completa",
     "calidad_DEGRADADA": "Degradada",
-    "confianza_reducida": "confianza reducida",
+    "confianza_reducida": "confianza baja (datos incompletos)",
     "sincronizacion": "Sincronización temporal",
     "sync_SINCRONIZADA": "Sincronizada",
     "sync_JITTER": "Desfase tolerado (30–35 s)",
@@ -798,7 +827,12 @@
     "col_ejecucion": "Ejecución",
     "col_prob": "Probabilidad",
     "pesos": "Sanitario {{fs}} · Ambiental {{fa}} · Densidad {{fd}}",
-    "pesos_ayuda": "Peso de cada factor en el riesgo de contagio: estado sanitario del lote, condiciones ambientales y densidad de animales."
+    "pesos_ayuda": "Peso de cada factor en el riesgo de contagio: estado sanitario del lote, condiciones ambientales y densidad de animales.",
+    "lotes_titulo_one": "{{n}} lote evaluado",
+    "lotes_titulo_other": "{{n}} lotes evaluados",
+    "error_titulo": "No se pudieron cargar los cálculos de contagio",
+    "reintentar": "Reintentar",
+    "cargando": "Cargando…"
   },
   "intentos": {
     "titulo": "Intentos de registro no admitidos",
@@ -882,7 +916,12 @@
     "semilla": "Semilla aleatoria",
     "semilla_ayuda": "Para reproducibilidad (RNF-04) · por defecto 42",
     "sin_activacion_titulo": "Sin activación automática.",
-    "sin_activacion_texto": "El proceso calcula métricas y entrega la versión a RF-69. No decide si el modelo sirve: RF-69 asigna Aprobado o Rechazado, y activarlo siempre es una decisión humana."
+    "sin_activacion_texto": "El proceso calcula métricas y entrega la versión a RF-69. No decide si el modelo sirve: RF-69 asigna Aprobado o Rechazado, y activarlo siempre es una decisión humana.",
+    "col_fecha_inicio": "Fecha inicio",
+    "col_fecha_fin": "Fecha fin",
+    "col_tipo_modelo": "Tipo de modelo",
+    "col_acciones": "Acciones",
+    "en_curso": "En curso"
   },
   "conteo": {
     "registros_one": "{{n}} registro",

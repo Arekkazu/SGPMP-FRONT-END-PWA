@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-29 | Arekkazu | TC-DIS-188 RF-67 E1: sin resultados anunciado (role=status) con el texto del RF |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -22,7 +25,7 @@ export function HistorialTimeline({ eventos, puedeRetroalimentar, onRetroaliment
   const { t } = useT('prediction');
   if (eventos.length === 0) {
     return (
-      <div style={{ padding: 'var(--s8) var(--s4)', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>{t('historialtimeline.sin_eventos_en_el_periodo_consultado')}</div>
+      <div role="status" style={{ padding: 'var(--s8) var(--s4)', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)' }}>{t('historialtimeline.sin_eventos_en_el_periodo_consultado')}</div>
     );
   }
 

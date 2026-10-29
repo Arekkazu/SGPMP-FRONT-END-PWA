@@ -13,7 +13,10 @@
     "tipo_de_evento": "Event type",
     "todas": "All",
     "todos": "All",
-    "warning": "Warning"
+    "warning": "Warning",
+    "actor": "Actor",
+    "actor_ayuda": "User ID or system",
+    "tipo_de_modelo": "Model type"
   },
   "auditoriatable": {
     "acciones": "Actions",
@@ -28,7 +31,9 @@
     "ver_detalle": "View details",
     "ver_evento": "View event",
     "version": "Version",
-    "rf_origen": "Source RF"
+    "rf_origen": "Source RF",
+    "id_evento": "Event ID",
+    "ver_evento_de": "View event {{tipo}} {{id}}"
   },
   "auditoriaview": {
     "bitacora_de_auditoria": "Audit Log",
@@ -233,12 +238,13 @@
     "patologia": "Pathology",
     "selecciona": "— Select —",
     "todas": "All",
-    "todos": "All"
+    "todos": "All",
+    "patologia_no_aplica": "Does not apply to a POPULATION area: its model detects group anomalies, not a per-animal disease."
   },
   "historialtimeline": {
     "patologia_estimada": "Estimated pathology:",
     "retroalimentar": "Give feedback",
-    "sin_eventos_en_el_periodo_consultado": "No events in the period queried."
+    "sin_eventos_en_el_periodo_consultado": "No diagnostic records were found for the selected period and filters."
   },
   "historialview": {
     "cargar_mas": "Load more",
@@ -255,7 +261,18 @@
     "retroalimentacion_registrada": "Feedback recorded",
     "sin_acceso_al_historial": "No access to the history",
     "sin_conexion": "Offline",
-    "vista_de_historial": "History view"
+    "vista_de_historial": "History view",
+    "resultados_pagina": "Results, page {{n}}",
+    "paginacion": "History pagination",
+    "anterior": "Previous page",
+    "pagina_n": "Page {{n}}",
+    "grafica_descripcion": "Risk level (0 to 3) across {{n}} inferences; the same data is in the table below.",
+    "tabla_tendencia": "Risk trend history",
+    "col_fecha": "Date",
+    "col_nivel": "Risk level",
+    "col_enfermedad": "Estimated disease",
+    "col_confianza": "Confidence",
+    "col_score_anomalia": "Anomaly score"
   },
   "linechartprediccion": {
     "sin_datos_para_graficar_en_el_periodo": "No data to plot for the selected period."
@@ -319,7 +336,8 @@
       "VERSION_RECHAZADA": "Rejected",
       "VERSION_ACTIVADA": "Activated",
       "VERSION_DEPRECADA": "Deprecated"
-    }
+    },
+    "no_activable_rechazado": "Unavailable: a REJECTED version did not meet the minimum metrics and cannot be activated."
   },
   "modelosfiltros": {
     "aplicar": "Apply",
@@ -454,7 +472,8 @@
     "ver_historial": "View change history",
     "edge_sin_modelo_titulo": "Field mode cannot be turned on",
     "edge_sin_modelo_sugerencia": "Go to OTA Distribution to send the model to the devices before turning this mode on.",
-    "entendido": "Got it"
+    "entendido": "Got it",
+    "configurado": "(configured)"
   },
   "otatable": {
     "acciones": "Actions",
@@ -467,7 +486,8 @@
     "tipo_de_modelo": "Model type",
     "ver_despliegue": "View deployment",
     "ver_detalle": "View details",
-    "version": "Version"
+    "version": "Version",
+    "ver_despliegue_de": "View deployment of version v{{version}} on node #{{nodo}}"
   },
   "paginacion": {
     "anterior": "Previous",
@@ -496,7 +516,8 @@
     "no_se_puede_guardar_sin_conexion": "Saving is not possible while offline.",
     "nombre_de_la_patologia": "Pathology name",
     "sin_conexion": "Offline",
-    "variables_sensoricas_asociadas": "Associated sensor variables"
+    "variables_sensoricas_asociadas": "Associated sensor variables",
+    "regla_descripcion": "At least {{min}} characters ({{n}}/{{min}})."
   },
   "patologiapills": {
     "activa": "Active",
@@ -621,7 +642,8 @@
   "variablesselector": {
     "variables_sensoricas_asociadas": "Associated sensor variables",
     "seleccionadas_one": "{{n}} selected · between 2 and 6 required",
-    "seleccionadas_other": "{{n}} selected · between 2 and 6 required"
+    "seleccionadas_other": "{{n}} selected · between 2 and 6 required",
+    "regla": "Select between 2 and 6 variables ({{n}} selected)."
   },
   "motorhistorial": {
     "titulo": "Configuration history",
@@ -673,9 +695,9 @@
     "latencia_p95": "P95 latency",
     "cola_max": "Max. queue per node",
     "sync_hibrida": "Avg. hybrid sync",
-    "kpi_alto": "High risk",
-    "kpi_medio": "Medium risk",
-    "kpi_bajo": "Low / no risk",
+    "kpi_alto": "Critical",
+    "kpi_medio": "High risk",
+    "kpi_bajo": "Normal / low risk",
     "kpi_parciales": "Partial data",
     "kpi_alertas": "Active alerts",
     "alertas_titulo": "Active alerts (RF-57 · PREDICCION_PATOLOGIA) · {{n}}",
@@ -714,10 +736,10 @@
     "estado_FALLIDO": "Inference failed",
     "estado_DESCARTADO": "Dropped by overload",
     "estado_NO_DISPONIBLE": "Engine unavailable",
-    "nivel_0": "No risk",
+    "nivel_0": "Normal",
     "nivel_1": "Low risk",
-    "nivel_2": "Medium risk",
-    "nivel_3": "High risk",
+    "nivel_2": "High risk",
+    "nivel_3": "Critical",
     "fallback_NODO_DESINCRONIZADO": "Fallback: node out of sync",
     "fallback_ERROR_MODELO": "Fallback: model error in the field",
     "fallback_TIMEOUT": "Fallback: the node took too long",
@@ -732,7 +754,14 @@
     "hibrido_coincide": "It matches the field result.",
     "hibrido_discrepa": "It does not match the field result: the server result prevails.",
     "trazabilidad": "Traceability: from sensor to diagnosis",
-    "traza_sensor": "Sensor / camera"
+    "traza_sensor": "Sensor / camera",
+    "resultados": "Results received",
+    "excedidas": "With latency over 2 s",
+    "ultima_inferencia": "Latest inference",
+    "error_titulo": "Could not load the inferences",
+    "reintentar": "Retry",
+    "cargando": "Loading…",
+    "vacio": "There are no inference engine results on your farms yet."
   },
   "contagio": {
     "motor": "Contagion engine",
@@ -743,10 +772,10 @@
     "alertas_activas": "Active alerts",
     "kpi_lotes": "Monitored batches",
     "kpi_alto": "High risk",
-    "kpi_reducida": "Reduced confidence",
+    "kpi_reducida": "Low confidence",
     "kpi_alertas": "Contagion alerts",
     "alertas_titulo": "Active contagion alerts (RF-57 · RIESGO_CONTAGIO) · {{n}}",
-    "filtro_tipo": "Area model type",
+    "filtro_tipo": "Lot species",
     "todos": "All",
     "todas": "All",
     "sin_resultados": "No batch matches the filters. Remove one to see more.",
@@ -760,7 +789,7 @@
     "calidad": "Data quality",
     "calidad_COMPLETA": "Complete",
     "calidad_DEGRADADA": "Degraded",
-    "confianza_reducida": "reduced confidence",
+    "confianza_reducida": "low confidence (incomplete data)",
     "sincronizacion": "Time sync",
     "sync_SINCRONIZADA": "In sync",
     "sync_JITTER": "Tolerated lag (30–35 s)",
@@ -798,7 +827,12 @@
     "col_ejecucion": "Run",
     "col_prob": "Probability",
     "pesos": "Health {{fs}} · Environment {{fa}} · Density {{fd}}",
-    "pesos_ayuda": "Weight of each factor in the contagion risk: herd health status, environmental conditions and animal density."
+    "pesos_ayuda": "Weight of each factor in the contagion risk: herd health status, environmental conditions and animal density.",
+    "lotes_titulo_one": "{{n}} lot evaluated",
+    "lotes_titulo_other": "{{n}} lots evaluated",
+    "error_titulo": "Could not load the contagion calculations",
+    "reintentar": "Retry",
+    "cargando": "Loading…"
   },
   "intentos": {
     "titulo": "Rejected registration attempts",
@@ -882,7 +916,12 @@
     "semilla": "Random seed",
     "semilla_ayuda": "For reproducibility (RNF-04) · default 42",
     "sin_activacion_titulo": "No automatic activation.",
-    "sin_activacion_texto": "The process computes metrics and hands the version to RF-69. It does not decide whether the model is good: RF-69 sets Approved or Rejected, and activating it is always a human decision."
+    "sin_activacion_texto": "The process computes metrics and hands the version to RF-69. It does not decide whether the model is good: RF-69 sets Approved or Rejected, and activating it is always a human decision.",
+    "col_fecha_inicio": "Start date",
+    "col_fecha_fin": "End date",
+    "col_tipo_modelo": "Model type",
+    "col_acciones": "Actions",
+    "en_curso": "In progress"
   },
   "conteo": {
     "registros_one": "{{n}} record",

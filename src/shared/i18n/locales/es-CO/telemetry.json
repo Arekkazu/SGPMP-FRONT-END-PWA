@@ -67,7 +67,9 @@
     "mostrando_alertas_cacheadas_la_gestion_esta": "Mostrando alertas cacheadas. La gestión está deshabilitada.",
     "recargar": "Recargar",
     "sin_acceso_a_las_alertas": "Sin acceso a las alertas",
-    "sin_conexion": "Sin conexión"
+    "sin_conexion": "Sin conexión",
+    "anuncio_critica": "Nueva alerta crítica: {{tipo}}{{valor}}",
+    "anuncio_estado": "Alerta #{{id}}: {{estado}}"
   },
   "aplicarmantenimientomodal": {
     "cancelar": "Cancelar",
@@ -101,18 +103,42 @@
   },
   "bitacoraview": {
     "bitacora_de_auditoria_iot": "Bitácora de Auditoría IoT",
-    "csv": "CSV",
+    "csv": "Exportar CSV",
     "error_al_cargar_la_bitacora": "Error al cargar la bitácora",
-    "json": "JSON",
+    "json": "Exportar JSON",
     "no_se_pudo_exportar": "No se pudo exportar",
     "sin_acceso_a_la_bitacora": "Sin acceso a la bitácora",
     "verificar_integridad": "Verificar integridad"
   },
   "bufferview": {
-    "buffer": "Buffer",
     "buffer_y_sincronizacion": "Buffer y Sincronización",
-    "online": "Online",
-    "descripcion": "Lecturas guardadas en el dispositivo mientras no hay conexión y su envío al reconectarse"
+    "descripcion": "Lecturas guardadas en cada dispositivo mientras no hay conexión, según su último reporte",
+    "kpi_dispositivos": "Dispositivos",
+    "kpi_en_buffer": "Con datos en buffer",
+    "kpi_criticos": "Ocupación crítica",
+    "datos_pendientes": "Datos pendientes",
+    "conexion": "Buffer local",
+    "conexion_I": "Sin pendientes",
+    "conexion_A": "Activo, con datos por enviar",
+    "conexion_L": "Lleno",
+    "conexion_sin_reporte": "Sin reporte",
+    "ocupacion": "Ocupación del buffer",
+    "capacidad_utilizada": "Capacidad utilizada",
+    "capacidad_total": "Capacidad total",
+    "politica_activa": "Política activa",
+    "politica_POLITICA_RECHAZO": "Rechaza los datos nuevos",
+    "politica_POLITICA_SOBRESCRITURA": "Sobrescribe los más antiguos",
+    "ultimo_pendiente": "Último dato pendiente",
+    "ultimo_reporte": "Último reporte",
+    "estado_NORMAL": "Normal",
+    "estado_WARNING": "Advertencia (80 % o más)",
+    "estado_CRITICO": "Crítico (95 % o más)",
+    "sin_metricas": "El firmware de este dispositivo todavía no reporta la capacidad ni la ocupación del buffer.",
+    "vacio": "No hay dispositivos activos en tus fincas.",
+    "error_titulo": "No se pudo cargar el estado del buffer",
+    "reintentar": "Reintentar",
+    "cargando": "Cargando…",
+    "cola_en_edge": "La cola de lecturas vive en cada dispositivo; aquí se ve lo que reportó en su último heartbeat."
   },
   "calidaddetallemodal": {
     "apto_para_ia": "Apto para IA",
@@ -131,7 +157,8 @@
     "sin_conexion": "Sin conexión",
     "sin_permiso_e": "Sin permiso (E)",
     "sin_permiso_para_evaluar": "Sin permiso para evaluar",
-    "version": "Versión"
+    "version": "Versión",
+    "trazabilidad_estadistica": "Trazabilidad estadística de los flags"
   },
   "calidadfiltros": {
     "aplicar_filtros": "Aplicar filtros",
@@ -323,7 +350,11 @@
     "cargando": "Cargando…",
     "sensores_de_total_one": "{{visibles}} de {{n}} sensor",
     "sensores_de_total_other": "{{visibles}} de {{n}} sensores",
-    "sin_sensores_en_tus_fincas": "Tus fincas aún no tienen sensores. Se registran en Configuración › IoT."
+    "sin_sensores_en_tus_fincas": "Tus fincas aún no tienen sensores. Se registran en Configuración › IoT.",
+    "trabajando_sin_conexion": "Trabajando sin conexión",
+    "actualizacion_con_retraso": "Actualización con retraso",
+    "ultimo_dato": "Último dato recibido a las {{hora}}.",
+    "datos_desde_cache_detalle": "Se muestran los últimos datos guardados en el dispositivo."
   },
   "movilview": {
     "cargando": "Cargando…",
@@ -414,7 +445,7 @@
     "hasta": "Hasta",
     "no_se_pudo_verificar_la_integridad": "No se pudo verificar la integridad",
     "sin_permiso_para_verificar": "Sin permiso para verificar",
-    "verifica_la_cadena_hash_sha_256_deja_las": "Verifica la cadena hash SHA-256. Deja las fechas vacías para verificar todo el rango disponible.",
+    "verifica_la_cadena_hash_sha_256_deja_las": "Verifica la cadena hash SHA-256 de los eventos registrados entre las dos fechas.",
     "verificar": "Verificar",
     "verificar_integridad_de_la_bitacora": "Verificar integridad de la bitácora"
   },
@@ -670,7 +701,11 @@
     "no_encola": "El sistema no encola ventanas sin procesar.",
     "reparto_titulo": "Reparto orientativo del presupuesto por etapa",
     "ultimas_ventanas": "Últimas ventanas procesadas",
-    "sin_terminar": "no terminó a tiempo"
+    "sin_terminar": "no terminó a tiempo",
+    "detalle_titulo": "Evento Edge",
+    "sev_CRITICO": "Crítica",
+    "sev_MODERADO": "Moderada",
+    "sev_LEVE": "Leve"
   },
   "pipeline": {
     "reglas_titulo": "Reglas de envío al motor de inferencia",
@@ -903,5 +938,13 @@
   "vinculacion": {
     "sin_activo": "Sin activo",
     "lectura_numero": "Lectura #{{id}}"
+  },
+  "panelalertas": {
+    "titulo_one": "{{n}} alerta activa",
+    "titulo_other": "{{n}} alertas activas",
+    "sin_alertas": "Sin alertas activas en este alcance.",
+    "ver_activo": "Ver activo {{activo}}",
+    "mas": "Y {{n}} más.",
+    "ver_todas": "Ver todas en Alertas"
   }
 }

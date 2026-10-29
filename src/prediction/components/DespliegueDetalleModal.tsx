@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
+// | 2026-10-29 | Arekkazu | QA-M04-27-10 CU06 H-02 RF-70: nombre de la versión desplegada |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -55,8 +56,8 @@ export function DespliegueDetalleModal({ despliegue, onClose }: Props) {
         <ProgressBar valor={progreso} label={t('desplieguedetallemodal.progreso_de_descarga')} color={d.estado_despliegue === 'FALLIDO' ? 'var(--sem-error)' : 'var(--brand-500)'} height={10} />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--s4)' }}>
-          <Fila label={t('desplieguedetallemodal.version_de_modelo')}>v{d.id_version_modelo}</Fila>
-          <Fila label={t('desplieguedetallemodal.version_anterior')}>{d.id_version_modelo_anterior != null ? `v${d.id_version_modelo_anterior}` : '—'}</Fila>
+          <Fila label={t('desplieguedetallemodal.version_de_modelo')}>{d.nombre_version ?? `v${d.id_version_modelo}`}</Fila>
+          <Fila label={t('desplieguedetallemodal.version_anterior')}>{d.id_version_modelo_anterior != null ? (d.nombre_version_anterior ?? `v${d.id_version_modelo_anterior}`) : '—'}</Fila>
           <Fila label={t('desplieguedetallemodal.dispositivo_iot')}>#{d.id_dispositivo_iot}</Fila>
           <Fila label={t('desplieguedetallemodal.modo_distribucion')}>{d.modo_distribucion || '—'}</Fila>
           <Fila label={t('desplieguedetallemodal.intentos')}>{d.intentos_descarga} / {d.max_reintentos}</Fila>

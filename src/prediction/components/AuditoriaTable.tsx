@@ -3,6 +3,7 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-73: columna de RF de origen |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: nombre del usuario en vez de «Usuario 900» |
+// | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -40,6 +41,7 @@ export function AuditoriaTable({ eventos, loading, onVer }: Props) {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={THEAD_ROW}>
+            <th scope="col" style={TH}>{t('auditoriatable.id_evento')}</th>
             <th style={TH}>{t('auditoriatable.timestamp')}</th>
             <th style={TH}>{t('auditoriatable.tipo_de_evento')}</th>
             <th style={TH}>{t('auditoriatable.rf_origen')}</th>
@@ -56,6 +58,7 @@ export function AuditoriaTable({ eventos, loading, onVer }: Props) {
             const ok = (e.resultado_operacion ?? '').toUpperCase().includes('EXITO') || (e.resultado_operacion ?? '').toUpperCase() === 'OK';
             return (
               <tr key={e.id_evento}>
+                <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', whiteSpace: 'nowrap' }} title={e.id_evento}>{e.id_evento.slice(0, 8)}</td>
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', whiteSpace: 'nowrap' }}>{fmt(e.fecha_evento)}</td>
                 <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{e.tipo_evento}</td>
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)' }}>{rfDeEvento(e.tipo_evento) ?? '—'}</td>
@@ -77,7 +80,7 @@ export function AuditoriaTable({ eventos, loading, onVer }: Props) {
                 <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{e.version_modelo ?? '—'}</td>
                 <td style={{ ...TD, textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{e.latencia_ms != null ? `${e.latencia_ms} ms` : '—'}</td>
                 <td style={{ ...TD, textAlign: 'right' }}>
-                  <Button variant="ghost" size="sm" onClick={() => onVer(e)} aria-label={t('auditoriatable.ver_evento')} title={t('auditoriatable.ver_detalle')}>
+                  <Button variant="ghost" size="sm" onClick={() => onVer(e)} aria-label={t('auditoriatable.ver_evento_de', { tipo: e.tipo_evento, id: e.id_evento.slice(0, 8) })} title={t('auditoriatable.ver_detalle')}>
                     <Eye size={16} aria-hidden />
                   </Button>
                 </td>

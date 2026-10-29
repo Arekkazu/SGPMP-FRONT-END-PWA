@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-29 | Arekkazu | H-M3-17 CP137 RF-63: rango de fechas invertido se avisa en el campo y no se aplica |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
@@ -27,6 +30,7 @@ interface Props {
 }
 
 export function BitacoraFiltros({ value, onChange, onAplicar, onLimpiar }: Props) {
+  const invertido = !!value.fecha_desde && !!value.fecha_hasta && value.fecha_desde > value.fecha_hasta;
   const { t } = useT('telemetry');
   const set = (k: keyof BitacoraFiltrosState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     onChange({ ...value, [k]: e.target.value });
@@ -76,11 +80,19 @@ export function BitacoraFiltros({ value, onChange, onAplicar, onLimpiar }: Props
         </div>
         <div>
           <label style={LABEL} htmlFor="b-hasta">{t('bitacorafiltros.hasta')}</label>
-          <input id="b-hasta" type="date" style={INPUT} value={value.fecha_hasta} onChange={set('fecha_hasta')} />
+          <input
+            id="b-hasta" type="date" style={INPUT} value={value.fecha_hasta} onChange={set('fecha_hasta')}
+            aria-invalid={invertido} aria-describedby={invertido ? 'b-rango-error' : undefined}
+          />
+          {invertido && (
+            <p id="b-rango-error" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+              {t('filtros.rango_invertido', { ns: 'common' })}
+            </p>
+          )}
         </div>
       </div>
       <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)' }}>
-        <Button variant="primary" size="sm" onClick={onAplicar}>
+        <Button variant="primary" size="sm" disabled={invertido} onClick={() => { if (!invertido) onAplicar(); }}>
           <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('bitacorafiltros.aplicar_filtros')}</Button>
         <Button variant="ghost" size="sm" onClick={onLimpiar}>{t('bitacorafiltros.limpiar')}</Button>
       </div>

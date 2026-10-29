@@ -2,6 +2,7 @@
 // |------------|---------|-------------|
 // | 2026-10-22 | Leandro | FE-12 RF-57: bloquea envíos simultáneos y conserva rechazos |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-08 RF-57: resueltas hoy por fecha de resolución |
+// | 2026-10-29 | Arekkazu | TC-DIS-150 RF-57: recarga silenciosa que devuelve las alertas para anunciarlas |
 import { useState, useCallback, useRef } from 'react';
 import { alertasApi } from '../api/alertasApi';
 import { cacheAlertas, getAlertasCache } from '../db/telemetriaTables';
@@ -45,8 +46,9 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
   const listar = tecnicas ? alertasApi.listarTecnicas : alertasApi.listar;
   const patchEstado = tecnicas ? alertasApi.cambiarEstadoTecnica : alertasApi.cambiarEstado;
 
-  const cargar = useCallback(async (filtros: ListarAlertasFiltros = {}) => {
-    setLoading(true);
+  /** `silencioso`: el refresco automático no muestra el esqueleto ni desmonta las filas. */
+  const cargar = useCallback(async (filtros: ListarAlertasFiltros = {}, silencioso = false): Promise<AlertaSchema[] | null> => {
+    if (!silencioso) setLoading(true);
     setError(null);
     try {
       const data = await listar({ por_pagina: 50, ...filtros });
@@ -81,6 +83,7 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
           // caché no crítica
         }
       }
+      return items;
     } catch (e) {
       if (!tecnicas) {
         const cached = await getAlertasCache();
@@ -112,10 +115,11 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
             }))
           );
           setFromCache(true);
-          return;
+          return null;
         }
       }
       setError(e as ApiError);
+      return null;
     } finally {
       setLoading(false);
     }

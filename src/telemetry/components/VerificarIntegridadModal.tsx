@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-29 | Arekkazu | H-M3-21 CP148 RF-63: la ventana es obligatoria (FA-11); se valida antes de verificar |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ShieldCheck, ShieldAlert } from 'lucide-react';
@@ -22,10 +25,17 @@ export function VerificarIntegridadModal({ verificando, verificacion, verificarE
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
 
-  const lanzar = () => onVerificar(
-    desde ? inicioDelDiaUtc(desde) : undefined,
-    hasta ? finDelDiaUtc(hasta) : undefined
-  );
+  const [touched, setTouched] = useState(false);
+  // H-M3-21: el backend exige la ventana (RF-63 FA-11); el texto invitaba a dejarla vacía.
+  const faltan = !desde || !hasta;
+  const invertido = !faltan && desde > hasta;
+  const errorFechas = touched && (faltan || invertido);
+
+  const lanzar = () => {
+    setTouched(true);
+    if (faltan || invertido) return;
+    onVerificar(inicioDelDiaUtc(desde), finDelDiaUtc(hasta));
+  };
 
   const comprometido = verificacion != null && verificacion.comprometidos > 0;
 
@@ -46,11 +56,16 @@ export function VerificarIntegridadModal({ verificando, verificacion, verificarE
       <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
         <div>
           <label style={LABEL} htmlFor="vi-desde">{t('verificarintegridadmodal.desde')}</label>
-          <input id="vi-desde" type="date" style={INPUT} value={desde} onChange={(e) => setDesde(e.target.value)} />
+          <input id="vi-desde" type="date" style={INPUT} value={desde} onChange={(e) => setDesde(e.target.value)} aria-required aria-invalid={errorFechas} aria-describedby={errorFechas ? 'vi-fechas-error' : undefined} />
         </div>
         <div>
           <label style={LABEL} htmlFor="vi-hasta">{t('verificarintegridadmodal.hasta')}</label>
-          <input id="vi-hasta" type="date" style={INPUT} value={hasta} onChange={(e) => setHasta(e.target.value)} />
+          <input id="vi-hasta" type="date" style={INPUT} value={hasta} onChange={(e) => setHasta(e.target.value)} aria-required aria-invalid={errorFechas} aria-describedby={errorFechas ? 'vi-fechas-error' : undefined} />
+          {errorFechas && (
+            <p id="vi-fechas-error" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+              {invertido ? t('filtros.rango_invertido', { ns: 'common' }) : t('filtros.fechas_obligatorias', { ns: 'common' })}
+            </p>
+          )}
         </div>
       </div>
 

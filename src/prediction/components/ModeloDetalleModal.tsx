@@ -4,6 +4,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-07 RF-69: matriz de confusión con ejes Real/Predicho y clases |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 N-02/T-19: transiciones con nombre del usuario y etiqueta legible |
+// | 2026-10-29 | Arekkazu | TC-DIS-172 RF-69: en una versión RECHAZADO la activación se ve deshabilitada con su motivo |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Rocket, Save, CheckCircle2, XCircle, Info } from 'lucide-react';
@@ -246,6 +247,14 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
                 <Button variant="primary" disabled={!puedeActivar} onClick={onSolicitarActivar}>
                   <Rocket size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelodetallemodal.activar_en_produccion')}</Button>
               )}
+            </section>
+          )}
+          {/* TC-DIS-172: el botón ausente no comunicaba que la versión no se puede activar. */}
+          {modelo.estado_version === 'RECHAZADO' && puedeEjecutar && (
+            <section style={{ borderTop: '1px solid var(--surface-border)', paddingTop: 'var(--s4)' }}>
+              <Button variant="primary" disabled aria-describedby="modelo-no-activable">
+                <Rocket size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelodetallemodal.activar_en_produccion')}</Button>
+              <p id="modelo-no-activable" style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>{t('modelodetallemodal.no_activable_rechazado')}</p>
             </section>
           )}
         </div>

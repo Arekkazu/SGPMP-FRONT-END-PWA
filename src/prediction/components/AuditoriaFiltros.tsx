@@ -1,8 +1,12 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Filter, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
+import { TIPOS_MODELO, etiquetaTipoModelo } from '../types';
 
 export interface AuditoriaFiltrosState {
   tipo_evento: string;
@@ -10,10 +14,13 @@ export interface AuditoriaFiltrosState {
   id_referencia: string;
   fecha_desde: string;
   fecha_hasta: string;
+  /** ID de usuario (número) o identificador del sistema que originó el evento. */
+  actor: string;
+  tipo_modelo: string;
 }
 
 export const AUDITORIA_FILTROS_VACIO: AuditoriaFiltrosState = {
-  tipo_evento: '', severidad: '', id_referencia: '', fecha_desde: '', fecha_hasta: '',
+  tipo_evento: '', severidad: '', id_referencia: '', fecha_desde: '', fecha_hasta: '', actor: '', tipo_modelo: '',
 };
 
 // Optgroups del catálogo de tipos de evento (espeja el mockup RF-73).
@@ -74,6 +81,19 @@ export function AuditoriaFiltros({ value, onChange, onAplicar, onLimpiar }: Prop
             <option value="WARNING">{t('auditoriafiltros.warning')}</option>
             <option value="ERROR">{t('auditoriafiltros.error')}</option>
             <option value="CRITICAL">{t('auditoriafiltros.critico')}</option>
+          </select>
+        </div>
+
+        <div>
+          <label style={LABEL} htmlFor="aud-actor">{t('auditoriafiltros.actor')}</label>
+          <input id="aud-actor" style={INPUT} placeholder={t('auditoriafiltros.actor_ayuda')} value={value.actor} onChange={(e) => set('actor', e.target.value)} />
+        </div>
+
+        <div>
+          <label style={LABEL} htmlFor="aud-modelo">{t('auditoriafiltros.tipo_de_modelo')}</label>
+          <select id="aud-modelo" style={INPUT} value={value.tipo_modelo} onChange={(e) => set('tipo_modelo', e.target.value)}>
+            <option value="">{t('auditoriafiltros.todos')}</option>
+            {TIPOS_MODELO.map((tm) => <option key={tm} value={tm}>{etiquetaTipoModelo(tm)}</option>)}
           </select>
         </div>
 

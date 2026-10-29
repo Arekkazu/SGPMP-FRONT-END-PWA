@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
+// | 2026-10-29 | Arekkazu | H-M3-05 CP31 RF-57: rango de fechas invertido se avisa en el campo y no se aplica |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
@@ -54,6 +55,7 @@ interface Props {
 }
 
 export function AlertasFiltros({ areas = [], activos = [], value, onChange, onAplicar, onLimpiar, ocultarTipo }: Props) {
+  const invertido = !!value.fecha_desde && !!value.fecha_hasta && value.fecha_desde > value.fecha_hasta;
   const { t } = useT('telemetry');
   const nombreActivo = (a: ActivoOpcionTelemetria) => a.identificador || `${a.nombre_especie ?? ''} #${a.id_activo_biologico}`.trim();
   const catalogoActivos = activos.map((a) => ({ id: a.id_activo_biologico, nombre: nombreActivo(a) }));
@@ -129,11 +131,19 @@ export function AlertasFiltros({ areas = [], activos = [], value, onChange, onAp
         </div>
         <div>
           <label style={LABEL} htmlFor="al-hasta">{t('alertasfiltros.hasta')}</label>
-          <input id="al-hasta" type="date" style={INPUT} value={value.fecha_hasta} onChange={set('fecha_hasta')} />
+          <input
+            id="al-hasta" type="date" style={INPUT} value={value.fecha_hasta} onChange={set('fecha_hasta')}
+            aria-invalid={invertido} aria-describedby={invertido ? 'al-rango-error' : undefined}
+          />
+          {invertido && (
+            <p id="al-rango-error" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+              {t('filtros.rango_invertido', { ns: 'common' })}
+            </p>
+          )}
         </div>
       </div>
       <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)' }}>
-        <Button variant="primary" size="sm" onClick={onAplicar}>
+        <Button variant="primary" size="sm" disabled={invertido} onClick={() => { if (!invertido) onAplicar(); }}>
           <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('alertasfiltros.aplicar_filtros')}</Button>
         <Button variant="ghost" size="sm" onClick={onLimpiar}>{t('alertasfiltros.limpiar')}</Button>
       </div>

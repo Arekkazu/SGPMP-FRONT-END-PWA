@@ -4,13 +4,15 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-04 RF-65: solo versiones APROBADO/ACTIVO; alerta crítica 0,50–0,95 con 0,70 por defecto |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-24: los campos numéricos con su etiqueta |
+// | 2026-10-29 | Arekkazu | TC-DIS-168 RF-65 a11y 3.3.1: el error del backend se marca en su campo (aria-invalid) |
+// | 2026-10-29 | Arekkazu | TC-DIS-168 RF-65 a11y 4.1.2: modo_ejecucion como combobox con nombre (Select del DS) |
 import React, { useEffect, useId, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { humanizar as etiquetaEstadoVersion } from '../../shared/lib/etiquetas';
-import { Save, Server, Cpu, Shuffle, Info } from 'lucide-react';
+import { Save, Info } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
-import { OptionCard } from '../../shared/design-system/OptionCard';
+import { Select } from '../../shared/design-system/Select';
 import { ModalShell } from './ModalShell';
 import { ThresholdStrip } from './ThresholdStrip';
 import { ContratoModeloPanel } from './ContratoModeloPanel';
@@ -32,20 +34,17 @@ interface Props {
   onGuardar: (dto: ConfigurarMotorDTO) => void;
 }
 
-const MODOS: { id: ModoEjecucion; icon: React.ReactNode }[] = [
-  { id: 'SERVIDOR', icon: <Server size={18} aria-hidden /> },
-  { id: 'EDGE', icon: <Cpu size={18} aria-hidden /> },
-  { id: 'HIBRIDO', icon: <Shuffle size={18} aria-hidden /> },
-];
+const MODOS: ModoEjecucion[] = ['SERVIDOR', 'EDGE', 'HIBRIDO'];
 
 const H3: React.CSSProperties = { fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' };
 const SECCION: React.CSSProperties = { marginBottom: 'var(--s6)', borderTop: '1px solid var(--surface-border)', paddingTop: 'var(--s5)' };
 
 function RangoCampo({
-  label, valor, min, max, step, unidad, disabled, onChange,
-}: { label: string; valor: number; min: number; max: number; step: number; unidad?: string; disabled?: boolean; onChange: (v: number) => void }) {
+  label, valor, min, max, step, unidad, disabled, onChange, error,
+}: { label: string; valor: number; min: number; max: number; step: number; unidad?: string; disabled?: boolean; onChange: (v: number) => void; error?: string }) {
   // T-24: el número no tenía nombre accesible y el <label> no apuntaba a ningún campo.
   const id = useId();
+  const idError = `${id}-error`;
   return (
     <div>
       <label style={LABEL} htmlFor={id}>{label}</label>
@@ -64,10 +63,13 @@ function RangoCampo({
           min={min} max={max} step={step} value={valor}
           disabled={disabled}
           onChange={(e) => onChange(Number(e.target.value))}
+          aria-invalid={!!error}
+          aria-describedby={error ? idError : undefined}
           style={{ ...INPUT, width: 90, height: 34 }}
         />
         {unidad && <span style={{ fontSize: '12px', color: 'var(--text-muted)', width: 28 }}>{unidad}</span>}
       </div>
+      {error && <span id={idError} role="alert" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--sem-error)' }}>{error}</span>}
     </div>
   );
 }
@@ -84,6 +86,8 @@ function NoAplica({ label }: { label: string }) {
 interface CambioVersion { componente: Componente | null; valor: number }
 
 export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveError, online, puedeEditar, nodosSinConfirmar, onGuardar }: Props) {
+  // TC-DIS-168: el 422 trae `field`; el error va también en el campo, no solo en la alerta global.
+  const errorDe = (campo: string) => (saveError?.field === campo ? saveError.message : undefined);
   const { t } = useT('prediction');
   const [riesgoAlto, setRiesgoAlto] = useState(0.7);
   const [alertaCritica, setAlertaCritica] = useState(0.7);
@@ -205,8 +209,8 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
             </>
           ) : (
             <>
-              <RangoCampo label={t('motorconfigform.umbral_de_riesgo_alto')} valor={riesgoAlto} min={0.5} max={0.95} step={0.01} disabled={!puedeEditar} onChange={setRiesgoAlto} />
-              <RangoCampo label={t('motorconfigform.umbral_de_alerta_critica')} valor={alertaCritica} min={0.5} max={0.95} step={0.01} disabled={!puedeEditar} onChange={setAlertaCritica} />
+              <RangoCampo label={t('motorconfigform.umbral_de_riesgo_alto')} valor={riesgoAlto} min={0.5} max={0.95} step={0.01} disabled={!puedeEditar} onChange={setRiesgoAlto} error={errorDe('umbral_riesgo_alto')} />
+              <RangoCampo label={t('motorconfigform.umbral_de_alerta_critica')} valor={alertaCritica} min={0.5} max={0.95} step={0.01} disabled={!puedeEditar} onChange={setAlertaCritica} error={errorDe('umbral_alerta_critica')} />
               <ThresholdStrip riesgoAlto={riesgoAlto} alertaCritica={alertaCritica} />
             </>
           )}
@@ -231,7 +235,7 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
 
       <section style={SECCION}>
         <h3 style={H3}>{t('motorconfigform.ventana_titulo')}</h3>
-        <RangoCampo label={t('motorconfigform.ventana_de_analisis')} valor={ventana} min={5} max={15} step={1} unidad="min" disabled={!puedeEditar} onChange={setVentana} />
+        <RangoCampo label={t('motorconfigform.ventana_de_analisis')} valor={ventana} min={5} max={15} step={1} unidad="min" disabled={!puedeEditar} onChange={setVentana} error={errorDe('ventana_temporal_min')} />
         <p style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{t('motorconfigform.ventana_ayuda')}</p>
       </section>
 
@@ -239,15 +243,18 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
         <h3 style={H3}>{t('motorconfigform.ejecucion_y_version')}</h3>
 
         <div style={{ marginBottom: 'var(--s5)' }}>
-          <span id="motor-modo" style={LABEL}>{t('motorconfigform.modo_de_ejecucion')}</span>
-          <div role="group" aria-labelledby="motor-modo" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--s3)' }}>
-            {MODOS.map((m) => (
-              <OptionCard key={m.id} selected={modo === m.id} disabled={!puedeEditar} onClick={() => setModo(m.id)}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontWeight: 700 }}>{m.icon}{t(`motorconfigform.modo_${m.id}`)}</span>
-                <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginTop: 'var(--s1)' }}>{t(`motorconfigform.modo_${m.id}_ayuda`)}</span>
-              </OptionCard>
-            ))}
-          </div>
+          {/* TC-DIS-168 (4.1.2): QA verifica un combobox llamado "Modo de ejecución"; las tarjetas
+              eran botones sueltos sin valor. La ayuda del modo elegido queda asociada al campo. */}
+          <Select
+            id="motor-modo"
+            label={t('motorconfigform.modo_de_ejecucion')}
+            value={modo}
+            disabled={!puedeEditar}
+            onChange={(e) => setModo(e.target.value as ModoEjecucion)}
+            hint={t(`motorconfigform.modo_${modo}_ayuda`)}
+          >
+            {MODOS.map((m) => <option key={m} value={m}>{t(`motorconfigform.modo_${m}`)}</option>)}
+          </Select>
           {gestionadoPorAdmin}
         </div>
 

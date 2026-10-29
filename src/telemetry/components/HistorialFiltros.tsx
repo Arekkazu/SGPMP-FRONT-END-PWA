@@ -2,7 +2,8 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01/M3-13 RF-59: 7 días por defecto, rangos rápidos consultan, exportación deshabilitada con motivo |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre en vez de «ID infraestructura» |
-import React from 'react';
+// | 2026-10-29 | Arekkazu | H-M3-03 CP15 RF-59: Desde/Hasta vacías o invertidas se avisan en español antes de consultar |
+import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, Download } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -51,6 +52,16 @@ export function HistorialFiltros({ areas, value, onChange, onAplicar, onExportar
   const set = (k: keyof HistorialFiltrosState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     onChange({ ...value, [k]: e.target.value });
 
+  // H-M3-03: el 422 del backend por fecha vacía llegaba con el texto técnico en inglés.
+  const [intento, setIntento] = useState(false);
+  const faltan = !value.fecha_inicio || !value.fecha_fin;
+  const invertido = !faltan && value.fecha_inicio > value.fecha_fin;
+  const errorFechas = intento && (faltan || invertido);
+  const consultar = () => {
+    setIntento(true);
+    if (!faltan && !invertido) onAplicar();
+  };
+
   // M3-01: el rango rápido también consulta; antes solo cambiaba las fechas.
   const aplicarRango = (n: number) => {
     const v = { ...value, fecha_inicio: diasAtrasLocal(n), fecha_fin: hoyLocal() };
@@ -69,11 +80,16 @@ export function HistorialFiltros({ areas, value, onChange, onAplicar, onExportar
       <div style={FILTER_GRID}>
         <div>
           <label style={LABEL} htmlFor="h-desde">{t('historialfiltros.desde')}</label>
-          <input id="h-desde" type="date" style={INPUT} value={value.fecha_inicio} onChange={set('fecha_inicio')} aria-required />
+          <input id="h-desde" type="date" style={INPUT} value={value.fecha_inicio} onChange={set('fecha_inicio')} aria-required aria-invalid={errorFechas} aria-describedby={errorFechas ? 'h-fechas-error' : undefined} />
         </div>
         <div>
           <label style={LABEL} htmlFor="h-hasta">{t('historialfiltros.hasta')}</label>
-          <input id="h-hasta" type="date" style={INPUT} value={value.fecha_fin} onChange={set('fecha_fin')} aria-required />
+          <input id="h-hasta" type="date" style={INPUT} value={value.fecha_fin} onChange={set('fecha_fin')} aria-required aria-invalid={errorFechas} aria-describedby={errorFechas ? 'h-fechas-error' : undefined} />
+          {errorFechas && (
+            <p id="h-fechas-error" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+              {invertido ? t('filtros.rango_invertido', { ns: 'common' }) : t('filtros.fechas_obligatorias', { ns: 'common' })}
+            </p>
+          )}
         </div>
         <div>
           <label style={LABEL} htmlFor="h-var">{t('historialfiltros.variable')}</label>
@@ -119,7 +135,7 @@ export function HistorialFiltros({ areas, value, onChange, onAplicar, onExportar
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
-        <Button variant="primary" size="sm" onClick={() => onAplicar()}>
+        <Button variant="primary" size="sm" onClick={consultar}>
           <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('historialfiltros.consultar')}</Button>
         {puedeExportar && (
           // M3-13: el backend responde siempre 503 hasta que exista el módulo de Reportes

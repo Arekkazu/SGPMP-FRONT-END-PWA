@@ -1,9 +1,11 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-10 RF-60: listado de dispositivos de la finca con estado |
+// | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: panel del buffer Edge (GET /iot/buffer) |
 import { http } from '../../shared/api/http';
 import type {
   DispositivoConEstadoSchema,
+  EstadoBufferSchema,
   EstadoDispositivoDetalleSchema,
   EstadoDispositivoIoTSchema,
   HistoricoTransicionSchema,
@@ -17,6 +19,19 @@ export const dispositivosApi = {
   async listar(estado?: string): Promise<DispositivoConEstadoSchema[]> {
     const res = await http.get<DispositivoConEstadoSchema[]>(BASE, { params: estado ? { estado } : {} });
     return res.data;
+  },
+
+  /** TC-DIS-148: último reporte del buffer Edge de cada dispositivo, los más ocupados primero. Recurso 35 (R). */
+  async buffer(): Promise<EstadoBufferSchema[]> {
+    const res = await http.get<EstadoBufferSchema[]>('/iot/buffer');
+    // El backend manda los Decimal como texto ("85.000"), como en el historial (#317).
+    const n = (v: unknown) => (v == null ? null : Number(v));
+    return res.data.map((d) => ({
+      ...d,
+      capacidad_total: n(d.capacidad_total),
+      capacidad_utilizada: n(d.capacidad_utilizada),
+      porcentaje_ocupacion: n(d.porcentaje_ocupacion),
+    }));
   },
 
   /** Estado actual + historial reciente de un dispositivo (RF-60). Recurso 35. */

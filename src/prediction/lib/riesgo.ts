@@ -1,14 +1,18 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-29 | Arekkazu | TC-DIS-182 RF-66: etiquetas de nivel Normal / Riesgo bajo / Riesgo alto / Crítico |
 // Utilidades para interpretar el nivel de riesgo de los eventos de historial (RF-67).
 // ⚠️ La forma del `payload` de EventoHistorialResponse no está documentada en el
 // contrato; se extrae de forma tolerante. Ver TASKS.md § Pendientes.
 
 import type { Tono } from '../components/Pill';
 
+// TC-DIS-182: los cuatro niveles de RF-66, iguales en el monitor y en el historial.
 export const NIVEL_RIESGO_LABEL: Record<number, string> = {
-  0: 'Sin riesgo',
-  1: 'Bajo',
-  2: 'Moderado',
-  3: 'Alto',
+  0: 'Normal',
+  1: 'Riesgo bajo',
+  2: 'Riesgo alto',
+  3: 'Crítico',
 };
 
 export function nivelRiesgoTono(nivel: number | null): Tono {

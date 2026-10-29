@@ -5,6 +5,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: valores con máximo 2 decimales y separador regional + T-19 códigos legibles |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-05/M3-06 RF-57: historial con evento Creada, estados legibles y autor; ubicación con nombres |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-05/M3-06/T-18: sin pasos repetidos, umbral superado y activo con nombre |
+// | 2026-10-29 | Arekkazu | H-M3-08 CP38/39 RF-57: reglas activadas por nombre, no "[object Object]" |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -49,11 +50,21 @@ const ACCION_META: Record<NuevoEstadoAlerta, { label: string; variant: 'primary'
   DESCARTADA: { label: 'descartar', variant: 'danger', icon: <XCircle size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
 };
 
+function nombreRegla(regla: unknown): string {
+  if (regla && typeof regla === 'object') {
+    const r = regla as { nombre?: unknown; id?: unknown };
+    if (typeof r.nombre === 'string' && r.nombre) return etiquetaCodigo(r.nombre);
+    if (r.id != null) return `#${String(r.id)}`;
+  }
+  return etiquetaCodigo(String(regla));
+}
+
 export function AlertaDetalleModal({ detalle, loading, error, puedeGestionar, puedeDescartar, online, onAccion, onClose }: Props) {
   const { t } = useT('telemetry');
   const acciones = detalle ? accionesAlerta(detalle.estado_alerta, { puedeGestionar, puedeDescartar }) : [];
   const umbral = umbralDeAlerta(detalle?.metadato_evento);
-  const reglas = Array.isArray(detalle?.reglas_activas) ? detalle!.reglas_activas.map(String) : [];
+  // H-M3-08: cada regla llega como objeto ({id, nombre, umbral_*}); String() daba "[object Object]".
+  const reglas = Array.isArray(detalle?.reglas_activas) ? detalle!.reglas_activas.map(nombreRegla) : [];
 
   return (
     <ModalShell

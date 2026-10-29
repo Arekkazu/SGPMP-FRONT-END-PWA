@@ -67,7 +67,9 @@
     "mostrando_alertas_cacheadas_la_gestion_esta": "Showing cached alerts. Management is disabled.",
     "recargar": "Reload",
     "sin_acceso_a_las_alertas": "No access to alerts",
-    "sin_conexion": "Offline"
+    "sin_conexion": "Offline",
+    "anuncio_critica": "New critical alert: {{tipo}}{{valor}}",
+    "anuncio_estado": "Alert #{{id}}: {{estado}}"
   },
   "aplicarmantenimientomodal": {
     "cancelar": "Cancel",
@@ -101,18 +103,42 @@
   },
   "bitacoraview": {
     "bitacora_de_auditoria_iot": "IoT Audit Log",
-    "csv": "CSV",
+    "csv": "Export CSV",
     "error_al_cargar_la_bitacora": "Failed to load the log",
-    "json": "JSON",
+    "json": "Export JSON",
     "no_se_pudo_exportar": "The export failed",
     "sin_acceso_a_la_bitacora": "No access to the log",
     "verificar_integridad": "Verify integrity"
   },
   "bufferview": {
-    "buffer": "Buffer",
     "buffer_y_sincronizacion": "Buffer and Synchronization",
-    "online": "Online",
-    "descripcion": "Readings stored on the device while offline, and how they are sent once reconnected"
+    "descripcion": "Readings stored on each device while offline, as of its latest report",
+    "kpi_dispositivos": "Devices",
+    "kpi_en_buffer": "With buffered data",
+    "kpi_criticos": "Critical occupancy",
+    "datos_pendientes": "Pending data",
+    "conexion": "Local buffer",
+    "conexion_I": "Nothing pending",
+    "conexion_A": "Active, data waiting to be sent",
+    "conexion_L": "Full",
+    "conexion_sin_reporte": "No report",
+    "ocupacion": "Buffer occupancy",
+    "capacidad_utilizada": "Used capacity",
+    "capacidad_total": "Total capacity",
+    "politica_activa": "Active policy",
+    "politica_POLITICA_RECHAZO": "Rejects new data",
+    "politica_POLITICA_SOBRESCRITURA": "Overwrites the oldest data",
+    "ultimo_pendiente": "Latest pending reading",
+    "ultimo_reporte": "Latest report",
+    "estado_NORMAL": "Normal",
+    "estado_WARNING": "Warning (80% or more)",
+    "estado_CRITICO": "Critical (95% or more)",
+    "sin_metricas": "This device firmware does not report buffer capacity or occupancy yet.",
+    "vacio": "There are no active devices on your farms.",
+    "error_titulo": "Could not load the buffer status",
+    "reintentar": "Retry",
+    "cargando": "Loading…",
+    "cola_en_edge": "The reading queue lives on each device; this shows what it reported in its latest heartbeat."
   },
   "calidaddetallemodal": {
     "apto_para_ia": "Suitable for AI",
@@ -131,7 +157,8 @@
     "sin_conexion": "Offline",
     "sin_permiso_e": "No permission (E)",
     "sin_permiso_para_evaluar": "No permission to evaluate",
-    "version": "Version"
+    "version": "Version",
+    "trazabilidad_estadistica": "Statistical traceability of the flags"
   },
   "calidadfiltros": {
     "aplicar_filtros": "Apply filters",
@@ -323,7 +350,11 @@
     "cargando": "Loading…",
     "sensores_de_total_one": "{{visibles}} of {{n}} sensor",
     "sensores_de_total_other": "{{visibles}} of {{n}} sensors",
-    "sin_sensores_en_tus_fincas": "Your farms don't have sensors yet. Register them in Settings › IoT."
+    "sin_sensores_en_tus_fincas": "Your farms don't have sensors yet. Register them in Settings › IoT.",
+    "trabajando_sin_conexion": "Working offline",
+    "actualizacion_con_retraso": "Delayed update",
+    "ultimo_dato": "Last data received at {{hora}}.",
+    "datos_desde_cache_detalle": "Showing the last data saved on this device."
   },
   "movilview": {
     "cargando": "Loading…",
@@ -414,7 +445,7 @@
     "hasta": "To",
     "no_se_pudo_verificar_la_integridad": "The integrity check failed",
     "sin_permiso_para_verificar": "No permission to verify",
-    "verifica_la_cadena_hash_sha_256_deja_las": "Verifies the SHA-256 hash chain. Leave the dates empty to verify the whole available range.",
+    "verifica_la_cadena_hash_sha_256_deja_las": "Verifies the SHA-256 hash chain of the events recorded between both dates.",
     "verificar": "Verify",
     "verificar_integridad_de_la_bitacora": "Verify the audit log integrity"
   },
@@ -670,7 +701,11 @@
     "no_encola": "The system does not queue unprocessed windows.",
     "reparto_titulo": "Indicative budget split by stage",
     "ultimas_ventanas": "Latest processed windows",
-    "sin_terminar": "did not finish in time"
+    "sin_terminar": "did not finish in time",
+    "detalle_titulo": "Edge event",
+    "sev_CRITICO": "Critical",
+    "sev_MODERADO": "Moderate",
+    "sev_LEVE": "Low"
   },
   "pipeline": {
     "reglas_titulo": "Rules for sending to the inference engine",
@@ -903,5 +938,13 @@
   "vinculacion": {
     "sin_activo": "No asset",
     "lectura_numero": "Reading #{{id}}"
+  },
+  "panelalertas": {
+    "titulo_one": "{{n}} active alert",
+    "titulo_other": "{{n}} active alerts",
+    "sin_alertas": "No active alerts in this scope.",
+    "ver_activo": "View asset {{activo}}",
+    "mas": "And {{n}} more.",
+    "ver_todas": "See all in Alerts"
   }
 }
