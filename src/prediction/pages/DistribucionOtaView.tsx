@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-70: KPIs con los totales reales de la flota y textos traducidos |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
+// | 2026-10-29 | Arekkazu | USAB-M04 prototipo RF-70: «Envío a campo» y marca de solo lectura para quien no envía |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { DownloadCloud, RefreshCw, Plus, CheckCircle2, XCircle, Clock, Package } from 'lucide-react';
@@ -9,6 +10,7 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
+import { Pill } from '../components/Pill';
 import { useOta } from '../hooks/useOta';
 import { useDistribucionOta } from '../hooks/useDistribucionOta';
 import { OtaTable } from '../components/OtaTable';
@@ -87,7 +89,7 @@ export function DistribucionOtaView() {
     [despliegues, fTipo]
   );
 
-  if (!puedeVer) return <PermissionDenied seccion="Distribución de modelos (OTA)" />;
+  if (!puedeVer) return <PermissionDenied seccion={t('distribucionotaview.titulo')} />;
 
   return (
     <div style={{ minHeight: '100%' }}>
@@ -106,10 +108,10 @@ export function DistribucionOtaView() {
           <Button variant="ghost" size="sm" onClick={() => consultar(paginacion.pagina)} aria-label={t('distribucionotaview.recargar')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
-          {puedeLanzar && (
+          {puedeLanzar ? (
             <Button variant="primary" size="sm" onClick={abrirForm} disabled={!online}>
               <Plus size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('distribucionotaview.nuevo_despliegue')}</Button>
-          )}
+          ) : <Pill tono="neutral">{t('distribucionotaview.solo_lectura')}</Pill>}
         </div>
       </div>
 
