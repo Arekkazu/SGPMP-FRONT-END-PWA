@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66: view-model del monitor desde GET /prediccion/inferencias (antes monitorMock) |
+// | 2026-10-29 | Arekkazu | USAB-M04 prototipo 13.9 RF-66/RF-68: id del activo y fecha ISO para unir con contagio |
 import { formatearFechaHora, formatearHora } from '../../shared/i18n/formato';
 import type { InferenciaMonitorResponse, ModoEjecucion, TipoModelo } from '../types';
 
@@ -11,6 +12,9 @@ export type MotivoFallback = 'NODO_DESINCRONIZADO' | 'ERROR_MODELO' | 'TIMEOUT';
 export interface Inferencia {
   id: string;
   uuid: string;
+  idActivo: number;
+  /** ISO de la inferencia: `hora` es solo para mostrar. */
+  fecha: string;
   /** Activo (individual) o lote/área (poblacional). */
   unidad: string;
   area: string;
@@ -60,6 +64,8 @@ export function aInferencia(r: InferenciaMonitorResponse): Inferencia {
   return {
     id: `INF-${r.id_resultado_inferencia.slice(0, 8)}`,
     uuid: r.id_resultado_inferencia,
+    idActivo: r.id_activo_biologico,
+    fecha: r.fecha_inferencia,
     unidad: r.identificador_activo ?? `#${r.id_activo_biologico}`,
     area: `${r.nombre_area} · ${r.nombre_finca}`,
     especie: r.especie ?? '—',

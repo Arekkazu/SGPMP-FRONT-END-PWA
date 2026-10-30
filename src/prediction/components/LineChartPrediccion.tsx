@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | TC-DIS-187 RF-67 a11y 1.1.1: la gráfica lleva título y descripción para el lector |
+// | 2026-10-29 | Arekkazu | USAB-M04 prototipo 13.9 RF-66: eje Y solo con enteros para niveles de riesgo |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import {
@@ -22,6 +23,8 @@ interface Props {
   /** Líneas de umbral punteadas (p. ej. alerta/riesgo). */
   referencias?: { y: number; label: string; color?: string }[];
   yDomain?: [number, number];
+  /** Niveles de riesgo (0–3): sin marcas como 0,75 o 1,5. */
+  soloEnteros?: boolean;
   /** 1.1.1: nombre y resumen del SVG; la tabla alternativa va al lado (la pone quien la usa). */
   titulo?: string;
   descripcion?: string;
@@ -35,7 +38,7 @@ const AXIS_STYLE = { fontSize: 11, fill: 'var(--text-muted)', fontFamily: 'var(-
  * Wrapper de gráfico de líneas del módulo de predicción (RF-67 tendencia de riesgo).
  * Único punto que consume `recharts` aquí; el resto del módulo no depende de la librería.
  */
-export function LineChartPrediccion({ data, xKey, series, height = 260, unit, referencias, yDomain, titulo, descripcion }: Props) {
+export function LineChartPrediccion({ data, xKey, series, height = 260, unit, referencias, yDomain, soloEnteros, titulo, descripcion }: Props) {
   const { t } = useT('prediction');
   if (!data || data.length === 0) {
     return (
@@ -54,6 +57,7 @@ export function LineChartPrediccion({ data, xKey, series, height = 260, unit, re
             stroke="var(--surface-border)"
             width={44}
             domain={yDomain}
+            allowDecimals={!soloEnteros}
             label={unit ? { value: unit, angle: -90, position: 'insideLeft', style: { ...AXIS_STYLE, textAnchor: 'middle' } } : undefined}
           />
           <Tooltip

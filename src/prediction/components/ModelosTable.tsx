@@ -4,6 +4,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-23: tarjetas por debajo de 768px, con estado arriba |
+// | 2026-10-29 | Arekkazu | USAB-M04 prototipo M4-07 RF-69/RNF-02: F1 y sensibilidad con barra y marca del mínimo |
 import React from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -18,16 +19,51 @@ function fmtPct(v: number | null): string {
   return v == null ? '—' : `${(v * 100).toFixed(1)}%`;
 }
 
+/** RNF-02: mínimos de aprobación de un modelo supervisado. */
+export const MINIMO_F1 = 0.8;
+export const MINIMO_RECALL_RIESGO_ALTO = 0.85;
+
+/**
+ * Prototipo M04 (M4-07): la métrica con su mínimo a la vista. La rayita es el mínimo
+ * para aprobar; verde si lo cumple, rojo si no. El texto dice el valor y el mínimo.
+ */
+export function MetricaMinima({ label, valor, minimo }: { label: string; valor: number | null; minimo: number }) {
+  const { t } = useT('prediction');
+  const ok = valor != null && valor >= minimo;
+  const color = valor == null ? 'var(--text-muted)' : ok ? 'var(--sem-success)' : 'var(--sem-error)';
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '12px' }}>
+      <span style={{ color: 'var(--text-muted)', minWidth: 84 }}>{label}</span>
+      <span aria-hidden style={{ position: 'relative', width: 64, height: 6, borderRadius: 'var(--r-full)', background: 'var(--surface-hover)', flexShrink: 0 }}>
+        <span style={{ position: 'absolute', inset: 0, width: `${Math.min(100, (valor ?? 0) * 100)}%`, borderRadius: 'var(--r-full)', background: color }} />
+        <span style={{ position: 'absolute', top: -3, bottom: -3, left: `${minimo * 100}%`, width: 2, background: 'var(--text-primary)' }} />
+      </span>
+      <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color }} title={t('modelostable.minimo', { minimo: fmtPct(minimo) })}>
+        {fmtPct(valor)}
+      </span>
+      <span className="ds-sr-only">{t('modelostable.minimo', { minimo: fmtPct(minimo) })}</span>
+    </span>
+  );
+}
+
 /** POBLACIONAL se evalúa con métricas propias; INDIVIDUAL/META con F1 y sensibilidad de riesgo alto. */
 function Metricas({ m }: { m: VersionModeloResponse }) {
   const { t } = useT('prediction');
   const pob = m.metricas_poblacionales;
-  const filas: [string, string][] = pob
+  const filas: [string, string][] | null = pob
     ? [
       [t('modelostable.fp_rutina'), fmtPct(typeof pob.tasa_falsos_positivos_rutina === 'number' ? pob.tasa_falsos_positivos_rutina : null)],
       [t('modelostable.deteccion_clinica'), fmtPct(typeof pob.tasa_deteccion_eventos_clinicos === 'number' ? pob.tasa_deteccion_eventos_clinicos : null)],
     ]
-    : [[t('modelostable.f1_global'), fmtPct(m.f1_score)], [t('modelostable.sensib_riesgo'), fmtPct(m.recall_clase_riesgo_alto)]];
+    : null;
+  if (!filas) {
+    return (
+      <span style={{ display: 'grid', gap: 'var(--s1)' }}>
+        <MetricaMinima label={t('modelostable.f1_global')} valor={m.f1_score} minimo={MINIMO_F1} />
+        <MetricaMinima label={t('modelostable.sensib_riesgo')} valor={m.recall_clase_riesgo_alto} minimo={MINIMO_RECALL_RIESGO_ALTO} />
+      </span>
+    );
+  }
   return (
     <span style={{ display: 'grid', gap: 2, fontSize: '12px' }}>
       {filas.map(([k, v]) => <span key={k}><span style={{ color: 'var(--text-muted)' }}>{k}</span> <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{v}</span></span>)}
