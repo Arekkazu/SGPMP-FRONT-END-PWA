@@ -16,10 +16,13 @@
  *
  * Herramientas: @axe-core/playwright en los 3 viewports + Lighthouse snapshot solo en escritorio.
  */
+// | Fecha      | Nombre        | Que se hizo                                                            |
+// |------------|---------------|--------------------------------------------------------------------------|
+// | 2026-10-30 | Laura032005   | M04 RF-68: distinguir error de servidor (BLOQUEO) de lista vacía; pausado por bug backend 500 |
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
-  abrirSesion, anotar, auditarTabla, desviacion, escanear, irA, main, precondicion, regionesVivas, textosColumna,
+  abrirSesion, anotar, auditarTabla, desviacion, escanear, esGet, irA, main, precondicion, regionesVivas, textosColumna,
 } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-170';
@@ -58,7 +61,11 @@ async function cerrar(page: Page) {
   await expect(page.getByRole('dialog')).toBeHidden();
 }
 
-test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Riesgo de contagio del lote (RF-68)`, () => {
+// 2026-10-30: PAUSADO — GET /prediccion/riesgo-contagio responde HTTP 500 (ERROR_INTERNO) para la
+// cuenta de prueba desde que el DBA sembró los 4 resultados de TC-DIS-170 (timestamp del error:
+// 2026-10-30T18:39:59Z). No es un bloqueo de dato ni un defecto de este spec — es un bug de backend,
+// ver issue #467. Reactivar (quitar .skip) cuando se confirme el fix.
+test.describe.skip(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Riesgo de contagio del lote (RF-68)`, () => {
   test.describe.configure({ mode: 'default' });
 
   let contexto: BrowserContext;
@@ -73,14 +80,34 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Riesgo de contagio del lot
   });
 
   test('1. CRÍTICO - cada nivel Bajo/Medio/Alto con texto además del color (1.4.1) y nombre en la tarjeta (4.1.2)', async ({}, testInfo) => {
+    const respuesta = page.waitForResponse(esGet('/prediccion/riesgo-contagio'), { timeout: 30_000 }).catch(() => null);
     await irA(page, RUTA, TITULO);
+    const r = await respuesta;
+    const cuerpo = r ? await r.text().catch(() => '') : null;
+    anotar(testInfo, 'GET /prediccion/riesgo-contagio', `HTTP ${r?.status() ?? 'sin respuesta'} · ${cuerpo === null ? 'sin cuerpo' : `${cuerpo.length} bytes`}`);
+    // 2026-10-30: BLOQUEO DE AMBIENTE real, no precondición de dato — un 200 con lista vacía es
+    // precondición; un error de servidor (visto como "No se pudieron cargar los cálculos de
+    // contagio" en la vista, probablemente disparado por el seed nuevo) es un defecto a reportar,
+    // no algo que un script de QA pueda rodear corriendo de nuevo.
+    expect(r?.ok() ?? false, `BLOQUEO DE AMBIENTE: GET /prediccion/riesgo-contagio responde HTTP ${r?.status() ?? 'sin respuesta'} en vez de 200 — revisar con backend, posiblemente disparado por el seed de datos nuevo`).toBe(true);
     if (await main(page).getByRole('note').filter({ hasText: 'Datos simulados' }).isVisible()) {
       anotar(testInfo, 'Datos', 'Vista con datos simulados (DatosSimuladosBanner): el modelo de contagio aún no expone endpoints.');
     }
     const textos = (await tarjetas(page).allInnerTexts()).map((t) => t.replace(/\s+/g, ' ').trim());
     anotar(testInfo, 'Tarjetas de lote (nombre accesible = texto del botón)', textos.join(' || '));
-    expect(textos.length, 'la vista debe listar lotes monitoreados').toBeGreaterThan(0);
-    desviacion(false, '2.4.6/1.3.1: la grilla de tarjetas de lote no tiene ningún heading ni aria-label que la identifique (a diferencia de la sección "Alertas", que sí usa aria-labelledby)');
+    // 2026-10-29: la vista ya consulta datos reales (antes mock); precondición de dato, no
+    // defecto de UI, si el ambiente no tiene lotes para esta cuenta en este momento.
+    precondicion(textos.length > 0, 'no hay lotes monitoreados en el ambiente para esta cuenta');
+    if (textos.length === 0) return;
+    // 2026-10-29: confirmado corregido — la grilla de tarjetas ahora es un <section
+    // aria-labelledby="ctg-lotes"> con su propio <h2>; se verifica en vivo, no se asume fijo.
+    const grilla = await tarjetas(page).first().evaluate((el) => {
+      const seccion = el.closest('section');
+      const nombre = seccion?.getAttribute('aria-labelledby') ?? seccion?.getAttribute('aria-label') ?? null;
+      return { tieneSeccion: !!seccion, nombre };
+    });
+    anotar(testInfo, 'Nombre accesible de la grilla de lotes', JSON.stringify(grilla));
+    desviacion(!!grilla.nombre, '2.4.6/1.3.1: la grilla de tarjetas de lote no tiene ningún heading ni aria-label que la identifique');
 
     const sinNivel = textos.filter((t) => !NIVEL_RE.test(t));
     expect.soft(sinNivel, '1.4.1 CRÍTICO / 4.1.2: tarjetas cuyo nivel solo se comunica por color').toEqual([]);

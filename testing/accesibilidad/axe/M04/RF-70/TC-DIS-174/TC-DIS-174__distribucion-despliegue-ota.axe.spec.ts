@@ -17,6 +17,9 @@
  *
  * Herramientas: @axe-core/playwright en los 3 viewports + Lighthouse snapshot solo en escritorio.
  */
+// | Fecha      | Nombre        | Que se hizo                                                          |
+// |------------|---------------|------------------------------------------------------------------------|
+// | 2026-10-30 | Laura032005   | M04 RF-70: título renombrado a "Envío de modelos a campo" (ebf9bc4)   |
 import { expect, test, type BrowserContext, type Page, type Route, type TestInfo } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
@@ -25,10 +28,9 @@ import {
 
 const TC_ID = 'TC-DIS-174';
 const RUTA = 'prediccion/distribucion';
-// 2026-10-27: el heading real usa minúscula en "modelos" (distribucionotaview.titulo);
-// con exact:true el "Modelos" en mayúscula nunca hacía match — esto era la causa real del
-// "cuelgue": irA() nunca encontraba el heading ni el login, y esperaba el timeout completo.
-const TITULO = 'Distribución de modelos (OTA)';
+// 2026-10-30 (commit ebf9bc4): la vista se renombró de "Distribución de modelos (OTA)" a
+// "Envío de modelos a campo" (prediction.json → distribucionotaview.titulo).
+const TITULO = 'Envío de modelos a campo';
 const PASOS_LIGHTHOUSE = ['listado', 'detalle-fallido', 'filtrado'];
 
 const ESTADO_TEXTO: Record<string, string> = { EXITOSO: 'Exitoso', FALLIDO: 'Fallido', PENDIENTE: 'Pendiente', SIN_CAMBIOS: 'Sin cambios' };

@@ -20,6 +20,9 @@
  *
  * Herramientas: @axe-core/playwright en los 3 viewports + Lighthouse snapshot solo en escritorio.
  */
+// | Fecha      | Nombre        | Que se hizo                                                          |
+// |------------|---------------|------------------------------------------------------------------------|
+// | 2026-10-30 | Laura032005   | M04 RF-65: desambiguar alerta duplicada (global + campo) con .first() |
 import { expect, test, type BrowserContext, type Locator, type Page, type Route } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
@@ -127,7 +130,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Configuración del motor d
       await expect(guardar, 'con un umbral de 0.30 el cliente no bloquea el envío').toBeEnabled();
       await guardar.click();
       await expect.poll(() => estado.envios, { message: 'El guardado debe llegar al POST simulado' }).toBe(1);
-      const alerta = main(page).getByRole('alert').filter({ hasText: ERROR_RANGO.message });
+      // 2026-10-29: ahora hay 2 anuncios con el mismo texto — la alerta global y el error de
+      // campo asociado (confirmado abajo con aria-invalid) — antes solo existía la global.
+      const alerta = main(page).getByRole('alert').filter({ hasText: ERROR_RANGO.message }).first();
       await expect(alerta, '3.3.1: el 422 de rango debe anunciarse con role="alert"').toBeVisible();
       anotar(testInfo, 'Error', (await alerta.innerText()).replace(/\s+/g, ' '));
       const invalido = await main(page).getByRole('slider', { name: 'Umbral de riesgo alto', exact: true }).getAttribute('aria-invalid');
@@ -158,7 +163,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Configuración del motor d
     try {
       await main(page).getByRole('button', { name: 'Guardar configuración', exact: true }).click();
       await expect.poll(() => estado.envios, { message: 'El guardado debe llegar al POST simulado' }).toBe(1);
-      await expect(main(page).getByRole('alert').filter({ hasText: ERROR_INCONSISTENCIA.message }), '3.3.1: el 422 de inconsistencia debe anunciarse con role="alert"').toBeVisible();
+      // 2026-10-29: mismo caso que el 422 de rango — ahora hay 2 anuncios con el mismo texto.
+      await expect(main(page).getByRole('alert').filter({ hasText: ERROR_INCONSISTENCIA.message }).first(), '3.3.1: el 422 de inconsistencia debe anunciarse con role="alert"').toBeVisible();
       await escanear(page, TC_ID, __dirname, 'error-422-inconsistencia', testInfo, PASOS_LIGHTHOUSE);
     } finally {
       await page.unroute(URL_MOTOR);
