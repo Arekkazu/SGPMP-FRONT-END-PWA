@@ -3,6 +3,7 @@
 // | 2026-10-20 | Arekkazu | FE-05 RF-15: densidad_poblacional_max y esperanza_vida_dias en especie (RFC-012/014) |
 // | 2026-10-20 | Arekkazu | FE-06 RF-20: especies (1..N), nivel_criticidad y capacidad_maxima del área (RFC-012/016) |
 // | 2026-10-20 | Arekkazu | FE-09 RF-17: es_critica en la variable ambiental (RFC-016) |
+// | 2026-10-30 | Arekkazu | INC-M03-135-G01 RF-49: especies compatibles de un sensor |
 import type { TipoModelo } from '../prediction/types';
 
 /** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
@@ -223,6 +224,12 @@ export type CategoriaSensor =
   | 'AMONIACO'
   | 'SALINIDAD'
   | 'LUMINOSIDAD';
+
+/** RF-49 R3: especies con las que el sensor puede vincularse a un activo (M02 lo exige). */
+export interface EspeciesCompatiblesSensorResponse {
+  id_sensor: number;
+  especies: { id_especie: number; nombre: string }[];
+}
 
 export interface SensorResponse {
   id_sensores: number;

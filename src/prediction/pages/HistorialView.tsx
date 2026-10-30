@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-03/N-03 RF-72: diagnósticos de la especie del activo y activo con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-187/188/191/192 RF-67: tablist sin Exportar, tabla alternativa a la gráfica y página anterior |
+// | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: el Administrador amplía la ventana de un resultado |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -19,10 +20,11 @@ import { HistorialFiltros, historialFiltrosVacio, type HistorialFiltrosState } f
 import { HistorialTimeline } from '../components/HistorialTimeline';
 import { LineChartPrediccion } from '../components/LineChartPrediccion';
 import { RetroalimentacionFormModal, type RetroContexto } from '../components/RetroalimentacionFormModal';
+import { AmpliarVentanaRetroModal } from '../components/AmpliarVentanaRetroModal';
 import { diagnosticosPara } from '../lib/diagnosticos';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { NIVEL_RIESGO_LABEL, extraerConfianza, extraerNivelRiesgo, extraerPatologia } from '../lib/riesgo';
-import { RECURSO_HISTORIAL, RECURSO_RETRO, ACCION_R, ACCION_C } from '../rbac';
+import { RECURSO_HISTORIAL, RECURSO_RETRO, RECURSO_CONFIG_GLOBAL, ACCION_R, ACCION_C, ACCION_U } from '../rbac';
 import type { ConsultarHistorialFiltros, EventoHistorialResponse } from '../types';
 
 type TabId = 'timeline' | 'tendencia';
@@ -31,6 +33,7 @@ export function HistorialView() {
   const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_HISTORIAL, ACCION_R);
   const puedeRetroalimentar = usePermission(RECURSO_RETRO, ACCION_C);
+  const puedeAmpliar = usePermission(RECURSO_CONFIG_GLOBAL, ACCION_U);
   const online = useOnlineStatus();
 
   const { eventos, cursor, loading, loadingMas, error, fromCache, activos, activosError, cargarActivos, consultar, cargarMas, limpiar } = useHistorial();
@@ -41,6 +44,8 @@ export function HistorialView() {
   const [tab, setTab] = useState<TabId>('timeline');
   const [retroEvento, setRetroEvento] = useState<EventoHistorialResponse | null>(null);
   const [retroOk, setRetroOk] = useState(false);
+  const [ampliarEvento, setAmpliarEvento] = useState<EventoHistorialResponse | null>(null);
+  const [ampliadoHasta, setAmpliadoHasta] = useState<string | null>(null);
   // TC-DIS-188: la paginación por cursor solo agregaba al final; se ve una página a la vez
   // y se puede volver. `cortes[i]` = índice del primer evento de la página i.
   const [pagina, setPagina] = useState(0);
@@ -128,6 +133,11 @@ export function HistorialView() {
     if (ok) { setRetroEvento(null); setRetroOk(true); setTimeout(() => setRetroOk(false), 4000); }
   };
 
+  const enviarAmpliacion = async (dto: Parameters<typeof retro.ampliarVentana>[0]) => {
+    const ampliacion = await retro.ampliarVentana(dto);
+    if (ampliacion) { setAmpliarEvento(null); setAmpliadoHasta(ampliacion.fecha_limite); }
+  };
+
   if (!puedeVer) return <PermissionDenied seccion="Historial diagnóstico" />;
 
   return (
@@ -141,6 +151,7 @@ export function HistorialView() {
       <div style={{ padding: 'var(--page-pad)' }}>
         <Alert variant="info" title="Registro inmutable (NIC-41)" description={t('historialview.los_resultados_de_inferencia_no_se')} style={{ marginBottom: 'var(--s5)' }} />
 
+        {ampliadoHasta && <Alert variant="success" title={t('historialview.ventana_ampliada')} description={t('historialview.ventana_ampliada_detalle', { fecha: formatearFecha(ampliadoHasta) })} style={{ marginBottom: 'var(--s4)' }} />}
         {retroOk && <Alert variant="success" title={t('historialview.retroalimentacion_registrada')} description={t('historialview.gracias_la_evaluacion_clinica_quedo')} style={{ marginBottom: 'var(--s4)' }} />}
         {!online && <Alert variant="warning" title={t('historialview.sin_conexion')} description={t('historialview.mostrando_historial_cacheado_del_ultimo')} style={{ marginBottom: 'var(--s4)' }} />}
         {fromCache && online && <Alert variant="info" title={t('historialview.datos_desde_cache')} description="No se pudo conectar; se muestra el último historial disponible." style={{ marginBottom: 'var(--s4)' }} />}
@@ -181,7 +192,13 @@ export function HistorialView() {
               {loading ? (
                 <div style={{ padding: 'var(--s8)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('historialview.consultando_historial')}</div>
               ) : (
-                <HistorialTimeline eventos={eventosPagina} puedeRetroalimentar={puedeRetroalimentar && online} onRetroalimentar={setRetroEvento} />
+                <HistorialTimeline
+                  eventos={eventosPagina}
+                  puedeRetroalimentar={puedeRetroalimentar && online}
+                  onRetroalimentar={setRetroEvento}
+                  puedeAmpliar={puedeAmpliar && online}
+                  onAmpliar={(e) => { retro.limpiarSaveError(); setAmpliadoHasta(null); setAmpliarEvento(e); }}
+                />
               )}
             </div>
             {(pagina > 0 || haySiguiente) && (
@@ -245,6 +262,19 @@ export function HistorialView() {
           </div>
         )}
       </div>
+
+      {ampliarEvento && ampliarEvento.id_resultado_inferencia && (
+        <AmpliarVentanaRetroModal
+          idResultado={ampliarEvento.id_resultado_inferencia}
+          nombreActivo={activoDe(ampliarEvento.id_activo_biologico)?.identificador ?? `#${ampliarEvento.id_activo_biologico}`}
+          fechaInferencia={ampliarEvento.fecha_evento}
+          saving={retro.saving}
+          saveError={retro.saveError}
+          online={online}
+          onSubmit={enviarAmpliacion}
+          onClose={() => { retro.limpiarSaveError(); setAmpliarEvento(null); }}
+        />
+      )}
 
       {retroEvento && retroEvento.id_resultado_inferencia && (
         <RetroalimentacionFormModal

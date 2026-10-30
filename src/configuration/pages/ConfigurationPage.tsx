@@ -1,6 +1,8 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | INC-M03-82-G192 RF-62: política de visión en la pestaña Sistema |
+// | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: ventana de retroalimentación en la pestaña Sistema |
+// | 2026-10-30 | Arekkazu | INC-M03-135-G01 RF-49: sub-pestaña Especies compatibles en IoT |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, RefreshCw, Search } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -18,6 +20,7 @@ import { EspeciesModal } from '../components/EspeciesModal';
 import { PorEspeciePage } from '../components/PorEspeciePage';
 import { ParametrosSection } from '../components/ParametrosSection';
 import { PoliticaVisionSection } from '../components/PoliticaVisionSection';
+import { VentanaRetroalimentacionSection } from '../components/VentanaRetroalimentacionSection';
 import { FincasTable } from '../components/FincasTable';
 import { useTiposArea } from '../hooks/useTiposArea';
 import { TipoAreaTable } from '../components/TipoAreaTable';
@@ -27,6 +30,7 @@ import { DispositivosTable } from '../components/DispositivosTable';
 import { SensoresSection } from '../components/SensoresSection';
 import { ConfiguracionRemotaSection } from '../components/ConfiguracionRemotaSection';
 import { CalibracionSection } from '../components/CalibracionSection';
+import { EspeciesCompatiblesSection } from '../components/EspeciesCompatiblesSection';
 import { IdentidadVisualSection } from '../components/IdentidadVisualSection';
 import { TemaVisualSection } from '../components/TemaVisualSection';
 import { IdiomaSection } from '../components/IdiomaSection';
@@ -67,6 +71,7 @@ const SUBPESTANAS: Partial<Record<TabId, { id: string; claveLabel: string; conte
     { id: 'sensores', claveLabel: 'subpestanas.sensores', contenido: () => <SensoresSection /> },
     { id: 'remota', claveLabel: 'subpestanas.configuracion_remota', contenido: () => <ConfiguracionRemotaSection /> },
     { id: 'calibracion', claveLabel: 'subpestanas.calibracion', contenido: () => <CalibracionSection /> },
+    { id: 'especies-compatibles', claveLabel: 'subpestanas.especies_compatibles', contenido: () => <EspeciesCompatiblesSection /> },
   ],
   personalizacion: [
     { id: 'identidad', claveLabel: 'subpestanas.identidad_visual', contenido: () => <IdentidadVisualSection /> },
@@ -514,6 +519,7 @@ export function ConfigurationPage() {
           <>
             <ParametrosSection onEditStateChange={setParametrosEditState} />
             <PoliticaVisionSection />
+            <VentanaRetroalimentacionSection />
           </>
         )}
         {activeTab === 'plantillas' && <PlantillasTable />}

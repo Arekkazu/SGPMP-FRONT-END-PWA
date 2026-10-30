@@ -1,8 +1,9 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | PEND-456 RF-68: lotes de contagio desde los cálculos del backend |
+// | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68/67: evento CONTAGIO del historial |
 import { describe, expect, it } from 'vitest';
-import { aLotes } from './contagio';
+import { aLotes, contagioDelEvento } from './contagio';
 import type { RiesgoContagioMonitorResponse } from '../types';
 
 const calculo = (cambios: Partial<RiesgoContagioMonitorResponse>): RiesgoContagioMonitorResponse => ({
@@ -39,5 +40,14 @@ describe('aLotes (RF-68)', () => {
       'Cálculo degradado': 'AJUSTE',
     });
     expect(lote.nota).toBe('FD sin sensor');
+  });
+});
+
+describe('contagioDelEvento (RF-67, INC-M04-223-G034)', () => {
+  it('lee nivel y probabilidad del evento CONTAGIO; null en los demás tipos', () => {
+    expect(contagioDelEvento({ probabilidad_contagio: 0.55, nivel_riesgo_contagio: 2 })).toEqual({ probabilidad: 0.55, nivel: 'ALTO' });
+    expect(contagioDelEvento({ probabilidad_contagio: 0.2 })).toEqual({ probabilidad: 0.2, nivel: null });
+    expect(contagioDelEvento({ nivel_riesgo: 2, confianza_global: 0.9 })).toBeNull();
+    expect(contagioDelEvento(null)).toBeNull();
   });
 });

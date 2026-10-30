@@ -1,6 +1,8 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | PEND-456 RF-68: lotes de contagio desde GET /prediccion/riesgo-contagio (antes contagioMock) |
+// | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68/67: evento CONTAGIO del historial con nivel y probabilidad |
+import type { Tono } from '../components/Pill';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import type { RiesgoContagioMonitorResponse } from '../types';
 
@@ -39,6 +41,15 @@ export interface LoteContagio {
 }
 
 const NIVELES: Record<number, NivelContagio> = { 0: 'BAJO', 1: 'MEDIO', 2: 'ALTO' };
+export const NIVEL_TONO: Record<NivelContagio, Tono> = { ALTO: 'error', MEDIO: 'warning', BAJO: 'success' };
+
+/** Evento CONTAGIO del historial RF-67 (RF-68 paso 9): null si el payload no es de contagio. */
+export function contagioDelEvento(payload: Record<string, unknown> | null): { probabilidad: number; nivel: NivelContagio | null } | null {
+  const p = payload?.probabilidad_contagio;
+  if (typeof p !== 'number') return null;
+  const n = payload?.nivel_riesgo_contagio;
+  return { probabilidad: p, nivel: typeof n === 'number' ? NIVELES[n] ?? null : null };
+}
 const texto = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
 
 function degradado(r: RiesgoContagioMonitorResponse): boolean {
