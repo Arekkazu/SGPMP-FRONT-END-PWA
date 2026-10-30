@@ -1,3 +1,12 @@
+## [1.4.0-rc.11](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.10...v1.4.0-rc.11) (2026-10-30)
+
+### Features
+
+* **rf64-prediction:** encabezado de patologías con activas y versión del catálogo ([2a40560](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2a405604224e0614ff1cee6cbf7ada8c46bbb756))
+* **rf66-prediction:** estado sanitario por lote que une monitor y contagio ([72444df](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/72444df3c70c8694ff843b128bec1c104f1b8d5d))
+* **rf69-prediction:** modelos en producción por tipo y métricas con la marca de su mínimo ([ebf9bc4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ebf9bc48f2b9bd22e9e1fc800e142761f58dfda1))
+* **rf70-prediction:** envío a campo con el lenguaje del prototipo y aviso de solo lectura ([252dff8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/252dff86e1e9c81c63a3b202c62a71ecc0bfc67c))
+
 ## [1.4.0-rc.10](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.9...v1.4.0-rc.10) (2026-10-30)
 
 ### Features
