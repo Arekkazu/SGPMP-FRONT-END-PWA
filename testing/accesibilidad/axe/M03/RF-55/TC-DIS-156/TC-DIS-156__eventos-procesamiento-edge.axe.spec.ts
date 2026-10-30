@@ -15,6 +15,9 @@
  * Herramientas: @axe-core/playwright en los 3 viewports (resultados/axe-TC-DIS-156.html/json) +
  * Lighthouse snapshot solo en escritorio. Sin escrituras: la vista es de solo lectura.
  */
+// | Fecha      | Nombre        | Que se hizo                                                    |
+// |------------|---------------|------------------------------------------------------------------|
+// | 2026-10-30 | Laura032005   | M03 RF-55: regex de severidad no reconocía la forma femenina "Moderada" |
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
@@ -120,7 +123,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Eventos de procesamiento E
     await page.keyboard.press('Enter');
     const dialogo = page.getByRole('dialog');
     await expect(dialogo, 'Enter sobre la fila debe abrir el detalle del evento').toBeVisible();
-    await expect.soft(dialogo, '4.1.2: el detalle debe mostrar la severidad como texto').toContainText(/leve|moderado|cr[ií]tico/i);
+    // 2026-10-30: la UI usa la forma femenina ("Leve/Moderada/Crítica", concuerda con "Severidad"),
+    // no la masculina del criterio (LEVE/MODERADO/CRITICO) — se acepta cualquiera de las dos.
+    await expect.soft(dialogo, '4.1.2: el detalle debe mostrar la severidad como texto').toContainText(/leve|moderad[oa]|cr[ií]tic[oa]/i);
     await escanear(page, TC_ID, __dirname, 'detalle-compuesta', testInfo, PASOS_LIGHTHOUSE);
     await page.keyboard.press('Escape');
   });
