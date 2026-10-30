@@ -1,7 +1,8 @@
 /* | Fecha      | Nombre   | Que se hizo |
    |------------|----------|-------------|
    | 2026-10-25 | Arekkazu | USAB-M03-M04 T-23: tablas que se vuelven tarjetas por debajo de 768px |
-   | 2026-10-29 | Arekkazu | TC-DIS-150/179 a11y: clase global .ds-sr-only (solo lector de pantalla) |  */
+   | 2026-10-29 | Arekkazu | TC-DIS-150/179 a11y: clase global .ds-sr-only (solo lector de pantalla) |
+   | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: .ds-kv, lista rótulo → valor (antes rejilla inline en BufferView) |  */
 
 /* Rejillas de contenido del DS v2.0 ("Reglas responsive por componente").
  *
@@ -31,6 +32,15 @@
 /* --bp-md: la tercera columna necesita tablet. */
 @media (min-width: 768px) {
   .ds-fg3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Lista rótulo → valor (`<dl>`): el rótulo ocupa lo que sobra y el valor se pega a la
+ * derecha. Dos pistas a cualquier ancho a propósito: el valor es corto y cabe a 360px. */
+.ds-kv {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s1) var(--s3);
+  margin: 0;
 }
 
 /* Contenido principal con un panel lateral de ancho fijo (el editor de

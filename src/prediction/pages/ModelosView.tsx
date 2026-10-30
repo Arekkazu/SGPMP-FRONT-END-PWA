@@ -2,8 +2,9 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: avisos de registro automático y solo lectura, intentos de registro no admitidos |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
+// | 2026-10-29 | Arekkazu | USAB-M04 prototipo RF-69/RF-70: franja «En producción» por tipo de modelo y nota de mínimos |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { formatearNumero } from '../../shared/i18n/formato';
+import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Boxes, RefreshCw, Rocket, AlertTriangle, Info } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -11,6 +12,9 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useModelos } from '../hooks/useModelos';
+import { modelosApi } from '../api/modelosApi';
+import { OptionCard } from '../../shared/design-system/OptionCard';
+import { MINIMO_F1, MINIMO_RECALL_RIESGO_ALTO } from '../components/ModelosTable';
 import { ModelosFiltros, MODELOS_FILTROS_VACIO, type ModelosFiltrosState } from '../components/ModelosFiltros';
 import { ModelosTable } from '../components/ModelosTable';
 import { ModeloDetalleModal } from '../components/ModeloDetalleModal';
@@ -19,7 +23,10 @@ import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { IntentosRegistroTable } from '../components/IntentosRegistroTable';
 import { RECURSO_MODELOS, RECURSO_AUDITORIA, RECURSO_OTA, ACCION_R, ACCION_U, ACCION_E } from '../rbac';
-import type { ListarModelosFiltros, VersionModeloResponse } from '../types';
+import { PARADIGMA_POR_TIPO, TIPO_MODELO_LABEL, type ListarModelosFiltros, type TipoModelo, type VersionModeloResponse } from '../types';
+
+const TIPOS = Object.keys(TIPO_MODELO_LABEL) as TipoModelo[];
+const pct = (v: number) => formatearNumero(v, { style: 'percent', maximumFractionDigits: 0 });
 
 export function ModelosView() {
   const { t } = useT('prediction');
@@ -36,6 +43,9 @@ export function ModelosView() {
   const [detalleSel, setDetalleSel] = useState<VersionModeloResponse | null>(null);
   const [detalleLoading, setDetalleLoading] = useState(false);
   const [confirmarActivar, setConfirmarActivar] = useState(false);
+  // Prototipo M04: qué versión responde hoy por cada tipo. Se consulta aparte porque la
+  // tabla está paginada y filtrada; sin respuesta, la franja no se muestra.
+  const [activos, setActivos] = useState<VersionModeloResponse[] | null>(null);
 
   const build = useCallback((f: ModelosFiltrosState): ListarModelosFiltros => {
     const api: ListarModelosFiltros = {};
@@ -45,6 +55,10 @@ export function ModelosView() {
   }, []);
 
   useEffect(() => { if (puedeVer) cargar({}, 1); }, [puedeVer, cargar]);
+  useEffect(() => {
+    if (!puedeVer || !online) return;
+    modelosApi.listar({ estado: 'ACTIVO', limit: 50 }).then((r) => setActivos(r.items), () => setActivos(null));
+  }, [puedeVer, online, detalleSel?.estado_version]);
   useEffect(() => { if (puedeVer && puedeVerAuditoria && online) cargarIntentos(); }, [puedeVer, puedeVerAuditoria, online, cargarIntentos]);
 
   const visibles = useMemo(() => {
@@ -109,9 +123,43 @@ export function ModelosView() {
           </span>
         </div>
 
+        {activos && (
+          <section aria-labelledby="modelos-produccion" style={{ marginBottom: 'var(--s5)' }}>
+            <h2 id="modelos-produccion" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>{t('modelosview.en_produccion')}</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 'var(--s3)' }}>
+              {TIPOS.map((tipo) => {
+                const m = activos.find((a) => a.tipo_modelo === tipo);
+                const titulo = <span style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{TIPO_MODELO_LABEL[tipo]}</span>;
+                if (!m) {
+                  return (
+                    <div key={tipo} style={{ padding: 'var(--s3) var(--s4)', borderRadius: 'var(--r-lg)', border: '1px dashed var(--surface-border)' }}>
+                      {titulo}
+                      <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)' }}>{t('modelosview.sin_modelo_activo')}</span>
+                      <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>{t('modelosview.sin_predicciones_tipo')}</span>
+                    </div>
+                  );
+                }
+                return (
+                  <OptionCard key={tipo} onClick={() => abrirDetalle(m)} style={{ padding: 'var(--s3) var(--s4)' }}>
+                    {titulo}
+                    <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      {m.nombre_version} · {PARADIGMA_POR_TIPO[tipo] === 'POBLACIONAL' || m.f1_score == null ? t('modelosview.poblacional') : t('modelosview.f1', { valor: pct(m.f1_score) })}
+                    </span>
+                    {m.fecha_despliegue && <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>{t('modelosview.desde', { fecha: formatearFecha(new Date(m.fecha_despliegue)) })}</span>}
+                  </OptionCard>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         <ModelosFiltros value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} />
 
         <ModelosTable modelos={visibles} loading={loading} onVer={abrirDetalle} />
+
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s3) 0 0' }}>
+          {t('modelosview.nota_minimos', { f1: pct(MINIMO_F1), recall: pct(MINIMO_RECALL_RIESGO_ALTO) })}
+        </p>
 
         <Paginacion
           pagina={paginacion.pagina}

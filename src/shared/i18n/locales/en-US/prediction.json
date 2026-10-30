@@ -116,7 +116,7 @@
     "sin_conexion_desc": "A distribution cannot be launched while offline.",
     "sin_dispositivos": "There are no active devices.",
     "tamano_fragmento": "Chunk size (bytes)",
-    "titulo": "New OTA distribution",
+    "titulo": "New send to the field",
     "ventana_fin": "Window end",
     "ventana_inicio": "Window start",
     "version": "Model version",
@@ -161,7 +161,7 @@
     "exitoso": "Successful",
     "fallido": "Failed",
     "mostrando_despliegues_cacheados": "Showing cached deployments.",
-    "nuevo_despliegue": "New deployment",
+    "nuevo_despliegue": "New send",
     "pendiente": "Pending",
     "recargar": "Reload",
     "sin_acceso_a_la_distribucion": "No access to distribution",
@@ -171,8 +171,8 @@
     "todas": "All",
     "todos": "All",
     "version": "Model version",
-    "titulo": "Model distribution (OTA)",
-    "descripcion": "Send active versions to field devices and track their status",
+    "titulo": "Send models to the field",
+    "descripcion": "Update the model on the farm devices that make predictions, even without internet",
     "desde_cache": "from cache",
     "kpi_total": "Total rollouts",
     "kpi_completados": "Completed",
@@ -180,7 +180,8 @@
     "kpi_errores": "With errors",
     "kpi_errores_sub": "device FAILED",
     "kpi_pendientes": "Pending",
-    "kpi_pendientes_sub": "waiting for the window or in progress"
+    "kpi_pendientes_sub": "waiting for the window or in progress",
+    "solo_lectura": "Read only"
   },
   "distribucionprogreso": {
     "error_seguimiento": "The distribution status could not be refreshed",
@@ -363,7 +364,8 @@
     "registrado": "Registered · owner",
     "fp_rutina": "False positives (routine)",
     "deteccion_clinica": "Clinical event detection",
-    "por_rf71": "RF-71 · process {{proceso}}…"
+    "por_rf71": "RF-71 · process {{proceso}}…",
+    "minimo": "minimum {{minimo}}"
   },
   "modelosview": {
     "activar": "Activate",
@@ -379,7 +381,14 @@
     "sin_conexion": "Offline",
     "registro_automatico_titulo": "Registration and approval are automatic.",
     "registro_automatico_texto": "Only retraining (RF-71) creates versions; the system evaluates them and decides Approved or Rejected without human input. Here you review metrics, add clinical notes and activate an Approved version. The engine only uses the Active version.",
-    "solo_lectura_texto": "Your role can only view: adding notes and activating require the Veterinarian or Administrator role."
+    "solo_lectura_texto": "Your role can only view: adding notes and activating require the Veterinarian or Administrator role.",
+    "en_produccion": "In production",
+    "sin_modelo_activo": "No active model",
+    "sin_predicciones_tipo": "No predictions for this type",
+    "desde": "Since {{fecha}}",
+    "poblacional": "Population model",
+    "f1": "F1 {{valor}}",
+    "nota_minimos": "The mark on each bar is the minimum to approve: F1 {{f1}} and high-risk sensitivity {{recall}} (RNF-02)."
   },
   "monitorinferenciaview": {
     "monitoreo_de_inferencia": "Inference Monitoring",
@@ -566,11 +575,13 @@
     "recargar": "Reload",
     "se_inactivara": "This will deactivate",
     "sin_acceso_al_catalogo": "No access to the catalog",
-    "sin_conexion": "Offline"
+    "sin_conexion": "Offline",
+    "activas_version": "{{activas}} active · catalog version {{version}}"
   },
   "prediccionpage": {
-    "modelos_ia": "AI models",
-    "secciones_de_prediccion": "Prediction sections"
+    "secciones_de_prediccion": "Prediction sections",
+    "seguimiento": "Follow-up",
+    "motor_y_auditoria": "Engine and audit"
   },
   "reentrenamientoview": {
     "algoritmo": "Algorithm",
@@ -934,5 +945,44 @@
   "catalogos": {
     "todas_las_especies": "All species",
     "variable_n": "Variable #{{id}}"
+  },
+  "estadosanitario": {
+    "titulo": "Health status",
+    "descripcion": "Risk of each batch or animal from the engine’s latest prediction and its contagion risk.",
+    "resumen_filtra": "Summary by risk level. Tap a card to filter",
+    "estado_sanitario": "Health status",
+    "confianza": "confidence",
+    "probable": "Likely:",
+    "sin_enfermedad": "No likely disease",
+    "score": "Anomaly score {{score}} (threshold {{umbral}})",
+    "sin_prediccion": "No prediction for this batch yet: check its sensors in Telemetry.",
+    "sin_prediccion_corto": "No prediction",
+    "tendencia_sube": "Up in 24 h",
+    "tendencia_baja": "Down in 24 h",
+    "tendencia_estable": "Steady in 24 h",
+    "contagio": "Contagion risk",
+    "ultima": "Last prediction {{hora}}",
+    "evaluar": "Evaluate",
+    "ver_por_que": "See why",
+    "vacio": "No predictions for your farms yet.",
+    "ninguno_filtro": "No batch at that level.",
+    "kpi_sub_3": "Act today",
+    "kpi_sub_2": "Watch closely",
+    "kpi_sub_1": "Watch",
+    "kpi_sub_0": "Nothing new",
+    "kpi_sub_sin": "Check sensors",
+    "ultimas_24h": "Last 24 hours",
+    "enfermedades": "Most likely diseases",
+    "por_que": "Why this contagion risk?",
+    "factor_fs": "Health",
+    "factor_fa": "Environment",
+    "factor_fd": "Density",
+    "pesa": "weighs {{peso}}",
+    "factor_fs_desc": "condition of the animals according to the engine’s predictions.",
+    "factor_fa_desc": "surroundings: temperature, humidity, pH, oxygen and ammonia.",
+    "factor_fd_desc": "how full the space is compared with the maximum allowed density.",
+    "sin_contagio": "This batch has no contagion calculation yet.",
+    "modelo": "Model {{version}} · {{hora}}",
+    "detalle_tecnico": "See technical detail"
   }
 }

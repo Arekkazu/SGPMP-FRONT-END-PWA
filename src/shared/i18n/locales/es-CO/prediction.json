@@ -116,13 +116,13 @@
     "sin_conexion_desc": "No se puede lanzar una distribución sin conexión.",
     "sin_dispositivos": "No hay dispositivos activos.",
     "tamano_fragmento": "Tamaño de fragmento (bytes)",
-    "titulo": "Nueva distribución OTA",
+    "titulo": "Nuevo envío a campo",
     "ventana_fin": "Fin de la ventana",
     "ventana_inicio": "Inicio de la ventana",
     "version": "Versión del modelo",
     "paso_version": "Selección de versión",
     "paso_config": "Configuración",
-    "paso_dispositivos": "Dispositivos",
+    "paso_dispositivos": "Equipos",
     "pasos_aria": "Pasos del nuevo despliegue",
     "anterior": "Anterior",
     "siguiente": "Siguiente",
@@ -161,7 +161,7 @@
     "exitoso": "Exitoso",
     "fallido": "Fallido",
     "mostrando_despliegues_cacheados": "Mostrando despliegues cacheados.",
-    "nuevo_despliegue": "Nuevo despliegue",
+    "nuevo_despliegue": "Nuevo envío",
     "pendiente": "Pendiente",
     "recargar": "Recargar",
     "sin_acceso_a_la_distribucion": "Sin acceso a la distribución",
@@ -171,8 +171,8 @@
     "todas": "Todas",
     "todos": "Todos",
     "version": "Versión del modelo",
-    "titulo": "Distribución de modelos (OTA)",
-    "descripcion": "Envía versiones activas a los dispositivos de campo y sigue su estado",
+    "titulo": "Envío de modelos a campo",
+    "descripcion": "Actualiza el modelo de los equipos que predicen en la finca, aunque no tengan internet",
     "desde_cache": "desde caché",
     "kpi_total": "Despliegues totales",
     "kpi_completados": "Completados",
@@ -180,7 +180,8 @@
     "kpi_errores": "Con errores",
     "kpi_errores_sub": "dispositivo FALLIDO",
     "kpi_pendientes": "Pendientes",
-    "kpi_pendientes_sub": "en espera de ventana o en proceso"
+    "kpi_pendientes_sub": "en espera de ventana o en proceso",
+    "solo_lectura": "Solo lectura"
   },
   "distribucionprogreso": {
     "error_seguimiento": "No se pudo actualizar el estado de la distribución",
@@ -363,7 +364,8 @@
     "registrado": "Registrado · responsable",
     "fp_rutina": "Falsos positivos (rutina)",
     "deteccion_clinica": "Detección de eventos clínicos",
-    "por_rf71": "RF-71 · proceso {{proceso}}…"
+    "por_rf71": "RF-71 · proceso {{proceso}}…",
+    "minimo": "mínimo {{minimo}}"
   },
   "modelosview": {
     "activar": "Activar",
@@ -379,7 +381,14 @@
     "sin_conexion": "Sin conexión",
     "registro_automatico_titulo": "El registro y la aprobación son automáticos.",
     "registro_automatico_texto": "Solo el reentrenamiento (RF-71) crea versiones; el sistema las evalúa y decide Aprobado o Rechazado sin intervención humana. Aquí revisas las métricas, registras notas clínicas y activas una versión Aprobada. El motor solo usa la versión Activa.",
-    "solo_lectura_texto": "Tu rol solo puede consultar: registrar notas y activar requieren el rol Veterinario o Administrador."
+    "solo_lectura_texto": "Tu rol solo puede consultar: registrar notas y activar requieren el rol Veterinario o Administrador.",
+    "en_produccion": "En producción",
+    "sin_modelo_activo": "Sin modelo activo",
+    "sin_predicciones_tipo": "No hay predicciones para este tipo",
+    "desde": "Desde el {{fecha}}",
+    "poblacional": "Modelo poblacional",
+    "f1": "F1 {{valor}}",
+    "nota_minimos": "La rayita de cada barra es el mínimo para aprobar: F1 {{f1}} y sensibilidad de riesgo alto {{recall}} (RNF-02)."
   },
   "monitorinferenciaview": {
     "monitoreo_de_inferencia": "Monitoreo de Inferencia",
@@ -566,11 +575,13 @@
     "recargar": "Recargar",
     "se_inactivara": "Se inactivará",
     "sin_acceso_al_catalogo": "Sin acceso al catálogo",
-    "sin_conexion": "Sin conexión"
+    "sin_conexion": "Sin conexión",
+    "activas_version": "{{activas}} activas · versión {{version}} del catálogo"
   },
   "prediccionpage": {
-    "modelos_ia": "Modelos IA",
-    "secciones_de_prediccion": "Secciones de predicción"
+    "secciones_de_prediccion": "Secciones de predicción",
+    "seguimiento": "Seguimiento",
+    "motor_y_auditoria": "Motor y auditoría"
   },
   "reentrenamientoview": {
     "algoritmo": "Algoritmo",
@@ -934,5 +945,44 @@
   "catalogos": {
     "todas_las_especies": "Todas las especies",
     "variable_n": "Variable #{{id}}"
+  },
+  "estadosanitario": {
+    "titulo": "Estado sanitario",
+    "descripcion": "Riesgo de cada lote o animal según la última predicción del motor y su riesgo de contagio.",
+    "resumen_filtra": "Resumen por nivel de riesgo. Toca una tarjeta para filtrar",
+    "estado_sanitario": "Estado sanitario",
+    "confianza": "confianza",
+    "probable": "Probable:",
+    "sin_enfermedad": "Sin enfermedad probable",
+    "score": "Puntaje de anomalía {{score}} (umbral {{umbral}})",
+    "sin_prediccion": "Aún no hay predicción para este lote: revisa sus sensores en Telemetría.",
+    "sin_prediccion_corto": "Sin predicción",
+    "tendencia_sube": "Subió en 24 h",
+    "tendencia_baja": "Bajó en 24 h",
+    "tendencia_estable": "Estable en 24 h",
+    "contagio": "Riesgo de contagio",
+    "ultima": "Última predicción {{hora}}",
+    "evaluar": "Evaluar",
+    "ver_por_que": "Ver por qué",
+    "vacio": "Aún no hay predicciones para tus fincas.",
+    "ninguno_filtro": "Ningún lote en ese nivel.",
+    "kpi_sub_3": "Actuar hoy",
+    "kpi_sub_2": "Vigilar de cerca",
+    "kpi_sub_1": "Vigilar",
+    "kpi_sub_0": "Sin novedad",
+    "kpi_sub_sin": "Revisar sensores",
+    "ultimas_24h": "Últimas 24 horas",
+    "enfermedades": "Enfermedades más probables",
+    "por_que": "¿Por qué este riesgo de contagio?",
+    "factor_fs": "Sanitario",
+    "factor_fa": "Ambiental",
+    "factor_fd": "Densidad",
+    "pesa": "pesa {{peso}}",
+    "factor_fs_desc": "estado de los animales según las predicciones del motor.",
+    "factor_fa_desc": "condiciones del entorno: temperatura, humedad, pH, oxígeno y amoníaco.",
+    "factor_fd_desc": "qué tan lleno está el espacio frente a la densidad máxima permitida.",
+    "sin_contagio": "Este lote aún no tiene cálculo de contagio.",
+    "modelo": "Modelo {{version}} · {{hora}}",
+    "detalle_tecnico": "Ver detalle técnico"
   }
 }

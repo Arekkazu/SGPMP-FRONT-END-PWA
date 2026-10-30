@@ -1,7 +1,8 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-05/M3-06/T-19: historial sin pasos repetidos, umbral superado y motivo legible |
-import type { HistoricoEstadoAlertaSchema } from '../types';
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo RF-57: ubicacionAlerta vive aquí para la lista y el detalle |
+import type { AlertaSchema, HistoricoEstadoAlertaSchema } from '../types';
 import { etiquetaCodigo } from './etiquetaCodigo';
 
 /**
@@ -63,4 +64,14 @@ export function motivoLegible(motivo: string | null | undefined): string | null 
   if (!motivo) return null;
   const m = MOTIVO_CREACION.exec(motivo.trim());
   return m ? etiquetaCodigo(m[1]) : motivo;
+}
+
+/** M3-06: "Finca › Área › Sensor" con los nombres que mande el backend; si no, los IDs. */
+export function ubicacionAlerta(a: AlertaSchema): string {
+  const partes = [
+    a.nombre_finca,
+    a.nombre_infraestructura ?? (a.id_infraestructura != null ? `Área #${a.id_infraestructura}` : null),
+    a.nombre_sensor ?? (a.id_sensor != null ? `Sensor #${a.id_sensor}` : null),
+  ].filter(Boolean);
+  return partes.length ? partes.join(' › ') : '—';
 }
