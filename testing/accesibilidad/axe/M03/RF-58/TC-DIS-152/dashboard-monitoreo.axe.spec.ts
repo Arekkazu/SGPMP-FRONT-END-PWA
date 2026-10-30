@@ -5,7 +5,12 @@
  * Ruta: /telemetria/monitoreo — MonitoreoView + UnidadCard + SensorCard (SemaforoPill, Gauge)
  * + SensorDetalleModal
  *
- * Primera ejecución sobre el ambiente TEST nuevo (app en /sigab-test, API en /api-sgpmp-test).
+ * Tercera ejecución (2026-10-29) sobre 1.4.0-rc.11, ambiente TEST (app en /sigab-test, API en
+ * /api-sgpmp-test). Desde el prototipo 13.4 la vista agrupa los sensores por área en secciones
+ * plegables (UnidadCard: botón con aria-expanded y un titular con lo que le pasa al área); dentro,
+ * los sensores con problema van en tarjeta (SensorCard), los normales en fila (SensorFila) y los
+ * que no reportan en un <details>. El semáforo se lee Normal / Cerca del límite / Fuera de rango /
+ * Sin datos (o "Sin umbral configurado"). Los avisos de degradación son Alert (role="alert").
  *
  * Criterios (hoja "CASOS DE PRUEBA UI/UX"): 0 violaciones axe A/AA, con énfasis CRÍTICO en
  *   1.4.1 — cada estado del semáforo VERDE/AMARILLO/ROJO/GRIS se comunica también con texto o
@@ -48,8 +53,10 @@ const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const REFRESCO_MS = 30_000;
 const LATENCIA_NIVEL_2_MS = 3_500;
 
-// Texto visible de SemaforoPill por estado (src/telemetry/components/SemaforoPill.tsx)
-const ETIQUETA_SEMAFORO: Record<string, string> = { VERDE: 'Normal', AMARILLO: 'Advertencia', ROJO: 'Fuera de rango', GRIS: 'Sin señal' };
+// Texto visible de SemaforoPill por estado (src/telemetry/components/SemaforoPill.tsx, desde M3-11)
+const ETIQUETA_SEMAFORO: Record<string, string> = { VERDE: 'Normal', AMARILLO: 'Cerca del límite', ROJO: 'Fuera de rango', GRIS: 'Sin datos' };
+const RE_ESTADO = /^(Normal|Cerca del límite|Fuera de rango|Sin datos|Sin umbral configurado)$/;
+const RE_ESTADO_TEXTO = /Normal|Cerca del límite|Fuera de rango|Sin datos|Sin umbral configurado/;
 
 const ruta = (url: string) => new URL(url).pathname.replace(/^.*\/api-sgpmp-test/, '');
 
@@ -95,7 +102,21 @@ async function irAMonitoreo(page: Page) {
   await expect(page.getByRole('heading', { level: 1, name: 'Monitoreo en Tiempo Real' })).toBeVisible({ timeout: 60_000 });
   // 2026-10-27: el conteo ya no usa el literal "(es)" — i18next pluraliza a
   // "1 sensor" / "N sensores" desde el fix de T-22 (conteo.sensores_one/_other).
-  await expect(page.getByText(/\d+ sensores?/)).toBeVisible({ timeout: 60_000 });
+  // 1.4.0: el texto aparece también en las áreas ("N sensores sin datos"): se toma el subtítulo.
+  await expect(page.locator('h1 + p')).toContainText(/\d+ sensores?/, { timeout: 60_000 });
+  await expect(page.locator('main section').first()).toBeVisible({ timeout: 60_000 });
+}
+
+/** Abre todas las áreas plegadas y los grupos "sin datos", para leer cada sensor. */
+async function desplegarTodo(page: Page) {
+  const cerradas = page.locator('main section > button[aria-expanded="false"]');
+  while (await cerradas.count()) await cerradas.first().click();
+  await page.locator('main details:not([open]) > summary').evaluateAll((ss) => ss.forEach((s) => (s.parentElement as HTMLDetailsElement).open = true));
+}
+
+/** Botones de sensor (tarjeta o fila) dentro de las áreas. */
+function sensoresEnPantalla(page: Page) {
+  return page.locator('main [id^="area-"] button.ds-option');
 }
 
 /** Textos de todas las regiones que un lector de pantalla anuncia sin mover el foco. */
@@ -130,7 +151,9 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 // ── Pruebas ──────────────────────────────────────────────────────────────────
 
 test.describe('TC-DIS-152 — Dashboard de Monitoreo en Tiempo Real', () => {
-  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
+  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás.
+  // El timeout global (30 s) no alcanza para login + axe + Lighthouse.
+  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_152_VIEWPORTS.`);
@@ -146,54 +169,58 @@ test.describe('TC-DIS-152 — Dashboard de Monitoreo en Tiempo Real', () => {
     testInfo.annotations.push({ type: 'Datos', description: `${datos.sensores.length} sensores reales · estados: ${enDatos.join(', ')}` });
     expect(enDatos, 'Precondición: datos con los 4 estados del semáforo').toEqual(['AMARILLO', 'GRIS', 'ROJO', 'VERDE']);
 
-    // 1.4.1 por tarjeta de sensor: el pill del semáforo tiene su texto y su ícono, y coincide con el dato
-    const tarjetas = page.locator('button.ds-option').filter({ has: page.getByRole('img') });
+    // Las áreas en reposo plegadas se abren para leer todos los sensores de la página
+    const plegadas = await page.locator('main section > button[aria-expanded="false"]').count();
+    await desplegarTodo(page);
+
+    // 1.4.1 por sensor (tarjeta o fila): el pill del semáforo tiene su texto y su ícono, y coincide con el dato
+    const tarjetas = sensoresEnPantalla(page);
     const n = await tarjetas.count();
-    expect(n, 'Hay tarjetas de sensor').toBeGreaterThan(0);
-    const leidas = await tarjetas.evaluateAll((els) => els.map((el) => {
-      const pills = [...el.querySelectorAll('span')].filter((s) => /^(Normal|Advertencia|Fuera de rango|Sin señal)$/.test(s.textContent?.trim() ?? ''));
-      const pill = pills[0];
+    expect(n, 'Hay sensores en pantalla').toBeGreaterThan(0);
+    const leidas = await tarjetas.evaluateAll((els, re) => els.map((el) => {
+      const pill = [...el.querySelectorAll('span')].find((s) => new RegExp(re).test(s.textContent?.trim() ?? '') && s.querySelector('svg'))
+        ?? [...el.querySelectorAll('span')].find((s) => new RegExp(re).test(s.textContent?.trim() ?? ''));
       return {
-        nombre: el.querySelector('div div')?.textContent?.trim() ?? '',
+        nombre: (el.querySelector('div div, span span')?.textContent ?? '').trim(),
         estado: pill?.textContent?.trim() ?? '',
-        icono: !!pill?.parentElement?.querySelector('svg') || !!pill?.querySelector('svg'),
+        icono: !!pill?.querySelector('svg'),
       };
-    }));
+    }), RE_ESTADO.source);
     const porEstado: Record<string, number> = {};
     for (const t of leidas) {
       porEstado[t.estado || '(sin texto)'] = (porEstado[t.estado || '(sin texto)'] ?? 0) + 1;
-      expect.soft(t.estado, `DEFECTO 1.4.1: la tarjeta "${t.nombre}" no muestra el estado del semáforo en texto`).toMatch(/^(Normal|Advertencia|Fuera de rango|Sin señal)$/);
+      expect.soft(t.estado, `DEFECTO 1.4.1: el sensor "${t.nombre}" no muestra el estado del semáforo en texto`).toMatch(RE_ESTADO);
       expect.soft(t.icono, `DEFECTO 1.4.1: el estado "${t.estado}" de "${t.nombre}" no tiene ícono`).toBe(true);
     }
-    testInfo.annotations.push({ type: 'Semáforo en pantalla', description: JSON.stringify(porEstado) });
+    testInfo.annotations.push({ type: 'Semáforo en pantalla', description: `${n} sensores (${plegadas} áreas estaban plegadas) · ${JSON.stringify(porEstado)}` });
     for (const [codigo, texto] of Object.entries(ETIQUETA_SEMAFORO)) {
-      if (enDatos.includes(codigo)) expect.soft(porEstado[texto] ?? 0, `El estado ${codigo} se muestra como "${texto}"`).toBeGreaterThan(0);
+      if (enDatos.includes(codigo) && codigo !== 'GRIS') expect.soft(porEstado[texto] ?? 0, `El estado ${codigo} se muestra como "${texto}"`).toBeGreaterThan(0);
     }
+    if (enDatos.includes('GRIS')) expect.soft((porEstado['Sin datos'] ?? 0) + (porEstado['Sin umbral configurado'] ?? 0), 'El estado GRIS se muestra como "Sin datos" o "Sin umbral configurado"').toBeGreaterThan(0);
 
-    // 4.1.2: cada tarjeta (botón) tiene nombre accesible con el sensor y su estado
-    const nombres = await tarjetas.evaluateAll((els) => els.slice(0, 40).map((el) => (el.getAttribute('aria-label') ?? el.textContent ?? '').replace(/\s+/g, ' ').trim()));
+    // 4.1.2: cada sensor (botón) tiene nombre accesible con el sensor y su estado
+    const nombres = await tarjetas.evaluateAll((els) => els.slice(0, 60).map((el) => (el.getAttribute('aria-label') ?? el.textContent ?? '').replace(/\s+/g, ' ').trim()));
     for (const nombre of nombres) {
-      expect.soft(nombre, 'DEFECTO 4.1.2: tarjeta de sensor sin nombre accesible con su estado').toMatch(/Normal|Advertencia|Fuera de rango|Sin señal/);
+      expect.soft(nombre, 'DEFECTO 4.1.2: sensor sin nombre accesible con su estado').toMatch(RE_ESTADO_TEXTO);
     }
 
-    // 1.4.1 / 1.3.1 en el resumen de cada unidad: el estado general y los contadores con texto
-    const unidades = await page.locator('section > div:first-child').evaluateAll((els) => els.map((el) => {
-      const pills = [...el.querySelectorAll('span')].map((s) => s.textContent?.trim() ?? '');
-      const estadoGeneral = pills.find((t) => /^(VERDE|AMARILLO|ROJO|GRIS|Normal|Advertencia|Fuera de rango|Sin señal)$/.test(t)) ?? '';
-      const contadores = [...el.querySelectorAll('span[title]')].map((s) => ({
-        titulo: s.getAttribute('title') ?? '',
-        visible: (s.textContent ?? '').trim(),
-        etiquetaAccesible: s.getAttribute('aria-label') ?? '',
-      }));
-      return { nombre: el.querySelector('div div div div')?.textContent?.trim() ?? '', estadoGeneral, contadores };
+    // 1.4.1 / 1.3.1 / 4.1.2 en cada área: botón con estado expandido y titular con lo que le pasa, contadores con texto
+    const unidades = await page.locator('main section > button[aria-expanded]').evaluateAll((bs) => bs.map((b) => {
+      const visibles = [...b.querySelectorAll('span')].filter((s) => s.querySelector('svg')).map((s) => (s.textContent ?? '').replace(/\s+/g, ' ').trim());
+      return {
+        nombre: (b.querySelector('div div div')?.textContent ?? '').trim(),
+        expandido: b.getAttribute('aria-expanded'),
+        controla: b.getAttribute('aria-controls'),
+        texto: (b.textContent ?? '').replace(/\s+/g, ' ').trim(),
+        contadores: visibles,
+      };
     }));
-    testInfo.annotations.push({ type: 'Unidades', description: unidades.map((u) => `${u.nombre}: ${u.estadoGeneral}`).join(' · ') });
-    // Un defecto por tipo (no uno por unidad): se listan las unidades afectadas
-    const colorComoEstado = unidades.filter((u) => /^(VERDE|AMARILLO|ROJO|GRIS)$/.test(u.estadoGeneral)).map((u) => `${u.nombre}=${u.estadoGeneral}`);
-    expect.soft(colorComoEstado, 'DEFECTO 1.4.1: el estado general de la unidad muestra el nombre del color (VERDE/ROJO/GRIS), no su significado, y sin ícono').toEqual([]);
-    // El texto visible es solo un número; "Sensores en línea" vive en title, que los lectores no leen de forma fiable
-    const contadoresSinEtiqueta = [...new Set(unidades.flatMap((u) => u.contadores.filter((c) => !/\D/.test(c.visible) && !c.etiquetaAccesible).map((c) => c.titulo)))];
-    expect.soft(contadoresSinEtiqueta, `DEFECTO 1.3.1: contadores de las ${unidades.length} unidades que muestran solo un número (la etiqueta está solo en title)`).toEqual([]);
+    testInfo.annotations.push({ type: 'Áreas', description: unidades.slice(0, 6).map((u) => `${u.texto.slice(0, 120)} [aria-expanded=${u.expandido}]`).join(' ‖ ') });
+    expect.soft(unidades.filter((u) => !u.controla).map((u) => u.nombre), '4.1.2: cada área plegable referencia su contenido (aria-controls)').toEqual([]);
+    const colorComoEstado = unidades.filter((u) => /\b(VERDE|AMARILLO|ROJO|GRIS)\b/.test(u.texto)).map((u) => u.nombre);
+    expect.soft(colorComoEstado, 'DEFECTO 1.4.1: el estado del área muestra el nombre del color, no su significado').toEqual([]);
+    const contadoresSoloNumero = [...new Set(unidades.flatMap((u) => u.contadores.filter((c) => /^\d+$/.test(c))))];
+    expect.soft(contadoresSoloNumero, 'DEFECTO 1.3.1: contadores de las áreas que muestran solo un número').toEqual([]);
 
     await escanear(page, 'nivel0', testInfo);
   });
@@ -202,30 +229,35 @@ test.describe('TC-DIS-152 — Dashboard de Monitoreo en Tiempo Real', () => {
     const datos = await interceptar(page);
     await page.clock.install();
     await irAMonitoreo(page);
-    await page.getByLabel('Filtrar por ID de infraestructura').focus();
+    // Foco fuera de los avisos: en el selector de área
+    await page.locator('#monitoreo-area').focus();
     const antes = await textoAnunciado(page);
 
     // Latencia 3,5 s en el refresco automático (Nivel 2: 2 000 < latencia ≤ 5 000 ms)
     datos.modo = 'retraso';
     await page.clock.runFor(REFRESCO_MS + 1_000);
     await page.clock.resume();
-    await page.waitForTimeout(LATENCIA_NIVEL_2_MS + 3_000);
+    const indicador = page.getByText(/Actualizaci[oó]n con retraso/i);
+    await expect.soft(indicador.first(), 'DEFECTO RF-58 Nivel 2: no aparece el indicador "Actualización con retraso"').toBeVisible({ timeout: LATENCIA_NIVEL_2_MS + 8_000 });
 
     const anunciado = await textoAnunciado(page);
-    const visible = await page.getByText(/Actualizaci[oó]n con retraso/i).count();
+    const visible = await indicador.count();
     const subtitulo = (await page.locator('h1 + p').innerText()).trim();
-    testInfo.annotations.push({ type: 'Nivel 2', description: `indicador visible: ${visible} · regiones live: "${anunciado || '(vacío)'}" · subtítulo: "${subtitulo}"` });
-    expect.soft(visible, 'DEFECTO RF-58 Nivel 2: no aparece el indicador "Actualización con retraso"').toBeGreaterThan(0);
+    const avisoTexto = visible ? (await page.getByRole('alert').filter({ hasText: /retraso/i }).first().innerText().catch(() => '')).replace(/\s+/g, ' ') : '';
+    testInfo.annotations.push({ type: 'Nivel 2', description: `indicador visible: ${visible} · aviso: "${avisoTexto}" · regiones live: "${anunciado || '(vacío)'}" · subtítulo: "${subtitulo}"` });
     expect.soft(anunciado === antes ? '' : anunciado, 'DEFECTO 4.1.3: el indicador de degradación (Nivel 2) no se anuncia por aria-live').toMatch(/retraso/i);
-    expect.soft(subtitulo, 'DEFECTO RF-58 Nivel 2: el indicador no muestra la hora del último dato').toMatch(/\d{1,2}:\d{2}/);
+    expect.soft(`${avisoTexto} ${subtitulo}`, 'DEFECTO RF-58 Nivel 2: el indicador no muestra la hora del último dato').toMatch(/\d{1,2}:\d{2}/);
     await escanear(page, 'nivel2-retraso', testInfo);
+    // El aviso debe seguir mientras dura la degradación (el Alert info del DS se oculta solo a los 6 s)
+    await page.waitForTimeout(8_000);
+    expect.soft(await indicador.count(), 'DEFECTO RF-58 Nivel 2: el aviso "Actualización con retraso" desaparece solo a los pocos segundos aunque la degradación sigue').toBeGreaterThan(0);
   });
 
   test('c. [4.1.3] Nivel 3: "Trabajando sin conexión" visible y anunciado (Datos simulados)', async ({ page, context }, testInfo) => {
     const datos = await interceptar(page);
     await page.clock.install();
     await irAMonitoreo(page);
-    await page.getByLabel('Filtrar por ID de infraestructura').focus();
+    await page.locator('#monitoreo-area').focus();
 
     // 1) El backend deja de responder en el refresco automático (Nivel 3: ausencia de respuesta)
     datos.modo = 'sin-respuesta';
@@ -258,7 +290,8 @@ test.describe('TC-DIS-152 — Dashboard de Monitoreo en Tiempo Real', () => {
   test('d. Teclado: detalle de un sensor por teclado, foco visible y retorno del foco (2.1.1 / 2.4.3 / 2.4.7)', async ({ page }, testInfo) => {
     await interceptar(page);
     await irAMonitoreo(page);
-    const tarjeta = page.locator('button.ds-option').filter({ hasText: /Fuera de rango|Advertencia/ }).filter({ has: page.getByRole('img') }).first();
+    const tarjeta = sensoresEnPantalla(page).filter({ hasText: /Fuera de rango|Cerca del límite/ }).first();
+    await page.keyboard.press('Shift');
     await tarjeta.focus();
     const foco = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement;
