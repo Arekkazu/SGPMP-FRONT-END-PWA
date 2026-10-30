@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real |
+// | 2026-10-29 | Arekkazu | USAB-M04 prototipo RF-64: el encabezado dice cuántas están activas y la versión del catálogo |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -112,6 +113,11 @@ export function PatologiasView() {
             <Stethoscope size={20} aria-hidden />{t('patologiasview.catalogo_de_patologias')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
             {loading ? 'Cargando…' : t('conteo.patologias', { count: total, n: formatearNumero(total) })}
+            {/* Prototipo M04: activas y versión del catálogo, que sube con cada cambio. */}
+            {!loading && patologias.length > 0 && ` · ${t('patologiasview.activas_version', {
+              activas: formatearNumero(patologias.filter((p) => p.es_activo).length),
+              version: Math.max(...patologias.map((p) => p.version_catalogo)),
+            })}`}
             {fromCache && ' · desde caché'}
           </p>
         </div>
