@@ -2,7 +2,7 @@
 // |------------|---------|-------------|
 // | 2026-10-22 | Leandro | FE-12 RF-57: verifica permisos, transiciones y rechazos HTTP |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-19: la fila muestra el tipo de alerta legible |
-// | 2026-10-29 | Arekkazu | USAB-M03 prototipo RF-57: sin vista móvil aparte; la integración queda en Alertas |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo RF-57: sin vista móvil aparte; acciones desde la tarjeta y desde el detalle |
 import React, { useContext } from 'react';
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -207,23 +207,32 @@ describe('FE-12 mutación HTTP real con transporte simulado', () => {
   });
 });
 
-describe('FE-12 integración de la vista Alertas', () => {
+// Prototipo M03: la acción se toma desde la tarjeta o desde el detalle; las dos rutas
+// respetan los mismos permisos y transiciones (RF-57).
+describe.each(['detalle', 'tarjeta'] as const)('FE-12 integración de Alertas desde %s', (via) => {
+  /** Zona donde están los botones de acción: el diálogo de detalle o la tarjeta. */
+  let zona: () => HTMLElement;
   async function abrir() {
     render(<AlertasView />, { wrapper: Wrapper });
-    const fila = await screen.findByText('Temperatura critica');
-    fireEvent.click(fila.closest('tr')!);
-    await screen.findByRole('dialog');
+    await screen.findByText(/Temperatura critica/);
+    if (via === 'detalle') {
+      fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
+      await screen.findByRole('dialog');
+      zona = () => screen.getByRole('dialog');
+    } else {
+      zona = () => screen.getByRole('article');
+    }
   }
   it('oculta Descartar con U y sin D', async () => {
     sesion = { ...sesion, permisos: [R, U] };
     await abrir();
-    await screen.findByRole('button', { name: 'Tomar en atención' });
+    await within(zona()).findByRole('button', { name: 'Tomar en atención' });
     expect(screen.queryByRole('button', { name: 'Descartar' })).not.toBeInTheDocument();
   });
   it.each([403, 422])('rechazo %s conserva motivo y estado sin reintentar', async (status) => {
     statusPatch = status; mensaje = 'Rechazo público verificable'; errorCode = status === 403 ? 'ACCESO_DENEGADO' : 'TRANSICION_INVALIDA';
     await abrir();
-    fireEvent.click(await screen.findByRole('button', { name: 'Descartar' }));
+    fireEvent.click(await within(zona()).findByRole('button', { name: 'Descartar' }));
     const dialogo = screen.getByRole('dialog', { name: 'Descartar alerta (falso positivo)' });
     fireEvent.change(within(dialogo).getByRole('textbox'), { target: { value: 'Motivo sin perder' } });
     fireEvent.click(within(dialogo).getByRole('button', { name: 'Descartar' }));

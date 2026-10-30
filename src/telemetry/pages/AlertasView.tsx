@@ -6,6 +6,7 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-150 RF-57 a11y 4.1.3/2.4.3: refresco cada 60 s, anuncios y foco de regreso |
 // | 2026-10-29 | Arekkazu | USAB-M03 prototipo RF-57: las tarjetas del resumen filtran por estado |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo T-23 RF-57: alertas en tarjetas con la acción a un toque |
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -20,7 +21,7 @@ import { accionesAlerta } from '../lib/accionesAlerta';
 import { useAlertas } from '../hooks/useAlertas';
 import { useAlertaDetalle } from '../hooks/useAlertaDetalle';
 import { AlertasFiltros, ALERTAS_FILTROS_VACIO, type AlertasFiltrosState } from '../components/AlertasFiltros';
-import { AlertasTable } from '../components/AlertasTable';
+import { AlertasLista } from '../components/AlertasLista';
 import { useAreas } from '../hooks/useAreas';
 import { useActivos } from '../hooks/useActivos';
 import { AlertaDetalleModal } from '../components/AlertaDetalleModal';
@@ -52,6 +53,9 @@ export function AlertasView() {
   const activos = useActivos();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [accion, setAccion] = useState<NuevoEstadoAlerta | null>(null);
+  // Prototipo M03: la acción se toma desde la tarjeta, sin abrir el detalle. `enLinea` es la
+  // alerta de la lista sobre la que se actúa; sin ella, la acción viene del detalle.
+  const [enLinea, setEnLinea] = useState<AlertaSchema | null>(null);
   // a11y 4.1.3 (TC-DIS-150): alerta crítica nueva (assertive) y cambios de estado (polite).
   const [anuncioCritico, setAnuncioCritico] = useState('');
   const [anuncio, setAnuncio] = useState('');
@@ -122,19 +126,42 @@ export function AlertasView() {
     if (saveError?.status === 422 && selectedId != null) void detalleHook.cargar(selectedId, true);
   }, [saveError, selectedId, detalleHook.cargar]);
 
+  // 422 desde la tarjeta: el estado cambió en el servidor; se trae el actual para el diálogo.
+  const idEnLinea = enLinea?.id_alerta;
+  useEffect(() => {
+    if (saveError?.status === 422 && idEnLinea != null) {
+      void detalleHook.cargar(idEnLinea, true).then((actual) => { if (actual) setEnLinea(actual); });
+    }
+  }, [saveError, idEnLinea, detalleHook.cargar]);
+
+  const accionEnLinea = (a: AlertaSchema, estado: NuevoEstadoAlerta) => {
+    if (!online || saving || !accionesAlerta(a.estado_alerta, permisosAcciones).includes(estado)) return;
+    origenFoco.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    detalleHook.limpiar(); limpiarSaveError(); setEnLinea(a); setAccion(estado);
+  };
+  const cerrarAccion = () => {
+    setAccion(null);
+    if (enLinea) {
+      setEnLinea(null); detalleHook.limpiar();
+      window.setTimeout(() => { if (origenFoco.current?.isConnected) origenFoco.current.focus(); }, 0);
+    }
+  };
+  // La alerta sobre la que se confirma: la de la tarjeta o la del detalle abierto.
+  const objetivo: AlertaSchema | null = enLinea ?? detalleHook.detalle;
+
   const elegirAccion = (estado: NuevoEstadoAlerta) => {
     if (!online || saving || !detalleHook.detalle || !accionesAlerta(detalleHook.detalle.estado_alerta, permisosAcciones).includes(estado)) return;
     limpiarSaveError(); setAccion(estado);
   };
 
   const confirmarCambio = async (dto: Parameters<typeof cambiarEstado>[1]) => {
-    if (selectedId == null || saving || !online || detalleHook.loading || !detalleHook.detalle
-      || !accionesAlerta(detalleHook.detalle.estado_alerta, permisosAcciones).includes(dto.nuevo_estado)) return;
-    const ok = await cambiarEstado(selectedId, dto);
+    if (!objetivo || saving || !online || detalleHook.loading
+      || !accionesAlerta(objetivo.estado_alerta, permisosAcciones).includes(dto.nuevo_estado)) return;
+    const id = objetivo.id_alerta;
+    const ok = await cambiarEstado(id, dto);
     if (ok) {
-      setAccion(null);
-      cerrarDetalle();
-      setAnuncio(t('alertasview.anuncio_estado', { id: selectedId, estado: etiquetaEstadoAlerta(dto.nuevo_estado) }));
+      if (enLinea) cerrarAccion(); else { setAccion(null); cerrarDetalle(); }
+      setAnuncio(t('alertasview.anuncio_estado', { id, estado: etiquetaEstadoAlerta(dto.nuevo_estado) }));
       // Silenciosa: las filas no se desmontan y el foco puede volver a la suya.
       cargar(build(paginacion.pagina), true);
       cargarResumen();
@@ -183,7 +210,14 @@ export function AlertasView() {
           onLimpiar={() => { setFiltros(ALERTAS_FILTROS_VACIO); cargar({ pagina: 1, por_pagina: 50 }); }}
         />
 
-        <AlertasTable alertas={alertas} loading={loading} onAbrir={abrir} />
+        <AlertasLista
+          alertas={alertas}
+          loading={loading}
+          acciones={(a) => accionesAlerta(a.estado_alerta, permisosAcciones)}
+          bloqueadas={!online || saving}
+          onAccion={accionEnLinea}
+          onAbrir={abrir}
+        />
 
         <Paginacion
           pagina={paginacion.pagina}
@@ -206,15 +240,15 @@ export function AlertasView() {
         />
       )}
 
-      {accion && detalleHook.detalle && (
+      {accion && objetivo && (
         <CambiarEstadoAlertaModal
-          alerta={detalleHook.detalle}
+          alerta={objetivo}
           estado={accion}
           saving={saving}
-          autorizada={online && !detalleHook.loading && accionesAlerta(detalleHook.detalle.estado_alerta, permisosAcciones).includes(accion)}
+          autorizada={online && !detalleHook.loading && accionesAlerta(objetivo.estado_alerta, permisosAcciones).includes(accion)}
           saveError={saveError}
           onConfirm={confirmarCambio}
-          onClose={() => setAccion(null)}
+          onClose={cerrarAccion}
         />
       )}
     </div>

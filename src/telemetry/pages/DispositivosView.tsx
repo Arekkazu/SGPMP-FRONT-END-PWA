@@ -4,6 +4,7 @@
 // | 2026-10-22 | Leandro | FE-12 RF-57: conserva autorización técnica al reutilizar modales |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-10 RF-60: lista de dispositivos en vez del campo de ID |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: sin filtro de sensor por ID, que el endpoint técnico ignoraba |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo T-23 RF-60: alertas técnicas en tarjetas, como Alertas |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, Wrench, AlertTriangle } from 'lucide-react';
@@ -18,7 +19,7 @@ import { DispositivoEstadoPanel } from '../components/DispositivoEstadoPanel';
 import { AplicarMantenimientoModal } from '../components/AplicarMantenimientoModal';
 import { CamarasVisionPanel } from '../components/CamarasVisionPanel';
 import { AlertasFiltros, ALERTAS_FILTROS_VACIO, type AlertasFiltrosState } from '../components/AlertasFiltros';
-import { AlertasTable } from '../components/AlertasTable';
+import { AlertasLista } from '../components/AlertasLista';
 import { AlertaDetalleModal } from '../components/AlertaDetalleModal';
 import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal';
 import { Paginacion } from '../components/Paginacion';
@@ -151,7 +152,7 @@ export function DispositivosView() {
                 ocultarTipo
               />
 
-              <AlertasTable alertas={tecnicas.alertas} loading={tecnicas.loading} onAbrir={setSelId} />
+              <AlertasLista alertas={tecnicas.alertas} loading={tecnicas.loading} acciones={() => []} bloqueadas onAccion={() => undefined} onAbrir={setSelId} />
 
               <Paginacion
                 pagina={tecnicas.paginacion.pagina}
