@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11/13.10: GRIS se lee "Sin datos" y AMARILLO "Cerca del límite" |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo 13.4 RF-58: etiqueta del semáforo para el titular del área |
 import React from 'react';
 import { CheckCircle2, AlertTriangle, AlertOctagon, CircleOff } from 'lucide-react';
 import { Pill, type Tono } from './Pill';
@@ -25,6 +26,9 @@ function normalizar(estado: string | null | undefined): EstadoSemaforo {
   const up = (estado ?? '').toUpperCase();
   return (up in META ? (up as EstadoSemaforo) : 'GRIS');
 }
+
+/** Texto del estado ("Fuera de rango"), el mismo de la píldora. */
+export const etiquetaSemaforo = (estado: string | null | undefined) => META[normalizar(estado)].label;
 
 export function SemaforoPill({ estado }: { estado: string | null | undefined }) {
   const meta = META[normalizar(estado)];

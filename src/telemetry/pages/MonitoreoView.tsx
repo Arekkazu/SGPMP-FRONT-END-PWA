@@ -3,6 +3,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M3-08/M3-11: área por nombre, contadores de todo el alcance y estado vacío sin filtros |
 // | 2026-10-29 | Arekkazu | TC-DIS-152 RF-58 R1 / G98 CA-11: degradación nivel 2/3 anunciada y panel de alertas activas |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo 13.4 RF-58: resumen que filtra, áreas por gravedad y plegables, medidor solo para problemas |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -17,12 +18,16 @@ import { SelectorArea } from '../components/SelectorArea';
 import { Paginacion } from '../components/Paginacion';
 import { UnidadCard } from '../components/UnidadCard';
 import { SensorCard } from '../components/SensorCard';
+import { SensorFila } from '../components/SensorFila';
+import { KpiCard } from '../components/KpiCard';
+import { etiquetaSemaforo } from '../components/SemaforoPill';
 import { SensorDetalleModal } from '../components/SensorDetalleModal';
 import { PanelAlertasActivas } from '../components/PanelAlertasActivas';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { horaCaptura } from '../lib/sensorEscala';
+import { conProblema, gravedad, porGravedad, semaforo, sinDatos, titularArea } from '../lib/enVivo';
 import { RECURSO_MONITOREO, ACCION_R } from '../rbac';
-import type { EstadoSensorSchema, DashboardFiltros } from '../types';
+import type { EstadoSensorSchema, DashboardFiltros, EstadoSemaforo } from '../types';
 
 const REFRESH_MS = 30000;
 /** RF-58 Restricción 1, Nivel 2: el refresco responde, pero tarda más de 2 s. */
@@ -37,17 +42,7 @@ const GRID: React.CSSProperties = {
   marginTop: 'var(--s3)',
 };
 
-function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: number; etiqueta: string; color: string }) {
-  return (
-    <div style={{ flex: '1 1 120px', minWidth: 120, background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', color }}>
-        {icon}
-        <span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{valor}</span>
-      </div>
-      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{etiqueta}</div>
-    </div>
-  );
-}
+const LISTA: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 'var(--s2)', marginTop: 'var(--s3)' };
 
 export function MonitoreoView() {
   const { t } = useT('telemetry');
@@ -62,6 +57,10 @@ export function MonitoreoView() {
   const [idArea, setIdArea] = useState<number | null>(null);
   const [pagina, setPagina] = useState(1);
   const [seleccionado, setSeleccionado] = useState<EstadoSensorSchema | null>(null);
+  // Prototipo 13.4: tocar una tarjeta del resumen deja solo los sensores en ese estado.
+  const [filtro, setFiltro] = useState<EstadoSemaforo | null>(null);
+  // Lo que el usuario abrió o cerró a mano; sin entrada, el área se abre si tiene problemas.
+  const [abiertas, setAbiertas] = useState<Record<number, boolean>>({});
 
   const filtros = useMemo<DashboardFiltros>(() => {
     const f: DashboardFiltros = { pagina, por_pagina: POR_PAGINA };
@@ -126,6 +125,17 @@ export function MonitoreoView() {
     return map;
   }, [sensores]);
 
+  // Prototipo 13.4: primero el área en peor estado y, dentro, el peor sensor.
+  const grupos = useMemo(() => unidades
+    .map((u) => {
+      const todos = [...(sensoresPorUnidad.get(u.id_infraestructura) ?? [])].sort(porGravedad);
+      return { u, todos, visibles: filtro ? todos.filter((s) => semaforo(s.estado_semaforo) === filtro) : todos };
+    })
+    .filter((g) => !filtro || g.visibles.length > 0)
+    .sort((a, b) => gravedad(a.u.estado_general) - gravedad(b.u.estado_general)), [unidades, sensoresPorUnidad, filtro]);
+  const abierta = (id: number, estado: string) =>
+    abiertas[id] ?? (filtro != null || grupos.length === 1 || gravedad(estado) < gravedad('GRIS'));
+
   if (!puedeVer) return <PermissionDenied seccion="Monitoreo en tiempo real" />;
 
   return (
@@ -177,13 +187,13 @@ export function MonitoreoView() {
           <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('monitoreoview.sin_acceso_al_monitoreo') : t('monitoreoview.error_al_cargar_el_dashboard')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />
         )}
 
-        {/* KPIs globales */}
-        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
-          <Kpi icon={<Radio size={18} aria-hidden />} valor={kpis.total} etiqueta="Sensores" color="var(--brand-500)" />
-          <Kpi icon={<CheckCircle2 size={18} aria-hidden />} valor={kpis.verde} etiqueta="Normales" color="var(--sem-success)" />
-          <Kpi icon={<AlertTriangle size={18} aria-hidden />} valor={kpis.amarillo} etiqueta="En advertencia" color="var(--sem-warning)" />
-          <Kpi icon={<AlertOctagon size={18} aria-hidden />} valor={kpis.rojo} etiqueta="Fuera de rango" color="var(--sem-error)" />
-          <Kpi icon={<CircleOff size={18} aria-hidden />} valor={kpis.gris} etiqueta="Sin señal" color="var(--text-muted)" />
+        {/* M3-08: los totales son de todo el alcance. Prototipo 13.4: cada tarjeta filtra. */}
+        <div role="group" aria-label={t('monitoreoview.resumen_filtra')} style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
+          <KpiCard icon={<Radio size={18} aria-hidden />} valor={kpis.total} etiqueta="Sensores" color="var(--brand-500)" onClick={() => setFiltro(null)} activo={filtro === null} />
+          <KpiCard icon={<AlertOctagon size={18} aria-hidden />} valor={kpis.rojo} etiqueta="Fuera de rango" color="var(--sem-error)" onClick={() => setFiltro((f) => (f === 'ROJO' ? null : 'ROJO'))} activo={filtro === 'ROJO'} />
+          <KpiCard icon={<AlertTriangle size={18} aria-hidden />} valor={kpis.amarillo} etiqueta="Cerca del límite" color="var(--sem-warning)" onClick={() => setFiltro((f) => (f === 'AMARILLO' ? null : 'AMARILLO'))} activo={filtro === 'AMARILLO'} />
+          <KpiCard icon={<CircleOff size={18} aria-hidden />} valor={kpis.gris} etiqueta="Sin datos" color="var(--text-muted)" onClick={() => setFiltro((f) => (f === 'GRIS' ? null : 'GRIS'))} activo={filtro === 'GRIS'} />
+          <KpiCard icon={<CheckCircle2 size={18} aria-hidden />} valor={kpis.verde} etiqueta="Normales" color="var(--sem-success)" onClick={() => setFiltro((f) => (f === 'VERDE' ? null : 'VERDE'))} activo={filtro === 'VERDE'} />
         </div>
 
         {panelAlertas && <PanelAlertasActivas panel={panelAlertas} />}
@@ -201,14 +211,41 @@ export function MonitoreoView() {
             {idArea != null ? t('monitoreoview.no_hay_sensores_para_mostrar_con_los') : t('monitoreoview.sin_sensores_en_tus_fincas')}
           </p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s7)' }}>
-            {unidades.map((u) => {
-              const grupo = sensoresPorUnidad.get(u.id_infraestructura) ?? [];
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
+            {filtro && grupos.length === 0 && (
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('monitoreoview.ninguno_con_filtro', { estado: etiquetaSemaforo(filtro) })}</p>
+            )}
+            {grupos.map(({ u, todos, visibles }) => {
+              const id = u.id_infraestructura;
+              const abre = abierta(id, u.estado_general);
+              const vacios = visibles.filter(sinDatos);
+              const problemas = visibles.filter((s) => !sinDatos(s) && conProblema(s));
+              const normales = visibles.filter((s) => !sinDatos(s) && !conProblema(s));
               return (
-                <section key={u.id_infraestructura}>
-                  <UnidadCard unidad={u} />
-                  <div style={GRID}>
-                    {grupo.map((s) => <SensorCard key={s.id_sensor} sensor={s} onAbrir={setSeleccionado} />)}
+                <section key={id}>
+                  <UnidadCard
+                    unidad={u}
+                    titular={titularArea(todos)}
+                    abierta={abre}
+                    onAlternar={() => setAbiertas((m) => ({ ...m, [id]: !abre }))}
+                    idContenido={`area-${id}`}
+                  />
+                  <div id={`area-${id}`} hidden={!abre}>
+                    {problemas.length > 0 && (
+                      <div style={GRID}>{problemas.map((s) => <SensorCard key={s.id_sensor} sensor={s} onAbrir={setSeleccionado} />)}</div>
+                    )}
+                    {normales.length > 0 && (
+                      <div style={LISTA}>{normales.map((s) => <SensorFila key={s.id_sensor} sensor={s} onAbrir={setSeleccionado} />)}</div>
+                    )}
+                    {/* Prototipo 13.4: los que no reportan se agrupan; abiertos si son todo lo que hay. */}
+                    {vacios.length > 0 && (
+                      <details open={vacios.length === visibles.length} style={{ marginTop: 'var(--s3)' }}>
+                        <summary style={{ cursor: 'pointer', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                          {t('monitoreoview.sensores_sin_datos', { count: vacios.length, n: formatearNumero(vacios.length) })}
+                        </summary>
+                        <div style={LISTA}>{vacios.map((s) => <SensorFila key={s.id_sensor} sensor={s} onAbrir={setSeleccionado} />)}</div>
+                      </details>
+                    )}
                   </div>
                 </section>
               );

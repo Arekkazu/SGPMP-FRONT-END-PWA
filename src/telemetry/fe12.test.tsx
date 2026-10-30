@@ -2,6 +2,7 @@
 // |------------|---------|-------------|
 // | 2026-10-22 | Leandro | FE-12 RF-57: verifica permisos, transiciones y rechazos HTTP |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-19: la fila muestra el tipo de alerta legible |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo RF-57: sin vista móvil aparte; la integración queda en Alertas |
 import React, { useContext } from 'react';
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,7 +19,6 @@ import { AlertaDetalleModal } from './components/AlertaDetalleModal';
 import { CambiarEstadoAlertaModal } from './components/CambiarEstadoAlertaModal';
 import { EstadoAlertaPill } from './components/EstadoAlertaPill';
 import { AlertasView } from './pages/AlertasView';
-import { MovilView } from './pages/MovilView';
 import type { AlertaDetalleSchema, AlertaSchema, NuevoEstadoAlerta } from './types';
 
 vi.mock('./db/telemetriaTables', () => ({ cacheAlertas: vi.fn(), getAlertasCache: vi.fn().mockResolvedValue([]) }));
@@ -207,19 +207,17 @@ describe('FE-12 mutación HTTP real con transporte simulado', () => {
   });
 });
 
-describe.each([['detalle', AlertasView], ['móvil', MovilView]] as const)('FE-12 integración de vista %s', (_, Vista) => {
+describe('FE-12 integración de la vista Alertas', () => {
   async function abrir() {
-    render(<Vista />, { wrapper: Wrapper });
-    if (Vista === AlertasView) {
-      const fila = await screen.findByText('Temperatura critica');
-      fireEvent.click(fila.closest('tr')!);
-      await screen.findByRole('dialog');
-    }
+    render(<AlertasView />, { wrapper: Wrapper });
+    const fila = await screen.findByText('Temperatura critica');
+    fireEvent.click(fila.closest('tr')!);
+    await screen.findByRole('dialog');
   }
   it('oculta Descartar con U y sin D', async () => {
     sesion = { ...sesion, permisos: [R, U] };
     await abrir();
-    await screen.findByRole('button', { name: Vista === AlertasView ? 'Tomar en atención' : 'Tomar' });
+    await screen.findByRole('button', { name: 'Tomar en atención' });
     expect(screen.queryByRole('button', { name: 'Descartar' })).not.toBeInTheDocument();
   });
   it.each([403, 422])('rechazo %s conserva motivo y estado sin reintentar', async (status) => {

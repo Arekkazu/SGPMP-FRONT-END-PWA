@@ -2,12 +2,13 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-07/T-20: pestañas compartidas, ocultas sin permiso |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-20/T-21: Flujo IoT (simulado) solo para Admin/Ingeniero, también por URL |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo RF-58/RF-61: 5 pestañas principales, Calidad y Bitácora en Registros, sin vista móvil aparte |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Switch, Route, Redirect } from 'react-router-dom';
 import {
   Activity, BellRing, Cpu, History, Link2, ShieldCheck, ClipboardList,
-  DownloadCloud, Layers, Workflow, Smartphone,
+  DownloadCloud, Layers, Workflow,
 } from 'lucide-react';
 import {
   PestanasModulo, PestanaProtegida, usePrimeraPestana, type GrupoPestanas, type PestanaModulo,
@@ -28,17 +29,21 @@ import { IngestaView } from './IngestaView';
 import { BufferView } from './BufferView';
 import { EdgeView } from './EdgeView';
 import { PipelineView } from './PipelineView';
-import { MovilView } from './MovilView';
 
+// Prototipo M03 (reprueba 25-oct): máximo 5 pestañas de operación diaria. Lo que se
+// consulta menos queda en grupos con título. «Campo (móvil)» duplicaba Monitoreo y
+// Alertas: el RF pide que la interfaz funcione desde 360 px, no una sección aparte.
 const TABS_OPERACION: PestanaModulo[] = [
-  { label: 'Monitoreo', path: '/telemetria/monitoreo', icon: <Activity size={15} aria-hidden />, permiso: [RECURSO_MONITOREO, ACCION_R] },
+  { label: 'En vivo', path: '/telemetria/monitoreo', icon: <Activity size={15} aria-hidden />, permiso: [RECURSO_MONITOREO, ACCION_R] },
   { label: 'Alertas', path: '/telemetria/alertas', icon: <BellRing size={15} aria-hidden />, permiso: [RECURSO_ALERTAS, ACCION_R] },
   { label: 'Dispositivos', path: '/telemetria/dispositivos', icon: <Cpu size={15} aria-hidden />, permiso: [RECURSO_INFRAESTRUCTURA, ACCION_R] },
   { label: 'Historial', path: '/telemetria/historial', icon: <History size={15} aria-hidden />, permiso: [RECURSO_HISTORIAL, ACCION_R] },
-  { label: 'Vinculaciones', path: '/telemetria/vinculaciones', icon: <Link2 size={15} aria-hidden />, permiso: [RECURSO_VINCULACIONES, ACCION_R] },
+  { label: 'Revisar lecturas', path: '/telemetria/vinculaciones', icon: <Link2 size={15} aria-hidden />, permiso: [RECURSO_VINCULACIONES, ACCION_R] },
+];
+
+const TABS_REGISTROS: PestanaModulo[] = [
   { label: 'Calidad', path: '/telemetria/calidad', icon: <ShieldCheck size={15} aria-hidden />, permiso: [RECURSO_CALIDAD, ACCION_R] },
   { label: 'Bitácora', path: '/telemetria/bitacora', icon: <ClipboardList size={15} aria-hidden />, permiso: [RECURSO_BITACORA, ACCION_R] },
-  { label: 'Campo (móvil)', path: '/telemetria/campo', icon: <Smartphone size={15} aria-hidden />, permiso: [RECURSO_MONITOREO, ACCION_R] },
 ];
 
 // T-20/T-21: Flujo IoT muestra datos simulados (con fincas que no son del usuario).
@@ -59,7 +64,11 @@ const [TAB_INGESTA, TAB_BUFFER, TAB_EDGE, TAB_PIPELINE] = TABS_IOT;
  */
 export function TelemetryPage() {
   const { t } = useT('telemetry');
-  const grupos: GrupoPestanas[] = [{ pestanas: TABS_OPERACION }, { titulo: t('telemetrypage.flujo_iot'), pestanas: TABS_IOT }];
+  const grupos: GrupoPestanas[] = [
+    { pestanas: TABS_OPERACION },
+    { titulo: t('telemetrypage.registros'), pestanas: TABS_REGISTROS },
+    { titulo: t('telemetrypage.flujo_iot'), pestanas: TABS_IOT },
+  ];
   // El Contador no tiene Monitoreo: entra por la primera pestaña que sí puede abrir.
   const inicio = usePrimeraPestana(grupos);
   return (
@@ -77,7 +86,7 @@ export function TelemetryPage() {
         <Route exact path="/telemetria/vinculaciones" component={VinculacionesView} />
         <Route exact path="/telemetria/calidad" component={CalidadView} />
         <Route exact path="/telemetria/bitacora" component={BitacoraView} />
-        <Route exact path="/telemetria/campo" component={MovilView} />
+        <Redirect exact from="/telemetria/campo" to="/telemetria/monitoreo" />
         <Route exact path="/telemetria/ingesta"><PestanaProtegida pestana={TAB_INGESTA}><IngestaView /></PestanaProtegida></Route>
         <Route exact path="/telemetria/buffer"><PestanaProtegida pestana={TAB_BUFFER}><BufferView /></PestanaProtegida></Route>
         <Route exact path="/telemetria/edge"><PestanaProtegida pestana={TAB_EDGE}><EdgeView /></PestanaProtegida></Route>
