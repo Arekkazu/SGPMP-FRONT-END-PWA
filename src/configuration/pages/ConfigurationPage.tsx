@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | INC-M03-82-G192 RF-62: política de visión en la pestaña Sistema |
+// | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: ventana de retroalimentación en la pestaña Sistema |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, RefreshCw, Search } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -18,6 +19,7 @@ import { EspeciesModal } from '../components/EspeciesModal';
 import { PorEspeciePage } from '../components/PorEspeciePage';
 import { ParametrosSection } from '../components/ParametrosSection';
 import { PoliticaVisionSection } from '../components/PoliticaVisionSection';
+import { VentanaRetroalimentacionSection } from '../components/VentanaRetroalimentacionSection';
 import { FincasTable } from '../components/FincasTable';
 import { useTiposArea } from '../hooks/useTiposArea';
 import { TipoAreaTable } from '../components/TipoAreaTable';
@@ -514,6 +516,7 @@ export function ConfigurationPage() {
           <>
             <ParametrosSection onEditStateChange={setParametrosEditState} />
             <PoliticaVisionSection />
+            <VentanaRetroalimentacionSection />
           </>
         )}
         {activeTab === 'plantillas' && <PlantillasTable />}

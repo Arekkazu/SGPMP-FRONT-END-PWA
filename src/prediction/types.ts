@@ -5,6 +5,7 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M4-02: nombre del usuario en auditoría, de variables y de especie en patologías |
 // | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
 // | 2026-10-29 | Arekkazu | QA-M04-27-10 / PEND-456 RF-54/66/68/70: nombres de versión, buffer, inferencias y contagio reales |
+// | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: ampliación de la ventana para un resultado |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -484,6 +485,21 @@ export interface RegistrarRetroalimentacionDTO {
   diagnosticos_reales?: number[] | null;
   observaciones_clinicas?: string | null;
   fuente_diagnostico?: FuenteDiagnostico | null;
+}
+
+/** RF-72: excepción del Administrador a la ventana para un resultado (POST /prediccion/retroalimentacion/ampliaciones). */
+export interface AmpliarVentanaRetroDTO {
+  id_resultado_inferencia: string;
+  dias_habilitados: number;    // 1–365, desde hoy
+  justificacion: string;       // 10–1000 caracteres, queda en RF-73
+}
+
+export interface AmpliacionVentanaRetroResponse {
+  id_ampliacion_ventana_retroalimentacion: number;
+  id_resultado_inferencia: string;
+  fecha_limite: string;
+  justificacion: string;
+  id_usuario_autorizador: number;
 }
 
 export interface RetroalimentacionClinicaResponse {

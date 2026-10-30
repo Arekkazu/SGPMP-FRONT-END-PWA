@@ -1,5 +1,10 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: ampliación de la ventana para un resultado |
 import { http } from '../../shared/api/http';
 import type {
+  AmpliacionVentanaRetroResponse,
+  AmpliarVentanaRetroDTO,
   RegistrarRetroalimentacionDTO,
   RetroalimentacionClinicaResponse,
 } from '../types';
@@ -14,6 +19,12 @@ export const retroApi = {
    */
   async registrar(dto: RegistrarRetroalimentacionDTO): Promise<RetroalimentacionClinicaResponse> {
     const res = await http.post<RetroalimentacionClinicaResponse>(BASE, dto);
+    return res.data;
+  },
+
+  /** Habilita un resultado vencido durante N días (Administrador; la ventana global no cambia). */
+  async ampliarVentana(dto: AmpliarVentanaRetroDTO): Promise<AmpliacionVentanaRetroResponse> {
+    const res = await http.post<AmpliacionVentanaRetroResponse>(`${BASE}/ampliaciones`, dto);
     return res.data;
   },
 };

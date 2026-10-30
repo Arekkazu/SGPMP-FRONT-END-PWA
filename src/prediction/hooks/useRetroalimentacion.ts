@@ -1,6 +1,11 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: ampliación de la ventana para un resultado |
 import { useState, useCallback } from 'react';
 import { retroApi } from '../api/retroApi';
 import type {
+  AmpliacionVentanaRetroResponse,
+  AmpliarVentanaRetroDTO,
   RegistrarRetroalimentacionDTO,
   RetroalimentacionClinicaResponse,
 } from '../types';
@@ -31,7 +36,23 @@ export function useRetroalimentacion() {
     []
   );
 
+  const ampliarVentana = useCallback(
+    async (dto: AmpliarVentanaRetroDTO): Promise<AmpliacionVentanaRetroResponse | null> => {
+      setSaving(true);
+      setSaveError(null);
+      try {
+        return await retroApi.ampliarVentana(dto);
+      } catch (e) {
+        setSaveError(e as ApiError);
+        return null;
+      } finally {
+        setSaving(false);
+      }
+    },
+    []
+  );
+
   const limpiarSaveError = useCallback(() => setSaveError(null), []);
 
-  return { saving, saveError, registrar, limpiarSaveError };
+  return { saving, saveError, registrar, ampliarVentana, limpiarSaveError };
 }
