@@ -1,3 +1,17 @@
+## [1.4.0-rc.10](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.9...v1.4.0-rc.10) (2026-10-30)
+
+### Features
+
+* **rf57-telemetry:** alertas en tarjetas con umbral, qué hacer y la acción a un toque ([c26f5d9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c26f5d9a09278629c4ea6cf1880815f23ffeb06a))
+* **rf57-telemetry:** las tarjetas del resumen de alertas filtran por estado ([fda3c40](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/fda3c40d804d876eb1f0609543b4b76f65d23d43))
+* **rf58-telemetry:** en vivo por áreas con resumen que filtra y sin vista móvil aparte ([2e91bb5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2e91bb51e55f341e63469c1ad970508a2e306c87))
+* **rf59-telemetry:** una gráfica por variable en el historial, sin mezclar unidades en un eje ([82d41a3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/82d41a3bcafa7310b1760fafae73eb5dcdec7e7d))
+* **rf61-telemetry:** revisar lecturas como bandeja, primero lo que necesita revisión ([383bb71](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/383bb71e0688725cc78de99d060143234a93d7e9))
+
+### Bug Fixes
+
+* **rf54-telemetry:** la lista de indicadores del buffer usa la clase .ds-kv en vez de una rejilla inline ([f010a54](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f010a54e25385e65eaf07fdd9e14089f294aa3fc))
+
 ## [1.4.0-rc.9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.8...v1.4.0-rc.9) (2026-10-29)
 
 ### Features
