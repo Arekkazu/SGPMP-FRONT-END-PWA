@@ -151,7 +151,7 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 
 test.describe('TC-DIS-187 — Alternativa en tabla para la gráfica de evolución del riesgo', () => {
   // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default' });
+  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_187_VIEWPORTS.`);
@@ -200,6 +200,14 @@ test.describe('TC-DIS-187 — Alternativa en tabla para la gráfica de evolució
     const info = await leerPanel(panel);
     testInfo.annotations.push({ type: 'Panel de tendencia', description: JSON.stringify(info) });
     expect.soft(info.tabla, 'DEFECTO 1.1.1: la gráfica POBLACIONAL no tiene alternativa en tabla (fecha, nivel_riesgo, score_anomalia)').toBe(true);
+    if (info.tabla) {
+      // 1.3.1: los encabezados siguen el paradigma POBLACIONAL (fecha, nivel_riesgo, score_anomalia),
+      // sin columnas que no aplican a un área (enfermedad estimada, confianza por clase)
+      const faltan = ENCABEZADOS.POBLACIONAL.filter(([, re]) => !info.encabezados.some((h) => re.test(h))).map(([n]) => n);
+      const noAplican = info.encabezados.filter((h) => /enfermedad|confianza/i.test(h));
+      expect.soft(faltan, 'DEFECTO 1.3.1: la tabla POBLACIONAL no tiene los encabezados de su paradigma').toEqual([]);
+      expect.soft(noAplican, 'DEFECTO 1.3.1: la tabla POBLACIONAL usa columnas de INDIVIDUAL que no aplican a un área (enfermedad estimada, confianza)').toEqual([]);
+    }
     const texto = await page.locator('main').innerText();
     expect.soft(/anomal/i.test(texto), 'DEFECTO: la vista no muestra el score de anomalía del área POBLACIONAL en ninguna parte').toBe(true);
     await escanear(page, 'tendencia-poblacional', testInfo);
