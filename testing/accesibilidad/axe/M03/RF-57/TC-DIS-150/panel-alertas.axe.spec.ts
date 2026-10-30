@@ -5,7 +5,11 @@
  * Ruta: /telemetria/alertas — AlertasView + AlertaDetalleModal + CambiarEstadoAlertaModal,
  * y la bandeja de notificaciones de la barra superior (única superficie con refresco automático).
  *
- * Primera ejecución sobre el ambiente TEST nuevo (app en /sigab-test, API en /api-sgpmp-test).
+ * Tercera ejecución (2026-10-29) sobre 1.4.0-rc.11, ambiente TEST (app en /sigab-test, API en
+ * /api-sgpmp-test). Desde el prototipo M03 (T-23) las alertas son tarjetas <article> con
+ * severidad, estado, «Qué hacer» y acciones a un toque, en vez de filas de tabla; el panel se
+ * refresca solo cada 60 s y anuncia por dos regiones vivas ocultas (Anunciador: assertive para
+ * una alerta crítica nueva, polite para los cambios de estado).
  *
  * Criterios (hoja "CASOS DE PRUEBA UI/UX"): 0 violaciones axe A/AA, con énfasis CRÍTICO en
  *   4.1.3 — toda alerta nueva (sobre todo CRITICO) se anuncia por una región aria-live=assertive
@@ -76,10 +80,17 @@ interface Simulacion {
   patches: { id: number; cuerpo: Record<string, unknown> }[];
   /** Último listado sin filtros que recibió la tabla (en el mismo orden de las filas). */
   lista: Record<string, unknown>[];
+  /** Alertas reales llevadas a ACTIVA en listado y detalle (Datos simulados). */
+  forzadas: number[];
 }
 
-async function interceptar(page: Page): Promise<Simulacion> {
-  const sim: Simulacion = { alertaNueva: null, notificacionNueva: null, estados: new Map(), detalles: new Map(), patches: [], lista: [] };
+/**
+ * `forzarActivas`: cuántas alertas reales (no ACTIVA) se llevan a ACTIVA en la primera carga del
+ * listado. En TEST el Productor ya no tiene alertas ACTIVA (2026-10-29) y las transiciones c / d
+ * parten de ese estado; como el PATCH también es simulado, nada llega al backend.
+ */
+async function interceptar(page: Page, forzarActivas = 0): Promise<Simulacion> {
+  const sim: Simulacion = { alertaNueva: null, notificacionNueva: null, estados: new Map(), detalles: new Map(), patches: [], lista: [], forzadas: [] };
   await page.route((url) => API.test(url.href), async (route: Route) => {
     const req = route.request();
     const metodo = req.method();
@@ -102,6 +113,14 @@ async function interceptar(page: Page): Promise<Simulacion> {
       const res = await route.fetch();
       const json = await res.json();
       const estado = new URL(req.url()).searchParams.get('estado');
+      if (!estado && sim.forzadas.length < forzarActivas) {
+        for (const a of (json.items ?? []) as Record<string, unknown>[]) {
+          if (sim.forzadas.length >= forzarActivas) break;
+          if (a.estado_alerta === 'ACTIVA') continue;
+          sim.forzadas.push(a.id_alerta as number);
+          sim.estados.set(a.id_alerta as number, 'ACTIVA');
+        }
+      }
       let items: Record<string, unknown>[] = (json.items ?? []).map((a: Record<string, unknown>) =>
         sim.estados.has(a.id_alerta as number) ? { ...a, estado_alerta: sim.estados.get(a.id_alerta as number) } : a);
       if (sim.alertaNueva && (!estado || estado === sim.alertaNueva.estado_alerta)) items = [sim.alertaNueva, ...items];
@@ -133,7 +152,29 @@ async function interceptar(page: Page): Promise<Simulacion> {
 async function irAAlertas(page: Page) {
   await page.goto(`${APP}/telemetria/alertas`);
   await expect(page.getByRole('heading', { level: 1, name: 'Alertas Ambientales y Sanitarias' })).toBeVisible({ timeout: 60_000 });
-  await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 60_000 });
+  await expect(tarjetas(page).first()).toBeVisible({ timeout: 60_000 });
+}
+
+/** Tarjetas de alerta (una <article> por alerta, en el orden del listado). */
+function tarjetas(page: Page) {
+  return page.locator('main article[aria-labelledby^="alerta-"]');
+}
+
+/** Tarjeta de la alerta `id`. */
+function tarjetaDe(page: Page, id: number) {
+  return page.locator(`main article[aria-labelledby="alerta-${id}"]`);
+}
+
+/** Severidad y estado de cada tarjeta: texto e ícono de sus dos pastillas. */
+async function leerPastillas(page: Page) {
+  return tarjetas(page).evaluateAll((arts) => arts.map((a) => {
+    const [sev, est] = [...(a.firstElementChild?.querySelectorAll(':scope > span') ?? [])];
+    return {
+      id: Number((a.getAttribute('aria-labelledby') ?? '').replace('alerta-', '')),
+      severidad: sev?.textContent?.trim() ?? '', iconoSev: !!sev?.querySelector('svg'),
+      estado: est?.textContent?.trim() ?? '', iconoEst: !!est?.querySelector('svg'),
+    };
+  }));
 }
 
 /** Textos de todas las regiones que un lector de pantalla anuncia sin mover el foco. */
@@ -167,10 +208,10 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
   expect.soft(lh.auditoriasFallidas.map((a) => a.id), `DEFECTO: auditorías de accesibilidad fallidas en Lighthouse ("${paso}")`).toEqual([]);
 }
 
-/** Abre por teclado la fila cuyo texto contiene `texto` y espera el detalle. */
-async function abrirDetalle(page: Page, texto: string | RegExp) {
-  const fila = page.locator('tbody tr').filter({ hasText: texto }).first();
-  await fila.focus();
+/** Abre por teclado el detalle de la alerta `id` (botón "Ver detalle" de su tarjeta) y lo espera. */
+async function abrirDetalle(page: Page, id: number) {
+  await page.keyboard.press('Shift');
+  await tarjetaDe(page, id).getByRole('button', { name: 'Ver detalle' }).focus();
   await page.keyboard.press('Enter');
   const dialogo = page.getByRole('dialog').first();
   await expect(dialogo).toBeVisible({ timeout: 30_000 });
@@ -181,7 +222,9 @@ async function abrirDetalle(page: Page, texto: string | RegExp) {
 // ── Pruebas ──────────────────────────────────────────────────────────────────
 
 test.describe('TC-DIS-150 — Panel de Alertas en Tiempo Real', () => {
-  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
+  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás.
+  // El timeout global (30 s) no alcanza para login + axe + Lighthouse.
+  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_150_VIEWPORTS.`);
@@ -192,19 +235,17 @@ test.describe('TC-DIS-150 — Panel de Alertas en Tiempo Real', () => {
     await interceptar(page);
     await irAAlertas(page);
 
-    // 1.4.1: cada celda de severidad y de estado tiene texto propio y un ícono, no solo color
-    const celdas = await page.locator('tbody tr').evaluateAll((filas) => filas.map((f) => {
-      const td = f.querySelectorAll('td');
-      return { severidad: td[3]?.textContent?.trim() ?? '', iconoSev: !!td[3]?.querySelector('svg'), estado: td[6]?.textContent?.trim() ?? '', iconoEst: !!td[6]?.querySelector('svg') };
-    }));
-    testInfo.annotations.push({ type: 'Datos', description: `${celdas.length} alertas reales del Productor` });
+    // 1.4.1: cada tarjeta muestra severidad y estado con texto propio y un ícono, no solo color
+    const celdas = await leerPastillas(page);
+    testInfo.annotations.push({ type: 'Datos', description: `${celdas.length} alertas reales del Productor · severidades: ${[...new Set(celdas.map((c) => c.severidad))].join(', ')} · estados: ${[...new Set(celdas.map((c) => c.estado))].join(', ')}` });
     for (const c of celdas) {
-      expect.soft(c.severidad, 'DEFECTO 1.4.1: severidad sin texto').toMatch(/^(Leve|Moderado|Crítico)$/);
+      expect.soft(c.severidad, 'DEFECTO 1.4.1: severidad sin texto').toMatch(/^(Leve|Moderada|Crítica)$/);
       expect.soft(c.iconoSev, `DEFECTO 1.4.1: severidad "${c.severidad}" sin ícono`).toBe(true);
       expect.soft(c.estado, 'DEFECTO 1.4.1: estado sin texto').toMatch(/^(Activa|En atención|Resuelta|Descartada|Vencida)$/);
+      expect.soft(c.iconoEst, `DEFECTO 1.4.1: estado "${c.estado}" sin ícono`).toBe(true);
     }
     const severidades = new Set(celdas.map((c) => c.severidad));
-    expect.soft([...severidades].sort(), 'Precondición: el listado muestra las 3 severidades').toEqual(['Crítico', 'Leve', 'Moderado']);
+    expect.soft([...severidades].sort(), 'Precondición: el listado muestra las 3 severidades').toEqual(['Crítica', 'Leve', 'Moderada']);
 
     await escanear(page, 'reposo', testInfo);
   });
@@ -242,8 +283,8 @@ test.describe('TC-DIS-150 — Panel de Alertas en Tiempo Real', () => {
     const anunciadoAssertive = await textoAnunciado(page, true);
     const anunciado = await textoAnunciado(page);
     const campana = await page.locator('button[aria-label^="Notificaciones"]').getAttribute('aria-label');
-    const enTabla = await page.locator('tbody tr').filter({ hasText: 'ESTRES_TERMICO' }).filter({ hasText: '41.5' }).count();
-    testInfo.annotations.push({ type: 'Anuncio', description: `assertive/alert: "${anunciadoAssertive || '(vacío)'}" · todas las regiones live: "${anunciado || '(vacío)'}" · campana: "${campana}" · fila nueva en la tabla: ${enTabla}` });
+    const enTabla = await tarjetaDe(page, 990150).count();
+    testInfo.annotations.push({ type: 'Anuncio', description: `assertive/alert: "${anunciadoAssertive || '(vacío)'}" · todas las regiones live: "${anunciado || '(vacío)'}" · campana: "${campana}" · tarjeta nueva en el panel: ${enTabla}` });
 
     expect.soft(anunciadoAssertive, 'DEFECTO CRÍTICO 4.1.3: la alerta CRITICA nueva no se anuncia en una región aria-live="assertive" sin mover el foco').toMatch(/cr[ií]tic|estr[eé]s t[eé]rmico/i);
     expect.soft(anunciado === anunciadoAntes ? '' : anunciado, 'DEFECTO 4.1.3: ninguna región live cambió al llegar la alerta').not.toBe('');
@@ -255,24 +296,23 @@ test.describe('TC-DIS-150 — Panel de Alertas en Tiempo Real', () => {
   });
 
   test('c. Transición ACTIVA → EN_ATENCION → RESUELTA anunciada (3.3.1 / 4.1.3) (Datos simulados)', async ({ page }, testInfo) => {
-    const sim = await interceptar(page);
+    const sim = await interceptar(page, 1);
     await irAAlertas(page);
+    testInfo.annotations.push({ type: 'Datos simulados', description: `Alerta real llevada a ACTIVA en listado y detalle: ${sim.forzadas.map((id) => `#${id}`).join(', ') || '(ninguna)'}; los PATCH de estado se responden en la prueba.` });
 
     // 2026-10-27: filtrar las filas por hasText: 'Activa' es substring e insensible a
     // mayúsculas — puede calzar con una fila que en realidad está DESCARTADA (o cualquier
     // otra) si "activa" aparece en otra celda. Se ubica la fila ACTIVA real por posición,
     // igual que ya hace el test 'd' con sim.lista.
-    const idx = sim.lista.findIndex((a) => a.estado_alerta === 'ACTIVA');
-    expect(idx, 'Precondición: al menos 1 alerta ACTIVA del Productor').toBeGreaterThanOrEqual(0);
-    const fila = page.locator('tbody tr').nth(idx);
-    const texto = (await fila.locator('td').first().innerText()).trim();
-    const fecha = (await fila.locator('td').nth(7).innerText()).trim();
-    const filaId = page.locator('tbody tr').filter({ hasText: texto }).filter({ hasText: fecha });
+    const activa = sim.lista.find((a) => a.estado_alerta === 'ACTIVA');
+    expect(activa, 'Precondición: al menos 1 alerta ACTIVA del Productor').toBeTruthy();
+    const idAlerta = activa!.id_alerta as number;
+    const filaId = tarjetaDe(page, idAlerta);
 
     // Detalle abierto por teclado
-    let dialogo = await abrirDetalle(page, fecha);
+    let dialogo = await abrirDetalle(page, idAlerta);
     await escanear(page, 'detalle-activa', testInfo);
-    const idAlerta = Number((await dialogo.getByRole('heading').first().innerText()).match(/#(\d+)/)?.[1]);
+    expect.soft(await dialogo.getByRole('heading').first().innerText(), 'El detalle corresponde a la alerta').toContain(`#${idAlerta}`);
 
     // ACTIVA → EN_ATENCION
     await dialogo.getByRole('button', { name: 'Tomar en atención' }).click();
@@ -293,17 +333,19 @@ test.describe('TC-DIS-150 — Panel de Alertas en Tiempo Real', () => {
     await expect(filaId.first()).toContainText('En atención', { timeout: 30_000 });
 
     // EN_ATENCION → RESUELTA, con el motivo obligatorio vacío primero (3.3.1)
-    dialogo = await abrirDetalle(page, fecha);
+    dialogo = await abrirDetalle(page, idAlerta);
     await dialogo.getByRole('button', { name: 'Resolver' }).click();
     const modalRes = page.getByRole('dialog', { name: 'Marcar alerta como resuelta' });
-    await modalRes.getByRole('button', { name: 'Marcar resuelta' }).click();
+    // 1.4.0: el botón de confirmar dice "Resolver" (fe12.resolver), antes "Marcar resuelta"
+    const confirmarRes = modalRes.getByRole('button', { name: 'Resolver', exact: true });
+    await confirmarRes.click();
     await expect(modalRes.getByRole('alert')).toContainText('obligatorio');
     await expect.soft(modalRes.getByLabel(/Acción tomada/), 'DEFECTO 3.3.1: campo con error sin aria-invalid').toHaveAttribute('aria-invalid', 'true');
     const describedby = await modalRes.getByLabel(/Acción tomada/).getAttribute('aria-describedby');
     expect.soft(describedby, 'DEFECTO 3.3.1: el error del motivo no está asociado al campo (aria-describedby)').toBeTruthy();
     await escanear(page, 'modal-resuelta-error', testInfo);
     await modalRes.getByLabel(/Acción tomada/).fill('Se ajustó la ventilación del galpón (prueba QA, simulada).');
-    await modalRes.getByRole('button', { name: 'Marcar resuelta' }).click();
+    await confirmarRes.click();
     await expect(modalRes).toBeHidden({ timeout: 30_000 });
     await page.waitForTimeout(1_500);
     const anuncio2 = await textoAnunciado(page);
@@ -313,35 +355,43 @@ test.describe('TC-DIS-150 — Panel de Alertas en Tiempo Real', () => {
   });
 
   test('d. Transición ACTIVA → DESCARTADA y ACTIVA → VENCIDA anunciadas (Datos simulados)', async ({ page }, testInfo) => {
-    const sim = await interceptar(page);
+    const sim = await interceptar(page, 2);
     await page.clock.install();
     await irAAlertas(page);
+    testInfo.annotations.push({ type: 'Datos simulados', description: `Alertas reales llevadas a ACTIVA en listado y detalle: ${sim.forzadas.map((id) => `#${id}`).join(', ') || '(ninguna)'}; el PATCH y el vencimiento se simulan en la prueba.` });
 
     // Dos alertas ACTIVA distintas, ubicadas por id_alerta (la fila sigue el orden del listado;
     // varias alertas comparten la misma hora de generación)
     const activas = sim.lista.filter((a) => a.estado_alerta === 'ACTIVA').map((a) => a.id_alerta as number);
     expect(activas.length, 'Precondición: al menos 2 alertas ACTIVA del Productor').toBeGreaterThanOrEqual(2);
     const [idDesc, idVenc] = activas;
-    const filaDe = (id: number) => page.locator('tbody tr').nth(sim.lista.findIndex((a) => a.id_alerta === id));
+    const filaDe = (id: number) => tarjetaDe(page, id);
     testInfo.annotations.push({ type: 'Alertas usadas', description: `DESCARTADA #${idDesc} · VENCIDA #${idVenc}` });
 
     // ACTIVA → DESCARTADA (falso positivo, motivo obligatorio)
-    await filaDe(idDesc).focus();
-    await page.keyboard.press('Enter');
-    const dialogo = page.getByRole('dialog', { name: new RegExp(`#${idDesc}\\b`) });
-    await expect(dialogo).toBeVisible({ timeout: 30_000 });
-    await dialogo.getByRole('button', { name: 'Falso positivo' }).click();
-    const modal = page.getByRole('dialog', { name: 'Descartar alerta (falso positivo)' });
-    await expect(modal).toBeVisible();
-    await escanear(page, 'modal-descartada', testInfo);
-    await modal.getByLabel(/Motivo del descarte/).fill('Sensor expuesto a sol directo (prueba QA, simulada).');
-    await modal.getByRole('button', { name: 'Descartar' }).click();
-    await expect(modal).toBeHidden({ timeout: 30_000 });
-    await page.waitForTimeout(1_500);
-    const anuncioDesc = await textoAnunciado(page);
-    testInfo.annotations.push({ type: 'Anuncio DESCARTADA', description: anuncioDesc || '(ninguno)' });
-    expect.soft(anuncioDesc, 'DEFECTO 3.3.1/4.1.3: la transición ACTIVA→DESCARTADA no se anuncia').toMatch(/descart/i);
-    expect.soft(sim.patches.at(-1)?.cuerpo, 'PATCH simulado de DESCARTADA').toMatchObject({ nuevo_estado: 'DESCARTADA' });
+    const dialogo = await abrirDetalle(page, idDesc);
+    // 1.4.0: descartar exige el permiso D sobre alertas (useAccionesAlerta); sin él no se ofrece
+    const descartar = dialogo.getByRole('button', { name: 'Descartar', exact: true });
+    const acciones = await dialogo.getByRole('button').allInnerTexts();
+    testInfo.annotations.push({ type: 'Acciones del detalle (ACTIVA)', description: acciones.map((a) => a.trim()).filter(Boolean).join(', ') });
+    if (await descartar.count()) {
+      await descartar.click();
+      const modal = page.getByRole('dialog', { name: 'Descartar alerta (falso positivo)' });
+      await expect(modal).toBeVisible();
+      await escanear(page, 'modal-descartada', testInfo);
+      await modal.getByLabel(/Motivo del descarte/).fill('Sensor expuesto a sol directo (prueba QA, simulada).');
+      await modal.getByRole('button', { name: 'Descartar', exact: true }).click();
+      await expect(modal).toBeHidden({ timeout: 30_000 });
+      await page.waitForTimeout(1_500);
+      const anuncioDesc = await textoAnunciado(page);
+      testInfo.annotations.push({ type: 'Anuncio DESCARTADA', description: anuncioDesc || '(ninguno)' });
+      expect.soft(anuncioDesc, 'DEFECTO 3.3.1/4.1.3: la transición ACTIVA→DESCARTADA no se anuncia').toMatch(/descart/i);
+      expect.soft(sim.patches.at(-1)?.cuerpo, 'PATCH simulado de DESCARTADA').toMatchObject({ nuevo_estado: 'DESCARTADA' });
+    } else {
+      expect.soft(0, 'BLOQUEO: el rol Productor no tiene permiso para descartar alertas (permiso D sobre alertas); la transición ACTIVA→DESCARTADA no se puede ejecutar con el rol del caso').toBeGreaterThan(0);
+    }
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 10_000 });
 
     // ACTIVA → VENCIDA: la hace el sistema (vence el SLA); llega con el siguiente refresco
     const filaVenc = filaDe(idVenc);
@@ -351,7 +401,7 @@ test.describe('TC-DIS-150 — Panel de Alertas en Tiempo Real', () => {
     await page.clock.resume();
     await page.waitForTimeout(3_000);
     const anuncioVenc = await textoAnunciado(page);
-    const estadoFila = (await filaVenc.locator('td').nth(6).innerText()).trim();
+    const estadoFila = (await leerPastillas(page)).find((c) => c.id === idVenc)?.estado ?? '(sin tarjeta)';
     testInfo.annotations.push({ type: 'Anuncio VENCIDA', description: `${anuncioVenc || '(ninguno)'} · estado en la tabla: ${estadoFila}` });
     expect.soft(anuncioVenc, 'DEFECTO 3.3.1/4.1.3: el vencimiento de la alerta (ACTIVA→VENCIDA) no se anuncia').toMatch(/vencid/i);
     expect.soft(estadoFila, 'DEFECTO: el panel no refleja solo el vencimiento (sin tiempo real)').toBe('Vencida');
@@ -368,31 +418,40 @@ test.describe('TC-DIS-150 — Panel de Alertas en Tiempo Real', () => {
     await severidad.selectOption('CRITICO');
     await page.getByRole('button', { name: /Aplicar/ }).focus();
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(2_000);
-    const sevs = await page.locator('tbody tr td:nth-child(4)').allInnerTexts();
-    expect.soft(sevs.length, 'El filtro CRITICO devuelve filas').toBeGreaterThan(0);
-    expect.soft(sevs.every((s) => s.trim() === 'Crítico'), 'El filtro por teclado aplica severidad CRITICO').toBe(true);
+    await expect.poll(async () => {
+      const sevs = (await leerPastillas(page)).map((c) => c.severidad);
+      return sevs.length > 0 && sevs.every((s) => s === 'Crítica');
+    }, { timeout: 30_000, message: 'El filtro por teclado deja solo alertas de severidad Crítica' }).toBe(true);
 
-    // Recorrido con Tab hasta la primera fila: el foco es visible en cada parada
-    await page.locator('tbody tr').first().focus();
-    const contorno = await page.evaluate(() => {
-      const el = document.activeElement as HTMLElement;
-      const cs = getComputedStyle(el);
-      return { tag: el.tagName, outline: cs.outlineStyle !== 'none' && cs.outlineWidth !== '0px', sombra: cs.boxShadow !== 'none', fondo: cs.backgroundColor };
-    });
-    testInfo.annotations.push({ type: 'Foco en fila', description: JSON.stringify(contorno) });
-    expect.soft(contorno.outline || contorno.sombra, 'DEFECTO 2.4.7: la fila enfocada no muestra foco visible').toBe(true);
-    const rol = (await page.locator('tbody tr').first().getAttribute('role')) ?? '(sin role)';
-    expect.soft(rol, 'DEFECTO 4.1.2: fila interactiva (tabIndex=0, abre el detalle) sin rol de botón/enlace').toMatch(/button|link/);
+    // Las acciones de la primera tarjeta, recorridas con Tab: el foco es visible en cada parada
+    const primera = tarjetas(page).first();
+    const botones = primera.getByRole('button');
+    await page.keyboard.press('Shift');
+    await botones.first().focus();
+    const paradas: { nombre: string; visible: boolean }[] = [];
+    for (let i = 0; i < (await botones.count()); i++) {
+      paradas.push(await page.evaluate(() => {
+        const el = document.activeElement as HTMLElement;
+        const cs = getComputedStyle(el);
+        return { nombre: (el.textContent ?? '').trim(), visible: (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none' };
+      }));
+      await page.keyboard.press('Tab');
+    }
+    testInfo.annotations.push({ type: 'Acciones de la tarjeta con Tab', description: JSON.stringify(paradas) });
+    expect.soft(paradas.filter((p) => !p.visible).map((p) => p.nombre), 'DEFECTO 2.4.7: acciones de la tarjeta sin foco visible').toEqual([]);
+    // Las acciones nombran a qué alerta se aplican (aria-describedby al título de la tarjeta)
+    const describe = await botones.first().getAttribute('aria-describedby');
+    expect.soft(describe, '4.1.2: las acciones de la tarjeta se asocian a su alerta').toMatch(/^alerta-\d+$/);
 
-    // Escape cierra el detalle y el foco vuelve a la fila
+    // "Ver detalle" por teclado; Escape cierra y el foco vuelve al botón que lo abrió
+    const ver = primera.getByRole('button', { name: 'Ver detalle' });
+    await ver.focus();
     await page.keyboard.press('Enter');
     const dialogo = page.getByRole('dialog').first();
     await expect(dialogo).toBeVisible({ timeout: 30_000 });
     await page.keyboard.press('Escape');
     await expect(dialogo).toBeHidden();
-    const vuelve = await page.evaluate(() => document.activeElement?.tagName);
-    expect.soft(vuelve, 'DEFECTO 2.4.3: al cerrar el detalle el foco no vuelve a la fila').toBe('TR');
+    await expect.soft(ver, 'DEFECTO 2.4.3: al cerrar el detalle el foco no vuelve a "Ver detalle" de la tarjeta').toBeFocused();
     await escanear(page, 'filtro-critico', testInfo);
   });
 });
