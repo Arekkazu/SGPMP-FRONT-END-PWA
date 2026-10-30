@@ -1,6 +1,7 @@
 // | Fecha      | Nombre  | Que se hizo |
 // |------------|---------|-------------|
 // | 2026-10-22 | Leandro | FE-12 RF-57: verifica diseño y acciones con API simulada |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo RF-57: el rechazo a 390 px se prueba en Alertas y el detalle se abre con «Ver detalle» |
 /// <reference types="cypress" />
 
 // Navegador real y aplicación real; todas las respuestas HTTP son dobles explícitos.
@@ -34,7 +35,7 @@ describe('FE-12 navegador con backend simulado', () => {
     preparar(false);
     cy.viewport(1280, 900);
     cy.visit('/telemetria/alertas');
-    cy.contains('tr', 'TEMPERATURA_CRITICA').click();
+    cy.contains('button', 'Ver detalle').click();
     cy.get('.ds-modal__panel').should('be.visible');
     cy.contains('button', 'Tomar en atención').should('be.visible');
     cy.contains('button', /^Descartar$/).should('not.exist');
@@ -52,10 +53,11 @@ describe('FE-12 navegador con backend simulado', () => {
         req.reply({ statusCode: estado, body: { error_code: estado === 403 ? 'ACCESO_DENEGADO' : 'TRANSICION_INVALIDA', message: 'Rechazo público FE-12' } });
       }).as('cambio');
       cy.viewport(390, 844);
-      cy.visit('/telemetria/campo');
-      cy.contains('button', /^Descartar$/).click();
+      cy.visit('/telemetria/alertas');
+      cy.contains('button', 'Ver detalle').click();
+      cy.get('.ds-modal__panel').contains('button', /^Descartar$/).click();
       cy.get('#motivo-alerta').type('Motivo conservado');
-      cy.get('[role="dialog"]').contains('button', /^Descartar$/).click();
+      cy.get('[role="dialog"]').last().contains('button', /^Descartar$/).click();
       cy.wait('@cambio');
       cy.contains('[role="alert"]', 'Rechazo público FE-12').should('be.visible');
       cy.get('#motivo-alerta').should('have.value', 'Motivo conservado');

@@ -2,6 +2,7 @@
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 // | 2026-10-26 | Arekkazu | INC-M03-193-G121 RF-59: la línea se corta en los vacíos temporales (CA-13) |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo 13.6 RF-59: título y alto por gráfica, una por variable |
 import React, { useMemo } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { LineChartTelemetria, type SerieChart } from './LineChartTelemetria';
@@ -49,10 +50,12 @@ export function buildChart(
   return { data: Array.from(byTs.values()), series };
 }
 
-export function HistorialChart({ items, unidad, vacios = [] }: {
+export function HistorialChart({ items, unidad, vacios = [], titulo, alto = 280 }: {
   items: LecturaHistoricaSchema[];
   unidad?: string;
   vacios?: VacioTemporalSchema[];
+  titulo?: string;
+  alto?: number;
 }) {
   const { t } = useT('telemetry');
   const { data, series } = useMemo(() => buildChart(items, vacios), [items, vacios]);
@@ -60,9 +63,9 @@ export function HistorialChart({ items, unidad, vacios = [] }: {
   const zonas = useMemo(() => zonasDelGrafico(vacios, data.map((d) => String(d.x))), [vacios, data]);
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)', marginBottom: 'var(--s6)' }}>
-      <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('historialchart.evolucion_de_lecturas')}</h3>
+      <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{titulo ?? t('historialchart.evolucion_de_lecturas')}</h3>
       <LineChartTelemetria
-        data={data} xKey="x" series={series} unit={unidad} height={280} formatX={horaCaptura}
+        data={data} xKey="x" series={series} unit={unidad} height={alto} formatX={horaCaptura}
         zonasSinDatos={zonas} etiquetaSinDatos={t('historialchart.sin_datos')}
       />
     </div>

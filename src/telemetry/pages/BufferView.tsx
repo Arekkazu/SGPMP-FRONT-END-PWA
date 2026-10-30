@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: datos reales de GET /iot/buffer e indicadores etiquetados |
+// | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: la lista de indicadores usa .ds-kv (regla de rejillas responsive) |
 import React from 'react';
 import { AlertTriangle, CheckCircle2, Cpu, Database, Layers, OctagonAlert } from 'lucide-react';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
@@ -50,7 +51,7 @@ function TarjetaBuffer({ d }: { d: EstadoBufferSchema }) {
       )}
 
       {/* 1.3.1: cada indicador con su rótulo (dt) y su valor (dd). */}
-      <dl style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--s1) var(--s3)', margin: 0 }}>
+      <dl className="ds-kv">
         <dt style={DT}>{t('bufferview.conexion')}</dt>
         <dd style={DD}>{t(`bufferview.conexion_${d.estado_local_buffer ?? 'sin_reporte'}`)}</dd>
         <dt style={DT}>{t('bufferview.datos_pendientes')}</dt>

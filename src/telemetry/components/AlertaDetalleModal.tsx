@@ -6,6 +6,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-05/M3-06 RF-57: historial con evento Creada, estados legibles y autor; ubicación con nombres |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-05/M3-06/T-18: sin pasos repetidos, umbral superado y activo con nombre |
 // | 2026-10-29 | Arekkazu | H-M3-08 CP38/39 RF-57: reglas activadas por nombre, no "[object Object]" |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo RF-57: comparte las acciones con la tarjeta de la lista |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Clock, CheckCircle2, XCircle } from 'lucide-react';
@@ -21,8 +22,7 @@ import { fechaHoraCaptura, valorConUnidad } from '../lib/sensorEscala';
 import type { AlertaDetalleSchema, NuevoEstadoAlerta } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { etiquetaCodigo } from '../lib/etiquetaCodigo';
-import { ubicacionAlerta } from './AlertasTable';
-import { motivoLegible, sinPasosRepetidos, umbralDeAlerta } from '../lib/detalleAlerta';
+import { motivoLegible, sinPasosRepetidos, ubicacionAlerta, umbralDeAlerta } from '../lib/detalleAlerta';
 
 interface Props {
   detalle: AlertaDetalleSchema | null;
@@ -44,7 +44,7 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-const ACCION_META: Record<NuevoEstadoAlerta, { label: string; variant: 'primary' | 'secondary' | 'danger'; icon: React.ReactNode }> = {
+export const ACCION_META: Record<NuevoEstadoAlerta, { label: string; variant: 'primary' | 'secondary' | 'danger'; icon: React.ReactNode }> = {
   EN_ATENCION: { label: 'tomar', variant: 'secondary', icon: <Clock size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
   RESUELTA: { label: 'resolver', variant: 'primary', icon: <CheckCircle2 size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },
   DESCARTADA: { label: 'descartar', variant: 'danger', icon: <XCircle size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} /> },

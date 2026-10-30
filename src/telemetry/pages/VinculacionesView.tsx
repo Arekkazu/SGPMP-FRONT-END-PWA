@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre en el filtro |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo 13.8 RF-61: lista por revisar / vinculadas con la acción en la tarjeta |
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -13,7 +14,7 @@ import { Button } from '../../shared/design-system/Button';
 import { useVinculaciones } from '../hooks/useVinculaciones';
 import { useAreas } from '../hooks/useAreas';
 import { VinculacionesFiltros, VINCULACIONES_FILTROS_VACIO, type VinculacionesFiltrosState } from '../components/VinculacionesFiltros';
-import { VinculacionesTable } from '../components/VinculacionesTable';
+import { VinculacionesLista } from '../components/VinculacionesLista';
 import { VinculacionDetalleModal } from '../components/VinculacionDetalleModal';
 import { ResolverVinculacionModal } from '../components/ResolverVinculacionModal';
 import { CorregirVinculacionModal } from '../components/CorregirVinculacionModal';
@@ -36,6 +37,10 @@ export function VinculacionesView() {
   const areas = useAreas();
   const [seleccionada, setSeleccionada] = useState<VinculacionLecturaSchema | null>(null);
   const [accion, setAccion] = useState<Accion>(null);
+  // La acción se abrió desde la tarjeta: al cancelarla se vuelve a la lista, no al detalle.
+  const [desdeTarjeta, setDesdeTarjeta] = useState(false);
+  const accionDirecta = (v: VinculacionLecturaSchema, a: Exclude<Accion, null>) => { setSeleccionada(v); setDesdeTarjeta(true); setAccion(a); };
+  const cerrarAccion = () => { setAccion(null); if (desdeTarjeta) { setSeleccionada(null); setDesdeTarjeta(false); } };
 
   const build = useCallback(
     (pagina: number): VincFiltrosDTO => {
@@ -92,7 +97,15 @@ export function VinculacionesView() {
           onLimpiar={() => { setFiltros(VINCULACIONES_FILTROS_VACIO); cargar({ pagina: 1, por_pagina: 50 }); }}
         />
 
-        <VinculacionesTable items={items} loading={loading} onAbrir={setSeleccionada} />
+        <VinculacionesLista
+          items={items}
+          loading={loading}
+          puedeGestionar={puedeGestionar}
+          online={online}
+          onAbrir={(v) => { setDesdeTarjeta(false); setSeleccionada(v); }}
+          onResolver={(v) => accionDirecta(v, 'resolver')}
+          onCorregir={(v) => accionDirecta(v, 'corregir')}
+        />
 
         <Paginacion pagina={paginacion.pagina} totalPaginas={paginacion.totalPaginas} totalRegistros={paginacion.totalRegistros} onCambiar={(p) => cargar(build(p))} />
       </div>
@@ -109,11 +122,11 @@ export function VinculacionesView() {
       )}
 
       {seleccionada && accion === 'resolver' && (
-        <ResolverVinculacionModal vinc={seleccionada} saving={saving} saveError={saveError} onConfirm={confirmarResolver} onClose={() => setAccion(null)} />
+        <ResolverVinculacionModal vinc={seleccionada} saving={saving} saveError={saveError} onConfirm={confirmarResolver} onClose={cerrarAccion} />
       )}
 
       {seleccionada && accion === 'corregir' && (
-        <CorregirVinculacionModal vinc={seleccionada} saving={saving} saveError={saveError} onConfirm={confirmarCorregir} onClose={() => setAccion(null)} />
+        <CorregirVinculacionModal vinc={seleccionada} saving={saving} saveError={saveError} onConfirm={confirmarCorregir} onClose={cerrarAccion} />
       )}
     </div>
   );

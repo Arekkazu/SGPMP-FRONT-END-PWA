@@ -5,6 +5,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01/M3-13 RF-59: 7 días por defecto, rangos rápidos consultan, exportación deshabilitada con motivo |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre en el filtro |
 // | 2026-10-26 | Arekkazu | INC-M03-180/184-G111/G113 RF-59: el 422 de parámetros inválidos se muestra como tal |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo 13.6 RF-59: una gráfica por variable, sin mezclar unidades en un eje |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -21,6 +22,7 @@ import { ExportarModal } from '../components/ExportarModal';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_HISTORIAL, ACCION_R, ACCION_E } from '../rbac';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 import type { HistorialFiltros as HistorialFiltrosDTO, EstadoDato, OrigenDato, FormatoExportHistorial } from '../types';
 
 export function HistorialView() {
@@ -56,9 +58,15 @@ export function HistorialView() {
 
   useEffect(() => { if (puedeVer) cargar(build(1)); }, [puedeVer]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const unidadChart = useMemo(() => {
-    const unidades = new Set(items.map((i) => i.unidad_medida));
-    return unidades.size === 1 ? items[0]?.unidad_medida : undefined;
+  // Prototipo 13.6 (M3-09): una gráfica por variable. En un solo eje, pH (0–14) y
+  // conductividad (cientos) se aplastaban y la escala no tenía unidad.
+  const porVariable = useMemo(() => {
+    const map = new Map<string, typeof items>();
+    for (const it of items) map.set(it.tipo_variable, [...(map.get(it.tipo_variable) ?? []), it]);
+    return [...map].map(([variable, lecturas]) => {
+      const unidades = new Set(lecturas.map((l) => l.unidad_medida));
+      return { variable, lecturas, unidad: unidades.size === 1 ? lecturas[0].unidad_medida : undefined };
+    });
   }, [items]);
 
   const doExportar = async (formato: FormatoExportHistorial) => { await exportar(build(paginacion.pagina), formato); };
@@ -122,7 +130,18 @@ export function HistorialView() {
         {!loading && items.length > 0 && (
           <>
             <EstadisticasCards estadisticas={estadisticas} />
-            <HistorialChart items={items} unidad={unidadChart} vacios={vacios} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 440px), 1fr))', columnGap: 'var(--s4)' }}>
+              {porVariable.map(({ variable, lecturas, unidad }) => (
+                <HistorialChart
+                  key={variable}
+                  titulo={unidad ? `${etiquetaCodigo(variable)} (${unidad})` : etiquetaCodigo(variable)}
+                  items={lecturas}
+                  unidad={unidad}
+                  vacios={vacios.filter((v) => v.tipo_variable === variable)}
+                  alto={porVariable.length > 1 ? 200 : 280}
+                />
+              ))}
+            </div>
           </>
         )}
 
