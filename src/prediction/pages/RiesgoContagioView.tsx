@@ -5,6 +5,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-170 RF-68 a11y 2.4.6/1.3.1: la grilla de lotes tiene encabezado |
 // | 2026-10-29 | Arekkazu | PEND-456 RF-68: datos reales de GET /prediccion/riesgo-contagio (sin contagioMock) |
+// | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68: NIVEL_TONO compartido con el historial |
 import React, { useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -18,10 +19,9 @@ import { ModalShell } from '../components/ModalShell';
 import { Pill, type Tono } from '../components/Pill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW, INPUT, LABEL } from '../components/tableStyles';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
-import { aLotes, type LoteContagio, type NivelContagio, type ResultadoRegla } from '../lib/contagio';
+import { aLotes, NIVEL_TONO, type LoteContagio, type NivelContagio, type ResultadoRegla } from '../lib/contagio';
 import { useRiesgoContagio } from '../hooks/useMonitor';
 
-const NIVEL_TONO: Record<NivelContagio, Tono> = { ALTO: 'error', MEDIO: 'warning', BAJO: 'success' };
 const REGLA_TONO: Record<ResultadoRegla, Tono> = { CUMPLE: 'success', NO_CUMPLE: 'error', AJUSTE: 'warning' };
 const CARD: React.CSSProperties = { background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' };
 const H3: React.CSSProperties = { fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' };

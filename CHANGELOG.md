@@ -1,3 +1,14 @@
+## [1.4.0-rc.12](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.11...v1.4.0-rc.12) (2026-10-30)
+
+### Features
+
+* **rf49-mod9:** configurar las especies compatibles de cada sensor desde M09 (INC-M03-135-G01) ([e21c4de](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e21c4dea0ec2d66e47e1c862c3c5987f226f7063)), closes [#871](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/871)
+* **rf72-prediction:** ventana de retroalimentacion en M09 y ampliacion por resultado desde el historial (INC-M04-229-G070) ([7b441b2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7b441b2b92688db7f68ceeca156cad6cab2ed016))
+
+### Bug Fixes
+
+* **rf68-prediction:** el historial muestra nivel y probabilidad del evento CONTAGIO (INC-M04-223-G034) ([bb11509](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/bb1150910f11cf79fa9fdf0dbf47a316fb6b94e2)), closes [#871](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/871)
+
 ## [1.4.0-rc.11](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.10...v1.4.0-rc.11) (2026-10-30)
 
 ### Features

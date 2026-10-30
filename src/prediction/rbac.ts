@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: ampliación de la ventana para un resultado |
 // =====================================================================
 // Módulo 4 — Predicción / IA · IDs de recursos y acciones RBAC
 // Espeja modulo1.recursos / modulo1.acciones del backend
@@ -20,6 +23,9 @@ export const RECURSO_OTA = 44;
 export const RECURSO_RETRO = 45;
 /** Recurso 46 — bitácora de auditoría M04 (RF-73). Admin: R,E. */
 export const RECURSO_AUDITORIA = 46;
+
+/** Recurso 21 — configuraciones globales (M09). Admin: U amplía la ventana de RF-72 para un resultado. */
+export const RECURSO_CONFIG_GLOBAL = 21;
 
 export const ACCION_C = 1; // Crear
 export const ACCION_R = 2; // Leer (listar / detalle)
