@@ -5,7 +5,11 @@
  * Ruta: /telemetria/vinculaciones — VinculacionesView + VinculacionDetalleModal +
  * ResolverVinculacionModal + CorregirVinculacionModal (Telemetría → Vinculaciones)
  *
- * Primera ejecución sobre el ambiente TEST nuevo (app en /sigab-test, API en /api-sgpmp-test).
+ * Tercera ejecución (2026-10-29) sobre 1.4.0-rc.11, ambiente TEST (app en /sigab-test, API en
+ * /api-sgpmp-test). Desde el prototipo 13.8 la vista es una bandeja de tarjetas <article> en dos
+ * secciones con h2 ("Por revisar" / "Vinculadas"), cada una con "Elegir animal o lote" / "Corregir"
+ * y "Ver detalle"; el activo se elige en un Combobox (ARIA 1.2) con los candidatos de la
+ * infraestructura (M3-03) y el modelo de manejo llega fijo de la vinculación.
  *
  * Precondiciones (hoja "CASOS DE PRUEBA UI/UX"):
  *   - Rol: Ingeniero de Campo (o Veterinario/Administrador). Se usa Administrador: los datos
@@ -100,24 +104,35 @@ async function interceptar(page: Page, opciones: { error422?: boolean } = {}) {
 async function irAVinculaciones(page: Page) {
   await page.goto(`${APP}/telemetria/vinculaciones`);
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/vinculaci/i, { timeout: 60_000 });
-  await expect(page.locator('main tbody tr').first()).toBeVisible({ timeout: 60_000 });
+  await expect(tarjetas(page).first()).toBeVisible({ timeout: 60_000 });
 }
 
-/** Filtra por estado con los controles de la vista y espera a que la tabla lo refleje. */
+/** Tarjetas de vinculación de la bandeja, en orden. */
+function tarjetas(page: Page) {
+  return page.locator('main article');
+}
+
+/** Estado de cada tarjeta (pastilla de estado, la primera de la tarjeta). */
+async function estadosEnPantalla(page: Page) {
+  return tarjetas(page).evaluateAll((as) => as.map((a) => (a.firstElementChild?.querySelector('span')?.textContent ?? '').trim()));
+}
+
+/** Filtra por estado con los controles de la vista y espera a que la bandeja lo refleje. */
 async function filtrarPorEstado(page: Page, estado: string) {
   await page.getByLabel('Estado', { exact: true }).selectOption(estado);
   await page.getByRole('button', { name: /aplicar filtros/i }).click();
   const etiqueta = ETIQUETA_ESTADO[estado];
   await expect.poll(async () => {
-    const estados = await page.locator('main tbody tr td:nth-child(7)').allInnerTexts();
-    return estados.length > 0 && estados.every((e) => e.trim() === etiqueta);
+    const estados = await estadosEnPantalla(page);
+    return estados.length > 0 && estados.every((e) => e === etiqueta);
   }, { timeout: 30_000, message: `BLOQUEO: no hay vinculaciones en estado ${estado} en el ambiente` }).toBe(true);
 }
 
-/** Abre la primera fila por teclado (foco + Enter) y devuelve el diálogo de detalle. */
+/** Abre por teclado ("Ver detalle" de la primera tarjeta + Enter) y devuelve el diálogo de detalle. */
 async function abrirPrimera(page: Page): Promise<Locator> {
-  const fila = page.locator('main tbody tr').first();
-  await fila.focus();
+  const ver = tarjetas(page).first().getByRole('button', { name: 'Ver detalle' });
+  await page.keyboard.press('Shift');
+  await ver.focus();
   await page.keyboard.press('Enter');
   const dialogo = page.getByRole('dialog');
   await expect(dialogo).toBeVisible({ timeout: 15_000 });
@@ -132,6 +147,43 @@ async function abrirResolver(page: Page, estado: 'AMBIGUA' | 'SIN_VINCULAR') {
   const dialogo = page.getByRole('dialog');
   await expect(dialogo.getByRole('heading', { name: /resolver vinculaci/i })).toBeVisible({ timeout: 15_000 });
   return { dialogo, tituloDetalle, tituloResolver: await dialogo.getByRole('heading').first().innerText() };
+}
+
+/**
+ * Abre "Elegir animal o lote" en las tarjetas AMBIGUA hasta dar con una cuya infraestructura tenga
+ * activos candidatos (la ayuda del combobox dice "N activos en esta infraestructura"). Varias
+ * AMBIGUA de TEST están en áreas sin animales listables.
+ */
+async function abrirResolverConCandidatos(page: Page, testInfo: TestInfo) {
+  await filtrarPorEstado(page, 'AMBIGUA');
+  const total = Math.min(await tarjetas(page).count(), 15);
+  const probadas: string[] = [];
+  for (let i = 0; i < total; i++) {
+    // Los candidatos llegan de GET /activos-biologicos?id_infraestructura=… después de abrir el diálogo
+    const candidatos = page.waitForResponse((r) => /\/activos-biologicos\?.*id_infraestructura=/.test(r.url()), { timeout: 20_000 }).catch(() => null);
+    await tarjetas(page).nth(i).getByRole('button', { name: /elegir animal o lote/i }).click();
+    const dialogo = page.getByRole('dialog');
+    await expect(dialogo.getByRole('heading', { name: /resolver vinculaci/i })).toBeVisible({ timeout: 15_000 });
+    await candidatos;
+    await page.waitForTimeout(500);
+    const combo = dialogo.getByRole('combobox', { name: /activo biol[oó]gico/i });
+    const ayuda = await combo.evaluate((el) => (el.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean).map((id) => document.getElementById(id)?.textContent ?? '').join(' '));
+    const titulo = await dialogo.getByRole('heading').first().innerText();
+    probadas.push(`${titulo}: ${ayuda}`);
+    if (/\d+ activos? en esta infraestructura/i.test(ayuda)) {
+      testInfo.annotations.push({ type: 'Vinculación AMBIGUA con candidatos', description: probadas.join(' ‖ ') });
+      return { dialogo, combo, titulo };
+    }
+    await dialogo.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(dialogo).toBeHidden({ timeout: 10_000 });
+  }
+  testInfo.annotations.push({ type: 'Vinculaciones AMBIGUA probadas', description: probadas.join(' ‖ ') });
+  throw new Error(`BLOQUEO: ninguna de las ${total} vinculaciones AMBIGUA revisadas tiene activos candidatos en su infraestructura`);
+}
+
+/** Opciones de la lista del combobox (no las de otros <select> de la página). */
+function opcionesDe(page: Page, idLista: string | null) {
+  return page.locator(`[id="${idLista ?? ''}"] [role="option"]`);
 }
 
 /** Controles que podrían ser la lista de activos candidatos (listbox, radios, select, combobox). */
@@ -165,7 +217,9 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 // ── Pruebas ──────────────────────────────────────────────────────────────────
 
 test.describe('TC-DIS-154 — Resolución manual de vinculaciones (AMBIGUA / SIN_VINCULAR)', () => {
-  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
+  // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás.
+  // El timeout global (30 s) no alcanza para login + axe + Lighthouse.
+  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_154_VIEWPORTS.`);
@@ -177,27 +231,38 @@ test.describe('TC-DIS-154 — Resolución manual de vinculaciones (AMBIGUA / SIN
     await irAVinculaciones(page);
     await escanear(page, 'listado', testInfo);
 
+    // Bandeja: secciones con encabezado ("Por revisar" / "Vinculadas")
+    const secciones = await page.locator('main section[aria-labelledby] h2').allInnerTexts();
+    testInfo.annotations.push({ type: 'Secciones de la bandeja', description: secciones.join(' · ') });
+    expect.soft(secciones.some((s) => /por revisar/i.test(s)), 'La bandeja separa "Por revisar" con su encabezado').toBe(true);
+
     for (const estado of ['AMBIGUA', 'SIN_VINCULAR']) {
       await filtrarPorEstado(page, estado);
-      const n = await page.locator('main tbody tr').count();
+      const n = await tarjetas(page).count();
       testInfo.annotations.push({ type: `Vinculaciones ${estado}`, description: String(n) });
     }
-    // Las filas se abren con teclado: cada una debe exponer qué es (rol y nombre), no solo ser enfocable
-    const fila = await page.locator('main tbody tr').first().evaluate((tr) => ({ tabindex: tr.getAttribute('tabindex'), rol: tr.getAttribute('role'), nombre: tr.getAttribute('aria-label') }));
-    testInfo.annotations.push({ type: 'Fila enfocable', description: JSON.stringify(fila) });
+    // Los botones de cada tarjeta dicen a qué lectura se aplican
+    const botones = await tarjetas(page).first().getByRole('button').evaluateAll((bs) => bs.map((b) => ({ texto: (b.textContent ?? '').trim(), describedby: b.getAttribute('aria-describedby'), label: b.getAttribute('aria-label') })));
+    testInfo.annotations.push({ type: 'Botones de la tarjeta', description: JSON.stringify(botones) });
   });
 
   test('b. [1.3.1 / 4.1.2 / 2.4.6] Formulario de resolución de una lectura AMBIGUA', async ({ page }, testInfo) => {
     const escrituras = await interceptar(page);
     await irAVinculaciones(page);
     const { dialogo, tituloDetalle, tituloResolver } = await abrirResolver(page, 'AMBIGUA');
-    const texto = (await dialogo.innerText()).replace(/\s+/g, ' ');
+    // Texto del formulario sin la ayuda del combobox ("… activos en esta infraestructura"), que no
+    // es el rótulo de la estructura de la lectura
+    const texto = (await dialogo.evaluate((d) => {
+      const c = d.cloneNode(true) as HTMLElement;
+      c.querySelectorAll('[id$="-hint"]').forEach((h) => h.remove());
+      return c.textContent ?? '';
+    })).replace(/\s+/g, ' ');
     testInfo.annotations.push({ type: 'Encabezados', description: `detalle="${tituloDetalle}" · resolver="${tituloResolver}"` });
     testInfo.annotations.push({ type: 'Contenido del formulario', description: texto.slice(0, 400) });
 
     // 1.3.1: rótulos de sensor_id y estructura en el formulario
     expect.soft(/sensor/i.test(texto), 'DEFECTO 1.3.1: el formulario de resolución no muestra el sensor_id de la lectura con su rótulo').toBe(true);
-    expect.soft(/estructura|infraestructura/i.test(texto), 'DEFECTO 1.3.1: el formulario de resolución no muestra la estructura con su rótulo').toBe(true);
+    expect.soft(/estructura|infraestructura|[áa]rea|galp[oó]n|estanque|corral/i.test(texto), 'DEFECTO 1.3.1: el formulario de resolución no muestra la estructura (área) de la lectura con su rótulo').toBe(true);
 
     // 1.3.1 / 4.1.2: lista de activos candidatos (los >1 animales activos de la estructura)
     const candidatos = await listaCandidatos(dialogo);
@@ -208,12 +273,19 @@ test.describe('TC-DIS-154 — Resolución manual de vinculaciones (AMBIGUA / SIN
     // 2.4.6: el encabezado dice que la lectura es AMBIGUA
     expect.soft(`${tituloDetalle} ${tituloResolver}`, 'DEFECTO 2.4.6: ni el encabezado del detalle ni el del formulario dicen que la lectura es AMBIGUA').toMatch(/ambigua/i);
 
-    // Campos con rótulo y obligatoriedad expuestos
-    for (const nombre of [/activo biol[oó]gico/i, /modelo de manejo/i]) {
-      const campo = dialogo.getByLabel(nombre);
-      await expect.soft(campo, `1.3.1: campo con rótulo ${nombre}`).toHaveCount(1);
-      if (await campo.count()) await expect.soft(campo, `aria-required en ${nombre}`).toHaveAttribute('aria-required', 'true');
+    // Activo: combobox con rótulo, obligatoriedad y ayuda asociada (la ayuda cambia al llegar los candidatos)
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+    const activo = dialogo.getByRole('combobox', { name: /activo biol[oó]gico/i });
+    await expect.soft(activo, '1.3.1 / 4.1.2: el activo es un combobox con rótulo').toHaveCount(1);
+    if (await activo.count()) {
+      await expect.soft(activo, 'aria-required en el activo').toHaveAttribute('aria-required', 'true');
+      const ayuda = await activo.evaluate((el) => (el.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean).map((id) => document.getElementById(id)?.textContent ?? '').join(' '));
+      testInfo.annotations.push({ type: 'Ayuda del combobox', description: ayuda || '(ninguna)' });
     }
+    // Modelo de manejo: fijo (texto) o lista cerrada
+    const modelo = dialogo.locator('#rv-modelo');
+    const tipoModelo = await modelo.evaluate((el) => `${el.tagName.toLowerCase()} "${(el.textContent ?? '').trim()}"`);
+    testInfo.annotations.push({ type: 'Modelo de manejo', description: tipoModelo });
     await escanear(page, 'resolver-ambigua', testInfo);
     expect(escrituras, 'Ninguna escritura enviada al abrir el formulario').toEqual([]);
   });
@@ -262,9 +334,11 @@ test.describe('TC-DIS-154 — Resolución manual de vinculaciones (AMBIGUA / SIN
     const escrituras = await interceptar(page, { error422: true });
     await irAVinculaciones(page);
     const { dialogo } = await abrirResolver(page, 'AMBIGUA');
-    await dialogo.getByLabel(/activo biol[oó]gico/i).fill('1');
-    const modelo = dialogo.getByLabel(/modelo de manejo/i);
-    if (!(await modelo.inputValue()).trim()) await modelo.fill('INDIVIDUAL');
+    await dialogo.getByRole('combobox', { name: /activo biol[oó]gico/i }).fill('1');
+    // Tab cierra la lista del combobox, que en móvil y tablet tapa el botón de confirmar
+    await page.keyboard.press('Tab');
+    const modelo = dialogo.locator('#rv-modelo');
+    if ((await modelo.evaluate((el) => el.tagName)) === 'SELECT' && !(await modelo.inputValue())) await modelo.selectOption('INDIVIDUAL');
     await dialogo.getByRole('button', { name: /confirmar vinculaci/i }).click();
 
     const alerta = dialogo.getByRole('alert').filter({ hasText: /\S/ });
@@ -279,7 +353,7 @@ test.describe('TC-DIS-154 — Resolución manual de vinculaciones (AMBIGUA / SIN
   test('f. [2.1.1 / 4.1.2] Teclado: lista de candidatos operable con Tab/flechas y Enter', async ({ page }, testInfo) => {
     await interceptar(page);
     await irAVinculaciones(page);
-    const { dialogo } = await abrirResolver(page, 'AMBIGUA');
+    const { dialogo } = await abrirResolverConCandidatos(page, testInfo);
     // Recorrido con Tab dentro del diálogo: qué controles alcanza el teclado
     const recorrido: string[] = [];
     for (let i = 0; i < 8; i++) {
@@ -295,5 +369,26 @@ test.describe('TC-DIS-154 — Resolución manual de vinculaciones (AMBIGUA / SIN
     const dentro = await dialogo.evaluate((d) => d.contains(document.activeElement));
     expect.soft(dentro, 'El foco queda atrapado dentro del diálogo').toBe(true);
     expect(await listaCandidatos(dialogo), 'DEFECTO 2.1.1 / 4.1.2: no hay lista de candidatos que recorrer con flechas y seleccionar con Enter').toBeGreaterThan(0);
+
+    // Combobox de candidatos: flecha abajo abre la lista y mueve la opción activa; Enter la elige
+    const combo = dialogo.getByRole('combobox', { name: /activo biol[oó]gico/i });
+    await combo.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect.soft(combo, '4.1.2: al abrir la lista el combobox expone aria-expanded="true"').toHaveAttribute('aria-expanded', 'true');
+    const opciones = opcionesDe(page, await combo.getAttribute('aria-controls'));
+    const n = await opciones.count();
+    const activa = await combo.getAttribute('aria-activedescendant');
+    const textoActiva = activa ? await page.locator(`[id="${activa}"]`).innerText().catch(() => '') : '';
+    testInfo.annotations.push({ type: 'Candidatos', description: `${n} opciones · activa: ${activa ?? '(ninguna)'} "${textoActiva.replace(/\s+/g, ' ')}"` });
+    expect.soft(n, 'BLOQUEO: el combobox no lista candidatos para esta infraestructura').toBeGreaterThan(0);
+    expect.soft(activa, '4.1.2: la opción activa se comunica con aria-activedescendant').toBeTruthy();
+    if (n > 0) {
+      await page.keyboard.press('Enter');
+      const valor = await combo.inputValue();
+      testInfo.annotations.push({ type: 'Elegido con Enter', description: valor });
+      expect.soft(valor, '2.1.1: Enter elige el candidato activo').toMatch(/\(#\d+\)$/);
+      await expect.soft(combo, 'Tras elegir, la lista se cierra').toHaveAttribute('aria-expanded', 'false');
+    }
+    await escanear(page, 'candidatos-teclado', testInfo);
   });
 });
