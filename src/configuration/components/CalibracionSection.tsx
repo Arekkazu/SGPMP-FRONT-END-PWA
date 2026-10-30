@@ -1,13 +1,15 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-30 | Arekkazu | INC-M03-135-G01 RF-49: DispSelector y SensorSelector en archivos propios |
 import React, { useEffect, useState } from 'react';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
-import { ShieldCheck, ChevronLeft, Check, RefreshCw, Cpu } from 'lucide-react';
+import { ShieldCheck, ChevronLeft, Check, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
-import { OptionCard } from '../../shared/design-system/OptionCard';
 import { Stepper } from '../../shared/design-system/Stepper';
 import { iconoCategoriaSensor } from '../iconos';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -16,9 +18,10 @@ import { useDispositivosIot } from '../hooks/useDispositivosIot';
 import { useSensores } from '../hooks/useSensores';
 import { useCalibracion } from '../hooks/useCalibracion';
 import type { DispositivoIotResponse, SensorResponse, CalibracionResponse } from '../types';
-import { Buscador } from '../../shared/design-system/Buscador';
-import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
+import { usePaginado } from '../../shared/hooks/useBusqueda';
 import { Paginacion } from './Paginacion';
+import { DispSelector } from './DispSelector';
+import { SensorSelector } from './SensorSelector';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -41,91 +44,6 @@ function formatTs(iso: string | null | undefined): string {
 // ── Step indicator ────────────────────────────────────────────────────────────
 
 type WizardStep = 'dispositivo' | 'sensor' | 'calibrar';
-// ── Device selector ───────────────────────────────────────────────────────────
-
-function DispSelector({ dispositivos, loading, onSelect }: {
-  dispositivos: DispositivoIotResponse[]; loading: boolean; onSelect: (d: DispositivoIotResponse) => void;
-}) {
-  const { t } = useT('configuration');
-  const activos = dispositivos.filter((d) => d.es_activo);
-  const busqueda = useBusqueda(activos, (d) => `${d.serial} ${d.descripcion ?? ''}`);
-  if (loading) {
-    return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} style={{ height: 90, borderRadius: 'var(--r-lg)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }} />
-        ))}
-        <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
-      </div>
-    );
-  }
-  if (activos.length === 0) {
-    return <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s7) 0' }}>{t('calibracionsection.no_hay_dispositivos_activos_disponibles')}</p>;
-  }
-  return (
-    <>
-      {busqueda.conBuscador && (
-        <Buscador id="buscar-disp-calibracion" label={t('busqueda.buscar_dispositivo', { ns: 'common' })} value={busqueda.consulta} onChange={busqueda.setConsulta} resultados={busqueda.filtrados.length} />
-      )}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px,1fr))', gap: 'var(--s4)' }}>
-        {busqueda.filtrados.map((d) => (
-          <OptionCard key={d.id_dispositivo_iot} onClick={() => onSelect(d)}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s3)' }}>
-              <span className="ds-option__icono"><Cpu size={20} strokeWidth={1.5} aria-hidden /></span>
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: 'var(--brand-600)' }}>{d.serial}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{d.descripcion}</div>
-              </div>
-            </div>
-          </OptionCard>
-        ))}
-      </div>
-    </>
-  );
-}
-
-// ── Sensor selector ───────────────────────────────────────────────────────────
-
-function SensorSelector({ sensores, loading, error, onSelect, onBack }: {
-  sensores: SensorResponse[]; loading: boolean; error: { message: string } | null;
-  onSelect: (s: SensorResponse) => void; onBack: () => void;
-}) {
-  const { t } = useT('configuration');
-  const activos = sensores.filter((s) => s.es_activo);
-  return (
-    <div>
-      <Button variant="ghost" size="sm" onClick={onBack} style={{ marginBottom: 'var(--s4)' }} aria-label={t('calibracionsection.cambiar_dispositivo')}>
-        <ChevronLeft size={16} aria-hidden />{t('calibracionsection.cambiar_dispositivo')}</Button>
-      {error && <Alert variant="error" title={t('calibracionsection.error_al_cargar_sensores')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
-      {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 'var(--s4)' }}>
-          {Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ height: 80, borderRadius: 'var(--r-xl)', background: 'var(--surface-hover)', animation: 'pulse 1.4s ease-in-out infinite' }} />)}
-          <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
-        </div>
-      ) : activos.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: 'var(--s6) 0' }}>{t('calibracionsection.este_dispositivo_no_tiene_sensores_activos')}</p>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: 'var(--s4)' }}>
-          {activos.map((s) => {
-            const Icono = iconoCategoriaSensor(s.categoria);
-            return (
-              <OptionCard key={s.id_sensores} onClick={() => onSelect(s)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)' }}>
-                  <span className="ds-option__icono"><Icono size={20} strokeWidth={1.5} aria-hidden /></span>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{s.nombre}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>{s.categoria ?? t('calibracionsection.sin_categoria')}</div>
-                  </div>
-                </div>
-              </OptionCard>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Calibration history ───────────────────────────────────────────────────────
 
 function HistorialCalibraciones({ calibraciones, loading, sensor }: { calibraciones: CalibracionResponse[]; loading: boolean; sensor: SensorResponse }) {
