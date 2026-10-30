@@ -26,11 +26,12 @@
  * Herramientas: @axe-core/playwright + Lighthouse en modo snapshot sobre la misma sesión
  * (resultados/). Una auditoría fallida de Lighthouse es un defecto aunque tenga peso 0.
  *
- * ESTADO DE LA VISTA (2026-10-22): IngestaView pinta datos fijos de `ingestaMock.ts` con el banner
- * "Datos simulados" (sin endpoint de lectura del equipo AIOT). Trae 7 lecturas escalares con solo
- * 3 calidades (VALIDA, FUERA_DE_RANGO, ERROR), sin filas de visión, sin filtros y sin estado vacío.
- * Como los datos no viajan por la red, no se pueden reconstruir con page.route: los pasos que
- * dependen de ellos fallan con "BLOQUEO" y lo que sí existe se escanea y se verifica.
+ * ESTADO DE LA VISTA (2026-10-29, 1.4.0-rc.11, tercera ejecución): IngestaView (prototipo v2,
+ * RFC-011) sigue pintando datos fijos de `ingestaMock.ts`, ahora marcados con la etiqueta discreta
+ * "DEMO" (EtiquetaDemo, role="note") en vez del banner "Datos simulados". Trae 17 lecturas con los 9
+ * estados de calidad, filas de visión (vector de comportamiento), filtros por búsqueda / estado /
+ * origen / tipo de dato / orden, estado vacío y detalle por lectura. La precondición de datos reales
+ * sigue en "BLOQUEO"; todos los pasos se ejecutan sobre los datos de ejemplo de la vista.
  * PROTECCIÓN DE DATOS: vista de solo lectura; toda escritura al backend se aborta.
  *
  * Navegación directa por URL (page.goto), sin sidebar.
@@ -139,6 +140,37 @@ async function contarFiltros(page: Page) {
   return page.locator('main').locator('select, [role="combobox"], input[type="search"], input[type="text"]').count();
 }
 
+/** Marca de datos de ejemplo: etiqueta "DEMO" (desde 1.4.0) o el banner "Datos simulados" anterior. */
+async function marcaDatosDeEjemplo(page: Page) {
+  return page.locator('main').getByRole('note').filter({ hasText: /datos simulados|datos de ejemplo|\bDEMO\b/i }).count();
+}
+
+/** Texto de la región viva que anuncia el número de lecturas ("Mostrando n lecturas"). */
+async function anuncioConteo(page: Page) {
+  return (await page.locator('main [aria-live]').allInnerTexts()).map((t) => t.trim()).filter(Boolean).join(' | ');
+}
+
+/** Elemento enfocado y si muestra un indicador de foco. */
+async function enfocado(page: Page) {
+  return page.evaluate(() => {
+    const a = document.activeElement as HTMLElement | null;
+    if (!a || a === document.body) return { descripcion: '(body)', focoVisible: false };
+    const cs = getComputedStyle(a);
+    const label = a.id ? document.querySelector(`label[for="${a.id}"]`)?.textContent : '';
+    return {
+      descripcion: `${(a.getAttribute('role') ?? a.tagName).toLowerCase()} "${(label || a.getAttribute('aria-label') || a.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 30)}"`,
+      focoVisible: (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none',
+    };
+  });
+}
+
+/** Aplica un filtro de la vista con teclado (foco en el select y elección de la opción). */
+async function filtrarConTeclado(page: Page, id: string, valor: string) {
+  await page.keyboard.press('Shift');
+  await page.locator(`#${id}`).focus();
+  await page.locator(`#${id}`).selectOption(valor);
+}
+
 // ── Escaneo ──────────────────────────────────────────────────────────────────
 
 function resumenViolaciones(violaciones: { id: string; impact?: string | null; nodes: { target: unknown }[] }[]) {
@@ -165,7 +197,9 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 // ── Pruebas ──────────────────────────────────────────────────────────────────
 
 test.describe('TC-DIS-146 — Estado de Ingesta de Telemetría', () => {
-  // Cada test inicia sesión por su cuenta: un bloqueo en uno no debe saltar los demás
+  // Cada test inicia sesión por su cuenta: un bloqueo en uno no debe saltar los demás.
+  // El timeout global (30 s) no alcanza para login + axe + Lighthouse.
+  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_146_VIEWPORTS.`);
@@ -175,12 +209,12 @@ test.describe('TC-DIS-146 — Estado de Ingesta de Telemetría', () => {
 
   test('a. Navegar a la vista técnica de Estado de Ingesta; precondición de datos', async ({ page }, testInfo) => {
     await irAIngesta(page);
-    const simulados = await page.getByRole('note').filter({ hasText: /datos simulados/i }).count();
+    const simulados = await marcaDatosDeEjemplo(page);
     const { filas } = await leerTabla(page);
     const etiquetas = [...new Set(filas.map((f) => f.calidad.trim()))];
-    testInfo.annotations.push({ type: 'Datos', description: `${filas.length} lecturas · calidades presentes: ${etiquetas.join(', ')} · banner "Datos simulados": ${simulados ? 'sí' : 'no'}` });
+    testInfo.annotations.push({ type: 'Datos', description: `${filas.length} lecturas · calidades presentes: ${etiquetas.join(', ')} · marca de datos de ejemplo (DEMO): ${simulados ? 'sí' : 'no'}` });
 
-    expect.soft(simulados, 'BLOQUEO: la vista muestra datos fijos de ejemplo (banner "Datos simulados"); no hay lectura real de la ingesta').toBe(0);
+    expect.soft(simulados, 'BLOQUEO: la vista muestra datos fijos de ejemplo (etiqueta "DEMO"); no hay lectura real de la ingesta').toBe(0);
     const faltantes = ESTADOS_CALIDAD.filter((e) => !etiquetas.includes(ETIQUETA_CALIDAD[e]));
     expect.soft(faltantes, 'BLOQUEO: estados de calidad de la precondición que no aparecen en la vista').toEqual([]);
     const vision = filas.filter((f) => f.celdas.some((c) => /visi[oó]n/i.test(c))).length;
@@ -216,34 +250,94 @@ test.describe('TC-DIS-146 — Estado de Ingesta de Telemetría', () => {
     await escanear(page, 'listado', testInfo);
   });
 
-  test('c. Filtro por estado de calidad y nuevo escaneo', async ({ page }) => {
+  test('c. [4.1.2] Filtro por estado de calidad (teclado) y nuevo escaneo', async ({ page }, testInfo) => {
     await irAIngesta(page);
-    const filtro = page.getByRole('combobox', { name: /calidad|estado/i });
-    expect(await filtro.count(), 'BLOQUEO: la vista no tiene filtro por estado de calidad').toBeGreaterThan(0);
+    const filtro = page.locator('#ing-estado');
+    await expect(filtro, '4.1.2: el filtro de estado tiene nombre accesible').toHaveAccessibleName(/estado/i);
+    const opciones = await filtro.locator('option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value).filter(Boolean));
+    testInfo.annotations.push({ type: 'Opciones del filtro de estado', description: opciones.join(', ') });
+    expect.soft(ESTADOS_CALIDAD.filter((e) => !opciones.includes(e)), '4.1.2: el filtro ofrece los 9 estados de calidad').toEqual([]);
+
+    await filtrarConTeclado(page, 'ing-estado', 'ERROR_SENSOR');
+    await expect.poll(async () => {
+      const { filas } = await leerTabla(page);
+      return filas.length > 0 && filas.every((f) => f.calidad === ETIQUETA_CALIDAD.ERROR_SENSOR);
+    }, { timeout: 10_000, message: 'El filtro deja solo lecturas "Valor imposible" (ERROR_SENSOR)' }).toBe(true);
+    const anuncio = await anuncioConteo(page);
+    testInfo.annotations.push({ type: 'Anuncio tras filtrar', description: anuncio || '(ninguno)' });
+    expect.soft(anuncio, '4.1.3: el número de lecturas filtradas se anuncia (aria-live)').toMatch(/\d+/);
+    await escanear(page, 'filtro-estado', testInfo);
   });
 
-  test('d. Filtro por tipo de dato "Visión" y nuevo escaneo', async ({ page }) => {
+  test('d. [1.3.1 / 1.4.1] Filtro por tipo de dato "Vector de comportamiento" y nuevo escaneo', async ({ page }, testInfo) => {
     await irAIngesta(page);
-    const filtro = page.getByRole('combobox', { name: /tipo de dato|tipo/i });
-    expect(await filtro.count(), 'BLOQUEO: la vista no tiene filtro por tipo de dato (escalar / visión)').toBeGreaterThan(0);
+    await expect(page.locator('#ing-tipo'), '4.1.2: el filtro de tipo de dato tiene nombre accesible').toHaveAccessibleName(/tipo/i);
+    await filtrarConTeclado(page, 'ing-tipo', 'VECTOR_COMPORTAMIENTO');
+    const { encabezados, filas } = await (async () => {
+      await expect.poll(async () => (await leerTabla(page)).filas.every((f) => f.celdas.some((c) => /vector de comportamiento/i.test(c))), { timeout: 10_000 }).toBe(true);
+      return leerTabla(page);
+    })();
+    const iValor = encabezados.findIndex((h) => /valor/i.test(h));
+    const iVariable = encabezados.findIndex((h) => /variable/i.test(h));
+    const filasVision = filas.map((f) => ({ estado: f.calidad, variable: f.celdas[iVariable], valor: f.celdas[iValor] }));
+    testInfo.annotations.push({ type: 'Filas de visión', description: JSON.stringify(filasVision) });
+    // Aceptada y rechazada presentes
+    expect.soft(filasVision.some((f) => f.estado === ETIQUETA_CALIDAD.LECTURA_VALIDA), 'Hay una observación de visión aceptada').toBe(true);
+    expect.soft(filasVision.some((f) => f.estado !== ETIQUETA_CALIDAD.LECTURA_VALIDA), 'Hay una observación de visión rechazada').toBe(true);
+    // 1.3.1: lo que no aplica a una fila de visión dice "No aplica", nunca vacío ni "—"
+    const sinDato = filasVision.filter((f) => !f.valor.trim() || /^[—-]$/.test(f.valor.trim())).map((f) => `${f.estado}: valor="${f.valor}"`);
+    expect.soft(sinDato, 'DEFECTO 1.3.1: en filas de visión el valor que no aplica se muestra vacío o como "—" en vez de "No aplica"').toEqual([]);
+    await escanear(page, 'filtro-vision', testInfo);
   });
 
-  test('e. Detalle del vector de comportamiento abierto por teclado', async ({ page }) => {
+  test('e. Detalle del vector de comportamiento abierto por teclado', async ({ page }, testInfo) => {
     await irAIngesta(page);
-    const desplegables = page.locator('main [aria-expanded]');
-    const vision = await page.locator('tbody tr').filter({ hasText: /visi[oó]n/i }).count();
-    expect(vision + (await desplegables.count()), 'BLOQUEO: no hay registros de visión ni detalle desplegable del vector de comportamiento').toBeGreaterThan(0);
+    await filtrarConTeclado(page, 'ing-tipo', 'VECTOR_COMPORTAMIENTO');
+    const fila = page.locator('main tbody tr').filter({ hasText: /válida/i }).first();
+    await expect(fila).toBeVisible({ timeout: 10_000 });
+    const sensorFila = (await fila.locator('td').first().locator('div').first().innerText()).trim();
+    await fila.focus();
+    await page.keyboard.press('Enter');
+    const dialogo = page.getByRole('dialog');
+    await expect(dialogo, '2.1.1: Enter sobre la fila abre el detalle del vector').toBeVisible({ timeout: 10_000 });
+    await expect(dialogo, 'El diálogo tiene nombre accesible').toHaveAccessibleName(/vector de comportamiento/i);
+    expect.soft(await dialogo.evaluate((d) => d.contains(document.activeElement)), 'El foco pasa al detalle').toBe(true);
+    testInfo.annotations.push({ type: 'Detalle del vector', description: (await dialogo.innerText()).replace(/\s+/g, ' ').slice(0, 300) });
+    await escanear(page, 'detalle-vector', testInfo);
+    await page.keyboard.press('Escape');
+    await expect(dialogo).toBeHidden({ timeout: 10_000 });
+    const vuelta = await enfocado(page);
+    testInfo.annotations.push({ type: 'Foco al cerrar', description: vuelta.descripcion });
+    expect.soft(vuelta.descripcion, '2.4.3: al cerrar, el foco vuelve a la fila que abrió el detalle').toMatch(new RegExp(`^tr "${sensorFila}`));
   });
 
-  test('f. [3.3.1] Filtro sin resultados: estado vacío anunciado', async ({ page }) => {
+  test('f. [3.3.1 / 4.1.3] Filtro sin resultados: estado vacío anunciado', async ({ page }, testInfo) => {
     await irAIngesta(page);
-    expect(await contarFiltros(page), 'BLOQUEO: sin filtros no se puede producir el estado "sin resultados"').toBeGreaterThan(0);
+    await page.locator('#ing-q').fill('zzz-sin-coincidencias');
+    const vacio = page.locator('main').getByText(/ninguna lectura coincide/i);
+    await expect(vacio, 'Se muestra el estado sin resultados').toBeVisible({ timeout: 10_000 });
+    const anuncio = await anuncioConteo(page);
+    const mensajeEnRegionViva = await vacio.evaluate((el) => !!el.closest('[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"]'));
+    testInfo.annotations.push({ type: 'Sin resultados', description: `mensaje: "${(await vacio.innerText()).trim()}" · en región viva: ${mensajeEnRegionViva ? 'sí' : 'no'} · región viva anuncia: "${anuncio}"` });
+    expect.soft(anuncio, '4.1.3: la región viva anuncia que hay 0 lecturas').toMatch(/\b0\b/);
+    await escanear(page, 'sin-resultados', testInfo);
   });
 
   test('g. [2.1.1] Teclado: filtros, tabla y detalle operables', async ({ page }, testInfo) => {
     await irAIngesta(page);
     const filtros = await contarFiltros(page);
     testInfo.annotations.push({ type: 'Controles de filtro', description: String(filtros) });
+    // Recorrido con Tab desde la búsqueda: los 5 filtros, la región de la tabla y las filas
+    await page.keyboard.press('Shift');
+    await page.locator('#ing-q').focus();
+    const recorrido = [await enfocado(page)];
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press('Tab');
+      recorrido.push(await enfocado(page));
+    }
+    testInfo.annotations.push({ type: 'Recorrido con Tab', description: recorrido.map((p) => `${p.descripcion}${p.focoVisible ? '' : ' [SIN FOCO VISIBLE]'}`).join(' → ') });
+    expect.soft(recorrido.filter((p) => !p.focoVisible && p.descripcion !== '(body)').map((p) => p.descripcion), 'DEFECTO 2.4.7: elementos que reciben foco sin indicador visible').toEqual([]);
+    expect.soft(recorrido.some((p) => /^row|^tr/.test(p.descripcion)), '2.1.1: las filas de la tabla se alcanzan con Tab').toBe(true);
 
     // Si la tabla desborda horizontalmente, su contenedor debe poder recibir foco para desplazarse
     const contenedor = page.locator('table').first().locator('xpath=..');
@@ -258,6 +352,6 @@ test.describe('TC-DIS-146 — Estado de Ingesta de Telemetría', () => {
       expect.soft(desborde.tabindex, 'DEFECTO 2.1.1: la tabla desborda y su contenedor no es enfocable, así que no se puede desplazar con el teclado').toBe('0');
       expect.soft(desborde.nombre, 'DEFECTO 4.1.2: el contenedor desplazable de la tabla no tiene nombre accesible (role="region" + aria-label, como ScrollRegion)').toBeTruthy();
     }
-    expect.soft(filtros, 'BLOQUEO: no hay filtros que operar por teclado').toBeGreaterThan(0);
+    expect.soft(filtros, 'Hay filtros que operar por teclado').toBeGreaterThan(0);
   });
 });
