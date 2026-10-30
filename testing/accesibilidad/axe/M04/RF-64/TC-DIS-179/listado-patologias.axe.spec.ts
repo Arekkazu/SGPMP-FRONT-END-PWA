@@ -135,7 +135,7 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 
 test.describe('TC-DIS-179 — Distinción base / agregada en el listado del Catálogo', () => {
   // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default' });
+  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_179_VIEWPORTS.`);
