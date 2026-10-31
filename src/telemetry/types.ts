@@ -13,6 +13,7 @@
 // | 2026-10-31 | Arekkazu | TC-DIS-166 RF-63 + CP74 RF-61: filtros por RF de origen y por modelo de manejo |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
 // | 2026-10-31 | Arekkazu | CP50/CP58/T-18 RF-60: tiempo sin contacto con unidad, transición manual o automática con responsable, equipo por nombre |
+// | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: valor de la lectura actual cuando está fuera de rango |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -251,6 +252,8 @@ export interface EstadoSensorSchema {
   es_valor_operativo?: boolean;
   /** Etiqueta del backend en español; la UI la traduce con `estadoLectura`. */
   etiqueta_estado?: string | null;
+  /** G88 (RF-58): valor de la última lectura, con el que se calcula el semáforo. */
+  valor_condicion_actual?: number | string | null;
 }
 
 export interface DashboardResponseSchema {

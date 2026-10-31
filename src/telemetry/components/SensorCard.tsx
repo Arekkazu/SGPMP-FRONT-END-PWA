@@ -4,6 +4,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11: el último dato muestra el día cuando no es de hoy + T-19 códigos legibles |
 // | 2026-10-26 | Leandro | ISSUE-678 G87 RF-58: distinguir la referencia válida de la condición posterior del sensor. |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-22 RF-58: batería y señal en formato regional |
+// | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: valor de la lectura actual cuando está fuera de rango |
 import { formatearNumero } from '../../shared/i18n/formato';
 import React from 'react';
 import './ReferenciaValida.css';
@@ -61,6 +62,12 @@ export function SensorCard({ sensor, onAbrir }: Props) {
 
       {sensor.indicador_anomalia && sensor.es_valor_operativo && (
         <small className="sensor-referencia-valida">{t('estadolectura.ultima_lectura_valida')}</small>
+      )}
+      {/* G88 (RF-58): el semáforo se calcula con la lectura actual, aunque esté fuera de rango. */}
+      {sensor.estado_calidad === 'FUERA_DE_RANGO' && sensor.valor_condicion_actual != null && (
+        <small className="sensor-referencia-valida">
+          {t('estadolectura.lectura_actual', { valor: Number(sensor.valor_condicion_actual), unidad: sensor.ultima_unidad ?? '' })}
+        </small>
       )}
 
       <div style={{ display: 'flex', justifyContent: 'center' }}>

@@ -1,3 +1,10 @@
+## [1.4.0-rc.13](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.12...v1.4.0-rc.13) (2026-10-31)
+
+### Features
+
+* **rf57-telemetry:** tipo de alerta REGLA_SIMPLE en filtros y etiquetas (INC-M03-240-G69) ([33e293a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/33e293afda98d9e88299aebaa0f8cce14cc86836)), closes [Arekkazu/sgpmp-backend#881](https://github.com/Arekkazu/sgpmp-backend/issues/881)
+* **rf58-mod9:** tolerancia T del semaforo configurable en el umbral y lectura actual fuera de rango (INC-M03-246-G88) ([c5f4892](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c5f4892b302bfbd6eec7413584dd668843a89853)), closes [Arekkazu/sgpmp-backend#889](https://github.com/Arekkazu/sgpmp-backend/issues/889)
+
 ## [1.4.0-rc.12](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.11...v1.4.0-rc.12) (2026-10-30)
 
 ### Features

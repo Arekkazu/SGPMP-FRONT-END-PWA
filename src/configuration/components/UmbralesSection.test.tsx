@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | FE-09 RF-17: el mock incluye usePermissionPorNombre |
+// | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: el payload lleva tolerancia_semaforo y se prueba T=2 |
 /**
  * RF-17 — validación cruzada de umbrales ambientales (#1667).
  *
@@ -172,7 +173,21 @@ describe('UmbralesSection — validación cruzada RF-17', () => {
         { nivel: 'precaucion', limite_inferior: 8, limite_superior: 14 },
         { nivel: 'critico', limite_inferior: 0, limite_superior: 6 },
       ],
+      tolerancia_semaforo: null,
     });
+  });
+
+  it('envia la tolerancia T configurada (G88, RF-58)', async () => {
+    const user = userEvent.setup();
+    render(<UmbralesSection idEspecie={3} />);
+    await abrirModal(user);
+    await user.selectOptions(screen.getByLabelText(/variable ambiental/i), '2');
+    await llenarNiveles(user, { min: 0, max: 14, normal: [6, 8], precaucion: [8, 14], critico: [0, 6] });
+    await user.type(screen.getByLabelText(/tolerancia t del semáforo/i), '2');
+    await user.click(screen.getByRole('button', { name: /registrar umbral/i }));
+
+    await waitFor(() => expect(umbrales.registrar).toHaveBeenCalledTimes(1));
+    expect(umbrales.registrar).toHaveBeenCalledWith(expect.objectContaining({ tolerancia_semaforo: 2 }));
   });
 });
 
