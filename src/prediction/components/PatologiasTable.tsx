@@ -4,6 +4,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-179 RF-64 a11y 1.4.1: variable crítica con ícono y texto, no solo color de borde |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-23 RF-64: patologías en tarjetas en celular |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Eye, Pencil, Ban, Lock, AlertTriangle } from 'lucide-react';
@@ -39,15 +40,16 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
 
   return (
     <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de patologías">
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+      {/* T-23: tarjetas por debajo de 768px (Layout.css); a 375px la tabla medía 898px. */}
+      <table className="ds-tabla-tarjetas" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={THEAD_ROW}>
-            <th style={TH}>{t('patologiastable.nombre')}</th>
-            <th style={TH}>{t('patologiastable.especie')}</th>
-            <th style={TH}>{t('patologiastable.variables_asociadas')}</th>
-            <th style={TH}>{t('patologiastable.tipo')}</th>
-            <th style={TH}>{t('patologiastable.estado')}</th>
-            <th style={{ ...TH, textAlign: 'right' }}>{t('patologiastable.acciones')}</th>
+            <th scope="col" style={TH}>{t('patologiastable.nombre')}</th>
+            <th scope="col" style={TH}>{t('patologiastable.especie')}</th>
+            <th scope="col" style={TH}>{t('patologiastable.variables_asociadas')}</th>
+            <th scope="col" style={TH}>{t('patologiastable.tipo')}</th>
+            <th scope="col" style={TH}>{t('patologiastable.estado')}</th>
+            <th scope="col" style={{ ...TH, textAlign: 'right' }}>{t('patologiastable.acciones')}</th>
           </tr>
         </thead>
         <tbody>
@@ -55,9 +57,9 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
             const bloqueada = p.es_base;
             return (
               <tr key={p.id_patologia}>
-                <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{p.nombre_patologia}</td>
-                <td style={TD}>{nombreEspecie(p)}</td>
-                <td style={TD}>
+                <td className="ds-celda-titulo" style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{p.nombre_patologia}</td>
+                <td data-label={t('patologiastable.especie')} style={TD}>{nombreEspecie(p)}</td>
+                <td data-label={t('patologiastable.variables_asociadas')} style={TD}>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s1)' }}>
                     {p.variables_sensoricas_asociadas.length === 0 && <span style={{ color: 'var(--text-muted)' }}>—</span>}
                     {p.variables_sensoricas_asociadas.map((v) => (
@@ -80,9 +82,9 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
                     ))}
                   </div>
                 </td>
-                <td style={TD}><TipoPatologiaPill esBase={p.es_base} /></td>
-                <td style={TD}><EstadoActivoPill activo={p.es_activo} /></td>
-                <td style={{ ...TD, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                <td data-label={t('patologiastable.tipo')} style={TD}><TipoPatologiaPill esBase={p.es_base} /></td>
+                <td className="ds-celda-destacada" style={TD}><EstadoActivoPill activo={p.es_activo} /></td>
+                <td className="ds-celda-accion" style={{ ...TD, textAlign: 'right', whiteSpace: 'nowrap' }}>
                   <Button variant="ghost" size="sm" onClick={() => onVer(p)} aria-label={`Ver ${p.nombre_patologia}`} title={t('patologiastable.ver_detalle')}>
                     <Eye size={16} aria-hidden />
                   </Button>

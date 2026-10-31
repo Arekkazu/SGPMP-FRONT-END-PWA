@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/M4-05 RF-70: equipos por nombre y por tipo de modelo |
 /**
  * FE-01a (RF-70): DistribucionOtaView muestra los despliegues reales de
  * `modulo4.despliegues_ota`, sin el banner de datos simulados. Con una versión
@@ -19,7 +22,7 @@ vi.mock('../api/otaApi', () => ({ otaApi: { listarDespliegues: vi.fn(), estadoPo
 vi.mock('../api/modelosApi', () => ({ modelosApi: { listar: vi.fn() } }));
 
 const despliegue = (id: number, version: number, estado: DespliegueOtaResponse['estado_despliegue']) => ({
-  id_despliegue_ota: id, id_version_modelo: version, id_dispositivo_iot: 38, tipo_modelo: 'MODELO_AVES',
+  id_despliegue_ota: id, id_version_modelo: version, id_dispositivo_iot: 38, nombre_dispositivo: `Edge ${id}`, tipo_modelo: 'MODELO_AVES',
   paradigma: 'POBLACIONAL', componente: 'DETECTOR', modo_distribucion: 'INMEDIATO', estado_despliegue: estado,
   hash_modelo_sha256: null, resultado_validacion_hash: null, id_version_modelo_anterior: null, rollback_ejecutado: false,
   intentos_descarga: 0, max_reintentos: 3, tamano_modelo_bytes: null, tamano_descargado_bytes: null,
@@ -39,8 +42,8 @@ describe('DistribucionOtaView — datos reales (FE-01a)', () => {
 
   it('muestra los despliegues de GET /prediccion/despliegues sin el banner de datos simulados', async () => {
     render(<DistribucionOtaView />);
-    await waitFor(() => expect(screen.getByText('#101')).toBeTruthy());
-    expect(screen.getByText('#102')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('Edge 101')).toBeTruthy());
+    expect(screen.getByText('Edge 102')).toBeTruthy();
     expect(otaApi.listarDespliegues).toHaveBeenCalledWith({ limit: 20, offset: 0 });
     expect(screen.queryByText(/Datos simulados/i)).toBeNull();
   });
@@ -52,14 +55,14 @@ describe('DistribucionOtaView — datos reales (FE-01a)', () => {
     fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'EXITOSO' } });
     fireEvent.click(screen.getByText('Aplicar'));
     await waitFor(() => expect(otaApi.estadoPorVersion).toHaveBeenCalledWith(35, { estado: 'EXITOSO' }));
-    await waitFor(() => expect(screen.queryByText('#102')).toBeNull());
-    expect(screen.getByText('#101')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText('Edge 102')).toBeNull());
+    expect(screen.getByText('Edge 101')).toBeTruthy();
   });
 
   it('si el GET falla muestra el error real, no datos de ejemplo', async () => {
     vi.mocked(otaApi.listarDespliegues).mockRejectedValue({ status: 500, code: 'HTTP_500', message: 'Error interno del servidor' });
     render(<DistribucionOtaView />);
     await waitFor(() => expect(screen.getByText('Error interno del servidor')).toBeTruthy());
-    expect(screen.queryByText('#101')).toBeNull();
+    expect(screen.queryByText('Edge 101')).toBeNull();
   });
 });

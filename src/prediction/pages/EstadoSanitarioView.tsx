@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo 13.9 RF-66/RF-68/RF-69: Monitor y Contagio en una ficha por lote, con evaluación clínica |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
 import React, { useEffect, useMemo, useState } from 'react';
 import { HeartPulse, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -103,7 +104,10 @@ function Ficha({ lote, puedeEvaluar, online, onEvaluar, onPorQue }: {
         <>
           <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
             {poblacional
-              ? t('estadosanitario.score', { score: formatearNumero(a.score ?? 0, { maximumFractionDigits: 2 }), umbral: formatearNumero(a.umbralScore ?? 0, { maximumFractionDigits: 2 }) })
+              // N-05: sin umbral configurado no hay "umbral 0" ni clasificación.
+              ? a.umbralScore
+                ? t('estadosanitario.score', { score: formatearNumero(a.score ?? 0, { maximumFractionDigits: 2 }), umbral: formatearNumero(a.umbralScore, { maximumFractionDigits: 2 }) })
+                : t('estadosanitario.score_sin_umbral')
               : a.enfermedad && a.nivel !== 0
                 ? <>{t('estadosanitario.probable')} <strong>{a.enfermedad}</strong></>
                 : <strong>{t('estadosanitario.sin_enfermedad')}</strong>}

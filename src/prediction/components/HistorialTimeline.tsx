@@ -3,8 +3,9 @@
 // | 2026-10-29 | Arekkazu | TC-DIS-188 RF-67 E1: sin resultados anunciado (role=status) con el texto del RF |
 // | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68/67: evento CONTAGIO del historial con nivel y probabilidad |
 // | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: botón Ampliar ventana en eventos de inferencia |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 import React from 'react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { MessageSquarePlus, Activity, CalendarPlus } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -72,13 +73,13 @@ export function HistorialTimeline({ eventos, puedeRetroalimentar, onRetroaliment
               </div>
               {contagio && (
                 <div style={{ marginTop: 'var(--s2)', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  <strong>{t('contagio.probabilidad')}:</strong> {(contagio.probabilidad * 100).toFixed(0)}%
+                  <strong>{t('contagio.probabilidad')}:</strong> {formatearNumero(contagio.probabilidad, { style: 'percent', maximumFractionDigits: 0 })}
                 </div>
               )}
               {(patologia || confianza != null) && (
                 <div style={{ display: 'flex', gap: 'var(--s4)', marginTop: 'var(--s2)', fontSize: '13px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
                   {patologia && <span><strong>{t('historialtimeline.patologia_estimada')}</strong> {patologia}</span>}
-                  {confianza != null && <span><strong>Confianza:</strong> {(confianza * 100).toFixed(0)}%</span>}
+                  {confianza != null && <span><strong>Confianza:</strong> {formatearNumero(confianza, { style: 'percent', maximumFractionDigits: 0 })}</span>}
                 </div>
               )}
             </div>

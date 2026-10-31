@@ -4,6 +4,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-08 RF-71: solo Admin/Vet (permiso E sobre versiones de modelo) |
 // | 2026-10-29 | Arekkazu | TC-DIS-176 RF-71 a11y 1.3.1: columnas Tipo de modelo, Fecha inicio y Fecha fin del criterio |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 import React, { useState } from 'react';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -19,7 +20,7 @@ import { ModalShell } from '../components/ModalShell';
 import { ProgressBar } from '../components/ProgressBar';
 import { Pill, type Tono } from '../components/Pill';
 import { INPUT, LABEL, TH, TD, TABLE_WRAP, THEAD_ROW } from '../components/tableStyles';
-import { COMPONENTES, PARADIGMA_POR_TIPO, TIPOS_MODELO, TIPO_MODELO_LABEL, type TipoModelo } from '../types';
+import { COMPONENTES, PARADIGMA_POR_TIPO, TIPOS_MODELO, TIPO_MODELO_LABEL, etiquetaComponente, type TipoModelo } from '../types';
 import {
   PROCESOS_REENTRENAMIENTO, RECURSOS_MOCK, DEGRADACION, FASES_REENTRENAMIENTO, estadoFases,
   type ProcesoReentrenamiento, type EstadoProceso, type EstadoFase,
@@ -126,7 +127,7 @@ function ConfigModal({ onClose }: { onClose: () => void }) {
             <div>
               <label style={LABEL} htmlFor="re-comp">{t('reentrenamiento.componente')}</label>
               <select id="re-comp" style={INPUT} disabled defaultValue="ANOMALIAS">
-                {COMPONENTES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {COMPONENTES.map((c) => <option key={c} value={c}>{etiquetaComponente(c)}</option>)}
               </select>
             </div>
           )}

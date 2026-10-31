@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-05 RF-70: solo equipos compatibles con el tipo de modelo de la versión |
 /** FE-01b (RF-70, DEV-15): endpoints del orquestador OTA. */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { http } from '../../shared/api/http';
@@ -38,10 +41,10 @@ describe('otaApi — orquestador OTA (FE-01b)', () => {
     expect(r.nivel_bateria_minimo).toBeNull();
   });
 
-  it('lista solo dispositivos activos y acepta la respuesta {total, items} del backend', async () => {
-    getMock.mockResolvedValue({ data: { total: 1, items: [{ id_dispositivo_iot: 38, serial: 'EDGE-38', descripcion: 'Gateway', es_activo: true, fps: null }] } });
-    const r = await otaApi.listarDispositivosObjetivo();
-    expect(getMock).toHaveBeenCalledWith('/configuracion/dispositivos-iot', { params: { solo_activos: true } });
-    expect(r).toEqual([{ id_dispositivo_iot: 38, serial: 'EDGE-38', descripcion: 'Gateway', es_activo: true }]);
+  it('M4-05: pide al backend solo los equipos compatibles con el tipo de modelo', async () => {
+    getMock.mockResolvedValue({ data: [{ id_dispositivo_iot: 38, serial: 'EDGE-38', descripcion: 'Gateway', categoria: 'SENSOR', nombre_infraestructura: 'Galpón 1' }] });
+    const r = await otaApi.listarDispositivosObjetivo('MODELO_AVES');
+    expect(getMock).toHaveBeenCalledWith('/prediccion/ota/dispositivos-objetivo', { params: { tipo_modelo: 'MODELO_AVES' } });
+    expect(r).toEqual([{ id_dispositivo_iot: 38, serial: 'EDGE-38', descripcion: 'Gateway', categoria: 'SENSOR', nombre_infraestructura: 'Galpón 1', es_activo: true }]);
   });
 });

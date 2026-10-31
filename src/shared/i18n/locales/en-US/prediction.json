@@ -114,7 +114,7 @@
     "reintentos": "Download retries",
     "sin_conexion": "Offline",
     "sin_conexion_desc": "A distribution cannot be launched while offline.",
-    "sin_dispositivos": "There are no active devices.",
+    "sin_dispositivos": "No active device can receive this model type: the area must have the model assigned and the device must be Active.",
     "tamano_fragmento": "Chunk size (bytes)",
     "titulo": "New send to the field",
     "ventana_fin": "Window end",
@@ -176,9 +176,9 @@
     "desde_cache": "from cache",
     "kpi_total": "Total rollouts",
     "kpi_completados": "Completed",
-    "kpi_completados_sub": "device SUCCESSFUL or UNCHANGED",
+    "kpi_completados_sub": "devices updated or unchanged",
     "kpi_errores": "With errors",
-    "kpi_errores_sub": "device FAILED",
+    "kpi_errores_sub": "devices with errors",
     "kpi_pendientes": "Pending",
     "kpi_pendientes_sub": "waiting for the window or in progress",
     "solo_lectura": "Read only"
@@ -499,7 +499,7 @@
     "ver_despliegue": "View deployment",
     "ver_detalle": "View details",
     "version": "Version",
-    "ver_despliegue_de": "View deployment of version v{{version}} on node #{{nodo}}"
+    "ver_despliegue_de": "View deployment of {{version}} on {{nodo}}"
   },
   "paginacion": {
     "anterior": "Previous",
@@ -684,8 +684,8 @@
     "paradigma_INDIVIDUAL": "Individual",
     "paradigma_META": "Meta (cross-cutting)",
     "entrada": "Input data",
-    "entrada_POBLACIONAL": "tipo_dato = VECTOR_COMPORTAMIENTO, per area",
-    "entrada_INDIVIDUAL": "tipo_dato = ESCALAR, window of readings per individual",
+    "entrada_POBLACIONAL": "Camera behavior vector, per area",
+    "entrada_INDIVIDUAL": "Sensor readings window, per individual",
     "entrada_META": "RF-66 outputs per batch, temperature and humidity, and population density",
     "componentes": "Vector components",
     "variables": "Variables the version expects",
@@ -714,7 +714,7 @@
     "kpi_bajo": "Normal / low risk",
     "kpi_parciales": "Partial data",
     "kpi_alertas": "Active alerts",
-    "alertas_titulo": "Active alerts (RF-57 · PREDICCION_PATOLOGIA) · {{n}}",
+    "alertas_titulo": "Active disease prediction alerts · {{n}}",
     "sin_alertas": "There are no active prediction alerts.",
     "anomalia_area": "Area behavior anomaly",
     "tab_unidades": "Monitored assets and areas · {{n}}",
@@ -742,7 +742,7 @@
     "modo": "Execution mode",
     "version": "Applied model version",
     "ventana": "Analyzed window",
-    "alerta": "Alert (RF-57)",
+    "alerta": "Alert",
     "sin_alerta": "No alert",
     "no_aplica": "Not applicable",
     "estado_EMITIDO": "Issued",
@@ -788,7 +788,7 @@
     "kpi_alto": "High risk",
     "kpi_reducida": "Low confidence",
     "kpi_alertas": "Contagion alerts",
-    "alertas_titulo": "Active contagion alerts (RF-57 · RIESGO_CONTAGIO) · {{n}}",
+    "alertas_titulo": "Active contagion risk alerts · {{n}}",
     "filtro_tipo": "Lot species",
     "todos": "All",
     "todas": "All",
@@ -816,7 +816,7 @@
     "ejecucion_CALCULADO": "Calculated",
     "ejecucion_CACHE": "Reused (no changes)",
     "ejecucion_SIN_CALCULO": "Not calculated",
-    "alerta": "Alert (RF-57)",
+    "alerta": "Alert",
     "sin_alerta": "No alert",
     "calculo_aplicado": "Applied calculation",
     "tab_factores": "Calculation factors",
@@ -846,7 +846,8 @@
     "lotes_titulo_other": "{{n}} lots evaluated",
     "error_titulo": "Could not load the contagion calculations",
     "reintentar": "Retry",
-    "cargando": "Loading…"
+    "cargando": "Loading…",
+    "sin_calculos": "There are no contagion risk calculations for the batches on your farms yet."
   },
   "intentos": {
     "titulo": "Rejected registration attempts",
@@ -986,7 +987,9 @@
     "factor_fd_desc": "how full the space is compared with the maximum allowed density.",
     "sin_contagio": "This batch has no contagion calculation yet.",
     "modelo": "Model {{version}} · {{hora}}",
-    "detalle_tecnico": "See technical detail"
+    "detalle_tecnico": "See technical detail",
+    "score_sin_umbral": "No anomaly threshold configured in the Engine: the area is not classified yet",
+    "sin_umbral_corto": "no threshold"
   },
   "ampliarventana": {
     "titulo": "Extend the feedback window",
@@ -1004,5 +1007,14 @@
     "dias_invalidos": "Enter a whole number between 1 and {{max}}.",
     "justificacion": "Technical justification",
     "justificacion_corta": "The justification must be at least {{min}} characters long."
+  },
+  "inferencias": {
+    "lote_de": "{{especie}} batch · {{area}}"
+  },
+  "componentes": {
+    "DETECTOR": "Detector",
+    "SEGUIMIENTO": "Tracking",
+    "METRICAS": "Metrics",
+    "ANOMALIAS": "Anomalies"
   }
 }

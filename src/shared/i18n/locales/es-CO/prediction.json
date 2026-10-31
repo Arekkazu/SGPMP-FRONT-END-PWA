@@ -114,7 +114,7 @@
     "reintentos": "Reintentos de descarga",
     "sin_conexion": "Sin conexión",
     "sin_conexion_desc": "No se puede lanzar una distribución sin conexión.",
-    "sin_dispositivos": "No hay dispositivos activos.",
+    "sin_dispositivos": "Ningún equipo activo puede recibir este tipo de modelo: el área debe tener el modelo asignado y el equipo estar en estado Activo.",
     "tamano_fragmento": "Tamaño de fragmento (bytes)",
     "titulo": "Nuevo envío a campo",
     "ventana_fin": "Fin de la ventana",
@@ -176,9 +176,9 @@
     "desde_cache": "desde caché",
     "kpi_total": "Despliegues totales",
     "kpi_completados": "Completados",
-    "kpi_completados_sub": "dispositivo EXITOSO o SIN_CAMBIOS",
+    "kpi_completados_sub": "equipos actualizados o sin cambios",
     "kpi_errores": "Con errores",
-    "kpi_errores_sub": "dispositivo FALLIDO",
+    "kpi_errores_sub": "equipos con error",
     "kpi_pendientes": "Pendientes",
     "kpi_pendientes_sub": "en espera de ventana o en proceso",
     "solo_lectura": "Solo lectura"
@@ -499,7 +499,7 @@
     "ver_despliegue": "Ver despliegue",
     "ver_detalle": "Ver detalle",
     "version": "Versión",
-    "ver_despliegue_de": "Ver despliegue de la versión v{{version}} en el nodo #{{nodo}}"
+    "ver_despliegue_de": "Ver despliegue de {{version}} en {{nodo}}"
   },
   "paginacion": {
     "anterior": "Anterior",
@@ -684,8 +684,8 @@
     "paradigma_INDIVIDUAL": "Individual",
     "paradigma_META": "Meta (transversal)",
     "entrada": "Dato de entrada",
-    "entrada_POBLACIONAL": "tipo_dato = VECTOR_COMPORTAMIENTO, por área",
-    "entrada_INDIVIDUAL": "tipo_dato = ESCALAR, ventana de lecturas por individuo",
+    "entrada_POBLACIONAL": "Vector de comportamiento de las cámaras, por área",
+    "entrada_INDIVIDUAL": "Ventana de lecturas de los sensores, por individuo",
     "entrada_META": "Salidas de RF-66 por lote, temperatura y humedad, y densidad poblacional",
     "componentes": "Componentes del vector",
     "variables": "Variables que espera la versión",
@@ -714,7 +714,7 @@
     "kpi_bajo": "Normal / riesgo bajo",
     "kpi_parciales": "Datos parciales",
     "kpi_alertas": "Alertas activas",
-    "alertas_titulo": "Alertas activas (RF-57 · PREDICCION_PATOLOGIA) · {{n}}",
+    "alertas_titulo": "Alertas de predicción de enfermedad activas · {{n}}",
     "sin_alertas": "No hay alertas de predicción activas.",
     "anomalia_area": "Anomalía de comportamiento del área",
     "tab_unidades": "Activos y áreas monitoreados · {{n}}",
@@ -742,7 +742,7 @@
     "modo": "Modo de ejecución",
     "version": "Versión del modelo aplicado",
     "ventana": "Ventana analizada",
-    "alerta": "Alerta (RF-57)",
+    "alerta": "Alerta",
     "sin_alerta": "Sin alerta",
     "no_aplica": "No aplica",
     "estado_EMITIDO": "Emitido",
@@ -788,7 +788,7 @@
     "kpi_alto": "Riesgo alto",
     "kpi_reducida": "Confianza baja",
     "kpi_alertas": "Alertas de contagio",
-    "alertas_titulo": "Alertas de contagio activas (RF-57 · RIESGO_CONTAGIO) · {{n}}",
+    "alertas_titulo": "Alertas de riesgo de contagio activas · {{n}}",
     "filtro_tipo": "Especie del lote",
     "todos": "Todos",
     "todas": "Todas",
@@ -816,7 +816,7 @@
     "ejecucion_CALCULADO": "Calculado",
     "ejecucion_CACHE": "Reutilizado (sin cambios)",
     "ejecucion_SIN_CALCULO": "Sin cálculo",
-    "alerta": "Alerta (RF-57)",
+    "alerta": "Alerta",
     "sin_alerta": "Sin alerta",
     "calculo_aplicado": "Cálculo aplicado",
     "tab_factores": "Factores del cálculo",
@@ -846,7 +846,8 @@
     "lotes_titulo_other": "{{n}} lotes evaluados",
     "error_titulo": "No se pudieron cargar los cálculos de contagio",
     "reintentar": "Reintentar",
-    "cargando": "Cargando…"
+    "cargando": "Cargando…",
+    "sin_calculos": "Todavía no hay cálculos de riesgo de contagio para los lotes de tus fincas."
   },
   "intentos": {
     "titulo": "Intentos de registro no admitidos",
@@ -986,7 +987,9 @@
     "factor_fd_desc": "qué tan lleno está el espacio frente a la densidad máxima permitida.",
     "sin_contagio": "Este lote aún no tiene cálculo de contagio.",
     "modelo": "Modelo {{version}} · {{hora}}",
-    "detalle_tecnico": "Ver detalle técnico"
+    "detalle_tecnico": "Ver detalle técnico",
+    "score_sin_umbral": "Sin umbral de anomalía configurado en el Motor: el área no se clasifica todavía",
+    "sin_umbral_corto": "sin umbral"
   },
   "ampliarventana": {
     "titulo": "Ampliar la ventana de retroalimentación",
@@ -1004,5 +1007,14 @@
     "dias_invalidos": "Ingresa un número entero entre 1 y {{max}}.",
     "justificacion": "Justificación técnica",
     "justificacion_corta": "La justificación debe tener al menos {{min}} caracteres."
+  },
+  "inferencias": {
+    "lote_de": "Lote de {{especie}} · {{area}}"
+  },
+  "componentes": {
+    "DETECTOR": "Detector",
+    "SEGUIMIENTO": "Seguimiento",
+    "METRICAS": "Métricas",
+    "ANOMALIAS": "Anomalías"
   }
 }
