@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | H-M3-14 CP107 RF-62: rango invertido no se envía y se avisa en el campo |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { CheckCircle2 } from 'lucide-react';
@@ -8,11 +9,13 @@ import { ModalShell } from './ModalShell';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { INPUT, LABEL } from './tableStyles';
-import type { SolicitarReevaluacionDTO, ReevaluacionResponseSchema } from '../types';
+import { SelectorSensor } from './SelectorSensor';
+import type { SolicitarReevaluacionDTO, ReevaluacionResponseSchema, SensorCatalogo } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 interface Props {
+  sensores: SensorCatalogo[];
   saving: boolean;
   saveError: ApiError | null;
   reevaluacion: ReevaluacionResponseSchema | null;
@@ -27,9 +30,11 @@ const TEXTAREA: React.CSSProperties = {
   minHeight: 90, resize: 'vertical', outline: 'none',
 };
 
-export function ReevaluarModal({ saving, saveError, reevaluacion, onConfirm, onClose }: Props) {
+export function ReevaluarModal({ sensores, saving, saveError, reevaluacion, onConfirm, onClose }: Props) {
   const { t } = useT('telemetry');
-  const [idSensor, setIdSensor] = useState('');
+  const [textoSensor, setTextoSensor] = useState('');
+  const [idElegido, setIdElegido] = useState<number | null>(null);
+  const idSensor = idElegido != null ? String(idElegido) : '';
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
   const [causa, setCausa] = useState('');
@@ -87,8 +92,12 @@ export function ReevaluarModal({ saving, saveError, reevaluacion, onConfirm, onC
 
           <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={LABEL} htmlFor="re-sensor">{t('reevaluarmodal.id_sensor')}</label>
-              <input id="re-sensor" type="number" style={{ ...INPUT, borderColor: touched && faltaSensor ? 'var(--sem-error)' : 'var(--surface-border)' }} value={idSensor} onChange={(e) => setIdSensor(e.target.value)} aria-required aria-invalid={touched && faltaSensor} />
+              {/* T-18: el sensor se busca por nombre; también acepta el ID escrito. */}
+              <SelectorSensor
+                id="re-sensor" sensores={sensores} value={textoSensor} required
+                onChange={(texto, id) => { setTextoSensor(texto); setIdElegido(id); }}
+                error={touched && faltaSensor ? t('reevaluarmodal.elige_un_sensor') : undefined}
+              />
             </div>
             <div>
               <label style={LABEL} htmlFor="re-desde">{t('reevaluarmodal.desde')}</label>

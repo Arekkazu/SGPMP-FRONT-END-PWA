@@ -4,6 +4,7 @@
 // | 2026-10-20 | Arekkazu | FE-06 RF-20: especies (1..N), nivel_criticidad y capacidad_maxima del área (RFC-012/016) |
 // | 2026-10-20 | Arekkazu | FE-09 RF-17: es_critica en la variable ambiental (RFC-016) |
 // | 2026-10-30 | Arekkazu | INC-M03-135-G01 RF-49: especies compatibles de un sensor |
+// | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: tolerancia T del semáforo configurable en el umbral |
 import type { TipoModelo } from '../prediction/types';
 
 /** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
@@ -476,6 +477,10 @@ export interface UmbralAmbientalResponse {
   es_activo: boolean;
   fecha_actualizacion: string | null;
   niveles: NivelAlertaDTO[];
+  /** RF-58 Fase 3 (G88): tolerancia T del semáforo; null = 10 % del rango. */
+  tolerancia_semaforo?: number | string | null;
+  /** T que aplica el semáforo (la configurada o el 10 % del rango). */
+  tolerancia_semaforo_efectiva?: number | string | null;
 }
 
 export interface RegistrarUmbralDTO {
@@ -484,12 +489,15 @@ export interface RegistrarUmbralDTO {
   valor_min: number;
   valor_max: number;
   niveles: NivelAlertaDTO[];
+  tolerancia_semaforo?: number | null;
 }
 
 export interface EditarUmbralDTO {
   valor_min: number;
   valor_max: number;
   niveles: NivelAlertaDTO[];
+  /** Ausente = conserva la T vigente; null = vuelve al 10 % del rango. */
+  tolerancia_semaforo?: number | null;
   fecha_actualizacion?: string | null;
 }
 

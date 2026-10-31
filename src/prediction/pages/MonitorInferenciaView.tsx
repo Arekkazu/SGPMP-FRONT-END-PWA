@@ -4,6 +4,8 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-183 RF-66 a11y 4.1.3: contadores de riesgo y alertas en región viva |
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66: datos reales de GET /prediccion/inferencias (sin monitorMock) |
+// | 2026-10-31 | Arekkazu | TC-DIS-146 RF-53 a11y 1.3.1: la columna de detalle tiene encabezado |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { formatearNumero } from '../../shared/i18n/formato';
@@ -157,7 +159,7 @@ export function MonitorInferenciaView() {
                     {TIPO_MODELO_LABEL[i.tipoModelo]} · {t(`contrato.paradigma_${PARADIGMA_POR_TIPO[i.tipoModelo]}`)}
                   </div>
                   <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginTop: 'var(--s3)', fontWeight: 600 }}>
-                    {i.estado !== 'EMITIDO' ? '—' : poblacional ? t('monitor.score_card', { score: i.score?.toFixed(2), umbral: i.umbralScore?.toFixed(2) }) : i.enfermedad}
+                    {i.estado !== 'EMITIDO' ? '—' : poblacional ? (i.umbralScore ? t('monitor.score_card', { score: formatearNumero(i.score ?? 0, { maximumFractionDigits: 2 }), umbral: formatearNumero(i.umbralScore, { maximumFractionDigits: 2 }) }) : t('estadosanitario.score_sin_umbral')) : i.enfermedad}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--s3)' }}>
                     <span><Clock size={11} aria-hidden style={{ verticalAlign: 'middle' }} /> {i.hora}</span>
@@ -170,7 +172,7 @@ export function MonitorInferenciaView() {
         ) : (
           <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de inferencias recientes">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead><tr style={THEAD_ROW}>{cols.map((h, k) => <th key={k} style={TH}>{h}</th>)}</tr></thead>
+              <thead><tr style={THEAD_ROW}>{cols.map((h, k) => <th key={k} scope="col" style={TH}>{h || <span className="ds-sr-only">{t('acciones.ver_detalle', { ns: 'common' })}</span>}</th>)}</tr></thead>
               <tbody>
                 {inferencias.map((i) => {
                   const poblacional = PARADIGMA_POR_TIPO[i.tipoModelo] === 'POBLACIONAL';
@@ -182,7 +184,7 @@ export function MonitorInferenciaView() {
                       <td style={TD}><Resultado i={i} /></td>
                       <td style={{ ...TD, fontSize: '12px' }}>{poblacional ? <span style={{ color: 'var(--text-muted)' }}>{t('monitor.no_aplica')}</span> : i.enfermedad ?? '—'}</td>
                       <td style={{ ...TD, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
-                        {poblacional ? (i.score != null ? `score ${i.score.toFixed(2)}` : '—') : i.confianza != null ? `${Math.round(i.confianza * 100)}%` : '—'}
+                        {poblacional ? (i.score != null ? formatearNumero(i.score, { maximumFractionDigits: 2 }) : '—') : i.confianza != null ? `${Math.round(i.confianza * 100)}%` : '—'}
                       </td>
                       <td style={{ ...TD, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>{i.latenciaMs != null ? `${i.latenciaMs} ms` : '—'}</td>
                       <td style={TD}><Indicadores i={i} /></td>

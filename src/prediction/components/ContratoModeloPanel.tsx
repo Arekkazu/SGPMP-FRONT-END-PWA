@@ -1,17 +1,19 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: contrato de entrada y salida del modelo según su paradigma (RFC-009) |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 import React from 'react';
 import { ArrowRightLeft } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
 import { PARADIGMA_POR_TIPO, TIPO_MODELO_LABEL, type TipoModelo } from '../types';
+import { humanizar } from '../../shared/lib/etiquetas';
 
 interface Props {
   tipoModelo: TipoModelo;
   /** Texto de la versión vigente (una, o una por componente en POBLACIONAL). */
   versionVigente: string;
-  /** IDs de variables que admite la versión INDIVIDUAL (compatibilidad_variables). */
-  variables: number[] | null;
+  /** Variables que admite la versión INDIVIDUAL (compatibilidad_variables): ID o código. T-19: el código se humaniza. */
+  variables: Array<number | string> | null;
 }
 
 export function ContratoModeloPanel({ tipoModelo, versionVigente, variables }: Props) {
@@ -28,7 +30,7 @@ export function ContratoModeloPanel({ tipoModelo, versionVigente, variables }: P
     filas.push([t('contrato.no_entran'), t('contrato.no_entran_POBLACIONAL')]);
   }
   if (paradigma === 'INDIVIDUAL') {
-    filas.push([t('contrato.variables'), variables?.length ? variables.map((v) => `#${v}`).join(' · ') : '—']);
+    filas.push([t('contrato.variables'), variables?.length ? variables.map((v) => (typeof v === 'number' ? `#${v}` : humanizar(String(v)))).join(' · ') : '—']);
     filas.push([t('contrato.entran'), t('contrato.entran_INDIVIDUAL')]);
   }
   filas.push([t('contrato.salida'), t(`contrato.salida_${paradigma}`)]);

@@ -2,8 +2,10 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 // | 2026-10-29 | Arekkazu | QA-M04-27-10 CU06 H-02 RF-70: nombre de la versión desplegada |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/T-19/T-23 RF-70: equipo por nombre, modo con etiqueta y tarjetas en celular |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 import React from 'react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { RotateCcw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -12,7 +14,8 @@ import { ModalShell } from './ModalShell';
 import { EstadoOtaPill } from './EstadoOtaPill';
 import { ProgressBar } from './ProgressBar';
 import { Pill } from './Pill';
-import { etiquetaTipoModelo } from '../types';
+import { etiquetaModo, nombreDispositivo } from './OtaTable';
+import { etiquetaComponente, etiquetaTipoModelo } from '../types';
 import type { DespliegueOtaResponse } from '../types';
 
 interface Props {
@@ -49,7 +52,7 @@ export function DespliegueDetalleModal({ despliegue, onClose }: Props) {
         <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', alignItems: 'center' }}>
           <EstadoOtaPill estado={d.estado_despliegue} />
           <Pill tono="neutral">{etiquetaTipoModelo(d.tipo_modelo)}</Pill>
-          {d.componente && <Pill tono="neutral">{d.componente}</Pill>}
+          {d.componente && <Pill tono="neutral">{etiquetaComponente(d.componente)}</Pill>}
           {d.rollback_ejecutado && <Pill tono="warning" icon={<RotateCcw size={12} aria-hidden />}>{t('desplieguedetallemodal.rollback_ejecutado')}</Pill>}
         </div>
 
@@ -58,12 +61,12 @@ export function DespliegueDetalleModal({ despliegue, onClose }: Props) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--s4)' }}>
           <Fila label={t('desplieguedetallemodal.version_de_modelo')}>{d.nombre_version ?? `v${d.id_version_modelo}`}</Fila>
           <Fila label={t('desplieguedetallemodal.version_anterior')}>{d.id_version_modelo_anterior != null ? (d.nombre_version_anterior ?? `v${d.id_version_modelo_anterior}`) : '—'}</Fila>
-          <Fila label={t('desplieguedetallemodal.dispositivo_iot')}>#{d.id_dispositivo_iot}</Fila>
-          <Fila label={t('desplieguedetallemodal.modo_distribucion')}>{d.modo_distribucion || '—'}</Fila>
+          <Fila label={t('desplieguedetallemodal.dispositivo_iot')}>{nombreDispositivo(d)}</Fila>
+          <Fila label={t('desplieguedetallemodal.modo_distribucion')}>{etiquetaModo(t, d.modo_distribucion)}</Fila>
           <Fila label={t('desplieguedetallemodal.intentos')}>{d.intentos_descarga} / {d.max_reintentos}</Fila>
           <Fila label={t('desplieguedetallemodal.bateria_al_inicio')}>{d.nivel_bateria_al_inicio != null ? `${d.nivel_bateria_al_inicio}%` : '—'}</Fila>
-          <Fila label={t('desplieguedetallemodal.duracion')}>{d.duracion_proceso_ms != null ? `${(d.duracion_proceso_ms / 1000).toFixed(1)} s` : '—'}</Fila>
-          <Fila label={t('desplieguedetallemodal.tamano_modelo')}>{d.tamano_modelo_bytes != null ? `${(d.tamano_modelo_bytes / 1_048_576).toFixed(1)} MB` : '—'}</Fila>
+          <Fila label={t('desplieguedetallemodal.duracion')}>{d.duracion_proceso_ms != null ? `${formatearNumero(d.duracion_proceso_ms / 1000, { maximumFractionDigits: 1 })} s` : '—'}</Fila>
+          <Fila label={t('desplieguedetallemodal.tamano_modelo')}>{d.tamano_modelo_bytes != null ? `${formatearNumero(d.tamano_modelo_bytes / 1_048_576, { maximumFractionDigits: 1 })} MB` : '—'}</Fila>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--s4)', borderTop: '1px solid var(--surface-border)', paddingTop: 'var(--s4)' }}>

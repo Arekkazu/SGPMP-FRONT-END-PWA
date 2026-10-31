@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-56: reglas de envío, filtros, tipo de dato, estado_calidad y detalle del paquete |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-31 | Arekkazu | TC-DIS-146 RF-53 a11y 1.3.1: la columna de detalle tiene encabezado |
 import React, { useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Workflow, Send, Clock, XCircle, AlertTriangle, ChevronRight } from 'lucide-react';
@@ -30,7 +31,7 @@ export function PipelineView() {
     () => PIPELINE_PAQUETES.filter((p) => (!estado || p.estado === estado) && (!contexto || p.contexto === contexto)),
     [estado, contexto],
   );
-  const cols = [t('pipeline.col_paquete'), t('pipeline.col_dispositivo'), t('pipeline.col_tipo'), t('pipeline.col_contexto'), t('pipeline.col_variables'), t('pipeline.col_registros'), 'estado_calidad', t('pipeline.col_severidad'), t('pipeline.col_origen'), t('pipeline.col_estado'), t('pipeline.col_reintentos'), t('pipeline.col_enviado'), ''];
+  const cols = [t('pipeline.col_paquete'), t('pipeline.col_dispositivo'), t('pipeline.col_tipo'), t('pipeline.col_contexto'), t('pipeline.col_variables'), t('pipeline.col_registros'), t('pipeline.col_estado_calidad'), t('pipeline.col_severidad'), t('pipeline.col_origen'), t('pipeline.col_estado'), t('pipeline.col_reintentos'), t('pipeline.col_enviado'), ''];
 
   return (
     <div style={{ minHeight: '100%' }}>
@@ -81,7 +82,7 @@ export function PipelineView() {
 
         <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de paquetes al motor de inferencia">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-            <thead><tr style={THEAD_ROW}>{cols.map((h, i) => <th key={i} style={TH}>{h}</th>)}</tr></thead>
+            <thead><tr style={THEAD_ROW}>{cols.map((h, i) => <th key={i} scope="col" style={TH}>{h || <span className="ds-sr-only">{t('acciones.ver_detalle', { ns: 'common' })}</span>}</th>)}</tr></thead>
             <tbody>
               {paquetes.map((p) => (
                 <tr key={p.id} className="ds-fila-accion" tabIndex={0} onClick={() => setAbierto(p)} onKeyDown={alActivarConTeclado(() => setAbierto(p))}>

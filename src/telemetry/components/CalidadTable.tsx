@@ -2,17 +2,25 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre; encabezado de la columna de acción |
+// | 2026-10-31 | Arekkazu | TC-DIS-146 RF-53 a11y 1.3.1: la columna de detalle tiene encabezado |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, ShieldCheck, Check, X } from 'lucide-react';
 import { ClasificacionCalidadPill } from './ClasificacionCalidadPill';
 import { FlagChips } from './FlagChips';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
-import { fechaHoraCaptura } from '../lib/sensorEscala';
+import { fechaHoraCaptura, valorConUnidad } from '../lib/sensorEscala';
 import type { TelemetriaCalidadSchema } from '../types';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
 
 const COLS = ['Lectura', 'Sensor', 'Índice', 'Clasificación', 'Apto IA', 'Apto NIC41', 'Flags', 'Evaluada', ''];
+
+/** «Temperatura ambiental · 25 °C». */
+export function lecturaCalidad(c: TelemetriaCalidadSchema): string {
+  if (!c.nombre_variable) return `#${c.id_telemetria}`;
+  return `${c.nombre_variable} · ${valorConUnidad(c.valor_lectura, c.unidad_lectura)}`;
+}
 
 function Apto({ ok }: { ok: boolean }) {
   return ok
@@ -52,7 +60,7 @@ export function CalidadTable({ items, loading, onAbrir }: Props) {
     <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de evaluaciones de calidad">
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
-          <tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} style={TH}>{h || <span className="ds-sr-only">Ver detalle</span>}</th>)}</tr>
+          <tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} scope="col" style={TH}>{h || <span className="ds-sr-only">{t('acciones.ver_detalle', { ns: 'common' })}</span>}</th>)}</tr>
         </thead>
         <tbody>
           {items.map((c) => (
@@ -63,8 +71,9 @@ export function CalidadTable({ items, loading, onAbrir }: Props) {
               onClick={() => onAbrir(c)}
               onKeyDown={alActivarConTeclado(() => onAbrir(c))}
             >
-              <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', fontWeight: 600 }}>#{c.id_telemetria}</td>
-              <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>#{c.id_sensor}</td>
+              {/* T-18: la lectura y el sensor por nombre; el número solo si el backend no lo resolvió. */}
+              <td style={{ ...TD, color: 'var(--text-primary)', fontWeight: 600 }}>{lecturaCalidad(c)}</td>
+              <td style={{ ...TD, color: 'var(--text-secondary)' }}>{c.nombre_sensor ?? `#${c.id_sensor}`}</td>
               <td style={{ ...TD, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{c.indice_calidad != null ? c.indice_calidad : '—'}</td>
               <td style={TD}><ClasificacionCalidadPill clasificacion={c.clasificacion_calidad} /></td>
               <td style={{ ...TD, textAlign: 'center' }}><Apto ok={c.apto_para_ia} /></td>

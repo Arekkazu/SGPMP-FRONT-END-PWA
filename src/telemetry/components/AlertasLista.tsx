@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | USAB-M03 prototipo T-23/M3-06/M3-07 RF-57: tarjetas con umbral, «Qué hacer» y acciones en la tarjeta |
+// | 2026-10-31 | Arekkazu | TC-DIS-150 RF-57 a11y: tarjeta cerrada atenuada con token, no opacity; título h2 tras el h1 |
 import React from 'react';
 import { BellRing, Lightbulb, MapPin } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -30,7 +31,7 @@ function Tarjeta({ a, acciones, bloqueadas, onAccion, onAbrir }: Omit<Props, 'al
   const umbral = umbralDeAlerta(a.metadato_evento);
   const abierta = ABIERTA.includes((a.estado_alerta ?? '').toUpperCase());
   return (
-    <article aria-labelledby={`alerta-${a.id_alerta}`} style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', display: 'flex', flexDirection: 'column', gap: 'var(--s2)', opacity: abierta ? 1 : 0.85 }}>
+    <article aria-labelledby={`alerta-${a.id_alerta}`} style={{ background: abierta ? 'var(--surface-card)' : 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
         <SeveridadBadge severidad={a.severidad} />
         <EstadoAlertaPill estado={a.estado_alerta} />
@@ -43,7 +44,7 @@ function Tarjeta({ a, acciones, bloqueadas, onAccion, onAbrir }: Omit<Props, 'al
         <span style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--text-muted)' }}>{fechaHoraCaptura(a.fecha_generacion)}</span>
       </div>
 
-      <h3 id={`alerta-${a.id_alerta}`} style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+      <h2 id={`alerta-${a.id_alerta}`} style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
         {etiquetaCodigo(a.tipo_alerta)}
         {a.valor != null && <> · <span style={{ fontVariantNumeric: 'tabular-nums' }}>{valorConUnidad(a.valor, a.unidad)}</span></>}
         {/* M3-06: el umbral que superó, junto al valor. */}
@@ -52,7 +53,7 @@ function Tarjeta({ a, acciones, bloqueadas, onAccion, onAbrir }: Omit<Props, 'al
             {' '}{t('alertaslista.normal', { min: valorConUnidad(umbral.rangoNormal[0]), max: valorConUnidad(umbral.rangoNormal[1], a.unidad) })}
           </span>
         )}
-      </h3>
+      </h2>
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--s1)', fontSize: '12px', color: 'var(--text-secondary)' }}>
         <MapPin size={14} aria-hidden style={{ flexShrink: 0, marginTop: 1 }} />

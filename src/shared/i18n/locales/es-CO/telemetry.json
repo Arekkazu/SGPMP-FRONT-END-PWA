@@ -83,10 +83,27 @@
     "severidad": "Severidad",
     "tipo_de_evento": "Tipo de evento",
     "todas": "Todas",
-    "todos": "Todos"
+    "todos": "Todos",
+    "rf_origen": "RF de origen",
+    "origen_RF53": "Ingesta (RF-53)",
+    "origen_RF54": "Buffer local (RF-54)",
+    "origen_RF55": "Procesamiento Edge (RF-55)",
+    "origen_RF56": "Paquetes de inferencia (RF-56)",
+    "origen_RF57": "Alertas (RF-57)",
+    "origen_RF58": "Monitoreo (RF-58)",
+    "origen_RF59": "Historial (RF-59)",
+    "origen_RF60": "Dispositivos (RF-60)",
+    "origen_RF61": "Vinculaciones (RF-61)",
+    "origen_RF62": "Calidad de datos (RF-62)",
+    "origen_RF17": "Umbrales al Edge (RF-17)",
+    "origen_RF20": "Modelo del área al Edge (RF-20)",
+    "origen_RF23": "Credenciales MQTT (RF-23)"
   },
   "bitacoratable": {
-    "sin_eventos_de_auditoria_para_los_filtros": "Sin eventos de auditoría para los filtros seleccionados."
+    "sin_eventos_de_auditoria_para_los_filtros": "Sin eventos de auditoría para los filtros seleccionados.",
+    "ordenar_por": "Ordenar por {{columna}}",
+    "ver_evento": "Ver evento #{{id}}: {{tipo}}, {{fecha}}",
+    "tabla": "Tabla de eventos de auditoría"
   },
   "bitacoraview": {
     "bitacora_de_auditoria_iot": "Bitácora de Auditoría IoT",
@@ -145,7 +162,8 @@
     "sin_permiso_e": "Sin permiso (E)",
     "sin_permiso_para_evaluar": "Sin permiso para evaluar",
     "version": "Versión",
-    "trazabilidad_estadistica": "Trazabilidad estadística de los flags"
+    "trazabilidad_estadistica": "Trazabilidad estadística de los flags",
+    "titulo": "Evaluación de calidad · {{lectura}}"
   },
   "calidadfiltros": {
     "aplicar_filtros": "Aplicar filtros",
@@ -203,7 +221,14 @@
     "tiempo_sin_contacto": "Tiempo sin contacto",
     "transiciones_de_estado": "Transiciones de estado",
     "ultimo_contacto": "Último contacto",
-    "ultimo_heartbeat": "Último heartbeat"
+    "ultimo_heartbeat": "Último heartbeat",
+    "dispositivo_n": "Dispositivo #{{id}}",
+    "manual_por": "Manual · {{nombre}}",
+    "usuario_n": "usuario #{{id}}",
+    "automatica": "Automática",
+    "dias": "{{n}} días",
+    "horas_min": "{{h}} h {{m}} min",
+    "minutos": "{{m}} min"
   },
   "dispositivosview": {
     "acceso_restringido": "Acceso restringido",
@@ -233,13 +258,15 @@
   "estadolectura": {
     "sin_umbral": "Sin umbral configurado",
     "sin_umbral_desc": "La variable recibe datos, pero no tiene rangos operativos configurados en M09. Se avisó al administrador.",
-    "fuera_de_rango": "Lectura fuera de rango",
-    "fuera_de_rango_desc": "La lectura está fuera del rango físico del sensor: no es un valor operativo normal.",
+    "fuera_de_rango": "Lectura inválida descartada",
+    "fuera_de_rango_desc": "La última lectura está fuera del rango físico del sensor y se descartó; se muestra el último valor válido.",
     "requiere_calibracion": "Requiere calibración",
     "requiere_calibracion_desc": "Las lecturas recientes del sensor tienen error de calibración. Revise y calibre el sensor.",
     "en_revision_tecnica": "En revisión técnica",
     "en_revision_tecnica_desc": "El sensor tiene una anomalía técnica en revisión; el valor no se muestra como operativo.",
-    "ultima_lectura_valida": "Última lectura válida"
+    "ultima_lectura_valida": "Última lectura válida",
+    "ultimo_valido": "Último válido",
+    "lectura_actual": "Lectura actual: {{valor}} {{unidad}}"
   },
   "eventoauditoriamodal": {
     "accion_detallada": "Acción detallada",
@@ -295,12 +322,15 @@
     "todos": "Todos",
     "validas": "Válidas",
     "variable": "Variable",
-    "exportar_no_disponible": "Disponible cuando se integre el módulo de Reportes."
+    "exportar_no_disponible": "Disponible cuando se integre el módulo de Reportes.",
+    "todas_las_variables": "Todas"
   },
   "historialtable": {
     "sin_lecturas_para_el_rango_y_filtros": "No se encontraron registros para los filtros seleccionados",
     "sugerencia_sin_resultados": "Amplíe el rango de fechas o modifique los filtros.",
-    "vacio_temporal": "Sin datos por {{valor}} {{unidad}} desde {{desde}} (frecuencia esperada: {{frecuencia}} min)"
+    "vacio_temporal": "Sin datos por {{valor}} {{unidad}} desde {{desde}} (frecuencia esperada: {{frecuencia}} min)",
+    "tabla": "Tabla de lecturas",
+    "con_alerta": "Con alerta"
   },
   "historialview": {
     "error_al_cargar_el_historial": "Error al cargar el historial",
@@ -370,7 +400,8 @@
     "re_evaluacion_completada": "Re-evaluación completada",
     "sin_permiso_para_re_evaluar": "Sin permiso para re-evaluar",
     "solicitar_re_evaluacion": "Solicitar re-evaluación",
-    "solicitar_re_evaluacion_de_calidad": "Solicitar re-evaluación de calidad"
+    "solicitar_re_evaluacion_de_calidad": "Solicitar re-evaluación de calidad",
+    "elige_un_sensor": "Elige un sensor de la lista o escribe su ID."
   },
   "resolvervinculacionmodal": {
     "asigna_el_activo_biologico_correcto_para_la": "Asigna el activo biológico correcto para la lectura",
@@ -378,7 +409,13 @@
     "confirmar_vinculacion": "Confirmar vinculación",
     "este_campo_es_obligatorio": "Este campo es obligatorio.",
     "no_se_pudo_resolver_la_vinculacion": "No se pudo resolver la vinculación",
-    "sin_permiso_para_resolver": "Sin permiso para resolver"
+    "sin_permiso_para_resolver": "Sin permiso para resolver",
+    "titulo": "Resolver vinculación",
+    "titulo_ambigua": "Resolver vinculación ambigua",
+    "titulo_sin_vincular": "Resolver vinculación de una lectura sin vincular",
+    "lectura": "Lectura",
+    "sensor": "Sensor",
+    "area": "Área"
   },
   "sensorcard": {
     "alerta_activa_asociada": "Alerta activa asociada",
@@ -400,7 +437,8 @@
     "tendencia": "Tendencia",
     "ultima_lectura": "Última lectura",
     "unidad_productiva": "Unidad productiva",
-    "variable_medida": "Variable medida"
+    "variable_medida": "Variable medida",
+    "senal_rssi": "Señal LoRaWAN (RSSI)"
   },
   "telemetrypage": {
     "flujo_iot": "Flujo IoT",
@@ -442,10 +480,12 @@
     "trazabilidad_nic_41": "Trazabilidad NIC 41",
     "usuario": "Usuario",
     "vinculacion_reemplazada": "Vinculación reemplazada",
-    "titulo": "Vinculación #{{id}}",
+    "titulo": "Vinculación: {{lectura}}",
     "lectura": "Lectura",
     "sensor": "Sensor",
-    "medida_el": "Medida el"
+    "medida_el": "Medida el",
+    "titulo_ambigua": "Lectura ambigua: {{lectura}}",
+    "titulo_sin_vincular": "Lectura sin vincular: {{lectura}}"
   },
   "vinculacionesfiltros": {
     "ambigua": "Ambigua",
@@ -464,7 +504,8 @@
     "pendiente_revision": "Pendiente revisión",
     "sin_vincular": "Sin vincular",
     "superada": "Superada",
-    "todos": "Todos"
+    "todos": "Todos",
+    "modelo_manejo": "Modelo de manejo"
   },
   "vinculacionesview": {
     "error_al_cargar_vinculaciones": "Error al cargar vinculaciones",
@@ -734,7 +775,8 @@
     "fallo_DESFASE_EXCEDIDO": "Desfase mayor a 72 h",
     "fallo_DESFASE_EXCEDIDO_desc": "Viene del buffer con {{horas}} h de antigüedad y supera el máximo de 72 h (RFC-015 C2): no se envía al motor.",
     "reintentable": "Se puede reintentar ({{n}}/{{max}} intentos usados).",
-    "no_reintentable": "No se resuelve reintentando: hay que corregir el origen."
+    "no_reintentable": "No se resuelve reintentando: hay que corregir el origen.",
+    "col_estado_calidad": "Calidad"
   },
   "camaras": {
     "parametros_titulo": "Parámetros de heartbeat por categoría",
@@ -831,7 +873,7 @@
     "TIEMPO_REAL": "Tiempo real",
     "BUFFER_LOCAL": "Desde buffer local",
     "EDGE_AGREGADO": "Agregado en el Edge",
-    "LECTURA_VALIDA": "Válida",
+    "LECTURA_VALIDA": "Lectura válida",
     "FUERA_DE_RANGO": "Fuera de rango",
     "ERROR_CALIBRACION": "Error de calibración",
     "AMBIENTAL": "Ambiental",
@@ -861,7 +903,18 @@
     "FIEBRE": "Fiebre",
     "INACTIVIDAD_ANORMAL": "Inactividad anormal",
     "PREDICCION_PATOLOGIA": "Predicción de patología",
-    "TORMENTA_DE_ALERTAS": "Tormenta de alertas"
+    "TORMENTA_DE_ALERTAS": "Tormenta de alertas",
+    "HUMEDAD_RELATIVA": "Humedad relativa",
+    "NH3": "Amoniaco (NH3)",
+    "CO2": "Dióxido de carbono (CO2)",
+    "PH_AGUA": "pH del agua",
+    "OXIGENO_DISUELTO": "Oxígeno disuelto",
+    "TDS": "Conductividad eléctrica",
+    "TEMP_CORPORAL": "Temperatura corporal",
+    "FRECUENCIA_CARDIACA": "Frecuencia cardiaca",
+    "FRECUENCIA_RESPIRATORIA": "Frecuencia respiratoria",
+    "ACTIVIDAD": "Actividad",
+    "REGLA_SIMPLE": "Regla simple (una variable)"
   },
   "camposvinculacion": {
     "activo_biologico": "Activo biológico",
@@ -905,7 +958,8 @@
   },
   "vinculacion": {
     "sin_activo": "Sin activo",
-    "lectura_numero": "Lectura #{{id}}"
+    "lectura_numero": "Lectura #{{id}}",
+    "area_numero": "Área #{{id}}"
   },
   "panelalertas": {
     "titulo_one": "{{n}} alerta activa",
@@ -934,5 +988,10 @@
     "que_hacer": "Qué hacer:",
     "ver_detalle": "Ver detalle",
     "sin_resultados": "No hay alertas que coincidan con los filtros."
+  },
+  "selectorsensor": {
+    "sensor": "Sensor",
+    "placeholder": "Busca por nombre o escribe el ID",
+    "vacio": "Sin coincidencias. Puedes escribir el ID del sensor."
   }
 }

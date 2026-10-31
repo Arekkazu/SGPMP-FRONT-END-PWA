@@ -3,6 +3,7 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-65: confirmar el cambio de versión y suma de pesos obligatoria |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-04: alerta crítica 0,70 por defecto y sin versiones rechazadas |
 // | 2026-10-29 | Arekkazu | TC-DIS-168 RF-65: modo_ejecucion como combobox con nombre |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19 RF-65: el componente se rotula con su nombre |
 /**
  * RF-65 v2.0 (RFC-009): el formulario envía los campos del paradigma del modelo —
  * umbral de anomalía y versión por componente para POBLACIONAL, umbrales de
@@ -33,7 +34,7 @@ describe('MotorConfigForm — campos por paradigma (RFC-009)', () => {
   it('POBLACIONAL envía umbral de anomalía y versión por componente, sin umbrales de riesgo', () => {
     const onGuardar = renderForm('MODELO_AVES');
     expect(screen.queryByRole('slider', { name: 'Umbral de riesgo alto' })).toBeNull();
-    fireEvent.change(screen.getByLabelText('Versión activa · DETECTOR'), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText('Versión activa · Detector'), { target: { value: '10' } });
     fireEvent.click(screen.getByText('Confirmar cambio'));
     fireEvent.click(screen.getByText('Guardar configuración'));
 

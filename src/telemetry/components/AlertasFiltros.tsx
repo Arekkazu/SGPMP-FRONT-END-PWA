@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
 // | 2026-10-29 | Arekkazu | H-M3-05 CP31 RF-57: rango de fechas invertido se avisa en el campo y no se aplica |
+// | 2026-10-31 | Claude   | INC-M03-240-G69 RF-57: filtro por el tipo REGLA_SIMPLE |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
@@ -19,6 +20,8 @@ import type { ActivoOpcionTelemetria } from '../api/alertasApi';
 const TIPOS_ALERTA = [
   'ESTRES_TERMICO', 'SINDROME_RESPIRATORIO', 'RIESGO_HIDRICO', 'FIEBRE', 'INACTIVIDAD_ANORMAL',
   'FALLO_AMBIENTAL', 'PREDICCION_PATOLOGIA', 'TORMENTA_DE_ALERTAS', 'CONVERSION_ALIMENTICIA',
+  // G69 (RF-57 E14): alerta de una sola variable fuera de su banda NORMAL.
+  'REGLA_SIMPLE',
 ];
 
 export interface AlertasFiltrosState {

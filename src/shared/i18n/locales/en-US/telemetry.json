@@ -83,10 +83,27 @@
     "severidad": "Severity",
     "tipo_de_evento": "Event type",
     "todas": "All",
-    "todos": "All"
+    "todos": "All",
+    "rf_origen": "Source RF",
+    "origen_RF53": "Ingestion (RF-53)",
+    "origen_RF54": "Local buffer (RF-54)",
+    "origen_RF55": "Edge processing (RF-55)",
+    "origen_RF56": "Inference packages (RF-56)",
+    "origen_RF57": "Alerts (RF-57)",
+    "origen_RF58": "Monitoring (RF-58)",
+    "origen_RF59": "History (RF-59)",
+    "origen_RF60": "Devices (RF-60)",
+    "origen_RF61": "Linkages (RF-61)",
+    "origen_RF62": "Data quality (RF-62)",
+    "origen_RF17": "Thresholds to Edge (RF-17)",
+    "origen_RF20": "Area model to Edge (RF-20)",
+    "origen_RF23": "MQTT credentials (RF-23)"
   },
   "bitacoratable": {
-    "sin_eventos_de_auditoria_para_los_filtros": "No audit events for the selected filters."
+    "sin_eventos_de_auditoria_para_los_filtros": "No audit events for the selected filters.",
+    "ordenar_por": "Sort by {{columna}}",
+    "ver_evento": "View event #{{id}}: {{tipo}}, {{fecha}}",
+    "tabla": "Audit events table"
   },
   "bitacoraview": {
     "bitacora_de_auditoria_iot": "IoT Audit Log",
@@ -145,7 +162,8 @@
     "sin_permiso_e": "No permission (E)",
     "sin_permiso_para_evaluar": "No permission to evaluate",
     "version": "Version",
-    "trazabilidad_estadistica": "Statistical traceability of the flags"
+    "trazabilidad_estadistica": "Statistical traceability of the flags",
+    "titulo": "Quality evaluation · {{lectura}}"
   },
   "calidadfiltros": {
     "aplicar_filtros": "Apply filters",
@@ -203,7 +221,14 @@
     "tiempo_sin_contacto": "Time without contact",
     "transiciones_de_estado": "Status transitions",
     "ultimo_contacto": "Last contact",
-    "ultimo_heartbeat": "Last heartbeat"
+    "ultimo_heartbeat": "Last heartbeat",
+    "dispositivo_n": "Device #{{id}}",
+    "manual_por": "Manual · {{nombre}}",
+    "usuario_n": "user #{{id}}",
+    "automatica": "Automatic",
+    "dias": "{{n}} days",
+    "horas_min": "{{h}} h {{m}} min",
+    "minutos": "{{m}} min"
   },
   "dispositivosview": {
     "acceso_restringido": "Access restricted",
@@ -233,13 +258,15 @@
   "estadolectura": {
     "sin_umbral": "No threshold configured",
     "sin_umbral_desc": "The variable receives data but has no operating ranges configured in M09. The administrator was notified.",
-    "fuera_de_rango": "Out-of-range reading",
-    "fuera_de_rango_desc": "The reading is outside the sensor's physical range: it is not a normal operating value.",
+    "fuera_de_rango": "Invalid reading discarded",
+    "fuera_de_rango_desc": "The latest reading is outside the sensor physical range and was discarded; the last valid value is shown.",
     "requiere_calibracion": "Calibration required",
     "requiere_calibracion_desc": "The sensor's recent readings have a calibration error. Check and calibrate the sensor.",
     "en_revision_tecnica": "Under technical review",
     "en_revision_tecnica_desc": "The sensor has a technical anomaly under review; the value is not shown as operational.",
-    "ultima_lectura_valida": "Last valid reading"
+    "ultima_lectura_valida": "Last valid reading",
+    "ultimo_valido": "Last valid",
+    "lectura_actual": "Current reading: {{valor}} {{unidad}}"
   },
   "eventoauditoriamodal": {
     "accion_detallada": "Detailed action",
@@ -295,12 +322,15 @@
     "todos": "All",
     "validas": "Valid",
     "variable": "Variable",
-    "exportar_no_disponible": "Available once the Reports module is integrated."
+    "exportar_no_disponible": "Available once the Reports module is integrated.",
+    "todas_las_variables": "All"
   },
   "historialtable": {
     "sin_lecturas_para_el_rango_y_filtros": "No records were found for the selected filters",
     "sugerencia_sin_resultados": "Widen the date range or change the filters.",
-    "vacio_temporal": "No data for {{valor}} {{unidad}} since {{desde}} (expected frequency: {{frecuencia}} min)"
+    "vacio_temporal": "No data for {{valor}} {{unidad}} since {{desde}} (expected frequency: {{frecuencia}} min)",
+    "tabla": "Readings table",
+    "con_alerta": "With alert"
   },
   "historialview": {
     "error_al_cargar_el_historial": "Failed to load the history",
@@ -370,7 +400,8 @@
     "re_evaluacion_completada": "Re-evaluation completed",
     "sin_permiso_para_re_evaluar": "No permission to re-evaluate",
     "solicitar_re_evaluacion": "Request re-evaluation",
-    "solicitar_re_evaluacion_de_calidad": "Request a quality re-evaluation"
+    "solicitar_re_evaluacion_de_calidad": "Request a quality re-evaluation",
+    "elige_un_sensor": "Choose a sensor from the list or type its ID."
   },
   "resolvervinculacionmodal": {
     "asigna_el_activo_biologico_correcto_para_la": "Assign the correct biological asset for the reading",
@@ -378,7 +409,13 @@
     "confirmar_vinculacion": "Confirm link",
     "este_campo_es_obligatorio": "This field is required.",
     "no_se_pudo_resolver_la_vinculacion": "The link could not be resolved",
-    "sin_permiso_para_resolver": "No permission to resolve"
+    "sin_permiso_para_resolver": "No permission to resolve",
+    "titulo": "Resolve link",
+    "titulo_ambigua": "Resolve ambiguous link",
+    "titulo_sin_vincular": "Resolve link of an unlinked reading",
+    "lectura": "Reading",
+    "sensor": "Sensor",
+    "area": "Area"
   },
   "sensorcard": {
     "alerta_activa_asociada": "Associated active alert",
@@ -400,7 +437,8 @@
     "tendencia": "Trend",
     "ultima_lectura": "Last reading",
     "unidad_productiva": "Production unit",
-    "variable_medida": "Measured variable"
+    "variable_medida": "Measured variable",
+    "senal_rssi": "LoRaWAN signal (RSSI)"
   },
   "telemetrypage": {
     "flujo_iot": "IoT flow",
@@ -442,10 +480,12 @@
     "trazabilidad_nic_41": "IAS 41 traceability",
     "usuario": "User",
     "vinculacion_reemplazada": "Link replaced",
-    "titulo": "Link #{{id}}",
+    "titulo": "Link: {{lectura}}",
     "lectura": "Reading",
     "sensor": "Sensor",
-    "medida_el": "Measured on"
+    "medida_el": "Measured on",
+    "titulo_ambigua": "Ambiguous reading: {{lectura}}",
+    "titulo_sin_vincular": "Unlinked reading: {{lectura}}"
   },
   "vinculacionesfiltros": {
     "ambigua": "Ambiguous",
@@ -464,7 +504,8 @@
     "pendiente_revision": "Pending review",
     "sin_vincular": "Unlinked",
     "superada": "Superseded",
-    "todos": "All"
+    "todos": "All",
+    "modelo_manejo": "Management model"
   },
   "vinculacionesview": {
     "error_al_cargar_vinculaciones": "Failed to load links",
@@ -734,7 +775,8 @@
     "fallo_DESFASE_EXCEDIDO": "Lag over 72 h",
     "fallo_DESFASE_EXCEDIDO_desc": "It comes from the buffer {{horas}} h old and exceeds the 72 h maximum (RFC-015 C2): it is not sent to the engine.",
     "reintentable": "It can be retried ({{n}}/{{max}} attempts used).",
-    "no_reintentable": "Retrying will not fix it: the source must be corrected."
+    "no_reintentable": "Retrying will not fix it: the source must be corrected.",
+    "col_estado_calidad": "Quality"
   },
   "camaras": {
     "parametros_titulo": "Heartbeat parameters by category",
@@ -831,7 +873,7 @@
     "TIEMPO_REAL": "Real time",
     "BUFFER_LOCAL": "From local buffer",
     "EDGE_AGREGADO": "Edge aggregate",
-    "LECTURA_VALIDA": "Valid",
+    "LECTURA_VALIDA": "Valid reading",
     "FUERA_DE_RANGO": "Out of range",
     "ERROR_CALIBRACION": "Calibration error",
     "AMBIENTAL": "Environmental",
@@ -861,7 +903,18 @@
     "FIEBRE": "Fever",
     "INACTIVIDAD_ANORMAL": "Abnormal inactivity",
     "PREDICCION_PATOLOGIA": "Disease prediction",
-    "TORMENTA_DE_ALERTAS": "Alert storm"
+    "TORMENTA_DE_ALERTAS": "Alert storm",
+    "HUMEDAD_RELATIVA": "Relative humidity",
+    "NH3": "Ammonia (NH3)",
+    "CO2": "Carbon dioxide (CO2)",
+    "PH_AGUA": "Water pH",
+    "OXIGENO_DISUELTO": "Dissolved oxygen",
+    "TDS": "Electrical conductivity",
+    "TEMP_CORPORAL": "Body temperature",
+    "FRECUENCIA_CARDIACA": "Heart rate",
+    "FRECUENCIA_RESPIRATORIA": "Respiratory rate",
+    "ACTIVIDAD": "Activity",
+    "REGLA_SIMPLE": "Simple rule (single variable)"
   },
   "camposvinculacion": {
     "activo_biologico": "Biological asset",
@@ -905,7 +958,8 @@
   },
   "vinculacion": {
     "sin_activo": "No asset",
-    "lectura_numero": "Reading #{{id}}"
+    "lectura_numero": "Reading #{{id}}",
+    "area_numero": "Area #{{id}}"
   },
   "panelalertas": {
     "titulo_one": "{{n}} active alert",
@@ -934,5 +988,10 @@
     "que_hacer": "What to do:",
     "ver_detalle": "See detail",
     "sin_resultados": "No alerts match the filters."
+  },
+  "selectorsensor": {
+    "sensor": "Sensor",
+    "placeholder": "Search by name or type the ID",
+    "vacio": "No matches. You can type the sensor ID."
   }
 }

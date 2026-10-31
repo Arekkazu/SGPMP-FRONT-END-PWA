@@ -1,4 +1,8 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 import React from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 
 interface Props {
   /** Umbral de riesgo alto (0.50–0.95). */
@@ -38,7 +42,7 @@ export function ThresholdStrip({ riesgoAlto, alertaCritica, min = 0.5, max = 0.9
     <div style={{ padding: 'var(--s5) 0 var(--s3)' }}>
       <div
         role="img"
-        aria-label={`Umbral de riesgo alto ${riesgoAlto.toFixed(2)}, alerta crítica ${alertaCritica.toFixed(2)}`}
+        aria-label={`Umbral de riesgo alto ${formatearNumero(riesgoAlto, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, alerta crítica ${formatearNumero(alertaCritica, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
         style={{
           position: 'relative',
           height: 12,
@@ -46,12 +50,12 @@ export function ThresholdStrip({ riesgoAlto, alertaCritica, min = 0.5, max = 0.9
           background: 'linear-gradient(90deg, var(--sem-success) 0%, var(--sem-warning) 55%, var(--sem-error) 100%)',
         }}
       >
-        <Marcador posicion={pct(riesgoAlto, min, max)} color="var(--sem-warning)" label={`Riesgo ${riesgoAlto.toFixed(2)}`} />
-        <Marcador posicion={pct(alertaCritica, min, max)} color="var(--sem-error)" label={`Crítica ${alertaCritica.toFixed(2)}`} />
+        <Marcador posicion={pct(riesgoAlto, min, max)} color="var(--sem-warning)" label={`Riesgo ${formatearNumero(riesgoAlto, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <Marcador posicion={pct(alertaCritica, min, max)} color="var(--sem-error)" label={`Crítica ${formatearNumero(alertaCritica, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--s2)', fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-        <span>{min.toFixed(2)}</span>
-        <span>{max.toFixed(2)}</span>
+        <span>{formatearNumero(min, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <span>{formatearNumero(max, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
     </div>
   );
