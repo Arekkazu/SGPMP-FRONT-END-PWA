@@ -1,3 +1,14 @@
+## [1.4.0-rc.14](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.13...v1.4.0-rc.14) (2026-10-31)
+
+### Features
+
+* **rf58-rf62-telemetry:** usabilidad M03 del 30-10 (T-18, T-19, T-22, M3-09, CP34, CP50, CP58, CP74, CP84) ([64d3423](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/64d3423a656abc10a91211b4dd1d4e3572365b74))
+* **rf64-rf70-prediction:** usabilidad M04 del 30-10 (T-18, T-19, T-22, T-23, M4-02, M4-05, M4-07, N-04, N-05) ([078f724](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/078f72446f7f16f43fa234850809ead6ea283f2f))
+
+### Bug Fixes
+
+* **rf53-rf63-telemetry:** accesibilidad de la tercera evaluacion M03 (TC-DIS-146, 150, 154, 160, 166) ([0d701eb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0d701eb21c744a192557dbe9d89c62377a46f2a3))
+
 ## [1.4.0-rc.13](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.12...v1.4.0-rc.13) (2026-10-31)
 
 ### Features
