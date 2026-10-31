@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-22: nombres en vez de IDs y un solo formato de fecha |
+// | 2026-10-31 | Arekkazu | TC-DIS-154 RF-61 a11y 1.3.1/2.4.6 + T-18: título según AMBIGUA/SIN_VINCULAR, sensor y área sin IDs |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { GitFork, Pencil, ShieldCheck } from 'lucide-react';
@@ -11,7 +12,7 @@ import { EstadoVinculacionPill } from './EstadoVinculacionPill';
 import { MecanismoPill } from './MecanismoPill';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { etiquetaCodigo } from '../lib/etiquetaCodigo';
-import { lecturaVinculada, nombreActivoVinculado, ubicacionVinculada } from '../lib/vinculacion';
+import { lecturaVinculada, nombreActivoVinculado, tituloPorEstado, ubicacionVinculada } from '../lib/vinculacion';
 import type { VinculacionLecturaSchema } from '../types';
 
 interface Props {
@@ -43,7 +44,7 @@ export function VinculacionDetalleModal({ vinc, puedeGestionar, online, onResolv
 
   return (
     <ModalShell
-      title={t('vinculaciondetallemodal.titulo', { id: vinc.id_vinculacion_lectura })}
+      title={t(`vinculaciondetallemodal.${tituloPorEstado(estado)}`, { lectura: lecturaVinculada(vinc) })}
       onClose={onClose}
       maxWidth={520}
       footer={

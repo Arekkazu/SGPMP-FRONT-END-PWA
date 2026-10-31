@@ -10,6 +10,9 @@
 // | 2026-10-26 | Arekkazu | INC-M03 lote 26-10 RF-58/59: unidad sin sensores, alertas correlacionadas y desviación estándar |
 // | 2026-10-29 | Arekkazu | INC-M03-211-G98 RF-58: panel de alertas activas del dashboard |
 // | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: estado del buffer Edge por dispositivo (GET /iot/buffer) |
+// | 2026-10-31 | Arekkazu | TC-DIS-166 RF-63 + CP74 RF-61: filtros por RF de origen y por modelo de manejo |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
+// | 2026-10-31 | Arekkazu | CP50/CP58/T-18 RF-60: tiempo sin contacto con unidad, transición manual o automática con responsable, equipo por nombre |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -392,7 +395,8 @@ export interface EstadoDispositivoIoTSchema {
   estado_actual: string;
   fecha_ultimo_contacto: string | null;
   id_ultimo_heartbeat: number | null;
-  tiempo_sin_contacto: string | null;
+  /** Segundos desde el último contacto (backend). */
+  tiempo_sin_contacto: number | string | null;
   causa_primaria: string | null;
   causas_secundarias: unknown | null;
   fecha_ultima_actualizacion: string;
@@ -406,6 +410,8 @@ export interface HistoricoTransicionSchema {
   causa_primaria: string | null;
   causa_secundaria: unknown | null;
   id_usuario_responsable: number | null;
+  /** CP58: nombre de quien hizo la transición manual (backend). */
+  nombre_usuario_responsable?: string | null;
   notas: string | null;
   fecha_transicion: string;
 }
@@ -467,6 +473,7 @@ export interface VinculacionesFiltros {
   estado_vinculacion?: string;
   mecanismo_vinculacion?: string;
   id_infraestructura?: number;
+  modelo_manejo?: string;
   fecha_desde?: string;
   fecha_hasta?: string;
   pagina?: number;
@@ -488,7 +495,12 @@ export interface CorregirVinculacionDTO {
 // Calidad — /iot/calidad (recurso 38)
 // =====================================================================
 export interface TelemetriaCalidadSchema {
-  id_evaluacion: string;                   // UUID
+  id_evaluacion: string;
+  /** T-18: nombres resueltos por el backend. */
+  nombre_sensor?: string | null;
+  nombre_variable?: string | null;
+  valor_lectura?: number | null;
+  unidad_lectura?: string | null;                   // UUID
   id_telemetria: number;
   id_sensor: number;
   timestamp_evaluacion: string;
@@ -570,6 +582,14 @@ export interface ListaAuditoriaIotSchema {
   items: EventoAuditoriaIotSchema[];
 }
 
+/** T-18: sensor del catálogo (`GET /iot/monitoreo/sensores`). */
+export interface SensorCatalogo {
+  id_sensor: number;
+  nombre_sensor: string;
+  nombre_infraestructura: string | null;
+  nombre_finca: string | null;
+}
+
 export interface AuditoriaFiltros {
   fecha_desde?: string;
   fecha_hasta?: string;
@@ -578,6 +598,7 @@ export interface AuditoriaFiltros {
   clasificacion_registro?: string;
   entidad_afectada_id?: string;
   resultado?: string;
+  rf_origen?: string;
   pagina?: number;
   por_pagina?: number;
 }
