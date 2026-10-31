@@ -1,9 +1,13 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-31 | Arekkazu | RF-71: estado de datos para reentrenar los modelos individuales |
 import { http } from '../../shared/api/http';
 import type {
   VersionModeloListResponse,
   VersionModeloResponse,
   ListarModelosFiltros,
   RegistrarNotasVersionDTO,
+  EstadoReentrenamiento,
 } from '../types';
 
 const BASE = '/prediccion/modelos';
@@ -11,6 +15,12 @@ const BASE = '/prediccion/modelos';
 export const modelosApi = {
   async listar(filtros: ListarModelosFiltros = {}): Promise<VersionModeloListResponse> {
     const res = await http.get<VersionModeloListResponse>(BASE, { params: filtros });
+    return res.data;
+  },
+
+  /** RF-71: retroalimentaciones nuevas por modelo individual y si alcanzan para reentrenar. */
+  async estadoReentrenamiento(): Promise<EstadoReentrenamiento[]> {
+    const res = await http.get<EstadoReentrenamiento[]>(`${BASE}/reentrenamiento`);
     return res.data;
   },
 
