@@ -1,3 +1,10 @@
+## [1.4.0-rc.15](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.14...v1.4.0-rc.15) (2026-10-31)
+
+### Features
+
+* **rf64-prediction:** aviso de variables sin umbral RF-17 y de datos para reentrenar ([054fd08](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/054fd0872a1e0385a14455bb42ad774fdd7684d8)), closes [#905](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/905)
+* **rf71-prediction:** botón para solicitar el reentrenamiento desde el aviso de Modelos IA ([c3ef279](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c3ef279b6585f8f68a6aa8ef1e40571d8031322d)), closes [#906](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/906)
+
 ## [1.4.0-rc.14](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.13...v1.4.0-rc.14) (2026-10-31)
 
 ### Features
