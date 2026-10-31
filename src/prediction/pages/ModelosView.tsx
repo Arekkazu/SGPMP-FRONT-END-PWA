@@ -131,7 +131,7 @@ export function ModelosView() {
           </span>
         </div>
 
-        {puedeVer && <AvisoReentrenamiento online={online} />}
+        {puedeVer && <AvisoReentrenamiento online={online} puedeSolicitar={puedeEjecutar} />}
 
         {activos && (
           <section aria-labelledby="modelos-produccion" style={{ marginBottom: 'var(--s5)' }}>

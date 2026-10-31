@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
+// | 2026-10-31 | Arekkazu | RF-71/RF-73: filtro por solicitud de reentrenamiento |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Filter, X } from 'lucide-react';
@@ -33,6 +34,7 @@ const TIPOS_EVENTO: Record<string, { value: string; label: string }[]> = {
     { value: 'MODELO_REGISTRADO', label: 'Modelo registrado' },
     { value: 'MODELO_ACTIVADO', label: 'Modelo activado' },
     { value: 'NOTAS_REGISTRADAS', label: 'Notas registradas' },
+    { value: 'REENTRENAMIENTO_SOLICITADO', label: 'Reentrenamiento solicitado' },
   ],
   Distribución: [
     { value: 'OTA_INICIADO', label: 'OTA iniciado' },
