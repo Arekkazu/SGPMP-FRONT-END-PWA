@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
+// | 2026-10-31 | Arekkazu | CP34 RF-57: el selector de animal o lote recibe los activos (page_size/registros) |
 import { http } from '../../shared/api/http';
 import type {
   ListaAlertasSchema,
@@ -45,11 +46,21 @@ export const alertasApi = {
    * T-18: activos de las fincas del usuario para el filtro de alertas. Mismo endpoint
    * de M02 que usa Predicción, sin importar ese módulo (un módulo no importa de otro).
    */
+  /**
+   * CP34: el listado de M02 pagina con `page_size` (máx. 100) y devuelve `registros`;
+   * se pedía `por_pagina` y se leía `items`, así que el selector quedaba vacío.
+   * ponytail: hasta 10 páginas (1.000 activos); un buscador del lado del servidor si crece.
+   */
   async listarActivos(): Promise<ActivoOpcionTelemetria[]> {
-    const res = await http.get<{ items?: ActivoOpcionTelemetria[] } | ActivoOpcionTelemetria[]>(
-      '/activos-biologicos/', { params: { por_pagina: 200 } },
-    );
-    return Array.isArray(res.data) ? res.data : res.data.items ?? [];
+    const todos: ActivoOpcionTelemetria[] = [];
+    for (let pagina = 1; pagina <= 10; pagina++) {
+      const res = await http.get<{ registros?: ActivoOpcionTelemetria[]; total_paginas?: number }>(
+        '/activos-biologicos/', { params: { pagina, page_size: 100 } },
+      );
+      todos.push(...(res.data.registros ?? []));
+      if (pagina >= (res.data.total_paginas ?? 1)) break;
+    }
+    return todos;
   },
 };
 

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66: conversión del resultado del motor al monitor |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
 import { describe, expect, it } from 'vitest';
 import { aInferencia, latenciaP95, ultimoPorUnidad } from './inferencias';
 import type { InferenciaMonitorResponse } from '../types';
@@ -28,10 +29,22 @@ describe('aInferencia (RF-66)', () => {
 
   it('sin probabilidades completas no inventa la distribución; sin identificador usa el id', () => {
     const i = aInferencia({ ...base, identificador_activo: null, probabilidad_riesgo: { 2: 0.7 }, probabilidad_enfermedad: {}, id_alerta_generada: null });
-    expect(i.unidad).toBe('#906');
+    expect(i.unidad).toBe('Lote de Porcinos · Corral 1');
     expect(i.distRiesgo).toBeUndefined();
     expect(i.distPatologias).toBeUndefined();
     expect(i.alerta).toBeUndefined();
+  });
+
+  it('T-18: la enfermedad se muestra por nombre aunque la clave sea el id', () => {
+    const i = aInferencia({ ...base, probabilidad_enfermedad: { 8: 0.85 }, nombres_patologias: { 8: 'Fiebre aftosa' } });
+    expect(i.distPatologias?.[0]).toEqual({ nombre: 'Fiebre aftosa', prob: 0.85 });
+  });
+
+  it('N-05: un modelo poblacional sin umbral no se clasifica y bajo el umbral es normal', () => {
+    const pob = { ...base, tipo_modelo: 'MODELO_PORCINOS' as const, paradigma: 'POBLACIONAL' as const, nivel_riesgo: 3 };
+    expect(aInferencia({ ...pob, probabilidad_riesgo: { score_anomalia: 0, umbral_score_anomalia: 0 } }).nivel).toBeNull();
+    expect(aInferencia({ ...pob, probabilidad_riesgo: { score_anomalia: 0.2, umbral_score_anomalia: 0.7 } }).nivel).toBe(0);
+    expect(aInferencia({ ...pob, probabilidad_riesgo: { score_anomalia: 0.9, umbral_score_anomalia: 0.7 } }).nivel).toBe(3);
   });
 
   it('el estado actual de cada unidad es su resultado más reciente; p95 de latencias', () => {

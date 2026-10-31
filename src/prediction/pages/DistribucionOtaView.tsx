@@ -3,6 +3,8 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-70: KPIs con los totales reales de la flota y textos traducidos |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo RF-70: «Envío a campo» y marca de solo lectura para quien no envía |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-05 RF-70: solo equipos compatibles con el tipo de modelo de la versión |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { DownloadCloud, RefreshCw, Plus, CheckCircle2, XCircle, Clock, Package } from 'lucide-react';
@@ -21,7 +23,7 @@ import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { INPUT, LABEL, FILTER_GRID } from '../components/tableStyles';
 import { RECURSO_OTA, ACCION_R, ACCION_E } from '../rbac';
-import { TIPOS_MODELO, TIPO_MODELO_LABEL, type ListarDesplieguesFiltros, type DespliegueOtaResponse, type CrearDistribucionOtaDTO, etiquetaTipoModelo } from '../types';
+import { TIPOS_MODELO, TIPO_MODELO_LABEL, type ListarDesplieguesFiltros, type DespliegueOtaResponse, type CrearDistribucionOtaDTO, etiquetaComponente, etiquetaTipoModelo } from '../types';
 
 function Kpi({ icon, valor, etiqueta, sub, color }: { icon: React.ReactNode; valor: number | string; etiqueta: string; sub?: string; color: string }) {
   return (
@@ -147,7 +149,7 @@ export function DistribucionOtaView() {
                 <option value="">{t('distribucionotaview.todas')}</option>
                 {versiones.map((v) => (
                   <option key={v.id_version_modelo} value={v.id_version_modelo}>
-                    {`${v.nombre_version} · ${etiquetaTipoModelo(v.tipo_modelo)}${v.componente ? ` · ${v.componente}` : ''}`}
+                    {`${v.nombre_version} · ${etiquetaTipoModelo(v.tipo_modelo)}${v.componente ? ` · ${etiquetaComponente(v.componente)}` : ''}`}
                   </option>
                 ))}
               </select>
@@ -191,6 +193,7 @@ export function DistribucionOtaView() {
         <DistribucionOtaFormModal
           versiones={ota.versiones}
           dispositivos={ota.dispositivos}
+          onTipoModelo={ota.cargarDispositivos}
           lanzando={ota.lanzando}
           lanzarError={ota.lanzarError ?? ota.opcionesError}
           online={online}

@@ -6,6 +6,7 @@
 // | 2026-10-29 | Arekkazu | TC-DIS-170 RF-68 a11y 2.4.6/1.3.1: la grilla de lotes tiene encabezado |
 // | 2026-10-29 | Arekkazu | PEND-456 RF-68: datos reales de GET /prediccion/riesgo-contagio (sin contagioMock) |
 // | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68: NIVEL_TONO compartido con el historial |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 N-04 RF-68: sin cálculos se avisa en vez de quedar en 0 |
 import React, { useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -269,7 +270,10 @@ export function RiesgoContagioView() {
 
         <h2 id="ctg-lotes" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>{t('contagio.lotes_titulo', { count: lotes.length, n: lotes.length })}</h2>
         {lotes.length === 0 ? (
-          <p role="status" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)', fontSize: '14px' }}>{t('contagio.sin_resultados')}</p>
+          <p role="status" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)', fontSize: '14px' }}>
+            {/* N-04: sin cálculos en las fincas del usuario no es "quita filtros"; se dice qué pasa. */}
+            {!loading && !error && calculos.length === 0 ? t('contagio.sin_calculos') : t('contagio.sin_resultados')}
+          </p>
         ) : (
           <section aria-labelledby="ctg-lotes" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--s4)' }}>
             {lotes.map((l) => (

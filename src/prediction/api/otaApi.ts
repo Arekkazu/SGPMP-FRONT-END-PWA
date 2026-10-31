@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-05 RF-70: buscador y filtro por categoría en el paso de dispositivos |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-05 RF-70: solo equipos compatibles con el tipo de modelo de la versión |
 import { http } from '../../shared/api/http';
 import type {
   OtaStatusResponse,
@@ -46,14 +47,17 @@ export const otaApi = {
     return mapDistribucion(res.data);
   },
 
-  /** Dispositivos activos que se pueden elegir como objetivo (`GET /configuracion/dispositivos-iot`). */
-  async listarDispositivosObjetivo(): Promise<DispositivoObjetivoOta[]> {
-    const res = await http.get<{ items: DispositivoObjetivoOta[] } | DispositivoObjetivoOta[]>(
-      '/configuracion/dispositivos-iot',
-      { params: { solo_activos: true } },
+  /**
+   * M4-05: equipos que pueden recibir una versión de ese tipo de modelo: activos, en estado
+   * ACTIVO y en un área con ese modelo asignado (`GET /prediccion/ota/dispositivos-objetivo`).
+   * Antes salían los 575 equipos de todas las fincas, incluidas cámaras e inactivos.
+   */
+  async listarDispositivosObjetivo(tipoModelo: string): Promise<DispositivoObjetivoOta[]> {
+    const res = await http.get<Omit<DispositivoObjetivoOta, 'es_activo'>[]>(
+      '/prediccion/ota/dispositivos-objetivo',
+      { params: { tipo_modelo: tipoModelo } },
     );
-    const items = Array.isArray(res.data) ? res.data : res.data.items;
-    return items.map(({ id_dispositivo_iot, serial, descripcion, es_activo, categoria }) => ({ id_dispositivo_iot, serial, descripcion, es_activo, categoria }));
+    return res.data.map((d) => ({ ...d, es_activo: true }));
   },
 };
 

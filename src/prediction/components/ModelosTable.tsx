@@ -5,18 +5,19 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-23: tarjetas por debajo de 768px, con estado arriba |
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo M4-07 RF-69/RNF-02: F1 y sensibilidad con barra y marca del mínimo |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 import React from 'react';
-import { formatearFecha } from '../../shared/i18n/formato';
+import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Eye, BadgeCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { EstadoModeloPill } from './EstadoModeloPill';
-import { etiquetaTipoModelo } from '../types';
+import { etiquetaComponente, etiquetaTipoModelo } from '../types';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
 import type { VersionModeloResponse } from '../types';
 
 function fmtPct(v: number | null): string {
-  return v == null ? '—' : `${(v * 100).toFixed(1)}%`;
+  return v == null ? '—' : formatearNumero(v, { style: 'percent', maximumFractionDigits: 1 });
 }
 
 /** RNF-02: mínimos de aprobación de un modelo supervisado. */
@@ -117,7 +118,7 @@ export function ModelosTable({ modelos, loading, onVer }: Props) {
                   {m.esta_produccion && <BadgeCheck size={14} aria-label={t('modelostable.en_produccion')} style={{ color: 'var(--sem-success)' }} />}
                 </span>
               </td>
-              <td data-label={t('modelostable.tipo_componente')} style={TD}>{etiquetaTipoModelo(m.tipo_modelo)}{m.componente && ` · ${m.componente}`}</td>
+              <td data-label={t('modelostable.tipo_componente')} style={TD}>{etiquetaTipoModelo(m.tipo_modelo)}{m.componente && ` · ${etiquetaComponente(m.componente)}`}</td>
               <td className="ds-celda-destacada" style={TD}><EstadoModeloPill estado={m.estado_version} /></td>
               <td data-label={t('modelostable.metricas')} style={TD}><Metricas m={m} /></td>
               <td data-label={t('modelostable.registrado')} style={TD}>

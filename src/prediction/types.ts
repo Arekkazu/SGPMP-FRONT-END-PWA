@@ -6,6 +6,9 @@
 // | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
 // | 2026-10-29 | Arekkazu | QA-M04-27-10 / PEND-456 RF-54/66/68/70: nombres de versión, buffer, inferencias y contagio reales |
 // | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: ampliación de la ventana para un resultado |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-05 RF-70: solo equipos compatibles con el tipo de modelo de la versión |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -15,6 +18,7 @@
 //  - Decimal del backend → number | null.  datetime/date/UUID → string.
 //  - Uniones const en MAYÚSCULAS para los enums del dominio.
 // =====================================================================
+import i18n from '../shared/i18n';
 
 // ── Enums (uniones const) ────────────────────────────────────────────
 /** RFC-009: eje tipo de manejo (6 modelos en 3 paradigmas), ya no tamaño del animal. */
@@ -79,6 +83,12 @@ export const TIPOS_MODELO = Object.keys(PARADIGMA_POR_TIPO) as TipoModelo[];
 export const TIPOS_MODELO_ASIGNABLES = TIPOS_MODELO.filter((t) => PARADIGMA_POR_TIPO[t] !== 'META');
 
 export const COMPONENTES: Componente[] = ['DETECTOR', 'SEGUIMIENTO', 'METRICAS', 'ANOMALIAS'];
+
+/** T-19: «Métricas», no «METRICAS». Un componente fuera del catálogo se muestra tal cual. */
+export function etiquetaComponente(componente: string | null | undefined): string {
+  if (!componente) return '';
+  return COMPONENTES.includes(componente as Componente) ? i18n.t(`prediction:componentes.${componente}`) : componente;
+}
 
 // =====================================================================
 // RF-64 · Catálogo de Patologías — /prediccion/patologias (recurso 18)
@@ -340,6 +350,8 @@ export interface InferenciaMonitorResponse {
   fecha_inferencia: string;
   tiene_alerta_generada: boolean;
   id_alerta_generada: number | null;
+  /** T-18: nombre de cada patología de `probabilidad_enfermedad`, por su id (backend). */
+  nombres_patologias?: Record<string, string> | null;
 }
 
 /** RF-68: un cálculo de riesgo de contagio de un lote (GET /prediccion/riesgo-contagio). */
@@ -378,6 +390,8 @@ export interface DespliegueOtaResponse {
   nombre_version?: string | null;
   nombre_version_anterior?: string | null;
   id_dispositivo_iot: number;
+  /** T-18: descripción o serial del equipo (backend). */
+  nombre_dispositivo?: string | null;
   tipo_modelo: TipoModelo;
   paradigma: Paradigma | null;
   componente: Componente | null;
@@ -454,6 +468,8 @@ export interface DispositivoObjetivoOta {
   es_activo: boolean;
   /** M4-05: SENSOR | CAMARA, para filtrar los 373 equipos del paso 3. */
   categoria?: string | null;
+  /** M4-05: área del equipo, para reconocerlo sin el serial. */
+  nombre_infraestructura?: string | null;
 }
 
 export interface OtaStatusResponse {

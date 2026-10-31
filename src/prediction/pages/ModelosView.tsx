@@ -3,6 +3,7 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: avisos de registro automático y solo lectura, intentos de registro no admitidos |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo RF-69/RF-70: franja «En producción» por tipo de modelo y nota de mínimos |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-07 RF-69: clases de la matriz de confusión por nombre |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -18,6 +19,7 @@ import { MINIMO_F1, MINIMO_RECALL_RIESGO_ALTO } from '../components/ModelosTable
 import { ModelosFiltros, MODELOS_FILTROS_VACIO, type ModelosFiltrosState } from '../components/ModelosFiltros';
 import { ModelosTable } from '../components/ModelosTable';
 import { ModeloDetalleModal } from '../components/ModeloDetalleModal';
+import { usePatologias } from '../hooks/usePatologias';
 import { ModalShell } from '../components/ModalShell';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
@@ -29,6 +31,9 @@ const TIPOS = Object.keys(TIPO_MODELO_LABEL) as TipoModelo[];
 const pct = (v: number) => formatearNumero(v, { style: 'percent', maximumFractionDigits: 0 });
 
 export function ModelosView() {
+  // M4-07: nombres de las clases de la matriz de confusión (patologías del catálogo).
+  const patologiasHook = usePatologias();
+  const cargarPatologias = patologiasHook.cargar;
   const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_MODELOS, ACCION_R);
   const puedeEditar = usePermission(RECURSO_MODELOS, ACCION_U);
@@ -41,6 +46,7 @@ export function ModelosView() {
 
   const [filtros, setFiltros] = useState<ModelosFiltrosState>(MODELOS_FILTROS_VACIO);
   const [detalleSel, setDetalleSel] = useState<VersionModeloResponse | null>(null);
+  useEffect(() => { if (detalleSel) void cargarPatologias({}); }, [detalleSel?.id_version_modelo, cargarPatologias]); // eslint-disable-line react-hooks/exhaustive-deps
   const [detalleLoading, setDetalleLoading] = useState(false);
   const [confirmarActivar, setConfirmarActivar] = useState(false);
   // Prototipo M04: qué versión responde hoy por cada tipo. Se consulta aparte porque la
@@ -185,6 +191,7 @@ export function ModelosView() {
           onGuardarNotas={onGuardarNotas}
           onSolicitarActivar={() => setConfirmarActivar(true)}
           onClose={() => { setDetalleSel(null); setConfirmarActivar(false); }}
+          nombrePatologia={(id) => patologiasHook.patologias.find((p) => String(p.id_patologia) === id)?.nombre_patologia}
         />
       )}
 

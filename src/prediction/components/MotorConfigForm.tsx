@@ -6,6 +6,7 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-24: los campos numéricos con su etiqueta |
 // | 2026-10-29 | Arekkazu | TC-DIS-168 RF-65 a11y 3.3.1: el error del backend se marca en su campo (aria-invalid) |
 // | 2026-10-29 | Arekkazu | TC-DIS-168 RF-65 a11y 4.1.2: modo_ejecucion como combobox con nombre (Select del DS) |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 import React, { useEffect, useId, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { humanizar as etiquetaEstadoVersion } from '../../shared/lib/etiquetas';
@@ -17,9 +18,10 @@ import { ModalShell } from './ModalShell';
 import { ThresholdStrip } from './ThresholdStrip';
 import { ContratoModeloPanel } from './ContratoModeloPanel';
 import { INPUT, LABEL } from './tableStyles';
-import { COMPONENTES, PARADIGMA_POR_TIPO } from '../types';
+import { COMPONENTES, PARADIGMA_POR_TIPO, etiquetaComponente } from '../types';
 import type { Componente, ConfiguracionMotorIAResponse, ConfigurarMotorDTO, ModoEjecucion, TipoModelo, VersionModeloResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+import { formatearNumero } from '../../shared/i18n/formato';
 
 interface Props {
   tipoModelo: TipoModelo;
@@ -227,7 +229,7 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
             <RangoCampo label={t('motorconfigform.factor_densidad')} valor={wDen} min={0} max={1} step={0.05} disabled={!puedeEditar} onChange={setWDen} />
           </div>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s3)', marginBottom: 0 }}>
-            {t('motorconfigform.suma_de_pesos')}{' '}<strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{sumaPesos.toFixed(2)}</strong>
+            {t('motorconfigform.suma_de_pesos')}{' '}<strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{formatearNumero(sumaPesos, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
           </p>
           {errPesos && <span role="alert" style={{ display: 'block', fontSize: '12px', color: 'var(--sem-error)', marginTop: 'var(--s1)' }}>{errPesos}</span>}
         </section>
@@ -261,7 +263,7 @@ export function MotorConfigForm({ tipoModelo, config, versiones, saving, saveErr
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--s4)' }}>
           {poblacional ? COMPONENTES.map((c) => (
             <div key={c}>
-              <label style={LABEL} htmlFor={`motor-version-${c}`}>{t('motorconfigform.version_activa_de', { componente: c })}</label>
+              <label style={LABEL} htmlFor={`motor-version-${c}`}>{t('motorconfigform.version_activa_de', { componente: etiquetaComponente(c) })}</label>
               <select id={`motor-version-${c}`} style={INPUT} value={versionesComp[c] ?? ''} disabled={!puedeEditar} onChange={(e) => pedirCambioVersion(c, e.target.value)}>
                 <option value="">{t('motorconfigform.sin_asignar')}</option>
                 {versionesTipo.filter((v) => v.componente === c).map((v) => (

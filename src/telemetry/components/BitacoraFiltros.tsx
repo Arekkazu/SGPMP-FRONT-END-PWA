@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | H-M3-17 CP137 RF-63: rango de fechas invertido se avisa en el campo y no se aplica |
+// | 2026-10-31 | Arekkazu | TC-DIS-166 RF-63: filtro por RF de origen del evento |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
@@ -15,11 +16,15 @@ export interface BitacoraFiltrosState {
   entidad_afectada_id: string;
   fecha_desde: string;
   fecha_hasta: string;
+  rf_origen: string;
 }
+
+/** RF emisor que acepta el backend (`ComponenteOrigen`), en el orden del módulo. */
+export const RF_ORIGEN_BITACORA = ['RF53', 'RF54', 'RF55', 'RF56', 'RF57', 'RF58', 'RF59', 'RF60', 'RF61', 'RF62', 'RF17', 'RF20', 'RF23'];
 
 export const BITACORA_FILTROS_VACIO: BitacoraFiltrosState = {
   tipo_evento: '', severidad_log: '', clasificacion_registro: '', resultado: '',
-  entidad_afectada_id: '', fecha_desde: '', fecha_hasta: '',
+  entidad_afectada_id: '', fecha_desde: '', fecha_hasta: '', rf_origen: '',
 };
 
 interface Props {
@@ -68,6 +73,13 @@ export function BitacoraFiltros({ value, onChange, onAplicar, onLimpiar }: Props
             <option value="FALLIDO">{t('bitacorafiltros.fallido')}</option>
             <option value="PARCIAL">{t('bitacorafiltros.parcial')}</option>
             <option value="RECHAZADO">{t('bitacorafiltros.rechazado')}</option>
+          </select>
+        </div>
+        <div>
+          <label style={LABEL} htmlFor="b-rf">{t('bitacorafiltros.rf_origen')}</label>
+          <select id="b-rf" style={INPUT} value={value.rf_origen} onChange={set('rf_origen')}>
+            <option value="">{t('bitacorafiltros.todos')}</option>
+            {RF_ORIGEN_BITACORA.map((rf) => <option key={rf} value={rf}>{t(`bitacorafiltros.origen_${rf}`)}</option>)}
           </select>
         </div>
         <div>

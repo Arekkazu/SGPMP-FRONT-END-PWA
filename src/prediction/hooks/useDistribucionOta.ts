@@ -1,6 +1,7 @@
 // | Fecha      | Nombre       | Que se hizo                                           |
 // |------------|--------------|-------------------------------------------------------|
 // | 2026-10-23 | destroyerban | FE-08 RF-70: la OTA lista versiones APROBADO          |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-05 RF-70: solo equipos compatibles con el tipo de modelo de la versión |
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { otaApi } from '../api/otaApi';
 import { modelosApi } from '../api/modelosApi';
@@ -41,12 +42,20 @@ export function useDistribucionOta(online: boolean) {
     setOpcionesError(null);
     try {
       // El filtro `estado` del backend admite un solo valor: una consulta por estado.
-      const [porEstado, disp] = await Promise.all([
-        Promise.all(ESTADOS_VERSION_DISTRIBUIBLES.map((estado) => modelosApi.listar({ estado, limit: 100 }))),
-        otaApi.listarDispositivosObjetivo(),
-      ]);
+      const porEstado = await Promise.all(ESTADOS_VERSION_DISTRIBUIBLES.map((estado) => modelosApi.listar({ estado, limit: 100 })));
       setVersiones(unirVersionesDistribuibles(porEstado.map((r) => r.items ?? [])));
-      setDispositivos(disp);
+    } catch (e) {
+      setOpcionesError(e as ApiError);
+    }
+  }, []);
+
+  /** M4-05: los equipos dependen del tipo de modelo de la versión elegida. */
+  const cargarDispositivos = useCallback(async (tipoModelo: string | null) => {
+    setDispositivos([]);
+    if (!tipoModelo) return;
+    setOpcionesError(null);
+    try {
+      setDispositivos(await otaApi.listarDispositivosObjetivo(tipoModelo));
     } catch (e) {
       setOpcionesError(e as ApiError);
     }
@@ -98,7 +107,7 @@ export function useDistribucionOta(online: boolean) {
   }, [enCurso, online, refrescar]);
 
   return {
-    versiones, dispositivos, opcionesError, cargarOpciones,
+    versiones, dispositivos, opcionesError, cargarOpciones, cargarDispositivos,
     distribucion, componentesPorNodo, seguimientoError, refrescar,
     lanzar, lanzando, lanzarError, limpiarLanzarError,
   };

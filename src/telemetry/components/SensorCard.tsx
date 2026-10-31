@@ -3,7 +3,9 @@
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-11: el último dato muestra el día cuando no es de hoy + T-19 códigos legibles |
 // | 2026-10-26 | Leandro | ISSUE-678 G87 RF-58: distinguir la referencia válida de la condición posterior del sensor. |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-22 RF-58: batería y señal en formato regional |
 // | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: valor de la lectura actual cuando está fuera de rango |
+import { formatearNumero } from '../../shared/i18n/formato';
 import React from 'react';
 import './ReferenciaValida.css';
 import { useT } from '../../shared/i18n/useT';
@@ -76,11 +78,11 @@ export function SensorCard({ sensor, onAbrir }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', gap: 'var(--s2)', flexWrap: 'wrap' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)' }}>
           <BatteryMedium size={13} aria-hidden />
-          {sensor.nivel_bateria_pct != null ? `${sensor.nivel_bateria_pct}%` : '—'}
+          {sensor.nivel_bateria_pct != null ? formatearNumero(Number(sensor.nivel_bateria_pct) / 100, { style: 'percent', maximumFractionDigits: 0 }) : '—'}
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)' }} title="Señal LoRaWAN (RSSI)">
           <SignalHigh size={13} aria-hidden />
-          {sensor.calidad_senal_rssi != null ? `${sensor.calidad_senal_rssi} dBm` : '—'}
+          {sensor.calidad_senal_rssi != null ? `${formatearNumero(sensor.calidad_senal_rssi, { maximumFractionDigits: 0 })} dBm` : '—'}
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)' }}>
           <Tendencia tendencia={sensor.tendencia} />

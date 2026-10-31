@@ -5,6 +5,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-10 RF-60: lista de dispositivos en vez del campo de ID |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: sin filtro de sensor por ID, que el endpoint técnico ignoraba |
 // | 2026-10-29 | Arekkazu | USAB-M03 prototipo T-23 RF-60: alertas técnicas en tarjetas, como Alertas |
+// | 2026-10-31 | Arekkazu | CP50/CP58/T-18 RF-60: tiempo sin contacto con unidad, transición manual o automática con responsable, equipo por nombre |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, Wrench, AlertTriangle } from 'lucide-react';
@@ -106,6 +107,7 @@ export function DispositivosView() {
 
           <div style={{ marginTop: 'var(--s5)' }} aria-live="polite">
           <DispositivoEstadoPanel
+            nombre={(() => { const d = lista.items.find((x) => x.id_dispositivo_iot === dispositivo.idConsultado); return d ? d.descripcion || d.serial : undefined; })()}
             idConsultado={dispositivo.idConsultado}
             estado={dispositivo.estado}
             historial={dispositivo.historial}
