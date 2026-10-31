@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-20 | Arekkazu | FE-09 RF-17: interruptor es_critica por variable, solo para el Administrador (RFC-016) |
 // | 2026-10-23 | Arekkazu | FE-09 RF-17: el interruptor depende de variables_ambientales_criticas (DB-08) |
+// | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: tolerancia T del semáforo configurable en el umbral |
 import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -76,6 +77,13 @@ interface FormValues {
   precaucion_sup: number;
   critico_inf: number;
   critico_sup: number;
+  /** G88: texto del input; vacío = 10 % del rango. */
+  tolerancia_semaforo: string;
+}
+
+/** G88: '' → null (usa el 10 % del rango); un número no negativo se envía tal cual. */
+function toleranciaDesdeFormulario(valor: string): number | null {
+  return valor === '' || valor === null || valor === undefined ? null : Number(valor);
 }
 
 // ── Semáforo visual — barra proporcional horizontal ───────────────────────────
@@ -260,6 +268,7 @@ function UmbralModal({
         precaucion_sup: n('precaucion')?.limite_superior ?? 0,
         critico_inf: n('critico')?.limite_inferior ?? 0,
         critico_sup: n('critico')?.limite_superior ?? 0,
+        tolerancia_semaforo: umbral.tolerancia_semaforo == null ? '' : String(Number(umbral.tolerancia_semaforo)),
       });
     } else {
       reset({
@@ -272,6 +281,7 @@ function UmbralModal({
         precaucion_sup: 0,
         critico_inf: 0,
         critico_sup: 0,
+        tolerancia_semaforo: '',
       });
     }
   }, [umbral, reset, variables]);
@@ -305,6 +315,7 @@ function UmbralModal({
         valor_min: Number(data.valor_min),
         valor_max: Number(data.valor_max),
         niveles,
+        tolerancia_semaforo: toleranciaDesdeFormulario(data.tolerancia_semaforo),
         fecha_actualizacion: umbral.fecha_actualizacion,
       });
     } else {
@@ -314,6 +325,7 @@ function UmbralModal({
         valor_min: Number(data.valor_min),
         valor_max: Number(data.valor_max),
         niveles,
+        tolerancia_semaforo: toleranciaDesdeFormulario(data.tolerancia_semaforo),
       });
     }
     if (ok) onClose();
@@ -453,6 +465,34 @@ function UmbralModal({
                     <NivelCard nivel="normal"     unidad={varSel.unidad} register={register} errors={errors} />
                     <NivelCard nivel="precaucion" unidad={varSel.unidad} register={register} errors={errors} />
                     <NivelCard nivel="critico"    unidad={varSel.unidad} register={register} errors={errors} />
+                  </div>
+                </div>
+              </div>
+
+              {/* ── SECCIÓN 3: Tolerancia del semáforo (G88, RF-58 Fase 3) ── */}
+              <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
+                <div style={{ background: 'var(--surface-hover)', padding: 'var(--s2) var(--s4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>{t('umbralessection.3_tolerancia_semaforo')}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>{t('umbralessection.opcional')}</span>
+                </div>
+                <div style={{ padding: 'var(--s5)' }}>
+                  {/* G88 (RF-58 Fase 3): fuera del rango, el semáforo es AMARILLO a menos de T
+                      del borde y ROJO más allá. Vacío = 10 % del rango. */}
+                  <div className="ds-fg2" style={{ gap: 'var(--s4)', maxWidth: 380 }}>
+                    <Input
+                      label={t('umbralessection.tolerancia_semaforo_label', { unidad: varSel.unidad })}
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder={t('umbralessection.tolerancia_semaforo_placeholder')}
+                      hint={t('umbralessection.tolerancia_semaforo_ayuda')}
+                      error={errors.tolerancia_semaforo?.message}
+                      {...register('tolerancia_semaforo', {
+                        validate: (v) =>
+                          v === '' || v === undefined || (Number.isFinite(Number(v)) && Number(v) >= 0)
+                          || t('umbralessection.tolerancia_semaforo_invalida'),
+                      })}
+                    />
                   </div>
                 </div>
               </div>
@@ -705,6 +745,12 @@ export function UmbralesSection({ idEspecie }: Props) {
                     </td>
                     <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                       {u.valor_min} – {u.valor_max} <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{v.unidad}</span>
+                      {u.tolerancia_semaforo_efectiva != null && (
+                        <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
+                          {t(u.tolerancia_semaforo == null ? 'umbralessection.tolerancia_semaforo_defecto' : 'umbralessection.tolerancia_semaforo_corta',
+                            { valor: Number(u.tolerancia_semaforo_efectiva) })}
+                        </div>
+                      )}
                     </td>
                     <td style={{ ...TD, minWidth: 160 }}>
                       <SemaforoBar umbral={u} />

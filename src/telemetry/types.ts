@@ -10,6 +10,7 @@
 // | 2026-10-26 | Arekkazu | INC-M03 lote 26-10 RF-58/59: unidad sin sensores, alertas correlacionadas y desviación estándar |
 // | 2026-10-29 | Arekkazu | INC-M03-211-G98 RF-58: panel de alertas activas del dashboard |
 // | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: estado del buffer Edge por dispositivo (GET /iot/buffer) |
+// | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: valor de la lectura actual cuando está fuera de rango |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -248,6 +249,8 @@ export interface EstadoSensorSchema {
   es_valor_operativo?: boolean;
   /** Etiqueta del backend en español; la UI la traduce con `estadoLectura`. */
   etiqueta_estado?: string | null;
+  /** G88 (RF-58): valor de la última lectura, con el que se calcula el semáforo. */
+  valor_condicion_actual?: number | string | null;
 }
 
 export interface DashboardResponseSchema {
