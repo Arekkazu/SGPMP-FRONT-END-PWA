@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-10-29 | Arekkazu | TC-DIS-164 RF-62: trazabilidad estadística de cada flag (media, desviación, drift) con etiqueta |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { RefreshCcw } from 'lucide-react';
@@ -12,6 +13,7 @@ import { ClasificacionCalidadPill } from './ClasificacionCalidadPill';
 import { FlagChips } from './FlagChips';
 import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 import { fechaHoraCaptura } from '../lib/sensorEscala';
+import { lecturaCalidad } from './CalidadTable';
 import type { TelemetriaCalidadSchema } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -83,7 +85,7 @@ export function CalidadDetalleModal({ item, puedeEjecutar, online, saving, saveE
   const disabled = !puedeEjecutar || !online || saving;
   return (
     <ModalShell
-      title={`Evaluación de calidad · lectura #${item.id_telemetria}`}
+      title={t('calidaddetallemodal.titulo', { lectura: lecturaCalidad(item) })}
       onClose={onClose}
       maxWidth={560}
       footer={
@@ -101,7 +103,7 @@ export function CalidadDetalleModal({ item, puedeEjecutar, online, saving, saveE
         )}
       </div>
 
-      <Fila label={t('calidaddetallemodal.sensor')}>#{item.id_sensor}</Fila>
+      <Fila label={t('calidaddetallemodal.sensor')}>{item.nombre_sensor ?? `#${item.id_sensor}`}</Fila>
       <Fila label={t('calidaddetallemodal.evaluada')}>{fechaHoraCaptura(item.timestamp_evaluacion)}</Fila>
       <Fila label={t('calidaddetallemodal.apto_para_ia')}>{item.apto_para_ia ? 'Sí' : 'No'}</Fila>
       <Fila label={t('calidaddetallemodal.apto_para_nic_41')}>{item.apto_para_nic41 ? 'Sí' : 'No'}</Fila>

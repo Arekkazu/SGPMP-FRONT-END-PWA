@@ -3,6 +3,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01/M3-13 RF-59: 7 días por defecto, rangos rápidos consultan, exportación deshabilitada con motivo |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre en vez de «ID infraestructura» |
 // | 2026-10-29 | Arekkazu | H-M3-03 CP15 RF-59: Desde/Hasta vacías o invertidas se avisan en español antes de consultar |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19 RF-59: variable elegida de una lista con nombres |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, Download } from 'lucide-react';
@@ -10,6 +11,7 @@ import { Button } from '../../shared/design-system/Button';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
 import { diasAtrasLocal, hoyLocal } from '../../shared/lib/fecha';
 import { SelectorArea } from './SelectorArea';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 import type { AreaTelemetria } from '../hooks/useAreas';
 
 export interface HistorialFiltrosState {
@@ -36,6 +38,12 @@ export const HISTORIAL_FILTROS_DEFAULT: HistorialFiltrosState = {
 };
 
 const RANGOS = [7, 30, 60, 90];
+
+/** Códigos de telemetría del catálogo de M09 (`codigo_telemetria`) que acepta el historial. */
+const VARIABLES_TELEMETRIA = [
+  'TEMPERATURA_AMBIENTAL', 'HUMEDAD_RELATIVA', 'NH3', 'CO2', 'PH_AGUA', 'OXIGENO_DISUELTO', 'TDS',
+  'TEMP_CORPORAL', 'FRECUENCIA_CARDIACA', 'FRECUENCIA_RESPIRATORIA', 'ACTIVIDAD',
+];
 
 interface Props {
   areas: AreaTelemetria[];
@@ -93,7 +101,11 @@ export function HistorialFiltros({ areas, value, onChange, onAplicar, onExportar
         </div>
         <div>
           <label style={LABEL} htmlFor="h-var">{t('historialfiltros.variable')}</label>
-          <input id="h-var" style={INPUT} placeholder={t('historialfiltros.ej_temperatura_ambiental')} value={value.tipo_variable} onChange={set('tipo_variable')} />
+          {/* T-19: lista con nombres en vez de pedir escribir "TEMPERATURA_AMBIENTAL". */}
+          <select id="h-var" style={INPUT} value={value.tipo_variable} onChange={set('tipo_variable')}>
+            <option value="">{t('historialfiltros.todas_las_variables')}</option>
+            {VARIABLES_TELEMETRIA.map((v) => <option key={v} value={v}>{etiquetaCodigo(v)}</option>)}
+          </select>
         </div>
         <div>
           <label style={LABEL} htmlFor="h-cat">{t('historialfiltros.categoria')}</label>
