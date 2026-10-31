@@ -529,7 +529,10 @@
     "nombre_de_la_patologia": "Pathology name",
     "sin_conexion": "Offline",
     "variables_sensoricas_asociadas": "Associated sensor variables",
-    "regla_descripcion": "At least {{min}} characters ({{n}}/{{min}})."
+    "regla_descripcion": "At least {{min}} characters ({{n}}/{{min}}).",
+    "sin_umbral_titulo": "No threshold configured",
+    "sin_umbral_detalle_one": "{{variables}} has no RF-17 threshold configured. The traffic light and fixed alerts do not evaluate it until it is configured in Settings › By species › Environmental thresholds. You can still register the disease.",
+    "sin_umbral_detalle_other": "{{variables}} have no RF-17 threshold configured. The traffic light and fixed alerts do not evaluate them until they are configured in Settings › By species › Environmental thresholds. You can still register the disease."
   },
   "patologiapills": {
     "activa": "Active",
@@ -657,7 +660,10 @@
     "variables_sensoricas_asociadas": "Associated sensor variables",
     "seleccionadas_one": "{{n}} selected · between 2 and 6 required",
     "seleccionadas_other": "{{n}} selected · between 2 and 6 required",
-    "regla": "Select between 2 and 6 variables ({{n}} selected)."
+    "regla": "Select between 2 and 6 variables ({{n}} selected).",
+    "sin_umbral": "no threshold",
+    "con_umbral": "threshold set",
+    "umbral_parcial": "threshold in {{con}}/{{de}}"
   },
   "motorhistorial": {
     "titulo": "Configuration history",
@@ -1016,5 +1022,16 @@
     "SEGUIMIENTO": "Tracking",
     "METRICAS": "Metrics",
     "ANOMALIAS": "Anomalies"
+  },
+  "avisoreentrenamiento": {
+    "titulo_insuficiente": "{{modelo}}: not enough data to retrain",
+    "detalle_insuficiente": "{{n}} new feedback records since the last version. {{faltan}} more are needed before retraining can be requested (from {{solicitud}}).",
+    "titulo_puede_solicitarse": "{{modelo}}: retraining can now be requested",
+    "detalle_puede_solicitarse": "{{n}} new feedback records since the last version. RF-71 runs it from {{minimo}}: {{faltan}} to go.",
+    "titulo_listo": "{{modelo}}: enough data to retrain",
+    "detalle_listo": "{{n}} new feedback records since the last version: meets the RF-71 minimum ({{minimo}}).",
+    "solicitar": "Request retraining",
+    "solicitado": "Request recorded in the M04 audit log with {{n}} new feedback records.",
+    "no_se_pudo_solicitar": "Retraining could not be requested"
   }
 }

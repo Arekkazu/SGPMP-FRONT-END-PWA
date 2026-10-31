@@ -1,9 +1,15 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-31 | Arekkazu | RF-71: estado de datos para reentrenar los modelos individuales |
+// | 2026-10-31 | Arekkazu | RF-71/RF-73: solicitar el reentrenamiento (queda en la bitácora) |
 import { http } from '../../shared/api/http';
 import type {
   VersionModeloListResponse,
   VersionModeloResponse,
   ListarModelosFiltros,
   RegistrarNotasVersionDTO,
+  EstadoReentrenamiento,
+  TipoModelo,
 } from '../types';
 
 const BASE = '/prediccion/modelos';
@@ -11,6 +17,19 @@ const BASE = '/prediccion/modelos';
 export const modelosApi = {
   async listar(filtros: ListarModelosFiltros = {}): Promise<VersionModeloListResponse> {
     const res = await http.get<VersionModeloListResponse>(BASE, { params: filtros });
+    return res.data;
+  },
+
+  /** RF-71: retroalimentaciones nuevas por modelo individual y si alcanzan para reentrenar. */
+  async estadoReentrenamiento(): Promise<EstadoReentrenamiento[]> {
+    const res = await http.get<EstadoReentrenamiento[]>(`${BASE}/reentrenamiento`);
+    return res.data;
+  },
+
+  /** RF-71/RF-73: deja REENTRENAMIENTO_SOLICITADO en la bitácora. 422 por debajo del mínimo. */
+  async solicitarReentrenamiento(tipoModelo: TipoModelo): Promise<{ id_evento: string; estado: EstadoReentrenamiento }> {
+    const res = await http.post<{ id_evento: string; estado: EstadoReentrenamiento }>(
+      `${BASE}/reentrenamiento/solicitudes`, { tipo_modelo: tipoModelo });
     return res.data;
   },
 

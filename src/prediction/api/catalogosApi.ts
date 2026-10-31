@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables (I3P-1) y especies del backend, no listas estáticas |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-02 RF-64: el selector ofrece solo las 11 variables del RF-64 |
+// | 2026-10-31 | Arekkazu | RF-64/RF-17: variables con umbral activo por especie, para el aviso del formulario |
 import { http } from '../../shared/api/http';
 
 export interface VariableCatalogo {
@@ -42,5 +43,12 @@ export const catalogosApi = {
   async especies(): Promise<EspecieCatalogo[]> {
     const res = await http.get<{ items: EspecieCatalogo[] }>('/configuracion/especies', { params: { solo_activas: true } });
     return res.data.items ?? [];
+  },
+  /** Recurso 20 (umbrales), R: ids de variable con umbral RF-17 activo para la especie. */
+  async variablesConUmbral(idEspecie: number): Promise<number[]> {
+    const res = await http.get<{ items: { id_variable_ambiental: number }[] }>('/configuracion/umbrales', {
+      params: { id_especie: idEspecie, solo_activas: true },
+    });
+    return (res.data.items ?? []).map((u) => u.id_variable_ambiental);
   },
 };

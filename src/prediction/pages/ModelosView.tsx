@@ -4,6 +4,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo RF-69/RF-70: franja «En producción» por tipo de modelo y nota de mínimos |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-07 RF-69: clases de la matriz de confusión por nombre |
+// | 2026-10-31 | Arekkazu | RF-71: aviso de datos insuficientes para reentrenar el modelo individual |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -24,6 +25,7 @@ import { ModalShell } from '../components/ModalShell';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { IntentosRegistroTable } from '../components/IntentosRegistroTable';
+import { AvisoReentrenamiento } from '../components/AvisoReentrenamiento';
 import { RECURSO_MODELOS, RECURSO_AUDITORIA, RECURSO_OTA, ACCION_R, ACCION_U, ACCION_E } from '../rbac';
 import { PARADIGMA_POR_TIPO, TIPO_MODELO_LABEL, type ListarModelosFiltros, type TipoModelo, type VersionModeloResponse } from '../types';
 
@@ -128,6 +130,8 @@ export function ModelosView() {
             {!puedeEditar && !puedeEjecutar && <> {t('modelosview.solo_lectura_texto')}</>}
           </span>
         </div>
+
+        {puedeVer && <AvisoReentrenamiento online={online} puedeSolicitar={puedeEjecutar} />}
 
         {activos && (
           <section aria-labelledby="modelos-produccion" style={{ marginBottom: 'var(--s5)' }}>

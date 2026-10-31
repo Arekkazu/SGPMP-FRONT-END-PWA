@@ -9,6 +9,7 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-05 RF-70: solo equipos compatibles con el tipo de modelo de la versión |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
+// | 2026-10-31 | Arekkazu | RF-71: estado de datos para reentrenar los modelos individuales |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -598,4 +599,17 @@ export interface ActivoSelectorItem {
   nombre_especie: string | null;
   /** M4-03: para ofrecer solo diagnósticos de su especie. */
   id_especie?: number | null;
+}
+
+/** GET /prediccion/modelos/reentrenamiento (RF-71). */
+export interface EstadoReentrenamiento {
+  tipo_modelo: TipoModelo;
+  /** Resultados con retroalimentación RF-72 desde la última versión del modelo. */
+  registros_nuevos: number;
+  desde: string | null;
+  estado: 'INSUFICIENTE' | 'PUEDE_SOLICITARSE' | 'LISTO';
+  /** Para el siguiente estado; 0 si está LISTO. */
+  faltan: number;
+  minimo_solicitud: number;
+  minimo_reentrenamiento: number;
 }

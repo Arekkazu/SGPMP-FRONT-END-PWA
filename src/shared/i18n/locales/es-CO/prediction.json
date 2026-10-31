@@ -529,7 +529,10 @@
     "nombre_de_la_patologia": "Nombre de la patología",
     "sin_conexion": "Sin conexión",
     "variables_sensoricas_asociadas": "Variables sensóricas asociadas",
-    "regla_descripcion": "Mínimo {{min}} caracteres ({{n}}/{{min}})."
+    "regla_descripcion": "Mínimo {{min}} caracteres ({{n}}/{{min}}).",
+    "sin_umbral_titulo": "Sin umbral configurado",
+    "sin_umbral_detalle_one": "{{variables}} no tiene umbral configurado en RF-17. El semáforo y las alertas fijas no la evalúan hasta configurarlo en Configuración › Por especie › Umbrales ambientales. Puedes registrar la patología igual.",
+    "sin_umbral_detalle_other": "{{variables}} no tienen umbral configurado en RF-17. El semáforo y las alertas fijas no las evalúan hasta configurarlos en Configuración › Por especie › Umbrales ambientales. Puedes registrar la patología igual."
   },
   "patologiapills": {
     "activa": "Activa",
@@ -657,7 +660,10 @@
     "variables_sensoricas_asociadas": "Variables sensóricas asociadas",
     "seleccionadas_one": "{{n}} seleccionada · se requieren entre 2 y 6",
     "seleccionadas_other": "{{n}} seleccionadas · se requieren entre 2 y 6",
-    "regla": "Selecciona entre 2 y 6 variables ({{n}} seleccionadas)."
+    "regla": "Selecciona entre 2 y 6 variables ({{n}} seleccionadas).",
+    "sin_umbral": "sin umbral",
+    "con_umbral": "con umbral",
+    "umbral_parcial": "umbral en {{con}}/{{de}}"
   },
   "motorhistorial": {
     "titulo": "Historial de configuración",
@@ -1016,5 +1022,16 @@
     "SEGUIMIENTO": "Seguimiento",
     "METRICAS": "Métricas",
     "ANOMALIAS": "Anomalías"
+  },
+  "avisoreentrenamiento": {
+    "titulo_insuficiente": "{{modelo}}: no hay datos suficientes para reentrenar",
+    "detalle_insuficiente": "{{n}} retroalimentaciones nuevas desde la última versión. Faltan {{faltan}} para poder solicitar el reentrenamiento (desde {{solicitud}}).",
+    "titulo_puede_solicitarse": "{{modelo}}: ya se puede solicitar el reentrenamiento",
+    "detalle_puede_solicitarse": "{{n}} retroalimentaciones nuevas desde la última versión. RF-71 lo ejecuta desde {{minimo}}: faltan {{faltan}}.",
+    "titulo_listo": "{{modelo}}: datos suficientes para reentrenar",
+    "detalle_listo": "{{n}} retroalimentaciones nuevas desde la última versión: cumple el mínimo de RF-71 ({{minimo}}).",
+    "solicitar": "Solicitar reentrenamiento",
+    "solicitado": "Solicitud registrada en la bitácora de M04 con {{n}} retroalimentaciones nuevas.",
+    "no_se_pudo_solicitar": "No se pudo solicitar el reentrenamiento"
   }
 }
