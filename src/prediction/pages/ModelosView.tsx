@@ -5,10 +5,11 @@
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo RF-69/RF-70: franja «En producción» por tipo de modelo y nota de mínimos |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-07 RF-69: clases de la matriz de confusión por nombre |
 // | 2026-10-31 | Arekkazu | RF-71: aviso de datos insuficientes para reentrenar el modelo individual |
+// | 2026-10-31 | Arekkazu | RFC-010 RF-69: confirmar activar o poner en sombra |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { Boxes, RefreshCw, Rocket, AlertTriangle, Info } from 'lucide-react';
+import { Boxes, RefreshCw, Rocket, AlertTriangle, Info, MoonStar } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
@@ -50,7 +51,8 @@ export function ModelosView() {
   const [detalleSel, setDetalleSel] = useState<VersionModeloResponse | null>(null);
   useEffect(() => { if (detalleSel) void cargarPatologias({}); }, [detalleSel?.id_version_modelo, cargarPatologias]); // eslint-disable-line react-hooks/exhaustive-deps
   const [detalleLoading, setDetalleLoading] = useState(false);
-  const [confirmarActivar, setConfirmarActivar] = useState(false);
+  // RFC-010: la misma confirmación sirve para activar o para poner en sombra.
+  const [confirmar, setConfirmar] = useState<null | 'activar' | 'sombra'>(null);
   // Prototipo M04: qué versión responde hoy por cada tipo. Se consulta aparte porque la
   // tabla está paginada y filtrada; sin respuesta, la franja no se muestra.
   const [activos, setActivos] = useState<VersionModeloResponse[] | null>(null);
@@ -94,10 +96,10 @@ export function ModelosView() {
     if (ok) setDetalleSel(ok);
   };
 
-  const onConfirmarActivar = async () => {
-    if (!detalleSel) return;
-    const ok = await activar(detalleSel.id_version_modelo);
-    if (ok) { setDetalleSel(ok); setConfirmarActivar(false); }
+  const onConfirmar = async () => {
+    if (!detalleSel || !confirmar) return;
+    const ok = await activar(detalleSel.id_version_modelo, confirmar === 'sombra');
+    if (ok) { setDetalleSel(ok); setConfirmar(null); }
   };
 
   if (!puedeVer) return <PermissionDenied seccion="Versiones de modelos IA" />;
@@ -193,22 +195,26 @@ export function ModelosView() {
           transiciones={transiciones}
           despliegues={despliegues}
           onGuardarNotas={onGuardarNotas}
-          onSolicitarActivar={() => setConfirmarActivar(true)}
-          onClose={() => { setDetalleSel(null); setConfirmarActivar(false); }}
+          onSolicitarActivar={() => setConfirmar('activar')}
+          onSolicitarSombra={() => setConfirmar('sombra')}
+          onClose={() => { setDetalleSel(null); setConfirmar(null); }}
           nombrePatologia={(id) => patologiasHook.patologias.find((p) => String(p.id_patologia) === id)?.nombre_patologia}
         />
       )}
 
-      {confirmarActivar && detalleSel && (
+      {confirmar && detalleSel && (
         <ModalShell
-          title={t('modelosview.confirmar_activacion_en_produccion')}
-          onClose={() => setConfirmarActivar(false)}
+          title={t(confirmar === 'sombra' ? 'modelosview.confirmar_sombra' : 'modelosview.confirmar_activacion_en_produccion')}
+          onClose={() => setConfirmar(null)}
           maxWidth={480}
           footer={
             <>
-              <Button variant="secondary" onClick={() => setConfirmarActivar(false)} disabled={saving}>{t('modelosview.cancelar')}</Button>
-              <Button variant="primary" onClick={onConfirmarActivar} loading={saving} disabled={!online}>
-                <Rocket size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelosview.activar')}</Button>
+              <Button variant="secondary" onClick={() => setConfirmar(null)} disabled={saving}>{t('modelosview.cancelar')}</Button>
+              <Button variant="primary" onClick={onConfirmar} loading={saving} disabled={!online}>
+                {confirmar === 'sombra'
+                  ? <><MoonStar size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelosview.poner_en_sombra')}</>
+                  : <><Rocket size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelosview.activar')}</>}
+              </Button>
             </>
           }
         >
@@ -216,7 +222,7 @@ export function ModelosView() {
             <AlertTriangle size={20} aria-hidden style={{ color: 'var(--sem-warning)', flexShrink: 0, marginTop: 2 }} />
             <div>
               <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>
-                <strong>{detalleSel.nombre_version}</strong>{' '}{t('modelosview.pasara_a_produccion_y_reemplazara_la')}</p>
+                <strong>{detalleSel.nombre_version}</strong>{' '}{t(confirmar === 'sombra' ? 'modelosview.pasara_a_sombra' : 'modelosview.pasara_a_produccion_y_reemplazara_la')}</p>
               {saveError && <p role="alert" style={{ margin: 'var(--s3) 0 0', fontSize: '13px', color: 'var(--sem-error)' }}>{saveError.message}</p>}
             </div>
           </div>
