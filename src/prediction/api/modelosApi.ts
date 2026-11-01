@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-31 | Arekkazu | RF-71: estado de datos para reentrenar los modelos individuales |
 // | 2026-10-31 | Arekkazu | RF-71/RF-73: solicitar el reentrenamiento (queda en la bitácora) |
+// | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
 import { http } from '../../shared/api/http';
 import type {
   VersionModeloListResponse,
@@ -43,7 +44,13 @@ export const modelosApi = {
     return res.data;
   },
 
-  /** Activa una versión APROBADA con notas → 422 si faltan notas o la transición es inválida. */
+  /** RFC-010: APROBADO → SOMBRA. Corre en el motor y registra resultados, pero no alerta. */
+  async ponerEnSombra(idVersion: number): Promise<VersionModeloResponse> {
+    const res = await http.post<VersionModeloResponse>(`${BASE}/${idVersion}/sombra`);
+    return res.data;
+  },
+
+  /** Activa una versión APROBADA o en SOMBRA con notas → 422 si faltan notas, si es SINTETICA o la transición es inválida. */
   async activar(idVersion: number): Promise<VersionModeloResponse> {
     const res = await http.post<VersionModeloResponse>(`${BASE}/${idVersion}/activar`);
     return res.data;

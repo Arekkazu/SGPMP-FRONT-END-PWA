@@ -339,9 +339,16 @@
       "VERSION_APROBADA": "Approved",
       "VERSION_RECHAZADA": "Rejected",
       "VERSION_ACTIVADA": "Activated",
-      "VERSION_DEPRECADA": "Deprecated"
+      "VERSION_DEPRECADA": "Deprecated",
+      "VERSION_EN_SOMBRA": "In shadow"
     },
-    "no_activable_rechazado": "Unavailable: a REJECTED version did not meet the minimum metrics and cannot be activated."
+    "no_activable_rechazado": "Unavailable: a REJECTED version did not meet the minimum metrics and cannot be activated.",
+    "activo_biologico": "Animal #{{id}}",
+    "req_en_sombra_valor": "in shadow, ready to promote",
+    "req_datos_reales": "Trained on real data",
+    "poner_en_sombra": "Run in shadow",
+    "sombra_ayuda": "In shadow the model runs on the animal's data and stores its predictions, but raises no alerts. It replaces the version already in shadow for the same animal.",
+    "no_activable_sintetico": "Unavailable: a model trained on synthetic data only runs in shadow until it is retrained on real data."
   },
   "modelosfiltros": {
     "aplicar": "Apply",
@@ -368,7 +375,14 @@
     "fp_rutina": "False positives (routine)",
     "deteccion_clinica": "Clinical event detection",
     "por_rf71": "RF-71 · process {{proceso}}…",
-    "minimo": "minimum {{minimo}}"
+    "minimo": "minimum {{minimo}}",
+    "activo_biologico": "Animal #{{id}}",
+    "fuente": {
+      "REAL": "Real data",
+      "SINTETICA": "Synthetic data",
+      "EXTERNA": "External data",
+      "MIXTA": "Mixed data"
+    }
   },
   "modelosview": {
     "activar": "Activate",
@@ -391,7 +405,10 @@
     "desde": "Since {{fecha}}",
     "poblacional": "Population model",
     "f1": "F1 {{valor}}",
-    "nota_minimos": "The mark on each bar is the minimum to approve: F1 {{f1}} and high-risk sensitivity {{recall}} (RNF-02)."
+    "nota_minimos": "The mark on each bar is the minimum to approve: F1 {{f1}} and high-risk sensitivity {{recall}} (RNF-02).",
+    "confirmar_sombra": "Confirm shadow run",
+    "poner_en_sombra": "Run in shadow",
+    "pasara_a_sombra": "will run in shadow: it stores predictions without alerting and replaces the shadow version of the same animal."
   },
   "monitorinferenciaview": {
     "monitoreo_de_inferencia": "Inference Monitoring",

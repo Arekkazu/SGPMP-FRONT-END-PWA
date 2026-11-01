@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, Filter, X } from 'lucide-react';
@@ -13,9 +16,9 @@ export interface ModelosFiltrosState {
 
 export const MODELOS_FILTROS_VACIO: ModelosFiltrosState = { busqueda: '', tipo: '', estado: '' };
 
-const ESTADOS = ['EN_VALIDACION', 'APROBADO', 'ACTIVO', 'DEPRECADO', 'RECHAZADO'];
+const ESTADOS = ['EN_VALIDACION', 'APROBADO', 'SOMBRA', 'ACTIVO', 'DEPRECADO', 'RECHAZADO'];
 const ESTADO_LABEL: Record<string, string> = {
-  EN_VALIDACION: 'En validación', APROBADO: 'Aprobado', ACTIVO: 'Activo', DEPRECADO: 'Deprecado', RECHAZADO: 'Rechazado',
+  EN_VALIDACION: 'En validación', APROBADO: 'Aprobado', SOMBRA: 'En sombra', ACTIVO: 'Activo', DEPRECADO: 'Deprecado', RECHAZADO: 'Rechazado',
 };
 
 interface Props {
