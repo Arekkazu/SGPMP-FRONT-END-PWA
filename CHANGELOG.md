@@ -1,3 +1,9 @@
+## [1.4.0-rc.16](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.15...v1.4.0-rc.16) (2026-11-01)
+
+### Features
+
+* **rfc-010:** RF-69 estado SOMBRA, versión por animal y fuente de datos en Modelos IA ([c89a87e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c89a87e7682034cc8513b4406f8c1a32f9f06553)), closes [Arekkazu/sgpmp-backend#909](https://github.com/Arekkazu/sgpmp-backend/issues/909)
+
 ## [1.4.0-rc.15](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.14...v1.4.0-rc.15) (2026-10-31)
 
 ### Features
