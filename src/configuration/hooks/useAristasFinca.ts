@@ -1,14 +1,16 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | RFC-021 RF-110: aristas activas de una finca para el grafo |
-import { useEffect, useState } from 'react';
-import { topologiaApi } from '../api/topologiaApi';
-import type { AristaGrafo } from '../components/GrafoTopologia';
+// | 2026-11-02 | Arekkazu | RF-110: recargar tras editar |
+import { useCallback, useEffect, useState } from 'react';
+import { topologiaApi, type AristaTopologia } from '../api/topologiaApi';
 import type { ApiError } from '../../shared/api/errors';
 
 export function useAristasFinca(idFinca: number | null) {
-  const [aristas, setAristas] = useState<AristaGrafo[]>([]);
+  const [aristas, setAristas] = useState<AristaTopologia[]>([]);
   const [error, setError] = useState<ApiError | null>(null);
+  const [version, setVersion] = useState(0);
+  const recargar = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
     if (idFinca == null) return;
@@ -18,7 +20,7 @@ export function useAristasFinca(idFinca: number | null) {
       .then((a) => { if (vigente) setAristas(a); })
       .catch((e: ApiError) => { if (vigente) { setAristas([]); setError(e); } });
     return () => { vigente = false; };
-  }, [idFinca]);
+  }, [idFinca, version]);
 
-  return { aristas, error };
+  return { aristas, error, recargar };
 }

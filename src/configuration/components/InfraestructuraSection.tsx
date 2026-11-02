@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-20 | Arekkazu | FE-06 RF-20: varias especies del mismo grupo, nivel_criticidad y capacidad derivada (RFC-012/016) |
 // | 2026-11-02 | Arekkazu | RFC-021 RF-110: grafo de la topología sanitaria de toda la finca |
+// | 2026-11-02 | Arekkazu | RF-110: la sección de topología permite crear, editar y quitar relaciones |
 import React, { useEffect, useId, useState } from 'react';
 import { formatearFecha, formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -27,8 +28,7 @@ import { NIVELES_CRITICIDAD, type EspecieResponse, type FincaResponse, type Infr
 import type { ApiError } from '../../shared/api/errors';
 import { iconoTipoArea } from '../iconos';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
-import { useAristasFinca } from '../hooks/useAristasFinca';
-import { GrafoTopologia } from './GrafoTopologia';
+import { TopologiaSanitaria } from './TopologiaSanitaria';
 import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -513,7 +513,6 @@ export function InfraestructuraSection() {
   const { infraestructuras, loading, saving, error, saveError, cargar, registrar, editar, desactivar, reactivar } = useInfraestructuras();
 
   const [fincaSeleccionada, setFincaSeleccionada] = useState<FincaResponse | null>(null);
-  const topologia = useAristasFinca(puedeVerTopologia && fincaSeleccionada ? fincaSeleccionada.id_finca : null);
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
 
@@ -707,17 +706,7 @@ export function InfraestructuraSection() {
           )}
 
           {puedeVerTopologia && !loading && infraestructuras.length > 0 && (
-            <section aria-labelledby="topologia-finca" style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)', marginTop: 'var(--s5)' }}>
-              <h3 id="topologia-finca" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('topologia.titulo_finca')}</h3>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s1) 0 var(--s3)' }}>{t('topologia.descripcion_finca')}</p>
-              {topologia.error
-                ? <Alert variant="error" title={t('topologia.error')} description={topologia.error.message} />
-                : <GrafoTopologia
-                    titulo={t('topologia.titulo_finca')}
-                    nodos={infraestructuras.map((i) => ({ id: i.id_infraestructura, nombre: i.nombre_infraestructura, activo: i.es_activo, detalle: i.tipo_area }))}
-                    aristas={topologia.aristas}
-                  />}
-            </section>
+            <TopologiaSanitaria idFinca={fincaSeleccionada.id_finca} areas={infraestructuras} />
           )}
 
           {/* Modals */}
