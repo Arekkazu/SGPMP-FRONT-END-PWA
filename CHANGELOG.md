@@ -1,3 +1,9 @@
+## [1.4.0-rc.20](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.19...v1.4.0-rc.20) (2026-11-02)
+
+### Features
+
+* **rf-66:** «Lo que ve la cámara» en Predicción (ficha del lote y detalle de la inferencia) ([527d802](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/527d802e7381b7e66b5595b681fa40fc9d917fb5))
+
 ## [1.4.0-rc.19](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.18...v1.4.0-rc.19) (2026-11-02)
 
 ### Features
