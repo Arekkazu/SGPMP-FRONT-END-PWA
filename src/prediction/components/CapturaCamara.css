@@ -1,0 +1,66 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-11-02 | Arekkazu | RF-66: miniatura de la cámara con «Ver imagen» y vista completa | */
+
+.captura-miniatura {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  padding: 0;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: none;
+  cursor: zoom-in;
+}
+
+.captura-miniatura img {
+  display: block;
+  width: 100%;
+}
+
+.captura-miniatura__velo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.captura-miniatura:hover .captura-miniatura__velo,
+.captura-miniatura:focus-visible .captura-miniatura__velo {
+  opacity: 1;
+}
+
+.captura-completa {
+  width: min(96vw, 1100px);
+  max-height: 94vh;
+  padding: var(--s4);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--r-lg);
+  background: var(--surface-card);
+  color: var(--text-primary);
+}
+
+.captura-completa::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.captura-completa img {
+  display: block;
+  width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .captura-miniatura__velo { transition: none; }
+}
