@@ -7,6 +7,7 @@
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo M4-07 RF-69/RNF-02: F1 y sensibilidad con barra y marca del mínimo |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
+// | 2026-11-02 | Arekkazu | AJF-08 RF-69: rótulos de métricas legibles; ancho del rótulo para que no se parta |
 import React from 'react';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -35,7 +36,7 @@ export function MetricaMinima({ label, valor, minimo }: { label: string; valor: 
   const color = valor == null ? 'var(--text-muted)' : ok ? 'var(--sem-success)' : 'var(--sem-error)';
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '12px' }}>
-      <span style={{ color: 'var(--text-muted)', minWidth: 84 }}>{label}</span>
+      <span style={{ color: 'var(--text-muted)', minWidth: 150 }}>{label}</span>
       <span aria-hidden style={{ position: 'relative', width: 64, height: 6, borderRadius: 'var(--r-full)', background: 'var(--surface-hover)', flexShrink: 0 }}>
         <span style={{ position: 'absolute', inset: 0, width: `${Math.min(100, (valor ?? 0) * 100)}%`, borderRadius: 'var(--r-full)', background: color }} />
         <span style={{ position: 'absolute', top: -3, bottom: -3, left: `${minimo * 100}%`, width: 2, background: 'var(--text-primary)' }} />
