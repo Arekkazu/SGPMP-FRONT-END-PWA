@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo 13.9 RF-66/RF-68/RF-69: Monitor y Contagio en una ficha por lote, con evaluación clínica |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
+// | 2026-11-02 | Arekkazu | RFC-021 C21.4 RF-68: «¿Por qué?» dice cuánto sube el riesgo por las áreas vecinas |
 import React, { useEffect, useMemo, useState } from 'react';
 import { HeartPulse, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -207,6 +208,14 @@ function PorQueModal({ lote, onDetalle, onClose }: { lote: LoteSanitario; onDeta
                 ))}
               </ul>
               {c.pesosRecalculados && <p style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--sem-warning)' }}>{t('contagio.pesos_recalculados', c.pesos)}</p>}
+              {c.exposicion && (
+                <p style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--sem-warning)' }}>
+                  {t('estadosanitario.por_vecinas', {
+                    base: pct(c.exposicion.pBase), total: pct(c.probabilidad),
+                    areas: c.exposicion.focos.map((f) => t('estadosanitario.foco_vecino', { area: f.idArea, via: f.via })).join(', '),
+                  })}
+                </p>
+              )}
             </>
           ) : <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>{t('estadosanitario.sin_contagio')}</p>}
         </section>

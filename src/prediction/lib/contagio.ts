@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | PEND-456 RF-68: lotes de contagio desde GET /prediccion/riesgo-contagio (antes contagioMock) |
 // | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68/67: evento CONTAGIO del historial con nivel y probabilidad |
+// | 2026-11-02 | Arekkazu | RFC-021 C21.4 RF-68: exposición a focos de áreas vecinas en el desglose |
 import type { Tono } from '../components/Pill';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import type { RiesgoContagioMonitorResponse } from '../types';
@@ -16,6 +17,9 @@ export interface CalculoHistorial {
   hora: string; disparador: string; probabilidad: number; nivel: NivelContagio | null;
   fs: number; fa: number | null; fd: number | null; calidad: 'COMPLETA' | 'DEGRADADA'; confianzaReducida: boolean;
 }
+
+/** RFC-021 C21.4: P = P_base + (1 − P_base)·λ·Fv por los focos de las áreas vecinas. */
+export interface Exposicion { pBase: number; fv: number; focos: { idArea: number; via: string; peso: number }[] }
 
 export interface LoteContagio {
   id: number;
@@ -38,6 +42,7 @@ export interface LoteContagio {
   /** Del más antiguo al más reciente. */
   historial: CalculoHistorial[];
   nota?: string;
+  exposicion: Exposicion | null;
 }
 
 const NIVELES: Record<number, NivelContagio> = { 0: 'BAJO', 1: 'MEDIO', 2: 'ALTO' };
@@ -51,6 +56,17 @@ export function contagioDelEvento(payload: Record<string, unknown> | null): { pr
   return { probabilidad: p, nivel: typeof n === 'number' ? NIVELES[n] ?? null : null };
 }
 const texto = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
+
+/** El backend guarda `exposicion` vacío cuando el área no tiene focos vecinos. */
+export function exposicionDe(r: RiesgoContagioMonitorResponse): Exposicion | null {
+  const e = r.detalle_calculo?.exposicion as Record<string, unknown> | undefined;
+  if (e?.fv == null) return null;
+  const focos = Array.isArray(e.focos) ? (e.focos as Record<string, unknown>[]) : [];
+  return {
+    pBase: Number(e.p_base), fv: Number(e.fv),
+    focos: focos.map((f) => ({ idArea: Number(f.id_area), via: String(f.via), peso: Number(f.peso) })),
+  };
+}
 
 function degradado(r: RiesgoContagioMonitorResponse): boolean {
   return r.confianza_baja || !!r.factores_ausentes?.length || texto(r.detalle_calculo?.motivos_degradacion).length > 0;
@@ -76,6 +92,14 @@ function reglasDe(r: RiesgoContagioMonitorResponse): ReglaAplicada[] {
   }
   if (r.factores_ausentes?.length) {
     reglas.push({ regla: 'Factores ausentes: pesos redistribuidos', valor: r.factores_ausentes.join(', '), resultado: 'AJUSTE', origen: 'RF-68 · calidad de datos' });
+  }
+  const exposicion = exposicionDe(r);
+  if (exposicion) {
+    reglas.push({
+      regla: 'Exposición a áreas vecinas',
+      valor: `P base ${exposicion.pBase} · Fv ${exposicion.fv} · ${exposicion.focos.map((f) => `área ${f.idArea} por ${f.via} (w ${f.peso})`).join(', ')}`,
+      resultado: 'AJUSTE', origen: 'RFC-021 · C21.4',
+    });
   }
   for (const motivo of texto(r.detalle_calculo?.motivos_degradacion)) {
     reglas.push({ regla: 'Cálculo degradado', valor: motivo, resultado: 'AJUSTE', origen: 'RF-68 · calidad de datos' });
@@ -122,6 +146,7 @@ export function aLotes(calculos: RiesgoContagioMonitorResponse[]): LoteContagio[
       reglas: reglasDe(r),
       historial: orden.map(aHistorial),
       nota: motivos.length ? motivos.join(' · ') : undefined,
+      exposicion: exposicionDe(r),
     };
   }).sort((a, b) => b.probabilidad - a.probabilidad);
 }
