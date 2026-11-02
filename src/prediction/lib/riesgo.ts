@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | TC-DIS-182 RF-66: etiquetas de nivel Normal / Riesgo bajo / Riesgo alto / Crítico |
+// | 2026-11-02 | Arekkazu | AJF-09 RF-67: la confianza viene en confianza_global |
 // Utilidades para interpretar el nivel de riesgo de los eventos de historial (RF-67).
 // ⚠️ La forma del `payload` de EventoHistorialResponse no está documentada en el
 // contrato; se extrae de forma tolerante. Ver TASKS.md § Pendientes.
@@ -40,7 +41,8 @@ export function extraerNivelRiesgo(payload: Record<string, unknown> | null): num
 /** Lee una probabilidad/confianza (0–1) del payload si existe. */
 export function extraerConfianza(payload: Record<string, unknown> | null): number | null {
   if (!payload) return null;
-  const claves = ['confianza', 'probabilidad', 'confidence', 'score'];
+  // AJF-09: el backend manda `confianza_global` (RF-67); sin ella la confianza nunca se veía.
+  const claves = ['confianza_global', 'confianza', 'probabilidad', 'confidence', 'score'];
   for (const k of claves) {
     const v = payload[k];
     if (typeof v === 'number') return v;

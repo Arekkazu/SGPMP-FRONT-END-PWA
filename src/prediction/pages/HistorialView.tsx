@@ -3,6 +3,7 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-03/N-03 RF-72: diagnósticos de la especie del activo y activo con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-187/188/191/192 RF-67: tablist sin Exportar, tabla alternativa a la gráfica y página anterior |
 // | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: el Administrador amplía la ventana de un resultado |
+// | 2026-11-02 | Arekkazu | AJF-09 RF-67: aviso de inmutabilidad sin la norma NIC 41 y en i18n |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -149,12 +150,14 @@ export function HistorialView() {
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
-        <Alert variant="info" title="Registro inmutable (NIC-41)" description={t('historialview.los_resultados_de_inferencia_no_se')} style={{ marginBottom: 'var(--s5)' }} />
+        {/* AJF-09: NIC 41 es la norma contable de activos biológicos, no tiene que ver con que
+            las inferencias no se editen; y la pantalla no muestra códigos de norma ni de RF. */}
+        <Alert variant="info" title={t('historialview.inmutable_titulo')} description={t('historialview.inmutable_texto')} style={{ marginBottom: 'var(--s5)' }} />
 
         {ampliadoHasta && <Alert variant="success" title={t('historialview.ventana_ampliada')} description={t('historialview.ventana_ampliada_detalle', { fecha: formatearFecha(ampliadoHasta) })} style={{ marginBottom: 'var(--s4)' }} />}
         {retroOk && <Alert variant="success" title={t('historialview.retroalimentacion_registrada')} description={t('historialview.gracias_la_evaluacion_clinica_quedo')} style={{ marginBottom: 'var(--s4)' }} />}
         {!online && <Alert variant="warning" title={t('historialview.sin_conexion')} description={t('historialview.mostrando_historial_cacheado_del_ultimo')} style={{ marginBottom: 'var(--s4)' }} />}
-        {fromCache && online && <Alert variant="info" title={t('historialview.datos_desde_cache')} description="No se pudo conectar; se muestra el último historial disponible." style={{ marginBottom: 'var(--s4)' }} />}
+        {fromCache && online && <Alert variant="info" title={t('historialview.datos_desde_cache')} description={t('historialview.datos_desde_cache_texto')} style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('historialview.sin_acceso_al_historial') : t('historialview.error_al_consultar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <HistorialFiltros

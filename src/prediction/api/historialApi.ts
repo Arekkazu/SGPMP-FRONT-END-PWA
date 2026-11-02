@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-02 | Arekkazu | AJF-09 RF-67: el selector de animales leía items y pedía por_pagina; quedaba vacío |
 import { http } from '../../shared/api/http';
 import type {
   HistorialDiagnosticoResponse,
@@ -20,17 +23,21 @@ export const historialApi = {
   },
 
   /**
-   * Listado de activos biológicos para el selector del filtro.
-   * Se consulta el endpoint de M02 directamente (no se importa el módulo
-   * biological_assets: regla "un módulo no importa de otro"). Endpoint presunto
-   * — confirmar en Swagger; si falla, la vista degrada a input numérico manual.
+   * Animales y lotes para el selector del filtro (M02, sin importar el módulo).
+   * AJF-09: el listado de M02 pagina con `page_size` (máx. 100) y devuelve `registros`;
+   * aquí se pedía `por_pagina` y se leía `items`, así que el selector quedaba siempre vacío
+   * y no había cómo consultar el historial. Mismo arreglo que CP34 en telemetría.
+   * ponytail: hasta 10 páginas (1.000 activos); un buscador del lado del servidor si crece.
    */
   async listarActivos(): Promise<ActivoSelectorItem[]> {
-    const res = await http.get<{ items?: ActivoSelectorItem[] } | ActivoSelectorItem[]>(
-      '/activos-biologicos/',
-      { params: { por_pagina: 200 } }
-    );
-    const data = res.data;
-    return Array.isArray(data) ? data : data.items ?? [];
+    const todos: ActivoSelectorItem[] = [];
+    for (let pagina = 1; pagina <= 10; pagina++) {
+      const res = await http.get<{ registros?: ActivoSelectorItem[]; total_paginas?: number }>(
+        '/activos-biologicos/', { params: { pagina, page_size: 100 } },
+      );
+      todos.push(...(res.data.registros ?? []));
+      if (pagina >= (res.data.total_paginas ?? 1)) break;
+    }
+    return todos;
   },
 };
