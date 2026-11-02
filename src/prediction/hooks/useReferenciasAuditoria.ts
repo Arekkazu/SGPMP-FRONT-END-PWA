@@ -18,7 +18,7 @@ async function cargarOpciones(entidad: EntidadReferencia): Promise<OpcionReferen
         detalle: a.nombre_especie ?? undefined,
       }));
     case 'version_modelo':
-      return (await modelosApi.listar({ limit: 200 })).items.map((v) => ({
+      return (await modelosApi.listar({ limit: 100 })).items.map((v) => ({
         id: v.id_version_modelo, nombre: v.nombre_version, detalle: etiquetaTipoModelo(v.tipo_modelo),
       }));
     case 'patologia':

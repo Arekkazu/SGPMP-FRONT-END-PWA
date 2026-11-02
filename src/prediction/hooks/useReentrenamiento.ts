@@ -58,7 +58,7 @@ function useCarga<T>(leer: () => Promise<T>, inicial: T, habilitado: boolean) {
 
 const leerEstados = () => modelosApi.estadoReentrenamiento();
 const leerSolicitudes = async () => (await auditoriaApi.listar({ tipo_evento: 'REENTRENAMIENTO_SOLICITADO', por_pagina: 20 })).items;
-const leerVersiones = async () => (await modelosApi.listar({ limit: 200 })).items;
+const leerVersiones = async () => (await modelosApi.listar({ limit: 100 })).items;
 const leerUltimas = () => monitorApi.inferencias({ por_activo: 1 });
 
 export function useReentrenamiento({ online, puedeVerBitacora, puedeVerInferencias }: { online: boolean; puedeVerBitacora: boolean; puedeVerInferencias: boolean }) {
