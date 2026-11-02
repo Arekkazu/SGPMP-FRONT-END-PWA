@@ -1,6 +1,12 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-02 | Arekkazu | AJF-01 RF-46: alertas IoT, cambios de riesgo, diagnósticos y contagio en el historial, con icono y enlace |
 import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { BellRing, Brain, Stethoscope, ShieldAlert } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
-import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
+import i18n from '../../shared/i18n';
+import { FECHA_NUMERICA, formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { errorServidor } from './formControls';
 import { History } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
@@ -49,7 +55,56 @@ const TD: React.CSSProperties = { padding: 'var(--s3) var(--s4)', borderBottom: 
 const CATEGORIAS: CategoriaHistorial[] = [
   'ESTADO', 'FASE', 'EVENTO_BIOLOGICO', 'CRECIMIENTO', 'SANITARIO',
   'REPRODUCTIVO', 'PRODUCTIVO', 'BAJA', 'TRANSFERENCIA',
+  'ALERTA_IOT', 'PREDICCION', 'DIAGNOSTICO_CLINICO', 'CONTAGIO',
 ];
+
+/** AJF-01: icono de las categorías que vienen de telemetría y predicción. */
+const ICONO: Record<string, React.ReactNode> = {
+  ALERTA_IOT: <BellRing size={12} aria-hidden />,
+  PREDICCION: <Brain size={12} aria-hidden />,
+  DIAGNOSTICO_CLINICO: <Stethoscope size={12} aria-hidden />,
+  CONTAGIO: <ShieldAlert size={12} aria-hidden />,
+};
+
+/** AJF-01: a dónde lleva el detalle de un evento de telemetría o predicción. */
+export function enlaceRegistro(r: RegistroHistorialResponse): string | null {
+  if (r.categoria === 'ALERTA_IOT') return '/telemetria/alertas';
+  if (r.categoria === 'PREDICCION' || r.categoria === 'DIAGNOSTICO_CLINICO') return '/prediccion/monitor';
+  if (r.categoria === 'CONTAGIO') return '/prediccion/contagio';
+  return null;
+}
+
+const pct = (v: unknown) => (v == null || v === '' || Number.isNaN(Number(v)) ? '' : formatearNumero(Number(v), { style: 'percent', maximumFractionDigits: 0 }));
+const nivel = (n: unknown) => i18n.t(`biologicalAssets:historialsection.nivel_${String(n)}`, { defaultValue: String(n) });
+const tipoAlerta = (c: string) => i18n.t(`telemetry:codigos.${c}`, { defaultValue: humanizar(c) });
+
+/** Frase legible de los eventos de M03/M04 ("Fiebre · 39,8 °C", "Riesgo pasó de Normal a Moderado · 75 %"). */
+function describirM03M04(r: RegistroHistorialResponse): string | null {
+  const d = r.detalle_especifico ?? {};
+  const tt = (k: string, o: Record<string, unknown> = {}) => i18n.t(`biologicalAssets:historialsection.${k}`, o);
+  switch (r.categoria) {
+    case 'ALERTA_IOT': {
+      const tipo = tipoAlerta(texto(d.tipo_alerta));
+      if (d.ambito === 'AREA') return tt('alerta_area', { tipo, area: texto(d.nombre_area) || '—' });
+      const valor = texto(d.valor) ? ` · ${formatearNumero(Number(d.valor), { maximumFractionDigits: 2 })}${d.unidad ? ` ${texto(d.unidad)}` : ''}` : '';
+      return `${tipo}${valor}`;
+    }
+    case 'PREDICCION': {
+      const conf = pct(d.confianza_global);
+      const base = d.nivel_anterior != null && d.nivel_anterior !== d.nivel_riesgo
+        ? tt('riesgo_cambio', { de: nivel(d.nivel_anterior), a: nivel(d.nivel_riesgo) })
+        : tt('riesgo_nivel', { nivel: nivel(d.nivel_riesgo) });
+      const pat = texto(d.nombre_patologia);
+      return [base, pat, conf].filter(Boolean).join(' · ') + (d.modo_sombra ? ` ${tt('de_prueba')}` : '');
+    }
+    case 'DIAGNOSTICO_CLINICO':
+      return [tt('diagnostico', { diagnosticos: texto(d.diagnosticos) || humanizar(texto(d.estado)) }), texto(d.observaciones)].filter(Boolean).join(' — ');
+    case 'CONTAGIO':
+      return tt('contagio_alto', { probabilidad: pct(d.probabilidad_contagio) });
+    default:
+      return null;
+  }
+}
 
 const texto = (v: unknown): string => (v == null || v === '' ? '' : String(v));
 
@@ -59,6 +114,8 @@ const texto = (v: unknown): string => (v == null || v === '' ? '' : String(v));
  * arma una frase legible; la nota que escribió el usuario se agrega al final.
  */
 export function describirRegistro(r: RegistroHistorialResponse, etiquetaReproductiva: (c: string) => string = humanizar): string {
+  const m = describirM03M04(r);
+  if (m) return m;
   const d = r.detalle_especifico ?? {};
   const d1 = texto(d.detalle_1);
   const d2 = texto(d.detalle_2);
@@ -145,7 +202,9 @@ export function HistorialSection({ idActivo }: Props) {
           <table aria-label={t('historialsection.historial_consolidado')} style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-                {['Fecha', 'Categoría', 'Descripción', 'Responsable'].map((h) => <th key={h} scope="col" style={TH}>{h}</th>)}
+                {[t('historialsection.col_fecha'), t('historialsection.categoria'), t('historialsection.col_descripcion'), t('historialsection.col_responsable'), ''].map((h, k) => (
+                  <th key={k} scope="col" style={TH}>{h || <span className="ds-sr-only">{t('historialsection.col_detalle')}</span>}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -155,12 +214,15 @@ export function HistorialSection({ idActivo }: Props) {
                     {formatearFecha(r.fecha_evento, FECHA_NUMERICA)}
                   </td>
                   <td style={TD}>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--surface-hover)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', whiteSpace: 'nowrap' }}>
-                      {categoriaLegible(r.categoria)}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--surface-hover)', padding: '2px var(--s2)', borderRadius: 'var(--r-full)', whiteSpace: 'nowrap' }}>
+                      {ICONO[r.categoria]}{categoriaLegible(r.categoria)}
                     </span>
                   </td>
                   <td style={{ ...TD, color: 'var(--text-primary)' }}>{describirRegistro(r, reproductiva)}</td>
                   <td style={{ ...TD, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{r.usuario_responsable}</td>
+                  <td style={{ ...TD, whiteSpace: 'nowrap' }}>
+                    {enlaceRegistro(r) && <Link to={enlaceRegistro(r)!} style={{ color: 'var(--brand-600)', fontSize: '12px' }}>{t('historialsection.ver_detalle')}</Link>}
+                  </td>
                 </tr>
               ))}
             </tbody>
