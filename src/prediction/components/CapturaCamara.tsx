@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área (última captura o la de una ventana) |
 // | 2026-11-02 | Arekkazu | RF-66: miniatura que se abre completa; conteo frente al inventario y aviso |
+// | 2026-11-02 | Arekkazu | RF-66: nota que explica el número de cada caja y de dónde sale el conteo |
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, Maximize2, TriangleAlert, X } from 'lucide-react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
@@ -63,6 +64,7 @@ export function CapturaCamara({ idArea, ventanaFin }: { idArea: number | null | 
             <figcaption style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s2)' }}>
               {pie}
               {total != null && <strong style={{ display: 'block', marginTop: 'var(--s1)', color: 'var(--text-secondary)' }}>{t('camara.conteo', { n, total })}</strong>}
+              <span style={{ display: 'block', marginTop: 'var(--s1)' }}>{t('camara.nota_numeros')}</span>
             </figcaption>
             {captura.discrepancia_inventario && total != null && (
               <p role="status" style={{ display: 'flex', gap: 'var(--s2)', margin: 'var(--s2) 0 0', padding: 'var(--s2) var(--s3)', borderRadius: 'var(--r-md)', border: '1px solid var(--sem-warning-border)', background: 'var(--sem-warning-bg)', fontSize: '12.5px', color: 'var(--text-primary)' }}>
@@ -80,6 +82,7 @@ export function CapturaCamara({ idArea, ventanaFin }: { idArea: number | null | 
                 </button>
               </div>
               <img src={captura.imagen} alt={alt} />
+              <p style={{ margin: 'var(--s3) 0 0', fontSize: '12.5px', color: 'var(--text-muted)' }}>{t('camara.nota_numeros')}</p>
             </dialog>
           </figure>
         );
