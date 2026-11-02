@@ -1,3 +1,9 @@
+## [1.4.0-rc.17](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.16...v1.4.0-rc.17) (2026-11-02)
+
+### Features
+
+* **rfc-021:** RF-68 muestra la exposición a focos de áreas vecinas en el desglose del contagio ([3e13b90](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3e13b9006e79693414d561530e556c1765016359)), closes [#921](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/921)
+
 ## [1.4.0-rc.16](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.15...v1.4.0-rc.16) (2026-11-01)
 
 ### Features
