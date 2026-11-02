@@ -14,6 +14,7 @@
 // | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
 // | 2026-11-02 | Arekkazu | AJF-13 RF-73: entidad_referencia y nombre_referencia en la bitácora |
 // | 2026-11-02 | Arekkazu | AJF-10 RF-66: monitor paginado y filtros nuevos |
+// | 2026-11-02 | Arekkazu | AJF-14 RF-71: solicitud por animal y procesos de reentrenamiento |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -649,4 +650,50 @@ export interface InferenciasPaginadasResponse {
   pagina: number;
   por_pagina: number;
   indicadores: IndicadoresInferencias;
+}
+
+// =====================================================================
+// AJF-14 · Procesos de reentrenamiento (RF-71) — /prediccion/modelos/reentrenamiento/procesos
+// =====================================================================
+export type EstadoProcesoReentrenamiento = 'PENDIENTE' | 'EN_CURSO' | 'COMPLETADO' | 'FALLIDO' | 'INTERRUMPIDO' | 'CANCELADO';
+export const FASES_REENTRENAMIENTO = ['ACTIVACION', 'DATASET', 'PREPROCESAMIENTO', 'ENTRENAMIENTO', 'METRICAS', 'ENTREGA', 'CIERRE'] as const;
+
+export interface FaseProcesoReentrenamiento {
+  fase: number;
+  nombre: typeof FASES_REENTRENAMIENTO[number];
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  /** null = en curso o sin empezar; OK | FALLIDA | INTERRUMPIDA. */
+  resultado: 'OK' | 'FALLIDA' | 'INTERRUMPIDA' | null;
+}
+
+export interface ProcesoReentrenamientoResponse {
+  id_proceso_reentrenamiento: string;
+  tipo_modelo: TipoModelo;
+  id_activo_biologico: number;
+  identificador_activo: string | null;
+  nombre_especie: string | null;
+  disparador: 'MANUAL' | 'PROGRAMADO' | 'DEGRADACION';
+  modo_generacion: string;
+  estado: EstadoProcesoReentrenamiento;
+  fase_actual: number;
+  fases: FaseProcesoReentrenamiento[];
+  porcentaje_progreso: number;
+  porcentaje_cpu: number | string | null;
+  memoria_ram_mb: number | null;
+  codigo_error: string | null;
+  motivos: unknown[] | null;
+  id_version_modelo_resultante: number | null;
+  nombre_version_resultante: string | null;
+  fecha_solicitud: string;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  fecha_ultimo_latido: string | null;
+}
+
+export interface ListaProcesosReentrenamiento {
+  items: ProcesoReentrenamientoResponse[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
 }

@@ -1,9 +1,14 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | AJF-12 RF-71: vista oficial sin modo demo: avance por modelo, solicitudes, versiones creadas y calibración por animal |
-import React from 'react';
+// | 2026-11-02 | Arekkazu | AJF-14 RF-71 FE-1..4: procesos reales con fases y solicitud por animal |
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { RefreshCw, ClipboardList, Boxes, Gauge as GaugeIcon, CheckCircle2, Loader2 } from 'lucide-react';
+import { RefreshCw, ClipboardList, Boxes, Gauge as GaugeIcon, CheckCircle2, Loader2, Cpu, Play } from 'lucide-react';
+import { Combobox } from '../../shared/design-system/Combobox';
+import { etiquetaDeCatalogo, idDeCatalogo, resolverCatalogo } from '../../shared/lib/catalogo';
+import { ProcesosReentrenamiento } from '../components/ProcesosReentrenamiento';
+import { useActivosPrediccion } from '../hooks/useActivosPrediccion';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Button } from '../../shared/design-system/Button';
@@ -53,6 +58,23 @@ export function ReentrenamientoView() {
   const puedeVerBitacora = usePermission(RECURSO_AUDITORIA, ACCION_R);
   const puedeVerInferencias = usePermission(RECURSO_HISTORIAL, ACCION_R);
   const r = useReentrenamiento({ online, puedeVerBitacora, puedeVerInferencias });
+  // FE-2: solicitar por animal, eligiéndolo por su código.
+  const activos = useActivosPrediccion();
+  const catalogo = activos.map((a) => ({ id: a.id_activo_biologico, nombre: a.identificador || `#${a.id_activo_biologico}` }));
+  const [animal, setAnimal] = useState('');
+  const [idAnimal, setIdAnimal] = useState<number | null>(null);
+  const [animalTocado, setAnimalTocado] = useState(false);
+  const abierto = idAnimal != null ? r.procesoAbiertoDe(idAnimal) : null;
+  const motivoAnimal = !puedeEjecutar ? t('reentrenamiento.motivo_sin_permiso')
+    : !online ? t('reentrenamiento.motivo_sin_conexion')
+      : idAnimal == null ? t('procesos.motivo_elige_animal')
+        : abierto ? t('procesos.motivo_abierto', { estado: t(`procesos.estado_${abierto.estado}`) })
+          : null;
+  const resolverAnimal = () => {
+    const res = resolverCatalogo(animal, catalogo);
+    if (res.estado === 'resuelto') { setAnimal(res.texto); setIdAnimal(res.id); }
+    setAnimalTocado(res.estado === 'sin_resolver');
+  };
 
   if (!puedeEjecutar && !puedeVerModelos) return <PermissionDenied seccion="Reentrenamiento" />;
 
@@ -66,6 +88,42 @@ export function ReentrenamientoView() {
 
       <div style={{ padding: 'var(--page-pad)', display: 'flex', flexDirection: 'column', gap: 'var(--s7)' }}>
         {!online && <Alert variant="warning" title={t('reentrenamiento.sin_conexion')} description={t('reentrenamiento.sin_conexion_texto')} />}
+
+        <section aria-labelledby="re-procesos">
+          <h2 id="re-procesos" style={H2}><Cpu size={17} aria-hidden />{t('procesos.titulo')}</h2>
+          <p style={AYUDA}>{t('procesos.ayuda')}</p>
+          <div style={{ ...CARD, marginBottom: 'var(--s4)' }}>
+            <div style={{ display: 'flex', gap: 'var(--s3)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+                <Combobox
+                  id="re-animal"
+                  label={t('procesos.animal')}
+                  opciones={activos.map((a) => ({ valor: etiquetaDeCatalogo(a.identificador || `#${a.id_activo_biologico}`, a.id_activo_biologico), detalle: a.nombre_especie ?? undefined }))}
+                  value={animal}
+                  onChange={(texto) => { setAnimal(texto); const id = idDeCatalogo(texto, catalogo); setIdAnimal(id); if (id != null || !texto.trim()) setAnimalTocado(false); }}
+                  onBlur={resolverAnimal}
+                  onEnter={resolverAnimal}
+                  error={animalTocado ? t('procesos.animal_sin_resolver') : undefined}
+                  placeholder={t('procesos.animal_placeholder')}
+                />
+              </div>
+              <Button variant="primary" size="sm" loading={r.enviandoAnimal} disabled={!!motivoAnimal}
+                aria-describedby={motivoAnimal ? 're-animal-motivo' : undefined}
+                onClick={async () => { if (idAnimal != null && await r.solicitarAnimal(idAnimal)) { setAnimal(''); setIdAnimal(null); } }}>
+                <Play size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('avisoreentrenamiento.solicitar')}
+              </Button>
+            </div>
+            {motivoAnimal && <p id="re-animal-motivo" style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{motivoAnimal}</p>}
+            {r.errorAnimal && <Alert variant={r.errorAnimal.status === 409 || r.errorAnimal.status === 422 ? 'warning' : 'error'} title={t('avisoreentrenamiento.no_se_pudo_solicitar')} description={r.errorAnimal.message} style={{ marginTop: 'var(--s3)' }} />}
+          </div>
+          {r.procesos.error ? (
+            <Alert variant={r.procesos.error.status === 403 ? 'warning' : 'error'} title={t('procesos.error')} description={r.procesos.error.message} />
+          ) : r.procesos.datos.length === 0 ? (
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{r.procesos.loading ? t('reentrenamiento.cargando') : t('procesos.vacio')}</p>
+          ) : (
+            <div aria-live="polite"><ProcesosReentrenamiento procesos={r.procesos.datos} /></div>
+          )}
+        </section>
 
         <section aria-labelledby="re-estado">
           <h2 id="re-estado" style={H2}><GaugeIcon size={17} aria-hidden />{t('reentrenamiento.estado_titulo')}</h2>

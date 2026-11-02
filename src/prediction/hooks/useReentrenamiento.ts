@@ -1,12 +1,16 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | AJF-12 RF-71: reentrenamiento con datos reales (estado por modelo, solicitudes, versiones y calibración) |
+// | 2026-11-02 | Arekkazu | AJF-14 RF-71 FE-2/FE-3: procesos, refresco cada 15 s mientras haya abiertos y solicitud por animal |
 import { useCallback, useEffect, useState } from 'react';
 import { modelosApi } from '../api/modelosApi';
 import { auditoriaApi } from '../api/auditoriaApi';
 import { monitorApi } from '../api/monitorApi';
 import type { ApiError } from '../../shared/api/errors';
-import type { EstadoReentrenamiento, EventoAuditoriaM04Response, InferenciaMonitorResponse, TipoModelo, VersionModeloResponse } from '../types';
+import type { EstadoReentrenamiento, EventoAuditoriaM04Response, InferenciaMonitorResponse, ProcesoReentrenamientoResponse, TipoModelo, VersionModeloResponse } from '../types';
+
+/** FE-3: refresco de los procesos mientras alguno está pendiente o en curso. */
+export const REFRESCO_PROCESOS_MS = 15_000;
 
 /** Un animal con su versión asignada y si su última inferencia salió calibrando (contexto incompleto). */
 export interface CalibracionAnimal {
@@ -60,12 +64,42 @@ const leerEstados = () => modelosApi.estadoReentrenamiento();
 const leerSolicitudes = async () => (await auditoriaApi.listar({ tipo_evento: 'REENTRENAMIENTO_SOLICITADO', por_pagina: 20 })).items;
 const leerVersiones = async () => (await modelosApi.listar({ limit: 100 })).items;
 const leerUltimas = () => monitorApi.inferencias({ por_activo: 1 });
+const leerProcesos = async () => (await modelosApi.procesosReentrenamiento({ por_pagina: 20 })).items;
+
+/** FE-3: hay que seguir refrescando si algún proceso no terminó. */
+export function hayProcesosAbiertos(procesos: ProcesoReentrenamientoResponse[]): boolean {
+  return procesos.some((p) => p.estado === 'EN_CURSO' || p.estado === 'PENDIENTE');
+}
 
 export function useReentrenamiento({ online, puedeVerBitacora, puedeVerInferencias }: { online: boolean; puedeVerBitacora: boolean; puedeVerInferencias: boolean }) {
   const estados = useCarga<EstadoReentrenamiento[]>(leerEstados, [], online);
   const solicitudes = useCarga<EventoAuditoriaM04Response[]>(leerSolicitudes, [], online && puedeVerBitacora);
   const versiones = useCarga<VersionModeloResponse[]>(leerVersiones, [], online);
   const ultimas = useCarga<InferenciaMonitorResponse[]>(leerUltimas, [], online && puedeVerInferencias);
+  const procesos = useCarga<ProcesoReentrenamientoResponse[]>(leerProcesos, [], online);
+  const abiertos = hayProcesosAbiertos(procesos.datos);
+  useEffect(() => {
+    if (!abiertos || !online) return undefined;
+    const id = window.setInterval(() => { void procesos.cargar(); }, REFRESCO_PROCESOS_MS);
+    return () => window.clearInterval(id);
+  }, [abiertos, online, procesos.cargar]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [enviandoAnimal, setEnviandoAnimal] = useState(false);
+  const [errorAnimal, setErrorAnimal] = useState<ApiError | null>(null);
+  const solicitarAnimal = useCallback(async (idActivo: number) => {
+    setEnviandoAnimal(true);
+    setErrorAnimal(null);
+    try {
+      await modelosApi.solicitarReentrenamientoAnimal(idActivo);
+      await Promise.all([procesos.cargar(), solicitudes.cargar()]);
+      return true;
+    } catch (e) {
+      setErrorAnimal(e as ApiError);
+      return false;
+    } finally {
+      setEnviandoAnimal(false);
+    }
+  }, [procesos.cargar, solicitudes.cargar]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [enviando, setEnviando] = useState<TipoModelo | null>(null);
   const [errorSolicitud, setErrorSolicitud] = useState<ApiError | null>(null);
@@ -85,7 +119,10 @@ export function useReentrenamiento({ online, puedeVerBitacora, puedeVerInferenci
   }, [estados.cargar, solicitudes.cargar]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
-    estados, solicitudes, versiones, ultimas,
+    estados, solicitudes, versiones, ultimas, procesos,
+    solicitarAnimal, enviandoAnimal, errorAnimal,
+    /** FE-2: el animal ya tiene un proceso abierto (el botón se deshabilita con el motivo). */
+    procesoAbiertoDe: (idActivo: number) => procesos.datos.find((p) => p.id_activo_biologico === idActivo && (p.estado === 'PENDIENTE' || p.estado === 'EN_CURSO')) ?? null,
     versionesReentrenadas: versiones.datos.filter((v) => v.id_proceso_rf71 != null).slice(0, 10),
     calibracion: calibracionPorAnimal(ultimas.datos, versiones.datos),
     solicitar, enviando, errorSolicitud,

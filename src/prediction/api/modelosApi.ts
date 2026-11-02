@@ -3,6 +3,7 @@
 // | 2026-10-31 | Arekkazu | RF-71: estado de datos para reentrenar los modelos individuales |
 // | 2026-10-31 | Arekkazu | RF-71/RF-73: solicitar el reentrenamiento (queda en la bitácora) |
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
+// | 2026-11-02 | Arekkazu | AJF-14 RF-71: solicitud por animal y procesos de reentrenamiento |
 import { http } from '../../shared/api/http';
 import type {
   VersionModeloListResponse,
@@ -10,8 +11,7 @@ import type {
   ListarModelosFiltros,
   RegistrarNotasVersionDTO,
   EstadoReentrenamiento,
-  TipoModelo,
-} from '../types';
+  TipoModelo, ListaProcesosReentrenamiento } from '../types';
 
 const BASE = '/prediccion/modelos';
 
@@ -31,6 +31,19 @@ export const modelosApi = {
   async solicitarReentrenamiento(tipoModelo: TipoModelo): Promise<{ id_evento: string; estado: EstadoReentrenamiento }> {
     const res = await http.post<{ id_evento: string; estado: EstadoReentrenamiento }>(
       `${BASE}/reentrenamiento/solicitudes`, { tipo_modelo: tipoModelo });
+    return res.data;
+  },
+
+  /** AJF-14: por animal abre un proceso que ejecuta el motor de IA. 409 si ya hay uno; 422 sin lecturas. */
+  async solicitarReentrenamientoAnimal(idActivo: number, motivo?: string): Promise<{ id_evento: string; id_proceso_reentrenamiento: string }> {
+    const res = await http.post<{ id_evento: string; id_proceso_reentrenamiento: string }>(
+      `${BASE}/reentrenamiento/solicitudes`, { id_activo_biologico: idActivo, motivo });
+    return res.data;
+  },
+
+  /** AJF-14: procesos de reentrenamiento con sus 7 fases. Recurso 43 (R). */
+  async procesosReentrenamiento(filtros: { estado?: string; id_activo_biologico?: number; pagina?: number; por_pagina?: number } = {}): Promise<ListaProcesosReentrenamiento> {
+    const res = await http.get<ListaProcesosReentrenamiento>(`${BASE}/reentrenamiento/procesos`, { params: filtros });
     return res.data;
   },
 
