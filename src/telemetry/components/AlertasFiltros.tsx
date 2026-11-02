@@ -3,12 +3,13 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
 // | 2026-10-29 | Arekkazu | H-M3-05 CP31 RF-57: rango de fechas invertido se avisa en el campo y no se aplica |
 // | 2026-10-31 | Claude   | INC-M03-240-G69 RF-57: filtro por el tipo REGLA_SIMPLE |
-import React from 'react';
+// | 2026-11-02 | Arekkazu | AJF-02 RF-57: el animal o lote escrito a medias se resuelve al salir o se avisa en el campo; no se consulta sin el filtro |
+import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Combobox } from '../../shared/design-system/Combobox';
-import { etiquetaDeCatalogo, idDeCatalogo } from '../../shared/lib/catalogo';
+import { etiquetaDeCatalogo, idDeCatalogo, resolverCatalogo } from '../../shared/lib/catalogo';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
 import { SelectorArea } from './SelectorArea';
 import { etiquetaCodigo } from '../lib/etiquetaCodigo';
@@ -63,6 +64,21 @@ export function AlertasFiltros({ areas = [], activos = [], value, onChange, onAp
   const nombreActivo = (a: ActivoOpcionTelemetria) => a.identificador || `${a.nombre_especie ?? ''} #${a.id_activo_biologico}`.trim();
   const catalogoActivos = activos.map((a) => ({ id: a.id_activo_biologico, nombre: nombreActivo(a) }));
   const opcionesActivos = activos.map((a) => ({ valor: etiquetaDeCatalogo(nombreActivo(a), a.id_activo_biologico), detalle: a.nombre_especie ?? undefined }));
+  // AJF-02: texto en el campo que no es un activo → antes la consulta salía sin el
+  // filtro y parecía que "no filtraba". Ahora se avisa en el campo y no se consulta.
+  const [activoTocado, setActivoTocado] = useState(false);
+  const activoSinResolver = !ocultarTipo && value.activo.trim() !== '' && value.id_activo_biologico === '';
+  const errorActivo = activoTocado && activoSinResolver ? t('alertasfiltros.activo_sin_resolver') : undefined;
+  const resolverActivo = () => {
+    const r = resolverCatalogo(value.activo, catalogoActivos);
+    if (r.estado === 'resuelto') onChange({ ...value, activo: r.texto, id_activo_biologico: String(r.id) });
+    setActivoTocado(r.estado === 'sin_resolver');
+  };
+  const aplicar = () => {
+    if (invertido) return;
+    if (activoSinResolver) { setActivoTocado(true); return; }
+    onAplicar();
+  };
   const set = (k: keyof AlertasFiltrosState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     onChange({ ...value, [k]: e.target.value });
 
@@ -123,7 +139,12 @@ export function AlertasFiltros({ areas = [], activos = [], value, onChange, onAp
               onChange={(activo) => {
                 const id = idDeCatalogo(activo, catalogoActivos);
                 onChange({ ...value, activo, id_activo_biologico: id != null ? String(id) : '' });
+                if (id != null || !activo.trim()) setActivoTocado(false);
               }}
+              onBlur={resolverActivo}
+              onEnter={resolverActivo}
+              error={errorActivo}
+              hint={t('alertasfiltros.activo_ayuda')}
               placeholder={t('selectorarea.placeholder')}
             />
           </>
@@ -146,9 +167,9 @@ export function AlertasFiltros({ areas = [], activos = [], value, onChange, onAp
         </div>
       </div>
       <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)' }}>
-        <Button variant="primary" size="sm" disabled={invertido} onClick={() => { if (!invertido) onAplicar(); }}>
+        <Button variant="primary" size="sm" disabled={invertido} onClick={aplicar}>
           <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('alertasfiltros.aplicar_filtros')}</Button>
-        <Button variant="ghost" size="sm" onClick={onLimpiar}>{t('alertasfiltros.limpiar')}</Button>
+        <Button variant="ghost" size="sm" onClick={() => { setActivoTocado(false); onLimpiar(); }}>{t('alertasfiltros.limpiar')}</Button>
       </div>
     </>
   );
