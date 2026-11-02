@@ -1,3 +1,9 @@
+## [1.4.0-rc.23](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.22...v1.4.0-rc.23) (2026-11-02)
+
+### Bug Fixes
+
+* **rf-66:** Estado sanitario y Riesgo de contagio piden las últimas de cada animal o lote ([a2313a5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a2313a5fe0a450d125d28abc421d1de01bcfefe1))
+
 ## [1.4.0-rc.22](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.21...v1.4.0-rc.22) (2026-11-02)
 
 ### Bug Fixes
