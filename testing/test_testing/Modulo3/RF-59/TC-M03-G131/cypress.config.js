@@ -7,7 +7,7 @@ module.exports = defineConfig({
   reporter: 'mochawesome',
   reporterOptions: {
     reportDir: 'RESULTADOS',
-    reportFilename: 'resultado_TC-M03-G131_[name]',
+    reportFilename: 'resultado_TC-M03-G131_v4.0_[name]',
     html: true,
     json: false,
     overwrite: true,

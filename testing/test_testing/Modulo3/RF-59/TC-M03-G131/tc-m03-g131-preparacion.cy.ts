@@ -27,7 +27,7 @@ describe('TC-M03-G131 · RF-59 · Preparacion de la sesion de usabilidad', () =>
     cy.consultarHistorial({ desde: '2026-10-20', hasta: '2026-10-22', variable: 'Temperatura Ambiental', estado: '', infra: '' }).then((i) => {
       expect(i.response.statusCode).to.eq(200);
       expect(i.response.body.total, 'lecturas de temperatura 20-22/10').to.be.greaterThan(0);
-      cy.get('.recharts-wrapper').should('be.visible');
+      cy.get('.recharts-wrapper').first().scrollIntoView().should('be.visible');
       cy.get('table tbody tr').should('have.length.greaterThan', 0);
       cy.screenshot('TC-M03-G131-tarea2-temperatura');
     });
