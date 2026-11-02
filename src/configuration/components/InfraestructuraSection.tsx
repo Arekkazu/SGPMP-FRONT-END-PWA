@@ -1,6 +1,8 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-20 | Arekkazu | FE-06 RF-20: varias especies del mismo grupo, nivel_criticidad y capacidad derivada (RFC-012/016) |
+// | 2026-11-02 | Arekkazu | RFC-021 RF-110: grafo de la topología sanitaria de toda la finca |
+// | 2026-11-02 | Arekkazu | RF-110: la sección de topología permite crear, editar y quitar relaciones |
 import React, { useEffect, useId, useState } from 'react';
 import { formatearFecha, formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -26,6 +28,7 @@ import { NIVELES_CRITICIDAD, type EspecieResponse, type FincaResponse, type Infr
 import type { ApiError } from '../../shared/api/errors';
 import { iconoTipoArea } from '../iconos';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { TopologiaSanitaria } from './TopologiaSanitaria';
 import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -503,6 +506,8 @@ export function InfraestructuraSection() {
   const puedeCrear  = usePermission(10, 1);
   const puedeEditar = usePermission(10, 3);
   const puedeDesact = usePermission(10, 4);
+  // RF-110: recurso 87 topologia_sanitaria (migración 33ae7f41e560 del backend).
+  const puedeVerTopologia = usePermission(87, 2);
 
   const { fincas, loading: loadingFincas, cargar: cargarFincas } = useFincas();
   const { infraestructuras, loading, saving, error, saveError, cargar, registrar, editar, desactivar, reactivar } = useInfraestructuras();
@@ -698,6 +703,10 @@ export function InfraestructuraSection() {
             )}
             <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
             </>
+          )}
+
+          {puedeVerTopologia && !loading && infraestructuras.length > 0 && (
+            <TopologiaSanitaria idFinca={fincaSeleccionada.id_finca} areas={infraestructuras} />
           )}
 
           {/* Modals */}

@@ -339,9 +339,16 @@
       "VERSION_APROBADA": "Aprobada",
       "VERSION_RECHAZADA": "Rechazada",
       "VERSION_ACTIVADA": "Activada",
-      "VERSION_DEPRECADA": "Deprecada"
+      "VERSION_DEPRECADA": "Deprecada",
+      "VERSION_EN_SOMBRA": "En sombra"
     },
-    "no_activable_rechazado": "No disponible: una versión RECHAZADO no cumplió las métricas mínimas y no se puede activar."
+    "no_activable_rechazado": "No disponible: una versión RECHAZADO no cumplió las métricas mínimas y no se puede activar.",
+    "activo_biologico": "Animal #{{id}}",
+    "req_en_sombra_valor": "en sombra, lista para promover",
+    "req_datos_reales": "Entrenada con datos reales",
+    "poner_en_sombra": "Poner en sombra",
+    "sombra_ayuda": "En sombra el modelo corre con los datos del animal y guarda sus predicciones, pero no genera alertas. Reemplaza a la versión que esté en sombra para el mismo animal.",
+    "no_activable_sintetico": "No disponible: un modelo entrenado con datos sintéticos solo corre en sombra hasta reentrenarse con datos reales."
   },
   "modelosfiltros": {
     "aplicar": "Aplicar",
@@ -368,7 +375,14 @@
     "fp_rutina": "Falsos positivos (rutina)",
     "deteccion_clinica": "Detección de eventos clínicos",
     "por_rf71": "RF-71 · proceso {{proceso}}…",
-    "minimo": "mínimo {{minimo}}"
+    "minimo": "mínimo {{minimo}}",
+    "activo_biologico": "Animal #{{id}}",
+    "fuente": {
+      "REAL": "Datos reales",
+      "SINTETICA": "Datos sintéticos",
+      "EXTERNA": "Datos externos",
+      "MIXTA": "Datos mixtos"
+    }
   },
   "modelosview": {
     "activar": "Activar",
@@ -391,7 +405,10 @@
     "desde": "Desde el {{fecha}}",
     "poblacional": "Modelo poblacional",
     "f1": "F1 {{valor}}",
-    "nota_minimos": "La rayita de cada barra es el mínimo para aprobar: F1 {{f1}} y sensibilidad de riesgo alto {{recall}} (RNF-02)."
+    "nota_minimos": "La rayita de cada barra es el mínimo para aprobar: F1 {{f1}} y sensibilidad de riesgo alto {{recall}} (RNF-02).",
+    "confirmar_sombra": "Confirmar puesta en sombra",
+    "poner_en_sombra": "Poner en sombra",
+    "pasara_a_sombra": "correrá en sombra: guardará predicciones sin alertar y reemplazará la versión en sombra del mismo animal."
   },
   "monitorinferenciaview": {
     "monitoreo_de_inferencia": "Monitoreo de Inferencia",
@@ -529,7 +546,10 @@
     "nombre_de_la_patologia": "Nombre de la patología",
     "sin_conexion": "Sin conexión",
     "variables_sensoricas_asociadas": "Variables sensóricas asociadas",
-    "regla_descripcion": "Mínimo {{min}} caracteres ({{n}}/{{min}})."
+    "regla_descripcion": "Mínimo {{min}} caracteres ({{n}}/{{min}}).",
+    "sin_umbral_titulo": "Sin umbral configurado",
+    "sin_umbral_detalle_one": "{{variables}} no tiene umbral configurado en RF-17. El semáforo y las alertas fijas no la evalúan hasta configurarlo en Configuración › Por especie › Umbrales ambientales. Puedes registrar la patología igual.",
+    "sin_umbral_detalle_other": "{{variables}} no tienen umbral configurado en RF-17. El semáforo y las alertas fijas no las evalúan hasta configurarlos en Configuración › Por especie › Umbrales ambientales. Puedes registrar la patología igual."
   },
   "patologiapills": {
     "activa": "Activa",
@@ -657,7 +677,10 @@
     "variables_sensoricas_asociadas": "Variables sensóricas asociadas",
     "seleccionadas_one": "{{n}} seleccionada · se requieren entre 2 y 6",
     "seleccionadas_other": "{{n}} seleccionadas · se requieren entre 2 y 6",
-    "regla": "Selecciona entre 2 y 6 variables ({{n}} seleccionadas)."
+    "regla": "Selecciona entre 2 y 6 variables ({{n}} seleccionadas).",
+    "sin_umbral": "sin umbral",
+    "con_umbral": "con umbral",
+    "umbral_parcial": "umbral en {{con}}/{{de}}"
   },
   "motorhistorial": {
     "titulo": "Historial de configuración",
@@ -847,7 +870,15 @@
     "error_titulo": "No se pudieron cargar los cálculos de contagio",
     "reintentar": "Reintentar",
     "cargando": "Cargando…",
-    "sin_calculos": "Todavía no hay cálculos de riesgo de contagio para los lotes de tus fincas."
+    "sin_calculos": "Todavía no hay cálculos de riesgo de contagio para los lotes de tus fincas.",
+    "mapa_titulo": "Mapa de propagación",
+    "mapa_descripcion": "Nivel de contagio de cada área y las relaciones por las que un foco expone a sus vecinas.",
+    "mapa_finca": "Finca",
+    "mapa_error": "No se pudo cargar el mapa de propagación",
+    "mapa_pasos": "Última propagación",
+    "mapa_sin_pasos": "Ninguna área está expuesta a un foco vecino en su último cálculo.",
+    "mapa_paso": "{{desde}} → {{hacia}} por {{via}}: de {{base}} a {{total}} ({{fecha}})",
+    "mapa_finca_no_encontrada": "No encontramos esa finca. Elígela de la lista o escribe su ID."
   },
   "intentos": {
     "titulo": "Intentos de registro no admitidos",
@@ -959,7 +990,7 @@
     "probable": "Probable:",
     "sin_enfermedad": "Sin enfermedad probable",
     "score": "Puntaje de anomalía {{score}} (umbral {{umbral}})",
-    "sin_prediccion": "Aún no hay predicción para este lote: revisa sus sensores en Telemetría.",
+    "sin_prediccion": "Aún no hay predicción individual para este lote: puede que no tenga modelo asignado o que sus sensores no hayan generado eventos (revisa Telemetría).",
     "sin_prediccion_corto": "Sin predicción",
     "tendencia_sube": "Subió en 24 h",
     "tendencia_baja": "Bajó en 24 h",
@@ -985,6 +1016,8 @@
     "factor_fs_desc": "estado de los animales según las predicciones del motor.",
     "factor_fa_desc": "condiciones del entorno: temperatura, humedad, pH, oxígeno y amoníaco.",
     "factor_fd_desc": "qué tan lleno está el espacio frente a la densidad máxima permitida.",
+    "por_vecinas": "Por sí solo el riesgo sería {{base}}; sube a {{total}} por la exposición a {{areas}}.",
+    "foco_vecino": "área {{area}} ({{via}})",
     "sin_contagio": "Este lote aún no tiene cálculo de contagio.",
     "modelo": "Modelo {{version}} · {{hora}}",
     "detalle_tecnico": "Ver detalle técnico",
@@ -1016,5 +1049,16 @@
     "SEGUIMIENTO": "Seguimiento",
     "METRICAS": "Métricas",
     "ANOMALIAS": "Anomalías"
+  },
+  "avisoreentrenamiento": {
+    "titulo_insuficiente": "{{modelo}}: no hay datos suficientes para reentrenar",
+    "detalle_insuficiente": "{{n}} retroalimentaciones nuevas desde la última versión. Faltan {{faltan}} para poder solicitar el reentrenamiento (desde {{solicitud}}).",
+    "titulo_puede_solicitarse": "{{modelo}}: ya se puede solicitar el reentrenamiento",
+    "detalle_puede_solicitarse": "{{n}} retroalimentaciones nuevas desde la última versión. RF-71 lo ejecuta desde {{minimo}}: faltan {{faltan}}.",
+    "titulo_listo": "{{modelo}}: datos suficientes para reentrenar",
+    "detalle_listo": "{{n}} retroalimentaciones nuevas desde la última versión: cumple el mínimo de RF-71 ({{minimo}}).",
+    "solicitar": "Solicitar reentrenamiento",
+    "solicitado": "Solicitud registrada en la bitácora de M04 con {{n}} retroalimentaciones nuevas.",
+    "no_se_pudo_solicitar": "No se pudo solicitar el reentrenamiento"
   }
 }

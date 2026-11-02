@@ -2,11 +2,12 @@
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 N-02: el historial del modelo solo con sus cambios de estado |
 // | 2026-10-29 | Arekkazu | QA-M04-27-10 CU05 H-09/H-05 RF-69: guardar notas no es una transición "Aprobada" |
+// | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
 import type { EventoAuditoriaM04Response } from '../types';
 
 /** Los eventos de la bitácora M04 que cambian el estado de una versión (RF-69). */
 const CAMBIOS_DE_ESTADO = new Set([
-  'VERSION_REGISTRADA', 'VERSION_APROBADA', 'VERSION_RECHAZADA', 'VERSION_ACTIVADA', 'VERSION_DEPRECADA',
+  'VERSION_REGISTRADA', 'VERSION_APROBADA', 'VERSION_RECHAZADA', 'VERSION_EN_SOMBRA', 'VERSION_ACTIVADA', 'VERSION_DEPRECADA',
 ]);
 
 /**

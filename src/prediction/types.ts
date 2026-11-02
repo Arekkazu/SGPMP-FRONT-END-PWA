@@ -9,6 +9,8 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-05 RF-70: solo equipos compatibles con el tipo de modelo de la versión |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
+// | 2026-10-31 | Arekkazu | RF-71: estado de datos para reentrenar los modelos individuales |
+// | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -35,7 +37,10 @@ export type Componente = 'DETECTOR' | 'SEGUIMIENTO' | 'METRICAS' | 'ANOMALIAS';
 export type ModoEjecucion = 'EDGE' | 'SERVIDOR' | 'HIBRIDO';
 
 export type EstadoVersion =
-  | 'EN_VALIDACION' | 'APROBADO' | 'RECHAZADO' | 'ACTIVO' | 'DEPRECADO';
+  | 'EN_VALIDACION' | 'APROBADO' | 'RECHAZADO' | 'SOMBRA' | 'ACTIVO' | 'DEPRECADO';
+
+/** RFC-010: de dónde salen los datos de entrenamiento. Un modelo SINTETICA solo corre en SOMBRA. */
+export type FuenteDatos = 'REAL' | 'SINTETICA' | 'EXTERNA' | 'MIXTA';
 
 export type EstadoOta =
   | 'EXITOSO' | 'FALLIDO' | 'PENDIENTE' | 'SIN_CAMBIOS' | 'EN_PROCESO';
@@ -279,6 +284,10 @@ export interface VersionModeloResponse {
   componente: Componente | null;
   /** POBLACIONAL: calibracion_completada, tasa_falsos_positivos_rutina, tasa_deteccion_eventos_clinicos. */
   metricas_poblacionales: Record<string, number | boolean> | null;
+  /** RFC-010: animal del modelo INDIVIDUAL (uno por animal); null en POBLACIONAL y META. */
+  id_activo_biologico: number | null;
+  /** RFC-010; null solo en versiones leídas de la caché. */
+  fuente_datos: FuenteDatos | null;
   estado_version: EstadoVersion;
   formato_artefacto: string | null;
   tamanio_artefacto_bytes: number | null;
@@ -598,4 +607,17 @@ export interface ActivoSelectorItem {
   nombre_especie: string | null;
   /** M4-03: para ofrecer solo diagnósticos de su especie. */
   id_especie?: number | null;
+}
+
+/** GET /prediccion/modelos/reentrenamiento (RF-71). */
+export interface EstadoReentrenamiento {
+  tipo_modelo: TipoModelo;
+  /** Resultados con retroalimentación RF-72 desde la última versión del modelo. */
+  registros_nuevos: number;
+  desde: string | null;
+  estado: 'INSUFICIENTE' | 'PUEDE_SOLICITARSE' | 'LISTO';
+  /** Para el siguiente estado; 0 si está LISTO. */
+  faltan: number;
+  minimo_solicitud: number;
+  minimo_reentrenamiento: number;
 }
