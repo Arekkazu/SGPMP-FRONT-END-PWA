@@ -1,3 +1,10 @@
+## [1.4.0-rc.22](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.21...v1.4.0-rc.22) (2026-11-02)
+
+### Bug Fixes
+
+* **i18n:** los textos de pantalla dicen qué hace cada parte en vez de su código de requisito ([2285146](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/228514600c4d19683bf65e8b080eb2e0bdf5d004))
+* **rf-66:** la trazabilidad nombra cada paso y la foto explica el número de cada caja ([dad549f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/dad549f57ea09ba04f7a6c331dec4ff5e3e1112a))
+
 ## [1.4.0-rc.21](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.20...v1.4.0-rc.21) (2026-11-02)
 
 ### Features
