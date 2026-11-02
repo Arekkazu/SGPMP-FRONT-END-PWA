@@ -7,6 +7,7 @@
 // | 2026-10-29 | Arekkazu | USAB-M03 prototipo T-23 RF-60: alertas técnicas en tarjetas, como Alertas |
 // | 2026-10-31 | Arekkazu | CP50/CP58/T-18 RF-60: tiempo sin contacto con unidad, transición manual o automática con responsable, equipo por nombre |
 // | 2026-11-02 | Arekkazu | AJF-03 RF-57: la sección de alertas técnicas no existe para quien no tiene el permiso |
+// | 2026-11-02 | Arekkazu | AJF-04 RF-60: parámetros de heartbeat y ventanas de visión reales, solo con permiso de alertas técnicas |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Cpu, Wrench, AlertTriangle } from 'lucide-react';
@@ -20,6 +21,7 @@ import { useAlertas } from '../hooks/useAlertas';
 import { DispositivoEstadoPanel } from '../components/DispositivoEstadoPanel';
 import { AplicarMantenimientoModal } from '../components/AplicarMantenimientoModal';
 import { CamarasVisionPanel } from '../components/CamarasVisionPanel';
+import { useParametrosHeartbeat, useVentanasVision } from '../hooks/useParametrosHeartbeat';
 import { AlertasFiltros, ALERTAS_FILTROS_VACIO, type AlertasFiltrosState } from '../components/AlertasFiltros';
 import { AlertasLista } from '../components/AlertasLista';
 import { AlertaDetalleModal } from '../components/AlertaDetalleModal';
@@ -69,6 +71,10 @@ export function DispositivosView() {
     if (ok) { setMantAbierto(false); void lista.cargar(); }
   };
 
+  const heartbeat = useParametrosHeartbeat(puedeVerTecnicas);
+  const vision = useVentanasVision(dispositivo.idConsultado, puedeVerTecnicas);
+  const nombreSeleccionado = (() => { const d = lista.items.find((x) => x.id_dispositivo_iot === dispositivo.idConsultado); return d ? d.descripcion || d.serial : undefined; })();
+
   const enMantenimiento = (dispositivo.estado?.estado_actual ?? '').toUpperCase() === 'EN_MANTENIMIENTO';
 
   // La técnica seleccionada se toma del propio listado (no hay endpoint de detalle
@@ -108,7 +114,7 @@ export function DispositivosView() {
 
           <div style={{ marginTop: 'var(--s5)' }} aria-live="polite">
           <DispositivoEstadoPanel
-            nombre={(() => { const d = lista.items.find((x) => x.id_dispositivo_iot === dispositivo.idConsultado); return d ? d.descripcion || d.serial : undefined; })()}
+            nombre={nombreSeleccionado}
             idConsultado={dispositivo.idConsultado}
             estado={dispositivo.estado}
             historial={dispositivo.historial}
@@ -163,8 +169,19 @@ export function DispositivosView() {
           </section>
         )}
 
-        {/* Cámaras (RFC-011) y parámetros por categoría: sin endpoint aún, datos simulados */}
-        <CamarasVisionPanel />
+        {/* AJF-04: parámetros por categoría y ventanas de visión, del backend. Es operación de
+            equipos: mismo permiso que las alertas técnicas. */}
+        {puedeVerTecnicas && (
+          <CamarasVisionPanel
+            parametros={heartbeat.parametros}
+            loadingParametros={heartbeat.loading}
+            errorParametros={heartbeat.error}
+            nombreDispositivo={nombreSeleccionado}
+            ventanas={vision.ventanas}
+            loadingVentanas={vision.loading}
+            errorVentanas={vision.error}
+          />
+        )}
       </div>
 
       {puedeVerTecnicas && seleccionada && (

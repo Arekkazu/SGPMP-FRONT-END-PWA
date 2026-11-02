@@ -14,6 +14,7 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
 // | 2026-10-31 | Arekkazu | CP50/CP58/T-18 RF-60: tiempo sin contacto con unidad, transición manual o automática con responsable, equipo por nombre |
 // | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: valor de la lectura actual cuando está fuera de rango |
+// | 2026-11-02 | Arekkazu | AJF-04 RF-60: parámetros de heartbeat y ventanas de visión |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -612,4 +613,31 @@ export interface VerificacionIntegridadSchema {
   total_verificados: number;
   comprometidos: number;
   ids_comprometidos: string[];
+}
+
+/** AJF-04: `GET /iot/dispositivos/parametros-heartbeat`. Segundos; null = sin configurar. */
+export interface ParametrosHeartbeatCategoria {
+  categoria: string;
+  intervalo_heartbeat_seg: number | null;
+  frecuencia_muestreo_seg: number | null;
+  margen_tolerancia_seg: number | null;
+  umbral_sin_senal_seg: number | null;
+  umbral_inactivo_seg: number | null;
+  cadena_valida: boolean | null;
+  faltantes: string[];
+  configurado: boolean;
+}
+
+export type ResultadoVentanasVision = 'DETECCION_VALIDA' | 'SIN_DETECCION_VALIDA' | 'SIN_VENTANAS' | 'SIN_CONFIGURAR' | 'NO_ES_CAMARA';
+
+/** AJF-04: `GET /iot/dispositivos/{id}/ventanas-vision`. La más reciente primero. */
+export interface VentanasVision {
+  id_dispositivo_iot: number;
+  es_camara: boolean;
+  ventanas: { id_observacion_vision: number; inicio: string | null; fin: string; cobertura: number; n_individuos: number | null }[];
+  ventanas_consecutivas: number | null;
+  cobertura_minima: number | null;
+  duracion_seg: number | null;
+  consecutivas_bajo_minimo: number;
+  resultado: ResultadoVentanasVision;
 }
