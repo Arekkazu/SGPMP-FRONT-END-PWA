@@ -1,3 +1,10 @@
+## [1.4.0-rc.19](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.18...v1.4.0-rc.19) (2026-11-02)
+
+### Features
+
+* **rf-110:** editar la topología sanitaria y filtrar el mapa de propagación por finca ([a2e129a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a2e129a1b39f13ee39a2bb126a8c8929b72c9f77))
+* **rf-110:** relacionar áreas tocándolas en el grafo y color por tipo de área ([d241838](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d2418385f1c738d59e1827bd6569364c1d62bfac))
+
 ## [1.4.0-rc.18](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.17...v1.4.0-rc.18) (2026-11-02)
 
 ### Features
