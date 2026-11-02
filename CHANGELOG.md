@@ -1,3 +1,9 @@
+## [1.4.0-rc.21](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.20...v1.4.0-rc.21) (2026-11-02)
+
+### Features
+
+* **rf-66:** la imagen de la cámara se abre completa y el conteo se compara con el inventario ([294f4b0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/294f4b0e7df73a61d9a6b185572fc8e22945d292))
+
 ## [1.4.0-rc.20](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.19...v1.4.0-rc.20) (2026-11-02)
 
 ### Features
