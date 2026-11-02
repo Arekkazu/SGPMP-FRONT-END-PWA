@@ -22,9 +22,16 @@ function verificar(estado: 'ERROR_CALIBRACION' | 'FUERA_DE_RANGO') {
     });
     const variables = new Set(items.map((it) => it.tipo_variable)).size;
 
-    // Grafica: una linea por variable numerica, ningun estado categorico como serie ni en los ejes
+    // Grafica (diseno vigente desde 26-Oct INC-M03-193 y 29-Oct USAB 13.6): UNA grafica por variable numerica y,
+    // dentro de cada una, una linea por tramo (cada vacio temporal abre un tramo nuevo con el mismo color).
+    // Por eso se exige: n.o de graficas = n.o de variables; cada grafica con al menos una linea; ningun estado
+    // categorico como serie ni en los ejes. (Contar .recharts-line contra n.o de variables era un supuesto anterior.)
     cy.get('.recharts-wrapper').first().scrollIntoView().should('be.visible');
-    cy.get('.recharts-line').should('have.length', variables);
+    cy.get('.recharts-wrapper').should('have.length', variables);
+    cy.get('.recharts-wrapper').each(($w) => {
+      expect($w.find('.recharts-line').length, 'lineas en cada grafica (una por variable, mas un tramo por vacio)').to.be.greaterThan(0);
+    });
+    cy.get('.recharts-line').its('length').should('be.gte', variables);
     cy.get('.recharts-wrapper').invoke('text').should('not.match', ESTADOS_CATEGORICOS);
     cy.get('.recharts-wrapper svg text').then(($t) => {
       const numericos = [...$t].map((t) => (t.textContent || '').trim()).filter((x) => /^-?[\d.,]+$/.test(x));

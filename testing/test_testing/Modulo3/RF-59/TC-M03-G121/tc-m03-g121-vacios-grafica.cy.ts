@@ -35,15 +35,16 @@ describe('TC-M03-G121 · RF-59 · Vacios temporales en la grafica', () => {
   });
 
   it('1.2 (244) El vacio se ve como zona sombreada o linea discontinua con la etiqueta "Sin datos"', () => {
-    cy.get('.recharts-wrapper').should('be.visible');
+    // La grafica queda bajo los indicadores y fuera de la ventana: se desplaza hasta ella antes de pedir visibilidad.
+    cy.get('.recharts-wrapper').first().scrollIntoView().should('be.visible');
     cy.get('.recharts-reference-area').should('have.length.greaterThan', 0);
-    cy.get('.recharts-wrapper').contains('Sin datos').should('be.visible');
+    cy.get('.recharts-wrapper').contains('Sin datos').scrollIntoView().should('be.visible');
     cy.screenshot('TC-M03-G121-1.2-vacio-grafica');
   });
 
   it('1.2 (244) La visualizacion no se interrumpe: sin error en pantalla y con grafica y tabla visibles', () => {
     cy.contains(/error al cargar|par[aá]metros inv[aá]lidos/i).should('not.exist');
-    cy.get('.recharts-wrapper').first().should('be.visible');
+    cy.get('.recharts-wrapper').first().scrollIntoView().should('be.visible');
     cy.get('table tbody tr').should('have.length.greaterThan', 0);
     // Informativo (no es parte del criterio de la ficha): aviso de texto y marca del vacio en la tabla.
     cy.get('body').then(($b) => {
@@ -66,10 +67,31 @@ describe('TC-M03-G121 · RF-59 · Vacios temporales en la grafica', () => {
   });
 
   it('2.2 (245) La grafica no une con una linea continua las lecturas de ambos lados del vacio', () => {
+    // Desde INC-M03-193 (26-Oct) el corte se hace con un tramo (otra <Line>) por cada lado del vacio, no con un
+    // trazo de varios segmentos. Se comprueba el comportamiento: (a) la serie esta cortada (mas de un trazo o
+    // mas de un segmento "M") y (b) NINGUN trazo pasa por dentro de la zona "Sin datos" (nada interpolado).
+    // recharts dibuja la zona como <path class="recharts-reference-area-rect"> (no como <rect>).
+    cy.get('.recharts-wrapper').first().scrollIntoView();
+    cy.get('.recharts-reference-area-rect').should('have.length.greaterThan', 0);
     cy.get('path.recharts-line-curve').should('have.length.greaterThan', 0).then(($paths) => {
-      const conCorte = [...$paths].some((p) => ((p.getAttribute('d') || '').match(/M/g) || []).length > 1);
-      cy.screenshot('TC-M03-G121-2.2-discontinuidad');
-      expect(conCorte, 'alguna linea de la serie esta cortada en el vacio (trazo con mas de un segmento)').to.eq(true);
+      const segmentos = [...$paths].reduce((n, p) => n + Math.max(1, ((p.getAttribute('d') || '').match(/M/g) || []).length), 0);
+      cy.get('.recharts-reference-area-rect').then(($zonas) => {
+        const TOL = 2; // px: los trazos de cada lado terminan justo en el borde de la zona
+        const cruces: string[] = [];
+        [...$zonas].forEach((z, zi) => {
+          const rz = z.getBoundingClientRect();
+          if (rz.width <= 2 * TOL) return;
+          [...$paths].forEach((p, pi) => {
+            const rp = p.getBoundingClientRect();
+            const entraEnZona = rp.left < rz.right - TOL && rp.right > rz.left + TOL;
+            if (entraEnZona) cruces.push(`trazo ${pi} cruza la zona ${zi}`);
+          });
+        });
+        cy.task('log', `G121 2.2: trazos=${$paths.length}, segmentos=${segmentos}, zonas=${$zonas.length}, cruces=${cruces.length}`);
+        cy.screenshot('TC-M03-G121-2.2-discontinuidad');
+        expect(segmentos, 'la serie esta cortada en el vacio (mas de un trazo o de un segmento)').to.be.greaterThan(1);
+        expect(cruces, 'trazos que atraviesan la zona "Sin datos" (interpolacion del vacio)').to.deep.eq([]);
+      });
     });
   });
 });

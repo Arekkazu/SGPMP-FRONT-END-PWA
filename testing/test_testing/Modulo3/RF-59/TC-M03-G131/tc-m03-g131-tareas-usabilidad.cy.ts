@@ -47,7 +47,9 @@ describe('TC-M03-G131 · RF-59 · Tareas de usabilidad del historial', () => {
       expect(i.response.statusCode).to.eq(200);
       const aplicados = i.response.body.filtros_aplicados;
       expect(i.response.body.total, 'lecturas').to.be.greaterThan(0);
-      expect(aplicados.tipo_variable, 'variable aplicada').to.eq('Temperatura Ambiental');
+      // Desde INC-M03-187 (BUG-G118-01) el API admite varias variables: el filtro aplicado se devuelve como lista.
+      // Se acepta lista o texto, pero debe ser exactamente la variable pedida (ninguna otra).
+      expect([].concat(aplicados.tipo_variable), 'variable aplicada').to.deep.eq(['Temperatura Ambiental']);
       cy.get('.recharts-wrapper').first().scrollIntoView().should('be.visible');
       cy.get('table tbody tr').should('have.length.greaterThan', 0);
       fin('2. Filtrar temperatura 20-22/10', true, `Lecturas: ${i.response.body.total}`);
@@ -78,7 +80,7 @@ describe('TC-M03-G131 · RF-59 · Tareas de usabilidad del historial', () => {
       expect(vacios.length, 'vacios informados por el API').to.be.greaterThan(0);
       cy.get('.recharts-wrapper').first().scrollIntoView().should('be.visible');
       cy.get('.recharts-reference-area').should('have.length.greaterThan', 0);
-      cy.get('.recharts-wrapper').contains('Sin datos').should('be.visible');
+      cy.get('.recharts-wrapper').contains('Sin datos').scrollIntoView().should('be.visible');
       cy.get('body').then(($b) => {
         const aviso = /intervalos? sin datos/i.test($b.text());
         fin('4. Detectar el vacio', true, `Zona "Sin datos" visible; aviso de texto del periodo: ${aviso ? 'si' : 'no'}; fila de vacio en la tabla: ${$b.find('[data-testid="fila-vacio"]').length}`);
@@ -88,22 +90,29 @@ describe('TC-M03-G131 · RF-59 · Tareas de usabilidad del historial', () => {
   });
 
   it('Tarea 5. Ver temperatura y humedad juntas y poder distinguirlas', () => {
+    // Diseno vigente desde 29-Oct (USAB-M03 prototipo 13.6): una grafica por variable, cada una con su titulo y su
+    // eje Y (sin mezclar unidades en un eje), en la misma pantalla. Se comprueba que las dos variables se ven a la
+    // vez, que cada una tiene su grafica y que los titulos las distinguen. Si la ficha exige una sola grafica con
+    // leyenda, eso es una diferencia de diseno a confirmar con Analisis (no se da por defecto).
     inicio();
     cy.consultarHistorial({ desde: DESDE, hasta: HASTA, variable: '', estado: '', infra: '' }).then((i) => {
       accion(3); // fechas, vaciar variable, Consultar
       const items: any[] = i.response.body.items;
-      const rango = (v: string) => {
-        const xs = items.filter((it) => it.tipo_variable === v).map((it) => Number(it.valor));
-        return xs.length ? Math.max(...xs) - Math.min(...xs) : 0;
-      };
+      const variables = [...new Set(items.map((it) => it.tipo_variable))];
+      expect(variables.length, 'variables en la pagina 1 de lecturas').to.be.greaterThan(1);
+      expect(variables, 'temperatura y humedad en la pagina').to.include.members(['Humedad Relativa', 'Temperatura Ambiental']);
       cy.get('.recharts-wrapper').first().scrollIntoView().should('be.visible');
-      cy.get('.recharts-legend-item-text').then(($l) => {
-        const nombres = [...$l].map((e) => (e.textContent || '').trim());
-        expect(nombres.length, 'series en la leyenda').to.be.greaterThan(1);
-        const r1 = rango('Humedad Relativa'); const r2 = rango('Temperatura Ambiental');
-        const plana = Math.min(r1, r2) / Math.max(r1, r2, 1) < 0.1;
-        fin('5. Temperatura y humedad juntas', true,
-          `Leyenda: ${nombres.join(', ')}. Rango pagina 1: humedad ${r1.toFixed(1)}, temperatura ${r2.toFixed(1)}. Un solo eje Y${plana ? ': una serie se ve casi plana' : ''}`);
+      cy.get('.recharts-wrapper').should('have.length', variables.length);
+      cy.get('.recharts-wrapper').then(($w) => {
+        const titulos = [...$w].map((w) => (w.closest('.recharts-responsive-container')?.parentElement?.parentElement?.querySelector('h3')?.textContent || '').trim());
+        cy.task('log', `G131 t5 graficas=${$w.length}; titulos: ` + titulos.join(' | '));
+        titulos.forEach((t, k) => expect(t.length, `titulo de la grafica ${k + 1}`).to.be.greaterThan(0));
+        expect(new Set(titulos).size, 'titulos distintos (las variables se distinguen)').to.eq(titulos.length);
+        const norm = (x: string) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        expect(titulos.some((t) => /temperatura/.test(norm(t))), 'una grafica titulada temperatura').to.eq(true);
+        expect(titulos.some((t) => /humedad/.test(norm(t))), 'una grafica titulada humedad').to.eq(true);
+        fin('5. Temperatura y humedad en la misma pantalla', true,
+          `Graficas: ${$w.length}, una por variable, cada una con titulo y eje propios: ${titulos.join('; ')}. No hay leyenda comun (diseno 13.6)`);
       });
       cy.screenshot('tarea5-dos-variables');
     });
