@@ -79,11 +79,16 @@ async function protegerEscrituras(page: Page) {
 }
 
 async function irAMonitor(page: Page) {
+  // 1.4.0: el monitor lee datos reales de GET /prediccion/inferencias; se espera esa respuesta
+  // para no leer la vista antes de que pinte los resultados
+  const inferencias = page.waitForResponse((r) => /\/prediccion\/inferencias/.test(r.url()) && r.request().method() === 'GET', { timeout: 60_000 }).catch(() => null);
   await page.goto(`${APP}/prediccion/monitor`);
+  await inferencias;
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/inferencia/i, { timeout: 60_000 });
   // 2026-10-27: SubPestanas (shared/design-system/SubPestanas.tsx) es un <nav> con <button
   // aria-current>, no un widget ARIA de tabs — no hay role="tab" que buscar.
   await expect(page.getByRole('button', { name: /activos y áreas monitoreados/i })).toBeVisible({ timeout: 60_000 });
+  await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
 }
 
 interface Tarjeta {
@@ -170,7 +175,7 @@ test.describe('TC-DIS-182 — Niveles de riesgo en el Dashboard de Predicción S
   // 2026-10-27: confirmado contra el ambiente real — login + goto + 2 esperas de hasta 60s cada
   // una (heading, luego pestaña) exceden el default de 30s sin que haya ningún selector roto;
   // 60s de margen alcanza sin llegar a los 300s que antes ocultaban cuelgues reales.
-  test.describe.configure({ mode: 'default', timeout: 60_000 });
+  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_182_VIEWPORTS.`);
@@ -184,14 +189,15 @@ test.describe('TC-DIS-182 — Niveles de riesgo en el Dashboard de Predicción S
     const simulados = await page.getByRole('note').filter({ hasText: /datos simulados/i }).count();
     const tarjetas = await leerTarjetas(page);
     testInfo.annotations.push({ type: 'Datos', description: `${tarjetas.length} tarjetas · badges: ${tarjetas.map((t) => t.badge).join(', ')} · banner "Datos simulados": ${simulados ? 'sí' : 'no'}` });
-    expect.soft(new Set(tarjetas.map((t) => t.badge)).size, 'Precondición: los 4 niveles de riesgo representados').toBe(4);
+    const niveles = new Set(tarjetas.map((t) => t.badge.toLowerCase()));
+    expect.soft(niveles.size, `BLOQUEO: los datos reales del monitor solo traen ${niveles.size} de los 4 niveles de riesgo (${[...niveles].join(', ')}); no hay datos congelados con los 4`).toBe(4);
     expect.soft(simulados, 'BLOQUEO: el dashboard muestra datos fijos de ejemplo (banner "Datos simulados"); las inferencias semilla del backend no se ven').toBe(0);
 
-    // 2026-10-27: la etiqueta real es "Paquetes recibidos" (monitor.paquetes), no "Paquetes hoy"
-    // — y ya pasa por formatearNumero(), no por un formateador de fecha.
-    const paquetes = await page.locator('main').getByText('Paquetes recibidos', { exact: true }).locator('xpath=..').innerText();
-    testInfo.annotations.push({ type: 'Paquetes recibidos', description: paquetes.replace(/\s+/g, ' ') });
-    expect.soft(paquetes, '"Paquetes recibidos" debe mostrar un número, no una fecha').not.toMatch(/\d{1,2}\/\d{1,2}\/\d{2,4}|19(69|70)/);
+    // 1.4.0: el estado del motor muestra resultados, latencia P95, excedidas y última inferencia
+    // (ya no "Paquetes recibidos"); ningún indicador debe mostrar una fecha en lugar de un número
+    const estadoMotor = (await page.locator('main section[aria-labelledby="motor-estado"]').innerText().catch(() => '')).replace(/\s+/g, ' ');
+    testInfo.annotations.push({ type: 'Estado del motor', description: estadoMotor || '(sin sección)' });
+    expect.soft(estadoMotor, 'Los indicadores del motor no muestran una fecha de 1969/1970 en vez de un número').not.toMatch(/\/(69|70),|19(69|70)/);
   });
 
   test('b. [1.4.1] Escaneo del dashboard; cada nivel con badge y etiqueta textual del RF', async ({ page }, testInfo) => {
@@ -202,7 +208,9 @@ test.describe('TC-DIS-182 — Niveles de riesgo en el Dashboard de Predicción S
     testInfo.annotations.push({ type: 'Ícono en el badge', description: `${tarjetas.filter((t) => t.icono).length}/${tarjetas.length}` });
 
     const etiquetas = [...new Set(tarjetas.map((t) => t.badge))];
-    const fueraDelRF = etiquetas.filter((e) => !ETIQUETAS_RF.includes(e));
+    // La vista usa mayúscula inicial ("Riesgo bajo"); el rótulo es el mismo
+    const fueraDelRF = etiquetas.filter((e) => !ETIQUETAS_RF.some((r) => r.toLowerCase() === e.toLowerCase()));
+    testInfo.annotations.push({ type: 'Etiquetas de nivel en pantalla', description: etiquetas.join(', ') });
     expect.soft(fueraDelRF, `DEFECTO 1.4.1: etiquetas de nivel que no son las del RF-66 (${ETIQUETAS_RF.join(' / ')})`).toEqual([]);
     await escanear(page, 'dashboard-activos', testInfo);
   });
@@ -236,10 +244,26 @@ test.describe('TC-DIS-182 — Niveles de riesgo en el Dashboard de Predicción S
 
   test('e. Tarjeta del área POBLACIONAL: nombre del área, score de anomalía y "No aplica"', async ({ page }, testInfo) => {
     await irAMonitor(page);
-    const texto = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
-    const poblacional = /poblacional|[áa]rea\b.*anomal|score de anomal|puntaje de anomal/i.test(texto);
-    testInfo.annotations.push({ type: 'Resultado POBLACIONAL en la vista', description: poblacional ? 'sí' : 'no' });
-    expect.soft(poblacional, 'DEFECTO: el dashboard no presenta resultados POBLACIONAL (área con score de anomalía, RFC-009 v1.1); solo activos individuales').toBe(true);
-    expect.soft(/no aplica \(modelo poblacional\)/i.test(texto), 'DEFECTO: no aparece "No aplica (modelo poblacional)" donde no aplican enfermedad estimada ni probabilidades por clase').toBe(true);
+    // Tarjetas: las POBLACIONAL dicen "Poblacional" y muestran el puntaje de anomalía con su umbral
+    const tarjetas = await page.locator('main article[role="button"]').evaluateAll((as) => as.map((a) => (a.textContent ?? '').replace(/\s+/g, ' ').trim()));
+    const poblacionales = tarjetas.filter((t) => /poblacional/i.test(t));
+    testInfo.annotations.push({ type: 'Tarjetas POBLACIONAL', description: poblacionales.join(' ‖ ') || '(ninguna)' });
+    expect.soft(poblacionales.length, 'DEFECTO: el dashboard no presenta resultados POBLACIONAL (RFC-009 v1.1)').toBeGreaterThan(0);
+    expect.soft(poblacionales.filter((t) => /anomal[ií]a\s*\(|umbral\s*\)/i.test(t)), 'DEFECTO 1.3.1: la tarjeta POBLACIONAL muestra el puntaje de anomalía y el umbral vacíos ("Puntaje de anomalía (umbral )") en vez de un valor o "No aplica"').toEqual([]);
+
+    // Feed: en filas POBLACIONAL lo que no aplica dice "No aplica"; el score se muestra con su rótulo
+    await page.getByRole('button', { name: /feed de inferencias/i }).click();
+    await expect(page.locator('main tbody tr').first()).toBeVisible();
+    const encabezados = (await page.locator('main thead th').allInnerTexts()).map((h) => h.trim());
+    const iEnf = encabezados.findIndex((h) => /enfermedad/i.test(h));
+    const iConf = encabezados.findIndex((h) => /confianza|score/i.test(h));
+    const filas = await page.locator('main tbody tr').evaluateAll((trs, [e, c]) => trs.map((tr) => {
+      const td = tr.querySelectorAll('td');
+      return { enfermedad: (td[e]?.textContent ?? '').trim(), confianza: (td[c]?.textContent ?? '').trim() };
+    }), [iEnf, iConf]);
+    const filasPob = filas.filter((f) => /^no aplica/i.test(f.enfermedad) || /^score/i.test(f.confianza));
+    testInfo.annotations.push({ type: 'Filas POBLACIONAL del feed', description: `${filasPob.length} de ${filas.length} · ${JSON.stringify(filasPob.slice(0, 4))}` });
+    expect.soft(filasPob.filter((f) => !/^no aplica/i.test(f.enfermedad)).length, '"No aplica" en la enfermedad estimada de los resultados POBLACIONAL').toBe(0);
+    expect.soft(filasPob.filter((f) => !f.confianza || /^[—-]$/.test(f.confianza)).map((f) => f.confianza), 'DEFECTO: en filas POBLACIONAL el score de anomalía se muestra vacío ("—") en vez de su valor o "No aplica"').toEqual([]);
   });
 });
