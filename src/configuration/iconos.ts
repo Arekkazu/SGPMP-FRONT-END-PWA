@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-02 | Arekkazu | RF-110: color por tipo de área para el grafo de topología |
 import {
   Beef, Bird, Building2, ChartColumn, ChartLine, Cloud, Cpu, Droplets, Fence, Fish, FlaskConical, Hourglass, House,
   OctagonAlert, Package, Radio, Sprout, Sun, Thermometer, Trees, TriangleAlert, Warehouse, Waves, Wind, Wrench,
@@ -30,6 +33,21 @@ export function iconoCategoriaSensor(categoria: string | null | undefined): Luci
 
 export function iconoTipoArea(tipo: string): LucideIcon {
   return POR_TIPO_AREA[tipo] ?? Building2;
+}
+
+// Color de cada tipo de área en el grafo de topología (RF-110). Tonos medios que contrastan con un
+// ícono blanco en tema claro y oscuro; un tipo nuevo del catálogo toma uno fijo según su nombre.
+const COLOR_TIPO_AREA: Record<string, string> = {
+  'Galpón': '#d97706',
+  'Corral': '#a0522d',
+  'Potrero': '#2e8634',
+  'Estanque': '#1a6abf',
+  'Invernadero': '#0d9488',
+};
+const COLORES_EXTRA = ['#7c3aed', '#db2777', '#4f46e5', '#b45309', '#0891b2'];
+
+export function colorTipoArea(tipo: string): string {
+  return COLOR_TIPO_AREA[tipo] ?? COLORES_EXTRA[[...tipo].reduce((h, c) => h + c.charCodeAt(0), 0) % COLORES_EXTRA.length];
 }
 
 // Iconos de los widgets del dashboard (RF-28). El catalogo lo define el backend;

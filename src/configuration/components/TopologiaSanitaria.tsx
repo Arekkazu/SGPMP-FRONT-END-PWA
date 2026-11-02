@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | RF-110: grafo de la finca y edición de sus relaciones entre áreas |
+// | 2026-11-02 | Arekkazu | RF-110: relacionar tocando dos áreas en el grafo; color por tipo de área |
 import React, { useState } from 'react';
 import { Plus, Share2, X } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -16,6 +17,7 @@ import { topologiaApi, VIAS, type AristaPayload, type AristaTopologia } from '..
 import { GrafoTopologia } from './GrafoTopologia';
 import type { ApiError } from '../../shared/api/errors';
 import type { InfraestructuraResponse } from '../types';
+import { colorTipoArea, iconoTipoArea } from '../iconos';
 
 // RF-110: recurso 87 topologia_sanitaria.
 const RECURSO = 87;
@@ -27,8 +29,10 @@ export function TopologiaSanitaria({ idFinca, areas }: { idFinca: number; areas:
   const puedeCrear = usePermission(RECURSO, 1);
   const puedeEditar = usePermission(RECURSO, 3);
   const { aristas, error, recargar } = useAristasFinca(idFinca);
-  // null: cerrado · 'nueva' · la arista que se edita
-  const [modal, setModal] = useState<AristaTopologia | 'nueva' | null>(null);
+  // Formulario abierto: editando una arista, o creando (con las áreas ya elegidas si se tocaron en el grafo).
+  const [modal, setModal] = useState<{ arista?: AristaTopologia; origen?: number; destino?: number } | null>(null);
+  const puedeConectar = puedeCrear && online;
+  const tipos = [...new Set(areas.map((a) => a.tipo_area))];
 
   return (
     <section aria-labelledby="topologia-finca" style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)', marginTop: 'var(--s5)' }}>
@@ -38,7 +42,7 @@ export function TopologiaSanitaria({ idFinca, areas }: { idFinca: number; areas:
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s1) 0 0' }}>{t('topologia.descripcion_finca')}</p>
         </div>
         {puedeCrear && (
-          <Button variant="primary" size="sm" onClick={() => setModal('nueva')} disabled={!online || areas.filter((a) => a.es_activo).length < 2}>
+          <Button variant="primary" size="sm" onClick={() => setModal({})} disabled={!online || areas.filter((a) => a.es_activo).length < 2}>
             <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('topologia.nueva')}
           </Button>
         )}
@@ -48,14 +52,21 @@ export function TopologiaSanitaria({ idFinca, areas }: { idFinca: number; areas:
           ? <Alert variant="error" title={t('topologia.error')} description={error.message} />
           : <GrafoTopologia
               titulo={t('topologia.titulo_finca')}
-              nodos={areas.map((i) => ({ id: i.id_infraestructura, nombre: i.nombre_infraestructura, activo: i.es_activo, detalle: i.tipo_area }))}
+              nodos={areas.map((i) => ({
+                id: i.id_infraestructura, nombre: i.nombre_infraestructura, activo: i.es_activo, detalle: i.tipo_area,
+                color: colorTipoArea(i.tipo_area), icono: iconoTipoArea(i.tipo_area),
+              }))}
               aristas={aristas}
-              onEditar={puedeEditar && online ? (a) => setModal(a) : undefined}
+              leyenda={tipos.map((tipo) => ({ nombre: tipo, color: colorTipoArea(tipo) }))}
+              onEditar={puedeEditar && online ? (a) => setModal({ arista: a }) : undefined}
+              onConectar={puedeConectar ? (origen, destino) => setModal({ origen, destino }) : undefined}
             />}
       </div>
       {modal && (
         <RelacionModal
-          arista={modal === 'nueva' ? null : modal}
+          arista={modal.arista ?? null}
+          origenInicial={modal.origen}
+          destinoInicial={modal.destino}
           areas={areas.filter((a) => a.es_activo)}
           onClose={() => setModal(null)}
           onGuardado={() => { setModal(null); recargar(); }}
@@ -65,14 +76,15 @@ export function TopologiaSanitaria({ idFinca, areas }: { idFinca: number; areas:
   );
 }
 
-function RelacionModal({ arista, areas, onClose, onGuardado }: {
-  arista: AristaTopologia | null; areas: InfraestructuraResponse[]; onClose: () => void; onGuardado: () => void;
+function RelacionModal({ arista, origenInicial, destinoInicial, areas, onClose, onGuardado }: {
+  arista: AristaTopologia | null; origenInicial?: number; destinoInicial?: number;
+  areas: InfraestructuraResponse[]; onClose: () => void; onGuardado: () => void;
 }) {
   const { t } = useT('configuration');
   const dialogRef = useModalA11y(onClose);
   const puedeQuitar = usePermission(RECURSO, 4);
-  const [origen, setOrigen] = useState(String(arista?.origen ?? ''));
-  const [destino, setDestino] = useState(String(arista?.destino ?? ''));
+  const [origen, setOrigen] = useState(String(arista?.origen ?? origenInicial ?? ''));
+  const [destino, setDestino] = useState(String(arista?.destino ?? destinoInicial ?? ''));
   const [via, setVia] = useState(arista?.via ?? 'PROXIMIDAD');
   const [bidireccional, setBidireccional] = useState(arista?.bidireccional ?? false);
   const [intensidad, setIntensidad] = useState(String(arista?.intensidad ?? '0.5'));
