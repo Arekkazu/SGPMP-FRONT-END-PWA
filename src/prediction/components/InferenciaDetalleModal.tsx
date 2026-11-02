@@ -3,11 +3,13 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-66: detalle de inferencia por área o por activo con trazabilidad |
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66: tipos desde lib/inferencias (datos reales); paquete opcional |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
+// | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
 import React from 'react';
 import { Info } from 'lucide-react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { ModalShell } from './ModalShell';
+import { CapturaCamara } from './CapturaCamara';
 import { Pill, type Tono } from './Pill';
 import { ProbBar } from './ProbBar';
 import { nivelRiesgoTono } from '../lib/riesgo';
@@ -59,6 +61,8 @@ export function InferenciaDetalleModal({ inf, onClose }: { inf: Inferencia; onCl
             <Info size={16} aria-hidden style={{ color: 'var(--sem-info)', flexShrink: 0, marginTop: 1 }} /><span>{inf.nota}</span>
           </div>
         )}
+
+        {poblacional && <CapturaCamara idArea={inf.idArea} ventanaFin={inf.finVentana ?? undefined} />}
 
         {inf.distRiesgo && (
           <section>

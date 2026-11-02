@@ -3,6 +3,7 @@
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo 13.9 RF-66/RF-68/RF-69: Monitor y Contagio en una ficha por lote, con evaluación clínica |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
 // | 2026-11-02 | Arekkazu | RFC-021 C21.4 RF-68: «¿Por qué?» dice cuánto sube el riesgo por las áreas vecinas |
+// | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
 import React, { useEffect, useMemo, useState } from 'react';
 import { HeartPulse, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -13,6 +14,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { OptionCard } from '../../shared/design-system/OptionCard';
 import { ModalShell } from '../components/ModalShell';
+import { CapturaCamara } from '../components/CapturaCamara';
 import { ProbBar } from '../components/ProbBar';
 import { LineChartPrediccion } from '../components/LineChartPrediccion';
 import { InferenciaDetalleModal } from '../components/InferenciaDetalleModal';
@@ -182,6 +184,8 @@ function PorQueModal({ lote, onDetalle, onClose }: { lote: LoteSanitario; onDeta
             </div>
           </section>
         )}
+
+        <CapturaCamara idArea={a?.idArea ?? c?.idArea} />
 
         <section>
           <h3 style={H3}>{t('estadosanitario.por_que')}</h3>

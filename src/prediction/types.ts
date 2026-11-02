@@ -11,6 +11,7 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 // | 2026-10-31 | Arekkazu | RF-71: estado de datos para reentrenar los modelos individuales |
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
+// | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -361,6 +362,8 @@ export interface InferenciaMonitorResponse {
   id_alerta_generada: number | null;
   /** T-18: nombre de cada patología de `probabilidad_enfermedad`, por su id (backend). */
   nombres_patologias?: Record<string, string> | null;
+  /** Área actual del activo: con ella se pide lo que ve su cámara. */
+  id_infraestructura?: number | null;
 }
 
 /** RF-68: un cálculo de riesgo de contagio de un lote (GET /prediccion/riesgo-contagio). */
@@ -390,6 +393,7 @@ export interface RiesgoContagioMonitorResponse {
   fecha_calculo: string;
   id_alerta_generada: number | null;
   detalle_calculo: Record<string, unknown> | null;
+  id_infraestructura?: number | null;
 }
 
 export interface DespliegueOtaResponse {
