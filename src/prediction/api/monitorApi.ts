@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66: monitor de inferencia con datos reales de GET /prediccion/inferencias |
 // | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
+// | 2026-11-02 | Arekkazu | RF-66: la captura trae el inventario del área y el aviso de discrepancia |
 import { http } from '../../shared/api/http';
 import type { InferenciaMonitorResponse, RiesgoContagioMonitorResponse } from '../types';
 
@@ -17,7 +18,11 @@ export interface FiltrosMonitor {
 const n = (v: unknown) => (v == null ? null : Number(v));
 
 /** Último cuadro de una ventana de la cámara con las cajas detectadas (`imagen` es un data URL). */
-export interface CapturaCamara { id_dispositivo_iot: number; fecha: string; n_individuos: number | null; imagen: string }
+export interface CapturaCamara {
+  id_dispositivo_iot: number; fecha: string; n_individuos: number | null; imagen: string;
+  /** Inventario actual del área (lotes poblacionales vigentes) y si las últimas ventanas se alejan de él. */
+  cantidad_registrada?: number | null; discrepancia_inventario?: boolean;
+}
 
 export const monitorApi = {
   /** Lo que ve la cámara del área: la captura más reciente o la de `ventanaFin`. Recurso 42 (R). */
