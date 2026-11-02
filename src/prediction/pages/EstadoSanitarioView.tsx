@@ -4,6 +4,7 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
 // | 2026-11-02 | Arekkazu | RFC-021 C21.4 RF-68: «¿Por qué?» dice cuánto sube el riesgo por las áreas vecinas |
 // | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
+// | 2026-11-02 | Arekkazu | RF-66/RF-68: últimas de cada animal o lote (por_activo) para que ninguno desaparezca |
 import React, { useEffect, useMemo, useState } from 'react';
 import { HeartPulse, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -245,7 +246,7 @@ export function EstadoSanitarioView() {
   const puedeVer = usePermission(RECURSO_HISTORIAL, ACCION_R);
   const puedeEvaluar = usePermission(RECURSO_RETRO, ACCION_C);
   const online = useOnlineStatus();
-  const { inferencias, loading, error, cargar } = useInferencias();
+  const { inferencias, loading, error, cargar } = useInferencias(true);
   // Sin permiso sobre el motor, contagio responde 403: la ficha sale sin esa barra.
   const { calculos } = useRiesgoContagio();
   const patologiasHook = usePatologias();

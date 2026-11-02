@@ -3,6 +3,7 @@
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66: monitor de inferencia con datos reales de GET /prediccion/inferencias |
 // | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
 // | 2026-11-02 | Arekkazu | RF-66: la captura trae el inventario del área y el aviso de discrepancia |
+// | 2026-11-02 | Arekkazu | RF-66/RF-68: últimas de cada animal o lote (por_activo) para que ninguno desaparezca |
 import { http } from '../../shared/api/http';
 import type { InferenciaMonitorResponse, RiesgoContagioMonitorResponse } from '../types';
 
@@ -12,6 +13,8 @@ export interface FiltrosMonitor {
   desde?: string;
   hasta?: string;
   limite?: number;
+  /** Las N más recientes de CADA animal o lote; con él, `limite` no aplica. */
+  por_activo?: number;
 }
 
 // Los Decimal del backend llegan como texto ("0.86"); el resto de la app trabaja con number.
