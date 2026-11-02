@@ -12,6 +12,7 @@
 // | 2026-10-31 | Arekkazu | RF-71: estado de datos para reentrenar los modelos individuales |
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
 // | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
+// | 2026-11-02 | Arekkazu | AJF-13 RF-73: entidad_referencia y nombre_referencia en la bitácora |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -566,6 +567,8 @@ export interface EventoAuditoriaM04Response {
   id_sistema: string | null;
   id_referencia: string | null;
   entidad_referencia: string | null;
+  /** AJF-13: código del animal, nombre de la versión o de la patología, si el backend lo resolvió. */
+  nombre_referencia?: string | null;
   resultado_operacion: string | null;
   codigo_error: string | null;
   descripcion_error: string | null;
@@ -589,6 +592,8 @@ export interface ListarAuditoriaFiltros {
   id_usuario?: number;
   id_sistema?: string;
   id_referencia?: string;
+  /** AJF-13: activo_biologico (incluye lotes) | version_modelo | patologia | configuracion_motor_ia. */
+  entidad_referencia?: string;
   severidad_evento?: string;
   tipo_modelo?: string;
   pagina?: number;

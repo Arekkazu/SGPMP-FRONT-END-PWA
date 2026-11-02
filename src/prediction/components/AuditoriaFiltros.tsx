@@ -2,16 +2,24 @@
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
 // | 2026-10-31 | Arekkazu | RF-71/RF-73: filtro por solicitud de reentrenamiento |
-import React from 'react';
+// | 2026-11-02 | Arekkazu | AJF-13 RF-73: "Relacionado con" + "Registro" por nombre en vez del ID de referencia libre |
+import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Filter, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
 import { TIPOS_MODELO, etiquetaTipoModelo } from '../types';
+import { Combobox } from '../../shared/design-system/Combobox';
+import { etiquetaDeCatalogo, idDeCatalogo, resolverCatalogo } from '../../shared/lib/catalogo';
+import { ENTIDADES_REFERENCIA, type EntidadReferencia, type OpcionReferencia } from '../lib/referenciaAuditoria';
 
 export interface AuditoriaFiltrosState {
   tipo_evento: string;
   severidad: string;
+  /** AJF-13: qué tipo de cosa ("Relacionado con") y cuál ("Registro", por nombre). */
+  entidad_referencia: EntidadReferencia | '';
+  referencia: string;
+  /** Id resuelto desde `referencia`; es lo que viaja al backend. */
   id_referencia: string;
   fecha_desde: string;
   fecha_hasta: string;
@@ -21,7 +29,7 @@ export interface AuditoriaFiltrosState {
 }
 
 export const AUDITORIA_FILTROS_VACIO: AuditoriaFiltrosState = {
-  tipo_evento: '', severidad: '', id_referencia: '', fecha_desde: '', fecha_hasta: '', actor: '', tipo_modelo: '',
+  tipo_evento: '', severidad: '', entidad_referencia: '', referencia: '', id_referencia: '', fecha_desde: '', fecha_hasta: '', actor: '', tipo_modelo: '',
 };
 
 // Optgroups del catálogo de tipos de evento (espeja el mockup RF-73).
@@ -54,11 +62,31 @@ interface Props {
   onChange: (v: AuditoriaFiltrosState) => void;
   onAplicar: () => void;
   onLimpiar: () => void;
+  /** Catálogo de la entidad elegida (lo carga la página). */
+  opcionesReferencia?: OpcionReferencia[];
 }
 
-export function AuditoriaFiltros({ value, onChange, onAplicar, onLimpiar }: Props) {
+/** AJF-13: hay texto en "Registro" que no es una opción de la lista. */
+export function referenciaSinResolver(v: AuditoriaFiltrosState): boolean {
+  return !!v.entidad_referencia && v.referencia.trim() !== '' && v.id_referencia === '';
+}
+
+export function AuditoriaFiltros({ value, onChange, onAplicar, onLimpiar, opcionesReferencia = [] }: Props) {
   const { t } = useT('prediction');
   const set = <K extends keyof AuditoriaFiltrosState>(k: K, v: AuditoriaFiltrosState[K]) => onChange({ ...value, [k]: v });
+  const [refTocada, setRefTocada] = useState(false);
+  const sinResolver = referenciaSinResolver(value);
+  const errorRef = refTocada && sinResolver ? t('referencia.sin_resolver') : undefined;
+  const opcionesCombo = opcionesReferencia.map((o) => ({ valor: etiquetaDeCatalogo(o.nombre, o.id), detalle: o.detalle }));
+  const resolverRef = () => {
+    const r = resolverCatalogo(value.referencia, opcionesReferencia);
+    if (r.estado === 'resuelto') onChange({ ...value, referencia: r.texto, id_referencia: String(r.id) });
+    setRefTocada(r.estado === 'sin_resolver');
+  };
+  const aplicar = () => {
+    if (sinResolver) { setRefTocada(true); return; }
+    onAplicar();
+  };
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', marginBottom: 'var(--s5)' }}>
@@ -100,9 +128,34 @@ export function AuditoriaFiltros({ value, onChange, onAplicar, onLimpiar }: Prop
         </div>
 
         <div>
-          <label style={LABEL} htmlFor="aud-ref">{t('auditoriafiltros.id_de_referencia')}</label>
-          <input id="aud-ref" style={INPUT} placeholder={t('auditoriafiltros.entidad_referenciada')} value={value.id_referencia} onChange={(e) => set('id_referencia', e.target.value)} />
+          <label style={LABEL} htmlFor="aud-entidad">{t('referencia.relacionado_con')}</label>
+          <select
+            id="aud-entidad" style={INPUT} value={value.entidad_referencia}
+            onChange={(e) => { setRefTocada(false); onChange({ ...value, entidad_referencia: e.target.value as EntidadReferencia | '', referencia: '', id_referencia: '' }); }}
+          >
+            <option value="">{t('auditoriafiltros.todos')}</option>
+            {ENTIDADES_REFERENCIA.map((en) => <option key={en} value={en}>{t(`referencia.opcion.${en}`)}</option>)}
+          </select>
         </div>
+
+        {value.entidad_referencia && (
+          <Combobox
+            id="aud-ref"
+            label={t('referencia.registro')}
+            opciones={opcionesCombo}
+            value={value.referencia}
+            onChange={(texto) => {
+              const id = idDeCatalogo(texto, opcionesReferencia);
+              onChange({ ...value, referencia: texto, id_referencia: id != null ? String(id) : '' });
+              if (id != null || !texto.trim()) setRefTocada(false);
+            }}
+            onBlur={resolverRef}
+            onEnter={resolverRef}
+            error={errorRef}
+            hint={t(`referencia.ayuda.${value.entidad_referencia}`)}
+            placeholder={t('referencia.registro_placeholder')}
+          />
+        )}
 
         <div>
           <label style={LABEL} htmlFor="aud-desde">{t('auditoriafiltros.desde')}</label>
@@ -116,9 +169,9 @@ export function AuditoriaFiltros({ value, onChange, onAplicar, onLimpiar }: Prop
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--s2)', justifyContent: 'flex-end' }}>
-        <Button variant="ghost" size="sm" onClick={onLimpiar}>
+        <Button variant="ghost" size="sm" onClick={() => { setRefTocada(false); onLimpiar(); }}>
           <X size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriafiltros.limpiar')}</Button>
-        <Button variant="secondary" size="sm" onClick={onAplicar}>
+        <Button variant="secondary" size="sm" onClick={aplicar}>
           <Filter size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriafiltros.aplicar')}</Button>
       </div>
     </div>
