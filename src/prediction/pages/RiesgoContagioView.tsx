@@ -7,6 +7,7 @@
 // | 2026-10-29 | Arekkazu | PEND-456 RF-68: datos reales de GET /prediccion/riesgo-contagio (sin contagioMock) |
 // | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68: NIVEL_TONO compartido con el historial |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 N-04 RF-68: sin cálculos se avisa en vez de quedar en 0 |
+// | 2026-11-02 | Arekkazu | RFC-021 RF-110 RF-68: mapa de propagación entre áreas |
 import React, { useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -22,6 +23,7 @@ import { TH, TD, TABLE_WRAP, THEAD_ROW, INPUT, LABEL } from '../components/table
 import { alActivarConTeclado } from '../../shared/lib/teclado';
 import { aLotes, NIVEL_TONO, type LoteContagio, type NivelContagio, type ResultadoRegla } from '../lib/contagio';
 import { useRiesgoContagio } from '../hooks/useMonitor';
+import { MapaPropagacion } from '../components/MapaPropagacion';
 
 const REGLA_TONO: Record<ResultadoRegla, Tono> = { CUMPLE: 'success', NO_CUMPLE: 'error', AJUSTE: 'warning' };
 const CARD: React.CSSProperties = { background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' };
@@ -226,6 +228,8 @@ export function RiesgoContagioView() {
             </div>
           ))}
         </div>
+
+        <MapaPropagacion lotes={todos} />
 
         <section aria-labelledby="ctg-alertas" style={{ marginBottom: 'var(--s5)' }}>
           <h2 id="ctg-alertas" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>
