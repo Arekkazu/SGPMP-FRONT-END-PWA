@@ -13,6 +13,7 @@
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
 // | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
 // | 2026-11-02 | Arekkazu | AJF-13 RF-73: entidad_referencia y nombre_referencia en la bitácora |
+// | 2026-11-02 | Arekkazu | AJF-10 RF-66: monitor paginado y filtros nuevos |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -363,6 +364,8 @@ export interface InferenciaMonitorResponse {
   id_alerta_generada: number | null;
   /** T-18: nombre de cada patología de `probabilidad_enfermedad`, por su id (backend). */
   nombres_patologias?: Record<string, string> | null;
+  /** AJF-10: inferencia de prueba (modelo en sombra): no genera alertas. */
+  modo_sombra?: boolean;
   /** Área actual del activo: con ella se pide lo que ve su cámara. */
   id_infraestructura?: number | null;
 }
@@ -629,4 +632,21 @@ export interface EstadoReentrenamiento {
   faltan: number;
   minimo_solicitud: number;
   minimo_reentrenamiento: number;
+}
+
+/** AJF-10: totales del periodo filtrado (no solo de la página). */
+export interface IndicadoresInferencias {
+  total: number;
+  en_riesgo: number;
+  con_alerta: number;
+  animales_distintos: number;
+}
+
+/** AJF-10: `GET /prediccion/inferencias/paginado`. */
+export interface InferenciasPaginadasResponse {
+  items: InferenciaMonitorResponse[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+  indicadores: IndicadoresInferencias;
 }

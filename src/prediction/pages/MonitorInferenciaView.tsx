@@ -6,7 +6,9 @@
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66: datos reales de GET /prediccion/inferencias (sin monitorMock) |
 // | 2026-10-31 | Arekkazu | TC-DIS-146 RF-53 a11y 1.3.1: la columna de detalle tiene encabezado |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
-import React, { useState } from 'react';
+// | 2026-11-02 | Arekkazu | AJF-10 RF-66: todas las inferencias paginadas con filtros, totales del periodo, alerta enlazada y marca de prueba |
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useT } from '../../shared/i18n/useT';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { Alert } from '../../shared/design-system/Alert';
@@ -20,7 +22,10 @@ import { TH, TD, TABLE_WRAP, THEAD_ROW } from '../components/tableStyles';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
 import { PARADIGMA_POR_TIPO, TIPO_MODELO_LABEL } from '../types';
 import { latenciaP95, ultimoPorUnidad, type Inferencia } from '../lib/inferencias';
-import { useInferencias } from '../hooks/useMonitor';
+import { useInferencias, useMonitorPaginado } from '../hooks/useMonitor';
+import { useActivosPrediccion } from '../hooks/useActivosPrediccion';
+import { MonitorFiltros, MONITOR_FILTROS_VACIO, aFiltrosApi, type MonitorFiltrosState } from '../components/MonitorFiltros';
+import { Paginacion } from '../components/Paginacion';
 
 type TabId = 'unidades' | 'feed';
 
@@ -60,6 +65,12 @@ export function MonitorInferenciaView() {
   const [sel, setSel] = useState<Inferencia | null>(null);
 
   const { inferencias, loading, error, cargar } = useInferencias();
+  // AJF-10: la pestaña de todas las inferencias pagina en el backend con filtros y totales del periodo.
+  const activos = useActivosPrediccion();
+  const [filtros, setFiltros] = useState<MonitorFiltrosState>(MONITOR_FILTROS_VACIO);
+  const pag = useMonitorPaginado();
+  const consultar = (f: MonitorFiltrosState = filtros, pagina = 1) => pag.cargar(aFiltrosApi(f), pagina);
+  useEffect(() => { if (tab === 'feed') void pag.cargar(aFiltrosApi(MONITOR_FILTROS_VACIO), 1); }, [tab, pag.cargar]); // eslint-disable-line react-hooks/exhaustive-deps
   const actuales = ultimoPorUnidad(inferencias);
   const contar = (f: (i: Inferencia) => boolean) => actuales.filter(f).length;
   const alertas = inferencias.filter((i) => i.alerta);
@@ -70,7 +81,8 @@ export function MonitorInferenciaView() {
     [t('monitor.excedidas'), formatearNumero(inferencias.filter((i) => (i.latenciaMs ?? 0) > 2000).length)],
     [t('monitor.ultima_inferencia'), inferencias[0]?.hora ?? '—'],
   ];
-  const cols = [t('monitor.col_id'), t('monitor.activo_area'), t('monitor.tipo_modelo'), t('monitor.nivel'), t('monitor.enfermedad'), t('monitor.col_confianza'), t('monitor.latencia'), t('monitor.col_indicadores'), t('monitor.col_hora'), ''];
+  const cols = [t('monitor.activo_area'), t('monitor.tipo_modelo'), t('monitor.nivel'), t('monitor.enfermedad'), t('monitor.col_confianza'), t('monitor.col_alerta'), t('monitor.col_indicadores'), t('monitor.col_hora'), ''];
+  const ind = pag.indicadores;
 
   return (
     <div style={{ minHeight: '100%' }}>
@@ -170,32 +182,62 @@ export function MonitorInferenciaView() {
             })}
           </div>
         ) : (
-          <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de inferencias recientes">
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead><tr style={THEAD_ROW}>{cols.map((h, k) => <th key={k} scope="col" style={TH}>{h || <span className="ds-sr-only">{t('acciones.ver_detalle', { ns: 'common' })}</span>}</th>)}</tr></thead>
-              <tbody>
-                {inferencias.map((i) => {
-                  const poblacional = PARADIGMA_POR_TIPO[i.tipoModelo] === 'POBLACIONAL';
-                  return (
-                    <tr key={i.id} className="ds-fila-accion" tabIndex={0} onClick={() => setSel(i)} onKeyDown={alActivarConTeclado(() => setSel(i))}>
-                      <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>{i.id}</td>
-                      <td style={TD}><div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{i.unidad}</div><div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{i.area}</div></td>
-                      <td style={{ ...TD, fontSize: '12px' }}>{TIPO_MODELO_LABEL[i.tipoModelo]}</td>
-                      <td style={TD}><Resultado i={i} /></td>
-                      <td style={{ ...TD, fontSize: '12px' }}>{poblacional ? <span style={{ color: 'var(--text-muted)' }}>{t('monitor.no_aplica')}</span> : i.enfermedad ?? '—'}</td>
-                      <td style={{ ...TD, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
-                        {poblacional ? (i.score != null ? formatearNumero(i.score, { maximumFractionDigits: 2 }) : '—') : i.confianza != null ? `${Math.round(i.confianza * 100)}%` : '—'}
-                      </td>
-                      <td style={{ ...TD, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>{i.latenciaMs != null ? `${i.latenciaMs} ms` : '—'}</td>
-                      <td style={TD}><Indicadores i={i} /></td>
-                      <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{i.hora}</td>
-                      <td style={{ ...TD, textAlign: 'right', color: 'var(--text-muted)' }}><ChevronRight size={16} aria-label={t('monitor.ver_detalle')} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <MonitorFiltros
+              activos={activos}
+              value={filtros}
+              onChange={setFiltros}
+              onAplicar={(v) => consultar(v ?? filtros, 1)}
+              onLimpiar={() => { setFiltros(MONITOR_FILTROS_VACIO); consultar(MONITOR_FILTROS_VACIO, 1); }}
+            />
+            {pag.error && <Alert variant={pag.error.status === 403 ? 'warning' : 'error'} title={t('monitor.error_titulo')} description={pag.error.message} style={{ marginBottom: 'var(--s4)' }} />}
+            <div aria-live="polite" style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s4)' }}>
+              <Kpi valor={ind ? formatearNumero(ind.total) : '—'} etiqueta={t('monitor.kpi_periodo')} />
+              <Kpi valor={ind ? formatearNumero(ind.en_riesgo) : '—'} etiqueta={t('monitor.kpi_en_riesgo')} />
+              <Kpi valor={ind ? formatearNumero(ind.con_alerta) : '—'} etiqueta={t('monitor.kpi_con_alerta')} />
+              <Kpi valor={ind ? formatearNumero(ind.animales_distintos) : '—'} etiqueta={t('monitor.kpi_animales')} />
+            </div>
+            {pag.loading && <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('monitor.cargando')}</p>}
+            {!pag.loading && !pag.error && pag.inferencias.length === 0 && (
+              <p role="status" style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('monitor.sin_resultados_filtros')}</p>
+            )}
+            {pag.inferencias.length > 0 && (
+              <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label={t('monitor.tabla_aria')}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead><tr style={THEAD_ROW}>{cols.map((h, k) => <th key={k} scope="col" style={TH}>{h || <span className="ds-sr-only">{t('acciones.ver_detalle', { ns: 'common' })}</span>}</th>)}</tr></thead>
+                  <tbody>
+                    {pag.inferencias.map((i) => {
+                      const poblacional = PARADIGMA_POR_TIPO[i.tipoModelo] === 'POBLACIONAL';
+                      return (
+                        <tr key={i.uuid} className="ds-fila-accion" tabIndex={0} onClick={() => setSel(i)} onKeyDown={alActivarConTeclado(() => setSel(i))}>
+                          <td style={TD}>
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{i.unidad}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{i.area}</div>
+                            {i.prueba && <Pill tono="info">{t('monitor.de_prueba')}</Pill>}
+                          </td>
+                          <td style={{ ...TD, fontSize: '12px' }}>{TIPO_MODELO_LABEL[i.tipoModelo]}</td>
+                          <td style={TD}><Resultado i={i} /></td>
+                          <td style={{ ...TD, fontSize: '12px' }}>{poblacional ? <span style={{ color: 'var(--text-muted)' }}>{t('monitor.no_aplica')}</span> : i.enfermedad ?? '—'}</td>
+                          <td style={{ ...TD, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+                            {poblacional ? (i.score != null ? formatearNumero(i.score, { maximumFractionDigits: 2 }) : '—') : i.confianza != null ? `${Math.round(i.confianza * 100)}%` : '—'}
+                          </td>
+                          <td style={{ ...TD, fontSize: '12px' }}>
+                            {i.idAlerta != null
+                              ? <Link to="/telemetria/alertas" onClick={(e) => e.stopPropagation()} style={{ color: 'var(--brand-600)' }}>{t('monitor.ver_alerta', { id: i.idAlerta })}</Link>
+                              : <span style={{ color: 'var(--text-muted)' }}>{t('monitor.sin_alerta_fila')}</span>}
+                          </td>
+                          <td style={TD}><Indicadores i={i} /></td>
+                          <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{i.hora}</td>
+                          <td style={{ ...TD, textAlign: 'right', color: 'var(--text-muted)' }}><ChevronRight size={16} aria-label={t('monitor.ver_detalle')} /></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <Paginacion pagina={pag.paginacion.pagina} totalPaginas={pag.paginacion.totalPaginas} totalRegistros={pag.paginacion.total} onCambiar={(p) => consultar(filtros, p)} />
+          </>
         )}
       </div>
 
