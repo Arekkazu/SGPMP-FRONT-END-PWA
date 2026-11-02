@@ -4,6 +4,7 @@
 // | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68/67: evento CONTAGIO del historial con nivel y probabilidad |
 // | 2026-11-02 | Arekkazu | RFC-021 C21.4 RF-68: exposición a focos de áreas vecinas en el desglose |
 // | 2026-11-02 | Arekkazu | RFC-021 RF-110 RF-68: mapa de propagación (nivel por área, focos y pasos) |
+// | 2026-11-02 | Arekkazu | RF-68: la fila de exposición no muestra códigos de RFC |
 import type { Tono } from '../components/Pill';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import type { RiesgoContagioMonitorResponse } from '../types';
@@ -103,7 +104,7 @@ function reglasDe(r: RiesgoContagioMonitorResponse): ReglaAplicada[] {
     reglas.push({
       regla: 'Exposición a áreas vecinas',
       valor: `P base ${exposicion.pBase} · Fv ${exposicion.fv} · ${exposicion.focos.map((f) => `área ${f.idArea} por ${f.via} (w ${f.peso})`).join(', ')}`,
-      resultado: 'AJUSTE', origen: 'RFC-021 · C21.4',
+      resultado: 'AJUSTE', origen: 'Áreas vecinas',
     });
   }
   for (const motivo of texto(r.detalle_calculo?.motivos_degradacion)) {

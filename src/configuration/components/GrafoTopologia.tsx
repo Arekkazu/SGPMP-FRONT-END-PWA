@@ -1,9 +1,11 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | RFC-021 RF-110: grafo de las áreas de la finca y sus aristas de transmisión |
+// | 2026-11-02 | Arekkazu | RF-110: botón para editar cada relación |
 import React, { useId } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
+import { Button } from '../../shared/design-system/Button';
 
 export type NivelNodo = 'BAJO' | 'MEDIO' | 'ALTO';
 export interface NodoGrafo { id: number; nombre: string; activo: boolean; nivel?: NivelNodo | null; detalle?: string; foco?: boolean }
@@ -22,7 +24,9 @@ export function posiciones(ids: number[]): Map<number, { x: number; y: number }>
   }));
 }
 
-export function GrafoTopologia({ nodos, aristas, titulo }: { nodos: NodoGrafo[]; aristas: AristaGrafo[]; titulo: string }) {
+export function GrafoTopologia<A extends AristaGrafo>({ nodos, aristas, titulo, onEditar }: {
+  nodos: NodoGrafo[]; aristas: A[]; titulo: string; onEditar?: (arista: A) => void;
+}) {
   const { t } = useT('configuration');
   const uid = useId().replace(/:/g, '');
   const pos = posiciones(nodos.map((n) => n.id));
@@ -81,7 +85,12 @@ export function GrafoTopologia({ nodos, aristas, titulo }: { nodos: NodoGrafo[];
         })}
       </svg>
       <ul style={{ listStyle: 'none', padding: 0, margin: 'var(--s3) 0 0', display: 'flex', flexDirection: 'column', gap: 'var(--s1)', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-        {visibles.length ? visibles.map((a) => <li key={a.id}>{relacion(a)}</li>) : <li>{t('topologia.sin_aristas')}</li>}
+        {visibles.length ? visibles.map((a) => (
+          <li key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap' }}>
+            {relacion(a)}
+            {onEditar && <Button variant="ghost" size="sm" onClick={() => onEditar(a)} aria-label={t('topologia.editar_aria', { relacion: relacion(a) })}>{t('topologia.editar')}</Button>}
+          </li>
+        )) : <li>{t('topologia.sin_aristas')}</li>}
       </ul>
     </div>
   );
