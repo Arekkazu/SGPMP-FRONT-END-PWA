@@ -1,3 +1,9 @@
+## [1.4.0-rc.18](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.17...v1.4.0-rc.18) (2026-11-02)
+
+### Features
+
+* **rfc-021:** RF-110 grafo de la topología sanitaria y mapa de propagación del contagio (RF-68) ([b00d462](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b00d46275f0ff23f91fe9793d29c8f734176b903))
+
 ## [1.4.0-rc.17](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.16...v1.4.0-rc.17) (2026-11-02)
 
 ### Features
