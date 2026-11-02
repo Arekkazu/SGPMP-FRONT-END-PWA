@@ -3,6 +3,7 @@
 // | 2026-10-29 | Arekkazu | PEND-456 RF-68: lotes de contagio desde GET /prediccion/riesgo-contagio (antes contagioMock) |
 // | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68/67: evento CONTAGIO del historial con nivel y probabilidad |
 // | 2026-11-02 | Arekkazu | RFC-021 C21.4 RF-68: exposición a focos de áreas vecinas en el desglose |
+// | 2026-11-02 | Arekkazu | RFC-021 RF-110 RF-68: mapa de propagación (nivel por área, focos y pasos) |
 import type { Tono } from '../components/Pill';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import type { RiesgoContagioMonitorResponse } from '../types';
@@ -25,6 +26,9 @@ export interface LoteContagio {
   id: number;
   nombre: string;
   area: string;
+  /** Área productiva del cálculo (snapshot `id_area_productiva`) y su finca, para el mapa. */
+  idArea: number | null;
+  finca: string;
   especie: string;
   fuenteFs: FuenteFs | null;
   probabilidad: number;
@@ -56,6 +60,7 @@ export function contagioDelEvento(payload: Record<string, unknown> | null): { pr
   return { probabilidad: p, nivel: typeof n === 'number' ? NIVELES[n] ?? null : null };
 }
 const texto = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
+const numero = (v: unknown): number | null => (typeof v === 'number' ? v : null);
 
 /** El backend guarda `exposicion` vacío cuando el área no tiene focos vecinos. */
 export function exposicionDe(r: RiesgoContagioMonitorResponse): Exposicion | null {
@@ -131,6 +136,8 @@ export function aLotes(calculos: RiesgoContagioMonitorResponse[]): LoteContagio[
       id: r.id_activo_biologico,
       nombre: r.identificador_activo ?? `#${r.id_activo_biologico}`,
       area: `${r.nombre_area} · ${r.nombre_finca}`,
+      idArea: numero(r.detalle_calculo?.id_area_productiva),
+      finca: r.nombre_finca,
       especie: r.especie ?? '—',
       fuenteFs: fuente === 'CONTEO_INDIVIDUAL' || fuente === 'SCORE_POBLACIONAL' ? fuente : null,
       probabilidad: r.probabilidad_contagio,
@@ -149,4 +156,24 @@ export function aLotes(calculos: RiesgoContagioMonitorResponse[]): LoteContagio[
       exposicion: exposicionDe(r),
     };
   }).sort((a, b) => b.probabilidad - a.probabilidad);
+}
+
+export interface NodoContagio { id: number; nombre: string; activo: boolean; nivel: NivelContagio | null; probabilidad: number | null; foco: boolean }
+/** Un salto de la última propagación: el foco `desde` subió el riesgo del área `hacia`. */
+export interface PasoPropagacion { desde: number; hacia: number; via: string; pBase: number; probabilidad: number; fecha: string }
+
+const ORDEN: Record<NivelContagio, number> = { BAJO: 0, MEDIO: 1, ALTO: 2 };
+
+/** RFC-021: cada área toma el peor lote de su último cálculo; es foco si otra área la cita como foco. */
+export function mapaPropagacion(lotes: LoteContagio[], areas: { id: number; nombre: string; activo: boolean }[]) {
+  const pasos: PasoPropagacion[] = lotes.flatMap((l) => (l.exposicion && l.idArea != null
+    ? l.exposicion.focos.map((f) => ({ desde: f.idArea, hacia: l.idArea as number, via: f.via, pBase: l.exposicion!.pBase, probabilidad: l.probabilidad, fecha: l.fecha }))
+    : []));
+  const focos = new Set(pasos.map((p) => p.desde));
+  const rango = (l: LoteContagio) => (l.nivel ? ORDEN[l.nivel] : -1);
+  const nodos: NodoContagio[] = areas.map((a) => {
+    const [peor] = lotes.filter((l) => l.idArea === a.id).sort((x, y) => rango(y) - rango(x) || y.probabilidad - x.probabilidad);
+    return { ...a, nivel: peor?.nivel ?? null, probabilidad: peor?.probabilidad ?? null, foco: focos.has(a.id) };
+  });
+  return { nodos, pasos };
 }

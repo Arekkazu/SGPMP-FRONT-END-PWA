@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-20 | Arekkazu | FE-06 RF-20: varias especies del mismo grupo, nivel_criticidad y capacidad derivada (RFC-012/016) |
+// | 2026-11-02 | Arekkazu | RFC-021 RF-110: grafo de la topología sanitaria de toda la finca |
 import React, { useEffect, useId, useState } from 'react';
 import { formatearFecha, formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -26,6 +27,8 @@ import { NIVELES_CRITICIDAD, type EspecieResponse, type FincaResponse, type Infr
 import type { ApiError } from '../../shared/api/errors';
 import { iconoTipoArea } from '../iconos';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
+import { useAristasFinca } from '../hooks/useAristasFinca';
+import { GrafoTopologia } from './GrafoTopologia';
 import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -503,11 +506,14 @@ export function InfraestructuraSection() {
   const puedeCrear  = usePermission(10, 1);
   const puedeEditar = usePermission(10, 3);
   const puedeDesact = usePermission(10, 4);
+  // RF-110: recurso 87 topologia_sanitaria (migración 33ae7f41e560 del backend).
+  const puedeVerTopologia = usePermission(87, 2);
 
   const { fincas, loading: loadingFincas, cargar: cargarFincas } = useFincas();
   const { infraestructuras, loading, saving, error, saveError, cargar, registrar, editar, desactivar, reactivar } = useInfraestructuras();
 
   const [fincaSeleccionada, setFincaSeleccionada] = useState<FincaResponse | null>(null);
+  const topologia = useAristasFinca(puedeVerTopologia && fincaSeleccionada ? fincaSeleccionada.id_finca : null);
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
 
@@ -698,6 +704,20 @@ export function InfraestructuraSection() {
             )}
             <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
             </>
+          )}
+
+          {puedeVerTopologia && !loading && infraestructuras.length > 0 && (
+            <section aria-labelledby="topologia-finca" style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)', marginTop: 'var(--s5)' }}>
+              <h3 id="topologia-finca" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('topologia.titulo_finca')}</h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s1) 0 var(--s3)' }}>{t('topologia.descripcion_finca')}</p>
+              {topologia.error
+                ? <Alert variant="error" title={t('topologia.error')} description={topologia.error.message} />
+                : <GrafoTopologia
+                    titulo={t('topologia.titulo_finca')}
+                    nodos={infraestructuras.map((i) => ({ id: i.id_infraestructura, nombre: i.nombre_infraestructura, activo: i.es_activo, detalle: i.tipo_area }))}
+                    aristas={topologia.aristas}
+                  />}
+            </section>
           )}
 
           {/* Modals */}
