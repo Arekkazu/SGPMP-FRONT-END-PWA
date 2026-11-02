@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área |
 // | 2026-11-02 | Arekkazu | RF-66: miniatura ampliable, conteo frente al inventario y aviso |
+// | 2026-11-02 | Arekkazu | RF-66: nota que explica el número de cada caja |
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -43,6 +44,8 @@ describe('CapturaCamara (RF-66)', () => {
     fireEvent.click(await screen.findByRole('button', { name: /ver la imagen completa/i }));
     expect(container.querySelector('dialog')?.hasAttribute('open')).toBe(true);
     expect(screen.getByText(/la cámara ve ~6 de 15 registrados/i)).toBeTruthy();
+    // La nota va bajo la miniatura y bajo la imagen completa.
+    expect(screen.getAllByText(/cada número identifica a un animal/i)).toHaveLength(2);
     expect(screen.queryByRole('status')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /cerrar/i }));
     expect(container.querySelector('dialog')?.hasAttribute('open')).toBe(false);

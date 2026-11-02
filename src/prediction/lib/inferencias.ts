@@ -4,6 +4,7 @@
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo 13.9 RF-66/RF-68: id del activo y fecha ISO para unir con contagio |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
 // | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
+// | 2026-11-02 | Arekkazu | RF-66: quita paquete y eventoEdge, que nunca se llenaban |
 import { formatearFechaHora, formatearHora } from '../../shared/i18n/formato';
 import i18n from '../../shared/i18n';
 import { PARADIGMA_POR_TIPO, type InferenciaMonitorResponse, type ModoEjecucion, type TipoModelo } from '../types';
@@ -43,8 +44,6 @@ export interface Inferencia {
   faltantes?: string[];
   contextoIncompleto?: boolean;
   hibrido?: { syncMs: number; nivelServidor: number; discrepancia: boolean };
-  paquete?: string;
-  eventoEdge?: string;
   alerta?: string;
   nota?: string;
   /** Área (para la cámara) y fin de la ventana en ISO, para pedir la captura de esa ventana. */
