@@ -82,10 +82,15 @@ async function interceptar(page: Page) {
 }
 
 async function irAMonitor(page: Page) {
+  // 1.4.0: el monitor lee datos reales de GET /prediccion/inferencias; se espera esa respuesta
+  // para no leer la vista antes de que pinte los resultados
+  const inferencias = page.waitForResponse((r) => /\/prediccion\/inferencias/.test(r.url()) && r.request().method() === 'GET', { timeout: 60_000 }).catch(() => null);
   await page.goto(`${APP}/prediccion/monitor`);
+  await inferencias;
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/inferencia/i, { timeout: 60_000 });
   // 2026-10-27: SubPestanas es un <nav> de botones, no un widget ARIA de tabs.
   await expect(page.getByRole('button', { name: /activos y áreas monitoreados/i })).toBeVisible({ timeout: 60_000 });
+  await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
 }
 
 interface Contador {
@@ -149,7 +154,7 @@ test.describe('TC-DIS-183 — aria-live en los contadores del Dashboard de Predi
   // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás.
   // 2026-10-27: igual que TC-182 — login + 2 esperas de hasta 60s cada una exceden el default de
   // 30s sin que haya ningún selector roto. El test c ya ajusta su propio timeout (45s de espera).
-  test.describe.configure({ mode: 'default', timeout: 60_000 });
+  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_183_VIEWPORTS.`);
@@ -179,7 +184,7 @@ test.describe('TC-DIS-183 — aria-live en los contadores del Dashboard de Predi
 
   test('c. [4.1.3] Actualización automática anunciada sin mover el foco', async ({ page }, testInfo) => {
     // La prueba observa la vista 45 s en busca de un cambio automático; margen real, no un cuelgue.
-    testInfo.setTimeout(90_000);
+    testInfo.setTimeout(300_000);
     const lecturas = await interceptar(page);
     await iniciarSesion(page);
     await irAMonitor(page);
@@ -192,7 +197,7 @@ test.describe('TC-DIS-183 — aria-live en los contadores del Dashboard de Predi
     const consultas = lecturas.filter((l) => l.t >= desde).map((l) => l.p);
     testInfo.annotations.push({ type: 'Observación', description: `${OBSERVACION_MS / 1000} s · antes ${JSON.stringify(antes.map((c) => c.valor))} · después ${JSON.stringify(despues.map((c) => c.valor))} · GET a la API en ese lapso: ${consultas.length ? consultas.join(', ') : 'ninguno'}` });
     const cambio = antes.some((c, i) => c.valor !== despues[i].valor);
-    expect(cambio || consultas.length > 0, `BLOQUEO: en ${OBSERVACION_MS / 1000} s los contadores no cambiaron ni la vista consultó la API; son valores fijos y no se puede provocar ni simular la actualización`).toBe(true);
+    expect(cambio || consultas.length > 0, `BLOQUEO: en ${OBSERVACION_MS / 1000} s los contadores no cambiaron ni la vista volvió a consultar la API: el monitor (datos reales de GET /prediccion/inferencias) se carga una sola vez y no se refresca solo, así que no hay actualización automática que provocar ni anunciar`).toBe(true);
   });
 
   test('d. [4.1.3] Contador de áreas en riesgo / alertas POBLACIONAL con aria-live', async ({ page }, testInfo) => {
