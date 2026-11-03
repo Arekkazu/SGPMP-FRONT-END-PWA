@@ -1,3 +1,11 @@
+## [1.4.0-rc.27](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.26...v1.4.0-rc.27) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-58:** el monitoreo muestra la unidad sin sensores y avisa al usuario sin unidades asignadas ([58bef34](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/58bef3490793f5cd3a2387292d5f617580cdcb67)), closes [Arekkazu/SGPMP-FRONT-END-PWA#470](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/470) [Arekkazu/SGPMP-FRONT-END-PWA#472](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/472)
+* **rf-64,rf-67,rf-68,rf-69,rf-72,rf-73:** hallazgos de la re-prueba M04 ronda 2 en Predicción ([487a848](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/487a848d04929d834aec513501a2dee20fef1b6f))
+* **rf-66:** la ficha de Estado sanitario avisa cuando la predicción es de un modelo en prueba ([76d2d6c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/76d2d6c5d4d45b5b596d512c8ab32c9cb78a8624))
+
 ## [1.4.0-rc.26](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.25...v1.4.0-rc.26) (2026-11-03)
 
 ### Bug Fixes
