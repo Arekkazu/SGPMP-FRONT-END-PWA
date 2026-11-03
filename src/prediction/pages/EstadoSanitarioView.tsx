@@ -6,6 +6,7 @@
 // | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
 // | 2026-11-02 | Arekkazu | RF-66/RF-68: últimas de cada animal o lote (por_activo) para que ninguno desaparezca |
 // | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU03 H-06 RF-68: «Ver por qué» explica el riesgo aunque los factores propios sumen 0 |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU03 H-05 RF-66: la ficha avisa cuando la predicción es de un modelo en prueba |
 import React, { useEffect, useMemo, useState } from 'react';
 import { HeartPulse, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -104,6 +105,11 @@ function Ficha({ lote, puedeEvaluar, online, onEvaluar, onPorQue }: {
           </div>
         )}
       </div>
+
+      {/* QA-M04 ronda 2 CU03 H-05: la predicción de un modelo en prueba no se presenta como diagnóstico validado. */}
+      {a?.prueba && (
+        <p role="note" style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--sem-warning)' }}>{t('estadosanitario.modelo_en_prueba')}</p>
+      )}
 
       {a ? (
         <>
