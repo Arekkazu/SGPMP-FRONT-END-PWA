@@ -3,6 +3,7 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-73: pestaña por RF de origen, búsqueda en la página y aviso de evidencia verificable |
 // | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
 // | 2026-11-02 | Arekkazu | AJF-13 RF-73: "Relacionado con" + "Registro" por nombre en vez del ID de referencia libre |
+// | 2026-11-03 | Claude   | RF-73: sin pestaña ni búsqueda por RF de origen |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ClipboardList, RefreshCw, Download, ListChecks, AlertOctagon, Layers, ShieldCheck } from 'lucide-react';
@@ -23,9 +24,8 @@ import { RECURSO_AUDITORIA, ACCION_R, ACCION_E } from '../rbac';
 import type { ListarAuditoriaFiltros, EventoAuditoriaM04Response } from '../types';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 import { INPUT, LABEL } from '../components/tableStyles';
-import { RF_ORIGEN, rfDeEvento } from '../lib/rfOrigen';
 
-type TabId = 'todos' | 'criticos' | 'tipo' | 'rf';
+type TabId = 'todos' | 'criticos' | 'tipo';
 
 function Kpi({ icon, valor, etiqueta, color }: { icon: React.ReactNode; valor: number | null; etiqueta: string; color: string }) {
   return (
@@ -90,7 +90,7 @@ export function AuditoriaView() {
   const buscados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     if (!q) return eventos;
-    return eventos.filter((e) => [e.tipo_evento, e.id_referencia, e.entidad_referencia, etiquetaReferencia(e), e.id_sistema, e.codigo_error, e.descripcion_error, e.correlacion_id, rfDeEvento(e.tipo_evento)]
+    return eventos.filter((e) => [e.tipo_evento, e.id_referencia, e.entidad_referencia, etiquetaReferencia(e), e.id_sistema, e.codigo_error, e.descripcion_error, e.correlacion_id]
       .some((c) => c?.toLowerCase().includes(q)));
   }, [eventos, busqueda]);
 
@@ -98,12 +98,6 @@ export function AuditoriaView() {
     if (tab === 'criticos') return buscados.filter((e) => e.severidad_evento === 'ERROR' || e.severidad_evento === 'CRITICAL');
     return buscados;
   }, [buscados, tab]);
-
-  const porRf = useMemo(() => {
-    const map = new Map<string, number>();
-    buscados.forEach((e) => { const rf = rfDeEvento(e.tipo_evento) ?? '—'; map.set(rf, (map.get(rf) ?? 0) + 1); });
-    return [...RF_ORIGEN, '—'].filter((rf) => map.has(rf)).map((rf) => [rf, map.get(rf) ?? 0] as const);
-  }, [buscados]);
 
   const correlacionados = useMemo(() => {
     if (!sel?.correlacion_id) return [];
@@ -126,7 +120,6 @@ export function AuditoriaView() {
     { id: 'todos', label: t('auditoriaview.todos_los_eventos') },
     { id: 'criticos', label: t('auditoriaview.eventos_criticos'), badge: criticosCount },
     { id: 'tipo', label: t('auditoriaview.por_tipo_de_evento') },
-    { id: 'rf', label: t('auditoriaview.por_rf_origen') },
   ];
 
   return (
@@ -199,19 +192,7 @@ export function AuditoriaView() {
           })}
         </div>
 
-        {tab === 'rf' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-            {porRf.length === 0 && <div style={{ padding: 'var(--page-pad)', textAlign: 'center', color: 'var(--text-muted)' }}>{t('auditoriaview.sin_eventos_en_esta_pagina')}</div>}
-            {porRf.map(([rf, count]) => (
-              <div key={rf} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--s3) var(--s4)', background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)' }}>{rf}</span>{rf !== '—' && <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}> · {t(`auditoriaview.rf_${rf.replace('-', '')}`)}</span>}
-                </span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-secondary)' }}>{count}</span>
-              </div>
-            ))}
-          </div>
-        ) : tab === 'tipo' ? (
+        {tab === 'tipo' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
             {porTipo.length === 0 && <div style={{ padding: 'var(--page-pad)', textAlign: 'center', color: 'var(--text-muted)' }}>{t('auditoriaview.sin_eventos_en_esta_pagina')}</div>}
             {porTipo.map(([tipo, count]) => (

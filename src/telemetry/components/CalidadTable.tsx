@@ -4,6 +4,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre; encabezado de la columna de acción |
 // | 2026-10-31 | Arekkazu | TC-DIS-146 RF-53 a11y 1.3.1: la columna de detalle tiene encabezado |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
+// | 2026-11-03 | Claude   | RF-62: columna «Índice» renombrada a «Calidad (0-100)» |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, ShieldCheck, Check, X } from 'lucide-react';
@@ -14,7 +15,7 @@ import { fechaHoraCaptura, valorConUnidad } from '../lib/sensorEscala';
 import type { TelemetriaCalidadSchema } from '../types';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
 
-const COLS = ['Lectura', 'Sensor', 'Índice', 'Clasificación', 'Apto IA', 'Apto NIC41', 'Flags', 'Evaluada', ''];
+const COLS = ['Lectura', 'Sensor', 'Calidad (0-100)', 'Clasificación', 'Apto IA', 'Apto NIC41', 'Flags', 'Evaluada', ''];
 
 /** «Temperatura ambiental · 25 °C». */
 export function lecturaCalidad(c: TelemetriaCalidadSchema): string {
