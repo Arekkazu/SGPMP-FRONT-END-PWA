@@ -8,6 +8,7 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
 // | 2026-11-02 | Arekkazu | AJF-08 RF-69: rótulos de métricas legibles; ancho del rótulo para que no se parta |
+// | 2026-11-03 | Arekkazu | QA-M04 RF-69: el animal de la versión por su identificador, no «Animal #49» |
 import React from 'react';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -124,7 +125,7 @@ export function ModelosTable({ modelos, loading, onVer }: Props) {
                 {etiquetaTipoModelo(m.tipo_modelo)}{m.componente && ` · ${etiquetaComponente(m.componente)}`}
                 {/* RFC-010: el modelo INDIVIDUAL es de un animal; el sintético solo corre en sombra. */}
                 {m.id_activo_biologico != null && (
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('modelostable.activo_biologico', { id: m.id_activo_biologico })}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('modelostable.activo_biologico', { nombre: m.identificador_activo ?? `#${m.id_activo_biologico}` })}</div>
                 )}
                 {m.fuente_datos && m.fuente_datos !== 'REAL' && (
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t(`modelostable.fuente.${m.fuente_datos}`)}</div>
