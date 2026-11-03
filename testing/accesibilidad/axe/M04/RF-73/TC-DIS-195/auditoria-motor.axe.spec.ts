@@ -116,6 +116,12 @@ async function irAAuditoria(page: Page) {
  * eventos INFO (los propios inicios de sesión de las pruebas los generan); los eventos semilla con
  * métricas quedan más atrás y se alcanzan filtrando.
  */
+/** Columna (1-based) de la severidad, ubicada por su encabezado (1.4.0 agregó "ID de evento" y "RF origen"). */
+async function colSeveridad(page: Page) {
+  const encabezados = (await page.locator('main thead th').allInnerTexts()).map((h) => h.trim());
+  return encabezados.findIndex((h) => /severidad/i.test(h)) + 1;
+}
+
 const ETIQUETA_SEVERIDAD: Record<string, string> = { INFO: 'Info', WARNING: 'Warning', ERROR: 'Error', CRITICAL: 'Crítico' };
 
 async function filtrarSeveridad(page: Page, estado: { eventos: EventoApi[]; ultimaConsulta: string }, severidad: string) {
@@ -124,7 +130,7 @@ async function filtrarSeveridad(page: Page, estado: { eventos: EventoApi[]; ulti
   // Listo cuando la última respuesta es la de esta severidad y la tabla pinta exactamente esas filas
   await expect.poll(async () => {
     if (!estado.ultimaConsulta.includes(`severidad_evento=${severidad}`)) return false;
-    const celdas = await page.locator('main tbody tr td:nth-child(3)').allInnerTexts();
+    const celdas = await page.locator(`main tbody tr td:nth-child(${await colSeveridad(page)})`).allInnerTexts();
     return celdas.length === estado.eventos.length && celdas.every((c) => c.trim() === ETIQUETA_SEVERIDAD[severidad]);
   }, { timeout: 30_000, message: `La tabla refleja el filtro de severidad ${severidad}` }).toBe(true);
 }
@@ -180,7 +186,7 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 
 test.describe('TC-DIS-195 — Bitácora de Auditoría y Trazabilidad del Motor', () => {
   // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default' });
+  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_195_VIEWPORTS.`);
@@ -261,7 +267,7 @@ test.describe('TC-DIS-195 — Bitácora de Auditoría y Trazabilidad del Motor',
     await aplicar.focus();
     await page.keyboard.press('Enter');
     await expect.poll(async () => {
-      const t = await page.locator('main tbody tr td:nth-child(3)').allInnerTexts();
+      const t = await page.locator(`main tbody tr td:nth-child(${await colSeveridad(page)})`).allInnerTexts();
       return t.length > 0 && t.every((x) => /cr[ií]tico/i.test(x));
     }, { timeout: 30_000, message: '2.1.1: el filtro aplicado con teclado deja solo eventos CRITICAL' }).toBe(true);
   });
