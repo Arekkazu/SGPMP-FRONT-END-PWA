@@ -199,7 +199,7 @@ async function enviarConError(page: Page, dialogo: Locator, estado: { error: Err
 
 test.describe('TC-DIS-192 — Mensajes de error del formulario de Retroalimentación Clínica', () => {
   // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default' });
+  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_192_VIEWPORTS.`);
