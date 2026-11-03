@@ -1,3 +1,11 @@
+## [1.4.0-rc.28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.27...v1.4.0-rc.28) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-57,rf-59,rf-61,rf-62:** filtros alineados: el combobox se ve como los select de la fila ([5cb237d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5cb237d3dcc56d2cb93f499ea8b0cc2d5f8299ed))
+* **rf-63:** la bitácora IoT filtra por tipo de evento con nombres claros y sin «RF de origen» ([a8e7f8c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a8e7f8c5d83c12e110360bdc92bb6d30747984e8))
+* **rf-67:** el activo o lote del Historial se escribe y autocompleta ([814b688](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/814b68843651f6fe64effa0310264b306eaf7b55)), closes [#5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/5)
+
 ## [1.4.0-rc.27](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.26...v1.4.0-rc.27) (2026-11-03)
 
 ### Bug Fixes
