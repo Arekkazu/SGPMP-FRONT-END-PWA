@@ -20,6 +20,9 @@
  *
  * Herramientas: @axe-core/playwright en los 3 viewports + Lighthouse snapshot solo en escritorio.
  */
+// | Fecha      | Nombre        | Que se hizo                                                          |
+// |------------|---------------|------------------------------------------------------------------------|
+// | 2026-11-02 | Laura032005   | M03 RF-60: rótulos de BUFFER_ACTIVO/EN_MANTENIMIENTO actualizados (RFC-020) |
 import { expect, test, type BrowserContext, type Page, type Route } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
@@ -33,8 +36,10 @@ const TITULO = 'Estado de Dispositivos IoT';
 const PASOS_LIGHTHOUSE = ['vista-inicial', 'detalle-dispositivo', 'modal-mantenimiento'];
 
 // Texto que muestra EstadoDispositivoPill por cada estado del ciclo de vida
+// 2026-11-02 (RFC-020 Fase 7, commit 6491568): BUFFER_ACTIVO y EN_MANTENIMIENTO cambiaron de
+// rótulo ("Modo buffer" → "Modo offline"; "Mantenimiento" → "En mantenimiento").
 const ESTADO_TEXTO: Record<string, string> = {
-  ACTIVO: 'Activo', 'SIN_SEÑAL': 'Sin señal', BUFFER_ACTIVO: 'Modo buffer', INACTIVO: 'Inactivo', EN_MANTENIMIENTO: 'Mantenimiento',
+  ACTIVO: 'Activo', 'SIN_SEÑAL': 'Sin señal', BUFFER_ACTIVO: 'Modo offline', INACTIVO: 'Inactivo', EN_MANTENIMIENTO: 'En mantenimiento',
 };
 // FALLO_CONECTIVIDAD es el tipo con que el backend registra DISPOSITIVO_SIN_SEÑAL / DISPOSITIVO_INACTIVO
 const ALERTAS_CRITERIO = [/SIN_SE[ÑN]AL/i, /INACTIVO/i, /SE[ÑN]AL_DEGRADADA/i, /BATERIA_CRITICA/i, /FALLO_CONECTIVIDAD/i];
