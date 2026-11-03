@@ -15,6 +15,7 @@
 // | 2026-11-02 | Arekkazu | AJF-13 RF-73: entidad_referencia y nombre_referencia en la bitácora |
 // | 2026-11-02 | Arekkazu | AJF-10 RF-66: monitor paginado y filtros nuevos |
 // | 2026-11-02 | Arekkazu | AJF-14 RF-71: solicitud por animal y procesos de reentrenamiento |
+// | 2026-11-03 | Arekkazu | RF-72: bandeja de inferencias por evaluar (antes datos de ejemplo) |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -696,4 +697,44 @@ export interface ListaProcesosReentrenamiento {
   total: number;
   pagina: number;
   por_pagina: number;
+}
+
+// ─── RF-72: bandeja de retroalimentación ─────────────────────────────────────
+export type EstadoEvaluacion = 'PENDIENTE' | 'EVALUADO' | 'VENTANA_VENCIDA';
+
+/** GET /prediccion/retroalimentacion/bandeja: una inferencia que el veterinario puede evaluar. */
+export interface InferenciaPorEvaluar {
+  id_resultado_inferencia: string;
+  id_activo_biologico: number;
+  identificador_activo: string | null;
+  especie: string | null;
+  nombre_finca: string | null;
+  nombre_area: string | null;
+  nivel_riesgo: number;
+  id_patologia: number | null;
+  nombre_patologia: string | null;
+  confianza_global: string | number;
+  fecha_inferencia: string;
+  tiene_alerta_generada: boolean;
+  modo_sombra: boolean;
+  estado_evaluacion: EstadoEvaluacion;
+  fecha_limite: string;
+  numero_evaluaciones: number;
+  evaluada_por_mi: boolean;
+  activo_en_baja: boolean;
+  puede_evaluar: boolean;
+}
+
+export interface BandejaRetroalimentacionResponse {
+  items: InferenciaPorEvaluar[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+  ventana_dias: number;
+  indicadores: { pendientes: number; evaluadas: number; vencidas: number };
+}
+
+export interface FiltrosBandejaRetro {
+  estado_evaluacion?: EstadoEvaluacion;
+  nivel_riesgo?: number;
 }
