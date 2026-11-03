@@ -4,6 +4,7 @@
 // | 2026-10-29 | Arekkazu | TC-DIS-164 RF-62: trazabilidad estadística de cada flag (media, desviación, drift) con etiqueta |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
 // | 2026-11-02 | Arekkazu | AJF-06 RF-62: parámetros aplicados legibles con unidad, objetos como sub-lista y "Sin problemas detectados" |
+// | 2026-11-03 | Claude   | RF-62: «Índice: 60» pasa a «Calidad 60/100» con qué significa |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { RefreshCcw } from 'lucide-react';
@@ -131,9 +132,12 @@ export function CalidadDetalleModal({ item, puedeEjecutar, online, saving, saveE
       <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center', marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>
         <ClasificacionCalidadPill clasificacion={item.clasificacion_calidad} />
         {item.indice_calidad != null && (
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Índice: {item.indice_calidad}</span>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('calidaddetallemodal.puntaje', { valor: item.indice_calidad })}</span>
         )}
       </div>
+      {item.indice_calidad != null && (
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'calc(-1 * var(--s2)) 0 var(--s4)' }}>{t('calidaddetallemodal.puntaje_ayuda')}</p>
+      )}
 
       <Fila label={t('calidaddetallemodal.sensor')}>{item.nombre_sensor ?? `#${item.id_sensor}`}</Fila>
       <Fila label={t('calidaddetallemodal.evaluada')}>{fechaHoraCaptura(item.timestamp_evaluacion)}</Fila>
