@@ -1,3 +1,14 @@
+## [1.4.0-rc.25](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.24...v1.4.0-rc.25) (2026-11-03)
+
+### Features
+
+* **rf-62:** calidad de vision con las observaciones evaluadas por el backend ([eb7b883](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/eb7b883af9f4b2a05164262aba412de9c133bfc7))
+* **rf-72:** retroalimentacion clinica con la bandeja real del backend ([402c622](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/402c6227a8b3a293eb832f17bdd91a0b1826a349))
+
+### Bug Fixes
+
+* **rf-59:** lista de animales sin barra final y especie elegida del catalogo ([0ed0bd8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0ed0bd89d5cfd0884d6da8ad702996547a8281be))
+
 ## [1.4.0-rc.24](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.23...v1.4.0-rc.24) (2026-11-03)
 
 ### Features
