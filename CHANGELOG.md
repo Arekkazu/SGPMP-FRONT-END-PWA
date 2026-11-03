@@ -1,3 +1,9 @@
+## [1.4.0-rc.30](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.29...v1.4.0-rc.30) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-66,rf-69:** sin aviso de «modelo en prueba» en la ficha y el animal de la versión por su identificador ([7301353](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/73013534a1bcc89b2d7b2608410800dd36fa925e))
+
 ## [1.4.0-rc.29](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.28...v1.4.0-rc.29) (2026-11-03)
 
 ### Bug Fixes
