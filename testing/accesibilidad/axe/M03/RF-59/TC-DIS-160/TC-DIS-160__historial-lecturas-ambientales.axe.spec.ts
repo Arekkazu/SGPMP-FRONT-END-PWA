@@ -23,6 +23,9 @@
  *
  * Herramientas: @axe-core/playwright en los 3 viewports + Lighthouse snapshot solo en escritorio.
  */
+// | Fecha      | Nombre        | Que se hizo                                                            |
+// |------------|---------------|--------------------------------------------------------------------------|
+// | 2026-10-30 | Laura032005   | M03 RF-59: gráfica por variable (ya no título único) y texto de estado vacío actualizado |
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
@@ -38,7 +41,9 @@ const PASOS_LIGHTHOUSE = ['vista', 'exportar', 'error-rango'];
 const URL_HISTORIAL = esGet('/iot/monitoreo/historial');
 const SEMAFORO_TEXTO = ['Normal', 'Advertencia', 'Fuera de rango', 'Sin señal'];
 const FILTROS = [/^Desde/, /^Hasta/, /^Variable$/, /^Categoría$/, /^Área$/, /^Especie$/, /^Estado de la lectura$/, /^Origen del dato$/];
-const SIN_RESULTADOS = 'Sin lecturas para el rango y filtros seleccionados.';
+// 2026-10-30: INC-M03-191/192-G116 (26/10) cambió el texto y agregó una sugerencia; ya no es
+// "Sin lecturas para el rango y filtros seleccionados." (sin ese literal en el bundle actual).
+const SIN_RESULTADOS = 'No se encontraron registros para los filtros seleccionados';
 const AREA = process.env.TC_DIS_160_AREA ?? '347';
 const DIAS = Number(process.env.TC_DIS_160_DIAS ?? 7);
 
@@ -106,9 +111,14 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial de lecturas ambi
     desviacion((await main(page).getByLabel(/sensor/i).count()) > 0, 'no hay filtro por sensor (el criterio pide fecha/variable/sensor/especie/estado)');
 
     if (items.length > 0) {
+      // 2026-10-30 (USAB-M03 13.6, 29/10): ahora hay una gráfica por variable, cada una titulada
+      // con el nombre de la variable (no el genérico "Evolución de lecturas", que solo es el
+      // fallback de HistorialChart cuando no se le pasa `titulo` — HistorialView siempre lo pasa).
+      const titulos = main(page).getByRole('heading', { level: 3 });
+      await expect(titulos.first(), 'con lecturas, la vista debe mostrar al menos una gráfica de evolución').toBeVisible();
+      expect.soft(await titulos.count(), '1.1.1: debe haber una gráfica por cada variable presente en los datos').toBe(variables.length);
       // 1.1.1: la gráfica existe y la tabla tiene una fila por cada lectura que la gráfica dibuja
-      const titulo = main(page).getByRole('heading', { name: 'Evolución de lecturas', exact: true });
-      await expect(titulo, 'con lecturas, la vista debe mostrar la gráfica de evolución').toBeVisible();
+      const titulo = titulos.first();
       const grafica = main(page).locator('div').filter({ has: titulo }).last();
       // evaluateAll no espera: un locator.evaluate sin elemento se queda esperando hasta el timeout del test
       const svg = await grafica.locator('svg').evaluateAll((els) => els.map((s) => ({
@@ -152,9 +162,19 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial de lecturas ambi
   });
 
   test('3. Sin resultados - el mensaje se anuncia sin mover el foco (3.3.1 / 4.1.3)', async ({}, testInfo) => {
-    await abrirAcotado(page);
-    await main(page).getByLabel(/^Variable$/).fill('QA_SIN_RESULTADOS');
-    await consultar(page);
+    // 2026-10-30: el backend ya valida tipo_variable contra su catálogo y devuelve 422
+    // "Parámetros inválidos" ante un valor inventado (antes aceptaba cualquier texto y
+    // devolvía lista vacía). Para forzar el estado vacío real se usa una variable válida
+    // con un rango de fechas sin datos, no un nombre de variable inexistente.
+    const { acotada } = await abrirAcotado(page);
+    const variable = (await json<{ items: Lectura[] }>(acotada))?.items[0]?.tipo_variable;
+    precondicion(!!variable, 'sin lecturas no hay variable válida con la cual forzar el vacío');
+    if (!variable) return;
+    await main(page).getByLabel(/^Variable$/).fill(variable);
+    await main(page).getByLabel(/^Desde/).fill('2020-01-01');
+    await main(page).getByLabel(/^Hasta/).fill('2020-01-02');
+    const res = await consultar(page);
+    anotar(testInfo, 'Respuesta con rango sin datos', `HTTP ${res?.status() ?? 'sin respuesta'}`);
     const mensaje = main(page).getByText(SIN_RESULTADOS, { exact: true });
     await expect(mensaje, 'un filtro sin resultados debe mostrar el estado vacío').toBeVisible();
     anotar(testInfo, 'Regiones vivas', (await regionesVivas(page)).join(' ; ') || 'ninguna');

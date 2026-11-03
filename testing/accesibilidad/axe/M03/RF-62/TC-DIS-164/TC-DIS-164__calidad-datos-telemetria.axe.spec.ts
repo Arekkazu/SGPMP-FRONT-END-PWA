@@ -15,6 +15,9 @@
  *
  * Herramientas: @axe-core/playwright en los 3 viewports + Lighthouse snapshot solo en escritorio.
  */
+// | Fecha      | Nombre        | Que se hizo                                                        |
+// |------------|---------------|----------------------------------------------------------------------|
+// | 2026-10-29 | Laura032005   | M03 RF-62: desambiguar tabla tras agregarse CalidadVisionPanel (RFC-011) |
 import { expect, test, type BrowserContext, type Page, type Response } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
@@ -43,7 +46,10 @@ interface Evaluacion {
 test.use({ locale: 'es-CO', launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
 
 function tabla(page: Page) {
-  return main(page).getByRole('table');
+  // 2026-10-29: la vista ahora agrega CalidadVisionPanel (RFC-011, panel simulado de
+  // observaciones de visión) con su propia tabla — getByRole('table') sin desambiguar
+  // revienta en modo estricto. Esta prueba es sobre las lecturas de sensor, no visión.
+  return main(page).getByRole('region', { name: 'Tabla de evaluaciones de calidad' }).getByRole('table');
 }
 
 function flagsActivos(e: Evaluacion) {
