@@ -1,3 +1,10 @@
+## [1.4.0-rc.26](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.25...v1.4.0-rc.26) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-62:** puntaje de calidad explicado en vez de "Indice" ([312dee0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/312dee0a11148da2e21ab7982b05bb252c56ef38))
+* **rf-72:** bandeja sin respuestas viejas y con boton reintentar ([a068aa3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a068aa3b199303522328cd53c7d1384220eab10f))
+
 ## [1.4.0-rc.25](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.24...v1.4.0-rc.25) (2026-11-03)
 
 ### Features
