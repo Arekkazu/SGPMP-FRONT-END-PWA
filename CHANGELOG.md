@@ -1,3 +1,10 @@
+## [1.4.0-rc.31](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.30...v1.4.0-rc.31) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-33:** la búsqueda de activos revisa todas las páginas y el [#id](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/id) solo aplica a lotes ([d24e2f6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d24e2f6b9b8e3d2bf3d51a4334ff2880b103dd87))
+* **rf-59:** botón Limpiar en el historial de lecturas que vuelve a los filtros por defecto ([6b44cd8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6b44cd884b3f816f37026a4ba6974d57a449b151))
+
 ## [1.4.0-rc.30](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.29...v1.4.0-rc.30) (2026-11-03)
 
 ### Bug Fixes
