@@ -300,6 +300,14 @@
 * **rfc016-rf17:** el interruptor es_critica depende del recurso variables_ambientales_criticas, no de editar umbrales (FE-09) ([6c67120](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6c671200f8ba13893ec8d25dc9b0a6b898da898e))
 * **telemetry:** rf-57 fe-12 controlar descarte por permisos y transiciones ([184131b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/184131b75bd5d7e24f1d1fb1426051a0ecdedc9f)), closes [#3694](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/3694) [#3781](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/3781) [#3782](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/3782)
 
+## [1.3.4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.3...v1.3.4) (2026-10-23)
+
+### Bug Fixes
+
+* **deploy:** servir la app bajo una subruta del proxy con VITE_BASE_PATH ([8589b80](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8589b8096e3fa674c2bcbcd04d8925a33ee4133b))
+* **rf16-mod9:** campos numericos que no aceptan letras al registrar metricas y demas formularios ([80b939b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/80b939b11a5e6fa80b6eb770fdab608debaddc59))
+* **rf33-mod2:** explicar por que una finca no muestra areas para la especie elegida ([9631a2d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9631a2db564b1b6b748228bfaaa77e7fa3fffd5d))
+
 ## [1.3.2-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.2-rc.1...v1.3.2-rc.2) (2026-10-13)
 
 ### Bug Fixes
