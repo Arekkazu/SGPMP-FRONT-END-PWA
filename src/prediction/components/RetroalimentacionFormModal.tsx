@@ -3,6 +3,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-03 RF-72: inferencia por fecha, sin Ninguna al marcar Incorrecto, patologías en grupo con nombre |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-03/N-03 RF-72: diagnósticos de la especie del activo y activo con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-191/192 RF-72: radiogroup con nombre, diagnóstico anunciado, E4 asociado y observaciones 0/500 |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU08 H-01 RF-72: el error del intento anterior se va al cambiar el formulario |
 import React, { useState } from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -63,6 +64,11 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
   const [fuente, setFuente] = useState<FuenteDiagnostico | ''>('');
   const [observaciones, setObservaciones] = useState('');
   const [touched, setTouched] = useState(false);
+  // CU08 H-01: el error es del envío hecho con estos datos; si se cambia algo ya no aplica.
+  const firma = JSON.stringify([estado, elegidos, fuente, observaciones]);
+  const [errorDe, setErrorDe] = useState({ error: saveError, firma });
+  if (saveError !== errorDe.error) setErrorDe({ error: saveError, firma });
+  const errorVigente = saveError && errorDe.firma === firma ? saveError : null;
 
   const requiereDiagnostico = estado === 'PARCIAL' || estado === 'INCORRECTO';
   const opciones = patologiasOpciones.filter((p) => estado !== 'INCORRECTO' || !esNinguna(p.nombre));
@@ -108,7 +114,7 @@ export function RetroalimentacionFormModal({ contexto, patologiasOpciones, savin
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
         {!online && <Alert variant="warning" title={t('retroalimentacionformmodal.sin_conexion')} description={t('retroalimentacionformmodal.no_se_puede_registrar_sin_conexion')} />}
-        {saveError && <Alert variant={saveError.status === 403 ? 'warning' : 'error'} title={t('retroalimentacionformmodal.no_se_pudo_registrar')} description={saveError.message} />}
+        {errorVigente && <Alert variant={errorVigente.status === 403 ? 'warning' : 'error'} title={t('retroalimentacionformmodal.no_se_pudo_registrar')} description={errorVigente.message} />}
 
         {/* Contexto de la inferencia */}
         <div style={{ background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s3)', fontSize: '12px', color: 'var(--text-secondary)' }}>

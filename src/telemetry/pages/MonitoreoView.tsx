@@ -4,6 +4,7 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M3-08/M3-11: área por nombre, contadores de todo el alcance y estado vacío sin filtros |
 // | 2026-10-29 | Arekkazu | TC-DIS-152 RF-58 R1 / G98 CA-11: degradación nivel 2/3 anunciada y panel de alertas activas |
 // | 2026-10-29 | Arekkazu | USAB-M03 prototipo 13.4 RF-58: resumen que filtra, áreas por gravedad y plegables, medidor solo para problemas |
+// | 2026-11-03 | Arekkazu | INC-M03-249-G93/250-G94 RF-58: unidad sin sensores visible y aviso de usuario sin unidades |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -205,13 +206,18 @@ export function MonitoreoView() {
             ))}
             <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}'}</style>
           </div>
-        ) : sensores.length === 0 && !error ? (
+        ) : sensores.length === 0 && unidades.length === 0 && !error ? (
           // M3-11: sin filtro no hay "filtros actuales" que culpar.
+          // INC-M03-250-G94: sin unidades no es "faltan sensores", es que no tiene unidades asignadas.
           <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-            {idArea != null ? t('monitoreoview.no_hay_sensores_para_mostrar_con_los') : t('monitoreoview.sin_sensores_en_tus_fincas')}
+            {idArea != null ? t('monitoreoview.no_hay_sensores_para_mostrar_con_los') : t('monitoreoview.sin_unidades_asignadas')}
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
+            {/* INC-M03-249-G93: una unidad sin sensores sigue visible como tarjeta en GRIS. */}
+            {sensores.length === 0 && idArea == null && !error && (
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('monitoreoview.sin_sensores_en_tus_fincas')}</p>
+            )}
             {filtro && grupos.length === 0 && (
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('monitoreoview.ninguno_con_filtro', { estado: etiquetaSemaforo(filtro) })}</p>
             )}

@@ -16,6 +16,7 @@
 // | 2026-11-02 | Arekkazu | AJF-10 RF-66: monitor paginado y filtros nuevos |
 // | 2026-11-02 | Arekkazu | AJF-14 RF-71: solicitud por animal y procesos de reentrenamiento |
 // | 2026-11-03 | Arekkazu | RF-72: bandeja de inferencias por evaluar (antes datos de ejemplo) |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU01 H-16 RF-64: filtro nombre del listado de patologías |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -136,6 +137,8 @@ export interface ListarPatologiasFiltros {
   especie_aplicable?: string;
   solo_activas?: boolean;
   solo_base?: boolean;
+  /** Fragmento del nombre, sin distinguir mayúsculas. */
+  nombre?: string;
 }
 
 export interface RegistrarPatologiaDTO {

@@ -54,7 +54,8 @@ export function extraerConfianza(payload: Record<string, unknown> | null): numbe
 /** Texto corto de la patología estimada si el payload la trae. */
 export function extraerPatologia(payload: Record<string, unknown> | null): string | null {
   if (!payload) return null;
-  const claves = ['patologia', 'enfermedad_estimada', 'diagnostico', 'patologia_estimada'];
+  // QA-M04 ronda 2 CU04 H-01: el historial manda `nombre_patologia`; sin ella la tarjeta salía sin patología.
+  const claves = ['nombre_patologia', 'patologia', 'enfermedad_estimada', 'diagnostico', 'patologia_estimada'];
   for (const k of claves) {
     const v = payload[k];
     if (typeof v === 'string') return v;
