@@ -1,3 +1,11 @@
+## [1.4.0-rc.29](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.28...v1.4.0-rc.29) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-23:** intervalo de transmisión mínimo de 10 minutos en la configuración remota ([8d46a32](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8d46a32ed982ec509d2346aeac050401fe831fbf))
+* **rf-47,rf-49:** análisis sin «null» y sensores del activo en solo lectura ([0ebf5f4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0ebf5f4523607389fa57041701ee7fab0eb2cebb))
+* **rf-73:** la bitácora M04 avisa cuando «Hasta» es anterior a «Desde» ([834f198](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/834f198f75907d457846c6d3cd7304be131b6a0e))
+
 ## [1.4.0-rc.28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.27...v1.4.0-rc.28) (2026-11-03)
 
 ### Bug Fixes
