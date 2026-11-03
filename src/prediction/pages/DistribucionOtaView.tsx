@@ -5,6 +5,7 @@
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo RF-70: «Envío a campo» y marca de solo lectura para quien no envía |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-05 RF-70: solo equipos compatibles con el tipo de modelo de la versión |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU01 H-13: sin acciones de escritura con datos de caché |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { DownloadCloud, RefreshCw, Plus, CheckCircle2, XCircle, Clock, Package } from 'lucide-react';
@@ -111,7 +112,7 @@ export function DistribucionOtaView() {
             <RefreshCw size={15} aria-hidden />
           </Button>
           {puedeLanzar ? (
-            <Button variant="primary" size="sm" onClick={abrirForm} disabled={!online}>
+            <Button variant="primary" size="sm" onClick={abrirForm} disabled={!online || fromCache}>
               <Plus size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('distribucionotaview.nuevo_despliegue')}</Button>
           ) : <Pill tono="neutral">{t('distribucionotaview.solo_lectura')}</Pill>}
         </div>

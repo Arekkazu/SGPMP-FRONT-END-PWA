@@ -7,6 +7,7 @@
 // | 2026-10-31 | Arekkazu | RF-71: aviso de datos insuficientes para reentrenar el modelo individual |
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: confirmar activar o poner en sombra |
 // | 2026-11-02 | Arekkazu | AJF-08 RF-69: textos de la vista sin jerga ni abreviaturas; "sombra" se dice "en prueba" |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU01 H-13: sin acciones de escritura con datos de caché |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -188,9 +189,9 @@ export function ModelosView() {
         <ModeloDetalleModal
           modelo={detalleSel}
           loading={detalleLoading}
-          puedeEditar={puedeEditar && online}
+          puedeEditar={puedeEditar && online && !fromCache}
           puedeEjecutar={puedeEjecutar}
-          online={online}
+          online={online && !fromCache}
           saving={saving}
           saveError={saveError}
           transiciones={transiciones}
@@ -211,7 +212,7 @@ export function ModelosView() {
           footer={
             <>
               <Button variant="secondary" onClick={() => setConfirmar(null)} disabled={saving}>{t('modelosview.cancelar')}</Button>
-              <Button variant="primary" onClick={onConfirmar} loading={saving} disabled={!online}>
+              <Button variant="primary" onClick={onConfirmar} loading={saving} disabled={!online || fromCache}>
                 {confirmar === 'sombra'
                   ? <><MoonStar size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelosview.poner_en_sombra')}</>
                   : <><Rocket size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelosview.activar')}</>}

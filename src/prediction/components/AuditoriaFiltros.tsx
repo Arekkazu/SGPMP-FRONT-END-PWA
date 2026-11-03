@@ -3,6 +3,7 @@
 // | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
 // | 2026-10-31 | Arekkazu | RF-71/RF-73: filtro por solicitud de reentrenamiento |
 // | 2026-11-02 | Arekkazu | AJF-13 RF-73: "Relacionado con" + "Registro" por nombre en vez del ID de referencia libre |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU09 H-05 RF-73: tipo de evento con los 45 tipos que registra la bitácora |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Filter, X } from 'lucide-react';
@@ -32,28 +33,74 @@ export const AUDITORIA_FILTROS_VACIO: AuditoriaFiltrosState = {
   tipo_evento: '', severidad: '', entidad_referencia: '', referencia: '', id_referencia: '', fecha_desde: '', fecha_hasta: '', actor: '', tipo_modelo: '',
 };
 
-// Optgroups del catálogo de tipos de evento (espeja el mockup RF-73).
+// Optgroups con los tipos de `modulo4.enum_tipo_evento_auditoria_m04`.
+// QA-M04 ronda 2 CU09 H-05: el catálogo anterior era el del mockup; faltaban tipos que
+// sí se registran y sobraban otros que no existen (el backend respondía 500 con ellos).
 const TIPOS_EVENTO: Record<string, { value: string; label: string }[]> = {
+  Patologías: [
+    { value: 'CATALOGO_PATOLOGIA_AGREGADA', label: 'Patología agregada' },
+    { value: 'CATALOGO_PATOLOGIA_MODIFICADA', label: 'Patología modificada' },
+    { value: 'CATALOGO_PATOLOGIA_INACTIVADA', label: 'Patología inactivada' },
+  ],
   Inferencia: [
     { value: 'INFERENCIA_EJECUTADA', label: 'Inferencia ejecutada' },
-    { value: 'RIESGO_DETECTADO', label: 'Riesgo detectado' },
+    { value: 'INFERENCIA_RECHAZADA', label: 'Inferencia rechazada' },
+    { value: 'INFERENCIA_NO_DISPONIBLE', label: 'Inferencia no disponible' },
+    { value: 'LATENCIA_EXCEDIDA', label: 'Latencia excedida' },
+    { value: 'ALERTA_PREDICCION_GENERADA', label: 'Alerta de predicción generada' },
+    { value: 'ALERTA_CALIDAD_DATOS', label: 'Alerta de calidad de datos' },
+  ],
+  Contagio: [
+    { value: 'RIESGO_CONTAGIO_CALCULADO', label: 'Riesgo de contagio calculado' },
+    { value: 'ALERTA_CONTAGIO_GENERADA', label: 'Alerta de contagio generada' },
+    { value: 'ERROR_DATOS_INSUFICIENTES', label: 'Datos insuficientes' },
+    { value: 'ERROR_DATOS_DESINCRONIZADOS', label: 'Datos desincronizados' },
+    { value: 'SOBRECARGA_MODELO_CONTAGIO', label: 'Sobrecarga del modelo de contagio' },
+  ],
+  Historial: [
+    { value: 'HISTORIAL_CONSULTADO', label: 'Historial consultado' },
+    { value: 'EXPORTACION_GENERADA', label: 'Exportación generada' },
   ],
   Modelos: [
-    { value: 'MODELO_REGISTRADO', label: 'Modelo registrado' },
-    { value: 'MODELO_ACTIVADO', label: 'Modelo activado' },
+    { value: 'VERSION_REGISTRADA', label: 'Versión registrada' },
+    { value: 'VERSION_APROBADA', label: 'Versión aprobada' },
+    { value: 'VERSION_RECHAZADA', label: 'Versión rechazada' },
+    { value: 'VERSION_EN_SOMBRA', label: 'Versión en sombra' },
+    { value: 'VERSION_ACTIVADA', label: 'Versión activada' },
+    { value: 'VERSION_DEPRECADA', label: 'Versión deprecada' },
     { value: 'NOTAS_REGISTRADAS', label: 'Notas registradas' },
-    { value: 'REENTRENAMIENTO_SOLICITADO', label: 'Reentrenamiento solicitado' },
+    { value: 'HASH_INVALIDO_DETECTADO', label: 'Hash inválido detectado' },
+    { value: 'INTENTO_CARGA_MODELO_EXTERNO', label: 'Intento de cargar un modelo externo' },
   ],
-  Distribución: [
-    { value: 'OTA_INICIADO', label: 'OTA iniciado' },
-    { value: 'OTA_COMPLETADO', label: 'OTA completado' },
+  'Envío a campo': [
+    { value: 'MODELO_DISTRIBUIDO_EDGE', label: 'Modelo enviado al nodo' },
+    { value: 'MODELO_ACTIVADO_EDGE', label: 'Modelo activado en el nodo' },
+    { value: 'DISTRIBUCION_FALLIDA', label: 'Envío fallido' },
+    { value: 'DISTRIBUCION_POSPUESTA', label: 'Envío pospuesto' },
+  ],
+  Reentrenamiento: [
+    { value: 'REENTRENAMIENTO_SOLICITADO', label: 'Reentrenamiento solicitado' },
+    { value: 'REENTRENAMIENTO_INICIADO', label: 'Reentrenamiento iniciado' },
+    { value: 'REENTRENAMIENTO_COMPLETADO', label: 'Reentrenamiento completado' },
+    { value: 'REENTRENAMIENTO_FALLIDO', label: 'Reentrenamiento fallido' },
+    { value: 'REENTRENAMIENTO_ABORTADO', label: 'Reentrenamiento abortado' },
+    { value: 'REENTRENAMIENTO_INTERRUMPIDO', label: 'Reentrenamiento interrumpido' },
+    { value: 'REENTRENAMIENTO_PAUSADO_POR_PRIORIDAD', label: 'Reentrenamiento pausado por prioridad' },
+    { value: 'DEGRADACION_DETECTADA', label: 'Degradación detectada' },
   ],
   Retroalimentación: [
     { value: 'RETROALIMENTACION_REGISTRADA', label: 'Retroalimentación registrada' },
+    { value: 'CONFLICTO_RETROALIMENTACION', label: 'Conflicto de retroalimentación' },
+    { value: 'VENTANA_RETROALIMENTACION_AMPLIADA', label: 'Ventana de retroalimentación ampliada' },
   ],
   Configuración: [
-    { value: 'MOTOR_CONFIGURADO', label: 'Motor configurado' },
-    { value: 'PATOLOGIA_MODIFICADA', label: 'Patología modificada' },
+    { value: 'CONFIGURACION_MOTOR_CAMBIADA', label: 'Configuración del motor cambiada' },
+  ],
+  Bitácora: [
+    { value: 'AUDITORIA_EVENTO_INVALIDO', label: 'Evento inválido' },
+    { value: 'AUDITORIA_FALLA_PERSISTENCIA', label: 'Falla al guardar un evento' },
+    { value: 'AUDITORIA_FALLBACK_ACTIVADO', label: 'Respaldo local activado' },
+    { value: 'TIMESTAMP_CORREGIDO', label: 'Fecha del evento corregida' },
   ],
 };
 
