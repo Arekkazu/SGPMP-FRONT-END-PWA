@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: sensor por nombre en vez de «ID sensor» |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
 import React, { useMemo } from 'react';
 import { Combobox } from '../../shared/design-system/Combobox';
 import { etiquetaDeCatalogo, idDeCatalogo } from '../../shared/lib/catalogo';
@@ -15,10 +16,12 @@ interface Props {
   onChange: (texto: string, idSensor: number | null) => void;
   required?: boolean;
   error?: string;
+  /** En una fila de filtros (ver Combobox). */
+  compacto?: boolean;
 }
 
 /** Mismo patrón que SelectorArea: se elige por nombre o se escribe el ID; el backend valida. */
-export function SelectorSensor({ id, sensores, value, onChange, required, error }: Props) {
+export function SelectorSensor({ id, sensores, value, onChange, required, error, compacto }: Props) {
   const { t } = useT('telemetry');
   const catalogo = useMemo(() => sensores.map((s) => ({ id: s.id_sensor, nombre: s.nombre_sensor })), [sensores]);
   const opciones = useMemo(
@@ -39,6 +42,7 @@ export function SelectorSensor({ id, sensores, value, onChange, required, error 
       vacio={t('selectorsensor.vacio')}
       required={required}
       error={error}
+      compacto={compacto}
     />
   );
 }

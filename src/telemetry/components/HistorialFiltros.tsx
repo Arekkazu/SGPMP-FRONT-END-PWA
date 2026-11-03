@@ -6,6 +6,7 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19 RF-59: variable elegida de una lista con nombres |
 // | 2026-11-02 | Arekkazu | AJF-05 RF-59: los filtros que no se pueden combinar se deshabilitan con el motivo visible |
 // | 2026-11-03 | Arekkazu | AJF-05 RF-59: especie elegida del catálogo (Combobox) en vez de texto libre |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, Download } from 'lucide-react';
@@ -177,6 +178,7 @@ export function HistorialFiltros({ areas, especies = [], especiesError = false, 
         </div>
         <SelectorArea
           id="h-infra"
+          compacto
           areas={areas}
           value={value.area}
           onChange={(area, idArea) => onChange({ ...value, area, id_infraestructura: idArea != null ? String(idArea) : '' })}
@@ -185,6 +187,7 @@ export function HistorialFiltros({ areas, especies = [], especiesError = false, 
         />
         <Combobox
           id="h-esp"
+          compacto
           label={t('historialfiltros.especie')}
           opciones={especies.map((nombre) => ({ valor: nombre }))}
           value={value.especie}

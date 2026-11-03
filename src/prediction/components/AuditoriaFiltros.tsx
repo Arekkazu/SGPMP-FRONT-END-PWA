@@ -4,6 +4,7 @@
 // | 2026-10-31 | Arekkazu | RF-71/RF-73: filtro por solicitud de reentrenamiento |
 // | 2026-11-02 | Arekkazu | AJF-13 RF-73: "Relacionado con" + "Registro" por nombre en vez del ID de referencia libre |
 // | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU09 H-05 RF-73: tipo de evento con los 45 tipos que registra la bitácora |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Filter, X } from 'lucide-react';
@@ -188,6 +189,7 @@ export function AuditoriaFiltros({ value, onChange, onAplicar, onLimpiar, opcion
         {value.entidad_referencia && (
           <Combobox
             id="aud-ref"
+            compacto
             label={t('referencia.registro')}
             opciones={opcionesCombo}
             value={value.referencia}

@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre (Combobox id+nombre) en vez de «ID infraestructura» |
 // | 2026-11-02 | Arekkazu | AJF-05 RF-59: deshabilitado y texto de ayuda |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
 import React, { useMemo } from 'react';
 import { Combobox } from '../../shared/design-system/Combobox';
 import { etiquetaDeCatalogo, idDeCatalogo } from '../../shared/lib/catalogo';
@@ -17,10 +18,12 @@ interface Props {
   disabled?: boolean;
   /** Texto de ayuda bajo el campo (p. ej. por qué está deshabilitado). */
   hint?: string;
+  /** En una fila de filtros (ver Combobox). */
+  compacto?: boolean;
 }
 
 /** Mismo patrón que SelectorActivo: se elige por nombre o se escribe el ID; el backend valida. */
-export function SelectorArea({ id, areas, value, onChange, disabled, hint }: Props) {
+export function SelectorArea({ id, areas, value, onChange, disabled, hint, compacto }: Props) {
   const { t } = useT('telemetry');
   const catalogo = useMemo(() => areas.map((a) => ({ id: a.id, nombre: a.nombre })), [areas]);
   const opciones = useMemo(
@@ -38,6 +41,7 @@ export function SelectorArea({ id, areas, value, onChange, disabled, hint }: Pro
       vacio={t('selectorarea.vacio')}
       disabled={disabled}
       hint={hint}
+      compacto={compacto}
     />
   );
 }

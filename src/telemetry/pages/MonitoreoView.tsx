@@ -5,6 +5,7 @@
 // | 2026-10-29 | Arekkazu | TC-DIS-152 RF-58 R1 / G98 CA-11: degradación nivel 2/3 anunciada y panel de alertas activas |
 // | 2026-10-29 | Arekkazu | USAB-M03 prototipo 13.4 RF-58: resumen que filtra, áreas por gravedad y plegables, medidor solo para problemas |
 // | 2026-11-03 | Arekkazu | INC-M03-249-G93/250-G94 RF-58: unidad sin sensores visible y aviso de usuario sin unidades |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -161,6 +162,7 @@ export function MonitoreoView() {
           <div style={{ minWidth: 220 }}>
             <SelectorArea
               id="monitoreo-area"
+              compacto
               areas={areas}
               value={area}
               onChange={(texto, id) => { setArea(texto); setIdArea(id); setPagina(1); }}

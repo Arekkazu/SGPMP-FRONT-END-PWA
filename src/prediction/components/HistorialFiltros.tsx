@@ -3,6 +3,7 @@
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-10-29 | Arekkazu | TC-DIS-188 RF-67: el filtro de patología no aplica a un área POBLACIONAL (deshabilitado con motivo) |
 // | 2026-11-03 | Arekkazu | RF-67: activo o lote con autocompletado (Combobox) en vez de una lista que crece sin fin |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, X } from 'lucide-react';
@@ -63,6 +64,7 @@ export function HistorialFiltros({ value, activos, activosError, patologias, onC
       <div style={FILTER_GRID}>
         <Combobox
           id="hist-activo"
+          compacto
           label={t('historialfiltros.activo_lote')}
           required
           opciones={opciones}
