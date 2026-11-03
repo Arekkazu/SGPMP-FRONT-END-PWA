@@ -16,6 +16,7 @@
 // | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: valor de la lectura actual cuando está fuera de rango |
 // | 2026-11-02 | Arekkazu | AJF-04 RF-60: parámetros de heartbeat y ventanas de visión |
 // | 2026-11-02 | Arekkazu | AJF-07 RF-53: lectura de la bitácora de ingesta |
+// | 2026-11-03 | Arekkazu | RF-62: observaciones de visión evaluadas (antes datos de ejemplo) |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -700,4 +701,60 @@ export interface FiltrosIngesta {
   id_dispositivo_iot?: number;
   pagina?: number;
   por_pagina?: number;
+}
+
+// ─── RF-62: calidad de visión (GET /iot/calidad/vision) ──────────────────────
+export type ClaseVision = 'OPTIMA' | 'DEGRADADA' | 'NO_APTA';
+export type FiltroClaseVision = ClaseVision | 'SIN_EVALUAR';
+
+/** Un flag con los valores con que se evaluó (p. ej. `fps_configurado`, `tracks_perdidos_tolerables`). */
+export type FlagVision = { activo: boolean } & Record<string, unknown>;
+
+export interface ObservacionVisionEvaluada {
+  id_observacion_vision: number;
+  id_dispositivo_iot: number;
+  serial_camara: string | null;
+  id_infraestructura: number;
+  nombre_area: string | null;
+  fecha_inicio_ventana: string | null;
+  fecha_observacion: string;
+  n_individuos_observados: number | null;
+  cobertura_ventana: string | number;
+  fps_efectivo: string | number;
+  cantidad_tracks_perdidos: number;
+  estado_calibracion: 'CALIBRADO' | 'EN_CALIBRACION' | 'SIN_LINEA_BASE';
+  /** null mientras espera la evaluación asíncrona. */
+  indice_calidad_vision: string | number | null;
+  clasificacion_calidad: ClaseVision | null;
+  es_apto_para_ia: boolean | null;
+  es_confianza_baja: boolean | null;
+  apto_para_nic41: boolean;
+  flags_detectados: Record<string, FlagVision> | null;
+  fecha_evaluacion_calidad: string | null;
+}
+
+export interface PoliticaVision {
+  w1: string | number;
+  w2: string | number;
+  w3: string | number;
+  tracks_perdidos_tolerables: number;
+  umbral_optima: string | number;
+  umbral_degradada: string | number;
+  factor_en_calibracion: string | number;
+}
+
+export interface ListaCalidadVision {
+  items: ObservacionVisionEvaluada[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+  desde: string;
+  hasta: string;
+  politica: PoliticaVision | null;
+  politica_motivo: string | null;
+}
+
+export interface FiltrosCalidadVision {
+  clasificacion?: FiltroClaseVision;
+  id_dispositivo_iot?: number;
 }
