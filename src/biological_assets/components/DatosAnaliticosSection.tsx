@@ -1,5 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-03 | Arekkazu | QA-M02 RF-47: métricas actuales sin «null» ni claves crudas |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { formatearFechaHora } from '../../shared/i18n/formato';
 import { BarChart3 } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { useDatosConsolidados } from '../hooks/useDatosConsolidados';
@@ -33,6 +37,14 @@ const LABEL: React.CSSProperties = {
   display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)',
   marginBottom: 'var(--s1)', textTransform: 'uppercase', letterSpacing: '0.04em',
 };
+
+/** Lo que el usuario ve de una métrica: nunca «null», ni fechas ISO, ni «[object Object]». */
+export function valorMetrica(k: string, v: unknown): string {
+  if (v == null || v === '') return '—';
+  if (Array.isArray(v)) return v.length === 0 ? '—' : String(v.length);
+  if (k.startsWith('fecha') && typeof v === 'string') return formatearFechaHora(v);
+  return String(v);
+}
 
 function DictList({ items, vacio }: { items: Record<string, unknown>[]; vacio: string }) {
   if (!items || items.length === 0) {
@@ -117,8 +129,8 @@ export function DatosAnaliticosSection({ idActivo }: Props) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s4)' }}>
                   {Object.entries(data.metricas_actuales).map(([k, v]) => (
                     <div key={k}>
-                      <div style={{ fontSize: 'var(--fs-label-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{k}</div>
-                      <div style={{ fontSize: '15px', color: 'var(--text-primary)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{String(v)}</div>
+                      <div style={{ fontSize: 'var(--fs-label-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{t(`datosanaliticossection.metrica.${k}`, { defaultValue: k })}</div>
+                      <div style={{ fontSize: '15px', color: 'var(--text-primary)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{valorMetrica(k, v)}</div>
                     </div>
                   ))}
                 </div>

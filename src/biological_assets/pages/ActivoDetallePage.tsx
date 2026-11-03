@@ -1,6 +1,7 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
+// | 2026-11-03 | Arekkazu | QA-M02 RF-49: la ficha solo consulta los sensores asociados; ya no crea asociaciones |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useHistory, useParams } from 'react-router-dom';
@@ -193,13 +194,7 @@ export function ActivoDetallePage() {
         )}
         {tab === 'historial' && <HistorialSection idActivo={idActivo} />}
         {tab === 'infraestructura' && <InfraestructuraSection idActivo={idActivo} onChanged={refrescar} />}
-        {tab === 'sensores' && (
-          <SensoresSection
-            idActivo={idActivo}
-            esPoblacional={String(tipo).toUpperCase() === 'POBLACIONAL'}
-            idInfraestructura={activo?.id_infraestructura ?? null}
-          />
-        )}
+        {tab === 'sensores' && <SensoresSection idActivo={idActivo} />}
         {tab === 'indicadores' && <IndicadoresSection idActivo={idActivo} />}
         {tab === 'analisis' && <DatosAnaliticosSection idActivo={idActivo} />}
       </div>
