@@ -1,3 +1,6 @@
+// | Fecha      | Nombre           | Que se hizo                                   |
+// |------------|------------------|-----------------------------------------------|
+// | 2026-11-03 | Arekkazu         | RF-33: búsqueda sobre todas las páginas; #id solo lotes |
 import React, { useEffect, useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useHistory } from 'react-router-dom';
@@ -33,23 +36,27 @@ export function RegistryView() {
     setFiltros(next);
   };
 
+  // Búsqueda cliente-side. Al buscar se traen todas las páginas (una sola
+  // carga al empezar a escribir), no solo la visible. #290 §2.3: el número
+  // ("#749") solo cuenta para los lotes, que es lo que muestran en pantalla;
+  // un individual se busca por su identificador, no por el id interno.
+  const busqueda = filtros.busqueda.trim().toLowerCase();
+  const buscando = !!busqueda;
+
   // Filtros de servidor (tipo, estado, página) — recargan al backend.
   useEffect(() => {
     const params: ListarActivosFiltros = { pagina };
     if (filtros.tipo) params.tipo = filtros.tipo;
     if (filtros.estado) params.id_estado = ESTADO_ID[filtros.estado];
-    cargar(params);
-  }, [filtros.tipo, filtros.estado, pagina, cargar]);
+    cargar(params, buscando);
+  }, [filtros.tipo, filtros.estado, pagina, buscando, cargar]);
 
-  // Búsqueda cliente-side sobre la página cargada. #290 §2.3: también por el
-  // número que se ve en pantalla ("#749"), que es lo único que tienen los lotes.
-  const busqueda = filtros.busqueda.trim().toLowerCase();
   const visibles = useMemo(() => {
     if (!busqueda) return activos;
     const numero = busqueda.replace(/^#/, '');
     return activos.filter(
       (a) =>
-        String(a.id_activo_biologico) === numero ||
+        (!a.identificador && String(a.id_activo_biologico) === numero) ||
         (a.identificador ?? '').toLowerCase().includes(busqueda) ||
         (a.nombre_especie ?? '').toLowerCase().includes(busqueda) ||
         (a.nombre_infraestructura ?? '').toLowerCase().includes(busqueda)
@@ -61,7 +68,7 @@ export function RegistryView() {
     const params: ListarActivosFiltros = { pagina };
     if (filtros.tipo) params.tipo = filtros.tipo;
     if (filtros.estado) params.id_estado = ESTADO_ID[filtros.estado];
-    cargar(params);
+    cargar(params, buscando);
   };
 
   return (
