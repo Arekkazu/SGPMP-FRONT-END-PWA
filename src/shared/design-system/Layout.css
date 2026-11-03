@@ -1,3 +1,9 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-10-25 | Arekkazu | USAB-M03-M04 T-23: tablas que se vuelven tarjetas por debajo de 768px |
+   | 2026-10-29 | Arekkazu | TC-DIS-150/179 a11y: clase global .ds-sr-only (solo lector de pantalla) |
+   | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: .ds-kv, lista rótulo → valor (antes rejilla inline en BufferView) |  */
+
 /* Rejillas de contenido del DS v2.0 ("Reglas responsive por componente").
  *
  * Existen porque una rejilla escrita como `style={{ gridTemplateColumns:
@@ -26,6 +32,15 @@
 /* --bp-md: la tercera columna necesita tablet. */
 @media (min-width: 768px) {
   .ds-fg3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Lista rótulo → valor (`<dl>`): el rótulo ocupa lo que sobra y el valor se pega a la
+ * derecha. Dos pistas a cualquier ancho a propósito: el valor es corto y cabe a 360px. */
+.ds-kv {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s1) var(--s3);
+  margin: 0;
 }
 
 /* Contenido principal con un panel lateral de ancho fijo (el editor de
@@ -124,6 +139,80 @@
   outline-offset: -2px;
 }
 
+/* T-23: tabla de datos que por debajo de 768px (--bp-md) se vuelve una tarjeta por
+ * fila. Con scroll horizontal, a 375px se veían 3 o 4 columnas y Severidad, Estado y
+ * "Ver detalle" quedaban fuera de la pantalla. Cada <td> lleva su rótulo en
+ * data-label; .ds-celda-destacada (estado, severidad) sube al principio,
+ * .ds-celda-titulo ocupa el ancho completo y .ds-celda-accion queda a la derecha.
+ * Los !important vencen el padding y el borde inline de tableStyles.ts. */
+@media (max-width: 767px) {
+  .ds-tabla-tarjetas,
+  .ds-tabla-tarjetas tbody {
+    display: block;
+  }
+
+  .ds-tabla-tarjetas thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ds-tabla-tarjetas tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--s2) var(--s4);
+    padding: var(--s3) var(--s4);
+    border-bottom: 1px solid var(--surface-border);
+  }
+
+  .ds-tabla-tarjetas td {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: normal !important;
+  }
+
+  .ds-tabla-tarjetas td[data-label]::before {
+    content: attr(data-label);
+    font-size: var(--fs-label-sm);
+    font-weight: 600;
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .ds-tabla-tarjetas .ds-celda-destacada {
+    order: -2;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .ds-tabla-tarjetas .ds-celda-destacada::before {
+    content: none;
+  }
+
+  .ds-tabla-tarjetas .ds-celda-titulo {
+    order: -1;
+    flex-basis: 100%;
+  }
+
+  .ds-tabla-tarjetas .ds-celda-titulo::before {
+    content: none;
+  }
+
+  .ds-tabla-tarjetas .ds-celda-accion {
+    order: -2;
+    margin-left: auto;
+  }
+}
+
 /* Enlace "Saltar al contenido" (WCAG 2.4.1): fuera de pantalla hasta recibir foco. */
 .ds-skip-link {
   position: absolute;
@@ -192,4 +281,18 @@
     left: auto;
     width: 380px;
   }
+}
+
+/* Solo para lector de pantalla (WCAG 4.1.3 / 1.4.1): región viva de Anunciador o texto que
+   acompaña a un color. Global para que cualquier pantalla pueda usarla. */
+.ds-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }

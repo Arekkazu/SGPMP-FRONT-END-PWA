@@ -1,19 +1,32 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-178 RF-64 a11y 3.3.2/2.5.5: regla 2-6 asociada al grupo y opciones de 48 px |
+// | 2026-10-31 | Arekkazu | RF-64/RF-17: cada variable indica si la especie tiene umbral configurado |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { CATALOGO_VARIABLES } from '../lib/catalogos';
+import type { VariableSensorica } from '../lib/catalogos';
+import type { CoberturaUmbral } from '../hooks/useUmbralesVariables';
 
 interface Props {
+  /** Catálogo I3P-1 real (useCatalogosPatologia). */
+  variables: VariableSensorica[];
   seleccionadas: number[];
   onChange: (ids: number[]) => void;
   error?: string;
   disabled?: boolean;
+  /** Rótulo visible del grupo (aria-labelledby); sin él se usa un nombre propio. */
+  idRotulo?: string;
+  /** RF-17: especies con umbral por variable. Sin dato (null/undefined) no se muestra nada. */
+  cobertura?: CoberturaUmbral | null;
 }
 
 /**
  * Multiselect por chips para las variables sensóricas asociadas (RF-64).
  * Regla del backend: entre 2 y 6 variables. La validación de rango se hace en el form.
  */
-export function VariablesSelector({ seleccionadas, onChange, error, disabled }: Props) {
+export function VariablesSelector({ variables, seleccionadas, onChange, error, disabled, idRotulo, cobertura }: Props) {
   const { t } = useT('prediction');
   const toggle = (id: number) => {
     if (disabled) return;
@@ -24,10 +37,12 @@ export function VariablesSelector({ seleccionadas, onChange, error, disabled }: 
     <div>
       <div
         role="group"
-        aria-label={t('variablesselector.variables_sensoricas_asociadas')}
+        aria-labelledby={idRotulo}
+        aria-label={idRotulo ? undefined : t('variablesselector.variables_sensoricas_asociadas')}
+        aria-describedby={error ? 'vars-regla vars-error' : 'vars-regla'}
         style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)' }}
       >
-        {CATALOGO_VARIABLES.map((v) => {
+        {variables.map((v) => {
           const activa = seleccionadas.includes(v.id);
           return (
             <button
@@ -49,25 +64,37 @@ export function VariablesSelector({ seleccionadas, onChange, error, disabled }: 
                 fontWeight: activa ? 700 : 500,
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.6 : 1,
-                minHeight: 32,
+                minHeight: 'var(--s9)',
               }}
             >
               {v.nombre}
-              {v.unidad && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', opacity: 0.7 }}>{v.unidad}</span>}
+              {v.unidad && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)' }}>{v.unidad}</span>}
+              {cobertura && <MarcaUmbral con={cobertura.porVariable.get(v.id) ?? 0} de={cobertura.especies} />}
             </button>
           );
         })}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--s2)' }}>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-          {seleccionadas.length} seleccionada(s) · se requieren entre 2 y 6
+        <span id="vars-regla" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+          {t('variablesselector.regla', { n: seleccionadas.length })}
         </span>
       </div>
       {error && (
-        <span role="alert" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--sem-error)' }}>
+        <span id="vars-error" role="alert" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--sem-error)' }}>
           {error}
         </span>
       )}
     </div>
+  );
+}
+
+function MarcaUmbral({ con, de }: { con: number; de: number }) {
+  const { t } = useT('prediction');
+  const texto = con === 0 ? t('variablesselector.sin_umbral')
+    : con < de ? t('variablesselector.umbral_parcial', { con, de }) : t('variablesselector.con_umbral');
+  return (
+    <span style={{ fontSize: '10px', fontWeight: 600, color: con === 0 ? 'var(--sem-warning)' : 'var(--text-muted)' }}>
+      · {texto}
+    </span>
   );
 }

@@ -1,9 +1,15 @@
-import { useState, useCallback } from 'react';
+// | Fecha      | Nombre  | Que se hizo |
+// |------------|---------|-------------|
+// | 2026-10-22 | Leandro | FE-12 RF-57: bloquea envíos simultáneos y conserva rechazos |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-08 RF-57: resueltas hoy por fecha de resolución |
+// | 2026-10-29 | Arekkazu | TC-DIS-150 RF-57: recarga silenciosa que devuelve las alertas para anunciarlas |
+import { useState, useCallback, useRef } from 'react';
 import { alertasApi } from '../api/alertasApi';
 import { cacheAlertas, getAlertasCache } from '../db/telemetriaTables';
 import type { AlertaSchema, ListarAlertasFiltros, ActualizarEstadoAlertaDTO } from '../types';
 import type { ApiError } from '../../shared/api/errors';
-import { hoyLocal } from '../../shared/lib/fecha';
+import { errorEstadoAlerta } from '../lib/errorEstadoAlerta';
+import { hoyLocal, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 interface PaginacionState {
   pagina: number;
@@ -26,6 +32,8 @@ interface Opciones {
 
 
 export function useAlertas({ tecnicas = false }: Opciones = {}) {
+  const enviando = useRef(false);
+  const limpiarSaveError = useCallback(() => setSaveError(null), []);
   const [alertas, setAlertas] = useState<AlertaSchema[]>([]);
   const [paginacion, setPaginacion] = useState<PaginacionState>({ pagina: 1, totalPaginas: 1, totalRegistros: 0, porPagina: 50 });
   const [loading, setLoading] = useState(false);
@@ -38,8 +46,9 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
   const listar = tecnicas ? alertasApi.listarTecnicas : alertasApi.listar;
   const patchEstado = tecnicas ? alertasApi.cambiarEstadoTecnica : alertasApi.cambiarEstado;
 
-  const cargar = useCallback(async (filtros: ListarAlertasFiltros = {}) => {
-    setLoading(true);
+  /** `silencioso`: el refresco automático no muestra el esqueleto ni desmonta las filas. */
+  const cargar = useCallback(async (filtros: ListarAlertasFiltros = {}, silencioso = false): Promise<AlertaSchema[] | null> => {
+    if (!silencioso) setLoading(true);
     setError(null);
     try {
       const data = await listar({ por_pagina: 50, ...filtros });
@@ -74,6 +83,7 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
           // caché no crítica
         }
       }
+      return items;
     } catch (e) {
       if (!tecnicas) {
         const cached = await getAlertasCache();
@@ -105,10 +115,11 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
             }))
           );
           setFromCache(true);
-          return;
+          return null;
         }
       }
       setError(e as ApiError);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -121,7 +132,9 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
         listar({ estado: 'ACTIVA', por_pagina: 1 }),
         listar({ estado: 'EN_ATENCION', por_pagina: 1 }),
         listar({ estado: 'VENCIDA', por_pagina: 1 }),
-        listar({ estado: 'RESUELTA', fecha_desde: hoyLocal(), por_pagina: 1 }),
+        // M3-08: "hoy" por la fecha de resolución y en el día del usuario; antes filtraba
+        // por fecha de generación y una alerta de ayer resuelta hoy no contaba.
+        listar({ estado: 'RESUELTA', fecha_resolucion_desde: inicioDelDiaUtc(hoyLocal()), por_pagina: 1 }),
       ]);
       setResumen({
         activas: act.total ?? 0,
@@ -136,16 +149,23 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
 
   const cambiarEstado = useCallback(
     async (idAlerta: number, dto: ActualizarEstadoAlertaDTO): Promise<AlertaSchema | null> => {
+      if (enviando.current) return null;
+      enviando.current = true;
       setSaving(true);
       setSaveError(null);
       try {
         const actualizada = await patchEstado(idAlerta, dto);
         setAlertas((prev) => prev.map((a) => (a.id_alerta === idAlerta ? actualizada : a)));
+        if (!tecnicas) {
+          try { await cacheAlertas([{ ...actualizada, cachedAt: Date.now() }]); }
+          catch { /* La caché no invalida una mutación ya confirmada por el servidor. */ }
+        }
         return actualizada;
       } catch (e) {
-        setSaveError(e as ApiError);
+        setSaveError(errorEstadoAlerta(e as ApiError));
         return null;
       } finally {
+        enviando.current = false;
         setSaving(false);
       }
     },
@@ -154,6 +174,6 @@ export function useAlertas({ tecnicas = false }: Opciones = {}) {
 
   return {
     alertas, paginacion, loading, saving, error, saveError, fromCache, resumen,
-    cargar, cargarResumen, cambiarEstado,
+    cargar, cargarResumen, cambiarEstado, limpiarSaveError,
   };
 }

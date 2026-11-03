@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo                                                        |
+// |------------|--------------|--------------------------------------------------------------------|
+// | 2026-10-21 | destroyerban | #73 RF-37: fase destino del ciclo, distinta a la actual            |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
@@ -89,31 +92,81 @@ function FaseItem({ fase, ultimo }: { fase: GestionFaseResponse; ultimo: boolean
 
 interface FormValues {
   id_ciclo_productiva: string;
+  fase_destino: string;
+  confirmar_no_estandar: boolean;
   motivo_cambio: string;
   fecha_inicio: string;
+}
+
+/**
+ * #73 (RF-37): la fase "estándar" a la que se pasa, con la misma regla de
+ * `cambiar_fase_use_case`: la siguiente a la última fase registrada del ciclo,
+ * o la primera si el activo nunca estuvo en él. null si el ciclo ya se completó
+ * (o la última fase no se reconoce): entonces cualquier destino es no estándar.
+ */
+export function faseEstandar(ciclo: CicloProductivoAsignable, historial: GestionFaseResponse[]): number | null {
+  const enCiclo = historial
+    .filter((g) => g.id_ciclo_productiva === ciclo.id_ciclo_productivo)
+    .sort((a, b) => new Date(a.fecha_inicio).getTime() - new Date(b.fecha_inicio).getTime());
+  if (enCiclo.length === 0) return ciclo.fases[0]?.id_ciclos_productivo_biologico ?? null;
+  const ultima = enCiclo[enCiclo.length - 1];
+  const idx = ciclo.fases.findIndex((f) => f.id_ciclos_productivo_biologico === ultima.id_ciclos_productivo_biologico);
+  if (idx < 0) return null;
+  return ciclo.fases[idx + 1]?.id_ciclos_productivo_biologico ?? null;
 }
 
 function CambiarFaseModal({
   ciclos,
   ciclosLoading,
+  historial,
   saving, saveError, onClose, onConfirmar,
 }: {
   ciclos: CicloProductivoAsignable[];
   ciclosLoading: boolean;
+  historial: GestionFaseResponse[];
   saving: boolean;
   saveError: ReturnType<typeof useFases>['saveError'];
   onClose: () => void;
   onConfirmar: (dto: CambiarFaseDTO) => Promise<boolean>;
 }) {
   const { t } = useT('biologicalAssets');
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { id_ciclo_productiva: '', motivo_cambio: '', fecha_inicio: '' },
+    defaultValues: { id_ciclo_productiva: '', fase_destino: '', confirmar_no_estandar: false, motivo_cambio: '', fecha_inicio: '' },
   });
+
+  // #73 (RF-37): las fases destino salen del ciclo elegido, que ya viene filtrado
+  // por la especie del activo (`GET /{id}/ciclos-productivos`).
+  const idCiclo = Number(watch('id_ciclo_productiva')) || null;
+  const ciclo = ciclos.find((c) => c.id_ciclo_productivo === idCiclo) ?? null;
+  const activa = historial.find((g) => g.es_activa) ?? null;
+  const idFaseActual = ciclo && activa?.id_ciclo_productiva === ciclo.id_ciclo_productivo
+    ? activa.id_ciclos_productivo_biologico ?? null
+    : null;
+  const idEstandar = ciclo ? faseEstandar(ciclo, historial) : null;
+  const idDestino = Number(watch('fase_destino')) || null;
+  const esNoEstandar = idDestino !== null && idDestino !== idEstandar;
+  // RF-37: un salto o un retroceso exige confirmación explícita (si es la actual, ya avisa ese error).
+  const pideConfirmacion = esNoEstandar && idDestino !== idFaseActual;
+
+  // Al elegir el ciclo se propone la siguiente fase de la secuencia (la transición estándar).
+  useEffect(() => {
+    setValue('fase_destino', idEstandar !== null ? String(idEstandar) : '');
+    setValue('confirmar_no_estandar', false);
+  }, [idCiclo, idEstandar, setValue]);
+
+  const etiquetaFase = (f: CicloProductivoAsignable['fases'][number], i: number) => {
+    const sufijo = f.id_ciclos_productivo_biologico === idFaseActual
+      ? ` (${t('fasessection.sufijo_actual')})`
+      : f.id_ciclos_productivo_biologico === idEstandar ? ` (${t('fasessection.sufijo_siguiente')})` : '';
+    return `${i + 1}. ${f.nombre_fase}${sufijo}`;
+  };
 
   const submit = async (v: FormValues) => {
     const ok = await onConfirmar({
       id_ciclo_productiva: Number(v.id_ciclo_productiva),
+      fase_destino_id: Number(v.fase_destino),
+      confirmacion_no_estandar: esNoEstandar,
       motivo_cambio: v.motivo_cambio.trim() || null,
       fecha_inicio: v.fecha_inicio ? instanteParaEvento(v.fecha_inicio) : null,
     });
@@ -152,6 +205,54 @@ function CambiarFaseModal({
               </option>
             ))}
           </Select>
+          <Select
+            id="fase-destino"
+            label={t('fasessection.fase_destino')}
+            required
+            disabled={!ciclo}
+            error={errors.fase_destino?.message}
+            hint={!ciclo
+              ? t('fasessection.elige_ciclo_primero')
+              : idEstandar === null ? t('fasessection.ciclo_completado') : undefined}
+            {...register('fase_destino', {
+              required: t('fasessection.fase_destino_obligatoria'),
+              // RF-37: "La fase destino debe ser distinta a la actual" (backend: FASE_DESTINO_IGUAL_ACTUAL).
+              validate: (v) => idFaseActual === null || Number(v) !== idFaseActual || t('fasessection.fase_destino_igual_actual'),
+            })}
+          >
+            <option value="">{t('fasessection.seleccionar_fase')}</option>
+            {ciclo?.fases.map((f, i) => (
+              <option key={f.id_ciclos_productivo_biologico} value={f.id_ciclos_productivo_biologico}>
+                {etiquetaFase(f, i)}
+              </option>
+            ))}
+          </Select>
+          {pideConfirmacion && (
+            <div>
+              <Alert
+                variant="warning"
+                title={t('fasessection.transicion_no_estandar_titulo')}
+                description={t('fasessection.transicion_no_estandar_detalle')}
+                style={{ marginBottom: 'var(--s2)' }}
+              />
+              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: 'var(--fs-label-md)', color: 'var(--text-primary)' }}>
+                <input
+                  type="checkbox"
+                  aria-invalid={!!errors.confirmar_no_estandar}
+                  style={{ accentColor: 'var(--brand-500)' }}
+                  {...register('confirmar_no_estandar', {
+                    validate: (v) => !pideConfirmacion || v || t('fasessection.confirmacion_obligatoria'),
+                  })}
+                />
+                {t('fasessection.confirmar_no_estandar')}
+              </label>
+              {errors.confirmar_no_estandar?.message && (
+                <p role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+                  {errors.confirmar_no_estandar.message}
+                </p>
+              )}
+            </div>
+          )}
           <Input label={t('fasessection.fecha_de_inicio')} type="date" max={hoyLocal()} {...register('fecha_inicio')} />
           <div>
             <label style={{ display: 'block', fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--s1)' }} htmlFor="motivo-fase">{t('fasessection.motivo_del_cambio')}</label>
@@ -220,6 +321,7 @@ export function FasesSection({ idActivo, estadoActual, onChanged }: Props) {
         <CambiarFaseModal
           ciclos={ciclos}
           ciclosLoading={ciclosLoading}
+          historial={fases}
           saving={saving}
           saveError={saveError}
           onClose={() => setAbierto(false)}

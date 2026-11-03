@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-03 | Arekkazu | QA-M09 RF-23: intervalo de transmisión mínimo de 10 minutos |
 import React, { useEffect, useState } from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -188,6 +191,9 @@ function Historial({ historial, loading, acciones, esCamara }: {
 
 // ── Config form ───────────────────────────────────────────────────────────────
 
+/** QA-M09 RF-23: piso del intervalo de transmisión; el backend lo exige igual. */
+const INTERVALO_MINIMO = 10;
+
 interface FormValues { frecuencia_captura: number; intervalo_transmision: number; fps: number; }
 
 function ConfigForm({ dispositivo, esCamara, onBack, encolada, cancelada, saving, saveError, ultima, historial, loadingHist, acciones, onSubmit, onReload }: {
@@ -355,7 +361,7 @@ function ConfigForm({ dispositivo, esCamara, onBack, encolada, cancelada, saving
                   <input
                     id="cfg-intervalo-transmision"
                     type="number"
-                    min={1}
+                    min={INTERVALO_MINIMO}
                     step={1}
                     placeholder="15"
                     aria-required="true"
@@ -369,7 +375,7 @@ function ConfigForm({ dispositivo, esCamara, onBack, encolada, cancelada, saving
                     {...register('intervalo_transmision', {
                       required: t('configuracionremotasection.obligatorio'),
                       valueAsNumber: true,
-                      min: { value: 1, message: t('configuracionremotasection.minimo_1_minuto') },
+                      min: { value: INTERVALO_MINIMO, message: t('configuracionremotasection.minimo_10_minutos') },
                       validate: (v) =>
                         v >= getValues('frecuencia_captura') ||
                         t('configuracionremotasection.intervalo_mayor_o_igual_a_frecuencia'),

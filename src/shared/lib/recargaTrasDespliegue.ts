@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 N-01: la versión nueva se aplica sola tras un despliegue |
 /**
  * Tras un despliegue, una pestaña abierta con el bundle anterior pide chunks
  * cuyos hashes ya no existen (404) y la página queda en "No se pudo mostrar
@@ -35,5 +38,24 @@ export function instalarRecargaTrasDespliegue(): void {
     }
     event.preventDefault();
     void recargarConVersionNueva();
+  });
+}
+
+/**
+ * N-01: el service worker nuevo (autoUpdate: skipWaiting + clientsClaim) tomaba el
+ * control, pero la pestaña seguía con el index.html viejo del precaché: las
+ * correcciones de un despliegue no se veían hasta cerrar sesión y volver a entrar.
+ * Al cambiar el controlador se recarga una vez. Sin controlador previo es la primera
+ * instalación, no una versión nueva, y no se recarga. Sin aviso al usuario: ocurre
+ * al abrir la app después del despliegue, cuando el navegador descubre el sw.js nuevo.
+ */
+export function instalarRecargaPorVersionNueva(): void {
+  const sw = 'serviceWorker' in navigator ? navigator.serviceWorker : undefined;
+  if (!sw?.controller) return;
+  let recargando = false;
+  sw.addEventListener('controllerchange', () => {
+    if (recargando) return;
+    recargando = true;
+    window.location.reload();
   });
 }

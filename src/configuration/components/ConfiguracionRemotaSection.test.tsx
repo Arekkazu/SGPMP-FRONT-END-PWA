@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-03 | Arekkazu | QA-M09 RF-23: intervalo de transmisión mínimo de 10 minutos |
 /**
  * RF-23 v1.1 (RFC-011): una CAMARA se configura solo con fps (1–60); un SENSOR
  * con frecuencia de captura e intervalo de transmisión. El formulario muestra y
@@ -70,5 +73,16 @@ describe('ConfiguracionRemotaSection por categoría', () => {
     fireEvent.submit(screen.getByLabelText(/frecuencia de captura/i).closest('form')!);
 
     await waitFor(() => expect(configurar).toHaveBeenCalledWith(8, { frecuencia_captura: 5, intervalo_transmision: 15 }));
+  });
+
+  it('un sensor no acepta un intervalo de transmisión menor a 10 minutos', async () => {
+    render(<ConfiguracionRemotaSection />);
+    fireEvent.click(screen.getByText('IOT-001'));
+
+    fireEvent.change(screen.getByLabelText(/intervalo de transmisi/i), { target: { value: '9' } });
+    fireEvent.submit(screen.getByLabelText(/intervalo de transmisi/i).closest('form')!);
+
+    expect((await screen.findByRole('alert')).textContent).toMatch(/10 minutos/);
+    expect(configurar).not.toHaveBeenCalled();
   });
 });

@@ -1,12 +1,20 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-73: pestaña por RF de origen, búsqueda en la página y aviso de evidencia verificable |
+// | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
+// | 2026-11-02 | Arekkazu | AJF-13 RF-73: "Relacionado con" + "Registro" por nombre en vez del ID de referencia libre |
+// | 2026-11-03 | Claude   | RF-73: sin pestaña ni búsqueda por RF de origen |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { ClipboardList, RefreshCw, Download, ListChecks, AlertOctagon, Layers } from 'lucide-react';
+import { ClipboardList, RefreshCw, Download, ListChecks, AlertOctagon, Layers, ShieldCheck } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useAuditoria } from '../hooks/useAuditoria';
 import { AuditoriaFiltros, AUDITORIA_FILTROS_VACIO, type AuditoriaFiltrosState } from '../components/AuditoriaFiltros';
+import { useReferenciasAuditoria } from '../hooks/useReferenciasAuditoria';
+import { etiquetaReferencia } from '../lib/referenciaAuditoria';
 import { AuditoriaTable } from '../components/AuditoriaTable';
 import { EventoAuditoriaModal } from '../components/EventoAuditoriaModal';
 import { ExportarAuditoriaModal } from '../components/ExportarAuditoriaModal';
@@ -15,6 +23,7 @@ import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_AUDITORIA, ACCION_R, ACCION_E } from '../rbac';
 import type { ListarAuditoriaFiltros, EventoAuditoriaM04Response } from '../types';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
+import { INPUT, LABEL } from '../components/tableStyles';
 
 type TabId = 'todos' | 'criticos' | 'tipo';
 
@@ -43,14 +52,21 @@ export function AuditoriaView() {
   const [sel, setSel] = useState<EventoAuditoriaM04Response | null>(null);
   const [selLoading, setSelLoading] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
 
   const build = useCallback((f: AuditoriaFiltrosState, pagina = 1): ListarAuditoriaFiltros => {
     const api: ListarAuditoriaFiltros = { pagina, por_pagina: 50 };
     if (f.tipo_evento) api.tipo_evento = f.tipo_evento;
     if (f.severidad) api.severidad_evento = f.severidad;
-    if (f.id_referencia.trim()) api.id_referencia = f.id_referencia.trim();
+    // AJF-13: el tipo de cosa siempre acompaña al id; "2" solo no dice si es lote, versión o patología.
+    if (f.entidad_referencia) api.entidad_referencia = f.entidad_referencia;
+    if (f.entidad_referencia && f.id_referencia) api.id_referencia = f.id_referencia;
     if (f.fecha_desde) api.fecha_desde = inicioDelDiaUtc(f.fecha_desde);
     if (f.fecha_hasta) api.fecha_hasta = finDelDiaUtc(f.fecha_hasta);
+    // Actor: un número es un usuario; cualquier otro texto, el sistema que originó el evento.
+    const actor = f.actor.trim();
+    if (actor) { if (/^\d+$/.test(actor)) api.id_usuario = Number(actor); else api.id_sistema = actor; }
+    if (f.tipo_modelo) api.tipo_modelo = f.tipo_modelo;
     return api;
   }, []);
 
@@ -59,6 +75,7 @@ export function AuditoriaView() {
   }, [puedeVer, cargar, cargarResumen]);
 
   const aplicar = () => { cargar(build(filtros, 1)); cargarResumen(build(filtros)); };
+  const { opciones: opcionesReferencia } = useReferenciasAuditoria(filtros.entidad_referencia);
   const limpiar = () => { setFiltros(AUDITORIA_FILTROS_VACIO); cargar({ pagina: 1, por_pagina: 50 }); cargarResumen(); };
 
   const abrirDetalle = async (e: EventoAuditoriaM04Response) => {
@@ -69,10 +86,18 @@ export function AuditoriaView() {
     setSelLoading(false);
   };
 
+  // CA-12: el backend no busca por texto; se busca dentro de la página cargada.
+  const buscados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return eventos;
+    return eventos.filter((e) => [e.tipo_evento, e.id_referencia, e.entidad_referencia, etiquetaReferencia(e), e.id_sistema, e.codigo_error, e.descripcion_error, e.correlacion_id]
+      .some((c) => c?.toLowerCase().includes(q)));
+  }, [eventos, busqueda]);
+
   const visibles = useMemo(() => {
-    if (tab === 'criticos') return eventos.filter((e) => e.severidad_evento === 'ERROR' || e.severidad_evento === 'CRITICAL');
-    return eventos;
-  }, [eventos, tab]);
+    if (tab === 'criticos') return buscados.filter((e) => e.severidad_evento === 'ERROR' || e.severidad_evento === 'CRITICAL');
+    return buscados;
+  }, [buscados, tab]);
 
   const correlacionados = useMemo(() => {
     if (!sel?.correlacion_id) return [];
@@ -83,9 +108,9 @@ export function AuditoriaView() {
 
   const porTipo = useMemo(() => {
     const map = new Map<string, number>();
-    eventos.forEach((e) => map.set(e.tipo_evento, (map.get(e.tipo_evento) ?? 0) + 1));
+    buscados.forEach((e) => map.set(e.tipo_evento, (map.get(e.tipo_evento) ?? 0) + 1));
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
-  }, [eventos]);
+  }, [buscados]);
 
   const criticosCount = (resumen?.errores ?? 0) + (resumen?.criticos ?? 0);
 
@@ -104,8 +129,8 @@ export function AuditoriaView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <ClipboardList size={20} aria-hidden />{t('auditoriaview.bitacora_de_auditoria')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            Registro inmutable de eventos del módulo de predicción
-            {fromCache && ' · desde caché'}
+            {t('auditoriaview.descripcion')}
+            {fromCache && ` · ${t('auditoriaview.desde_cache')}`}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--s2)' }}>
@@ -129,7 +154,17 @@ export function AuditoriaView() {
           <Kpi icon={<AlertOctagon size={18} aria-hidden />} valor={resumen?.criticos ?? null} etiqueta="Críticos" color="var(--sem-error)" />
         </div>
 
-        <AuditoriaFiltros value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} />
+        <div role="note" style={{ display: 'flex', gap: 'var(--s2)', padding: 'var(--s3) var(--s4)', marginBottom: 'var(--s5)', borderRadius: 'var(--r-md)', border: '1px solid var(--sem-info-border)', background: 'var(--sem-info-bg)', color: 'var(--text-primary)', fontSize: '13px' }}>
+          <ShieldCheck size={16} aria-hidden style={{ color: 'var(--sem-info)', flexShrink: 0, marginTop: 1 }} />
+          <span><strong>{t('auditoriaview.evidencia_titulo')}</strong> {t('auditoriaview.evidencia_texto')}</span>
+        </div>
+
+        <AuditoriaFiltros value={filtros} onChange={setFiltros} onAplicar={aplicar} onLimpiar={limpiar} opcionesReferencia={opcionesReferencia} />
+
+        <div style={{ maxWidth: 360, marginBottom: 'var(--s4)' }}>
+          <label style={LABEL} htmlFor="aud-buscar">{t('auditoriaview.buscar')}</label>
+          <input id="aud-buscar" type="search" style={INPUT} value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder={t('auditoriaview.buscar_placeholder')} />
+        </div>
 
         {/* Tabs */}
         <div role="tablist" aria-label={t('auditoriaview.vista_de_eventos')} style={{ display: 'flex', gap: 'var(--s2)', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>

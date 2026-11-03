@@ -1,18 +1,15 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-03 | Arekkazu | QA-M02 RF-49: la ficha solo consulta los sensores asociados; ya no crea asociaciones |
 import { http } from '../../shared/api/http';
-import type { AsociarSensorActivoDTO, AsociacionSensorActivoResponse } from '../types';
+import type { ConsultaAsociacionesSensorResponse } from '../types';
 
 const BASE = '/activos-biologicos';
 
 export const sensoresApi = {
-  /** Recurso 30 (asociacion_sensor_activo) — solo Admin/Ingeniero pueden crear. */
-  async asociar(
-    idActivo: number,
-    dto: AsociarSensorActivoDTO
-  ): Promise<AsociacionSensorActivoResponse> {
-    const res = await http.post<AsociacionSensorActivoResponse>(
-      `${BASE}/${idActivo}/sensores`,
-      dto
-    );
+  /** Asociaciones vigentes del activo, incluidas las ambientales de su infraestructura. */
+  async listar(idActivo: number): Promise<ConsultaAsociacionesSensorResponse> {
+    const res = await http.get<ConsultaAsociacionesSensorResponse>(`${BASE}/${idActivo}/sensores`);
     return res.data;
   },
 };

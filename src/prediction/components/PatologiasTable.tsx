@@ -1,6 +1,13 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-11 RF-64: la fila base dice por qué no se edita |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-179 RF-64 a11y 1.4.1: variable crítica con ícono y texto, no solo color de borde |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-23 RF-64: patologías en tarjetas en celular |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { Eye, Pencil, Ban } from 'lucide-react';
+import { Eye, Pencil, Ban, Lock, AlertTriangle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { EstadoActivoPill, TipoPatologiaPill } from './PatologiaPills';
 import { nombreEspecie, nombreVariable } from '../lib/catalogos';
@@ -32,16 +39,17 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
   }
 
   return (
-    <div style={TABLE_WRAP}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+    <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de patologías">
+      {/* T-23: tarjetas por debajo de 768px (Layout.css); a 375px la tabla medía 898px. */}
+      <table className="ds-tabla-tarjetas" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={THEAD_ROW}>
-            <th style={TH}>{t('patologiastable.nombre')}</th>
-            <th style={TH}>{t('patologiastable.especie')}</th>
-            <th style={TH}>{t('patologiastable.variables_asociadas')}</th>
-            <th style={TH}>{t('patologiastable.tipo')}</th>
-            <th style={TH}>{t('patologiastable.estado')}</th>
-            <th style={{ ...TH, textAlign: 'right' }}>{t('patologiastable.acciones')}</th>
+            <th scope="col" style={TH}>{t('patologiastable.nombre')}</th>
+            <th scope="col" style={TH}>{t('patologiastable.especie')}</th>
+            <th scope="col" style={TH}>{t('patologiastable.variables_asociadas')}</th>
+            <th scope="col" style={TH}>{t('patologiastable.tipo')}</th>
+            <th scope="col" style={TH}>{t('patologiastable.estado')}</th>
+            <th scope="col" style={{ ...TH, textAlign: 'right' }}>{t('patologiastable.acciones')}</th>
           </tr>
         </thead>
         <tbody>
@@ -49,9 +57,9 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
             const bloqueada = p.es_base;
             return (
               <tr key={p.id_patologia}>
-                <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{p.nombre_patologia}</td>
-                <td style={TD}>{nombreEspecie(p.especie_aplicable)}</td>
-                <td style={TD}>
+                <td className="ds-celda-titulo" style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>{p.nombre_patologia}</td>
+                <td data-label={t('patologiastable.especie')} style={TD}>{nombreEspecie(p)}</td>
+                <td data-label={t('patologiastable.variables_asociadas')} style={TD}>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s1)' }}>
                     {p.variables_sensoricas_asociadas.length === 0 && <span style={{ color: 'var(--text-muted)' }}>—</span>}
                     {p.variables_sensoricas_asociadas.map((v) => (
@@ -67,37 +75,49 @@ export function PatologiasTable({ patologias, loading, puedeEditar, puedeDesacti
                           color: 'var(--text-secondary)',
                         }}
                       >
-                        {nombreVariable(v.id_variable_ambiental)}
+                        {v.es_variable_critica && <AlertTriangle size={11} aria-hidden style={{ color: 'var(--sem-warning)', marginRight: 2, verticalAlign: '-1px' }} />}
+                        {nombreVariable(v)}
+                        {v.es_variable_critica && <span className="ds-sr-only">{` (${t('patologiastable.variable_critica')})`}</span>}
                       </span>
                     ))}
                   </div>
                 </td>
-                <td style={TD}><TipoPatologiaPill esBase={p.es_base} /></td>
-                <td style={TD}><EstadoActivoPill activo={p.es_activo} /></td>
-                <td style={{ ...TD, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                <td data-label={t('patologiastable.tipo')} style={TD}><TipoPatologiaPill esBase={p.es_base} /></td>
+                <td className="ds-celda-destacada" style={TD}><EstadoActivoPill activo={p.es_activo} /></td>
+                <td className="ds-celda-accion" style={{ ...TD, textAlign: 'right', whiteSpace: 'nowrap' }}>
                   <Button variant="ghost" size="sm" onClick={() => onVer(p)} aria-label={`Ver ${p.nombre_patologia}`} title={t('patologiastable.ver_detalle')}>
                     <Eye size={16} aria-hidden />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={!puedeEditar || bloqueada}
-                    onClick={() => onEditar(p)}
-                    aria-label={`Editar ${p.nombre_patologia}`}
-                    title={bloqueada ? t('patologiastable.las_patologias_base_no_se_pueden_editar') : 'Editar'}
-                  >
-                    <Pencil size={16} aria-hidden />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={!puedeDesactivar || bloqueada || !p.es_activo}
-                    onClick={() => onDesactivar(p)}
-                    aria-label={`Inactivar ${p.nombre_patologia}`}
-                    title={bloqueada ? t('patologiastable.las_patologias_base_no_se_pueden_inactivar') : 'Inactivar'}
-                  >
-                    <Ban size={16} aria-hidden />
-                  </Button>
+                  {bloqueada ? (
+                    // M4-11: el motivo se lee en la fila. Un `title` en un botón deshabilitado
+                    // no aparece al pasar el cursor ni lo anuncia el lector de pantalla.
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', marginLeft: 'var(--s2)', fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      <Lock size={14} aria-hidden />{t('patologiastable.base_no_editable')}
+                    </span>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!puedeEditar}
+                        onClick={() => onEditar(p)}
+                        aria-label={`Editar ${p.nombre_patologia}`}
+                        title="Editar"
+                      >
+                        <Pencil size={16} aria-hidden />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!puedeDesactivar || !p.es_activo}
+                        onClick={() => onDesactivar(p)}
+                        aria-label={`Inactivar ${p.nombre_patologia}`}
+                        title="Inactivar"
+                      >
+                        <Ban size={16} aria-hidden />
+                      </Button>
+                    </>
+                  )}
                 </td>
               </tr>
             );

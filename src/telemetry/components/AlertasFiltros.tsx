@@ -1,36 +1,85 @@
-import React from 'react';
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
+// | 2026-10-29 | Arekkazu | H-M3-05 CP31 RF-57: rango de fechas invertido se avisa en el campo y no se aplica |
+// | 2026-10-31 | Claude   | INC-M03-240-G69 RF-57: filtro por el tipo REGLA_SIMPLE |
+// | 2026-11-02 | Arekkazu | AJF-02 RF-57: el animal o lote escrito a medias se resuelve al salir o se avisa en el campo; no se consulta sin el filtro |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
+import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { Combobox } from '../../shared/design-system/Combobox';
+import { etiquetaDeCatalogo, idDeCatalogo, resolverCatalogo } from '../../shared/lib/catalogo';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
+import { SelectorArea } from './SelectorArea';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
+import type { AreaTelemetria } from '../hooks/useAreas';
+import type { ActivoOpcionTelemetria } from '../api/alertasApi';
+
+// T-19: el tipo era texto libre ("Ej: ESTRES_TERMICO"). modulo3.enum_tipo_alerta,
+// sin TECNICA, que tiene su propia vista.
+const TIPOS_ALERTA = [
+  'ESTRES_TERMICO', 'SINDROME_RESPIRATORIO', 'RIESGO_HIDRICO', 'FIEBRE', 'INACTIVIDAD_ANORMAL',
+  'FALLO_AMBIENTAL', 'PREDICCION_PATOLOGIA', 'TORMENTA_DE_ALERTAS', 'CONVERSION_ALIMENTICIA',
+  // G69 (RF-57 E14): alerta de una sola variable fuera de su banda NORMAL.
+  'REGLA_SIMPLE',
+];
 
 export interface AlertasFiltrosState {
   estado: string;
   severidad: string;
   origen_evento: string;
   tipo_alerta: string;
-  id_sensor: string;
+  /** T-18: área y activo se eligen por nombre; los id_* son lo que se envía. */
+  id_infraestructura: string;
+  area: string;
   id_activo_biologico: string;
+  activo: string;
   fecha_desde: string;
   fecha_hasta: string;
 }
 
 export const ALERTAS_FILTROS_VACIO: AlertasFiltrosState = {
   estado: '', severidad: '', origen_evento: '', tipo_alerta: '',
-  id_sensor: '', id_activo_biologico: '', fecha_desde: '', fecha_hasta: '',
+  id_infraestructura: '', area: '', id_activo_biologico: '', activo: '', fecha_desde: '', fecha_hasta: '',
 };
 
 interface Props {
+  areas?: AreaTelemetria[];
+  activos?: ActivoOpcionTelemetria[];
   value: AlertasFiltrosState;
   onChange: (v: AlertasFiltrosState) => void;
   onAplicar: () => void;
   onLimpiar: () => void;
-  /** Oculta filtros no relevantes en alertas técnicas (tipo fijo). */
+  /**
+   * Alertas técnicas: tipo fijo, y /iot/alertas-tecnicas no filtra por área ni por
+   * activo (antes se mostraban esos campos y se ignoraban).
+   */
   ocultarTipo?: boolean;
 }
 
-export function AlertasFiltros({ value, onChange, onAplicar, onLimpiar, ocultarTipo }: Props) {
+export function AlertasFiltros({ areas = [], activos = [], value, onChange, onAplicar, onLimpiar, ocultarTipo }: Props) {
+  const invertido = !!value.fecha_desde && !!value.fecha_hasta && value.fecha_desde > value.fecha_hasta;
   const { t } = useT('telemetry');
+  const nombreActivo = (a: ActivoOpcionTelemetria) => a.identificador || `${a.nombre_especie ?? ''} #${a.id_activo_biologico}`.trim();
+  const catalogoActivos = activos.map((a) => ({ id: a.id_activo_biologico, nombre: nombreActivo(a) }));
+  const opcionesActivos = activos.map((a) => ({ valor: etiquetaDeCatalogo(nombreActivo(a), a.id_activo_biologico), detalle: a.nombre_especie ?? undefined }));
+  // AJF-02: texto en el campo que no es un activo → antes la consulta salía sin el
+  // filtro y parecía que "no filtraba". Ahora se avisa en el campo y no se consulta.
+  const [activoTocado, setActivoTocado] = useState(false);
+  const activoSinResolver = !ocultarTipo && value.activo.trim() !== '' && value.id_activo_biologico === '';
+  const errorActivo = activoTocado && activoSinResolver ? t('alertasfiltros.activo_sin_resolver') : undefined;
+  const resolverActivo = () => {
+    const r = resolverCatalogo(value.activo, catalogoActivos);
+    if (r.estado === 'resuelto') onChange({ ...value, activo: r.texto, id_activo_biologico: String(r.id) });
+    setActivoTocado(r.estado === 'sin_resolver');
+  };
+  const aplicar = () => {
+    if (invertido) return;
+    if (activoSinResolver) { setActivoTocado(true); return; }
+    onAplicar();
+  };
   const set = (k: keyof AlertasFiltrosState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     onChange({ ...value, [k]: e.target.value });
 
@@ -69,30 +118,61 @@ export function AlertasFiltros({ value, onChange, onAplicar, onLimpiar, ocultarT
         {!ocultarTipo && (
           <div>
             <label style={LABEL} htmlFor="al-tipo">{t('alertasfiltros.tipo_de_alerta')}</label>
-            <input id="al-tipo" style={INPUT} placeholder={t('alertasfiltros.ej_estres_termico')} value={value.tipo_alerta} onChange={set('tipo_alerta')} />
+            <select id="al-tipo" style={INPUT} value={value.tipo_alerta} onChange={set('tipo_alerta')}>
+              <option value="">{t('alertasfiltros.todos')}</option>
+              {TIPOS_ALERTA.map((c) => <option key={c} value={c}>{etiquetaCodigo(c)}</option>)}
+            </select>
           </div>
         )}
-        <div>
-          <label style={LABEL} htmlFor="al-sensor">{t('alertasfiltros.id_sensor')}</label>
-          <input id="al-sensor" type="number" style={INPUT} value={value.id_sensor} onChange={set('id_sensor')} />
-        </div>
-        <div>
-          <label style={LABEL} htmlFor="al-activo">{t('alertasfiltros.id_activo')}</label>
-          <input id="al-activo" type="number" style={INPUT} value={value.id_activo_biologico} onChange={set('id_activo_biologico')} />
-        </div>
+        {!ocultarTipo && (
+          <>
+            <SelectorArea
+              id="al-area"
+              compacto
+              areas={areas}
+              value={value.area}
+              onChange={(area, id) => onChange({ ...value, area, id_infraestructura: id != null ? String(id) : '' })}
+            />
+            <Combobox
+              id="al-activo"
+              compacto
+              label={t('alertasfiltros.activo')}
+              opciones={opcionesActivos}
+              value={value.activo}
+              onChange={(activo) => {
+                const id = idDeCatalogo(activo, catalogoActivos);
+                onChange({ ...value, activo, id_activo_biologico: id != null ? String(id) : '' });
+                if (id != null || !activo.trim()) setActivoTocado(false);
+              }}
+              onBlur={resolverActivo}
+              onEnter={resolverActivo}
+              error={errorActivo}
+              hint={t('alertasfiltros.activo_ayuda')}
+              placeholder={t('selectorarea.placeholder')}
+            />
+          </>
+        )}
         <div>
           <label style={LABEL} htmlFor="al-desde">{t('alertasfiltros.desde')}</label>
           <input id="al-desde" type="date" style={INPUT} value={value.fecha_desde} onChange={set('fecha_desde')} />
         </div>
         <div>
           <label style={LABEL} htmlFor="al-hasta">{t('alertasfiltros.hasta')}</label>
-          <input id="al-hasta" type="date" style={INPUT} value={value.fecha_hasta} onChange={set('fecha_hasta')} />
+          <input
+            id="al-hasta" type="date" style={INPUT} value={value.fecha_hasta} onChange={set('fecha_hasta')}
+            aria-invalid={invertido} aria-describedby={invertido ? 'al-rango-error' : undefined}
+          />
+          {invertido && (
+            <p id="al-rango-error" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+              {t('filtros.rango_invertido', { ns: 'common' })}
+            </p>
+          )}
         </div>
       </div>
       <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)' }}>
-        <Button variant="primary" size="sm" onClick={onAplicar}>
+        <Button variant="primary" size="sm" disabled={invertido} onClick={aplicar}>
           <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('alertasfiltros.aplicar_filtros')}</Button>
-        <Button variant="ghost" size="sm" onClick={onLimpiar}>{t('alertasfiltros.limpiar')}</Button>
+        <Button variant="ghost" size="sm" onClick={() => { setActivoTocado(false); onLimpiar(); }}>{t('alertasfiltros.limpiar')}</Button>
       </div>
     </>
   );

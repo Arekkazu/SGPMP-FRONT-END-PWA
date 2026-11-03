@@ -5,7 +5,8 @@
     "el_identificador_de_la_ruta_no_es_valido": "The identifier in the URL is not valid.",
     "no_se_pudo_cargar_el_activo": "The asset could not be loaded",
     "secciones_del_activo": "Asset sections",
-    "volver_a_la_lista": "Back to the list"
+    "volver_a_la_lista": "Back to the list",
+    "advertencia_edad_titulo": "Asset registered with an age warning"
   },
   "activosfiltros": {
     "buscar": "Search",
@@ -19,35 +20,6 @@
   "activostable": {
     "no_hay_activos_biologicos_que_coincidan_con": "No biological assets match the filters.",
     "aun_no_hay_activos": "There are no biological assets registered on your farms yet."
-  },
-  "asociarsensormodal": {
-    "ambiental": "Environmental",
-    "asociar_sensor": "Link sensor",
-    "asociar_sensor_iot": "Link IoT sensor",
-    "cancelar": "Cancel",
-    "cargando": "Loading…",
-    "directa": "Direct",
-    "dispositivo_iot": "IoT device",
-    "el_dispositivo_es_obligatorio": "The device is required.",
-    "el_sensor_es_obligatorio": "The sensor is required.",
-    "fecha_de_inicio": "Start date",
-    "id_dispositivo_iot": "IoT device ID",
-    "id_infraestructura": "Infrastructure ID",
-    "id_invalido": "Invalid ID.",
-    "id_sensor": "Sensor ID",
-    "individual": "Individual",
-    "infraestructura_del_activo": "Asset facility",
-    "la_infraestructura_es_obligatoria": "The infrastructure is required.",
-    "lote": "Batch",
-    "motivo": "Reason",
-    "no_se_pudo_asociar_el_sensor": "The sensor could not be linked",
-    "opcional": "Optional",
-    "poblacional": "Population",
-    "seleccionar": "Select…",
-    "sensor": "Sensor",
-    "solo_administrador_e_ingeniero_pueden": "You don't have permission to link sensors to this asset.",
-    "tipo_de_activo": "Asset type",
-    "tipo_de_asociacion": "Link type"
   },
   "auditoriam02view": {
     "aplicar_filtros": "Apply filters",
@@ -150,7 +122,15 @@
     "sin_datos": "No data.",
     "sin_metricas": "No metrics.",
     "tipo_de_dato": "Data type",
-    "todos": "All"
+    "todos": "All",
+    "metrica": {
+      "peso_actual": "Current weight",
+      "unidad_peso": "Weight unit",
+      "fecha_ultimo_peso": "Last weighing",
+      "cantidad_actual": "Current count",
+      "biomasa_total": "Total biomass",
+      "indicadores_historicos": "Calculated indicators"
+    }
   },
   "editaractivomodal": {
     "cancelar": "Cancel",
@@ -258,7 +238,12 @@
     "padre_obligatorio": "Choose the sire: this event requires it.",
     "sin_especificar": "Not specified",
     "seleccionar": "Select…",
-    "al_menos_una_cria": "There must be at least 1 offspring."
+    "al_menos_una_cria": "There must be at least 1 offspring.",
+    "campos_para_la_categoria": "Fields for the chosen category",
+    "numero_de_crias_perdidas": "Number of offspring lost",
+    "resultado_del_diagnostico": "Diagnosis result",
+    "positivo": "Positive (pregnant)",
+    "negativo": "Negative"
   },
   "eventosanitarioform": {
     "campos_para_el_tipo": "Fields for the selected type",
@@ -290,7 +275,11 @@
     "tipo": "Type",
     "tratamiento": "Treatment",
     "unidad_de_dosis": "Dose unit",
-    "vacunacion": "Vaccination"
+    "vacunacion": "Vaccination",
+    "requiere_diagnostico_titulo": "This asset has no diagnosis yet",
+    "requiere_diagnostico_detalle": "To record a treatment or a vaccination, first record a diagnosis event for this asset.",
+    "registrar_diagnostico": "Record diagnosis",
+    "verificando_diagnostico": "Checking the asset's health history…"
   },
   "eventossection": {
     "error_al_cargar_eventos": "Failed to load events",
@@ -322,7 +311,19 @@
     "cargando_ciclos": "Loading cycles…",
     "seleccionar_ciclo": "Select a production cycle",
     "sin_ciclos": "This asset's species has no production cycles configured in Settings.",
-    "ayuda_ciclo": "The next phase of the selected cycle is assigned."
+    "ayuda_ciclo": "This cycle's phases appear in “Target phase”; the next one is preselected.",
+    "fase_destino": "Target phase",
+    "seleccionar_fase": "Select phase…",
+    "elige_ciclo_primero": "Choose the production cycle first.",
+    "ciclo_completado": "The asset already completed this cycle: any phase you choose is out of sequence.",
+    "fase_destino_obligatoria": "The target phase is required.",
+    "fase_destino_igual_actual": "The asset is already in this phase. Choose a different one.",
+    "sufijo_actual": "current",
+    "sufijo_siguiente": "next",
+    "transicion_no_estandar_titulo": "Out-of-sequence transition",
+    "transicion_no_estandar_detalle": "This phase is not the next one in the cycle: it skips ahead or goes back.",
+    "confirmar_no_estandar": "I confirm this out-of-sequence transition is intentional.",
+    "confirmacion_obligatoria": "Confirm the out-of-sequence transition to continue."
   },
   "fichaintegralview": {
     "accesos_directos": "Shortcuts",
@@ -374,7 +375,26 @@
     "cat_baja": "Removal",
     "cat_transferencia": "Transfer",
     "cat_ingreso": "Intake",
-    "cat_indicador": "Indicator"
+    "cat_indicador": "Indicator",
+    "cat_alerta_iot": "Sensor alert",
+    "cat_prediccion": "Prediction",
+    "cat_diagnostico_clinico": "Clinical diagnosis",
+    "cat_contagio": "Contagion risk",
+    "nivel_0": "Normal",
+    "nivel_1": "Low",
+    "nivel_2": "Moderate",
+    "nivel_3": "High",
+    "alerta_area": "Critical environmental alert in {{area}}: {{tipo}}",
+    "riesgo_cambio": "Risk went from {{de}} to {{a}}",
+    "riesgo_nivel": "{{nivel}} risk",
+    "de_prueba": "(test run, raised no alert)",
+    "diagnostico": "Diagnosis: {{diagnosticos}}",
+    "contagio_alto": "High contagion risk · {{probabilidad}}",
+    "col_fecha": "Date",
+    "col_descripcion": "Description",
+    "col_responsable": "Responsible",
+    "col_detalle": "Detail",
+    "ver_detalle": "View detail"
   },
   "indicadoressection": {
     "advertencias": "Warnings",
@@ -442,7 +462,6 @@
     "la_cantidad_inicial_es_obligatoria_para": "The initial quantity is required for batches.",
     "la_especie_es_obligatoria": "The species is required.",
     "la_fecha_de_inicio_es_obligatoria": "The start date is required.",
-    "la_fecha_de_nacimiento_es_obligatoria": "The date of birth is required.",
     "la_infraestructura_es_obligatoria": "The infrastructure is required.",
     "la_raza_es_obligatoria": "The breed is required.",
     "macho": "Male",
@@ -466,16 +485,33 @@
     "cargando": "Loading…",
     "sin_fincas": "You have no farms assigned. Ask the administrator to assign one.",
     "sin_infraestructuras_compatibles": "This farm has no active areas for that species.",
-    "areas_de_otra_especie": "This farm's areas are for another species ({{otras}}), not for {{especie}}.",
-    "area_de_otra_especie": "{{area}} is an area for {{especie}}. Choose one compatible with the asset's species.",
+    "areas_de_otra_especie": "This farm's areas host species of another management group ({{otras}}), which do not accept {{especie}}.",
+    "area_de_otra_especie": "{{area}} hosts species of another management group ({{especie}}). Choose an area of the same group as the asset's species.",
     "contacta_administrador_area": "Contact an Administrator to create the area for this species.",
     "ir_a_crear_area": "Create area in Configuration",
-    "lote_sin_densidad_titulo": "This species cannot register batches yet",
-    "lote_sin_densidad_detalle": "{{especie}} is missing its maximum density. Ask the administrator, or register an individual animal.",
+    "lote_sin_densidad_titulo": "This species cannot register assets yet",
+    "lote_sin_densidad_detalle": "{{especie}} is missing its maximum density (ind/m²), used to compute the area's capacity. Ask the administrator.",
     "especie_hint": "Type the species name or ID.",
     "finca_hint": "Optional: filters the suggested infrastructures.",
-    "infraestructura_hint": "Type the name or ID. Choose a farm to see suggestions.",
-    "opcion_no_valida": "Choose an option from the list or type the ID."
+    "infraestructura_hint": "Choose the farm first; then type the name or ID, or open the list.",
+    "opcion_no_valida": "Choose an option from the list or type the ID.",
+    "fecha_nacimiento_hint": "Optional. If the age reaches the species' life expectancy, the asset is still registered and you will see a warning.",
+    "capacidad_area": "capacity {{capacidad}}",
+    "atributo_debe_ser_numero": "Enter a number.",
+    "atributo_debe_ser_entero": "Enter a whole number, without decimals.",
+    "atributo_minimo": "Must be greater than or equal to {{min}}.",
+    "atributo_maximo": "Must be less than or equal to {{max}}.",
+    "atributo_rango": "Between {{min}} and {{max}}.",
+    "cargando_atributos": "Loading the species attributes…",
+    "atributos_no_cargados_titulo": "The species attributes could not be loaded",
+    "atributos_no_cargados_detalle": "Without them the record cannot be validated. Check your connection and try again.",
+    "especie_no_disponible": "That species does not exist or is inactive. Choose one from the list.",
+    "elige_finca_primero": "Choose the farm first to validate the infrastructure.",
+    "infraestructura_no_disponible": "That infrastructure does not exist, is inactive or does not belong to the chosen farm.",
+    "catalogos_no_cargados_titulo": "The species and farms could not be loaded",
+    "catalogos_no_cargados_detalle": "Without them the record cannot be validated. Check your connection and try again.",
+    "infraestructuras_no_cargadas": "The farm infrastructures could not be loaded.",
+    "reintentar": "Try again"
   },
   "registraractivopage": {
     "alta_de_un_ejemplar_individual_o_de_un_lote": "Register a single animal or a population batch",
@@ -521,15 +557,21 @@
     "coincidencias_en_pagina_other": "{{count}} of {{total}} assets on this page match. Search only checks the current page."
   },
   "sensoressection": {
-    "asociacion_creada_con_advertencia": "Link created with a warning",
-    "asociar_sensor": "Link sensor",
-    "sensores_iot": "IoT sensors"
+    "sensores_iot": "IoT sensors",
+    "sin_sensores": "This asset has no associated sensors.",
+    "gestion_en_configuracion": "Sensor associations are managed from the Configuration module.",
+    "sensor": "Sensor",
+    "dispositivo": "Device",
+    "tipo": "Type",
+    "desde": "Since",
+    "estado": "Status",
+    "error_al_cargar": "Could not load the sensors"
   },
   "transferenciawizard": {
     "cancelar": "Cancel",
     "confirma_la_transferencia": "Confirm the transfer",
     "confirmar_transferencia": "Confirm transfer",
-    "criterio_destinos": "Only active facilities on the same farm, compatible with the species and with room for this asset are listed.",
+    "criterio_destinos": "Only active areas on the same farm that host or accept the species' management group and have room for this asset are listed (capacity uses the lowest density of its species, including the asset's).",
     "describe_el_motivo": "Describe the reason…",
     "destino": "Destination",
     "el_motivo_es_obligatorio": "A reason is required.",
@@ -547,6 +589,7 @@
     "sin_infraestructura_de_origen": "No source infrastructure",
     "transferencia_interna": "Internal transfer",
     "transferir": "Transfer",
-    "volver": "Back"
+    "volver": "Back",
+    "libres": "free: {{libres}}"
   }
 }

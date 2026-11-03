@@ -1,3 +1,7 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-29 | Arekkazu | H-M3-14 CP107 RF-62: rango invertido no se envía y se avisa en el campo |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { CheckCircle2 } from 'lucide-react';
@@ -5,11 +9,13 @@ import { ModalShell } from './ModalShell';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { INPUT, LABEL } from './tableStyles';
-import type { SolicitarReevaluacionDTO, ReevaluacionResponseSchema } from '../types';
+import { SelectorSensor } from './SelectorSensor';
+import type { SolicitarReevaluacionDTO, ReevaluacionResponseSchema, SensorCatalogo } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
 
 interface Props {
+  sensores: SensorCatalogo[];
   saving: boolean;
   saveError: ApiError | null;
   reevaluacion: ReevaluacionResponseSchema | null;
@@ -24,9 +30,11 @@ const TEXTAREA: React.CSSProperties = {
   minHeight: 90, resize: 'vertical', outline: 'none',
 };
 
-export function ReevaluarModal({ saving, saveError, reevaluacion, onConfirm, onClose }: Props) {
+export function ReevaluarModal({ sensores, saving, saveError, reevaluacion, onConfirm, onClose }: Props) {
   const { t } = useT('telemetry');
-  const [idSensor, setIdSensor] = useState('');
+  const [textoSensor, setTextoSensor] = useState('');
+  const [idElegido, setIdElegido] = useState<number | null>(null);
+  const idSensor = idElegido != null ? String(idElegido) : '';
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
   const [causa, setCausa] = useState('');
@@ -38,11 +46,14 @@ export function ReevaluarModal({ saving, saveError, reevaluacion, onConfirm, onC
   const rangoDesde = desde ? inicioDelDiaUtc(desde) : undefined;
   const rangoHasta = hasta ? finDelDiaUtc(hasta) : undefined;
   const faltaFechas = !rangoDesde || !rangoHasta;
+  // H-M3-14: con «Hasta» antes de «Desde» decía "operación completada" sobre un rango vacío.
+  const invertido = !faltaFechas && desde > hasta;
+  const errorFechas = touched && (faltaFechas || invertido);
   const causaInvalida = causa.trim().length < 10;
 
   const confirmar = () => {
     setTouched(true);
-    if (faltaSensor || faltaFechas || causaInvalida) return;
+    if (faltaSensor || faltaFechas || invertido || causaInvalida) return;
     onConfirm({
       id_sensor: Number(idSensor),
       fecha_desde: rangoDesde,
@@ -81,16 +92,25 @@ export function ReevaluarModal({ saving, saveError, reevaluacion, onConfirm, onC
 
           <div className="ds-fg2" style={{ gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={LABEL} htmlFor="re-sensor">{t('reevaluarmodal.id_sensor')}</label>
-              <input id="re-sensor" type="number" style={{ ...INPUT, borderColor: touched && faltaSensor ? 'var(--sem-error)' : 'var(--surface-border)' }} value={idSensor} onChange={(e) => setIdSensor(e.target.value)} aria-required aria-invalid={touched && faltaSensor} />
+              {/* T-18: el sensor se busca por nombre; también acepta el ID escrito. */}
+              <SelectorSensor
+                id="re-sensor" sensores={sensores} value={textoSensor} required
+                onChange={(texto, id) => { setTextoSensor(texto); setIdElegido(id); }}
+                error={touched && faltaSensor ? t('reevaluarmodal.elige_un_sensor') : undefined}
+              />
             </div>
             <div>
               <label style={LABEL} htmlFor="re-desde">{t('reevaluarmodal.desde')}</label>
-              <input id="re-desde" type="date" style={{ ...INPUT, borderColor: touched && faltaFechas ? 'var(--sem-error)' : 'var(--surface-border)' }} value={desde} onChange={(e) => setDesde(e.target.value)} aria-required />
+              <input id="re-desde" type="date" style={{ ...INPUT, borderColor: errorFechas ? 'var(--sem-error)' : 'var(--surface-border)' }} value={desde} onChange={(e) => setDesde(e.target.value)} aria-required aria-invalid={errorFechas} aria-describedby={errorFechas ? 're-fechas-error' : undefined} />
             </div>
             <div>
               <label style={LABEL} htmlFor="re-hasta">{t('reevaluarmodal.hasta')}</label>
-              <input id="re-hasta" type="date" style={{ ...INPUT, borderColor: touched && faltaFechas ? 'var(--sem-error)' : 'var(--surface-border)' }} value={hasta} onChange={(e) => setHasta(e.target.value)} aria-required />
+              <input id="re-hasta" type="date" style={{ ...INPUT, borderColor: errorFechas ? 'var(--sem-error)' : 'var(--surface-border)' }} value={hasta} onChange={(e) => setHasta(e.target.value)} aria-required aria-invalid={errorFechas} aria-describedby={errorFechas ? 're-fechas-error' : undefined} />
+              {errorFechas && (
+                <p id="re-fechas-error" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>
+                  {invertido ? t('filtros.rango_invertido', { ns: 'common' }) : t('filtros.fechas_obligatorias', { ns: 'common' })}
+                </p>
+              )}
             </div>
           </div>
 

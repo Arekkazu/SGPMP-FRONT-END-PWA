@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: severidad de la alerta en femenino, como el filtro |
 import React from 'react';
 import { Info, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { Pill, type Tono } from './Pill';
@@ -13,8 +16,8 @@ const SIZE = 12;
 
 const META: Record<Severidad, Meta> = {
   LEVE: { label: 'Leve', tono: 'info', icon: <Info size={SIZE} aria-hidden /> },
-  MODERADO: { label: 'Moderado', tono: 'warning', icon: <AlertTriangle size={SIZE} aria-hidden /> },
-  CRITICO: { label: 'Crítico', tono: 'error', icon: <AlertOctagon size={SIZE} aria-hidden /> },
+  MODERADO: { label: 'Moderada', tono: 'warning', icon: <AlertTriangle size={SIZE} aria-hidden /> },
+  CRITICO: { label: 'Crítica', tono: 'error', icon: <AlertOctagon size={SIZE} aria-hidden /> },
 };
 
 function normalizar(sev: string | null | undefined): Severidad | null {

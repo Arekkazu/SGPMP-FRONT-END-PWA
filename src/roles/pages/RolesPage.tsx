@@ -1,5 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-20: aviso único de sin acceso (AccesoDenegado) |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
+import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
 import { Plus, Search } from 'lucide-react';
 import { useRoles } from '../hooks/useRoles';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -43,14 +47,7 @@ export function RolesPage() {
     : roles;
   const { pagina, setPagina, totalPaginas, enPagina } = usePaginado(rolesFiltrados, busqueda);
 
-  if (!puedeVer) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
-        <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.375rem' }}>{t('rolespage.acceso_restringido')}</p>
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: 320 }}>{t('rolespage.la_gestion_de_roles_requiere_permiso_de')}</p>
-      </div>
-    );
-  }
+  if (!puedeVer) return <AccesoDenegado seccion={t('rolespage.seccion')} />;
 
 
   const handleSave = async (data: CrearRolDTO | { id: number; dto: EditarRolDTO; permisos: PermisoResponse[] }) => {

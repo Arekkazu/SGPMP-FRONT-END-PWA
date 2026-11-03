@@ -1,4 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
+// | 2026-10-31 | Arekkazu | TC-DIS-166 RF-63: filtro por RF de origen |
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { ClipboardList, FileJson, FileText, ShieldCheck } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -32,6 +37,7 @@ export function BitacoraView() {
       if (filtros.severidad_log) f.severidad_log = filtros.severidad_log;
       if (filtros.clasificacion_registro) f.clasificacion_registro = filtros.clasificacion_registro;
       if (filtros.resultado) f.resultado = filtros.resultado;
+      if (filtros.rf_origen) f.rf_origen = filtros.rf_origen;
       if (filtros.entidad_afectada_id) f.entidad_afectada_id = filtros.entidad_afectada_id.trim();
       if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
       if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
@@ -53,7 +59,7 @@ export function BitacoraView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <ClipboardList size={20} aria-hidden />{t('bitacoraview.bitacora_de_auditoria_iot')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : `${paginacion.totalRegistros} evento(s)`}
+            {loading ? 'Cargando…' : t('conteo.eventos', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
           </p>
         </div>
         {puedeEjecutar && (

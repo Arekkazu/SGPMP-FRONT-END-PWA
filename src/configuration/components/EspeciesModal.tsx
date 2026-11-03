@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-20 | Arekkazu | FE-05 RF-15: densidad (ind/m²) y esperanza de vida (días), opcionales |
 import React, { useEffect } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -16,9 +19,18 @@ interface FormValues {
   nombre: string;
   descripcion: string;
   grupo_manejo: GrupoManejo | '';
+  densidad_poblacional_max: string;
+  esperanza_vida_dias: string;
 }
 
-const CAMPOS = ['nombre', 'descripcion', 'grupo_manejo'] as const;
+const CAMPOS = ['nombre', 'descripcion', 'grupo_manejo', 'densidad_poblacional_max', 'esperanza_vida_dias'] as const;
+
+// RFC-012: ind/m², positiva y con máximo 2 decimales (numeric(6,2) en la ficha).
+const DENSIDAD_REGEX = /^\d+(\.\d{1,2})?$/;
+
+function textoDe(valor: number | string | null | undefined): string {
+  return valor === null || valor === undefined ? '' : String(Number(valor));
+}
 
 interface Props {
   especie: EspecieResponse | null;
@@ -65,9 +77,15 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
 
   useEffect(() => {
     if (especie) {
-      reset({ nombre: especie.nombre, descripcion: especie.descripcion ?? '', grupo_manejo: especie.grupo_manejo ?? '' });
+      reset({
+        nombre: especie.nombre,
+        descripcion: especie.descripcion ?? '',
+        grupo_manejo: especie.grupo_manejo ?? '',
+        densidad_poblacional_max: textoDe(especie.densidad_poblacional_max ?? especie.densidad_maxima_por_especie),
+        esperanza_vida_dias: textoDe(especie.esperanza_vida_dias),
+      });
     } else {
-      reset({ nombre: '', descripcion: '', grupo_manejo: '' });
+      reset({ nombre: '', descripcion: '', grupo_manejo: '', densidad_poblacional_max: '', esperanza_vida_dias: '' });
     }
   }, [especie, reset]);
 
@@ -75,6 +93,9 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
     const descripcion = data.descripcion.trim() || undefined;
     // La validación del formulario garantiza que no llegue vacío (RF-15 v1.1: obligatorio).
     const grupo_manejo = data.grupo_manejo as GrupoManejo;
+    // Vacío viaja como null: en la edición borra el valor (RFC-012/014, ambos opcionales).
+    const densidad_poblacional_max = data.densidad_poblacional_max.trim() || null;
+    const esperanza_vida_dias = data.esperanza_vida_dias.trim() ? Number(data.esperanza_vida_dias) : null;
     let ok: boolean;
 
     if (modoEditar && especie) {
@@ -82,12 +103,14 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
         nombre: data.nombre.trim(),
         descripcion,
         grupo_manejo,
+        densidad_poblacional_max,
+        esperanza_vida_dias,
         // Tal cual vino del GET, null incluido: una hora del cliente nunca coincide
         // con la de la BD y el backend lo rechazaba con 412 (#231).
         fecha_actualizacion: especie.fecha_actualizacion,
       });
     } else {
-      ok = await onRegistrar({ nombre: data.nombre.trim(), descripcion, grupo_manejo });
+      ok = await onRegistrar({ nombre: data.nombre.trim(), descripcion, grupo_manejo, densidad_poblacional_max, esperanza_vida_dias });
     }
 
     if (ok) onClose();
@@ -179,6 +202,44 @@ export function EspeciesModal({ especie, saving, saveError, onClose, onRegistrar
               <option value="" disabled>{t('especiesmodal.selecciona_grupo_de_manejo')}</option>
               {GRUPOS_MANEJO.map((g) => <option key={g} value={g}>{t(`especiesmodal.grupos_manejo.${g}`)}</option>)}
             </Select>
+
+            <div className="ds-fg2">
+              <Input
+                label={t('especiesmodal.densidad')}
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0.01"
+                placeholder={t('especiesmodal.densidad_placeholder')}
+                hint={t('especiesmodal.densidad_ayuda')}
+                error={errors.densidad_poblacional_max?.message}
+                {...register('densidad_poblacional_max', {
+                  validate: (v) => {
+                    const valor = v.trim();
+                    if (!valor) return true;
+                    if (!DENSIDAD_REGEX.test(valor)) return t('especiesmodal.densidad_dos_decimales');
+                    return Number(valor) > 0 || t('especiesmodal.densidad_mayor_a_cero');
+                  },
+                })}
+              />
+              <Input
+                label={t('especiesmodal.esperanza_vida')}
+                type="number"
+                inputMode="numeric"
+                step="1"
+                min="1"
+                placeholder={t('especiesmodal.esperanza_vida_placeholder')}
+                hint={t('especiesmodal.esperanza_vida_ayuda')}
+                error={errors.esperanza_vida_dias?.message}
+                {...register('esperanza_vida_dias', {
+                  validate: (v) => {
+                    const valor = v.trim();
+                    if (!valor) return true;
+                    return (/^\d+$/.test(valor) && Number(valor) > 0) || t('especiesmodal.esperanza_vida_entera');
+                  },
+                })}
+              />
+            </div>
 
             {modoEditar && especie && (
               <div style={{ padding: 'var(--s3)', background: 'var(--surface-hover)', borderRadius: 'var(--r-md)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>

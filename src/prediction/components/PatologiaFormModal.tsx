@@ -1,3 +1,8 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-178 RF-64 a11y 3.3.2: reglas de 50 caracteres y 2-6 variables asociadas a su campo |
+// | 2026-10-31 | Arekkazu | RF-64/RF-17: aviso de variables sin umbral para la especie, sin bloquear |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Save } from 'lucide-react';
@@ -6,7 +11,8 @@ import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { ModalShell } from './ModalShell';
 import { VariablesSelector } from './VariablesSelector';
-import { CATALOGO_ESPECIES } from '../lib/catalogos';
+import { useUmbralesVariables } from '../hooks/useUmbralesVariables';
+import { conTodas, type EspecieOpcion, type VariableSensorica } from '../lib/catalogos';
 import { INPUT, LABEL } from './tableStyles';
 import type { PatologiaM04Response } from '../types';
 import type { ApiError } from '../../shared/api/errors';
@@ -19,6 +25,9 @@ export interface PatologiaFormValues {
 }
 
 interface Props {
+  /** Catálogos reales (useCatalogosPatologia), M4-02. */
+  catalogoVariables: VariableSensorica[];
+  especies: EspecieOpcion[];
   mode: 'crear' | 'editar';
   inicial: PatologiaM04Response | null;
   saving: boolean;
@@ -30,7 +39,7 @@ interface Props {
 
 const DESC_MIN = 50;
 
-export function PatologiaFormModal({ mode, inicial, saving, saveError, online, onSubmit, onClose }: Props) {
+export function PatologiaFormModal({ catalogoVariables, especies, mode, inicial, saving, saveError, online, onSubmit, onClose }: Props) {
   const { t } = useT('prediction');
   const [nombre, setNombre] = useState(inicial?.nombre_patologia ?? '');
   const [especie, setEspecie] = useState(inicial?.especie_aplicable ?? 'TODAS');
@@ -39,6 +48,10 @@ export function PatologiaFormModal({ mode, inicial, saving, saveError, online, o
     inicial?.variables_sensoricas_asociadas.map((v) => v.id_variable_ambiental) ?? []
   );
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const cobertura = useUmbralesVariables(especie, especies);
+  const sinUmbral = cobertura
+    ? catalogoVariables.filter((v) => variables.includes(v.id) && !cobertura.porVariable.get(v.id))
+    : [];
 
   const errNombre = !nombre.trim() ? 'El nombre es obligatorio.' : undefined;
   const errDescripcion =
@@ -102,7 +115,7 @@ export function PatologiaFormModal({ mode, inicial, saving, saveError, online, o
             onChange={(e) => setEspecie(e.target.value)}
             disabled={mode === 'editar'}
           >
-            {CATALOGO_ESPECIES.map((op) => <option key={op.valor} value={op.valor}>{op.nombre}</option>)}
+            {conTodas(especies).map((op) => <option key={op.valor} value={op.valor}>{op.nombre}</option>)}
           </select>
           {mode === 'editar' && (
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('patologiaformmodal.la_especie_no_se_modifica_al_editar')}</span>
@@ -120,25 +133,42 @@ export function PatologiaFormModal({ mode, inicial, saving, saveError, online, o
             onBlur={() => marcar('descripcion')}
             aria-required="true"
             aria-invalid={!!(touched.descripcion && errDescripcion)}
+            aria-describedby="pat-form-desc-regla"
             placeholder={t('patologiaformmodal.describe_signos_clinicos_factores_de_riesgo')}
           />
+          {/* Mismo id con o sin error: la regla queda asociada al campo (aria-describedby). */}
           {(fieldError('descripcion', errDescripcion) ?? fieldError('descripcion_clinica')) ? (
-            <span role="alert" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--sem-error)' }}>
+            <span id="pat-form-desc-regla" role="alert" style={{ display: 'block', marginTop: 'var(--s1)', fontSize: '12px', color: 'var(--sem-error)' }}>
               {fieldError('descripcion', errDescripcion) ?? fieldError('descripcion_clinica')}
             </span>
           ) : (
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{descripcion.trim().length} caracteres</span>
+            <span id="pat-form-desc-regla" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              {t('patologiaformmodal.regla_descripcion', { n: descripcion.trim().length, min: DESC_MIN })}
+            </span>
           )}
         </div>
 
         <div>
-          <label style={LABEL}>{t('patologiaformmodal.variables_sensoricas_asociadas')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></label>
+          <span id="pat-form-vars-rotulo" style={{ ...LABEL, display: 'block' }}>{t('patologiaformmodal.variables_sensoricas_asociadas')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></span>
           <VariablesSelector
+            idRotulo="pat-form-vars-rotulo"
+            variables={catalogoVariables}
             seleccionadas={variables}
             onChange={(ids) => { setVariables(ids); marcar('variables'); }}
+            cobertura={cobertura}
             error={fieldError('variables', errVariables) ?? fieldError('variables_sensoricas_asociadas')}
           />
         </div>
+        {sinUmbral.length > 0 && (
+          <Alert
+            variant="warning"
+            title={t('patologiaformmodal.sin_umbral_titulo')}
+            description={t('patologiaformmodal.sin_umbral_detalle', {
+              variables: sinUmbral.map((v) => v.nombre).join(', '),
+              count: sinUmbral.length,
+            })}
+          />
+        )}
       </div>
     </ModalShell>
   );

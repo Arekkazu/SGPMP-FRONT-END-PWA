@@ -1,3 +1,8 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-20 | Arekkazu | FE-09 RF-17: interruptor es_critica por variable, solo para el Administrador (RFC-016) |
+// | 2026-10-23 | Arekkazu | FE-09 RF-17: el interruptor depende de variables_ambientales_criticas (DB-08) |
+// | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: tolerancia T del semáforo configurable en el umbral |
 import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -10,7 +15,7 @@ import { useBusqueda, usePaginado } from '../../shared/hooks/useBusqueda';
 import { Paginacion } from './Paginacion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
-import { usePermission } from '../../shared/rbac/usePermission';
+import { usePermission, usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useUmbralesAmbientales } from '../hooks/useUmbralesAmbientales';
 import { useVariablesAmbientales } from '../hooks/useVariablesAmbientales';
@@ -72,6 +77,13 @@ interface FormValues {
   precaucion_sup: number;
   critico_inf: number;
   critico_sup: number;
+  /** G88: texto del input; vacío = 10 % del rango. */
+  tolerancia_semaforo: string;
+}
+
+/** G88: '' → null (usa el 10 % del rango); un número no negativo se envía tal cual. */
+function toleranciaDesdeFormulario(valor: string): number | null {
+  return valor === '' || valor === null || valor === undefined ? null : Number(valor);
 }
 
 // ── Semáforo visual — barra proporcional horizontal ───────────────────────────
@@ -256,6 +268,7 @@ function UmbralModal({
         precaucion_sup: n('precaucion')?.limite_superior ?? 0,
         critico_inf: n('critico')?.limite_inferior ?? 0,
         critico_sup: n('critico')?.limite_superior ?? 0,
+        tolerancia_semaforo: umbral.tolerancia_semaforo == null ? '' : String(Number(umbral.tolerancia_semaforo)),
       });
     } else {
       reset({
@@ -268,6 +281,7 @@ function UmbralModal({
         precaucion_sup: 0,
         critico_inf: 0,
         critico_sup: 0,
+        tolerancia_semaforo: '',
       });
     }
   }, [umbral, reset, variables]);
@@ -301,6 +315,7 @@ function UmbralModal({
         valor_min: Number(data.valor_min),
         valor_max: Number(data.valor_max),
         niveles,
+        tolerancia_semaforo: toleranciaDesdeFormulario(data.tolerancia_semaforo),
         fecha_actualizacion: umbral.fecha_actualizacion,
       });
     } else {
@@ -310,6 +325,7 @@ function UmbralModal({
         valor_min: Number(data.valor_min),
         valor_max: Number(data.valor_max),
         niveles,
+        tolerancia_semaforo: toleranciaDesdeFormulario(data.tolerancia_semaforo),
       });
     }
     if (ok) onClose();
@@ -452,6 +468,34 @@ function UmbralModal({
                   </div>
                 </div>
               </div>
+
+              {/* ── SECCIÓN 3: Tolerancia del semáforo (G88, RF-58 Fase 3) ── */}
+              <div style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
+                <div style={{ background: 'var(--surface-hover)', padding: 'var(--s2) var(--s4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)' }}>{t('umbralessection.3_tolerancia_semaforo')}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>{t('umbralessection.opcional')}</span>
+                </div>
+                <div style={{ padding: 'var(--s5)' }}>
+                  {/* G88 (RF-58 Fase 3): fuera del rango, el semáforo es AMARILLO a menos de T
+                      del borde y ROJO más allá. Vacío = 10 % del rango. */}
+                  <div className="ds-fg2" style={{ gap: 'var(--s4)', maxWidth: 380 }}>
+                    <Input
+                      label={t('umbralessection.tolerancia_semaforo_label', { unidad: varSel.unidad })}
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder={t('umbralessection.tolerancia_semaforo_placeholder')}
+                      hint={t('umbralessection.tolerancia_semaforo_ayuda')}
+                      error={errors.tolerancia_semaforo?.message}
+                      {...register('tolerancia_semaforo', {
+                        validate: (v) =>
+                          v === '' || v === undefined || (Number.isFinite(Number(v)) && Number(v) >= 0)
+                          || t('umbralessection.tolerancia_semaforo_invalida'),
+                      })}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
@@ -542,6 +586,66 @@ function formatFecha(iso: string | null): string {
   catch { return iso; }
 }
 
+// ── Variables críticas (RFC-016 B.7) ──────────────────────────────────────────
+// Una lectura de una variable crítica entra como crítica en la cola del broker bajo
+// saturación (RF-53 E15). Solo el Administrador la cambia; el resto la ve.
+function VariablesCriticas({ variables, editable, guardando, error, onCambiar }: {
+  variables: VariableAmbientalCatalogo[];
+  editable: boolean;
+  guardando: number | null;
+  error: string | null;
+  onCambiar: (id: number, esCritica: boolean) => void;
+}) {
+  const { t } = useT('configuration');
+  if (variables.length === 0) return null;
+  return (
+    <section aria-labelledby="variables-criticas-titulo" style={{ marginTop: 'var(--s6)' }}>
+      <h4 id="variables-criticas-titulo" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+        {t('umbralessection.variables_criticas')}
+      </h4>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--s1) 0 var(--s3)' }}>
+        {t('umbralessection.variables_criticas_ayuda')}
+      </p>
+      {error && <Alert variant="error" title={t('umbralessection.error')} description={error} style={{ marginBottom: 'var(--s3)' }} />}
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
+        {variables.map((v) => {
+          const critica = !!v.es_critica;
+          return (
+            <li key={v.id_variable_ambiental} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--s3)', minHeight: 36 }}>
+              <span id={`variable-critica-${v.id_variable_ambiental}`} style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+                {v.nombre} <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>({v.unidad})</span>
+              </span>
+              {editable ? (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={critica}
+                  aria-labelledby={`variable-critica-${v.id_variable_ambiental}`}
+                  disabled={guardando !== null}
+                  onClick={() => onCambiar(v.id_variable_ambiental, !critica)}
+                  style={{
+                    minWidth: 72, minHeight: 32, padding: '0 var(--s3)', borderRadius: 'var(--r-full)', fontSize: '12px', fontWeight: 600,
+                    cursor: guardando !== null ? 'wait' : 'pointer',
+                    border: `1.5px solid ${critica ? 'var(--sem-error)' : 'var(--surface-border)'}`,
+                    background: critica ? 'var(--sem-error-bg)' : 'var(--surface-card)',
+                    color: critica ? 'var(--sem-error)' : 'var(--text-secondary)',
+                  }}
+                >
+                  {critica ? t('umbralessection.critica_si') : t('umbralessection.critica_no')}
+                </button>
+              ) : (
+                <span style={{ fontSize: '12px', fontWeight: 600, color: critica ? 'var(--sem-error)' : 'var(--text-muted)' }}>
+                  {critica ? t('umbralessection.critica_si') : t('umbralessection.critica_no')}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 export function UmbralesSection({ idEspecie }: Props) {
   const { t } = useT('configuration');
@@ -549,9 +653,11 @@ export function UmbralesSection({ idEspecie }: Props) {
   const puedeCrear  = usePermission(20, 1);
   const puedeEditar = usePermission(20, 3);
   const puedeDesact = usePermission(20, 4);
+  // RFC-016: es_critica es del Administrador (recurso propio de DB-08); el Veterinario edita umbrales, no esto.
+  const puedeMarcarCritica = usePermissionPorNombre('variables_ambientales_criticas', 3);
 
   const { umbrales, loading, saving, error, saveError, cargar, registrar, editar, desactivar, limpiarSaveError } = useUmbralesAmbientales();
-  const { variables, cargar: cargarVariables } = useVariablesAmbientales();
+  const { variables, cargar: cargarVariables, marcarCritica, guardando, errorCritica } = useVariablesAmbientales();
   const [modal, setModal] = useState<ModalState>({ tipo: 'ninguno' });
   const [accionError, setAccionError] = useState<string | null>(null);
 
@@ -639,6 +745,12 @@ export function UmbralesSection({ idEspecie }: Props) {
                     </td>
                     <td style={{ ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                       {u.valor_min} – {u.valor_max} <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{v.unidad}</span>
+                      {u.tolerancia_semaforo_efectiva != null && (
+                        <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
+                          {t(u.tolerancia_semaforo == null ? 'umbralessection.tolerancia_semaforo_defecto' : 'umbralessection.tolerancia_semaforo_corta',
+                            { valor: Number(u.tolerancia_semaforo_efectiva) })}
+                        </div>
+                      )}
                     </td>
                     <td style={{ ...TD, minWidth: 160 }}>
                       <SemaforoBar umbral={u} />
@@ -677,6 +789,14 @@ export function UmbralesSection({ idEspecie }: Props) {
         <Paginacion pagina={pagina} totalPaginas={totalPaginas} totalRegistros={busqueda.filtrados.length} onCambiar={setPagina} />
         </>
       )}
+
+      <VariablesCriticas
+        variables={variables}
+        editable={puedeMarcarCritica && online}
+        guardando={guardando}
+        error={errorCritica?.message ?? null}
+        onCambiar={(id, esCritica) => { void marcarCritica(id, esCritica); }}
+      />
 
       {(modal.tipo === 'crear' || modal.tipo === 'editar') && (
         <UmbralModal

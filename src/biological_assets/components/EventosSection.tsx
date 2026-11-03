@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo                                                        |
+// |------------|--------------|--------------------------------------------------------------------|
+// | 2026-10-21 | destroyerban | #71 RF-41: consulta si el activo ya tiene un diagnóstico           |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
@@ -10,7 +13,7 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useEventos } from '../hooks/useEventos';
 import { EventoCrecimientoForm } from './EventoCrecimientoForm';
-import { EventoSanitarioForm } from './EventoSanitarioForm';
+import { EventoSanitarioForm, type DiagnosticoPrevio } from './EventoSanitarioForm';
 import { EventoReproductivoForm } from './EventoReproductivoForm';
 import { EventoProductivoForm } from './EventoProductivoForm';
 import { RegistrarBajaModal } from './RegistrarBajaModal';
@@ -116,6 +119,21 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
       .then(setPatologias)
       .catch(() => setPatologias([]))
       .finally(() => setConfigLoading(false));
+  }, [idActivo, modal]);
+  // #71 (RF-41): tratamiento y vacunación exigen un DIAGNOSTICO previo en el historial.
+  // `GET /eventos` sirve para individuales y lotes y conserva `sanitario.tipo` aunque el
+  // rol no tenga permiso clínico. Si no carga, no se bloquea: el backend lo valida (422).
+  const [diagnosticoPrevio, setDiagnosticoPrevio] = useState<DiagnosticoPrevio>('desconocido');
+  useEffect(() => {
+    if (modal !== 'sanitario') return;
+    let vigente = true;
+    setDiagnosticoPrevio('cargando');
+    eventosApi.listar(idActivo)
+      .then((h) => {
+        if (vigente) setDiagnosticoPrevio(h.eventos.some((e) => e.sanitario?.tipo === 'DIAGNOSTICO') ? 'si' : 'no');
+      })
+      .catch(() => { if (vigente) setDiagnosticoPrevio('desconocido'); });
+    return () => { vigente = false; };
   }, [idActivo, modal]);
   // RF-40/RF-43: con el permiso de activos, no el de configuración de M09 (que el
   // Productor no tiene), y marcadas según la fase activa.
@@ -245,6 +263,7 @@ export function EventosSection({ idActivo, idEspecie, tipo, estadoActual, cantid
         <EventoSanitarioForm
           patologias={patologias}
           patologiasLoading={configLoading}
+          diagnosticoPrevio={diagnosticoPrevio}
           saving={saving}
           saveError={saveError}
           onClose={cerrar}

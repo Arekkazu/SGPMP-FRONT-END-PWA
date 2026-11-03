@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-29 | Arekkazu | TC-DIS-150 RF-57: etiqueta del estado reutilizable en los anuncios |
 import React from 'react';
 import { BellRing, Clock, CheckCircle2, XCircle, TimerOff, HelpCircle } from 'lucide-react';
 import { Pill, type Tono } from './Pill';
@@ -22,6 +25,12 @@ const META: Record<EstadoAlerta, Meta> = {
 function normalizar(estado: string | null | undefined): EstadoAlerta | null {
   const up = (estado ?? '').toUpperCase().replace(/\s+/g, '_');
   return up in META ? (up as EstadoAlerta) : null;
+}
+
+/** Mismo texto del pill, para anunciarlo (TC-DIS-150). */
+export function etiquetaEstadoAlerta(estado: string | null | undefined): string {
+  const key = normalizar(estado);
+  return key ? META[key].label : (estado ?? '—');
 }
 
 export function EstadoAlertaPill({ estado }: { estado: string | null | undefined }) {

@@ -1,4 +1,8 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 import React from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 
 interface Props {
   label: string;
@@ -16,7 +20,7 @@ export function ProbBar({ label, valor, color = 'var(--brand-500)' }: Props) {
       <div style={{ flex: 1, height: 10, borderRadius: 'var(--r-full)', background: 'var(--surface-hover)', overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 'var(--r-full)' }} />
       </div>
-      <span style={{ flex: '0 0 44px', textAlign: 'right', fontSize: '12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{pct.toFixed(0)}%</span>
+      <span style={{ flex: '0 0 44px', textAlign: 'right', fontSize: '12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{formatearNumero(pct / 100, { style: 'percent', maximumFractionDigits: 0 })}</span>
     </div>
   );
 }

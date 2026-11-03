@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: motivo del cierre y aviso que sobrevive a la recarga |
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -33,12 +36,29 @@ test('no ofrece el reenvío para otros errores de login', () => {
 });
 
 test('avisa cuando el interceptor cerró la sesión antes de llegar a /login', () => {
-  sessionStorage.setItem('sgpmp:sesion-cerrada', '1');
+  sessionStorage.setItem('sgpmp:sesion-cerrada', JSON.stringify({ motivo: 'generica', en: Date.now() }));
 
   renderConError(null);
 
   expect(screen.getByText(/sesión cerrada/i)).toBeInTheDocument();
-  expect(sessionStorage.getItem('sgpmp:sesion-cerrada')).toBeNull();
+  // T-16: lo borra el login exitoso, no el primer render (se perdía en la recarga).
+  expect(sessionStorage.getItem('sgpmp:sesion-cerrada')).not.toBeNull();
+});
+
+test('T-16: explica que la sesión se abrió en otro dispositivo', () => {
+  sessionStorage.setItem('sgpmp:sesion-cerrada', JSON.stringify({ motivo: 'otro_dispositivo', en: Date.now() }));
+
+  renderConError(null);
+
+  expect(screen.getByText(/otro dispositivo o navegador/i)).toBeInTheDocument();
+});
+
+test('T-16: un aviso de hace más de 10 minutos ya no se muestra', () => {
+  sessionStorage.setItem('sgpmp:sesion-cerrada', JSON.stringify({ motivo: 'generica', en: Date.now() - 11 * 60_000 }));
+
+  renderConError(null);
+
+  expect(screen.queryByText(/sesión cerrada/i)).toBeNull();
 });
 
 test('no muestra el aviso de sesión cerrada en un login normal', () => {

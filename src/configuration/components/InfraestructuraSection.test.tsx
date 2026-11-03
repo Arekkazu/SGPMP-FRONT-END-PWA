@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-20 | Arekkazu | FE-06 RF-20: varias especies del mismo grupo, criticidad y capacidad |
 /**
  * RF-20 — el formulario de área productiva poblaba su `<select>` de tipo desde
  * un array hardcodeado (`TIPOS_AREA`), que además enviaba valores capitalizados
@@ -54,6 +57,8 @@ vi.mock('../hooks/useEspecies', () => ({
       { id_especie: 1, nombre: 'Pollo de engorde', es_activo: true, grupo_manejo: 'AVES', tipo_modelo: 'MODELO_AVES', fecha_creacion: '', fecha_actualizacion: null },
       { id_especie: 2, nombre: 'Conejo', es_activo: true, grupo_manejo: null, tipo_modelo: null, fecha_creacion: '', fecha_actualizacion: null },
       { id_especie: 3, nombre: 'Codorniz', es_activo: false, grupo_manejo: 'AVES', tipo_modelo: 'MODELO_AVES', fecha_creacion: '', fecha_actualizacion: null },
+      { id_especie: 4, nombre: 'Gallina ponedora', es_activo: true, grupo_manejo: 'AVES', tipo_modelo: 'MODELO_AVES', fecha_creacion: '', fecha_actualizacion: null, densidad_maxima_por_especie: '8.00' },
+      { id_especie: 5, nombre: 'Pavo', es_activo: true, grupo_manejo: 'AVES', tipo_modelo: 'MODELO_AVES', fecha_creacion: '', fecha_actualizacion: null, densidad_maxima_por_especie: '5.50' },
     ],
     cargar: vi.fn(),
   }),
@@ -93,36 +98,67 @@ describe('InfraestructuraSection — catálogo de tipos de área (RF-20)', () =>
   });
 });
 
-describe('InfraestructuraSection — especie y modelo de IA (RF-20 v1.1, RFC-009)', () => {
+describe('InfraestructuraSection — especies, modelo de IA y criticidad (RF-20, RFC-012/016)', () => {
   const abrirFormulario = async () => {
     render(<InfraestructuraSection />);
     fireEvent.click(await screen.findByText('Finca El Remanso'));
     fireEvent.click(await screen.findByText('Registrar primera área'));
+    await screen.findByRole('group', { name: /Especies/ });
   };
   const opcionesDe = (el: HTMLElement) => within(el).getAllByRole('option').map((o) => o.textContent);
+  const especiesVisibles = () => within(screen.getByRole('group', { name: /Especies/ }))
+    .getAllByRole('checkbox').map((c) => c.closest('label')?.textContent);
+  const marcar = (nombre: string) => fireEvent.click(screen.getByRole('checkbox', { name: nombre }));
 
-  it('solo ofrece especies activas y, como modelo, la familia de la especie elegida', async () => {
+  it('solo ofrece especies activas y, tras la primera, las de su mismo grupo de manejo', async () => {
     await abrirFormulario();
-    const especie = await screen.findByLabelText(/Especie/);
-    expect(opcionesDe(especie)).toEqual(['Selecciona una especie', 'Pollo de engorde', 'Conejo']);
+    expect(especiesVisibles()).toEqual(['Pollo de engorde', 'Conejo', 'Gallina ponedora', 'Pavo']);
 
-    fireEvent.change(especie, { target: { value: '1' } });
+    marcar('Pollo de engorde');
+    expect(especiesVisibles()).toEqual(['Pollo de engorde', 'Gallina ponedora', 'Pavo']);
     expect(opcionesDe(screen.getByLabelText(/Modelo de IA/))).toEqual(['— Sin modelo asignado —', 'Aves']);
 
-    fireEvent.change(especie, { target: { value: '2' } });
+    marcar('Pollo de engorde');
+    marcar('Conejo');
+    expect(especiesVisibles()).toEqual(['Conejo']);
     expect(opcionesDe(screen.getByLabelText(/Modelo de IA/))).toEqual(['— Sin modelo asignado —']);
     expect(screen.getByText(/no tiene grupo de manejo/)).toBeTruthy();
   });
 
-  it('envía especie_id y tipo_modelo_asignado al registrar', async () => {
+  it('estima la capacidad con la menor densidad de las especies elegidas', async () => {
     await abrirFormulario();
-    fireEvent.change(await screen.findByLabelText(/Especie/), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/Superficie/), { target: { value: '10' } });
+    marcar('Gallina ponedora');
+    expect(screen.getByText(/Capacidad del área: 80 individuos/)).toBeTruthy();
+    marcar('Pavo');
+    expect(screen.getByText(/Capacidad del área: 55 individuos/)).toBeTruthy();
+    marcar('Pollo de engorde');  // sin densidad
+    expect(screen.getByText(/Capacidad sin calcular/)).toBeTruthy();
+  });
+
+  it('exige al menos una especie', async () => {
+    await abrirFormulario();
+    fireEvent.change(screen.getByLabelText(/Nombre del área/), { target: { value: 'Galpón Norte' } });
+    fireEvent.change(screen.getByLabelText(/Superficie/), { target: { value: '120' } });
+    fireEvent.click(screen.getByText('Registrar área'));
+    expect(await screen.findByText('Selecciona una especie')).toBeTruthy();
+    expect(registrar).not.toHaveBeenCalled();
+  });
+
+  it('envía especies, tipo_modelo_asignado y nivel_criticidad al registrar', async () => {
+    await abrirFormulario();
+    marcar('Pollo de engorde');
+    marcar('Gallina ponedora');
     fireEvent.change(screen.getByLabelText(/Modelo de IA/), { target: { value: 'MODELO_AVES' } });
+    fireEvent.change(screen.getByLabelText(/Nivel de criticidad/), { target: { value: 'ALTA' } });
     fireEvent.change(screen.getByLabelText(/Nombre del área/), { target: { value: 'Galpón Norte' } });
     fireEvent.change(screen.getByLabelText(/Superficie/), { target: { value: '120' } });
     fireEvent.click(screen.getByText('Registrar área'));
 
     await waitFor(() => expect(registrar).toHaveBeenCalled());
-    expect(registrar.mock.calls[0][0]).toMatchObject({ especie_id: 1, tipo_modelo_asignado: 'MODELO_AVES' });
+    expect(registrar.mock.calls[0][0]).toMatchObject({
+      especies: [1, 4], tipo_modelo_asignado: 'MODELO_AVES', nivel_criticidad: 'ALTA',
+    });
+    expect(registrar.mock.calls[0][0]).not.toHaveProperty('especie_id');
   });
 });

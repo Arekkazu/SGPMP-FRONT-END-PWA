@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: el aviso de sesión cerrada guarda motivo y fecha |
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { useContext } from 'react';
@@ -132,6 +135,6 @@ describe('AuthProvider — bootstrap de sesion', () => {
 
     await screen.findByText('listo');
     expect(borrarSesionOffline).toHaveBeenCalled();
-    expect(sessionStorage.getItem('sgpmp:sesion-cerrada')).toBe('1');
+    expect(JSON.parse(sessionStorage.getItem('sgpmp:sesion-cerrada') ?? '{}').motivo).toBe('generica');
   });
 });

@@ -1,7 +1,10 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import { describe, expect, it } from 'vitest';
 import {
   aInstanteUtc,
-  diaParaBackendUtc,
+  diaLocal,
   diasAtrasLocal,
   finDelDiaUtc,
   hoyLocal,
@@ -69,15 +72,16 @@ describe('diasAtrasLocal', () => {
   });
 });
 
-describe('diaParaBackendUtc', () => {
-  it('#130: el hoy local viaja como el hoy UTC, que el backend guarda con la hora real', () => {
+describe('diaLocal', () => {
+  it('da el día local del instante, no el de UTC', () => {
     // 22:00 local: en UTC-5 ya es el día siguiente en UTC.
     const noche = new Date(2026, 0, 1, 22, 0);
-    expect(diaParaBackendUtc('2026-01-01', noche)).toBe(noche.toISOString().slice(0, 10));
+    expect(diaLocal(noche.toISOString())).toBe('2026-01-01');
   });
 
-  it('un día pasado viaja tal cual', () => {
-    expect(diaParaBackendUtc('2025-12-30', new Date(2026, 0, 1, 22, 0))).toBe('2025-12-30');
+  it('vacío si no hay fecha o no es válida', () => {
+    expect(diaLocal(null)).toBe('');
+    expect(diaLocal('no-es-fecha')).toBe('');
   });
 });
 

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Controller, useForm } from 'react-hook-form';
@@ -33,7 +36,6 @@ interface Props {
   onConfirmar: (dto: RegistrarEventoProductivoDTO) => Promise<boolean>;
 }
 
-const HOY = hoyLocal();
 
 const num = (v: string | number | null): number | null => (v === null || v === '' ? null : Number(v));
 
@@ -48,7 +50,7 @@ export function EventoProductivoForm({
   const { t } = useT('biologicalAssets');
   const { register, control, handleSubmit, watch, getValues, setValue, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { producto: '', fecha_evento: HOY },
+    defaultValues: { producto: '', fecha_evento: hoyLocal() },
   });
 
   const habilitadas = metricas.filter((m) => m.habilitada_en_fase);
@@ -178,7 +180,7 @@ export function EventoProductivoForm({
             })}
           />
           <Input
-            label={t('eventoproductivoform.fecha_del_evento')} required type="date" max={HOY}
+            label={t('eventoproductivoform.fecha_del_evento')} required type="date" max={hoyLocal()}
             error={errors.fecha_evento?.message ?? delServidor('fecha_evento')}
             {...register('fecha_evento', { required: t('eventoproductivoform.la_fecha_es_obligatoria') })}
           />

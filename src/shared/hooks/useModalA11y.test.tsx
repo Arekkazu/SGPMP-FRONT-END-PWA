@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-24: el fondo queda inert con el modal abierto |
 /**
  * #199: con dos modales apilados (confirmación sobre formulario), Escape cierra
  * solo el de arriba; al cerrarlo, el de abajo vuelve a atender Escape.
@@ -38,5 +41,28 @@ describe('useModalA11y', () => {
   it('al abrir, el foco entra al diálogo', () => {
     const { getByRole } = render(<Modal onClose={vi.fn()} />);
     expect(getByRole('button', { name: 'dentro' })).toHaveFocus();
+  });
+
+  it('T-24: el fondo queda inert mientras el modal está abierto, y se suelta al cerrar', () => {
+    const { rerender } = render(
+      <div>
+        <main data-testid="fondo"><button type="button">fondo</button></main>
+        <div className="ds-toasts" data-testid="toasts" />
+        <section><Modal onClose={vi.fn()} /></section>
+      </div>,
+    );
+
+    expect(document.querySelector('[data-testid="fondo"]')).toHaveAttribute('inert');
+    // Los avisos se siguen anunciando.
+    expect(document.querySelector('[data-testid="toasts"]')).not.toHaveAttribute('inert');
+
+    rerender(
+      <div>
+        <main data-testid="fondo"><button type="button">fondo</button></main>
+        <div className="ds-toasts" data-testid="toasts" />
+        <section />
+      </div>,
+    );
+    expect(document.querySelector('[data-testid="fondo"]')).not.toHaveAttribute('inert');
   });
 });

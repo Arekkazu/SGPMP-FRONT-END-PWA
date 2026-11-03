@@ -1,3 +1,10 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-20 | Arekkazu | FE-05 RF-15: densidad_poblacional_max y esperanza_vida_dias en especie (RFC-012/014) |
+// | 2026-10-20 | Arekkazu | FE-06 RF-20: especies (1..N), nivel_criticidad y capacidad_maxima del área (RFC-012/016) |
+// | 2026-10-20 | Arekkazu | FE-09 RF-17: es_critica en la variable ambiental (RFC-016) |
+// | 2026-10-30 | Arekkazu | INC-M03-135-G01 RF-49: especies compatibles de un sensor |
+// | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: tolerancia T del semáforo configurable en el umbral |
 import type { TipoModelo } from '../prediction/types';
 
 /** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
@@ -20,8 +27,12 @@ export interface EspecieResponse {
   grupo_manejo?: GrupoManejo | null;
   /** Derivado de grupo_manejo (solo lectura); RF-20 exige que el modelo del área coincida. */
   tipo_modelo?: TipoModelo | null;
-  /** RF-36: límite de densidad del lote; null = sin configurar (el registro de lotes falla). Decimal → texto. */
+  /** RFC-012: densidad poblacional máxima en ind/m²; null = sin configurar. Decimal → texto. */
+  densidad_poblacional_max?: number | string | null;
+  /** Deprecado (RFC-012): mismo valor que `densidad_poblacional_max`. */
   densidad_maxima_por_especie?: number | string | null;
+  /** RFC-014: esperanza de vida en días; null = no definida. */
+  esperanza_vida_dias?: number | null;
   /** #115 (RF-15): solo en cliente — true mientras la creación offline que lo generó
    *  sigue en syncQueue. No lo emite el backend. */
   pendienteSync?: boolean;
@@ -31,12 +42,20 @@ export interface RegistrarEspecieDTO {
   nombre: string;
   descripcion?: string;
   grupo_manejo: GrupoManejo;
+  /** RFC-012: ind/m², > 0, máximo 2 decimales. */
+  densidad_poblacional_max?: string | null;
+  /** RFC-014: días, entero > 0. */
+  esperanza_vida_dias?: number | null;
 }
 
 export interface EditarEspecieDTO {
   nombre: string;
   descripcion?: string;
   grupo_manejo: GrupoManejo;
+  /** null borra el valor (RFC-012). */
+  densidad_poblacional_max?: string | null;
+  /** null borra el valor (RFC-014). */
+  esperanza_vida_dias?: number | null;
   /** Concurrencia optimista: el valor del último GET; null si nunca se editó (#231). */
   fecha_actualizacion: string | null;
 }
@@ -103,10 +122,19 @@ export interface InfraestructuraResponse {
   descripcion_infraestructura: string | null;
   es_activo: boolean;
   fecha_actualizacion: string | null;
-  /** RF-20 v1.1 (RFC-009). null en áreas registradas antes del cambio. */
+  /** Deprecado (RFC-012): la especie si el área tiene una sola; usar `especies`. */
   especie_id: number | null;
+  /** RFC-012: 1..N especies del mismo grupo de manejo, en orden de asociación. */
+  especies?: number[];
   tipo_modelo_asignado: TipoModelo | null;
+  /** RFC-016: criticidad operativa del área (priorización bajo saturación). */
+  nivel_criticidad?: NivelCriticidad;
+  /** RFC-012: derivada, floor(MIN densidad ind/m² × superficie); null si alguna especie no tiene densidad. */
+  capacidad_maxima?: number | null;
 }
+
+export type NivelCriticidad = 'ALTA' | 'MEDIA' | 'BAJA';
+export const NIVELES_CRITICIDAD: readonly NivelCriticidad[] = ['ALTA', 'MEDIA', 'BAJA'];
 
 export interface RegistrarInfraestructuraDTO {
   nombre_infraestructura: string;
@@ -114,9 +142,11 @@ export interface RegistrarInfraestructuraDTO {
   superficie: number;
   finca_id: number;
   descripcion_infraestructura?: string;
-  especie_id: number;
-  /** Debe coincidir con la familia de modelo de la especie (422 si no). */
+  /** RFC-012: al menos una, todas del mismo grupo de manejo (422 si no). */
+  especies: number[];
+  /** Debe coincidir con la familia de modelo del grupo común (422 si no). */
   tipo_modelo_asignado?: TipoModelo | null;
+  nivel_criticidad?: NivelCriticidad;
 }
 
 export interface EditarInfraestructuraDTO extends RegistrarInfraestructuraDTO {
@@ -195,6 +225,12 @@ export type CategoriaSensor =
   | 'AMONIACO'
   | 'SALINIDAD'
   | 'LUMINOSIDAD';
+
+/** RF-49 R3: especies con las que el sensor puede vincularse a un activo (M02 lo exige). */
+export interface EspeciesCompatiblesSensorResponse {
+  id_sensor: number;
+  especies: { id_especie: number; nombre: string }[];
+}
 
 export interface SensorResponse {
   id_sensores: number;
@@ -441,6 +477,10 @@ export interface UmbralAmbientalResponse {
   es_activo: boolean;
   fecha_actualizacion: string | null;
   niveles: NivelAlertaDTO[];
+  /** RF-58 Fase 3 (G88): tolerancia T del semáforo; null = 10 % del rango. */
+  tolerancia_semaforo?: number | string | null;
+  /** T que aplica el semáforo (la configurada o el 10 % del rango). */
+  tolerancia_semaforo_efectiva?: number | string | null;
 }
 
 export interface RegistrarUmbralDTO {
@@ -449,12 +489,15 @@ export interface RegistrarUmbralDTO {
   valor_min: number;
   valor_max: number;
   niveles: NivelAlertaDTO[];
+  tolerancia_semaforo?: number | null;
 }
 
 export interface EditarUmbralDTO {
   valor_min: number;
   valor_max: number;
   niveles: NivelAlertaDTO[];
+  /** Ausente = conserva la T vigente; null = vuelve al 10 % del rango. */
+  tolerancia_semaforo?: number | null;
   fecha_actualizacion?: string | null;
 }
 
@@ -465,6 +508,8 @@ export interface VariableAmbientalCatalogo {
   unidad: string;
   valor_fisico_min: number;
   valor_fisico_max: number;
+  /** RFC-016 B.7: sus lecturas entran como críticas bajo saturación. Lo edita solo el Administrador. */
+  es_critica?: boolean;
 }
 
 // =====================================================================
@@ -473,6 +518,9 @@ export interface VariableAmbientalCatalogo {
 export interface ConfiguracionGlobalResponse {
   id_configuracion_global: number;
   frecuencia_muestreo: number;
+  /** RF-18 / DEV-14: nombre canónico, en minutos. Ausente en servidores anteriores. */
+  umbral_sin_senal?: number;
+  /** Alias de compatibilidad de umbral_sin_senal; no es intervalo_heartbeat. */
   heartbeat: number;
   fecha_actualizacion: string;
   id_usuario: number;

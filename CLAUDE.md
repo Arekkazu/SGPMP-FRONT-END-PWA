@@ -16,6 +16,28 @@ es válido para Git pero invisible para el pipeline.
 
 ---
 
+## Tabla de seguimiento en cabecera (obligatoria desde 2026-10-20)
+
+**Todo archivo de código que se cree o edite — incluido por una IA — debe
+llevar al inicio, en comentarios, una tabla de seguimiento**, y se actualiza
+al terminar el cambio, antes del commit:
+
+```tsx
+// | Fecha      | Nombre           | Que se hizo                                        |
+// |------------|------------------|----------------------------------------------------|
+// | 2026-10-20 | usuario-git      | FE-05 RF-15: densidad y esperanza de vida opcionales |
+import { useState } from 'react'
+```
+
+- **Fecha** del cambio (`YYYY-MM-DD`), **Nombre**: el usuario de git de quien hace el cambio (`git config user.name` en esa máquina, nunca un nombre fijo) y **Que se hizo**: ID de la tarea + RF + una frase corta. Es un rastro rápido de qué ha sufrido el archivo, no el contenido del PR.
+- Una fila por tarea y por archivo (no una por cada edición); la fila nueva va al final.
+- Solo hacia adelante: un archivo sin tabla la recibe la primera vez que se toca; no se reconstruye historial de git.
+- Aplica a `.ts`, `.tsx`, `.js` y `.css` (en CSS con `/* … */`). Si el archivo empieza con una directiva (`'use client'`, `/// <reference …>`), la tabla va debajo.
+- No aplica a archivos que no admiten comentarios o que se generan solos: JSON (incluidos los locales de i18n), lockfiles, `CHANGELOG.md`.
+- En conflictos de merge sobre la tabla se conservan las filas de ambos lados.
+
+---
+
 ## Qué cubre este documento
 
 - Stack y versiones instaladas

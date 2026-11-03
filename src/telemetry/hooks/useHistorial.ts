@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo |
+// |------------|--------------|-------------|
+// | 2026-10-23 | destroyerban | FE-11 RF-59: aviso de truncado y marca de intervalos vacíos |
 import { useState, useCallback } from 'react';
 import { monitoreoApi } from '../api/monitoreoApi';
 import type {
@@ -5,6 +8,7 @@ import type {
   ResumenEstadisticoSchema,
   HistorialFiltros,
   FormatoExportHistorial,
+  VacioTemporalSchema,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -14,11 +18,19 @@ interface PaginacionState {
   totalRegistros: number;
 }
 
+/** RF-59 E6 / CA-19 (DEV-38): resultado limitado a los primeros 10 000 registros. */
+export interface TruncadoState {
+  truncado: boolean;
+  totalEncontrado: number;
+}
+
 export function useHistorial() {
   const [items, setItems] = useState<LecturaHistoricaSchema[]>([]);
   const [estadisticas, setEstadisticas] = useState<ResumenEstadisticoSchema[]>([]);
   const [rangoReal, setRangoReal] = useState<Record<string, unknown>>({});
   const [paginacion, setPaginacion] = useState<PaginacionState>({ pagina: 1, totalPaginas: 1, totalRegistros: 0 });
+  const [truncado, setTruncado] = useState<TruncadoState>({ truncado: false, totalEncontrado: 0 });
+  const [vacios, setVacios] = useState<VacioTemporalSchema[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -33,6 +45,8 @@ export function useHistorial() {
       setItems(data.items ?? []);
       setEstadisticas(data.estadisticas ?? []);
       setRangoReal(data.rango_real_datos ?? {});
+      setTruncado({ truncado: !!data.truncado, totalEncontrado: data.total_encontrado ?? data.total ?? 0 });
+      setVacios(data.vacios_temporales ?? []);
       setPaginacion({
         pagina: data.pagina ?? 1,
         totalPaginas: data.paginas_totales ?? 1,
@@ -42,6 +56,8 @@ export function useHistorial() {
       setError(e as ApiError);
       setItems([]);
       setEstadisticas([]);
+      setTruncado({ truncado: false, totalEncontrado: 0 });
+      setVacios([]);
     } finally {
       setLoading(false);
     }
@@ -76,5 +92,7 @@ export function useHistorial() {
     []
   );
 
-  return { items, estadisticas, rangoReal, paginacion, loading, error, exportando, exportError, cargar, exportar };
+  return {
+    items, estadisticas, rangoReal, paginacion, truncado, vacios, loading, error, exportando, exportError, cargar, exportar,
+  };
 }

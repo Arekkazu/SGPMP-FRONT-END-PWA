@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -7,7 +10,7 @@ import { Button } from '../../shared/design-system/Button';
 import { ModalShell } from './ModalShell';
 import type { ApiError } from '../../shared/api/errors';
 import type { CerrarCicloDTO } from '../types';
-import { diaParaBackendUtc, hoyLocal } from '../../shared/lib/fecha';
+import { hoyLocal } from '../../shared/lib/fecha';
 
 interface FormValues {
   fecha_cierre: string;
@@ -36,18 +39,17 @@ const TEXTAREA: React.CSSProperties = {
   outline: 'none',
 };
 
-const HOY = hoyLocal();
 
 export function CerrarCicloModal({ identificador, saving, error, onClose, onConfirmar }: Props) {
   const { t } = useT('biologicalAssets');
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
-    defaultValues: { fecha_cierre: HOY, motivo_cierre: '', descripcion_cierre: '' },
+    defaultValues: { fecha_cierre: hoyLocal(), motivo_cierre: '', descripcion_cierre: '' },
   });
 
   const submit = async (v: FormValues) => {
     const ok = await onConfirmar({
-      fecha_cierre: diaParaBackendUtc(v.fecha_cierre),
+      fecha_cierre: v.fecha_cierre,
       motivo_cierre: v.motivo_cierre.trim(),
       descripcion_cierre: v.descripcion_cierre.trim() || null,
     });
@@ -74,11 +76,11 @@ export function CerrarCicloModal({ identificador, saving, error, onClose, onConf
       <form onSubmit={handleSubmit(submit)} noValidate>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
           <Input
-            label={t('cerrarciclomodal.fecha_de_cierre')} required type="date" max={HOY}
+            label={t('cerrarciclomodal.fecha_de_cierre')} required type="date" max={hoyLocal()}
             error={errors.fecha_cierre?.message}
             {...register('fecha_cierre', {
               required: t('cerrarciclomodal.la_fecha_de_cierre_es_obligatoria'),
-              validate: (val) => val <= HOY || 'No puede ser una fecha futura.',
+              validate: (val) => val <= hoyLocal() || 'No puede ser una fecha futura.',
             })}
           />
           <div>

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
 import { http } from '../../shared/api/http';
 import type {
   DashboardResponseSchema,
@@ -5,6 +8,7 @@ import type {
   HistorialPageSchema,
   HistorialFiltros,
   FormatoExportHistorial,
+  SensorCatalogo,
 } from '../types';
 
 const BASE = '/iot/monitoreo';
@@ -42,6 +46,12 @@ export const monitoreoApi = {
    */
   async dashboard(filtros: DashboardFiltros = {}): Promise<DashboardResponseSchema> {
     const res = await http.get<DashboardResponseSchema>(`${BASE}/dashboard`, { params: filtros });
+    return res.data;
+  },
+
+  /** T-18: sensores activos de las fincas del usuario, para elegirlos por nombre. */
+  async sensores(): Promise<SensorCatalogo[]> {
+    const res = await http.get<SensorCatalogo[]>(`${BASE}/sensores`);
     return res.data;
   },
 

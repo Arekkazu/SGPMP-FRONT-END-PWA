@@ -1,94 +1,170 @@
-import React, { useState } from 'react';
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-68: estado del motor, alertas, filtros y detalle con factores, reglas e historial |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-10 RF-68: pesos del cálculo en palabras y porcentaje |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-10-29 | Arekkazu | TC-DIS-170 RF-68 a11y 2.4.6/1.3.1: la grilla de lotes tiene encabezado |
+// | 2026-10-29 | Arekkazu | PEND-456 RF-68: datos reales de GET /prediccion/riesgo-contagio (sin contagioMock) |
+// | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68: NIVEL_TONO compartido con el historial |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 N-04 RF-68: sin cálculos se avisa en vez de quedar en 0 |
+// | 2026-11-02 | Arekkazu | RFC-021 RF-110 RF-68: mapa de propagación entre áreas |
+// | 2026-11-02 | Arekkazu | AJF-11 RF-68: grafo plegable, búsqueda por lote o área, paginación de 15 y filtros que aplican también al grafo |
+import React, { useMemo, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { ShieldAlert, Activity, AlertTriangle, Database } from 'lucide-react';
-import { DatosSimuladosBanner } from '../components/DatosSimuladosBanner';
+import { Alert } from '../../shared/design-system/Alert';
+import { Button } from '../../shared/design-system/Button';
+import { ShieldAlert, BellRing, Info, Eye, EyeOff, Search } from 'lucide-react';
+import { SubPestanas } from '../../shared/design-system/SubPestanas';
 import { LineChartPrediccion } from '../components/LineChartPrediccion';
 import { ProbBar } from '../components/ProbBar';
 import { ModalShell } from '../components/ModalShell';
 import { Pill, type Tono } from '../components/Pill';
-import { TH, TD, TABLE_WRAP, THEAD_ROW } from '../components/tableStyles';
-import { CONTAGIO_MOTOR, LOTES_CONTAGIO, type LoteContagio } from '../mocks/contagioMock';
+import { TH, TD, TABLE_WRAP, THEAD_ROW, INPUT, LABEL } from '../components/tableStyles';
+import { alActivarConTeclado } from '../../shared/lib/teclado';
+import { aLotes, NIVEL_TONO, type LoteContagio, type NivelContagio, type ResultadoRegla } from '../lib/contagio';
+import { useRiesgoContagio } from '../hooks/useMonitor';
+import { MapaPropagacion } from '../components/MapaPropagacion';
+import { Paginacion } from '../components/Paginacion';
+import { normalizar } from '../../shared/hooks/useBusqueda';
+import { humanizar } from '../../shared/lib/etiquetas';
 
-const NIVEL_TONO: Record<string, Tono> = { ALTO: 'error', MEDIO: 'warning', BAJO: 'success' };
+/** AJF-11: 15 por página en lotes y en alertas. */
+const POR_PAGINA = 15;
+const CLAVE_GRAFO = 'sgpmp.contagio.grafo_visible';
+
+function leerGrafoVisible(): boolean {
+  try { return localStorage.getItem(CLAVE_GRAFO) !== '0'; } catch { return true; }
+}
+function guardarGrafoVisible(v: boolean) {
+  try { localStorage.setItem(CLAVE_GRAFO, v ? '1' : '0'); } catch { /* sin almacenamiento: solo dura la sesión */ }
+}
+/** La especie llega como dato (BOVINO); en pantalla va legible, el filtro compara el dato. */
+const especieLegible = (e: string) => (/^[A-Z0-9_]+$/.test(e) ? humanizar(e) : e);
+const pagina = <T,>(items: T[], p: number) => items.slice((p - 1) * POR_PAGINA, p * POR_PAGINA);
+
+const REGLA_TONO: Record<ResultadoRegla, Tono> = { CUMPLE: 'success', NO_CUMPLE: 'error', AJUSTE: 'warning' };
+const CARD: React.CSSProperties = { background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' };
+const H3: React.CSSProperties = { fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' };
+const ROTULO: React.CSSProperties = { fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 2 };
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
+
+type TabDetalle = 'factores' | 'reglas' | 'historial';
+
+function NivelPill({ nivel }: { nivel: NivelContagio | null }) {
+  const { t } = useT('prediction');
+  return nivel ? <Pill tono={NIVEL_TONO[nivel]}>{t(`contagio.nivel_${nivel}`)}</Pill> : <Pill tono="neutral">{t('contagio.sin_calculo')}</Pill>;
+}
+
+function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
+  return <div><div style={ROTULO}>{rotulo}</div><div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{children}</div></div>;
+}
 
 function LoteDetalle({ lote, onClose }: { lote: LoteContagio; onClose: () => void }) {
   const { t } = useT('prediction');
-  const m = CONTAGIO_MOTOR;
-  const chartData = lote.historial.map((h) => ({ hora: h.hora, prob: Number((h.probabilidad * 100).toFixed(0)) }));
+  const [tab, setTab] = useState<TabDetalle>('factores');
+  const p = lote.pesos;
+  const chartData = lote.historial.map((h) => ({ hora: h.hora, prob: Math.round(h.probabilidad * 100) }));
+
   return (
-    <ModalShell title={`${lote.identificador} · ${lote.especie}`} onClose={onClose} maxWidth={720} footer={null}>
+    <ModalShell title={lote.nombre} onClose={onClose} maxWidth={720}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s4)', flexWrap: 'wrap' }}>
-          <div style={{ fontSize: '40px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: `var(--sem-${NIVEL_TONO[lote.nivel]})` }}>
-            {(lote.probabilidad * 100).toFixed(0)}%
-          </div>
-          <div>
-            <Pill tono={NIVEL_TONO[lote.nivel]}>{lote.nivel}</Pill>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>Confianza {(lote.confianza * 100).toFixed(0)}% · Calidad {lote.calidad}</div>
-          </div>
+        <div className="ds-fg3" style={{ gap: 'var(--s4)' }}>
+          <Campo rotulo={t('contagio.nivel')}><NivelPill nivel={lote.nivel} /></Campo>
+          <Campo rotulo={t('contagio.probabilidad')}><span style={{ ...MONO, fontSize: '20px', fontWeight: 800 }}>{lote.probabilidad != null ? `${Math.round(lote.probabilidad * 100)}%` : '—'}</span></Campo>
+          <Campo rotulo={t('contagio.calidad')}><Pill tono={lote.calidad === 'COMPLETA' ? 'success' : 'warning'}>{t(`contagio.calidad_${lote.calidad}`)}</Pill>{lote.confianzaReducida && <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('contagio.confianza_reducida')}</div>}</Campo>
+          <Campo rotulo={t('contagio.lote_area')}>{lote.area}<div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{especieLegible(lote.especie)}</div></Campo>
+          <Campo rotulo={t('contagio.fuente_fs')}>{lote.fuenteFs ? t(`contagio.fuente_${lote.fuenteFs}`) : '—'}</Campo>
+          <Campo rotulo={t('contagio.calculo')}>{lote.fecha}<div style={{ ...MONO, fontSize: '12px', color: 'var(--text-muted)' }}>{lote.configVersion != null ? `config v${lote.configVersion}` : '—'}</div></Campo>
+          <Campo rotulo={t('contagio.alerta')}>{lote.alerta ? <Pill tono="error">{lote.alerta}</Pill> : t('contagio.sin_alerta')}</Campo>
         </div>
 
-        {lote.pesos_recalculados && (
-          <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center', padding: 'var(--s3)', background: 'var(--sem-warning-bg)', border: '1px solid var(--sem-warning-border)', borderRadius: 'var(--r-md)', color: 'var(--sem-warning)', fontSize: '13px' }}>
-            <AlertTriangle size={16} aria-hidden />{t('riesgocontagioview.pesos_recalculados_por_datos_faltantes')}</div>
+        {lote.nota && (
+          <div role="note" style={{ display: 'flex', gap: 'var(--s2)', padding: 'var(--s3) var(--s4)', borderRadius: 'var(--r-md)', border: '1px solid var(--sem-info-border)', background: 'var(--sem-info-bg)', fontSize: '13px', color: 'var(--text-primary)' }}>
+            <Info size={16} aria-hidden style={{ color: 'var(--sem-info)', flexShrink: 0, marginTop: 1 }} /><span>{lote.nota}</span>
+          </div>
         )}
 
-        {/* Fórmula ponderada */}
-        <div style={{ background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s4)', fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center' }}>
-          P = {m.w_fs} · F<sub>s</sub> + {m.w_fa} · F<sub>a</sub> + {m.w_fd} · F<sub>d</sub>
-        </div>
-
-        {/* Factores del cálculo */}
-        <div>
-          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>{t('riesgocontagioview.factores_del_calculo')}</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-            <ProbBar label="Factor sanitario (Fs)" valor={lote.factor_sanitario} color="var(--sem-error)" />
-            <ProbBar label="Factor ambiental (Fa)" valor={lote.factor_ambiental} color="var(--sem-warning)" />
-            <ProbBar label="Factor densidad (Fd)" valor={lote.factor_densidad} color="var(--sem-info)" />
+        <section>
+          <h3 style={H3}>{t('contagio.calculo_aplicado')}</h3>
+          <div style={{ background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s4)', ...MONO, fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+            P = {p.fs} · F<sub>s</sub> ({lote.fs}) + {p.fa} · F<sub>a</sub> ({lote.fa ?? '—'}) + {p.fd} · F<sub>d</sub> ({lote.fd ?? '—'})
           </div>
-        </div>
+        </section>
 
-        {/* Tendencia */}
-        <div>
-          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>{t('riesgocontagioview.tendencia_de_contagio')}</h3>
-          <LineChartPrediccion
-            data={chartData}
-            xKey="hora"
-            series={[{ dataKey: 'prob', name: 'Probabilidad (%)', color: 'var(--sem-error)' }]}
-            yDomain={[0, 100]}
-            referencias={[{ y: 70, label: 'Alto', color: 'var(--sem-error)' }, { y: 40, label: 'Medio', color: 'var(--sem-warning)' }]}
-            height={220}
-          />
-        </div>
+        <SubPestanas<TabDetalle>
+          pestanas={[{ id: 'factores', label: t('contagio.tab_factores') }, { id: 'reglas', label: t('contagio.tab_reglas') }, { id: 'historial', label: t('contagio.tab_historial') }]}
+          activa={tab}
+          onCambiar={setTab}
+          ariaLabel={t('contagio.tabs_aria')}
+        />
 
-        {/* Historial del lote */}
-        <div>
-          <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 var(--s3)', color: 'var(--text-primary)' }}>{t('riesgocontagioview.historial_del_lote')}</h3>
-          <div style={TABLE_WRAP}>
+        {tab === 'factores' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
+            {lote.pesosRecalculados && <p role="note" style={{ margin: 0, fontSize: '13px', color: 'var(--sem-warning)' }}>{t('contagio.pesos_recalculados', { fs: p.fs, fa: p.fa, fd: p.fd })}</p>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
+              <ProbBar label={t('contagio.factor_fs')} valor={lote.fs} color="var(--sem-error)" />
+              {lote.fa != null && <ProbBar label={t('contagio.factor_fa')} valor={lote.fa} color="var(--sem-warning)" />}
+              {lote.fd != null && <ProbBar label={t('contagio.factor_fd')} valor={lote.fd} color="var(--sem-info)" />}
+            </div>
+          </div>
+        )}
+
+        {tab === 'reglas' && (
+          <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de factores del lote">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-              <thead>
-                <tr style={THEAD_ROW}>
-                  <th style={TH}>{t('riesgocontagioview.hora')}</th><th style={{ ...TH, textAlign: 'right' }}>{t('riesgocontagioview.prob')}</th><th style={TH}>{t('riesgocontagioview.nivel')}</th>
-                  <th style={{ ...TH, textAlign: 'right' }}>Fs</th><th style={{ ...TH, textAlign: 'right' }}>Fa</th><th style={{ ...TH, textAlign: 'right' }}>Fd</th>
-                  <th style={{ ...TH, textAlign: 'right' }}>{t('riesgocontagioview.confianza')}</th>
-                </tr>
-              </thead>
+              <caption className="sr-only">{t('contagio.reglas_caption')}</caption>
+              <thead><tr style={THEAD_ROW}>{[t('contagio.col_regla'), t('contagio.col_valor'), t('contagio.col_resultado'), t('contagio.col_origen')].map((h) => <th key={h} style={TH}>{h}</th>)}</tr></thead>
               <tbody>
-                {lote.historial.map((h) => (
-                  <tr key={h.hora}>
-                    <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>{h.hora}</td>
-                    <td style={{ ...TD, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{(h.probabilidad * 100).toFixed(0)}%</td>
-                    <td style={TD}><Pill tono={NIVEL_TONO[h.nivel]}>{h.nivel}</Pill></td>
-                    <td style={{ ...TD, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{h.fs}</td>
-                    <td style={{ ...TD, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{h.fa}</td>
-                    <td style={{ ...TD, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{h.fd}</td>
-                    <td style={{ ...TD, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{(h.confianza * 100).toFixed(0)}%</td>
+                {lote.reglas.map((r) => (
+                  <tr key={r.regla}>
+                    <td style={{ ...TD, color: 'var(--text-primary)' }}>{r.regla}</td>
+                    <td style={{ ...TD, ...MONO }}>{r.valor}</td>
+                    <td style={TD}><Pill tono={REGLA_TONO[r.resultado]}>{t(`contagio.regla_${r.resultado}`)}</Pill></td>
+                    <td style={{ ...TD, color: 'var(--text-muted)' }}>{r.origen}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        )}
+
+        {tab === 'historial' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
+            <LineChartPrediccion
+              data={chartData}
+              xKey="hora"
+              series={[{ dataKey: 'prob', name: t('contagio.probabilidad_pct'), color: 'var(--sem-error)' }]}
+              yDomain={[0, 100]}
+              referencias={[{ y: 65, label: t('contagio.nivel_ALTO'), color: 'var(--sem-error)' }, { y: 40, label: t('contagio.nivel_MEDIO'), color: 'var(--sem-warning)' }]}
+              height={200}
+            />
+            <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Historial del lote">
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={THEAD_ROW}>
+                    {[t('contagio.col_hora'), t('contagio.col_disparador'), t('contagio.col_ejecucion'), t('contagio.col_prob'), t('contagio.nivel'), 'Fs', 'Fa', 'Fd', t('contagio.calidad')].map((h) => <th key={h} style={TH}>{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {lote.historial.map((h, k) => (
+                    <tr key={k}>
+                      <td style={{ ...TD, ...MONO }}>{h.hora}</td>
+                      <td style={TD}>{h.disparador}</td>
+                      <td style={TD}>{t('contagio.ejecucion_CALCULADO')}</td>
+                      <td style={{ ...TD, ...MONO }}>{Math.round(h.probabilidad * 100)}%</td>
+                      <td style={TD}><NivelPill nivel={h.nivel} /></td>
+                      <td style={{ ...TD, ...MONO }}>{h.fs}</td>
+                      <td style={{ ...TD, ...MONO }}>{h.fa ?? '—'}</td>
+                      <td style={{ ...TD, ...MONO }}>{h.fd ?? '—'}</td>
+                      <td style={TD}>{t(`contagio.calidad_${h.calidad}`)}{h.confianzaReducida && ` · ${t('contagio.confianza_reducida')}`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </ModalShell>
   );
@@ -97,13 +173,43 @@ function LoteDetalle({ lote, onClose }: { lote: LoteContagio; onClose: () => voi
 export function RiesgoContagioView() {
   const { t } = useT('prediction');
   const [sel, setSel] = useState<LoteContagio | null>(null);
-  const m = CONTAGIO_MOTOR;
+  const [tipo, setTipo] = useState('');
+  const [fuente, setFuente] = useState('');
+  const [riesgo, setRiesgo] = useState('');
+  const { calculos, loading, error, cargar } = useRiesgoContagio();
+  const todos = useMemo(() => aLotes(calculos), [calculos]);
+  const [busqueda, setBusqueda] = useState('');
+  const [grafoVisible, setGrafoVisible] = useState(leerGrafoVisible);
+  const [paginaLotes, setPaginaLotes] = useState(1);
+  const [paginaAlertas, setPaginaAlertas] = useState(1);
+  // AJF-11: búsqueda por lote o área sin mayúsculas ni tildes; los filtros aplican a
+  // lotes, alertas y grafo por igual.
+  const lotes = useMemo(() => {
+    const q = normalizar(busqueda);
+    return todos.filter((l) =>
+      (!tipo || l.especie === tipo) && (!fuente || l.fuenteFs === fuente) && (!riesgo || l.nivel === riesgo)
+      && (!q || normalizar(`${l.nombre} ${l.area}`).includes(q)));
+  }, [todos, tipo, fuente, riesgo, busqueda]);
+  const alertas = todos.filter((l) => l.alerta);
+  const alertasFiltradas = lotes.filter((l) => l.alerta);
+  const totalPaginasLotes = Math.max(1, Math.ceil(lotes.length / POR_PAGINA));
+  const totalPaginasAlertas = Math.max(1, Math.ceil(alertasFiltradas.length / POR_PAGINA));
+  const filtrar = (fn: () => void) => { fn(); setPaginaLotes(1); setPaginaAlertas(1); };
+  const alternarGrafo = () => setGrafoVisible((v) => { guardarGrafoVisible(!v); return !v; });
+  const tipos = [...new Set(todos.map((l) => l.especie))];
+  // Pesos del cálculo más reciente: los que el motor tenía configurados (RF-65).
+  const ultimo = calculos[0];
 
+  const motor = [
+    [t('contagio.eventos'), calculos.length],
+    [t('contagio.degradados'), todos.filter((l) => l.calidad === 'DEGRADADA').length],
+    [t('contagio.alertas_activas'), alertas.length],
+  ];
   const kpis = [
-    { etiqueta: 'Ciclos hoy', valor: m.ciclos_hoy, color: 'var(--brand-500)', icon: <Activity size={18} aria-hidden /> },
-    { etiqueta: 'Lotes degradados', valor: m.lotes_degradados, color: 'var(--sem-warning)', icon: <AlertTriangle size={18} aria-hidden /> },
-    { etiqueta: 'Sin datos', valor: m.sin_datos, color: 'var(--text-muted)', icon: <Database size={18} aria-hidden /> },
-    { etiqueta: 'Alertas de contagio', valor: m.alertas, color: 'var(--sem-error)', icon: <ShieldAlert size={18} aria-hidden /> },
+    [t('contagio.kpi_lotes'), todos.length],
+    [t('contagio.kpi_alto'), todos.filter((l) => l.nivel === 'ALTO').length],
+    [t('contagio.kpi_reducida'), todos.filter((l) => l.confianzaReducida).length],
+    [t('contagio.kpi_alertas'), alertas.length],
   ];
 
   return (
@@ -115,40 +221,133 @@ export function RiesgoContagioView() {
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
-        <DatosSimuladosBanner detalle="El modelo de contagio es del equipo IoT/IA y aún no expone endpoints; esta vista usa datos de ejemplo" />
+        {error && (
+          <div style={{ marginBottom: 'var(--s4)' }}>
+            <Alert variant={error.status === 403 ? 'warning' : 'error'} title={t('contagio.error_titulo')} description={error.message} />
+            <Button variant="secondary" size="sm" onClick={cargar} style={{ marginTop: 'var(--s2)' }}>{t('contagio.reintentar')}</Button>
+          </div>
+        )}
+        {loading && <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('contagio.cargando')}</p>}
 
-        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', marginBottom: 'var(--s6)', display: 'flex', gap: 'var(--s4)', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('riesgocontagioview.pesos_del_calculo')}</span>
-          <Pill tono="error">W<sub>fs</sub> {m.w_fs}</Pill>
-          <Pill tono="warning">W<sub>fa</sub> {m.w_fa}</Pill>
-          <Pill tono="info">W<sub>fd</sub> {m.w_fd}</Pill>
-        </div>
+        <section aria-labelledby="ctg-motor" style={{ ...CARD, padding: 'var(--s5)', marginBottom: 'var(--s5)' }}>
+          <h2 id="ctg-motor" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', flexWrap: 'wrap', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            {t('contagio.motor')}
+            {/* M4-10: los pesos en palabras y en porcentaje, no "W fs 0.5". */}
+            {ultimo && <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }} title={t('contagio.pesos_ayuda')}>
+              {t('contagio.pesos', {
+                fs: formatearNumero(ultimo.w_fs_aplicado, { style: 'percent' }),
+                fa: formatearNumero(ultimo.w_fa_aplicado, { style: 'percent' }),
+                fd: formatearNumero(ultimo.w_fd_aplicado, { style: 'percent' }),
+              })}
+            </span>}
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s4)', marginTop: 'var(--s4)' }}>
+            {motor.map(([label, valor]) => (
+              <div key={label}>
+                <div style={{ fontSize: '20px', fontWeight: 800, ...MONO, color: 'var(--text-primary)' }}>{valor}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
-          {kpis.map((k) => (
-            <div key={k.etiqueta} style={{ flex: '1 1 140px', minWidth: 140, background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', color: k.color }}>{k.icon}<span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{k.valor}</span></div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{k.etiqueta}</div>
+        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
+          {kpis.map(([label, valor]) => (
+            <div key={label} style={{ ...CARD, flex: '1 1 140px', minWidth: 140 }}>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{valor}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'var(--s1)' }}>{label}</div>
             </div>
           ))}
         </div>
 
-        <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('riesgocontagioview.lotes_monitoreados')}</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--s4)' }}>
-          {LOTES_CONTAGIO.map((l) => (
-            <button key={l.id} onClick={() => setSel(l)} style={{ textAlign: 'left', background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', cursor: 'pointer' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s2)' }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{l.identificador}</span>
-                <Pill tono={NIVEL_TONO[l.nivel]}>{l.nivel}</Pill>
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--s3)' }}>{l.especie} · {l.finca}</div>
-              <div style={{ fontSize: '32px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: `var(--sem-${NIVEL_TONO[l.nivel]})`, marginBottom: 'var(--s2)' }}>
-                {(l.probabilidad * 100).toFixed(0)}%
-              </div>
-              <ProbBar label={t('riesgocontagioview.contagio')} valor={l.probabilidad} color={`var(--sem-${NIVEL_TONO[l.nivel]})`} />
-            </button>
-          ))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
+          <div>
+            <label style={LABEL} htmlFor="ctg-buscar">{t('contagio.buscar')}</label>
+            <div style={{ position: 'relative' }}>
+              <Search size={15} aria-hidden style={{ position: 'absolute', left: 'var(--s3)', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input id="ctg-buscar" type="search" style={{ ...INPUT, paddingLeft: 'var(--s8)' }} value={busqueda} placeholder={t('contagio.buscar_placeholder')} onChange={(e) => filtrar(() => setBusqueda(e.target.value))} />
+            </div>
+          </div>
+          <div>
+            <label style={LABEL} htmlFor="ctg-tipo">{t('contagio.filtro_tipo')}</label>
+            <select id="ctg-tipo" style={INPUT} value={tipo} onChange={(e) => filtrar(() => setTipo(e.target.value))}>
+              <option value="">{t('contagio.todos')}</option>
+              {tipos.map((tm) => <option key={tm} value={tm}>{especieLegible(tm)}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={LABEL} htmlFor="ctg-fuente">{t('contagio.fuente_fs')}</label>
+            <select id="ctg-fuente" style={INPUT} value={fuente} onChange={(e) => filtrar(() => setFuente(e.target.value))}>
+              <option value="">{t('contagio.todas')}</option>
+              <option value="CONTEO_INDIVIDUAL">{t('contagio.fuente_CONTEO_INDIVIDUAL')}</option>
+              <option value="SCORE_POBLACIONAL">{t('contagio.fuente_SCORE_POBLACIONAL')}</option>
+            </select>
+          </div>
+          <div>
+            <label style={LABEL} htmlFor="ctg-riesgo">{t('contagio.nivel')}</label>
+            <select id="ctg-riesgo" style={INPUT} value={riesgo} onChange={(e) => filtrar(() => setRiesgo(e.target.value))}>
+              <option value="">{t('contagio.todos')}</option>
+              <option value="ALTO">{t('contagio.nivel_ALTO')}</option>
+              <option value="MEDIO">{t('contagio.nivel_MEDIO')}</option>
+              <option value="BAJO">{t('contagio.nivel_BAJO')}</option>
+            </select>
+          </div>
         </div>
+
+        <div style={{ marginBottom: 'var(--s4)' }}>
+          <Button variant="secondary" size="sm" onClick={alternarGrafo} aria-expanded={grafoVisible} aria-controls="ctg-grafo">
+            {grafoVisible
+              ? <><EyeOff size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('contagio.ocultar_grafo')}</>
+              : <><Eye size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('contagio.mostrar_grafo')}</>}
+          </Button>
+        </div>
+        <div id="ctg-grafo" hidden={!grafoVisible}>
+          {grafoVisible && <MapaPropagacion lotes={lotes} />}
+        </div>
+
+        <section aria-labelledby="ctg-alertas" style={{ marginBottom: 'var(--s5)' }}>
+          <h2 id="ctg-alertas" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>
+            <BellRing size={16} aria-hidden />{t('contagio.alertas_titulo', { n: alertasFiltradas.length })}
+          </h2>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
+            {pagina(alertasFiltradas, paginaAlertas).map((l) => (
+              <li key={l.alerta} style={{ ...CARD, padding: 'var(--s3) var(--s4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--s3)', flexWrap: 'wrap', fontSize: '13px' }}>
+                <span><strong style={MONO}>{l.alerta}</strong> · {l.nombre} · {l.area}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)' }}><NivelPill nivel={l.nivel} /><span style={MONO}>{l.probabilidad != null ? `${Math.round(l.probabilidad * 100)}%` : '—'}</span></span>
+              </li>
+            ))}
+          </ul>
+          <Paginacion pagina={paginaAlertas} totalPaginas={totalPaginasAlertas} onCambiar={setPaginaAlertas} />
+        </section>
+
+        <h2 id="ctg-lotes" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>{t('contagio.lotes_titulo', { count: lotes.length, n: lotes.length })}</h2>
+        {lotes.length === 0 ? (
+          <p role="status" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--s7)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)', fontSize: '14px' }}>
+            {/* N-04: sin cálculos en las fincas del usuario no es "quita filtros"; se dice qué pasa. */}
+            {!loading && !error && calculos.length === 0 ? t('contagio.sin_calculos') : t('contagio.sin_resultados')}
+          </p>
+        ) : (
+          <section aria-labelledby="ctg-lotes" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--s4)' }}>
+            {pagina(lotes, paginaLotes).map((l) => (
+              <article key={l.id} role="button" className="ds-fila-accion" tabIndex={0} onClick={() => setSel(l)} onKeyDown={alActivarConTeclado(() => setSel(l))} style={{ ...CARD, cursor: 'pointer' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{l.nombre}</span>
+                  <NivelPill nivel={l.nivel} />
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{l.area} · {especieLegible(l.especie)}</div>
+                <div style={{ fontSize: '28px', fontWeight: 800, ...MONO, color: 'var(--text-primary)', margin: 'var(--s3) 0 var(--s2)' }}>
+                  {l.probabilidad != null ? `${Math.round(l.probabilidad * 100)}%` : '—'}
+                </div>
+                {l.probabilidad != null && <ProbBar label={t('contagio.probabilidad')} valor={l.probabilidad} color={l.nivel ? `var(--sem-${NIVEL_TONO[l.nivel]})` : undefined} />}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s1)', marginTop: 'var(--s3)' }}>
+                  {l.fuenteFs && <Pill tono="neutral">{t(`contagio.fuente_${l.fuenteFs}`)}</Pill>}
+                  {l.confianzaReducida && <Pill tono="warning">{t('contagio.confianza_reducida')}</Pill>}
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
+        <Paginacion pagina={paginaLotes} totalPaginas={totalPaginasLotes} onCambiar={setPaginaLotes} />
       </div>
 
       {sel && <LoteDetalle lote={sel} onClose={() => setSel(null)} />}

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre       | Que se hizo                                                        |
+// |------------|--------------|--------------------------------------------------------------------|
+// | 2026-10-21 | destroyerban | #72 RF-42: campos y etiquetas por categoría, anunciados al cambiar |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -7,7 +10,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { hoyLocal, instanteParaEvento } from '../../shared/lib/fecha';
 import { ModalShell } from './ModalShell';
-import { FormSelect, FormTextArea, FORM_COL } from './formControls';
+import { AnuncioCampos, FormSelect, FormTextArea, FORM_COL } from './formControls';
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarEventoReproductivoDTO, CategoriaReproductiva, ResultadoReproductivo } from '../types';
 
@@ -21,10 +24,21 @@ interface FormValues {
   descripcion: string;
 }
 
-/** Lo que exige el backend por categoría (registrar_evento_reproductivo_use_case). */
-const REQUIEREN_PADRE: CategoriaReproductiva[] = ['servicio', 'inseminacion'];
-const ADMITEN_PADRE: CategoriaReproductiva[] = ['servicio', 'inseminacion', 'parto', 'nacimiento'];
-const REQUIEREN_CRIAS: CategoriaReproductiva[] = ['parto', 'aborto', 'nacimiento'];
+/**
+ * #72 (RF-42): campos de cada categoría, en un solo lugar (como `EventoSanitarioForm`
+ * por tipo). Sigue a RF-42 paso 10 y a `registrar_evento_reproductivo_use_case`:
+ * servicio/inseminación exigen el padre; parto, aborto y nacimiento exigen
+ * `numero_crias >= 1` (en aborto, las crías perdidas); el diagnóstico solo su resultado.
+ * Parto y nacimiento admiten el padre de la cría (genealogía, opcional).
+ */
+export const CAMPOS_POR_CATEGORIA: Record<CategoriaReproductiva, { padre: 'obligatorio' | 'opcional' | null; crias: boolean }> = {
+  servicio: { padre: 'obligatorio', crias: false },
+  inseminacion: { padre: 'obligatorio', crias: false },
+  diagnostico: { padre: null, crias: false },
+  parto: { padre: 'opcional', crias: true },
+  aborto: { padre: null, crias: true },
+  nacimiento: { padre: 'opcional', crias: true },
+};
 
 interface Props {
   esPoblacional: boolean;
@@ -43,9 +57,22 @@ export function EventoReproductivoForm({ esPoblacional, candidatosPadre, saving,
   });
   // #298 3.1b: cada categoría muestra solo sus campos.
   const categoria = watch('categoria');
-  const pidePadre = !esPoblacional && ADMITEN_PADRE.includes(categoria);
-  const padreObligatorio = REQUIEREN_PADRE.includes(categoria);
-  const pideCrias = REQUIEREN_CRIAS.includes(categoria);
+  const campos = CAMPOS_POR_CATEGORIA[categoria];
+  const pidePadre = !esPoblacional && campos.padre !== null;
+  const padreObligatorio = campos.padre === 'obligatorio';
+  const pideCrias = campos.crias;
+  const esAborto = categoria === 'aborto';
+  // En el diagnóstico de preñez "exitoso" es positivo: es lo que el backend exige antes del parto.
+  const esDiagnostico = categoria === 'diagnostico';
+  const etiquetaPadre = t(padreObligatorio ? 'eventoreproductivoform.padre' : 'eventoreproductivoform.padre_de_la_cria');
+  const etiquetaCrias = t(esAborto ? 'eventoreproductivoform.numero_de_crias_perdidas' : 'eventoreproductivoform.numero_de_crias');
+  // WCAG 4.1.3: al cambiar de categoría se anuncian los campos que quedan, como en el evento sanitario.
+  const camposVisibles = [
+    t(esDiagnostico ? 'eventoreproductivoform.resultado_del_diagnostico' : 'eventoreproductivoform.resultado'),
+    pidePadre && etiquetaPadre,
+    esPoblacional && t('eventoreproductivoform.id_madre'),
+    pideCrias && etiquetaCrias,
+  ].filter(Boolean).join(', ');
 
   const submit = async (v: FormValues) => {
     const dto: RegistrarEventoReproductivoDTO = {
@@ -78,6 +105,7 @@ export function EventoReproductivoForm({ esPoblacional, candidatosPadre, saving,
         </p>
       )}
       <form onSubmit={handleSubmit(submit)} noValidate>
+        <AnuncioCampos texto={`${t('eventoreproductivoform.campos_para_la_categoria')}: ${camposVisibles}`} />
         <div style={FORM_COL}>
           <FormSelect label={t('eventoreproductivoform.categoria')} required disabled={esPoblacional} {...register('categoria')}>
             {esPoblacional ? (
@@ -94,16 +122,20 @@ export function EventoReproductivoForm({ esPoblacional, candidatosPadre, saving,
             )}
           </FormSelect>
 
-          <FormSelect label={t('eventoreproductivoform.resultado')} required {...register('resultado')}>
-            <option value="exitoso">{t('eventoreproductivoform.exitoso')}</option>
-            <option value="fallido">{t('eventoreproductivoform.fallido')}</option>
+          <FormSelect
+            label={t(esDiagnostico ? 'eventoreproductivoform.resultado_del_diagnostico' : 'eventoreproductivoform.resultado')}
+            required
+            {...register('resultado')}
+          >
+            <option value="exitoso">{t(esDiagnostico ? 'eventoreproductivoform.positivo' : 'eventoreproductivoform.exitoso')}</option>
+            <option value="fallido">{t(esDiagnostico ? 'eventoreproductivoform.negativo' : 'eventoreproductivoform.fallido')}</option>
           </FormSelect>
 
           <Input label={t('eventoreproductivoform.fecha')} type="date" max={hoyLocal()} {...register('fecha')} />
           {pidePadre && (
             <Select
               id="evento-padre"
-              label={t(padreObligatorio ? 'eventoreproductivoform.padre' : 'eventoreproductivoform.padre_de_la_cria')}
+              label={etiquetaPadre}
               required={padreObligatorio}
               hint={candidatosPadre.length === 0 ? t('eventoreproductivoform.sin_candidatos_padre') : undefined}
               error={errors.id_padre?.message}
@@ -120,7 +152,7 @@ export function EventoReproductivoForm({ esPoblacional, candidatosPadre, saving,
           )}
           {pideCrias && (
             <Input
-              label={t('eventoreproductivoform.numero_de_crias')} required type="number" min={1} step={1}
+              label={etiquetaCrias} required type="number" min={1} step={1}
               error={errors.numero_crias?.message}
               {...register('numero_crias', {
                 validate: (v) => (Number.isInteger(Number(v)) && Number(v) >= 1) || t('eventoreproductivoform.al_menos_una_cria'),

@@ -1,14 +1,59 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-10 RF-60: listado de dispositivos de la finca con estado |
+// | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: panel del buffer Edge (GET /iot/buffer) |
+// | 2026-11-02 | Arekkazu | AJF-04 RF-60: parámetros de heartbeat y ventanas de visión |
 import { http } from '../../shared/api/http';
 import type {
+  DispositivoConEstadoSchema,
+  EstadoBufferSchema,
   EstadoDispositivoDetalleSchema,
   EstadoDispositivoIoTSchema,
   HistoricoTransicionSchema,
   AplicarMantenimientoDTO,
+  ParametrosHeartbeatCategoria,
+  VentanasVision,
 } from '../types';
 
 const BASE = '/iot/dispositivos';
 
 export const dispositivosApi = {
+  /** M3-10: dispositivos de las fincas del usuario con estado, batería y señal. Recurso 35 (R). */
+  async listar(estado?: string): Promise<DispositivoConEstadoSchema[]> {
+    const res = await http.get<DispositivoConEstadoSchema[]>(BASE, { params: estado ? { estado } : {} });
+    return res.data;
+  },
+
+  /** TC-DIS-148: último reporte del buffer Edge de cada dispositivo, los más ocupados primero. Recurso 35 (R). */
+  async buffer(): Promise<EstadoBufferSchema[]> {
+    const res = await http.get<EstadoBufferSchema[]>('/iot/buffer');
+    // El backend manda los Decimal como texto ("85.000"), como en el historial (#317).
+    const n = (v: unknown) => (v == null ? null : Number(v));
+    return res.data.map((d) => ({
+      ...d,
+      capacidad_total: n(d.capacidad_total),
+      capacidad_utilizada: n(d.capacidad_utilizada),
+      porcentaje_ocupacion: n(d.porcentaje_ocupacion),
+    }));
+  },
+
+  /** AJF-04: parámetros de heartbeat por categoría (solo lectura). Recurso 36 (R). */
+  async parametrosHeartbeat(): Promise<ParametrosHeartbeatCategoria[]> {
+    const res = await http.get<ParametrosHeartbeatCategoria[]>(`${BASE}/parametros-heartbeat`);
+    return res.data;
+  },
+
+  /** AJF-04: últimas ventanas de visión de una cámara. Recurso 36 (R). */
+  async ventanasVision(idDispositivo: number, cantidad = 10): Promise<VentanasVision> {
+    const res = await http.get<VentanasVision>(`${BASE}/${idDispositivo}/ventanas-vision`, { params: { cantidad } });
+    const n = (v: unknown) => (v == null ? null : Number(v));
+    return {
+      ...res.data,
+      cobertura_minima: n(res.data.cobertura_minima),
+      ventanas: res.data.ventanas.map((v) => ({ ...v, cobertura: Number(v.cobertura) })),
+    };
+  },
+
   /** Estado actual + historial reciente de un dispositivo (RF-60). Recurso 35. */
   async estado(idDispositivo: number, limiteHistorial = 20): Promise<EstadoDispositivoDetalleSchema> {
     const res = await http.get<EstadoDispositivoDetalleSchema>(`${BASE}/${idDispositivo}/estado`, {

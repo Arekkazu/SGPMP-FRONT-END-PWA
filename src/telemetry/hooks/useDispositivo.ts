@@ -1,6 +1,10 @@
-import { useState, useCallback } from 'react';
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-10 RF-60: listado de dispositivos de la finca con estado |
+import { useState, useCallback, useEffect } from 'react';
 import { dispositivosApi } from '../api/dispositivosApi';
 import type {
+  DispositivoConEstadoSchema,
   EstadoDispositivoIoTSchema,
   HistoricoTransicionSchema,
   AplicarMantenimientoDTO,
@@ -73,4 +77,27 @@ export function useDispositivo() {
     aplicarMantenimiento,
     limpiarSaveError,
   };
+}
+
+/** M3-10: listado de dispositivos; se recarga tras un cambio de mantenimiento. */
+export function useDispositivos(habilitado: boolean) {
+  const [items, setItems] = useState<DispositivoConEstadoSchema[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+
+  const cargar = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setItems(await dispositivosApi.listar());
+    } catch (e) {
+      setError(e as ApiError);
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { if (habilitado) void cargar(); }, [habilitado, cargar]);
+  return { items, loading, error, cargar };
 }

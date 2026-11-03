@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-20 | Arekkazu | FE-05 RF-15: densidad y esperanza de vida opcionales |
 /**
  * #231 (RF-15): una especie que nunca se editó tiene `fecha_actualizacion` null.
  * Se envía tal cual; mandar la hora del cliente nunca coincide con la BD y el
@@ -69,5 +72,62 @@ describe('EspeciesModal', () => {
     await userEvent.selectOptions(screen.getByLabelText(/Grupo de manejo/), 'ACUICULTURA');
     await enviar();
     expect(onEditar).toHaveBeenCalledWith(42, expect.objectContaining({ grupo_manejo: 'ACUICULTURA' }));
+  });
+
+  // FE-05 (RFC-012/014): densidad y esperanza de vida son opcionales.
+  it('registra sin densidad ni esperanza de vida (viajan null)', async () => {
+    const onRegistrar = registrarModal();
+    await userEvent.type(screen.getByLabelText(/^Nombre/), 'Tilapia Roja');
+    await userEvent.selectOptions(screen.getByLabelText(/Grupo de manejo/), 'ACUICULTURA');
+    await enviar();
+    expect(onRegistrar).toHaveBeenCalledWith(expect.objectContaining({
+      densidad_poblacional_max: null, esperanza_vida_dias: null,
+    }));
+  });
+
+  it('registra con densidad (ind/m²) y esperanza de vida (días)', async () => {
+    const onRegistrar = registrarModal();
+    await userEvent.type(screen.getByLabelText(/^Nombre/), 'Tilapia Roja');
+    await userEvent.selectOptions(screen.getByLabelText(/Grupo de manejo/), 'ACUICULTURA');
+    await userEvent.type(screen.getByLabelText(/Densidad máxima/), '80.5');
+    await userEvent.type(screen.getByLabelText(/Esperanza de vida/), '730');
+    await enviar();
+    expect(onRegistrar).toHaveBeenCalledWith(expect.objectContaining({
+      densidad_poblacional_max: '80.5', esperanza_vida_dias: 730,
+    }));
+  });
+
+  it.each([
+    ['80.123', 'Use un número con máximo 2 decimales.'],
+    ['0', 'La densidad debe ser mayor a cero.'],
+  ])('no registra con densidad %s', async (valor, mensaje) => {
+    const onRegistrar = registrarModal();
+    await userEvent.type(screen.getByLabelText(/^Nombre/), 'Tilapia Roja');
+    await userEvent.selectOptions(screen.getByLabelText(/Grupo de manejo/), 'ACUICULTURA');
+    await userEvent.type(screen.getByLabelText(/Densidad máxima/), valor);
+    await enviar();
+    expect(onRegistrar).not.toHaveBeenCalled();
+    expect(screen.getByText(mensaje)).toBeTruthy();
+  });
+
+  it('la esperanza de vida no admite decimales al escribir', async () => {
+    registrarModal();
+    const campo = screen.getByLabelText(/Esperanza de vida/) as HTMLInputElement;
+    await userEvent.type(campo, '1.5');
+    expect(campo.value).toBe('15');
+  });
+
+  it('al editar precarga los valores y vaciarlos los borra', async () => {
+    const onEditar = vi.fn().mockResolvedValue(true);
+    render(<EspeciesModal especie={{ ...especie(null), densidad_poblacional_max: '80.00', esperanza_vida_dias: 365 }}
+      saving={false} saveError={null} onClose={vi.fn()} onRegistrar={vi.fn()} onEditar={onEditar} />);
+    const densidad = screen.getByLabelText(/Densidad máxima/) as HTMLInputElement;
+    expect(densidad.value).toBe('80');
+    expect((screen.getByLabelText(/Esperanza de vida/) as HTMLInputElement).value).toBe('365');
+    await userEvent.clear(densidad);
+    await enviar();
+    expect(onEditar).toHaveBeenCalledWith(42, expect.objectContaining({
+      densidad_poblacional_max: null, esperanza_vida_dias: 365,
+    }));
   });
 });

@@ -1,21 +1,33 @@
+// | Fecha      | Nombre  | Que se hizo |
+// |------------|---------|-------------|
+// | 2026-10-21 | Arekkazu | PROTO-V2 RF-60: sección simulada de cámaras y parámetros de heartbeat por categoría |
+// | 2026-10-22 | Leandro | FE-12 RF-57: conserva autorización técnica al reutilizar modales |
+// | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-10 RF-60: lista de dispositivos en vez del campo de ID |
+// | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: sin filtro de sensor por ID, que el endpoint técnico ignoraba |
+// | 2026-10-29 | Arekkazu | USAB-M03 prototipo T-23 RF-60: alertas técnicas en tarjetas, como Alertas |
+// | 2026-10-31 | Arekkazu | CP50/CP58/T-18 RF-60: tiempo sin contacto con unidad, transición manual o automática con responsable, equipo por nombre |
+// | 2026-11-02 | Arekkazu | AJF-03 RF-57: la sección de alertas técnicas no existe para quien no tiene el permiso |
+// | 2026-11-02 | Arekkazu | AJF-04 RF-60: parámetros de heartbeat y ventanas de visión reales, solo con permiso de alertas técnicas |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { Cpu, Search, Wrench, AlertTriangle } from 'lucide-react';
+import { Cpu, Wrench, AlertTriangle } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
-import { useDispositivo } from '../hooks/useDispositivo';
+import { useDispositivo, useDispositivos } from '../hooks/useDispositivo';
+import { DispositivosLista } from '../components/DispositivosLista';
 import { useAlertas } from '../hooks/useAlertas';
 import { DispositivoEstadoPanel } from '../components/DispositivoEstadoPanel';
 import { AplicarMantenimientoModal } from '../components/AplicarMantenimientoModal';
+import { CamarasVisionPanel } from '../components/CamarasVisionPanel';
+import { useParametrosHeartbeat, useVentanasVision } from '../hooks/useParametrosHeartbeat';
 import { AlertasFiltros, ALERTAS_FILTROS_VACIO, type AlertasFiltrosState } from '../components/AlertasFiltros';
-import { AlertasTable } from '../components/AlertasTable';
+import { AlertasLista } from '../components/AlertasLista';
 import { AlertaDetalleModal } from '../components/AlertaDetalleModal';
 import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
-import { INPUT, LABEL } from '../components/tableStyles';
 import { RECURSO_INFRAESTRUCTURA, RECURSO_ALERTAS_TECNICAS, ACCION_R, ACCION_U } from '../rbac';
 import type { ListarAlertasFiltros, NuevoEstadoAlerta } from '../types';
 import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
@@ -29,7 +41,7 @@ export function DispositivosView() {
   const online = useOnlineStatus();
 
   const dispositivo = useDispositivo();
-  const [idInput, setIdInput] = useState('');
+  const lista = useDispositivos(puedeVerInfra);
   const [mantAbierto, setMantAbierto] = useState(false);
 
   const tecnicas = useAlertas({ tecnicas: true });
@@ -43,7 +55,6 @@ export function DispositivosView() {
       if (filtros.estado) f.estado = filtros.estado;
       if (filtros.severidad) f.severidad = filtros.severidad;
       if (filtros.origen_evento) f.origen_evento = filtros.origen_evento;
-      if (filtros.id_sensor) f.id_sensor = Number(filtros.id_sensor);
       if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
       if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
       return f;
@@ -55,15 +66,14 @@ export function DispositivosView() {
     if (puedeVerTecnicas) tecnicas.cargar({ pagina: 1, por_pagina: 50 });
   }, [puedeVerTecnicas, tecnicas.cargar]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const consultar = () => {
-    const id = Number(idInput.trim());
-    if (id > 0) dispositivo.cargar(id);
-  };
-
   const confirmarMantenimiento = async (dto: Parameters<typeof dispositivo.aplicarMantenimiento>[0]) => {
     const ok = await dispositivo.aplicarMantenimiento(dto);
-    if (ok) setMantAbierto(false);
+    if (ok) { setMantAbierto(false); void lista.cargar(); }
   };
+
+  const heartbeat = useParametrosHeartbeat(puedeVerTecnicas);
+  const vision = useVentanasVision(dispositivo.idConsultado, puedeVerTecnicas);
+  const nombreSeleccionado = (() => { const d = lista.items.find((x) => x.id_dispositivo_iot === dispositivo.idConsultado); return d ? d.descripcion || d.serial : undefined; })();
 
   const enMantenimiento = (dispositivo.estado?.estado_actual ?? '').toUpperCase() === 'EN_MANTENIMIENTO';
 
@@ -94,30 +104,24 @@ export function DispositivosView() {
       <div style={{ padding: 'var(--page-pad)', display: 'flex', flexDirection: 'column', gap: 'var(--s7)' }}>
         {/* Consulta de dispositivo */}
         <section>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--s3)', flexWrap: 'wrap', marginBottom: 'var(--s5)' }}>
-            <div style={{ maxWidth: 220 }}>
-              <label style={LABEL} htmlFor="disp-id">{t('dispositivosview.id_de_dispositivo')}</label>
-              <input
-                id="disp-id"
-                type="number"
-                style={INPUT}
-                value={idInput}
-                onChange={(e) => setIdInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') consultar(); }}
-                placeholder="Ej: 12"
-              />
-            </div>
-            <Button variant="primary" size="sm" onClick={consultar} disabled={!idInput.trim()}>
-              <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('dispositivosview.consultar')}</Button>
-          </div>
+          <DispositivosLista
+            items={lista.items}
+            loading={lista.loading}
+            error={lista.error}
+            seleccionado={dispositivo.idConsultado}
+            onSeleccionar={(id) => dispositivo.cargar(id)}
+          />
 
+          <div style={{ marginTop: 'var(--s5)' }} aria-live="polite">
           <DispositivoEstadoPanel
+            nombre={nombreSeleccionado}
             idConsultado={dispositivo.idConsultado}
             estado={dispositivo.estado}
             historial={dispositivo.historial}
             loading={dispositivo.loading}
             error={dispositivo.error}
           />
+          </div>
 
           {dispositivo.estado && puedeMantenimiento && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', flexWrap: 'wrap', marginTop: 'var(--s4)' }}>
@@ -137,56 +141,68 @@ export function DispositivosView() {
           )}
         </section>
 
-        {/* Alertas técnicas */}
-        <section>
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
-            <AlertTriangle size={18} aria-hidden />{t('dispositivosview.alertas_tecnicas')}</h2>
+        {/* Alertas técnicas: solo existen para quien tiene el permiso de verlas */}
+        {puedeVerTecnicas && (
+          <section>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
+              <AlertTriangle size={18} aria-hidden />{t('dispositivosview.alertas_tecnicas')}</h2>
 
-          {!puedeVerTecnicas ? (
-            <Alert variant="warning" title={t('dispositivosview.acceso_restringido')} description={t('dispositivosview.las_alertas_tecnicas_solo_estan_disponibles')} />
-          ) : (
-            <>
-              {!online && <Alert variant="warning" title={t('dispositivosview.sin_conexion')} description={t('dispositivosview.la_gestion_de_alertas_tecnicas_esta')} style={{ marginBottom: 'var(--s4)' }} />}
-              {tecnicas.error && <Alert variant={tecnicas.error.status === 403 ? 'warning' : 'error'} title={t('dispositivosview.error_al_cargar_alertas_tecnicas')} description={tecnicas.error.message} style={{ marginBottom: 'var(--s4)' }} />}
+            {!online && <Alert variant="warning" title={t('dispositivosview.sin_conexion')} description={t('dispositivosview.la_gestion_de_alertas_tecnicas_esta')} style={{ marginBottom: 'var(--s4)' }} />}
+            {tecnicas.error && <Alert variant={tecnicas.error.status === 403 ? 'warning' : 'error'} title={t('dispositivosview.error_al_cargar_alertas_tecnicas')} description={tecnicas.error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
-              <AlertasFiltros
-                value={filtros}
-                onChange={setFiltros}
-                onAplicar={() => tecnicas.cargar(build(1))}
-                onLimpiar={() => { setFiltros(ALERTAS_FILTROS_VACIO); tecnicas.cargar({ pagina: 1, por_pagina: 50 }); }}
-                ocultarTipo
-              />
+            <AlertasFiltros
+              value={filtros}
+              onChange={setFiltros}
+              onAplicar={() => tecnicas.cargar(build(1))}
+              onLimpiar={() => { setFiltros(ALERTAS_FILTROS_VACIO); tecnicas.cargar({ pagina: 1, por_pagina: 50 }); }}
+              ocultarTipo
+            />
 
-              <AlertasTable alertas={tecnicas.alertas} loading={tecnicas.loading} onAbrir={setSelId} />
+            <AlertasLista alertas={tecnicas.alertas} loading={tecnicas.loading} acciones={() => []} bloqueadas onAccion={() => undefined} onAbrir={setSelId} />
 
-              <Paginacion
-                pagina={tecnicas.paginacion.pagina}
-                totalPaginas={tecnicas.paginacion.totalPaginas}
-                totalRegistros={tecnicas.paginacion.totalRegistros}
-                onCambiar={(p) => tecnicas.cargar(build(p))}
-              />
-            </>
-          )}
-        </section>
+            <Paginacion
+              pagina={tecnicas.paginacion.pagina}
+              totalPaginas={tecnicas.paginacion.totalPaginas}
+              totalRegistros={tecnicas.paginacion.totalRegistros}
+              onCambiar={(p) => tecnicas.cargar(build(p))}
+            />
+          </section>
+        )}
+
+        {/* AJF-04: parámetros por categoría y ventanas de visión, del backend. Es operación de
+            equipos: mismo permiso que las alertas técnicas. */}
+        {puedeVerTecnicas && (
+          <CamarasVisionPanel
+            parametros={heartbeat.parametros}
+            loadingParametros={heartbeat.loading}
+            errorParametros={heartbeat.error}
+            nombreDispositivo={nombreSeleccionado}
+            ventanas={vision.ventanas}
+            loadingVentanas={vision.loading}
+            errorVentanas={vision.error}
+          />
+        )}
       </div>
 
-      {seleccionada && (
+      {puedeVerTecnicas && seleccionada && (
         <AlertaDetalleModal
           detalle={{ ...seleccionada, historico_estados: [] }}
           loading={false}
           error={null}
           puedeGestionar={puedeGestionarTecnicas}
+          puedeDescartar={puedeGestionarTecnicas}
           online={online}
-          onAccion={setAccion}
+          onAccion={(estado) => { tecnicas.limpiarSaveError(); setAccion(estado); }}
           onClose={() => setSelId(null)}
         />
       )}
 
-      {accion && seleccionada && (
+      {puedeVerTecnicas && accion && seleccionada && (
         <CambiarEstadoAlertaModal
           alerta={seleccionada}
           estado={accion}
           saving={tecnicas.saving}
+          autorizada={online && puedeGestionarTecnicas}
           saveError={tecnicas.saveError}
           onConfirm={confirmarCambio}
           onClose={() => setAccion(null)}
