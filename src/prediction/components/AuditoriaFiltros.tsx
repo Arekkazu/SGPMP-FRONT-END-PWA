@@ -5,6 +5,7 @@
 // | 2026-11-02 | Arekkazu | AJF-13 RF-73: "Relacionado con" + "Registro" por nombre en vez del ID de referencia libre |
 // | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU09 H-05 RF-73: tipo de evento con los 45 tipos que registra la bitácora |
 // | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
+// | 2026-11-03 | Arekkazu | QA-M04 RF-73: «Hasta» anterior a «Desde» se avisa y no se aplica |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Filter, X } from 'lucide-react';
@@ -131,8 +132,10 @@ export function AuditoriaFiltros({ value, onChange, onAplicar, onLimpiar, opcion
     if (r.estado === 'resuelto') onChange({ ...value, referencia: r.texto, id_referencia: String(r.id) });
     setRefTocada(r.estado === 'sin_resolver');
   };
+  const invertido = !!value.fecha_desde && !!value.fecha_hasta && value.fecha_desde > value.fecha_hasta;
   const aplicar = () => {
     if (sinResolver) { setRefTocada(true); return; }
+    if (invertido) return;
     onAplicar();
   };
 
@@ -213,14 +216,18 @@ export function AuditoriaFiltros({ value, onChange, onAplicar, onLimpiar, opcion
 
         <div>
           <label style={LABEL} htmlFor="aud-hasta">{t('auditoriafiltros.hasta')}</label>
-          <input id="aud-hasta" type="date" style={INPUT} value={value.fecha_hasta} onChange={(e) => set('fecha_hasta', e.target.value)} />
+          <input
+            id="aud-hasta" type="date" style={INPUT} value={value.fecha_hasta} onChange={(e) => set('fecha_hasta', e.target.value)}
+            aria-invalid={invertido} aria-describedby={invertido ? 'aud-rango-error' : undefined}
+          />
+          {invertido && <p id="aud-rango-error" role="alert" style={{ fontSize: '12px', color: 'var(--sem-error)', margin: 'var(--s1) 0 0' }}>{t('filtros.rango_invertido', { ns: 'common' })}</p>}
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--s2)', justifyContent: 'flex-end' }}>
         <Button variant="ghost" size="sm" onClick={() => { setRefTocada(false); onLimpiar(); }}>
           <X size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriafiltros.limpiar')}</Button>
-        <Button variant="secondary" size="sm" onClick={aplicar}>
+        <Button variant="secondary" size="sm" onClick={aplicar} disabled={invertido}>
           <Filter size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('auditoriafiltros.aplicar')}</Button>
       </div>
     </div>
