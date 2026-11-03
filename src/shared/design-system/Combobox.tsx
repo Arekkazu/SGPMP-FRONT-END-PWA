@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-03 | Arekkazu | Variante compacta para filas de filtros (alineada con los select) |
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useT } from '../i18n/useT';
@@ -35,6 +38,8 @@ interface ComboboxProps {
   error?: string;
   /** Texto de la lista vacía; por defecto, "Sin coincidencias. Puedes escribir el ID." */
   vacio?: string;
+  /** En una fila de filtros: rótulo y alto iguales a los `select` de al lado. */
+  compacto?: boolean;
 }
 
 /**
@@ -45,7 +50,7 @@ interface ComboboxProps {
  */
 export function Combobox({
   id, label, opciones, value, onChange, onSelect, onEnter, onBlur, inputRef, name,
-  required, disabled, placeholder, hint, error, vacio,
+  required, disabled, placeholder, hint, error, vacio, compacto,
 }: ComboboxProps) {
   const { t } = useT('common');
   const input = useRef<HTMLInputElement | null>(null);
@@ -97,7 +102,7 @@ export function Combobox({
   };
 
   return (
-    <div className="ds-field">
+    <div className={compacto ? 'ds-field ds-field--compacto' : 'ds-field'}>
       <label className="ds-field__label" htmlFor={id}>
         {label}
         {required && <span className="ds-field__req" aria-hidden="true"> *</span>}

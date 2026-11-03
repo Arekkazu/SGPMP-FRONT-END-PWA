@@ -4,6 +4,7 @@
 // | 2026-10-29 | Arekkazu | H-M3-05 CP31 RF-57: rango de fechas invertido se avisa en el campo y no se aplica |
 // | 2026-10-31 | Claude   | INC-M03-240-G69 RF-57: filtro por el tipo REGLA_SIMPLE |
 // | 2026-11-02 | Arekkazu | AJF-02 RF-57: el animal o lote escrito a medias se resuelve al salir o se avisa en el campo; no se consulta sin el filtro |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
@@ -127,12 +128,14 @@ export function AlertasFiltros({ areas = [], activos = [], value, onChange, onAp
           <>
             <SelectorArea
               id="al-area"
+              compacto
               areas={areas}
               value={value.area}
               onChange={(area, id) => onChange({ ...value, area, id_infraestructura: id != null ? String(id) : '' })}
             />
             <Combobox
               id="al-activo"
+              compacto
               label={t('alertasfiltros.activo')}
               opciones={opcionesActivos}
               value={value.activo}

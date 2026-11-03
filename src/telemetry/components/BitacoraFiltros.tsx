@@ -2,11 +2,13 @@
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | H-M3-17 CP137 RF-63: rango de fechas invertido se avisa en el campo y no se aplica |
 // | 2026-10-31 | Arekkazu | TC-DIS-166 RF-63: filtro por RF de origen del evento |
+// | 2026-11-03 | Arekkazu | RF-63: tipo de evento en un desplegable por área del sistema, sin "RF de origen" a la vista |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 export interface BitacoraFiltrosState {
   tipo_evento: string;
@@ -19,8 +21,32 @@ export interface BitacoraFiltrosState {
   rf_origen: string;
 }
 
-/** RF emisor que acepta el backend (`ComponenteOrigen`), en el orden del módulo. */
-export const RF_ORIGEN_BITACORA = ['RF53', 'RF54', 'RF55', 'RF56', 'RF57', 'RF58', 'RF59', 'RF60', 'RF61', 'RF62', 'RF17', 'RF20', 'RF23'];
+/**
+ * Tipos de evento por componente que los emite (`ComponenteOrigen` del backend). El
+ * usuario ve el área del sistema y el evento con nombre; el código del componente solo
+ * viaja como filtro `rf_origen` al elegir «Todos» de un grupo.
+ */
+export const GRUPOS_BITACORA: { componente: string; tipos: string[] }[] = [
+  { componente: 'RF53', tipos: ['TELEMETRIA_VALIDADA', 'TELEMETRIA_RECHAZADA', 'ERROR_AUTENTICACION_DISPOSITIVO', 'POSTCOMMIT_RF53_LECTURAS_COMPLETADO', 'POSTCOMMIT_RF53_AUDITORIA_COMPLETADO'] },
+  { componente: 'RF54', tipos: ['BUFFER_CAPACITY_WARNING', 'BUFFER_OVERFLOW', 'BUFFER_DATA_CORRUPTION'] },
+  { componente: 'RF55', tipos: ['DESVIACION_DETECTADA'] },
+  { componente: 'RF56', tipos: ['PAQUETE_INFERENCIA_GENERADO', 'PAQUETE_ENVIADO_IA', 'CONTEXTO_INCOMPLETO'] },
+  { componente: 'RF57', tipos: ['ALERTA_GENERADA', 'ALERTA_RECONOCIDA', 'ALERTA_RESUELTA', 'ALERTA_DESCARTADA', 'TRANSICION_ALERTA_RECHAZADA', 'DUPLICADO_ALERTA_CORRELACIONADO', 'ESCALAMIENTO_ALERTA_SLA', 'SLA_ALERTA_INCUMPLIDO', 'NOTIFICACION_FALLIDA', 'MOTOR_INFERENCIA_NO_INTEGRADO', 'POSTCOMMIT_RF57_COMPLETADO'] },
+  { componente: 'RF58', tipos: ['VARIABLE_SIN_UMBRAL'] },
+  { componente: 'RF59', tipos: ['HISTORIAL_CONSULTADO'] },
+  { componente: 'RF60', tipos: ['HEARTBEAT_RECIBIDO', 'DISPOSITIVO_SIN_SEÑAL', 'DISPOSITIVO_INACTIVO', 'DISPOSITIVO_RECONECTADO', 'ESTADO_CAMBIADO', 'POSTCOMMIT_RF60_COMPLETADO', 'POSTCOMMIT_RF60_TRANSICIONES_COMPLETADO', 'POSTCOMMIT_HEARTBEAT_ESTADO_COMPLETADO', 'POSTCOMMIT_HEARTBEAT_ALERTAS_COMPLETADO', 'POSTCOMMIT_HEARTBEAT_SENSORES_COMPLETADO', 'POSTCOMMIT_HEARTBEAT_FIRMWARE_COMPLETADO', 'POSTCOMMIT_HEARTBEAT_AUDITORIA_COMPLETADO', 'POSTCOMMIT_VISION_DETECCION_COMPLETADO'] },
+  { componente: 'RF61', tipos: ['VINCULACION_AUTOMATICA', 'SIN_VINCULAR', 'POSTCOMMIT_RF61_COMPLETADO'] },
+  { componente: 'RF62', tipos: ['EVALUACION_CALIDAD_COMPLETADA', 'POSTCOMMIT_RF62_COMPLETADO', 'POSTCOMMIT_RF62_FALLIDO', 'POSTCOMMIT_VISION_CALIDAD_COMPLETADO'] },
+  { componente: 'RF17', tipos: ['PROPAGACION_UMBRAL_EDGE', 'POSTCOMMIT_RF17_COMPLETADO', 'POSTCOMMIT_RF17_FALLIDO'] },
+  { componente: 'RF20', tipos: ['PROPAGACION_TIPO_MODELO_EDGE'] },
+  { componente: 'RF23', tipos: ['CREDENCIAL_MQTT_EMITIDA', 'CREDENCIAL_MQTT_REVOCADA', 'CONFIGURACION_REMOTA_REINTENTADA'] },
+];
+
+/** Un solo desplegable para dos filtros del backend: «c:<componente>» o «t:<tipo>». */
+function valorTipo(v: BitacoraFiltrosState): string {
+  if (v.tipo_evento) return `t:${v.tipo_evento}`;
+  return v.rf_origen ? `c:${v.rf_origen}` : '';
+}
 
 export const BITACORA_FILTROS_VACIO: BitacoraFiltrosState = {
   tipo_evento: '', severidad_log: '', clasificacion_registro: '', resultado: '',
@@ -45,7 +71,24 @@ export function BitacoraFiltros({ value, onChange, onAplicar, onLimpiar }: Props
       <div style={FILTER_GRID}>
         <div>
           <label style={LABEL} htmlFor="b-tipo">{t('bitacorafiltros.tipo_de_evento')}</label>
-          <input id="b-tipo" style={INPUT} value={value.tipo_evento} onChange={set('tipo_evento')} />
+          <select
+            id="b-tipo" style={INPUT} value={valorTipo(value)}
+            onChange={(e) => {
+              const [clase, codigo = ''] = e.target.value.split(/:(.*)/);
+              onChange({ ...value, tipo_evento: clase === 't' ? codigo : '', rf_origen: clase === 'c' ? codigo : '' });
+            }}
+          >
+            <option value="">{t('bitacorafiltros.todos')}</option>
+            {GRUPOS_BITACORA.map(({ componente, tipos }) => {
+              const grupo = t(`bitacorafiltros.origen_${componente}`);
+              return (
+                <optgroup key={componente} label={grupo}>
+                  <option value={`c:${componente}`}>{t('bitacorafiltros.todos_del_grupo', { grupo })}</option>
+                  {tipos.map((tipo) => <option key={tipo} value={`t:${tipo}`}>{etiquetaCodigo(tipo)}</option>)}
+                </optgroup>
+              );
+            })}
+          </select>
         </div>
         <div>
           <label style={LABEL} htmlFor="b-sev">{t('bitacorafiltros.severidad')}</label>
@@ -73,13 +116,6 @@ export function BitacoraFiltros({ value, onChange, onAplicar, onLimpiar }: Props
             <option value="FALLIDO">{t('bitacorafiltros.fallido')}</option>
             <option value="PARCIAL">{t('bitacorafiltros.parcial')}</option>
             <option value="RECHAZADO">{t('bitacorafiltros.rechazado')}</option>
-          </select>
-        </div>
-        <div>
-          <label style={LABEL} htmlFor="b-rf">{t('bitacorafiltros.rf_origen')}</label>
-          <select id="b-rf" style={INPUT} value={value.rf_origen} onChange={set('rf_origen')}>
-            <option value="">{t('bitacorafiltros.todos')}</option>
-            {RF_ORIGEN_BITACORA.map((rf) => <option key={rf} value={rf}>{t(`bitacorafiltros.origen_${rf}`)}</option>)}
           </select>
         </div>
         <div>

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | AJF-10 RF-66: filtros del monitor (animal, tipo, nivel, fechas con rangos rápidos, alerta, pruebas) |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
 import React, { useState } from 'react';
 import { Filter, X } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -94,6 +95,7 @@ export function MonitorFiltros({ activos, value, onChange, onAplicar, onLimpiar 
       <div style={FILTER_GRID}>
         <Combobox
           id="mon-activo"
+          compacto
           label={t('monitor.filtro_activo')}
           opciones={opciones}
           value={value.activo}
