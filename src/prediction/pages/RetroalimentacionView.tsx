@@ -4,6 +4,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-03 RF-72: el formulario recibe la fecha de la inferencia |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-03/N-03 RF-72: diagnósticos de la especie del activo y activo con nombre |
 // | 2026-11-03 | Arekkazu | RF-72: bandeja real del backend en vez de datos de ejemplo |
+// | 2026-11-03 | Claude   | RF-72: botón Reintentar si la bandeja no carga |
 import React, { useEffect, useMemo, useState } from 'react';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -133,7 +134,16 @@ export function RetroalimentacionView() {
         {okFlash && <Alert variant="success" title={t('retroalimentacionview.evaluacion_registrada')} description={t('retroalimentacionview.la_retroalimentacion_clinica_quedo')} style={{ marginBottom: 'var(--s4)' }} />}
         {!online && <Alert variant="warning" title={t('retroalimentacionview.sin_conexion')} description={t('retroalimentacionview.el_registro_de_evaluaciones_esta')} style={{ marginBottom: 'var(--s4)' }} />}
         {!puedeRegistrar && <Alert variant="info" title={t('retroalimentacionview.solo_supervision')} description={t('retroalimentacionview.tu_rol_puede_consultar_las_evaluaciones')} style={{ marginBottom: 'var(--s4)' }} />}
-        {bandeja.error && <Alert variant={bandeja.error.status === 403 ? 'warning' : 'error'} title={t('retroalimentacionview.no_se_pudo_cargar')} description={bandeja.error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {bandeja.error && (
+          <div style={{ marginBottom: 'var(--s4)' }}>
+            <Alert variant={bandeja.error.status === 403 ? 'warning' : 'error'} title={t('retroalimentacionview.no_se_pudo_cargar')} description={bandeja.error.message} />
+            {bandeja.error.status !== 403 && (
+              <Button variant="secondary" size="sm" loading={bandeja.loading} disabled={!online} onClick={() => void bandeja.recargar()} style={{ marginTop: 'var(--s2)' }}>
+                {t('acciones.reintentar', { ns: 'common' })}
+              </Button>
+            )}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', marginBottom: 'var(--s6)' }}>
           <Kpi icon={<Clock size={18} aria-hidden />} valor={datos?.indicadores.pendientes ?? null} etiqueta={t('retroalimentacionview.kpi_pendientes')} color="var(--sem-info)" />
