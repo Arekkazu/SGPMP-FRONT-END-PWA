@@ -7,6 +7,7 @@
 // | 2026-11-02 | Arekkazu | AJF-05 RF-59: los filtros que no se pueden combinar se deshabilitan con el motivo visible |
 // | 2026-11-03 | Arekkazu | AJF-05 RF-59: especie elegida del catálogo (Combobox) en vez de texto libre |
 // | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
+// | 2026-11-03 | Arekkazu | RF-59: botón Limpiar que vuelve a los filtros por defecto y consulta |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, Download } from 'lucide-react';
@@ -137,6 +138,15 @@ export function HistorialFiltros({ areas, especies = [], especiesError = false, 
     onAplicar(v);
   };
 
+  // Vuelve a los filtros por defecto con fechas de hoy (el default se calcula al cargar el módulo).
+  const limpiar = () => {
+    const v = { ...HISTORIAL_FILTROS_DEFAULT, fecha_inicio: diasAtrasLocal(7), fecha_fin: hoyLocal() };
+    setIntento(false);
+    setEspecieSinResolver(false);
+    onChange(v);
+    onAplicar(v);
+  };
+
   return (
     <>
       <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', marginBottom: 'var(--s4)' }}>
@@ -229,6 +239,7 @@ export function HistorialFiltros({ areas, especies = [], especiesError = false, 
       <div style={{ display: 'flex', gap: 'var(--s2)', marginBottom: 'var(--s5)', flexWrap: 'wrap' }}>
         <Button variant="primary" size="sm" onClick={consultar}>
           <Search size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('historialfiltros.consultar')}</Button>
+        <Button variant="ghost" size="sm" onClick={limpiar}>{t('acciones.limpiar', { ns: 'common' })}</Button>
         {puedeExportar && (
           // M3-13: el backend responde siempre 503 hasta que exista el módulo de Reportes
           // (M08). El motivo va en texto visible; un `title` en un botón deshabilitado no se ve.
