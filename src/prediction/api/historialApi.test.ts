@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | AJF-09 RF-67: el selector de animales lee `registros` y recorre las páginas de M02 |
+// | 2026-11-03 | Arekkazu | AJF-09 RF-67: /activos-biologicos sin barra final (307 fuera del prefijo del proxy) |
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { http } from '../../shared/api/http';
 import { historialApi } from './historialApi';
@@ -16,7 +17,7 @@ describe('historialApi.listarActivos', () => {
       .mockResolvedValueOnce({ data: { registros: [{ id_activo_biologico: 5 }], total_paginas: 2 } } as never);
     const activos = await historialApi.listarActivos();
     expect(activos.map((a) => a.id_activo_biologico)).toEqual([4, 5]);
-    expect(http.get).toHaveBeenNthCalledWith(1, '/activos-biologicos/', { params: { pagina: 1, page_size: 100 } });
+    expect(http.get).toHaveBeenNthCalledWith(1, '/activos-biologicos', { params: { pagina: 1, page_size: 100 } });
     expect(http.get).toHaveBeenCalledTimes(2);
   });
 });

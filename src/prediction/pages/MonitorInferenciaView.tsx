@@ -7,6 +7,7 @@
 // | 2026-10-31 | Arekkazu | TC-DIS-146 RF-53 a11y 1.3.1: la columna de detalle tiene encabezado |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
 // | 2026-11-02 | Arekkazu | AJF-10 RF-66: todas las inferencias paginadas con filtros, totales del periodo, alerta enlazada y marca de prueba |
+// | 2026-11-03 | Arekkazu | AJF-14 RF-71: useActivosPrediccion devuelve también si la lista falló |
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useT } from '../../shared/i18n/useT';
@@ -66,7 +67,7 @@ export function MonitorInferenciaView() {
 
   const { inferencias, loading, error, cargar } = useInferencias();
   // AJF-10: la pestaña de todas las inferencias pagina en el backend con filtros y totales del periodo.
-  const activos = useActivosPrediccion();
+  const { activos } = useActivosPrediccion();
   const [filtros, setFiltros] = useState<MonitorFiltrosState>(MONITOR_FILTROS_VACIO);
   const pag = useMonitorPaginado();
   const consultar = (f: MonitorFiltrosState = filtros, pagina = 1) => pag.cargar(aFiltrosApi(f), pagina);

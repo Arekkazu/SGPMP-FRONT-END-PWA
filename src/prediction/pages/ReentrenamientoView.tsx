@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | AJF-12 RF-71: vista oficial sin modo demo: avance por modelo, solicitudes, versiones creadas y calibración por animal |
 // | 2026-11-02 | Arekkazu | AJF-14 RF-71 FE-1..4: procesos reales con fases y solicitud por animal |
+// | 2026-11-03 | Arekkazu | AJF-14 RF-71: la lista de animales sin barra final y con aviso si no carga |
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { RefreshCw, ClipboardList, Boxes, Gauge as GaugeIcon, CheckCircle2, Loader2, Cpu, Play } from 'lucide-react';
@@ -59,7 +60,7 @@ export function ReentrenamientoView() {
   const puedeVerInferencias = usePermission(RECURSO_HISTORIAL, ACCION_R);
   const r = useReentrenamiento({ online, puedeVerBitacora, puedeVerInferencias });
   // FE-2: solicitar por animal, eligiéndolo por su código.
-  const activos = useActivosPrediccion();
+  const { activos, error: errorActivos } = useActivosPrediccion();
   const catalogo = activos.map((a) => ({ id: a.id_activo_biologico, nombre: a.identificador || `#${a.id_activo_biologico}` }));
   const [animal, setAnimal] = useState('');
   const [idAnimal, setIdAnimal] = useState<number | null>(null);
@@ -105,6 +106,8 @@ export function ReentrenamientoView() {
                   onEnter={resolverAnimal}
                   error={animalTocado ? t('procesos.animal_sin_resolver') : undefined}
                   placeholder={t('procesos.animal_placeholder')}
+                  vacio={errorActivos ? t('procesos.animales_no_cargaron') : undefined}
+                  hint={errorActivos ? t('procesos.animales_no_cargaron') : undefined}
                 />
               </div>
               <Button variant="primary" size="sm" loading={r.enviandoAnimal} disabled={!!motivoAnimal}

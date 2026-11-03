@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | AJF-09 RF-67: el selector de animales leía items y pedía por_pagina; quedaba vacío |
+// | 2026-11-03 | Arekkazu | AJF-09 RF-67: /activos-biologicos sin barra final (307 fuera del prefijo del proxy) |
 import { http } from '../../shared/api/http';
 import type {
   HistorialDiagnosticoResponse,
@@ -33,7 +34,9 @@ export const historialApi = {
     const todos: ActivoSelectorItem[] = [];
     for (let pagina = 1; pagina <= 10; pagina++) {
       const res = await http.get<{ registros?: ActivoSelectorItem[]; total_paginas?: number }>(
-        '/activos-biologicos/', { params: { pagina, page_size: 100 } },
+        // Sin barra final: con ella el backend responde 307 a una URL sin el prefijo del proxy
+        // (/sigab-dev) y el navegador no llega; el selector quedaba vacío sin aviso.
+        '/activos-biologicos', { params: { pagina, page_size: 100 } },
       );
       todos.push(...(res.data.registros ?? []));
       if (pagina >= (res.data.total_paginas ?? 1)) break;

@@ -5,6 +5,7 @@
 // | 2026-10-29 | Arekkazu | H-M3-03 CP15 RF-59: Desde/Hasta vacías o invertidas se avisan en español antes de consultar |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19 RF-59: variable elegida de una lista con nombres |
 // | 2026-11-02 | Arekkazu | AJF-05 RF-59: los filtros que no se pueden combinar se deshabilitan con el motivo visible |
+// | 2026-11-03 | Arekkazu | AJF-05 RF-59: especie elegida del catálogo (Combobox) en vez de texto libre |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, Download } from 'lucide-react';
@@ -12,6 +13,8 @@ import { Button } from '../../shared/design-system/Button';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
 import { diasAtrasLocal, hoyLocal } from '../../shared/lib/fecha';
 import { SelectorArea } from './SelectorArea';
+import { Combobox } from '../../shared/design-system/Combobox';
+import { resolverEspecie } from '../lib/especie';
 import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 import type { AreaTelemetria } from '../hooks/useAreas';
 import { combinacionValida, companerosPosibles, filtroPermitido, type FiltroHistorial } from '../lib/combinacionesHistorial';
@@ -63,6 +66,9 @@ export function filtrosElegidos(v: HistorialFiltrosState): Set<FiltroHistorial> 
 
 interface Props {
   areas: AreaTelemetria[];
+  /** Nombres del catálogo de especies (M09). Vacío si no cargó: el campo acepta lo escrito. */
+  especies?: string[];
+  especiesError?: boolean;
   value: HistorialFiltrosState;
   onChange: (v: HistorialFiltrosState) => void;
   /** Con `v`, consulta con esos filtros (los rangos rápidos no esperan al re-render). */
@@ -71,7 +77,7 @@ interface Props {
   puedeExportar: boolean;
 }
 
-export function HistorialFiltros({ areas, value, onChange, onAplicar, onExportar, puedeExportar }: Props) {
+export function HistorialFiltros({ areas, especies = [], especiesError = false, value, onChange, onAplicar, onExportar, puedeExportar }: Props) {
   const { t } = useT('telemetry');
   const set = (k: keyof HistorialFiltrosState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     onChange({ ...value, [k]: e.target.value });
@@ -105,9 +111,22 @@ export function HistorialFiltros({ areas, value, onChange, onAplicar, onExportar
   const combinacionInvalida = !combinacionValida(elegidos);
   const describe = (f: FiltroHistorial) => (bloqueado(f) ? 'h-combinacion-motivo' : undefined);
 
+  // La especie se filtra por su nombre exacto en el catálogo: lo escrito se lleva a ese nombre
+  // y, si no coincide con ninguna (o con varias), se avisa en el campo en vez de consultar.
+  const [especieSinResolver, setEspecieSinResolver] = useState(false);
+  const resolverCampoEspecie = (texto: string): string | null => {
+    if (!especies.length) return texto.trim();
+    const nombre = resolverEspecie(texto, especies);
+    setEspecieSinResolver(nombre == null);
+    if (nombre != null && nombre !== value.especie) onChange({ ...value, especie: nombre });
+    return nombre;
+  };
+
   const consultar = () => {
     setIntento(true);
-    if (!faltan && !invertido && !combinacionInvalida) onAplicar();
+    const especie = resolverCampoEspecie(value.especie);
+    if (especie == null || faltan || invertido || combinacionInvalida) return;
+    onAplicar(especie !== value.especie ? { ...value, especie } : undefined);
   };
 
   // M3-01: el rango rápido también consulta; antes solo cambiaba las fechas.
@@ -164,10 +183,20 @@ export function HistorialFiltros({ areas, value, onChange, onAplicar, onExportar
           disabled={bloqueado('id_unidad_productiva')}
           hint={bloqueado('id_unidad_productiva') ? motivo : undefined}
         />
-        <div>
-          <label style={LABEL} htmlFor="h-esp">{t('historialfiltros.especie')}</label>
-          <input id="h-esp" style={INPUT} value={value.especie} onChange={set('especie')} disabled={bloqueado('especie')} aria-describedby={describe('especie')} />
-        </div>
+        <Combobox
+          id="h-esp"
+          label={t('historialfiltros.especie')}
+          opciones={especies.map((nombre) => ({ valor: nombre }))}
+          value={value.especie}
+          onChange={(texto) => { onChange({ ...value, especie: texto }); setEspecieSinResolver(false); }}
+          onBlur={() => resolverCampoEspecie(value.especie)}
+          onEnter={(texto) => resolverCampoEspecie(texto)}
+          placeholder={t('historialfiltros.especie_placeholder')}
+          vacio={especiesError ? t('historialfiltros.especies_no_cargaron') : t('historialfiltros.especie_vacio')}
+          disabled={bloqueado('especie')}
+          error={especieSinResolver ? t('historialfiltros.especie_sin_resolver') : undefined}
+          hint={bloqueado('especie') ? motivo : especiesError ? t('historialfiltros.especies_no_cargaron') : undefined}
+        />
         <div>
           <label style={LABEL} htmlFor="h-estado">{t('historialfiltros.estado_de_la_lectura')}</label>
           <select id="h-estado" style={INPUT} value={value.estado_dato} onChange={set('estado_dato')} disabled={bloqueado('estado_dato')} aria-describedby={describe('estado_dato')}>
