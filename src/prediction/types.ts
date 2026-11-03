@@ -11,6 +11,12 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 // | 2026-10-31 | Arekkazu | RF-71: estado de datos para reentrenar los modelos individuales |
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
+// | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
+// | 2026-11-02 | Arekkazu | AJF-13 RF-73: entidad_referencia y nombre_referencia en la bitácora |
+// | 2026-11-02 | Arekkazu | AJF-10 RF-66: monitor paginado y filtros nuevos |
+// | 2026-11-02 | Arekkazu | AJF-14 RF-71: solicitud por animal y procesos de reentrenamiento |
+// | 2026-11-03 | Arekkazu | RF-72: bandeja de inferencias por evaluar (antes datos de ejemplo) |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU01 H-16 RF-64: filtro nombre del listado de patologías |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -131,6 +137,8 @@ export interface ListarPatologiasFiltros {
   especie_aplicable?: string;
   solo_activas?: boolean;
   solo_base?: boolean;
+  /** Fragmento del nombre, sin distinguir mayúsculas. */
+  nombre?: string;
 }
 
 export interface RegistrarPatologiaDTO {
@@ -361,6 +369,10 @@ export interface InferenciaMonitorResponse {
   id_alerta_generada: number | null;
   /** T-18: nombre de cada patología de `probabilidad_enfermedad`, por su id (backend). */
   nombres_patologias?: Record<string, string> | null;
+  /** AJF-10: inferencia de prueba (modelo en sombra): no genera alertas. */
+  modo_sombra?: boolean;
+  /** Área actual del activo: con ella se pide lo que ve su cámara. */
+  id_infraestructura?: number | null;
 }
 
 /** RF-68: un cálculo de riesgo de contagio de un lote (GET /prediccion/riesgo-contagio). */
@@ -390,6 +402,7 @@ export interface RiesgoContagioMonitorResponse {
   fecha_calculo: string;
   id_alerta_generada: number | null;
   detalle_calculo: Record<string, unknown> | null;
+  id_infraestructura?: number | null;
 }
 
 export interface DespliegueOtaResponse {
@@ -562,6 +575,8 @@ export interface EventoAuditoriaM04Response {
   id_sistema: string | null;
   id_referencia: string | null;
   entidad_referencia: string | null;
+  /** AJF-13: código del animal, nombre de la versión o de la patología, si el backend lo resolvió. */
+  nombre_referencia?: string | null;
   resultado_operacion: string | null;
   codigo_error: string | null;
   descripcion_error: string | null;
@@ -585,6 +600,8 @@ export interface ListarAuditoriaFiltros {
   id_usuario?: number;
   id_sistema?: string;
   id_referencia?: string;
+  /** AJF-13: activo_biologico (incluye lotes) | version_modelo | patologia | configuracion_motor_ia. */
+  entidad_referencia?: string;
   severidad_evento?: string;
   tipo_modelo?: string;
   pagina?: number;
@@ -620,4 +637,107 @@ export interface EstadoReentrenamiento {
   faltan: number;
   minimo_solicitud: number;
   minimo_reentrenamiento: number;
+}
+
+/** AJF-10: totales del periodo filtrado (no solo de la página). */
+export interface IndicadoresInferencias {
+  total: number;
+  en_riesgo: number;
+  con_alerta: number;
+  animales_distintos: number;
+}
+
+/** AJF-10: `GET /prediccion/inferencias/paginado`. */
+export interface InferenciasPaginadasResponse {
+  items: InferenciaMonitorResponse[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+  indicadores: IndicadoresInferencias;
+}
+
+// =====================================================================
+// AJF-14 · Procesos de reentrenamiento (RF-71) — /prediccion/modelos/reentrenamiento/procesos
+// =====================================================================
+export type EstadoProcesoReentrenamiento = 'PENDIENTE' | 'EN_CURSO' | 'COMPLETADO' | 'FALLIDO' | 'INTERRUMPIDO' | 'CANCELADO';
+export const FASES_REENTRENAMIENTO = ['ACTIVACION', 'DATASET', 'PREPROCESAMIENTO', 'ENTRENAMIENTO', 'METRICAS', 'ENTREGA', 'CIERRE'] as const;
+
+export interface FaseProcesoReentrenamiento {
+  fase: number;
+  nombre: typeof FASES_REENTRENAMIENTO[number];
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  /** null = en curso o sin empezar; OK | FALLIDA | INTERRUMPIDA. */
+  resultado: 'OK' | 'FALLIDA' | 'INTERRUMPIDA' | null;
+}
+
+export interface ProcesoReentrenamientoResponse {
+  id_proceso_reentrenamiento: string;
+  tipo_modelo: TipoModelo;
+  id_activo_biologico: number;
+  identificador_activo: string | null;
+  nombre_especie: string | null;
+  disparador: 'MANUAL' | 'PROGRAMADO' | 'DEGRADACION';
+  modo_generacion: string;
+  estado: EstadoProcesoReentrenamiento;
+  fase_actual: number;
+  fases: FaseProcesoReentrenamiento[];
+  porcentaje_progreso: number;
+  porcentaje_cpu: number | string | null;
+  memoria_ram_mb: number | null;
+  codigo_error: string | null;
+  motivos: unknown[] | null;
+  id_version_modelo_resultante: number | null;
+  nombre_version_resultante: string | null;
+  fecha_solicitud: string;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  fecha_ultimo_latido: string | null;
+}
+
+export interface ListaProcesosReentrenamiento {
+  items: ProcesoReentrenamientoResponse[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+}
+
+// ─── RF-72: bandeja de retroalimentación ─────────────────────────────────────
+export type EstadoEvaluacion = 'PENDIENTE' | 'EVALUADO' | 'VENTANA_VENCIDA';
+
+/** GET /prediccion/retroalimentacion/bandeja: una inferencia que el veterinario puede evaluar. */
+export interface InferenciaPorEvaluar {
+  id_resultado_inferencia: string;
+  id_activo_biologico: number;
+  identificador_activo: string | null;
+  especie: string | null;
+  nombre_finca: string | null;
+  nombre_area: string | null;
+  nivel_riesgo: number;
+  id_patologia: number | null;
+  nombre_patologia: string | null;
+  confianza_global: string | number;
+  fecha_inferencia: string;
+  tiene_alerta_generada: boolean;
+  modo_sombra: boolean;
+  estado_evaluacion: EstadoEvaluacion;
+  fecha_limite: string;
+  numero_evaluaciones: number;
+  evaluada_por_mi: boolean;
+  activo_en_baja: boolean;
+  puede_evaluar: boolean;
+}
+
+export interface BandejaRetroalimentacionResponse {
+  items: InferenciaPorEvaluar[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+  ventana_dias: number;
+  indicadores: { pendientes: number; evaluadas: number; vencidas: number };
+}
+
+export interface FiltrosBandejaRetro {
+  estado_evaluacion?: EstadoEvaluacion;
+  nivel_riesgo?: number;
 }

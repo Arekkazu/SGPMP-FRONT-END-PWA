@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre en vez de «ID infraestructura» |
 // | 2026-10-31 | Arekkazu | CP74/CP84 RF-61: filtro por modelo de manejo y rango de fechas invertido avisado |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
@@ -70,6 +71,7 @@ export function VinculacionesFiltros({ areas, value, onChange, onAplicar, onLimp
         </div>
         <SelectorArea
           id="v-infra"
+          compacto
           areas={areas}
           value={value.area}
           onChange={(area, idArea) => onChange({ ...value, area, id_infraestructura: idArea != null ? String(idArea) : '' })}

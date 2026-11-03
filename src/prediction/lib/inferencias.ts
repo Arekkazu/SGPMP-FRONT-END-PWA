@@ -3,6 +3,9 @@
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66: view-model del monitor desde GET /prediccion/inferencias (antes monitorMock) |
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo 13.9 RF-66/RF-68: id del activo y fecha ISO para unir con contagio |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
+// | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
+// | 2026-11-02 | Arekkazu | RF-66: quita paquete y eventoEdge, que nunca se llenaban |
+// | 2026-11-02 | Arekkazu | AJF-10 RF-66: monitor paginado y filtros nuevos |
 import { formatearFechaHora, formatearHora } from '../../shared/i18n/formato';
 import i18n from '../../shared/i18n';
 import { PARADIGMA_POR_TIPO, type InferenciaMonitorResponse, type ModoEjecucion, type TipoModelo } from '../types';
@@ -42,10 +45,15 @@ export interface Inferencia {
   faltantes?: string[];
   contextoIncompleto?: boolean;
   hibrido?: { syncMs: number; nivelServidor: number; discrepancia: boolean };
-  paquete?: string;
-  eventoEdge?: string;
   alerta?: string;
+  /** AJF-10: id de la alerta generada, para enlazarla. */
+  idAlerta?: number | null;
+  /** AJF-10: resultado de un modelo en prueba (sombra): no genera alertas. */
+  prueba?: boolean;
   nota?: string;
+  /** Área (para la cámara) y fin de la ventana en ISO, para pedir la captura de esa ventana. */
+  idArea?: number | null;
+  finVentana?: string | null;
 }
 
 const numero = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
@@ -72,6 +80,8 @@ export function aInferencia(r: InferenciaMonitorResponse): Inferencia {
     // T-18: un lote sin identificador se nombra por su especie y área, no "#878".
     unidad: r.identificador_activo ?? i18n.t('prediction:inferencias.lote_de', { especie: r.especie ?? '—', area: r.nombre_area }),
     area: `${r.nombre_area} · ${r.nombre_finca}`,
+    idArea: r.id_infraestructura ?? null,
+    finVentana: r.fecha_fin_ventana,
     especie: r.especie ?? '—',
     tipoModelo: r.tipo_modelo,
     estado: 'EMITIDO',
@@ -89,6 +99,8 @@ export function aInferencia(r: InferenciaMonitorResponse): Inferencia {
     distPatologias: enfermedades.length ? enfermedades : undefined,
     contextoIncompleto: r.contexto_incompleto,
     alerta: r.id_alerta_generada != null ? `ALR-${r.id_alerta_generada}` : undefined,
+    idAlerta: r.id_alerta_generada,
+    prueba: !!r.modo_sombra,
   };
 }
 

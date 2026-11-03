@@ -8,12 +8,13 @@
 // | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68: NIVEL_TONO compartido con el historial |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 N-04 RF-68: sin cálculos se avisa en vez de quedar en 0 |
 // | 2026-11-02 | Arekkazu | RFC-021 RF-110 RF-68: mapa de propagación entre áreas |
+// | 2026-11-02 | Arekkazu | AJF-11 RF-68: grafo plegable, búsqueda por lote o área, paginación de 15 y filtros que aplican también al grafo |
 import React, { useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
-import { ShieldAlert, BellRing, Info } from 'lucide-react';
+import { ShieldAlert, BellRing, Info, Eye, EyeOff, Search } from 'lucide-react';
 import { SubPestanas } from '../../shared/design-system/SubPestanas';
 import { LineChartPrediccion } from '../components/LineChartPrediccion';
 import { ProbBar } from '../components/ProbBar';
@@ -24,6 +25,23 @@ import { alActivarConTeclado } from '../../shared/lib/teclado';
 import { aLotes, NIVEL_TONO, type LoteContagio, type NivelContagio, type ResultadoRegla } from '../lib/contagio';
 import { useRiesgoContagio } from '../hooks/useMonitor';
 import { MapaPropagacion } from '../components/MapaPropagacion';
+import { Paginacion } from '../components/Paginacion';
+import { normalizar } from '../../shared/hooks/useBusqueda';
+import { humanizar } from '../../shared/lib/etiquetas';
+
+/** AJF-11: 15 por página en lotes y en alertas. */
+const POR_PAGINA = 15;
+const CLAVE_GRAFO = 'sgpmp.contagio.grafo_visible';
+
+function leerGrafoVisible(): boolean {
+  try { return localStorage.getItem(CLAVE_GRAFO) !== '0'; } catch { return true; }
+}
+function guardarGrafoVisible(v: boolean) {
+  try { localStorage.setItem(CLAVE_GRAFO, v ? '1' : '0'); } catch { /* sin almacenamiento: solo dura la sesión */ }
+}
+/** La especie llega como dato (BOVINO); en pantalla va legible, el filtro compara el dato. */
+const especieLegible = (e: string) => (/^[A-Z0-9_]+$/.test(e) ? humanizar(e) : e);
+const pagina = <T,>(items: T[], p: number) => items.slice((p - 1) * POR_PAGINA, p * POR_PAGINA);
 
 const REGLA_TONO: Record<ResultadoRegla, Tono> = { CUMPLE: 'success', NO_CUMPLE: 'error', AJUSTE: 'warning' };
 const CARD: React.CSSProperties = { background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' };
@@ -55,7 +73,7 @@ function LoteDetalle({ lote, onClose }: { lote: LoteContagio; onClose: () => voi
           <Campo rotulo={t('contagio.nivel')}><NivelPill nivel={lote.nivel} /></Campo>
           <Campo rotulo={t('contagio.probabilidad')}><span style={{ ...MONO, fontSize: '20px', fontWeight: 800 }}>{lote.probabilidad != null ? `${Math.round(lote.probabilidad * 100)}%` : '—'}</span></Campo>
           <Campo rotulo={t('contagio.calidad')}><Pill tono={lote.calidad === 'COMPLETA' ? 'success' : 'warning'}>{t(`contagio.calidad_${lote.calidad}`)}</Pill>{lote.confianzaReducida && <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('contagio.confianza_reducida')}</div>}</Campo>
-          <Campo rotulo={t('contagio.lote_area')}>{lote.area}<div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{lote.especie} · id {lote.id}</div></Campo>
+          <Campo rotulo={t('contagio.lote_area')}>{lote.area}<div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{especieLegible(lote.especie)}</div></Campo>
           <Campo rotulo={t('contagio.fuente_fs')}>{lote.fuenteFs ? t(`contagio.fuente_${lote.fuenteFs}`) : '—'}</Campo>
           <Campo rotulo={t('contagio.calculo')}>{lote.fecha}<div style={{ ...MONO, fontSize: '12px', color: 'var(--text-muted)' }}>{lote.configVersion != null ? `config v${lote.configVersion}` : '—'}</div></Campo>
           <Campo rotulo={t('contagio.alerta')}>{lote.alerta ? <Pill tono="error">{lote.alerta}</Pill> : t('contagio.sin_alerta')}</Campo>
@@ -160,11 +178,24 @@ export function RiesgoContagioView() {
   const [riesgo, setRiesgo] = useState('');
   const { calculos, loading, error, cargar } = useRiesgoContagio();
   const todos = useMemo(() => aLotes(calculos), [calculos]);
-  const lotes = useMemo(
-    () => todos.filter((l) => (!tipo || l.especie === tipo) && (!fuente || l.fuenteFs === fuente) && (!riesgo || l.nivel === riesgo)),
-    [todos, tipo, fuente, riesgo],
-  );
+  const [busqueda, setBusqueda] = useState('');
+  const [grafoVisible, setGrafoVisible] = useState(leerGrafoVisible);
+  const [paginaLotes, setPaginaLotes] = useState(1);
+  const [paginaAlertas, setPaginaAlertas] = useState(1);
+  // AJF-11: búsqueda por lote o área sin mayúsculas ni tildes; los filtros aplican a
+  // lotes, alertas y grafo por igual.
+  const lotes = useMemo(() => {
+    const q = normalizar(busqueda);
+    return todos.filter((l) =>
+      (!tipo || l.especie === tipo) && (!fuente || l.fuenteFs === fuente) && (!riesgo || l.nivel === riesgo)
+      && (!q || normalizar(`${l.nombre} ${l.area}`).includes(q)));
+  }, [todos, tipo, fuente, riesgo, busqueda]);
   const alertas = todos.filter((l) => l.alerta);
+  const alertasFiltradas = lotes.filter((l) => l.alerta);
+  const totalPaginasLotes = Math.max(1, Math.ceil(lotes.length / POR_PAGINA));
+  const totalPaginasAlertas = Math.max(1, Math.ceil(alertasFiltradas.length / POR_PAGINA));
+  const filtrar = (fn: () => void) => { fn(); setPaginaLotes(1); setPaginaAlertas(1); };
+  const alternarGrafo = () => setGrafoVisible((v) => { guardarGrafoVisible(!v); return !v; });
   const tipos = [...new Set(todos.map((l) => l.especie))];
   // Pesos del cálculo más reciente: los que el motor tenía configurados (RF-65).
   const ultimo = calculos[0];
@@ -229,33 +260,24 @@ export function RiesgoContagioView() {
           ))}
         </div>
 
-        <MapaPropagacion lotes={todos} />
-
-        <section aria-labelledby="ctg-alertas" style={{ marginBottom: 'var(--s5)' }}>
-          <h2 id="ctg-alertas" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>
-            <BellRing size={16} aria-hidden />{t('contagio.alertas_titulo', { n: alertas.length })}
-          </h2>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-            {alertas.map((l) => (
-              <li key={l.alerta} style={{ ...CARD, padding: 'var(--s3) var(--s4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--s3)', flexWrap: 'wrap', fontSize: '13px' }}>
-                <span><strong style={MONO}>{l.alerta}</strong> · {l.nombre} · {l.area}</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)' }}><NivelPill nivel={l.nivel} /><span style={MONO}>{l.probabilidad != null ? `${Math.round(l.probabilidad * 100)}%` : '—'}</span></span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--s4)', marginBottom: 'var(--s4)' }}>
           <div>
+            <label style={LABEL} htmlFor="ctg-buscar">{t('contagio.buscar')}</label>
+            <div style={{ position: 'relative' }}>
+              <Search size={15} aria-hidden style={{ position: 'absolute', left: 'var(--s3)', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input id="ctg-buscar" type="search" style={{ ...INPUT, paddingLeft: 'var(--s8)' }} value={busqueda} placeholder={t('contagio.buscar_placeholder')} onChange={(e) => filtrar(() => setBusqueda(e.target.value))} />
+            </div>
+          </div>
+          <div>
             <label style={LABEL} htmlFor="ctg-tipo">{t('contagio.filtro_tipo')}</label>
-            <select id="ctg-tipo" style={INPUT} value={tipo} onChange={(e) => setTipo(e.target.value)}>
+            <select id="ctg-tipo" style={INPUT} value={tipo} onChange={(e) => filtrar(() => setTipo(e.target.value))}>
               <option value="">{t('contagio.todos')}</option>
-              {tipos.map((tm) => <option key={tm} value={tm}>{tm}</option>)}
+              {tipos.map((tm) => <option key={tm} value={tm}>{especieLegible(tm)}</option>)}
             </select>
           </div>
           <div>
             <label style={LABEL} htmlFor="ctg-fuente">{t('contagio.fuente_fs')}</label>
-            <select id="ctg-fuente" style={INPUT} value={fuente} onChange={(e) => setFuente(e.target.value)}>
+            <select id="ctg-fuente" style={INPUT} value={fuente} onChange={(e) => filtrar(() => setFuente(e.target.value))}>
               <option value="">{t('contagio.todas')}</option>
               <option value="CONTEO_INDIVIDUAL">{t('contagio.fuente_CONTEO_INDIVIDUAL')}</option>
               <option value="SCORE_POBLACIONAL">{t('contagio.fuente_SCORE_POBLACIONAL')}</option>
@@ -263,7 +285,7 @@ export function RiesgoContagioView() {
           </div>
           <div>
             <label style={LABEL} htmlFor="ctg-riesgo">{t('contagio.nivel')}</label>
-            <select id="ctg-riesgo" style={INPUT} value={riesgo} onChange={(e) => setRiesgo(e.target.value)}>
+            <select id="ctg-riesgo" style={INPUT} value={riesgo} onChange={(e) => filtrar(() => setRiesgo(e.target.value))}>
               <option value="">{t('contagio.todos')}</option>
               <option value="ALTO">{t('contagio.nivel_ALTO')}</option>
               <option value="MEDIO">{t('contagio.nivel_MEDIO')}</option>
@@ -271,6 +293,32 @@ export function RiesgoContagioView() {
             </select>
           </div>
         </div>
+
+        <div style={{ marginBottom: 'var(--s4)' }}>
+          <Button variant="secondary" size="sm" onClick={alternarGrafo} aria-expanded={grafoVisible} aria-controls="ctg-grafo">
+            {grafoVisible
+              ? <><EyeOff size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('contagio.ocultar_grafo')}</>
+              : <><Eye size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('contagio.mostrar_grafo')}</>}
+          </Button>
+        </div>
+        <div id="ctg-grafo" hidden={!grafoVisible}>
+          {grafoVisible && <MapaPropagacion lotes={lotes} />}
+        </div>
+
+        <section aria-labelledby="ctg-alertas" style={{ marginBottom: 'var(--s5)' }}>
+          <h2 id="ctg-alertas" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>
+            <BellRing size={16} aria-hidden />{t('contagio.alertas_titulo', { n: alertasFiltradas.length })}
+          </h2>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
+            {pagina(alertasFiltradas, paginaAlertas).map((l) => (
+              <li key={l.alerta} style={{ ...CARD, padding: 'var(--s3) var(--s4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--s3)', flexWrap: 'wrap', fontSize: '13px' }}>
+                <span><strong style={MONO}>{l.alerta}</strong> · {l.nombre} · {l.area}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s2)' }}><NivelPill nivel={l.nivel} /><span style={MONO}>{l.probabilidad != null ? `${Math.round(l.probabilidad * 100)}%` : '—'}</span></span>
+              </li>
+            ))}
+          </ul>
+          <Paginacion pagina={paginaAlertas} totalPaginas={totalPaginasAlertas} onCambiar={setPaginaAlertas} />
+        </section>
 
         <h2 id="ctg-lotes" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>{t('contagio.lotes_titulo', { count: lotes.length, n: lotes.length })}</h2>
         {lotes.length === 0 ? (
@@ -280,13 +328,13 @@ export function RiesgoContagioView() {
           </p>
         ) : (
           <section aria-labelledby="ctg-lotes" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--s4)' }}>
-            {lotes.map((l) => (
+            {pagina(lotes, paginaLotes).map((l) => (
               <article key={l.id} role="button" className="ds-fila-accion" tabIndex={0} onClick={() => setSel(l)} onKeyDown={alActivarConTeclado(() => setSel(l))} style={{ ...CARD, cursor: 'pointer' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s2)', marginBottom: 'var(--s2)' }}>
                   <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{l.nombre}</span>
                   <NivelPill nivel={l.nivel} />
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{l.area} · {l.especie}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{l.area} · {especieLegible(l.especie)}</div>
                 <div style={{ fontSize: '28px', fontWeight: 800, ...MONO, color: 'var(--text-primary)', margin: 'var(--s3) 0 var(--s2)' }}>
                   {l.probabilidad != null ? `${Math.round(l.probabilidad * 100)}%` : '—'}
                 </div>
@@ -299,6 +347,7 @@ export function RiesgoContagioView() {
             ))}
           </section>
         )}
+        <Paginacion pagina={paginaLotes} totalPaginas={totalPaginasLotes} onCambiar={setPaginaLotes} />
       </div>
 
       {sel && <LoteDetalle lote={sel} onClose={() => setSel(null)} />}

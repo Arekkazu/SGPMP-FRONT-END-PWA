@@ -4,10 +4,11 @@
 // | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68/67: evento CONTAGIO del historial con nivel y probabilidad |
 // | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: botón Ampliar ventana en eventos de inferencia |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU04 H-01 RF-67: la inferencia se abre en su detalle |
 import React from 'react';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { MessageSquarePlus, Activity, CalendarPlus } from 'lucide-react';
+import { MessageSquarePlus, Activity, CalendarPlus, Eye } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Pill } from './Pill';
 import { contagioDelEvento, NIVEL_TONO } from '../lib/contagio';
@@ -26,9 +27,11 @@ interface Props {
   /** RF-72: el Administrador amplía la ventana de un resultado de inferencia. */
   puedeAmpliar?: boolean;
   onAmpliar?: (e: EventoHistorialResponse) => void;
+  /** CU04 H-01: abre el detalle completo de la inferencia (probabilidades, versión, ventana). */
+  onVerDetalle?: (e: EventoHistorialResponse) => void;
 }
 
-export function HistorialTimeline({ eventos, puedeRetroalimentar, onRetroalimentar, puedeAmpliar = false, onAmpliar }: Props) {
+export function HistorialTimeline({ eventos, puedeRetroalimentar, onRetroalimentar, puedeAmpliar = false, onAmpliar, onVerDetalle }: Props) {
   const { t } = useT('prediction');
   if (eventos.length === 0) {
     return (
@@ -61,6 +64,10 @@ export function HistorialTimeline({ eventos, puedeRetroalimentar, onRetroaliment
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>{fmt(e.fecha_evento)}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
+                  {onVerDetalle && e.tipo_evento === 'INFERENCIA' && e.id_resultado_inferencia && (
+                    <Button variant="ghost" size="sm" onClick={() => onVerDetalle(e)}>
+                      <Eye size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('historialtimeline.ver_detalle')}</Button>
+                  )}
                   {puedeRetroalimentar && e.id_resultado_inferencia && (
                     <Button variant="ghost" size="sm" onClick={() => onRetroalimentar(e)}>
                       <MessageSquarePlus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('historialtimeline.retroalimentar')}</Button>

@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-19: filtros de alertas por área, activo y tipo con nombre |
 // | 2026-10-31 | Arekkazu | CP34 RF-57: el selector de animal o lote recibe los activos (page_size/registros) |
+// | 2026-11-03 | Arekkazu | AJF-02 RF-57: /activos-biologicos sin barra final (307 fuera del prefijo del proxy) |
 import { http } from '../../shared/api/http';
 import type {
   ListaAlertasSchema,
@@ -55,7 +56,8 @@ export const alertasApi = {
     const todos: ActivoOpcionTelemetria[] = [];
     for (let pagina = 1; pagina <= 10; pagina++) {
       const res = await http.get<{ registros?: ActivoOpcionTelemetria[]; total_paginas?: number }>(
-        '/activos-biologicos/', { params: { pagina, page_size: 100 } },
+        // Sin barra final: con ella el backend responde 307 a una URL sin el prefijo del proxy.
+        '/activos-biologicos', { params: { pagina, page_size: 100 } },
       );
       todos.push(...(res.data.registros ?? []));
       if (pagina >= (res.data.total_paginas ?? 1)) break;

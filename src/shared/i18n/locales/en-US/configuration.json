@@ -123,7 +123,7 @@
     "acciones": "Actions",
     "activo": "Active",
     "cada_cuantos_minutos_el_dispositivo_captura": "How often, in minutes, the device captures data.",
-    "cada_cuantos_minutos_transmite_datos_al": "How often, in minutes, it sends data to the server.",
+    "cada_cuantos_minutos_transmite_datos_al": "How often, in minutes, it sends data to the server (at least 10).",
     "cambiar_dispositivo": "Change device",
     "cancelar": "Cancel",
     "configuracion_cancelada": "Configuration cancelled",
@@ -139,6 +139,7 @@
     "intervalo_de_transmision": "Transmission interval",
     "la_configuracion_remota_requiere_conexion": "Remote configuration requires a connection.",
     "minimo_1_minuto": "At least 1 minute.",
+    "minimo_10_minutos": "At least 10 minutes.",
     "no_hay_dispositivos_activos_registralos_en": "There are no active devices. Register them in the \"IoT Devices\" section.",
     "no_tienes_permiso_para_configurar": "You do not have permission to configure IoT devices remotely.",
     "programar_configuracion_del_dispositivo": "Schedule the device configuration",
@@ -910,12 +911,12 @@
     "titulo": "Production cycles for “{{nombre}}”"
   },
   "politicavision": {
-    "titulo": "Vision quality policy (RF-62)",
+    "titulo": "Vision quality policy",
     "descripcion": "Weights of the camera observation quality index, tolerable lost tracks, classification thresholds and calibration factor. Applied without redeploying.",
     "parametros": "Parameters",
     "pesos_suman": "w1 + w2 + w3 must add up to 1 (now {{suma}}).",
     "optima_mayor": "umbral_optima must be greater than umbral_degradada.",
-    "sin_configurar": "RFC-011 base values",
+    "sin_configurar": "System default values",
     "sin_configurar_detalle": "Not saved yet; saving configures all seven.",
     "no_se_pudo_guardar": "Could not save the vision policy",
     "error_cargar": "Could not load the vision policy",
@@ -923,7 +924,7 @@
     "guardar": "Save policy"
   },
   "ventanaretro": {
-    "titulo": "Clinical feedback window (RF-72)",
+    "titulo": "Clinical feedback window",
     "descripcion": "Calendar days after the inference result during which a Veterinarian can record feedback. It applies immediately to new records.",
     "parametro": "Parameter",
     "dias": "Window days",
@@ -933,10 +934,13 @@
     "sin_configurar_detalle": "Until a value is saved, feedback cannot be recorded.",
     "no_se_pudo_guardar": "The window could not be saved",
     "error_cargar": "The feedback window could not be loaded",
-    "guardar": "Save window"
+    "guardar": "Save window",
+    "programado": "Retrain each animal automatically every (days)",
+    "programado_ayuda": "If an animal's model version is older than this, the system requests its retraining. 0 = off.",
+    "programado_invalido": "It must be a whole number between 0 and {{max}}."
   },
   "especiescompatibles": {
-    "titulo": "Compatible species per sensor (RF-49)",
+    "titulo": "Compatible species per sensor",
     "descripcion": "A sensor can only be linked to animals of the species marked here.",
     "reiniciar": "Restart",
     "sin_conexion": "No connection",

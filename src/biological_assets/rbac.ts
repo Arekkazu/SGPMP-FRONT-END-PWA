@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-03 | Arekkazu | QA-M02 RF-49: la ficha solo consulta los sensores asociados; ya no crea asociaciones |
 // =====================================================================
 // Módulo 2 — Activos Biológicos · IDs de recursos y acciones RBAC
 // Espeja modulo1.recursos / modulo1.acciones del backend.
@@ -8,8 +11,6 @@
 
 /** Recurso 29 — todas las operaciones sobre el activo biológico. */
 export const RECURSO_ACTIVOS = 29;
-/** Recurso 30 — asociar sensor IoT a un activo. */
-export const RECURSO_SENSOR_ACTIVO = 30;
 /** Recurso 31 — lectura de la bitácora de auditoría del módulo. */
 export const RECURSO_AUDITORIA_M02 = 31;
 

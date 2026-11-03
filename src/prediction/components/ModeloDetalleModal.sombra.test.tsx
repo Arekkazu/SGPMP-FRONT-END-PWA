@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
+// | 2026-11-02 | Arekkazu | AJF-08 RF-69: SOMBRA se muestra como "En prueba" |
 /** RFC-010: un modelo SINTETICA solo va a sombra; uno REAL se promueve de sombra a producción. */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -45,15 +46,15 @@ describe('ModeloDetalleModal · RFC-010', () => {
     expect(screen.getByText('Animal #9001')).toBeTruthy();
     expect(screen.getByText('Datos sintéticos')).toBeTruthy();
     expect((screen.getByRole('button', { name: /Activar en producción/ }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByText(/solo corre en sombra hasta reentrenarse con datos reales/)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Poner en sombra/ }));
+    expect(screen.getByText(/solo corre en prueba hasta reentrenarse con datos reales/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Poner en prueba/ }));
     expect(onSolicitarSombra).toHaveBeenCalledOnce();
   });
 
   it('una versión real en sombra con notas se promueve a producción', () => {
     const { onSolicitarActivar } = abrir(version({ estado_version: 'SOMBRA', fuente_datos: 'REAL', notas_validacion: 'Validada en campo' }));
-    expect(screen.getByText('En sombra')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /Poner en sombra/ })).toBeNull();
+    expect(screen.getByText('En prueba')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Poner en prueba/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Activar en producción/ }));
     expect(onSolicitarActivar).toHaveBeenCalledOnce();
   });

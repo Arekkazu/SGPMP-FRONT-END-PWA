@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | H-M3-12 CP95 RF-62: rango de fechas invertido se avisa en el campo y no se aplica |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
@@ -43,6 +44,7 @@ export function CalidadFiltros({ sensores, value, onChange, onAplicar, onLimpiar
       <div style={FILTER_GRID}>
         <SelectorSensor
           id="c-sensor"
+          compacto
           sensores={sensores}
           value={value.sensor}
           onChange={(sensor, idSensor) => onChange({ ...value, sensor, id_sensor: idSensor != null ? String(idSensor) : '' })}
@@ -59,7 +61,11 @@ export function CalidadFiltros({ sensores, value, onChange, onAplicar, onLimpiar
         </div>
         <div>
           <label style={LABEL} htmlFor="c-estado">{t('calidadfiltros.estado_evaluacion')}</label>
-          <input id="c-estado" style={INPUT} value={value.estado_evaluacion} onChange={set('estado_evaluacion')} placeholder={t('calidadfiltros.ej_vigente')} />
+          <select id="c-estado" style={INPUT} value={value.estado_evaluacion} onChange={set('estado_evaluacion')}>
+            <option value="">{t('calidadfiltros.estado_todos')}</option>
+            <option value="VIGENTE">{t('calidadfiltros.estado_vigente')}</option>
+            <option value="SUPERADA">{t('calidadfiltros.estado_superada')}</option>
+          </select>
         </div>
         <div>
           <label style={LABEL} htmlFor="c-desde">{t('calidadfiltros.desde')}</label>

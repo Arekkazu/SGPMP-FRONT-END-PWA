@@ -3,7 +3,8 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real |
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo RF-64: el encabezado dice cuántas están activas y la versión del catálogo |
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU01 H-02/H-09/H-13 RF-64: filtros en vivo, versión del catálogo completo y sin editar desde caché |
+import React, { useEffect, useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { Stethoscope, Plus, RefreshCw, AlertTriangle } from 'lucide-react';
@@ -20,7 +21,10 @@ import { PatologiaDetalleModal } from '../components/PatologiaDetalleModal';
 import { ModalShell } from '../components/ModalShell';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { RECURSO_PATOLOGIAS, ACCION_R, ACCION_C, ACCION_U, ACCION_D } from '../rbac';
-import type { ListarPatologiasFiltros, PatologiaM04Response } from '../types';
+import type { PatologiaM04Response } from '../types';
+
+/** Espacios repetidos cuentan como uno, igual que la validación del nombre en el backend. */
+const normalizar = (s: string) => s.trim().split(/\s+/).join(' ').toLowerCase();
 
 export function PatologiasView() {
   const { t } = useT('prediction');
@@ -30,7 +34,9 @@ export function PatologiasView() {
   const puedeDesactivar = usePermission(RECURSO_PATOLOGIAS, ACCION_D);
   const online = useOnlineStatus();
 
-  const { patologias, total, loading, saving, error, saveError, fromCache, cargar, detalle, crear, editar, desactivar, limpiarSaveError } = usePatologias();
+  const { patologias, loading, saving, error, saveError, fromCache, cargar, detalle, crear, editar, desactivar, limpiarSaveError } = usePatologias();
+  // CU01 H-13: con datos de caché el catálogo puede estar incompleto; no se opera sobre él.
+  const operable = online && !fromCache;
   const catalogos = useCatalogosPatologia();
 
   const [filtros, setFiltros] = useState<PatologiasFiltrosState>(PATOLOGIAS_FILTROS_VACIO);
@@ -40,29 +46,23 @@ export function PatologiasView() {
   const [detalleLoading, setDetalleLoading] = useState(false);
   const [aDesactivar, setADesactivar] = useState<PatologiaM04Response | null>(null);
 
-  const build = useCallback((f: PatologiasFiltrosState): ListarPatologiasFiltros => {
-    const api: ListarPatologiasFiltros = {};
-    if (f.especie) api.especie_aplicable = f.especie;
-    if (f.estado === 'activas') api.solo_activas = true;
-    if (f.tipo === 'base') api.solo_base = true;
-    return api;
-  }, []);
-
   useEffect(() => { if (puedeVer) cargar({}); }, [puedeVer, cargar]);
 
-  // Filtros que el backend no soporta directamente → se aplican en cliente.
+  // CU01 H-02: antes unos filtros iban al backend al pulsar Aplicar y otros se
+  // aplicaban al instante en cliente, y la lista intermedia mezclaba ambos. El
+  // catálogo es corto: se carga completo y todos los filtros se aplican al elegirlos.
   const visibles = useMemo(() => {
-    let lista = patologias;
-    if (filtros.busqueda.trim()) {
-      const q = filtros.busqueda.trim().toLowerCase();
-      lista = lista.filter((p) => p.nombre_patologia.toLowerCase().includes(q));
-    }
-    if (filtros.estado === 'inactivas') lista = lista.filter((p) => !p.es_activo);
-    if (filtros.tipo === 'personalizada') lista = lista.filter((p) => !p.es_base);
-    return lista;
+    const q = normalizar(filtros.busqueda);
+    return patologias.filter((p) =>
+      (!q || normalizar(p.nombre_patologia).includes(q))
+      && (!filtros.especie || p.especie_aplicable === filtros.especie)
+      && (!filtros.estado || p.es_activo === (filtros.estado === 'activas'))
+      && (!filtros.tipo || p.es_base === (filtros.tipo === 'base')));
   }, [patologias, filtros]);
+  // CU01 H-09: la versión es la del catálogo, no la más alta entre las filas filtradas.
+  const versionCatalogo = patologias.length > 0 ? Math.max(...patologias.map((p) => p.version_catalogo)) : null;
 
-  const aplicar = () => cargar(build(filtros));
+  const aplicar = () => cargar({});
   const limpiar = () => { setFiltros(PATOLOGIAS_FILTROS_VACIO); cargar({}); };
 
   const abrirCrear = () => { limpiarSaveError(); setEditando(null); setFormMode('crear'); };
@@ -112,11 +112,11 @@ export function PatologiasView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <Stethoscope size={20} aria-hidden />{t('patologiasview.catalogo_de_patologias')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : t('conteo.patologias', { count: total, n: formatearNumero(total) })}
+            {loading ? 'Cargando…' : t('conteo.patologias', { count: visibles.length, n: formatearNumero(visibles.length) })}
             {/* Prototipo M04: activas y versión del catálogo, que sube con cada cambio. */}
-            {!loading && patologias.length > 0 && ` · ${t('patologiasview.activas_version', {
-              activas: formatearNumero(patologias.filter((p) => p.es_activo).length),
-              version: Math.max(...patologias.map((p) => p.version_catalogo)),
+            {!loading && versionCatalogo != null && ` · ${t('patologiasview.activas_version', {
+              activas: formatearNumero(visibles.filter((p) => p.es_activo).length),
+              version: versionCatalogo,
             })}`}
             {fromCache && ' · desde caché'}
           </p>
@@ -125,7 +125,7 @@ export function PatologiasView() {
           <Button variant="ghost" size="sm" onClick={aplicar} aria-label={t('patologiasview.recargar')}>
             <RefreshCw size={15} aria-hidden />
           </Button>
-          <Button variant="primary" size="sm" disabled={!puedeCrear || !online} onClick={abrirCrear}>
+          <Button variant="primary" size="sm" disabled={!puedeCrear || !operable} onClick={abrirCrear}>
             <Plus size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('patologiasview.nueva_patologia')}</Button>
         </div>
       </div>
@@ -140,8 +140,8 @@ export function PatologiasView() {
         <PatologiasTable
           patologias={visibles}
           loading={loading}
-          puedeEditar={puedeEditar && online}
-          puedeDesactivar={puedeDesactivar && online}
+          puedeEditar={puedeEditar && operable}
+          puedeDesactivar={puedeDesactivar && operable}
           onVer={abrirDetalle}
           onEditar={abrirEditar}
           onDesactivar={setADesactivar}
@@ -156,7 +156,7 @@ export function PatologiasView() {
           inicial={editando}
           saving={saving}
           saveError={saveError}
-          online={online}
+          online={operable}
           onSubmit={enviarForm}
           onClose={cerrarForm}
         />
@@ -174,7 +174,7 @@ export function PatologiasView() {
           footer={
             <>
               <Button variant="secondary" onClick={() => setADesactivar(null)} disabled={saving}>{t('patologiasview.cancelar')}</Button>
-              <Button variant="danger" onClick={confirmarDesactivar} loading={saving} disabled={!online}>{t('patologiasview.inactivar')}</Button>
+              <Button variant="danger" onClick={confirmarDesactivar} loading={saving} disabled={!operable}>{t('patologiasview.inactivar')}</Button>
             </>
           }
         >

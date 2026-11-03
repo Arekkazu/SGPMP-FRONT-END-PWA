@@ -2,16 +2,22 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-10-29 | Arekkazu | TC-DIS-188 RF-67: el filtro de patología no aplica a un área POBLACIONAL (deshabilitado con motivo) |
-import React from 'react';
+// | 2026-11-03 | Arekkazu | RF-67: activo o lote con autocompletado (Combobox) en vez de una lista que crece sin fin |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
+import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { Combobox } from '../../shared/design-system/Combobox';
+import { etiquetaDeCatalogo, idDeCatalogo, resolverCatalogo } from '../../shared/lib/catalogo';
 import { NIVEL_RIESGO_LABEL } from '../lib/riesgo';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
 import type { ActivoSelectorItem } from '../types';
 import { diasAtrasLocal, hoyLocal } from '../../shared/lib/fecha';
 
 export interface HistorialFiltrosState {
+  /** Lo escrito en el campo; `idActivo` es el activo al que resuelve. */
+  activo: string;
   idActivo: string;
   fecha_inicio: string;
   fecha_fin: string;
@@ -21,7 +27,7 @@ export interface HistorialFiltrosState {
 }
 
 export function historialFiltrosVacio(): HistorialFiltrosState {
-  return { idActivo: '', fecha_inicio: diasAtrasLocal(30), fecha_fin: hoyLocal(), nivel_riesgo: '', id_patologia: '', incluir_alertas: false };
+  return { activo: '', idActivo: '', fecha_inicio: diasAtrasLocal(30), fecha_fin: hoyLocal(), nivel_riesgo: '', id_patologia: '', incluir_alertas: false };
 }
 
 interface Props {
@@ -41,25 +47,38 @@ export function HistorialFiltros({ value, activos, activosError, patologias, onC
   const errFechas = value.fecha_inicio && value.fecha_fin && value.fecha_inicio > value.fecha_fin;
   // TC-DIS-188: un área POBLACIONAL no tiene patología por animal; el filtro no aplica.
   const poblacional = activos.find((a) => String(a.id_activo_biologico) === String(value.idActivo))?.tipo === 'POBLACIONAL';
+  // Mismo campo que el monitor de inferencias: se escribe, se filtra y se elige; también acepta el ID.
+  const nombre = (a: ActivoSelectorItem) => a.identificador || `${a.tipo === 'POBLACIONAL' ? 'Lote' : 'Activo'} ${a.id_activo_biologico}`;
+  const catalogo = activos.map((a) => ({ id: a.id_activo_biologico, nombre: nombre(a) }));
+  const opciones = activos.map((a) => ({ valor: etiquetaDeCatalogo(nombre(a), a.id_activo_biologico), detalle: a.nombre_especie ?? undefined }));
+  const [tocado, setTocado] = useState(false);
+  const sinResolver = value.activo.trim() !== '' && value.idActivo === '';
+  const resolver = () => {
+    const r = resolverCatalogo(value.activo, catalogo);
+    if (r.estado === 'resuelto') onChange({ ...value, activo: r.texto, idActivo: String(r.id) });
+    setTocado(r.estado === 'sin_resolver');
+  };
 
   return (
     <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', marginBottom: 'var(--s5)' }}>
       <div style={FILTER_GRID}>
-        <div>
-          <label style={LABEL} htmlFor="hist-activo">{t('historialfiltros.activo_lote')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></label>
-          {activosError ? (
-            <input id="hist-activo" type="number" style={INPUT} placeholder={t('historialfiltros.id_de_activo')} value={value.idActivo} onChange={(e) => set('idActivo', e.target.value)} />
-          ) : (
-            <select id="hist-activo" style={INPUT} value={value.idActivo} onChange={(e) => set('idActivo', e.target.value)}>
-              <option value="">{t('historialfiltros.selecciona')}</option>
-              {activos.map((a) => (
-                <option key={a.id_activo_biologico} value={a.id_activo_biologico}>
-                  {a.identificador ?? `Activo ${a.id_activo_biologico}`}{a.nombre_especie ? ` · ${a.nombre_especie}` : ''}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
+        <Combobox
+          id="hist-activo"
+          compacto
+          label={t('historialfiltros.activo_lote')}
+          required
+          opciones={opciones}
+          value={value.activo}
+          onChange={(texto) => {
+            const id = idDeCatalogo(texto, catalogo);
+            onChange({ ...value, activo: texto, idActivo: id != null ? String(id) : '' });
+            if (id != null || !texto.trim()) setTocado(false);
+          }}
+          onBlur={resolver}
+          onEnter={resolver}
+          error={tocado && sinResolver ? t('monitor.filtro_activo_sin_resolver') : undefined}
+          placeholder={activosError ? t('historialfiltros.id_de_activo') : t('monitor.filtro_activo_placeholder')}
+        />
 
         <div>
           <label style={LABEL} htmlFor="hist-desde">{t('historialfiltros.desde')}<span aria-hidden style={{ color: 'var(--sem-error)' }}>*</span></label>

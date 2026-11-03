@@ -14,6 +14,9 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
 // | 2026-10-31 | Arekkazu | CP50/CP58/T-18 RF-60: tiempo sin contacto con unidad, transición manual o automática con responsable, equipo por nombre |
 // | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: valor de la lectura actual cuando está fuera de rango |
+// | 2026-11-02 | Arekkazu | AJF-04 RF-60: parámetros de heartbeat y ventanas de visión |
+// | 2026-11-02 | Arekkazu | AJF-07 RF-53: lectura de la bitácora de ingesta |
+// | 2026-11-03 | Arekkazu | RF-62: observaciones de visión evaluadas (antes datos de ejemplo) |
 // =====================================================================
 // Módulo 3 — Telemetría IoT · Tipos de dominio
 // Contrato: do-it/telemetrry/api_reference_m03_telemetria_iot.md
@@ -612,4 +615,146 @@ export interface VerificacionIntegridadSchema {
   total_verificados: number;
   comprometidos: number;
   ids_comprometidos: string[];
+}
+
+/** AJF-04: `GET /iot/dispositivos/parametros-heartbeat`. Segundos; null = sin configurar. */
+export interface ParametrosHeartbeatCategoria {
+  categoria: string;
+  intervalo_heartbeat_seg: number | null;
+  frecuencia_muestreo_seg: number | null;
+  margen_tolerancia_seg: number | null;
+  umbral_sin_senal_seg: number | null;
+  umbral_inactivo_seg: number | null;
+  cadena_valida: boolean | null;
+  faltantes: string[];
+  configurado: boolean;
+}
+
+export type ResultadoVentanasVision = 'DETECCION_VALIDA' | 'SIN_DETECCION_VALIDA' | 'SIN_VENTANAS' | 'SIN_CONFIGURAR' | 'NO_ES_CAMARA';
+
+/** AJF-04: `GET /iot/dispositivos/{id}/ventanas-vision`. La más reciente primero. */
+export interface VentanasVision {
+  id_dispositivo_iot: number;
+  es_camara: boolean;
+  ventanas: { id_observacion_vision: number; inicio: string | null; fin: string; cobertura: number; n_individuos: number | null }[];
+  ventanas_consecutivas: number | null;
+  cobertura_minima: number | null;
+  duracion_seg: number | null;
+  consecutivas_bajo_minimo: number;
+  resultado: ResultadoVentanasVision;
+}
+
+export type EstadoIngesta =
+  | 'LECTURA_VALIDA' | 'FUERA_DE_RANGO' | 'ERROR_CALIBRACION' | 'ERROR_AUTENTICACION' | 'ERROR_DUPLICADO'
+  | 'ERROR_ESTRUCTURA' | 'ERROR_TIEMPO' | 'ERROR_UNIDAD' | 'ERROR_SENSOR';
+
+/** Solo estos se persisten en la base principal; el resto queda únicamente en la bitácora (RF-53). */
+export const ESTADOS_PERSISTIDOS: EstadoIngesta[] = ['LECTURA_VALIDA', 'FUERA_DE_RANGO', 'ERROR_CALIBRACION'];
+
+/** AJF-07: un evento de `modulo3.bitacora_ingest` (`GET /iot/ingesta`). Los datos de la lectura solo vienen si se persistió. */
+export interface LecturaIngesta {
+  id_bitacora_ingest: number;
+  fecha_evento: string;
+  fecha_captura_dato: string | null;
+  tipo_evento: string | null;
+  estado_calidad: EstadoIngesta | null;
+  severidad: string | null;
+  descripcion: string | null;
+  id_sensor: number | null;
+  nombre_sensor: string | null;
+  id_dispositivo_iot: number | null;
+  serial_dispositivo: string | null;
+  nombre_area: string | null;
+  gateway_id: string | null;
+  id_telemetria: number | null;
+  nombre_variable: string | null;
+  categoria_variable: string | null;
+  valor_crudo: number | null;
+  valor_ajustado: number | null;
+  unidad_medida: string | null;
+  origen: 'TIEMPO_REAL' | 'BUFFER_LOCAL' | 'EDGE_AGREGADO' | null;
+  latencia_ms: number | null;
+  calibrado: boolean | null;
+  valor_agregado: boolean | null;
+  latencia_alta: boolean | null;
+  frecuencia_anomala: boolean | null;
+  posible_drift: boolean | null;
+  payload_recibido: Record<string, unknown> | null;
+}
+
+export interface ListaIngesta {
+  items: LecturaIngesta[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+  desde: string;
+  hasta: string;
+}
+
+export interface IndicadoresIngesta { total: number; validas: number; fuera_de_rango: number; errores: number }
+
+export interface FiltrosIngesta {
+  desde?: string;
+  hasta?: string;
+  estado_calidad?: string;
+  origen?: string;
+  id_dispositivo_iot?: number;
+  pagina?: number;
+  por_pagina?: number;
+}
+
+// ─── RF-62: calidad de visión (GET /iot/calidad/vision) ──────────────────────
+export type ClaseVision = 'OPTIMA' | 'DEGRADADA' | 'NO_APTA';
+export type FiltroClaseVision = ClaseVision | 'SIN_EVALUAR';
+
+/** Un flag con los valores con que se evaluó (p. ej. `fps_configurado`, `tracks_perdidos_tolerables`). */
+export type FlagVision = { activo: boolean } & Record<string, unknown>;
+
+export interface ObservacionVisionEvaluada {
+  id_observacion_vision: number;
+  id_dispositivo_iot: number;
+  serial_camara: string | null;
+  id_infraestructura: number;
+  nombre_area: string | null;
+  fecha_inicio_ventana: string | null;
+  fecha_observacion: string;
+  n_individuos_observados: number | null;
+  cobertura_ventana: string | number;
+  fps_efectivo: string | number;
+  cantidad_tracks_perdidos: number;
+  estado_calibracion: 'CALIBRADO' | 'EN_CALIBRACION' | 'SIN_LINEA_BASE';
+  /** null mientras espera la evaluación asíncrona. */
+  indice_calidad_vision: string | number | null;
+  clasificacion_calidad: ClaseVision | null;
+  es_apto_para_ia: boolean | null;
+  es_confianza_baja: boolean | null;
+  apto_para_nic41: boolean;
+  flags_detectados: Record<string, FlagVision> | null;
+  fecha_evaluacion_calidad: string | null;
+}
+
+export interface PoliticaVision {
+  w1: string | number;
+  w2: string | number;
+  w3: string | number;
+  tracks_perdidos_tolerables: number;
+  umbral_optima: string | number;
+  umbral_degradada: string | number;
+  factor_en_calibracion: string | number;
+}
+
+export interface ListaCalidadVision {
+  items: ObservacionVisionEvaluada[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+  desde: string;
+  hasta: string;
+  politica: PoliticaVision | null;
+  politica_motivo: string | null;
+}
+
+export interface FiltrosCalidadVision {
+  clasificacion?: FiltroClaseVision;
+  id_dispositivo_iot?: number;
 }

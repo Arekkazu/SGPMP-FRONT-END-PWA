@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU01 H-16 RF-64: si la respuesta del registro se pierde, se confirma en el catálogo |
 import { useState, useCallback } from 'react';
 import { patologiasApi } from '../api/patologiasApi';
 import { cachePatologias, getPatologiasCache } from '../db/prediccionTables';
@@ -8,6 +11,18 @@ import type {
   EditarPatologiaDTO,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
+
+const normalizar = (s: string) => s.trim().split(/\s+/).join(' ').toLowerCase();
+
+async function registradaPeseAlError(error: ApiError, nombre: string): Promise<PatologiaM04Response | null> {
+  if (error.status > 0 && error.status < 500) return null;
+  try {
+    const { items = [] } = await patologiasApi.listar({ nombre: nombre.trim() });
+    return items.find((p) => normalizar(p.nombre_patologia) === normalizar(nombre)) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * RF-64 · Catálogo de patologías.
@@ -89,6 +104,10 @@ export function usePatologias() {
     try {
       return await patologiasApi.registrar(dto);
     } catch (e) {
+      // CU01 H-16: sin respuesta (red, tiempo agotado) o con 5xx el registro pudo
+      // guardarse igual; reintentar daría "ya existe". Se confirma en el catálogo.
+      const registrada = await registradaPeseAlError(e as ApiError, dto.nombre_patologia);
+      if (registrada) return registrada;
       setSaveError(e as ApiError);
       return null;
     } finally {

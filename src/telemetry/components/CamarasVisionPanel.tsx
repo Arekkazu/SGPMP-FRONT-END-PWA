@@ -2,110 +2,131 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-60: parámetros de heartbeat por categoría y detección de visión por cámara |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
+// | 2026-11-02 | Arekkazu | AJF-04 RF-60: parámetros y ventanas reales del backend, sin datos simulados |
 import React from 'react';
-import { ScanEye, Timer, CheckCircle2, AlertTriangle, WifiOff } from 'lucide-react';
+import { ScanEye, Timer, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
-import { DatosSimuladosBanner } from './DatosSimuladosBanner';
+import { formatearFechaHora, formatearHora, formatearNumero } from '../../shared/i18n/formato';
+import { Alert } from '../../shared/design-system/Alert';
 import { Pill, type Tono } from './Pill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
-import {
-  PARAMETROS_CATEGORIA, PARAMETROS_VISION, INACTIVIDAD_EXTENDIDA_S, CAMARAS,
-  umbralSinSenal, cadenaCanonicaValida, formatoSegundos, evaluarDeteccion,
-  type CategoriaDispositivo, type ResultadoDeteccion,
-} from '../mocks/camarasMock';
+import { etiquetaCodigo } from '../lib/etiquetaCodigo';
+import { formatoSegundos } from '../lib/duracion';
+import type { ApiError } from '../../shared/api/errors';
+import type { ParametrosHeartbeatCategoria, ResultadoVentanasVision, VentanasVision } from '../types';
 
-const RESULTADO: Record<ResultadoDeteccion, { tono: Tono; icon: React.ReactNode }> = {
+const RESULTADO: Record<ResultadoVentanasVision, { tono: Tono; icon: React.ReactNode }> = {
   DETECCION_VALIDA: { tono: 'success', icon: <CheckCircle2 size={12} aria-hidden /> },
   SIN_DETECCION_VALIDA: { tono: 'warning', icon: <AlertTriangle size={12} aria-hidden /> },
-  SIN_SEÑAL: { tono: 'neutral', icon: <WifiOff size={12} aria-hidden /> },
+  SIN_VENTANAS: { tono: 'neutral', icon: <Info size={12} aria-hidden /> },
+  SIN_CONFIGURAR: { tono: 'neutral', icon: <Info size={12} aria-hidden /> },
+  NO_ES_CAMARA: { tono: 'neutral', icon: <Info size={12} aria-hidden /> },
 };
 
 const H2: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s2)' };
 const AYUDA: React.CSSProperties = { margin: '0 0 var(--s4)', fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '75ch' };
 const MONO: React.CSSProperties = { ...TD, fontFamily: 'var(--font-mono)', fontSize: '12px' };
 
-export function CamarasVisionPanel() {
+interface Props {
+  parametros: ParametrosHeartbeatCategoria[];
+  loadingParametros: boolean;
+  errorParametros: ApiError | null;
+  /** Dispositivo elegido en la lista (nombre para el título) y sus ventanas. */
+  nombreDispositivo?: string;
+  ventanas: VentanasVision | null;
+  loadingVentanas: boolean;
+  errorVentanas: ApiError | null;
+}
+
+function Segundos({ valor }: { valor: number | null }) {
   const { t } = useT('telemetry');
-  const categorias = Object.keys(PARAMETROS_CATEGORIA) as CategoriaDispositivo[];
-  const cols = [t('camaras.col_categoria'), 'intervalo_heartbeat', 'frecuencia_muestreo', 'margen_tolerancia', 'umbral_sin_senal', 'umbral_inactivo', t('camaras.col_cadena')];
+  return valor == null ? <span style={{ color: 'var(--text-muted)' }}>{t('camaras.sin_configurar_corto')}</span> : <>{formatoSegundos(valor)}</>;
+}
+
+export function CamarasVisionPanel({ parametros, loadingParametros, errorParametros, nombreDispositivo, ventanas, loadingVentanas, errorVentanas }: Props) {
+  const { t } = useT('telemetry');
+  const cols = [t('camaras.col_categoria'), t('camaras.col_intervalo'), t('camaras.col_frecuencia'), t('camaras.col_margen'), t('camaras.col_sin_senal'), t('camaras.col_inactivo'), t('camaras.col_cadena')];
+  const faltan = parametros.some((p) => !p.configurado);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s7)' }}>
       <section>
         <h2 style={H2}><Timer size={18} aria-hidden />{t('camaras.parametros_titulo')}</h2>
         <p style={AYUDA}>{t('camaras.parametros_ayuda')}</p>
-        <DatosSimuladosBanner seccion />
-        <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de cámaras">
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-            <thead><tr style={THEAD_ROW}>{cols.map((h) => <th key={h} style={TH}>{h}</th>)}</tr></thead>
-            <tbody>
-              {categorias.map((c) => {
-                const p = PARAMETROS_CATEGORIA[c];
-                const sinSenal = umbralSinSenal(p);
-                const valida = cadenaCanonicaValida(p);
-                return (
-                  <tr key={c} style={{ background: 'var(--surface-card)' }}>
-                    <td style={{ ...TD, fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {t(`camaras.cat_${c}`)}{p.d && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}> (D)</span>}
+        {errorParametros && <Alert variant={errorParametros.status === 403 ? 'warning' : 'error'} title={t('camaras.error_parametros')} description={errorParametros.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {loadingParametros && <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('camaras.cargando')}</p>}
+        {parametros.length > 0 && (
+          <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label={t('camaras.tabla_parametros')}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead><tr style={THEAD_ROW}>{cols.map((h) => <th key={h} scope="col" style={TH}>{h}</th>)}</tr></thead>
+              <tbody>
+                {parametros.map((p) => (
+                  <tr key={p.categoria} style={{ background: 'var(--surface-card)' }}>
+                    <th scope="row" style={{ ...TD, textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {t(`camaras.cat_${p.categoria}`, { defaultValue: etiquetaCodigo(p.categoria) })}
+                    </th>
+                    <td style={MONO}><Segundos valor={p.intervalo_heartbeat_seg} /></td>
+                    <td style={MONO}><Segundos valor={p.frecuencia_muestreo_seg} /></td>
+                    <td style={MONO}><Segundos valor={p.margen_tolerancia_seg} /></td>
+                    <td style={MONO}><Segundos valor={p.umbral_sin_senal_seg} /></td>
+                    <td style={MONO}><Segundos valor={p.umbral_inactivo_seg} /></td>
+                    <td style={TD}>
+                      {p.cadena_valida == null
+                        ? <Pill tono="neutral">{t('camaras.cadena_sin_datos')}</Pill>
+                        : <Pill tono={p.cadena_valida ? 'success' : 'error'}>{t(p.cadena_valida ? 'camaras.cadena_ok' : 'camaras.cadena_error')}</Pill>}
                     </td>
-                    <td style={MONO}>{p.hb} s</td>
-                    <td style={MONO}>{p.freq} s</td>
-                    <td style={MONO}>{p.margen} s</td>
-                    <td style={MONO}>{formatoSegundos(sinSenal)}</td>
-                    <td style={MONO}>{formatoSegundos(sinSenal + INACTIVIDAD_EXTENDIDA_S)}</td>
-                    <td style={TD}><Pill tono={valida ? 'success' : 'error'}>{t(valida ? 'camaras.cadena_ok' : 'camaras.cadena_error')}</Pill></td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <p style={{ margin: 'var(--s3) 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-          <code style={{ fontFamily: 'var(--font-mono)' }}>intervalo_heartbeat ≤ frecuencia_muestreo / 2 ≤ frecuencia_muestreo ≤ umbral_sin_senal</code>. {t('camaras.alias_nota')}
-        </p>
-        <p style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-          {t('camaras.params_camara', { n: PARAMETROS_VISION.ventanasConsecutivas, cobertura: PARAMETROS_VISION.coberturaMinima.toFixed(2) })}
-        </p>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {faltan && <p style={{ margin: 'var(--s3) 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>{t('camaras.sin_configurar')}</p>}
+        <p style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{t('camaras.cadena_explicacion')}</p>
       </section>
 
-      <section>
+      <section aria-live="polite">
         <h2 style={H2}><ScanEye size={18} aria-hidden />{t('camaras.deteccion_titulo')}</h2>
         <p style={AYUDA}>{t('camaras.deteccion_ayuda')}</p>
-        <div className="ds-fg3" style={{ gap: 'var(--s4)' }}>
-          {CAMARAS.map((cam) => {
-            const { resultado, consecutivas } = evaluarDeteccion(cam.ventanas);
-            const r = RESULTADO[resultado];
-            const clave = resultado.replace('Ñ', 'N');
-            return (
-              <article key={cam.serial} style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)' }}>
-                <header style={{ marginBottom: 'var(--s3)' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{cam.serial}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{cam.area} · {t('camaras.firmware')} {cam.firmware} · {t('camaras.sin_bateria')}</div>
-                </header>
-                <Pill tono={r.tono} icon={r.icon}>{t(`camaras.res_${clave}`)}</Pill>
-                {cam.ventanas.length > 0 && (
-                  <>
-                    <p style={{ margin: 'var(--s2) 0', fontSize: '12px', color: 'var(--text-muted)' }}>{t('camaras.consecutivas', { n: consecutivas, max: PARAMETROS_VISION.ventanasConsecutivas })}</p>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s1)' }}>
-                      {cam.ventanas.map((v) => {
-                        const bajo = v.cobertura < PARAMETROS_VISION.coberturaMinima;
-                        return (
-                          <li key={v.ventana} style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--s2)', fontSize: '12px' }}>
-                            <span style={{ fontFamily: 'var(--font-mono)' }}>{v.ventana} · n={v.individuos}</span>
-                            <span style={{ fontFamily: 'var(--font-mono)', color: bajo ? 'var(--sem-warning)' : 'var(--text-secondary)' }}>
-                              {v.cobertura.toFixed(2)}{bajo && ` ${t('camaras.bajo_minimo')}`}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </>
-                )}
-                <p style={{ margin: 'var(--s3) 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>{t(`camaras.nota_${clave}`)}</p>
-              </article>
-            );
-          })}
-        </div>
+        {!nombreDispositivo && !ventanas && !loadingVentanas && (
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', border: '1px dashed var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)', textAlign: 'center', margin: 0 }}>{t('camaras.elige_camara')}</p>
+        )}
+        {errorVentanas && <Alert variant={errorVentanas.status === 403 ? 'warning' : 'error'} title={t('camaras.error_ventanas')} description={errorVentanas.message} />}
+        {loadingVentanas && <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('camaras.cargando')}</p>}
+        {ventanas && (
+          <article style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', maxWidth: 560 }}>
+            <header style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--s2)', flexWrap: 'wrap', marginBottom: 'var(--s3)' }}>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{nombreDispositivo}</span>
+              <Pill tono={RESULTADO[ventanas.resultado].tono} icon={RESULTADO[ventanas.resultado].icon}>{t(`camaras.res_${ventanas.resultado}`)}</Pill>
+            </header>
+            {ventanas.resultado !== 'NO_ES_CAMARA' && ventanas.ventanas_consecutivas != null && ventanas.cobertura_minima != null && (
+              <p style={{ margin: '0 0 var(--s2)', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {t('camaras.politica', { n: ventanas.ventanas_consecutivas, cobertura: formatearNumero(ventanas.cobertura_minima, { style: 'percent' }) })}
+                {' '}{t('camaras.consecutivas', { n: ventanas.consecutivas_bajo_minimo, max: ventanas.ventanas_consecutivas })}
+              </p>
+            )}
+            {ventanas.ventanas.length > 0 && (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--s1)' }}>
+                {ventanas.ventanas.map((v) => {
+                  const bajo = ventanas.cobertura_minima != null && v.cobertura < ventanas.cobertura_minima;
+                  return (
+                    <li key={v.id_observacion_vision} style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--s2)', fontSize: '12px', flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)' }}>
+                        {v.inicio ? `${formatearFechaHora(v.inicio)}–${formatearHora(v.fin)}` : formatearFechaHora(v.fin)}
+                        {v.n_individuos != null && ` · ${t('camaras.individuos', { n: v.n_individuos })}`}
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-mono)', color: bajo ? 'var(--sem-warning)' : 'var(--text-secondary)' }}>
+                        {bajo && <AlertTriangle size={12} aria-hidden style={{ verticalAlign: 'middle', marginRight: 2 }} />}
+                        {formatearNumero(v.cobertura, { style: 'percent' })}{bajo && ` ${t('camaras.bajo_minimo')}`}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <p style={{ margin: 'var(--s3) 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>{t(`camaras.nota_${ventanas.resultado}`)}</p>
+          </article>
+        )}
       </section>
     </div>
   );
