@@ -3,6 +3,7 @@
 // | 2026-11-02 | Arekkazu | AJF-12 RF-71: vista oficial sin modo demo: avance por modelo, solicitudes, versiones creadas y calibración por animal |
 // | 2026-11-02 | Arekkazu | AJF-14 RF-71 FE-1..4: procesos reales con fases y solicitud por animal |
 // | 2026-11-03 | Arekkazu | AJF-14 RF-71: la lista de animales sin barra final y con aviso si no carga |
+// | 2026-11-03 | Arekkazu | QA-M04 RF-69: el animal de la versión por su identificador, no «Animal #49» |
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { RefreshCw, ClipboardList, Boxes, Gauge as GaugeIcon, CheckCircle2, Loader2, Cpu, Play } from 'lucide-react';
@@ -208,7 +209,7 @@ export function ReentrenamientoView() {
                 <li key={v.id_version_modelo} style={{ ...CARD, padding: 'var(--s3) var(--s4)', display: 'flex', justifyContent: 'space-between', gap: 'var(--s3)', flexWrap: 'wrap', alignItems: 'center' }}>
                   <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
                     <strong>{v.nombre_version}</strong> · {etiquetaTipoModelo(v.tipo_modelo)}
-                    {v.id_activo_biologico != null && ` · ${t('modelostable.activo_biologico', { id: v.id_activo_biologico })}`}
+                    {v.id_activo_biologico != null && ` · ${t('modelostable.activo_biologico', { nombre: v.identificador_activo ?? `#${v.id_activo_biologico}` })}`}
                     <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)' }}>{v.fecha_registro ? formatearFechaHora(v.fecha_registro) : '—'}</span>
                   </span>
                   <span style={{ display: 'inline-flex', gap: 'var(--s2)', alignItems: 'center' }}>
