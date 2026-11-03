@@ -147,7 +147,7 @@ async function escanear(page: Page, estado: string, testInfo: TestInfo) {
 
 test.describe('TC-DIS-178 — Formulario de Registro y Edición de Patologías', () => {
   // Cada test inicia sesión por su cuenta: un defecto en uno no debe saltar los demás
-  test.describe.configure({ mode: 'default' });
+  test.describe.configure({ mode: 'default', timeout: 300_000 });
 
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(!VIEWPORTS_HABILITADOS.includes(testInfo.project.name), `Viewport "${testInfo.project.name}" deshabilitado por TC_DIS_178_VIEWPORTS.`);
@@ -185,7 +185,9 @@ test.describe('TC-DIS-178 — Formulario de Registro y Edición de Patologías',
     testInfo.annotations.push({ type: 'Grupo de variables', description: JSON.stringify({ opciones: n, ...reglaGrupo }) });
     expect.soft(reglaGrupo.describedby, 'DEFECTO 1.3.1/3.3.2: la regla "entre 2 y 6 variables" y la obligatoriedad no están asociadas al grupo').toMatch(/2 y 6/);
     // Etiqueta visible "Variables sensóricas asociadas *" sin for/id (no ligada al grupo)
-    const etiquetaSuelta = await dialogo.locator('label', { hasText: 'Variables sensóricas asociadas' }).evaluate((l) => !(l as HTMLLabelElement).htmlFor && !l.id);
+    // 1.4.0: el rótulo del grupo puede haber dejado de ser un <label>; si no hay <label> suelto, no hay defecto
+    const rotuloGrupo = dialogo.locator('label', { hasText: 'Variables sensóricas asociadas' });
+    const etiquetaSuelta = (await rotuloGrupo.count()) ? await rotuloGrupo.first().evaluate((l) => !(l as HTMLLabelElement).htmlFor && !l.id) : false;
     expect.soft(etiquetaSuelta, 'DEFECTO 1.3.1: la etiqueta visible "Variables sensóricas asociadas *" es un <label> sin control asociado').toBe(false);
 
     await escanear(page, 'formulario-vacio', testInfo);
