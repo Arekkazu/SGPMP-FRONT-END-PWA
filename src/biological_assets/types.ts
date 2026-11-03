@@ -3,6 +3,7 @@
 // | 2026-10-21 | destroyerban | #73 RF-37: fase destino y confirmación no estándar en CambiarFase  |
 // | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-11-02 | Arekkazu | AJF-01 RF-46: categorías de telemetría y predicción en el historial |
 // =====================================================================
 // Módulo 2 — Activos Biológicos · Tipos de dominio
 // Contrato: do-it/biological_assets/.../api_reference_m02_activos_biologicos.md
@@ -18,7 +19,9 @@ export type EstadoActivoNombre =
 
 export type CategoriaHistorial =
   | 'ESTADO' | 'FASE' | 'EVENTO_BIOLOGICO' | 'CRECIMIENTO' | 'SANITARIO'
-  | 'REPRODUCTIVO' | 'PRODUCTIVO' | 'BAJA' | 'TRANSFERENCIA';
+  | 'REPRODUCTIVO' | 'PRODUCTIVO' | 'BAJA' | 'TRANSFERENCIA'
+  // AJF-01: eventos de telemetría y predicción del activo.
+  | 'ALERTA_IOT' | 'PREDICCION' | 'DIAGNOSTICO_CLINICO' | 'CONTAGIO';
 
 export type TipoMedicionCrecimiento = 'PESO' | 'TALLA' | 'BIOMASA';
 export type TipoEventoSanitario = 'VACUNACION' | 'TRATAMIENTO' | 'DIAGNOSTICO' | 'CONTROL_PREVENTIVO';

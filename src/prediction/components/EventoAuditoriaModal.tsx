@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-02 | Arekkazu | AJF-13 RF-73: referencia con nombre ("Animal BOV-003") en la tabla y el detalle |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT, useNombreModulo } from '../../shared/i18n/useT';
@@ -6,6 +9,7 @@ import { ModalShell } from './ModalShell';
 import { SeveridadAuditoriaPill } from './SeveridadAuditoriaPill';
 import { Pill } from './Pill';
 import type { EventoAuditoriaM04Response } from '../types';
+import { etiquetaReferencia } from '../lib/referenciaAuditoria';
 
 interface Props {
   evento: EventoAuditoriaM04Response | null;
@@ -53,7 +57,10 @@ export function EventoAuditoriaModal({ evento, loading, correlacionados, onClose
             <Fila label={t('eventoauditoriamodal.fecha')}>{fmt(evento.fecha_evento)}</Fila>
             <Fila label={t('eventoauditoriamodal.modulo')}>{nombreModulo(evento.modulo)}</Fila>
             <Fila label={t('eventoauditoriamodal.correlacion')}>{evento.correlacion_id ?? '—'}</Fila>
-            <Fila label={t('eventoauditoriamodal.referencia')}>{evento.entidad_referencia ?? '—'}{evento.id_referencia ? ` · ${evento.id_referencia}` : ''}</Fila>
+            <Fila label={t('eventoauditoriamodal.referencia')}>
+              {etiquetaReferencia(evento)}
+              {evento.id_referencia && <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', wordBreak: 'break-all' }}>{evento.id_referencia}</div>}
+            </Fila>
             <Fila label={t('eventoauditoriamodal.version_modelo')}>{evento.version_modelo ?? '—'}</Fila>
             <Fila label={t('eventoauditoriamodal.latencia')}>{evento.latencia_ms != null ? `${evento.latencia_ms} ms` : '—'}</Fila>
             <Fila label={t('eventoauditoriamodal.origen_dato')}>{evento.origen_dato ?? '—'}</Fila>

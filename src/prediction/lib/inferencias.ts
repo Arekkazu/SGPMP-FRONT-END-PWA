@@ -5,6 +5,7 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
 // | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
 // | 2026-11-02 | Arekkazu | RF-66: quita paquete y eventoEdge, que nunca se llenaban |
+// | 2026-11-02 | Arekkazu | AJF-10 RF-66: monitor paginado y filtros nuevos |
 import { formatearFechaHora, formatearHora } from '../../shared/i18n/formato';
 import i18n from '../../shared/i18n';
 import { PARADIGMA_POR_TIPO, type InferenciaMonitorResponse, type ModoEjecucion, type TipoModelo } from '../types';
@@ -45,6 +46,10 @@ export interface Inferencia {
   contextoIncompleto?: boolean;
   hibrido?: { syncMs: number; nivelServidor: number; discrepancia: boolean };
   alerta?: string;
+  /** AJF-10: id de la alerta generada, para enlazarla. */
+  idAlerta?: number | null;
+  /** AJF-10: resultado de un modelo en prueba (sombra): no genera alertas. */
+  prueba?: boolean;
   nota?: string;
   /** Área (para la cámara) y fin de la ventana en ISO, para pedir la captura de esa ventana. */
   idArea?: number | null;
@@ -94,6 +99,8 @@ export function aInferencia(r: InferenciaMonitorResponse): Inferencia {
     distPatologias: enfermedades.length ? enfermedades : undefined,
     contextoIncompleto: r.contexto_incompleto,
     alerta: r.id_alerta_generada != null ? `ALR-${r.id_alerta_generada}` : undefined,
+    idAlerta: r.id_alerta_generada,
+    prueba: !!r.modo_sombra,
   };
 }
 

@@ -3,6 +3,7 @@
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-10-29 | Arekkazu | TC-DIS-164 RF-62: trazabilidad estadística de cada flag (media, desviación, drift) con etiqueta |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
+// | 2026-11-02 | Arekkazu | AJF-06 RF-62: parámetros aplicados legibles con unidad, objetos como sub-lista y "Sin problemas detectados" |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { RefreshCcw } from 'lucide-react';
@@ -14,6 +15,7 @@ import { FlagChips } from './FlagChips';
 import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 import { fechaHoraCaptura } from '../lib/sensorEscala';
 import { lecturaCalidad } from './CalidadTable';
+import { parametrosLegibles, type FilaParametro } from '../lib/parametrosCalidad';
 import type { TelemetriaCalidadSchema } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -36,18 +38,48 @@ function Fila({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function Params({ dict }: { dict: Record<string, unknown> | null | undefined }) {
-  const entries = dict ? Object.entries(dict) : [];
-  if (entries.length === 0) return <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>—</span>;
+function ListaParametros({ filas }: { filas: FilaParametro[] }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 'var(--s2)', marginTop: 'var(--s2)' }}>
-      {entries.map(([k, v]) => (
-        <div key={k} style={{ background: 'var(--surface-hover)', borderRadius: 'var(--r-sm)', padding: 'var(--s2)' }}>
-          <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{k}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-primary)' }}>{String(v)}</div>
+    <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 'var(--s2)', margin: 'var(--s2) 0 0' }}>
+      {filas.map((f) => (
+        <div key={f.clave} style={{ background: 'var(--surface-hover)', borderRadius: 'var(--r-sm)', padding: 'var(--s2)', gridColumn: f.hijos ? '1 / -1' : undefined }}>
+          <dt style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{f.etiqueta}</dt>
+          {f.hijos ? (
+            <dd style={{ margin: 'var(--s1) 0 0' }}>
+              <ul style={{ margin: 0, paddingLeft: 'var(--s4)', fontSize: '13px', color: 'var(--text-primary)' }}>
+                {f.hijos.map((h) => (
+                  <li key={h.clave}>
+                    {h.etiqueta}: {h.hijos ? h.hijos.map((x) => `${x.etiqueta} ${x.valor}`).join(' · ') : <strong style={{ fontWeight: 600 }}>{h.valor}</strong>}
+                  </li>
+                ))}
+              </ul>
+            </dd>
+          ) : (
+            <dd style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{f.valor}</dd>
+          )}
         </div>
       ))}
-    </div>
+    </dl>
+  );
+}
+
+/** AJF-06: parámetros con etiqueta y unidad; lo que es solo traza va plegado en "Detalle técnico". */
+function Params({ dict }: { dict: Record<string, unknown> | null | undefined }) {
+  const { t } = useT('telemetry');
+  const { principales, tecnicos } = parametrosLegibles(dict);
+  if (principales.length === 0 && tecnicos.length === 0) {
+    return <p style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{t('calidaddetallemodal.sin_parametros')}</p>;
+  }
+  return (
+    <>
+      {principales.length > 0 && <ListaParametros filas={principales} />}
+      {tecnicos.length > 0 && (
+        <details style={{ marginTop: 'var(--s3)' }}>
+          <summary style={{ cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)', minHeight: 'var(--s9)', display: 'flex', alignItems: 'center' }}>{t('calidaddetallemodal.detalle_tecnico')}</summary>
+          <ListaParametros filas={tecnicos} />
+        </details>
+      )}
+    </>
   );
 }
 
@@ -114,7 +146,7 @@ export function CalidadDetalleModal({ item, puedeEjecutar, online, saving, saveE
 
       <div style={{ marginTop: 'var(--s4)' }}>
         <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--s2)' }}>{t('calidaddetallemodal.flags_detectados')}</div>
-        <FlagChips flags={item.flags_detectados} />
+        <FlagChips flags={item.flags_detectados} textoVacio={t('calidaddetallemodal.sin_problemas')} />
       </div>
       <TrazabilidadFlags flags={item.flags_detectados} />
 

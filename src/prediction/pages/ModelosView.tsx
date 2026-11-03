@@ -6,6 +6,7 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-07 RF-69: clases de la matriz de confusión por nombre |
 // | 2026-10-31 | Arekkazu | RF-71: aviso de datos insuficientes para reentrenar el modelo individual |
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: confirmar activar o poner en sombra |
+// | 2026-11-02 | Arekkazu | AJF-08 RF-69: textos de la vista sin jerga ni abreviaturas; "sombra" se dice "en prueba" |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -111,7 +112,7 @@ export function ModelosView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <Boxes size={20} aria-hidden />{t('modelosview.gestion_de_modelos_de_ia')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : t('conteo.versiones', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
+            {loading ? t('modelosview.cargando') : t('conteo.versiones', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
             {fromCache && ' · desde caché'}
           </p>
         </div>
@@ -122,7 +123,7 @@ export function ModelosView() {
 
       <div style={{ padding: 'var(--page-pad)' }}>
         {!online && <Alert variant="warning" title={t('modelosview.sin_conexion')} description={t('modelosview.mostrando_versiones_cacheadas_las_acciones')} style={{ marginBottom: 'var(--s4)' }} />}
-        {fromCache && online && <Alert variant="info" title={t('modelosview.datos_desde_cache')} description="No se pudo conectar; se muestran las últimas versiones disponibles." style={{ marginBottom: 'var(--s4)' }} />}
+        {fromCache && online && <Alert variant="info" title={t('modelosview.datos_desde_cache')} description={t('modelosview.datos_desde_cache_texto')} style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('modelosview.sin_acceso_a_los_modelos') : t('modelosview.error_al_cargar_versiones')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <div role="note" style={{ display: 'flex', gap: 'var(--s2)', padding: 'var(--s3) var(--s4)', marginBottom: 'var(--s4)', borderRadius: 'var(--r-md)', border: '1px solid var(--sem-info-border)', background: 'var(--sem-info-bg)', color: 'var(--text-primary)', fontSize: '13px' }}>

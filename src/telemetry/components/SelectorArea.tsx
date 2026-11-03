@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre (Combobox id+nombre) en vez de «ID infraestructura» |
+// | 2026-11-02 | Arekkazu | AJF-05 RF-59: deshabilitado y texto de ayuda |
 import React, { useMemo } from 'react';
 import { Combobox } from '../../shared/design-system/Combobox';
 import { etiquetaDeCatalogo, idDeCatalogo } from '../../shared/lib/catalogo';
@@ -13,10 +14,13 @@ interface Props {
   /** Texto escrito: el nombre sugerido «Área (#id)» o el ID. */
   value: string;
   onChange: (texto: string, idArea: number | null) => void;
+  disabled?: boolean;
+  /** Texto de ayuda bajo el campo (p. ej. por qué está deshabilitado). */
+  hint?: string;
 }
 
 /** Mismo patrón que SelectorActivo: se elige por nombre o se escribe el ID; el backend valida. */
-export function SelectorArea({ id, areas, value, onChange }: Props) {
+export function SelectorArea({ id, areas, value, onChange, disabled, hint }: Props) {
   const { t } = useT('telemetry');
   const catalogo = useMemo(() => areas.map((a) => ({ id: a.id, nombre: a.nombre })), [areas]);
   const opciones = useMemo(
@@ -32,6 +36,8 @@ export function SelectorArea({ id, areas, value, onChange }: Props) {
       onChange={(texto) => onChange(texto, idDeCatalogo(texto, catalogo))}
       placeholder={t('selectorarea.placeholder')}
       vacio={t('selectorarea.vacio')}
+      disabled={disabled}
+      hint={hint}
     />
   );
 }
