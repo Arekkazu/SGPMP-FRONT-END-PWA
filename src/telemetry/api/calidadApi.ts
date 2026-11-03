@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-03 | Arekkazu | RF-62: observaciones de visión evaluadas (antes datos de ejemplo) |
 import { http } from '../../shared/api/http';
 import type {
   ListaCalidadSchema,
@@ -5,11 +8,19 @@ import type {
   CalidadFiltros,
   SolicitarReevaluacionDTO,
   ReevaluacionResponseSchema,
+  FiltrosCalidadVision,
+  ListaCalidadVision,
 } from '../types';
 
 const BASE = '/iot/calidad';
 
 export const calidadApi = {
+  /** Observaciones de visión con su índice y la política vigente (RF-62). Recurso 38 (R). */
+  async vision(filtros: FiltrosCalidadVision, pagina: number, porPagina: number): Promise<ListaCalidadVision> {
+    const res = await http.get<ListaCalidadVision>(`${BASE}/vision`, { params: { ...filtros, pagina, por_pagina: porPagina } });
+    return res.data;
+  },
+
   /** Listar evaluaciones de calidad (RF-62). Recurso 38 (R). */
   async listar(filtros: CalidadFiltros = {}): Promise<ListaCalidadSchema> {
     const res = await http.get<ListaCalidadSchema>(BASE, { params: filtros });
