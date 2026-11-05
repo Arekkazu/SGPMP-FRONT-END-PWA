@@ -1,3 +1,10 @@
+## [1.4.0-rc.32](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.31...v1.4.0-rc.32) (2026-11-05)
+
+### Features
+
+* **rf19:** titular tributario de la finca con digito de verificacion DIAN ([78be5fc](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/78be5fc8debc9540755a8311fa9e634d2d2b1a19))
+* **rf82-rf94-mod6:** modulo de finanzas NIC 41 con valoracion, cierre y revelaciones ([7c24977](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7c2497720de4d6b2a8068c91d4f9351c456fa6ec))
+
 ## [1.4.0-rc.31](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.30...v1.4.0-rc.31) (2026-11-03)
 
 ### Bug Fixes
