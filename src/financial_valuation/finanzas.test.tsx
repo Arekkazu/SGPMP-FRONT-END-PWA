@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: pestañas por permiso, desviación de precio, cierre con autorización y DV del NIT |
+// | 2026-11-05 | Arekkazu | M06 prototipos: período global, filtros de variaciones y suma decimal exacta |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -11,7 +12,9 @@ import { http } from '../shared/api/http';
 import { FinanzasPage } from './pages/FinanzasPage';
 import { PreciosView } from './pages/PreciosView';
 import { CierreView } from './pages/CierreView';
-import { aFraccion, aPorcentaje } from './components/comunes';
+import { VariacionesView } from './pages/VariacionesView';
+import { ProveedorPeriodo, aFraccion, aPorcentaje, formatoMoneda } from './components/comunes';
+import { signo, sumar } from './lib/decimal';
 import { digitoVerificacion } from '../configuration/components/TitularFincaModal';
 
 // Permisos efectivos por nombre de recurso; nunca se infieren del rol.
@@ -97,7 +100,7 @@ describe('CierreView (RF-87)', () => {
     } };
     respuestas['POST /finanzas/periodos/7/cierre'] = { data: { id_cierre: 1, periodo: '2026-11', estado: 'CERRADO', activos_procesados: 1, activos_excluidos: [], lineas_excluidas: [], comprobantes: [], hash_cierre: 'x', reportes: {}, id_periodo_siguiente: 8 } };
     const user = userEvent.setup();
-    render(<MemoryRouter><CierreView /></MemoryRouter>);
+    render(<MemoryRouter><ProveedorPeriodo><CierreView /></ProveedorPeriodo></MemoryRouter>);
     const cerrar = await screen.findByRole('button', { name: 'Cerrar período' });
     expect(cerrar).toBeDisabled();
     await user.click(screen.getByLabelText(/último precio conocido/));
@@ -109,7 +112,45 @@ describe('CierreView (RF-87)', () => {
   });
 });
 
+describe('VariacionesView (RF-86)', () => {
+  const variacion = (id: number, identificador: string, tipo: string, monto: string, estado: string) => ({
+    id_variacion_valor_razonable: id, id_activo_biologico: id, identificador, tipo_activo: 'INDIVIDUAL', id_especie: 2, especie: 'Trucha',
+    finca: 'La Esperanza', clasificacion: 'CONSUMO', tipo, monto_variacion: monto, valor_razonable_anterior: '1000.00',
+    valor_razonable_nuevo: '1100.00', tiene_estimacion: false, fecha_registro: '2026-11-03T10:00:00Z', id_linea: id,
+    tipo_evidencia: 'VARIACION_PRECIO', estado_trazabilidad: estado,
+  });
+
+  it('suma ganancias y pérdidas exactas y filtra por tipo con conteo y limpiar', async () => {
+    sesion.permisos = [permiso('valoracion_activos', 2), permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/periodos/7/variaciones'] = { data: [
+      variacion(1, 'T-1', 'GANANCIA_PRECIO_MERCADO', '0.10', 'VERIFICADO'),
+      variacion(2, 'T-2', 'GANANCIA_TRANSFORMACION_BIOLOGICA', '0.20', 'VERIFICACION_PENDIENTE'),
+      variacion(3, 'T-3', 'PERDIDA_PRECIO_MERCADO', '-50.00', 'PENDIENTE_TRAZABILIDAD'),
+    ] };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><VariacionesView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('Mostrando 3 de 3 variaciones')).toBeInTheDocument();
+    // 0,10 + 0,20 = 0,30 exacto (en coma flotante sería 0,30000000000000004).
+    // El buscador de texto normaliza espacios del DOM; el espacio duro de Intl también se normaliza aquí.
+    expect(screen.getAllByText(`+${formatoMoneda('0.30')}`.replace(/\s/g, ' ')).length).toBeGreaterThan(0);
+    await user.selectOptions(screen.getByLabelText('Tipo de variación'), 'PERDIDA_PRECIO_MERCADO');
+    expect(screen.getByText('Mostrando 1 de 3 variaciones')).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).queryByText('T-1')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+    expect(screen.getByText('Mostrando 3 de 3 variaciones')).toBeInTheDocument();
+  });
+});
+
 describe('utilidades', () => {
+  it('suma decimales en texto sin errores de coma flotante', () => {
+    expect(sumar(['0.10', '0.20'])).toBe('0.30');
+    expect(sumar(['1500.0000', '-2000.5', null, ''])).toBe('-500.5000');
+    expect(sumar([])).toBe('0');
+    expect(signo('-0.01')).toBe(-1);
+    expect(signo('0.0000')).toBe(0);
+  });
+
   it('convierte porcentajes y fracciones sin perder precisión', () => {
     expect(aPorcentaje('0.0500')).toBe('5');
     expect(aFraccion('5')).toBe('0.05');

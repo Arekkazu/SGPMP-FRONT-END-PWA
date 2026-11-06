@@ -1,7 +1,8 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-92: informe de revelaciones NIC 41 por párrafo (borrador, aprobación y descarga) |
-import React, { useCallback, useEffect, useState } from 'react';
+// | 2026-11-05 | Arekkazu | M06 RF-92 prototipo: historial de versiones del período con filtros; sin JSON ni claves crudas |
+import React, { useEffect, useState } from 'react';
 import { CheckCircle2, Download, FileText, Plus, Trash2, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
@@ -15,10 +16,10 @@ import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { finanzasApi } from '../api/finanzasApi';
 import { ACCION_C, ACCION_R, ACCION_U, R_REVELACIONES, R_VALORACION } from '../rbac';
-import type { ActivoValorado, InformePayload, Periodo } from '../types';
+import type { ActivoValorado, InformePayload } from '../types';
 import {
-  AreaTexto, Datos, EncabezadoVista, EstadoBadge, EstadoVacio, ErrorApi, FILTROS, MotivoModal, PANEL, SECUNDARIO, SelectorPeriodo,
-  Subtitulo, TABLA, TD, TH, formatoCantidad, formatoFecha, formatoMoneda, guardarArchivo, useAsync,
+  AreaTexto, Datos, EncabezadoVista, EstadoBadge, ErrorApi, Listado, MotivoModal, PANEL, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TH,
+  formatoCantidad, formatoFecha, formatoMoneda, guardarArchivo, nombrePeriodo, useAsync, useListado, usePeriodo,
 } from '../components/comunes';
 
 /** Orden del informe: el de la norma (¶40-56 y NIIF 13 ¶93). */
@@ -37,22 +38,32 @@ const MONEDA = new Set([
 const OCULTOS = new Set(['id_activo_biologico', 'id_precio_mercado', 'json_metodo_costo']);
 const CATALOGO: Record<string, string> = { fuente: 'fuente', categoria: 'categoria', metodo_costo: 'metodo_costo' };
 
+/** Rótulo de un campo del informe; uno sin traducción se lee como texto, nunca como clave. */
+function humanizar(clave: string): string {
+  const texto = clave.replace(/_/g, ' ').trim();
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 function Valor({ campo, valor }: { campo: string; valor: unknown }) {
   const { t } = useT('finanzas');
-  if (valor === null || valor === undefined || valor === '') return <>—</>;
+  if (valor === null || valor === undefined || valor === '') return <>{t('rev.sin_dato')}</>;
   if (typeof valor === 'boolean') return <>{valor ? t('comun.si') : t('comun.no')}</>;
   if (MONEDA.has(campo)) return <>{formatoMoneda(valor as string)}</>;
   if (campo === 'magnitud') return <>{formatoCantidad(valor as string)}</>;
   if (campo.startsWith('fecha')) return <>{formatoFecha(String(valor))}</>;
   if (Array.isArray(valor)) return <>{valor.map((v) => t(`clasificacion.${v}`, { defaultValue: String(v) })).join(', ')}</>;
-  if (typeof valor === 'object') return <>{JSON.stringify(valor)}</>;
+  if (typeof valor === 'object') {
+    const pares = Object.entries(valor as Record<string, unknown>).filter(([k]) => !OCULTOS.has(k));
+    return <>{pares.map(([k, v], i) => <span key={k}>{i > 0 && ' · '}{t(`rev.campo.${k}`, { defaultValue: humanizar(k) })}: <Valor campo={k} valor={v} /></span>)}</>;
+  }
   // Solo los valores de catálogo se traducen; nombres, identificadores y textos del Contador son datos.
   return <>{campo in CATALOGO ? t(`${CATALOGO[campo]}.${String(valor)}`, { defaultValue: String(valor) }) : String(valor)}</>;
 }
 
 function Seccion({ clave, contenido }: { clave: string; contenido: unknown }) {
   const { t } = useT('finanzas');
-  const etiqueta = (k: string) => t(`rev.campo.${k}`, { defaultValue: k });
+  const etiqueta = (k: string) => t(`rev.campo.${k}`, { defaultValue: humanizar(k) });
+  const titulo = t(`rev.s.${clave}`, { defaultValue: humanizar(clave) });
   let cuerpo: React.ReactNode;
   if (typeof contenido === 'string') {
     cuerpo = <p style={SECUNDARIO}>{t('rev.datos_insuficientes')}</p>;
@@ -61,7 +72,7 @@ function Seccion({ clave, contenido }: { clave: string; contenido: unknown }) {
     else {
       const columnas = Object.keys(contenido[0] as object).filter((k) => !OCULTOS.has(k));
       cuerpo = (
-        <ScrollRegion label={t(`rev.s.${clave}`)}>
+        <ScrollRegion label={titulo}>
           <table style={TABLA}>
             <thead><tr>{columnas.map((c) => <th key={c} style={TH}>{etiqueta(c)}</th>)}</tr></thead>
             <tbody>
@@ -75,7 +86,7 @@ function Seccion({ clave, contenido }: { clave: string; contenido: unknown }) {
     }
   } else if (contenido && typeof contenido === 'object') {
     const obj = contenido as Record<string, unknown>;
-    const simples = Object.entries(obj).filter(([, v]) => !Array.isArray(v) || v.every((x) => typeof x !== 'object'));
+    const simples = Object.entries(obj).filter(([k, v]) => !OCULTOS.has(k) && (!Array.isArray(v) || v.every((x) => typeof x !== 'object')));
     const listas = Object.entries(obj).filter(([, v]) => Array.isArray(v) && v.some((x) => typeof x === 'object'));
     cuerpo = (
       <>
@@ -89,7 +100,7 @@ function Seccion({ clave, contenido }: { clave: string; contenido: unknown }) {
   }
   return (
     <section style={{ marginTop: 'var(--s5)' }} aria-labelledby={`rev-${clave}`}>
-      <h3 id={`rev-${clave}`} style={{ margin: '0 0 var(--s2)', fontSize: 'var(--fs-body-lg)', fontWeight: 700 }}>{t(`rev.s.${clave}`)}</h3>
+      <h3 id={`rev-${clave}`} style={{ margin: '0 0 var(--s2)', fontSize: 'var(--fs-body-lg)', fontWeight: 700 }}>{titulo}</h3>
       {cuerpo}
     </section>
   );
@@ -101,26 +112,31 @@ export function RevelacionesView() {
   const puedeGenerar = usePermissionPorNombre(R_REVELACIONES, ACCION_C);
   const puedeResolver = usePermissionPorNombre(R_REVELACIONES, ACCION_U);
   const puedeVerActivos = usePermissionPorNombre(R_VALORACION, ACCION_R);
-  const [idPeriodo, setIdPeriodo] = useState<number | null>(null);
+  const { periodo } = usePeriodo();
   const [idInforme, setIdInforme] = useState<number | null>(null);
   const [generar, setGenerar] = useState(false);
   const [rechazar, setRechazar] = useState(false);
-  const [cerrado, setCerrado] = useState(false);
   const informes = useAsync(finanzasApi.informes);
   const detalle = useAsync(finanzasApi.informe);
   const resolucion = useAsync(finanzasApi.resolverInforme);
   const descarga = useAsync(finanzasApi.descargarInforme);
   const activos = useAsync(finanzasApi.activos);
+  const idPeriodo = periodo?.id_periodo_contable;
+  const cerrado = periodo?.estado === 'CERRADO';
   const { ejecutar: cargarInformes, limpiar: limpiarInformes } = informes;
   const { ejecutar: cargarDetalle, limpiar: limpiarDetalle } = detalle;
   const { ejecutar: cargarActivos } = activos;
-  const elegir = useCallback((id: number | null, p: Periodo | null) => {
-    setIdPeriodo(id); setCerrado(p?.estado === 'CERRADO'); setIdInforme(null); limpiarInformes(); limpiarDetalle();
-  }, [limpiarInformes, limpiarDetalle]);
-  useEffect(() => { if (idPeriodo) cargarInformes(idPeriodo); }, [idPeriodo, cargarInformes]);
+  useEffect(() => {
+    setIdInforme(null); limpiarInformes(); limpiarDetalle();
+    if (puedeLeer && idPeriodo) cargarInformes(idPeriodo);
+  }, [puedeLeer, idPeriodo, cargarInformes, limpiarInformes, limpiarDetalle]);
   useEffect(() => { if (informes.data?.length && idInforme === null) setIdInforme(informes.data[0].id_informe); }, [informes.data, idInforme]);
   useEffect(() => { if (idInforme) cargarDetalle(idInforme); }, [idInforme, cargarDetalle]);
   useEffect(() => { if (puedeGenerar && puedeVerActivos) cargarActivos(); }, [puedeGenerar, puedeVerActivos, cargarActivos]);
+
+  const l = useListado(informes.data, (x) => x.version_informe, [
+    { id: 'estado', etiqueta: t('col.estado'), valor: (x) => x.estado, texto: (v) => t(`estado.${v}`) },
+  ]);
 
   if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.revelaciones')} />;
   const inf = detalle.data;
@@ -139,32 +155,52 @@ export function RevelacionesView() {
     <>
       <EncabezadoVista
         titulo={t('rev.titulo')}
-        descripcion={t('rev.descripcion')}
-        acciones={puedeGenerar && idPeriodo && cerrado && (
+        descripcion={periodo ? t('rev.descripcion_periodo', { periodo: nombrePeriodo(periodo) }) : t('rev.descripcion')}
+        acciones={puedeGenerar && cerrado && (
           <Button variant="primary" size="md" onClick={() => setGenerar(true)}><Plus size={18} aria-hidden />{t('rev.generar')}</Button>
         )}
       />
-      <div style={{ ...FILTROS, marginBottom: 'var(--s5)' }}>
-        <SelectorPeriodo id="rev-periodo" value={idPeriodo} onChange={elegir} autoseleccionar preferir="CERRADO" />
-        {(informes.data ?? []).length > 0 && (
-          <Select id="rev-version" label={t('rev.version')} value={idInforme ?? ''} onChange={(e) => setIdInforme(Number(e.target.value))}>
-            {(informes.data ?? []).map((x) => <option key={x.id_informe} value={x.id_informe}>{x.version_informe} · {t(`estado.${x.estado}`)}</option>)}
-          </Select>
-        )}
-      </div>
+      {periodo && !cerrado && <Alert variant="info" title={t('rev.solo_cerrados')} description={t('rev.solo_cerrados_detalle')} style={{ marginBottom: 'var(--s5)' }} />}
       <ErrorApi error={informes.error ?? detalle.error ?? resolucion.error ?? descarga.error} />
-      {!inf ? (
-        <EstadoVacio icono={<FileText size={28} aria-hidden />} titulo={informes.cargando || detalle.cargando ? t('comun.cargando') : t('rev.vacio_titulo')} detalle={t('rev.vacio_detalle')} />
-      ) : (
+      {!periodo ? <SinPeriodo /> : (
+        <Listado l={l} idBase="rev" titulo={t('rev.historial')} sustantivo={t('rev.sustantivo')} buscar={t('rev.buscar')} cargando={informes.cargando}
+          vacio={{ icono: <FileText size={28} aria-hidden />, titulo: t('rev.vacio_titulo'), detalle: t('rev.vacio_detalle') }}>
+          {(visibles) => (
+            <table style={TABLA}>
+              <thead>
+                <tr><th style={TH}>{t('rev.version')}</th><th style={TH}>{t('col.estado')}</th><th style={TH}>{t('rev.generado_el')}</th>
+                  <th style={TH}>{t('rev.aprobado_el')}</th><th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th></tr>
+              </thead>
+              <tbody>
+                {visibles.map((x) => (
+                  <tr key={x.id_informe} aria-current={x.id_informe === idInforme ? 'true' : undefined}>
+                    <td style={TD}><strong className="fin-mono">{x.version_informe}</strong></td>
+                    <td style={TD}><EstadoBadge estado={x.estado} />{x.razon_rechazo && <span className="fin-secundario">{x.razon_rechazo}</span>}</td>
+                    <td style={{ ...TD, whiteSpace: 'nowrap' }}>{formatoFecha(x.fecha_generacion, true)}</td>
+                    <td style={{ ...TD, whiteSpace: 'nowrap' }}>{x.fecha_aprobacion ? formatoFecha(x.fecha_aprobacion, true) : t('rev.sin_aprobar')}</td>
+                    <td style={TD}>
+                      <Button variant={x.id_informe === idInforme ? 'secondary' : 'ghost'} size="sm" onClick={() => setIdInforme(x.id_informe)}>
+                        {x.estado === 'BORRADOR' ? t('rev.ver_borrador') : t('rev.ver_informe')}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Listado>
+      )}
+      {inf && (
         <>
-          <section style={PANEL} aria-label={t('rev.resumen')}>
+          <section style={{ ...PANEL, marginTop: 'var(--s5)' }} aria-label={t('rev.resumen')}>
             <Datos filas={[
               [t('rev.version'), inf.version_informe], [t('col.estado'), <EstadoBadge key="e" estado={inf.estado} />],
-              [t('rev.generado_el'), formatoFecha(inf.fecha_generacion, true)], [t('rev.aprobado_el'), formatoFecha(inf.fecha_aprobacion, true)],
-              [t('col.hash'), <span key="h" title={inf.hash_informe} style={{ fontFamily: 'var(--font-mono)' }}>{inf.hash_informe.slice(0, 16)}…</span>],
+              [t('rev.generado_el'), formatoFecha(inf.fecha_generacion, true)],
+              [t('rev.aprobado_el'), inf.fecha_aprobacion ? formatoFecha(inf.fecha_aprobacion, true) : t('rev.sin_aprobar')],
+              [t('col.hash'), <span key="h" title={inf.hash_informe} className="fin-mono">{inf.hash_informe.slice(0, 16)}…</span>],
             ]} />
             {inf.razon_rechazo && <Alert variant="error" title={t('rev.rechazado_por')} description={inf.razon_rechazo} style={{ marginTop: 'var(--s3)' }} />}
-            <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', marginTop: 'var(--s4)' }}>
+            <div className="fin-acciones" style={{ marginTop: 'var(--s4)' }}>
               {inf.estado === 'BORRADOR' && puedeResolver && (
                 <>
                   <Button variant="primary" size="sm" loading={resolucion.cargando} onClick={aprobar}><CheckCircle2 size={14} aria-hidden />{t('rev.aprobar')}</Button>
@@ -178,6 +214,7 @@ export function RevelacionesView() {
                 </>
               )}
             </div>
+            {inf.estado !== 'APROBADO' && <p style={{ ...SECUNDARIO, margin: 'var(--s3) 0 0' }}>{t('rev.descarga_aprobado')}</p>}
           </section>
           {alertas.length > 0 && (
             <Alert variant="warning" title={t('rev.alertas', { count: alertas.length })} description={alertas.map((a) => a.detalle).join(' · ')} style={{ marginTop: 'var(--s4)' }} />

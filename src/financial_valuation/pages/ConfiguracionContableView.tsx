@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-84/RF-88/RF-109: periodicidad, parámetros por especie, costos de venta y matriz |
+// | 2026-11-05 | Arekkazu | M06 prototipos: matriz contable con búsqueda y filtros; sin ids en pantalla |
 import React, { useEffect, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -17,7 +18,7 @@ import { ACCION_C, ACCION_R, ACCION_U, R_CONFIGURACION } from '../rbac';
 import { SENTIDOS, SUBTIPOS, TIPOS_HECHO } from '../types';
 import type { Clasificacion, Configuracion, ParametroEspecie, Sentido, Subtipo, TipoCierre, TipoHecho } from '../types';
 import {
-  EncabezadoVista, ErrorApi, FILTROS, PANEL, SECUNDARIO, Subtitulo, TABLA, TD, TH, aFraccion, aPorcentaje, useAsync,
+  EncabezadoVista, ErrorApi, FILTROS, Listado, PANEL, SECUNDARIO, Subtitulo, TABLA, TD, TH, aFraccion, aPorcentaje, useAsync, useListado,
 } from '../components/comunes';
 
 export function ConfiguracionContableView() {
@@ -206,7 +207,12 @@ function Matriz({ config, puedeCrear, puedeEditar, onGuardado }: SeccionProps & 
   const [aviso, setAviso] = useState<string>();
   const alta = useAsync(finanzasApi.guardarAsignacion);
   const baja = useAsync(finanzasApi.desactivarAsignacion);
-  const nombreEspecie = (id: number | null) => (id === null ? t('comun.todas') : config.especies.find((e) => e.id_especie === id)?.especie ?? `#${id}`);
+  const nombreEspecie = (id: number | null) => (id === null ? t('comun.todas') : config.especies.find((e) => e.id_especie === id)?.especie ?? t('config.especie_inactiva'));
+  const l = useListado(config.matriz, (a) => `${t(`hecho.${a.tipo_hecho}`)} ${nombreEspecie(a.id_especie)} ${a.cuenta_debito} ${a.cuenta_credito}`, [
+    { id: 'hecho', etiqueta: t('col.tipo_hecho'), valor: (a) => a.tipo_hecho, texto: (v) => t(`hecho.${v}`) },
+    { id: 'sentido', etiqueta: t('col.sentido'), valor: (a) => a.sentido, texto: (v) => t(`sentido.${v}`) },
+    { id: 'especie', etiqueta: t('col.especie'), valor: (a) => String(a.id_especie ?? 'TODAS'), texto: (v) => (v === 'TODAS' ? t('config.todas_especies') : nombreEspecie(Number(v))), femenino: true },
+  ]);
   const aplicaSubtipo = tipo === 'CONSUMO_INSUMO' || tipo === 'MANO_OBRA_PROPIA';
 
   const agregar = async (e: React.FormEvent) => {
@@ -257,10 +263,9 @@ function Matriz({ config, puedeCrear, puedeEditar, onGuardado }: SeccionProps & 
           </div>
         </form>
       )}
-      {config.matriz.length === 0 ? (
-        <Alert variant="info" title={t('config.matriz_vacia')} />
-      ) : (
-        <ScrollRegion label={t('config.matriz')}>
+      <Listado l={l} idBase="matriz" sustantivo={t('config.sustantivo')} buscar={t('config.buscar')} cargando={false}
+        vacio={{ icono: <Plus size={28} aria-hidden />, titulo: t('config.matriz_vacia'), detalle: t('config.matriz_ayuda') }}>
+        {(visibles) => (
           <table style={TABLA}>
             <thead>
               <tr>
@@ -270,17 +275,18 @@ function Matriz({ config, puedeCrear, puedeEditar, onGuardado }: SeccionProps & 
               </tr>
             </thead>
             <tbody>
-              {config.matriz.map((a) => (
+              {visibles.map((a) => (
                 <tr key={a.id_asignacion_cuenta_contable}>
                   <td style={TD}>{t(`hecho.${a.tipo_hecho}`)}</td>
                   <td style={TD}>{t(`sentido.${a.sentido}`)}</td>
                   <td style={TD}>{nombreEspecie(a.id_especie)}</td>
                   <td style={TD}>{a.subtipo_costo ? t(`subtipo.${a.subtipo_costo}`) : t('comun.todos')}</td>
-                  <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>{a.cuenta_debito}</td>
-                  <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>{a.cuenta_credito}</td>
+                  <td style={TD}><span className="fin-mono">{a.cuenta_debito}</span></td>
+                  <td style={TD}><span className="fin-mono">{a.cuenta_credito}</span></td>
                   {puedeEditar && (
                     <td style={TD}>
-                      <Button variant="ghost" size="sm" onClick={() => quitar(a.id_asignacion_cuenta_contable)} aria-label={t('config.quitar_asignacion')}>
+                      <Button variant="ghost" size="sm" onClick={() => quitar(a.id_asignacion_cuenta_contable)}
+                        aria-label={t('config.quitar_asignacion_aria', { hecho: t(`hecho.${a.tipo_hecho}`), especie: nombreEspecie(a.id_especie) })}>
                         <Trash2 size={14} aria-hidden />
                       </Button>
                     </td>
@@ -289,8 +295,8 @@ function Matriz({ config, puedeCrear, puedeEditar, onGuardado }: SeccionProps & 
               ))}
             </tbody>
           </table>
-        </ScrollRegion>
-      )}
+        )}
+      </Listado>
     </>
   );
 }

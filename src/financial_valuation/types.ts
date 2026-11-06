@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: contratos de la API /finanzas |
+// | 2026-11-05 | Arekkazu | M06 prototipos: listados del período, modelo de costo por activo y resumen de auditoría |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -78,7 +79,39 @@ export interface ActivoValorado {
   id_activo_biologico: number; identificador: string; tipo: string; especie: string; finca: string; estado: string;
   clasificacion: Clasificacion | null; fecha_reconocimiento: string; indicador_reconocimiento: string; es_apertura: boolean;
   valorado_por_costo: boolean; valor_contable_por_costo: Dec | null; valor_razonable_neto: Dec | null;
-  fecha_calculo: string | null; tiene_valor_estimado: boolean;
+  fecha_calculo: string | null; tiene_valor_estimado: boolean; id_especie: number; costo_adquisicion: Dec | null;
+  origen_financiero: string; valor_inicial: Dec | null; id_finca: number; id_infraestructura: number; infraestructura: string;
+  /** Modelo de costo (NIC 41 ¶30): solo si el activo se mide al costo. */
+  costo_base: Dec | null; depreciacion_acumulada: Dec | null; deterioro_acumulado: Dec | null; vida_util_meses: number | null;
+  razon_sin_mercado: string | null; fecha_marcacion: string | null; escenario_costo: string | null;
+}
+
+/** Datos del activo que acompañan a cada registro de los listados del período. */
+interface ActivoDelRegistro {
+  id_activo_biologico: number; identificador: string; tipo_activo: string; id_especie: number; especie: string; finca: string;
+  clasificacion: Clasificacion | null;
+}
+export interface MedicionPeriodo extends ActivoDelRegistro {
+  id_medicion_posterior: number; origen_medicion: string; valor_razonable_anterior: Dec; valor_razonable_actual: Dec;
+  ganancia_perdida_transformacion: Dec; ganancia_perdida_precio_mercado: Dec; variacion_total: Dec;
+  tiene_valor_estimado: boolean; estado: string; fecha_medicion: string;
+}
+export type TipoVariacion = 'GANANCIA_TRANSFORMACION_BIOLOGICA' | 'PERDIDA_TRANSFORMACION_BIOLOGICA' | 'GANANCIA_PRECIO_MERCADO'
+  | 'PERDIDA_PRECIO_MERCADO';
+export interface VariacionPeriodo extends ActivoDelRegistro {
+  id_variacion_valor_razonable: number; tipo: TipoVariacion; monto_variacion: Dec; valor_razonable_anterior: Dec;
+  valor_razonable_nuevo: Dec; tiene_estimacion: boolean; fecha_registro: string; id_linea: number | null;
+  tipo_evidencia: string | null; estado_trazabilidad: string;
+}
+export interface CalculoPeriodo extends ActivoDelRegistro {
+  id_calculo_valor_razonable: number; magnitud: Dec; unidad_magnitud: string; precio_unitario: Dec; valor_razonable_bruto: Dec;
+  costos_venta: Dec; valor_neto: Dec; metodo_costo: string; estado: string; tiene_valor_estimado: boolean; es_producto: boolean;
+  fecha_calculo: string;
+}
+export interface ProductoPeriodo extends ActivoDelRegistro {
+  id_reconocimiento_producto_agricola: number; producto_agricola: string; cantidad_cosechada: Dec; unidad_medida: string;
+  precio_mercado_producto: Dec | null; costo_venta_producto: Dec | null; valor_producto: Dec; valor_reduccion_activo: Dec | null;
+  tipo: 'PRODUCTO_DE_CONSUMO' | 'PRODUCTO_PERIODICO' | string; fecha_cosecha: string;
 }
 export interface Calculo {
   id_calculo_valor_razonable: number | null; magnitud: Dec; unidad_magnitud: string; precio_unitario: Dec;
@@ -118,6 +151,7 @@ export interface Costo {
   id_periodo_contable: number; estado: string; politica_capitalizacion: string; justificacion: string | null;
   tercero_razon_social: string | null; factura_prefijo: string | null; factura_numero: string | null;
   id_grupo_reparto: string | null; metodo_reparto: string | null; es_reverso: boolean; id_origen_m05: string | null;
+  id_especie: number; especie: string; finca: string;
 }
 export interface CostoPayload {
   subtipo_costo: Subtipo; origen_costo: OrigenCosto; monto_costo: string; fecha_costo: string;
@@ -188,4 +222,8 @@ export interface EventoAuditoria {
   activo: string | null; id_periodo_contable: number | null; resumen_payload: Record<string, unknown> | null;
   monto_afectado: Dec | null; severidad: string; integridad_verificable: boolean;
 }
-export interface PaginaAuditoria { total_registros: number; pagina_actual: number; registros_por_pagina: number; eventos: EventoAuditoria[] }
+export type Severidad = 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
+export interface PaginaAuditoria {
+  total_registros: number; pagina_actual: number; registros_por_pagina: number; eventos: EventoAuditoria[];
+  resumen_severidad: Record<Severidad, number>;
+}

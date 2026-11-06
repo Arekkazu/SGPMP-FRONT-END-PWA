@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82/RF-84/RF-88: propuestas de reconocimiento inicial y confirmación |
+// | 2026-11-05 | Arekkazu | M06 RF-82 prototipo: indicadores, avisos y una tabla con propuestas y reconocidos filtrable |
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, ClipboardCheck, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -10,80 +11,149 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Badge } from '../../shared/design-system/Badge';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
-import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { finanzasApi } from '../api/finanzasApi';
-import { ACCION_C, ACCION_R, R_RECONOCIMIENTO } from '../rbac';
-import type { Clasificacion, CostosManuales, Propuesta } from '../types';
+import { ACCION_C, ACCION_R, R_RECONOCIMIENTO, R_VALORACION } from '../rbac';
+import type { Clasificacion, CostosManuales, Dec, Propuesta } from '../types';
+import { DetalleActivoModal } from '../components/DetalleActivoModal';
 import {
-  AreaTexto, Datos, EncabezadoVista, EstadoVacio, ErrorApi, SECUNDARIO, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM,
-  formatoCantidad, formatoFecha, formatoMoneda, useAsync,
+  AreaTexto, CeldaActivo, Datos, EncabezadoVista, EstadoBadge, ErrorApi, Indicadores, Listado, SECUNDARIO, Subtitulo, TABLA, TD,
+  TD_NUM, TH, TH_NUM, formatoCantidad, formatoFecha, formatoMoneda, nombrePeriodo, useAsync, useListado, usePeriodo,
 } from '../components/comunes';
+
+type EstadoFila = 'PENDIENTE' | 'BLOQUEADO' | 'CONFIRMADO';
+interface Fila {
+  id: number; identificador: string; especie: string; finca: string; origen: string; metodo: string | null; valor: Dec | null;
+  fecha: string | null; estado: EstadoFila; propuesta?: Propuesta;
+}
 
 export function ReconocimientosView() {
   const { t } = useT('finanzas');
   const puedeLeer = usePermissionPorNombre(R_RECONOCIMIENTO, ACCION_R);
   const puedeConfirmar = usePermissionPorNombre(R_RECONOCIMIENTO, ACCION_C);
+  const puedeVerActivos = usePermissionPorNombre(R_VALORACION, ACCION_R);
+  const { periodo } = usePeriodo();
   const propuestas = useAsync(finanzasApi.propuestas);
+  const activos = useAsync(finanzasApi.activos);
   const [abierta, setAbierta] = useState<Propuesta | null>(null);
-  const { ejecutar: cargar } = propuestas;
-  useEffect(() => { if (puedeLeer) cargar(); }, [puedeLeer, cargar]);
+  const [detalle, setDetalle] = useState<Fila | null>(null);
+  const { ejecutar: cargarPropuestas } = propuestas;
+  const { ejecutar: cargarActivos } = activos;
+  const cargar = () => { cargarPropuestas(); if (puedeVerActivos) cargarActivos(); };
+  useEffect(() => {
+    if (puedeLeer) cargarPropuestas();
+    if (puedeLeer && puedeVerActivos) cargarActivos();
+  }, [puedeLeer, puedeVerActivos, cargarPropuestas, cargarActivos]);
+
+  const filas: Fila[] = [
+    ...(propuestas.data ?? []).map((p): Fila => ({
+      id: p.id_activo_biologico, identificador: p.identificador, especie: p.especie, finca: p.finca, origen: p.origen_financiero,
+      metodo: p.indicador_valoracion, valor: p.valor_inicial, fecha: p.fecha_reconocimiento,
+      estado: p.es_confirmable ? 'PENDIENTE' : 'BLOQUEADO', propuesta: p,
+    })),
+    ...(activos.data ?? []).map((a): Fila => ({
+      id: a.id_activo_biologico, identificador: a.identificador, especie: a.especie, finca: a.finca, origen: a.origen_financiero,
+      metodo: a.indicador_reconocimiento, valor: a.valor_inicial, fecha: a.fecha_reconocimiento, estado: 'CONFIRMADO',
+    })),
+  ];
+  const l = useListado(filas, (f) => `${f.identificador} ${f.especie} ${f.finca}`, [
+    { id: 'estado', etiqueta: t('col.estado'), valor: (f) => f.estado, texto: (v) => t(`estado.${v}`) },
+    { id: 'metodo', etiqueta: t('col.metodo'), valor: (f) => f.metodo, texto: (v) => t(`metodo.${v}`) },
+    { id: 'especie', etiqueta: t('col.especie'), valor: (f) => f.especie, texto: (v) => v, femenino: true },
+    { id: 'origen', etiqueta: t('col.origen'), valor: (f) => f.origen, texto: (v) => t(`origen.${v}`, { defaultValue: t('recon.origen_sin_definir') }) },
+  ]);
 
   if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.reconocimiento')} />;
-  const lista = propuestas.data ?? [];
+
+  const pendientes = filas.filter((f) => f.estado === 'PENDIENTE');
+  const bloqueados = filas.filter((f) => f.estado === 'BLOQUEADO');
+  const confirmados = filas.filter((f) => f.estado === 'CONFIRMADO');
+  const enPeriodo = periodo
+    ? confirmados.filter((f) => f.fecha && f.fecha >= periodo.fecha_inicio && f.fecha <= periodo.fecha_fin)
+    : confirmados;
+  const alCosto = confirmados.filter((f) => f.metodo === 'VALORACION_POR_COSTO');
 
   return (
     <>
       <EncabezadoVista
         titulo={t('recon.titulo')}
         descripcion={t('recon.descripcion')}
-        acciones={<Button variant="secondary" size="md" loading={propuestas.cargando} onClick={() => cargar()}><RefreshCw size={16} aria-hidden />{t('comun.actualizar')}</Button>}
+        acciones={<Button variant="secondary" size="md" loading={propuestas.cargando || activos.cargando} onClick={cargar}><RefreshCw size={16} aria-hidden />{t('comun.actualizar')}</Button>}
       />
-      <ErrorApi error={propuestas.error} />
-      {lista.length === 0 ? (
-        <EstadoVacio icono={<ClipboardCheck size={28} aria-hidden />} titulo={propuestas.cargando ? t('comun.cargando') : t('recon.vacio_titulo')} detalle={t('recon.vacio_detalle')} />
-      ) : (
-        <ScrollRegion label={t('recon.titulo')}>
+      <ErrorApi error={propuestas.error ?? activos.error} />
+      <Indicadores items={[
+        { etiqueta: t('recon.kpi_periodo'), valor: enPeriodo.length, tono: 'success',
+          detalle: periodo ? t('recon.kpi_periodo_detalle', { periodo: nombrePeriodo(periodo) }) : t('recon.kpi_total_detalle') },
+        { etiqueta: t('recon.kpi_pendientes'), valor: pendientes.length, tono: pendientes.length ? 'warning' : 'neutral',
+          detalle: pendientes.length ? pendientes.slice(0, 3).map((f) => f.identificador).join(', ') : t('recon.kpi_sin_pendientes') },
+        { etiqueta: t('recon.kpi_costo'), valor: alCosto.length, tono: 'info', detalle: t('recon.kpi_costo_detalle') },
+        { etiqueta: t('recon.kpi_total'), valor: filas.length, detalle: t('recon.kpi_total_activos', { count: bloqueados.length }) },
+      ]} />
+      {(pendientes.length > 0 || bloqueados.length > 0) && (
+        <div className="fin-avisos">
+          {pendientes.length > 0 && (
+            <div className="fin-acciones" style={{ alignItems: 'center' }}>
+              <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+                <Alert variant="warning" title={t('recon.aviso_pendientes', { count: pendientes.length })} description={t('recon.aviso_pendientes_detalle')} />
+              </div>
+              {pendientes[0].propuesta && (
+                <Button variant="secondary" size="md" onClick={() => setAbierta(pendientes[0].propuesta ?? null)}>{t('recon.revisar_ahora')}</Button>
+              )}
+            </div>
+          )}
+          {bloqueados.length > 0 && (
+            <Alert variant="error" title={t('recon.aviso_bloqueados', { count: bloqueados.length })}
+              description={bloqueados.slice(0, 3).map((f) => `${f.identificador}: ${f.propuesta?.bloqueos[0]?.mensaje ?? t('recon.bloqueo_generico')}`).join(' · ')} />
+          )}
+        </div>
+      )}
+      <Listado l={l} idBase="recon" sustantivo={t('recon.sustantivo')} buscar={t('recon.buscar')} cargando={propuestas.cargando || activos.cargando}
+        vacio={{ icono: <ClipboardCheck size={28} aria-hidden />, titulo: t('recon.vacio_titulo'), detalle: t('recon.vacio_detalle') }}>
+        {(visibles) => (
           <table style={TABLA}>
             <thead>
               <tr>
-                <th style={TH}>{t('col.activo')}</th><th style={TH}>{t('col.especie')}</th><th style={TH}>{t('col.origen')}</th>
-                <th style={TH}>{t('col.metodo')}</th><th style={TH_NUM}>{t('col.costo_adquisicion')}</th>
-                <th style={TH_NUM}>{t('col.valor_inicial')}</th><th style={TH_NUM}>{t('col.diferencia')}</th><th style={TH}>{t('col.estado')}</th>
+                <th style={TH}>{t('col.activo')}</th><th style={TH}>{t('col.especie_origen')}</th><th style={TH_NUM}>{t('col.valor_reconocido')}</th>
+                <th style={TH}>{t('col.metodo')}</th><th style={TH}>{t('col.estado')}</th><th style={TH}>{t('col.fecha')}</th>
                 <th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th>
               </tr>
             </thead>
             <tbody>
-              {lista.map((p) => {
-                const diferencia = p.hechos.find((h) => h.tipo_hecho === 'RECONOCIMIENTO_DIFERENCIA');
-                return (
-                  <tr key={p.id_activo_biologico}>
-                    <td style={TD}><strong>{p.identificador}</strong><div style={SECUNDARIO}>{p.finca}</div></td>
-                    <td style={TD}>{p.especie}</td>
-                    <td style={TD}>{t(`origen.${p.origen_financiero}`, { defaultValue: p.origen_financiero })}{p.es_apertura && <div style={SECUNDARIO}>{t('recon.apertura')}</div>}</td>
-                    <td style={TD}>{p.indicador_valoracion ? t(`metodo.${p.indicador_valoracion}`) : '—'}</td>
-                    <td style={TD_NUM}>{formatoMoneda(p.costo_adquisicion)}</td>
-                    <td style={TD_NUM}>{formatoMoneda(p.valor_inicial)}</td>
-                    <td style={TD_NUM}>{diferencia ? `${diferencia.sentido === 'PERDIDA' ? '−' : '+'}${formatoMoneda(diferencia.valor)}` : '—'}</td>
-                    <td style={TD}>
-                      {p.es_confirmable
-                        ? <Badge variant="success">{t('recon.lista')}</Badge>
-                        : <Badge variant="warning">{t('recon.bloqueada', { count: p.bloqueos.length })}</Badge>}
-                    </td>
-                    <td style={TD}><Button variant="secondary" size="sm" onClick={() => setAbierta(p)}>{t('recon.revisar')}</Button></td>
-                  </tr>
-                );
-              })}
+              {visibles.map((f) => (
+                <tr key={`${f.estado}-${f.id}`} className={f.estado === 'PENDIENTE' ? 'fin-fila--atencion' : undefined}>
+                  <td style={TD}><CeldaActivo identificador={f.identificador} finca={f.finca} /></td>
+                  <td style={TD}>{f.especie}<span className="fin-secundario">{t(`origen.${f.origen}`, { defaultValue: t('recon.origen_sin_definir') })}</span></td>
+                  <td style={TD_NUM}>
+                    {f.valor ? formatoMoneda(f.valor) : t('recon.sin_valor')}
+                    <span className="fin-secundario">{f.estado === 'CONFIRMADO' ? t('recon.valor_reconocido') : t('recon.valor_propuesto')}</span>
+                  </td>
+                  <td style={TD}>{f.metodo
+                    ? <Badge variant={f.metodo === 'VALORACION_POR_COSTO' ? 'warning' : 'info'}>{t(`metodo.${f.metodo}`)}</Badge>
+                    : t('recon.metodo_por_definir')}</td>
+                  <td style={TD}><EstadoBadge estado={f.estado} /></td>
+                  <td style={{ ...TD, whiteSpace: 'nowrap' }}>{formatoFecha(f.fecha)}</td>
+                  <td style={TD}>
+                    {f.propuesta ? (
+                      <Button variant="secondary" size="sm" onClick={() => setAbierta(f.propuesta ?? null)}
+                        aria-label={t('recon.revisar_aria', { activo: f.identificador })}>{t('recon.revisar')}</Button>
+                    ) : puedeVerActivos && (
+                      <Button variant="ghost" size="sm" onClick={() => setDetalle(f)}
+                        aria-label={t('valor.ver_detalle_aria', { activo: f.identificador })}>{t('valor.ver_detalle')}</Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
-        </ScrollRegion>
-      )}
+        )}
+      </Listado>
       {abierta && (
         <PropuestaModal inicial={abierta} puedeConfirmar={puedeConfirmar} onCerrar={() => setAbierta(null)}
           onConfirmado={() => { setAbierta(null); cargar(); }} />
       )}
+      {detalle && <DetalleActivoModal idActivo={detalle.id} identificador={detalle.identificador} onCerrar={() => setDetalle(null)} onCambio={cargar} />}
     </>
   );
 }
@@ -123,13 +193,13 @@ function PropuestaModal({ inicial, puedeConfirmar, onCerrar, onConfirmado }: {
 
   const filas: Array<[string, React.ReactNode]> = [
     [t('col.fecha_reconocimiento'), formatoFecha(p.fecha_reconocimiento)],
-    [t('col.metodo'), p.indicador_valoracion ? t(`metodo.${p.indicador_valoracion}`) : '—'],
-    [t('col.magnitud'), p.magnitud ? `${formatoCantidad(p.magnitud)} ${p.unidad_magnitud ?? ''}` : '—'],
-    [t('col.precio'), p.precio ? `${formatoMoneda(p.precio.precio_unitario)} / ${p.precio.unidad_medida} · ${t(`fuente.${p.precio.fuente}`)} · ${formatoFecha(p.precio.fecha_vigencia)}` : '—'],
-    [t('col.costos_venta'), formatoMoneda(p.costos_venta)],
-    [t('col.valor_inicial'), formatoMoneda(p.valor_inicial)],
-    [t('col.costo_adquisicion'), formatoMoneda(p.costo_adquisicion)],
-    [t('col.soporte'), p.soporte_documental || '—'],
+    [t('col.metodo'), p.indicador_valoracion ? t(`metodo.${p.indicador_valoracion}`) : t('recon.metodo_por_definir')],
+    [t('col.magnitud'), p.magnitud ? `${formatoCantidad(p.magnitud)} ${p.unidad_magnitud ?? ''}` : t('valor.sin_magnitud')],
+    [t('col.precio'), p.precio ? `${formatoMoneda(p.precio.precio_unitario)} / ${p.precio.unidad_medida} · ${t(`fuente.${p.precio.fuente}`)} · ${formatoFecha(p.precio.fecha_vigencia)}` : t('recon.sin_precio')],
+    [t('col.costos_venta'), p.costos_venta ? formatoMoneda(p.costos_venta) : t('recon.sin_costos_venta')],
+    [t('col.valor_inicial'), p.valor_inicial ? formatoMoneda(p.valor_inicial) : t('recon.sin_valor')],
+    [t('col.costo_adquisicion'), p.costo_adquisicion ? formatoMoneda(p.costo_adquisicion) : t('valor.sin_costo')],
+    [t('col.soporte'), p.soporte_documental || t('recon.sin_soporte')],
   ];
 
   return (
