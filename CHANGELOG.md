@@ -1,3 +1,13 @@
+## [1.4.0-rc.33](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.32...v1.4.0-rc.33) (2026-11-06)
+
+### Features
+
+* **rf82-rf94-mod6:** modulo financiero con la estructura de los prototipos ([7053589](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/70535895436455e0b8cb279ac50a5c77af4d9a03))
+
+### Bug Fixes
+
+* **i18n:** textos de prediccion, telemetria y comun sin codigos de modulo ([2a1cbe8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2a1cbe8a53f12997bc8e5679f4742f64948381c5))
+
 ## [1.4.0-rc.32](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.31...v1.4.0-rc.32) (2026-11-05)
 
 ### Features
