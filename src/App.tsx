@@ -3,6 +3,7 @@
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: módulo de suministros (ruta /suministros) |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: cierre por inactividad con motivo y ruta de retorno |
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: módulo financiero NIC 41 (ruta /finanzas) |
+// | 2026-11-06 | Arekkazu | M07 RF-95..102: integración contable con AgroFusion (ruta /integracion) |
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
@@ -77,6 +78,7 @@ const TelemetryPage = lazy(() => import('./telemetry/pages/TelemetryPage').then(
 const PrediccionPage = lazy(() => import('./prediction/pages/PrediccionPage').then((m) => ({ default: m.PrediccionPage })));
 const SuministrosPage = lazy(() => import('./supplies/pages/SuministrosPage').then((m) => ({ default: m.SuministrosPage })));
 const FinanzasPage = lazy(() => import('./financial_valuation/pages/FinanzasPage').then((m) => ({ default: m.FinanzasPage })));
+const IntegracionPage = lazy(() => import('./accounting_integration/pages/IntegracionPage').then((m) => ({ default: m.IntegracionPage })));
 
 /** Mientras llega el chunk de la pagina: anuncio para el lector, sin salto visual. */
 function CargandoPagina() {
@@ -377,6 +379,7 @@ function AppRoutes() {
       <PrivateRoute path="/prediccion" component={PrediccionPage} />
       <PrivateRoute path="/suministros" component={SuministrosPage} />
       <PrivateRoute path="/finanzas" component={FinanzasPage} />
+      <PrivateRoute path="/integracion" component={IntegracionPage} />
 
       {/* Default */}
       <Route exact path="/" component={RutaRaiz} />

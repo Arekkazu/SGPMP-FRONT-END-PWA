@@ -4,11 +4,12 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M9-10/T-20: se ocultan los módulos sin permiso |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-20: Telemetría y Predicción visibles con cualquiera de sus permisos de lectura |
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: Finanzas NIC 41 en el menú (recursos por nombre) |
+// | 2026-11-06 | Arekkazu | M07 RF-95..102: Integración contable en el menú (recursos por nombre) |
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Shield, ClipboardList,
-  User, LogOut, Settings, Sprout, Activity, BrainCircuit, Package, Landmark
+  User, LogOut, Settings, Sprout, Activity, BrainCircuit, Package, Landmark, ArrowLeftRight
 } from 'lucide-react';
 import { useT } from '../i18n/useT';
 import { useAuth } from '../auth/useAuth';
@@ -46,6 +47,9 @@ const NAV_ITEMS: NavItem[] = [
   { claveLabel: 'modulos.finanzas', path: '/finanzas', icon: <Landmark size={16} aria-hidden />, requireLecturaNombre: [
     'valoracion_activos', 'reconocimiento_inicial', 'precios_mercado', 'costos_activos', 'cierre_periodo', 'estado_resultados',
     'revelaciones_nic41', 'cotizaciones', 'configuracion_contable', 'auditoria_financiera'] },
+  // M07: integración contable con AgroFusion (Contador, Administrador y auditor externo).
+  { claveLabel: 'modulos.integracion', path: '/integracion', icon: <ArrowLeftRight size={16} aria-hidden />, requireLecturaNombre: [
+    'exportacion_contable', 'clientes_externos', 'contratos_aaef', 'auditoria_integracion', 'auditoria_integracion_cierres'] },
   { claveLabel: 'modulos.usuarios', path: '/usuarios', icon: <Users size={16} aria-hidden />, requirePermission: lectura(1) },
   { claveLabel: 'modulos.roles', path: '/roles', icon: <Shield size={16} aria-hidden />, requirePermission: lectura(2) },
   { claveLabel: 'modulos.auditoria', path: '/auditoria', icon: <ClipboardList size={16} aria-hidden />, requirePermission: lectura(6) },
