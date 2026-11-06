@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-07/T-20: pestañas de módulo compartidas, ocultas sin permiso |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-20/T-21: la ruta responde igual que la pestaña y el módulo abre en la primera permitida |
+// | 2026-11-05 | Arekkazu | M06 prototipos: permiso por nombre de recurso (ids que cambian entre ambientes) |
 import React from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
@@ -15,6 +16,8 @@ export interface PestanaModulo {
   icon: React.ReactNode;
   /** [id_recurso, id_accion]. Sin permiso → no se muestra (T-20). Sin valor → siempre visible. */
   permiso?: [number, number];
+  /** [nombre_recurso, id_accion], para recursos cuyo id sale de la secuencia y cambia entre ambientes. */
+  permisoNombre?: [string, number];
 }
 
 export interface GrupoPestanas {
@@ -37,8 +40,10 @@ interface Props {
  * vista responde con `AccesoDenegado` (CLAUDE.md § RBAC: no bloquear rutas).
  * La fila se desplaza sin barra visible y con un degradado en el borde (T-07).
  */
-function tiene(permisos: PermisoUsuario[] | null, permiso?: [number, number]): boolean {
-  return !permiso || (permisos ?? []).some((x) => x.id_recurso === permiso[0] && x.id_accion === permiso[1]);
+function tiene(permisos: PermisoUsuario[] | null, { permiso, permisoNombre }: Pick<PestanaModulo, 'permiso' | 'permisoNombre'>): boolean {
+  const lista = permisos ?? [];
+  return (!permiso || lista.some((x) => x.id_recurso === permiso[0] && x.id_accion === permiso[1]))
+    && (!permisoNombre || lista.some((x) => x.nombre_recurso === permisoNombre[0] && x.id_accion === permisoNombre[1]));
 }
 
 /**
@@ -48,7 +53,7 @@ function tiene(permisos: PermisoUsuario[] | null, permiso?: [number, number]): b
 export function usePrimeraPestana(grupos: GrupoPestanas[]): string | null {
   const { permisos } = useAuth();
   if (permisos === null) return null;
-  const primera = grupos.flatMap((g) => g.pestanas).find((p) => tiene(permisos, p.permiso));
+  const primera = grupos.flatMap((g) => g.pestanas).find((p) => tiene(permisos, p));
   return (primera ?? grupos[0].pestanas[0]).path;
 }
 
@@ -60,7 +65,7 @@ export function usePrimeraPestana(grupos: GrupoPestanas[]): string | null {
 export function PestanaProtegida({ pestana, children }: { pestana: PestanaModulo; children: React.ReactNode }) {
   const { permisos } = useAuth();
   if (permisos === null) return null;
-  return tiene(permisos, pestana.permiso) ? <>{children}</> : <AccesoDenegado seccion={pestana.label} />;
+  return tiene(permisos, pestana) ? <>{children}</> : <AccesoDenegado seccion={pestana.label} />;
 }
 
 export function PestanasModulo({ grupos, ariaLabel }: Props) {
@@ -68,7 +73,7 @@ export function PestanasModulo({ grupos, ariaLabel }: Props) {
   const { pathname } = useLocation();
   const { permisos } = useAuth();
 
-  const visible = (p: PestanaModulo) => tiene(permisos, p.permiso);
+  const visible = (p: PestanaModulo) => tiene(permisos, p);
 
   const filtrados = grupos
     .map((g) => ({ ...g, pestanas: g.pestanas.filter(visible) }))

@@ -5,6 +5,7 @@
 // | 2026-10-20 | Arekkazu | FE-09 RF-17: es_critica en la variable ambiental (RFC-016) |
 // | 2026-10-30 | Arekkazu | INC-M03-135-G01 RF-49: especies compatibles de un sensor |
 // | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: tolerancia T del semáforo configurable en el umbral |
+// | 2026-11-04 | Arekkazu | RF-19 v1.1: titular tributario de la finca (M06 cierra por titular) |
 import type { TipoModelo } from '../prediction/types';
 
 /** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
@@ -82,6 +83,16 @@ export interface FincaResponse {
   id_usuario: number | null;
   /** Nombre del productor (RF-19); null si el backend no lo puede resolver. */
   nombre_usuario?: string | null;
+}
+
+/** RF-19 v1.1: titular tributario de la finca; sin titular los cuatro campos son null. */
+export interface TitularFinca {
+  id_finca: number;
+  nombre: string;
+  tipo_id_tributaria: 'NIT' | 'CC' | 'CE' | null;
+  numero_id_tributaria: string | null;
+  dv: string | null;
+  razon_social: string | null;
 }
 
 export interface RegistrarFincaDTO {

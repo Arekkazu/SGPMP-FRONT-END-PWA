@@ -1,3 +1,33 @@
+## [1.4.0-rc.33](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.32...v1.4.0-rc.33) (2026-11-06)
+
+### Features
+
+* **rf82-rf94-mod6:** modulo financiero con la estructura de los prototipos ([7053589](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/70535895436455e0b8cb279ac50a5c77af4d9a03))
+
+### Bug Fixes
+
+* **i18n:** textos de prediccion, telemetria y comun sin codigos de modulo ([2a1cbe8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2a1cbe8a53f12997bc8e5679f4742f64948381c5))
+
+## [1.4.0-rc.32](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.31...v1.4.0-rc.32) (2026-11-05)
+
+### Features
+
+* **rf19:** titular tributario de la finca con digito de verificacion DIAN ([78be5fc](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/78be5fc8debc9540755a8311fa9e634d2d2b1a19))
+* **rf82-rf94-mod6:** modulo de finanzas NIC 41 con valoracion, cierre y revelaciones ([7c24977](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7c2497720de4d6b2a8068c91d4f9351c456fa6ec))
+
+## [1.4.0-rc.31](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.30...v1.4.0-rc.31) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-33:** la búsqueda de activos revisa todas las páginas y el [#id](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/id) solo aplica a lotes ([d24e2f6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d24e2f6b9b8e3d2bf3d51a4334ff2880b103dd87))
+* **rf-59:** botón Limpiar en el historial de lecturas que vuelve a los filtros por defecto ([6b44cd8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6b44cd884b3f816f37026a4ba6974d57a449b151))
+
+## [1.4.0-rc.30](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.29...v1.4.0-rc.30) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-66,rf-69:** sin aviso de «modelo en prueba» en la ficha y el animal de la versión por su identificador ([7301353](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/73013534a1bcc89b2d7b2608410800dd36fa925e))
+
 ## [1.4.0-rc.29](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.28...v1.4.0-rc.29) (2026-11-03)
 
 ### Bug Fixes

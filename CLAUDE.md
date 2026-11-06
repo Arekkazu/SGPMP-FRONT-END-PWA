@@ -38,6 +38,27 @@ import { useState } from 'react'
 
 ---
 
+## Textos visibles, vacíos y filtros (obligatorio desde 2026-11-05)
+
+1. **Nunca un código interno en pantalla.** Ningún texto visible — título, rótulo, columna, badge, chip, toast,
+   placeholder, ayuda, nombre de pestaña — dice `RF-xx`, `RFC-xxx`, `Módulo N`, `M01`…`M09`, `CU-xx`, el nombre de
+   una tabla o columna del backend ni un valor de enum crudo (`PENDIENTE_CUENTA`, `INICIAL_RF82`). Se usa lo que el
+   usuario ve en el software («Suministros», «Activos biológicos»). Las referencias normativas que reconoce el
+   usuario (NIC 41 ¶12, NIIF 13) sí se permiten. Los prototipos de diseño traen chips «RF-82» y columnas
+   «ID PRECIO (RF-89)»: se toma su idea, nunca esas etiquetas.
+2. **Nada de `null`, `undefined`, `NaN` ni códigos sueltos.** Un enum se muestra por su traducción (`t('estado.X')`);
+   un dato opcional vacío se muestra con lo que significa («Sin vencimiento», «Indefinida», «Sin cuenta asignada»)
+   y `—` solo cuando de verdad no aplica. Nunca una columna o tabla cuyo contenido sea ids o códigos internos
+   (`#123`, `tabla_origen`); si el usuario necesita identificar algo, se muestra su identificador de negocio.
+3. **Filtros con lógica y completos.** Cada listado tiene búsqueda y un filtro por cada dimensión que muestra la
+   tabla y que el usuario necesita acotar (estado, especie, tipo, origen…). Las opciones salen del catálogo o de
+   los datos reales, nunca valores que el backend no conoce; los filtros se combinan con AND; «Limpiar filtros»
+   aparece cuando hay alguno activo; el pie dice «Mostrando X de Y»; y el estado vacío distingue «no hay
+   registros» de «ningún registro coincide con los filtros». Si el filtro lo resuelve el backend, el endpoint
+   debe aceptarlo y validarlo (ver CLAUDE.md del backend).
+
+---
+
 ## Qué cubre este documento
 
 - Stack y versiones instaladas
