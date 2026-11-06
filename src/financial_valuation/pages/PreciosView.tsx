@@ -1,15 +1,16 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-89: repositorio de precios de mercado con vigencia, desviación y corrección |
+// | 2026-11-05 | Arekkazu | M06 RF-89 prototipo: avisos de especies sin precio, por vencer y programados; filtros completos |
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, PencilLine, Tag } from 'lucide-react';
+import { PencilLine, Plus, Tag } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
+import { Badge } from '../../shared/design-system/Badge';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
-import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
@@ -19,9 +20,15 @@ import { finanzasApi } from '../api/finanzasApi';
 import { ACCION_C, ACCION_R, R_CONFIGURACION, R_PRECIOS } from '../rbac';
 import type { CategoriaPrecio, FuentePrecio, Precio, PrecioPayload } from '../types';
 import {
-  AreaTexto, EncabezadoVista, EstadoBadge, EstadoVacio, ErrorApi, FILTROS, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM,
-  formatoFecha, formatoMoneda, useAsync,
+  AreaTexto, EncabezadoVista, EstadoBadge, ErrorApi, Listado, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM,
+  formatoFecha, formatoMoneda, useAsync, useListado,
 } from '../components/comunes';
+
+const hoyIso = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const diasHasta = (fecha: string) => Math.round((new Date(`${fecha}T00:00:00`).getTime() - new Date(`${hoyIso()}T00:00:00`).getTime()) / 86_400_000);
 
 export function PreciosView() {
   const { t } = useT('finanzas');
@@ -30,17 +37,31 @@ export function PreciosView() {
   const puedeVerConfig = usePermissionPorNombre(R_CONFIGURACION, ACCION_R);
   const precios = useAsync(finanzasApi.precios);
   const config = useAsync(finanzasApi.configuracion);
-  const [especie, setEspecie] = useState('');
-  const [modal, setModal] = useState<{ corrige?: Precio } | null>(null);
+  const [modal, setModal] = useState<{ corrige?: Precio; especie?: number } | null>(null);
   const { ejecutar: cargar } = precios;
   const { ejecutar: cargarConfig } = config;
-  useEffect(() => { if (puedeLeer) cargar(especie ? Number(especie) : undefined); }, [puedeLeer, especie, cargar]);
+  useEffect(() => { if (puedeLeer) cargar(); }, [puedeLeer, cargar]);
   useEffect(() => { if (puedeVerConfig) cargarConfig(); }, [puedeVerConfig, cargarConfig]);
 
   const especies = config.data?.especies ?? [];
-  const nombre = (id: number) => especies.find((e) => e.id_especie === id)?.especie ?? `#${id}`;
-  if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.precios')} />;
+  const nombre = (id: number) => especies.find((e) => e.id_especie === id)?.especie ?? t('precios.especie_sin_nombre');
   const lista = precios.data ?? [];
+  const l = useListado(lista, (p) => `${nombre(p.id_especie)} ${p.evidencia} ${p.justificacion ?? ''}`, [
+    { id: 'especie', etiqueta: t('col.especie'), valor: (p) => String(p.id_especie), texto: (v) => nombre(Number(v)), femenino: true },
+    { id: 'categoria', etiqueta: t('col.categoria'), valor: (p) => p.categoria, texto: (v) => t(`categoria.${v}`), femenino: true },
+    { id: 'fuente', etiqueta: t('col.fuente'), valor: (p) => p.fuente, texto: (v) => t(`fuente.${v}`), femenino: true },
+    { id: 'estado', etiqueta: t('col.estado'), valor: (p) => p.estado, texto: (v) => t(`estado.${v}`) },
+  ]);
+
+  if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.precios')} />;
+
+  // Especies que se miden con precio (tienen clasificación) y no tienen ninguno vigente hoy.
+  const vigentes = new Set(lista.filter((p) => p.estado === 'ACTIVO').map((p) => p.id_especie));
+  const sinPrecio = especies.filter((e) => e.clasificacion && !vigentes.has(e.id_especie));
+  const ventana = config.data?.general.dias_alerta_vencimiento_precio ?? 30;
+  const porVencer = lista.filter((p) => p.estado === 'ACTIVO' && p.fecha_vencimiento && diasHasta(p.fecha_vencimiento) <= ventana);
+  const programados = lista.filter((p) => p.estado === 'PROGRAMADO');
+  const corregido = (p: Precio) => lista.find((x) => x.id_precio_mercado === p.id_precio_corregido);
 
   return (
     <>
@@ -51,77 +72,87 @@ export function PreciosView() {
           <Button variant="primary" size="md" onClick={() => setModal({})}><Plus size={18} aria-hidden />{t('precios.registrar')}</Button>
         )}
       />
-      <div style={{ ...FILTROS, marginBottom: 'var(--s5)' }}>
-        {especies.length > 0 && (
-          <Select id="precios-especie" label={t('col.especie')} value={especie} onChange={(e) => setEspecie(e.target.value)}>
-            <option value="">{t('comun.todas')}</option>
-            {especies.map((e) => <option key={e.id_especie} value={e.id_especie}>{e.especie}</option>)}
-          </Select>
+      <div className="fin-avisos">
+        <Alert variant="info" title={t('precios.aviso_titulo')} description={t('precios.aviso_detalle')} />
+        {sinPrecio.length > 0 && (
+          <div className="fin-acciones" style={{ alignItems: 'center' }}>
+            <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+              <Alert variant="error" title={t('precios.sin_vigente_titulo', { count: sinPrecio.length })}
+                description={t('precios.sin_vigente_detalle', { especies: sinPrecio.map((e) => e.especie).join(', ') })} />
+            </div>
+            {puedeRegistrar && <Button variant="danger" size="md" onClick={() => setModal({ especie: sinPrecio[0].id_especie })}>{t('precios.registrar_ahora')}</Button>}
+          </div>
+        )}
+        {porVencer.length > 0 && (
+          <Alert variant="warning" title={t('precios.por_vencer_titulo', { count: porVencer.length })}
+            description={porVencer.map((p) => t('precios.por_vencer_item', { especie: nombre(p.id_especie), categoria: t(`categoria.${p.categoria}`),
+              fecha: formatoFecha(p.fecha_vencimiento), count: diasHasta(p.fecha_vencimiento as string) })).join(' · ')} />
+        )}
+        {programados.length > 0 && (
+          <Alert variant="info" title={t('precios.programados_titulo', { count: programados.length })}
+            description={programados.map((p) => t('precios.programado_item', { especie: nombre(p.id_especie), fecha: formatoFecha(p.fecha_vigencia) })).join(' · ')} />
         )}
       </div>
-      <ErrorApi error={precios.error} />
-      {lista.length === 0 ? (
-        <EstadoVacio icono={<Tag size={28} aria-hidden />} titulo={precios.cargando ? t('comun.cargando') : t('precios.vacio_titulo')} detalle={t('precios.vacio_detalle')} />
-      ) : (
-        <ScrollRegion label={t('precios.titulo')}>
+      <ErrorApi error={precios.error ?? config.error} />
+      <Listado l={l} idBase="precios" sustantivo={t('precios.sustantivo')} buscar={t('precios.buscar')} cargando={precios.cargando}
+        vacio={{ icono: <Tag size={28} aria-hidden />, titulo: t('precios.vacio_titulo'), detalle: t('precios.vacio_detalle') }}>
+        {(visibles) => (
           <table style={TABLA}>
             <thead>
               <tr>
-                <th style={TH}>{t('col.especie')}</th><th style={TH}>{t('col.categoria')}</th><th style={TH_NUM}>{t('col.precio')}</th>
+                <th style={TH}>{t('precios.especie_categoria')}</th><th style={TH_NUM}>{t('precios.precio_unitario_col')}</th>
                 <th style={TH}>{t('col.fuente')}</th><th style={TH}>{t('col.vigencia')}</th><th style={TH}>{t('col.vencimiento')}</th>
                 <th style={TH}>{t('col.estado')}</th><th style={TH}>{t('col.evidencia')}</th>
-                {puedeRegistrar && <th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th>}
+                {puedeRegistrar && puedeVerConfig && <th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th>}
               </tr>
             </thead>
             <tbody>
-              {lista.map((p) => (
+              {visibles.map((p) => (
                 <tr key={p.id_precio_mercado}>
-                  <td style={TD}>{nombre(p.id_especie)}</td>
-                  <td style={TD}>{t(`categoria.${p.categoria}`)}</td>
+                  <td style={TD}>
+                    <strong>{nombre(p.id_especie)}</strong>
+                    <span className="fin-secundario">{t(`categoria.${p.categoria}`)}</span>
+                    {p.es_aplicado && <Badge variant="success">{t('precios.aplicado')}</Badge>}
+                  </td>
                   <td style={TD_NUM}>{formatoMoneda(p.precio_unitario)} / {p.unidad_medida}</td>
                   <td style={TD}>{t(`fuente.${p.fuente}`)}</td>
-                  <td style={TD}>{formatoFecha(p.fecha_vigencia)}</td>
-                  <td style={TD}>{formatoFecha(p.fecha_vencimiento)}</td>
+                  <td style={{ ...TD, whiteSpace: 'nowrap' }}>{formatoFecha(p.fecha_vigencia)}</td>
+                  <td style={{ ...TD, whiteSpace: 'nowrap' }}>{p.fecha_vencimiento ? formatoFecha(p.fecha_vencimiento) : t('precios.indefinida')}</td>
                   <td style={TD}>
                     <EstadoBadge estado={p.estado} />
-                    {p.es_aplicado && <div style={{ ...SECUNDARIO, marginTop: 'var(--s1)' }}>{t('precios.aplicado')}</div>}
-                    {p.id_precio_corregido && <div style={{ ...SECUNDARIO, marginTop: 'var(--s1)' }}>{t('precios.corrige', { id: p.id_precio_corregido })}</div>}
+                    {p.id_precio_corregido && (
+                      <span className="fin-secundario">{t('precios.corrige', { fecha: formatoFecha(corregido(p)?.fecha_vigencia) })}</span>
+                    )}
                   </td>
-                  <td style={{ ...TD, maxWidth: 260, overflowWrap: 'anywhere' }}>{p.evidencia}{p.justificacion ? <div style={SECUNDARIO}>{p.justificacion}</div> : null}</td>
-                  {puedeRegistrar && (
+                  <td style={{ ...TD, maxWidth: 260, overflowWrap: 'anywhere' }}>{p.evidencia}{p.justificacion && <span className="fin-secundario">{p.justificacion}</span>}</td>
+                  {puedeRegistrar && puedeVerConfig && (
                     <td style={TD}>
-                      {puedeVerConfig && (
-                        <Button variant="ghost" size="sm" onClick={() => setModal({ corrige: p })} aria-label={t('precios.corregir_aria', { id: p.id_precio_mercado })}>
-                          <PencilLine size={14} aria-hidden />{t('precios.corregir')}
-                        </Button>
-                      )}
+                      <Button variant="ghost" size="sm" onClick={() => setModal({ corrige: p })}
+                        aria-label={t('precios.corregir_aria', { especie: nombre(p.id_especie), fecha: formatoFecha(p.fecha_vigencia) })}>
+                        <PencilLine size={14} aria-hidden />{t('precios.corregir')}
+                      </Button>
                     </td>
                   )}
                 </tr>
               ))}
             </tbody>
           </table>
-        </ScrollRegion>
-      )}
+        )}
+      </Listado>
       {modal && (
-        <PrecioModal especies={especies} corrige={modal.corrige} onCerrar={() => setModal(null)}
-          onGuardado={() => { setModal(null); cargar(especie ? Number(especie) : undefined); }} />
+        <PrecioModal especies={especies} corrige={modal.corrige} especieInicial={modal.especie} onCerrar={() => setModal(null)}
+          onGuardado={() => { setModal(null); cargar(); }} />
       )}
     </>
   );
 }
 
-const hoyIso = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
-function PrecioModal({ especies, corrige, onCerrar, onGuardado }: {
-  especies: Array<{ id_especie: number; especie: string }>; corrige?: Precio; onCerrar: () => void; onGuardado: () => void;
+function PrecioModal({ especies, corrige, especieInicial, onCerrar, onGuardado }: {
+  especies: Array<{ id_especie: number; especie: string }>; corrige?: Precio; especieInicial?: number; onCerrar: () => void; onGuardado: () => void;
 }) {
   const { t } = useT('finanzas');
   const [f, setF] = useState({
-    especie: corrige ? String(corrige.id_especie) : '', categoria: (corrige?.categoria ?? 'PESO_KG') as CategoriaPrecio,
+    especie: corrige ? String(corrige.id_especie) : especieInicial ? String(especieInicial) : '', categoria: (corrige?.categoria ?? 'PESO_KG') as CategoriaPrecio,
     metrica: corrige?.id_metrica_produccion ? String(corrige.id_metrica_produccion) : '', precio: '',
     vigencia: corrige?.fecha_vigencia ?? hoyIso(), vencimiento: '', fuente: (corrige?.fuente ?? 'MERCADO_ACTIVO') as FuentePrecio,
     evidencia: '', justificacion: '',
@@ -167,7 +198,7 @@ function PrecioModal({ especies, corrige, onCerrar, onGuardado }: {
 
   return (
     <ModalShell
-      title={corrige ? t('precios.corregir_titulo', { id: corrige.id_precio_mercado }) : t('precios.registrar')}
+      title={corrige ? t('precios.corregir_titulo', { especie: especies.find((e) => e.id_especie === corrige.id_especie)?.especie ?? '', fecha: formatoFecha(corrige.fecha_vigencia) }) : t('precios.registrar')}
       onClose={onCerrar}
       maxWidth={640}
       footer={(

@@ -1,95 +1,28 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
-// | 2026-11-04 | Arekkazu | M06 RF-83..88: valor en libros por activo, mediciones ¶51, modelo de costo y reversión |
+// | 2026-11-05 | Arekkazu | M06 prototipos: historial financiero del activo, compartido por las vistas de valoración |
 import React, { useEffect, useState } from 'react';
-import { Calculator, Play, Scale, Undo2 } from 'lucide-react';
+import { Calculator, Undo2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
-import { Badge } from '../../shared/design-system/Badge';
 import { ModalShell } from '../../shared/design-system/ModalShell';
-import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
-import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { decimalPositivo } from '../../supplies/lib/formato';
 import { finanzasApi } from '../api/finanzasApi';
-import { ACCION_C, ACCION_D, ACCION_E, ACCION_R, ACCION_U, R_COSTO_HISTORICO, R_RECONOCIMIENTO, R_VALORACION } from '../rbac';
-import type { ActivoValorado } from '../types';
+import { ACCION_C, ACCION_D, ACCION_U, R_COSTO_HISTORICO, R_RECONOCIMIENTO } from '../rbac';
 import {
-  AreaTexto, Datos, EncabezadoVista, EstadoBadge, EstadoVacio, ErrorApi, MotivoModal, PANEL, SECUNDARIO, Subtitulo, TABLA, TD,
-  TD_NUM, TH, TH_NUM, formatoCantidad, formatoFecha, formatoMoneda, useAsync,
-} from '../components/comunes';
+  AreaTexto, Datos, EstadoBadge, ErrorApi, MotivoModal, PANEL, SECUNDARIO, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM, Variacion,
+  formatoCantidad, formatoFecha, formatoMoneda, useAsync,
+} from './comunes';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 
-export function ValoracionView() {
-  const { t } = useT('finanzas');
-  const puedeLeer = usePermissionPorNombre(R_VALORACION, ACCION_R);
-  const puedeProcesar = usePermissionPorNombre(R_VALORACION, ACCION_E);
-  const activos = useAsync(finanzasApi.activos);
-  const proceso = useAsync(finanzasApi.procesarEventos);
-  const [abierto, setAbierto] = useState<ActivoValorado | null>(null);
-  const { ejecutar: cargar } = activos;
-  useEffect(() => { if (puedeLeer) cargar(); }, [puedeLeer, cargar]);
+interface Props { idActivo: number; identificador: string; onCerrar: () => void; onCambio: () => void }
 
-  if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.valoracion')} />;
-  const lista = activos.data ?? [];
-
-  const procesar = async () => {
-    const r = await proceso.ejecutar();
-    if (!r) return;
-    const suma = (o: Record<string, number>) => o.PROCESADO ?? 0;
-    pushToast('success', t('valor.procesado', { eventos: suma(r.eventos), provisiones: suma(r.provisiones_m05) }));
-    cargar();
-  };
-
-  return (
-    <>
-      <EncabezadoVista
-        titulo={t('valor.titulo')}
-        descripcion={t('valor.descripcion')}
-        acciones={puedeProcesar && (
-          <Button variant="secondary" size="md" loading={proceso.cargando} onClick={procesar}><Play size={16} aria-hidden />{t('valor.procesar')}</Button>
-        )}
-      />
-      <ErrorApi error={activos.error ?? proceso.error} />
-      {lista.length === 0 ? (
-        <EstadoVacio icono={<Scale size={28} aria-hidden />} titulo={activos.cargando ? t('comun.cargando') : t('valor.vacio_titulo')} detalle={t('valor.vacio_detalle')} />
-      ) : (
-        <ScrollRegion label={t('valor.titulo')}>
-          <table style={TABLA}>
-            <thead>
-              <tr>
-                <th style={TH}>{t('col.activo')}</th><th style={TH}>{t('col.especie')}</th><th style={TH}>{t('col.clasificacion')}</th>
-                <th style={TH}>{t('col.metodo')}</th><th style={TH_NUM}>{t('col.valor_libros')}</th><th style={TH}>{t('col.ultima_medicion')}</th>
-                <th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {lista.map((a) => (
-                <tr key={a.id_activo_biologico}>
-                  <td style={TD}><strong>{a.identificador}</strong><div style={SECUNDARIO}>{a.finca}</div></td>
-                  <td style={TD}>{a.especie}</td>
-                  <td style={TD}>{a.clasificacion ? t(`clasificacion.${a.clasificacion}`) : '—'}</td>
-                  <td style={TD}>
-                    {a.valorado_por_costo ? <Badge variant="warning">{t('metodo.VALORACION_POR_COSTO')}</Badge> : <Badge variant="info">{t('metodo.VALOR_RAZONABLE')}</Badge>}
-                    {a.tiene_valor_estimado && <div style={{ ...SECUNDARIO, marginTop: 'var(--s1)' }}>{t('valor.estimado')}</div>}
-                  </td>
-                  <td style={TD_NUM}>{formatoMoneda(a.valorado_por_costo ? a.valor_contable_por_costo : a.valor_razonable_neto)}</td>
-                  <td style={TD}>{formatoFecha(a.fecha_calculo, true)}</td>
-                  <td style={TD}><Button variant="secondary" size="sm" onClick={() => setAbierto(a)}>{t('valor.ver_detalle')}</Button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </ScrollRegion>
-      )}
-      {abierto && <DetalleActivo activo={abierto} onCerrar={() => setAbierto(null)} onCambio={cargar} />}
-    </>
-  );
-}
-
-function DetalleActivo({ activo, onCerrar, onCambio }: { activo: ActivoValorado; onCerrar: () => void; onCambio: () => void }) {
+export function DetalleActivoModal({ idActivo, identificador, onCerrar, onCambio }: Props) {
   const { t } = useT('finanzas');
   const puedeRevertir = usePermissionPorNombre(R_RECONOCIMIENTO, ACCION_D);
   const puedeDeteriorar = usePermissionPorNombre(R_COSTO_HISTORICO, ACCION_C);
@@ -100,16 +33,16 @@ function DetalleActivo({ activo, onCerrar, onCambio }: { activo: ActivoValorado;
   const cambio = useAsync(finanzasApi.cambiarAValorRazonable);
   const [revertir, setRevertir] = useState(false);
   const [deterioro, setDeterioro] = useState(false);
-  const id = activo.id_activo_biologico;
   const { ejecutar: cargar } = historial;
-  useEffect(() => { cargar(id); }, [id, cargar]);
+  useEffect(() => { cargar(idActivo); }, [idActivo, cargar]);
 
   const h = historial.data;
   const costo = h?.valoracion_costo?.es_activa ? h.valoracion_costo : null;
-  const refrescar = () => { cargar(id); onCambio(); };
+  const ultimo = h?.calculos[0];
+  const refrescar = () => { cargar(idActivo); onCambio(); };
 
   const pasarAValorRazonable = async () => {
-    if (await cambio.ejecutar(id)) { pushToast('success', t('valor.cambio_ok')); refrescar(); }
+    if (await cambio.ejecutar(idActivo)) { pushToast('success', t('valor.cambio_ok')); refrescar(); }
   };
 
   // Los diálogos no se anidan: la acción reemplaza al detalle y al cerrarla vuelve a él.
@@ -120,29 +53,34 @@ function DetalleActivo({ activo, onCerrar, onCambio }: { activo: ActivoValorado;
         min={20} max={2000} peligro enviando={reversion.cargando} error={reversion.error}
         onCerrar={() => setRevertir(false)}
         onConfirmar={async (motivo) => {
-          if (await reversion.ejecutar(id, motivo)) { setRevertir(false); pushToast('success', t('valor.revertido')); refrescar(); }
+          if (await reversion.ejecutar(idActivo, motivo)) { setRevertir(false); pushToast('success', t('valor.revertido')); refrescar(); }
         }}
       />
     );
   }
-  if (deterioro) return <DeterioroModal idActivo={id} onCerrar={() => setDeterioro(false)} onGuardado={() => { setDeterioro(false); refrescar(); }} />;
+  if (deterioro) return <DeterioroModal idActivo={idActivo} onCerrar={() => setDeterioro(false)} onGuardado={() => { setDeterioro(false); refrescar(); }} />;
+
+  const magnitud = !h ? '' : h.activo.peso_kg ? `${formatoCantidad(h.activo.peso_kg)} kg`
+    : h.activo.cantidad_actual != null ? t('valor.individuos', { count: h.activo.cantidad_actual }) : t('valor.sin_magnitud');
 
   return (
-    <ModalShell title={t('valor.detalle_titulo', { activo: activo.identificador })} onClose={onCerrar} maxWidth={960}
+    <ModalShell title={t('valor.detalle_titulo', { activo: identificador })} onClose={onCerrar} maxWidth={960}
       footer={<Button variant="secondary" size="md" onClick={onCerrar}>{t('comun.cerrar')}</Button>}>
       <ErrorApi error={historial.error ?? cambio.error} />
+      {!h && historial.cargando && <p style={SECUNDARIO}>{t('comun.cargando')}</p>}
       {h && (
         <>
           <Datos filas={[
             [t('col.especie'), h.activo.especie], [t('col.finca'), h.activo.finca],
             [t('col.titular'), h.activo.razon_social ? `${h.activo.razon_social} · ${h.activo.numero_id_tributaria}` : t('valor.sin_titular')],
-            [t('col.magnitud'), h.activo.peso_kg ? `${formatoCantidad(h.activo.peso_kg)} kg` : h.activo.cantidad_actual != null ? t('valor.individuos', { count: h.activo.cantidad_actual }) : '—'],
-            [t('col.costo_adquisicion'), formatoMoneda(h.activo.costo_adquisicion)],
-            [t('col.valor_libros'), formatoMoneda(costo ? costo.valor_contable_por_costo : activo.valor_razonable_neto)],
+            [t('col.magnitud'), magnitud],
+            [t('col.costo_adquisicion'), h.activo.costo_adquisicion ? formatoMoneda(h.activo.costo_adquisicion) : t('valor.sin_costo')],
+            [t('col.valor_libros'), costo ? formatoMoneda(costo.valor_contable_por_costo)
+              : ultimo ? formatoMoneda(ultimo.valor_neto) : t('valor.sin_calculo')],
           ]} />
 
-          <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap', marginTop: 'var(--s4)' }}>
-            <Button variant="secondary" size="sm" loading={simulacion.cargando} onClick={() => simulacion.ejecutar(id)}>
+          <div className="fin-acciones" style={{ marginTop: 'var(--s4)' }}>
+            <Button variant="secondary" size="sm" loading={simulacion.cargando} onClick={() => simulacion.ejecutar(idActivo)}>
               <Calculator size={14} aria-hidden />{t('valor.simular')}
             </Button>
             {costo && puedeDeteriorar && <Button variant="secondary" size="sm" onClick={() => setDeterioro(true)}>{t('valor.registrar_deterioro')}</Button>}
@@ -158,7 +96,9 @@ function DetalleActivo({ activo, onCerrar, onCambio }: { activo: ActivoValorado;
           {simulacion.data && (
             <section style={{ ...PANEL, marginTop: 'var(--s4)' }} aria-label={t('valor.simulacion')}>
               <h3 style={{ margin: '0 0 var(--s3)', fontSize: 'var(--fs-body-lg)' }}>{t('valor.simulacion')}</h3>
-              {!simulacion.data.es_valido && <Alert variant="warning" title={simulacion.data.mensaje ?? t(`motivo.${simulacion.data.motivo}`, { defaultValue: simulacion.data.motivo ?? '' })} />}
+              {!simulacion.data.es_valido && (
+                <Alert variant="warning" title={simulacion.data.mensaje ?? t(`motivo.${simulacion.data.motivo}`, { defaultValue: t('valor.simulacion_invalida') })} />
+              )}
               {simulacion.data.calculo && (
                 <Datos filas={[
                   [t('col.magnitud'), `${formatoCantidad(simulacion.data.calculo.magnitud)} ${simulacion.data.calculo.unidad_magnitud}`],
@@ -179,7 +119,8 @@ function DetalleActivo({ activo, onCerrar, onCambio }: { activo: ActivoValorado;
               <Subtitulo>{t('valor.modelo_costo')}</Subtitulo>
               <Alert variant="info" title={t('valor.modelo_costo_ayuda')} description={costo.razon_sin_mercado ?? undefined} style={{ marginBottom: 'var(--s3)' }} />
               <Datos filas={[
-                [t('col.costo_base'), formatoMoneda(costo.costos_adquisicion)], [t('col.vida_util'), costo.vida_util_meses ?? '—'],
+                [t('col.costo_base'), formatoMoneda(costo.costos_adquisicion)],
+                [t('col.vida_util'), costo.vida_util_meses ?? t('valor.sin_vida_util')],
                 [t('col.depreciacion'), formatoMoneda(costo.depreciacion_acumulada)], [t('col.deterioro'), formatoMoneda(costo.deterioro_acumulado)],
                 [t('col.valor_libros'), formatoMoneda(costo.valor_contable_por_costo)],
               ]} />
@@ -201,13 +142,13 @@ function DetalleActivo({ activo, onCerrar, onCambio }: { activo: ActivoValorado;
                 <tbody>
                   {h.mediciones.map((m) => (
                     <tr key={m.id_medicion_posterior}>
-                      <td style={TD}>{formatoFecha(m.fecha_medicion, true)}{m.tiene_valor_estimado && <div style={SECUNDARIO}>{t('valor.estimado')}</div>}</td>
-                      <td style={TD}>{t(`origen_medicion.${m.origen_medicion}`, { defaultValue: m.origen_medicion })}</td>
+                      <td style={TD}>{formatoFecha(m.fecha_medicion, true)}{m.tiene_valor_estimado && <span className="fin-secundario">{t('valor.estimado')}</span>}</td>
+                      <td style={TD}>{t(`origen_medicion.${m.origen_medicion}`, { defaultValue: t('origen_medicion.EVENTO') })}</td>
                       <td style={TD_NUM}>{formatoMoneda(m.valor_razonable_anterior)}</td>
                       <td style={TD_NUM}>{formatoMoneda(m.valor_razonable_actual)}</td>
-                      <td style={TD_NUM}>{formatoMoneda(m.ganancia_perdida_transformacion)}</td>
-                      <td style={TD_NUM}>{formatoMoneda(m.ganancia_perdida_precio_mercado)}</td>
-                      <td style={TD_NUM}><strong>{formatoMoneda(m.variacion_total)}</strong></td>
+                      <td style={TD_NUM}><Variacion valor={m.ganancia_perdida_transformacion} /></td>
+                      <td style={TD_NUM}><Variacion valor={m.ganancia_perdida_precio_mercado} /></td>
+                      <td style={TD_NUM}><Variacion valor={m.variacion_total} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -229,10 +170,11 @@ function DetalleActivo({ activo, onCerrar, onCambio }: { activo: ActivoValorado;
                   {h.lineas.map((l) => (
                     <tr key={l.id_linea_asiento_nic41}>
                       <td style={TD}>{formatoFecha(l.fecha_hecho)}</td>
-                      <td style={TD}>{t(`hecho.${l.tipo_hecho}`)}{l.es_reverso && <div style={SECUNDARIO}>{t('valor.reverso')}</div>}</td>
+                      <td style={TD}>{t(`hecho.${l.tipo_hecho}`)}{l.es_reverso && <span className="fin-secundario">{t('valor.reverso')}</span>}</td>
                       <td style={TD}>{t(`sentido.${l.sentido}`)}</td>
                       <td style={TD_NUM}>{formatoMoneda(l.valor)}</td>
-                      <td style={{ ...TD, fontFamily: 'var(--font-mono)' }}>{l.cuenta_debito && l.cuenta_credito ? `${l.cuenta_debito} / ${l.cuenta_credito}` : '—'}</td>
+                      <td style={TD}>{l.cuenta_debito && l.cuenta_credito
+                        ? <span className="fin-mono">{l.cuenta_debito} / {l.cuenta_credito}</span> : t('valor.sin_cuenta')}</td>
                       <td style={TD}><EstadoBadge estado={l.estado} /></td>
                     </tr>
                   ))}
@@ -242,7 +184,6 @@ function DetalleActivo({ activo, onCerrar, onCambio }: { activo: ActivoValorado;
           )}
         </>
       )}
-
     </ModalShell>
   );
 }
@@ -250,6 +191,9 @@ function DetalleActivo({ activo, onCerrar, onCambio }: { activo: ActivoValorado;
 function DeterioroModal({ idActivo, onCerrar, onGuardado }: { idActivo: number; onCerrar: () => void; onGuardado: () => void }) {
   const { t } = useT('finanzas');
   const registro = useAsync(finanzasApi.registrarDeterioro);
+  const eventos = useAsync(finanzasApi.eventosSanitarios);
+  const { ejecutar: cargarEventos } = eventos;
+  useEffect(() => { cargarEventos(idActivo); }, [idActivo, cargarEventos]);
   const [evento, setEvento] = useState('');
   const [impacto, setImpacto] = useState('');
   const [justificacion, setJustificacion] = useState('');
@@ -257,7 +201,7 @@ function DeterioroModal({ idActivo, onCerrar, onGuardado }: { idActivo: number; 
 
   const guardar = async () => {
     const monto = decimalPositivo(impacto);
-    if (!/^\d+$/.test(evento) || !monto || justificacion.trim().length < 30) { setAviso(t('valor.deterioro_incompleto')); return; }
+    if (!evento || !monto || justificacion.trim().length < 30) { setAviso(t('valor.deterioro_incompleto')); return; }
     setAviso(undefined);
     if (await registro.ejecutar(idActivo, { id_evento_sanitario: Number(evento), impacto_economico_cop: monto, justificacion: justificacion.trim() })) {
       pushToast('success', t('valor.deterioro_ok'));
@@ -274,10 +218,19 @@ function DeterioroModal({ idActivo, onCerrar, onGuardado }: { idActivo: number; 
         </>
       )}>
       <p style={{ ...SECUNDARIO, margin: '0 0 var(--s4)' }}>{t('valor.deterioro_ayuda')}</p>
-      <ErrorApi error={registro.error} />
+      <ErrorApi error={registro.error ?? eventos.error} />
       {aviso && <Alert variant="error" title={aviso} style={{ marginBottom: 'var(--s3)' }} />}
       <div style={{ display: 'grid', gap: 'var(--s4)' }}>
-        <Input id="det-evento" label={t('valor.evento_sanitario')} required inputMode="numeric" value={evento} onChange={(e) => setEvento(e.target.value.trim())} hint={t('valor.evento_sanitario_ayuda')} />
+        <Select id="det-evento" label={t('valor.evento_sanitario')} required value={evento} onChange={(e) => setEvento(e.target.value)}
+          disabled={eventos.cargando || (eventos.data ?? []).length === 0}
+          hint={!eventos.cargando && (eventos.data ?? []).length === 0 ? t('valor.sin_eventos_sanitarios') : t('valor.evento_sanitario_ayuda')}>
+          <option value="">{eventos.cargando ? t('comun.cargando') : t('comun.elegir')}</option>
+          {(eventos.data ?? []).map((ev) => (
+            <option key={ev.id_evento} value={ev.id_evento}>
+              {[formatoFecha(ev.fecha), t(`tipo_sanitario.${ev.tipo}`, { defaultValue: t('tipo_sanitario.DIAGNOSTICO') }), ev.diagnostico].filter(Boolean).join(' · ')}
+            </option>
+          ))}
+        </Select>
         <Input id="det-impacto" label={t('valor.impacto')} required inputMode="decimal" value={impacto} onChange={(e) => setImpacto(e.target.value)} />
         <AreaTexto id="det-justificacion" label={t('valor.justificacion')} required maxLength={2000} value={justificacion}
           onChange={(e) => setJustificacion(e.target.value)} hint={t('comun.minimo', { n: 30 })} />

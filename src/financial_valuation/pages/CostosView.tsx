@@ -1,15 +1,16 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-90: costos del activo (manuales, factura de proveedor, reparto y clasificación) |
+// | 2026-11-05 | Arekkazu | M06 RF-90 prototipo: costos del período consolidados por naturaleza y tipo, con filtros |
 import React, { useEffect, useState } from 'react';
 import { Plus, Receipt, Tags } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
+import { Badge } from '../../shared/design-system/Badge';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
-import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
@@ -18,13 +19,17 @@ import { finanzasApi } from '../api/finanzasApi';
 import { ACCION_C, ACCION_R, ACCION_U, R_COSTOS, R_VALORACION } from '../rbac';
 import { SUBTIPOS } from '../types';
 import type { ActivoValorado, Costo, CostoPayload, Naturaleza, OrigenCosto, Subtipo } from '../types';
+import { sumar } from '../lib/decimal';
 import {
-  AreaTexto, EncabezadoVista, EstadoBadge, EstadoVacio, ErrorApi, FILTROS, MotivoModal, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM,
-  formatoFecha, formatoMoneda, useAsync,
+  AreaTexto, CeldaActivo, EncabezadoVista, EstadoBadge, ErrorApi, Listado, MotivoModal, SECUNDARIO, SinPeriodo, TABLA, TD, TD_NUM, TH,
+  TH_NUM, formatoFecha, formatoMoneda, nombrePeriodo, useAsync, useListado, usePeriodo,
 } from '../components/comunes';
 
 const ORIGENES_MANUALES: OrigenCosto[] = ['MANO_OBRA_PROPIA', 'COMPRA_PROVEEDOR', 'SERVICIO_TERCERO'];
 const NATURALEZAS: Naturaleza[] = ['MANTENIMIENTO', 'INVERSION', 'VENTA'];
+const TONO_NATURALEZA = { MANTENIMIENTO: 'success', VENTA: 'info', INVERSION: 'warning' } as const;
+/** Un reverso resta del total. */
+const firmado = (c: Costo) => (c.es_reverso ? `-${c.monto_costo}` : c.monto_costo);
 
 export function CostosView() {
   const { t } = useT('finanzas');
@@ -32,95 +37,133 @@ export function CostosView() {
   const puedeRegistrar = usePermissionPorNombre(R_COSTOS, ACCION_C);
   const puedeClasificar = usePermissionPorNombre(R_COSTOS, ACCION_U);
   const puedeVerActivos = usePermissionPorNombre(R_VALORACION, ACCION_R);
+  const { periodo } = usePeriodo();
   const costos = useAsync(finanzasApi.costos);
   const activos = useAsync(finanzasApi.activos);
-  const [idActivo, setIdActivo] = useState('');
-  const [estado, setEstado] = useState('');
-  const [origen, setOrigen] = useState('');
   const [registrar, setRegistrar] = useState(false);
   const [aClasificar, setAClasificar] = useState<Costo | null>(null);
+  const id = periodo?.id_periodo_contable;
   const { ejecutar: cargar } = costos;
   const { ejecutar: cargarActivos } = activos;
-  const filtros = { id_activo_biologico: idActivo ? Number(idActivo) : undefined, estado: estado || undefined, origen_costo: origen || undefined };
-  const recargar = () => cargar(filtros);
-  useEffect(() => { if (puedeLeer) cargar({ id_activo_biologico: idActivo ? Number(idActivo) : undefined, estado: estado || undefined, origen_costo: origen || undefined }); },
-    [puedeLeer, idActivo, estado, origen, cargar]);
+  const recargar = () => { if (id) cargar({ id_periodo_contable: id }); };
+  useEffect(() => { if (puedeLeer && id) cargar({ id_periodo_contable: id }); }, [puedeLeer, id, cargar]);
   useEffect(() => { if (puedeVerActivos) cargarActivos(); }, [puedeVerActivos, cargarActivos]);
+
+  const l = useListado(costos.data, (c) => `${c.activo ?? ''} ${c.especie} ${c.finca} ${c.tercero_razon_social ?? ''} ${c.factura_numero ?? ''}`, [
+    { id: 'naturaleza', etiqueta: t('col.naturaleza'), valor: (c) => c.naturaleza_costo ?? 'SIN_CLASIFICAR', texto: (v) => t(`naturaleza.${v}`), femenino: true },
+    { id: 'subtipo', etiqueta: t('col.subtipo'), valor: (c) => c.subtipo_costo, texto: (v) => t(`subtipo.${v}`) },
+    { id: 'estado', etiqueta: t('col.estado'), valor: (c) => c.estado, texto: (v) => t(`estado.${v}`) },
+    { id: 'origen', etiqueta: t('col.origen'), valor: (c) => c.origen_costo, texto: (v) => t(`origen_costo.${v}`) },
+  ]);
 
   if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.costos')} />;
   const lista = costos.data ?? [];
-  const listaActivos = activos.data ?? [];
+  const pendientes = lista.filter((c) => c.estado === 'PENDIENTE_CLASIFICACION');
+  const grupos = NATURALEZAS.map((n) => {
+    const deEsta = lista.filter((c) => c.naturaleza_costo === n);
+    const porSubtipo = SUBTIPOS.map((s) => ({ s, total: sumar(deEsta.filter((c) => c.subtipo_costo === s).map(firmado)) }))
+      .filter((x) => Number(x.total) !== 0);
+    return { n, registros: deEsta.length, total: sumar(deEsta.map(firmado)), porSubtipo };
+  }).filter((g) => g.registros > 0);
 
   return (
     <>
       <EncabezadoVista
         titulo={t('costos.titulo')}
-        descripcion={t('costos.descripcion')}
+        descripcion={periodo ? t('costos.descripcion_periodo', { periodo: nombrePeriodo(periodo) }) : t('costos.descripcion')}
         acciones={puedeRegistrar && puedeVerActivos && (
           <Button variant="primary" size="md" onClick={() => setRegistrar(true)}><Plus size={18} aria-hidden />{t('costos.registrar')}</Button>
         )}
       />
-      <div style={{ ...FILTROS, marginBottom: 'var(--s5)' }}>
-        {listaActivos.length > 0 && (
-          <Select id="cos-activo" label={t('col.activo')} value={idActivo} onChange={(e) => setIdActivo(e.target.value)}>
-            <option value="">{t('comun.todos')}</option>
-            {listaActivos.map((a) => <option key={a.id_activo_biologico} value={a.id_activo_biologico}>{a.identificador} · {a.especie}</option>)}
-          </Select>
+      <div className="fin-avisos">
+        <Alert variant="info" title={t('costos.politica_titulo')} description={t('costos.politica_detalle')} />
+        {pendientes.length > 0 && (
+          <div className="fin-acciones" style={{ alignItems: 'center' }}>
+            <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+              <Alert variant="warning" title={t('costos.pendientes_titulo', { count: pendientes.length })} description={t('costos.pendientes_detalle')} />
+            </div>
+            <Button variant="secondary" size="md" onClick={() => l.setFiltro('estado', 'PENDIENTE_CLASIFICACION')}>{t('costos.ver_pendientes')}</Button>
+          </div>
         )}
-        <Select id="cos-estado" label={t('col.estado')} value={estado} onChange={(e) => setEstado(e.target.value)}>
-          <option value="">{t('comun.todos')}</option>
-          {['REGISTRADO', 'PENDIENTE_CLASIFICACION'].map((x) => <option key={x} value={x}>{t(`estado.${x}`)}</option>)}
-        </Select>
-        <Select id="cos-origen" label={t('col.origen')} value={origen} onChange={(e) => setOrigen(e.target.value)}>
-          <option value="">{t('comun.todos')}</option>
-          {[...ORIGENES_MANUALES, 'CONSUMO_INVENTARIO'].map((x) => <option key={x} value={x}>{t(`origen_costo.${x}`)}</option>)}
-        </Select>
       </div>
-      <ErrorApi error={costos.error} />
-      {lista.length === 0 ? (
-        <EstadoVacio icono={<Receipt size={28} aria-hidden />} titulo={costos.cargando ? t('comun.cargando') : t('costos.vacio_titulo')} detalle={t('costos.vacio_detalle')} />
-      ) : (
-        <ScrollRegion label={t('costos.titulo')}>
-          <table style={TABLA}>
-            <thead>
-              <tr>
-                <th style={TH}>{t('col.fecha')}</th><th style={TH}>{t('col.activo')}</th><th style={TH}>{t('col.subtipo')}</th>
-                <th style={TH}>{t('col.origen')}</th><th style={TH}>{t('col.naturaleza')}</th><th style={TH_NUM}>{t('col.monto')}</th>
-                <th style={TH}>{t('col.tratamiento')}</th><th style={TH}>{t('col.estado')}</th>
-                {puedeClasificar && <th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th>}
-              </tr>
-            </thead>
-            <tbody>
-              {lista.map((c) => (
-                <tr key={c.id_registro_costo}>
-                  <td style={TD}>{formatoFecha(c.fecha_costo)}</td>
-                  <td style={TD}>{c.activo ?? '—'}{c.id_grupo_reparto && <div style={SECUNDARIO}>{t('costos.repartido')}</div>}</td>
-                  <td style={TD}>{t(`subtipo.${c.subtipo_costo}`)}</td>
-                  <td style={TD}>
-                    {t(`origen_costo.${c.origen_costo}`)}
-                    {c.factura_numero && <div style={SECUNDARIO}>{t('costos.factura', { numero: `${c.factura_prefijo ?? ''}${c.factura_numero}`, tercero: c.tercero_razon_social ?? '' })}</div>}
-                  </td>
-                  <td style={TD}>{c.naturaleza_costo ? t(`naturaleza.${c.naturaleza_costo}`) : '—'}</td>
-                  <td style={TD_NUM}>{c.es_reverso ? '−' : ''}{formatoMoneda(c.monto_costo)}</td>
-                  <td style={TD}>
-                    {t(`vehiculo.${c.vehiculo_contable}`, { defaultValue: c.vehiculo_contable })}
-                    {c.politica_capitalizacion === 'CAPITALIZAR' && <div style={SECUNDARIO}>{t('costos.capitalizado')}</div>}
-                  </td>
-                  <td style={TD}><EstadoBadge estado={c.estado} /></td>
-                  {puedeClasificar && (
-                    <td style={TD}>
-                      {c.estado === 'PENDIENTE_CLASIFICACION' && (
-                        <Button variant="secondary" size="sm" onClick={() => setAClasificar(c)}><Tags size={14} aria-hidden />{t('costos.clasificar')}</Button>
-                      )}
-                    </td>
-                  )}
-                </tr>
+      <ErrorApi error={costos.error ?? activos.error} />
+      {!periodo ? <SinPeriodo /> : (
+        <>
+          {grupos.length > 0 && (
+            <div className="fin-columnas">
+              {grupos.map((g) => (
+                <section key={g.n} className="fin-tarjeta" aria-labelledby={`costos-${g.n}`} style={{ borderLeft: `4px solid var(--sem-${TONO_NATURALEZA[g.n]})` }}>
+                  <div className="fin-acciones" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Badge variant={TONO_NATURALEZA[g.n]}>{t(`naturaleza.${g.n}`)}</Badge>
+                    <span style={SECUNDARIO}>{t('costos.registros', { count: g.registros })}</span>
+                  </div>
+                  <h3 id={`costos-${g.n}`} style={{ margin: 'var(--s3) 0 0' }}>{t(`costos.total_${g.n}`)}</h3>
+                  <p className="fin-kpi__valor" style={{ margin: 'var(--s1) 0' }}>{formatoMoneda(g.total)}</p>
+                  <p style={{ ...SECUNDARIO, margin: 0 }}>{t(`costos.ayuda_${g.n}`)}</p>
+                  <div className="fin-barras">
+                    {g.porSubtipo.map((x) => (
+                      <div key={x.s}>
+                        <div className="fin-barra__fila"><span>{t(`subtipo.${x.s}`)}</span><strong>{formatoMoneda(x.total)}</strong></div>
+                        <div className="fin-barra__pista" aria-hidden>
+                          <div className={`fin-barra__relleno${g.n === 'VENTA' ? ' fin-barra__relleno--info' : ''}`}
+                            style={{ width: `${Math.max(2, Math.min(100, (Number(x.total) / Number(g.total)) * 100))}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               ))}
-            </tbody>
-          </table>
-        </ScrollRegion>
+            </div>
+          )}
+          <Listado l={l} idBase="costos" titulo={t('costos.registros_titulo')} sustantivo={t('costos.sustantivo')} buscar={t('costos.buscar')}
+            cargando={costos.cargando}
+            vacio={{ icono: <Receipt size={28} aria-hidden />, titulo: t('costos.vacio_titulo'), detalle: t('costos.vacio_detalle') }}>
+            {(visibles) => (
+              <table style={TABLA}>
+                <thead>
+                  <tr>
+                    <th style={TH}>{t('col.activo')}</th><th style={TH}>{t('col.naturaleza')}</th><th style={TH}>{t('col.subtipo')}</th>
+                    <th style={TH_NUM}>{t('col.monto')}</th><th style={TH}>{t('col.estado')}</th><th style={TH}>{t('col.origen')}</th>
+                    <th style={TH}>{t('col.fecha')}</th>{puedeClasificar && <th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibles.map((c) => (
+                    <tr key={c.id_registro_costo} className={c.estado === 'PENDIENTE_CLASIFICACION' ? 'fin-fila--atencion' : undefined}>
+                      <td style={TD}>
+                        <CeldaActivo identificador={c.activo ?? t('costos.sin_activo')} especie={c.especie} finca={c.finca} />
+                        {c.id_grupo_reparto && <span className="fin-secundario">{t('costos.repartido')}</span>}
+                      </td>
+                      <td style={TD}>{c.naturaleza_costo
+                        ? <Badge variant={TONO_NATURALEZA[c.naturaleza_costo]}>{t(`naturaleza.${c.naturaleza_costo}`)}</Badge>
+                        : t('naturaleza.SIN_CLASIFICAR')}</td>
+                      <td style={TD}>
+                        {t(`subtipo.${c.subtipo_costo}`)}
+                        <span className="fin-secundario">{t(`vehiculo.${c.vehiculo_contable}`, { defaultValue: t('vehiculo.NINGUNO') })}{c.politica_capitalizacion === 'CAPITALIZAR' ? ` · ${t('costos.capitalizado')}` : ''}</span>
+                      </td>
+                      <td style={TD_NUM}>{c.es_reverso ? <span className="fin-neg">−{formatoMoneda(c.monto_costo)}</span> : formatoMoneda(c.monto_costo)}</td>
+                      <td style={TD}><EstadoBadge estado={c.estado} /></td>
+                      <td style={TD}>
+                        {t(`origen_costo.${c.origen_costo}`)}
+                        {c.factura_numero && <span className="fin-secundario">{t('costos.factura', { numero: `${c.factura_prefijo ?? ''}${c.factura_numero}`, tercero: c.tercero_razon_social ?? '' })}</span>}
+                      </td>
+                      <td style={{ ...TD, whiteSpace: 'nowrap' }}>{formatoFecha(c.fecha_costo)}</td>
+                      {puedeClasificar && (
+                        <td style={TD}>
+                          {c.estado === 'PENDIENTE_CLASIFICACION' && (
+                            <Button variant="secondary" size="sm" onClick={() => setAClasificar(c)}><Tags size={14} aria-hidden />{t('costos.clasificar')}</Button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Listado>
+        </>
       )}
-      {registrar && <CostoModal activos={listaActivos} onCerrar={() => setRegistrar(false)} onGuardado={() => { setRegistrar(false); recargar(); }} />}
+      {registrar && <CostoModal activos={activos.data ?? []} onCerrar={() => setRegistrar(false)} onGuardado={() => { setRegistrar(false); recargar(); }} />}
       {aClasificar && <ClasificarModal costo={aClasificar} onCerrar={() => setAClasificar(null)} onGuardado={() => { setAClasificar(null); recargar(); }} />}
     </>
   );

@@ -1,9 +1,10 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: cliente de la API /finanzas (valoración NIC 41) |
+// | 2026-11-05 | Arekkazu | M06 prototipos: listados del período y auditoría ordenable |
 import { http } from '../../shared/api/http';
 import type {
-  ActivoValorado, Asignacion, Cadena, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
+  ActivoValorado, Asignacion, Cadena, CalculoPeriodo, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
   CostosManuales, Cotizacion, EstadoDetalle, EstadoResumen, HistorialActivo, InformeDetalle, InformePayload, InformeResumen,
   Linea, Naturaleza, PaginaAuditoria, Periodo, Precio, PrecioPayload, Prevalidacion, Propuesta, ResultadoCierre,
   ResultadoCosto, Simulacion,
@@ -66,6 +67,12 @@ export const finanzasApi = {
   registrarDeterioro: (idActivo: number, body: { id_evento_sanitario: number; impacto_economico_cop: string; justificacion: string }) =>
     post<unknown>(`/activos/${idActivo}/deterioros`, body),
   cambiarAValorRazonable: (idActivo: number) => post<unknown>(`/activos/${idActivo}/valor-razonable`),
+  eventosSanitarios: (idActivo: number) =>
+    get<Array<{ id_evento: number; fecha: string; tipo: string; diagnostico: string | null }>>(`/activos/${idActivo}/eventos-sanitarios`),
+  mediciones: (idPeriodo: number) => get<MedicionPeriodo[]>(`/periodos/${idPeriodo}/mediciones`),
+  variaciones: (idPeriodo: number) => get<VariacionPeriodo[]>(`/periodos/${idPeriodo}/variaciones`),
+  calculos: (idPeriodo: number) => get<CalculoPeriodo[]>(`/periodos/${idPeriodo}/calculos`),
+  productos: (idPeriodo: number) => get<ProductoPeriodo[]>(`/periodos/${idPeriodo}/productos`),
 
   // Costos (RF-90)
   costos: (filtros: { id_activo_biologico?: number; id_periodo_contable?: number; estado?: string; origen_costo?: string }) =>
@@ -97,7 +104,7 @@ export const finanzasApi = {
   // Estado de resultados (RF-93) y revelaciones (RF-92)
   estados: (idPeriodo: number) => get<EstadoResumen[]>(`/periodos/${idPeriodo}/estados-resultados`),
   estado: (id: number) => get<EstadoDetalle>(`/estados-resultados/${id}`),
-  generarEstado: (idPeriodo: number, filtros: { id_especie?: number; id_finca?: number }) =>
+  generarEstado: (idPeriodo: number, filtros: { id_especie?: number; id_finca?: number; id_activo_biologico?: number }) =>
     post<{ id_estado: number }>(`/periodos/${idPeriodo}/estados-resultados`, filtros),
   aprobarEstado: (id: number) => post<unknown>(`/estados-resultados/${id}/aprobacion`),
   descargarEstado: (id: number, formato: 'pdf' | 'excel') => archivo(`/estados-resultados/${id}/descarga`, formato, `estado-resultados-${id}`),
@@ -109,6 +116,7 @@ export const finanzasApi = {
   descargarInforme: (id: number, formato: 'pdf' | 'excel') => archivo(`/revelaciones/${id}/descarga`, formato, `revelaciones-${id}`),
 
   // Auditoría (RF-94)
-  auditoria: (filtros: { id_periodo_contable?: number; id_activo_biologico?: number; tipo_evento?: string; severidad?: string; pagina: number }) =>
-    get<PaginaAuditoria>('/auditoria', { ...filtros, tamano: 50, formato: 'LEGIBLE' }),
+  auditoria: (filtros: { id_periodo_contable?: number; id_activo_biologico?: number; tipo_evento?: string; severidad?: string;
+    pagina: number; tamano?: number; orden?: 'ASC' | 'DESC' }) =>
+    get<PaginaAuditoria>('/auditoria', { tamano: 50, ...filtros, formato: 'LEGIBLE' }),
 };
