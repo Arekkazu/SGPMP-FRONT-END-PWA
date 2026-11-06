@@ -1,3 +1,9 @@
+## [1.4.0-rc.34](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.33...v1.4.0-rc.34) (2026-11-06)
+
+### Features
+
+* **rf95-rf102-mod7:** modulo de integracion contable con AgroFusion ([52caf6a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/52caf6a17092c942a58ba13274a9208284d76fa0))
+
 ## [1.4.0-rc.33](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.32...v1.4.0-rc.33) (2026-11-06)
 
 ### Features
