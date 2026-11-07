@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-88 TC-DIS-237: accesibilidad de los mensajes de error al pasar un activo a valor razonable |
+// | 2026-11-07 | Laura032005 | M06 RF-88 TC-DIS-237: loguear como Contador (Administrador no tiene permiso valoracion_por_costo) |
 /**
  * TC-DIS-237 — Accesibilidad WCAG 2.1 AA de los mensajes de error de la marcación (parámetros
  * de M09 sin configurar, activo en BAJA y cambio a VALOR_RAZONABLE sin precio)
@@ -21,7 +22,9 @@
  */
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
-import { abrirSesion, anotar, escanear, irA, main, precondicion, PREFIJO_API } from '../../../_shared/sigabA11y';
+import {
+  abrirSesion, anotar, credencialesPorRol, escanear, irA, main, precondicion, PREFIJO_API,
+} from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-237';
 const RUTA = 'finanzas/valoracion-costo';
@@ -46,7 +49,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Errores al pasar a valor r
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    ({ contexto, page } = await abrirSesion(browser, testInfo));
+    ({ contexto, page } = await abrirSesion(browser, testInfo, credencialesPorRol('CONTADOR')));
   });
 
   test.afterAll(async () => {
