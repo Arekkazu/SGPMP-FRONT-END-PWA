@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M05 RF-76 TC-DIS-212: accesibilidad del formulario de aplicación de medicamento |
+// | 2026-11-06 | Laura032005 | M05 RF-76 TC-DIS-212: "Medicamento" coincidía también con "Lote del medicamento"; se agrega exact:true |
 /**
  * TC-DIS-212 — Accesibilidad WCAG 2.1 AA del formulario de Registro de Aplicación de
  * Medicamentos y de sus mensajes de error por campo
@@ -56,7 +57,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Formulario de aplicación 
     const dialogo = await abrirFormulario(page);
 
     const requeridos = [
-      ['combobox', 'Activo biológico'], ['textbox', 'Medicamento'], ['combobox', 'Vía de administración'],
+      ['combobox', 'Activo biológico'], ['textbox', /^Medicamento$/], ['combobox', 'Vía de administración'],
       ['textbox', 'Fecha de aplicación'], ['textbox', 'Hora de aplicación'], ['spinbutton', 'Dosis total aplicada'],
       ['textbox', 'Unidad de la dosis'], ['spinbutton', /Costo por unidad de dosis/], ['textbox', 'Veterinario responsable'],
       ['textbox', 'Motivo de la aplicación'],

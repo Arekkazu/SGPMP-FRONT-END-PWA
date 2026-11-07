@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M05 RF-81 TC-DIS-220: accesibilidad de la exportación del historial y sus estados asíncronos |
+// | 2026-11-06 | Laura032005 | M05 RF-81 TC-DIS-220: separa el toast "en cola" de la alerta persistente "en proceso" (ambos aparecen a la vez) |
 /**
  * TC-DIS-220 — Accesibilidad de la exportación del Historial de Suministros (PDF/Excel) y de
  * sus estados asíncronos
@@ -77,8 +78,12 @@ test.describe(`${TC_ID} - Accesibilidad - Exportación del historial y estados a
 
     const focoAntes = await page.evaluate(() => document.activeElement?.tagName.toLowerCase());
     await pdf.click();
-    const aviso = page.getByText('Exportación en cola').or(page.getByText('Exportación en proceso'));
-    await expect.soft(aviso, '4.1.3 (E3): la aceptación asíncrona debe anunciarse').toBeVisible();
+    // pushToast('Exportación en cola') y el <Alert> persistente ("Exportación en proceso")
+    // aparecen a la vez: son dos anuncios reales distintos, no un único elemento ambiguo.
+    const toast = page.getByText('Exportación en cola', { exact: true });
+    const aviso = page.getByText('Exportación en proceso', { exact: true });
+    await expect.soft(toast, '4.1.3 (E3): el toast de aceptación asíncrona debe anunciarse').toBeVisible();
+    await expect.soft(aviso, '4.1.3 (E3): la alerta persistente de exportación en proceso debe anunciarse').toBeVisible();
     const enRegionViva = await aviso.evaluate((e) => !!e.closest('[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"]'));
     expect.soft(enRegionViva, '4.1.3: el aviso de exportación en cola debe estar en una región viva').toBe(true);
     const focoDespues = await page.evaluate(() => document.activeElement?.tagName.toLowerCase());
