@@ -1,6 +1,7 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M3-09 RF-58: con anomalía el semáforo dice que es del último valor válido |
 import React from 'react';
 import { AlertOctagon, CircleSlash, ScanSearch, Wrench } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -40,11 +41,14 @@ type SensorConEstado = Pick<
  * acompaña al semáforo para que no pase por un valor operativo normal.
  */
 export function EstadoSensorPills({ sensor }: { sensor: SensorConEstado }) {
+  const { t } = useT('telemetry');
   const estado = estadoLectura(sensor);
   if (estado === 'sin_umbral') return <EstadoLecturaPill estado={estado} />;
   return (
     <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 'var(--s1)', justifyContent: 'center' }}>
-      <SemaforoPill estado={sensor.estado_semaforo} />
+      {/* M3-09: con una anomalía el semáforo es del último valor válido, no de la lectura
+          descartada; decirlo evita leer «Normal» y «Lectura inválida» como contradicción. */}
+      <SemaforoPill estado={sensor.estado_semaforo} prefijo={estado ? t('estadolectura.ultimo_valido') : undefined} />
       {estado && <EstadoLecturaPill estado={estado} />}
     </span>
   );

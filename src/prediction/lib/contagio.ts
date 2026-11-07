@@ -1,6 +1,11 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | PEND-456 RF-68: lotes de contagio desde GET /prediccion/riesgo-contagio (antes contagioMock) |
+// | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68/67: evento CONTAGIO del historial con nivel y probabilidad |
+// | 2026-11-02 | Arekkazu | RFC-021 C21.4 RF-68: exposición a focos de áreas vecinas en el desglose |
+// | 2026-11-02 | Arekkazu | RFC-021 RF-110 RF-68: mapa de propagación (nivel por área, focos y pasos) |
+// | 2026-11-02 | Arekkazu | RF-68: la fila de exposición no muestra códigos de RFC |
+import type { Tono } from '../components/Pill';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import type { RiesgoContagioMonitorResponse } from '../types';
 
@@ -15,10 +20,16 @@ export interface CalculoHistorial {
   fs: number; fa: number | null; fd: number | null; calidad: 'COMPLETA' | 'DEGRADADA'; confianzaReducida: boolean;
 }
 
+/** RFC-021 C21.4: P = P_base + (1 − P_base)·λ·Fv por los focos de las áreas vecinas. */
+export interface Exposicion { pBase: number; fv: number; focos: { idArea: number; via: string; peso: number }[] }
+
 export interface LoteContagio {
   id: number;
   nombre: string;
   area: string;
+  /** Área productiva del cálculo (snapshot `id_area_productiva`) y su finca, para el mapa. */
+  idArea: number | null;
+  finca: string;
   especie: string;
   fuenteFs: FuenteFs | null;
   probabilidad: number;
@@ -36,10 +47,32 @@ export interface LoteContagio {
   /** Del más antiguo al más reciente. */
   historial: CalculoHistorial[];
   nota?: string;
+  exposicion: Exposicion | null;
 }
 
 const NIVELES: Record<number, NivelContagio> = { 0: 'BAJO', 1: 'MEDIO', 2: 'ALTO' };
+export const NIVEL_TONO: Record<NivelContagio, Tono> = { ALTO: 'error', MEDIO: 'warning', BAJO: 'success' };
+
+/** Evento CONTAGIO del historial RF-67 (RF-68 paso 9): null si el payload no es de contagio. */
+export function contagioDelEvento(payload: Record<string, unknown> | null): { probabilidad: number; nivel: NivelContagio | null } | null {
+  const p = payload?.probabilidad_contagio;
+  if (typeof p !== 'number') return null;
+  const n = payload?.nivel_riesgo_contagio;
+  return { probabilidad: p, nivel: typeof n === 'number' ? NIVELES[n] ?? null : null };
+}
 const texto = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
+const numero = (v: unknown): number | null => (typeof v === 'number' ? v : null);
+
+/** El backend guarda `exposicion` vacío cuando el área no tiene focos vecinos. */
+export function exposicionDe(r: RiesgoContagioMonitorResponse): Exposicion | null {
+  const e = r.detalle_calculo?.exposicion as Record<string, unknown> | undefined;
+  if (e?.fv == null) return null;
+  const focos = Array.isArray(e.focos) ? (e.focos as Record<string, unknown>[]) : [];
+  return {
+    pBase: Number(e.p_base), fv: Number(e.fv),
+    focos: focos.map((f) => ({ idArea: Number(f.id_area), via: String(f.via), peso: Number(f.peso) })),
+  };
+}
 
 function degradado(r: RiesgoContagioMonitorResponse): boolean {
   return r.confianza_baja || !!r.factores_ausentes?.length || texto(r.detalle_calculo?.motivos_degradacion).length > 0;
@@ -65,6 +98,14 @@ function reglasDe(r: RiesgoContagioMonitorResponse): ReglaAplicada[] {
   }
   if (r.factores_ausentes?.length) {
     reglas.push({ regla: 'Factores ausentes: pesos redistribuidos', valor: r.factores_ausentes.join(', '), resultado: 'AJUSTE', origen: 'RF-68 · calidad de datos' });
+  }
+  const exposicion = exposicionDe(r);
+  if (exposicion) {
+    reglas.push({
+      regla: 'Exposición a áreas vecinas',
+      valor: `P base ${exposicion.pBase} · Fv ${exposicion.fv} · ${exposicion.focos.map((f) => `área ${f.idArea} por ${f.via} (w ${f.peso})`).join(', ')}`,
+      resultado: 'AJUSTE', origen: 'Áreas vecinas',
+    });
   }
   for (const motivo of texto(r.detalle_calculo?.motivos_degradacion)) {
     reglas.push({ regla: 'Cálculo degradado', valor: motivo, resultado: 'AJUSTE', origen: 'RF-68 · calidad de datos' });
@@ -96,6 +137,8 @@ export function aLotes(calculos: RiesgoContagioMonitorResponse[]): LoteContagio[
       id: r.id_activo_biologico,
       nombre: r.identificador_activo ?? `#${r.id_activo_biologico}`,
       area: `${r.nombre_area} · ${r.nombre_finca}`,
+      idArea: numero(r.detalle_calculo?.id_area_productiva),
+      finca: r.nombre_finca,
       especie: r.especie ?? '—',
       fuenteFs: fuente === 'CONTEO_INDIVIDUAL' || fuente === 'SCORE_POBLACIONAL' ? fuente : null,
       probabilidad: r.probabilidad_contagio,
@@ -111,6 +154,27 @@ export function aLotes(calculos: RiesgoContagioMonitorResponse[]): LoteContagio[
       reglas: reglasDe(r),
       historial: orden.map(aHistorial),
       nota: motivos.length ? motivos.join(' · ') : undefined,
+      exposicion: exposicionDe(r),
     };
   }).sort((a, b) => b.probabilidad - a.probabilidad);
+}
+
+export interface NodoContagio { id: number; nombre: string; activo: boolean; nivel: NivelContagio | null; probabilidad: number | null; foco: boolean }
+/** Un salto de la última propagación: el foco `desde` subió el riesgo del área `hacia`. */
+export interface PasoPropagacion { desde: number; hacia: number; via: string; pBase: number; probabilidad: number; fecha: string }
+
+const ORDEN: Record<NivelContagio, number> = { BAJO: 0, MEDIO: 1, ALTO: 2 };
+
+/** RFC-021: cada área toma el peor lote de su último cálculo; es foco si otra área la cita como foco. */
+export function mapaPropagacion(lotes: LoteContagio[], areas: { id: number; nombre: string; activo: boolean }[]) {
+  const pasos: PasoPropagacion[] = lotes.flatMap((l) => (l.exposicion && l.idArea != null
+    ? l.exposicion.focos.map((f) => ({ desde: f.idArea, hacia: l.idArea as number, via: f.via, pBase: l.exposicion!.pBase, probabilidad: l.probabilidad, fecha: l.fecha }))
+    : []));
+  const focos = new Set(pasos.map((p) => p.desde));
+  const rango = (l: LoteContagio) => (l.nivel ? ORDEN[l.nivel] : -1);
+  const nodos: NodoContagio[] = areas.map((a) => {
+    const [peor] = lotes.filter((l) => l.idArea === a.id).sort((x, y) => rango(y) - rango(x) || y.probabilidad - x.probabilidad);
+    return { ...a, nivel: peor?.nivel ?? null, probabilidad: peor?.probabilidad ?? null, foco: focos.has(a.id) };
+  });
+  return { nodos, pasos };
 }

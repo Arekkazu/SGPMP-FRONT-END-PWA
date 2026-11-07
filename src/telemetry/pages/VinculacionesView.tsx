@@ -3,6 +3,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre en el filtro |
 // | 2026-10-29 | Arekkazu | USAB-M03 prototipo 13.8 RF-61: lista por revisar / vinculadas con la acción en la tarjeta |
+// | 2026-10-31 | Arekkazu | CP74/CP84 RF-61: filtro por modelo de manejo y rango de fechas invertido avisado |
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -49,6 +50,7 @@ export function VinculacionesView() {
       if (filtros.mecanismo_vinculacion) f.mecanismo_vinculacion = filtros.mecanismo_vinculacion;
       if (filtros.id_telemetria) f.id_telemetria = Number(filtros.id_telemetria);
       if (filtros.id_infraestructura) f.id_infraestructura = Number(filtros.id_infraestructura);
+      if (filtros.modelo_manejo) f.modelo_manejo = filtros.modelo_manejo;
       if (filtros.fecha_desde) f.fecha_desde = inicioDelDiaUtc(filtros.fecha_desde);
       if (filtros.fecha_hasta) f.fecha_hasta = finDelDiaUtc(filtros.fecha_hasta);
       return f;

@@ -1,8 +1,11 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | PEND-456 RF-68: lotes de contagio desde los cálculos del backend |
+// | 2026-10-30 | Arekkazu | INC-M04-223-G034 RF-68/67: evento CONTAGIO del historial |
+// | 2026-11-02 | Arekkazu | RFC-021 C21.4 RF-68: exposición a focos vecinos |
+// | 2026-11-02 | Arekkazu | RFC-021 RF-110 RF-68: mapa de propagación |
 import { describe, expect, it } from 'vitest';
-import { aLotes } from './contagio';
+import { aLotes, contagioDelEvento, mapaPropagacion } from './contagio';
 import type { RiesgoContagioMonitorResponse } from '../types';
 
 const calculo = (cambios: Partial<RiesgoContagioMonitorResponse>): RiesgoContagioMonitorResponse => ({
@@ -39,5 +42,40 @@ describe('aLotes (RF-68)', () => {
       'Cálculo degradado': 'AJUSTE',
     });
     expect(lote.nota).toBe('FD sin sensor');
+  });
+});
+
+describe('exposición a áreas vecinas (RFC-021 C21.4)', () => {
+  it('lee P_base, Fv y focos del cálculo; sin focos el backend la deja vacía', () => {
+    const exposicion = { p_base: '0.3750', fv: '0.6000', lambda: '0.5', focos: [{ id_area: 2, via: 'AGUA', peso: '0.6', factor_sanitario: '1' }] };
+    const [lote] = aLotes([calculo({ detalle_calculo: { exposicion } })]);
+    expect(lote.exposicion).toEqual({ pBase: 0.375, fv: 0.6, focos: [{ idArea: 2, via: 'AGUA', peso: 0.6 }] });
+    expect(lote.reglas.find((r) => r.regla === 'Exposición a áreas vecinas')?.valor).toBe('P base 0.375 · Fv 0.6 · área 2 por AGUA (w 0.6)');
+    expect(aLotes([calculo({ detalle_calculo: { exposicion: {} } })])[0].exposicion).toBeNull();
+    expect(aLotes([calculo({})])[0].exposicion).toBeNull();
+  });
+});
+
+describe('mapaPropagacion (RFC-021)', () => {
+  it('cada área toma su lote, el foco es el área que citan las expuestas y cada salto queda como paso', () => {
+    const foco = { probabilidad_contagio: 0.69, nivel_riesgo_contagio: 2 };
+    const lotes = aLotes([
+      calculo({ id_activo_biologico: 2, ...foco, detalle_calculo: { id_area_productiva: 2 } }),
+      calculo({ id_activo_biologico: 3, probabilidad_contagio: 0.555, nivel_riesgo_contagio: 1, detalle_calculo: {
+        id_area_productiva: 3, exposicion: { p_base: '0.3648', fv: '0.6', focos: [{ id_area: 2, via: 'AGUA', peso: '0.6' }] } } }),
+    ]);
+    const areas = [{ id: 1, nombre: 'Estanque', activo: true }, { id: 2, nombre: 'Potrero 1', activo: true }, { id: 3, nombre: 'Corral 1', activo: true }];
+    const { nodos, pasos } = mapaPropagacion(lotes, areas);
+    expect(nodos.map((n) => [n.id, n.nivel, n.foco])).toEqual([[1, null, false], [2, 'ALTO', true], [3, 'MEDIO', false]]);
+    expect(pasos).toMatchObject([{ desde: 2, hacia: 3, via: 'AGUA', pBase: 0.3648, probabilidad: 0.555 }]);
+  });
+});
+
+describe('contagioDelEvento (RF-67, INC-M04-223-G034)', () => {
+  it('lee nivel y probabilidad del evento CONTAGIO; null en los demás tipos', () => {
+    expect(contagioDelEvento({ probabilidad_contagio: 0.55, nivel_riesgo_contagio: 2 })).toEqual({ probabilidad: 0.55, nivel: 'ALTO' });
+    expect(contagioDelEvento({ probabilidad_contagio: 0.2 })).toEqual({ probabilidad: 0.2, nivel: null });
+    expect(contagioDelEvento({ nivel_riesgo: 2, confianza_global: 0.9 })).toBeNull();
+    expect(contagioDelEvento(null)).toBeNull();
   });
 });

@@ -1,14 +1,20 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | H-M3-12 CP95 RF-62: rango de fechas invertido se avisa en el campo y no se aplica |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18 RF-62: lectura y sensor por nombre; sensor elegido por nombre |
+// | 2026-11-03 | Arekkazu | Filtros: combobox compacto, alineado con los select de la fila |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { INPUT, LABEL, FILTER_GRID } from './tableStyles';
+import { SelectorSensor } from './SelectorSensor';
+import type { SensorCatalogo } from '../types';
 
 export interface CalidadFiltrosState {
+  /** ID que se envía; `sensor` es el texto del Combobox (T-18). */
   id_sensor: string;
+  sensor: string;
   clasificacion: string;
   estado_evaluacion: string;
   fecha_desde: string;
@@ -16,17 +22,18 @@ export interface CalidadFiltrosState {
 }
 
 export const CALIDAD_FILTROS_VACIO: CalidadFiltrosState = {
-  id_sensor: '', clasificacion: '', estado_evaluacion: '', fecha_desde: '', fecha_hasta: '',
+  id_sensor: '', sensor: '', clasificacion: '', estado_evaluacion: '', fecha_desde: '', fecha_hasta: '',
 };
 
 interface Props {
+  sensores: SensorCatalogo[];
   value: CalidadFiltrosState;
   onChange: (v: CalidadFiltrosState) => void;
   onAplicar: () => void;
   onLimpiar: () => void;
 }
 
-export function CalidadFiltros({ value, onChange, onAplicar, onLimpiar }: Props) {
+export function CalidadFiltros({ sensores, value, onChange, onAplicar, onLimpiar }: Props) {
   const invertido = !!value.fecha_desde && !!value.fecha_hasta && value.fecha_desde > value.fecha_hasta;
   const { t } = useT('telemetry');
   const set = (k: keyof CalidadFiltrosState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -35,10 +42,13 @@ export function CalidadFiltros({ value, onChange, onAplicar, onLimpiar }: Props)
   return (
     <>
       <div style={FILTER_GRID}>
-        <div>
-          <label style={LABEL} htmlFor="c-sensor">{t('calidadfiltros.id_sensor')}</label>
-          <input id="c-sensor" type="number" style={INPUT} value={value.id_sensor} onChange={set('id_sensor')} />
-        </div>
+        <SelectorSensor
+          id="c-sensor"
+          compacto
+          sensores={sensores}
+          value={value.sensor}
+          onChange={(sensor, idSensor) => onChange({ ...value, sensor, id_sensor: idSensor != null ? String(idSensor) : '' })}
+        />
         <div>
           <label style={LABEL} htmlFor="c-clas">{t('calidadfiltros.clasificacion')}</label>
           <select id="c-clas" style={INPUT} value={value.clasificacion} onChange={set('clasificacion')}>
@@ -51,7 +61,11 @@ export function CalidadFiltros({ value, onChange, onAplicar, onLimpiar }: Props)
         </div>
         <div>
           <label style={LABEL} htmlFor="c-estado">{t('calidadfiltros.estado_evaluacion')}</label>
-          <input id="c-estado" style={INPUT} value={value.estado_evaluacion} onChange={set('estado_evaluacion')} placeholder={t('calidadfiltros.ej_vigente')} />
+          <select id="c-estado" style={INPUT} value={value.estado_evaluacion} onChange={set('estado_evaluacion')}>
+            <option value="">{t('calidadfiltros.estado_todos')}</option>
+            <option value="VIGENTE">{t('calidadfiltros.estado_vigente')}</option>
+            <option value="SUPERADA">{t('calidadfiltros.estado_superada')}</option>
+          </select>
         </div>
         <div>
           <label style={LABEL} htmlFor="c-desde">{t('calidadfiltros.desde')}</label>

@@ -1,6 +1,13 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo 13.9 RF-66/RF-68/RF-69: Monitor y Contagio en una ficha por lote, con evaluación clínica |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
+// | 2026-11-02 | Arekkazu | RFC-021 C21.4 RF-68: «¿Por qué?» dice cuánto sube el riesgo por las áreas vecinas |
+// | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
+// | 2026-11-02 | Arekkazu | RF-66/RF-68: últimas de cada animal o lote (por_activo) para que ninguno desaparezca |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU03 H-06 RF-68: «Ver por qué» explica el riesgo aunque los factores propios sumen 0 |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU03 H-05 RF-66: la ficha avisa cuando la predicción es de un modelo en prueba |
+// | 2026-11-03 | Arekkazu | QA-M04 RF-66: se retira el aviso «modelo en prueba» de la ficha (lo pidió QA) |
 import React, { useEffect, useMemo, useState } from 'react';
 import { HeartPulse, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -11,6 +18,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { OptionCard } from '../../shared/design-system/OptionCard';
 import { ModalShell } from '../components/ModalShell';
+import { CapturaCamara } from '../components/CapturaCamara';
 import { ProbBar } from '../components/ProbBar';
 import { LineChartPrediccion } from '../components/LineChartPrediccion';
 import { InferenciaDetalleModal } from '../components/InferenciaDetalleModal';
@@ -103,7 +111,10 @@ function Ficha({ lote, puedeEvaluar, online, onEvaluar, onPorQue }: {
         <>
           <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
             {poblacional
-              ? t('estadosanitario.score', { score: formatearNumero(a.score ?? 0, { maximumFractionDigits: 2 }), umbral: formatearNumero(a.umbralScore ?? 0, { maximumFractionDigits: 2 }) })
+              // N-05: sin umbral configurado no hay "umbral 0" ni clasificación.
+              ? a.umbralScore
+                ? t('estadosanitario.score', { score: formatearNumero(a.score ?? 0, { maximumFractionDigits: 2 }), umbral: formatearNumero(a.umbralScore, { maximumFractionDigits: 2 }) })
+                : t('estadosanitario.score_sin_umbral')
               : a.enfermedad && a.nivel !== 0
                 ? <>{t('estadosanitario.probable')} <strong>{a.enfermedad}</strong></>
                 : <strong>{t('estadosanitario.sin_enfermedad')}</strong>}
@@ -178,11 +189,16 @@ function PorQueModal({ lote, onDetalle, onClose }: { lote: LoteSanitario; onDeta
           </section>
         )}
 
+        <CapturaCamara idArea={a?.idArea ?? c?.idArea} />
+
         <section>
           <h3 style={H3}>{t('estadosanitario.por_que')}</h3>
-          {c && aporte ? (
+          {c ? (
             <>
+              {/* QA-M04 ronda 2 CU03 H-06: hay cálculo aunque los factores propios sumen 0 (riesgo por vecinas). */}
+              {!aporte && <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>{t('estadosanitario.sin_aporte_propio', { total: pct(c.probabilidad) })}</p>}
               {/* M4-10: los pesos en palabras, no la fórmula. */}
+              {aporte && <>
               <div role="img" aria-label={FACTORES.map((f) => `${t(`estadosanitario.factor_${f.clave}`)} ${pct(aporte[f.clave])}`).join(', ')}
                 style={{ display: 'flex', height: 22, borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
                 {FACTORES.map((f) => (
@@ -202,7 +218,16 @@ function PorQueModal({ lote, onDetalle, onClose }: { lote: LoteSanitario; onDeta
                   </li>
                 ))}
               </ul>
+              </>}
               {c.pesosRecalculados && <p style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--sem-warning)' }}>{t('contagio.pesos_recalculados', c.pesos)}</p>}
+              {c.exposicion && (
+                <p style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--sem-warning)' }}>
+                  {t('estadosanitario.por_vecinas', {
+                    base: pct(c.exposicion.pBase), total: pct(c.probabilidad),
+                    areas: c.exposicion.focos.map((f) => t('estadosanitario.foco_vecino', { area: f.idArea, via: f.via })).join(', '),
+                  })}
+                </p>
+              )}
             </>
           ) : <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>{t('estadosanitario.sin_contagio')}</p>}
         </section>
@@ -228,7 +253,7 @@ export function EstadoSanitarioView() {
   const puedeVer = usePermission(RECURSO_HISTORIAL, ACCION_R);
   const puedeEvaluar = usePermission(RECURSO_RETRO, ACCION_C);
   const online = useOnlineStatus();
-  const { inferencias, loading, error, cargar } = useInferencias();
+  const { inferencias, loading, error, cargar } = useInferencias(true);
   // Sin permiso sobre el motor, contagio responde 403: la ficha sale sin esa barra.
   const { calculos } = useRiesgoContagio();
   const patologiasHook = usePatologias();

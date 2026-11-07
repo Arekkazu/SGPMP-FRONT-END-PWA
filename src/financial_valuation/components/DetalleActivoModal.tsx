@@ -1,0 +1,240 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-05 | Arekkazu | M06 prototipos: historial financiero del activo, compartido por las vistas de valoración |
+import React, { useEffect, useState } from 'react';
+import { Calculator, Undo2 } from 'lucide-react';
+import { Button } from '../../shared/design-system/Button';
+import { Input } from '../../shared/design-system/Input';
+import { Select } from '../../shared/design-system/Select';
+import { Alert } from '../../shared/design-system/Alert';
+import { ModalShell } from '../../shared/design-system/ModalShell';
+import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
+import { pushToast } from '../../shared/hooks/useToast';
+import { useT } from '../../shared/i18n/useT';
+import { decimalPositivo } from '../../supplies/lib/formato';
+import { finanzasApi } from '../api/finanzasApi';
+import { ACCION_C, ACCION_D, ACCION_U, R_COSTO_HISTORICO, R_RECONOCIMIENTO } from '../rbac';
+import {
+  AreaTexto, Datos, EstadoBadge, ErrorApi, MotivoModal, PANEL, SECUNDARIO, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM, Variacion,
+  formatoCantidad, formatoFecha, formatoMoneda, useAsync,
+} from './comunes';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+
+interface Props { idActivo: number; identificador: string; onCerrar: () => void; onCambio: () => void }
+
+export function DetalleActivoModal({ idActivo, identificador, onCerrar, onCambio }: Props) {
+  const { t } = useT('finanzas');
+  const puedeRevertir = usePermissionPorNombre(R_RECONOCIMIENTO, ACCION_D);
+  const puedeDeteriorar = usePermissionPorNombre(R_COSTO_HISTORICO, ACCION_C);
+  const puedeCambiarMetodo = usePermissionPorNombre(R_COSTO_HISTORICO, ACCION_U);
+  const historial = useAsync(finanzasApi.historial);
+  const simulacion = useAsync(finanzasApi.simular);
+  const reversion = useAsync(finanzasApi.revertir);
+  const cambio = useAsync(finanzasApi.cambiarAValorRazonable);
+  const [revertir, setRevertir] = useState(false);
+  const [deterioro, setDeterioro] = useState(false);
+  const { ejecutar: cargar } = historial;
+  useEffect(() => { cargar(idActivo); }, [idActivo, cargar]);
+
+  const h = historial.data;
+  const costo = h?.valoracion_costo?.es_activa ? h.valoracion_costo : null;
+  const ultimo = h?.calculos[0];
+  const refrescar = () => { cargar(idActivo); onCambio(); };
+
+  const pasarAValorRazonable = async () => {
+    if (await cambio.ejecutar(idActivo)) { pushToast('success', t('valor.cambio_ok')); refrescar(); }
+  };
+
+  // Los diálogos no se anidan: la acción reemplaza al detalle y al cerrarla vuelve a él.
+  if (revertir) {
+    return (
+      <MotivoModal
+        titulo={t('valor.revertir_titulo')} descripcion={t('valor.revertir_ayuda')} etiqueta={t('valor.motivo')} confirmar={t('valor.revertir')}
+        min={20} max={2000} peligro enviando={reversion.cargando} error={reversion.error}
+        onCerrar={() => setRevertir(false)}
+        onConfirmar={async (motivo) => {
+          if (await reversion.ejecutar(idActivo, motivo)) { setRevertir(false); pushToast('success', t('valor.revertido')); refrescar(); }
+        }}
+      />
+    );
+  }
+  if (deterioro) return <DeterioroModal idActivo={idActivo} onCerrar={() => setDeterioro(false)} onGuardado={() => { setDeterioro(false); refrescar(); }} />;
+
+  const magnitud = !h ? '' : h.activo.peso_kg ? `${formatoCantidad(h.activo.peso_kg)} kg`
+    : h.activo.cantidad_actual != null ? t('valor.individuos', { count: h.activo.cantidad_actual }) : t('valor.sin_magnitud');
+
+  return (
+    <ModalShell title={t('valor.detalle_titulo', { activo: identificador })} onClose={onCerrar} maxWidth={960}
+      footer={<Button variant="secondary" size="md" onClick={onCerrar}>{t('comun.cerrar')}</Button>}>
+      <ErrorApi error={historial.error ?? cambio.error} />
+      {!h && historial.cargando && <p style={SECUNDARIO}>{t('comun.cargando')}</p>}
+      {h && (
+        <>
+          <Datos filas={[
+            [t('col.especie'), h.activo.especie], [t('col.finca'), h.activo.finca],
+            [t('col.titular'), h.activo.razon_social ? `${h.activo.razon_social} · ${h.activo.numero_id_tributaria}` : t('valor.sin_titular')],
+            [t('col.magnitud'), magnitud],
+            [t('col.costo_adquisicion'), h.activo.costo_adquisicion ? formatoMoneda(h.activo.costo_adquisicion) : t('valor.sin_costo')],
+            [t('col.valor_libros'), costo ? formatoMoneda(costo.valor_contable_por_costo)
+              : ultimo ? formatoMoneda(ultimo.valor_neto) : t('valor.sin_calculo')],
+          ]} />
+
+          <div className="fin-acciones" style={{ marginTop: 'var(--s4)' }}>
+            <Button variant="secondary" size="sm" loading={simulacion.cargando} onClick={() => simulacion.ejecutar(idActivo)}>
+              <Calculator size={14} aria-hidden />{t('valor.simular')}
+            </Button>
+            {costo && puedeDeteriorar && <Button variant="secondary" size="sm" onClick={() => setDeterioro(true)}>{t('valor.registrar_deterioro')}</Button>}
+            {costo && puedeCambiarMetodo && (
+              <Button variant="secondary" size="sm" loading={cambio.cargando} onClick={pasarAValorRazonable}>{t('valor.pasar_vr')}</Button>
+            )}
+            {puedeRevertir && h.reconocimientos.some((r) => r.estado === 'CONFIRMADO') && (
+              <Button variant="danger" size="sm" onClick={() => { reversion.limpiar(); setRevertir(true); }}><Undo2 size={14} aria-hidden />{t('valor.revertir')}</Button>
+            )}
+          </div>
+
+          {simulacion.error && <Alert variant="error" title={simulacion.error.message} style={{ marginTop: 'var(--s3)' }} />}
+          {simulacion.data && (
+            <section style={{ ...PANEL, marginTop: 'var(--s4)' }} aria-label={t('valor.simulacion')}>
+              <h3 style={{ margin: '0 0 var(--s3)', fontSize: 'var(--fs-body-lg)' }}>{t('valor.simulacion')}</h3>
+              {!simulacion.data.es_valido && (
+                <Alert variant="warning" title={simulacion.data.mensaje ?? t(`motivo.${simulacion.data.motivo}`, { defaultValue: t('valor.simulacion_invalida') })} />
+              )}
+              {simulacion.data.calculo && (
+                <Datos filas={[
+                  [t('col.magnitud'), `${formatoCantidad(simulacion.data.calculo.magnitud)} ${simulacion.data.calculo.unidad_magnitud}`],
+                  [t('col.precio'), formatoMoneda(simulacion.data.calculo.precio_unitario)],
+                  [t('col.valor_bruto'), formatoMoneda(simulacion.data.calculo.valor_razonable_bruto)],
+                  [t('col.costo_transporte'), formatoMoneda(simulacion.data.calculo.costo_transporte)],
+                  [t('col.costo_comisiones'), formatoMoneda(simulacion.data.calculo.costo_comisiones)],
+                  [t('col.costo_impuestos'), formatoMoneda(simulacion.data.calculo.costo_impuestos_transaccion)],
+                  [t('col.valor_neto'), formatoMoneda(simulacion.data.calculo.valor_neto)],
+                ]} />
+              )}
+              <p style={{ ...SECUNDARIO, margin: 'var(--s3) 0 0' }}>{t('valor.simulacion_ayuda')}</p>
+            </section>
+          )}
+
+          {costo && (
+            <>
+              <Subtitulo>{t('valor.modelo_costo')}</Subtitulo>
+              <Alert variant="info" title={t('valor.modelo_costo_ayuda')} description={costo.razon_sin_mercado ?? undefined} style={{ marginBottom: 'var(--s3)' }} />
+              <Datos filas={[
+                [t('col.costo_base'), formatoMoneda(costo.costos_adquisicion)],
+                [t('col.vida_util'), costo.vida_util_meses ?? t('valor.sin_vida_util')],
+                [t('col.depreciacion'), formatoMoneda(costo.depreciacion_acumulada)], [t('col.deterioro'), formatoMoneda(costo.deterioro_acumulado)],
+                [t('col.valor_libros'), formatoMoneda(costo.valor_contable_por_costo)],
+              ]} />
+            </>
+          )}
+
+          <Subtitulo>{t('valor.mediciones')}</Subtitulo>
+          <p style={{ ...SECUNDARIO, margin: '0 0 var(--s3)' }}>{t('valor.mediciones_ayuda')}</p>
+          {h.mediciones.length === 0 ? <p style={SECUNDARIO}>{t('valor.sin_mediciones')}</p> : (
+            <ScrollRegion label={t('valor.mediciones')}>
+              <table style={TABLA}>
+                <thead>
+                  <tr>
+                    <th style={TH}>{t('col.fecha')}</th><th style={TH}>{t('col.origen')}</th><th style={TH_NUM}>{t('col.valor_anterior')}</th>
+                    <th style={TH_NUM}>{t('col.valor_actual')}</th><th style={TH_NUM}>{t('col.transformacion')}</th>
+                    <th style={TH_NUM}>{t('col.precio_mercado')}</th><th style={TH_NUM}>{t('col.variacion_total')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {h.mediciones.map((m) => (
+                    <tr key={m.id_medicion_posterior}>
+                      <td style={TD}>{formatoFecha(m.fecha_medicion, true)}{m.tiene_valor_estimado && <span className="fin-secundario">{t('valor.estimado')}</span>}</td>
+                      <td style={TD}>{t(`origen_medicion.${m.origen_medicion}`, { defaultValue: t('origen_medicion.EVENTO') })}</td>
+                      <td style={TD_NUM}>{formatoMoneda(m.valor_razonable_anterior)}</td>
+                      <td style={TD_NUM}>{formatoMoneda(m.valor_razonable_actual)}</td>
+                      <td style={TD_NUM}><Variacion valor={m.ganancia_perdida_transformacion} /></td>
+                      <td style={TD_NUM}><Variacion valor={m.ganancia_perdida_precio_mercado} /></td>
+                      <td style={TD_NUM}><Variacion valor={m.variacion_total} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ScrollRegion>
+          )}
+
+          <Subtitulo>{t('valor.lineas')}</Subtitulo>
+          {h.lineas.length === 0 ? <p style={SECUNDARIO}>{t('valor.sin_lineas')}</p> : (
+            <ScrollRegion label={t('valor.lineas')}>
+              <table style={TABLA}>
+                <thead>
+                  <tr>
+                    <th style={TH}>{t('col.fecha')}</th><th style={TH}>{t('col.tipo_hecho')}</th><th style={TH}>{t('col.sentido')}</th>
+                    <th style={TH_NUM}>{t('col.valor')}</th><th style={TH}>{t('col.cuentas')}</th><th style={TH}>{t('col.estado')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {h.lineas.map((l) => (
+                    <tr key={l.id_linea_asiento_nic41}>
+                      <td style={TD}>{formatoFecha(l.fecha_hecho)}</td>
+                      <td style={TD}>{t(`hecho.${l.tipo_hecho}`)}{l.es_reverso && <span className="fin-secundario">{t('valor.reverso')}</span>}</td>
+                      <td style={TD}>{t(`sentido.${l.sentido}`)}</td>
+                      <td style={TD_NUM}>{formatoMoneda(l.valor)}</td>
+                      <td style={TD}>{l.cuenta_debito && l.cuenta_credito
+                        ? <span className="fin-mono">{l.cuenta_debito} / {l.cuenta_credito}</span> : t('valor.sin_cuenta')}</td>
+                      <td style={TD}><EstadoBadge estado={l.estado} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ScrollRegion>
+          )}
+        </>
+      )}
+    </ModalShell>
+  );
+}
+
+function DeterioroModal({ idActivo, onCerrar, onGuardado }: { idActivo: number; onCerrar: () => void; onGuardado: () => void }) {
+  const { t } = useT('finanzas');
+  const registro = useAsync(finanzasApi.registrarDeterioro);
+  const eventos = useAsync(finanzasApi.eventosSanitarios);
+  const { ejecutar: cargarEventos } = eventos;
+  useEffect(() => { cargarEventos(idActivo); }, [idActivo, cargarEventos]);
+  const [evento, setEvento] = useState('');
+  const [impacto, setImpacto] = useState('');
+  const [justificacion, setJustificacion] = useState('');
+  const [aviso, setAviso] = useState<string>();
+
+  const guardar = async () => {
+    const monto = decimalPositivo(impacto);
+    if (!evento || !monto || justificacion.trim().length < 30) { setAviso(t('valor.deterioro_incompleto')); return; }
+    setAviso(undefined);
+    if (await registro.ejecutar(idActivo, { id_evento_sanitario: Number(evento), impacto_economico_cop: monto, justificacion: justificacion.trim() })) {
+      pushToast('success', t('valor.deterioro_ok'));
+      onGuardado();
+    }
+  };
+
+  return (
+    <ModalShell title={t('valor.registrar_deterioro')} onClose={onCerrar} maxWidth={520}
+      footer={(
+        <>
+          <Button variant="secondary" size="md" onClick={onCerrar} disabled={registro.cargando}>{t('comun.cancelar')}</Button>
+          <Button variant="primary" size="md" loading={registro.cargando} onClick={guardar}>{t('comun.guardar')}</Button>
+        </>
+      )}>
+      <p style={{ ...SECUNDARIO, margin: '0 0 var(--s4)' }}>{t('valor.deterioro_ayuda')}</p>
+      <ErrorApi error={registro.error ?? eventos.error} />
+      {aviso && <Alert variant="error" title={aviso} style={{ marginBottom: 'var(--s3)' }} />}
+      <div style={{ display: 'grid', gap: 'var(--s4)' }}>
+        <Select id="det-evento" label={t('valor.evento_sanitario')} required value={evento} onChange={(e) => setEvento(e.target.value)}
+          disabled={eventos.cargando || (eventos.data ?? []).length === 0}
+          hint={!eventos.cargando && (eventos.data ?? []).length === 0 ? t('valor.sin_eventos_sanitarios') : t('valor.evento_sanitario_ayuda')}>
+          <option value="">{eventos.cargando ? t('comun.cargando') : t('comun.elegir')}</option>
+          {(eventos.data ?? []).map((ev) => (
+            <option key={ev.id_evento} value={ev.id_evento}>
+              {[formatoFecha(ev.fecha), t(`tipo_sanitario.${ev.tipo}`, { defaultValue: t('tipo_sanitario.DIAGNOSTICO') }), ev.diagnostico].filter(Boolean).join(' · ')}
+            </option>
+          ))}
+        </Select>
+        <Input id="det-impacto" label={t('valor.impacto')} required inputMode="decimal" value={impacto} onChange={(e) => setImpacto(e.target.value)} />
+        <AreaTexto id="det-justificacion" label={t('valor.justificacion')} required maxLength={2000} value={justificacion}
+          onChange={(e) => setJustificacion(e.target.value)} hint={t('comun.minimo', { n: 30 })} />
+      </div>
+    </ModalShell>
+  );
+}

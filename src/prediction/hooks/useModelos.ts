@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: intentos de registro rechazados que quedan en la bitácora M04 |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 N-02: transiciones del modelo sin consultas ni repetidos |
+// | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
 import { useState, useCallback } from 'react';
 import { modelosApi } from '../api/modelosApi';
 import { auditoriaApi } from '../api/auditoriaApi';
@@ -86,6 +87,7 @@ export function useModelos() {
               nombre_version: c.nombre_version,
               tipo_modelo: c.tipo_modelo as VersionModeloResponse['tipo_modelo'],
               paradigma: null, componente: null, metricas_poblacionales: null,
+              id_activo_biologico: null, fuente_datos: null,
               estado_version: c.estado_version as VersionModeloResponse['estado_version'],
               formato_artefacto: null, tamanio_artefacto_bytes: null, hash_artefacto_sha256: null,
               dataset_entrenamiento_hash: null, id_proceso_rf71: null, version_referencia: null,
@@ -131,11 +133,12 @@ export function useModelos() {
     }
   }, []);
 
-  const activar = useCallback(async (id: number): Promise<VersionModeloResponse | null> => {
+  /** Activa la versión, o con ``enSombra`` la pone en SOMBRA (RFC-010). */
+  const activar = useCallback(async (id: number, enSombra = false): Promise<VersionModeloResponse | null> => {
     setSaving(true);
     setSaveError(null);
     try {
-      const actualizado = await modelosApi.activar(id);
+      const actualizado = await (enSombra ? modelosApi.ponerEnSombra(id) : modelosApi.activar(id));
       setModelos((prev) => prev.map((m) => (m.id_version_modelo === id ? actualizado : m)));
       return actualizado;
     } catch (e) {

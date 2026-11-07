@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/T-19/T-23 RF-70: equipo por nombre, modo con etiqueta y tarjetas en celular |
 import React from 'react';
 import { CheckCircle2, Clock, Loader2, OctagonX } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -45,7 +46,7 @@ interface Props {
 export function DistribucionOtaProgreso({ distribucion, componentesPorNodo, dispositivos, versiones }: Props) {
   const { t } = useT('prediction');
   const fases = estadoDeFases(distribucion);
-  const serial = (id: number) => dispositivos.find((d) => d.id_dispositivo_iot === id)?.serial ?? `#${id}`;
+  const serial = (id: number) => { const e = dispositivos.find((d) => d.id_dispositivo_iot === id); return e?.descripcion || e?.serial || `#${id}`; };
   const nombreVersion = (id: number) => versiones.find((v) => v.id_version_modelo === id)?.nombre_version ?? `v${id}`;
   const columnas = distribucion.componente ? COMPONENTES : [...COMPONENTES, COMPONENTE_COMPLETO];
 

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo                                                        |
 // |------------|----------|--------------------------------------------------------------------|
 // | 2026-10-29 | Arekkazu | INC-M03-82-G192 RF-62: política de visión configurable desde M09   |
+// | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: mismo contrato para la ventana de retroalimentación |
 import { http } from '../../shared/api/http';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -16,7 +17,6 @@ export interface ParametroPolitica {
   rango_maximo: number | string | null;
 }
 
-const BASE = '/configuracion/politica-vision';
 
 /** Una respuesta que no es la lista de parámetros no debe romper la pestaña Sistema. */
 function lista(data: unknown): ParametroPolitica[] {
@@ -26,11 +26,20 @@ function lista(data: unknown): ParametroPolitica[] {
   return data as ParametroPolitica[];
 }
 
-export const politicaVisionApi = {
-  async obtener(): Promise<ParametroPolitica[]> {
-    return lista((await http.get<unknown>(BASE)).data);
-  },
-  async actualizar(parametros: Record<string, number>): Promise<ParametroPolitica[]> {
-    return lista((await http.patch<unknown>(BASE, { parametros })).data);
-  },
-};
+/** GET/PATCH de un grupo de parámetros DEV-14 administrados desde M09. */
+export function parametrosApi(base: string) {
+  return {
+    async obtener(): Promise<ParametroPolitica[]> {
+      return lista((await http.get<unknown>(base)).data);
+    },
+    async actualizar(parametros: Record<string, number>): Promise<ParametroPolitica[]> {
+      return lista((await http.patch<unknown>(base, { parametros })).data);
+    },
+  };
+}
+
+export type ParametrosApi = ReturnType<typeof parametrosApi>;
+
+export const politicaVisionApi = parametrosApi('/configuracion/politica-vision');
+/** RF-72: ventana_retroalimentacion_dias (7 a 365). */
+export const ventanaRetroalimentacionApi = parametrosApi('/configuracion/parametros-retroalimentacion');

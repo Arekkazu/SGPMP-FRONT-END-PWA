@@ -5,6 +5,19 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/M4-02: nombre del usuario en auditoría, de variables y de especie en patologías |
 // | 2026-10-29 | Arekkazu | TC-DIS-195 RF-73: columna ID de evento y filtros por actor y tipo de modelo |
 // | 2026-10-29 | Arekkazu | QA-M04-27-10 / PEND-456 RF-54/66/68/70: nombres de versión, buffer, inferencias y contagio reales |
+// | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: ampliación de la ventana para un resultado |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-05 RF-70: solo equipos compatibles con el tipo de modelo de la versión |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
+// | 2026-10-31 | Arekkazu | RF-71: estado de datos para reentrenar los modelos individuales |
+// | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
+// | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
+// | 2026-11-02 | Arekkazu | AJF-13 RF-73: entidad_referencia y nombre_referencia en la bitácora |
+// | 2026-11-02 | Arekkazu | AJF-10 RF-66: monitor paginado y filtros nuevos |
+// | 2026-11-02 | Arekkazu | AJF-14 RF-71: solicitud por animal y procesos de reentrenamiento |
+// | 2026-11-03 | Arekkazu | RF-72: bandeja de inferencias por evaluar (antes datos de ejemplo) |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU01 H-16 RF-64: filtro nombre del listado de patologías |
+// | 2026-11-03 | Arekkazu | QA-M04 RF-69: el animal de la versión por su identificador, no «Animal #49» |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -14,6 +27,7 @@
 //  - Decimal del backend → number | null.  datetime/date/UUID → string.
 //  - Uniones const en MAYÚSCULAS para los enums del dominio.
 // =====================================================================
+import i18n from '../shared/i18n';
 
 // ── Enums (uniones const) ────────────────────────────────────────────
 /** RFC-009: eje tipo de manejo (6 modelos en 3 paradigmas), ya no tamaño del animal. */
@@ -30,7 +44,10 @@ export type Componente = 'DETECTOR' | 'SEGUIMIENTO' | 'METRICAS' | 'ANOMALIAS';
 export type ModoEjecucion = 'EDGE' | 'SERVIDOR' | 'HIBRIDO';
 
 export type EstadoVersion =
-  | 'EN_VALIDACION' | 'APROBADO' | 'RECHAZADO' | 'ACTIVO' | 'DEPRECADO';
+  | 'EN_VALIDACION' | 'APROBADO' | 'RECHAZADO' | 'SOMBRA' | 'ACTIVO' | 'DEPRECADO';
+
+/** RFC-010: de dónde salen los datos de entrenamiento. Un modelo SINTETICA solo corre en SOMBRA. */
+export type FuenteDatos = 'REAL' | 'SINTETICA' | 'EXTERNA' | 'MIXTA';
 
 export type EstadoOta =
   | 'EXITOSO' | 'FALLIDO' | 'PENDIENTE' | 'SIN_CAMBIOS' | 'EN_PROCESO';
@@ -79,6 +96,12 @@ export const TIPOS_MODELO_ASIGNABLES = TIPOS_MODELO.filter((t) => PARADIGMA_POR_
 
 export const COMPONENTES: Componente[] = ['DETECTOR', 'SEGUIMIENTO', 'METRICAS', 'ANOMALIAS'];
 
+/** T-19: «Métricas», no «METRICAS». Un componente fuera del catálogo se muestra tal cual. */
+export function etiquetaComponente(componente: string | null | undefined): string {
+  if (!componente) return '';
+  return COMPONENTES.includes(componente as Componente) ? i18n.t(`prediction:componentes.${componente}`) : componente;
+}
+
 // =====================================================================
 // RF-64 · Catálogo de Patologías — /prediccion/patologias (recurso 18)
 // =====================================================================
@@ -115,6 +138,8 @@ export interface ListarPatologiasFiltros {
   especie_aplicable?: string;
   solo_activas?: boolean;
   solo_base?: boolean;
+  /** Fragmento del nombre, sin distinguir mayúsculas. */
+  nombre?: string;
 }
 
 export interface RegistrarPatologiaDTO {
@@ -268,6 +293,12 @@ export interface VersionModeloResponse {
   componente: Componente | null;
   /** POBLACIONAL: calibracion_completada, tasa_falsos_positivos_rutina, tasa_deteccion_eventos_clinicos. */
   metricas_poblacionales: Record<string, number | boolean> | null;
+  /** RFC-010: animal del modelo INDIVIDUAL (uno por animal); null en POBLACIONAL y META. */
+  id_activo_biologico: number | null;
+  /** Identificador del animal («BOV-001»); null si no se pudo leer. */
+  identificador_activo?: string | null;
+  /** RFC-010; null solo en versiones leídas de la caché. */
+  fuente_datos: FuenteDatos | null;
   estado_version: EstadoVersion;
   formato_artefacto: string | null;
   tamanio_artefacto_bytes: number | null;
@@ -339,6 +370,12 @@ export interface InferenciaMonitorResponse {
   fecha_inferencia: string;
   tiene_alerta_generada: boolean;
   id_alerta_generada: number | null;
+  /** T-18: nombre de cada patología de `probabilidad_enfermedad`, por su id (backend). */
+  nombres_patologias?: Record<string, string> | null;
+  /** AJF-10: inferencia de prueba (modelo en sombra): no genera alertas. */
+  modo_sombra?: boolean;
+  /** Área actual del activo: con ella se pide lo que ve su cámara. */
+  id_infraestructura?: number | null;
 }
 
 /** RF-68: un cálculo de riesgo de contagio de un lote (GET /prediccion/riesgo-contagio). */
@@ -368,6 +405,7 @@ export interface RiesgoContagioMonitorResponse {
   fecha_calculo: string;
   id_alerta_generada: number | null;
   detalle_calculo: Record<string, unknown> | null;
+  id_infraestructura?: number | null;
 }
 
 export interface DespliegueOtaResponse {
@@ -377,6 +415,8 @@ export interface DespliegueOtaResponse {
   nombre_version?: string | null;
   nombre_version_anterior?: string | null;
   id_dispositivo_iot: number;
+  /** T-18: descripción o serial del equipo (backend). */
+  nombre_dispositivo?: string | null;
   tipo_modelo: TipoModelo;
   paradigma: Paradigma | null;
   componente: Componente | null;
@@ -453,6 +493,8 @@ export interface DispositivoObjetivoOta {
   es_activo: boolean;
   /** M4-05: SENSOR | CAMARA, para filtrar los 373 equipos del paso 3. */
   categoria?: string | null;
+  /** M4-05: área del equipo, para reconocerlo sin el serial. */
+  nombre_infraestructura?: string | null;
 }
 
 export interface OtaStatusResponse {
@@ -484,6 +526,21 @@ export interface RegistrarRetroalimentacionDTO {
   diagnosticos_reales?: number[] | null;
   observaciones_clinicas?: string | null;
   fuente_diagnostico?: FuenteDiagnostico | null;
+}
+
+/** RF-72: excepción del Administrador a la ventana para un resultado (POST /prediccion/retroalimentacion/ampliaciones). */
+export interface AmpliarVentanaRetroDTO {
+  id_resultado_inferencia: string;
+  dias_habilitados: number;    // 1–365, desde hoy
+  justificacion: string;       // 10–1000 caracteres, queda en RF-73
+}
+
+export interface AmpliacionVentanaRetroResponse {
+  id_ampliacion_ventana_retroalimentacion: number;
+  id_resultado_inferencia: string;
+  fecha_limite: string;
+  justificacion: string;
+  id_usuario_autorizador: number;
 }
 
 export interface RetroalimentacionClinicaResponse {
@@ -521,6 +578,8 @@ export interface EventoAuditoriaM04Response {
   id_sistema: string | null;
   id_referencia: string | null;
   entidad_referencia: string | null;
+  /** AJF-13: código del animal, nombre de la versión o de la patología, si el backend lo resolvió. */
+  nombre_referencia?: string | null;
   resultado_operacion: string | null;
   codigo_error: string | null;
   descripcion_error: string | null;
@@ -544,6 +603,8 @@ export interface ListarAuditoriaFiltros {
   id_usuario?: number;
   id_sistema?: string;
   id_referencia?: string;
+  /** AJF-13: activo_biologico (incluye lotes) | version_modelo | patologia | configuracion_motor_ia. */
+  entidad_referencia?: string;
   severidad_evento?: string;
   tipo_modelo?: string;
   pagina?: number;
@@ -566,4 +627,120 @@ export interface ActivoSelectorItem {
   nombre_especie: string | null;
   /** M4-03: para ofrecer solo diagnósticos de su especie. */
   id_especie?: number | null;
+}
+
+/** GET /prediccion/modelos/reentrenamiento (RF-71). */
+export interface EstadoReentrenamiento {
+  tipo_modelo: TipoModelo;
+  /** Resultados con retroalimentación RF-72 desde la última versión del modelo. */
+  registros_nuevos: number;
+  desde: string | null;
+  estado: 'INSUFICIENTE' | 'PUEDE_SOLICITARSE' | 'LISTO';
+  /** Para el siguiente estado; 0 si está LISTO. */
+  faltan: number;
+  minimo_solicitud: number;
+  minimo_reentrenamiento: number;
+}
+
+/** AJF-10: totales del periodo filtrado (no solo de la página). */
+export interface IndicadoresInferencias {
+  total: number;
+  en_riesgo: number;
+  con_alerta: number;
+  animales_distintos: number;
+}
+
+/** AJF-10: `GET /prediccion/inferencias/paginado`. */
+export interface InferenciasPaginadasResponse {
+  items: InferenciaMonitorResponse[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+  indicadores: IndicadoresInferencias;
+}
+
+// =====================================================================
+// AJF-14 · Procesos de reentrenamiento (RF-71) — /prediccion/modelos/reentrenamiento/procesos
+// =====================================================================
+export type EstadoProcesoReentrenamiento = 'PENDIENTE' | 'EN_CURSO' | 'COMPLETADO' | 'FALLIDO' | 'INTERRUMPIDO' | 'CANCELADO';
+export const FASES_REENTRENAMIENTO = ['ACTIVACION', 'DATASET', 'PREPROCESAMIENTO', 'ENTRENAMIENTO', 'METRICAS', 'ENTREGA', 'CIERRE'] as const;
+
+export interface FaseProcesoReentrenamiento {
+  fase: number;
+  nombre: typeof FASES_REENTRENAMIENTO[number];
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  /** null = en curso o sin empezar; OK | FALLIDA | INTERRUMPIDA. */
+  resultado: 'OK' | 'FALLIDA' | 'INTERRUMPIDA' | null;
+}
+
+export interface ProcesoReentrenamientoResponse {
+  id_proceso_reentrenamiento: string;
+  tipo_modelo: TipoModelo;
+  id_activo_biologico: number;
+  identificador_activo: string | null;
+  nombre_especie: string | null;
+  disparador: 'MANUAL' | 'PROGRAMADO' | 'DEGRADACION';
+  modo_generacion: string;
+  estado: EstadoProcesoReentrenamiento;
+  fase_actual: number;
+  fases: FaseProcesoReentrenamiento[];
+  porcentaje_progreso: number;
+  porcentaje_cpu: number | string | null;
+  memoria_ram_mb: number | null;
+  codigo_error: string | null;
+  motivos: unknown[] | null;
+  id_version_modelo_resultante: number | null;
+  nombre_version_resultante: string | null;
+  fecha_solicitud: string;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  fecha_ultimo_latido: string | null;
+}
+
+export interface ListaProcesosReentrenamiento {
+  items: ProcesoReentrenamientoResponse[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+}
+
+// ─── RF-72: bandeja de retroalimentación ─────────────────────────────────────
+export type EstadoEvaluacion = 'PENDIENTE' | 'EVALUADO' | 'VENTANA_VENCIDA';
+
+/** GET /prediccion/retroalimentacion/bandeja: una inferencia que el veterinario puede evaluar. */
+export interface InferenciaPorEvaluar {
+  id_resultado_inferencia: string;
+  id_activo_biologico: number;
+  identificador_activo: string | null;
+  especie: string | null;
+  nombre_finca: string | null;
+  nombre_area: string | null;
+  nivel_riesgo: number;
+  id_patologia: number | null;
+  nombre_patologia: string | null;
+  confianza_global: string | number;
+  fecha_inferencia: string;
+  tiene_alerta_generada: boolean;
+  modo_sombra: boolean;
+  estado_evaluacion: EstadoEvaluacion;
+  fecha_limite: string;
+  numero_evaluaciones: number;
+  evaluada_por_mi: boolean;
+  activo_en_baja: boolean;
+  puede_evaluar: boolean;
+}
+
+export interface BandejaRetroalimentacionResponse {
+  items: InferenciaPorEvaluar[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+  ventana_dias: number;
+  indicadores: { pendientes: number; evaluadas: number; vencidas: number };
+}
+
+export interface FiltrosBandejaRetro {
+  estado_evaluacion?: EstadoEvaluacion;
+  nivel_riesgo?: number;
 }

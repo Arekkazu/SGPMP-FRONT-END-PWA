@@ -1,3 +1,6 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-11-03 | Arekkazu | Variante compacta para filas de filtros (alineada con los select) | */
 /* Combobox: hereda .ds-field__input (estados y foco) y agrega el botón de la
    flecha y la lista. */
 
@@ -82,4 +85,33 @@
   font-family: var(--font-sans);
   font-size: var(--fs-body-md);
   color: var(--text-secondary);
+}
+
+/* Variante compacta: en una fila de filtros el combobox se ve como los select de
+   al lado (tableStyles LABEL/INPUT): rótulo en mayúsculas de 11px y 38px de alto. */
+.ds-field--compacto {
+  gap: var(--s1);
+}
+
+.ds-field--compacto .ds-field__label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ds-field--compacto .ds-field__input {
+  min-height: 0;
+  height: 38px;
+  padding: var(--s2) 36px var(--s2) var(--s3);
+  font-size: 13px;
+}
+
+.ds-field--compacto .ds-combobox__toggle {
+  width: 36px;
+}
+
+.ds-field--compacto .ds-combobox__toggle svg {
+  width: 16px;
+  height: 16px;
 }

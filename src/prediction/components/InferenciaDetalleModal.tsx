@@ -2,10 +2,15 @@
 // |------------|----------|-------------|
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-66: detalle de inferencia por área o por activo con trazabilidad |
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66: tipos desde lib/inferencias (datos reales); paquete opcional |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
+// | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
+// | 2026-11-02 | Arekkazu | RF-66: trazabilidad con el nombre de cada paso y según el origen (sensor o cámara) |
 import React from 'react';
 import { Info } from 'lucide-react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { ModalShell } from './ModalShell';
+import { CapturaCamara } from './CapturaCamara';
 import { Pill, type Tono } from './Pill';
 import { ProbBar } from './ProbBar';
 import { nivelRiesgoTono } from '../lib/riesgo';
@@ -28,7 +33,9 @@ export function InferenciaDetalleModal({ inf, onClose }: { inf: Inferencia; onCl
   const { t } = useT('prediction');
   const poblacional = PARADIGMA_POR_TIPO[inf.tipoModelo] === 'POBLACIONAL';
   const na = <span style={{ color: 'var(--text-muted)' }}>{t('monitor.no_aplica')}</span>;
-  const cadena = [t('monitor.traza_sensor'), 'RF-53', inf.eventoEdge ? `RF-55 · ${inf.eventoEdge}` : 'RF-55', inf.paquete ? `RF-56 · ${inf.paquete}` : 'RF-56', `RF-66 · ${inf.id}`, inf.alerta ? `RF-57 · ${inf.alerta}` : null].filter(Boolean) as string[];
+  // Los datos de la cámara no pasan por el Edge de sensores ni por el paquete de envío.
+  const pasos = poblacional ? ['traza_camara', 'traza_ventana', 'traza_calidad'] : ['traza_sensor', 'traza_lectura', 'traza_edge', 'traza_envio'];
+  const cadena = [...pasos.map((k) => t(`monitor.${k}`)), t('monitor.traza_resultado', { id: inf.id }), inf.alerta ? t('monitor.traza_alerta', { id: inf.alerta }) : null].filter(Boolean) as string[];
 
   return (
     <ModalShell title={`${t('monitor.detalle_titulo')} · ${inf.unidad}`} onClose={onClose} maxWidth={640}>
@@ -42,7 +49,7 @@ export function InferenciaDetalleModal({ inf, onClose }: { inf: Inferencia; onCl
           <Campo rotulo={t('monitor.enfermedad')}>{poblacional ? na : inf.enfermedad ?? '—'}</Campo>
           <Campo rotulo={poblacional ? t('monitor.score_anomalia') : t('monitor.confianza')}>
             <span style={{ fontFamily: 'var(--font-mono)' }}>
-              {poblacional ? (inf.score != null ? `${inf.score.toFixed(2)} / ${inf.umbralScore?.toFixed(2)}` : '—') : inf.confianza != null ? `${Math.round(inf.confianza * 100)}%` : '—'}
+              {poblacional ? (inf.score != null ? `${formatearNumero(inf.score, { maximumFractionDigits: 2 })} / ${inf.umbralScore ? formatearNumero(inf.umbralScore, { maximumFractionDigits: 2 }) : t('estadosanitario.sin_umbral_corto')}` : '—') : inf.confianza != null ? `${Math.round(inf.confianza * 100)}%` : '—'}
             </span>
           </Campo>
           <Campo rotulo={t('monitor.latencia')}><span style={{ fontFamily: 'var(--font-mono)', color: (inf.latenciaMs ?? 0) > 2000 ? 'var(--sem-warning)' : undefined }}>{inf.latenciaMs != null ? `${inf.latenciaMs} ms` : '—'}</span></Campo>
@@ -57,6 +64,8 @@ export function InferenciaDetalleModal({ inf, onClose }: { inf: Inferencia; onCl
             <Info size={16} aria-hidden style={{ color: 'var(--sem-info)', flexShrink: 0, marginTop: 1 }} /><span>{inf.nota}</span>
           </div>
         )}
+
+        {poblacional && <CapturaCamara idArea={inf.idArea} ventanaFin={inf.finVentana ?? undefined} />}
 
         {inf.distRiesgo && (
           <section>

@@ -5,7 +5,10 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-09: tipo de modelo vacío se lee "Sin tipo" |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-05 RF-70: buscador y filtro por categoría en el paso de dispositivos |
-import React, { useMemo, useState } from 'react';
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-05 RF-70: solo equipos compatibles con el tipo de modelo de la versión |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
+import React, { useEffect, useMemo, useState } from 'react';
+import { formatearNumero } from '../../shared/i18n/formato';
 import { Send, ChevronLeft, ChevronRight, PackageX } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
 import { Button } from '../../shared/design-system/Button';
@@ -32,12 +35,15 @@ import {
   type DispositivoObjetivoOta,
   type TipoModelo,
   type VersionModeloResponse,
+  etiquetaComponente,
   etiquetaTipoModelo,
 } from '../types';
 
 interface Props {
   versiones: VersionModeloResponse[];
   dispositivos: DispositivoObjetivoOta[];
+  /** M4-05: se llama con el tipo de modelo de la versión elegida para cargar sus equipos. */
+  onTipoModelo: (tipoModelo: string | null) => void;
   lanzando: boolean;
   lanzarError: ApiError | null;
   online: boolean;
@@ -67,7 +73,7 @@ const AYUDA: React.CSSProperties = { display: 'block', marginTop: 'var(--s1)', f
  * RF-70 (FE-01b, D6): el Administrador lanza una distribución OTA. El orden en que
  * se marcan los dispositivos decide el rollout: el primero es el canary.
  */
-export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, lanzarError, online, onLanzar, onClose }: Props) {
+export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, lanzarError, online, onLanzar, onClose, onTipoModelo }: Props) {
   const { t } = useT('prediction');
   const [form, setForm] = useState<FormDistribucion>(FORM_DISTRIBUCION_INICIAL);
   const [tocados, setTocados] = useState<Partial<Record<keyof FormDistribucion, boolean>>>({});
@@ -90,12 +96,22 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
   const poblacional = tipo !== '' && PARADIGMA_POR_TIPO[tipo] === 'POBLACIONAL';
   const candidatas = versiones.filter((v) => (!tipo || v.tipo_modelo === tipo) && (!poblacional || !componente || v.componente === componente));
   const elegida = versiones.find((v) => String(v.id_version_modelo) === form.idVersion);
+  // M4-05: cambiar de versión trae los equipos compatibles con su tipo de modelo y
+  // suelta los marcados que ya no lo son.
+  const tipoElegido = elegida?.tipo_modelo ?? null;
+  useEffect(() => { onTipoModelo(tipoElegido); }, [tipoElegido, onTipoModelo]);
+  useEffect(() => {
+    setForm((f) => {
+      const validos = f.dispositivos.filter((id) => dispositivos.some((d) => d.id_dispositivo_iot === id));
+      return validos.length === f.dispositivos.length ? f : { ...f, dispositivos: validos };
+    });
+  }, [dispositivos]);
   // M4-05: eran 373 equipos de todas las fincas sin forma de encontrar uno. Buscador
   // y filtro por categoría; "Seleccionar todos" toma solo los que se están viendo.
   const [categoria, setCategoria] = useState('');
   const categorias = useMemo(() => [...new Set(dispositivos.map((d) => d.categoria).filter(Boolean))] as string[], [dispositivos]);
   const porCategoria = useMemo(() => (categoria ? dispositivos.filter((d) => d.categoria === categoria) : dispositivos), [dispositivos, categoria]);
-  const { consulta, setConsulta, filtrados: visibles } = useBusqueda(porCategoria, (d) => `${d.serial} ${d.descripcion ?? ''}`);
+  const { consulta, setConsulta, filtrados: visibles } = useBusqueda(porCategoria, (d) => `${d.serial} ${d.descripcion ?? ''} ${d.nombre_infraestructura ?? ''}`);
   const habilitados = visibles.filter((d) => d.es_activo);
 
   /** Marca los campos del paso; si alguno tiene error no avanza. */
@@ -162,7 +178,7 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
                   <label style={LABEL} htmlFor="ota-form-componente">{t('distribucionform.componente')}</label>
                   <select id="ota-form-componente" style={INPUT} value={componente} onChange={(e) => { setComponente(e.target.value); set('idVersion', ''); }}>
                     <option value="">{t('distribucionform.todos_los_componentes')}</option>
-                    {COMPONENTES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    {COMPONENTES.map((c) => <option key={c} value={c}>{etiquetaComponente(c)}</option>)}
                   </select>
                   <span style={AYUDA}>{t('distribucionform.componente_ayuda')}</span>
                 </div>
@@ -179,7 +195,7 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
                 <option value="">{t('distribucionform.elige_version')}</option>
                 {candidatas.map((v) => (
                   <option key={v.id_version_modelo} value={v.id_version_modelo}>
-                    {`${v.nombre_version} · ${etiquetaTipoModelo(v.tipo_modelo)}${v.componente ? ` · ${v.componente}` : ''} · ${t(v.estado_version === 'APROBADO' ? 'distribucionform.estado_aprobado' : 'distribucionform.estado_activo')}`}
+                    {`${v.nombre_version} · ${etiquetaTipoModelo(v.tipo_modelo)}${v.componente ? ` · ${etiquetaComponente(v.componente)}` : ''} · ${t(v.estado_version === 'APROBADO' ? 'distribucionform.estado_aprobado' : 'distribucionform.estado_activo')}`}
                   </option>
                 ))}
               </select>
@@ -189,10 +205,10 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
             {elegida && (
               <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--s3)', margin: 0, padding: 'var(--s4)', background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', fontSize: '12px' }}>
                 {[
-                  [t('distribucionform.info_tipo'), `${etiquetaTipoModelo(elegida.tipo_modelo)}${elegida.componente ? ` · ${elegida.componente}` : ''}`],
+                  [t('distribucionform.info_tipo'), `${etiquetaTipoModelo(elegida.tipo_modelo)}${elegida.componente ? ` · ${etiquetaComponente(elegida.componente)}` : ''}`],
                   [t('distribucionform.info_estado'), elegida.estado_version],
                   [t('distribucionform.info_formato'), elegida.formato_artefacto ?? '—'],
-                  [t('distribucionform.info_tamano'), elegida.tamanio_artefacto_bytes ? `${(elegida.tamanio_artefacto_bytes / 1_048_576).toFixed(1)} MB` : '—'],
+                  [t('distribucionform.info_tamano'), elegida.tamanio_artefacto_bytes ? `${formatearNumero(elegida.tamanio_artefacto_bytes / 1_048_576, { maximumFractionDigits: 1 })} MB` : '—'],
                 ].map(([k, v]) => (
                   <div key={k}><dt style={{ color: 'var(--text-muted)' }}>{k}</dt><dd style={{ margin: 0, color: 'var(--text-primary)', fontWeight: 600 }}>{v}</dd></div>
                 ))}
@@ -289,6 +305,7 @@ export function DistribucionOtaFormModal({ versiones, dispositivos, lanzando, la
                     {/* Descripción primero; el serial (hasta 45 caracteres) se parte y no desborda el modal. */}
                     <span style={{ minWidth: 0 }}>
                       <span style={{ display: 'block', fontWeight: 600 }}>{d.descripcion || d.serial}</span>
+                      {d.nombre_infraestructura && <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)' }}>{d.nombre_infraestructura}</span>}
                       {d.descripcion && <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{d.serial}</span>}
                     </span>
                     {d.categoria && <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t(`distribucionform.categoria_${d.categoria}`, { defaultValue: d.categoria })}</span>}

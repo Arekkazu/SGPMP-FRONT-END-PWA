@@ -1,0 +1,266 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-11-05 | Arekkazu | M06 prototipos: período global, indicadores, barra de filtros y pie de tabla | */
+
+/* Período contable de todo el módulo (en el prototipo vive en la barra superior). */
+.fin-periodo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--s3);
+  padding: var(--s3) var(--page-pad);
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-card);
+}
+
+.fin-periodo__campo {
+  flex: 0 1 360px;
+  min-width: 0;
+}
+
+.fin-contenido {
+  padding: var(--page-pad);
+}
+
+/* Indicadores: tarjeta con acento lateral. El acento acompaña al texto, nunca lo reemplaza (WCAG 1.4.1). */
+.fin-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--s4);
+  margin: 0 0 var(--s5);
+}
+
+.fin-kpi {
+  --fin-tono: var(--neutral-450);
+  min-width: 0;
+  padding: var(--s4) var(--s5);
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-left: 4px solid var(--fin-tono);
+  border-radius: var(--r-lg);
+}
+
+.fin-kpi--success { --fin-tono: var(--sem-success); }
+.fin-kpi--warning { --fin-tono: var(--sem-warning); }
+.fin-kpi--error { --fin-tono: var(--sem-error); }
+.fin-kpi--info { --fin-tono: var(--sem-info); }
+
+.fin-kpi__etiqueta {
+  margin: 0;
+  font-size: var(--fs-label-sm);
+  font-weight: 700;
+  letter-spacing: var(--ls-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.fin-kpi__valor {
+  margin: var(--s2) 0 0;
+  font-size: var(--fs-heading-md);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.fin-kpi__detalle {
+  margin: var(--s1) 0 0;
+  font-size: var(--fs-body-sm);
+  color: var(--text-secondary);
+}
+
+.fin-avisos {
+  display: grid;
+  gap: var(--s3);
+  margin-bottom: var(--s5);
+}
+
+/* Listado: barra de búsqueda y filtros, tabla y pie en un mismo panel. */
+.fin-listado {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.fin-listado__titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s4) var(--s5) 0;
+}
+
+.fin-listado__titulo h2 {
+  margin: 0;
+  font-size: var(--fs-heading-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.fin-filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--s3) var(--s4);
+  align-items: end;
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.fin-filtros__busqueda {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 768px) {
+  .fin-filtros__busqueda { grid-column: span 2; }
+}
+
+.fin-filtros__limpiar {
+  display: flex;
+  align-items: flex-end;
+  min-height: var(--s9);
+}
+
+.fin-listado__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s3) var(--s5);
+  border-top: 1px solid var(--surface-border);
+  background: var(--surface-hover);
+  font-size: var(--fs-body-sm);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.fin-listado__vacio {
+  padding: var(--s5);
+}
+
+/* Fila que requiere atención (pendiente, bloqueada): el estado lo dice el badge de la fila. */
+.fin-fila--atencion td {
+  background: var(--sem-warning-bg);
+}
+
+.fin-pos { color: var(--sem-success); font-weight: 700; }
+.fin-neg { color: var(--sem-error); font-weight: 700; }
+.fin-mono { font-family: var(--font-mono); font-size: var(--fs-mono-md); }
+
+.fin-secundario {
+  display: block;
+  font-size: var(--fs-body-sm);
+  color: var(--text-secondary);
+  white-space: normal;
+}
+
+/* La primera columna identifica la fila: no se deja estrechar hasta partir el nombre en tres líneas. */
+.fin-listado td:first-child {
+  min-width: 170px;
+}
+
+.fin-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+/* Dos columnas desde tablet (consolidado de costos, resumen del período). */
+.fin-columnas {
+  display: grid;
+  gap: var(--s5);
+  grid-template-columns: 1fr;
+  margin-bottom: var(--s5);
+}
+
+@media (min-width: 768px) {
+  .fin-columnas { grid-template-columns: 1fr 1fr; }
+}
+
+.fin-tarjeta {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--r-lg);
+  padding: var(--s5);
+  min-width: 0;
+}
+
+.fin-tarjeta h2,
+.fin-tarjeta h3 {
+  margin: 0 0 var(--s3);
+  font-size: var(--fs-heading-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Barra proporcional (subtipos de costo, severidad): la cifra va siempre al lado. */
+.fin-barras {
+  display: grid;
+  gap: var(--s3);
+  margin: var(--s4) 0 0;
+}
+
+.fin-barra__fila {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  font-size: var(--fs-body-md);
+}
+
+.fin-barra__pista {
+  height: 6px;
+  margin-top: var(--s1);
+  border-radius: var(--r-full);
+  background: var(--surface-hover);
+  overflow: hidden;
+}
+
+.fin-barra__relleno {
+  height: 100%;
+  border-radius: var(--r-full);
+  background: var(--brand-500);
+}
+
+.fin-barra__relleno--info { background: var(--sem-info); }
+.fin-barra__relleno--warning { background: var(--sem-warning); }
+.fin-barra__relleno--error { background: var(--sem-error); }
+
+/* Precondiciones del cierre: icono + texto + badge, con el acento solo como apoyo. */
+.fin-checks {
+  display: grid;
+  gap: var(--s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fin-check {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--s3);
+  align-items: start;
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--surface-border);
+  border-left: 4px solid var(--sem-success);
+  border-radius: var(--r-md);
+}
+
+.fin-check--pendiente { border-left-color: var(--sem-error); }
+.fin-check--aviso { border-left-color: var(--sem-warning); }
+
+.fin-check__titulo {
+  margin: 0;
+  font-size: var(--fs-body-md);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.fin-check__detalle {
+  margin: var(--s1) 0 0;
+  font-size: var(--fs-body-sm);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}

@@ -4,9 +4,11 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-19: códigos del backend con etiqueta legible |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 a11y 2.1.1: tabla con scroll enfocable y con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-166 RF-63 a11y 2.4.6/4.1.3: encabezado completo y vacío anunciado |
-import React from 'react';
+// | 2026-10-31 | Arekkazu | TC-DIS-166 RF-63: filas con nombre propio, columnas ordenables y filtro por RF de origen |
+import React, { useMemo, useState } from 'react';
 import { useT, useNombreModulo } from '../../shared/i18n/useT';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { Button } from '../../shared/design-system/Button';
 import { SeveridadLogPill } from './SeveridadLogPill';
 import { Pill, type Tono } from './Pill';
 import { TH, TD, TABLE_WRAP, THEAD_ROW } from './tableStyles';
@@ -16,6 +18,16 @@ import { alActivarConTeclado } from '../../shared/lib/teclado';
 import { etiquetaCodigo } from '../lib/etiquetaCodigo';
 
 const COLS = ['Fecha', 'Tipo de evento', 'Módulo', 'Entidad', 'Usuario', 'Resultado', 'Severidad', 'Clasificación', 'Hash'];
+
+type Orden = { col: number; asc: boolean };
+// TC-DIS-166: columnas que se pueden ordenar y el valor por el que se comparan.
+const CLAVE_ORDEN: Record<number, (ev: EventoAuditoriaIotSchema) => string> = {
+  0: (ev) => ev.fecha_hora,
+  1: (ev) => ev.tipo_evento,
+  5: (ev) => ev.resultado,
+  6: (ev) => ev.severidad_log,
+  7: (ev) => ev.clasificacion_registro,
+};
 
 function tonoResultado(r: string): Tono {
   const up = r.toUpperCase();
@@ -41,6 +53,14 @@ interface Props {
 export function BitacoraTable({ items, loading, onAbrir }: Props) {
   const { t } = useT('telemetry');
   const nombreModulo = useNombreModulo();
+  // El backend devuelve la página ordenada por fecha descendente y no acepta otro orden.
+  // ponytail: ordena solo la página visible (50 filas); pasar `orden` al backend si hace falta sobre todo el resultado.
+  const [orden, setOrden] = useState<Orden>({ col: 0, asc: false });
+  const filas = useMemo(() => {
+    const clave = CLAVE_ORDEN[orden.col];
+    const copia = items.slice().sort((a, b) => clave(a).localeCompare(clave(b)));
+    return orden.asc ? copia : copia.reverse();
+  }, [items, orden]);
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
@@ -62,19 +82,40 @@ export function BitacoraTable({ items, loading, onAbrir }: Props) {
   }
 
   return (
-    <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label="Tabla de eventos de auditoría">
+    <div style={TABLE_WRAP} className="ds-scroll-region" tabIndex={0} role="region" aria-label={t('bitacoratable.tabla')}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
-          <tr style={THEAD_ROW}>{COLS.map((h, i) => <th key={i} style={TH}>{h}</th>)}</tr>
+          <tr style={THEAD_ROW}>
+            {COLS.map((h, i) => {
+              if (!CLAVE_ORDEN[i]) return <th key={i} scope="col" style={TH}>{h}</th>;
+              const activa = orden.col === i;
+              const Icono = !activa ? ArrowUpDown : orden.asc ? ArrowUp : ArrowDown;
+              return (
+                <th key={i} scope="col" style={TH} aria-sort={activa ? (orden.asc ? 'ascending' : 'descending') : 'none'}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setOrden({ col: i, asc: activa ? !orden.asc : true })}
+                    aria-label={t('bitacoratable.ordenar_por', { columna: h })}
+                  >
+                    {h}<Icono size={14} aria-hidden style={{ marginLeft: 'var(--s1)' }} />
+                  </Button>
+                </th>
+              );
+            })}
+          </tr>
         </thead>
         <tbody>
-          {items.map((ev) => {
+          {filas.map((ev) => {
             const cl = clasif(ev.clasificacion_registro);
             return (
               <tr
                 key={ev.id_evento}
                 className="ds-fila-accion"
                 tabIndex={0}
+                // TC-DIS-166: con miles de eventos iguales seguidos, sin nombre propio la fila
+                // se anunciaba (y se veía en el recorrido con Tab) idéntica a la anterior.
+                aria-label={t('bitacoratable.ver_evento', { id: ev.id_evento, tipo: etiquetaCodigo(ev.tipo_evento), fecha: fechaHoraCaptura(ev.fecha_hora) })}
                 onClick={() => onAbrir(ev)}
                 onKeyDown={alActivarConTeclado(() => onAbrir(ev))}
               >

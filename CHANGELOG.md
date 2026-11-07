@@ -1,3 +1,191 @@
+## [1.4.0-rc.34](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.33...v1.4.0-rc.34) (2026-11-06)
+
+### Features
+
+* **rf95-rf102-mod7:** modulo de integracion contable con AgroFusion ([52caf6a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/52caf6a17092c942a58ba13274a9208284d76fa0))
+
+## [1.4.0-rc.33](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.32...v1.4.0-rc.33) (2026-11-06)
+
+### Features
+
+* **rf82-rf94-mod6:** modulo financiero con la estructura de los prototipos ([7053589](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/70535895436455e0b8cb279ac50a5c77af4d9a03))
+
+### Bug Fixes
+
+* **i18n:** textos de prediccion, telemetria y comun sin codigos de modulo ([2a1cbe8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2a1cbe8a53f12997bc8e5679f4742f64948381c5))
+
+## [1.4.0-rc.32](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.31...v1.4.0-rc.32) (2026-11-05)
+
+### Features
+
+* **rf19:** titular tributario de la finca con digito de verificacion DIAN ([78be5fc](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/78be5fc8debc9540755a8311fa9e634d2d2b1a19))
+* **rf82-rf94-mod6:** modulo de finanzas NIC 41 con valoracion, cierre y revelaciones ([7c24977](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7c2497720de4d6b2a8068c91d4f9351c456fa6ec))
+
+## [1.4.0-rc.31](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.30...v1.4.0-rc.31) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-33:** la búsqueda de activos revisa todas las páginas y el [#id](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/id) solo aplica a lotes ([d24e2f6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d24e2f6b9b8e3d2bf3d51a4334ff2880b103dd87))
+* **rf-59:** botón Limpiar en el historial de lecturas que vuelve a los filtros por defecto ([6b44cd8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6b44cd884b3f816f37026a4ba6974d57a449b151))
+
+## [1.4.0-rc.30](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.29...v1.4.0-rc.30) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-66,rf-69:** sin aviso de «modelo en prueba» en la ficha y el animal de la versión por su identificador ([7301353](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/73013534a1bcc89b2d7b2608410800dd36fa925e))
+
+## [1.4.0-rc.29](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.28...v1.4.0-rc.29) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-23:** intervalo de transmisión mínimo de 10 minutos en la configuración remota ([8d46a32](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8d46a32ed982ec509d2346aeac050401fe831fbf))
+* **rf-47,rf-49:** análisis sin «null» y sensores del activo en solo lectura ([0ebf5f4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0ebf5f4523607389fa57041701ee7fab0eb2cebb))
+* **rf-73:** la bitácora M04 avisa cuando «Hasta» es anterior a «Desde» ([834f198](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/834f198f75907d457846c6d3cd7304be131b6a0e))
+
+## [1.4.0-rc.28](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.27...v1.4.0-rc.28) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-57,rf-59,rf-61,rf-62:** filtros alineados: el combobox se ve como los select de la fila ([5cb237d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5cb237d3dcc56d2cb93f499ea8b0cc2d5f8299ed))
+* **rf-63:** la bitácora IoT filtra por tipo de evento con nombres claros y sin «RF de origen» ([a8e7f8c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a8e7f8c5d83c12e110360bdc92bb6d30747984e8))
+* **rf-67:** el activo o lote del Historial se escribe y autocompleta ([814b688](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/814b68843651f6fe64effa0310264b306eaf7b55)), closes [#5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/5)
+
+## [1.4.0-rc.27](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.26...v1.4.0-rc.27) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-58:** el monitoreo muestra la unidad sin sensores y avisa al usuario sin unidades asignadas ([58bef34](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/58bef3490793f5cd3a2387292d5f617580cdcb67)), closes [Arekkazu/SGPMP-FRONT-END-PWA#470](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/470) [Arekkazu/SGPMP-FRONT-END-PWA#472](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/472)
+* **rf-64,rf-67,rf-68,rf-69,rf-72,rf-73:** hallazgos de la re-prueba M04 ronda 2 en Predicción ([487a848](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/487a848d04929d834aec513501a2dee20fef1b6f))
+* **rf-66:** la ficha de Estado sanitario avisa cuando la predicción es de un modelo en prueba ([76d2d6c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/76d2d6c5d4d45b5b596d512c8ab32c9cb78a8624))
+
+## [1.4.0-rc.26](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.25...v1.4.0-rc.26) (2026-11-03)
+
+### Bug Fixes
+
+* **rf-62:** puntaje de calidad explicado en vez de "Indice" ([312dee0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/312dee0a11148da2e21ab7982b05bb252c56ef38))
+* **rf-72:** bandeja sin respuestas viejas y con boton reintentar ([a068aa3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a068aa3b199303522328cd53c7d1384220eab10f))
+
+## [1.4.0-rc.25](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.24...v1.4.0-rc.25) (2026-11-03)
+
+### Features
+
+* **rf-62:** calidad de vision con las observaciones evaluadas por el backend ([eb7b883](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/eb7b883af9f4b2a05164262aba412de9c133bfc7))
+* **rf-72:** retroalimentacion clinica con la bandeja real del backend ([402c622](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/402c6227a8b3a293eb832f17bdd91a0b1826a349))
+
+### Bug Fixes
+
+* **rf-59:** lista de animales sin barra final y especie elegida del catalogo ([0ed0bd8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0ed0bd89d5cfd0884d6da8ad702996547a8281be))
+
+## [1.4.0-rc.24](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.23...v1.4.0-rc.24) (2026-11-03)
+
+### Features
+
+* **rf-46:** historial del activo muestra alertas, predicciones, diagnósticos y contagio ([3f33600](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3f336004a0936d0508256d7a129fdb55c84d7ba5))
+* **rf-53:** flujo iot con solo buffer e ingesta, la ingesta con datos reales ([5dc5b73](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5dc5b7369e9ce06009d1f464112276de8f615f41))
+* **rf-60:** parámetros de heartbeat y ventanas de visión reales en dispositivos ([0df5ce8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0df5ce86918710d0bde2ddbcb31d4748e29c9de8))
+* **rf-66:** monitor de inferencias con filtros, paginación y totales del periodo ([ee1d038](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ee1d03865807d4f9571b0bce54dd26fa9e3e9b42))
+* **rf-68:** grafo plegable, búsqueda y paginación en riesgo de contagio ([a386964](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a38696477552d4590f91ef93a25678a10102df7b))
+* **rf-71:** días del reentrenamiento programado editables en configuración ([5954dec](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5954dec3626133ae822d6bb804c1487b7d082c05))
+* **rf-71:** procesos reales de reentrenamiento y solicitud por animal ([ce18faf](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ce18fafd0681ffd8e1c83b001d9c00fc5ff39d07))
+* **rf-71:** reentrenamiento sin modo demo, solo con lo que existe ([67ea23d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/67ea23d65e4aa99cc25941c585fd459dd5bc6f1c))
+* **rf-73:** bitácora m04 filtra por registro relacionado elegido por nombre ([dd38cf7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/dd38cf74667f2efb4ee32810f0061f4a36fb9325))
+
+### Bug Fixes
+
+* **rf-57:** el filtro por animal o lote de alertas no se ignora en silencio ([b0a74ce](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b0a74ce71a5d6135e09ef6af956d0a2ed938cdd3))
+* **rf-57:** ocultar la sección de alertas técnicas a quien no tiene permiso ([d321350](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d32135098f6473129c7b8cb15a46107e586f41d4))
+* **rf-59:** no dejar armar combinaciones de filtros que el historial rechaza ([90e4aad](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/90e4aad3c66135ac4306167f8ffa0c7fb0af5f56))
+* **rf-62:** parámetros aplicados de calidad legibles en el detalle ([2e48763](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2e487633a2d57e3bef1aa19003ea2292491c1673))
+* **rf-67:** el historial de predicción no dejaba elegir animal y el aviso citaba nic-41 ([14321ac](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/14321ac4aa5fdba3ed30678e0e7c983652a50a5b))
+* **rf-69:** pedir a lo sumo 100 versiones, el máximo que acepta el listado ([0e04811](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0e0481186b0358aa4cac6e7082ab201432429360))
+* **rf-69:** textos de la vista de modelos sin diminutivos ni jerga ([98f3ac7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/98f3ac7d5ab118c8059c7afec63ab6ffdd0c6189))
+
+## [1.4.0-rc.23](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.22...v1.4.0-rc.23) (2026-11-02)
+
+### Bug Fixes
+
+* **rf-66:** Estado sanitario y Riesgo de contagio piden las últimas de cada animal o lote ([a2313a5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a2313a5fe0a450d125d28abc421d1de01bcfefe1))
+
+## [1.4.0-rc.22](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.21...v1.4.0-rc.22) (2026-11-02)
+
+### Bug Fixes
+
+* **i18n:** los textos de pantalla dicen qué hace cada parte en vez de su código de requisito ([2285146](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/228514600c4d19683bf65e8b080eb2e0bdf5d004))
+* **rf-66:** la trazabilidad nombra cada paso y la foto explica el número de cada caja ([dad549f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/dad549f57ea09ba04f7a6c331dec4ff5e3e1112a))
+
+## [1.4.0-rc.21](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.20...v1.4.0-rc.21) (2026-11-02)
+
+### Features
+
+* **rf-66:** la imagen de la cámara se abre completa y el conteo se compara con el inventario ([294f4b0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/294f4b0e7df73a61d9a6b185572fc8e22945d292))
+
+## [1.4.0-rc.20](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.19...v1.4.0-rc.20) (2026-11-02)
+
+### Features
+
+* **rf-66:** «Lo que ve la cámara» en Predicción (ficha del lote y detalle de la inferencia) ([527d802](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/527d802e7381b7e66b5595b681fa40fc9d917fb5))
+
+## [1.4.0-rc.19](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.18...v1.4.0-rc.19) (2026-11-02)
+
+### Features
+
+* **rf-110:** editar la topología sanitaria y filtrar el mapa de propagación por finca ([a2e129a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a2e129a1b39f13ee39a2bb126a8c8929b72c9f77))
+* **rf-110:** relacionar áreas tocándolas en el grafo y color por tipo de área ([d241838](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d2418385f1c738d59e1827bd6569364c1d62bfac))
+
+## [1.4.0-rc.18](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.17...v1.4.0-rc.18) (2026-11-02)
+
+### Features
+
+* **rfc-021:** RF-110 grafo de la topología sanitaria y mapa de propagación del contagio (RF-68) ([b00d462](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b00d46275f0ff23f91fe9793d29c8f734176b903))
+
+## [1.4.0-rc.17](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.16...v1.4.0-rc.17) (2026-11-02)
+
+### Features
+
+* **rfc-021:** RF-68 muestra la exposición a focos de áreas vecinas en el desglose del contagio ([3e13b90](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3e13b9006e79693414d561530e556c1765016359)), closes [#921](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/921)
+
+## [1.4.0-rc.16](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.15...v1.4.0-rc.16) (2026-11-01)
+
+### Features
+
+* **rfc-010:** RF-69 estado SOMBRA, versión por animal y fuente de datos en Modelos IA ([c89a87e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c89a87e7682034cc8513b4406f8c1a32f9f06553)), closes [Arekkazu/sgpmp-backend#909](https://github.com/Arekkazu/sgpmp-backend/issues/909)
+
+## [1.4.0-rc.15](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.14...v1.4.0-rc.15) (2026-10-31)
+
+### Features
+
+* **rf64-prediction:** aviso de variables sin umbral RF-17 y de datos para reentrenar ([054fd08](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/054fd0872a1e0385a14455bb42ad774fdd7684d8)), closes [#905](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/905)
+* **rf71-prediction:** botón para solicitar el reentrenamiento desde el aviso de Modelos IA ([c3ef279](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c3ef279b6585f8f68a6aa8ef1e40571d8031322d)), closes [#906](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/906)
+
+## [1.4.0-rc.14](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.13...v1.4.0-rc.14) (2026-10-31)
+
+### Features
+
+* **rf58-rf62-telemetry:** usabilidad M03 del 30-10 (T-18, T-19, T-22, M3-09, CP34, CP50, CP58, CP74, CP84) ([64d3423](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/64d3423a656abc10a91211b4dd1d4e3572365b74))
+* **rf64-rf70-prediction:** usabilidad M04 del 30-10 (T-18, T-19, T-22, T-23, M4-02, M4-05, M4-07, N-04, N-05) ([078f724](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/078f72446f7f16f43fa234850809ead6ea283f2f))
+
+### Bug Fixes
+
+* **rf53-rf63-telemetry:** accesibilidad de la tercera evaluacion M03 (TC-DIS-146, 150, 154, 160, 166) ([0d701eb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0d701eb21c744a192557dbe9d89c62377a46f2a3))
+
+## [1.4.0-rc.13](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.12...v1.4.0-rc.13) (2026-10-31)
+
+### Features
+
+* **rf57-telemetry:** tipo de alerta REGLA_SIMPLE en filtros y etiquetas (INC-M03-240-G69) ([33e293a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/33e293afda98d9e88299aebaa0f8cce14cc86836)), closes [Arekkazu/sgpmp-backend#881](https://github.com/Arekkazu/sgpmp-backend/issues/881)
+* **rf58-mod9:** tolerancia T del semaforo configurable en el umbral y lectura actual fuera de rango (INC-M03-246-G88) ([c5f4892](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/c5f4892b302bfbd6eec7413584dd668843a89853)), closes [Arekkazu/sgpmp-backend#889](https://github.com/Arekkazu/sgpmp-backend/issues/889)
+
+## [1.4.0-rc.12](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.11...v1.4.0-rc.12) (2026-10-30)
+
+### Features
+
+* **rf49-mod9:** configurar las especies compatibles de cada sensor desde M09 (INC-M03-135-G01) ([e21c4de](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e21c4dea0ec2d66e47e1c862c3c5987f226f7063)), closes [#871](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/871)
+* **rf72-prediction:** ventana de retroalimentacion en M09 y ampliacion por resultado desde el historial (INC-M04-229-G070) ([7b441b2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7b441b2b92688db7f68ceeca156cad6cab2ed016))
+
+### Bug Fixes
+
+* **rf68-prediction:** el historial muestra nivel y probabilidad del evento CONTAGIO (INC-M04-223-G034) ([bb11509](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/bb1150910f11cf79fa9fdf0dbf47a316fb6b94e2)), closes [#871](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/871)
+
 ## [1.4.0-rc.11](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.10...v1.4.0-rc.11) (2026-10-30)
 
 ### Features
@@ -147,6 +335,14 @@
 * **rf33-mod2:** explicar por que una finca no muestra areas para la especie elegida ([9631a2d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9631a2db564b1b6b748228bfaaa77e7fa3fffd5d))
 * **rfc016-rf17:** el interruptor es_critica depende del recurso variables_ambientales_criticas, no de editar umbrales (FE-09) ([6c67120](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6c671200f8ba13893ec8d25dc9b0a6b898da898e))
 * **telemetry:** rf-57 fe-12 controlar descarte por permisos y transiciones ([184131b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/184131b75bd5d7e24f1d1fb1426051a0ecdedc9f)), closes [#3694](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/3694) [#3781](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/3781) [#3782](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/3782)
+
+## [1.3.4](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.3...v1.3.4) (2026-10-23)
+
+### Bug Fixes
+
+* **deploy:** servir la app bajo una subruta del proxy con VITE_BASE_PATH ([8589b80](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8589b8096e3fa674c2bcbcd04d8925a33ee4133b))
+* **rf16-mod9:** campos numericos que no aceptan letras al registrar metricas y demas formularios ([80b939b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/80b939b11a5e6fa80b6eb770fdab608debaddc59))
+* **rf33-mod2:** explicar por que una finca no muestra areas para la especie elegida ([9631a2d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/9631a2db564b1b6b748228bfaaa77e7fa3fffd5d))
 
 ## [1.3.2-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.3.2-rc.1...v1.3.2-rc.2) (2026-10-13)
 

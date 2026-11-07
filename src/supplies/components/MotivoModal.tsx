@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-75/76/79: justificación obligatoria para anular o corregir |
+// | 2026-11-04 | Arekkazu | M06 RF-90: campo adicional opcional sobre la justificación |
 import React, { useState } from 'react';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { Button } from '../../shared/design-system/Button';
@@ -19,13 +20,15 @@ interface Props {
   max: number;
   opcional?: boolean;
   peligro?: boolean;
+  /** Campo que acompaña a la justificación (p. ej. la naturaleza al clasificar un costo). */
+  extra?: React.ReactNode;
   enviando: boolean;
   error: ApiError | null;
   onConfirmar: (texto: string) => void;
   onCerrar: () => void;
 }
 
-export function MotivoModal({ titulo, descripcion, etiqueta, confirmar, min, max, opcional, peligro, enviando, error, onConfirmar, onCerrar }: Props) {
+export function MotivoModal({ titulo, descripcion, etiqueta, confirmar, min, max, opcional, peligro, extra, enviando, error, onConfirmar, onCerrar }: Props) {
   const { t } = useT('supplies');
   const [texto, setTexto] = useState('');
   const [tocado, setTocado] = useState(false);
@@ -56,6 +59,7 @@ export function MotivoModal({ titulo, descripcion, etiqueta, confirmar, min, max
     >
       <p style={{ margin: '0 0 var(--s4)', fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', lineHeight: 'var(--lh-base)' }}>{descripcion}</p>
       {error && <Alert variant="error" title={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+      {extra && <div style={{ marginBottom: 'var(--s4)' }}>{extra}</div>}
       <AreaTexto
         id="m05-motivo"
         label={etiqueta}

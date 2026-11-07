@@ -4,6 +4,7 @@
 // | 2026-10-23 | destroyerban | FE-08 RF-70: la OTA lista versiones APROBADO          |
 // | 2026-10-23 | Arekkazu     | Integración RFC-012..016: FE-08 sobre el asistente en 3 pasos |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-05: "canary" se lee "Piloto" |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/M4-05 RF-70: equipos por nombre y por tipo de modelo |
 /**
  * FE-01b (RF-70, D6): el Administrador lanza una distribución y ve, en cada nodo,
  * la versión y el estado de cada componente.
@@ -34,7 +35,7 @@ const DISPOSITIVOS: DispositivoObjetivoOta[] = [
 
 function renderForm(onLanzar = vi.fn()) {
   render(
-    <DistribucionOtaFormModal versiones={VERSIONES} dispositivos={DISPOSITIVOS} lanzando={false}
+    <DistribucionOtaFormModal versiones={VERSIONES} dispositivos={DISPOSITIVOS} onTipoModelo={() => undefined} lanzando={false}
       lanzarError={null} online onLanzar={onLanzar} onClose={vi.fn()} />,
   );
   return onLanzar;
@@ -102,7 +103,7 @@ describe('DistribucionOtaFormModal — lanzar distribución en 3 pasos', () => {
 
   it('sin versiones distribuibles lo dice y no deja avanzar', () => {
     render(
-      <DistribucionOtaFormModal versiones={[]} dispositivos={DISPOSITIVOS} lanzando={false}
+      <DistribucionOtaFormModal versiones={[]} dispositivos={DISPOSITIVOS} onTipoModelo={() => undefined} lanzando={false}
         lanzarError={null} online onLanzar={vi.fn()} onClose={vi.fn()} />,
     );
     expect(screen.getByText('No hay versiones disponibles para distribuir')).toBeTruthy();
@@ -140,7 +141,7 @@ describe('DistribucionOtaProgreso — estado por nodo y por componente', () => {
       />,
     );
     const [, canary, parcial] = screen.getAllByRole('row');
-    expect(canary.textContent).toContain('EDGE-38');
+    expect(canary.textContent).toContain('Gateway camaronera');
     expect(canary.textContent).toContain('DETECTOR v3');
     expect(canary.textContent).toContain('ANOMALIAS v1');
     expect(within(parcial).getAllByText('En proceso').length).toBeGreaterThan(0);

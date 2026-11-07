@@ -4,11 +4,12 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-20/T-21: Monitor y Contagio (simulados) solo para Admin/Vet, también por URL |
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66/RF-68: Monitor y Contagio con el permiso de su endpoint real |
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo 13.9 RF-66/RF-68: Estado sanitario y 4 pestañas principales; el resto en grupos |
+// | 2026-11-03 | Arekkazu | RF-65: se retira la pestaña Motor (configuración del motor) por decisión del equipo |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Switch, Route, Redirect } from 'react-router-dom';
 import {
-  Activity, ShieldAlert, Stethoscope, SlidersHorizontal, History, MessageSquareText,
+  Activity, ShieldAlert, Stethoscope, History, MessageSquareText,
   Boxes, DownloadCloud, RefreshCw, ClipboardList, HeartPulse,
 } from 'lucide-react';
 import {
@@ -22,7 +23,6 @@ import {
 import { MonitorInferenciaView } from './MonitorInferenciaView';
 import { RiesgoContagioView } from './RiesgoContagioView';
 import { PatologiasView } from './PatologiasView';
-import { MotorView } from './MotorView';
 import { HistorialView } from './HistorialView';
 import { RetroalimentacionView } from './RetroalimentacionView';
 import { ModelosView } from './ModelosView';
@@ -53,7 +53,6 @@ const TABS_SEGUIMIENTO: PestanaModulo[] = [
 ];
 
 const TABS_MOTOR: PestanaModulo[] = [
-  { label: 'Motor', path: '/prediccion/motor', icon: <SlidersHorizontal size={15} aria-hidden />, permiso: [RECURSO_MOTOR, ACCION_R] },
   { label: 'Reentrenamiento', path: '/prediccion/reentrenamiento', icon: <RefreshCw size={15} aria-hidden />, permiso: [RECURSO_MODELOS, ACCION_E] },
   { label: 'Auditoría', path: '/prediccion/auditoria', icon: <ClipboardList size={15} aria-hidden />, permiso: [RECURSO_AUDITORIA, ACCION_R] },
 ];
@@ -86,7 +85,6 @@ export function PrediccionPage() {
         <Route exact path="/prediccion/contagio"><PestanaProtegida pestana={CONTAGIO}><RiesgoContagioView /></PestanaProtegida></Route>
         <Route exact path="/prediccion/estado"><PestanaProtegida pestana={ESTADO_SANITARIO}><EstadoSanitarioView /></PestanaProtegida></Route>
         <Route exact path="/prediccion/patologias" component={PatologiasView} />
-        <Route exact path="/prediccion/motor" component={MotorView} />
         <Route exact path="/prediccion/historial" component={HistorialView} />
         <Route exact path="/prediccion/retroalimentacion" component={RetroalimentacionView} />
         <Route exact path="/prediccion/modelos" component={ModelosView} />

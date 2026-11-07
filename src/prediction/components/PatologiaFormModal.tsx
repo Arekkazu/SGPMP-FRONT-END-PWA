@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-02 RF-64: variables y especies del catálogo real, con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-178 RF-64 a11y 3.3.2: reglas de 50 caracteres y 2-6 variables asociadas a su campo |
+// | 2026-10-31 | Arekkazu | RF-64/RF-17: aviso de variables sin umbral para la especie, sin bloquear |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Save } from 'lucide-react';
@@ -10,6 +11,7 @@ import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { ModalShell } from './ModalShell';
 import { VariablesSelector } from './VariablesSelector';
+import { useUmbralesVariables } from '../hooks/useUmbralesVariables';
 import { conTodas, type EspecieOpcion, type VariableSensorica } from '../lib/catalogos';
 import { INPUT, LABEL } from './tableStyles';
 import type { PatologiaM04Response } from '../types';
@@ -46,6 +48,10 @@ export function PatologiaFormModal({ catalogoVariables, especies, mode, inicial,
     inicial?.variables_sensoricas_asociadas.map((v) => v.id_variable_ambiental) ?? []
   );
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const cobertura = useUmbralesVariables(especie, especies);
+  const sinUmbral = cobertura
+    ? catalogoVariables.filter((v) => variables.includes(v.id) && !cobertura.porVariable.get(v.id))
+    : [];
 
   const errNombre = !nombre.trim() ? 'El nombre es obligatorio.' : undefined;
   const errDescripcion =
@@ -149,9 +155,20 @@ export function PatologiaFormModal({ catalogoVariables, especies, mode, inicial,
             variables={catalogoVariables}
             seleccionadas={variables}
             onChange={(ids) => { setVariables(ids); marcar('variables'); }}
+            cobertura={cobertura}
             error={fieldError('variables', errVariables) ?? fieldError('variables_sensoricas_asociadas')}
           />
         </div>
+        {sinUmbral.length > 0 && (
+          <Alert
+            variant="warning"
+            title={t('patologiaformmodal.sin_umbral_titulo')}
+            description={t('patologiaformmodal.sin_umbral_detalle', {
+              variables: sinUmbral.map((v) => v.nombre).join(', '),
+              count: sinUmbral.length,
+            })}
+          />
+        )}
       </div>
     </ModalShell>
   );

@@ -6,6 +6,7 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18: área por nombre en el filtro |
 // | 2026-10-26 | Arekkazu | INC-M03-180/184-G111/G113 RF-59: el 422 de parámetros inválidos se muestra como tal |
 // | 2026-10-29 | Arekkazu | USAB-M03 prototipo 13.6 RF-59: una gráfica por variable, sin mezclar unidades en un eje |
+// | 2026-11-03 | Arekkazu | AJF-05 RF-59: catálogo de especies para el filtro de especie |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -14,6 +15,7 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { Alert } from '../../shared/design-system/Alert';
 import { useHistorial } from '../hooks/useHistorial';
 import { useAreas } from '../hooks/useAreas';
+import { useEspecies } from '../hooks/useEspecies';
 import { HistorialFiltros, HISTORIAL_FILTROS_DEFAULT, type HistorialFiltrosState } from '../components/HistorialFiltros';
 import { EstadisticasCards } from '../components/EstadisticasCards';
 import { HistorialChart } from '../components/HistorialChart';
@@ -33,6 +35,7 @@ export function HistorialView() {
   const { items, estadisticas, paginacion, truncado, vacios, loading, error, exportando, exportError, cargar, exportar } = useHistorial();
   const [filtrosActuales, setFiltros] = useState<HistorialFiltrosState>(HISTORIAL_FILTROS_DEFAULT);
   const areas = useAreas();
+  const { especies, error: especiesError } = useEspecies();
   const [modalExport, setModalExport] = useState(false);
 
   const build = useCallback(
@@ -119,6 +122,8 @@ export function HistorialView() {
         )}
 
         <HistorialFiltros
+          especies={especies.map((e) => e.nombre)}
+          especiesError={especiesError}
           areas={areas}
           value={filtrosActuales}
           onChange={setFiltros}

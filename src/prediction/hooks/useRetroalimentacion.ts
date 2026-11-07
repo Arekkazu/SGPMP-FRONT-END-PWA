@@ -1,15 +1,20 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: ampliación de la ventana para un resultado |
+// | 2026-11-03 | Arekkazu | RF-72: la lista sale de useBandejaRetroalimentacion |
 import { useState, useCallback } from 'react';
 import { retroApi } from '../api/retroApi';
 import type {
+  AmpliacionVentanaRetroResponse,
+  AmpliarVentanaRetroDTO,
   RegistrarRetroalimentacionDTO,
   RetroalimentacionClinicaResponse,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
 /**
- * RF-72 · Registro de retroalimentación clínica (solo Vet).
- * El backend no expone GET de lista todavía (ver TASKS.md § Pendientes),
- * por lo que este hook solo cubre el registro.
+ * RF-72 · Registro de retroalimentación clínica (solo Vet) y ampliación de la ventana.
+ * La lista de inferencias por evaluar está en useBandejaRetroalimentacion.
  */
 export function useRetroalimentacion() {
   const [saving, setSaving] = useState(false);
@@ -31,7 +36,23 @@ export function useRetroalimentacion() {
     []
   );
 
+  const ampliarVentana = useCallback(
+    async (dto: AmpliarVentanaRetroDTO): Promise<AmpliacionVentanaRetroResponse | null> => {
+      setSaving(true);
+      setSaveError(null);
+      try {
+        return await retroApi.ampliarVentana(dto);
+      } catch (e) {
+        setSaveError(e as ApiError);
+        return null;
+      } finally {
+        setSaving(false);
+      }
+    },
+    []
+  );
+
   const limpiarSaveError = useCallback(() => setSaveError(null), []);
 
-  return { saving, saveError, registrar, limpiarSaveError };
+  return { saving, saveError, registrar, ampliarVentana, limpiarSaveError };
 }

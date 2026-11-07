@@ -5,16 +5,20 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M4-07 RF-69: matriz de confusión con ejes Real/Predicho y clases |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 N-02/T-19: transiciones con nombre del usuario y etiqueta legible |
 // | 2026-10-29 | Arekkazu | TC-DIS-172 RF-69: en una versión RECHAZADO la activación se ve deshabilitada con su motivo |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-07 RF-69: clases de la matriz de confusión por nombre |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
+// | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
+// | 2026-11-03 | Arekkazu | QA-M04 RF-69: el animal de la versión por su identificador, no «Animal #49» |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { Rocket, Save, CheckCircle2, XCircle, Info } from 'lucide-react';
-import { formatearFechaHora } from '../../shared/i18n/formato';
+import { Rocket, Save, CheckCircle2, XCircle, Info, MoonStar } from 'lucide-react';
+import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { ModalShell } from './ModalShell';
 import { EstadoModeloPill } from './EstadoModeloPill';
 import { Pill } from './Pill';
-import { etiquetaTipoModelo } from '../types';
+import { etiquetaComponente, etiquetaTipoModelo } from '../types';
 import type { DespliegueOtaResponse, EventoAuditoriaM04Response, VersionModeloResponse } from '../types';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -31,11 +35,15 @@ interface Props {
   despliegues: DespliegueOtaResponse[] | null;
   onGuardarNotas: (notas: string) => void;
   onSolicitarActivar: () => void;
+  /** RFC-010: APROBADO → SOMBRA. */
+  onSolicitarSombra: () => void;
   onClose: () => void;
+  /** M4-07: nombre de la patología del catálogo por su id, para nombrar las clases. */
+  nombrePatologia?: (id: string) => string | undefined;
 }
 
 function pct(v: number | null): string {
-  return v == null ? '—' : `${(v * 100).toFixed(1)}%`;
+  return v == null ? '—' : formatearNumero(v, { style: 'percent', maximumFractionDigits: 1 });
 }
 
 function Metrica({ label, valor, destacado }: { label: string; valor: string; destacado?: boolean }) {
@@ -58,14 +66,18 @@ function Requisito({ ok, texto, valor }: { ok: boolean; texto: string; valor: st
 
 const H3: React.CSSProperties = { fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' };
 
-export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar, online, saving, saveError, transiciones, despliegues, onGuardarNotas, onSolicitarActivar, onClose }: Props) {
+export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar, online, saving, saveError, transiciones, despliegues, onGuardarNotas, onSolicitarActivar, onSolicitarSombra, onClose, nombrePatologia }: Props) {
   const { t } = useT('prediction');
   const [notas, setNotas] = useState('');
 
   useEffect(() => { setNotas(modelo?.notas_validacion ?? ''); }, [modelo?.id_version_modelo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tieneNotas = !!(modelo?.notas_validacion && modelo.notas_validacion.trim());
-  const puedeActivar = modelo?.estado_version === 'APROBADO' && tieneNotas && puedeEjecutar && online;
+  // RFC-010: a producción se llega desde APROBADO o desde SOMBRA; un modelo SINTETICA nunca.
+  const sintetico = modelo?.fuente_datos === 'SINTETICA';
+  const activable = modelo?.estado_version === 'APROBADO' || modelo?.estado_version === 'SOMBRA';
+  const puedeActivar = activable && tieneNotas && !sintetico && puedeEjecutar && online;
+  const puedeSombra = modelo?.estado_version === 'APROBADO' && puedeEjecutar && online;
   // CA-13: las notas no se editan una vez registradas; rechazadas y deprecadas solo se consultan.
   const cerrada = modelo?.estado_version === 'RECHAZADO' || modelo?.estado_version === 'DEPRECADO';
   const notasEditables = puedeEditar && !tieneNotas && !cerrada;
@@ -86,7 +98,9 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
             <EstadoModeloPill estado={modelo.estado_version} />
             <Pill tono="neutral">{etiquetaTipoModelo(modelo.tipo_modelo)}</Pill>
             {modelo.paradigma && <Pill tono="neutral">{modelo.paradigma}</Pill>}
-            {modelo.componente && <Pill tono="neutral">{modelo.componente}</Pill>}
+            {modelo.componente && <Pill tono="neutral">{etiquetaComponente(modelo.componente)}</Pill>}
+            {modelo.id_activo_biologico != null && <Pill tono="neutral">{t('modelodetallemodal.activo_biologico', { nombre: modelo.identificador_activo ?? `#${modelo.id_activo_biologico}` })}</Pill>}
+            {modelo.fuente_datos && modelo.fuente_datos !== 'REAL' && <Pill tono="warning">{t(`modelostable.fuente.${modelo.fuente_datos}`)}</Pill>}
             {modelo.esta_produccion && <Pill tono="success">{t('modelodetallemodal.en_produccion')}</Pill>}
           </div>
 
@@ -120,7 +134,16 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
             )}
           </div>
 
-          {modelo.matriz_confusion && modelo.matriz_confusion.length > 0 && (
+          {modelo.matriz_confusion && modelo.matriz_confusion.length > 0 && (() => {
+            // M4-07: las clases son las de recall_por_clase (RF-64 CA-10/11: patologías del
+            // catálogo); si la clave es el id se muestra el nombre. Sin ellas, «Clase n».
+            const claves = Object.keys(modelo.recall_por_clase ?? {});
+            const etiqueta = (k: number) => {
+              const clave = claves.length === modelo.matriz_confusion!.length ? claves[k] : undefined;
+              if (!clave) return t('modelodetallemodal.clase', { n: k + 1 });
+              return (/^\d+$/.test(clave) && nombrePatologia?.(clave)) || clave;
+            };
+            return (
             <div>
               <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s3)' }}>{t('modelodetallemodal.matriz_de_confusion')}</h3>
               <div style={{ overflowX: 'auto' }}>
@@ -133,14 +156,14 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
                     <tr>
                       <th scope="col" style={{ padding: 'var(--s2)', fontFamily: 'var(--font-sans)', color: 'var(--text-muted)', fontWeight: 600 }}>{t('modelodetallemodal.real_predicho')}</th>
                       {modelo.matriz_confusion[0].map((_, j) => (
-                        <th key={j} scope="col" style={{ padding: 'var(--s2)', fontFamily: 'var(--font-sans)', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('modelodetallemodal.clase', { n: j + 1 })}</th>
+                        <th key={j} scope="col" style={{ padding: 'var(--s2)', fontFamily: 'var(--font-sans)', color: 'var(--text-secondary)', fontWeight: 600 }}>{etiqueta(j)}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {modelo.matriz_confusion.map((fila, i) => (
                       <tr key={i}>
-                        <th scope="row" style={{ padding: 'var(--s2)', fontFamily: 'var(--font-sans)', color: 'var(--text-secondary)', fontWeight: 600, textAlign: 'left' }}>{t('modelodetallemodal.clase', { n: i + 1 })}</th>
+                        <th scope="row" style={{ padding: 'var(--s2)', fontFamily: 'var(--font-sans)', color: 'var(--text-secondary)', fontWeight: 600, textAlign: 'left' }}>{etiqueta(i)}</th>
                         {fila.map((celda, j) => (
                           <td key={j} style={{ border: '1px solid var(--surface-border)', padding: 'var(--s2) var(--s3)', textAlign: 'center', color: i === j ? 'var(--sem-success)' : 'var(--text-secondary)', fontWeight: i === j ? 700 : 400 }}>
                             {celda}
@@ -152,7 +175,7 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
                 </table>
               </div>
             </div>
-          )}
+          ); })()}
 
           {modelo.detalle_validacion && (
             <Alert variant="warning" title={t('modelodetallemodal.detalle_de_validacion')} description={modelo.detalle_validacion} />
@@ -163,7 +186,7 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
             <h3 style={H3}>{t('modelodetallemodal.metadatos_titulo')}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--s3)', fontSize: '12px' }}>
               <div><span style={{ color: 'var(--text-muted)' }}>{t('modelodetallemodal.formato')} </span>{modelo.formato_artefacto ?? '—'}</div>
-              <div><span style={{ color: 'var(--text-muted)' }}>{t('modelodetallemodal.tamano')}</span>{modelo.tamanio_artefacto_bytes ? `${(modelo.tamanio_artefacto_bytes / 1_048_576).toFixed(1)} MB` : '—'}</div>
+              <div><span style={{ color: 'var(--text-muted)' }}>{t('modelodetallemodal.tamano')}</span>{modelo.tamanio_artefacto_bytes ? `${formatearNumero(modelo.tamanio_artefacto_bytes / 1_048_576, { maximumFractionDigits: 1 })} MB` : '—'}</div>
               <div><span style={{ color: 'var(--text-muted)' }}>{t('modelodetallemodal.registrada')} </span>{formatearFechaHora(modelo.fecha_registro)}</div>
               <div><span style={{ color: 'var(--text-muted)' }}>{t('modelodetallemodal.version_referencia')} </span>{modelo.version_referencia != null ? `#${modelo.version_referencia}` : '—'}</div>
               {[
@@ -228,24 +251,37 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
           </div>
 
           {/* Acción de activación */}
-          {modelo.estado_version === 'APROBADO' && (
+          {activable && (
             <section style={{ borderTop: '1px solid var(--surface-border)', paddingTop: 'var(--s4)' }}>
               <h3 style={H3}>{t('modelodetallemodal.requisitos_titulo')}</h3>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--s4)', display: 'flex', flexDirection: 'column', gap: 'var(--s2)' }}>
-                <Requisito ok texto={t('modelodetallemodal.req_aprobado')} valor={t('modelodetallemodal.req_aprobado_valor')} />
+                <Requisito ok texto={t('modelodetallemodal.req_aprobado')} valor={t(modelo.estado_version === 'SOMBRA' ? 'modelodetallemodal.req_en_sombra_valor' : 'modelodetallemodal.req_aprobado_valor')} />
                 <Requisito ok={tieneNotas} texto={t('modelodetallemodal.req_notas')} valor={tieneNotas ? t('modelodetallemodal.registradas') : t('modelodetallemodal.sin_notas')} />
+                <Requisito ok={!sintetico} texto={t('modelodetallemodal.req_datos_reales')} valor={t(`modelostable.fuente.${modelo.fuente_datos ?? 'REAL'}`)} />
               </ul>
               {despliegues && (
                 <p style={{ margin: '0 0 var(--s4)', fontSize: '12px', color: 'var(--text-secondary)' }}>
                   {t('modelodetallemodal.ota_info', { listos: otaListos, total: despliegues.length })}
                 </p>
               )}
-              {!tieneNotas && puedeEjecutar && (
+              {!tieneNotas && !sintetico && puedeEjecutar && (
                 <Alert variant="info" title={t('modelodetallemodal.notas_requeridas')} description={t('modelodetallemodal.registra_las_notas_de_validacion_clinica')} style={{ marginBottom: 'var(--s3)' }} />
               )}
               {puedeEjecutar && (
-                <Button variant="primary" disabled={!puedeActivar} onClick={onSolicitarActivar}>
-                  <Rocket size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelodetallemodal.activar_en_produccion')}</Button>
+                <div style={{ display: 'flex', gap: 'var(--s2)', flexWrap: 'wrap' }}>
+                  {modelo.estado_version === 'APROBADO' && (
+                    <Button variant={sintetico ? 'primary' : 'secondary'} disabled={!puedeSombra} onClick={onSolicitarSombra} aria-describedby="modelo-sombra-ayuda">
+                      <MoonStar size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelodetallemodal.poner_en_sombra')}</Button>
+                  )}
+                  <Button variant="primary" disabled={!puedeActivar} onClick={onSolicitarActivar} aria-describedby={sintetico ? 'modelo-solo-sombra' : undefined}>
+                    <Rocket size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelodetallemodal.activar_en_produccion')}</Button>
+                </div>
+              )}
+              {modelo.estado_version === 'APROBADO' && puedeEjecutar && (
+                <p id="modelo-sombra-ayuda" style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>{t('modelodetallemodal.sombra_ayuda')}</p>
+              )}
+              {sintetico && puedeEjecutar && (
+                <p id="modelo-solo-sombra" style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>{t('modelodetallemodal.no_activable_sintetico')}</p>
               )}
             </section>
           )}

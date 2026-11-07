@@ -1,6 +1,7 @@
 // | Fecha      | Nombre       | Que se hizo |
 // |------------|--------------|-------------|
 // | 2026-10-23 | destroyerban | FE-10 RF-58: estado GRIS sin umbral e indicador de anomalía |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M3-09 RF-58: con anomalía el semáforo dice que es del último valor válido |
 /**
  * FE-10 (RF-58 E7, R2, E2): el dashboard distingue GRIS sin umbral, lectura fuera de
  * rango y error de calibración, con su texto en es-CO y en-US (DEV-39).
@@ -60,7 +61,7 @@ describe('estadoLectura', () => {
 describe('EstadoSensorPills — los estados se ven distintos, en es-CO y en-US', () => {
   it.each([
     [SIN_UMBRAL, 'Sin umbral configurado', 'No threshold configured'],
-    [FUERA_DE_RANGO, 'Lectura fuera de rango', 'Out-of-range reading'],
+    [FUERA_DE_RANGO, 'Lectura inválida descartada', 'Invalid reading discarded'],
     [CALIBRACION, 'Requiere calibración', 'Calibration required'],
     [EN_REVISION, 'En revisión técnica', 'Under technical review'],
   ])('%#: %s / %s', async (s, esCO, enUS) => {
@@ -81,7 +82,8 @@ describe('EstadoSensorPills — los estados se ven distintos, en es-CO y en-US',
 
   it('una anomalía acompaña al semáforo, no lo reemplaza', () => {
     render(<EstadoSensorPills sensor={CALIBRACION} />);
-    expect(screen.getByText('Normal')).toBeInTheDocument();
+    // M3-09: el semáforo dice que es del último valor válido, no de la lectura anómala.
+    expect(screen.getByText('Último válido: Normal')).toBeInTheDocument();
     expect(screen.getByText('Requiere calibración').closest('[title]'))
       .toHaveAttribute('title', expect.stringContaining('error de calibración'));
   });
@@ -103,22 +105,23 @@ describe('SensorCard (dashboard)', () => {
 
 describe('G87: referencia válida independiente del estado posterior y del permiso', () => {
   it.each([
-    ['FUERA_DE_RANGO', 'Lectura fuera de rango', null],
-    ['ERROR_CALIBRACION', 'Requiere calibración', 77],
-    [null, 'En revisión técnica', null],
-  ] as const)('conserva 25 y el indicador %s en tarjeta y detalle', (calidad, etiqueta, bateria) => {
+    // M3-09: la etiqueta del backend «Lectura fuera de rango» se muestra como «Lectura inválida descartada».
+    ['FUERA_DE_RANGO', 'Lectura fuera de rango', null, 'Lectura inválida descartada'],
+    ['ERROR_CALIBRACION', 'Requiere calibración', 77, 'Requiere calibración'],
+    [null, 'En revisión técnica', null, 'En revisión técnica'],
+  ] as const)('conserva 25 y el indicador %s en tarjeta y detalle', (calidad, etiqueta, bateria, visible) => {
     const s = sensor({ ultimo_valor: 25, estado_calidad: calidad, indicador_anomalia: true,
       es_valor_operativo: true, estado_calidad_valor_operativo: 'LECTURA_VALIDA',
       etiqueta_estado: etiqueta, nivel_bateria_pct: bateria });
     const card = render(<SensorCard sensor={s} onAbrir={vi.fn()} />);
     expect(screen.getByText('Última lectura válida')).toBeInTheDocument();
-    expect(screen.getByText(etiqueta)).toBeInTheDocument();
+    expect(screen.getByText(visible)).toBeInTheDocument();
     expect(screen.getByText('25')).toBeInTheDocument();
     if (calidad === null) expect(screen.queryByText(/Requiere calibración|ERROR_CALIBRACION/)).not.toBeInTheDocument();
     card.unmount();
     render(<SensorDetalleModal sensor={s} onClose={vi.fn()} />);
     expect(screen.getByText('Última lectura válida')).toBeInTheDocument();
-    expect(screen.getByText(etiqueta)).toBeInTheDocument();
+    expect(screen.getByText(visible)).toBeInTheDocument();
     expect(screen.getByText('25')).toBeInTheDocument();
     if (bateria != null) expect(screen.getByText('77%')).toBeInTheDocument();
     else expect(screen.queryByText('77%')).not.toBeInTheDocument();

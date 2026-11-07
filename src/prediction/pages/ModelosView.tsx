@@ -3,10 +3,15 @@
 // | 2026-10-21 | Arekkazu | PROTO-V2 RF-69: avisos de registro automático y solo lectura, intentos de registro no admitidos |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: plurales y separador de miles en contadores |
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo RF-69/RF-70: franja «En producción» por tipo de modelo y nota de mínimos |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-07 RF-69: clases de la matriz de confusión por nombre |
+// | 2026-10-31 | Arekkazu | RF-71: aviso de datos insuficientes para reentrenar el modelo individual |
+// | 2026-10-31 | Arekkazu | RFC-010 RF-69: confirmar activar o poner en sombra |
+// | 2026-11-02 | Arekkazu | AJF-08 RF-69: textos de la vista sin jerga ni abreviaturas; "sombra" se dice "en prueba" |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU01 H-13: sin acciones de escritura con datos de caché |
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { Boxes, RefreshCw, Rocket, AlertTriangle, Info } from 'lucide-react';
+import { Boxes, RefreshCw, Rocket, AlertTriangle, Info, MoonStar } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
@@ -18,10 +23,12 @@ import { MINIMO_F1, MINIMO_RECALL_RIESGO_ALTO } from '../components/ModelosTable
 import { ModelosFiltros, MODELOS_FILTROS_VACIO, type ModelosFiltrosState } from '../components/ModelosFiltros';
 import { ModelosTable } from '../components/ModelosTable';
 import { ModeloDetalleModal } from '../components/ModeloDetalleModal';
+import { usePatologias } from '../hooks/usePatologias';
 import { ModalShell } from '../components/ModalShell';
 import { Paginacion } from '../components/Paginacion';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { IntentosRegistroTable } from '../components/IntentosRegistroTable';
+import { AvisoReentrenamiento } from '../components/AvisoReentrenamiento';
 import { RECURSO_MODELOS, RECURSO_AUDITORIA, RECURSO_OTA, ACCION_R, ACCION_U, ACCION_E } from '../rbac';
 import { PARADIGMA_POR_TIPO, TIPO_MODELO_LABEL, type ListarModelosFiltros, type TipoModelo, type VersionModeloResponse } from '../types';
 
@@ -29,6 +36,9 @@ const TIPOS = Object.keys(TIPO_MODELO_LABEL) as TipoModelo[];
 const pct = (v: number) => formatearNumero(v, { style: 'percent', maximumFractionDigits: 0 });
 
 export function ModelosView() {
+  // M4-07: nombres de las clases de la matriz de confusión (patologías del catálogo).
+  const patologiasHook = usePatologias();
+  const cargarPatologias = patologiasHook.cargar;
   const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_MODELOS, ACCION_R);
   const puedeEditar = usePermission(RECURSO_MODELOS, ACCION_U);
@@ -41,8 +51,10 @@ export function ModelosView() {
 
   const [filtros, setFiltros] = useState<ModelosFiltrosState>(MODELOS_FILTROS_VACIO);
   const [detalleSel, setDetalleSel] = useState<VersionModeloResponse | null>(null);
+  useEffect(() => { if (detalleSel) void cargarPatologias({}); }, [detalleSel?.id_version_modelo, cargarPatologias]); // eslint-disable-line react-hooks/exhaustive-deps
   const [detalleLoading, setDetalleLoading] = useState(false);
-  const [confirmarActivar, setConfirmarActivar] = useState(false);
+  // RFC-010: la misma confirmación sirve para activar o para poner en sombra.
+  const [confirmar, setConfirmar] = useState<null | 'activar' | 'sombra'>(null);
   // Prototipo M04: qué versión responde hoy por cada tipo. Se consulta aparte porque la
   // tabla está paginada y filtrada; sin respuesta, la franja no se muestra.
   const [activos, setActivos] = useState<VersionModeloResponse[] | null>(null);
@@ -86,10 +98,10 @@ export function ModelosView() {
     if (ok) setDetalleSel(ok);
   };
 
-  const onConfirmarActivar = async () => {
-    if (!detalleSel) return;
-    const ok = await activar(detalleSel.id_version_modelo);
-    if (ok) { setDetalleSel(ok); setConfirmarActivar(false); }
+  const onConfirmar = async () => {
+    if (!detalleSel || !confirmar) return;
+    const ok = await activar(detalleSel.id_version_modelo, confirmar === 'sombra');
+    if (ok) { setDetalleSel(ok); setConfirmar(null); }
   };
 
   if (!puedeVer) return <PermissionDenied seccion="Versiones de modelos IA" />;
@@ -101,7 +113,7 @@ export function ModelosView() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             <Boxes size={20} aria-hidden />{t('modelosview.gestion_de_modelos_de_ia')}</h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 'var(--s1)', marginBottom: 0 }}>
-            {loading ? 'Cargando…' : t('conteo.versiones', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
+            {loading ? t('modelosview.cargando') : t('conteo.versiones', { count: paginacion.totalRegistros, n: formatearNumero(paginacion.totalRegistros) })}
             {fromCache && ' · desde caché'}
           </p>
         </div>
@@ -112,7 +124,7 @@ export function ModelosView() {
 
       <div style={{ padding: 'var(--page-pad)' }}>
         {!online && <Alert variant="warning" title={t('modelosview.sin_conexion')} description={t('modelosview.mostrando_versiones_cacheadas_las_acciones')} style={{ marginBottom: 'var(--s4)' }} />}
-        {fromCache && online && <Alert variant="info" title={t('modelosview.datos_desde_cache')} description="No se pudo conectar; se muestran las últimas versiones disponibles." style={{ marginBottom: 'var(--s4)' }} />}
+        {fromCache && online && <Alert variant="info" title={t('modelosview.datos_desde_cache')} description={t('modelosview.datos_desde_cache_texto')} style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('modelosview.sin_acceso_a_los_modelos') : t('modelosview.error_al_cargar_versiones')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
 
         <div role="note" style={{ display: 'flex', gap: 'var(--s2)', padding: 'var(--s3) var(--s4)', marginBottom: 'var(--s4)', borderRadius: 'var(--r-md)', border: '1px solid var(--sem-info-border)', background: 'var(--sem-info-bg)', color: 'var(--text-primary)', fontSize: '13px' }}>
@@ -122,6 +134,8 @@ export function ModelosView() {
             {!puedeEditar && !puedeEjecutar && <> {t('modelosview.solo_lectura_texto')}</>}
           </span>
         </div>
+
+        {puedeVer && <AvisoReentrenamiento online={online} puedeSolicitar={puedeEjecutar} />}
 
         {activos && (
           <section aria-labelledby="modelos-produccion" style={{ marginBottom: 'var(--s5)' }}>
@@ -175,29 +189,34 @@ export function ModelosView() {
         <ModeloDetalleModal
           modelo={detalleSel}
           loading={detalleLoading}
-          puedeEditar={puedeEditar && online}
+          puedeEditar={puedeEditar && online && !fromCache}
           puedeEjecutar={puedeEjecutar}
-          online={online}
+          online={online && !fromCache}
           saving={saving}
           saveError={saveError}
           transiciones={transiciones}
           despliegues={despliegues}
           onGuardarNotas={onGuardarNotas}
-          onSolicitarActivar={() => setConfirmarActivar(true)}
-          onClose={() => { setDetalleSel(null); setConfirmarActivar(false); }}
+          onSolicitarActivar={() => setConfirmar('activar')}
+          onSolicitarSombra={() => setConfirmar('sombra')}
+          onClose={() => { setDetalleSel(null); setConfirmar(null); }}
+          nombrePatologia={(id) => patologiasHook.patologias.find((p) => String(p.id_patologia) === id)?.nombre_patologia}
         />
       )}
 
-      {confirmarActivar && detalleSel && (
+      {confirmar && detalleSel && (
         <ModalShell
-          title={t('modelosview.confirmar_activacion_en_produccion')}
-          onClose={() => setConfirmarActivar(false)}
+          title={t(confirmar === 'sombra' ? 'modelosview.confirmar_sombra' : 'modelosview.confirmar_activacion_en_produccion')}
+          onClose={() => setConfirmar(null)}
           maxWidth={480}
           footer={
             <>
-              <Button variant="secondary" onClick={() => setConfirmarActivar(false)} disabled={saving}>{t('modelosview.cancelar')}</Button>
-              <Button variant="primary" onClick={onConfirmarActivar} loading={saving} disabled={!online}>
-                <Rocket size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelosview.activar')}</Button>
+              <Button variant="secondary" onClick={() => setConfirmar(null)} disabled={saving}>{t('modelosview.cancelar')}</Button>
+              <Button variant="primary" onClick={onConfirmar} loading={saving} disabled={!online || fromCache}>
+                {confirmar === 'sombra'
+                  ? <><MoonStar size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelosview.poner_en_sombra')}</>
+                  : <><Rocket size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('modelosview.activar')}</>}
+              </Button>
             </>
           }
         >
@@ -205,7 +224,7 @@ export function ModelosView() {
             <AlertTriangle size={20} aria-hidden style={{ color: 'var(--sem-warning)', flexShrink: 0, marginTop: 2 }} />
             <div>
               <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>
-                <strong>{detalleSel.nombre_version}</strong>{' '}{t('modelosview.pasara_a_produccion_y_reemplazara_la')}</p>
+                <strong>{detalleSel.nombre_version}</strong>{' '}{t(confirmar === 'sombra' ? 'modelosview.pasara_a_sombra' : 'modelosview.pasara_a_produccion_y_reemplazara_la')}</p>
               {saveError && <p role="alert" style={{ margin: 'var(--s3) 0 0', fontSize: '13px', color: 'var(--sem-error)' }}>{saveError.message}</p>}
             </div>
           </div>

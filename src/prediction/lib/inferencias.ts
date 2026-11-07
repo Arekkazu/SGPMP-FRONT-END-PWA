@@ -2,8 +2,13 @@
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66: view-model del monitor desde GET /prediccion/inferencias (antes monitorMock) |
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo 13.9 RF-66/RF-68: id del activo y fecha ISO para unir con contagio |
+// | 2026-10-31 | Arekkazu | USAB-M03-M04 T-18/N-05 RF-66: enfermedad y lote por nombre; poblacional sin umbral no se clasifica |
+// | 2026-11-02 | Arekkazu | RF-66: lo que ve la cámara del área en Predicción |
+// | 2026-11-02 | Arekkazu | RF-66: quita paquete y eventoEdge, que nunca se llenaban |
+// | 2026-11-02 | Arekkazu | AJF-10 RF-66: monitor paginado y filtros nuevos |
 import { formatearFechaHora, formatearHora } from '../../shared/i18n/formato';
-import type { InferenciaMonitorResponse, ModoEjecucion, TipoModelo } from '../types';
+import i18n from '../../shared/i18n';
+import { PARADIGMA_POR_TIPO, type InferenciaMonitorResponse, type ModoEjecucion, type TipoModelo } from '../types';
 
 export type EstadoInferencia = 'EMITIDO' | 'RECHAZADO' | 'FALLIDO' | 'DESCARTADO' | 'NO_DISPONIBLE';
 export type MotivoFallback = 'NODO_DESINCRONIZADO' | 'ERROR_MODELO' | 'TIMEOUT';
@@ -40,10 +45,15 @@ export interface Inferencia {
   faltantes?: string[];
   contextoIncompleto?: boolean;
   hibrido?: { syncMs: number; nivelServidor: number; discrepancia: boolean };
-  paquete?: string;
-  eventoEdge?: string;
   alerta?: string;
+  /** AJF-10: id de la alerta generada, para enlazarla. */
+  idAlerta?: number | null;
+  /** AJF-10: resultado de un modelo en prueba (sombra): no genera alertas. */
+  prueba?: boolean;
   nota?: string;
+  /** Área (para la cámara) y fin de la ventana en ISO, para pedir la captura de esa ventana. */
+  idArea?: number | null;
+  finVentana?: string | null;
 }
 
 const numero = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
@@ -57,7 +67,8 @@ export function aInferencia(r: InferenciaMonitorResponse): Inferencia {
   const niveles = [0, 1, 2, 3].map((k) => numero(prob[String(k)]));
   const enfermedades = Object.entries(r.probabilidad_enfermedad ?? {})
     .filter(([, p]) => typeof p === 'number')
-    .map(([nombre, p]) => ({ nombre, prob: p }))
+    // T-18: la clave es el id de la patología ("8"); se muestra su nombre.
+    .map(([clave, p]) => ({ nombre: r.nombres_patologias?.[clave] ?? clave, prob: p }))
     .sort((a, b) => b.prob - a.prob);
   const ventana = r.fecha_inicio_ventana && r.fecha_fin_ventana
     ? `${formatearHora(r.fecha_inicio_ventana)}–${formatearHora(r.fecha_fin_ventana)}` : '—';
@@ -66,8 +77,11 @@ export function aInferencia(r: InferenciaMonitorResponse): Inferencia {
     uuid: r.id_resultado_inferencia,
     idActivo: r.id_activo_biologico,
     fecha: r.fecha_inferencia,
-    unidad: r.identificador_activo ?? `#${r.id_activo_biologico}`,
+    // T-18: un lote sin identificador se nombra por su especie y área, no "#878".
+    unidad: r.identificador_activo ?? i18n.t('prediction:inferencias.lote_de', { especie: r.especie ?? '—', area: r.nombre_area }),
     area: `${r.nombre_area} · ${r.nombre_finca}`,
+    idArea: r.id_infraestructura ?? null,
+    finVentana: r.fecha_fin_ventana,
     especie: r.especie ?? '—',
     tipoModelo: r.tipo_modelo,
     estado: 'EMITIDO',
@@ -76,7 +90,7 @@ export function aInferencia(r: InferenciaMonitorResponse): Inferencia {
     ventana,
     latenciaMs: r.latencia_ms,
     hora: formatearFechaHora(r.fecha_inferencia),
-    nivel: ([0, 1, 2, 3] as const).includes(r.nivel_riesgo as 0) ? (r.nivel_riesgo as 0 | 1 | 2 | 3) : null,
+    nivel: nivelCoherente(r, numero(prob.score_anomalia), numero(prob.umbral_score_anomalia)),
     score: numero(prob.score_anomalia),
     umbralScore: numero(prob.umbral_score_anomalia),
     enfermedad: r.nombre_patologia ?? undefined,
@@ -85,13 +99,28 @@ export function aInferencia(r: InferenciaMonitorResponse): Inferencia {
     distPatologias: enfermedades.length ? enfermedades : undefined,
     contextoIncompleto: r.contexto_incompleto,
     alerta: r.id_alerta_generada != null ? `ALR-${r.id_alerta_generada}` : undefined,
+    idAlerta: r.id_alerta_generada,
+    prueba: !!r.modo_sombra,
   };
 }
 
-/** El último resultado de cada unidad es su estado actual (la lista llega de la más reciente). */
+/**
+ * N-05 (RF-66 / RFC-009): en los modelos POBLACIONAL el riesgo sale de comparar el
+ * puntaje de anomalía con el umbral del Motor. Sin umbral configurado (o en 0) no se
+ * clasifica; con el puntaje bajo el umbral no puede ser "Crítico". El motor de IA
+ * todavía escribía niveles altos con puntaje 0: esto evita mostrar esa contradicción.
+ */
+function nivelCoherente(r: InferenciaMonitorResponse, score: number | undefined, umbral: number | undefined): 0 | 1 | 2 | 3 | null {
+  const nivel = ([0, 1, 2, 3] as const).includes(r.nivel_riesgo as 0) ? (r.nivel_riesgo as 0 | 1 | 2 | 3) : null;
+  if (PARADIGMA_POR_TIPO[r.tipo_modelo] !== 'POBLACIONAL') return nivel;
+  if (!umbral || score == null) return null;
+  return score < umbral ? 0 : nivel;
+}
+
+/** El último resultado de cada activo es su estado actual (la lista llega de la más reciente). */
 export function ultimoPorUnidad(lista: Inferencia[]): Inferencia[] {
-  const vistos = new Set<string>();
-  return lista.filter((i) => (vistos.has(i.unidad) ? false : (vistos.add(i.unidad), true)));
+  const vistos = new Set<number>();
+  return lista.filter((i) => (vistos.has(i.idActivo) ? false : (vistos.add(i.idActivo), true)));
 }
 
 /** Percentil 95 de las latencias conocidas; null sin datos. */

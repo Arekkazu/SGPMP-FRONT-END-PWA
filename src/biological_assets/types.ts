@@ -3,6 +3,8 @@
 // | 2026-10-21 | destroyerban | #73 RF-37: fase destino y confirmación no estándar en CambiarFase  |
 // | 2026-10-23 | destroyerban | FE-07 RF-33/48: multiespecie por grupo, fecha de nacimiento opcional y aviso de edad |
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-11-02 | Arekkazu | AJF-01 RF-46: categorías de telemetría y predicción en el historial |
+// | 2026-11-03 | Arekkazu | QA-M02 RF-49: la ficha solo consulta los sensores asociados; ya no crea asociaciones |
 // =====================================================================
 // Módulo 2 — Activos Biológicos · Tipos de dominio
 // Contrato: do-it/biological_assets/.../api_reference_m02_activos_biologicos.md
@@ -18,7 +20,9 @@ export type EstadoActivoNombre =
 
 export type CategoriaHistorial =
   | 'ESTADO' | 'FASE' | 'EVENTO_BIOLOGICO' | 'CRECIMIENTO' | 'SANITARIO'
-  | 'REPRODUCTIVO' | 'PRODUCTIVO' | 'BAJA' | 'TRANSFERENCIA';
+  | 'REPRODUCTIVO' | 'PRODUCTIVO' | 'BAJA' | 'TRANSFERENCIA'
+  // AJF-01: eventos de telemetría y predicción del activo.
+  | 'ALERTA_IOT' | 'PREDICCION' | 'DIAGNOSTICO_CLINICO' | 'CONTAGIO';
 
 export type TipoMedicionCrecimiento = 'PESO' | 'TALLA' | 'BIOMASA';
 export type TipoEventoSanitario = 'VACUNACION' | 'TRATAMIENTO' | 'DIAGNOSTICO' | 'CONTROL_PREVENTIVO';
@@ -512,20 +516,6 @@ export interface TransferenciaResponse {
 }
 
 // ── Sensores IoT (recurso 30) ────────────────────────────────────────
-export interface AsociarSensorActivoDTO {
-  tipo_activo: 'INDIVIDUAL' | 'LOTE';
-  // AMBIENTAL no se soporta desde este DTO (issue #351 backend): una
-  // asociación ambiental se ancla a la infraestructura, no a un activo
-  // puntual. El backend la rechaza con 400 si se envía aquí.
-  tipo_asociacion: 'DIRECTA' | 'POBLACIONAL';
-  dispositivo_iot_id: number;
-  sensor_id: number;
-  id_infraestructura: number;
-  fecha_inicio?: string | null;
-  fecha_fin?: string | null;
-  motivo?: string | null;
-}
-
 export interface AsociacionSensorActivoResponse {
   id_asociacion_activo_sensor: number;
   id_activo_biologico: number;
@@ -539,6 +529,14 @@ export interface AsociacionSensorActivoResponse {
   estado_asociacion: string;
   motivo: string | null;
   advertencia: string | null;
+  nombre_sensor: string | null;
+  serial_dispositivo: string | null;
+}
+
+export interface ConsultaAsociacionesSensorResponse {
+  id_activo_biologico: number;
+  tipo_consulta: string;
+  asociaciones: AsociacionSensorActivoResponse[];
 }
 
 // ── Indicadores / datos consolidados ─────────────────────────────────

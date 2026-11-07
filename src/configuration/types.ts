@@ -3,6 +3,9 @@
 // | 2026-10-20 | Arekkazu | FE-05 RF-15: densidad_poblacional_max y esperanza_vida_dias en especie (RFC-012/014) |
 // | 2026-10-20 | Arekkazu | FE-06 RF-20: especies (1..N), nivel_criticidad y capacidad_maxima del área (RFC-012/016) |
 // | 2026-10-20 | Arekkazu | FE-09 RF-17: es_critica en la variable ambiental (RFC-016) |
+// | 2026-10-30 | Arekkazu | INC-M03-135-G01 RF-49: especies compatibles de un sensor |
+// | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: tolerancia T del semáforo configurable en el umbral |
+// | 2026-11-04 | Arekkazu | RF-19 v1.1: titular tributario de la finca (M06 cierra por titular) |
 import type { TipoModelo } from '../prediction/types';
 
 /** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
@@ -80,6 +83,16 @@ export interface FincaResponse {
   id_usuario: number | null;
   /** Nombre del productor (RF-19); null si el backend no lo puede resolver. */
   nombre_usuario?: string | null;
+}
+
+/** RF-19 v1.1: titular tributario de la finca; sin titular los cuatro campos son null. */
+export interface TitularFinca {
+  id_finca: number;
+  nombre: string;
+  tipo_id_tributaria: 'NIT' | 'CC' | 'CE' | null;
+  numero_id_tributaria: string | null;
+  dv: string | null;
+  razon_social: string | null;
 }
 
 export interface RegistrarFincaDTO {
@@ -223,6 +236,12 @@ export type CategoriaSensor =
   | 'AMONIACO'
   | 'SALINIDAD'
   | 'LUMINOSIDAD';
+
+/** RF-49 R3: especies con las que el sensor puede vincularse a un activo (M02 lo exige). */
+export interface EspeciesCompatiblesSensorResponse {
+  id_sensor: number;
+  especies: { id_especie: number; nombre: string }[];
+}
 
 export interface SensorResponse {
   id_sensores: number;
@@ -469,6 +488,10 @@ export interface UmbralAmbientalResponse {
   es_activo: boolean;
   fecha_actualizacion: string | null;
   niveles: NivelAlertaDTO[];
+  /** RF-58 Fase 3 (G88): tolerancia T del semáforo; null = 10 % del rango. */
+  tolerancia_semaforo?: number | string | null;
+  /** T que aplica el semáforo (la configurada o el 10 % del rango). */
+  tolerancia_semaforo_efectiva?: number | string | null;
 }
 
 export interface RegistrarUmbralDTO {
@@ -477,12 +500,15 @@ export interface RegistrarUmbralDTO {
   valor_min: number;
   valor_max: number;
   niveles: NivelAlertaDTO[];
+  tolerancia_semaforo?: number | null;
 }
 
 export interface EditarUmbralDTO {
   valor_min: number;
   valor_max: number;
   niveles: NivelAlertaDTO[];
+  /** Ausente = conserva la T vigente; null = vuelve al 10 % del rango. */
+  tolerancia_semaforo?: number | null;
   fecha_actualizacion?: string | null;
 }
 

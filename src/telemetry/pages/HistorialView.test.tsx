@@ -5,6 +5,7 @@
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-22: conteos con plural y separador de miles |
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 M3-01: 7 días por defecto y el rango rápido consulta |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-18/T-22: el mock incluye el dashboard de áreas; números con separador |
+// | 2026-10-31 | Arekkazu | TC-DIS-160 RF-59 a11y 1.1.1/1.3.1: una fila por lectura, hueco dentro de la lectura; T-19/T-22/T-23 |
 /**
  * FE-11 (RF-59 E6 / CA-19 y E7 / CA-17): con la respuesta de DEV-38, el historial avisa
  * cuando el resultado se truncó y marca los intervalos sin datos.
@@ -88,9 +89,11 @@ describe('HistorialView — E7 / CA-17: intervalos vacíos', () => {
     render(<HistorialView />);
     expect(await screen.findByText('El periodo tiene 1 intervalo sin datos')).toBeInTheDocument();
 
+    // TC-DIS-160: una fila por lectura (como la gráfica); el hueco va dentro de la lectura
+    // 2 (04:00), la que lo cierra, antes de la 3 (01:59:30).
     const filas = screen.getAllByRole('row').slice(1); // sin el encabezado
-    const marca = screen.getByTestId('fila-vacio');
-    expect(filas.indexOf(marca)).toBe(2); // tras la lectura 2 (04:00), antes de la 3 (01:59:30)
+    expect(filas).toHaveLength(3);
+    const marca = within(filas[1]).getByTestId('fila-vacio');
     // Día y hora locales: 01:59:30Z en America/Bogota es el 19 a las 20:59.
     expect(marca).toHaveTextContent(`Sin datos por 2 h desde ${fechaHoraCaptura(VACIO.desde)}`);
     expect(within(marca).getByText(/frecuencia esperada: 1 min/)).toBeInTheDocument();

@@ -1,6 +1,8 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: módulo de suministros (namespace i18n 'supplies') |
+// | 2026-11-04 | Arekkazu | M06 RF-82..94: módulo financiero NIC 41 (namespace i18n 'finanzas') |
+// | 2026-11-06 | Arekkazu | M07 RF-95..102: namespace i18n 'integracion' |
 /**
  * Motor de internacionalizacion (RF-29).
  *
@@ -34,6 +36,8 @@ import esAuth from './locales/es-CO/auth.json';
 import esBiologicalAssets from './locales/es-CO/biologicalAssets.json';
 import esConfiguration from './locales/es-CO/configuration.json';
 import esDashboard from './locales/es-CO/dashboard.json';
+import esFinanzas from './locales/es-CO/finanzas.json';
+import esIntegracion from './locales/es-CO/integracion.json';
 import esNav from './locales/es-CO/nav.json';
 import esNotificaciones from './locales/es-CO/notificaciones.json';
 import esPerfil from './locales/es-CO/perfil.json';
@@ -49,6 +53,8 @@ import enAuth from './locales/en-US/auth.json';
 import enBiologicalAssets from './locales/en-US/biologicalAssets.json';
 import enConfiguration from './locales/en-US/configuration.json';
 import enDashboard from './locales/en-US/dashboard.json';
+import enFinanzas from './locales/en-US/finanzas.json';
+import enIntegracion from './locales/en-US/integracion.json';
 import enNav from './locales/en-US/nav.json';
 import enNotificaciones from './locales/en-US/notificaciones.json';
 import enPerfil from './locales/en-US/perfil.json';
@@ -65,12 +71,12 @@ export const LOCALE_DEFAULT: Locale = 'es-CO';
 const CLAVE_STORAGE = 'sgpmp-locale';
 
 export const RECURSOS = {
-  'es-CO': { common: esCommon, auditoria: esAuditoria, auth: esAuth, biologicalAssets: esBiologicalAssets, configuration: esConfiguration, dashboard: esDashboard, nav: esNav, notificaciones: esNotificaciones, perfil: esPerfil, prediction: esPrediction, roles: esRoles, supplies: esSupplies, telemetry: esTelemetry, usuarios: esUsuarios },
-  'en-US': { common: enCommon, auditoria: enAuditoria, auth: enAuth, biologicalAssets: enBiologicalAssets, configuration: enConfiguration, dashboard: enDashboard, nav: enNav, notificaciones: enNotificaciones, perfil: enPerfil, prediction: enPrediction, roles: enRoles, supplies: enSupplies, telemetry: enTelemetry, usuarios: enUsuarios },
+  'es-CO': { common: esCommon, auditoria: esAuditoria, auth: esAuth, biologicalAssets: esBiologicalAssets, configuration: esConfiguration, dashboard: esDashboard, finanzas: esFinanzas, integracion: esIntegracion, nav: esNav, notificaciones: esNotificaciones, perfil: esPerfil, prediction: esPrediction, roles: esRoles, supplies: esSupplies, telemetry: esTelemetry, usuarios: esUsuarios },
+  'en-US': { common: enCommon, auditoria: enAuditoria, auth: enAuth, biologicalAssets: enBiologicalAssets, configuration: enConfiguration, dashboard: enDashboard, finanzas: enFinanzas, integracion: enIntegracion, nav: enNav, notificaciones: enNotificaciones, perfil: enPerfil, prediction: enPrediction, roles: enRoles, supplies: enSupplies, telemetry: enTelemetry, usuarios: enUsuarios },
 } as const;
 
 /** Namespaces cargados. Un modulo nuevo se agrega aqui y en `RECURSOS`. */
-export const NAMESPACES = ['common', 'auditoria', 'auth', 'biologicalAssets', 'configuration', 'dashboard', 'nav', 'notificaciones', 'perfil', 'prediction', 'roles', 'supplies', 'telemetry', 'usuarios'] as const;
+export const NAMESPACES = ['common', 'auditoria', 'auth', 'biologicalAssets', 'configuration', 'dashboard', 'finanzas', 'integracion', 'nav', 'notificaciones', 'perfil', 'prediction', 'roles', 'supplies', 'telemetry', 'usuarios'] as const;
 
 export function esLocaleValido(valor: unknown): valor is Locale {
   return typeof valor === 'string' && (LOCALES as readonly string[]).includes(valor);

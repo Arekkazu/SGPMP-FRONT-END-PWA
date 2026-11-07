@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-10-30 | Arekkazu | INC-M03-135-G01 RF-49: especies compatibles de un sensor |
 import { http } from '../../shared/api/http';
 import type {
   DispositivoIotResponse, RegistrarDispositivoIotDTO,
@@ -5,7 +8,7 @@ import type {
   ConfiguracionRemotaResponse, ConfigurarRemotamenteDTO,
   SensorAreaResponse, AsociarSensorAreaDTO, AsociarSensorAreaResponse,
   CalibracionResponse, RegistrarCalibracionDTO, TipoDispositivoIotResponse,
-  CredencialMqttResponse, EstadoCredencialMqttResponse,
+  CredencialMqttResponse, EstadoCredencialMqttResponse, EspeciesCompatiblesSensorResponse,
 } from '../types';
 
 const DISP = '/configuracion/dispositivos-iot';
@@ -122,6 +125,19 @@ export const sensorAreaApi = {
   async listarAsociaciones(idSensor: number): Promise<SensorAreaResponse[]> {
     const res = await http.get<{ items: SensorAreaResponse[] }>(`${SENS}/${idSensor}/asociaciones`);
     return res.data.items;
+  },
+};
+
+export const especiesCompatiblesApi = {
+  async obtener(idSensor: number): Promise<EspeciesCompatiblesSensorResponse> {
+    const res = await http.get<EspeciesCompatiblesSensorResponse>(`${SENS}/${idSensor}/especies-compatibles`);
+    return res.data;
+  },
+
+  /** Reemplaza la lista completa (al menos una especie activa). */
+  async reemplazar(idSensor: number, idsEspecies: number[]): Promise<EspeciesCompatiblesSensorResponse> {
+    const res = await http.put<EspeciesCompatiblesSensorResponse>(`${SENS}/${idSensor}/especies-compatibles`, { ids_especies: idsEspecies });
+    return res.data;
   },
 };
 

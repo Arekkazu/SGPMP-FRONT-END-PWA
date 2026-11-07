@@ -2,6 +2,9 @@
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-03/N-03 RF-72: diagnósticos de la especie del activo y activo con nombre |
 // | 2026-10-29 | Arekkazu | TC-DIS-187/188/191/192 RF-67: tablist sin Exportar, tabla alternativa a la gráfica y página anterior |
+// | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: el Administrador amplía la ventana de un resultado |
+// | 2026-11-02 | Arekkazu | AJF-09 RF-67: aviso de inmutabilidad sin la norma NIC 41 y en i18n |
+// | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU04 H-01/H-03 RF-67: detalle de la inferencia y filtro con todas las patologías |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -19,10 +22,15 @@ import { HistorialFiltros, historialFiltrosVacio, type HistorialFiltrosState } f
 import { HistorialTimeline } from '../components/HistorialTimeline';
 import { LineChartPrediccion } from '../components/LineChartPrediccion';
 import { RetroalimentacionFormModal, type RetroContexto } from '../components/RetroalimentacionFormModal';
+import { AmpliarVentanaRetroModal } from '../components/AmpliarVentanaRetroModal';
 import { diagnosticosPara } from '../lib/diagnosticos';
+import { ESPECIE_TODAS } from '../lib/catalogos';
+import { aInferencia, type Inferencia } from '../lib/inferencias';
+import { monitorApi } from '../api/monitorApi';
+import { InferenciaDetalleModal } from '../components/InferenciaDetalleModal';
 import { PermissionDenied } from '../components/PermissionDenied';
 import { NIVEL_RIESGO_LABEL, extraerConfianza, extraerNivelRiesgo, extraerPatologia } from '../lib/riesgo';
-import { RECURSO_HISTORIAL, RECURSO_RETRO, ACCION_R, ACCION_C } from '../rbac';
+import { RECURSO_HISTORIAL, RECURSO_RETRO, RECURSO_CONFIG_GLOBAL, ACCION_R, ACCION_C, ACCION_U } from '../rbac';
 import type { ConsultarHistorialFiltros, EventoHistorialResponse } from '../types';
 
 type TabId = 'timeline' | 'tendencia';
@@ -31,6 +39,7 @@ export function HistorialView() {
   const { t } = useT('prediction');
   const puedeVer = usePermission(RECURSO_HISTORIAL, ACCION_R);
   const puedeRetroalimentar = usePermission(RECURSO_RETRO, ACCION_C);
+  const puedeAmpliar = usePermission(RECURSO_CONFIG_GLOBAL, ACCION_U);
   const online = useOnlineStatus();
 
   const { eventos, cursor, loading, loadingMas, error, fromCache, activos, activosError, cargarActivos, consultar, cargarMas, limpiar } = useHistorial();
@@ -41,6 +50,10 @@ export function HistorialView() {
   const [tab, setTab] = useState<TabId>('timeline');
   const [retroEvento, setRetroEvento] = useState<EventoHistorialResponse | null>(null);
   const [retroOk, setRetroOk] = useState(false);
+  const [ampliarEvento, setAmpliarEvento] = useState<EventoHistorialResponse | null>(null);
+  const [ampliadoHasta, setAmpliadoHasta] = useState<string | null>(null);
+  const [detalleInf, setDetalleInf] = useState<Inferencia | null>(null);
+  const [detalleError, setDetalleError] = useState(false);
   // TC-DIS-188: la paginación por cursor solo agregaba al final; se ve una página a la vez
   // y se puede volver. `cortes[i]` = índice del primer evento de la página i.
   const [pagina, setPagina] = useState(0);
@@ -49,7 +62,8 @@ export function HistorialView() {
   const reiniciarPaginas = () => { setPagina(0); setCortes([0]); };
 
   useEffect(() => {
-    if (puedeVer) { cargarActivos(); patologiasHook.cargar({ solo_activas: true }); }
+    // CU04 H-03: el filtro necesita también las inactivas; la retroalimentación sigue con las activas.
+    if (puedeVer) { cargarActivos(); patologiasHook.cargar({}); }
   }, [puedeVer, cargarActivos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // M4-03 / N-03: solo las patologías válidas de la especie del activo, en el filtro y
@@ -59,7 +73,30 @@ export function HistorialView() {
   const opcionesPara = useCallback((idActivo: number | string | null | undefined) =>
     diagnosticosPara(patologiasHook.patologias, { id: activoDe(idActivo)?.id_especie })
       .map((p) => ({ id: p.id_patologia, nombre: p.nombre_patologia })), [patologiasHook.patologias, activoDe]);
-  const patologiasOpciones = useMemo(() => opcionesPara(filtros.idActivo), [opcionesPara, filtros.idActivo]);
+  // CU04 H-03: se consulta por cualquier patología de la especie, también por las inactivadas después.
+  const patologiasOpciones = useMemo(() => {
+    const especie = activoDe(filtros.idActivo)?.id_especie;
+    return patologiasHook.patologias
+      .filter((p) => especie == null || p.especie_aplicable === ESPECIE_TODAS || p.especie_aplicable === String(especie))
+      .map((p) => ({ id: p.id_patologia, nombre: p.es_activo ? p.nombre_patologia : t('historialview.patologia_inactiva', { nombre: p.nombre_patologia }) }));
+  }, [patologiasHook.patologias, activoDe, filtros.idActivo, t]);
+
+  // CU04 H-01: la tarjeta abre el mismo detalle que el monitor de inferencias.
+  const verDetalle = async (e: EventoHistorialResponse) => {
+    setDetalleError(false);
+    const instante = new Date(e.fecha_evento).getTime();
+    try {
+      const lista = await monitorApi.inferencias({
+        id_activo_biologico: e.id_activo_biologico,
+        desde: new Date(instante - 1000).toISOString(),
+        hasta: new Date(instante + 1000).toISOString(),
+      });
+      const r = lista.find((x) => x.id_resultado_inferencia === e.id_resultado_inferencia);
+      if (r) setDetalleInf(aInferencia(r)); else setDetalleError(true);
+    } catch {
+      setDetalleError(true);
+    }
+  };
 
   const consultarHistorial = () => {
     if (!filtros.idActivo) return;
@@ -128,6 +165,11 @@ export function HistorialView() {
     if (ok) { setRetroEvento(null); setRetroOk(true); setTimeout(() => setRetroOk(false), 4000); }
   };
 
+  const enviarAmpliacion = async (dto: Parameters<typeof retro.ampliarVentana>[0]) => {
+    const ampliacion = await retro.ampliarVentana(dto);
+    if (ampliacion) { setAmpliarEvento(null); setAmpliadoHasta(ampliacion.fecha_limite); }
+  };
+
   if (!puedeVer) return <PermissionDenied seccion="Historial diagnóstico" />;
 
   return (
@@ -139,12 +181,16 @@ export function HistorialView() {
       </div>
 
       <div style={{ padding: 'var(--page-pad)' }}>
-        <Alert variant="info" title="Registro inmutable (NIC-41)" description={t('historialview.los_resultados_de_inferencia_no_se')} style={{ marginBottom: 'var(--s5)' }} />
+        {/* AJF-09: NIC 41 es la norma contable de activos biológicos, no tiene que ver con que
+            las inferencias no se editen; y la pantalla no muestra códigos de norma ni de RF. */}
+        <Alert variant="info" title={t('historialview.inmutable_titulo')} description={t('historialview.inmutable_texto')} style={{ marginBottom: 'var(--s5)' }} />
 
+        {ampliadoHasta && <Alert variant="success" title={t('historialview.ventana_ampliada')} description={t('historialview.ventana_ampliada_detalle', { fecha: formatearFecha(ampliadoHasta) })} style={{ marginBottom: 'var(--s4)' }} />}
         {retroOk && <Alert variant="success" title={t('historialview.retroalimentacion_registrada')} description={t('historialview.gracias_la_evaluacion_clinica_quedo')} style={{ marginBottom: 'var(--s4)' }} />}
         {!online && <Alert variant="warning" title={t('historialview.sin_conexion')} description={t('historialview.mostrando_historial_cacheado_del_ultimo')} style={{ marginBottom: 'var(--s4)' }} />}
-        {fromCache && online && <Alert variant="info" title={t('historialview.datos_desde_cache')} description="No se pudo conectar; se muestra el último historial disponible." style={{ marginBottom: 'var(--s4)' }} />}
+        {fromCache && online && <Alert variant="info" title={t('historialview.datos_desde_cache')} description={t('historialview.datos_desde_cache_texto')} style={{ marginBottom: 'var(--s4)' }} />}
         {error && !fromCache && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={error.status === 403 ? t('historialview.sin_acceso_al_historial') : t('historialview.error_al_consultar')} description={error.message} style={{ marginBottom: 'var(--s4)' }} />}
+        {detalleError && <Alert variant="warning" title={t('historialview.detalle_no_disponible')} style={{ marginBottom: 'var(--s4)' }} />}
 
         <HistorialFiltros
           value={filtros}
@@ -181,7 +227,14 @@ export function HistorialView() {
               {loading ? (
                 <div style={{ padding: 'var(--s8)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('historialview.consultando_historial')}</div>
               ) : (
-                <HistorialTimeline eventos={eventosPagina} puedeRetroalimentar={puedeRetroalimentar && online} onRetroalimentar={setRetroEvento} />
+                <HistorialTimeline
+                  eventos={eventosPagina}
+                  puedeRetroalimentar={puedeRetroalimentar && online && !fromCache}
+                  onRetroalimentar={setRetroEvento}
+                  puedeAmpliar={puedeAmpliar && online && !fromCache}
+                  onAmpliar={(e) => { retro.limpiarSaveError(); setAmpliadoHasta(null); setAmpliarEvento(e); }}
+                  onVerDetalle={online && !fromCache ? (e) => { void verDetalle(e); } : undefined}
+                />
               )}
             </div>
             {(pagina > 0 || haySiguiente) && (
@@ -245,6 +298,21 @@ export function HistorialView() {
           </div>
         )}
       </div>
+
+      {detalleInf && <InferenciaDetalleModal inf={detalleInf} onClose={() => setDetalleInf(null)} />}
+
+      {ampliarEvento && ampliarEvento.id_resultado_inferencia && (
+        <AmpliarVentanaRetroModal
+          idResultado={ampliarEvento.id_resultado_inferencia}
+          nombreActivo={activoDe(ampliarEvento.id_activo_biologico)?.identificador ?? `#${ampliarEvento.id_activo_biologico}`}
+          fechaInferencia={ampliarEvento.fecha_evento}
+          saving={retro.saving}
+          saveError={retro.saveError}
+          online={online}
+          onSubmit={enviarAmpliacion}
+          onClose={() => { retro.limpiarSaveError(); setAmpliarEvento(null); }}
+        />
+      )}
 
       {retroEvento && retroEvento.id_resultado_inferencia && (
         <RetroalimentacionFormModal
