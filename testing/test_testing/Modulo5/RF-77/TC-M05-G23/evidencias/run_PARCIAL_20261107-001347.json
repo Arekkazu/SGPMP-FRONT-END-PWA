@@ -1,0 +1,65 @@
+{
+  "tc": "TC-M05-G23",
+  "checkpoints": [
+    {
+      "paso": "CP-01 Sandbox + login Administrador",
+      "esperado": "Sandbox aceptado por el backend antes del login y ruta distinta de /login",
+      "obtenido": "ruta /sigab-test/dashboard; sandbox confirmado: sí; token capturado: sí; peticiones con sandbox: 4",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02 Navegación a /suministros/gastos",
+      "esperado": "Formulario de reporte visible con campo #gastos-desde interactivo",
+      "obtenido": "Formulario visible con campo #gastos-desde",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03 Generar reporte por UI (activo 57)",
+      "esperado": "POST /suministros/reportes-gastos -> 200, gasto_total_acumulado = \"10.0000\", panel de detalle visible",
+      "obtenido": "HTTP 200; id_reporte=14; gasto_total_acumulado=10.0000; panelVisible=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04 Exportar CSV por UI",
+      "esperado": "POST /exportacion -> 201, nombre_archivo = Gastos_57_2026-01-01_2026-07-31.csv, vigencia 24 h exactas",
+      "obtenido": "HTTP 201; nombre_archivo=Gastos_57_2026-01-01_2026-07-31.csv; vigencia=24.00 h; id_archivo=9a1516cc-9033-4867-870a-279663629879; GET descarga capturado HTTP 200",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05 Descarga y contenido CSV",
+      "esperado": "GET -> 200 text/csv; archivo descargado con 5 columnas exactas y suma de montos = 10.0000",
+      "obtenido": "HTTP 200; Content-Type=text/csv; charset=utf-8; encabezadoOk=true; filas=1; sumaMonto=10.0000 (esperado 10.0000)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06 Exportar PDF por UI",
+      "esperado": "POST /exportacion -> 201, nombre_archivo = Reporte_Gastos_57_2026-01-01_2026-07-31.pdf, vigencia 24 h exactas",
+      "obtenido": "HTTP 201; nombre_archivo=Reporte_Gastos_57_2026-01-01_2026-07-31.pdf; vigencia=24.00 h; id_archivo=475b69cc-5426-4e53-80cf-63a0ab65d97a; GET descarga capturado HTTP 200",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07 Descarga binaria PDF",
+      "esperado": "GET -> 200 application/pdf, tamaño > 0, primeros 5 bytes \"%PDF-\"",
+      "obtenido": "HTTP 200; Content-Type=application/pdf; tamaño=2295 bytes; magic=%PDF-",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08A Contenido del PDF",
+      "esperado": "1 página, título \"Reporte de Gastos Acumulados\", fecha de generación presente en el texto",
+      "obtenido": "encabezado=\"Reporte de Gastos Acumulados\"; fecha=\"2026-11-07T05:13:45+00:00\"; paginas=1; tamanoBytes=2295",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08B Logo en el PDF",
+      "esperado": "Imagen embebida detectada en el PDF (/Subtype /Image)",
+      "obtenido": "tieneImagen=false; id_finca=1; registro_iv_existe=false; logo_path_no_nulo=false; extension=sin_extension; archivo=\"Reporte_Gastos_57_2026-01-01_2026-07-31.pdf\"; causa no determinada",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-09 Aislamiento post-rollback sin sandbox",
+      "esperado": "Rollback 2xx; consulta sin sandbox del reporte y ambos archivos -> 404 (REPORTE/ARCHIVO_NO_ENCONTRADO)",
+      "obtenido": "No alcanzado; rollback de respaldo en after() -> HTTP 200",
+      "estado": "FALLA"
+    }
+  ]
+}

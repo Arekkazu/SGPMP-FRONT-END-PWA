@@ -1,0 +1,140 @@
+﻿node.exe : $ cross-env TZ=America/Bogota cypress run --browser chrome --spec tc-m05-g13-registro-medicamento.cy.ts
+En C:\nvm4w\nodejs\pnpm.ps1: 16 Carácter: 5
++     & "$basedir/node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs"  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ cross-env TZ=...dicamento.cy.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+
+DevTools listening on ws://127.0.0.1:54349/devtools/browser/ae61facc-7cea-4432-9935-22f1560ccd36
+Missing baseUrl in compilerOptions. tsconfig-paths will be skipped
+[TC-M05-G13] API HOST resuelto: api.inmero.co
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        13.17.0                                                                        │
+  │ Browser:        Chrome 156 (headless)                                                          │
+  │ Node Version:   v26.1.0 (C:\nvm4w\nodejs\node.exe)                                             │
+  │ Specs:          1 found (tc-m05-g13-registro-medicamento.cy.ts)                                │
+  │ Searched:       C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo │
+  │                 5\RF-76\TC-M05-G13\tc-m05-g13-registro-medicamento.cy.ts                       │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  tc-m05-g13-registro-medicamento.cy.ts                                           (1 of 1)
+
+
+  TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+    1) CP-01..CP-03 · login del Veterinario dentro del sandbox y apertura del formulario
+    (Attempt 1 of 2) CP-04..CP-06 · registro INDIVIDUAL (activo 778) desde la UI
+    2) CP-04..CP-06 · registro INDIVIDUAL (activo 778) desde la UI
+    (Attempt 1 of 2) CP-07 · el activo 778 queda EN_TRATAMIENTO (RF-44)
+    3) CP-07 · el activo 778 queda EN_TRATAMIENTO (RF-44)
+    (Attempt 1 of 2) CP-08 · precondición del activo poblacional 776
+    4) CP-08 · precondición del activo poblacional 776
+    (Attempt 1 of 2) CP-09..CP-11 · registro POBLACIONAL (activo 776) desde la UI
+    5) CP-09..CP-11 · registro POBLACIONAL (activo 776) desde la UI
+    (Attempt 1 of 2) CP-12 · el activo 776 queda EN_TRATAMIENTO (RF-44)
+    6) CP-12 · el activo 776 queda EN_TRATAMIENTO (RF-44)
+    (Attempt 1 of 2) CP-13 · dosis_por_individuo enviada en el body no se acepta como entrada
+    7) CP-13 · dosis_por_individuo enviada en el body no se acepta como entrada
+    √ CP-14 · rollback del sandbox y verificación sin sandbox (335ms)
+    (Attempt 1 of 2) Veredicto · la corrida falla si hay al menos un checkpoint en FALLA
+    8) Veredicto · la corrida falla si hay al menos un checkpoint en FALLA
+  [writeResult] -> C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-76\TC-M05-G13\evidencias\run_INVALIDA_20261106-162017.json
+
+
+  1 passing (3m)
+  8 failing
+
+  1) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       CP-01..CP-03 · login del Veterinario dentro del sandbox y apertura del formulario:
+     Error: [TC-M05-G13] El sandbox no quedó confirmado en CP-01: se detiene el bloque para no escribir fuera de él.
+      at exigirSandbox (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:120:0)
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:236:0)
+
+  2) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       CP-04..CP-06 · registro INDIVIDUAL (activo 778) desde la UI:
+     Error: [TC-M05-G13] El sandbox no quedó confirmado en CP-01: se detiene el bloque para no escribir fuera de él.
+      at exigirSandbox (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:120:0)
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:289:0)
+
+  3) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       CP-07 · el activo 778 queda EN_TRATAMIENTO (RF-44):
+     Error: [TC-M05-G13] El sandbox no quedó confirmado en CP-01: se detiene el bloque para no escribir fuera de él.
+      at exigirSandbox (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:120:0)
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:341:0)
+
+  4) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       CP-08 · precondición del activo poblacional 776:
+     Error: [TC-M05-G13] El sandbox no quedó confirmado en CP-01: se detiene el bloque para no escribir fuera de él.
+      at exigirSandbox (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:120:0)
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:349:0)
+
+  5) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       CP-09..CP-11 · registro POBLACIONAL (activo 776) desde la UI:
+     Error: [TC-M05-G13] El sandbox no quedó confirmado en CP-01: se detiene el bloque para no escribir fuera de él.
+      at exigirSandbox (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:120:0)
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:358:0)
+
+  6) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       CP-12 · el activo 776 queda EN_TRATAMIENTO (RF-44):
+     Error: [TC-M05-G13] El sandbox no quedó confirmado en CP-01: se detiene el bloque para no escribir fuera de él.
+      at exigirSandbox (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:120:0)
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:389:0)
+
+  7) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       CP-13 · dosis_por_individuo enviada en el body no se acepta como entrada:
+     Error: [TC-M05-G13] El sandbox no quedó confirmado en CP-01: se detiene el bloque para no escribir fuera de él.
+      at exigirSandbox (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:120:0)
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:396:0)
+
+  8) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       Veredicto · la corrida falla si hay al menos un checkpoint en FALLA:
+     AssertionError: Checkpoints en FALLA: CP-01, CP-02, CP-03, CP-04, CP-05, CP-06, CP-07, CP-08, CP-09, CP-10, CP-11, CP-12, CP-13, CP-14: expected [ Array(14) ] to have a length of 0 but got 14
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:471:79)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        9                                                                                │
+  │ Passing:      1                                                                                │
+  │ Failing:      8                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  1                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     2 minutes, 36 seconds                                                            │
+  │ Spec Ran:     tc-m05-g13-registro-medicamento.cy.ts                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\     (1258x622)
+     RF-76\TC-M05-G13\evidencias\screenshots\tc-m05-g13-registro-medicamento.cy.ts\CP               
+     -01_login_fallido.png                                                                          
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ×  tc-m05-g13-registro-medicamento.cy.      02:36        9        1        8        -        - │
+  │    ts                                                                                          │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ×  1 of 1 failed (100%)                     02:36        9        1        8        -        -  
+
+[ELIFECYCLE] Test failed. See above for more details.

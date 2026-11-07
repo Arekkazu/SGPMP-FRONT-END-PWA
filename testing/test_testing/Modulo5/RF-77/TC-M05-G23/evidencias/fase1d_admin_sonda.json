@@ -1,0 +1,201 @@
+{
+  "login": {
+    "metodo": "POST",
+    "ruta": "/sesiones/",
+    "status": 200,
+    "request_id": "7f6833ba-882f-41bb-aefd-617c9f996df8",
+    "hora_utc": "2026-11-07T03:43:38.171Z",
+    "rol": "Administrador"
+  },
+  "runId": "g23-probe3-1794023018170",
+  "pasos": {
+    "P1": {
+      "metodo": "POST",
+      "ruta": "/suministros/reportes-gastos",
+      "status": 200,
+      "error_code": null,
+      "request_id": "ff0dad81-aa30-4263-84ef-90be47b86836",
+      "hora_utc": "2026-11-07T03:43:39.708Z",
+      "body_enviado": {
+        "fecha_inicio_reporte": "2026-01-01",
+        "fecha_fin_reporte": "2026-07-31",
+        "tipo_periodo": "MENSUAL",
+        "activo_biologico_id": 57,
+        "categorias_incluidas": [
+          "ALIMENTACION",
+          "MEDICACION"
+        ]
+      },
+      "body_recibido": {
+        "id_reporte_gasto_acumulado": 10,
+        "id_activo_biologico": 57,
+        "id_infraestructura": null,
+        "id_especie": null,
+        "fecha_inicio": "2026-01-01",
+        "fecha_fin": "2026-07-31",
+        "tipo_periodo": "MENSUAL",
+        "gasto_total_acumulado": "10.0000",
+        "gasto_promedio_individuo": null,
+        "causa_no_calculable_promedio": null,
+        "sin_datos": false,
+        "estado": "GENERADO",
+        "mensaje": null,
+        "nota_bajas": null,
+        "advertencia": null,
+        "archivo": null,
+        "desglose_categorias": [
+          {
+            "categoria": "ALIMENTACION",
+            "subtotal": "10.0000",
+            "num_registros": 1,
+            "porcentaje": "100"
+          }
+        ],
+        "desglose_temporal": [
+          {
+            "etiqueta": "2026-07",
+            "fecha_inicio": "2026-07-31",
+            "fecha_fin": "2026-07-31",
+            "monto": "10.0000"
+          }
+        ],
+        "registros_sin_costo": [],
+        "tendencia": {
+          "gasto_periodo_actual": "10.0000",
+          "gasto_periodo_anterior": "0",
+          "variacion_porcentual": null,
+          "estado": "SIN_BASE_COMPARATIVA",
+          "nota": "No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual."
+        },
+        "fecha_generacion": "2026-11-07T03:43:39.245979Z"
+      }
+    },
+    "P2": {
+      "metodo": "POST",
+      "ruta": "/suministros/reportes-gastos/10/exportacion",
+      "status": 201,
+      "error_code": null,
+      "request_id": "f56255fc-8495-46e8-a420-9117875be90a",
+      "hora_utc": "2026-11-07T03:43:39.868Z",
+      "id_archivo": "4fd08c2d-4a77-4ab0-bba2-151c5fbfad34",
+      "nombre_archivo": "Gastos_57_2026-01-01_2026-07-31.csv",
+      "fecha_generacion": "2026-11-07T03:43:39.453341Z",
+      "fecha_expiracion": "2026-11-08T03:43:39.453341Z",
+      "diferencia_horas": 24,
+      "body_recibido": {
+        "id_archivo": "4fd08c2d-4a77-4ab0-bba2-151c5fbfad34",
+        "formato": "CSV",
+        "nombre_archivo": "Gastos_57_2026-01-01_2026-07-31.csv",
+        "total_registros": 1,
+        "tamano_bytes": 93,
+        "fecha_generacion": "2026-11-07T03:43:39.453341Z",
+        "fecha_expiracion": "2026-11-08T03:43:39.453341Z",
+        "url_descarga": "/suministros/reportes-gastos/exportaciones/4fd08c2d-4a77-4ab0-bba2-151c5fbfad34"
+      }
+    },
+    "P3": {
+      "metodo": "GET",
+      "ruta": "/suministros/reportes-gastos/exportaciones/4fd08c2d-4a77-4ab0-bba2-151c5fbfad34",
+      "status": 200,
+      "request_id": "65deabdf-63a0-4b86-b4af-e986225b8101",
+      "hora_utc": "2026-11-07T03:43:40.038Z",
+      "content_type": "text/csv; charset=utf-8",
+      "content_disposition": "attachment; filename=\"Gastos_57_2026-01-01_2026-07-31.csv\"",
+      "tamano_bytes": 93,
+      "fila_encabezado": "fecha,categoria,descripcion,monto_cop,estado",
+      "encabezado_coincide_exacto": true,
+      "numero_filas_datos": 1
+    },
+    "P4": {
+      "metodo": "POST",
+      "ruta": "/suministros/reportes-gastos/10/exportacion",
+      "status": 201,
+      "error_code": null,
+      "request_id": "fdf05f6a-3a9f-4307-9a2f-53cd4151c2e7",
+      "hora_utc": "2026-11-07T03:43:40.156Z",
+      "id_archivo": "acf4e53c-e64a-4058-ba63-18b74ec863ae",
+      "nombre_archivo": "Reporte_Gastos_57_2026-01-01_2026-07-31.pdf",
+      "fecha_generacion": "2026-11-07T03:43:39.719128Z",
+      "fecha_expiracion": "2026-11-08T03:43:39.719128Z",
+      "diferencia_horas": 24,
+      "body_recibido": {
+        "id_archivo": "acf4e53c-e64a-4058-ba63-18b74ec863ae",
+        "formato": "PDF",
+        "nombre_archivo": "Reporte_Gastos_57_2026-01-01_2026-07-31.pdf",
+        "total_registros": 1,
+        "tamano_bytes": 2295,
+        "fecha_generacion": "2026-11-07T03:43:39.719128Z",
+        "fecha_expiracion": "2026-11-08T03:43:39.719128Z",
+        "url_descarga": "/suministros/reportes-gastos/exportaciones/acf4e53c-e64a-4058-ba63-18b74ec863ae"
+      }
+    },
+    "P5": {
+      "metodo": "GET",
+      "ruta": "/suministros/reportes-gastos/exportaciones/acf4e53c-e64a-4058-ba63-18b74ec863ae",
+      "status": 200,
+      "request_id": "d289a392-398d-4c25-a2f5-5c217042b39f",
+      "hora_utc": "2026-11-07T03:43:40.430Z",
+      "content_type": "application/pdf",
+      "content_disposition": "attachment; filename=\"Reporte_Gastos_57_2026-01-01_2026-07-31.pdf\"",
+      "tamano_bytes": 2295,
+      "primeros_5_bytes": "%PDF-",
+      "es_pdf_valido": true
+    },
+    "P6": {
+      "metodo": "GET",
+      "ruta": "/suministros/reportes-gastos/10",
+      "status": 200,
+      "request_id": "c7e89844-cd6e-446f-b344-d9a9f70fc667",
+      "hora_utc": "2026-11-07T03:43:40.548Z",
+      "existe_en_sandbox": true
+    }
+  },
+  "rollback": {
+    "metodo": "DELETE",
+    "ruta": "/test-control/runs/g23-probe3-1794023018170",
+    "status": 200,
+    "request_id": "c351fa48-e7f4-4b52-a1e0-81efae656776",
+    "hora_utc": "2026-11-07T03:43:40.665Z",
+    "body": {
+      "status": "Rollback exitoso"
+    },
+    "exitoso": true
+  },
+  "verificacion_post_rollback": {
+    "reporte": {
+      "metodo": "GET",
+      "ruta": "/suministros/reportes-gastos/10",
+      "status": 404,
+      "error_code": "REPORTE_NO_ENCONTRADO",
+      "request_id": "ece3c9d7-3a77-4eee-b2ba-5a652492cd5d",
+      "hora_utc": "2026-11-07T03:43:41.024Z",
+      "body": {
+        "error_code": "REPORTE_NO_ENCONTRADO",
+        "message": "El reporte de gastos 10 no existe.",
+        "fields": [
+          {
+            "field": "id_reporte_gasto_acumulado",
+            "message": "El reporte de gastos 10 no existe."
+          }
+        ],
+        "timestamp": "2026-11-07T03:43:40.578294+00:00"
+      },
+      "aislado": true
+    },
+    "exportacion_csv": {
+      "metodo": "GET",
+      "ruta": "/suministros/reportes-gastos/exportaciones/4fd08c2d-4a77-4ab0-bba2-151c5fbfad34",
+      "status": 404,
+      "error_code": "ARCHIVO_NO_ENCONTRADO",
+      "request_id": "7e4f1e43-5b9e-42e7-9a72-09db9a9d8526",
+      "hora_utc": "2026-11-07T03:43:41.152Z",
+      "body": {
+        "error_code": "ARCHIVO_NO_ENCONTRADO",
+        "message": "El archivo 4fd08c2d-4a77-4ab0-bba2-151c5fbfad34 no existe.",
+        "fields": [],
+        "timestamp": "2026-11-07T03:43:40.705371+00:00"
+      },
+      "aislado": true
+    }
+  }
+}

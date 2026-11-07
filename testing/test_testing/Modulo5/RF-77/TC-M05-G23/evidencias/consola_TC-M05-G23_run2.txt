@@ -1,0 +1,174 @@
+﻿node.exe : $ cross-env TZ=America/Bogota cypress run --browser chrome --spec 
+tc-m05-g23-reporte-gastos-exportacion.cy.ts
+En C:\nvm4w\nodejs\pnpm.ps1: 16 Carácter: 5
++     & "$basedir/node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs"  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ cross-env TZ=...portacion.cy.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+
+DevTools listening on ws://127.0.0.1:49793/devtools/browser/c4e4fabf-9591-48a2-9b9e-6d2db806ecd7
+Missing baseUrl in compilerOptions. tsconfig-paths will be skipped
+[TC-M05-G23] API HOST resuelto: api.inmero.co
+[TC-M05-G23] APP BASE PATH: /sigab-test
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        13.17.0                                                                        │
+  │ Browser:        Chrome 156 (headless)                                                          │
+  │ Node Version:   v26.1.0 (C:\nvm4w\nodejs\node.exe)                                             │
+  │ Specs:          1 found (tc-m05-g23-reporte-gastos-exportacion.cy.ts)                          │
+  │ Searched:       C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo │
+  │                 5\RF-77\TC-M05-G23\tc-m05-g23-reporte-gastos-exportacion.cy.ts                 │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  tc-m05-g23-reporte-gastos-exportacion.cy.ts                                     (1 of 1)
+
+
+  TC-M05-G23 · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV
+    √ CP-01 · login Administrador dentro del sandbox transaccional (3953ms)
+    1) CP-02 · navegar a /suministros/gastos y verificar formulario
+    2) CP-03 · generar reporte de gastos por UI (activo 57, mensual, 2026-01-01 a 2026-07-31)
+    √ CP-04 · exportar reporte a CSV por UI y verificar respuesta de exportación (12ms)
+    √ CP-05 · verificar descarga en disco y estructura del CSV (5 columnas y suma montos) (30ms)
+    √ CP-06 · exportar reporte a PDF por UI y verificar respuesta de exportación (9ms)
+    √ CP-07 · verificar descarga en disco y validación de binario PDF (%PDF-) (32ms)
+    3) CP-08A · verificar texto, encabezado, fecha y páginas del PDF
+    4) CP-08B · verificar presencia de logo institucional embebido en el PDF
+    √ CP-09 · rollback del sandbox y verificación de aislamiento post-rollback (404) (151ms)
+    5) Veredicto · la corrida falla si hay al menos un checkpoint en FALLA
+  [escribirReporte] -> C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-77\TC-M05-G23\evidencias\run_PARCIAL_20261106-233147.json
+
+
+  6 passing (35s)
+  5 failing
+
+  1) TC-M05-G23 · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV
+       CP-02 · navegar a /suministros/gastos y verificar formulario:
+     AssertionError: Timed out retrying after 15000ms: Expected to find element: `#gastos-desde`, but never found it.
+      at Context.eval (webpack://tc-m05-g23-reporte-gastos/./tc-m05-g23-reporte-gastos-exportacion.cy.ts:156:0)
+
+  2) TC-M05-G23 · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV
+       CP-03 · generar reporte de gastos por UI (activo 57, mensual, 2026-01-01 a 2026-07-31):
+     AssertionError: Timed out retrying after 15000ms: Expected to find element: `#gastos-desde`, but never found it.
+      at Context.eval (webpack://tc-m05-g23-reporte-gastos/./tc-m05-g23-reporte-gastos-exportacion.cy.ts:168:0)
+
+  3) TC-M05-G23 · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV
+       CP-08A · verificar texto, encabezado, fecha y páginas del PDF:
+     CypressError: `cy.task('leerPdf')` failed with the following error:
+
+> [leerPdf] El archivo PDF no existe en la ruta: C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-77\TC-M05-G23\evidencias\descargas\Reporte_Gastos_57_2026-01-01_2026-07-31.pdf
+
+https://on.cypress.io/api/task
+      at <unknown> (https://api.inmero.co/__cypress/runner/cypress_runner.js:135123:70)
+      at tryCatcher (https://api.inmero.co/__cypress/runner/cypress_runner.js:1830:23)
+      at Promise._settlePromiseFromHandler (https://api.inmero.co/__cypress/runner/cypress_runner.js:1542:31)
+      at Promise._settlePromise (https://api.inmero.co/__cypress/runner/cypress_runner.js:1599:18)
+      at Promise._settlePromise0 (https://api.inmero.co/__cypress/runner/cypress_runner.js:1644:10)
+      at Promise._settlePromises (https://api.inmero.co/__cypress/runner/cypress_runner.js:1720:18)
+      at _drainQueueStep (https://api.inmero.co/__cypress/runner/cypress_runner.js:2430:12)
+      at _drainQueue (https://api.inmero.co/__cypress/runner/cypress_runner.js:2423:9)
+      at Async._drainQueues (https://api.inmero.co/__cypress/runner/cypress_runner.js:2439:5)
+      at Async.drainQueues (https://api.inmero.co/__cypress/runner/cypress_runner.js:2309:14)
+  From Your Spec Code:
+      at Context.eval (webpack://tc-m05-g23-reporte-gastos/./tc-m05-g23-reporte-gastos-exportacion.cy.ts:336:0)
+  
+  From Node.js Internals:
+    Error: [leerPdf] El archivo PDF no existe en la ruta: C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-77\TC-M05-G23\evidencias\descargas\Reporte_Gastos_57_2026-01-01_2026-07-31.pdf
+        at leerPdf (C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-77\TC-M05-G23\cypress.config.js:166:19)
+        at invoke (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\child\run_plugins.js:248:16)
+        at <unknown> (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\util.js:59:14)
+        at tryCatcher (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\bluebird\js\release\util.js:16:23)
+        at Promise.attempt.Promise.try (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\bluebird\js\release\method.js:39:29)
+        at Object.wrapChildPromise (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\util.js:58:23)
+        at RunPlugins.taskExecute (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\child\run_plugins.js:254:10)
+        at RunPlugins.execute (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\child\run_plugins.js:166:21)
+        at EventEmitter.<anonymous> (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\child\run_plugins.js:56:12)
+        at EventEmitter.emit (node:events:509:20)
+        at process.<anonymous> (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\util.js:33:22)
+        at process.emit (node:events:509:20)
+        at process.emit.sharedData.processEmitHook.installedValue [as emit] (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@cspotcode\source-map-support\source-map-support.js:745:40)
+        at emit (node:internal/child_process:956:14)
+        at processTicksAndRejections (node:internal/process/task_queues:91:21)
+
+  4) TC-M05-G23 · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV
+       CP-08B · verificar presencia de logo institucional embebido en el PDF:
+     CypressError: `cy.task('leerPdf')` failed with the following error:
+
+> [leerPdf] El archivo PDF no existe en la ruta: C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-77\TC-M05-G23\evidencias\descargas\Reporte_Gastos_57_2026-01-01_2026-07-31.pdf
+
+https://on.cypress.io/api/task
+      at <unknown> (https://api.inmero.co/__cypress/runner/cypress_runner.js:135123:70)
+      at tryCatcher (https://api.inmero.co/__cypress/runner/cypress_runner.js:1830:23)
+      at Promise._settlePromiseFromHandler (https://api.inmero.co/__cypress/runner/cypress_runner.js:1542:31)
+      at Promise._settlePromise (https://api.inmero.co/__cypress/runner/cypress_runner.js:1599:18)
+      at Promise._settlePromise0 (https://api.inmero.co/__cypress/runner/cypress_runner.js:1644:10)
+      at Promise._settlePromises (https://api.inmero.co/__cypress/runner/cypress_runner.js:1720:18)
+      at _drainQueueStep (https://api.inmero.co/__cypress/runner/cypress_runner.js:2430:12)
+      at _drainQueue (https://api.inmero.co/__cypress/runner/cypress_runner.js:2423:9)
+      at Async._drainQueues (https://api.inmero.co/__cypress/runner/cypress_runner.js:2439:5)
+      at Async.drainQueues (https://api.inmero.co/__cypress/runner/cypress_runner.js:2309:14)
+  From Your Spec Code:
+      at Context.eval (webpack://tc-m05-g23-reporte-gastos/./tc-m05-g23-reporte-gastos-exportacion.cy.ts:356:0)
+  
+  From Node.js Internals:
+    Error: [leerPdf] El archivo PDF no existe en la ruta: C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-77\TC-M05-G23\evidencias\descargas\Reporte_Gastos_57_2026-01-01_2026-07-31.pdf
+        at leerPdf (C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-77\TC-M05-G23\cypress.config.js:166:19)
+        at invoke (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\child\run_plugins.js:248:16)
+        at <unknown> (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\util.js:59:14)
+        at tryCatcher (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\bluebird\js\release\util.js:16:23)
+        at Promise.attempt.Promise.try (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\bluebird\js\release\method.js:39:29)
+        at Object.wrapChildPromise (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\util.js:58:23)
+        at RunPlugins.taskExecute (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\child\run_plugins.js:254:10)
+        at RunPlugins.execute (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\child\run_plugins.js:166:21)
+        at EventEmitter.<anonymous> (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\child\run_plugins.js:56:12)
+        at EventEmitter.emit (node:events:509:20)
+        at process.<anonymous> (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@packages\server\lib\plugins\util.js:33:22)
+        at process.emit (node:events:509:20)
+        at process.emit.sharedData.processEmitHook.installedValue [as emit] (C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress\resources\app\node_modules\@cspotcode\source-map-support\source-map-support.js:745:40)
+        at emit (node:internal/child_process:956:14)
+        at processTicksAndRejections (node:internal/process/task_queues:91:21)
+
+  5) TC-M05-G23 · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV
+       Veredicto · la corrida falla si hay al menos un checkpoint en FALLA:
+     AssertionError: Checkpoints en FALLA: CP-02, CP-03, CP-04, CP-05, CP-06, CP-07, CP-08A, CP-08B, CP-09: expected [ Array(9) ] to have a length of 0 but got 9
+      at Context.eval (webpack://tc-m05-g23-reporte-gastos/./tc-m05-g23-reporte-gastos-exportacion.cy.ts:447:79)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        11                                                                               │
+  │ Passing:      6                                                                                │
+  │ Failing:      5                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     35 seconds                                                                       │
+  │ Spec Ran:     tc-m05-g23-reporte-gastos-exportacion.cy.ts                                      │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ×  tc-m05-g23-reporte-gastos-exportaci      00:35       11        6        5        -        - │
+  │    on.cy.ts                                                                                    │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ×  1 of 1 failed (100%)                     00:35       11        6        5        -        -  
+
+[ELIFECYCLE] Test failed. See above for more details.

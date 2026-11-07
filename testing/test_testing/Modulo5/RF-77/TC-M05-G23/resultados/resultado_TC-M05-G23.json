@@ -1,0 +1,65 @@
+{
+  "tc": "TC-M05-G23",
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "esperado": "Sandbox aceptado por el backend antes del login y ruta distinta de /login",
+      "obtenido": "ruta /sigab-test/dashboard; sandbox confirmado: sí; token capturado: sí; peticiones con sandbox: 4",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "esperado": "Formulario de reporte visible con campo #gastos-desde interactivo",
+      "obtenido": "Formulario visible con campo #gastos-desde",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "esperado": "POST /suministros/reportes-gastos -> 200, gasto_total_acumulado = \"10.0000\", panel de detalle visible",
+      "obtenido": "HTTP 200; id_reporte=16; gasto_total_acumulado=10.0000; panelVisible=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "esperado": "POST /exportacion -> 201, nombre_archivo = Gastos_57_2026-01-01_2026-07-31.csv, vigencia 24 h exactas",
+      "obtenido": "HTTP 201; nombre_archivo=Gastos_57_2026-01-01_2026-07-31.csv; vigencia=24.00 h; id_archivo=49ecde3f-3aa7-44b6-a783-c9e58cf3f2e9; GET descarga capturado HTTP 200",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "esperado": "GET -> 200 text/csv; archivo descargado con 5 columnas exactas y suma de montos = 10.0000",
+      "obtenido": "HTTP 200; Content-Type=text/csv; charset=utf-8; encabezadoOk=true; filas=1; sumaMonto=10.0000 (esperado 10.0000)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "esperado": "POST /exportacion -> 201, nombre_archivo = Reporte_Gastos_57_2026-01-01_2026-07-31.pdf, vigencia 24 h exactas",
+      "obtenido": "HTTP 201; nombre_archivo=Reporte_Gastos_57_2026-01-01_2026-07-31.pdf; vigencia=24.00 h; id_archivo=eb494879-c202-417d-b05b-820e660ecf6e; GET descarga capturado HTTP 200",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "esperado": "GET -> 200 application/pdf, tamaño > 0, primeros 5 bytes \"%PDF-\"",
+      "obtenido": "HTTP 200; Content-Type=application/pdf; tamaño=2295 bytes; magic=%PDF-",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08A",
+      "esperado": "1 página, título \"Reporte de Gastos Acumulados\", fecha de generación presente en el texto",
+      "obtenido": "encabezado=\"Reporte de Gastos Acumulados\"; fecha=\"2026-11-07T10:37:30+00:00\"; paginas=1; tamanoBytes=2295",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08B",
+      "esperado": "Imagen embebida detectada en el PDF (/Subtype /Image)",
+      "obtenido": "tieneImagen=false; infra_status=200; iv_status=200; id_finca=1; registro_iv_existe=true; logo_path_no_nulo=true; extension=.png; static_status=500; archivo=\"Reporte_Gastos_57_2026-01-01_2026-07-31.pdf\"; causa no determinada",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-09",
+      "esperado": "Rollback 2xx; consulta sin sandbox del reporte y ambos archivos -> 404 (REPORTE/ARCHIVO_NO_ENCONTRADO)",
+      "obtenido": "rollback HTTP 200; spa_sesiones=0; intento 1: [rep 404 REPORTE_NO_ENCONTRADO reqId:1b3451c7-252e-4cdb-ab60-7d32a34f954c, csv 404 ARCHIVO_NO_ENCONTRADO reqId:fb737cee-5b75-4be7-ad19-c351d562081d, pdf 404 ARCHIVO_NO_ENCONTRADO reqId:9f14634a-b818-4b96-ac53-bf1787cafa0f] (aislamiento confirmado)",
+      "estado": "OK"
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "login": {
+    "metodo": "POST",
+    "ruta": "/sesiones/",
+    "status": 200,
+    "request_id": "3527044b-92a0-4aaa-92fd-98f91a9e2f4c",
+    "hora_utc": "2026-11-07T03:35:59.454Z",
+    "rol": "Administrador"
+  },
+  "paso1_4_consumo31": {
+    "metodo": "GET",
+    "ruta": "/suministros/consumo-alimentos?id_activo_biologico=57&limite=200",
+    "status": 200,
+    "request_id": "a7ea52bb-3534-4df9-bde3-3df31c071ead",
+    "hora_utc": "2026-11-07T03:36:00.452Z"
+  },
+  "paso2_1": {
+    "activo_57": {
+      "metodo": "GET",
+      "ruta": "/activos-biologicos/57",
+      "status": 200,
+      "request_id": "576dcbe7-2c3f-42c6-9dd3-5b7f1b67b8fc",
+      "hora_utc": "2026-11-07T03:36:00.619Z",
+      "datos": {
+        "id_activo_biologico": 57,
+        "id_especie": 1,
+        "tipo": "INDIVIDUAL",
+        "identificador": "TEST-GESTOR-ACTIVO-1",
+        "fecha_inicio_ciclo": "2026-01-01",
+        "detalles_procedencia": null,
+        "origen_financiero": "compra",
+        "costo_adquisicion": "100.0000",
+        "soporte_documental": "factura-test-001",
+        "descripcion": null,
+        "id_infraestructura": 2,
+        "atributos_dinamicos": null,
+        "id_estado": 1,
+        "nombre_estado": "ACTIVO",
+        "id_usuario": 30,
+        "fecha_creacion": "2026-07-31T05:15:45.490280Z",
+        "fecha_actualizacion": null,
+        "detalle_individual": null,
+        "detalle_poblacional": null,
+        "nombre_especie": null,
+        "nombre_infraestructura": null,
+        "advertencia_edad": null
+      }
+    },
+    "fases_57": {
+      "metodo": "GET",
+      "ruta": "/activos-biologicos/57/fases",
+      "status": 200,
+      "request_id": "e1f71757-2974-4097-8de9-63d70a2d6123",
+      "hora_utc": "2026-11-07T03:36:00.829Z",
+      "fases": [
+        {
+          "id_gestion_fases": 33,
+          "id_activo_biologico": 57,
+          "id_ciclo_productiva": 1,
+          "id_ciclos_productivo_biologico": 1,
+          "nombre_ciclo": "Ciclo completo tilapia 2025-A",
+          "nombre_fase_actual": "Fase larval tilapia",
+          "paso_actual": 1,
+          "total_pasos": 3,
+          "fecha_inicio": "2026-07-31T05:15:49.689277Z",
+          "fecha_finalizacion": "2026-07-31T17:48:26.683152Z",
+          "es_activa": false,
+          "motivo_cambio": null,
+          "es_transicion_no_estandar": false
+        }
+      ]
+    },
+    "selector_activos_recorrido": {
+      "endpoint": "/activos-biologicos",
+      "total_declarado": 776,
+      "paginas_leidas": 8,
+      "activo_57_encontrado": true,
+      "encontrado_en_pagina": 8,
+      "paginas_detalle": [
+        {
+          "pagina": 1,
+          "status": 200,
+          "request_id": "6af9a833-08f5-4334-afaf-9a132bc3f223",
+          "hora_utc": "2026-11-07T03:36:00.977Z",
+          "cantidad_retornada": 100,
+          "contiene_57": false
+        },
+        {
+          "pagina": 2,
+          "status": 200,
+          "request_id": "007130e5-9cb8-4a3a-8a37-b3475f6cd7d7",
+          "hora_utc": "2026-11-07T03:36:01.559Z",
+          "cantidad_retornada": 100,
+          "contiene_57": false
+        },
+        {
+          "pagina": 3,
+          "status": 200,
+          "request_id": "31e0725d-b833-47b1-8ac2-18233f98bb1f",
+          "hora_utc": "2026-11-07T03:36:01.967Z",
+          "cantidad_retornada": 100,
+          "contiene_57": false
+        },
+        {
+          "pagina": 4,
+          "status": 200,
+          "request_id": "b88ba4f5-2f32-4158-8234-0d316dc0e0dd",
+          "hora_utc": "2026-11-07T03:36:02.155Z",
+          "cantidad_retornada": 100,
+          "contiene_57": false
+        },
+        {
+          "pagina": 5,
+          "status": 200,
+          "request_id": "8a727630-022b-4893-8702-2273cbdd22a6",
+          "hora_utc": "2026-11-07T03:36:02.323Z",
+          "cantidad_retornada": 100,
+          "contiene_57": false
+        },
+        {
+          "pagina": 6,
+          "status": 200,
+          "request_id": "860e38f0-d549-45ab-aa7d-81e590a6ce85",
+          "hora_utc": "2026-11-07T03:36:02.506Z",
+          "cantidad_retornada": 100,
+          "contiene_57": false
+        },
+        {
+          "pagina": 7,
+          "status": 200,
+          "request_id": "c47b89b2-cea0-461b-9fd8-c3fb0e73e647",
+          "hora_utc": "2026-11-07T03:36:02.789Z",
+          "cantidad_retornada": 100,
+          "contiene_57": false
+        },
+        {
+          "pagina": 8,
+          "status": 200,
+          "request_id": "68027818-653f-482d-b583-c642941afafe",
+          "hora_utc": "2026-11-07T03:36:02.940Z",
+          "cantidad_retornada": 76,
+          "contiene_57": true
+        }
+      ]
+    },
+    "historial_admin": {
+      "metodo": "GET",
+      "ruta": "/suministros/reportes-gastos/historial",
+      "status": 200,
+      "request_id": "ce37812a-3936-4ad2-a660-c3cc759667d0",
+      "hora_utc": "2026-11-07T03:36:03.193Z",
+      "reportes": []
+    }
+  },
+  "paso3_sonda": {
+    "omitida": true,
+    "motivo": "Gate no cumplido"
+  }
+}

@@ -1,0 +1,128 @@
+﻿node.exe : $ cross-env TZ=America/Bogota cypress run --browser chrome --spec tc-m05-g13-registro-medicamento.cy.ts
+En C:\nvm4w\nodejs\pnpm.ps1: 16 Carácter: 5
++     & "$basedir/node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs"  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ cross-env TZ=...dicamento.cy.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+
+DevTools listening on ws://127.0.0.1:59225/devtools/browser/3b80f0dc-539f-4831-a4d5-be3ae54cb684
+Missing baseUrl in compilerOptions. tsconfig-paths will be skipped
+[TC-M05-G13] API HOST resuelto: api.inmero.co
+[TC-M05-G13] APP BASE PATH: /sigab-test
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        13.17.0                                                                        │
+  │ Browser:        Chrome 156 (headless)                                                          │
+  │ Node Version:   v26.1.0 (C:\nvm4w\nodejs\node.exe)                                             │
+  │ Specs:          1 found (tc-m05-g13-registro-medicamento.cy.ts)                                │
+  │ Searched:       C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo │
+  │                 5\RF-76\TC-M05-G13\tc-m05-g13-registro-medicamento.cy.ts                       │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  tc-m05-g13-registro-medicamento.cy.ts                                           (1 of 1)
+
+
+  TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+    √ CP-01..CP-03 · login del Veterinario dentro del sandbox y apertura del formulario (6647ms)
+    √ CP-04..CP-06 · registro INDIVIDUAL (activo 778) desde la UI (48936ms)
+    √ CP-07 · el activo 778 queda EN_TRATAMIENTO (RF-44) (211ms)
+    √ CP-08 · precondición del activo poblacional 776 (165ms)
+    √ CP-09..CP-11 · registro POBLACIONAL (activo 776) desde la UI (19850ms)
+    √ CP-12 · el activo 776 queda EN_TRATAMIENTO (RF-44) (176ms)
+    √ CP-13 · dosis_por_individuo enviada en el body no se acepta como entrada (299ms)
+    (Attempt 1 of 2) CP-14 · rollback del sandbox y verificación sin sandbox
+    1) CP-14 · rollback del sandbox y verificación sin sandbox
+    (Attempt 1 of 2) Veredicto · la corrida falla si hay al menos un checkpoint en FALLA
+    2) Veredicto · la corrida falla si hay al menos un checkpoint en FALLA
+  [writeResult] -> C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-76\TC-M05-G13\resultados\resultado_TC-M05-G13.json
+
+
+  7 passing (5m)
+  2 failing
+
+  1) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       CP-14 · rollback del sandbox y verificación sin sandbox:
+     CypressError: Timed out after waiting `120000ms` for your remote page to load.
+
+Your page did not fire its `load` event within `120000ms`.
+
+You can try increasing the `pageLoadTimeout` value in `Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-76\TC-M05-G13\cypress.config.js` to wait longer.
+
+Browsers will not fire the `load` event until all stylesheets and scripts are done downloading.
+
+When this `load` event occurs, Cypress will continue running commands.
+      at timedOutWaitingForPageLoad (https://api.inmero.co/__cypress/runner/cypress_runner.js:130639:64)
+      at <unknown> (https://api.inmero.co/__cypress/runner/cypress_runner.js:131624:16)
+      at tryCatcher (https://api.inmero.co/__cypress/runner/cypress_runner.js:1830:23)
+      at <unknown> (https://api.inmero.co/__cypress/runner/cypress_runner.js:4209:41)
+      at tryCatcher (https://api.inmero.co/__cypress/runner/cypress_runner.js:1830:23)
+      at Promise._settlePromiseFromHandler (https://api.inmero.co/__cypress/runner/cypress_runner.js:1542:31)
+      at Promise._settlePromise (https://api.inmero.co/__cypress/runner/cypress_runner.js:1599:18)
+      at Promise._settlePromise0 (https://api.inmero.co/__cypress/runner/cypress_runner.js:1644:10)
+      at Promise._settlePromises (https://api.inmero.co/__cypress/runner/cypress_runner.js:1720:18)
+      at _drainQueueStep (https://api.inmero.co/__cypress/runner/cypress_runner.js:2430:12)
+      at _drainQueue (https://api.inmero.co/__cypress/runner/cypress_runner.js:2423:9)
+      at Async._drainQueues (https://api.inmero.co/__cypress/runner/cypress_runner.js:2439:5)
+      at Async.drainQueues (https://api.inmero.co/__cypress/runner/cypress_runner.js:2309:14)
+  From Your Spec Code:
+      at visitar (webpack://tc-m05-g13-registro-medicamento/./commands.ts:56:0)
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./commands.ts:242:0)
+
+  2) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       Veredicto · la corrida falla si hay al menos un checkpoint en FALLA:
+     AssertionError: Checkpoints en FALLA: CP-05, CP-06, CP-07, CP-09, CP-10, CP-11, CP-12, CP-13, CP-14: expected [ Array(9) ] to have a length of 0 but got 9
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:494:79)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        9                                                                                │
+  │ Passing:      7                                                                                │
+  │ Failing:      2                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  3                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     5 minutes, 17 seconds                                                            │
+  │ Spec Ran:     tc-m05-g13-registro-medicamento.cy.ts                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\     (1258x622)
+     RF-76\TC-M05-G13\evidencias\screenshots\tc-m05-g13-registro-medicamento.cy.ts\cp               
+     03-formulario-abierto.png                                                                      
+  -  C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\     (1258x622)
+     RF-76\TC-M05-G13\evidencias\screenshots\tc-m05-g13-registro-medicamento.cy.ts\cp               
+     06-registro-individual.png                                                                     
+  -  C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\     (1258x622)
+     RF-76\TC-M05-G13\evidencias\screenshots\tc-m05-g13-registro-medicamento.cy.ts\cp               
+     10-formulario-poblacional.png                                                                  
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ×  tc-m05-g13-registro-medicamento.cy.      05:17        9        7        2        -        - │
+  │    ts                                                                                          │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ×  1 of 1 failed (100%)                     05:17        9        7        2        -        -  
+
+[ELIFECYCLE] Test failed. See above for more details.

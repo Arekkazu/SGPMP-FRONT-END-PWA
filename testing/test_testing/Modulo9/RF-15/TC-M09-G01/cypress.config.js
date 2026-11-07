@@ -14,6 +14,9 @@ module.exports = defineConfig({
       API_BASE_URL:
         process.env.CYPRESS_API_BASE_URL ||
         'https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test',
+      TEST_SANDBOX_SECRET:
+        process.env.TEST_SANDBOX_SECRET ||
+        '377ab8a5ddc2e5b7f7fb5b58533329eb6ce7f22b99cbd6ad5ffecf3e05b7f8ff',
     },
 
     specPattern: '*.cy.ts',
@@ -22,7 +25,7 @@ module.exports = defineConfig({
 
     viewportWidth: 1280,
     viewportHeight: 900,
-    defaultCommandTimeout: 12000,
+    defaultCommandTimeout: 15000,
 
     pageLoadTimeout: 180000,
     modifyObstructiveCode: false,
@@ -30,9 +33,9 @@ module.exports = defineConfig({
 
     blockHosts: ['*.googleapis.com', '*.gstatic.com', '*.firebaseio.com'],
 
-    video: true,
-    videosFolder: 'RESULTADOS/videos',
-    screenshotsFolder: 'RESULTADOS/screenshots',
+    video: false,
+    videosFolder: 'evidencias/videos',
+    screenshotsFolder: 'evidencias/screenshots',
     trashAssetsBeforeRuns: true,
 
     setupNodeEvents(on, config) {

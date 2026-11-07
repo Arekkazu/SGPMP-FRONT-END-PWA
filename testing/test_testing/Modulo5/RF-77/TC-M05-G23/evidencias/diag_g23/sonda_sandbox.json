@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-11-07T03:22:27.744Z",
+  "runId": "g23-probe-1794021748988",
+  "rol": "Administrador",
+  "activoElegido": 5,
+  "pasos": {
+    "P4.1_generar_reporte": {
+      "metodo": "POST",
+      "ruta": "/suministros/reportes-gastos",
+      "status": 422,
+      "requestId": "94724542-e954-438c-bb46-a7d52256a367",
+      "error_code": "ACTIVO_SIN_CICLO",
+      "body": {
+        "error_code": "ACTIVO_SIN_CICLO",
+        "message": "El activo 5 no tiene un ciclo productivo registrado. No es posible generar el reporte de gastos sin una referencia temporal del ciclo. Registre el inicio del ciclo (RF-37) antes de continuar.",
+        "fields": [
+          {
+            "field": "activo_biologico_id",
+            "message": "El activo 5 no tiene un ciclo productivo registrado. No es posible generar el reporte de gastos sin una referencia temporal del ciclo. Registre el inicio del ciclo (RF-37) antes de continuar."
+          }
+        ],
+        "timestamp": "2026-11-07T03:22:28.575718+00:00"
+      }
+    },
+    "P4.2_exportar_csv": {
+      "omitido": true,
+      "motivo": "P4.1 devolvio 422 ACTIVO_SIN_CICLO"
+    },
+    "P4.3_descargar_csv": {
+      "omitido": true,
+      "motivo": "P4.1 devolvio 422 ACTIVO_SIN_CICLO"
+    },
+    "P4.4_exportar_pdf": {
+      "omitido": true,
+      "motivo": "P4.1 devolvio 422 ACTIVO_SIN_CICLO"
+    },
+    "P4.5_descargar_pdf": {
+      "omitido": true,
+      "motivo": "P4.1 devolvio 422 ACTIVO_SIN_CICLO"
+    }
+  },
+  "rollback": {
+    "metodo": "DELETE",
+    "ruta": "/test-control/runs/g23-probe-1794021748988",
+    "status": 200,
+    "requestId": "f812573d-ecd3-423a-8907-5a9d7f73feff",
+    "body": {
+      "status": "Rollback exitoso"
+    },
+    "exitoso": true
+  }
+}
+

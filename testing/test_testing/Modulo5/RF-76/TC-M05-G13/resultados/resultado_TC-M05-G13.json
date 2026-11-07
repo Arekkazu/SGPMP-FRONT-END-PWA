@@ -1,0 +1,89 @@
+{
+  "tc": "TC-M05-G13",
+  "checkpoints": [
+    {
+      "paso": "CP-01 Sandbox + login Veterinario",
+      "esperado": "Sandbox aceptado por el backend antes del login y ruta distinta de /login",
+      "obtenido": "ruta /sigab-test/dashboard; sandbox confirmado por el backend: sí; token capturado: sí; peticiones con sandbox: 4",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02 Navegación Suministros → Medicamentos",
+      "esperado": "Ruta /suministros/medicamentos y título «Aplicación de medicamentos» visible",
+      "obtenido": "ruta /sigab-test/suministros/medicamentos; menú Suministros: sí; pestaña Medicamentos: sí; título visible: sí",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03 Abrir formulario de registro",
+      "esperado": "Botón «Registrar aplicación» habilitado; se abre role=dialog",
+      "obtenido": "botón habilitado: sí; diálogo abierto: sí",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04 Llenar formulario INDIVIDUAL (activo 778)",
+      "esperado": "Campos diligenciados, fecha por defecto = hoy (Bogotá), hora 08:00 y sin errores de campo",
+      "obtenido": "fecha por defecto 2026-11-06 (hoy 2026-11-06); hora 08:00; errores de campo: ninguno",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05 Guardar INDIVIDUAL → respuesta API",
+      "esperado": "201 (200 solo si ya estaba EN_TRATAMIENTO); VALIDADO; fecha_fin_retiro = hoy+7; costo_total_medicamento = 5000; dosis_por_individuo = null; body sin dosis_por_individuo",
+      "obtenido": "✗ HTTP 500; ✗ estado_registro=undefined; ✗ fecha_fin_retiro=undefined (esperada 2026-11-13); ✗ costo_total_medicamento=undefined; dosis_por_individuo=undefined; body sin dosis_por_individuo",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-06 UI tras registrar INDIVIDUAL",
+      "esperado": "Toast de éxito con la fecha de fin de retiro; fila con «En retiro hasta…» y estado Validado",
+      "obtenido": "toast de éxito: no; toast con 2026-11-13: no («»); fila «En retiro hasta…»: no; estado Validado: no",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-07 Estado del activo 778 (RF-44)",
+      "esperado": "GET /activos-biologicos/778 → EN_TRATAMIENTO",
+      "obtenido": "HTTP 200; estado ACTIVO (inicial ACTIVO)",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-08 Precondición activo 776",
+      "esperado": "GET /activos-biologicos/776 → ACTIVO, POBLACIONAL, cantidad_actual = 10",
+      "obtenido": "HTTP 200; tipo POBLACIONAL; estado ACTIVO; cantidad_actual 10",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-09 Cantidad actual visible en el formulario (776)",
+      "esperado": "Al elegir #776 se muestra la cantidad actual (10) en solo lectura",
+      "obtenido": "el formulario no muestra la cantidad actual del activo poblacional",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-10 Dosis por individuo en vivo (776)",
+      "esperado": "Al escribir dosis 20 aparece la dosis por individuo 2,0 en el formulario",
+      "obtenido": "el formulario no muestra la dosis por individuo al escribir 20",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-11 Guardar POBLACIONAL → respuesta API",
+      "esperado": "201 (200 solo si ya estaba EN_TRATAMIENTO); VALIDADO; dosis_por_individuo = \"2.0000\"; costo_total_medicamento = 4000; fecha_fin_retiro = hoy+3",
+      "obtenido": "✗ HTTP 500; ✗ estado_registro=undefined; ✗ fecha_fin_retiro=undefined (esperada 2026-11-09); ✗ costo_total_medicamento=undefined; ✗ dosis_por_individuo=undefined; body sin dosis_por_individuo",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-12 Estado del activo 776 (RF-44)",
+      "esperado": "GET /activos-biologicos/776 → EN_TRATAMIENTO",
+      "obtenido": "HTTP 200; estado ACTIVO (inicial ACTIVO)",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-13 dosis_por_individuo enviada en el body (999)",
+      "esperado": "4xx, o 2xx con dosis_por_individuo = \"2.0000\"; nunca queda guardado 999",
+      "obtenido": "HTTP 500 inesperado",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-14 Rollback del sandbox y verificación fuera de él",
+      "esperado": "Rollback 2xx; sin sandbox no aparecen los registros de la corrida y 778/776 conservan su estado inicial",
+      "obtenido": "No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).",
+      "estado": "FALLA"
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+﻿node.exe : $ cross-env TZ=America/Bogota cypress run --browser chrome --spec 
+tc-m05-g23-reporte-gastos-exportacion.cy.ts
+En C:\nvm4w\nodejs\pnpm.ps1: 16 Carácter: 5
++     & "$basedir/node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs"  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ cross-env TZ=...portacion.cy.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+
+DevTools listening on ws://127.0.0.1:58104/devtools/browser/1076c4ad-fe10-43c3-a4f4-9e7855ba1bb3
+Missing baseUrl in compilerOptions. tsconfig-paths will be skipped
+[TC-M05-G23] API HOST resuelto: api.inmero.co
+[TC-M05-G23] APP BASE PATH: /sigab-test
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        13.17.0                                                                        │
+  │ Browser:        Chrome 156 (headless)                                                          │
+  │ Node Version:   v26.1.0 (C:\nvm4w\nodejs\node.exe)                                             │
+  │ Specs:          1 found (tc-m05-g23-reporte-gastos-exportacion.cy.ts)                          │
+  │ Searched:       C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo │
+  │                 5\RF-77\TC-M05-G23\tc-m05-g23-reporte-gastos-exportacion.cy.ts                 │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  tc-m05-g23-reporte-gastos-exportacion.cy.ts                                     (1 of 1)
+
+
+  TC-M05-G23 · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV
+    √ CP-01 · login Administrador dentro del sandbox transaccional (3970ms)
+    √ CP-02 · navegar a /suministros/gastos y verificar formulario (1896ms)
+    √ CP-03 · generar reporte de gastos por UI (activo 57, mensual, 2026-01-01 a 2026-07-31) (1336ms)
+    √ CP-04 · exportar reporte a CSV por UI y verificar respuesta de exportación (379ms)
+    √ CP-05 · verificar descarga en disco y estructura del CSV (5 columnas y suma montos) (257ms)
+    √ CP-06 · exportar reporte a PDF por UI y verificar respuesta de exportación (630ms)
+    √ CP-07 · verificar descarga en disco y validación de binario PDF (%PDF-) (273ms)
+    √ CP-08A · verificar texto, encabezado, fecha y páginas del PDF (156ms)
+    √ CP-08B · verificar presencia de logo institucional embebido en el PDF (275ms)
+    1) CP-09 · rollback del sandbox y verificación de aislamiento post-rollback (404)
+    2) Veredicto · evaluar resultado final de la corrida
+  [escribirReporte] -> C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-77\TC-M05-G23\evidencias\run_PARCIAL_20261107-001347.json
+
+
+  9 passing (10s)
+  2 failing
+
+  1) TC-M05-G23 · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV
+       CP-09 · rollback del sandbox y verificación de aislamiento post-rollback (404):
+     CypressError: `cy.visit()` failed trying to load:
+
+https://api.inmero.co/about:blank
+
+The response we received from your web server was:
+
+  > 404: Not Found
+
+This was considered a failure because the status code was not `2xx`.
+
+If you do not want status codes to cause failures pass the option: `failOnStatusCode: false`
+      at <unknown> (https://api.inmero.co/__cypress/runner/cypress_runner.js:131591:76)
+      at visitFailedByErr (https://api.inmero.co/__cypress/runner/cypress_runner.js:131006:12)
+      at <unknown> (https://api.inmero.co/__cypress/runner/cypress_runner.js:131574:13)
+      at tryCatcher (https://api.inmero.co/__cypress/runner/cypress_runner.js:1830:23)
+      at Promise._settlePromiseFromHandler (https://api.inmero.co/__cypress/runner/cypress_runner.js:1542:31)
+      at Promise._settlePromise (https://api.inmero.co/__cypress/runner/cypress_runner.js:1599:18)
+      at Promise._settlePromise0 (https://api.inmero.co/__cypress/runner/cypress_runner.js:1644:10)
+      at Promise._settlePromises (https://api.inmero.co/__cypress/runner/cypress_runner.js:1720:18)
+      at _drainQueueStep (https://api.inmero.co/__cypress/runner/cypress_runner.js:2430:12)
+      at _drainQueue (https://api.inmero.co/__cypress/runner/cypress_runner.js:2423:9)
+      at Async._drainQueues (https://api.inmero.co/__cypress/runner/cypress_runner.js:2439:5)
+      at Async.drainQueues (https://api.inmero.co/__cypress/runner/cypress_runner.js:2309:14)
+  From Your Spec Code:
+      at Context.eval (webpack://tc-m05-g23-reporte-gastos/./tc-m05-g23-reporte-gastos-exportacion.cy.ts:471:0)
+
+  2) TC-M05-G23 · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV
+       Veredicto · evaluar resultado final de la corrida:
+     AssertionError: RECHAZADO: Checkpoints en FALLA real: CP-08B, CP-09
+      at Context.eval (webpack://tc-m05-g23-reporte-gastos/./tc-m05-g23-reporte-gastos-exportacion.cy.ts:601:0)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        11                                                                               │
+  │ Passing:      9                                                                                │
+  │ Failing:      2                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     9 seconds                                                                        │
+  │ Spec Ran:     tc-m05-g23-reporte-gastos-exportacion.cy.ts                                      │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ×  tc-m05-g23-reporte-gastos-exportaci      00:09       11        9        2        -        - │
+  │    on.cy.ts                                                                                    │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ×  1 of 1 failed (100%)                     00:09       11        9        2        -        -  
+
+[ELIFECYCLE] Test failed. See above for more details.

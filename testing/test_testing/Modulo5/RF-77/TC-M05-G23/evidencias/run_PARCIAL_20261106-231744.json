@@ -1,0 +1,65 @@
+{
+  "tc": "TC-M05-G23",
+  "checkpoints": [
+    {
+      "paso": "CP-01 Sandbox + login Administrador",
+      "esperado": "Sandbox aceptado por el backend antes del login y ruta distinta de /login",
+      "obtenido": "ruta /sigab-test/dashboard; sandbox confirmado: sí; token capturado: sí; peticiones con sandbox: 4",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02 Navegación a /suministros/gastos",
+      "esperado": "Formulario de reporte visible con campo #gastos-desde interactivo",
+      "obtenido": "Formulario visible con campo #gastos-desde",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03 Generar reporte por UI (activo 57)",
+      "esperado": "POST /suministros/reportes-gastos -> 200, gasto_total_acumulado = \"10.0000\", panel de detalle visible",
+      "obtenido": "HTTP 200; id_reporte=11; gasto_total_acumulado=10.0000; panelVisible=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04 Exportar CSV por UI",
+      "esperado": "POST /exportacion -> 201, nombre_archivo = Gastos_57_2026-01-01_2026-07-31.csv, vigencia 24 h exactas",
+      "obtenido": "HTTP 201; nombre_archivo=Gastos_57_2026-01-01_2026-07-31.csv; vigencia=24.00 h; id_archivo=df0aef0f-2228-4910-801d-9225be27c5f1",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05 Descarga y contenido CSV",
+      "esperado": "GET -> 200 text/csv; archivo descargado con 5 columnas exactas y suma de montos = 10.0000",
+      "obtenido": "No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-06 Exportar PDF por UI",
+      "esperado": "POST /exportacion -> 201, nombre_archivo = Reporte_Gastos_57_2026-01-01_2026-07-31.pdf, vigencia 24 h exactas",
+      "obtenido": "HTTP 201; nombre_archivo=Reporte_Gastos_57_2026-01-01_2026-07-31.pdf; vigencia=24.00 h; id_archivo=03ba89db-b077-474d-894a-a5ed3e4f7847",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07 Descarga binaria PDF",
+      "esperado": "GET -> 200 application/pdf, tamaño > 0, primeros 5 bytes \"%PDF-\"",
+      "obtenido": "No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-08A Contenido del PDF",
+      "esperado": "1 página, título \"Reporte de Gastos Acumulados\", fecha de generación presente en el texto",
+      "obtenido": "encabezado=\"Reporte de Gastos Acumulados\"; fecha=\"2026-11-07T04:17:27+00:00\"; paginas=1; tamanoBytes=2295",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08B Logo en el PDF",
+      "esperado": "Imagen embebida detectada en el PDF (/Subtype /Image)",
+      "obtenido": "tieneImagen=false; tamanoBytes=2295; archivo=\"Reporte_Gastos_57_2026-01-01_2026-07-31.pdf\"",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-09 Aislamiento post-rollback sin sandbox",
+      "esperado": "Rollback 2xx; consulta sin sandbox del reporte y ambos archivos -> 404 (REPORTE/ARCHIVO_NO_ENCONTRADO)",
+      "obtenido": "rollback HTTP 200; GET reporte 11 -> 404; GET CSV -> 404; GET PDF -> 404 (aislamiento confirmado)",
+      "estado": "OK"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "tc-m05-g23-reporte-gastos",
+  "private": true,
+  "version": "1.0.0",
+  "description": "TC-M05-G23 · RF-77 · Reporte de gastos acumulados por activo y exportación PDF/CSV con Sandbox Transaccional",
+  "type": "commonjs",
+  "scripts": {
+    "test": "cross-env TZ=America/Bogota cypress run --browser chrome --spec tc-m05-g23-reporte-gastos-exportacion.cy.ts",
+    "open": "cross-env TZ=America/Bogota cypress open",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "@types/pdf-parse": "^1.1.4",
+    "cross-env": "^7.0.3",
+    "cypress": "^13.17.0",
+    "dotenv": "^17.4.2",
+    "pdf-parse": "^1.1.4",
+    "typescript": "^5.9.3"
+  }
+}

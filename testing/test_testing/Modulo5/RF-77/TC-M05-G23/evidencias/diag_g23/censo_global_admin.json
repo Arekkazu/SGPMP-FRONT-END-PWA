@@ -1,0 +1,562 @@
+{
+  "login": {
+    "metodo": "POST",
+    "ruta": "/sesiones/",
+    "status": 200,
+    "request_id": "54866610-6d99-461e-a840-f3d3f39d850b",
+    "hora_utc": "2026-11-07T03:20:27.193Z",
+    "error_code": null
+  },
+  "activos_detalle": {
+    "1": {
+      "id": 1,
+      "hora_utc": "2026-11-07T03:20:28.679Z",
+      "get_activo": {
+        "metodo": "GET",
+        "ruta": "/activos-biologicos/1",
+        "status": 200,
+        "request_id": "233a997f-d689-436f-ac63-647c78e9da07",
+        "hora_utc": "2026-11-07T03:20:28.679Z",
+        "datos": {
+          "id_activo": 1,
+          "tipo": "INDIVIDUAL",
+          "estado": "ACTIVO",
+          "id_usuario_dueno": 1,
+          "fecha_inicio_ciclo": null
+        },
+        "error_code": null
+      },
+      "get_fases": {
+        "metodo": "GET",
+        "ruta": "/activos-biologicos/1/fases",
+        "status": 200,
+        "request_id": "62b85c71-782f-4435-8c6e-38f0917f2623",
+        "hora_utc": "2026-11-07T03:20:28.956Z",
+        "fases": [
+          {
+            "id_gestion_fases": 11,
+            "id_activo_biologico": 1,
+            "id_ciclo_productiva": 1,
+            "id_ciclos_productivo_biologico": 1,
+            "nombre_ciclo": "Ciclo completo tilapia 2025-A",
+            "nombre_fase_actual": "Fase larval tilapia",
+            "paso_actual": 1,
+            "total_pasos": 3,
+            "fecha_inicio": "2026-06-27T21:55:47.817029Z",
+            "fecha_finalizacion": "2026-05-03T20:50:34.916064Z",
+            "es_activa": false,
+            "motivo_cambio": null,
+            "es_transicion_no_estandar": false
+          },
+          {
+            "id_gestion_fases": 23,
+            "id_activo_biologico": 1,
+            "id_ciclo_productiva": 1,
+            "id_ciclos_productivo_biologico": 2,
+            "nombre_ciclo": "Ciclo completo tilapia 2025-A",
+            "nombre_fase_actual": "Fase juvenil tilapia",
+            "paso_actual": 2,
+            "total_pasos": 3,
+            "fecha_inicio": "2026-06-27T21:55:47.817029Z",
+            "fecha_finalizacion": "2026-05-03T20:50:34.916064Z",
+            "es_activa": false,
+            "motivo_cambio": null,
+            "es_transicion_no_estandar": false
+          }
+        ]
+      },
+      "get_alimentos": {
+        "metodo": "GET",
+        "ruta": "/suministros/consumo-alimentos?id_activo_biologico=1&limite=200",
+        "status": 200,
+        "request_id": "992a2862-f0d3-460a-81ff-b5ce31b0366a",
+        "hora_utc": "2026-11-07T03:20:29.120Z",
+        "total_declarado": 11,
+        "total_leidos": 11,
+        "registros": [
+          {
+            "id": 23,
+            "estado_registro": "ANULADO",
+            "costo_unitario": null,
+            "tiene_costo_valido": false,
+            "tipo": "Alimento Activo Test"
+          },
+          {
+            "id": 22,
+            "estado_registro": "VALIDADO",
+            "costo_unitario": null,
+            "tiene_costo_valido": false,
+            "tipo": "Alimento Activo Test"
+          },
+          {
+            "id": 19,
+            "estado_registro": "VALIDADO",
+            "costo_unitario": null,
+            "tiene_costo_valido": false,
+            "tipo": "Alimento Cesado Test"
+          },
+          {
+            "id": 18,
+            "estado_registro": "VALIDADO",
+            "costo_unitario": null,
+            "tiene_costo_valido": false,
+            "tipo": "Alimento Cesado Test"
+          },
+          {
+            "id": 15,
+            "estado_registro": "VALIDADO",
+            "costo_unitario": null,
+            "tiene_costo_valido": false,
+            "tipo": "Alimento Activo Test"
+          },
+          {
+            "id": 13,
+            "estado_registro": "VALIDADO",
+            "costo_unitario": null,
+            "tiene_costo_valido": false,
+            "tipo": "Alimento Activo Test"
+          },
+          {
+            "id": 11,
+            "estado_registro": "VALIDADO",
+            "costo_unitario": null,
+            "tiene_costo_valido": false,
+            "tipo": "Alimento Activo Test"
+          },
+          {
+            "id": 6,
+            "estado_registro": "VALIDADO",
+            "costo_unitario": null,
+            "tiene_costo_valido": false,
+            "tipo": "Alimento Activo Test"
+          },
+          {
+            "id": 4,
+            "estado_registro": "ANULADO",
+            "costo_unitario": null,
+            "tiene_costo_valido": false,
+            "tipo": "Alimento Activo Test"
+          },
+          {
+            "id": 3,
+            "estado_registro": "ANULADO",
+            "costo_unitario": null,
+            "tiene_costo_valido": false,
+            "tipo": "Alimento Activo Test"
+          },
+          {
+            "id": 30,
+            "fecha": "2026-07-15",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": null,
+            "tiene_costo_valido": false,
+            "tipo": "test"
+          }
+        ]
+      },
+      "get_medicamentos": {
+        "metodo": "GET",
+        "ruta": "/suministros/medicamentos?id_activo_biologico=1&limite=200",
+        "status": 200,
+        "request_id": "4657192f-9bc8-45f2-9cd7-f85ef2f0704e",
+        "hora_utc": "2026-11-07T03:20:29.250Z",
+        "total_declarado": 6,
+        "total_leidos": 6,
+        "registros": [
+          {
+            "id": 10,
+            "fecha": "2026-05-08",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": "4.0000",
+            "tiene_costo_valido": true,
+            "tipo": "Med Audit"
+          },
+          {
+            "id": 5,
+            "fecha": "2026-05-08",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": "7.5000",
+            "tiene_costo_valido": true,
+            "tipo": "Med Test"
+          },
+          {
+            "id": 4,
+            "fecha": "2026-05-08",
+            "estado_registro": "ANULADO",
+            "costo_unitario": "5.0000",
+            "tiene_costo_valido": false,
+            "tipo": "Antiparasitario"
+          },
+          {
+            "id": 3,
+            "fecha": "2026-05-08",
+            "estado_registro": "ANULADO",
+            "costo_unitario": "10.0000",
+            "tiene_costo_valido": false,
+            "tipo": "Antibiótico X"
+          },
+          {
+            "id": 2,
+            "fecha": "2026-05-08",
+            "estado_registro": "ANULADO",
+            "costo_unitario": "10.0000",
+            "tiene_costo_valido": false,
+            "tipo": "Antibiótico X"
+          },
+          {
+            "id": 9,
+            "fecha": "2026-05-07",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": "5.0000",
+            "tiene_costo_valido": true,
+            "tipo": "Med Test"
+          }
+        ]
+      }
+    },
+    "5": {
+      "id": 5,
+      "hora_utc": "2026-11-07T03:20:28.122Z",
+      "get_activo": {
+        "metodo": "GET",
+        "ruta": "/activos-biologicos/5",
+        "status": 200,
+        "request_id": "4bd8976a-942a-4a3b-9214-bf5e63e96b8e",
+        "hora_utc": "2026-11-07T03:20:28.122Z",
+        "datos": {
+          "id_activo": 5,
+          "tipo": "INDIVIDUAL",
+          "estado": "ACTIVO",
+          "id_usuario_dueno": 2,
+          "fecha_inicio_ciclo": null
+        },
+        "error_code": null
+      },
+      "get_fases": {
+        "metodo": "GET",
+        "ruta": "/activos-biologicos/5/fases",
+        "status": 200,
+        "request_id": "67e42202-161d-4574-be35-0595b35751ad",
+        "hora_utc": "2026-11-07T03:20:28.422Z",
+        "fases": [
+          {
+            "id_gestion_fases": 30,
+            "id_activo_biologico": 5,
+            "id_ciclo_productiva": 1,
+            "id_ciclos_productivo_biologico": 1,
+            "nombre_ciclo": "Ciclo completo tilapia 2025-A",
+            "nombre_fase_actual": "Fase larval tilapia",
+            "paso_actual": 1,
+            "total_pasos": 3,
+            "fecha_inicio": "2026-06-13T15:55:46.198341Z",
+            "fecha_finalizacion": "2026-06-28T14:00:00Z",
+            "es_activa": false,
+            "motivo_cambio": "Avance automático por duración de fase",
+            "es_transicion_no_estandar": false
+          },
+          {
+            "id_gestion_fases": 15,
+            "id_activo_biologico": 5,
+            "id_ciclo_productiva": 3,
+            "id_ciclos_productivo_biologico": 7,
+            "nombre_ciclo": "Ciclo completo camarón 2025-A",
+            "nombre_fase_actual": "Fase postlarval camarón",
+            "paso_actual": 1,
+            "total_pasos": 3,
+            "fecha_inicio": "2026-06-27T21:55:47.817029Z",
+            "fecha_finalizacion": "2024-05-15T00:00:00Z",
+            "es_activa": false,
+            "motivo_cambio": null,
+            "es_transicion_no_estandar": false
+          },
+          {
+            "id_gestion_fases": 32,
+            "id_activo_biologico": 5,
+            "id_ciclo_productiva": 1,
+            "id_ciclos_productivo_biologico": 2,
+            "nombre_ciclo": "Ciclo completo tilapia 2025-A",
+            "nombre_fase_actual": "Fase juvenil tilapia",
+            "paso_actual": 2,
+            "total_pasos": 3,
+            "fecha_inicio": "2026-06-28T14:00:00Z",
+            "fecha_finalizacion": "2026-09-09T19:00:00Z",
+            "es_activa": false,
+            "motivo_cambio": "Avance automático por duración de fase",
+            "es_transicion_no_estandar": false
+          },
+          {
+            "id_gestion_fases": 36,
+            "id_activo_biologico": 5,
+            "id_ciclo_productiva": 1,
+            "id_ciclos_productivo_biologico": 3,
+            "nombre_ciclo": "Ciclo completo tilapia 2025-A",
+            "nombre_fase_actual": "Fase engorde tilapia",
+            "paso_actual": 3,
+            "total_pasos": 3,
+            "fecha_inicio": "2026-09-09T19:00:00Z",
+            "fecha_finalizacion": null,
+            "es_activa": true,
+            "motivo_cambio": "Avance automático por duración de fase",
+            "es_transicion_no_estandar": false
+          }
+        ]
+      },
+      "get_alimentos": {
+        "metodo": "GET",
+        "ruta": "/suministros/consumo-alimentos?id_activo_biologico=5&limite=200",
+        "status": 200,
+        "request_id": "96e6438e-1934-4e1c-ac5f-80ed7b3c1762",
+        "hora_utc": "2026-11-07T03:20:28.549Z",
+        "total_declarado": 3,
+        "total_leidos": 3,
+        "registros": [
+          {
+            "id": 32,
+            "fecha": "2026-07-31",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": "1.0000",
+            "tiene_costo_valido": true,
+            "tipo": "test"
+          },
+          {
+            "id": 28,
+            "fecha": "2026-07-29",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": "1.0000",
+            "tiene_costo_valido": true,
+            "tipo": "test"
+          },
+          {
+            "id": 27,
+            "fecha": "2026-07-29",
+            "estado_registro": "ANULADO",
+            "costo_unitario": "1.0000",
+            "tiene_costo_valido": false,
+            "tipo": "test"
+          }
+        ]
+      },
+      "get_medicamentos": {
+        "metodo": "GET",
+        "ruta": "/suministros/medicamentos?id_activo_biologico=5&limite=200",
+        "status": 200,
+        "request_id": "8fa0ce86-cb77-4659-a648-cadc5b3a03e9",
+        "hora_utc": "2026-11-07T03:20:28.678Z",
+        "total_declarado": 5,
+        "total_leidos": 5,
+        "registros": [
+          {
+            "id": 15,
+            "fecha": "2026-07-29",
+            "estado_registro": "ANULADO",
+            "costo_unitario": "900.0000",
+            "tiene_costo_valido": false,
+            "tipo": "Enrofloxacina"
+          },
+          {
+            "id": 14,
+            "fecha": "2026-07-29",
+            "estado_registro": "ANULADO",
+            "costo_unitario": "1200.0000",
+            "tiene_costo_valido": false,
+            "tipo": "Oxitetraciclina"
+          },
+          {
+            "id": 13,
+            "fecha": "2026-07-29",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": "500.0000",
+            "tiene_costo_valido": true,
+            "tipo": "Meloxicam"
+          },
+          {
+            "id": 17,
+            "fecha": "2026-07-28",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": "10.0000",
+            "tiene_costo_valido": true,
+            "tipo": "SmokeTest"
+          },
+          {
+            "id": 18,
+            "fecha": "2026-07-01",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": "1000.0000",
+            "tiene_costo_valido": true,
+            "tipo": "TestRetiroVencidoRF76"
+          }
+        ]
+      }
+    },
+    "8": {
+      "id": 8,
+      "hora_utc": "2026-11-07T03:20:29.251Z",
+      "get_activo": {
+        "metodo": "GET",
+        "ruta": "/activos-biologicos/8",
+        "status": 200,
+        "request_id": "dbd840b2-ca65-4bc3-b5a9-f1a13158212b",
+        "hora_utc": "2026-11-07T03:20:29.251Z",
+        "datos": {
+          "id_activo": 8,
+          "tipo": "POBLACIONAL",
+          "estado": "CERRADO",
+          "id_usuario_dueno": 1,
+          "fecha_inicio_ciclo": null
+        },
+        "error_code": null
+      },
+      "get_fases": {
+        "metodo": "GET",
+        "ruta": "/activos-biologicos/8/fases",
+        "status": 200,
+        "request_id": "d6444c67-3c88-47dd-8beb-6c5d34d79ab2",
+        "hora_utc": "2026-11-07T03:20:29.534Z",
+        "fases": [
+          {
+            "id_gestion_fases": 18,
+            "id_activo_biologico": 8,
+            "id_ciclo_productiva": 5,
+            "id_ciclos_productivo_biologico": 12,
+            "nombre_ciclo": "Ciclo completo mojarra 2025-A",
+            "nombre_fase_actual": "Fase juvenil mojarra",
+            "paso_actual": 1,
+            "total_pasos": 2,
+            "fecha_inicio": "2026-06-27T21:55:47.817029Z",
+            "fecha_finalizacion": null,
+            "es_activa": true,
+            "motivo_cambio": null,
+            "es_transicion_no_estandar": false
+          }
+        ]
+      },
+      "get_alimentos": {
+        "metodo": "GET",
+        "ruta": "/suministros/consumo-alimentos?id_activo_biologico=8&limite=200",
+        "status": 200,
+        "request_id": "d7011504-a394-4877-bd4f-92d4d9a79f9d",
+        "hora_utc": "2026-11-07T03:20:29.664Z",
+        "total_declarado": 1,
+        "total_leidos": 1,
+        "registros": [
+          {
+            "id": 29,
+            "fecha": "2026-07-29",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": "1.0000",
+            "tiene_costo_valido": true,
+            "tipo": "test"
+          }
+        ]
+      },
+      "get_medicamentos": {
+        "metodo": "GET",
+        "ruta": "/suministros/medicamentos?id_activo_biologico=8&limite=200",
+        "status": 200,
+        "request_id": "49a0bd69-03f9-46b4-85e5-aa012e8c6759",
+        "hora_utc": "2026-11-07T03:20:29.788Z",
+        "total_declarado": 1,
+        "total_leidos": 1,
+        "registros": [
+          {
+            "id": 16,
+            "fecha": "2026-07-29",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": "50.0000",
+            "tiene_costo_valido": true,
+            "tipo": "Ivermectina"
+          }
+        ]
+      }
+    },
+    "57": {
+      "id": 57,
+      "hora_utc": "2026-11-07T03:20:29.788Z",
+      "get_activo": {
+        "metodo": "GET",
+        "ruta": "/activos-biologicos/57",
+        "status": 200,
+        "request_id": "a688290b-69a5-440f-9ec0-5f5ea92c5cbd",
+        "hora_utc": "2026-11-07T03:20:29.788Z",
+        "datos": {
+          "id_activo": 57,
+          "tipo": "INDIVIDUAL",
+          "estado": "ACTIVO",
+          "id_usuario_dueno": 30,
+          "fecha_inicio_ciclo": "2026-01-01"
+        },
+        "error_code": null
+      },
+      "get_fases": {
+        "metodo": "GET",
+        "ruta": "/activos-biologicos/57/fases",
+        "status": 200,
+        "request_id": "a2865a58-8459-4f34-9948-7fb6d209c6d5",
+        "hora_utc": "2026-11-07T03:20:30.070Z",
+        "fases": [
+          {
+            "id_gestion_fases": 33,
+            "id_activo_biologico": 57,
+            "id_ciclo_productiva": 1,
+            "id_ciclos_productivo_biologico": 1,
+            "nombre_ciclo": "Ciclo completo tilapia 2025-A",
+            "nombre_fase_actual": "Fase larval tilapia",
+            "paso_actual": 1,
+            "total_pasos": 3,
+            "fecha_inicio": "2026-07-31T05:15:49.689277Z",
+            "fecha_finalizacion": "2026-07-31T17:48:26.683152Z",
+            "es_activa": false,
+            "motivo_cambio": null,
+            "es_transicion_no_estandar": false
+          }
+        ]
+      },
+      "get_alimentos": {
+        "metodo": "GET",
+        "ruta": "/suministros/consumo-alimentos?id_activo_biologico=57&limite=200",
+        "status": 200,
+        "request_id": "38ba4eb4-e39e-4bde-9596-f61fc9852bf5",
+        "hora_utc": "2026-11-07T03:20:30.187Z",
+        "total_declarado": 1,
+        "total_leidos": 1,
+        "registros": [
+          {
+            "id": 31,
+            "fecha": "2026-07-31",
+            "estado_registro": "VALIDADO",
+            "costo_unitario": "1.0000",
+            "tiene_costo_valido": true,
+            "tipo": "test"
+          }
+        ]
+      },
+      "get_medicamentos": {
+        "metodo": "GET",
+        "ruta": "/suministros/medicamentos?id_activo_biologico=57&limite=200",
+        "status": 200,
+        "request_id": "e00f3d45-e181-44ce-ac3b-44be24d2c878",
+        "hora_utc": "2026-11-07T03:20:30.307Z",
+        "total_declarado": 0,
+        "total_leidos": 0,
+        "registros": []
+      }
+    }
+  },
+  "selector_activos": {
+    "metodo": "GET",
+    "ruta": "/activos-biologicos?pagina=1&page_size=100",
+    "status": 200,
+    "request_id": "dc797ee5-bc2a-44d2-96a9-b8f2255dae69",
+    "hora_utc": "2026-11-07T03:20:30.307Z",
+    "total_retornados": 100,
+    "aparicion_activos": {
+      "activo_5": false,
+      "activo_1": false,
+      "activo_8": false,
+      "activo_57": false,
+      "activo_778": true,
+      "activo_776": false,
+      "activo_296": false
+    }
+  }
+}

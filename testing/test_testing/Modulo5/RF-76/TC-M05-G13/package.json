@@ -1,0 +1,19 @@
+{
+  "name": "tc-m05-g13-registro-medicamento",
+  "private": true,
+  "version": "1.0.0",
+  "description": "TC-M05-G13 · RF-76 · CU03 – Registro de aplicación de medicamento según modalidad (INDIVIDUAL / POBLACIONAL) con Sandbox Transaccional",
+  "type": "commonjs",
+  "scripts": {
+    "test": "cross-env TZ=America/Bogota cypress run --browser chrome --spec tc-m05-g13-registro-medicamento.cy.ts",
+    "open": "cross-env TZ=America/Bogota cypress open",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "cross-env": "^7.0.3",
+    "cypress": "^13.17.0",
+    "dotenv": "^17.4.2",
+    "typescript": "^5.9.3"
+  }
+}
