@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M05 RF-76 TC-DIS-213: accesibilidad del aviso de retiro y del estado EN_TRATAMIENTO |
+// | 2026-11-06 | Laura032005 | M05 RF-76 TC-DIS-213: irA() esperaba un h1 fijo en la ficha del activo, que en realidad es dinámico (identificador); se navega sin exigir ese título |
 /**
  * TC-DIS-213 — [CRÍTICO] Accesibilidad WCAG 2.1 AA de la notificación de inicio de período de
  * retiro y del estado EN_TRATAMIENTO del activo
@@ -76,7 +77,10 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Periodo de retiro y estado
     precondicion(!!id, 'no se pudo determinar el ID de un activo con aplicaciones de medicamento para abrir su ficha');
     if (!id) return;
 
-    await irA(page, `activos-biologicos/${id}`, 'Detalle del activo').catch(() => null);
+    // ActivoHeader pinta el h1 con el identificador del activo (dinámico), no un título fijo:
+    // irA() no sirve aquí porque exige un h1 exacto conocido de antemano.
+    await page.goto(`activos-biologicos/${id}`, { waitUntil: 'commit', timeout: 60_000 });
+    await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => {});
     const pill = page.getByText('En tratamiento', { exact: true });
     const enTratamiento = await pill.count() > 0;
     anotar(testInfo, 'Estado del activo consultado', enTratamiento ? 'EN_TRATAMIENTO' : 'otro estado (no es un fallo de RF-76: depende de RF-44)');

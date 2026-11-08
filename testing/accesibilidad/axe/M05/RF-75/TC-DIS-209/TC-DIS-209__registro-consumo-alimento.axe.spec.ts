@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M05 RF-75 TC-DIS-209: accesibilidad del formulario de registro de consumo de alimento |
+// | 2026-11-06 | Laura032005 | M05 RF-75 TC-DIS-209: corrige el conteo de hints "Opcional." tras la primera corrida contra sigab-test |
 /**
  * TC-DIS-209 — [CRÍTICO] Accesibilidad WCAG 2.1 AA del formulario de Registro de Consumo de
  * Alimentos y de sus mensajes de error por campo
@@ -74,7 +75,8 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Formulario de consumo de a
     for (const [role, name] of campos) {
       await expect.soft(dialogo.getByRole(role, { name }), `4.1.2: falta el campo "${name}" con su rol accesible`).toBeVisible();
     }
-    await expect.soft(dialogo.getByText('Opcional.')).toHaveCount(1); // hora_suministro y observaciones comparten el hint, pero solo uno aparece sin el otro foco
+    // hora_suministro y observaciones son los dos campos opcionales del formulario; ambos muestran el hint "Opcional." a la vez (no depende del foco).
+    await expect.soft(dialogo.getByText('Opcional.')).toHaveCount(2);
 
     await escanear(page, TC_ID, __dirname, 'formulario-vacio', testInfo, PASOS_LIGHTHOUSE);
   });

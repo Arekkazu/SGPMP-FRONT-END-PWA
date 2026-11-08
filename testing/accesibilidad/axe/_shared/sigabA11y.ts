@@ -28,10 +28,15 @@ const HAR_ASSETS = path.join(__dirname, '../../../.har-cache/assets.har');
 // ── Sesión ───────────────────────────────────────────────────────────────────
 
 export function credencialesAdmin() {
-  const email = process.env.TEST_ADMIN_EMAIL ?? '';
-  const password = process.env.TEST_ADMIN_PASSWORD ?? '';
-  expect(email, 'Faltan TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
-  expect(password, 'Faltan TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD en testing/.env.test').not.toBe('');
+  return credencialesPorRol('ADMIN');
+}
+
+/** Cuentas por rol de testing/.env.test (ej. 'CONTADOR' → TEST_CONTADOR_EMAIL/PASSWORD). */
+export function credencialesPorRol(rol: string) {
+  const email = process.env[`TEST_${rol}_EMAIL`] ?? '';
+  const password = process.env[`TEST_${rol}_PASSWORD`] ?? '';
+  expect(email, `Faltan TEST_${rol}_EMAIL / TEST_${rol}_PASSWORD en testing/.env.test`).not.toBe('');
+  expect(password, `Faltan TEST_${rol}_EMAIL / TEST_${rol}_PASSWORD en testing/.env.test`).not.toBe('');
   return { email, password };
 }
 
@@ -53,8 +58,10 @@ export async function iniciarSesion(page: Page, email: string, password: string)
  * ninguna escritura hacia el backend salvo el login. Las simulaciones de cada spec van en
  * page.route, que tiene prioridad sobre contexto.route.
  */
-export async function abrirSesion(browser: Browser, testInfo: TestInfo): Promise<{ contexto: BrowserContext; page: Page }> {
-  const { email, password } = credencialesAdmin();
+export async function abrirSesion(
+  browser: Browser, testInfo: TestInfo, credenciales?: { email: string; password: string },
+): Promise<{ contexto: BrowserContext; page: Page }> {
+  const { email, password } = credenciales ?? credencialesAdmin();
   const use = testInfo.project.use;
   const contexto = await browser.newContext({
     baseURL: use.baseURL,

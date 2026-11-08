@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-88 TC-DIS-238: accesibilidad del desglose de valor contable y del cambio de método sin confirmación |
+// | 2026-11-07 | Laura032005 | M06 RF-88 TC-DIS-238: loguear como Contador (Administrador no tiene permiso valoracion_por_costo) |
 /**
  * TC-DIS-238 — Accesibilidad WCAG 2.1 AA del desglose del valor contable por costo, de la marca
  * diferenciada del método COSTO y de la confirmación del cambio a VALOR_RAZONABLE
@@ -22,7 +23,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
-  abrirSesion, anotar, desviacion, escanear, irA, main, precondicion,
+  abrirSesion, anotar, credencialesPorRol, desviacion, escanear, irA, main, precondicion,
 } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-238';
@@ -37,7 +38,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Desglose del valor contabl
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    ({ contexto, page } = await abrirSesion(browser, testInfo));
+    ({ contexto, page } = await abrirSesion(browser, testInfo, credencialesPorRol('CONTADOR')));
   });
 
   test.afterAll(async () => {

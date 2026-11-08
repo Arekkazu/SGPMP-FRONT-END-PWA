@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-88 TC-DIS-236: no hay formulario de marcación manual SIN_MERCADO_ACTIVO |
+// | 2026-11-07 | Laura032005 | M06 RF-88 TC-DIS-236: loguear como Contador (Administrador no tiene permiso valoracion_por_costo) |
 /**
  * TC-DIS-236 — Accesibilidad WCAG 2.1 AA del formulario de marcación SIN_MERCADO_ACTIVO con
  * razon_sin_mercado obligatoria y de la advertencia cuando RF-89 sí tiene precio
@@ -22,7 +23,9 @@
  */
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
-import { abrirSesion, anotar, desviacion, escanear, irA, main, precondicion } from '../../../_shared/sigabA11y';
+import {
+  abrirSesion, anotar, credencialesPorRol, desviacion, escanear, irA, main, precondicion,
+} from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-236';
 const RUTA = 'finanzas/valoracion-costo';
@@ -36,7 +39,10 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Marcación SIN_MERCADO_ACT
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    ({ contexto, page } = await abrirSesion(browser, testInfo));
+    // La cuenta Administrador (abrirSesion por defecto) no tiene el permiso valoracion_por_costo
+    // (R_COSTO_HISTORICO): ValoracionCostoView responde AccesoDenegado, que irA() no reconoce
+    // como un estado válido (solo espera el h1 de la vista o el login) y el test agota el timeout.
+    ({ contexto, page } = await abrirSesion(browser, testInfo, credencialesPorRol('CONTADOR')));
   });
 
   test.afterAll(async () => {

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-85 TC-DIS-232: accesibilidad de los filtros del historial de productos agrícolas |
+// | 2026-11-07 | Laura032005 | M06 RF-85 TC-DIS-232: no evaluar foco en un filtro deshabilitado por falta de datos (no es un fallo de teclado) |
 /**
  * TC-DIS-232 — Accesibilidad WCAG 2.1 AA de los filtros y del estado vacío del historial de
  * reconocimientos de productos agrícolas (activo, período, tipo de producto y rango de valores)
@@ -50,8 +51,14 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Filtros del historial de p
       if (await campo.count() > 0) {
         algunoPresente = true;
         await expect.soft(campo, `3.3.2: el filtro "${name}" debe exponer su etiqueta`).toBeVisible();
-        await campo.focus();
-        await expect.soft(campo, `2.1.1: "${name}" debe ser enfocable con Tab`).toBeFocused();
+        // Listado (comunes.tsx) deshabilita el filtro cuando hay menos de 2 valores distintos
+        // para ofrecer ("ningún filtro ofrece algo que no existe"): no es un fallo de teclado.
+        if (await campo.isEnabled()) {
+          await campo.focus();
+          await expect.soft(campo, `2.1.1: "${name}" debe ser enfocable con Tab`).toBeFocused();
+        } else {
+          anotar(testInfo, `Filtro "${name}" deshabilitado`, 'menos de 2 valores distintos en los datos del período (comportamiento esperado, no se evalúa el foco)');
+        }
       }
     }
     precondicion(algunoPresente, 'el período elegido no tiene productos agrícolas reconocidos (el panel de filtros solo aparece con l.total > 0)');
