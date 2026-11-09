@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82/RF-84/RF-88: propuestas de reconocimiento inicial y confirmación |
 // | 2026-11-05 | Arekkazu | M06 RF-82 prototipo: indicadores, avisos y una tabla con propuestas y reconocidos filtrable |
+// | 2026-11-08 | destroyerban | INC-M06-316-G16 RF-84: referencia documental de los costos manuales |
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, ClipboardCheck, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -169,6 +170,7 @@ function PropuestaModal({ inicial, puedeConfirmar, onCerrar, onConfirmado }: {
   const [manuales, setManuales] = useState(inicial.requiere_costos_manuales);
   const [costos, setCostos] = useState<Record<keyof CostosManuales, string>>({ transporte: '', comisiones: '', impuestos: '', otros: '' });
   const [justificacion, setJustificacion] = useState('');
+  const [referencia, setReferencia] = useState('');
   const [aviso, setAviso] = useState<string>();
 
   const recalcular = (c: Clasificacion | '') => { setClasificacion(c); if (c) recalculo.ejecutar(inicial.id_activo_biologico, c); };
@@ -179,11 +181,14 @@ function PropuestaModal({ inicial, puedeConfirmar, onCerrar, onConfirmado }: {
       const valores = Object.entries(costos).filter(([, v]) => v.trim() !== '');
       if (valores.some(([, v]) => !(Number(v.replace(',', '.')) >= 0))) { setAviso(t('recon.costos_invalidos')); return; }
       if (justificacion.trim().length < 20) { setAviso(t('recon.justificacion_corta')); return; }
+      // RF-84 R4: los costos propios se respaldan con un documento; el backend responde 400 sin él.
+      if (valores.length > 0 && referencia.trim().length < 3) { setAviso(t('recon.referencia_falta')); return; }
       costosManuales = Object.fromEntries(valores.map(([k, v]) => [k, v.replace(',', '.')]));
     }
     setAviso(undefined);
     const r = await confirmacion.ejecutar(inicial.id_activo_biologico, {
       clasificacion: clasificacion || undefined, costos_manuales: costosManuales, justificacion: manuales ? justificacion.trim() : undefined,
+      referencia_documental: manuales ? referencia.trim() || undefined : undefined,
     });
     if (r) {
       pushToast('success', t('recon.confirmado', { activo: inicial.identificador }), r.advertencias.join(' ') || undefined);
@@ -260,6 +265,8 @@ function PropuestaModal({ inicial, puedeConfirmar, onCerrar, onConfirmado }: {
               </div>
               <AreaTexto id="rc-justificacion" label={t('recon.justificacion')} required maxLength={1000} value={justificacion}
                 onChange={(e) => setJustificacion(e.target.value)} hint={t('recon.justificacion_ayuda')} />
+              <Input id="rc-referencia" label={t('recon.referencia')} required maxLength={200} value={referencia}
+                onChange={(e) => setReferencia(e.target.value)} hint={t('recon.referencia_ayuda')} />
             </>
           )}
           {aviso && <Alert variant="error" title={aviso} />}
