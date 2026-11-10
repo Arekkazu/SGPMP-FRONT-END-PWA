@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: contratos de la API /finanzas |
 // | 2026-11-05 | Arekkazu | M06 prototipos: listados del período, modelo de costo por activo y resumen de auditoría |
+// | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -112,6 +113,11 @@ export interface ProductoPeriodo extends ActivoDelRegistro {
   id_reconocimiento_producto_agricola: number; producto_agricola: string; cantidad_cosechada: Dec; unidad_medida: string;
   precio_mercado_producto: Dec | null; costo_venta_producto: Dec | null; valor_producto: Dec; valor_reduccion_activo: Dec | null;
   tipo: 'PRODUCTO_DE_CONSUMO' | 'PRODUCTO_PERIODICO' | string; fecha_cosecha: string;
+}
+export interface CosechaPendiente {
+  id_evento: number; id_activo_biologico: number; identificador: string; especie: string; finca: string;
+  clasificacion: Clasificacion | null; producto_agricola: string | null; unidad_medida: string | null; cantidad_cosechada: Dec;
+  fecha_cosecha: string; motivo: string | null; fecha_ultimo_intento: string; intentos: number; admite_costos_manuales: boolean;
 }
 export interface Calculo {
   id_calculo_valor_razonable: number | null; magnitud: Dec; unidad_magnitud: string; precio_unitario: Dec;
