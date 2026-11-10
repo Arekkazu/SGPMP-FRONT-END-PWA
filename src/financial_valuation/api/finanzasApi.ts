@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: cliente de la API /finanzas (valoración NIC 41) |
 // | 2026-11-05 | Arekkazu | M06 prototipos: listados del período y auditoría ordenable |
+// | 2026-11-09 | destroyerban | INC-M06-317-G17 RF-84: validar con justificación un cálculo con valor neto ≤ 0 |
 import { http } from '../../shared/api/http';
 import type {
   ActivoValorado, Asignacion, Cadena, CalculoPeriodo, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
@@ -72,6 +73,8 @@ export const finanzasApi = {
   mediciones: (idPeriodo: number) => get<MedicionPeriodo[]>(`/periodos/${idPeriodo}/mediciones`),
   variaciones: (idPeriodo: number) => get<VariacionPeriodo[]>(`/periodos/${idPeriodo}/variaciones`),
   calculos: (idPeriodo: number) => get<CalculoPeriodo[]>(`/periodos/${idPeriodo}/calculos`),
+  validarCalculo: (idCalculo: number, justificacion: string) =>
+    post<{ id_calculo_valor_razonable: number; estado: string; valor_neto: string }>(`/calculos/${idCalculo}/validacion`, { justificacion }),
   productos: (idPeriodo: number) => get<ProductoPeriodo[]>(`/periodos/${idPeriodo}/productos`),
 
   // Costos (RF-90)

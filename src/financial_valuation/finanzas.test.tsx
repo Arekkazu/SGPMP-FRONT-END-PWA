@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: pestañas por permiso, desviación de precio, cierre con autorización y DV del NIT |
 // | 2026-11-05 | Arekkazu | M06 prototipos: período global, filtros de variaciones y suma decimal exacta |
+// | 2026-11-09 | destroyerban | INC-M06-317-G17 RF-84: validar con justificación un cálculo con valor neto ≤ 0 |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -13,6 +14,7 @@ import { FinanzasPage } from './pages/FinanzasPage';
 import { PreciosView } from './pages/PreciosView';
 import { CierreView } from './pages/CierreView';
 import { VariacionesView } from './pages/VariacionesView';
+import { CalculoView } from './pages/CalculoView';
 import { ProveedorPeriodo, aFraccion, aPorcentaje, formatoMoneda } from './components/comunes';
 import { signo, sumar } from './lib/decimal';
 import { digitoVerificacion } from '../configuration/components/TitularFincaModal';
@@ -161,5 +163,56 @@ describe('utilidades', () => {
   it('calcula el dígito de verificación del NIT como la DIAN', () => {
     expect(digitoVerificacion('900123456')).toBe('8');
     expect(digitoVerificacion('800197268')).toBe('4');
+  });
+});
+
+describe('CalculoView (RF-84)', () => {
+  const calculo = {
+    id_calculo_valor_razonable: 55, id_activo_biologico: 7, identificador: 'BOV-007', tipo_activo: 'INDIVIDUAL', id_especie: 2,
+    especie: 'Bovino', finca: 'La Esperanza', clasificacion: 'PRODUCCION', magnitud: '400', unidad_magnitud: 'kg',
+    precio_unitario: '25000', valor_razonable_bruto: '10000000', costos_venta: '10100000', valor_neto: '-100000',
+    metodo_costo: 'MIXTO', estado: 'REVISION_REQUERIDA', tiene_valor_estimado: false, es_producto: false,
+    fecha_calculo: '2026-11-09T10:00:00Z',
+  };
+
+  const abrirValidacion = async () => {
+    sesion.permisos = [permiso('valoracion_activos', 2), permiso('valoracion_activos', 5), permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/periodos/7/calculos'] = [{ data: [calculo] }, { data: [{ ...calculo, estado: 'CALCULADO' }] }];
+    respuestas['POST /finanzas/calculos/55/validacion'] = { data: { id_calculo_valor_razonable: 55, estado: 'CALCULADO', valor_neto: '-100000' } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><CalculoView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('1 cálculo requiere revisión')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Validar el cálculo de BOV-007' }));
+    return { user, dialogo: within(screen.getByRole('dialog')) };
+  };
+  const validaciones = () => peticiones.filter((p) => p.url === '/finanzas/calculos/55/validacion' && p.method === 'post');
+
+  it('sin justificación suficiente no envía la validación', async () => {
+    const { user, dialogo } = await abrirValidacion();
+    await user.type(dialogo.getByLabelText(/^Justificación/), '     ');
+    await user.click(dialogo.getByRole('button', { name: /Validar el cálculo$/ }));
+
+    expect(await dialogo.findByText('Escribe una justificación de al menos 20 caracteres para validar el cálculo.')).toBeInTheDocument();
+    expect(validaciones()).toHaveLength(0);
+  });
+
+  it('envía la justificación y recarga los cálculos', async () => {
+    const { user, dialogo } = await abrirValidacion();
+    await user.type(dialogo.getByLabelText(/^Justificación/), 'Transporte extraordinario por cierre de la vía principal.');
+    await user.click(dialogo.getByRole('button', { name: /Validar el cálculo$/ }));
+
+    await waitFor(() => expect(validaciones()).toHaveLength(1));
+    expect(JSON.parse(validaciones()[0].data as string)).toEqual({ justificacion: 'Transporte extraordinario por cierre de la vía principal.' });
+    await waitFor(() => expect(screen.queryByText('1 cálculo requiere revisión')).not.toBeInTheDocument());
+  });
+
+  it('sin permiso de ejecutar no muestra el botón', async () => {
+    sesion.permisos = [permiso('valoracion_activos', 2), permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/periodos/7/calculos'] = { data: [calculo] };
+    render(<MemoryRouter><ProveedorPeriodo><CalculoView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('1 cálculo requiere revisión')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Validar el cálculo de BOV-007' })).not.toBeInTheDocument();
   });
 });
