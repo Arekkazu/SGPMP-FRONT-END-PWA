@@ -1,8 +1,9 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-05 | Arekkazu | M06 RF-91 prototipo: líneas de asiento del período con su cadena, indicadores y filtros |
+// | 2026-11-10 | Arekkazu | INC-M06-351-G45 RF-87: ajustar una línea de un período cerrado |
 import React, { useEffect, useState } from 'react';
-import { GitBranch, Link2, ShieldCheck } from 'lucide-react';
+import { GitBranch, Link2, PencilLine, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
@@ -10,8 +11,9 @@ import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { finanzasApi } from '../api/finanzasApi';
-import { ACCION_E, ACCION_R, R_TRAZABILIDAD, R_VALORACION } from '../rbac';
+import { ACCION_E, ACCION_R, R_CIERRE, R_TRAZABILIDAD, R_VALORACION } from '../rbac';
 import type { Linea } from '../types';
+import { AjusteModal } from '../components/AjusteModal';
 import { CadenaModal } from '../components/CadenaModal';
 import {
   EncabezadoVista, EstadoBadge, ErrorApi, Indicadores, Listado, SinPeriodo, TABLA, TD, TD_NUM, TH, TH_NUM, formatoFecha, formatoMoneda,
@@ -23,11 +25,13 @@ export function TrazabilidadView() {
   const puedeLeer = usePermissionPorNombre(R_TRAZABILIDAD, ACCION_R);
   const puedeVerificar = usePermissionPorNombre(R_TRAZABILIDAD, ACCION_E);
   const puedeVerLineas = usePermissionPorNombre(R_VALORACION, ACCION_R);
+  const puedeAjustar = usePermissionPorNombre(R_CIERRE, ACCION_E);
   const { periodo } = usePeriodo();
   const lineas = useAsync(finanzasApi.lineas);
   const activos = useAsync(finanzasApi.activos);
   const verificacion = useAsync(finanzasApi.verificarTrazabilidad);
   const [cadena, setCadena] = useState<Linea | null>(null);
+  const [ajustando, setAjustando] = useState<Linea | null>(null);
   const id = periodo?.id_periodo_contable;
   const { ejecutar: cargarLineas } = lineas;
   const { ejecutar: cargarActivos } = activos;
@@ -48,6 +52,9 @@ export function TrazabilidadView() {
   const lista = lineas.data ?? [];
   const cuenta = (e: string) => lista.filter((x) => x.estado_trazabilidad === e).length;
   const incompletas = cuenta('PENDIENTE_TRAZABILIDAD');
+  // Un hecho de un período cerrado se corrige con un ajuste en el período abierto (RF-87 v1.1); no se ajusta otro ajuste.
+  const ajustable = (x: Linea) => puedeAjustar && periodo?.estado === 'CERRADO' && x.estado === 'REGISTRADA'
+    && x.tipo_hecho !== 'AJUSTE_PERIODO_ANTERIOR';
 
   const verificar = async () => {
     if (!id) return;
@@ -110,6 +117,11 @@ export function TrazabilidadView() {
                         <Button variant="ghost" size="sm" onClick={() => setCadena(x)} aria-label={t('cierre.ver_cadena_aria', { linea: `${t(`hecho.${x.tipo_hecho}`)} · ${activoDe(x)}` })}>
                           <Link2 size={14} aria-hidden />{t('cierre.ver_cadena')}
                         </Button>
+                        {ajustable(x) && (
+                          <Button variant="ghost" size="sm" onClick={() => setAjustando(x)} aria-label={t('ajuste.abrir_aria', { linea: `${t(`hecho.${x.tipo_hecho}`)} · ${activoDe(x)}` })}>
+                            <PencilLine size={14} aria-hidden />{t('ajuste.abrir')}
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -118,6 +130,9 @@ export function TrazabilidadView() {
             )}
           </Listado>
         </>
+      )}
+      {ajustando && (
+        <AjusteModal linea={ajustando} titulo={`${t(`hecho.${ajustando.tipo_hecho}`)} · ${activoDe(ajustando)}`} onCerrar={() => setAjustando(null)} />
       )}
       {cadena && (
         <CadenaModal idLinea={cadena.id_linea_asiento_nic41} titulo={`${t(`hecho.${cadena.tipo_hecho}`)} · ${activoDe(cadena)}`} onCerrar={() => setCadena(null)} />

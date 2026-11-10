@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-93: estado de resultados del período con versiones, aprobación y descarga |
 // | 2026-11-05 | Arekkazu | M06 RF-93 prototipo: generación con filtros de especie, finca y activo; versiones en lista |
+// | 2026-11-10 | Arekkazu | INC-M06-337/344 RF-86/93: acumulado del período abierto y desglose del mantenimiento |
 import React, { useEffect, useState } from 'react';
 import { BarChart3, CheckCircle2, Download, Plus } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -14,7 +15,7 @@ import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { finanzasApi } from '../api/finanzasApi';
 import { ACCION_C, ACCION_R, ACCION_U, R_ESTADO_RESULTADOS, R_VALORACION } from '../rbac';
-import type { ActivoValorado, EstadoResumen } from '../types';
+import type { ActivoValorado, Dec, EstadoResumen } from '../types';
 import {
   Datos, EncabezadoVista, EstadoBadge, ErrorApi, Listado, PANEL, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM,
   Variacion, formatoFecha, formatoMoneda, guardarArchivo, nombrePeriodo, useAsync, useListado, usePeriodo,
@@ -50,11 +51,18 @@ export function EstadoResultadosView() {
   const aprobacion = useAsync(finanzasApi.aprobarEstado);
   const descarga = useAsync(finanzasApi.descargarEstado);
   const activos = useAsync(finanzasApi.activos);
+  const acumulado = useAsync(finanzasApi.acumulado);
   const idPeriodo = periodo?.id_periodo_contable;
   const cerrado = periodo?.estado === 'CERRADO';
   const { ejecutar: cargarEstados, limpiar: limpiarEstados } = estados;
   const { ejecutar: cargarDetalle, limpiar: limpiarDetalle } = detalle;
   const { ejecutar: cargarActivos } = activos;
+  const { ejecutar: cargarAcumulado, limpiar: limpiarAcumulado } = acumulado;
+  // RF-86: con el período abierto se consulta lo acumulado, sin versión; el estado formal (RF-93) llega al cerrar.
+  useEffect(() => {
+    limpiarAcumulado();
+    if (puedeLeer && idPeriodo && !cerrado) cargarAcumulado(idPeriodo);
+  }, [puedeLeer, idPeriodo, cerrado, cargarAcumulado, limpiarAcumulado]);
   useEffect(() => {
     setIdEstado(null); limpiarEstados(); limpiarDetalle();
     if (puedeLeer && idPeriodo) cargarEstados(idPeriodo);
@@ -85,7 +93,7 @@ export function EstadoResultadosView() {
 
   if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.estado-resultados')} />;
   const e = detalle.data;
-  const monto = (k: string) => (e?.componentes[k] as string | undefined) ?? '0';
+  const a = acumulado.data;
   const cambiar = (k: keyof typeof filtro) => (ev: React.ChangeEvent<HTMLSelectElement>) => {
     const siguiente = { ...filtro, [k]: ev.target.value };
     // Al cambiar especie o finca, el activo elegido deja de valer si ya no está entre los candidatos.
@@ -112,11 +120,20 @@ export function EstadoResultadosView() {
     if (a) guardarArchivo(a.blob, a.nombre);
   };
 
-  const tablaComponentes = (claves: string[], titulo: string, total: string) => (
+  // Las versiones guardadas antes del desglose no lo traen: se muestra solo el total.
+  const tablaComponentes = (componentes: Record<string, unknown>, claves: string[], titulo: string, total: string) => (
     <table style={TABLA}>
       <thead><tr><th style={TH}>{titulo}</th><th style={TH_NUM}>{t('col.valor')}</th></tr></thead>
       <tbody>
-        {claves.map((k) => <tr key={k}><td style={TD}>{t(`er.c.${k}`)}</td><td style={TD_NUM}>{formatoMoneda(monto(k))}</td></tr>)}
+        {claves.map((k) => (
+          <React.Fragment key={k}>
+            <tr><td style={TD}>{t(`er.c.${k}`)}</td><td style={TD_NUM}>{formatoMoneda((componentes[k] as Dec | undefined) ?? '0')}</td></tr>
+            {k === 'costos_mantenimiento' && Object.entries((componentes.desglose_costos_mantenimiento ?? {}) as Record<string, Dec>).map(([tipo, v]) => (
+              <tr key={tipo}><td style={{ ...TD, paddingLeft: 'var(--s6)' }} className="fin-secundario">{t(`subtipo.${tipo}`)}</td>
+                <td style={TD_NUM} className="fin-secundario">{formatoMoneda(v)}</td></tr>
+            ))}
+          </React.Fragment>
+        ))}
         <tr><td style={{ ...TD, fontWeight: 700 }}>{t('er.total')}</td><td style={{ ...TD_NUM, fontWeight: 700 }}>{formatoMoneda(total)}</td></tr>
       </tbody>
     </table>
@@ -127,7 +144,25 @@ export function EstadoResultadosView() {
       <EncabezadoVista titulo={t('er.titulo')} descripcion={periodo ? t('er.descripcion_periodo', { periodo: nombrePeriodo(periodo) }) : t('er.descripcion')} />
       <Alert variant="info" title={cerrado ? t('er.desglose_titulo') : t('er.solo_cerrados')} description={cerrado ? t('er.desglose_detalle') : t('er.solo_cerrados_detalle')}
         style={{ marginBottom: 'var(--s5)' }} />
-      <ErrorApi error={estados.error ?? detalle.error ?? generacion.error ?? aprobacion.error ?? descarga.error} />
+      <ErrorApi error={estados.error ?? detalle.error ?? generacion.error ?? aprobacion.error ?? descarga.error ?? acumulado.error} />
+      {a && (
+        <section aria-labelledby="er-acumulado" style={{ marginBottom: 'var(--s5)' }}>
+          <Subtitulo id="er-acumulado">{t('er.acumulado_titulo')}</Subtitulo>
+          <p style={{ ...SECUNDARIO, marginTop: 0 }}>{t('er.acumulado_detalle')}</p>
+          <section style={PANEL} aria-label={t('er.resumen')}>
+            <Datos filas={[[t('er.ingresos'), formatoMoneda(a.total_ingresos)], [t('er.gastos'), formatoMoneda(a.total_gastos)],
+              [t('er.resultado'), <Variacion key="r" valor={a.resultado_neto} />]]} />
+          </section>
+          <div className="fin-columnas" style={{ marginTop: 'var(--s5)' }}>
+            <ScrollRegion label={t('er.ingresos')}>
+              {tablaComponentes({ ...a.componentes, desglose_costos_mantenimiento: a.desglose_costos_mantenimiento }, INGRESOS, t('er.ingresos'), a.total_ingresos)}
+            </ScrollRegion>
+            <ScrollRegion label={t('er.gastos')}>
+              {tablaComponentes({ ...a.componentes, desglose_costos_mantenimiento: a.desglose_costos_mantenimiento }, GASTOS, t('er.gastos'), a.total_gastos)}
+            </ScrollRegion>
+          </div>
+        </section>
+      )}
       {!periodo ? <SinPeriodo /> : (
         <>
           {puedeGenerar && (
@@ -214,8 +249,8 @@ export function EstadoResultadosView() {
             {e.estado !== 'APROBADO' && <p style={{ ...SECUNDARIO, margin: 'var(--s3) 0 0' }}>{t('er.descarga_aprobado')}</p>}
           </section>
           <div className="fin-columnas" style={{ marginTop: 'var(--s5)' }}>
-            <ScrollRegion label={t('er.ingresos')}>{tablaComponentes(INGRESOS, t('er.ingresos'), e.total_ingresos)}</ScrollRegion>
-            <ScrollRegion label={t('er.gastos')}>{tablaComponentes(GASTOS, t('er.gastos'), e.total_gastos)}</ScrollRegion>
+            <ScrollRegion label={t('er.ingresos')}>{tablaComponentes(e.componentes, INGRESOS, t('er.ingresos'), e.total_ingresos)}</ScrollRegion>
+            <ScrollRegion label={t('er.gastos')}>{tablaComponentes(e.componentes, GASTOS, t('er.gastos'), e.total_gastos)}</ScrollRegion>
           </div>
           {Array.isArray(e.componentes.activos_excluidos_cierre) && e.componentes.activos_excluidos_cierre.length > 0 && (
             <>

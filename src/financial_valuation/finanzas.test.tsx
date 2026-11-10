@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: pestañas por permiso, desviación de precio, cierre con autorización y DV del NIT |
 // | 2026-11-05 | Arekkazu | M06 prototipos: período global, filtros de variaciones y suma decimal exacta |
+// | 2026-11-10 | Arekkazu | INC-M06-337/344/345/351: cierre en espera y cancelación, acumulado con desglose y ajuste |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -13,6 +14,8 @@ import { FinanzasPage } from './pages/FinanzasPage';
 import { PreciosView } from './pages/PreciosView';
 import { CierreView } from './pages/CierreView';
 import { VariacionesView } from './pages/VariacionesView';
+import { EstadoResultadosView } from './pages/EstadoResultadosView';
+import { TrazabilidadView } from './pages/TrazabilidadView';
 import { ProveedorPeriodo, aFraccion, aPorcentaje, formatoMoneda } from './components/comunes';
 import { signo, sumar } from './lib/decimal';
 import { digitoVerificacion } from '../configuration/components/TitularFincaModal';
@@ -109,6 +112,58 @@ describe('CierreView (RF-87)', () => {
     await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/periodos/7/cierre')).toBe(true));
     const cuerpo = JSON.parse(peticiones.find((p) => p.url === '/finanzas/periodos/7/cierre')!.data as string);
     expect(cuerpo).toEqual({ autorizar_exclusiones: false, incluir_activos_sin_precio: true });
+  });
+});
+
+describe('Lote QA 2026-11-10 (RF-86/87/93)', () => {
+  it('un cierre que espera autorización se avisa y se puede cancelar', async () => {
+    sesion.permisos = [permiso('cierre_periodo', 2), permiso('cierre_periodo', 5)];
+    respuestas['GET /finanzas/periodos'] = { data: [{ ...periodo, estado: 'EN_CIERRE', ultimo_cierre: {
+      id_cierre: 3, estado: 'EN_PROCESO', paso_actual: 3, error_detalle: null, fecha_inicio: '2026-11-10T15:00:00Z', fecha_fin: null,
+      nombre_usuario_ejecutor: 'Ana Contadora' } }] };
+    respuestas['GET /finanzas/periodos/7/prevalidacion'] = { data: { bloqueos: [], activos_sin_precio: [], lineas_sin_trazabilidad: [], puede_cerrar: true, requiere_autorizacion: false } };
+    respuestas['POST /finanzas/periodos/7/cierre/cancelacion'] = { data: { estado: 'ABIERTO' } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><CierreView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('El cierre espera tu decisión')).toBeInTheDocument();
+    expect(screen.getByText(/Ana Contadora/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cancelar el cierre' }));
+    await waitFor(() => expect(peticiones.some((p) => p.method === 'post' && p.url === '/finanzas/periodos/7/cierre/cancelacion')).toBe(true));
+  });
+
+  it('con el período abierto muestra el acumulado con el mantenimiento desglosado', async () => {
+    sesion.permisos = [permiso('estado_resultados', 2), permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/periodos/7/estado-resultados/acumulado'] = { data: {
+      componentes: { costos_mantenimiento: '410.0000', ganancia_transformacion_biologica: '1000.0000' },
+      desglose_costos_mantenimiento: { ALIMENTO: '101.0000', MEDICAMENTO: '102.0000', MANO_OBRA: '103.0000', VETERINARIO: '104.0000' },
+      total_ingresos: '1000.0000', total_gastos: '410.0000', resultado_neto: '590.0000', estado_periodo: 'ABIERTO', es_definitivo: false,
+    } };
+    render(<MemoryRouter><ProveedorPeriodo><EstadoResultadosView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('Acumulado del período')).toBeInTheDocument();
+    expect(screen.getByText('Alimento')).toBeInTheDocument();
+    expect(screen.getByText('Servicio veterinario')).toBeInTheDocument();
+  });
+
+  it('una línea de un período cerrado se ajusta con tipo, valor y justificación', async () => {
+    sesion.permisos = [permiso('trazabilidad_contable', 2), permiso('valoracion_activos', 2), permiso('cierre_periodo', 2), permiso('cierre_periodo', 5)];
+    respuestas['GET /finanzas/periodos'] = { data: [{ ...periodo, estado: 'CERRADO', fecha_cierre: '2026-11-30T23:00:00Z' }] };
+    respuestas['GET /finanzas/lineas'] = { data: [{
+      id_linea_asiento_nic41: 40, tipo_hecho: 'RECONOCIMIENTO_DIFERENCIA', sentido: 'GANANCIA', valor: '40000.00', fecha_hecho: '2026-11-05',
+      id_periodo_contable: 7, id_activo_biologico: null, tabla_origen: 'x', id_origen: 1, tipo_evidencia: 'REGISTRO_MANUAL',
+      subtipo_costo: null, es_estimacion: false, es_reverso: false, cuenta_debito: '1586', cuenta_credito: '4250', estado: 'REGISTRADA',
+      estado_trazabilidad: 'VERIFICADO' }] };
+    respuestas['POST /finanzas/lineas-asiento/40/ajustes'] = { status: 201, data: { id_linea_asiento_nic41: 41, periodo: '2026-12', periodo_corregido: '2026-11' } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><TrazabilidadView /></ProveedorPeriodo></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: /Registrar un ajuste de/ }));
+    const dialogo = within(await screen.findByRole('dialog'));
+    await user.type(dialogo.getByLabelText(/Valor del ajuste/), '10000');
+    await user.type(dialogo.getByLabelText(/Justificación de la corrección/), 'Descuento de la factura no aplicado');
+    await user.click(dialogo.getByRole('button', { name: 'Registrar ajuste' }));
+    await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/lineas-asiento/40/ajustes')).toBe(true));
+    const cuerpo = JSON.parse(peticiones.find((p) => p.url === '/finanzas/lineas-asiento/40/ajustes')!.data as string);
+    expect(cuerpo).toEqual({ tipo_ajuste: 'DISMINUIR', valor: '10000', justificacion: 'Descuento de la factura no aplicado' });
   });
 });
 

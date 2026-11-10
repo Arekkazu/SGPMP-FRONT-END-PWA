@@ -583,7 +583,16 @@
     "check_cuentas": "Cuentas contables asignadas",
     "check_cuentas_ok": "Todas las líneas de asiento tienen cuenta débito y crédito.",
     "check_suministros": "Consumos de Suministros incorporados",
-    "check_suministros_ok": "Todos los consumos de Suministros ya están en los costos del período."
+    "check_suministros_ok": "Todos los consumos de Suministros ya están en los costos del período.",
+    "check_matriz": "Matriz contable completa para el cierre",
+    "check_matriz_ok": "La matriz tiene cuentas para las variaciones y depreciaciones que registra el cierre.",
+    "check_titular": "Titular tributario de las fincas",
+    "check_titular_ok": "Todas las fincas con movimientos en el período conservan su titular.",
+    "en_espera": "El cierre espera tu decisión",
+    "en_espera_detalle": "El cierre iniciado el {{fecha}} por {{usuario}} está detenido hasta que autorices las exclusiones o lo canceles. Mientras tanto, los registros nuevos pasan al período siguiente.",
+    "otro_usuario": "otro usuario",
+    "cancelar": "Cancelar el cierre",
+    "cancelado": "Cierre cancelado: el período {{periodo}} vuelve a estar abierto."
   },
   "cot": {
     "titulo": "Cotizaciones",
@@ -654,7 +663,7 @@
     },
     "descripcion_periodo": "Ganancias y pérdidas de los activos biológicos de {{periodo}}, con los costos de mantenimiento como gasto.",
     "solo_cerrados": "Solo se generan estados de resultados sobre períodos cerrados",
-    "solo_cerrados_detalle": "Cierra el período para generar su estado. Incluye el desglose de ingresos y gastos que pide la NIC 41.",
+    "solo_cerrados_detalle": "Cierra el período para generar su estado definitivo. Mientras tanto puedes consultar abajo el acumulado provisional.",
     "desglose_titulo": "Desglose obligatorio por línea",
     "desglose_detalle": "Cada versión separa ingresos y gastos por reconocimiento, transformación, precio, productos y costos.",
     "generar_titulo": "Generar estado de resultados",
@@ -669,7 +678,9 @@
     "especie_filtrada": "Una especie",
     "finca_filtrada": "Una finca",
     "activo_filtrado": "Un activo",
-    "infraestructura_filtrada": "Una infraestructura"
+    "infraestructura_filtrada": "Una infraestructura",
+    "acumulado_titulo": "Acumulado del período",
+    "acumulado_detalle": "Lo que el período lleva registrado hasta hoy: ganancias como ingresos y pérdidas como gastos. Es provisional y se actualiza con cada variación; el estado definitivo se genera al cerrar."
   },
   "rev": {
     "titulo": "Revelaciones NIC 41",
@@ -1038,5 +1049,21 @@
     "estado_contable": "Estado contable",
     "sin_activo": "Del período, sin activo",
     "activo_sin_reconocer": "Activo fuera de la contabilidad"
+  },
+  "ajuste": {
+    "abrir": "Ajustar",
+    "abrir_aria": "Registrar un ajuste de {{linea}}",
+    "titulo": "Ajuste de período anterior: {{linea}}",
+    "ayuda": "El período de este hecho está cerrado y no se modifica. El ajuste se registra en el período abierto, con referencia a este hecho (valor original: {{valor}}).",
+    "tipo": "Tipo de ajuste",
+    "DISMINUIR": "Disminuir el valor del hecho",
+    "AUMENTAR": "Aumentar el valor del hecho",
+    "valor": "Valor del ajuste (COP)",
+    "justificacion": "Justificación de la corrección",
+    "registrar": "Registrar ajuste",
+    "registrado": "Ajuste registrado en el período {{periodo}}.",
+    "registrado_detalle": "Corrige un hecho del período {{periodo}}, que sigue sin cambios.",
+    "valor_invalido": "El valor del ajuste debe ser mayor a cero.",
+    "justificacion_corta": "La justificación debe tener al menos {{n}} caracteres."
   }
 }

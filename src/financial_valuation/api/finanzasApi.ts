@@ -2,12 +2,13 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: cliente de la API /finanzas (valoración NIC 41) |
 // | 2026-11-05 | Arekkazu | M06 prototipos: listados del período y auditoría ordenable |
+// | 2026-11-10 | Arekkazu | INC-M06-337/345/351 RF-86/87: cancelar cierre, ajuste de período anterior y acumulado |
 import { http } from '../../shared/api/http';
 import type {
-  ActivoValorado, Asignacion, Cadena, CalculoPeriodo, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
+  Acumulado, ActivoValorado, Asignacion, Cadena, CalculoPeriodo, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
   CostosManuales, Cotizacion, EstadoDetalle, EstadoResumen, HistorialActivo, InformeDetalle, InformePayload, InformeResumen,
   Linea, Naturaleza, PaginaAuditoria, Periodo, Precio, PrecioPayload, Prevalidacion, Propuesta, ResultadoCierre,
-  ResultadoCosto, Simulacion,
+  ResultadoCosto, Simulacion, TipoAjuste,
 } from '../types';
 
 const B = '/finanzas';
@@ -86,6 +87,9 @@ export const finanzasApi = {
   prevalidar: (id: number) => get<Prevalidacion>(`/periodos/${id}/prevalidacion`),
   cerrar: (id: number, body: { autorizar_exclusiones: boolean; incluir_activos_sin_precio: boolean }) =>
     post<ResultadoCierre>(`/periodos/${id}/cierre`, body),
+  cancelarCierre: (id: number) => post<{ estado: string }>(`/periodos/${id}/cierre/cancelacion`),
+  ajustarLinea: (idLinea: number, body: { tipo_ajuste: TipoAjuste; valor: string; justificacion: string }) =>
+    post<{ id_linea_asiento_nic41: number; periodo: string; periodo_corregido: string }>(`/lineas-asiento/${idLinea}/ajustes`, body),
   comprobantes: (id: number) => get<Comprobante[]>(`/periodos/${id}/comprobantes`),
   descargarComprobantes: (id: number, formato: 'csv' | 'pdf') => archivo(`/periodos/${id}/comprobantes/descarga`, formato, `comprobantes-${id}`),
   verificarTrazabilidad: (id: number) =>
@@ -104,6 +108,7 @@ export const finanzasApi = {
   // Estado de resultados (RF-93) y revelaciones (RF-92)
   estados: (idPeriodo: number) => get<EstadoResumen[]>(`/periodos/${idPeriodo}/estados-resultados`),
   estado: (id: number) => get<EstadoDetalle>(`/estados-resultados/${id}`),
+  acumulado: (idPeriodo: number) => get<Acumulado>(`/periodos/${idPeriodo}/estado-resultados/acumulado`),
   generarEstado: (idPeriodo: number, filtros: { id_especie?: number; id_finca?: number; id_activo_biologico?: number }) =>
     post<{ id_estado: number }>(`/periodos/${idPeriodo}/estados-resultados`, filtros),
   aprobarEstado: (id: number) => post<unknown>(`/estados-resultados/${id}/aprobacion`),

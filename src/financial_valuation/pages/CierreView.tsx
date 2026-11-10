@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-87/RF-91: períodos, prevalidación y cierre, comprobantes NIC 41 y trazabilidad |
 // | 2026-11-05 | Arekkazu | M06 RF-87 prototipo: tarjeta del período, precondiciones en lista, historial de cerrados |
+// | 2026-11-10 | Arekkazu | INC-M06-345/350 RF-87: cierre en espera de autorización, cancelación, matriz y titular |
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Download, Lock, XCircle } from 'lucide-react';
@@ -34,7 +35,7 @@ const TONO_CHECK = { ok: 'success', aviso: 'warning', pendiente: 'error' } as co
 // Bloqueos que devuelve la prevalidación, cada uno con su precondición; uno desconocido sale con título genérico.
 const BLOQUEOS: Array<[codigo: string, clave: string]> = [
   ['PERIODO_ANTERIOR_ABIERTO', 'anterior'], ['LINEAS_PENDIENTE_CUENTA', 'cuentas'], ['COSTOS_PENDIENTE_CLASIFICACION', 'costos'],
-  ['ENTREGAS_M05_PENDIENTES', 'suministros'],
+  ['ENTREGAS_M05_PENDIENTES', 'suministros'], ['MATRIZ_CONTABLE_INCOMPLETA', 'matriz'], ['FINCA_SIN_TITULAR', 'titular'],
 ];
 
 export function CierreView() {
@@ -46,7 +47,7 @@ export function CierreView() {
     <>
       <EncabezadoVista titulo={periodo ? t('cierre.titulo_periodo', { periodo: nombrePeriodo(periodo) }) : t('cierre.titulo')} descripcion={t('cierre.descripcion')} />
       {!periodo ? <SinPeriodo /> : (
-        <PanelPeriodo key={periodo.id_periodo_contable} periodo={periodo}
+        <PanelPeriodo key={periodo.id_periodo_contable} periodo={periodo} onCambio={recargar}
           onCerrado={(siguiente) => { recargar(); if (siguiente) pushToast('info', t('cierre.siguiente_abierto')); }} />
       )}
       <Historial periodos={periodos.filter((p) => p.estado === 'CERRADO')} />
@@ -54,7 +55,9 @@ export function CierreView() {
   );
 }
 
-function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (siguiente: number | null) => void }) {
+function PanelPeriodo({ periodo, onCerrado, onCambio }: {
+  periodo: Periodo; onCerrado: (siguiente: number | null) => void; onCambio: () => void;
+}) {
   const { t } = useT('finanzas');
   const puedeCerrar = usePermissionPorNombre(R_CIERRE, ACCION_E);
   const puedeVerPropuestas = usePermissionPorNombre(R_RECONOCIMIENTO, ACCION_R);
@@ -65,6 +68,10 @@ function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (si
   const cierre = useAsync(finanzasApi.cerrar);
   const comprobantes = useAsync(finanzasApi.comprobantes);
   const descarga = useAsync(finanzasApi.descargarComprobantes);
+  const cancelacion = useAsync(finanzasApi.cancelarCierre);
+  // Un cierre EN_PROCESO en el paso 3 espera que el Contador autorice las exclusiones o lo cancele (RF-87 FA-2/FA-3).
+  const ultimo = periodo.ultimo_cierre;
+  const enEspera = periodo.estado === 'EN_CIERRE' && ultimo?.estado === 'EN_PROCESO' && ultimo.paso_actual === 3;
   const [sinPrecio, setSinPrecio] = useState<'' | 'excluir' | 'incluir'>('');
   const [autorizarLineas, setAutorizarLineas] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
@@ -121,6 +128,15 @@ function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (si
       onCerrado(r.id_periodo_siguiente);
     } else {
       prevalidar(id);
+      onCambio();  // el 409 de autorización deja el período EN_CIERRE
+    }
+  };
+
+  const cancelar = async () => {
+    if (await cancelacion.ejecutar(id)) {
+      pushToast('info', t('cierre.cancelado', { periodo: nombrePeriodo(periodo) }));
+      prevalidar(id);
+      onCambio();
     }
   };
 
@@ -145,6 +161,19 @@ function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (si
           <Alert variant="error" title={t('cierre.ultimo_fallido', { paso: periodo.ultimo_cierre.paso_actual ?? 1 })}
             description={periodo.ultimo_cierre.error_detalle ?? undefined} style={{ marginTop: 'var(--s4)' }} />
         )}
+        {enEspera && ultimo && (
+          <Alert variant="warning" title={t('cierre.en_espera')} style={{ marginTop: 'var(--s4)' }}
+            description={t('cierre.en_espera_detalle', {
+              fecha: formatoFecha(ultimo.fecha_inicio, true), usuario: ultimo.nombre_usuario_ejecutor ?? t('cierre.otro_usuario'),
+            })} />
+        )}
+        {enEspera && puedeCerrar && (
+          <div className="fin-acciones" style={{ marginTop: 'var(--s3)' }}>
+            <Button variant="secondary" size="sm" loading={cancelacion.cargando} onClick={cancelar}>
+              <XCircle size={14} aria-hidden />{t('cierre.cancelar')}
+            </Button>
+          </div>
+        )}
       </section>
 
       {!cerrado && (
@@ -154,7 +183,7 @@ function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (si
             {checks.length > 0 && <Badge variant={completas === checks.length ? 'success' : 'warning'}>{t('cierre.completas', { n: completas, total: checks.length })}</Badge>}
           </div>
           <p style={{ ...SECUNDARIO, margin: 'var(--s1) 0 var(--s4)' }}>{t('cierre.prevalidacion_ayuda')}</p>
-          <ErrorApi error={prevalidacion.error ?? cierre.error} />
+          <ErrorApi error={prevalidacion.error ?? cierre.error ?? cancelacion.error} />
           {prevalidacion.cargando && !pv && <p style={SECUNDARIO}>{t('comun.cargando')}</p>}
           {pv && (
             <>
