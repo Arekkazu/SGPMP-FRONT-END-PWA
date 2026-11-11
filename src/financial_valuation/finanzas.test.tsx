@@ -7,6 +7,7 @@
 // | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
 // | 2026-11-10 | Arekkazu | INC-M06-337/344/345/351: cierre en espera y cancelación, acumulado con desglose y ajuste |
 // | 2026-11-10 | Arekkazu | #510 RF-89: un error al confirmar la desviación se muestra en vez del aviso |
+// | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -122,11 +123,12 @@ describe('PreciosView (RF-89)', () => {
 });
 
 describe('CierreView (RF-87)', () => {
-  it('con activos sin precio exige elegir excluirlos o estimarlos antes de cerrar', async () => {
+  it('con activos sin precio exige decidir por cada uno: excluirlo o estimarlo (INC-M06-346-G43-03)', async () => {
     sesion.permisos = [permiso('cierre_periodo', 2), permiso('cierre_periodo', 5)];
     respuestas['GET /finanzas/periodos'] = { data: [periodo] };
     respuestas['GET /finanzas/periodos/7/prevalidacion'] = { data: {
-      bloqueos: [], activos_sin_precio: [{ id_activo_biologico: 1, identificador: 'T-1', especie: 'Trucha' }],
+      bloqueos: [], activos_sin_precio: [{ id_activo_biologico: 1, identificador: 'T-1', especie: 'Trucha' },
+        { id_activo_biologico: 2, identificador: 'T-2', especie: 'Trucha' }],
       lineas_sin_trazabilidad: [], puede_cerrar: true, requiere_autorizacion: true,
     } };
     respuestas['POST /finanzas/periodos/7/cierre'] = { data: { id_cierre: 1, periodo: '2026-11', estado: 'CERRADO', activos_procesados: 1, activos_excluidos: [], lineas_excluidas: [], comprobantes: [], hash_cierre: 'x', reportes: {}, id_periodo_siguiente: 8 } };
@@ -134,12 +136,15 @@ describe('CierreView (RF-87)', () => {
     render(<MemoryRouter><ProveedorPeriodo><CierreView /></ProveedorPeriodo></MemoryRouter>);
     const cerrar = await screen.findByRole('button', { name: 'Cerrar período' });
     expect(cerrar).toBeDisabled();
-    await user.click(screen.getByLabelText(/último precio conocido/));
+    const t1 = within(screen.getByRole('group', { name: 'T-1 (Trucha)' }));
+    await user.click(t1.getByLabelText(/último precio conocido/));
+    expect(cerrar).toBeDisabled(); // falta decidir T-2
+    await user.click(within(screen.getByRole('group', { name: 'T-2 (Trucha)' })).getByLabelText(/Excluir de este cierre/));
     await user.click(cerrar);
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Cerrar período' }));
     await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/periodos/7/cierre')).toBe(true));
     const cuerpo = JSON.parse(peticiones.find((p) => p.url === '/finanzas/periodos/7/cierre')!.data as string);
-    expect(cuerpo).toEqual({ autorizar_exclusiones: false, incluir_activos_sin_precio: true });
+    expect(cuerpo).toEqual({ autorizar_exclusiones: true, incluir_activos_sin_precio: false, activos_estimados: [1] });
   });
 });
 

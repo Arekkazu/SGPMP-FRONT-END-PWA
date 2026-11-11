@@ -4,6 +4,7 @@
 // | 2026-11-05 | Arekkazu | M06 RF-87 prototipo: tarjeta del período, precondiciones en lista, historial de cerrados |
 // | 2026-11-10 | Arekkazu | INC-M06-345/350 RF-87: cierre en espera de autorización, cancelación, matriz y titular |
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-02 RF-87: la prevalidación lista cada línea sin trazabilidad con su activo y lo que falta |
+// | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Download, Lock, XCircle } from 'lucide-react';
@@ -73,7 +74,8 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
   // Un cierre EN_PROCESO en el paso 3 espera que el Contador autorice las exclusiones o lo cancele (RF-87 FA-2/FA-3).
   const ultimo = periodo.ultimo_cierre;
   const enEspera = periodo.estado === 'EN_CIERRE' && ultimo?.estado === 'EN_PROCESO' && ultimo.paso_actual === 3;
-  const [sinPrecio, setSinPrecio] = useState<'' | 'excluir' | 'incluir'>('');
+  // RF-87 FA-2: una decisión por cada activo sin precio, excluirlo o estimarlo (nunca pasa al costo, RF-88 v2.0).
+  const [decisiones, setDecisiones] = useState<Record<number, 'excluir' | 'estimar'>>({});
   const [autorizarLineas, setAutorizarLineas] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const { ejecutar: prevalidar } = prevalidacion;
@@ -90,7 +92,8 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
   const pv = prevalidacion.data;
   // Los activos sin precio se excluyen o se incluyen con estimación; las líneas sin trazabilidad se excluyen con
   // autorización. El backend recibe una sola autorización para ambas.
-  const faltaAutorizar = !!pv && ((pv.activos_sin_precio.length > 0 && !sinPrecio) || (pv.lineas_sin_trazabilidad.length > 0 && !autorizarLineas));
+  const faltaAutorizar = !!pv && (pv.activos_sin_precio.some((a) => !decisiones[a.id_activo_biologico]) || (pv.lineas_sin_trazabilidad.length > 0 && !autorizarLineas));
+  const decidirTodos = (d: 'excluir' | 'estimar') => setDecisiones(Object.fromEntries((pv?.activos_sin_precio ?? []).map((a) => [a.id_activo_biologico, d])));
   const pendientes = (propuestas.data ?? []).filter((p) => p.es_confirmable);
   const conocidos = new Set(BLOQUEOS.map(([c]) => c));
 
@@ -123,7 +126,9 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
 
   const ejecutar = async () => {
     setConfirmando(false);
-    const r = await cierre.ejecutar(id, { autorizar_exclusiones: sinPrecio === 'excluir' || autorizarLineas, incluir_activos_sin_precio: sinPrecio === 'incluir' });
+    const estimados = (pv?.activos_sin_precio ?? []).filter((a) => decisiones[a.id_activo_biologico] === 'estimar').map((a) => a.id_activo_biologico);
+    const excluye = (pv?.activos_sin_precio ?? []).some((a) => decisiones[a.id_activo_biologico] === 'excluir');
+    const r = await cierre.ejecutar(id, { autorizar_exclusiones: excluye || autorizarLineas, incluir_activos_sin_precio: false, activos_estimados: estimados });
     if (r) {
       pushToast('success', t('cierre.cerrado', { periodo: nombrePeriodo(periodo) }), t('cierre.cerrado_detalle', { count: r.comprobantes.length }));
       onCerrado(r.id_periodo_siguiente);
@@ -224,17 +229,29 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
               {puedeCerrar && pv.puede_cerrar && (
                 <div style={{ display: 'grid', gap: 'var(--s3)', marginTop: 'var(--s5)' }}>
                   {pv.activos_sin_precio.length > 0 && (
-                    <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 'var(--s2)' }}>
-                      <legend style={{ fontWeight: 600, marginBottom: 'var(--s2)' }}>{t('cierre.que_hacer_sin_precio')}</legend>
-                      <label style={{ display: 'flex', gap: 'var(--s2)' }}>
-                        <input type="radio" name="sin-precio" checked={sinPrecio === 'excluir'} onChange={() => setSinPrecio('excluir')} />
-                        {t('cierre.excluir')}
-                      </label>
-                      <label style={{ display: 'flex', gap: 'var(--s2)' }}>
-                        <input type="radio" name="sin-precio" checked={sinPrecio === 'incluir'} onChange={() => setSinPrecio('incluir')} />
-                        {t('cierre.incluir_estimacion')}
-                      </label>
-                    </fieldset>
+                    <div style={{ display: 'grid', gap: 'var(--s2)' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--s2)' }}>
+                        <strong>{t('cierre.que_hacer_sin_precio')}</strong>
+                        <Button variant="ghost" size="sm" onClick={() => decidirTodos('excluir')}>{t('cierre.excluir_todos')}</Button>
+                        <Button variant="ghost" size="sm" onClick={() => decidirTodos('estimar')}>{t('cierre.estimar_todos')}</Button>
+                      </div>
+                      <p style={{ ...SECUNDARIO, margin: 0 }}>{t('cierre.sin_precio_ayuda')}</p>
+                      {pv.activos_sin_precio.map((a) => (
+                        <fieldset key={a.id_activo_biologico} style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s2) var(--s3)', margin: 0, display: 'flex', flexWrap: 'wrap', gap: 'var(--s4)' }}>
+                          <legend style={{ fontWeight: 600, padding: '0 var(--s1)' }}>{`${a.identificador} (${a.especie})`}</legend>
+                          <label style={{ display: 'flex', gap: 'var(--s2)' }}>
+                            <input type="radio" name={`sin-precio-${a.id_activo_biologico}`} checked={decisiones[a.id_activo_biologico] === 'excluir'}
+                              onChange={() => setDecisiones((d) => ({ ...d, [a.id_activo_biologico]: 'excluir' }))} />
+                            {t('cierre.excluir_activo')}
+                          </label>
+                          <label style={{ display: 'flex', gap: 'var(--s2)' }}>
+                            <input type="radio" name={`sin-precio-${a.id_activo_biologico}`} checked={decisiones[a.id_activo_biologico] === 'estimar'}
+                              onChange={() => setDecisiones((d) => ({ ...d, [a.id_activo_biologico]: 'estimar' }))} />
+                            {t('cierre.estimar_activo')}
+                          </label>
+                        </fieldset>
+                      ))}
+                    </div>
                   )}
                   {pv.lineas_sin_trazabilidad.length > 0 && (
                     <label style={{ display: 'flex', gap: 'var(--s2)' }}>

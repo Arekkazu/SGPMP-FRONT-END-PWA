@@ -7,6 +7,7 @@
 // | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
 // | 2026-11-10 | Arekkazu | INC-M06-337/345/351 RF-86/87: cancelar cierre, ajuste de período anterior y acumulado |
 // | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
+// | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
 import { http } from '../../shared/api/http';
 import type {
   Acumulado, ActivoValorado, Asignacion, Cadena, CalculoPeriodo, CosechaPendiente, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
@@ -97,7 +98,7 @@ export const finanzasApi = {
   // Períodos y cierre (RF-87) y trazabilidad (RF-91)
   periodos: () => get<Periodo[]>('/periodos'),
   prevalidar: (id: number) => get<Prevalidacion>(`/periodos/${id}/prevalidacion`),
-  cerrar: (id: number, body: { autorizar_exclusiones: boolean; incluir_activos_sin_precio: boolean }) =>
+  cerrar: (id: number, body: { autorizar_exclusiones: boolean; incluir_activos_sin_precio: boolean; activos_estimados?: number[] }) =>
     post<ResultadoCierre>(`/periodos/${id}/cierre`, body),
   cancelarCierre: (id: number) => post<{ estado: string }>(`/periodos/${id}/cierre/cancelacion`),
   ajustarLinea: (idLinea: number, body: { tipo_ajuste: TipoAjuste; valor: string; justificacion: string }) =>
