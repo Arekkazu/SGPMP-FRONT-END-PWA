@@ -16,7 +16,8 @@
     "estado-resultados": "Estado de resultados",
     "auditoria": "Bitácora de auditoría",
     "cotizaciones": "Cotizaciones",
-    "configuracion": "Configuración contable"
+    "configuracion": "Configuración contable",
+    "pendientes": "Pendientes"
   },
   "comun": {
     "acciones": "Acciones",
@@ -664,7 +665,9 @@
     "progreso_ayuda": "El cierre corre en el servidor; esta pantalla se actualiza sola.",
     "resumen_decisiones": "{{excluidos}} activos se excluirán, {{estimados}} se medirán con estimación y {{pendientes}} siguen sin decisión.",
     "solo_contador": "Solo el Contador puede iniciar el cierre",
-    "solo_contador_detalle": "Tu rol consulta el período y sus comprobantes; no tiene permiso para cerrarlo."
+    "solo_contador_detalle": "Tu rol consulta el período y sus comprobantes; no tiene permiso para cerrarlo.",
+    "cancelar_no": "Cancelar cierre (No)",
+    "no_iniciado": "El cierre de {{periodo}} no se inició: el período sigue abierto y no cambió ningún registro."
   },
   "cot": {
     "titulo": "Cotizaciones",
@@ -789,7 +792,10 @@
     "sin_actividad": "Sin actividad en el período",
     "sin_estado_productor": "El Contador aún no ha generado el estado de resultados de este período.",
     "vacio_detalle_consulta": "Aparecerá cuando el Contador lo genere al cerrar el período.",
-    "ver_aria": "Ver la versión {{n}}"
+    "ver_aria": "Ver la versión {{n}}",
+    "aprobado_por": "Aprobado por",
+    "aprobador_sin_nombre": "Usuario sin nombre registrado",
+    "periodo_abierto_productor": "Este período sigue abierto: su estado de resultados estará disponible cuando el Contador lo cierre y lo apruebe."
   },
   "rev": {
     "titulo": "Revelaciones NIC 41",
@@ -910,7 +916,9 @@
     "justificacion_corta": "La justificación necesita al menos 20 caracteres.",
     "quitar_compromiso": "Quitar el compromiso {{n}}",
     "quitar_pignorado": "Quitar la garantía {{n}}",
-    "seccion_bloqueada": "Sección bloqueada: la fuente de estos datos presentó un error y no se pudo completar."
+    "seccion_bloqueada": "Sección bloqueada: la fuente de estos datos presentó un error y no se pudo completar.",
+    "aprobador": "Aprobado por",
+    "aprobador_sin_nombre": "Usuario sin nombre registrado"
   },
   "aud": {
     "titulo": "Bitácora de auditoría financiera",
@@ -1205,7 +1213,8 @@
     "neta": "Variación neta del período",
     "resumen_ayuda": "Las variaciones se reconocen en el estado de resultados del período en que ocurren (NIC 41 ¶26).",
     "vacio_titulo": "Sin variaciones en el período",
-    "vacio_detalle": "Aparecen cuando una medición cambia el valor razonable de un activo."
+    "vacio_detalle": "Aparecen cuando una medición cambia el valor razonable de un activo.",
+    "registro_automatico": "Cada variación sale de un evento medido (pesaje, nacimiento, cambio de precio) y queda ligada a él; no se registra a mano. Para registrar las de los eventos nuevos, procesa los eventos pendientes."
   },
   "traza": {
     "titulo": "Trazabilidad contable",
@@ -1272,5 +1281,27 @@
     "motivo_origen": "el registro de origen de la línea no existe",
     "motivo_cierre": "la línea no quedó en un comprobante del cierre",
     "motivo_generico": "eslabón incompleto"
+  },
+  "pendientes": {
+    "titulo": "Pendientes del período",
+    "descripcion": "Hechos que todavía no se pueden registrar: mediciones pendientes y hechos sin cuenta contable.",
+    "descripcion_periodo": "Hechos de {{periodo}} que todavía no se pueden registrar: mediciones pendientes y hechos sin cuenta contable.",
+    "kpi_medicion": "Medición pendiente",
+    "kpi_medicion_detalle": "Eventos que no generaron variación",
+    "kpi_cuenta": "Sin cuenta contable",
+    "kpi_cuenta_detalle": "Hechos sin par débito/crédito en la matriz",
+    "bloquean_cierre": "El período no se puede cerrar con hechos pendientes",
+    "bloquean_cierre_detalle": "Procesa los eventos pendientes y completa la matriz contable; los hechos sin cuenta se registran solos al completarla.",
+    "medicion_titulo": "Eventos con medición pendiente",
+    "sin_medicion": "Sin mediciones pendientes",
+    "sin_medicion_detalle": "Todos los eventos del período tienen su medición registrada.",
+    "motivo": "Motivo",
+    "sin_motivo": "Sin motivo registrado",
+    "ir_medicion": "Ir a Medición posterior",
+    "cuenta_titulo": "Hechos sin cuenta contable",
+    "sin_cuenta": "Sin hechos pendientes de cuenta",
+    "sin_cuenta_detalle": "La matriz contable cubre todos los hechos del período.",
+    "ir_configuracion": "Ir a Configuración contable",
+    "pedir_configuracion": "Pide al Contador que complete la matriz contable en Configuración contable."
   }
 }

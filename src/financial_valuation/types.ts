@@ -224,6 +224,7 @@ export interface EstadoResumen {
   fecha_aprobacion: string | null;
 }
 export interface EstadoDetalle extends EstadoResumen {
+  nombre_aprobador?: string | null;
   componentes: Record<string, Dec | unknown[] | Record<string, Dec>>; hash_consistencia: string;
 }
 /** Acumulado del período (también abierto), sin versión. */
@@ -235,6 +236,8 @@ export type TipoAjuste = 'AUMENTAR' | 'DISMINUIR';
 export interface InformeResumen {
   id_informe: number; version_informe: string; estado: 'BORRADOR' | 'APROBADO' | 'RECHAZADO' | 'ARCHIVADO' | string;
   fecha_generacion: string; fecha_aprobacion: string | null; razon_rechazo: string | null; hash_informe: string;
+  /** Nombre de quien lo aprobó; null mientras no se apruebe. */
+  nombre_aprobador?: string | null;
 }
 export interface InformeDetalle extends InformeResumen { contenido: Record<string, unknown> }
 export interface InformePayload {

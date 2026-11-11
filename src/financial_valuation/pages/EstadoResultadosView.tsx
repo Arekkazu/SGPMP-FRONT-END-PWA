@@ -15,7 +15,7 @@ import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { finanzasApi } from '../api/finanzasApi';
-import { ACCION_C, ACCION_R, ACCION_U, R_ESTADO_RESULTADOS, R_VALORACION } from '../rbac';
+import { ACCION_C, ACCION_R, ACCION_U, R_CIERRE, R_ESTADO_RESULTADOS, R_VALORACION } from '../rbac';
 import type { ActivoValorado, Dec, EstadoResumen } from '../types';
 import { signo } from '../lib/decimal';
 import {
@@ -75,6 +75,7 @@ export function EstadoResultadosView() {
   const puedeGenerar = usePermissionPorNombre(R_ESTADO_RESULTADOS, ACCION_C);
   const puedeAprobar = usePermissionPorNombre(R_ESTADO_RESULTADOS, ACCION_U);
   const puedeVerActivos = usePermissionPorNombre(R_VALORACION, ACCION_R);
+  const leeCierre = usePermissionPorNombre(R_CIERRE, ACCION_R);
   const { periodo, disponible } = usePeriodo();
   const [idEstado, setIdEstado] = useState<number | null>(null);
   const filtroVacio = { especie: '', finca: '', infraestructura: '', tipo: '', activo: '' };
@@ -95,8 +96,9 @@ export function EstadoResultadosView() {
   // RF-86: con el período abierto se consulta lo acumulado, sin versión; el estado formal (RF-93) llega al cerrar.
   useEffect(() => {
     limpiarAcumulado();
-    if (puedeLeer && idPeriodo && !cerrado) cargarAcumulado(idPeriodo);
-  }, [puedeLeer, idPeriodo, cerrado, cargarAcumulado, limpiarAcumulado]);
+    // RF-93: quien solo consulta reportes (Productor) ve el estado aprobado, no el acumulado provisional del período abierto.
+    if (puedeLeer && leeCierre && idPeriodo && !cerrado) cargarAcumulado(idPeriodo);
+  }, [puedeLeer, leeCierre, idPeriodo, cerrado, cargarAcumulado, limpiarAcumulado]);
   useEffect(() => {
     setIdEstado(null); limpiarEstados(); limpiarDetalle();
     if (puedeLeer && idPeriodo) cargarEstados(idPeriodo);
@@ -283,7 +285,8 @@ export function EstadoResultadosView() {
               {generacion.cargando && <p role="status" style={{ ...SECUNDARIO, margin: 'var(--s2) 0 0' }}>{t('er.generando')}</p>}
             </section>
           )}
-          {sinEstados && !puedeGenerar && <p role="status" style={{ ...SECUNDARIO, marginBottom: 'var(--s4)' }}>{t('er.sin_estado_productor')}</p>}
+          {sinEstados && !puedeGenerar && <p role="status" style={{ ...SECUNDARIO, marginBottom: 'var(--s4)' }}>
+            {cerrado ? t('er.sin_estado_productor') : t('er.periodo_abierto_productor')}</p>}
           <Listado l={l} idBase="er" titulo={t('er.versiones')} sustantivo={t('er.sustantivo')} buscar={t('er.buscar')} cargando={estados.cargando}
             vacio={{ icono: <BarChart3 size={28} aria-hidden />, titulo: t('er.vacio_titulo'), detalle: puedeGenerar ? t('er.vacio_detalle') : t('er.vacio_detalle_consulta') }}>
             {(visibles) => (
@@ -323,6 +326,7 @@ export function EstadoResultadosView() {
               [t('er.resultado'), <Variacion key="r" valor={e.resultado_neto} etiqueta />],
               [t('col.estado'), <EstadoBadge key="s" estado={e.estado} />],
               [t('er.generado_el'), formatoFecha(e.fecha_generacion, true)],
+              ...(e.fecha_aprobacion ? [[t('er.aprobado_por'), `${e.nombre_aprobador ?? t('er.aprobador_sin_nombre')} · ${formatoFecha(e.fecha_aprobacion, true)}`] as [string, React.ReactNode]] : []),
               [t('er.filtros'), alcance(e)],
             ]} />
             <div className="fin-acciones" style={{ marginTop: 'var(--s4)' }}>

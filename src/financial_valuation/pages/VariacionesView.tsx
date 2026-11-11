@@ -1,15 +1,17 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-05 | Arekkazu | M06 RF-86 prototipo: variaciones del período por tipo, fuente y trazabilidad con resumen |
+// | 2026-11-10 | Arekkazu | TC-DIS-235 RF-86: el Contador inicia el registro procesando los eventos pendientes; el rechazo se anuncia |
 import React, { useEffect, useState } from 'react';
-import { BarChart3, Link2 } from 'lucide-react';
+import { BarChart3, Link2, Play } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Badge } from '../../shared/design-system/Badge';
 import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
 import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
+import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { finanzasApi } from '../api/finanzasApi';
-import { ACCION_R, R_TRAZABILIDAD, R_VALORACION } from '../rbac';
+import { ACCION_E, ACCION_R, R_TRAZABILIDAD, R_VALORACION } from '../rbac';
 import type { VariacionPeriodo } from '../types';
 import { sumar } from '../lib/decimal';
 import { CadenaModal } from '../components/CadenaModal';
@@ -26,7 +28,9 @@ export function VariacionesView() {
   const puedeLeer = usePermissionPorNombre(R_VALORACION, ACCION_R);
   const puedeVerCadena = usePermissionPorNombre(R_TRAZABILIDAD, ACCION_R);
   const { periodo } = usePeriodo();
+  const puedeProcesar = usePermissionPorNombre(R_VALORACION, ACCION_E);
   const variaciones = useAsync(finanzasApi.variaciones);
+  const proceso = useAsync(finanzasApi.procesarEventos);
   const [cadena, setCadena] = useState<VariacionPeriodo | null>(null);
   const id = periodo?.id_periodo_contable;
   const { ejecutar: cargar } = variaciones;
@@ -46,12 +50,23 @@ export function VariacionesView() {
   const totalGanancias = sumar(ganancias.map(firmado));
   const totalPerdidas = sumar(perdidas.map(firmado));
   const verificadas = lista.filter((v) => v.estado_trazabilidad === 'VERIFICADO').length;
+  // RF-86: las variaciones salen de los eventos medidos (con su evento de origen); el Contador inicia el proceso.
+  const procesar = async () => {
+    const r = await proceso.ejecutar();
+    if (!r) return;
+    pushToast('success', t('valor.procesado', { eventos: r.eventos.PROCESADO ?? 0, provisiones: r.provisiones_m05.PROCESADO ?? 0 }));
+    if (id) cargar(id);
+  };
 
   return (
     <>
       <EncabezadoVista titulo={t('variaciones.titulo')}
-        descripcion={periodo ? t('variaciones.descripcion_periodo', { periodo: nombrePeriodo(periodo) }) : t('variaciones.descripcion')} />
-      <ErrorApi error={variaciones.error} />
+        descripcion={periodo ? t('variaciones.descripcion_periodo', { periodo: nombrePeriodo(periodo) }) : t('variaciones.descripcion')}
+        acciones={puedeProcesar && periodo?.estado === 'ABIERTO' && (
+          <Button variant="primary" size="md" loading={proceso.cargando} onClick={procesar}><Play size={16} aria-hidden />{t('valor.procesar')}</Button>
+        )} />
+      <p style={{ ...SECUNDARIO, margin: '0 0 var(--s4)' }}>{t('variaciones.registro_automatico')}</p>
+      <ErrorApi error={variaciones.error ?? proceso.error} />
       {!periodo ? <SinPeriodo /> : (
         <>
           <Indicadores items={[

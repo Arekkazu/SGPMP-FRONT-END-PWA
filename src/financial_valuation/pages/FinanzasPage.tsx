@@ -2,10 +2,11 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: shell del módulo financiero NIC 41 con pestañas por permiso |
 // | 2026-11-05 | Arekkazu | M06 prototipos: secciones agrupadas como el prototipo y un período para todo el módulo |
+// | 2026-11-10 | Arekkazu | TC-DIS-233 RF-86: sección Pendientes (medición pendiente y sin cuenta contable) |
 import React from 'react';
 import { Redirect, Route, Switch, useLocation } from 'react-router-dom';
 import {
-  BarChart3, BookOpen, Calculator, DollarSign, FileText, GitBranch, Handshake, Lock, Package, Receipt, RefreshCw, Scale,
+  BarChart3, BookOpen, Calculator, ClipboardList, DollarSign, FileText, GitBranch, Handshake, Lock, Package, Receipt, RefreshCw, Scale,
   Settings, ShieldCheck, Tag,
 } from 'lucide-react';
 import {
@@ -25,6 +26,7 @@ import { CalculoView } from './CalculoView';
 import { ProductosView } from './ProductosView';
 import { ValoracionCostoView } from './ValoracionCostoView';
 import { VariacionesView } from './VariacionesView';
+import { PendientesView } from './PendientesView';
 import { CierreView } from './CierreView';
 import { PreciosView } from './PreciosView';
 import { CostosView } from './CostosView';
@@ -53,6 +55,7 @@ const GRUPOS: Array<{ id: string; secciones: Seccion[] }> = [
   {
     id: 'resultados_periodo', secciones: [
       { id: 'variaciones', recurso: R_VALORACION, icono: <BarChart3 {...ICONO} />, vista: VariacionesView, conPeriodo: true },
+      { id: 'pendientes', recurso: R_VALORACION, icono: <ClipboardList {...ICONO} />, vista: PendientesView, conPeriodo: true },
       { id: 'cierre', recurso: R_CIERRE, icono: <Lock {...ICONO} />, vista: CierreView, conPeriodo: true },
     ],
   },

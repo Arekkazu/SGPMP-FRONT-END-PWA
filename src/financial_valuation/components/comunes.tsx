@@ -3,6 +3,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: piezas comunes de las vistas del módulo financiero |
 // | 2026-11-05 | Arekkazu | M06 prototipos: período global, indicadores, listado con búsqueda, filtros y pie |
 // | 2026-11-10 | Arekkazu | TC-DIS-244..266 RF-87..94: badges con icono, NIT ausente, páginas numeradas, resultado con Ganancia/Pérdida y descarga anunciada |
+// | 2026-11-10 | Arekkazu | TC-DIS-262 RF-93: el período lo elige también quien solo consulta reportes (prefiere el último cerrado) |
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AlertTriangle, Ban, CheckCircle2, Clock, FilterX, Info, Search, SearchX, XCircle } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
@@ -25,7 +26,7 @@ import { EstadoVacio } from '../../supplies/components/EstadoVacio';
 import { formatoFecha, formatoMoneda } from '../../supplies/lib/formato';
 import { finanzasApi } from '../api/finanzasApi';
 import { signo } from '../lib/decimal';
-import { ACCION_R, R_CIERRE } from '../rbac';
+import { ACCION_R, R_CIERRE, R_ESTADO_RESULTADOS, R_REVELACIONES } from '../rbac';
 import type { Periodo } from '../types';
 import '../finanzas.css';
 
@@ -121,10 +122,13 @@ export function descargarArchivo(a: Archivo) {
   pushToast('success', i18n.t('comun.descarga_lista', { ns: 'finanzas' }), a.nombre);
 }
 
-/** El abierto más reciente; si no hay ninguno abierto, el más reciente. */
-function preferido(periodos: Periodo[]): Periodo {
+/**
+ * Quien opera el cierre empieza en el abierto más reciente; quien solo consulta reportes, en el último cerrado
+ * (es el único con estado de resultados y revelaciones aprobados). Si no hay, el más reciente.
+ */
+function preferido(periodos: Periodo[], soloConsulta: boolean): Periodo {
   const recientes = [...periodos].sort((a, b) => b.fecha_inicio.localeCompare(a.fecha_inicio));
-  return recientes.find((p) => p.estado === 'ABIERTO') ?? recientes[0];
+  return recientes.find((p) => p.estado === (soloConsulta ? 'CERRADO' : 'ABIERTO')) ?? recientes[0];
 }
 
 interface ContextoPeriodo {
@@ -144,14 +148,18 @@ const PeriodoCtx = createContext<ContextoPeriodo>({
 
 /** Un solo período para todas las vistas: cambiar de pestaña no lo pierde (prototipo: selector de la barra superior). */
 export function ProveedorPeriodo({ children }: { children: React.ReactNode }) {
-  const disponible = usePermissionPorNombre(R_CIERRE, ACCION_R);
+  const leeCierre = usePermissionPorNombre(R_CIERRE, ACCION_R);
+  const leeEstado = usePermissionPorNombre(R_ESTADO_RESULTADOS, ACCION_R);
+  const leeRevelaciones = usePermissionPorNombre(R_REVELACIONES, ACCION_R);
+  // El backend acepta cualquiera de los tres para listar los períodos (RF-93: el Productor consulta lo aprobado).
+  const disponible = leeCierre || leeEstado || leeRevelaciones;
   const { data, cargando, error, ejecutar } = useAsync(finanzasApi.periodos);
   const [id, setId] = useState<number | null>(null);
   useEffect(() => { if (disponible) ejecutar(); }, [disponible, ejecutar]);
   const periodos = data ?? [];
   useEffect(() => {
-    if (periodos.length > 0 && !periodos.some((p) => p.id_periodo_contable === id)) setId(preferido(periodos).id_periodo_contable);
-  }, [periodos, id]);
+    if (periodos.length > 0 && !periodos.some((p) => p.id_periodo_contable === id)) setId(preferido(periodos, !leeCierre).id_periodo_contable);
+  }, [periodos, id, leeCierre]);
   const valor: ContextoPeriodo = {
     periodos, periodo: periodos.find((p) => p.id_periodo_contable === id) ?? null, elegir: setId,
     recargar: () => { ejecutar(); }, cargando, error, disponible,
