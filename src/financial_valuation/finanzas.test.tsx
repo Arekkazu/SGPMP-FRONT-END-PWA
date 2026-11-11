@@ -4,6 +4,7 @@
 // | 2026-11-05 | Arekkazu | M06 prototipos: período global, filtros de variaciones y suma decimal exacta |
 // | 2026-11-08 | destroyerban | INC-M06-316-G16 RF-84: la confirmación con costos propios envía su documento de soporte |
 // | 2026-11-09 | destroyerban | INC-M06-317-G17 RF-84: validar con justificación un cálculo con valor neto ≤ 0 |
+// | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -17,6 +18,7 @@ import { CierreView } from './pages/CierreView';
 import { VariacionesView } from './pages/VariacionesView';
 import { ReconocimientosView } from './pages/ReconocimientosView';
 import { CalculoView } from './pages/CalculoView';
+import { ProductosView } from './pages/ProductosView';
 import { ProveedorPeriodo, aFraccion, aPorcentaje, formatoMoneda } from './components/comunes';
 import { signo, sumar } from './lib/decimal';
 import { digitoVerificacion } from '../configuration/components/TitularFincaModal';
@@ -261,5 +263,65 @@ describe('CalculoView (RF-84)', () => {
     render(<MemoryRouter><ProveedorPeriodo><CalculoView /></ProveedorPeriodo></MemoryRouter>);
     expect(await screen.findByText('1 cálculo requiere revisión')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Validar el cálculo de BOV-007' })).not.toBeInTheDocument();
+  });
+});
+
+describe('ProductosView (RF-85 FA-1/FA-2)', () => {
+  const pendiente = (id_evento: number, identificador: string, clasificacion: string, admite: boolean) => ({
+    id_evento, id_activo_biologico: id_evento, identificador, especie: 'Bovino', finca: 'La Esperanza', clasificacion,
+    producto_agricola: 'Leche', unidad_medida: 'L', cantidad_cosechada: '200.000', fecha_cosecha: '2026-11-09T15:00:00Z',
+    motivo: 'Falta costos de venta para el producto Leche.', fecha_ultimo_intento: '2026-11-09T16:00:00Z', intentos: 1,
+    admite_costos_manuales: admite,
+  });
+
+  const abrir = async (permisos = [permiso('valoracion_activos', 2), permiso('valoracion_activos', 5), permiso('cierre_periodo', 2)]) => {
+    sesion.permisos = permisos;
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/productos/pendientes'] = [
+      { data: [pendiente(500, 'BOV-007', 'PRODUCCION', true), pendiente(501, 'TRU-008', 'CONSUMO', false)] }, { data: [] }];
+    respuestas['POST /finanzas/productos/pendientes/500/reconocimiento'] = { data: { id_evento: 500, resultado: 'PROCESADO' } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><ProductosView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('2 cosechas están pendientes de reconocer')).toBeInTheDocument();
+    return user;
+  };
+  const envios = () => peticiones.filter((p) => p.url === '/finanzas/productos/pendientes/500/reconocimiento' && p.method === 'post');
+
+  it('lista las cosechas pendientes y solo ofrece costos manuales donde aplican', async () => {
+    await abrir();
+    expect(screen.getAllByText('Falta costos de venta para el producto Leche.')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Ingresar los costos de venta de Leche de BOV-007' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ingresar los costos de venta de Leche de TRU-008' })).not.toBeInTheDocument();
+    expect(screen.getByText('Se valora con el activo')).toBeInTheDocument();
+  });
+
+  it('sin justificación no envía los costos', async () => {
+    const user = await abrir();
+    await user.click(screen.getByRole('button', { name: 'Ingresar los costos de venta de Leche de BOV-007' }));
+    const dialogo = within(screen.getByRole('dialog'));
+    await user.type(dialogo.getByLabelText(/^Transporte/), '42000');
+    await user.click(dialogo.getByRole('button', { name: /Reconocer la cosecha/ }));
+
+    expect(await dialogo.findByText('Justifica los costos de venta propios con al menos 20 caracteres.')).toBeInTheDocument();
+    expect(envios()).toHaveLength(0);
+  });
+
+  it('envía los costos con su justificación y recarga la bandeja', async () => {
+    const user = await abrir();
+    await user.click(screen.getByRole('button', { name: 'Ingresar los costos de venta de Leche de BOV-007' }));
+    const dialogo = within(screen.getByRole('dialog'));
+    await user.type(dialogo.getByLabelText(/^Transporte/), '42000');
+    await user.type(dialogo.getByLabelText(/^Justificación de los costos/), 'Flete del acopiador según la factura FE-881.');
+    await user.click(dialogo.getByRole('button', { name: /Reconocer la cosecha/ }));
+
+    await waitFor(() => expect(envios()).toHaveLength(1));
+    expect(JSON.parse(envios()[0].data as string)).toEqual({
+      costos_manuales: { transporte: '42000' }, justificacion: 'Flete del acopiador según la factura FE-881.' });
+    await waitFor(() => expect(screen.queryByText('2 cosechas están pendientes de reconocer')).not.toBeInTheDocument());
+  });
+
+  it('sin permiso de ejecutar muestra la bandeja sin la acción', async () => {
+    await abrir([permiso('valoracion_activos', 2), permiso('cierre_periodo', 2)]);
+    expect(screen.queryByRole('button', { name: /Ingresar los costos de venta/ })).not.toBeInTheDocument();
   });
 });

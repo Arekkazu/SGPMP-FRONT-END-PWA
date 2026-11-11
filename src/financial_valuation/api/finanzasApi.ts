@@ -4,9 +4,10 @@
 // | 2026-11-05 | Arekkazu | M06 prototipos: listados del período y auditoría ordenable |
 // | 2026-11-08 | destroyerban | INC-M06-316-G16 RF-84: referencia documental de los costos manuales |
 // | 2026-11-09 | destroyerban | INC-M06-317-G17 RF-84: validar con justificación un cálculo con valor neto ≤ 0 |
+// | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
 import { http } from '../../shared/api/http';
 import type {
-  ActivoValorado, Asignacion, Cadena, CalculoPeriodo, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
+  ActivoValorado, Asignacion, Cadena, CalculoPeriodo, CosechaPendiente, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
   CostosManuales, Cotizacion, EstadoDetalle, EstadoResumen, HistorialActivo, InformeDetalle, InformePayload, InformeResumen,
   Linea, Naturaleza, PaginaAuditoria, Periodo, Precio, PrecioPayload, Prevalidacion, Propuesta, ResultadoCierre,
   ResultadoCosto, Simulacion,
@@ -79,6 +80,10 @@ export const finanzasApi = {
   validarCalculo: (idCalculo: number, justificacion: string) =>
     post<{ id_calculo_valor_razonable: number; estado: string; valor_neto: string }>(`/calculos/${idCalculo}/validacion`, { justificacion }),
   productos: (idPeriodo: number) => get<ProductoPeriodo[]>(`/periodos/${idPeriodo}/productos`),
+  // RF-85 FA-1/FA-2: cosechas pendientes por falta de precio o de costos de venta.
+  cosechasPendientes: () => get<CosechaPendiente[]>('/productos/pendientes'),
+  reconocerCosecha: (idEvento: number, body: { costos_manuales: CostosManuales; justificacion: string }) =>
+    post<{ id_evento: number; resultado: string }>(`/productos/pendientes/${idEvento}/reconocimiento`, body),
 
   // Costos (RF-90)
   costos: (filtros: { id_activo_biologico?: number; id_periodo_contable?: number; estado?: string; origen_costo?: string }) =>
