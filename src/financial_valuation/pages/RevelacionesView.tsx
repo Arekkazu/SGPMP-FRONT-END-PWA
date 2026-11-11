@@ -2,7 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-92: informe de revelaciones NIC 41 por párrafo (borrador, aprobación y descarga) |
 // | 2026-11-05 | Arekkazu | M06 RF-92 prototipo: historial de versiones del período con filtros; sin JSON ni claves crudas |
-// | 2026-11-10 | Arekkazu | TC-DIS-257..259 RF-92: índice de secciones, filas identificadas, justificación bajo el campo, aprobación confirmada y descarga anunciada |
+// | 2026-11-10 | Arekkazu | TC-DIS-257..259 RF-92: índice de secciones, filas identificadas, justificación bajo el campo, aprobación confirmada, aprobador y descarga anunciada |
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileText, Plus, Trash2, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -180,7 +180,7 @@ export function RevelacionesView() {
             <table style={TABLA}>
               <thead>
                 <tr><th style={TH}>{t('rev.version')}</th><th style={TH}>{t('col.estado')}</th><th style={TH}>{t('rev.generado_el')}</th>
-                  <th style={TH}>{t('rev.aprobado_el')}</th><th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th></tr>
+                  <th style={TH}>{t('rev.aprobado_el')}</th><th style={TH}>{t('rev.aprobador')}</th><th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th></tr>
               </thead>
               <tbody>
                 {visibles.map((x) => (
@@ -189,6 +189,7 @@ export function RevelacionesView() {
                     <td style={TD}><EstadoBadge estado={x.estado} />{x.razon_rechazo && <span className="fin-secundario">{x.razon_rechazo}</span>}</td>
                     <td style={{ ...TD, whiteSpace: 'nowrap' }}>{formatoFecha(x.fecha_generacion, true)}</td>
                     <td style={{ ...TD, whiteSpace: 'nowrap' }}>{x.fecha_aprobacion ? formatoFecha(x.fecha_aprobacion, true) : t('rev.sin_aprobar')}</td>
+                    <td style={TD}>{x.nombre_aprobador ?? (x.fecha_aprobacion ? t('rev.aprobador_sin_nombre') : t('rev.sin_aprobar'))}</td>
                     <td style={TD}>
                       <Button variant={x.id_informe === idInforme ? 'secondary' : 'ghost'} size="sm" onClick={() => setIdInforme(x.id_informe)}>
                         {x.estado === 'BORRADOR' ? t('rev.ver_borrador') : t('rev.ver_informe')}
@@ -208,6 +209,7 @@ export function RevelacionesView() {
               [t('rev.version'), inf.version_informe], [t('col.estado'), <EstadoBadge key="e" estado={inf.estado} />],
               [t('rev.generado_el'), formatoFecha(inf.fecha_generacion, true)],
               [t('rev.aprobado_el'), inf.fecha_aprobacion ? formatoFecha(inf.fecha_aprobacion, true) : t('rev.sin_aprobar')],
+              [t('rev.aprobador'), inf.nombre_aprobador ?? (inf.fecha_aprobacion ? t('rev.aprobador_sin_nombre') : t('rev.sin_aprobar'))],
               [t('col.hash'), <span key="h" title={inf.hash_informe} className="fin-mono">{inf.hash_informe.slice(0, 16)}…</span>],
             ]} />
             {inf.razon_rechazo && <Alert variant="error" title={t('rev.rechazado_por')} description={inf.razon_rechazo} style={{ marginTop: 'var(--s3)' }} />}
