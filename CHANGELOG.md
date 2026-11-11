@@ -1,3 +1,9 @@
+## [1.4.0-rc.36](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.35...v1.4.0-rc.36) (2026-11-11)
+
+### Bug Fixes
+
+* **rf74-rf94-mod5-mod6:** accesibilidad y desviaciones de la primera evaluacion QA de suministros y finanzas ([37caa5c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/37caa5c499fb52ff390fc9069c753130468649ec))
+
 ## [1.4.0-rc.35](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.34...v1.4.0-rc.35) (2026-11-11)
 
 ### Features
