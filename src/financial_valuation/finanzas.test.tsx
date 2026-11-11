@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: pestañas por permiso, desviación de precio, cierre con autorización y DV del NIT |
 // | 2026-11-05 | Arekkazu | M06 prototipos: período global, filtros de variaciones y suma decimal exacta |
+// | 2026-11-08 | destroyerban | INC-M06-316-G16 RF-84: la confirmación con costos propios envía su documento de soporte |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -13,6 +14,7 @@ import { FinanzasPage } from './pages/FinanzasPage';
 import { PreciosView } from './pages/PreciosView';
 import { CierreView } from './pages/CierreView';
 import { VariacionesView } from './pages/VariacionesView';
+import { ReconocimientosView } from './pages/ReconocimientosView';
 import { ProveedorPeriodo, aFraccion, aPorcentaje, formatoMoneda } from './components/comunes';
 import { signo, sumar } from './lib/decimal';
 import { digitoVerificacion } from '../configuration/components/TitularFincaModal';
@@ -161,5 +163,50 @@ describe('utilidades', () => {
   it('calcula el dígito de verificación del NIT como la DIAN', () => {
     expect(digitoVerificacion('900123456')).toBe('8');
     expect(digitoVerificacion('800197268')).toBe('4');
+  });
+});
+
+describe('ReconocimientosView (RF-82, RF-84)', () => {
+  const propuesta = {
+    id_activo_biologico: 11, identificador: 'BOV-011', tipo: 'INDIVIDUAL', especie: 'Bovino', id_especie: 2, finca: 'La Esperanza',
+    estado: 'ACTIVO', origen_financiero: 'nacimiento', costo_adquisicion: null, soporte_documental: null,
+    fecha_reconocimiento: '2026-11-04', es_apertura: false, clasificacion: 'PRODUCCION', indicador_valoracion: 'VALOR_RAZONABLE',
+    valor_inicial: '9550000', costos_venta: '450000', magnitud: '400', unidad_magnitud: 'kg',
+    precio: { id_precio_mercado: 12, precio_unitario: '25000', unidad_medida: 'kg', fuente: 'MERCADO_ACTIVO', fecha_vigencia: '2026-09-01' },
+    hechos: [], bloqueos: [], advertencias: [], requiere_costos_manuales: false, es_confirmable: true,
+  };
+
+  const abrirConCostoPropio = async () => {
+    sesion.permisos = [permiso('reconocimiento_inicial', 2), permiso('reconocimiento_inicial', 1)];
+    respuestas['GET /finanzas/reconocimientos/propuestas'] = { data: [propuesta] };
+    respuestas['POST /finanzas/reconocimientos/11'] = { data: { id_reconocimiento_inicial: 5, valor_inicial: '9550000', advertencias: [] } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><ReconocimientosView /></ProveedorPeriodo></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: 'Revisar el reconocimiento de BOV-011' }));
+    const dialogo = within(screen.getByRole('dialog'));
+    await user.click(dialogo.getByLabelText(/Usar costos de venta propios/));
+    await user.type(dialogo.getByLabelText(/^Comisiones/), '250000');
+    await user.type(dialogo.getByLabelText(/^Justificación de los costos/), 'Comisión pactada con el comprador de la subasta.');
+    return { user, dialogo };
+  };
+  const confirmaciones = () => peticiones.filter((p) => p.url === '/finanzas/reconocimientos/11' && p.method === 'post');
+
+  it('sin documento de soporte no envía la confirmación con costos propios', async () => {
+    const { user, dialogo } = await abrirConCostoPropio();
+    await user.click(dialogo.getByRole('button', { name: /Confirmar reconocimiento/ }));
+
+    expect(await dialogo.findByText('Indica el documento que respalda los costos de venta propios.')).toBeInTheDocument();
+    expect(confirmaciones()).toHaveLength(0);
+  });
+
+  it('envía el documento de soporte como referencia_documental', async () => {
+    const { user, dialogo } = await abrirConCostoPropio();
+    await user.type(dialogo.getByLabelText(/^Documento de soporte/), 'Factura FE-1234');
+    await user.click(dialogo.getByRole('button', { name: /Confirmar reconocimiento/ }));
+
+    await waitFor(() => expect(confirmaciones()).toHaveLength(1));
+    expect(JSON.parse(confirmaciones()[0].data as string)).toMatchObject({
+      costos_manuales: { comisiones: '250000' }, referencia_documental: 'Factura FE-1234',
+    });
   });
 });

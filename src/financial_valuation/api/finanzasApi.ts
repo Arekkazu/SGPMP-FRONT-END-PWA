@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: cliente de la API /finanzas (valoración NIC 41) |
 // | 2026-11-05 | Arekkazu | M06 prototipos: listados del período y auditoría ordenable |
+// | 2026-11-08 | destroyerban | INC-M06-316-G16 RF-84: referencia documental de los costos manuales |
 import { http } from '../../shared/api/http';
 import type {
   ActivoValorado, Asignacion, Cadena, CalculoPeriodo, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
@@ -54,7 +55,9 @@ export const finanzasApi = {
   propuestas: () => get<Propuesta[]>('/reconocimientos/propuestas'),
   propuesta: (idActivo: number, clasificacion?: Clasificacion) =>
     get<Propuesta>(`/reconocimientos/propuestas/${idActivo}`, clasificacion ? { clasificacion } : undefined),
-  confirmar: (idActivo: number, body: { clasificacion?: Clasificacion; costos_manuales?: CostosManuales; justificacion?: string }) =>
+  confirmar: (idActivo: number, body: {
+    clasificacion?: Clasificacion; costos_manuales?: CostosManuales; justificacion?: string; referencia_documental?: string;
+  }) =>
     post<{ id_reconocimiento_inicial: number; valor_inicial: string; advertencias: string[] }>(`/reconocimientos/${idActivo}`, body),
   revertir: (idActivo: number, motivo: string) => post<unknown>(`/reconocimientos/${idActivo}/reversion`, { motivo_reversion: motivo }),
 
