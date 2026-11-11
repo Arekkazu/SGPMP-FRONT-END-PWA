@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-80: bitácora de auditoría del módulo con filtros, detalle y exportación |
+// | 2026-11-10 | Arekkazu | TC-DIS-208 RF-80: columna de clasificación con icono y filtros por actor y entidad afectada |
 import React, { useEffect, useState } from 'react';
 import { Search, FileDown, Eye, ScrollText } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -12,6 +13,7 @@ import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useT } from '../../shared/i18n/useT';
+import { humanizar } from '../../shared/lib/etiquetas';
 import { ACCION_E, ACCION_R, RECURSO_AUDITORIA } from '../rbac';
 import { useAuditoriaSuministros } from '../hooks/useAuditoriaSuministros';
 import { useActivosSuministros } from '../hooks/useActivosSuministros';
@@ -24,6 +26,7 @@ import { EstadoRegistroBadge } from '../components/EstadoRegistroBadge';
 import { SelectorActivo } from '../components/SelectorActivo';
 import { Paginacion } from '../components/Paginacion';
 import { EventoAuditoriaModal } from '../components/EventoAuditoriaModal';
+import { ClasificacionBadge } from '../components/ClasificacionBadge';
 import { FILTROS, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM } from '../components/estilos';
 
 const POR_PAGINA = 50;
@@ -33,7 +36,10 @@ const OPERACIONES = [
   'ACUMULADO_ACTUALIZADO', 'PROVISION_PENDIENTE', 'CONSULTA_HISTORIAL_EJECUTADA', 'EXPORTACION_HISTORIAL_GENERADA',
   'EXPORTACION_HISTORIAL_ELIMINADA', 'INSERT', 'UPDATE', 'DELETE',
 ];
-const RESULTADOS = ['EXITOSO', 'FALLIDO', 'RECHAZADO'];
+const RESULTADOS = ['EXITOSO', 'FALLIDO', 'PARCIAL', 'RECHAZADO', 'ADVERTENCIA'];
+// Entidades que registra la bitácora (RF-80); el filtro acepta también una escrita a mano.
+const ENTIDADES = ['registro_suministro', 'consumo_alimento', 'medicamento', 'acumulado_ciclo', 'provision_nic41', 'reporte_gastos_acumulados', 'historial_suministros', 'exportacion_historial'];
+
 const FORMATOS: { valor: 'csv' | 'xlsx' | 'pdf'; etiqueta: string }[] = [{ valor: 'csv', etiqueta: 'CSV' }, { valor: 'xlsx', etiqueta: 'Excel' }, { valor: 'pdf', etiqueta: 'PDF' }];
 
 export function AuditoriaView() {
@@ -48,6 +54,8 @@ export function AuditoriaView() {
   const [operacion, setOperacion] = useState('');
   const [resultado, setResultado] = useState('');
   const [clasificacion, setClasificacion] = useState('');
+  const [idUsuario, setIdUsuario] = useState('');
+  const [entidad, setEntidad] = useState('');
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
   const [filtros, setFiltros] = useState<FiltrosAuditoria>({ pagina: 1, registros_por_pagina: POR_PAGINA });
@@ -68,6 +76,8 @@ export function AuditoriaView() {
       tipo_operacion: operacion || undefined,
       resultado: resultado || undefined,
       clasificacion_registro: clasificacion || undefined,
+      id_usuario: idUsuario ? Number(idUsuario) : undefined,
+      entidad_afectada: entidad.trim() || undefined,
       id_activo_biologico: idActivo ?? undefined,
       fecha_desde: desde || undefined,
       fecha_hasta: hasta || undefined,
@@ -109,6 +119,9 @@ export function AuditoriaView() {
           <option value="TECNICO">{t('auditoria.clase_TECNICO')}</option>
         </Select>
         <SelectorActivo id="auditoria-activo" activos={activos} cargando={cargandoActivos} value={texto} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
+        <Input id="auditoria-usuario" label={t('auditoria.actor')} type="number" step={1} min={1} value={idUsuario} onChange={(e) => setIdUsuario(e.target.value)} hint={t('auditoria.actor_hint')} />
+        <Input id="auditoria-entidad" label={t('auditoria.entidad')} list="auditoria-entidades" value={entidad} onChange={(e) => setEntidad(e.target.value)} hint={t('auditoria.entidad_hint')} />
+        <datalist id="auditoria-entidades">{ENTIDADES.map((e) => <option key={e} value={e}>{t(`entidad.${e}`, { defaultValue: humanizar(e) })}</option>)}</datalist>
         <Input id="auditoria-desde" label={t('comun.desde')} type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
         <Input id="auditoria-hasta" label={t('comun.hasta')} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} error={rangoInvalido ? t('comun.rango_invalido') : undefined} />
         <div style={{ paddingBottom: 'var(--s1)' }}>
@@ -131,6 +144,7 @@ export function AuditoriaView() {
                   <th style={TH}>{t('comun.activo')}</th>
                   <th style={TH_NUM}>{t('auditoria.costo')}</th>
                   <th style={TH}>{t('auditoria.resultado')}</th>
+                  <th style={TH}>{t('auditoria.clasificacion')}</th>
                   <th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th>
                 </tr>
               </thead>
@@ -139,12 +153,14 @@ export function AuditoriaView() {
                   <tr key={e.id_auditoria_suministro}>
                     <td style={TD}>{formatoFecha(e.fecha_evento, true)}<div style={SECUNDARIO}>{t('auditoria.usuario_n', { id: e.id_usuario })}</div></td>
                     <td style={TD}>{t(`evento.${e.tipo_operacion}`, { defaultValue: e.tipo_operacion })}</td>
-                    <td style={TD}>{e.entidad_afectada}</td>
+                    <td style={TD}>{t(`entidad.${e.entidad_afectada}`, { defaultValue: humanizar(e.entidad_afectada) })}</td>
                     <td style={TD}>{e.id_activo_biologico ? `#${e.id_activo_biologico}` : '—'}</td>
                     <td style={TD_NUM}>{e.costo_afectado ? formatoMoneda(e.costo_afectado) : '—'}</td>
                     <td style={TD}><EstadoRegistroBadge estado={e.resultado} /></td>
+                    <td style={TD}><ClasificacionBadge clasificacion={e.clasificacion_registro} /></td>
                     <td style={TD}>
-                      <Button variant="ghost" size="sm" onClick={() => { detalle.limpiar(); setVerId(e.id_auditoria_suministro); }}>
+                      <Button variant="ghost" size="sm" onClick={() => { detalle.limpiar(); setVerId(e.id_auditoria_suministro); }}
+                        aria-label={t('auditoria.ver_aria', { id: e.id_auditoria_suministro })}>
                         <Eye size={16} aria-hidden />{t('comun.ver')}
                       </Button>
                     </td>

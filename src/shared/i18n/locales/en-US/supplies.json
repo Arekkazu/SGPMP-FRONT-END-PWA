@@ -50,7 +50,13 @@
     "siguiente": "Next",
     "sin_conexion": "Offline",
     "sin_conexion_detalle": "You can browse what is loaded; new records and voids need a connection.",
-    "seguimiento_fallo": "Could not check the progress. Reload the page to see whether it finished."
+    "seguimiento_fallo": "Could not check the progress. Reload the page to see whether it finished.",
+    "paginacion": "Pagination",
+    "ir_pagina": "Go to page {{pagina}}",
+    "activo_sin_visibles": "No assets are visible for your user: check your assigned farm or type the asset ID.",
+    "cerrar": "Close",
+    "si": "Yes",
+    "no": "No"
   },
   "estado": {
     "VALIDADO": "Validated",
@@ -75,7 +81,9 @@
     "GENERADO": "Generated",
     "CONSOLIDADO": "Consolidated",
     "ENTREGADO": "Delivered",
-    "REEMPLAZADO": "Superseded"
+    "REEMPLAZADO": "Superseded",
+    "PARCIAL": "Partial",
+    "ADVERTENCIA": "Warning"
   },
   "tipo": {
     "ALIMENTO": "Feed",
@@ -135,7 +143,17 @@
     "vacio_detalle": "Rations you record will show up here. Adjust the filters to look at a specific period.",
     "anular_titulo": "Void feeding #{{id}}",
     "anular_descripcion": "The record stays in the history as voided and its cost is taken off the production cycle. This cannot be undone.",
-    "sin_tipos": "There are no active feeds in the catalog. Ask the administrator to add them."
+    "sin_tipos": "There are no active feeds in the catalog. Ask the administrator to add them.",
+    "sin_activo_elegido": "Choose the asset first",
+    "no_aplica_individual": "Not applicable: individual asset",
+    "sin_poblacion": "No population recorded",
+    "sin_poblacion_hint": "The batch has no individuals recorded; the system will reject the entry until its population is updated.",
+    "por_individuo_pendiente": "Calculated when you type the quantity",
+    "cantidad_actual": "Current batch population",
+    "por_individuo_unidad": "Intake per individual ({{unidad}})",
+    "por_individuo_vivo": "{{valor}} {{unidad}} per individual",
+    "fecha_fase_hint": "The asset entered its current phase on {{fecha}}.",
+    "fecha_antes_fase": "The date cannot be earlier than the asset's phase change date ({{fecha}})."
   },
   "medicamento": {
     "titulo": "Medication log",
@@ -171,7 +189,11 @@
     "vacio_titulo": "No applications recorded",
     "vacio_detalle": "Medication applications will show up here with their withdrawal period.",
     "anular_titulo": "Void application #{{id}}",
-    "anular_descripcion": "The application is marked voided, its cost is taken off the cycle and it no longer counts toward the withdrawal period. This cannot be undone."
+    "anular_descripcion": "The application is marked voided, its cost is taken off the cycle and it no longer counts toward the withdrawal period. This cannot be undone.",
+    "dosis_individuo_pendiente": "Calculated when you type the dose",
+    "dosis_individuo_unidad": "Dose per individual ({{unidad}})",
+    "dosis_individuo_vivo": "Each of the {{poblacion}} individuals receives {{valor}} {{unidad}}.",
+    "dosis_individuo_no_aplica": "The dose per individual is only calculated for batches."
   },
   "ica": {
     "titulo": "Feed efficiency (FCR)",
@@ -198,7 +220,12 @@
     "tipo_MANUAL": "Manual",
     "tipo_AUTOMATICO": "Automatic",
     "tipo_REINTENTO_AUTOMATICO": "Automatic retry",
-    "tipo_REINTENTO_MANUAL": "Manual retry"
+    "tipo_REINTENTO_MANUAL": "Manual retry",
+    "detalle_titulo": "Calculation from {{desde}} to {{hasta}}",
+    "intento": "Attempt",
+    "alerta_critica": "Critical feed conversion: {{valor}}",
+    "alerta_critica_detalle": "The asset uses more than 5 kilos of feed per kilo gained. Review the ration and the animal's health; an alert was raised for the team.",
+    "ver_detalle_aria": "View the calculation details {{periodo}}"
   },
   "batch": {
     "titulo": "Automatic calculation (batch)",
@@ -263,7 +290,9 @@
     "cantidad_correcta": "Correct quantity",
     "precio_correcto": "Correct price per unit ($)",
     "motivo_correccion": "Reason for the correction",
-    "motivo_correccion_hint": "At least 20 characters."
+    "motivo_correccion_hint": "At least 20 characters.",
+    "sin_precio_referencia": "Reference price not available",
+    "sin_precio_referencia_detalle": "The system has no automatic price for veterinary services or inseminations: enter the real price and justify its source."
   },
   "nic41": {
     "titulo": "IAS 41 provision",
@@ -295,7 +324,17 @@
     "no_entregado": "Pending",
     "desglose": "Breakdown by type",
     "registros": "Included records",
-    "hash": "Integrity hash"
+    "hash": "Integrity hash",
+    "elegir_version": "Choose a version to view it",
+    "reemplaza_a": "Replaces {{version}}",
+    "version_anterior": "previous version",
+    "reporte_anterior": "Previous report",
+    "sin_anterior": "This is the first version",
+    "ver_anterior": "View previous report",
+    "incompleto_suma_one": "The report totals {{monto}} with {{count}} record.",
+    "incompleto_suma_other": "The report totals {{monto}} with {{count}} records.",
+    "incompleto_acumulado": "The cycle's accumulated total is {{acumulado}}: there is a difference of {{diferencia}}.",
+    "incompleto_sin_entrega": "In addition, the report has not been delivered to Finance yet."
   },
   "gastos": {
     "titulo": "Expense report",
@@ -326,7 +365,16 @@
     "historial_vacio": "You have not generated any reports yet.",
     "generado": "Generated",
     "regenerar": "Regenerate",
-    "regenerar_hint": "Recompute the report with current data."
+    "regenerar_hint": "Recompute the report with current data.",
+    "categoria": "Category",
+    "subtotal": "Subtotal",
+    "porcentaje": "Percentage",
+    "registros": "Records",
+    "especie_opcional": "Species (optional)",
+    "finca_opcional": "Farm (optional)",
+    "infraestructura_opcional": "Infrastructure (optional)",
+    "infraestructura_hint": "Choose the farm first.",
+    "alcance_hint": "Without an asset, the report groups the expenses of the chosen species or infrastructure."
   },
   "historial": {
     "titulo": "Supplies history",
@@ -353,7 +401,10 @@
     "resumen_async": "{{registros}} records for a total of {{monto}}.",
     "exportacion_en_cola": "Export queued",
     "exportacion_trabajo": "Export in progress",
-    "descargar": "Download export"
+    "descargar": "Download export",
+    "rango_fechas": "Date range",
+    "rango_costo": "Cost range",
+    "unidad": "Unit"
   },
   "evento": {
     "SUMINISTRO_REGISTRADO": "Supply recorded",
@@ -394,6 +445,22 @@
     "detalle_titulo": "Event #{{id}}",
     "incompleto": "Incomplete audit record",
     "antes": "Before",
-    "despues": "After"
+    "despues": "After",
+    "actor": "User (actor)",
+    "actor_hint": "Number of the user who performed the operation.",
+    "entidad_hint": "Choose one from the list or type its name.",
+    "sin_clasificacion": "Unclassified",
+    "ver_aria": "View the details of event {{id}}",
+    "retencion": "Kept for {{valor}}"
+  },
+  "entidad": {
+    "registro_suministro": "Supply record",
+    "consumo_alimento": "Feed intake",
+    "medicamento": "Medication",
+    "acumulado_ciclo": "Cycle accumulated total",
+    "provision_nic41": "NIC-41 provision",
+    "reporte_gastos_acumulados": "Expense report",
+    "historial_suministros": "Supply history",
+    "exportacion_historial": "History export"
   }
 }

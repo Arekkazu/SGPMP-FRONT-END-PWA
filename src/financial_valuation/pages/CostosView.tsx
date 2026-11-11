@@ -2,26 +2,28 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-90: costos del activo (manuales, factura de proveedor, reparto y clasificación) |
 // | 2026-11-05 | Arekkazu | M06 RF-90 prototipo: costos del período consolidados por naturaleza y tipo, con filtros |
-import React, { useEffect, useState } from 'react';
-import { Plus, Receipt, Tags } from 'lucide-react';
+// | 2026-11-10 | Arekkazu | TC-DIS-247..250 RF-90: consolidados en tabla (tipo, origen, activo), errores bajo cada campo, vista previa del reparto y cuenta débito resuelta |
+import React, { useEffect, useRef, useState } from 'react';
+import { Plus, Receipt, Tags, Trash2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
-import { Badge } from '../../shared/design-system/Badge';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
+import type { ApiError } from '../../shared/api/errors';
 import { decimalPositivo } from '../../supplies/lib/formato';
 import { finanzasApi } from '../api/finanzasApi';
-import { ACCION_C, ACCION_R, ACCION_U, R_COSTOS, R_VALORACION } from '../rbac';
-import { SUBTIPOS } from '../types';
-import type { ActivoValorado, Costo, CostoPayload, Naturaleza, OrigenCosto, Subtipo } from '../types';
+import { ACCION_C, ACCION_R, ACCION_U, R_CONFIGURACION, R_COSTOS, R_VALORACION } from '../rbac';
+import { ORIGENES, SUBTIPOS } from '../types';
+import type { ActivoValorado, Asignacion, Costo, CostoPayload, Naturaleza, OrigenCosto, Subtipo } from '../types';
 import { sumar } from '../lib/decimal';
 import {
-  AreaTexto, CeldaActivo, EncabezadoVista, EstadoBadge, ErrorApi, Listado, MotivoModal, SECUNDARIO, SinPeriodo, TABLA, TD, TD_NUM, TH,
+  AreaTexto, BadgeTono, CeldaActivo, EncabezadoVista, EstadoBadge, ErrorApi, Listado, MotivoModal, SECUNDARIO, SinPeriodo, TABLA, TD, TD_NUM, TH,
   TH_NUM, formatoFecha, formatoMoneda, nombrePeriodo, useAsync, useListado, usePeriodo,
 } from '../components/comunes';
 
@@ -30,6 +32,23 @@ const NATURALEZAS: Naturaleza[] = ['MANTENIMIENTO', 'INVERSION', 'VENTA'];
 const TONO_NATURALEZA = { MANTENIMIENTO: 'success', VENTA: 'info', INVERSION: 'warning' } as const;
 /** Un reverso resta del total. */
 const firmado = (c: Costo) => (c.es_reverso ? `-${c.monto_costo}` : c.monto_costo);
+const pct = (parte: string, total: string) => (Number(total) ? `${((Number(parte) / Number(total)) * 100).toFixed(1)} %` : '—');
+
+/** Tabla de subtotales con encabezado de fila (WCAG 1.3.1): la alternativa a cualquier barra. */
+function Subtotales({ titulo, filas, total }: { titulo: string; filas: Array<[string, string]>; total: string }) {
+  const { t } = useT('finanzas');
+  return (
+    <ScrollRegion label={titulo}>
+      <table style={TABLA}>
+        <thead><tr><th style={TH}>{titulo}</th><th style={TH_NUM}>{t('col.monto')}</th><th style={TH_NUM}>{t('costos.participacion')}</th></tr></thead>
+        <tbody>
+          {filas.map(([k, v]) => <tr key={k}><th scope="row" style={{ ...TD, textAlign: 'left', fontWeight: 500 }}>{k}</th><td style={TD_NUM}>{formatoMoneda(v)}</td><td style={TD_NUM}>{pct(v, total)}</td></tr>)}
+          <tr><th scope="row" style={{ ...TD, textAlign: 'left', fontWeight: 700 }}>{t('costos.subtotal')}</th><td style={{ ...TD_NUM, fontWeight: 700 }}>{formatoMoneda(total)}</td><td style={TD_NUM}>100 %</td></tr>
+        </tbody>
+      </table>
+    </ScrollRegion>
+  );
+}
 
 export function CostosView() {
   const { t } = useT('finanzas');
@@ -59,12 +78,17 @@ export function CostosView() {
   if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.costos')} />;
   const lista = costos.data ?? [];
   const pendientes = lista.filter((c) => c.estado === 'PENDIENTE_CLASIFICACION');
+  const total = sumar(lista.map(firmado));
   const grupos = NATURALEZAS.map((n) => {
     const deEsta = lista.filter((c) => c.naturaleza_costo === n);
     const porSubtipo = SUBTIPOS.map((s) => ({ s, total: sumar(deEsta.filter((c) => c.subtipo_costo === s).map(firmado)) }))
       .filter((x) => Number(x.total) !== 0);
     return { n, registros: deEsta.length, total: sumar(deEsta.map(firmado)), porSubtipo };
   }).filter((g) => g.registros > 0);
+  const porOrigen = ORIGENES.map((o) => [t(`origen_costo.${o}`), sumar(lista.filter((c) => c.origen_costo === o).map(firmado))] as [string, string]).filter(([, v]) => Number(v) !== 0);
+  const porActivo = [...new Map(lista.map((c) => [c.id_activo_biologico ?? 0, c.activo ?? t('costos.sin_activo')])).entries()]
+    .map(([idA, nombre]) => [nombre, sumar(lista.filter((c) => (c.id_activo_biologico ?? 0) === idA).map(firmado))] as [string, string])
+    .filter(([, v]) => Number(v) !== 0);
 
   return (
     <>
@@ -80,9 +104,9 @@ export function CostosView() {
         {pendientes.length > 0 && (
           <div className="fin-acciones" style={{ alignItems: 'center' }}>
             <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-              <Alert variant="warning" title={t('costos.pendientes_titulo', { count: pendientes.length })} description={t('costos.pendientes_detalle')} />
+              <Alert variant="warning" title={t('costos.pendientes_titulo', { count: pendientes.length })} description={t('costos.pendientes_detalle')} id="costos-pendientes-aviso" />
             </div>
-            <Button variant="secondary" size="md" onClick={() => l.setFiltro('estado', 'PENDIENTE_CLASIFICACION')}>{t('costos.ver_pendientes')}</Button>
+            <Button variant="secondary" size="md" onClick={() => l.setFiltro('estado', 'PENDIENTE_CLASIFICACION')} aria-describedby="costos-pendientes-aviso">{t('costos.ver_pendientes')}</Button>
           </div>
         )}
       </div>
@@ -94,25 +118,23 @@ export function CostosView() {
               {grupos.map((g) => (
                 <section key={g.n} className="fin-tarjeta" aria-labelledby={`costos-${g.n}`} style={{ borderLeft: `4px solid var(--sem-${TONO_NATURALEZA[g.n]})` }}>
                   <div className="fin-acciones" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Badge variant={TONO_NATURALEZA[g.n]}>{t(`naturaleza.${g.n}`)}</Badge>
+                    <BadgeTono tono={TONO_NATURALEZA[g.n]}>{t(`naturaleza.${g.n}`)}</BadgeTono>
                     <span style={SECUNDARIO}>{t('costos.registros', { count: g.registros })}</span>
                   </div>
-                  <h3 id={`costos-${g.n}`} style={{ margin: 'var(--s3) 0 0' }}>{t(`costos.total_${g.n}`)}</h3>
+                  <h2 id={`costos-${g.n}`} style={{ margin: 'var(--s3) 0 0' }}>{t(`costos.total_${g.n}`)}</h2>
                   <p className="fin-kpi__valor" style={{ margin: 'var(--s1) 0' }}>{formatoMoneda(g.total)}</p>
-                  <p style={{ ...SECUNDARIO, margin: 0 }}>{t(`costos.ayuda_${g.n}`)}</p>
-                  <div className="fin-barras">
-                    {g.porSubtipo.map((x) => (
-                      <div key={x.s}>
-                        <div className="fin-barra__fila"><span>{t(`subtipo.${x.s}`)}</span><strong>{formatoMoneda(x.total)}</strong></div>
-                        <div className="fin-barra__pista" aria-hidden>
-                          <div className={`fin-barra__relleno${g.n === 'VENTA' ? ' fin-barra__relleno--info' : ''}`}
-                            style={{ width: `${Math.max(2, Math.min(100, (Number(x.total) / Number(g.total)) * 100))}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <p style={{ ...SECUNDARIO, margin: '0 0 var(--s3)' }}>{t(`costos.ayuda_${g.n}`)}</p>
+                  <Subtotales titulo={t('col.subtipo')} filas={g.porSubtipo.map((x) => [t(`subtipo.${x.s}`), x.total])} total={g.total} />
                 </section>
               ))}
+              <section className="fin-tarjeta" aria-labelledby="costos-origen">
+                <h2 id="costos-origen">{t('costos.por_origen')}</h2>
+                <Subtotales titulo={t('col.origen')} filas={porOrigen} total={total} />
+              </section>
+              <section className="fin-tarjeta" aria-labelledby="costos-activo">
+                <h2 id="costos-activo">{t('costos.por_activo')}</h2>
+                <Subtotales titulo={t('col.activo')} filas={porActivo} total={total} />
+              </section>
             </div>
           )}
           <Listado l={l} idBase="costos" titulo={t('costos.registros_titulo')} sustantivo={t('costos.sustantivo')} buscar={t('costos.buscar')}
@@ -135,7 +157,7 @@ export function CostosView() {
                         {c.id_grupo_reparto && <span className="fin-secundario">{t('costos.repartido')}</span>}
                       </td>
                       <td style={TD}>{c.naturaleza_costo
-                        ? <Badge variant={TONO_NATURALEZA[c.naturaleza_costo]}>{t(`naturaleza.${c.naturaleza_costo}`)}</Badge>
+                        ? <BadgeTono tono={TONO_NATURALEZA[c.naturaleza_costo]}>{t(`naturaleza.${c.naturaleza_costo}`)}</BadgeTono>
                         : t('naturaleza.SIN_CLASIFICAR')}</td>
                       <td style={TD}>
                         {t(`subtipo.${c.subtipo_costo}`)}
@@ -151,7 +173,10 @@ export function CostosView() {
                       {puedeClasificar && (
                         <td style={TD}>
                           {c.estado === 'PENDIENTE_CLASIFICACION' && (
-                            <Button variant="secondary" size="sm" onClick={() => setAClasificar(c)}><Tags size={14} aria-hidden />{t('costos.clasificar')}</Button>
+                            <Button variant="secondary" size="sm" onClick={() => setAClasificar(c)}
+                              aria-label={t('costos.clasificar_aria', { subtipo: t(`subtipo.${c.subtipo_costo}`), activo: c.activo ?? t('costos.sin_activo'), monto: formatoMoneda(c.monto_costo) })}>
+                              <Tags size={14} aria-hidden />{t('costos.clasificar')}
+                            </Button>
                           )}
                         </td>
                       )}
@@ -174,9 +199,29 @@ const hoyIso = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+/** Campo del backend → campo del formulario, para poner cada error debajo del control (WCAG 3.3.1). */
+const CAMPO_API: Record<string, string> = {
+  tercero_nit: 'nit', tercero_dv: 'dv', tercero_razon_social: 'razon', factura_prefijo: 'prefijo', factura_numero: 'numero',
+  fecha_factura: 'fechaFactura', fecha_vencimiento_factura: 'vencimiento', monto_costo: 'monto', fecha_costo: 'fecha',
+  justificacion: 'justificacion', subtipo_costo: 'subtipo', origen_costo: 'origen', naturaleza_costo: 'naturaleza',
+  id_activo_biologico: 'uno', activos_reparto: 'reparto', metodo_reparto: 'metodo',
+};
+
+function erroresDeApi(e: ApiError | null): Record<string, string> {
+  if (!e) return {};
+  const pares = (e.fields?.length ? e.fields : e.field ? [{ field: e.field, message: e.message }] : [])
+    .map(({ field, message }) => [CAMPO_API[field] ?? CAMPO_API[field.split('.').pop() ?? ''], message] as const)
+    .filter(([k]) => !!k) as Array<[string, string]>;
+  return Object.fromEntries(pares);
+}
+
 function CostoModal({ activos, onCerrar, onGuardado }: { activos: ActivoValorado[]; onCerrar: () => void; onGuardado: () => void }) {
   const { t } = useT('finanzas');
+  const puedeVerMatriz = usePermissionPorNombre(R_CONFIGURACION, ACCION_R);
   const registro = useAsync(finanzasApi.registrarCosto);
+  const configuracion = useAsync(finanzasApi.configuracion);
+  const { ejecutar: cargarConfiguracion } = configuracion;
+  useEffect(() => { if (puedeVerMatriz) cargarConfiguracion(); }, [puedeVerMatriz, cargarConfiguracion]);
   const [f, setF] = useState({
     subtipo: 'MANO_OBRA' as Subtipo, origen: 'MANO_OBRA_PROPIA' as OrigenCosto, monto: '', fecha: hoyIso(), naturaleza: '' as Naturaleza | '',
     justificacion: '', nit: '', dv: '', razon: '', prefijo: '', numero: '', fechaFactura: '', vencimiento: '', capitalizar: false,
@@ -185,22 +230,47 @@ function CostoModal({ activos, onCerrar, onGuardado }: { activos: ActivoValorado
   const [uno, setUno] = useState('');
   const [reparto, setReparto] = useState<number[]>([]);
   const [metodo, setMetodo] = useState<'POR_CABEZAS' | 'POR_BIOMASA'>('POR_CABEZAS');
-  const [aviso, setAviso] = useState<string>();
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
+  const [errores, setErrores] = useState<Record<string, string>>({});
+  const [avisoMetodo, setAvisoMetodo] = useState('');
+  const grupoRef = useRef<HTMLFieldSetElement>(null);
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setF({ ...f, [k]: e.target.value });
+    if (errores[k]) setErrores((er) => { const { [k]: _, ...resto } = er; return resto; });
+  };
   const conProveedor = f.origen === 'COMPRA_PROVEEDOR' || f.origen === 'SERVICIO_TERCERO';
   const requiereJustificacion = f.subtipo === 'OTRO' || f.naturaleza === 'INVERSION' || f.naturaleza === 'VENTA';
+  const error = { ...erroresDeApi(registro.error), ...errores };
+  const errorGlobal = registro.error && Object.keys(erroresDeApi(registro.error)).length === 0 ? registro.error : null;
+
+  // Cuenta débito que resolverá el sistema según la matriz contable (RF-90): solo lectura, antes de guardar.
+  const matriz = configuracion.data?.matriz ?? [];
+  const hecho = f.origen === 'MANO_OBRA_PROPIA' ? 'MANO_OBRA_PROPIA' : 'CONSUMO_INSUMO';
+  const asignacion: Asignacion | undefined = matriz.find((a) => a.subtipo_costo === f.subtipo) ?? matriz.find((a) => a.tipo_hecho === hecho && !a.subtipo_costo);
+  const cuentaDebito = !puedeVerMatriz ? t('costos.cuenta_segun_matriz') : configuracion.cargando ? t('comun.cargando')
+    : asignacion ? `${asignacion.cuenta_debito} · ${t('costos.cuenta_credito_corta', { cuenta: asignacion.cuenta_credito })}` : t('costos.cuenta_sin_configurar');
+
+  const validar = (): Record<string, string> => {
+    const e: Record<string, string> = {};
+    if (!decimalPositivo(f.monto)) e.monto = t('costos.monto_invalido');
+    if (destino === 'uno' && !uno) e.uno = t('costos.activo_requerido');
+    if (destino === 'reparto' && reparto.length < 2) e.reparto = t('costos.reparto_minimo');
+    if (requiereJustificacion && f.justificacion.trim().length < 10) e.justificacion = t('costos.justificacion_requerida');
+    if (conProveedor) {
+      if (!/^\d{6,15}$/.test(f.nit)) e.nit = t('costos.nit_invalido');
+      if (!/^\d$/.test(f.dv)) e.dv = t('costos.dv_invalido');
+      if (!f.razon.trim()) e.razon = t('comun.requerido');
+      if (!f.numero.trim()) e.numero = t('comun.requerido');
+      if (!f.fechaFactura) e.fechaFactura = t('comun.requerido');
+    }
+    return e;
+  };
 
   const guardar = async () => {
-    const monto = decimalPositivo(f.monto);
-    if (!monto) { setAviso(t('costos.monto_invalido')); return; }
-    if (destino === 'uno' ? !uno : reparto.length < 2) { setAviso(destino === 'uno' ? t('costos.activo_requerido') : t('costos.reparto_minimo')); return; }
-    if (requiereJustificacion && f.justificacion.trim().length < 10) { setAviso(t('costos.justificacion_requerida')); return; }
-    if (conProveedor && (!/^\d{6,15}$/.test(f.nit) || !/^\d$/.test(f.dv) || !f.razon.trim() || !f.numero.trim() || !f.fechaFactura)) {
-      setAviso(t('costos.proveedor_incompleto')); return;
-    }
-    setAviso(undefined);
+    const e = validar();
+    setErrores(e);
+    if (Object.keys(e).length) return;
     const p: CostoPayload = {
-      subtipo_costo: f.subtipo, origen_costo: f.origen, monto_costo: monto, fecha_costo: f.fecha,
+      subtipo_costo: f.subtipo, origen_costo: f.origen, monto_costo: decimalPositivo(f.monto) as string, fecha_costo: f.fecha,
       ...(destino === 'uno' ? { id_activo_biologico: Number(uno) } : { activos_reparto: reparto, metodo_reparto: metodo }),
       ...(f.naturaleza ? { naturaleza_costo: f.naturaleza } : {}),
       ...(f.justificacion.trim() ? { justificacion: f.justificacion.trim() } : {}),
@@ -218,28 +288,44 @@ function CostoModal({ activos, onCerrar, onGuardado }: { activos: ActivoValorado
   };
 
   const alternar = (id: number) => setReparto(reparto.includes(id) ? reparto.filter((x) => x !== id) : [...reparto, id]);
+  const quitar = (id: number, indice: number) => {
+    setReparto(reparto.filter((x) => x !== id));
+    // El foco pasa al siguiente «Quitar» o, si era el último, al grupo de activos (WCAG 2.4.3).
+    setTimeout(() => {
+      const botones = grupoRef.current?.querySelectorAll<HTMLButtonElement>('[data-quitar]') ?? [];
+      (botones[Math.min(indice, botones.length - 1)] ?? grupoRef.current?.querySelector<HTMLElement>('input'))?.focus();
+    }, 0);
+  };
+  const cambiarMetodo = (m: 'POR_CABEZAS' | 'POR_BIOMASA') => {
+    setMetodo(m);
+    setAvisoMetodo(m === 'POR_BIOMASA' ? t('costos.aviso_biomasa') : t('costos.aviso_cabezas'));
+  };
+  const seleccionados = activos.filter((a) => reparto.includes(a.id_activo_biologico));
+  const montoReparto = decimalPositivo(f.monto);
+  // Vista previa del reparto por cabezas: partes iguales entre los activos elegidos; el residuo del redondeo va al primero.
+  const parte = montoReparto && seleccionados.length ? Math.floor((Number(montoReparto) * 100) / seleccionados.length) / 100 : 0;
+  const residuo = montoReparto ? Number((Number(montoReparto) - parte * seleccionados.length).toFixed(2)) : 0;
+  const tipoActivo = (a: ActivoValorado) => t(`cadena.tipo_${a.tipo}`, { defaultValue: a.tipo });
 
   return (
-    <ModalShell title={t('costos.registrar')} onClose={onCerrar} maxWidth={720}
+    <ModalShell title={t('costos.registrar')} onClose={onCerrar} maxWidth={720} descripcion={t('costos.registrar_ayuda')}
       footer={(
         <>
           <Button variant="secondary" size="md" onClick={onCerrar} disabled={registro.cargando}>{t('comun.cancelar')}</Button>
           <Button variant="primary" size="md" loading={registro.cargando} onClick={guardar}>{t('comun.guardar')}</Button>
         </>
       )}>
-      <p style={{ ...SECUNDARIO, margin: '0 0 var(--s4)' }}>{t('costos.registrar_ayuda')}</p>
-      <ErrorApi error={registro.error} />
-      {aviso && <Alert variant="error" title={aviso} style={{ marginBottom: 'var(--s3)' }} />}
+      <ErrorApi error={errorGlobal} />
       <div className="ds-fg2">
-        <Select id="co-subtipo" label={t('col.subtipo')} required value={f.subtipo} onChange={set('subtipo')}>
+        <Select id="co-subtipo" label={t('col.subtipo')} required value={f.subtipo} onChange={set('subtipo')} error={error.subtipo}>
           {SUBTIPOS.filter((s) => s !== 'ALIMENTO' && s !== 'MEDICAMENTO').map((s) => <option key={s} value={s}>{t(`subtipo.${s}`)}</option>)}
         </Select>
-        <Select id="co-origen" label={t('col.origen')} required value={f.origen} onChange={set('origen')}>
+        <Select id="co-origen" label={t('col.origen')} required value={f.origen} onChange={set('origen')} error={error.origen}>
           {ORIGENES_MANUALES.map((o) => <option key={o} value={o}>{t(`origen_costo.${o}`)}</option>)}
         </Select>
-        <Input id="co-monto" label={t('col.monto')} required inputMode="decimal" value={f.monto} onChange={set('monto')} />
-        <Input id="co-fecha" label={t('col.fecha')} type="date" required max={hoyIso()} value={f.fecha} onChange={set('fecha')} />
-        <Select id="co-naturaleza" label={t('col.naturaleza')} value={f.naturaleza} onChange={set('naturaleza')} hint={t('costos.naturaleza_ayuda')}>
+        <Input id="co-monto" label={t('col.monto')} required inputMode="decimal" value={f.monto} onChange={set('monto')} error={error.monto} />
+        <Input id="co-fecha" label={t('col.fecha')} type="date" required max={hoyIso()} value={f.fecha} onChange={set('fecha')} error={error.fecha} />
+        <Select id="co-naturaleza" label={t('col.naturaleza')} value={f.naturaleza} onChange={set('naturaleza')} hint={t('costos.naturaleza_ayuda')} error={error.naturaleza}>
           <option value="">{t('costos.naturaleza_automatica')}</option>
           {NATURALEZAS.map((n) => <option key={n} value={n}>{t(`naturaleza.${n}`)}</option>)}
         </Select>
@@ -247,57 +333,91 @@ function CostoModal({ activos, onCerrar, onGuardado }: { activos: ActivoValorado
           <option value="uno">{t('costos.un_activo')}</option>
           <option value="reparto">{t('costos.varios_activos')}</option>
         </Select>
+        <Input id="co-cuenta" label={t('costos.cuenta_debito')} value={cuentaDebito} readOnly aria-readonly="true" tabIndex={-1} hint={t('costos.cuenta_debito_ayuda')} />
       </div>
       {f.naturaleza === 'INVERSION' && (
-        <label style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'flex-start', marginTop: 'var(--s4)', fontSize: 'var(--fs-body-md)' }}>
-          <input type="checkbox" checked={f.capitalizar} onChange={(e) => setF({ ...f, capitalizar: e.target.checked })} style={{ marginTop: 4 }} />
+        <label className="fin-casilla" style={{ marginTop: 'var(--s4)' }}>
+          <input type="checkbox" checked={f.capitalizar} onChange={(e) => setF({ ...f, capitalizar: e.target.checked })} />
           <span>{t('costos.capitalizar')}<span style={{ ...SECUNDARIO, display: 'block' }}>{t('costos.capitalizar_ayuda')}</span></span>
         </label>
       )}
       <div style={{ marginTop: 'var(--s4)' }}>
         {destino === 'uno' ? (
-          <Select id="co-activo" label={t('col.activo')} required value={uno} onChange={(e) => setUno(e.target.value)}>
+          <Select id="co-activo" label={t('col.activo')} required value={uno} onChange={(e) => { setUno(e.target.value); setErrores(({ uno: _, ...r }) => r); }} error={error.uno}>
             <option value="">{t('comun.elegir')}</option>
-            {activos.map((a) => <option key={a.id_activo_biologico} value={a.id_activo_biologico}>{a.identificador} · {a.especie}</option>)}
+            {activos.map((a) => <option key={a.id_activo_biologico} value={a.id_activo_biologico}>{a.identificador} · {a.especie} · {tipoActivo(a)}</option>)}
           </Select>
         ) : (
-          <fieldset style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s3) var(--s4)' }}>
+          <fieldset ref={grupoRef} style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s3) var(--s4)' }}>
             <legend style={{ fontSize: 'var(--fs-label-md)', fontWeight: 600, padding: '0 var(--s1)' }}>{t('costos.activos_reparto')}</legend>
-            <div style={{ maxHeight: 180, overflowY: 'auto', display: 'grid', gap: 'var(--s1)' }}>
+            {error.reparto && <Alert variant="error" title={error.reparto} style={{ marginBottom: 'var(--s3)' }} />}
+            <div style={{ maxHeight: 220, overflowY: 'auto', display: 'grid', gap: 'var(--s1)' }}>
               {activos.map((a) => (
-                <label key={a.id_activo_biologico} style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center', fontSize: 'var(--fs-body-md)' }}>
+                <label key={a.id_activo_biologico} className="fin-casilla">
                   <input type="checkbox" checked={reparto.includes(a.id_activo_biologico)} onChange={() => alternar(a.id_activo_biologico)} />
-                  {a.identificador} · {a.especie}
+                  <span>{a.identificador} · {a.especie} · {tipoActivo(a)}</span>
                 </label>
               ))}
             </div>
+            <p role="status" style={{ ...SECUNDARIO, margin: 'var(--s2) 0 0' }}>{t('costos.seleccionados', { count: reparto.length })}</p>
             <div style={{ marginTop: 'var(--s3)' }}>
-              <Select id="co-metodo" label={t('costos.metodo_reparto')} value={metodo} onChange={(e) => setMetodo(e.target.value as 'POR_CABEZAS' | 'POR_BIOMASA')}>
+              <Select id="co-metodo" label={t('costos.metodo_reparto')} value={metodo} onChange={(e) => cambiarMetodo(e.target.value as 'POR_CABEZAS' | 'POR_BIOMASA')} error={error.metodo}>
                 <option value="POR_CABEZAS">{t('reparto.POR_CABEZAS')}</option>
                 <option value="POR_BIOMASA">{t('reparto.POR_BIOMASA')}</option>
               </Select>
+              <p role="status" style={{ ...SECUNDARIO, margin: 'var(--s2) 0 0' }}>{avisoMetodo}</p>
             </div>
+            {seleccionados.length > 0 && (
+              <div style={{ marginTop: 'var(--s3)' }}>
+                <table style={TABLA}>
+                  <caption style={{ textAlign: 'left', fontWeight: 600, marginBottom: 'var(--s2)' }}>{t('costos.vista_previa_reparto')}</caption>
+                  <thead>
+                    <tr><th style={TH}>{t('col.activo')}</th><th style={TH}>{t('costos.tipo_activo')}</th><th style={TH_NUM}>{t('costos.participacion')}</th>
+                      <th style={TH_NUM}>{t('costos.importe')}</th><th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th></tr>
+                  </thead>
+                  <tbody>
+                    {seleccionados.map((a, i) => (
+                      <tr key={a.id_activo_biologico}>
+                        <th scope="row" style={{ ...TD, textAlign: 'left' }}>{a.identificador}</th>
+                        <td style={TD}>{tipoActivo(a)}</td>
+                        <td style={TD_NUM}>{metodo === 'POR_BIOMASA' ? t('costos.segun_peso') : `${(100 / seleccionados.length).toFixed(1)} %`}</td>
+                        <td style={TD_NUM}>{metodo === 'POR_BIOMASA' || !montoReparto ? t('costos.al_guardar') : formatoMoneda(parte + (i === 0 ? residuo : 0))}</td>
+                        <td style={TD}>
+                          <Button variant="ghost" size="sm" data-quitar onClick={() => quitar(a.id_activo_biologico, i)} aria-label={t('costos.quitar_activo', { activo: a.identificador })}>
+                            <Trash2 size={14} aria-hidden />{t('comun.quitar')}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    {metodo === 'POR_CABEZAS' && montoReparto && residuo !== 0 && (
+                      <tr><td colSpan={5} style={{ ...TD, ...SECUNDARIO }}>{t('costos.residuo', { monto: formatoMoneda(residuo), activo: seleccionados[0].identificador })}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </fieldset>
         )}
       </div>
       {conProveedor && (
         <fieldset style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s3) var(--s4)', marginTop: 'var(--s4)' }}>
           <legend style={{ fontSize: 'var(--fs-label-md)', fontWeight: 600, padding: '0 var(--s1)' }}>{t('costos.factura_proveedor')}</legend>
+          <p role="status" style={{ ...SECUNDARIO, margin: '0 0 var(--s3)' }}>{t('costos.proveedor_habilitado')}</p>
           <div className="ds-fg2">
-            <Input id="co-nit" label={t('costos.nit')} required inputMode="numeric" value={f.nit} onChange={set('nit')} />
-            <Input id="co-dv" label={t('costos.dv')} required inputMode="numeric" maxLength={1} value={f.dv} onChange={set('dv')} />
-            <Input id="co-razon" label={t('costos.razon_social')} required maxLength={200} value={f.razon} onChange={set('razon')} />
-            <Input id="co-prefijo" label={t('costos.prefijo')} maxLength={10} value={f.prefijo} onChange={set('prefijo')} />
-            <Input id="co-numero" label={t('costos.numero_factura')} required maxLength={30} value={f.numero} onChange={set('numero')} />
-            <Input id="co-ffactura" label={t('costos.fecha_factura')} type="date" required value={f.fechaFactura} onChange={set('fechaFactura')} />
-            <Input id="co-fvenc" label={t('costos.vencimiento_factura')} type="date" value={f.vencimiento} onChange={set('vencimiento')} />
+            <Input id="co-nit" label={t('costos.nit')} required inputMode="numeric" value={f.nit} onChange={set('nit')} error={error.nit} ariaDescribedBy="co-fuente-unica" />
+            <Input id="co-dv" label={t('costos.dv')} required inputMode="numeric" maxLength={1} value={f.dv} onChange={set('dv')} error={error.dv} />
+            <Input id="co-razon" label={t('costos.razon_social')} required maxLength={200} value={f.razon} onChange={set('razon')} error={error.razon} />
+            <Input id="co-prefijo" label={t('costos.prefijo')} maxLength={10} value={f.prefijo} onChange={set('prefijo')} error={error.prefijo} />
+            <Input id="co-numero" label={t('costos.numero_factura')} required maxLength={30} value={f.numero} onChange={set('numero')} error={error.numero} ariaDescribedBy="co-fuente-unica" />
+            <Input id="co-ffactura" label={t('costos.fecha_factura')} type="date" required value={f.fechaFactura} onChange={set('fechaFactura')} error={error.fechaFactura} />
+            <Input id="co-fvenc" label={t('costos.vencimiento_factura')} type="date" value={f.vencimiento} onChange={set('vencimiento')} error={error.vencimiento} />
           </div>
-          <p style={{ ...SECUNDARIO, margin: 'var(--s3) 0 0' }}>{t('costos.aviso_fuente_unica')}</p>
+          <p id="co-fuente-unica" style={{ ...SECUNDARIO, margin: 'var(--s3) 0 0' }}>{t('costos.aviso_fuente_unica')}</p>
         </fieldset>
       )}
       <div style={{ marginTop: 'var(--s4)' }}>
         <AreaTexto id="co-justificacion" label={t('costos.justificacion')} required={requiereJustificacion} maxLength={2000} value={f.justificacion}
-          onChange={set('justificacion')} hint={requiereJustificacion ? t('comun.minimo', { n: 10 }) : undefined} />
+          onChange={set('justificacion')} error={error.justificacion} hint={requiereJustificacion ? t('comun.minimo', { n: 10 }) : undefined} />
       </div>
     </ModalShell>
   );

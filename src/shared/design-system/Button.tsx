@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-10 | Arekkazu | TC-DIS-255 RF-91: acepta ref para devolver el foco al botón tras una acción |
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import './Button.css';
@@ -10,6 +13,8 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
   loading?: boolean;
   fullWidth?: boolean;
+  /** React 19 pasa `ref` como prop: llega al <button> por `...rest`. */
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
 export function Button({

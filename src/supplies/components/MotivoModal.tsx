@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-75/76/79: justificación obligatoria para anular o corregir |
 // | 2026-11-04 | Arekkazu | M06 RF-90: campo adicional opcional sobre la justificación |
+// | 2026-11-10 | Arekkazu | TC-DIS-252/258 RF-COT/92: la descripción va por aria-describedby y el foco inicial queda en Cancelar |
 import React, { useState } from 'react';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { Button } from '../../shared/design-system/Button';
@@ -43,9 +44,10 @@ export function MotivoModal({ titulo, descripcion, etiqueta, confirmar, min, max
       title={titulo}
       onClose={onCerrar}
       maxWidth={480}
+      descripcion={descripcion}
       footer={(
         <>
-          <Button variant="secondary" size="md" onClick={onCerrar} disabled={enviando}>{t('comun.cancelar')}</Button>
+          <Button variant="secondary" size="md" onClick={onCerrar} disabled={enviando} data-autofocus>{t('comun.cancelar')}</Button>
           <Button
             variant={peligro ? 'danger' : 'primary'}
             size="md"
@@ -57,7 +59,6 @@ export function MotivoModal({ titulo, descripcion, etiqueta, confirmar, min, max
         </>
       )}
     >
-      <p style={{ margin: '0 0 var(--s4)', fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)', lineHeight: 'var(--lh-base)' }}>{descripcion}</p>
       {error && <Alert variant="error" title={error.message} style={{ marginBottom: 'var(--s4)' }} />}
       {extra && <div style={{ marginBottom: 'var(--s4)' }}>{extra}</div>}
       <AreaTexto

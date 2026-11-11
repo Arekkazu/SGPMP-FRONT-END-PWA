@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-24: el resto de la página queda inert mientras el modal está abierto |
+// | 2026-11-10 | Arekkazu | TC-DIS-242/252/258 RF-87/COT/92: el foco inicial puede ir a la acción segura ([data-autofocus]) |
 import { useEffect, useRef } from 'react';
 
 const SELECTOR_FOCABLES =
@@ -39,8 +40,9 @@ function esVisible(el: HTMLElement): boolean {
 /**
  * Comportamiento accesible para modales (QA TC-DIS-33):
  *
- * - Al montar: mueve el foco al primer elemento enfocable del panel y deja el
- *   resto de la página `inert` (T-24).
+ * - Al montar: mueve el foco al elemento marcado con `data-autofocus` (la acción
+ *   segura de un diálogo destructivo, WCAG 2.4.3) o, si no hay, al primer
+ *   enfocable del panel; deja el resto de la página `inert` (T-24).
  * - `Escape` cierra el modal.
  * - `Tab` / `Shift+Tab` ciclan el foco dentro del panel (trap).
  * - Al desmontar: devuelve el foco al elemento que lo tenía.
@@ -59,7 +61,7 @@ export function useModalA11y(onClose: () => void) {
     const focoPrevio = document.activeElement as HTMLElement | null;
     if (panel) pila.push(panel);
     const inertes = panel ? inertizarFondo(panel) : [];
-    panel?.querySelector<HTMLElement>(SELECTOR_FOCABLES)?.focus();
+    (panel?.querySelector<HTMLElement>('[data-autofocus]') ?? panel?.querySelector<HTMLElement>(SELECTOR_FOCABLES))?.focus();
 
     const manejarTecla = (event: KeyboardEvent) => {
       if (panel && pila[pila.length - 1] !== panel) return;

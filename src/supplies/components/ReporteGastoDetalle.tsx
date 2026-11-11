@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-77: reporte de gastos con desglose por categoría, período y tendencia |
+// | 2026-11-10 | Arekkazu | TC-DIS-202 RF-77: el desglose por categoría es una tabla (categoría, subtotal, porcentaje) y la barra solo la ilustra |
 import React from 'react';
 import { FileDown, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -66,21 +67,36 @@ export function ReporteGastoDetalle({ reporte: r, puedeExportar, exportando, onl
       {r.nota_bajas && <p style={{ ...SECUNDARIO, margin: '0 0 var(--s4)', fontSize: 'var(--fs-body-md)' }}>{r.nota_bajas}</p>}
 
       {r.desglose_categorias.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)', marginBottom: 'var(--s6)' }}>
-          <h3 style={{ margin: 0, fontSize: 'var(--fs-body-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>{t('gastos.por_categoria')}</h3>
-          {r.desglose_categorias.map((c) => (
-            <div key={c.categoria}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--s3)', fontSize: 'var(--fs-body-md)', marginBottom: 'var(--s1)' }}>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{t(`categoria.${c.categoria}`, { defaultValue: c.categoria })}</span>
-                <span style={{ color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
-                  {formatoMoneda(c.subtotal)} · {formatoCantidad(c.porcentaje, 1)} % · {t('comun.registros', { count: c.num_registros })}
-                </span>
-              </div>
-              <div aria-hidden style={{ height: 8, borderRadius: 'var(--r-full)', background: 'var(--surface-hover)', overflow: 'hidden' }}>
-                <div style={{ width: `${Math.min(100, Math.max(0, Number(c.porcentaje)))}%`, height: '100%', background: 'var(--brand-500)', borderRadius: 'var(--r-full)' }} />
-              </div>
-            </div>
-          ))}
+        <div style={{ marginBottom: 'var(--s6)' }}>
+          <h3 style={{ margin: '0 0 var(--s3)', fontSize: 'var(--fs-body-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>{t('gastos.por_categoria')}</h3>
+          {/* La tabla es el dato (WCAG 1.1.1); la barra de cada fila solo ilustra el porcentaje y va oculta al lector. */}
+          <ScrollRegion label={t('gastos.por_categoria')}>
+            <table style={TABLA}>
+              <thead>
+                <tr>
+                  <th style={TH}>{t('gastos.categoria')}</th>
+                  <th style={TH_NUM}>{t('gastos.subtotal')}</th>
+                  <th style={TH_NUM}>{t('gastos.porcentaje')}</th>
+                  <th style={TH_NUM}>{t('gastos.registros')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {r.desglose_categorias.map((c) => (
+                  <tr key={c.categoria}>
+                    <th scope="row" style={{ ...TD, textAlign: 'left', fontWeight: 600 }}>{t(`categoria.${c.categoria}`, { defaultValue: c.categoria })}</th>
+                    <td style={TD_NUM}>{formatoMoneda(c.subtotal)}</td>
+                    <td style={{ ...TD_NUM, minWidth: 160 }}>
+                      {formatoCantidad(c.porcentaje, 1)} %
+                      <div aria-hidden style={{ height: 6, marginTop: 'var(--s1)', borderRadius: 'var(--r-full)', background: 'var(--surface-hover)', overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.min(100, Math.max(0, Number(c.porcentaje)))}%`, height: '100%', background: 'var(--brand-500)', borderRadius: 'var(--r-full)' }} />
+                      </div>
+                    </td>
+                    <td style={TD_NUM}>{formatoCantidad(c.num_registros, 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </ScrollRegion>
         </div>
       )}
 

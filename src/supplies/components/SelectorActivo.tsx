@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: selector de activo con autocompletado que acepta el ID |
+// | 2026-11-10 | Arekkazu | H-M05-15/16 RF-81: sin activos visibles, la ayuda dice por qué en vez de una lista vacía muda |
 import React, { useMemo } from 'react';
 import { Combobox } from '../../shared/design-system/Combobox';
 import { idDeCatalogo, etiquetaDeCatalogo } from '../../shared/lib/catalogo';
@@ -45,7 +46,7 @@ export function SelectorActivo({ id, activos, cargando, value, onChange, require
       required={required}
       error={error}
       placeholder={cargando ? t('comun.cargando') : t('comun.activo_placeholder')}
-      hint={t('comun.activo_hint')}
+      hint={!cargando && activos.length === 0 ? t('comun.activo_sin_visibles') : t('comun.activo_hint')}
     />
   );
 }

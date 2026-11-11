@@ -2,26 +2,30 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-94: consulta legible de la auditoría financiera con integridad por evento |
 // | 2026-11-05 | Arekkazu | M06 RF-94 prototipo: panel de monitoreo por severidad, últimos eventos y exploración filtrada |
+// | 2026-11-10 | Arekkazu | TC-DIS-265/266 RF-94: filtros por fechas, usuario, origen y activo; columnas de período y origen; severidad con icono; detalle del evento |
 import React, { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, FilterX, ScrollText, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Eye, FilterX, ScrollText, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
-import { Badge } from '../../shared/design-system/Badge';
 import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { useT } from '../../shared/i18n/useT';
+import { finDelDiaUtc, inicioDelDiaUtc } from '../../shared/lib/fecha';
+import { Paginacion } from '../../supplies/components/Paginacion';
 import { finanzasApi } from '../api/finanzasApi';
-import { ACCION_R, R_AUDITORIA } from '../rbac';
+import { ACCION_R, R_AUDITORIA, R_VALORACION } from '../rbac';
 import type { EventoAuditoria, Severidad } from '../types';
+import { EventoFinancieroModal } from '../components/EventoFinancieroModal';
 import {
-  EncabezadoVista, EstadoVacio, ErrorApi, Indicadores, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM, formatoFecha,
+  BadgeTono, EncabezadoVista, EstadoVacio, ErrorApi, Indicadores, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM, formatoFecha,
   formatoMoneda, nombrePeriodo, useAsync, usePeriodo,
 } from '../components/comunes';
 
 const SEVERIDADES: Severidad[] = ['CRITICAL', 'ERROR', 'WARNING', 'INFO'];
 const VARIANTE = { INFO: 'info', WARNING: 'warning', ERROR: 'error', CRITICAL: 'error' } as const;
-const RELLENO = { INFO: 'fin-barra__relleno--info', WARNING: 'fin-barra__relleno--warning', ERROR: 'fin-barra__relleno--error', CRITICAL: 'fin-barra__relleno--error' };
+const ORIGENES = ['REPOSITORIO', 'FALLBACK'] as const;
 // Catálogo de tipos que acepta el backend (un valor fuera de él responde 400).
 const TIPOS = [
   'RECONOCIMIENTO_INICIAL', 'RECONOCIMIENTO_REVERTIDO', 'RECONOCIMIENTO_BLOQUEADO_SIN_VALOR', 'REVERSION_BLOQUEADA', 'CALCULO_VALOR_RAZONABLE',
@@ -37,24 +41,47 @@ const TIPOS = [
 ];
 const POR_PAGINA = 25;
 
+/** El origen llega legible del backend; si no, se deduce del código del filtro. */
+function origenDe(t: T, e: EventoAuditoria): string {
+  if (e.origen) return e.origen;
+  const crudo = (e.resumen_payload as Record<string, unknown> | null)?.origen;
+  return crudo === 'FALLBACK' ? t('aud.origen_FALLBACK') : crudo === 'REPOSITORIO' ? t('aud.origen_REPOSITORIO') : t('aud.origen_desconocido');
+}
+
 export function AuditoriaView() {
   const { t } = useT('finanzas');
   const puedeLeer = usePermissionPorNombre(R_AUDITORIA, ACCION_R);
+  const puedeVerActivos = usePermissionPorNombre(R_VALORACION, ACCION_R);
   const { periodo } = usePeriodo();
   const [severidad, setSeveridad] = useState('');
   const [tipo, setTipo] = useState('');
+  const [origen, setOrigen] = useState('');
+  const [usuario, setUsuario] = useState('');
+  const [activo, setActivo] = useState('');
+  const [desde, setDesde] = useState('');
+  const [hasta, setHasta] = useState('');
   const [orden, setOrden] = useState<'DESC' | 'ASC'>('DESC');
   const [pagina, setPagina] = useState(1);
+  const [detalle, setDetalle] = useState<EventoAuditoria | null>(null);
   const recientes = useAsync(finanzasApi.auditoria);
   const consulta = useAsync(finanzasApi.auditoria);
+  const activos = useAsync(finanzasApi.activos);
   const id = periodo?.id_periodo_contable;
   const { ejecutar: cargarRecientes } = recientes;
   const { ejecutar: consultar } = consulta;
+  const { ejecutar: cargarActivos } = activos;
+  const rangoInvalido = !!desde && !!hasta && desde > hasta;
   useEffect(() => { if (puedeLeer && id) cargarRecientes({ id_periodo_contable: id, pagina: 1, tamano: 5, orden: 'DESC' }); }, [puedeLeer, id, cargarRecientes]);
-  useEffect(() => { setPagina(1); }, [id, severidad, tipo, orden]);
+  useEffect(() => { if (puedeLeer && puedeVerActivos) cargarActivos(); }, [puedeLeer, puedeVerActivos, cargarActivos]);
+  useEffect(() => { setPagina(1); }, [id, severidad, tipo, origen, usuario, activo, desde, hasta, orden]);
   useEffect(() => {
-    if (puedeLeer && id) consultar({ id_periodo_contable: id, severidad: severidad || undefined, tipo_evento: tipo || undefined, pagina, tamano: POR_PAGINA, orden });
-  }, [puedeLeer, id, severidad, tipo, orden, pagina, consultar]);
+    if (!puedeLeer || !id || rangoInvalido) return;
+    consultar({
+      id_periodo_contable: id, severidad: severidad || undefined, tipo_evento: tipo || undefined, origen_registro: origen || undefined,
+      id_usuario: usuario ? Number(usuario) : undefined, id_activo_biologico: activo ? Number(activo) : undefined,
+      desde: inicioDelDiaUtc(desde), hasta: finDelDiaUtc(hasta), pagina, tamano: POR_PAGINA, orden,
+    });
+  }, [puedeLeer, id, severidad, tipo, origen, usuario, activo, desde, hasta, orden, pagina, rangoInvalido, consultar]);
 
   if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.auditoria')} />;
   const resumen = recientes.data?.resumen_severidad;
@@ -62,11 +89,13 @@ export function AuditoriaView() {
   const datos = consulta.data;
   const eventos = datos?.eventos ?? [];
   const paginas = Math.max(1, Math.ceil((datos?.total_registros ?? 0) / POR_PAGINA));
-  const hayFiltros = !!severidad || !!tipo;
+  const hayFiltros = !!severidad || !!tipo || !!origen || !!usuario || !!activo || !!desde || !!hasta;
+  const limpiar = () => { setSeveridad(''); setTipo(''); setOrigen(''); setUsuario(''); setActivo(''); setDesde(''); setHasta(''); };
+  const nombrePeriodoActual = periodo ? nombrePeriodo(periodo) : '';
 
   return (
     <>
-      <EncabezadoVista titulo={t('aud.titulo')} descripcion={periodo ? t('aud.descripcion_periodo', { periodo: nombrePeriodo(periodo) }) : t('aud.descripcion')} />
+      <EncabezadoVista titulo={t('aud.titulo')} descripcion={periodo ? t('aud.descripcion_periodo', { periodo: nombrePeriodoActual }) : t('aud.descripcion')} />
       <ErrorApi error={recientes.error ?? consulta.error} />
       {!periodo ? <SinPeriodo /> : (
         <>
@@ -79,16 +108,18 @@ export function AuditoriaView() {
           <div className="fin-columnas">
             <section className="fin-tarjeta" aria-labelledby="aud-dist">
               <h2 id="aud-dist">{t('aud.distribucion')}</h2>
-              <div className="fin-barras">
-                {SEVERIDADES.map((s) => (
-                  <div key={s}>
-                    <div className="fin-barra__fila"><span>{t(`severidad.${s}`)}</span><strong>{resumen?.[s] ?? 0}</strong></div>
-                    <div className="fin-barra__pista" aria-hidden>
-                      <div className={`fin-barra__relleno ${RELLENO[s]}`} style={{ width: `${total ? Math.max(2, ((resumen?.[s] ?? 0) / total) * 100) : 0}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <table style={TABLA}>
+                <thead><tr><th style={TH}>{t('aud.severidad')}</th><th style={TH_NUM}>{t('aud.eventos_col')}</th><th style={TH_NUM}>{t('costos.participacion')}</th></tr></thead>
+                <tbody>
+                  {SEVERIDADES.map((s) => (
+                    <tr key={s}>
+                      <th scope="row" style={{ ...TD, textAlign: 'left', fontWeight: 500 }}><BadgeTono tono={VARIANTE[s]}>{t(`severidad.${s}`)}</BadgeTono></th>
+                      <td style={TD_NUM}>{resumen?.[s] ?? 0}</td>
+                      <td style={TD_NUM}>{total ? `${(((resumen?.[s] ?? 0) / total) * 100).toFixed(0)} %` : '0 %'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </section>
             <section className="fin-tarjeta" aria-labelledby="aud-ultimos">
               <h2 id="aud-ultimos">{t('aud.ultimos')}</h2>
@@ -110,7 +141,8 @@ export function AuditoriaView() {
 
           <Subtitulo>{t('aud.explorar')}</Subtitulo>
           <section className="fin-listado" aria-label={t('aud.explorar')}>
-            <div className="fin-filtros">
+            <div className="fin-filtros" role="search">
+              <p style={{ ...SECUNDARIO, margin: 0, gridColumn: '1 / -1' }}>{t('aud.filtro_obligatorio', { periodo: nombrePeriodoActual })}</p>
               <Select id="aud-severidad" label={t('aud.severidad')} value={severidad} onChange={(e) => setSeveridad(e.target.value)}>
                 <option value="">{t('comun.todas')}</option>
                 {SEVERIDADES.map((s) => <option key={s} value={s}>{t(`severidad.${s}`)}</option>)}
@@ -119,13 +151,28 @@ export function AuditoriaView() {
                 <option value="">{t('comun.todos')}</option>
                 {[...TIPOS].sort((a, b) => t(`evento.${a}`).localeCompare(t(`evento.${b}`))).map((x) => <option key={x} value={x}>{t(`evento.${x}`)}</option>)}
               </Select>
+              <Select id="aud-origen" label={t('aud.origen')} value={origen} onChange={(e) => setOrigen(e.target.value)}>
+                <option value="">{t('comun.todos')}</option>
+                {ORIGENES.map((o) => <option key={o} value={o}>{t(`aud.origen_${o}`)}</option>)}
+              </Select>
+              <Input id="aud-usuario" label={t('aud.usuario')} type="number" step={1} min={1} value={usuario} onChange={(e) => setUsuario(e.target.value)} hint={t('aud.usuario_hint')} />
+              {puedeVerActivos ? (
+                <Select id="aud-activo" label={t('col.activo')} value={activo} onChange={(e) => setActivo(e.target.value)} disabled={(activos.data ?? []).length === 0}>
+                  <option value="">{t('comun.todos')}</option>
+                  {(activos.data ?? []).map((a) => <option key={a.id_activo_biologico} value={a.id_activo_biologico}>{a.identificador} · {a.especie}</option>)}
+                </Select>
+              ) : (
+                <Input id="aud-activo" label={t('aud.activo_id')} type="number" step={1} min={1} value={activo} onChange={(e) => setActivo(e.target.value)} />
+              )}
+              <Input id="aud-desde" label={t('aud.desde')} type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
+              <Input id="aud-hasta" label={t('aud.hasta')} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} error={rangoInvalido ? t('aud.rango_invalido') : undefined} />
               <Select id="aud-orden" label={t('aud.orden_label')} value={orden} onChange={(e) => setOrden(e.target.value as 'DESC' | 'ASC')}>
                 <option value="DESC">{t('aud.orden_desc')}</option>
                 <option value="ASC">{t('aud.orden_asc')}</option>
               </Select>
               {hayFiltros && (
                 <div className="fin-filtros__limpiar">
-                  <Button variant="ghost" size="md" onClick={() => { setSeveridad(''); setTipo(''); }}><FilterX size={16} aria-hidden />{t('comun.limpiar_filtros')}</Button>
+                  <Button variant="ghost" size="md" onClick={limpiar}><FilterX size={16} aria-hidden />{t('comun.limpiar_filtros')}</Button>
                 </div>
               )}
             </div>
@@ -140,8 +187,8 @@ export function AuditoriaView() {
                   <thead>
                     <tr>
                       <th style={TH}>{t('col.fecha')}</th><th style={TH}>{t('aud.evento')}</th><th style={TH}>{t('aud.actor')}</th>
-                      <th style={TH}>{t('col.activo')}</th><th style={TH_NUM}>{t('col.monto')}</th><th style={TH}>{t('aud.severidad')}</th>
-                      <th style={TH}>{t('aud.integridad')}</th>
+                      <th style={TH}>{t('col.activo')}</th><th style={TH}>{t('comun.periodo')}</th><th style={TH_NUM}>{t('col.monto')}</th><th style={TH}>{t('aud.severidad')}</th>
+                      <th style={TH}>{t('aud.origen')}</th><th style={TH}>{t('aud.integridad')}</th><th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -151,12 +198,19 @@ export function AuditoriaView() {
                         <td style={TD}>{nombreEvento(t, e)}</td>
                         <td style={TD}>{actor(t, e)}</td>
                         <td style={TD}>{e.activo ?? t('aud.sin_activo')}</td>
+                        <td style={TD}>{e.id_periodo_contable === id ? nombrePeriodoActual : e.id_periodo_contable ? t('aud.otro_periodo') : t('aud.sin_periodo')}</td>
                         <td style={TD_NUM}>{e.monto_afectado ? formatoMoneda(e.monto_afectado) : t('aud.sin_monto')}</td>
-                        <td style={TD}><Badge variant={VARIANTE[e.severidad as Severidad] ?? 'neutral'}>{t(`severidad.${e.severidad}`, { defaultValue: t('severidad.INFO') })}</Badge></td>
+                        <td style={TD}><BadgeTono tono={VARIANTE[e.severidad as Severidad] ?? 'neutral'}>{t(`severidad.${e.severidad}`, { defaultValue: t('severidad.INFO') })}</BadgeTono></td>
+                        <td style={TD}>{origenDe(t, e)}</td>
                         <td style={TD}>
                           {e.integridad_verificable
                             ? <span style={{ display: 'inline-flex', gap: 'var(--s1)', alignItems: 'center', color: 'var(--sem-success)' }}><ShieldCheck size={14} aria-hidden />{t('aud.integra')}</span>
                             : <span style={{ display: 'inline-flex', gap: 'var(--s1)', alignItems: 'center', color: 'var(--sem-error)' }}><ShieldAlert size={14} aria-hidden />{t('aud.sin_hash')}</span>}
+                        </td>
+                        <td style={TD}>
+                          <Button variant="ghost" size="sm" onClick={() => setDetalle(e)} aria-label={t('aud.ver_aria', { evento: nombreEvento(t, e), fecha: formatoFecha(e.fecha_hora, true) })}>
+                            <Eye size={14} aria-hidden />{t('aud.ver')}
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -167,18 +221,13 @@ export function AuditoriaView() {
             {(datos?.total_registros ?? 0) > 0 && (
               <div className="fin-listado__pie">
                 <span role="status">{t('comun.mostrando', { n: eventos.length, total: datos?.total_registros ?? 0, que: t('aud.sustantivo') })}</span>
-                {paginas > 1 && (
-                  <div className="fin-acciones" style={{ alignItems: 'center' }}>
-                    <span>{t('comun.pagina_de', { pagina, total: paginas })}</span>
-                    <Button variant="secondary" size="sm" disabled={pagina <= 1} onClick={() => setPagina(pagina - 1)} aria-label={t('comun.anterior')}><ChevronLeft size={16} aria-hidden /></Button>
-                    <Button variant="secondary" size="sm" disabled={pagina >= paginas} onClick={() => setPagina(pagina + 1)} aria-label={t('comun.siguiente')}><ChevronRight size={16} aria-hidden /></Button>
-                  </div>
-                )}
+                {paginas > 1 && <Paginacion pagina={pagina} totalPaginas={paginas} onCambiar={setPagina} sinResumen />}
               </div>
             )}
           </section>
         </>
       )}
+      {detalle && <EventoFinancieroModal evento={detalle} periodo={nombrePeriodoActual} onCerrar={() => setDetalle(null)} />}
     </>
   );
 }

@@ -1,6 +1,7 @@
 /* | Fecha      | Nombre   | Que se hizo |
    |------------|----------|-------------|
-   | 2026-11-05 | Arekkazu | M06 prototipos: período global, indicadores, barra de filtros y pie de tabla | */
+   | 2026-11-05 | Arekkazu | M06 prototipos: período global, indicadores, barra de filtros y pie de tabla |
+   | 2026-11-10 | Arekkazu | TC-DIS-249/251/254 RF-90/COT/91: eslabones expandibles y casillas con zona táctil de 48px | */
 
 /* Período contable de todo el módulo (en el prototipo vive en la barra superior). */
 .fin-periodo {
@@ -264,3 +265,38 @@
   color: var(--text-secondary);
   overflow-wrap: anywhere;
 }
+
+/* Eslabón de la cadena de trazabilidad (RF-91): botón que expande el detalle de cada nivel. */
+.fin-eslabon {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  width: 100%;
+  min-height: var(--s9);
+  padding: var(--s2) var(--s3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+  text-align: left;
+  font: inherit;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.fin-eslabon:hover { background: var(--surface-hover); }
+.fin-eslabon:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+/* Casillas de selección con zona táctil de 48px (WCAG 2.5.5) y texto legible. */
+.fin-casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: var(--s9);
+  padding: 0 var(--s2);
+  border-radius: var(--r-md);
+  font-size: var(--fs-body-md);
+  cursor: pointer;
+}
+
+.fin-casilla:hover { background: var(--surface-hover); }
+.fin-casilla input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--brand-600); }
