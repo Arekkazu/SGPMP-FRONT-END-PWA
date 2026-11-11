@@ -1,0 +1,107 @@
+{
+  "tc": "TC-M05-G41",
+  "checkpoints": [
+    {
+      "paso": "098-01 UI: tabla página 1 sin filtros muestra 50 filas",
+      "esperado": "50 filas",
+      "obtenido": "filas página 1 = 50",
+      "estado": "OK"
+    },
+    {
+      "paso": "098-02 UI: resumen sin filtros muestra total 500 y monto 63753757.50",
+      "esperado": "500 y ≈63753757.50 (|diff| <= 0.5)",
+      "obtenido": "total=500; montoTexto=\"$ 63.753.757,5\" (parsed=63753757.5, diff=0)",
+      "estado": "OK"
+    },
+    {
+      "paso": "098-03 UI: fechas de columna fecha página 1 en orden descendente (0 inversiones)",
+      "esperado": "0 inversiones",
+      "obtenido": "filas=50; sinParse=0; inversiones=0; muestra=[8/11/2026 .. 15/10/2026]",
+      "estado": "OK"
+    },
+    {
+      "paso": "098-04 UI: Anterior deshabilitado en pág 1; Siguiente pasa a pág 2 con 50 filas distintas",
+      "esperado": "Anterior deshabilitado pág 1; pág 2 con 50 filas y 1a fila distinta",
+      "obtenido": "pág1 Anterior disabled=true; enPág2=true; filasPág2=50; primeraFilaDistinta=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "098-05 UI: navegar hasta última página (10) muestra 50 filas y Siguiente deshabilitado",
+      "esperado": "50 filas, Siguiente deshabilitado",
+      "obtenido": "enPág10=true; filas=50; Siguiente disabled=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "098-06 API: GET historial?id_activo_biologico=1624 por defecto (pág 1 / 50 filas)",
+      "esperado": "HTTP 200, 50 items, total_paginas 10, total 500, monto 63753757.50, tipos 125 c/u, ciclos 3 (150/150/200), nivel_volumen 1, contexto false",
+      "obtenido": "HTTP 200; items=50; pags=10; total=500; monto=63753757.5000; tipos125=true; ciclos=[150,150,200]; vol=1; ctxNoDisp=false",
+      "estado": "OK"
+    },
+    {
+      "paso": "098-07 API: registros_por_pagina=200 págs 1-3 suman 500 IDs únicos y fecha DESC",
+      "esperado": "200+200+100 filas, 500 IDs únicos, fecha_aplicacion no creciente en 499 transiciones",
+      "obtenido": "HTTP [200,200,200]; filas=[200,200,100]; idsUnicos=500; inversionesFecha=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "099-01 UI: filtro combinado MEDICAMENTO+MANUAL+2026-04-23..2026-07-31+100000..300000",
+      "esperado": "8 filas, resumen total 8 y monto ≈900079.88",
+      "obtenido": "filas=8; resumenTotal=8; montoTexto=\"$ 900.079,88\" (parsed=900079.88, diff=0)",
+      "estado": "OK"
+    },
+    {
+      "paso": "099-02 UI: conjunto de costos de las 8 filas igual al oráculo y cumplimiento de 4 filtros",
+      "esperado": "Mismo conjunto numérico de 8 costos y 8/8 filas cumplen tipo/origen/fecha",
+      "obtenido": "setIgual=true; cumplen4Filtros=true; costosUI=[125012.45,100009.32,125010.45,100007.72,125014.45,100010.92,125008.45,100006.12]",
+      "estado": "OK"
+    },
+    {
+      "paso": "099-03 UI: vacío por costo (MEDICAMENTO + costo_min=500000)",
+      "esperado": "0 filas, resumen en cero y estado vacío visible",
+      "obtenido": "filas=0; total=0; monto=0; vacio=\"Sin suministros con esos filtrosAmplía el rango de fechas o quita filtros.\"; alertMensaje=\"Permisos actualizados Sus permisos han sido actualizados. La interfaz se recargará automáticamente para reflejar los nuevos accesos.\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "099-04 UI: vacío por fecha (2025-01-01..2025-12-31)",
+      "esperado": "0 filas, resumen en cero y estado vacío visible",
+      "obtenido": "filas=0; total=0; monto=0; vacio=\"Sin suministros con esos filtrosAmplía el rango de fechas o quita filtros.\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "099-05 UI: desde > hasta muestra error de validación y envía 0 GET historial",
+      "esperado": "Error de validación visible y 0 GET /suministros/historial",
+      "obtenido": "error=\"La fecha final debe ser igual o posterior a la inicial.\"; GET enviados=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "099-06 UI: costo_min > costo_max muestra error de validación y envía 0 GET historial",
+      "esperado": "Error de validación visible y 0 GET /suministros/historial",
+      "obtenido": "error=\"El costo máximo debe ser mayor o igual al mínimo.\"; GET enviados=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "099-07 API: combinado, simples (MEDICAMENTO/MANUAL/M40_AUTOMATICO) y 2 vacíos con mensaje literal",
+      "esperado": "8 (900079.88), 125, 251, 249, y 2 vacíos HTTP 200 items=[] ceros con mensaje literal activo 1624",
+      "obtenido": "comb=8/900079.8800; MED=125; MANUAL=251; M40=249; vacioC=200/No se encontraron registros de suministros con los filtros aplicados para el activo 1624.; vacioF=200/No se encontraron registros de suministros con los filtros aplicados para el activo 1624.",
+      "estado": "OK"
+    },
+    {
+      "paso": "099-08 API: rangos inválidos fecha_fin < fecha_inicio y costo_max < costo_min → HTTP 422",
+      "esperado": "HTTP 422 en ambos casos",
+      "obtenido": "fecha_inv: HTTP 422 error_code=\"COMBINACION_FILTROS_INVALIDA\" msg=\"Combinación de filtros inválida: fecha_fin_filtro (2026-04-01) es anterior a fecha_inicio_filtro (2026-08-01).\" | costo_inv: HTTP 422 error_code=\"COMBINACION_FILTROS_INVALIDA\" msg=\"Combinación de filtros inválida: costo_max (100000) es menor que costo_min (300000).\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "[SIMULADO] 104-01 UI: datos_contexto_no_disponibles=true y nombre_ciclo/especie=null",
+      "esperado": "Aviso de datos de contexto no disponibles visible y tabla con filas > 0",
+      "obtenido": "avisoContextoNoDisponible=true; filas=50; colCicloFila1=\"#4ACTIVO\"; textoResumen=\"Servicio veterinario$ 30.000.942,5 · 125Datos hasta 10/11/2026, 10:26 p. m. · algunos datos de contexto (activo, ciclo) no están disponibles\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "104-02 API real: datos_contexto_no_disponibles=false en 1624 (M02 disponible)",
+      "esperado": "datos_contexto_no_disponibles=false",
+      "obtenido": "HTTP 200; datos_contexto_no_disponibles=false",
+      "estado": "OK"
+    }
+  ]
+}

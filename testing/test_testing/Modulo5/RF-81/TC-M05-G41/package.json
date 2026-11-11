@@ -1,0 +1,20 @@
+{
+  "name": "tc-m05-g41-historial-suministros",
+  "private": true,
+  "version": "1.0.0",
+  "description": "TC-M05-G41 · RF-81 · Consulta del historial de suministros por activo (TC-M05-098, TC-M05-099, TC-M05-104) con Sandbox Transaccional",
+  "type": "commonjs",
+  "scripts": {
+    "test": "cross-env TZ=America/Bogota cypress run --browser chrome --spec cypress/e2e/historial_G41.cy.ts",
+    "open": "cross-env TZ=America/Bogota cypress open",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "cross-env": "^7.0.3",
+    "cypress": "^13.17.0",
+    "dotenv": "^17.4.2",
+    "typescript": "^5.9.3"
+  }
+}
+
