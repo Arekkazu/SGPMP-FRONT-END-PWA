@@ -2,13 +2,18 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: cliente de la API /finanzas (valoración NIC 41) |
 // | 2026-11-05 | Arekkazu | M06 prototipos: listados del período y auditoría ordenable |
+// | 2026-11-08 | destroyerban | INC-M06-316-G16 RF-84: referencia documental de los costos manuales |
+// | 2026-11-09 | destroyerban | INC-M06-317-G17 RF-84: validar con justificación un cálculo con valor neto ≤ 0 |
+// | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
+// | 2026-11-10 | Arekkazu | INC-M06-337/345/351 RF-86/87: cancelar cierre, ajuste de período anterior y acumulado |
+// | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
+// | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
 import { http } from '../../shared/api/http';
 import type {
-  ActivoValorado, Asignacion, Cadena, CalculoPeriodo, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
+  Acumulado, ActivoValorado, Asignacion, Cadena, CalculoPeriodo, CosechaPendiente, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
   CostosManuales, Cotizacion, EstadoDetalle, EstadoResumen, HistorialActivo, InformeDetalle, InformePayload, InformeResumen,
   Linea, Naturaleza, PaginaAuditoria, Periodo, Precio, PrecioPayload, Prevalidacion, Propuesta, ResultadoCierre,
-  ResultadoCosto, Simulacion,
-} from '../types';
+  ResultadoCosto, Simulacion, TipoAjuste, EventoPendiente } from '../types';
 
 const B = '/finanzas';
 
@@ -54,7 +59,9 @@ export const finanzasApi = {
   propuestas: () => get<Propuesta[]>('/reconocimientos/propuestas'),
   propuesta: (idActivo: number, clasificacion?: Clasificacion) =>
     get<Propuesta>(`/reconocimientos/propuestas/${idActivo}`, clasificacion ? { clasificacion } : undefined),
-  confirmar: (idActivo: number, body: { clasificacion?: Clasificacion; costos_manuales?: CostosManuales; justificacion?: string }) =>
+  confirmar: (idActivo: number, body: {
+    clasificacion?: Clasificacion; costos_manuales?: CostosManuales; justificacion?: string; referencia_documental?: string;
+  }) =>
     post<{ id_reconocimiento_inicial: number; valor_inicial: string; advertencias: string[] }>(`/reconocimientos/${idActivo}`, body),
   revertir: (idActivo: number, motivo: string) => post<unknown>(`/reconocimientos/${idActivo}/reversion`, { motivo_reversion: motivo }),
 
@@ -70,9 +77,16 @@ export const finanzasApi = {
   eventosSanitarios: (idActivo: number) =>
     get<Array<{ id_evento: number; fecha: string; tipo: string; diagnostico: string | null }>>(`/activos/${idActivo}/eventos-sanitarios`),
   mediciones: (idPeriodo: number) => get<MedicionPeriodo[]>(`/periodos/${idPeriodo}/mediciones`),
+  eventosPendientes: (idPeriodo: number) => get<EventoPendiente[]>(`/periodos/${idPeriodo}/eventos-pendientes`),
   variaciones: (idPeriodo: number) => get<VariacionPeriodo[]>(`/periodos/${idPeriodo}/variaciones`),
   calculos: (idPeriodo: number) => get<CalculoPeriodo[]>(`/periodos/${idPeriodo}/calculos`),
+  validarCalculo: (idCalculo: number, justificacion: string) =>
+    post<{ id_calculo_valor_razonable: number; estado: string; valor_neto: string }>(`/calculos/${idCalculo}/validacion`, { justificacion }),
   productos: (idPeriodo: number) => get<ProductoPeriodo[]>(`/periodos/${idPeriodo}/productos`),
+  // RF-85 FA-1/FA-2: cosechas pendientes por falta de precio o de costos de venta.
+  cosechasPendientes: () => get<CosechaPendiente[]>('/productos/pendientes'),
+  reconocerCosecha: (idEvento: number, body: { costos_manuales: CostosManuales; justificacion: string }) =>
+    post<{ id_evento: number; resultado: string }>(`/productos/pendientes/${idEvento}/reconocimiento`, body),
 
   // Costos (RF-90)
   costos: (filtros: { id_activo_biologico?: number; id_periodo_contable?: number; estado?: string; origen_costo?: string }) =>
@@ -84,8 +98,11 @@ export const finanzasApi = {
   // Períodos y cierre (RF-87) y trazabilidad (RF-91)
   periodos: () => get<Periodo[]>('/periodos'),
   prevalidar: (id: number) => get<Prevalidacion>(`/periodos/${id}/prevalidacion`),
-  cerrar: (id: number, body: { autorizar_exclusiones: boolean; incluir_activos_sin_precio: boolean }) =>
+  cerrar: (id: number, body: { autorizar_exclusiones: boolean; incluir_activos_sin_precio: boolean; activos_estimados?: number[] }) =>
     post<ResultadoCierre>(`/periodos/${id}/cierre`, body),
+  cancelarCierre: (id: number) => post<{ estado: string }>(`/periodos/${id}/cierre/cancelacion`),
+  ajustarLinea: (idLinea: number, body: { tipo_ajuste: TipoAjuste; valor: string; justificacion: string }) =>
+    post<{ id_linea_asiento_nic41: number; periodo: string; periodo_corregido: string }>(`/lineas-asiento/${idLinea}/ajustes`, body),
   comprobantes: (id: number) => get<Comprobante[]>(`/periodos/${id}/comprobantes`),
   descargarComprobantes: (id: number, formato: 'csv' | 'pdf') => archivo(`/periodos/${id}/comprobantes/descarga`, formato, `comprobantes-${id}`),
   verificarTrazabilidad: (id: number) =>
@@ -104,6 +121,7 @@ export const finanzasApi = {
   // Estado de resultados (RF-93) y revelaciones (RF-92)
   estados: (idPeriodo: number) => get<EstadoResumen[]>(`/periodos/${idPeriodo}/estados-resultados`),
   estado: (id: number) => get<EstadoDetalle>(`/estados-resultados/${id}`),
+  acumulado: (idPeriodo: number) => get<Acumulado>(`/periodos/${idPeriodo}/estado-resultados/acumulado`),
   generarEstado: (idPeriodo: number, filtros: { id_especie?: number; id_finca?: number; id_activo_biologico?: number }) =>
     post<{ id_estado: number }>(`/periodos/${idPeriodo}/estados-resultados`, filtros),
   aprobarEstado: (id: number) => post<unknown>(`/estados-resultados/${id}/aprobacion`),

@@ -2,6 +2,9 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-87/RF-91: períodos, prevalidación y cierre, comprobantes NIC 41 y trazabilidad |
 // | 2026-11-05 | Arekkazu | M06 RF-87 prototipo: tarjeta del período, precondiciones en lista, historial de cerrados |
+// | 2026-11-10 | Arekkazu | INC-M06-345/350 RF-87: cierre en espera de autorización, cancelación, matriz y titular |
+// | 2026-11-10 | Arekkazu | INC-M06-346-G43-02 RF-87: la prevalidación lista cada línea sin trazabilidad con su activo y lo que falta |
+// | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Download, Lock, XCircle } from 'lucide-react';
@@ -34,7 +37,7 @@ const TONO_CHECK = { ok: 'success', aviso: 'warning', pendiente: 'error' } as co
 // Bloqueos que devuelve la prevalidación, cada uno con su precondición; uno desconocido sale con título genérico.
 const BLOQUEOS: Array<[codigo: string, clave: string]> = [
   ['PERIODO_ANTERIOR_ABIERTO', 'anterior'], ['LINEAS_PENDIENTE_CUENTA', 'cuentas'], ['COSTOS_PENDIENTE_CLASIFICACION', 'costos'],
-  ['ENTREGAS_M05_PENDIENTES', 'suministros'],
+  ['ENTREGAS_M05_PENDIENTES', 'suministros'], ['MATRIZ_CONTABLE_INCOMPLETA', 'matriz'], ['FINCA_SIN_TITULAR', 'titular'],
 ];
 
 export function CierreView() {
@@ -46,7 +49,7 @@ export function CierreView() {
     <>
       <EncabezadoVista titulo={periodo ? t('cierre.titulo_periodo', { periodo: nombrePeriodo(periodo) }) : t('cierre.titulo')} descripcion={t('cierre.descripcion')} />
       {!periodo ? <SinPeriodo /> : (
-        <PanelPeriodo key={periodo.id_periodo_contable} periodo={periodo}
+        <PanelPeriodo key={periodo.id_periodo_contable} periodo={periodo} onCambio={recargar}
           onCerrado={(siguiente) => { recargar(); if (siguiente) pushToast('info', t('cierre.siguiente_abierto')); }} />
       )}
       <Historial periodos={periodos.filter((p) => p.estado === 'CERRADO')} />
@@ -54,7 +57,9 @@ export function CierreView() {
   );
 }
 
-function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (siguiente: number | null) => void }) {
+function PanelPeriodo({ periodo, onCerrado, onCambio }: {
+  periodo: Periodo; onCerrado: (siguiente: number | null) => void; onCambio: () => void;
+}) {
   const { t } = useT('finanzas');
   const puedeCerrar = usePermissionPorNombre(R_CIERRE, ACCION_E);
   const puedeVerPropuestas = usePermissionPorNombre(R_RECONOCIMIENTO, ACCION_R);
@@ -65,7 +70,12 @@ function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (si
   const cierre = useAsync(finanzasApi.cerrar);
   const comprobantes = useAsync(finanzasApi.comprobantes);
   const descarga = useAsync(finanzasApi.descargarComprobantes);
-  const [sinPrecio, setSinPrecio] = useState<'' | 'excluir' | 'incluir'>('');
+  const cancelacion = useAsync(finanzasApi.cancelarCierre);
+  // Un cierre EN_PROCESO en el paso 3 espera que el Contador autorice las exclusiones o lo cancele (RF-87 FA-2/FA-3).
+  const ultimo = periodo.ultimo_cierre;
+  const enEspera = periodo.estado === 'EN_CIERRE' && ultimo?.estado === 'EN_PROCESO' && ultimo.paso_actual === 3;
+  // RF-87 FA-2: una decisión por cada activo sin precio, excluirlo o estimarlo (nunca pasa al costo, RF-88 v2.0).
+  const [decisiones, setDecisiones] = useState<Record<number, 'excluir' | 'estimar'>>({});
   const [autorizarLineas, setAutorizarLineas] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const { ejecutar: prevalidar } = prevalidacion;
@@ -82,7 +92,8 @@ function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (si
   const pv = prevalidacion.data;
   // Los activos sin precio se excluyen o se incluyen con estimación; las líneas sin trazabilidad se excluyen con
   // autorización. El backend recibe una sola autorización para ambas.
-  const faltaAutorizar = !!pv && ((pv.activos_sin_precio.length > 0 && !sinPrecio) || (pv.lineas_sin_trazabilidad.length > 0 && !autorizarLineas));
+  const faltaAutorizar = !!pv && (pv.activos_sin_precio.some((a) => !decisiones[a.id_activo_biologico]) || (pv.lineas_sin_trazabilidad.length > 0 && !autorizarLineas));
+  const decidirTodos = (d: 'excluir' | 'estimar') => setDecisiones(Object.fromEntries((pv?.activos_sin_precio ?? []).map((a) => [a.id_activo_biologico, d])));
   const pendientes = (propuestas.data ?? []).filter((p) => p.es_confirmable);
   const conocidos = new Set(BLOQUEOS.map(([c]) => c));
 
@@ -115,12 +126,23 @@ function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (si
 
   const ejecutar = async () => {
     setConfirmando(false);
-    const r = await cierre.ejecutar(id, { autorizar_exclusiones: sinPrecio === 'excluir' || autorizarLineas, incluir_activos_sin_precio: sinPrecio === 'incluir' });
+    const estimados = (pv?.activos_sin_precio ?? []).filter((a) => decisiones[a.id_activo_biologico] === 'estimar').map((a) => a.id_activo_biologico);
+    const excluye = (pv?.activos_sin_precio ?? []).some((a) => decisiones[a.id_activo_biologico] === 'excluir');
+    const r = await cierre.ejecutar(id, { autorizar_exclusiones: excluye || autorizarLineas, incluir_activos_sin_precio: false, activos_estimados: estimados });
     if (r) {
       pushToast('success', t('cierre.cerrado', { periodo: nombrePeriodo(periodo) }), t('cierre.cerrado_detalle', { count: r.comprobantes.length }));
       onCerrado(r.id_periodo_siguiente);
     } else {
       prevalidar(id);
+      onCambio();  // el 409 de autorización deja el período EN_CIERRE
+    }
+  };
+
+  const cancelar = async () => {
+    if (await cancelacion.ejecutar(id)) {
+      pushToast('info', t('cierre.cancelado', { periodo: nombrePeriodo(periodo) }));
+      prevalidar(id);
+      onCambio();
     }
   };
 
@@ -145,6 +167,19 @@ function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (si
           <Alert variant="error" title={t('cierre.ultimo_fallido', { paso: periodo.ultimo_cierre.paso_actual ?? 1 })}
             description={periodo.ultimo_cierre.error_detalle ?? undefined} style={{ marginTop: 'var(--s4)' }} />
         )}
+        {enEspera && ultimo && (
+          <Alert variant="warning" title={t('cierre.en_espera')} style={{ marginTop: 'var(--s4)' }}
+            description={t('cierre.en_espera_detalle', {
+              fecha: formatoFecha(ultimo.fecha_inicio, true), usuario: ultimo.nombre_usuario_ejecutor ?? t('cierre.otro_usuario'),
+            })} />
+        )}
+        {enEspera && puedeCerrar && (
+          <div className="fin-acciones" style={{ marginTop: 'var(--s3)' }}>
+            <Button variant="secondary" size="sm" loading={cancelacion.cargando} onClick={cancelar}>
+              <XCircle size={14} aria-hidden />{t('cierre.cancelar')}
+            </Button>
+          </div>
+        )}
       </section>
 
       {!cerrado && (
@@ -154,7 +189,7 @@ function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (si
             {checks.length > 0 && <Badge variant={completas === checks.length ? 'success' : 'warning'}>{t('cierre.completas', { n: completas, total: checks.length })}</Badge>}
           </div>
           <p style={{ ...SECUNDARIO, margin: 'var(--s1) 0 var(--s4)' }}>{t('cierre.prevalidacion_ayuda')}</p>
-          <ErrorApi error={prevalidacion.error ?? cierre.error} />
+          <ErrorApi error={prevalidacion.error ?? cierre.error ?? cancelacion.error} />
           {prevalidacion.cargando && !pv && <p style={SECUNDARIO}>{t('comun.cargando')}</p>}
           {pv && (
             <>
@@ -170,24 +205,57 @@ function PanelPeriodo({ periodo, onCerrado }: { periodo: Periodo; onCerrado: (si
                   </li>
                 ))}
               </ul>
+              {pv.lineas_sin_trazabilidad.length > 0 && (
+                <div style={{ marginTop: 'var(--s4)' }}>
+                  <table style={TABLA} aria-describedby="cierre-traza-titulo">
+                    <caption id="cierre-traza-titulo" style={{ textAlign: 'left', fontWeight: 600, marginBottom: 'var(--s2)' }}>
+                      {t('cierre.lineas_traza_titulo', { count: pv.lineas_sin_trazabilidad.length })}
+                    </caption>
+                    <thead>
+                      <tr><th style={TH}>{t('cierre.lineas_traza_asiento')}</th><th style={TH}>{t('col.activo')}</th><th style={TH}>{t('cierre.lineas_traza_falta')}</th></tr>
+                    </thead>
+                    <tbody>
+                      {pv.lineas_sin_trazabilidad.map((l) => (
+                        <tr key={l.id_linea}>
+                          <td style={TD}>{t('cierre.lineas_traza_linea', { linea: l.id_linea, hecho: t(`hecho.${l.tipo_hecho}`) })}</td>
+                          <td style={TD}>{l.identificador ?? t('cierre.lineas_traza_sin_activo')}</td>
+                          <td style={TD}>{l.faltantes.map((f) => t(`eslabon.${f}`, { defaultValue: t('cierre.eslabon_otro') })).join(', ')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               {puedeCerrar && pv.puede_cerrar && (
                 <div style={{ display: 'grid', gap: 'var(--s3)', marginTop: 'var(--s5)' }}>
                   {pv.activos_sin_precio.length > 0 && (
-                    <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 'var(--s2)' }}>
-                      <legend style={{ fontWeight: 600, marginBottom: 'var(--s2)' }}>{t('cierre.que_hacer_sin_precio')}</legend>
-                      <label style={{ display: 'flex', gap: 'var(--s2)' }}>
-                        <input type="radio" name="sin-precio" checked={sinPrecio === 'excluir'} onChange={() => setSinPrecio('excluir')} />
-                        {t('cierre.excluir')}
-                      </label>
-                      <label style={{ display: 'flex', gap: 'var(--s2)' }}>
-                        <input type="radio" name="sin-precio" checked={sinPrecio === 'incluir'} onChange={() => setSinPrecio('incluir')} />
-                        {t('cierre.incluir_estimacion')}
-                      </label>
-                    </fieldset>
+                    <div style={{ display: 'grid', gap: 'var(--s2)' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--s2)' }}>
+                        <strong>{t('cierre.que_hacer_sin_precio')}</strong>
+                        <Button variant="ghost" size="sm" onClick={() => decidirTodos('excluir')}>{t('cierre.excluir_todos')}</Button>
+                        <Button variant="ghost" size="sm" onClick={() => decidirTodos('estimar')}>{t('cierre.estimar_todos')}</Button>
+                      </div>
+                      <p style={{ ...SECUNDARIO, margin: 0 }}>{t('cierre.sin_precio_ayuda')}</p>
+                      {pv.activos_sin_precio.map((a) => (
+                        <fieldset key={a.id_activo_biologico} style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s2) var(--s3)', margin: 0, display: 'flex', flexWrap: 'wrap', gap: 'var(--s4)' }}>
+                          <legend style={{ fontWeight: 600, padding: '0 var(--s1)' }}>{`${a.identificador} (${a.especie})`}</legend>
+                          <label style={{ display: 'flex', gap: 'var(--s2)' }}>
+                            <input type="radio" name={`sin-precio-${a.id_activo_biologico}`} checked={decisiones[a.id_activo_biologico] === 'excluir'}
+                              onChange={() => setDecisiones((d) => ({ ...d, [a.id_activo_biologico]: 'excluir' }))} />
+                            {t('cierre.excluir_activo')}
+                          </label>
+                          <label style={{ display: 'flex', gap: 'var(--s2)' }}>
+                            <input type="radio" name={`sin-precio-${a.id_activo_biologico}`} checked={decisiones[a.id_activo_biologico] === 'estimar'}
+                              onChange={() => setDecisiones((d) => ({ ...d, [a.id_activo_biologico]: 'estimar' }))} />
+                            {t('cierre.estimar_activo')}
+                          </label>
+                        </fieldset>
+                      ))}
+                    </div>
                   )}
                   {pv.lineas_sin_trazabilidad.length > 0 && (
                     <label style={{ display: 'flex', gap: 'var(--s2)' }}>
-                      <input type="checkbox" checked={autorizarLineas} onChange={(e) => setAutorizarLineas(e.target.checked)} />
+                      <input type="checkbox" checked={autorizarLineas} aria-describedby="cierre-traza-titulo" onChange={(e) => setAutorizarLineas(e.target.checked)} />
                       {t('cierre.autorizar_lineas')}
                     </label>
                   )}

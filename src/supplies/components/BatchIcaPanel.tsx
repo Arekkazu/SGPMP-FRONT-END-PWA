@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74 Flujo C: panel de corridas, cola y fallos del batch ICA |
+// | 2026-11-10 | Arekkazu | INC-M05-511 RF-74: la causa de interrupción del batch se muestra en palabras |
 import React, { useCallback, useEffect, useState } from 'react';
 import { Play, ListRestart, RotateCcw, Square } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -85,7 +86,7 @@ export function BatchIcaPanel({ online }: { online: boolean }) {
                   <td style={TD_NUM}>{c.cantidad_fallidos}</td>
                   <td style={TD}>
                     <EstadoRegistroBadge estado={c.estado} />
-                    {c.causa_interrupcion && <div style={{ ...SECUNDARIO, marginTop: 'var(--s1)' }}>{c.causa_interrupcion}</div>}
+                    {c.causa_interrupcion && <div style={{ ...SECUNDARIO, marginTop: 'var(--s1)' }}>{t(`batch.causa_${c.causa_interrupcion}`, { defaultValue: t('batch.causa_otra') })}</div>}
                   </td>
                   {puedeEjecutar && (
                     <td style={TD}>

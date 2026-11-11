@@ -2,6 +2,10 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: contratos de la API /finanzas |
 // | 2026-11-05 | Arekkazu | M06 prototipos: listados del período, modelo de costo por activo y resumen de auditoría |
+// | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
+// | 2026-11-10 | Arekkazu | INC-M06-337/344/345 RF-86/87/93: cierre en espera, acumulado y desglose de mantenimiento |
+// | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
+// | 2026-11-10 | Arekkazu | INC-M06-346-G43-02 RF-87: la prevalidación lista cada línea sin trazabilidad con su activo y lo que falta |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -98,6 +102,10 @@ export interface MedicionPeriodo extends ActivoDelRegistro {
 }
 export type TipoVariacion = 'GANANCIA_TRANSFORMACION_BIOLOGICA' | 'PERDIDA_TRANSFORMACION_BIOLOGICA' | 'GANANCIA_PRECIO_MERCADO'
   | 'PERDIDA_PRECIO_MERCADO';
+/** Evento del período cuya medición quedó suspendida: no deja medición posterior (RF-86). */
+export interface EventoPendiente extends ActivoDelRegistro {
+  id_evento: number; fecha_evento: string; motivo: string | null; fecha_procesamiento: string;
+}
 export interface VariacionPeriodo extends ActivoDelRegistro {
   id_variacion_valor_razonable: number; tipo: TipoVariacion; monto_variacion: Dec; valor_razonable_anterior: Dec;
   valor_razonable_nuevo: Dec; tiene_estimacion: boolean; fecha_registro: string; id_linea: number | null;
@@ -112,6 +120,11 @@ export interface ProductoPeriodo extends ActivoDelRegistro {
   id_reconocimiento_producto_agricola: number; producto_agricola: string; cantidad_cosechada: Dec; unidad_medida: string;
   precio_mercado_producto: Dec | null; costo_venta_producto: Dec | null; valor_producto: Dec; valor_reduccion_activo: Dec | null;
   tipo: 'PRODUCTO_DE_CONSUMO' | 'PRODUCTO_PERIODICO' | string; fecha_cosecha: string;
+}
+export interface CosechaPendiente {
+  id_evento: number; id_activo_biologico: number; identificador: string; especie: string; finca: string;
+  clasificacion: Clasificacion | null; producto_agricola: string | null; unidad_medida: string | null; cantidad_cosechada: Dec;
+  fecha_cosecha: string; motivo: string | null; fecha_ultimo_intento: string; intentos: number; admite_costos_manuales: boolean;
 }
 export interface Calculo {
   id_calculo_valor_razonable: number | null; magnitud: Dec; unidad_magnitud: string; precio_unitario: Dec;
@@ -170,11 +183,13 @@ export interface Periodo {
   id_periodo_contable: number; numero_id_tributaria: string; tipo_cierre: TipoCierre; fecha_inicio: string; fecha_fin: string;
   estado: 'ABIERTO' | 'EN_CIERRE' | 'CERRADO' | string; fecha_cierre: string | null;
   ultimo_cierre: { id_cierre: number; estado: string; paso_actual: number | null; error_detalle: string | null;
-    fecha_inicio: string; fecha_fin: string | null } | null;
+    fecha_inicio: string; fecha_fin: string | null; nombre_usuario_ejecutor?: string | null } | null;
 }
 export interface Prevalidacion {
   bloqueos: Array<{ codigo: string; mensaje: string }>; activos_sin_precio: Array<{ id_activo_biologico: number; identificador: string; especie: string }>;
-  lineas_sin_trazabilidad: Array<{ id_linea: number; tipo_hecho: TipoHecho; faltantes: string[] }>;
+  lineas_sin_trazabilidad: Array<{
+    id_linea: number; tipo_hecho: TipoHecho; faltantes: string[]; id_activo_biologico?: number | null; identificador?: string | null;
+  }>;
   puede_cerrar: boolean; requiere_autorizacion: boolean;
 }
 export interface ResultadoCierre {
@@ -205,7 +220,15 @@ export interface EstadoResumen {
   estado: 'GENERADO' | 'APROBADO' | string; fecha_generacion: string; filtros: Record<string, number | null>; version: number;
   fecha_aprobacion: string | null;
 }
-export interface EstadoDetalle extends EstadoResumen { componentes: Record<string, Dec | unknown[]>; hash_consistencia: string }
+export interface EstadoDetalle extends EstadoResumen {
+  componentes: Record<string, Dec | unknown[] | Record<string, Dec>>; hash_consistencia: string;
+}
+/** Acumulado del período (también abierto), sin versión. */
+export interface Acumulado {
+  componentes: Record<string, Dec>; desglose_costos_mantenimiento: Record<string, Dec>; total_ingresos: Dec; total_gastos: Dec;
+  resultado_neto: Dec; estado_periodo: string; es_definitivo: boolean;
+}
+export type TipoAjuste = 'AUMENTAR' | 'DISMINUIR';
 export interface InformeResumen {
   id_informe: number; version_informe: string; estado: 'BORRADOR' | 'APROBADO' | 'RECHAZADO' | 'ARCHIVADO' | string;
   fecha_generacion: string; fecha_aprobacion: string | null; razon_rechazo: string | null; hash_informe: string;
