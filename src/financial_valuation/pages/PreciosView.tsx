@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-89: repositorio de precios de mercado con vigencia, desviación y corrección |
 // | 2026-11-05 | Arekkazu | M06 RF-89 prototipo: avisos de especies sin precio, por vencer y programados; filtros completos |
+// | 2026-11-10 | Arekkazu | #510 RF-89: un error al confirmar la desviación se muestra en vez del aviso |
 import React, { useEffect, useMemo, useState } from 'react';
 import { PencilLine, Plus, Tag } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -192,8 +193,10 @@ function PrecioModal({ especies, corrige, especieInicial, onCerrar, onGuardado }
   };
 
   // RF-89 FA-3: una desviación mayor al umbral exige confirmación explícita.
+  // Cualquier otro error reemplaza el aviso: si no, un fallo al confirmar quedaba oculto tras el aviso amarillo.
   useEffect(() => {
-    if (registro.error?.code === 'DESVIACION_PRECIO_REQUIERE_CONFIRMACION') setDesviacion(registro.error.message);
+    if (!registro.error) return;
+    setDesviacion(registro.error.code === 'DESVIACION_PRECIO_REQUIERE_CONFIRMACION' ? registro.error.message : null);
   }, [registro.error]);
 
   return (

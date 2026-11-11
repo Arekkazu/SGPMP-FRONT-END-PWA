@@ -6,6 +6,7 @@
 // | 2026-11-09 | destroyerban | INC-M06-317-G17 RF-84: validar con justificación un cálculo con valor neto ≤ 0 |
 // | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
 // | 2026-11-10 | Arekkazu | INC-M06-337/344/345/351: cierre en espera y cancelación, acumulado con desglose y ajuste |
+// | 2026-11-10 | Arekkazu | #510 RF-89: un error al confirmar la desviación se muestra en vez del aviso |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -96,6 +97,27 @@ describe('PreciosView (RF-89)', () => {
     const [primera, segunda] = peticiones.filter((p) => p.url === '/finanzas/precios' && p.method === 'post').map((p) => JSON.parse(p.data as string));
     expect(primera).toMatchObject({ id_especie: 2, precio_unitario: '20000', confirmar_desviacion: false });
     expect(segunda.confirmar_desviacion).toBe(true);
+  });
+
+  it('si confirmar la desviación falla, muestra el error en vez del aviso', async () => {
+    sesion.permisos = [permiso('precios_mercado', 2), permiso('precios_mercado', 1), permiso('configuracion_contable', 2)];
+    respuestas['GET /finanzas/configuracion'] = { data: configuracion };
+    respuestas['POST /finanzas/precios'] = [
+      { status: 409, data: { error_code: 'DESVIACION_PRECIO_REQUIERE_CONFIRMACION', message: 'El precio difiere 150.0% del vigente.' } },
+      { status: 500, data: { error_code: 'ERROR_INTERNO', message: 'Ocurrió un error interno.' } },
+    ];
+    const user = userEvent.setup();
+    render(<MemoryRouter><PreciosView /></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: /Registrar precio/ }));
+    const dialogo = within(screen.getByRole('dialog'));
+    await user.selectOptions(dialogo.getByLabelText(/^Especie/), '2');
+    await user.type(dialogo.getByLabelText(/Precio unitario/), '20000');
+    await user.type(dialogo.getByLabelText(/^Evidencia/), 'Boletín de la feria');
+    await user.click(dialogo.getByRole('button', { name: 'Guardar' }));
+    await user.click(await dialogo.findByRole('button', { name: 'Confirmar y guardar' }));
+
+    expect(await dialogo.findByText(/Ocurrió un error interno/)).toBeInTheDocument();
+    expect(dialogo.queryByText('El precio difiere 150.0% del vigente.')).not.toBeInTheDocument();
   });
 });
 
