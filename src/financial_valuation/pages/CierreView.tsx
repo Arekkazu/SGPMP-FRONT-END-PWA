@@ -3,6 +3,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-87/RF-91: períodos, prevalidación y cierre, comprobantes NIC 41 y trazabilidad |
 // | 2026-11-05 | Arekkazu | M06 RF-87 prototipo: tarjeta del período, precondiciones en lista, historial de cerrados |
 // | 2026-11-10 | Arekkazu | INC-M06-345/350 RF-87: cierre en espera de autorización, cancelación, matriz y titular |
+// | 2026-11-10 | Arekkazu | INC-M06-346-G43-02 RF-87: la prevalidación lista cada línea sin trazabilidad con su activo y lo que falta |
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Download, Lock, XCircle } from 'lucide-react';
@@ -199,6 +200,27 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
                   </li>
                 ))}
               </ul>
+              {pv.lineas_sin_trazabilidad.length > 0 && (
+                <div style={{ marginTop: 'var(--s4)' }}>
+                  <table style={TABLA} aria-describedby="cierre-traza-titulo">
+                    <caption id="cierre-traza-titulo" style={{ textAlign: 'left', fontWeight: 600, marginBottom: 'var(--s2)' }}>
+                      {t('cierre.lineas_traza_titulo', { count: pv.lineas_sin_trazabilidad.length })}
+                    </caption>
+                    <thead>
+                      <tr><th style={TH}>{t('cierre.lineas_traza_asiento')}</th><th style={TH}>{t('col.activo')}</th><th style={TH}>{t('cierre.lineas_traza_falta')}</th></tr>
+                    </thead>
+                    <tbody>
+                      {pv.lineas_sin_trazabilidad.map((l) => (
+                        <tr key={l.id_linea}>
+                          <td style={TD}>{t('cierre.lineas_traza_linea', { linea: l.id_linea, hecho: t(`hecho.${l.tipo_hecho}`) })}</td>
+                          <td style={TD}>{l.identificador ?? t('cierre.lineas_traza_sin_activo')}</td>
+                          <td style={TD}>{l.faltantes.map((f) => t(`eslabon.${f}`, { defaultValue: t('cierre.eslabon_otro') })).join(', ')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               {puedeCerrar && pv.puede_cerrar && (
                 <div style={{ display: 'grid', gap: 'var(--s3)', marginTop: 'var(--s5)' }}>
                   {pv.activos_sin_precio.length > 0 && (
@@ -216,7 +238,7 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
                   )}
                   {pv.lineas_sin_trazabilidad.length > 0 && (
                     <label style={{ display: 'flex', gap: 'var(--s2)' }}>
-                      <input type="checkbox" checked={autorizarLineas} onChange={(e) => setAutorizarLineas(e.target.checked)} />
+                      <input type="checkbox" checked={autorizarLineas} aria-describedby="cierre-traza-titulo" onChange={(e) => setAutorizarLineas(e.target.checked)} />
                       {t('cierre.autorizar_lineas')}
                     </label>
                   )}

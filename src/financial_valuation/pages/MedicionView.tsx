@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-05 | Arekkazu | M06 RF-83 prototipo: medición posterior del período por activo, con indicadores y filtros |
+// | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
 import React, { useEffect, useState } from 'react';
 import { Play, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -12,7 +13,7 @@ import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { finanzasApi } from '../api/finanzasApi';
 import { ACCION_E, ACCION_R, R_VALORACION } from '../rbac';
-import type { ActivoValorado, Dec, MedicionPeriodo } from '../types';
+import type { ActivoValorado, Dec, EventoPendiente, MedicionPeriodo } from '../types';
 import { sumar, signo } from '../lib/decimal';
 import { DetalleActivoModal } from '../components/DetalleActivoModal';
 import {
@@ -24,19 +25,26 @@ type EstadoMedicion = 'COMPLETADO' | 'MEDICION_PENDIENTE' | 'SIN_MEDICION' | 'AL
 interface Fila {
   activo: ActivoValorado; mediciones: MedicionPeriodo[]; anterior: Dec | null; actual: Dec | null; total: Dec | null;
   transformacion: Dec | null; precio: Dec | null; estimado: boolean; estado: EstadoMedicion; ultima: string | null;
+  motivo: string | null;
 }
 
 const TONO_ESTADO = { COMPLETADO: 'success', MEDICION_PENDIENTE: 'warning', SIN_MEDICION: 'neutral', AL_COSTO: 'info' } as const;
 
 /** Un activo en el período: del valor con que lo empezó al último medido, con la suma de las variaciones. */
-function porActivo(activo: ActivoValorado, todas: MedicionPeriodo[]): Fila {
+export function porActivo(activo: ActivoValorado, todas: MedicionPeriodo[], suspendidos: EventoPendiente[] = []): Fila {
   const mediciones = todas.filter((m) => m.id_activo_biologico === activo.id_activo_biologico)
     .sort((a, b) => a.fecha_medicion.localeCompare(b.fecha_medicion));
   const hechas = mediciones.filter((m) => m.estado === 'COMPLETADO');
-  const estado: EstadoMedicion = mediciones.some((m) => m.estado !== 'COMPLETADO') ? 'MEDICION_PENDIENTE'
+  // Un evento suspendido no deja medición: si es posterior a la última medida, esa ya no es la vigente.
+  const ultimaHecha = hechas.at(-1)?.fecha_medicion;
+  const suspendido = suspendidos
+    .filter((e) => e.id_activo_biologico === activo.id_activo_biologico
+      && (!ultimaHecha || Date.parse(e.fecha_evento) > Date.parse(ultimaHecha)))
+    .sort((a, b) => b.fecha_evento.localeCompare(a.fecha_evento))[0];
+  const estado: EstadoMedicion = suspendido || mediciones.some((m) => m.estado !== 'COMPLETADO') ? 'MEDICION_PENDIENTE'
     : hechas.length ? 'COMPLETADO' : activo.valorado_por_costo ? 'AL_COSTO' : 'SIN_MEDICION';
   return {
-    activo, mediciones, estado, estimado: hechas.some((m) => m.tiene_valor_estimado),
+    activo, mediciones, estado, motivo: suspendido?.motivo ?? null, estimado: hechas.some((m) => m.tiene_valor_estimado),
     anterior: hechas[0]?.valor_razonable_anterior ?? null, actual: hechas.at(-1)?.valor_razonable_actual ?? null,
     total: hechas.length ? sumar(hechas.map((m) => m.variacion_total)) : null,
     transformacion: hechas.length ? sumar(hechas.map((m) => m.ganancia_perdida_transformacion)) : null,
@@ -52,16 +60,18 @@ export function MedicionView() {
   const { periodo } = usePeriodo();
   const activos = useAsync(finanzasApi.activos);
   const mediciones = useAsync(finanzasApi.mediciones);
+  const suspendidos = useAsync(finanzasApi.eventosPendientes);
   const proceso = useAsync(finanzasApi.procesarEventos);
   const [detalle, setDetalle] = useState<ActivoValorado | null>(null);
   const id = periodo?.id_periodo_contable;
   const { ejecutar: cargarActivos } = activos;
   const { ejecutar: cargarMediciones } = mediciones;
-  const cargar = () => { cargarActivos(); if (id) cargarMediciones(id); };
+  const { ejecutar: cargarSuspendidos } = suspendidos;
+  const cargar = () => { cargarActivos(); if (id) { cargarMediciones(id); cargarSuspendidos(id); } };
   useEffect(() => { if (puedeLeer) cargarActivos(); }, [puedeLeer, cargarActivos]);
-  useEffect(() => { if (puedeLeer && id) cargarMediciones(id); }, [puedeLeer, id, cargarMediciones]);
+  useEffect(() => { if (puedeLeer && id) { cargarMediciones(id); cargarSuspendidos(id); } }, [puedeLeer, id, cargarMediciones, cargarSuspendidos]);
 
-  const filas = (activos.data ?? []).map((a) => porActivo(a, mediciones.data ?? []));
+  const filas = (activos.data ?? []).map((a) => porActivo(a, mediciones.data ?? [], suspendidos.data ?? []));
   const l = useListado(filas, (f) => `${f.activo.identificador} ${f.activo.especie} ${f.activo.finca}`, [
     { id: 'estado', etiqueta: t('col.estado'), valor: (f) => f.estado, texto: (v) => t(`medicion.estado_${v}`) },
     { id: 'clasificacion', etiqueta: t('col.clasificacion'), valor: (f) => f.activo.clasificacion, texto: (v) => t(`clasificacion.${v}`), femenino: true },
@@ -95,7 +105,7 @@ export function MedicionView() {
         )}
       />
       <Alert variant="info" title={t('medicion.aviso_titulo')} description={t('medicion.aviso_detalle')} style={{ marginBottom: 'var(--s5)' }} />
-      <ErrorApi error={activos.error ?? mediciones.error ?? proceso.error} />
+      <ErrorApi error={activos.error ?? mediciones.error ?? suspendidos.error ?? proceso.error} />
       {!periodo ? <SinPeriodo /> : (
         <>
           <Indicadores items={[
@@ -140,6 +150,7 @@ export function MedicionView() {
                         : f.estimado ? <Badge variant="warning">{t('valor.estimado')}</Badge> : t('medicion.con_precio_vigente')}</td>
                       <td style={TD}>
                         <Badge variant={TONO_ESTADO[f.estado]}>{t(`medicion.estado_${f.estado}`)}</Badge>
+                        {f.motivo && <span className="fin-secundario">{f.motivo}</span>}
                       </td>
                       <td style={TD}>
                         <Button variant="ghost" size="sm" onClick={() => setDetalle(f.activo)}

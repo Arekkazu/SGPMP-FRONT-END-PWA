@@ -4,6 +4,8 @@
 // | 2026-11-05 | Arekkazu | M06 prototipos: listados del período, modelo de costo por activo y resumen de auditoría |
 // | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
 // | 2026-11-10 | Arekkazu | INC-M06-337/344/345 RF-86/87/93: cierre en espera, acumulado y desglose de mantenimiento |
+// | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
+// | 2026-11-10 | Arekkazu | INC-M06-346-G43-02 RF-87: la prevalidación lista cada línea sin trazabilidad con su activo y lo que falta |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -100,6 +102,10 @@ export interface MedicionPeriodo extends ActivoDelRegistro {
 }
 export type TipoVariacion = 'GANANCIA_TRANSFORMACION_BIOLOGICA' | 'PERDIDA_TRANSFORMACION_BIOLOGICA' | 'GANANCIA_PRECIO_MERCADO'
   | 'PERDIDA_PRECIO_MERCADO';
+/** Evento del período cuya medición quedó suspendida: no deja medición posterior (RF-86). */
+export interface EventoPendiente extends ActivoDelRegistro {
+  id_evento: number; fecha_evento: string; motivo: string | null; fecha_procesamiento: string;
+}
 export interface VariacionPeriodo extends ActivoDelRegistro {
   id_variacion_valor_razonable: number; tipo: TipoVariacion; monto_variacion: Dec; valor_razonable_anterior: Dec;
   valor_razonable_nuevo: Dec; tiene_estimacion: boolean; fecha_registro: string; id_linea: number | null;
@@ -181,7 +187,9 @@ export interface Periodo {
 }
 export interface Prevalidacion {
   bloqueos: Array<{ codigo: string; mensaje: string }>; activos_sin_precio: Array<{ id_activo_biologico: number; identificador: string; especie: string }>;
-  lineas_sin_trazabilidad: Array<{ id_linea: number; tipo_hecho: TipoHecho; faltantes: string[] }>;
+  lineas_sin_trazabilidad: Array<{
+    id_linea: number; tipo_hecho: TipoHecho; faltantes: string[]; id_activo_biologico?: number | null; identificador?: string | null;
+  }>;
   puede_cerrar: boolean; requiere_autorizacion: boolean;
 }
 export interface ResultadoCierre {

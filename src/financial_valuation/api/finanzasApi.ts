@@ -6,13 +6,13 @@
 // | 2026-11-09 | destroyerban | INC-M06-317-G17 RF-84: validar con justificación un cálculo con valor neto ≤ 0 |
 // | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
 // | 2026-11-10 | Arekkazu | INC-M06-337/345/351 RF-86/87: cancelar cierre, ajuste de período anterior y acumulado |
+// | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
 import { http } from '../../shared/api/http';
 import type {
   Acumulado, ActivoValorado, Asignacion, Cadena, CalculoPeriodo, CosechaPendiente, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
   CostosManuales, Cotizacion, EstadoDetalle, EstadoResumen, HistorialActivo, InformeDetalle, InformePayload, InformeResumen,
   Linea, Naturaleza, PaginaAuditoria, Periodo, Precio, PrecioPayload, Prevalidacion, Propuesta, ResultadoCierre,
-  ResultadoCosto, Simulacion, TipoAjuste,
-} from '../types';
+  ResultadoCosto, Simulacion, TipoAjuste, EventoPendiente } from '../types';
 
 const B = '/finanzas';
 
@@ -76,6 +76,7 @@ export const finanzasApi = {
   eventosSanitarios: (idActivo: number) =>
     get<Array<{ id_evento: number; fecha: string; tipo: string; diagnostico: string | null }>>(`/activos/${idActivo}/eventos-sanitarios`),
   mediciones: (idPeriodo: number) => get<MedicionPeriodo[]>(`/periodos/${idPeriodo}/mediciones`),
+  eventosPendientes: (idPeriodo: number) => get<EventoPendiente[]>(`/periodos/${idPeriodo}/eventos-pendientes`),
   variaciones: (idPeriodo: number) => get<VariacionPeriodo[]>(`/periodos/${idPeriodo}/variaciones`),
   calculos: (idPeriodo: number) => get<CalculoPeriodo[]>(`/periodos/${idPeriodo}/calculos`),
   validarCalculo: (idCalculo: number, justificacion: string) =>
