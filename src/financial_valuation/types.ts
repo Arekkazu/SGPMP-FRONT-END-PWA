@@ -3,6 +3,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: contratos de la API /finanzas |
 // | 2026-11-05 | Arekkazu | M06 prototipos: listados del período, modelo de costo por activo y resumen de auditoría |
 // | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
+// | 2026-11-10 | Arekkazu | INC-M06-337/344/345 RF-86/87/93: cierre en espera, acumulado y desglose de mantenimiento |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -176,7 +177,7 @@ export interface Periodo {
   id_periodo_contable: number; numero_id_tributaria: string; tipo_cierre: TipoCierre; fecha_inicio: string; fecha_fin: string;
   estado: 'ABIERTO' | 'EN_CIERRE' | 'CERRADO' | string; fecha_cierre: string | null;
   ultimo_cierre: { id_cierre: number; estado: string; paso_actual: number | null; error_detalle: string | null;
-    fecha_inicio: string; fecha_fin: string | null } | null;
+    fecha_inicio: string; fecha_fin: string | null; nombre_usuario_ejecutor?: string | null } | null;
 }
 export interface Prevalidacion {
   bloqueos: Array<{ codigo: string; mensaje: string }>; activos_sin_precio: Array<{ id_activo_biologico: number; identificador: string; especie: string }>;
@@ -211,7 +212,15 @@ export interface EstadoResumen {
   estado: 'GENERADO' | 'APROBADO' | string; fecha_generacion: string; filtros: Record<string, number | null>; version: number;
   fecha_aprobacion: string | null;
 }
-export interface EstadoDetalle extends EstadoResumen { componentes: Record<string, Dec | unknown[]>; hash_consistencia: string }
+export interface EstadoDetalle extends EstadoResumen {
+  componentes: Record<string, Dec | unknown[] | Record<string, Dec>>; hash_consistencia: string;
+}
+/** Acumulado del período (también abierto), sin versión. */
+export interface Acumulado {
+  componentes: Record<string, Dec>; desglose_costos_mantenimiento: Record<string, Dec>; total_ingresos: Dec; total_gastos: Dec;
+  resultado_neto: Dec; estado_periodo: string; es_definitivo: boolean;
+}
+export type TipoAjuste = 'AUMENTAR' | 'DISMINUIR';
 export interface InformeResumen {
   id_informe: number; version_informe: string; estado: 'BORRADOR' | 'APROBADO' | 'RECHAZADO' | 'ARCHIVADO' | string;
   fecha_generacion: string; fecha_aprobacion: string | null; razon_rechazo: string | null; hash_informe: string;
