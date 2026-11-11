@@ -1,3 +1,20 @@
+## [1.4.0-rc.35](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.34...v1.4.0-rc.35) (2026-11-11)
+
+### Features
+
+* **rf16-rf37-mod9:** pestanas de ciclos productivos y densidad maxima por especie ([f326ae7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f326ae71d36fa74e90e378ca58c3399b5e125d02))
+* **rf36-mod2:** estado de densidad del lote en el listado y en sus datos ([0b01f01](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0b01f0137956710acfe3599316e4996f39f0cd6c))
+* **rf87-mod6:** decision por cada activo sin precio en el cierre ([8f713ac](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8f713ac688a0f40e2103264f4f74f94942dc481c))
+
+### Bug Fixes
+
+* **rf74-rf86-rf87-mod5-mod6:** medicion pendiente por evento suspendido, lineas sin trazabilidad del cierre y causa del batch en palabras ([f6ce9b0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f6ce9b055d21cd33a181ef3a9b0a858b3d0b1d3f))
+* **rf84-mod6:** la confirmacion con costos propios pide el documento de soporte (INC-M06-316-G16) ([03b26bb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/03b26bbce15195428276669196e4bfd4eb9b3e85))
+* **rf84-mod6:** validar con justificación un cálculo con valor neto no positivo (INC-M06-317-G17) ([113798c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/113798c6b0c012ea997a597eaac6a98d40ce41ac)), closes [Arekkazu/sgpmp-backend#1004](https://github.com/Arekkazu/sgpmp-backend/issues/1004)
+* **rf85-mod6:** cosechas pendientes e ingreso manual de sus costos de venta (INC-M06-323-G27) ([d51bc6a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d51bc6ad1a420f8aa3c38eeeaa96939d8f87198c)), closes [Arekkazu/sgpmp-backend#1010](https://github.com/Arekkazu/sgpmp-backend/issues/1010)
+* **rf86-rf87-rf93-mod6:** cierre en espera con cancelacion, ajuste de periodo anterior y acumulado con desglose ([9174073](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/91740731ceef1da716e8c4d7399553a43ae1b648)), closes [#1068](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1068)
+* **rf89-mod6:** un error al confirmar la desviacion del precio se muestra en vez del aviso ([4acfe09](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4acfe09660d67bb563cd9b41ba1893274c4899fc))
+
 ## [1.4.0-rc.34](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.33...v1.4.0-rc.34) (2026-11-06)
 
 ### Features
