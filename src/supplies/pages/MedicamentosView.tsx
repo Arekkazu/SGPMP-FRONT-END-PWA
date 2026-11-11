@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-76: registro, consulta y anulación de aplicaciones de medicamento |
+// | 2026-11-10 | Arekkazu | TC-DIS-214 RF-76: columna de dosis por individuo para los lotes |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Pill, Ban } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -74,6 +75,7 @@ export function MedicamentosView() {
                 <th style={TH}>{t('medicamento.nombre')}</th>
                 <th style={TH}>{t('comun.fecha')}</th>
                 <th style={TH_NUM}>{t('medicamento.dosis_col')}</th>
+                <th style={TH_NUM}>{t('consumo.por_individuo')}</th>
                 <th style={TH}>{t('medicamento.retiro_col')}</th>
                 <th style={TH_NUM}>{t('comun.costo_total')}</th>
                 <th style={TH}>{t('comun.estado')}</th>
@@ -98,6 +100,7 @@ export function MedicamentosView() {
                       {m.hora_aplicacion && <div style={SECUNDARIO}>{m.hora_aplicacion.slice(0, 5)}</div>}
                     </td>
                     <td style={TD_NUM}>{formatoCantidad(m.cantidad)} {m.unidad_dosis}</td>
+                    <td style={TD_NUM}>{m.dosis_por_individuo ? `${formatoCantidad(m.dosis_por_individuo)} ${m.unidad_dosis}` : <span style={SECUNDARIO}>{t('consumo.no_aplica_individual')}</span>}</td>
                     <td style={TD}>
                       {m.fecha_fin_retiro
                         ? <span style={{ color: enRetiro ? 'var(--sem-warning)' : 'var(--text-secondary)', fontWeight: enRetiro ? 600 : 400 }}>

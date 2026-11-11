@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-10 | Arekkazu | #393 RF-36: estado de la densidad del lote en el listado y en sus datos |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { FECHA_NUMERICA, formatearFecha } from '../../shared/i18n/formato';
@@ -6,6 +9,7 @@ import { Button } from '../../shared/design-system/Button';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { EditarActivoModal } from './EditarActivoModal';
+import { DensidadLoteCard } from './DensidadLote';
 import { RECURSO_ACTIVOS, ACCION_U } from '../rbac';
 import type { ApiError } from '../../shared/api/errors';
 import type { ActivoBiologicoResponse, ActualizarActivoIndividualDTO } from '../types';
@@ -115,6 +119,7 @@ export function DatosActivoSection({ activo, loading, saving, saveError, onGuard
               <Dato label={t('datosactivosection.biomasa_total')} value={pob.biomasa_total} />
               <Dato label={t('datosactivosection.densidad')} value={pob.densidad} />
             </Grid>
+            <DensidadLoteCard idActivo={activo.id_activo_biologico} />
           </>
         ) : (
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>{t('datosactivosection.sin_detalle_disponible')}</p>

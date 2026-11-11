@@ -50,7 +50,13 @@
     "siguiente": "Siguiente",
     "sin_conexion": "Sin conexión",
     "sin_conexion_detalle": "Puedes consultar lo cargado; los registros nuevos y las anulaciones necesitan conexión.",
-    "seguimiento_fallo": "No se pudo consultar el avance. Recarga la página para ver si ya terminó."
+    "seguimiento_fallo": "No se pudo consultar el avance. Recarga la página para ver si ya terminó.",
+    "paginacion": "Paginación",
+    "ir_pagina": "Ir a la página {{pagina}}",
+    "activo_sin_visibles": "No hay activos visibles para tu usuario: revisa la finca que tienes asignada o escribe el ID del activo.",
+    "cerrar": "Cerrar",
+    "si": "Sí",
+    "no": "No"
   },
   "estado": {
     "VALIDADO": "Validado",
@@ -75,7 +81,9 @@
     "GENERADO": "Generado",
     "CONSOLIDADO": "Consolidado",
     "ENTREGADO": "Entregado",
-    "REEMPLAZADO": "Reemplazado"
+    "REEMPLAZADO": "Reemplazado",
+    "PARCIAL": "Parcial",
+    "ADVERTENCIA": "Advertencia"
   },
   "tipo": {
     "ALIMENTO": "Alimento",
@@ -135,7 +143,17 @@
     "vacio_detalle": "Cuando registres una ración aparecerá aquí. Ajusta los filtros si buscas un periodo concreto.",
     "anular_titulo": "Anular consumo #{{id}}",
     "anular_descripcion": "El registro queda en el historial como anulado y su costo se descuenta del ciclo productivo. Esta acción no se puede deshacer.",
-    "sin_tipos": "No hay alimentos activos en el catálogo. Pídele al administrador que los registre."
+    "sin_tipos": "No hay alimentos activos en el catálogo. Pídele al administrador que los registre.",
+    "sin_activo_elegido": "Elige primero el activo",
+    "no_aplica_individual": "No aplica: activo individual",
+    "sin_poblacion": "Sin población registrada",
+    "sin_poblacion_hint": "El lote no tiene individuos registrados; el sistema rechazará el registro hasta que se actualice su población.",
+    "por_individuo_pendiente": "Se calcula al escribir la cantidad",
+    "cantidad_actual": "Población actual del lote",
+    "por_individuo_unidad": "Consumo por individuo ({{unidad}})",
+    "por_individuo_vivo": "{{valor}} {{unidad}} por individuo",
+    "fecha_fase_hint": "El activo entró a su fase actual el {{fecha}}.",
+    "fecha_antes_fase": "La fecha no puede ser anterior a la fecha de cambio de fase del activo ({{fecha}})."
   },
   "medicamento": {
     "titulo": "Aplicación de medicamentos",
@@ -171,7 +189,11 @@
     "vacio_titulo": "Sin aplicaciones registradas",
     "vacio_detalle": "Las aplicaciones de medicamento aparecerán aquí con su periodo de retiro.",
     "anular_titulo": "Anular aplicación #{{id}}",
-    "anular_descripcion": "La aplicación queda como anulada, su costo se descuenta del ciclo y deja de contar para el periodo de retiro. Esta acción no se puede deshacer."
+    "anular_descripcion": "La aplicación queda como anulada, su costo se descuenta del ciclo y deja de contar para el periodo de retiro. Esta acción no se puede deshacer.",
+    "dosis_individuo_pendiente": "Se calcula al escribir la dosis",
+    "dosis_individuo_unidad": "Dosis por individuo ({{unidad}})",
+    "dosis_individuo_vivo": "Cada uno de los {{poblacion}} individuos recibe {{valor}} {{unidad}}.",
+    "dosis_individuo_no_aplica": "La dosis por individuo solo se calcula para lotes."
   },
   "ica": {
     "titulo": "Eficiencia alimenticia (ICA)",
@@ -198,7 +220,12 @@
     "tipo_MANUAL": "Manual",
     "tipo_AUTOMATICO": "Automático",
     "tipo_REINTENTO_AUTOMATICO": "Reintento automático",
-    "tipo_REINTENTO_MANUAL": "Reintento manual"
+    "tipo_REINTENTO_MANUAL": "Reintento manual",
+    "detalle_titulo": "Cálculo del {{desde}} al {{hasta}}",
+    "intento": "Intento",
+    "alerta_critica": "Conversión alimenticia crítica: {{valor}}",
+    "alerta_critica_detalle": "El activo gasta más de 5 kilos de alimento por kilo ganado. Revisa la ración y la salud del animal; se generó una alerta para el equipo.",
+    "ver_detalle_aria": "Ver el detalle del cálculo {{periodo}}"
   },
   "batch": {
     "titulo": "Cálculo automático (batch)",
@@ -224,7 +251,11 @@
     "intentos": "Intentos",
     "ultimo_intento": "Último intento",
     "reintentar": "Reintentar",
-    "reintentado": "Reintento enviado"
+    "reintentado": "Reintento enviado",
+    "causa_MANUAL": "Interrumpida por un usuario",
+    "causa_VENTANA_EXCEDIDA": "Superó la ventana de ejecución",
+    "causa_REINICIO_SERVIDOR": "Se detuvo porque el servidor se reinició",
+    "causa_otra": "Interrumpida"
   },
   "costeo": {
     "titulo": "Costos del ciclo productivo",
@@ -259,7 +290,9 @@
     "cantidad_correcta": "Cantidad correcta",
     "precio_correcto": "Precio correcto por unidad ($)",
     "motivo_correccion": "Motivo de la corrección",
-    "motivo_correccion_hint": "Mínimo 20 caracteres."
+    "motivo_correccion_hint": "Mínimo 20 caracteres.",
+    "sin_precio_referencia": "Precio de referencia no disponible",
+    "sin_precio_referencia_detalle": "El sistema no tiene un precio automático para servicios veterinarios ni inseminaciones: ingresa el precio real y justifica de dónde sale."
   },
   "nic41": {
     "titulo": "Provisión NIC-41",
@@ -291,7 +324,17 @@
     "no_entregado": "Pendiente",
     "desglose": "Desglose por tipo",
     "registros": "Registros incluidos",
-    "hash": "Huella de integridad"
+    "hash": "Huella de integridad",
+    "elegir_version": "Elige una versión para verla",
+    "reemplaza_a": "Reemplaza a la {{version}}",
+    "version_anterior": "versión anterior",
+    "reporte_anterior": "Reporte anterior",
+    "sin_anterior": "Es la primera versión",
+    "ver_anterior": "Ver reporte anterior",
+    "incompleto_suma_one": "El reporte suma {{monto}} con {{count}} registro.",
+    "incompleto_suma_other": "El reporte suma {{monto}} con {{count}} registros.",
+    "incompleto_acumulado": "El acumulado del ciclo es {{acumulado}}: hay una diferencia de {{diferencia}}.",
+    "incompleto_sin_entrega": "Además, el reporte aún no se entregó a Finanzas."
   },
   "gastos": {
     "titulo": "Reporte de gastos",
@@ -322,7 +365,16 @@
     "historial_vacio": "Todavía no has generado reportes.",
     "generado": "Generado",
     "regenerar": "Regenerar",
-    "regenerar_hint": "Vuelve a calcular el reporte con los datos actuales."
+    "regenerar_hint": "Vuelve a calcular el reporte con los datos actuales.",
+    "categoria": "Categoría",
+    "subtotal": "Subtotal",
+    "porcentaje": "Porcentaje",
+    "registros": "Registros",
+    "especie_opcional": "Especie (opcional)",
+    "finca_opcional": "Finca (opcional)",
+    "infraestructura_opcional": "Infraestructura (opcional)",
+    "infraestructura_hint": "Elige primero la finca.",
+    "alcance_hint": "Sin activo, el reporte agrupa los gastos de la especie o la infraestructura elegidas."
   },
   "historial": {
     "titulo": "Historial de suministros",
@@ -349,7 +401,10 @@
     "resumen_async": "{{registros}} registros por un total de {{monto}}.",
     "exportacion_en_cola": "Exportación en cola",
     "exportacion_trabajo": "Exportación en proceso",
-    "descargar": "Descargar exportación"
+    "descargar": "Descargar exportación",
+    "rango_fechas": "Rango de fechas",
+    "rango_costo": "Rango de costo",
+    "unidad": "Unidad"
   },
   "evento": {
     "SUMINISTRO_REGISTRADO": "Suministro registrado",
@@ -390,6 +445,22 @@
     "detalle_titulo": "Evento #{{id}}",
     "incompleto": "Registro de auditoría incompleto",
     "antes": "Antes",
-    "despues": "Después"
+    "despues": "Después",
+    "actor": "Usuario (actor)",
+    "actor_hint": "Número del usuario que hizo la operación.",
+    "entidad_hint": "Elige una de la lista o escribe su nombre.",
+    "sin_clasificacion": "Sin clasificar",
+    "ver_aria": "Ver el detalle del evento {{id}}",
+    "retencion": "Se conserva {{valor}}"
+  },
+  "entidad": {
+    "registro_suministro": "Registro de suministro",
+    "consumo_alimento": "Consumo de alimento",
+    "medicamento": "Medicamento",
+    "acumulado_ciclo": "Acumulado del ciclo",
+    "provision_nic41": "Provisión NIC-41",
+    "reporte_gastos_acumulados": "Reporte de gastos",
+    "historial_suministros": "Historial de suministros",
+    "exportacion_historial": "Exportación del historial"
   }
 }

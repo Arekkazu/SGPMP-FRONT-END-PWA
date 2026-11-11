@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-78: registro de servicio veterinario o inseminación en el ciclo |
+// | 2026-11-10 | Arekkazu | TC-DIS-215 RF-78: aviso de que no hay precio de referencia automático y por eso se justifica el precio |
 import React, { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { ModalShell } from '../../shared/design-system/ModalShell';
@@ -76,6 +77,9 @@ export function SuministroDirectoFormModal({ idActivo, nombreActivo, enviando, e
     >
       <form onSubmit={handleSubmit(enviar)} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
         <Alert variant="info" title={t('costeo.solo_directos')} description={t('costeo.solo_directos_detalle')} />
+        {/* RF-78: el sistema no tiene un precio de referencia automático para estos servicios, así que el precio es
+            manual y su justificación obligatoria (E2). El aviso se anuncia (role=alert) y lleva icono, no solo color. */}
+        <Alert variant="warning" title={t('costeo.sin_precio_referencia')} description={t('costeo.sin_precio_referencia_detalle')} id="costeo-aviso-precio" />
         {alertaGeneral && error && <Alert variant={error.status === 409 ? 'error' : 'warning'} title={error.message} />}
         <Select id="costeo-tipo" label={t('costeo.tipo')} required error={errors.tipo_suministro?.message} {...register('tipo_suministro', { required: t('costeo.tipo_requerido') })}>
           <option value="">{t('comun.seleccionar')}</option>
@@ -96,7 +100,7 @@ export function SuministroDirectoFormModal({ idActivo, nombreActivo, enviando, e
           <strong style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{cantidad && precio ? formatoMoneda(Number(cantidad) * Number(precio)) : '—'}</strong>
         </p>
         <AreaTexto id="costeo-justificacion" label={t('costeo.justificacion')} required maxLength={500} hint={t('costeo.justificacion_hint')}
-          error={errors.justificacion_precio?.message}
+          aria-describedby="costeo-aviso-precio" error={errors.justificacion_precio?.message}
           {...register('justificacion_precio', { validate: (v) => v.trim().length >= 20 || t('comun.motivo_corto', { min: 20, faltan: 20 - v.trim().length }) })} />
         <AreaTexto id="costeo-obs" label={t('comun.observaciones')} maxLength={500} hint={t('comun.opcional')} {...register('observacion')} />
       </form>

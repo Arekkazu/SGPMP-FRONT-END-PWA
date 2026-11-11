@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-77: generar reportes de gastos (síncrono o en cola), exportarlos y consultar el historial |
+// | 2026-11-10 | Arekkazu | CP119/H-M05-03 RF-77: alcance agregado por especie o infraestructura cuando no se elige un activo |
 import React, { useEffect, useState } from 'react';
 import { FileBarChart2, RefreshCw, Eye } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -16,6 +17,8 @@ import { diasAtrasLocal, hoyLocal } from '../../shared/lib/fecha';
 import { useT } from '../../shared/i18n/useT';
 import { ACCION_E, ACCION_R, RECURSO_GASTOS } from '../rbac';
 import { useReporteGastos } from '../hooks/useReporteGastos';
+import { useAsync } from '../hooks/useAsync';
+import { catalogosApi } from '../api/catalogosApi';
 import { useSondeoTrabajo } from '../hooks/useSondeoTrabajo';
 import { useActivosSuministros } from '../hooks/useActivosSuministros';
 import { guardarArchivo } from '../lib/descarga';
@@ -46,6 +49,21 @@ export function ReporteGastosView() {
   const [visible, setVisible] = useState<ReporteGasto | null>(null);
   const [idCola, setIdCola] = useState<number | null>(null);
   const sondeo = useSondeoTrabajo(idCola, consultarTrabajo);
+  // Alcance agregado (RF-77): sin activo, el reporte se acota por especie o por infraestructura de una finca.
+  const [idEspecie, setIdEspecie] = useState('');
+  const [idFinca, setIdFinca] = useState('');
+  const [idInfraestructura, setIdInfraestructura] = useState('');
+  const especies = useAsync(catalogosApi.especies);
+  const fincas = useAsync(catalogosApi.fincas);
+  const infraestructuras = useAsync(catalogosApi.infraestructuras);
+  const { ejecutar: cargarEspecies } = especies;
+  const { ejecutar: cargarFincas } = fincas;
+  const { ejecutar: cargarInfraestructuras, limpiar: limpiarInfraestructuras } = infraestructuras;
+  useEffect(() => { if (puedeGenerar) { cargarEspecies(); cargarFincas(); } }, [puedeGenerar, cargarEspecies, cargarFincas]);
+  useEffect(() => {
+    setIdInfraestructura('');
+    if (idFinca) cargarInfraestructuras(Number(idFinca)); else limpiarInfraestructuras();
+  }, [idFinca, cargarInfraestructuras, limpiarInfraestructuras]);
 
   const { ejecutar: cargarHistorial } = historial;
   useEffect(() => { if (puedeLeer) cargarHistorial(); }, [puedeLeer, cargarHistorial]);
@@ -67,6 +85,8 @@ export function ReporteGastosView() {
       fecha_fin_reporte: hasta,
       tipo_periodo: granularidad,
       activo_biologico_id: idActivo,
+      id_especie: idActivo === null && idEspecie ? Number(idEspecie) : null,
+      id_infraestructura: idActivo === null && idInfraestructura ? Number(idInfraestructura) : null,
       categorias_incluidas: categorias.length === CATEGORIAS.length ? null : categorias,
     });
     if (!r) return;
@@ -102,6 +122,23 @@ export function ReporteGastosView() {
             {GRANULARIDADES.map((g) => <option key={g} value={g}>{t(`granularidad.${g}`)}</option>)}
           </Select>
           <SelectorActivo id="gastos-activo" label={t('gastos.activo_opcional')} activos={activos} cargando={cargandoActivos} value={texto} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
+          {idActivo === null && (
+            <>
+              <Select id="gastos-especie" label={t('gastos.especie_opcional')} value={idEspecie} onChange={(e) => setIdEspecie(e.target.value)} hint={t('gastos.alcance_hint')}>
+                <option value="">{t('comun.todas')}</option>
+                {(especies.data ?? []).map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
+              </Select>
+              <Select id="gastos-finca" label={t('gastos.finca_opcional')} value={idFinca} onChange={(e) => setIdFinca(e.target.value)}>
+                <option value="">{t('comun.todas')}</option>
+                {(fincas.data ?? []).map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
+              </Select>
+              <Select id="gastos-infraestructura" label={t('gastos.infraestructura_opcional')} value={idInfraestructura} disabled={!idFinca}
+                hint={!idFinca ? t('gastos.infraestructura_hint') : undefined} onChange={(e) => setIdInfraestructura(e.target.value)}>
+                <option value="">{t('comun.todas')}</option>
+                {(infraestructuras.data ?? []).map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
+              </Select>
+            </>
+          )}
           <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
             <legend className="ds-field__label">{t('gastos.categorias')}</legend>
             <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', minHeight: 'var(--s9)', alignItems: 'center' }}>

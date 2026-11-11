@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-10 | Arekkazu | #512/#392 RF-16: pestañas de ciclos productivos y densidad máxima |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ChevronLeft } from 'lucide-react';
@@ -8,15 +11,19 @@ import { CiclosSection } from './CiclosSection';
 import { PatologiasSection } from './PatologiasSection';
 import { MetricasSection } from './MetricasSection';
 import { UmbralesSection } from './UmbralesSection';
+import { CiclosProductivosSection } from './CiclosProductivosSection';
+import { DensidadEtapasSection } from './DensidadEtapasSection';
 import type { EspecieResponse } from '../types';
 
-type SubTabId = 'ciclos' | 'patologias' | 'metricas' | 'umbrales';
+type SubTabId = 'ciclos' | 'ciclos_productivos' | 'densidad' | 'patologias' | 'metricas' | 'umbrales';
 
 const SUB_TABS: { id: SubTabId; label: string; disponible: boolean }[] = [
-  { id: 'ciclos', label: 'Ciclos Biológicos', disponible: true },
-  { id: 'patologias', label: 'Patologías', disponible: true },
-  { id: 'metricas', label: 'Métricas', disponible: true },
-  { id: 'umbrales', label: 'Umbrales Ambientales', disponible: true },
+  { id: 'ciclos', label: 'porespeciepage.tab_ciclos', disponible: true },
+  { id: 'ciclos_productivos', label: 'porespeciepage.tab_ciclos_productivos', disponible: true },
+  { id: 'densidad', label: 'porespeciepage.tab_densidad', disponible: true },
+  { id: 'patologias', label: 'porespeciepage.tab_patologias', disponible: true },
+  { id: 'metricas', label: 'porespeciepage.tab_metricas', disponible: true },
+  { id: 'umbrales', label: 'porespeciepage.tab_umbrales', disponible: true },
 ];
 
 const TAB_BTN: React.CSSProperties = {
@@ -112,7 +119,7 @@ export function PorEspeciePage() {
             aria-current={subTab === tab.id ? 'page' : undefined}
             title={!tab.disponible ? t('porespeciepage.disponible_proximamente') : undefined}
           >
-            {tab.label}
+            {t(tab.label)}
             {!tab.disponible && (
               <span style={{ marginLeft: 'var(--s1)', fontSize: '10px', color: 'var(--text-muted)' }}>(próx.)</span>
             )}
@@ -122,6 +129,8 @@ export function PorEspeciePage() {
 
       {/* Content */}
       {subTab === 'ciclos' && <CiclosSection idEspecie={especieSeleccionada.id_especie} />}
+      {subTab === 'ciclos_productivos' && <CiclosProductivosSection idEspecie={especieSeleccionada.id_especie} />}
+      {subTab === 'densidad' && <DensidadEtapasSection idEspecie={especieSeleccionada.id_especie} />}
       {subTab === 'patologias' && <PatologiasSection idEspecie={especieSeleccionada.id_especie} />}
       {subTab === 'metricas' && <MetricasSection idEspecie={especieSeleccionada.id_especie} />}
       {subTab === 'umbrales' && <UmbralesSection idEspecie={especieSeleccionada.id_especie} />}

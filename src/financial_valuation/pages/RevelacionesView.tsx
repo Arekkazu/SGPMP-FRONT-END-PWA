@@ -2,8 +2,9 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-92: informe de revelaciones NIC 41 por párrafo (borrador, aprobación y descarga) |
 // | 2026-11-05 | Arekkazu | M06 RF-92 prototipo: historial de versiones del período con filtros; sin JSON ni claves crudas |
+// | 2026-11-10 | Arekkazu | TC-DIS-257..259 RF-92: índice de secciones, filas identificadas, justificación bajo el campo, aprobación confirmada y descarga anunciada |
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, Download, FileText, Plus, Trash2, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Download, FileText, Plus, Trash2, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
@@ -19,7 +20,7 @@ import { ACCION_C, ACCION_R, ACCION_U, R_REVELACIONES, R_VALORACION } from '../r
 import type { ActivoValorado, InformePayload } from '../types';
 import {
   AreaTexto, Datos, EncabezadoVista, EstadoBadge, ErrorApi, Listado, MotivoModal, PANEL, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TH,
-  formatoCantidad, formatoFecha, formatoMoneda, guardarArchivo, nombrePeriodo, useAsync, useListado, usePeriodo,
+  descargarArchivo, formatoCantidad, formatoFecha, formatoMoneda, nombrePeriodo, useAsync, useListado, usePeriodo,
 } from '../components/comunes';
 
 /** Orden del informe: el de la norma (¶40-56 y NIIF 13 ¶93). */
@@ -66,7 +67,14 @@ function Seccion({ clave, contenido }: { clave: string; contenido: unknown }) {
   const titulo = t(`rev.s.${clave}`, { defaultValue: humanizar(clave) });
   let cuerpo: React.ReactNode;
   if (typeof contenido === 'string') {
-    cuerpo = <p style={SECUNDARIO}>{t('rev.datos_insuficientes')}</p>;
+    // El backend marca la sección con un código: sin datos suficientes, o bloqueada por un error en su fuente.
+    const bloqueada = /BLOQUE|ERROR/i.test(contenido);
+    cuerpo = (
+      <p style={{ ...SECUNDARIO, display: 'flex', gap: 'var(--s2)', alignItems: 'center' }}>
+        {bloqueada ? <XCircle size={16} aria-hidden style={{ color: 'var(--sem-error)' }} /> : <AlertTriangle size={16} aria-hidden style={{ color: 'var(--sem-warning)' }} />}
+        {bloqueada ? t('rev.seccion_bloqueada') : t('rev.datos_insuficientes')}
+      </p>
+    );
   } else if (Array.isArray(contenido)) {
     if (contenido.length === 0) cuerpo = <p style={SECUNDARIO}>{t('rev.sin_datos')}</p>;
     else {
@@ -100,7 +108,7 @@ function Seccion({ clave, contenido }: { clave: string; contenido: unknown }) {
   }
   return (
     <section style={{ marginTop: 'var(--s5)' }} aria-labelledby={`rev-${clave}`}>
-      <h3 id={`rev-${clave}`} style={{ margin: '0 0 var(--s2)', fontSize: 'var(--fs-body-lg)', fontWeight: 700 }}>{titulo}</h3>
+      <h3 id={`rev-${clave}`} tabIndex={-1} style={{ margin: '0 0 var(--s2)', fontSize: 'var(--fs-body-lg)', fontWeight: 700, outline: 'none' }}>{titulo}</h3>
       {cuerpo}
     </section>
   );
@@ -116,6 +124,7 @@ export function RevelacionesView() {
   const [idInforme, setIdInforme] = useState<number | null>(null);
   const [generar, setGenerar] = useState(false);
   const [rechazar, setRechazar] = useState(false);
+  const [aprobando, setAprobando] = useState(false);
   const informes = useAsync(finanzasApi.informes);
   const detalle = useAsync(finanzasApi.informe);
   const resolucion = useAsync(finanzasApi.resolverInforme);
@@ -144,12 +153,14 @@ export function RevelacionesView() {
   const alertas = (inf?.contenido.alertas_consistencia as Array<{ campo: string; detalle: string }> | undefined) ?? [];
 
   const aprobar = async () => {
+    setAprobando(false);
     if (inf && await resolucion.ejecutar(inf.id_informe, true)) { pushToast('success', t('rev.aprobado')); refrescar(inf.id_informe); }
   };
   const descargar = async (formato: 'pdf' | 'excel') => {
     const a = inf && await descarga.ejecutar(inf.id_informe, formato);
-    if (a) guardarArchivo(a.blob, a.nombre);
+    if (a) descargarArchivo(a);
   };
+  const secciones = inf ? SECCIONES.filter((k) => k in inf.contenido) : [];
 
   return (
     <>
@@ -203,7 +214,7 @@ export function RevelacionesView() {
             <div className="fin-acciones" style={{ marginTop: 'var(--s4)' }}>
               {inf.estado === 'BORRADOR' && puedeResolver && (
                 <>
-                  <Button variant="primary" size="sm" loading={resolucion.cargando} onClick={aprobar}><CheckCircle2 size={14} aria-hidden />{t('rev.aprobar')}</Button>
+                  <Button variant="primary" size="sm" loading={resolucion.cargando} onClick={() => setAprobando(true)}><CheckCircle2 size={14} aria-hidden />{t('rev.aprobar')}</Button>
                   <Button variant="danger" size="sm" onClick={() => { resolucion.limpiar(); setRechazar(true); }}><XCircle size={14} aria-hidden />{t('rev.rechazar')}</Button>
                 </>
               )}
@@ -219,8 +230,28 @@ export function RevelacionesView() {
           {alertas.length > 0 && (
             <Alert variant="warning" title={t('rev.alertas', { count: alertas.length })} description={alertas.map((a) => a.detalle).join(' · ')} style={{ marginTop: 'var(--s4)' }} />
           )}
-          {SECCIONES.filter((k) => k in inf.contenido).map((k) => <Seccion key={k} clave={k} contenido={inf.contenido[k]} />)}
+          {secciones.length > 1 && (
+            <nav aria-label={t('rev.indice')} style={{ ...PANEL, marginTop: 'var(--s4)' }}>
+              <p style={{ margin: '0 0 var(--s2)', fontWeight: 700 }}>{t('rev.indice')}</p>
+              <ol style={{ margin: 0, paddingLeft: 'var(--s5)', display: 'grid', gap: 'var(--s1)', fontSize: 'var(--fs-body-md)' }}>
+                {secciones.map((k) => <li key={k}><a href={`#rev-${k}`} style={{ color: 'var(--brand-600)' }}>{t(`rev.s.${k}`, { defaultValue: humanizar(k) })}</a></li>)}
+              </ol>
+            </nav>
+          )}
+          {secciones.map((k) => <Seccion key={k} clave={k} contenido={inf.contenido[k]} />)}
         </>
+      )}
+      {aprobando && inf && (
+        <ModalShell title={t('rev.aprobar_titulo', { version: inf.version_informe })} onClose={() => setAprobando(false)} maxWidth={480}
+          descripcion={t('rev.aprobar_detalle')}
+          footer={(
+            <>
+              <Button variant="secondary" size="md" data-autofocus onClick={() => setAprobando(false)}>{t('comun.cancelar')}</Button>
+              <Button variant="primary" size="md" loading={resolucion.cargando} onClick={aprobar}>{t('rev.aprobar')}</Button>
+            </>
+          )}>
+          <p style={{ margin: 0, lineHeight: 'var(--lh-base)' }}>{t('rev.aprobar_confirmacion', { version: inf.version_informe })}</p>
+        </ModalShell>
       )}
       {generar && idPeriodo && (
         <GenerarModal idPeriodo={idPeriodo} activos={activos.data ?? []} onCerrar={() => setGenerar(false)}
@@ -247,13 +278,18 @@ function GenerarModal({ idPeriodo, activos, onCerrar, onGenerado }: {
   const [sinNovedad, setSinNovedad] = useState(false);
   const [justificacion, setJustificacion] = useState('');
   const [aviso, setAviso] = useState<string>();
+  const [errorJustificacion, setErrorJustificacion] = useState<string>();
+  // La inconsistencia detectada por el backend se corrige en la justificación: el error va debajo de ese campo (WCAG 3.3.1).
+  const campoApi = generacion.error?.field ?? generacion.error?.fields?.[0]?.field;
+  const justificacionApi = campoApi === 'justificacion_inconsistencias' ? generacion.error?.message : undefined;
 
   const enviar = async () => {
     if (compromisos.some((c) => c.descripcion.trim().length < 3) || pignorados.some((p) => !p.id || p.entidad.trim().length < 2)) {
       setAviso(t('rev.filas_incompletas')); return;
     }
     if (!sinNovedad && compromisos.length === 0 && pignorados.length === 0) { setAviso(t('rev.declare_o_registre')); return; }
-    setAviso(undefined);
+    if (justificacion.trim() && justificacion.trim().length < 20) { setErrorJustificacion(t('rev.justificacion_corta')); return; }
+    setAviso(undefined); setErrorJustificacion(undefined);
     const r = await generacion.ejecutar(idPeriodo, {
       compromisos_vigentes: compromisos.map((c) => ({ ...c, descripcion: c.descripcion.trim(), monto_estimado: c.monto_estimado || null })),
       activos_pignorados: pignorados.map((p) => ({ id_activo_biologico: Number(p.id), entidad_acreedora: p.entidad.trim(), monto_garantia: p.monto || null })),
@@ -271,17 +307,17 @@ function GenerarModal({ idPeriodo, activos, onCerrar, onGenerado }: {
         </>
       )}>
       <p style={{ ...SECUNDARIO, margin: '0 0 var(--s4)' }}>{t('rev.generar_ayuda')}</p>
-      <ErrorApi error={generacion.error} />
+      <ErrorApi error={justificacionApi ? null : generacion.error} />
       {aviso && <Alert variant="error" title={aviso} style={{ marginBottom: 'var(--s3)' }} />}
 
       <Subtitulo>{t('rev.compromisos')}</Subtitulo>
       {compromisos.map((c, i) => (
         <div key={i} className="ds-fg3" style={{ alignItems: 'end', marginBottom: 'var(--s2)' }}>
-          <Input id={`rc-desc-${i}`} label={t('rev.campo.descripcion')} value={c.descripcion} onChange={(e) => setCompromisos(compromisos.map((x, j) => (j === i ? { ...x, descripcion: e.target.value } : x)))} />
-          <Input id={`rc-cont-${i}`} label={t('rev.campo.contraparte')} value={c.contraparte ?? ''} onChange={(e) => setCompromisos(compromisos.map((x, j) => (j === i ? { ...x, contraparte: e.target.value } : x)))} />
+          <Input id={`rc-desc-${i}`} label={t('rev.fila_compromiso', { n: i + 1, campo: t('rev.campo.descripcion') })} value={c.descripcion} onChange={(e) => setCompromisos(compromisos.map((x, j) => (j === i ? { ...x, descripcion: e.target.value } : x)))} />
+          <Input id={`rc-cont-${i}`} label={t('rev.fila_compromiso', { n: i + 1, campo: t('rev.campo.contraparte') })} value={c.contraparte ?? ''} onChange={(e) => setCompromisos(compromisos.map((x, j) => (j === i ? { ...x, contraparte: e.target.value } : x)))} />
           <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'end' }}>
-            <Input id={`rc-monto-${i}`} label={t('rev.campo.monto_estimado')} inputMode="decimal" value={c.monto_estimado ?? ''} onChange={(e) => setCompromisos(compromisos.map((x, j) => (j === i ? { ...x, monto_estimado: e.target.value } : x)))} />
-            <Button variant="ghost" size="sm" onClick={() => setCompromisos(compromisos.filter((_, j) => j !== i))} aria-label={t('comun.quitar')}><Trash2 size={14} aria-hidden /></Button>
+            <Input id={`rc-monto-${i}`} label={t('rev.fila_compromiso', { n: i + 1, campo: t('rev.campo.monto_estimado') })} inputMode="decimal" value={c.monto_estimado ?? ''} onChange={(e) => setCompromisos(compromisos.map((x, j) => (j === i ? { ...x, monto_estimado: e.target.value } : x)))} />
+            <Button variant="ghost" size="sm" onClick={() => setCompromisos(compromisos.filter((_, j) => j !== i))} aria-label={t('rev.quitar_compromiso', { n: i + 1 })}><Trash2 size={14} aria-hidden /></Button>
           </div>
         </div>
       ))}
@@ -290,25 +326,26 @@ function GenerarModal({ idPeriodo, activos, onCerrar, onGenerado }: {
       <Subtitulo>{t('rev.pignorados')}</Subtitulo>
       {pignorados.map((p, i) => (
         <div key={i} className="ds-fg3" style={{ alignItems: 'end', marginBottom: 'var(--s2)' }}>
-          <Select id={`rp-activo-${i}`} label={t('col.activo')} value={p.id} onChange={(e) => setPignorados(pignorados.map((x, j) => (j === i ? { ...x, id: e.target.value } : x)))}>
+          <Select id={`rp-activo-${i}`} label={t('rev.fila_pignorado', { n: i + 1, campo: t('col.activo') })} value={p.id} onChange={(e) => setPignorados(pignorados.map((x, j) => (j === i ? { ...x, id: e.target.value } : x)))}>
             <option value="">{t('comun.elegir')}</option>
             {activos.map((a) => <option key={a.id_activo_biologico} value={a.id_activo_biologico}>{a.identificador}</option>)}
           </Select>
-          <Input id={`rp-ent-${i}`} label={t('rev.campo.entidad_acreedora')} value={p.entidad} onChange={(e) => setPignorados(pignorados.map((x, j) => (j === i ? { ...x, entidad: e.target.value } : x)))} />
+          <Input id={`rp-ent-${i}`} label={t('rev.fila_pignorado', { n: i + 1, campo: t('rev.campo.entidad_acreedora') })} value={p.entidad} onChange={(e) => setPignorados(pignorados.map((x, j) => (j === i ? { ...x, entidad: e.target.value } : x)))} />
           <div style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'end' }}>
-            <Input id={`rp-monto-${i}`} label={t('rev.campo.monto_garantia')} inputMode="decimal" value={p.monto} onChange={(e) => setPignorados(pignorados.map((x, j) => (j === i ? { ...x, monto: e.target.value } : x)))} />
-            <Button variant="ghost" size="sm" onClick={() => setPignorados(pignorados.filter((_, j) => j !== i))} aria-label={t('comun.quitar')}><Trash2 size={14} aria-hidden /></Button>
+            <Input id={`rp-monto-${i}`} label={t('rev.fila_pignorado', { n: i + 1, campo: t('rev.campo.monto_garantia') })} inputMode="decimal" value={p.monto} onChange={(e) => setPignorados(pignorados.map((x, j) => (j === i ? { ...x, monto: e.target.value } : x)))} />
+            <Button variant="ghost" size="sm" onClick={() => setPignorados(pignorados.filter((_, j) => j !== i))} aria-label={t('rev.quitar_pignorado', { n: i + 1 })}><Trash2 size={14} aria-hidden /></Button>
           </div>
         </div>
       ))}
       <Button variant="secondary" size="sm" disabled={activos.length === 0} onClick={() => setPignorados([...pignorados, { id: '', entidad: '', monto: '' }])}><Plus size={14} aria-hidden />{t('rev.agregar_pignorado')}</Button>
 
-      <label style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'flex-start', marginTop: 'var(--s5)' }}>
-        <input type="checkbox" checked={sinNovedad} onChange={(e) => setSinNovedad(e.target.checked)} style={{ marginTop: 4 }} />
-        {t('rev.sin_novedad')}
+      <label className="fin-casilla" style={{ marginTop: 'var(--s5)' }}>
+        <input type="checkbox" checked={sinNovedad} onChange={(e) => setSinNovedad(e.target.checked)} />
+        <span>{t('rev.sin_novedad')}</span>
       </label>
       <div style={{ marginTop: 'var(--s4)' }}>
-        <AreaTexto id="rev-justificacion" label={t('rev.justificacion')} maxLength={2000} value={justificacion} onChange={(e) => setJustificacion(e.target.value)} hint={t('rev.justificacion_ayuda')} />
+        <AreaTexto id="rev-justificacion" label={t('rev.justificacion')} maxLength={2000} value={justificacion} required={!!justificacionApi}
+          onChange={(e) => { setJustificacion(e.target.value); setErrorJustificacion(undefined); }} error={errorJustificacion ?? justificacionApi} hint={t('rev.justificacion_ayuda')} />
       </div>
     </ModalShell>
   );

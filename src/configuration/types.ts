@@ -6,6 +6,8 @@
 // | 2026-10-30 | Arekkazu | INC-M03-135-G01 RF-49: especies compatibles de un sensor |
 // | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: tolerancia T del semáforo configurable en el umbral |
 // | 2026-11-04 | Arekkazu | RF-19 v1.1: titular tributario de la finca (M06 cierra por titular) |
+// | 2026-11-10 | Arekkazu | #512 RF-16/RF-37: ciclos productivos con sus fases en orden |
+// | 2026-11-10 | Arekkazu | #391/#392 RF-16: densidad máxima por etapa |
 import type { TipoModelo } from '../prediction/types';
 
 /** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
@@ -351,6 +353,12 @@ export interface CicloBiologicoResponse {
   id_especie: number;
   es_activo: boolean;
   fecha_actualizacion: string | null;
+  /** #391: animales por m² que admite un lote en esta etapa; null = sin configurar. Decimal como texto. */
+  densidad_maxima?: string | null;
+  /** #391: kg por m²; opcional. */
+  biomasa_maxima?: string | null;
+  /** #391: porcentaje del máximo desde el que la ficha del lote avisa (80, 85, 90 o 95). */
+  aviso_preventivo_pct?: number;
   /** #54 (RF-16): solo en cliente — true mientras la escritura offline que lo creó/tocó
    *  sigue en syncQueue. No lo emite el backend. */
   pendienteSync?: boolean;
@@ -815,3 +823,21 @@ export interface AplicacionPlantillaResponse {
   after_snapshot: Record<string, unknown> | null;
   fecha_aplicacion: string | null;
 }
+
+/** #391: densidad máxima de una etapa. */
+export interface ConfigurarDensidadEtapaDTO {
+  densidad_maxima: string;
+  biomasa_maxima: string | null;
+  aviso_preventivo_pct: 80 | 85 | 90 | 95;
+  fecha_actualizacion: string | null;
+}
+
+/** #512 (RF-16, RF-37): ciclo productivo de la especie con sus fases en el orden en que se recorren. */
+export interface FaseCicloProductivo { orden: number; id_ciclo_biologico: number; nombre: string; duracion_dias: number }
+export interface CicloProductivoResponse {
+  id_ciclo_productivo: number; nombre: string; id_especie: number; duracion_dias: number;
+  /** Algún animal o lote ya pasó por el ciclo: solo se le puede cambiar el nombre. */
+  en_uso: boolean;
+  fases: FaseCicloProductivo[];
+}
+export interface GuardarCicloProductivoDTO { nombre: string; id_ciclos_biologicos: number[] }

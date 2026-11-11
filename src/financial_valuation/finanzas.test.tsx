@@ -2,6 +2,13 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: pestañas por permiso, desviación de precio, cierre con autorización y DV del NIT |
 // | 2026-11-05 | Arekkazu | M06 prototipos: período global, filtros de variaciones y suma decimal exacta |
+// | 2026-11-08 | destroyerban | INC-M06-316-G16 RF-84: la confirmación con costos propios envía su documento de soporte |
+// | 2026-11-09 | destroyerban | INC-M06-317-G17 RF-84: validar con justificación un cálculo con valor neto ≤ 0 |
+// | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
+// | 2026-11-10 | Arekkazu | INC-M06-337/344/345/351: cierre en espera y cancelación, acumulado con desglose y ajuste |
+// | 2026-11-10 | Arekkazu | #510 RF-89: un error al confirmar la desviación se muestra en vez del aviso |
+// | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
+// | 2026-11-10 | Arekkazu | TC-DIS-242/244/261 RF-87/93: diálogo descrito con foco en Cancelar, NIT ausente, badges con icono y resultado con Ganancia/Pérdida |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -13,7 +20,12 @@ import { FinanzasPage } from './pages/FinanzasPage';
 import { PreciosView } from './pages/PreciosView';
 import { CierreView } from './pages/CierreView';
 import { VariacionesView } from './pages/VariacionesView';
-import { ProveedorPeriodo, aFraccion, aPorcentaje, formatoMoneda } from './components/comunes';
+import { ReconocimientosView } from './pages/ReconocimientosView';
+import { CalculoView } from './pages/CalculoView';
+import { ProductosView } from './pages/ProductosView';
+import { EstadoResultadosView } from './pages/EstadoResultadosView';
+import { TrazabilidadView } from './pages/TrazabilidadView';
+import { EstadoBadge, ProveedorPeriodo, Variacion, aFraccion, aPorcentaje, etiquetaPeriodo, formatoMoneda } from './components/comunes';
 import { signo, sumar } from './lib/decimal';
 import { digitoVerificacion } from '../configuration/components/TitularFincaModal';
 
@@ -88,14 +100,36 @@ describe('PreciosView (RF-89)', () => {
     expect(primera).toMatchObject({ id_especie: 2, precio_unitario: '20000', confirmar_desviacion: false });
     expect(segunda.confirmar_desviacion).toBe(true);
   });
+
+  it('si confirmar la desviación falla, muestra el error en vez del aviso', async () => {
+    sesion.permisos = [permiso('precios_mercado', 2), permiso('precios_mercado', 1), permiso('configuracion_contable', 2)];
+    respuestas['GET /finanzas/configuracion'] = { data: configuracion };
+    respuestas['POST /finanzas/precios'] = [
+      { status: 409, data: { error_code: 'DESVIACION_PRECIO_REQUIERE_CONFIRMACION', message: 'El precio difiere 150.0% del vigente.' } },
+      { status: 500, data: { error_code: 'ERROR_INTERNO', message: 'Ocurrió un error interno.' } },
+    ];
+    const user = userEvent.setup();
+    render(<MemoryRouter><PreciosView /></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: /Registrar precio/ }));
+    const dialogo = within(screen.getByRole('dialog'));
+    await user.selectOptions(dialogo.getByLabelText(/^Especie/), '2');
+    await user.type(dialogo.getByLabelText(/Precio unitario/), '20000');
+    await user.type(dialogo.getByLabelText(/^Evidencia/), 'Boletín de la feria');
+    await user.click(dialogo.getByRole('button', { name: 'Guardar' }));
+    await user.click(await dialogo.findByRole('button', { name: 'Confirmar y guardar' }));
+
+    expect(await dialogo.findByText(/Ocurrió un error interno/)).toBeInTheDocument();
+    expect(dialogo.queryByText('El precio difiere 150.0% del vigente.')).not.toBeInTheDocument();
+  });
 });
 
 describe('CierreView (RF-87)', () => {
-  it('con activos sin precio exige elegir excluirlos o estimarlos antes de cerrar', async () => {
+  it('con activos sin precio exige decidir por cada uno: excluirlo o estimarlo (INC-M06-346-G43-03)', async () => {
     sesion.permisos = [permiso('cierre_periodo', 2), permiso('cierre_periodo', 5)];
     respuestas['GET /finanzas/periodos'] = { data: [periodo] };
     respuestas['GET /finanzas/periodos/7/prevalidacion'] = { data: {
-      bloqueos: [], activos_sin_precio: [{ id_activo_biologico: 1, identificador: 'T-1', especie: 'Trucha' }],
+      bloqueos: [], activos_sin_precio: [{ id_activo_biologico: 1, identificador: 'T-1', especie: 'Trucha' },
+        { id_activo_biologico: 2, identificador: 'T-2', especie: 'Trucha' }],
       lineas_sin_trazabilidad: [], puede_cerrar: true, requiere_autorizacion: true,
     } };
     respuestas['POST /finanzas/periodos/7/cierre'] = { data: { id_cierre: 1, periodo: '2026-11', estado: 'CERRADO', activos_procesados: 1, activos_excluidos: [], lineas_excluidas: [], comprobantes: [], hash_cierre: 'x', reportes: {}, id_periodo_siguiente: 8 } };
@@ -103,12 +137,67 @@ describe('CierreView (RF-87)', () => {
     render(<MemoryRouter><ProveedorPeriodo><CierreView /></ProveedorPeriodo></MemoryRouter>);
     const cerrar = await screen.findByRole('button', { name: 'Cerrar período' });
     expect(cerrar).toBeDisabled();
-    await user.click(screen.getByLabelText(/último precio conocido/));
+    const t1 = within(screen.getByRole('group', { name: 'T-1 (Trucha)' }));
+    await user.click(t1.getByLabelText(/último precio conocido/));
+    expect(cerrar).toBeDisabled(); // falta decidir T-2
+    await user.click(within(screen.getByRole('group', { name: 'T-2 (Trucha)' })).getByLabelText(/Excluir de este cierre/));
     await user.click(cerrar);
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Cerrar período' }));
     await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/periodos/7/cierre')).toBe(true));
     const cuerpo = JSON.parse(peticiones.find((p) => p.url === '/finanzas/periodos/7/cierre')!.data as string);
-    expect(cuerpo).toEqual({ autorizar_exclusiones: false, incluir_activos_sin_precio: true });
+    expect(cuerpo).toEqual({ autorizar_exclusiones: true, incluir_activos_sin_precio: false, activos_estimados: [1] });
+  });
+});
+
+describe('Lote QA 2026-11-10 (RF-86/87/93)', () => {
+  it('un cierre que espera autorización se avisa y se puede cancelar', async () => {
+    sesion.permisos = [permiso('cierre_periodo', 2), permiso('cierre_periodo', 5)];
+    respuestas['GET /finanzas/periodos'] = { data: [{ ...periodo, estado: 'EN_CIERRE', ultimo_cierre: {
+      id_cierre: 3, estado: 'EN_PROCESO', paso_actual: 3, error_detalle: null, fecha_inicio: '2026-11-10T15:00:00Z', fecha_fin: null,
+      nombre_usuario_ejecutor: 'Ana Contadora' } }] };
+    respuestas['GET /finanzas/periodos/7/prevalidacion'] = { data: { bloqueos: [], activos_sin_precio: [], lineas_sin_trazabilidad: [], puede_cerrar: true, requiere_autorizacion: false } };
+    respuestas['POST /finanzas/periodos/7/cierre/cancelacion'] = { data: { estado: 'ABIERTO' } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><CierreView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('El cierre espera tu decisión')).toBeInTheDocument();
+    expect(screen.getByText(/Ana Contadora/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cancelar el cierre' }));
+    await waitFor(() => expect(peticiones.some((p) => p.method === 'post' && p.url === '/finanzas/periodos/7/cierre/cancelacion')).toBe(true));
+  });
+
+  it('con el período abierto muestra el acumulado con el mantenimiento desglosado', async () => {
+    sesion.permisos = [permiso('estado_resultados', 2), permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/periodos/7/estado-resultados/acumulado'] = { data: {
+      componentes: { costos_mantenimiento: '410.0000', ganancia_transformacion_biologica: '1000.0000' },
+      desglose_costos_mantenimiento: { ALIMENTO: '101.0000', MEDICAMENTO: '102.0000', MANO_OBRA: '103.0000', VETERINARIO: '104.0000' },
+      total_ingresos: '1000.0000', total_gastos: '410.0000', resultado_neto: '590.0000', estado_periodo: 'ABIERTO', es_definitivo: false,
+    } };
+    render(<MemoryRouter><ProveedorPeriodo><EstadoResultadosView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('Acumulado del período')).toBeInTheDocument();
+    expect(screen.getByText('Alimento')).toBeInTheDocument();
+    expect(screen.getByText('Servicio veterinario')).toBeInTheDocument();
+  });
+
+  it('una línea de un período cerrado se ajusta con tipo, valor y justificación', async () => {
+    sesion.permisos = [permiso('trazabilidad_contable', 2), permiso('valoracion_activos', 2), permiso('cierre_periodo', 2), permiso('cierre_periodo', 5)];
+    respuestas['GET /finanzas/periodos'] = { data: [{ ...periodo, estado: 'CERRADO', fecha_cierre: '2026-11-30T23:00:00Z' }] };
+    respuestas['GET /finanzas/lineas'] = { data: [{
+      id_linea_asiento_nic41: 40, tipo_hecho: 'RECONOCIMIENTO_DIFERENCIA', sentido: 'GANANCIA', valor: '40000.00', fecha_hecho: '2026-11-05',
+      id_periodo_contable: 7, id_activo_biologico: null, tabla_origen: 'x', id_origen: 1, tipo_evidencia: 'REGISTRO_MANUAL',
+      subtipo_costo: null, es_estimacion: false, es_reverso: false, cuenta_debito: '1586', cuenta_credito: '4250', estado: 'REGISTRADA',
+      estado_trazabilidad: 'VERIFICADO' }] };
+    respuestas['POST /finanzas/lineas-asiento/40/ajustes'] = { status: 201, data: { id_linea_asiento_nic41: 41, periodo: '2026-12', periodo_corregido: '2026-11' } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><TrazabilidadView /></ProveedorPeriodo></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: /Registrar un ajuste de/ }));
+    const dialogo = within(await screen.findByRole('dialog'));
+    await user.type(dialogo.getByLabelText(/Valor del ajuste/), '10000');
+    await user.type(dialogo.getByLabelText(/Justificación de la corrección/), 'Descuento de la factura no aplicado');
+    await user.click(dialogo.getByRole('button', { name: 'Registrar ajuste' }));
+    await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/lineas-asiento/40/ajustes')).toBe(true));
+    const cuerpo = JSON.parse(peticiones.find((p) => p.url === '/finanzas/lineas-asiento/40/ajustes')!.data as string);
+    expect(cuerpo).toEqual({ tipo_ajuste: 'DISMINUIR', valor: '10000', justificacion: 'Descuento de la factura no aplicado' });
   });
 });
 
@@ -161,5 +250,191 @@ describe('utilidades', () => {
   it('calcula el dígito de verificación del NIT como la DIAN', () => {
     expect(digitoVerificacion('900123456')).toBe('8');
     expect(digitoVerificacion('800197268')).toBe('4');
+  });
+});
+
+describe('ReconocimientosView (RF-82, RF-84)', () => {
+  const propuesta = {
+    id_activo_biologico: 11, identificador: 'BOV-011', tipo: 'INDIVIDUAL', especie: 'Bovino', id_especie: 2, finca: 'La Esperanza',
+    estado: 'ACTIVO', origen_financiero: 'nacimiento', costo_adquisicion: null, soporte_documental: null,
+    fecha_reconocimiento: '2026-11-04', es_apertura: false, clasificacion: 'PRODUCCION', indicador_valoracion: 'VALOR_RAZONABLE',
+    valor_inicial: '9550000', costos_venta: '450000', magnitud: '400', unidad_magnitud: 'kg',
+    precio: { id_precio_mercado: 12, precio_unitario: '25000', unidad_medida: 'kg', fuente: 'MERCADO_ACTIVO', fecha_vigencia: '2026-09-01' },
+    hechos: [], bloqueos: [], advertencias: [], requiere_costos_manuales: false, es_confirmable: true,
+  };
+
+  const abrirConCostoPropio = async () => {
+    sesion.permisos = [permiso('reconocimiento_inicial', 2), permiso('reconocimiento_inicial', 1)];
+    respuestas['GET /finanzas/reconocimientos/propuestas'] = { data: [propuesta] };
+    respuestas['POST /finanzas/reconocimientos/11'] = { data: { id_reconocimiento_inicial: 5, valor_inicial: '9550000', advertencias: [] } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><ReconocimientosView /></ProveedorPeriodo></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: 'Revisar el reconocimiento de BOV-011' }));
+    const dialogo = within(screen.getByRole('dialog'));
+    await user.click(dialogo.getByLabelText(/Usar costos de venta propios/));
+    await user.type(dialogo.getByLabelText(/^Comisiones/), '250000');
+    await user.type(dialogo.getByLabelText(/^Justificación de los costos/), 'Comisión pactada con el comprador de la subasta.');
+    return { user, dialogo };
+  };
+  const confirmaciones = () => peticiones.filter((p) => p.url === '/finanzas/reconocimientos/11' && p.method === 'post');
+
+  it('sin documento de soporte no envía la confirmación con costos propios', async () => {
+    const { user, dialogo } = await abrirConCostoPropio();
+    await user.click(dialogo.getByRole('button', { name: /Confirmar reconocimiento/ }));
+
+    expect(await dialogo.findByText('Indica el documento que respalda los costos de venta propios.')).toBeInTheDocument();
+    expect(confirmaciones()).toHaveLength(0);
+  });
+
+  it('envía el documento de soporte como referencia_documental', async () => {
+    const { user, dialogo } = await abrirConCostoPropio();
+    await user.type(dialogo.getByLabelText(/^Documento de soporte/), 'Factura FE-1234');
+    await user.click(dialogo.getByRole('button', { name: /Confirmar reconocimiento/ }));
+
+    await waitFor(() => expect(confirmaciones()).toHaveLength(1));
+    expect(JSON.parse(confirmaciones()[0].data as string)).toMatchObject({
+      costos_manuales: { comisiones: '250000' }, referencia_documental: 'Factura FE-1234',
+    });
+  });
+});
+
+describe('CalculoView (RF-84)', () => {
+  const calculo = {
+    id_calculo_valor_razonable: 55, id_activo_biologico: 7, identificador: 'BOV-007', tipo_activo: 'INDIVIDUAL', id_especie: 2,
+    especie: 'Bovino', finca: 'La Esperanza', clasificacion: 'PRODUCCION', magnitud: '400', unidad_magnitud: 'kg',
+    precio_unitario: '25000', valor_razonable_bruto: '10000000', costos_venta: '10100000', valor_neto: '-100000',
+    metodo_costo: 'MIXTO', estado: 'REVISION_REQUERIDA', tiene_valor_estimado: false, es_producto: false,
+    fecha_calculo: '2026-11-09T10:00:00Z',
+  };
+
+  const abrirValidacion = async () => {
+    sesion.permisos = [permiso('valoracion_activos', 2), permiso('valoracion_activos', 5), permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/periodos/7/calculos'] = [{ data: [calculo] }, { data: [{ ...calculo, estado: 'CALCULADO' }] }];
+    respuestas['POST /finanzas/calculos/55/validacion'] = { data: { id_calculo_valor_razonable: 55, estado: 'CALCULADO', valor_neto: '-100000' } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><CalculoView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('1 cálculo requiere revisión')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Validar el cálculo de BOV-007' }));
+    return { user, dialogo: within(screen.getByRole('dialog')) };
+  };
+  const validaciones = () => peticiones.filter((p) => p.url === '/finanzas/calculos/55/validacion' && p.method === 'post');
+
+  it('sin justificación suficiente no envía la validación', async () => {
+    const { user, dialogo } = await abrirValidacion();
+    await user.type(dialogo.getByLabelText(/^Justificación/), '     ');
+    await user.click(dialogo.getByRole('button', { name: /Validar el cálculo$/ }));
+
+    expect(await dialogo.findByText('Escribe una justificación de al menos 20 caracteres para validar el cálculo.')).toBeInTheDocument();
+    expect(validaciones()).toHaveLength(0);
+  });
+
+  it('envía la justificación y recarga los cálculos', async () => {
+    const { user, dialogo } = await abrirValidacion();
+    await user.type(dialogo.getByLabelText(/^Justificación/), 'Transporte extraordinario por cierre de la vía principal.');
+    await user.click(dialogo.getByRole('button', { name: /Validar el cálculo$/ }));
+
+    await waitFor(() => expect(validaciones()).toHaveLength(1));
+    expect(JSON.parse(validaciones()[0].data as string)).toEqual({ justificacion: 'Transporte extraordinario por cierre de la vía principal.' });
+    await waitFor(() => expect(screen.queryByText('1 cálculo requiere revisión')).not.toBeInTheDocument());
+  });
+
+  it('sin permiso de ejecutar no muestra el botón', async () => {
+    sesion.permisos = [permiso('valoracion_activos', 2), permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/periodos/7/calculos'] = { data: [calculo] };
+    render(<MemoryRouter><ProveedorPeriodo><CalculoView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('1 cálculo requiere revisión')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Validar el cálculo de BOV-007' })).not.toBeInTheDocument();
+  });
+});
+
+describe('ProductosView (RF-85 FA-1/FA-2)', () => {
+  const pendiente = (id_evento: number, identificador: string, clasificacion: string, admite: boolean) => ({
+    id_evento, id_activo_biologico: id_evento, identificador, especie: 'Bovino', finca: 'La Esperanza', clasificacion,
+    producto_agricola: 'Leche', unidad_medida: 'L', cantidad_cosechada: '200.000', fecha_cosecha: '2026-11-09T15:00:00Z',
+    motivo: 'Falta costos de venta para el producto Leche.', fecha_ultimo_intento: '2026-11-09T16:00:00Z', intentos: 1,
+    admite_costos_manuales: admite,
+  });
+
+  const abrir = async (permisos = [permiso('valoracion_activos', 2), permiso('valoracion_activos', 5), permiso('cierre_periodo', 2)]) => {
+    sesion.permisos = permisos;
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/productos/pendientes'] = [
+      { data: [pendiente(500, 'BOV-007', 'PRODUCCION', true), pendiente(501, 'TRU-008', 'CONSUMO', false)] }, { data: [] }];
+    respuestas['POST /finanzas/productos/pendientes/500/reconocimiento'] = { data: { id_evento: 500, resultado: 'PROCESADO' } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><ProductosView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('2 cosechas están pendientes de reconocer')).toBeInTheDocument();
+    return user;
+  };
+  const envios = () => peticiones.filter((p) => p.url === '/finanzas/productos/pendientes/500/reconocimiento' && p.method === 'post');
+
+  it('lista las cosechas pendientes y solo ofrece costos manuales donde aplican', async () => {
+    await abrir();
+    expect(screen.getAllByText('Falta costos de venta para el producto Leche.')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Ingresar los costos de venta de Leche de BOV-007' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ingresar los costos de venta de Leche de TRU-008' })).not.toBeInTheDocument();
+    expect(screen.getByText('Se valora con el activo')).toBeInTheDocument();
+  });
+
+  it('sin justificación no envía los costos', async () => {
+    const user = await abrir();
+    await user.click(screen.getByRole('button', { name: 'Ingresar los costos de venta de Leche de BOV-007' }));
+    const dialogo = within(screen.getByRole('dialog'));
+    await user.type(dialogo.getByLabelText(/^Transporte/), '42000');
+    await user.click(dialogo.getByRole('button', { name: /Reconocer la cosecha/ }));
+
+    expect(await dialogo.findByText('Justifica los costos de venta propios con al menos 20 caracteres.')).toBeInTheDocument();
+    expect(envios()).toHaveLength(0);
+  });
+
+  it('envía los costos con su justificación y recarga la bandeja', async () => {
+    const user = await abrir();
+    await user.click(screen.getByRole('button', { name: 'Ingresar los costos de venta de Leche de BOV-007' }));
+    const dialogo = within(screen.getByRole('dialog'));
+    await user.type(dialogo.getByLabelText(/^Transporte/), '42000');
+    await user.type(dialogo.getByLabelText(/^Justificación de los costos/), 'Flete del acopiador según la factura FE-881.');
+    await user.click(dialogo.getByRole('button', { name: /Reconocer la cosecha/ }));
+
+    await waitFor(() => expect(envios()).toHaveLength(1));
+    expect(JSON.parse(envios()[0].data as string)).toEqual({
+      costos_manuales: { transporte: '42000' }, justificacion: 'Flete del acopiador según la factura FE-881.' });
+    await waitFor(() => expect(screen.queryByText('2 cosechas están pendientes de reconocer')).not.toBeInTheDocument());
+  });
+
+  it('sin permiso de ejecutar muestra la bandeja sin la acción', async () => {
+    await abrir([permiso('valoracion_activos', 2), permiso('cierre_periodo', 2)]);
+    expect(screen.queryByRole('button', { name: /Ingresar los costos de venta/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('Accesibilidad QA M06 (TC-DIS-242/244/261)', () => {
+  it('el diálogo de cierre se nombra y describe por aria y arranca con el foco en Cancelar', async () => {
+    sesion.permisos = [permiso('cierre_periodo', 2), permiso('cierre_periodo', 5)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/periodos/7/prevalidacion'] = { data: { bloqueos: [], activos_sin_precio: [], lineas_sin_trazabilidad: [], puede_cerrar: true, requiere_autorizacion: false } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><CierreView /></ProveedorPeriodo></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: 'Cerrar período' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(dialogo).toHaveAttribute('aria-labelledby');
+    expect(dialogo).toHaveAttribute('aria-describedby');
+    expect(dialogo).toHaveAccessibleDescription(/inmutable/);
+    await waitFor(() => expect(within(dialogo).getByRole('button', { name: 'Cancelar' })).toHaveFocus());
+  });
+
+  it('un período sin titular no muestra «NIT null» y los estados llevan icono además del texto', () => {
+    expect(etiquetaPeriodo({ ...periodo, numero_id_tributaria: null as unknown as string })).toMatch(/Sin NIT asignado/);
+    expect(etiquetaPeriodo(periodo)).toMatch(/NIT 900123456/);
+    const { container } = render(<EstadoBadge estado="CERRADO" />);
+    expect(container.querySelector('.ds-badge svg')).not.toBeNull();
+    expect(container).toHaveTextContent('Cerrado');
+  });
+
+  it('el resultado neto dice Ganancia o Pérdida junto al signo', () => {
+    const { container } = render(<><Variacion valor="460000" etiqueta /><Variacion valor="-1190000" etiqueta /></>);
+    expect(container).toHaveTextContent(/\+\$.*Ganancia/);
+    expect(container).toHaveTextContent(/-\$.*Pérdida/);
   });
 });
