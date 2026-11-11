@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-08 | SaraSofGonzalez | TC-DIS-207 RF-79: teclado en el reporte consolidado y sus versiones |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-207 RF-79: reejecución; el acceso al reporte anterior se busca en el detalle de la v2 |
 /**
  * TC-DIS-207 — Accesibilidad WCAG 2.1 AA de la navegación por teclado del reporte consolidado y su
  * historial de versiones
@@ -44,10 +45,8 @@ test.describe('TC-DIS-207 — Teclado en el reporte consolidado y sus versiones'
     expect.soft(t.filasDesalineadas, '1.3.1: filas desalineadas con los encabezados').toEqual([]);
 
     const selectorVersion = await panel.getByRole('combobox', { name: /versi[oó]n/i }).count();
-    const enlacesAnterior = await panel.getByRole('link', { name: /anterior/i }).or(panel.getByRole('button', { name: /anterior/i })).count();
-    anotar(testInfo, 'Controles de versión', `selector de versión: ${selectorVersion} · acceso al reporte anterior: ${enlacesAnterior}`);
+    anotar(testInfo, 'Controles de versión', `selector de versión: ${selectorVersion}`);
     desviacion(selectorVersion > 0, '2.1.1: no hay selector de versión; cada versión se abre con un botón "Ver" de su fila');
-    desviacion(enlacesAnterior > 0, '2.1.1: no hay un control para ir al reporte anterior desde una versión corregida');
 
     // Teclado: ciclo → región → botones de la tabla.
     const select = panel.locator('#nic41-ciclo');
@@ -76,6 +75,24 @@ test.describe('TC-DIS-207 — Teclado en el reporte consolidado y sus versiones'
     expect.soft(texto.includes(MOTIVO), '1.3.1: el detalle no muestra el motivo de la corrección').toBe(true);
     desviacion(/811|v1\b|versi[oó]n 1|reporte anterior/i.test(texto), '1.3.1: el detalle de la v2 no indica cuál es su reporte anterior (id_reporte_anterior no aparece en pantalla)');
     expect.soft(texto.includes(HASH), 'Notas: la huella de integridad no se muestra completa como texto').toBe(true);
+    // El acceso al reporte anterior vive en el detalle de la versión corregida.
+    const anterior = dialogo.getByRole('link', { name: /anterior/i }).or(dialogo.getByRole('button', { name: /anterior/i }));
+    const hayAnterior = (await anterior.count()) > 0;
+    anotar(testInfo, 'Acceso al reporte anterior (en el detalle de la v2)', hayAnterior ? (await anterior.first().innerText()).trim() : '(no hay)');
+    desviacion(hayAnterior, '2.1.1: no hay un control para ir al reporte anterior desde una versión corregida');
+    if (hayAnterior) {
+      await page.keyboard.press('Shift');
+      await anterior.first().focus();
+      expect.soft(await focoVisible(page), '2.4.7: «Ver reporte anterior» no muestra foco visible').toBe(true);
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(800);
+      const ultimo = page.getByRole('dialog').last();
+      const titulo = (await ultimo.getAttribute('aria-label')) ?? (await ultimo.getByRole('heading').first().innerText().catch(() => null));
+      anotar(testInfo, 'Tras «Ver reporte anterior»', titulo ?? '(sin título)');
+      expect.soft(/v1\b|versi[oó]n 1/i.test(titulo ?? ''), '2.1.1: «Ver reporte anterior» no lleva a la v1').toBe(true);
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(300);
+    }
     const cabecera = await dialogo.locator('table').first().locator('thead th').count();
     anotar(testInfo, 'Tabla "Desglose por tipo"', `${cabecera} encabezados de columna`);
     await page.keyboard.press('Escape');
