@@ -5,12 +5,12 @@
 // | 2026-11-10 | Arekkazu | INC-M06-345/350 RF-87: cierre en espera de autorización, cancelación, matriz y titular |
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-02 RF-87: la prevalidación lista cada línea sin trazabilidad con su activo y lo que falta |
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
+// | 2026-11-10 | Arekkazu | TC-DIS-242..246 RF-87: diálogo descrito, avance por pasos anunciado, estados con icono, tablas de bloqueos y comprobantes con débito/crédito |
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Download, Lock, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
-import { Badge } from '../../shared/design-system/Badge';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
@@ -21,8 +21,8 @@ import { finanzasApi } from '../api/finanzasApi';
 import { ACCION_E, ACCION_R, R_CIERRE, R_RECONOCIMIENTO, R_REVELACIONES } from '../rbac';
 import type { Periodo } from '../types';
 import {
-  Datos, EncabezadoVista, EstadoBadge, ErrorApi, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM, etiquetaPeriodo,
-  formatoFecha, formatoMoneda, guardarArchivo, nombrePeriodo, useAsync, usePeriodo,
+  BadgeTono, Datos, EncabezadoVista, EstadoBadge, ErrorApi, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM,
+  descargarArchivo, etiquetaNit, etiquetaPeriodo, formatoFecha, formatoMoneda, nombrePeriodo, useAsync, usePeriodo,
 } from '../components/comunes';
 
 type Nivel = 'ok' | 'aviso' | 'pendiente';
@@ -39,6 +39,7 @@ const BLOQUEOS: Array<[codigo: string, clave: string]> = [
   ['PERIODO_ANTERIOR_ABIERTO', 'anterior'], ['LINEAS_PENDIENTE_CUENTA', 'cuentas'], ['COSTOS_PENDIENTE_CLASIFICACION', 'costos'],
   ['ENTREGAS_M05_PENDIENTES', 'suministros'], ['MATRIZ_CONTABLE_INCOMPLETA', 'matriz'], ['FINCA_SIN_TITULAR', 'titular'],
 ];
+const TOTAL_PASOS = 9;
 
 export function CierreView() {
   const { t } = useT('finanzas');
@@ -57,6 +58,23 @@ export function CierreView() {
   );
 }
 
+/** Avance del cierre (RF-87, 9 pasos): barra con aria-valuetext y texto anunciado sin mover el foco. */
+function Progreso({ paso }: { paso: number }) {
+  const { t } = useT('finanzas');
+  const nombre = t(`cierre.paso_${paso}`, { defaultValue: t('cierre.paso_generico') });
+  const texto = t('cierre.progreso', { paso, total: TOTAL_PASOS, nombre });
+  return (
+    <div style={{ marginTop: 'var(--s4)' }}>
+      <p id="cierre-progreso" role="status" style={{ margin: '0 0 var(--s2)', fontWeight: 600 }}>{texto}</p>
+      <div role="progressbar" aria-labelledby="cierre-progreso" aria-valuemin={1} aria-valuemax={TOTAL_PASOS} aria-valuenow={paso} aria-valuetext={texto}
+        className="fin-barra__pista" style={{ height: 8 }}>
+        <div className="fin-barra__relleno" style={{ width: `${(paso / TOTAL_PASOS) * 100}%` }} />
+      </div>
+      <p style={{ ...SECUNDARIO, margin: 'var(--s2) 0 0' }}>{t('cierre.progreso_ayuda')}</p>
+    </div>
+  );
+}
+
 function PanelPeriodo({ periodo, onCerrado, onCambio }: {
   periodo: Periodo; onCerrado: (siguiente: number | null) => void; onCambio: () => void;
 }) {
@@ -65,6 +83,7 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
   const puedeVerPropuestas = usePermissionPorNombre(R_RECONOCIMIENTO, ACCION_R);
   const id = periodo.id_periodo_contable;
   const cerrado = periodo.estado === 'CERRADO';
+  const abierto = periodo.estado === 'ABIERTO';
   const prevalidacion = useAsync(finanzasApi.prevalidar);
   const propuestas = useAsync(finanzasApi.propuestas);
   const cierre = useAsync(finanzasApi.cerrar);
@@ -78,6 +97,7 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
   const [decisiones, setDecisiones] = useState<Record<number, 'excluir' | 'estimar'>>({});
   const [autorizarLineas, setAutorizarLineas] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
+  const [paso, setPaso] = useState<number | null>(null);
   const { ejecutar: prevalidar } = prevalidacion;
   const { ejecutar: cargarPropuestas } = propuestas;
   const { ejecutar: cargarComprobantes } = comprobantes;
@@ -88,12 +108,25 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
     }
     cargarComprobantes(id);
   }, [id, cerrado, puedeVerPropuestas, prevalidar, cargarPropuestas, cargarComprobantes]);
+  // Mientras el POST del cierre corre, el paso en curso se lee del período (ultimo_cierre.paso_actual).
+  useEffect(() => {
+    if (!cierre.cargando) { setPaso(null); return; }
+    setPaso(1);
+    const timer = setInterval(async () => {
+      const ps = await finanzasApi.periodos().catch(() => null);
+      const p = ps?.find((x) => x.id_periodo_contable === id);
+      if (p?.ultimo_cierre?.paso_actual) setPaso(p.ultimo_cierre.paso_actual);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [cierre.cargando, id]);
 
   const pv = prevalidacion.data;
   // Los activos sin precio se excluyen o se incluyen con estimación; las líneas sin trazabilidad se excluyen con
   // autorización. El backend recibe una sola autorización para ambas.
   const faltaAutorizar = !!pv && (pv.activos_sin_precio.some((a) => !decisiones[a.id_activo_biologico]) || (pv.lineas_sin_trazabilidad.length > 0 && !autorizarLineas));
   const decidirTodos = (d: 'excluir' | 'estimar') => setDecisiones(Object.fromEntries((pv?.activos_sin_precio ?? []).map((a) => [a.id_activo_biologico, d])));
+  const excluidos = (pv?.activos_sin_precio ?? []).filter((a) => decisiones[a.id_activo_biologico] === 'excluir').length;
+  const estimados = (pv?.activos_sin_precio ?? []).filter((a) => decisiones[a.id_activo_biologico] === 'estimar').length;
   const pendientes = (propuestas.data ?? []).filter((p) => p.es_confirmable);
   const conocidos = new Set(BLOQUEOS.map(([c]) => c));
 
@@ -123,12 +156,13 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
     },
   ] : [];
   const completas = checks.filter((c) => c.nivel === 'ok').length;
+  const bloqueosActivos = checks.filter((c) => c.nivel === 'pendiente');
 
   const ejecutar = async () => {
     setConfirmando(false);
-    const estimados = (pv?.activos_sin_precio ?? []).filter((a) => decisiones[a.id_activo_biologico] === 'estimar').map((a) => a.id_activo_biologico);
+    const activosEstimados = (pv?.activos_sin_precio ?? []).filter((a) => decisiones[a.id_activo_biologico] === 'estimar').map((a) => a.id_activo_biologico);
     const excluye = (pv?.activos_sin_precio ?? []).some((a) => decisiones[a.id_activo_biologico] === 'excluir');
-    const r = await cierre.ejecutar(id, { autorizar_exclusiones: excluye || autorizarLineas, incluir_activos_sin_precio: false, activos_estimados: estimados });
+    const r = await cierre.ejecutar(id, { autorizar_exclusiones: excluye || autorizarLineas, incluir_activos_sin_precio: false, activos_estimados: activosEstimados });
     if (r) {
       pushToast('success', t('cierre.cerrado', { periodo: nombrePeriodo(periodo) }), t('cierre.cerrado_detalle', { count: r.comprobantes.length }));
       onCerrado(r.id_periodo_siguiente);
@@ -148,8 +182,16 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
 
   const descargar = async (formato: 'csv' | 'pdf') => {
     const a = await descarga.ejecutar(id, formato);
-    if (a) guardarArchivo(a.blob, a.nombre);
+    if (a) descargarArchivo(a);
   };
+
+  const radio = (a: { id_activo_biologico: number; identificador: string; especie: string }, valor: 'excluir' | 'estimar') => (
+    <label className="fin-casilla">
+      <input type="radio" name={`sin-precio-${a.id_activo_biologico}`} checked={decisiones[a.id_activo_biologico] === valor}
+        onChange={() => setDecisiones((d) => ({ ...d, [a.id_activo_biologico]: valor }))} />
+      <span>{t(valor === 'excluir' ? 'cierre.excluir_activo' : 'cierre.estimar_activo')}<span className="ds-sr-only"> · {a.identificador}</span></span>
+    </label>
+  );
 
   return (
     <>
@@ -160,12 +202,17 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
         </div>
         <Datos filas={[
           [t('cierre.inicio'), formatoFecha(periodo.fecha_inicio)], [t('cierre.fin'), formatoFecha(periodo.fecha_fin)],
-          [t('col.tipo_cierre'), t(`tipo_cierre.${periodo.tipo_cierre}`)], [t('cierre.titular'), `NIT ${periodo.numero_id_tributaria}`],
+          [t('col.tipo_cierre'), t(`tipo_cierre.${periodo.tipo_cierre}`)], [t('cierre.titular'), etiquetaNit(periodo.numero_id_tributaria)],
           [t('col.fecha_cierre'), periodo.fecha_cierre ? formatoFecha(periodo.fecha_cierre, true) : t('cierre.sin_cerrar')],
         ]} />
+        {cerrado && <Alert variant="info" title={t('cierre.cerrado_inmutable')} description={t('cierre.cerrado_inmutable_detalle')} style={{ marginTop: 'var(--s4)' }} />}
+        {!cerrado && !puedeCerrar && <Alert variant="info" title={t('cierre.solo_contador')} description={t('cierre.solo_contador_detalle')} style={{ marginTop: 'var(--s4)' }} />}
         {periodo.ultimo_cierre?.estado === 'FALLIDO' && (
           <Alert variant="error" title={t('cierre.ultimo_fallido', { paso: periodo.ultimo_cierre.paso_actual ?? 1 })}
-            description={periodo.ultimo_cierre.error_detalle ?? undefined} style={{ marginTop: 'var(--s4)' }} />
+            description={periodo.ultimo_cierre.error_detalle ?? t('cierre.fallido_rollback')} style={{ marginTop: 'var(--s4)' }} />
+        )}
+        {periodo.estado === 'EN_CIERRE' && !enEspera && (
+          <Alert variant="warning" title={t('cierre.en_curso')} description={t('cierre.en_curso_detalle')} style={{ marginTop: 'var(--s4)' }} />
         )}
         {enEspera && ultimo && (
           <Alert variant="warning" title={t('cierre.en_espera')} style={{ marginTop: 'var(--s4)' }}
@@ -180,13 +227,14 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
             </Button>
           </div>
         )}
+        {cierre.cargando && paso !== null && <Progreso paso={paso} />}
       </section>
 
       {!cerrado && (
         <section className="fin-tarjeta" aria-labelledby="cierre-pre" style={{ marginBottom: 'var(--s5)' }}>
           <div className="fin-acciones" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 id="cierre-pre" style={{ margin: 0 }}>{t('cierre.prevalidacion')}</h2>
-            {checks.length > 0 && <Badge variant={completas === checks.length ? 'success' : 'warning'}>{t('cierre.completas', { n: completas, total: checks.length })}</Badge>}
+            {checks.length > 0 && <BadgeTono tono={completas === checks.length ? 'success' : 'warning'}>{t('cierre.completas', { n: completas, total: checks.length })}</BadgeTono>}
           </div>
           <p style={{ ...SECUNDARIO, margin: 'var(--s1) 0 var(--s4)' }}>{t('cierre.prevalidacion_ayuda')}</p>
           <ErrorApi error={prevalidacion.error ?? cierre.error ?? cancelacion.error} />
@@ -201,10 +249,21 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
                       <p className="fin-check__titulo">{c.titulo}</p>
                       <p className="fin-check__detalle">{c.detalle}</p>
                     </div>
-                    <Badge variant={TONO_CHECK[c.nivel]}>{t(`cierre.nivel_${c.nivel}`)}</Badge>
+                    <BadgeTono tono={TONO_CHECK[c.nivel]}>{t(`cierre.nivel_${c.nivel}`)}</BadgeTono>
                   </li>
                 ))}
               </ul>
+              {bloqueosActivos.length > 0 && (
+                <div style={{ marginTop: 'var(--s4)' }}>
+                  <table style={TABLA}>
+                    <caption style={{ textAlign: 'left', fontWeight: 600, marginBottom: 'var(--s2)' }}>{t('cierre.bloqueos_titulo', { count: bloqueosActivos.length })}</caption>
+                    <thead><tr><th style={TH}>{t('cierre.bloqueo_condicion')}</th><th style={TH}>{t('cierre.bloqueo_detalle')}</th></tr></thead>
+                    <tbody>
+                      {bloqueosActivos.map((b) => <tr key={b.id}><th scope="row" style={{ ...TD, textAlign: 'left' }}>{b.titulo}</th><td style={TD}>{b.detalle}</td></tr>)}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               {pv.lineas_sin_trazabilidad.length > 0 && (
                 <div style={{ marginTop: 'var(--s4)' }}>
                   <table style={TABLA} aria-describedby="cierre-traza-titulo">
@@ -226,7 +285,7 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
                   </table>
                 </div>
               )}
-              {puedeCerrar && pv.puede_cerrar && (
+              {puedeCerrar && pv.puede_cerrar && abierto && (
                 <div style={{ display: 'grid', gap: 'var(--s3)', marginTop: 'var(--s5)' }}>
                   {pv.activos_sin_precio.length > 0 && (
                     <div style={{ display: 'grid', gap: 'var(--s2)' }}>
@@ -236,27 +295,36 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
                         <Button variant="ghost" size="sm" onClick={() => decidirTodos('estimar')}>{t('cierre.estimar_todos')}</Button>
                       </div>
                       <p style={{ ...SECUNDARIO, margin: 0 }}>{t('cierre.sin_precio_ayuda')}</p>
-                      {pv.activos_sin_precio.map((a) => (
-                        <fieldset key={a.id_activo_biologico} style={{ border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s2) var(--s3)', margin: 0, display: 'flex', flexWrap: 'wrap', gap: 'var(--s4)' }}>
-                          <legend style={{ fontWeight: 600, padding: '0 var(--s1)' }}>{`${a.identificador} (${a.especie})`}</legend>
-                          <label style={{ display: 'flex', gap: 'var(--s2)' }}>
-                            <input type="radio" name={`sin-precio-${a.id_activo_biologico}`} checked={decisiones[a.id_activo_biologico] === 'excluir'}
-                              onChange={() => setDecisiones((d) => ({ ...d, [a.id_activo_biologico]: 'excluir' }))} />
-                            {t('cierre.excluir_activo')}
-                          </label>
-                          <label style={{ display: 'flex', gap: 'var(--s2)' }}>
-                            <input type="radio" name={`sin-precio-${a.id_activo_biologico}`} checked={decisiones[a.id_activo_biologico] === 'estimar'}
-                              onChange={() => setDecisiones((d) => ({ ...d, [a.id_activo_biologico]: 'estimar' }))} />
-                            {t('cierre.estimar_activo')}
-                          </label>
-                        </fieldset>
-                      ))}
+                      <ScrollRegion label={t('cierre.que_hacer_sin_precio')}>
+                        <table style={TABLA}>
+                          <thead>
+                            <tr><th style={TH}>{t('col.activo')}</th><th style={TH}>{t('col.especie')}</th><th style={TH}>{t('cierre.motivo')}</th><th style={TH}>{t('cierre.decision')}</th></tr>
+                          </thead>
+                          <tbody>
+                            {pv.activos_sin_precio.map((a) => (
+                              <tr key={a.id_activo_biologico}>
+                                <th scope="row" style={{ ...TD, textAlign: 'left' }}>{a.identificador}</th>
+                                <td style={TD}>{a.especie}</td>
+                                <td style={TD}>{t('cierre.motivo_sin_precio')}</td>
+                                <td style={TD}>
+                                  <fieldset style={{ border: 0, margin: 0, padding: 0, display: 'grid', gap: 'var(--s1)' }}>
+                                    <legend className="ds-sr-only">{`${a.identificador} (${a.especie})`}</legend>
+                                    {radio(a, 'excluir')}
+                                    {radio(a, 'estimar')}
+                                  </fieldset>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </ScrollRegion>
+                      <p role="status" style={{ ...SECUNDARIO, margin: 0 }}>{t('cierre.resumen_decisiones', { excluidos, estimados, pendientes: pv.activos_sin_precio.length - excluidos - estimados })}</p>
                     </div>
                   )}
                   {pv.lineas_sin_trazabilidad.length > 0 && (
-                    <label style={{ display: 'flex', gap: 'var(--s2)' }}>
+                    <label className="fin-casilla">
                       <input type="checkbox" checked={autorizarLineas} aria-describedby="cierre-traza-titulo" onChange={(e) => setAutorizarLineas(e.target.checked)} />
-                      {t('cierre.autorizar_lineas')}
+                      <span>{t('cierre.autorizar_lineas')}</span>
                     </label>
                   )}
                   {pv.requiere_autorizacion && <Alert variant="warning" title={t('cierre.requiere_autorizacion')} />}
@@ -287,8 +355,8 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
           <ScrollRegion label={t('cierre.comprobantes')}>
             <table style={TABLA}>
               <thead>
-                <tr><th style={TH}>{t('col.codigo')}</th><th style={TH}>{t('col.tipo_hecho')}</th><th style={TH}>{t('col.especie')}</th>
-                  <th style={TH}>{t('col.cuentas')}</th><th style={TH_NUM}>{t('col.valor')}</th><th style={TH}>{t('col.hash')}</th></tr>
+                <tr><th style={TH}>{t('col.codigo')}</th><th style={TH}>{t('col.tipo_hecho')}</th><th style={TH}>{t('col.especie')}</th><th style={TH}>{t('col.fecha')}</th>
+                  <th style={TH}>{t('col.cuenta_debito')}</th><th style={TH}>{t('col.cuenta_credito')}</th><th style={TH_NUM}>{t('col.valor')}</th><th style={TH}>{t('col.hash')}</th></tr>
               </thead>
               <tbody>
                 {(comprobantes.data ?? []).map((c) => (
@@ -296,7 +364,9 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
                     <td style={TD}><span className="fin-mono">{c.codigo}</span></td>
                     <td style={TD}>{t(`hecho.${c.tipo_hecho}`)}</td>
                     <td style={TD}>{c.especie}</td>
-                    <td style={TD}><span className="fin-mono">{c.lineas.map((l) => `${l.cuenta_debito}/${l.cuenta_credito}`).join(' · ')}</span></td>
+                    <td style={{ ...TD, whiteSpace: 'nowrap' }}>{formatoFecha(c.fecha_comprobante)}</td>
+                    <td style={TD}>{c.lineas.map((l, i) => <span key={i} className="fin-mono" style={{ display: 'block' }}>{l.cuenta_debito}</span>)}</td>
+                    <td style={TD}>{c.lineas.map((l, i) => <span key={i} className="fin-mono" style={{ display: 'block' }}>{l.cuenta_credito}</span>)}</td>
                     <td style={TD_NUM}>{formatoMoneda(c.valor_total)}</td>
                     <td style={TD} title={c.hash_integridad}><span className="fin-mono">{c.hash_integridad.slice(0, 12)}…</span></td>
                   </tr>
@@ -308,14 +378,15 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
       )}
 
       {confirmando && (
-        <ModalShell title={t('cierre.confirmar_titulo')} onClose={() => setConfirmando(false)} maxWidth={480}
+        <ModalShell title={t('cierre.confirmar_titulo', { periodo: nombrePeriodo(periodo) })} onClose={() => setConfirmando(false)} maxWidth={480}
+          descripcion={t('cierre.confirmar_detalle', { periodo: etiquetaPeriodo(periodo) })}
           footer={(
             <>
-              <Button variant="secondary" size="md" onClick={() => setConfirmando(false)}>{t('comun.cancelar')}</Button>
-              <Button variant="primary" size="md" onClick={ejecutar}>{t('cierre.ejecutar')}</Button>
+              <Button variant="secondary" size="md" data-autofocus onClick={() => setConfirmando(false)}>{t('comun.cancelar')}</Button>
+              <Button variant="primary" size="md" onClick={ejecutar} aria-describedby="cierre-confirmar-periodo">{t('cierre.ejecutar')}</Button>
             </>
           )}>
-          <p style={{ margin: 0, lineHeight: 'var(--lh-base)' }}>{t('cierre.confirmar_detalle', { periodo: etiquetaPeriodo(periodo) })}</p>
+          <p id="cierre-confirmar-periodo" style={{ margin: 0, lineHeight: 'var(--lh-base)' }}>{t('cierre.confirmar_periodo', { periodo: nombrePeriodo(periodo) })}</p>
         </ModalShell>
       )}
     </>
@@ -344,7 +415,7 @@ function Historial({ periodos }: { periodos: Periodo[] }) {
             {ordenados.map((p) => (
               <tr key={p.id_periodo_contable}>
                 <td style={TD}><strong>{nombrePeriodo(p)}</strong><span className="fin-secundario">{t(`tipo_cierre.${p.tipo_cierre}`)}</span></td>
-                <td style={TD}>NIT {p.numero_id_tributaria}</td>
+                <td style={TD}>{etiquetaNit(p.numero_id_tributaria)}</td>
                 <td style={{ ...TD, whiteSpace: 'nowrap' }}>{p.fecha_cierre ? formatoFecha(p.fecha_cierre, true) : t('cierre.sin_cerrar')}</td>
                 <td style={TD}><EstadoBadge estado={p.estado} /></td>
                 <td style={TD}>

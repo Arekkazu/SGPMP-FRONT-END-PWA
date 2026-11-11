@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: pestañas por permiso, contrato de API, anulación y formulario de consumo |
+// | 2026-11-10 | Arekkazu | TC-DIS-198/200/209/210/218 RF-74/75/81: alerta de CA crítica, foco tras consultar, consumo por individuo, fecha vs fase y paginación con aria-current |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -11,6 +12,8 @@ import { http } from '../shared/api/http';
 import { SuministrosPage } from './pages/SuministrosPage';
 import { AlimentacionView } from './pages/AlimentacionView';
 import { ConsumoFormModal } from './components/ConsumoFormModal';
+import { EficienciaView } from './pages/EficienciaView';
+import { Paginacion } from './components/Paginacion';
 import { reportesApi } from './api/reportesApi';
 import { historialApi } from './api/historialApi';
 import { suministrosApi } from './api/suministrosApi';
@@ -152,5 +155,52 @@ describe('contrato de API M05', () => {
     const a = nuevaClaveIdempotencia();
     expect(a).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(nuevaClaveIdempotencia()).not.toBe(a);
+  });
+});
+
+describe('Accesibilidad QA M05 (TC-DIS-198/200/209/210/218)', () => {
+  const ica = (extra: Record<string, unknown>) => ({
+    id_resultado_ica: 500, id_activo_biologico: 7, periodo_evaluacion: 'MENSUAL', fecha_inicio_periodo: '2026-09-01', fecha_fin_periodo: '2026-09-30',
+    estado_resultado: 'CALCULADO', es_vigente: true, intento: 1, alimento_consumido_total_kg: '120.00', ganancia_peso_kg: '20.00', ca_calculado: '6.00',
+    clasificacion_ca: 'CRITICA', data_quality_score: 100, causa_no_calculo: null, mensaje: null, tipo_calculo: 'AUTOMATICO', fecha_calculo: '2026-10-01T02:00:00', ...extra,
+  });
+
+  it('un ICA crítico se anuncia con una alerta, el foco queda sobre el resultado y cada cálculo del historial abre su detalle', async () => {
+    sesion.permisos = [{ id_recurso: 49, id_accion: 2 }];
+    respuestas['GET /suministros/eficiencia-alimenticia/activos/7/vigente'] = { data: { id_activo_biologico: 7, periodo_evaluacion: 'MENSUAL', tiene_resultado: true, mensaje: null, resultado: ica({}) } };
+    respuestas['GET /suministros/eficiencia-alimenticia/activos/7/historial'] = { data: { total: 1, items: [ica({ es_vigente: false })] } };
+    render(<MemoryRouter><EficienciaView /></MemoryRouter>);
+    await userEvent.type(screen.getByRole('combobox', { name: /Activo biológico/ }), '7');
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
+    const alerta = await screen.findByRole('alert');
+    expect(alerta).toHaveTextContent(/crítica/i);
+    await waitFor(() => expect(document.activeElement).not.toBe(document.body));
+    fireEvent.click(await screen.findByRole('button', { name: /Ver el detalle del cálculo/ }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('Intento');
+  });
+
+  it('en un lote muestra la población y el consumo por individuo en vivo, y rechaza una fecha anterior al cambio de fase', async () => {
+    const activos = [{ id_activo_biologico: 5, tipo: 'POBLACIONAL', identificador: 'Lote norte', nombre_especie: 'Tilapia', nombre_infraestructura: 'Estanque 1', nombre_estado: 'Activo' }];
+    respuestas['GET /activos-biologicos/5'] = { data: { id_activo_biologico: 5, tipo: 'POBLACIONAL', identificador: 'Lote norte', detalle_poblacional: { cantidad_actual: 250 } } };
+    respuestas['GET /activos-biologicos/5/fases'] = { data: { fases: [{ id_gestion_fases: 1, nombre_ciclo: 'Engorde', nombre_fase_actual: 'Levante', fecha_inicio: '2026-09-01T05:00:00Z', fecha_finalizacion: null, es_activa: true }] } };
+    render(<ConsumoFormModal activos={activos} cargandoActivos={false} tiposAlimento={[]} cargandoTipos={false} enviando={false} error={null} onGuardar={vi.fn()} onCerrar={vi.fn()} />);
+    await userEvent.type(screen.getByRole('combobox', { name: /Activo biológico/ }), '5');
+    await waitFor(() => expect(screen.getByLabelText('Población actual del lote')).toHaveValue('250'));
+    await userEvent.type(screen.getByLabelText(/Cantidad suministrada/), '500');
+    expect(screen.getByLabelText(/Consumo por individuo/)).toHaveValue('2 kg');
+    const fecha = screen.getByLabelText(/Fecha del suministro/);
+    fireEvent.change(fecha, { target: { value: '2026-08-01' } });
+    fireEvent.blur(fecha);
+    expect(await screen.findByText(/fecha de cambio de fase/)).toBeInTheDocument();
+    expect(fecha).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('la paginación marca la página actual con aria-current y Siguiente avanza una página', () => {
+    const onCambiar = vi.fn();
+    render(<Paginacion pagina={2} totalPaginas={5} onCambiar={onCambiar} />);
+    expect(screen.getByRole('button', { name: 'Ir a la página 2' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: 'Ir a la página 1' })).not.toHaveAttribute('aria-current');
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
+    expect(onCambiar).toHaveBeenCalledWith(3);
   });
 });

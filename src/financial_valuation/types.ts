@@ -6,6 +6,7 @@
 // | 2026-11-10 | Arekkazu | INC-M06-337/344/345 RF-86/87/93: cierre en espera, acumulado y desglose de mantenimiento |
 // | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-02 RF-87: la prevalidación lista cada línea sin trazabilidad con su activo y lo que falta |
+// | 2026-11-10 | Arekkazu | TC-DIS-252/254/265 RF-COT/91/94: estado al cierre de la cotización, nivel del fallo de la cadena y origen del evento |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -205,7 +206,7 @@ export interface Comprobante {
 }
 export interface Cadena {
   id_linea_asiento_nic41: number; tipo_hecho: TipoHecho; valor: Dec; tipo_evidencia: string; estado_trazabilidad: string;
-  estado_verificacion: string | null; nivel_fallo: string | null; eslabones_faltantes: string[] | null;
+  estado_verificacion: string | null; nivel_fallo: string | number | null; eslabones_faltantes: string[] | null;
   eslabones: Record<string, unknown> | null;
 }
 
@@ -213,6 +214,8 @@ export interface Cotizacion {
   id_cotizacion: number; fecha_emision: string; activos_cotizados: number[]; valor_razonable_referencia: Dec;
   valor_cotizacion_propuesto: Dec; condiciones: string | null; estado: string; fecha_vencimiento: string | null;
   motivo_anulacion: string | null; version: number; estado_periodo: string;
+  /** Estado que tenía al cerrarse su período (RF-COT); null mientras el período sigue abierto. */
+  estado_al_cierre?: string | null;
 }
 
 export interface EstadoResumen {
@@ -244,6 +247,8 @@ export interface EventoAuditoria {
   id_evento: string; descripcion_evento: string; tipo_evento: string; fecha_hora: string; actor: string;
   activo: string | null; id_periodo_contable: number | null; resumen_payload: Record<string, unknown> | null;
   monto_afectado: Dec | null; severidad: string; integridad_verificable: boolean;
+  /** Vista legible: «Repositorio central» o «Sincronizado desde respaldo». */
+  origen?: string | null;
 }
 export type Severidad = 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
 export interface PaginaAuditoria {

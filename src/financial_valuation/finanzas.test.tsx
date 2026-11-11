@@ -8,6 +8,7 @@
 // | 2026-11-10 | Arekkazu | INC-M06-337/344/345/351: cierre en espera y cancelación, acumulado con desglose y ajuste |
 // | 2026-11-10 | Arekkazu | #510 RF-89: un error al confirmar la desviación se muestra en vez del aviso |
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
+// | 2026-11-10 | Arekkazu | TC-DIS-242/244/261 RF-87/93: diálogo descrito con foco en Cancelar, NIT ausente, badges con icono y resultado con Ganancia/Pérdida |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -24,7 +25,7 @@ import { CalculoView } from './pages/CalculoView';
 import { ProductosView } from './pages/ProductosView';
 import { EstadoResultadosView } from './pages/EstadoResultadosView';
 import { TrazabilidadView } from './pages/TrazabilidadView';
-import { ProveedorPeriodo, aFraccion, aPorcentaje, formatoMoneda } from './components/comunes';
+import { EstadoBadge, ProveedorPeriodo, Variacion, aFraccion, aPorcentaje, etiquetaPeriodo, formatoMoneda } from './components/comunes';
 import { signo, sumar } from './lib/decimal';
 import { digitoVerificacion } from '../configuration/components/TitularFincaModal';
 
@@ -405,5 +406,35 @@ describe('ProductosView (RF-85 FA-1/FA-2)', () => {
   it('sin permiso de ejecutar muestra la bandeja sin la acción', async () => {
     await abrir([permiso('valoracion_activos', 2), permiso('cierre_periodo', 2)]);
     expect(screen.queryByRole('button', { name: /Ingresar los costos de venta/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('Accesibilidad QA M06 (TC-DIS-242/244/261)', () => {
+  it('el diálogo de cierre se nombra y describe por aria y arranca con el foco en Cancelar', async () => {
+    sesion.permisos = [permiso('cierre_periodo', 2), permiso('cierre_periodo', 5)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/periodos/7/prevalidacion'] = { data: { bloqueos: [], activos_sin_precio: [], lineas_sin_trazabilidad: [], puede_cerrar: true, requiere_autorizacion: false } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><CierreView /></ProveedorPeriodo></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: 'Cerrar período' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(dialogo).toHaveAttribute('aria-labelledby');
+    expect(dialogo).toHaveAttribute('aria-describedby');
+    expect(dialogo).toHaveAccessibleDescription(/inmutable/);
+    await waitFor(() => expect(within(dialogo).getByRole('button', { name: 'Cancelar' })).toHaveFocus());
+  });
+
+  it('un período sin titular no muestra «NIT null» y los estados llevan icono además del texto', () => {
+    expect(etiquetaPeriodo({ ...periodo, numero_id_tributaria: null as unknown as string })).toMatch(/Sin NIT asignado/);
+    expect(etiquetaPeriodo(periodo)).toMatch(/NIT 900123456/);
+    const { container } = render(<EstadoBadge estado="CERRADO" />);
+    expect(container.querySelector('.ds-badge svg')).not.toBeNull();
+    expect(container).toHaveTextContent('Cerrado');
+  });
+
+  it('el resultado neto dice Ganancia o Pérdida junto al signo', () => {
+    const { container } = render(<><Variacion valor="460000" etiqueta /><Variacion valor="-1190000" etiqueta /></>);
+    expect(container).toHaveTextContent(/\+\$.*Ganancia/);
+    expect(container).toHaveTextContent(/-\$.*Pérdida/);
   });
 });

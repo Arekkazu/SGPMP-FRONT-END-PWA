@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-05 | Arekkazu | M06 RF-83 prototipo: medición posterior del período por activo, con indicadores y filtros |
 // | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
+// | 2026-11-10 | Arekkazu | TC-DIS-224 RF-83: columnas propias para la transformación biológica y el cambio de precio |
 import React, { useEffect, useState } from 'react';
 import { Play, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -123,7 +124,7 @@ export function MedicionView() {
                 <thead>
                   <tr>
                     <th style={TH}>{t('col.activo')}</th><th style={TH}>{t('col.clasificacion')}</th><th style={TH_NUM}>{t('col.valor_anterior')}</th>
-                    <th style={TH_NUM}>{t('col.valor_actual')}</th><th style={TH_NUM}>{t('col.variacion_total')}</th>
+                    <th style={TH_NUM}>{t('col.valor_actual')}</th><th style={TH_NUM}>{t('col.transformacion')}</th><th style={TH_NUM}>{t('col.precio_mercado')}</th><th style={TH_NUM}>{t('col.variacion_total')}</th>
                     <th style={TH}>{t('medicion.valor_estimado')}</th><th style={TH}>{t('col.estado')}</th>
                     <th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th>
                   </tr>
@@ -138,14 +139,9 @@ export function MedicionView() {
                         {f.actual ? formatoMoneda(f.actual) : f.activo.valorado_por_costo ? formatoMoneda(f.activo.valor_contable_por_costo) : t('medicion.sin_valor_periodo')}
                         {f.ultima && <span className="fin-secundario">{formatoFecha(f.ultima)}</span>}
                       </td>
-                      <td style={TD_NUM}>
-                        {f.total ? <Variacion valor={f.total} /> : t('medicion.sin_variacion')}
-                        {f.total && (
-                          <span className="fin-secundario">
-                            {t('medicion.desglose', { transformacion: formatoMoneda(f.transformacion), precio: formatoMoneda(f.precio) })}
-                          </span>
-                        )}
-                      </td>
+                      <td style={TD_NUM}>{f.total ? <Variacion valor={f.transformacion} /> : t('medicion.sin_variacion')}</td>
+                      <td style={TD_NUM}>{f.total ? <Variacion valor={f.precio} /> : t('medicion.sin_variacion')}</td>
+                      <td style={TD_NUM}>{f.total ? <Variacion valor={f.total} /> : t('medicion.sin_variacion')}</td>
                       <td style={TD}>{f.estado !== 'COMPLETADO' ? t('sin_mercado.no_aplica')
                         : f.estimado ? <Badge variant="warning">{t('valor.estimado')}</Badge> : t('medicion.con_precio_vigente')}</td>
                       <td style={TD}>

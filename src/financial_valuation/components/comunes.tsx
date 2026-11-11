@@ -2,8 +2,9 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: piezas comunes de las vistas del módulo financiero |
 // | 2026-11-05 | Arekkazu | M06 prototipos: período global, indicadores, listado con búsqueda, filtros y pie |
+// | 2026-11-10 | Arekkazu | TC-DIS-244..266 RF-87..94: badges con icono, NIT ausente, páginas numeradas, resultado con Ganancia/Pérdida y descarga anunciada |
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, FilterX, Search, SearchX } from 'lucide-react';
+import { AlertTriangle, Ban, CheckCircle2, Clock, FilterX, Info, Search, SearchX, XCircle } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
@@ -16,6 +17,10 @@ import type { ApiError } from '../../shared/api/errors';
 import { normalizar, usePaginado } from '../../shared/hooks/useBusqueda';
 import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { useAsync } from '../../supplies/hooks/useAsync';
+import { Paginacion } from '../../supplies/components/Paginacion';
+import { pushToast } from '../../shared/hooks/useToast';
+import { guardarArchivo as guardarBlob } from '../../supplies/lib/descarga';
+import type { Archivo } from '../api/finanzasApi';
 import { EstadoVacio } from '../../supplies/components/EstadoVacio';
 import { formatoFecha, formatoMoneda } from '../../supplies/lib/formato';
 import { finanzasApi } from '../api/finanzasApi';
@@ -33,6 +38,8 @@ export { formatoCantidad, formatoFecha, formatoMoneda } from '../../supplies/lib
 export { guardarArchivo } from '../../supplies/lib/descarga';
 export { PANEL, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM, FILTROS } from '../../supplies/components/estilos';
 
+export type Tono = 'success' | 'warning' | 'error' | 'info' | 'neutral';
+
 /** Estados del dominio → color del badge. El texto se traduce; el valor no. */
 const VARIANTE: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutral'> = {
   ACTIVO: 'success', VIGENTE: 'success', REGISTRADO: 'success', REGISTRADA: 'success', CERRADO: 'success',
@@ -46,10 +53,29 @@ const VARIANTE: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutr
   REVERTIDO: 'neutral', REVERTIDA: 'neutral', SUPERADO: 'neutral', ARCHIVADO: 'neutral', EXCLUIDA: 'neutral',
 };
 
+/** Icono de cada tono: el color nunca es el único indicador de estado (WCAG 1.4.1). */
+const ICONO_TONO: Record<Tono, React.ReactNode> = {
+  success: <CheckCircle2 size={12} aria-hidden />,
+  warning: <AlertTriangle size={12} aria-hidden />,
+  error: <XCircle size={12} aria-hidden />,
+  info: <Info size={12} aria-hidden />,
+  neutral: <Ban size={12} aria-hidden />,
+};
+const ICONO_ESTADO: Record<string, React.ReactNode> = {
+  PENDIENTE: <Clock size={12} aria-hidden />, PENDIENTE_CUENTA: <Clock size={12} aria-hidden />, PENDIENTE_CLASIFICACION: <Clock size={12} aria-hidden />,
+  VERIFICACION_PENDIENTE: <Clock size={12} aria-hidden />, EN_CIERRE: <Clock size={12} aria-hidden />, MEDICION_PENDIENTE: <Clock size={12} aria-hidden />,
+  PROGRAMADO: <Clock size={12} aria-hidden />,
+};
+
+/** Badge de estado con icono + texto según su tono. */
+export function BadgeTono({ tono, icono, children }: { tono: Tono; icono?: React.ReactNode; children: React.ReactNode }) {
+  return <Badge variant={tono}>{icono ?? ICONO_TONO[tono]}{children}</Badge>;
+}
+
 export function EstadoBadge({ estado }: { estado: string | null | undefined }) {
   const { t } = useT('finanzas');
   if (!estado) return <>{t('comun.sin_estado')}</>;
-  return <Badge variant={VARIANTE[estado] ?? 'neutral'}>{t(`estado.${estado}`, { defaultValue: t('comun.sin_estado') })}</Badge>;
+  return <BadgeTono tono={VARIANTE[estado] ?? 'neutral'} icono={ICONO_ESTADO[estado]}>{t(`estado.${estado}`, { defaultValue: t('comun.sin_estado') })}</BadgeTono>;
 }
 
 export function ErrorApi({ error }: { error: ApiError | null }) {
@@ -80,8 +106,19 @@ export function nombrePeriodo(p: Periodo): string {
   return `${formatoFecha(p.fecha_inicio)} – ${formatoFecha(p.fecha_fin)}`;
 }
 
+/** «NIT 900123456» o, si la finca aún no tiene titular, un texto que lo diga (nunca «NIT null»). */
+export function etiquetaNit(nit: string | null | undefined): string {
+  return nit ? `NIT ${nit}` : i18n.t('comun.sin_nit', { ns: 'finanzas' });
+}
+
 export function etiquetaPeriodo(p: Periodo): string {
-  return `${nombrePeriodo(p)} · NIT ${p.numero_id_tributaria}`;
+  return `${nombrePeriodo(p)} · ${etiquetaNit(p.numero_id_tributaria)}`;
+}
+
+/** Entrega el archivo y anuncia que la descarga quedó lista (WCAG 4.1.3). */
+export function descargarArchivo(a: Archivo) {
+  guardarBlob(a.blob, a.nombre);
+  pushToast('success', i18n.t('comun.descarga_lista', { ns: 'finanzas' }), a.nombre);
 }
 
 /** El abierto más reciente; si no hay ninguno abierto, el más reciente. */
@@ -158,7 +195,6 @@ export function SinPeriodo() {
 
 // --- Indicadores -----------------------------------------------------------------------------
 
-export type Tono = 'success' | 'warning' | 'error' | 'info' | 'neutral';
 export interface Indicador { etiqueta: string; valor: React.ReactNode; detalle?: string; tono?: Tono }
 
 export function Indicadores({ items }: { items: Indicador[] }) {
@@ -175,11 +211,22 @@ export function Indicadores({ items }: { items: Indicador[] }) {
   );
 }
 
-/** Monto con signo explícito: el color acompaña al «+» o «−», nunca lo reemplaza. */
-export function Variacion({ valor }: { valor: string | null | undefined }) {
+/**
+ * Monto con signo explícito: el color acompaña al «+» o «−», nunca lo reemplaza. Con `etiqueta`
+ * añade «Ganancia» / «Pérdida» en texto (resultado neto, WCAG 1.4.1).
+ */
+export function Variacion({ valor, etiqueta }: { valor: string | null | undefined; etiqueta?: boolean }) {
+  const { t } = useT('finanzas');
   if (valor == null || valor === '') return <>—</>;
   const s = signo(valor);
-  return <span className={s > 0 ? 'fin-pos' : s < 0 ? 'fin-neg' : undefined}>{s > 0 ? '+' : ''}{formatoMoneda(valor)}</span>;
+  const texto = `${s > 0 ? '+' : ''}${formatoMoneda(valor)}`;
+  return (
+    <span className={s > 0 ? 'fin-pos' : s < 0 ? 'fin-neg' : undefined}>
+      {texto}
+      {etiqueta && s !== 0 && ` (${t(s > 0 ? 'comun.ganancia' : 'comun.perdida')})`}
+      {etiqueta && s === 0 && ` (${t('comun.sin_resultado')})`}
+    </span>
+  );
 }
 
 // --- Listado: búsqueda, filtros combinados con AND, conteo y paginación -------------------------
@@ -277,15 +324,7 @@ export function Listado<T>({ l, idBase, titulo, acciones, buscar, sustantivo, ca
       {conDatos && (
         <div className="fin-listado__pie">
           <span role="status">{t('comun.mostrando', { n: l.filtrados.length, total: l.total, que: sustantivo })}</span>
-          {pag.totalPaginas > 1 && (
-            <div className="fin-acciones" style={{ alignItems: 'center' }}>
-              <span>{t('comun.pagina_de', { pagina: pag.pagina, total: pag.totalPaginas })}</span>
-              <Button variant="secondary" size="sm" disabled={pag.pagina <= 1} onClick={() => pag.setPagina(pag.pagina - 1)}
-                aria-label={t('comun.anterior')}><ChevronLeft size={16} aria-hidden /></Button>
-              <Button variant="secondary" size="sm" disabled={pag.pagina >= pag.totalPaginas} onClick={() => pag.setPagina(pag.pagina + 1)}
-                aria-label={t('comun.siguiente')}><ChevronRight size={16} aria-hidden /></Button>
-            </div>
-          )}
+          {pag.totalPaginas > 1 && <Paginacion pagina={pag.pagina} totalPaginas={pag.totalPaginas} onCambiar={pag.setPagina} sinResumen />}
         </div>
       )}
     </section>

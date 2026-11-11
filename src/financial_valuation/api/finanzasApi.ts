@@ -8,6 +8,7 @@
 // | 2026-11-10 | Arekkazu | INC-M06-337/345/351 RF-86/87: cancelar cierre, ajuste de período anterior y acumulado |
 // | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
+// | 2026-11-10 | Arekkazu | TC-DIS-265 RF-94: filtros de la bitácora por fechas, usuario, origen y activo |
 import { http } from '../../shared/api/http';
 import type {
   Acumulado, ActivoValorado, Asignacion, Cadena, CalculoPeriodo, CosechaPendiente, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
@@ -135,6 +136,6 @@ export const finanzasApi = {
 
   // Auditoría (RF-94)
   auditoria: (filtros: { id_periodo_contable?: number; id_activo_biologico?: number; tipo_evento?: string; severidad?: string;
-    pagina: number; tamano?: number; orden?: 'ASC' | 'DESC' }) =>
+    id_usuario?: number; origen_registro?: string; desde?: string; hasta?: string; pagina: number; tamano?: number; orden?: 'ASC' | 'DESC' }) =>
     get<PaginaAuditoria>('/auditoria', { tamano: 50, ...filtros, formato: 'LEGIBLE' }),
 };
