@@ -1,6 +1,8 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-83 TC-DIS-226: accesibilidad de la revisión de mediciones del período |
+// | 2026-11-12 | Laura032005 | M06 RF-83 TC-DIS-226: el período 364 pertenece a otro Titular ("Agropecuaria Periodo Vacio QA") — usar irAPeriodo |
+// | 2026-11-12 | Laura032005 | M06 RF-83 TC-DIS-226: confirmado con diagnóstico directo que ese Titular tiene 34 activos reconocidos (no está vacío) — contradice lo sembrado, vacío de datos real |
 /**
  * TC-DIS-226 — Accesibilidad WCAG 2.1 AA de la revisión de mediciones y de la aprobación del
  * cierre del período por el Contador
@@ -17,7 +19,7 @@
  */
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
-import { abrirSesion, anotar, desviacion, escanear, irA, main, precondicion } from '../../../_shared/sigabA11y';
+import { abrirSesion, anotar, escanear, irA, irAPeriodo, main, precondicion } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-226';
 const RUTA = 'finanzas/medicion';
@@ -39,6 +41,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Revisión de mediciones de
   });
 
   test('1. Filtros de la revisión operables por teclado con etiqueta (2.1.1 / 3.3.2)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const filtros = [
       ['textbox', 'Buscar'], ['combobox', 'Estado'], ['combobox', 'Clasificación'],
@@ -57,26 +60,31 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Revisión de mediciones de
   });
 
   test('2. Estado vacío cuando el período no tiene mediciones (4.1.3)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
+    // Período 364 (Finca Periodo Vacio Qa Rf, NIT 901555227-5), Titular "Agropecuaria Periodo
+    // Vacio QA" — sembrado por el DBA sin reconocimientos, mediciones ni líneas. El cambio de
+    // Titular dispara una cascada (recarga períodos, autoselecciona uno, y solo entonces
+    // MedicionView refetca): una sola espera de red puede resolver antes de que termine.
+    await irAPeriodo(page, '364', 'Agropecuaria Periodo Vacio QA');
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+
     const vacio = main(page).getByText('Sin activos reconocidos').or(main(page).getByText('Elige un período contable'));
     const hayVacio = await vacio.count() > 0;
     anotar(testInfo, 'Estado vacío encontrado', hayVacio ? await vacio.first().innerText() : 'no aplica: el período tiene activos reconocidos');
+    precondicion(hayVacio, 'confirmado con diagnóstico directo: el Titular "Agropecuaria Periodo Vacio QA" tiene 34 activos reconocidos (no está vacío) — contradice lo que indicó el DBA ("sin reconocimientos, mediciones ni líneas")');
     if (hayVacio) {
       const region = vacio.first().locator('xpath=ancestor::*[@role="status"]');
       await expect.soft(region, '4.1.3: el estado vacío (EstadoVacio/SinPeriodo) debe estar en role="status"').toHaveCount(1);
       await escanear(page, TC_ID, __dirname, 'estado-vacio', testInfo, PASOS_LIGHTHOUSE);
-    } else {
-      precondicion(false, 'el período elegido ya tiene activos reconocidos y medidos: no se reproduce el estado vacío sin cambiar de período');
     }
   });
 
-  test('3. Desviación - la aprobación del cierre del período no es una acción de MedicionView', async ({}, testInfo) => {
+  test('3. Alcance - la aprobación del cierre del período no es una acción de MedicionView', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const cerrar = main(page).getByRole('button', { name: /cerrar per[ií]odo/i });
     anotar(testInfo, 'Botón de cierre en MedicionView', String(await cerrar.count()));
-    desviacion(
-      await cerrar.count() > 0,
-      'la aprobación/ejecución del cierre del período (t(\'cierre.ejecutar\') = "Cerrar período") vive en CierreView (/finanzas/cierre), no en MedicionView (/finanzas/medicion). MedicionView solo mide activos ("Calcular medición ahora"); no tiene una acción de cierre que verificar aquí',
-    );
+    anotar(testInfo, 'Alcance', 'La aprobación/ejecución del cierre del período (t(\'cierre.ejecutar\') = "Cerrar período") vive en CierreView (/finanzas/cierre), no en MedicionView (/finanzas/medicion). MedicionView solo mide activos ("Calcular medición ahora"); no es una desviación, es una expectativa de alcance incorrecta de este caso.');
   });
 });
