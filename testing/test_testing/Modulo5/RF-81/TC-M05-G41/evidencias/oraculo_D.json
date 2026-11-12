@@ -1,0 +1,180 @@
+{
+  "caso_agrupado": "TC-M05-G41",
+  "rf": "RF-81",
+  "fecha_verificacion_utc": "2026-11-11T02:55:10Z",
+  "activo": {
+    "id_activo_biologico": 1624,
+    "tipo": "POBLACIONAL",
+    "nombre_activo": null,
+    "descripcion_semilla": "SEED-M05-HIST-500",
+    "especie": "Cachama Blanca",
+    "nombre_ciclo": "Ciclo completo cachama 2025-A"
+  },
+  "tc_m05_098_sin_filtros": {
+    "total_registros_filtrados": 500,
+    "monto_total_filtrado": "63753757.5000",
+    "nivel_volumen": 1,
+    "datos_contexto_no_disponibles": false,
+    "paginacion_default": {
+      "registros_por_pagina": 50,
+      "total_paginas": 10
+    },
+    "paginacion_max_200": {
+      "registros_por_pagina": 200,
+      "total_paginas": 3,
+      "filas_por_pagina": [200, 200, 100]
+    },
+    "paginacion_201_rechazo_observado": {
+      "http": 400,
+      "error_code": "VAL_ENTRADA",
+      "campo": "registros_por_pagina",
+      "detalle": "Input should be less than or equal to 200"
+    },
+    "desglose_por_tipo_suministro": {
+      "ALIMENTO": {
+        "total": 125,
+        "monto": "1875935.0000"
+      },
+      "INSEMINACION": {
+        "total": 125,
+        "monto": "22500941.2500"
+      },
+      "MEDICAMENTO": {
+        "total": 125,
+        "monto": "9375938.7500"
+      },
+      "SERVICIO_VETERINARIO": {
+        "total": 125,
+        "monto": "30000942.5000"
+      }
+    },
+    "desglose_por_ciclo": {
+      "Ciclo completo cachama 2025-A #701": {
+        "total": 150,
+        "monto": "18995339.7500"
+      },
+      "Ciclo completo cachama 2025-A #702": {
+        "total": 150,
+        "monto": "19256014.7500"
+      },
+      "Ciclo completo cachama 2025-A #703": {
+        "total": 200,
+        "monto": "25502403.0000"
+      }
+    },
+    "fases": {
+      "701": {
+        "total": 150,
+        "monto": "18995339.7500",
+        "fecha_min": "2026-01-13",
+        "fecha_max": "2026-04-22",
+        "costo_min": "5000.2000",
+        "costo_max": "400006.7000"
+      },
+      "702": {
+        "total": 150,
+        "monto": "19256014.7500",
+        "fecha_min": "2026-04-23",
+        "fecha_max": "2026-07-31",
+        "costo_min": "5001.6000",
+        "costo_max": "400014.7000"
+      },
+      "703": {
+        "total": 200,
+        "monto": "25502403.0000",
+        "fecha_min": "2026-08-01",
+        "fecha_max": "2026-11-08",
+        "costo_min": "5003.2000",
+        "costo_max": "400024.7000"
+      }
+    },
+    "tipo_x_origen": {
+      "ALIMENTO": { "M40_AUTOMATICO": 63, "MANUAL": 62 },
+      "MEDICAMENTO": { "M40_AUTOMATICO": 62, "MANUAL": 63 },
+      "SERVICIO_VETERINARIO": { "M40_AUTOMATICO": 62, "MANUAL": 63 },
+      "INSEMINACION": { "M40_AUTOMATICO": 62, "MANUAL": 63 }
+    },
+    "totales_origen": {
+      "MANUAL": 251,
+      "M40_AUTOMATICO": 249
+    }
+  },
+  "tc_m05_099_filtros": {
+    "a_combinado": {
+      "parametros": {
+        "tipo_suministro_filtro": "MEDICAMENTO",
+        "origen_precio_filtro": "MANUAL",
+        "fecha_inicio_filtro": "2026-04-23",
+        "fecha_fin_filtro": "2026-07-31",
+        "costo_min": 100000,
+        "costo_max": 300000
+      },
+      "total_registros_filtrados": 8,
+      "monto_total_filtrado": "900079.8800",
+      "desglose_por_tipo_suministro": {
+        "MEDICAMENTO": {
+          "total": 8,
+          "monto": "900079.8800"
+        }
+      },
+      "desglose_por_ciclo": {
+        "Ciclo completo cachama 2025-A #702": {
+          "total": 8,
+          "monto": "900079.8800"
+        }
+      },
+      "ids_esperados": [
+        "967ae69b-8e10-4728-a572-0625254f9191",
+        "8dbc4e7b-c533-406d-b89d-25317189ea8b",
+        "ffcf7897-46c2-4a9f-a6fe-a582bcce219b",
+        "053275ac-04d4-4f71-9981-521c1633b4df",
+        "5302e45f-56ce-4bee-b44b-99ba90a72b67",
+        "9e1acbb8-c2d7-4754-9e2b-669bf8737ae5",
+        "9deb31b3-c914-4a0b-8dcf-d13a6c630ce7",
+        "82250ae5-4ea0-4026-9f21-46c9d2656f0e"
+      ]
+    },
+    "b_vacio_por_costo": {
+      "parametros": {
+        "tipo_suministro_filtro": "MEDICAMENTO",
+        "costo_min": 500000
+      },
+      "total_registros_filtrados": 0,
+      "monto_total_filtrado": "0",
+      "total_paginas": 1,
+      "desglose_por_tipo_suministro": {},
+      "desglose_por_ciclo": {},
+      "mensaje": "No se encontraron registros de suministros con los filtros aplicados para el activo 1624."
+    },
+    "c_vacio_por_fecha": {
+      "parametros": {
+        "fecha_inicio_filtro": "2025-01-01",
+        "fecha_fin_filtro": "2025-12-31"
+      },
+      "total_registros_filtrados": 0,
+      "monto_total_filtrado": "0",
+      "total_paginas": 1,
+      "desglose_por_tipo_suministro": {},
+      "desglose_por_ciclo": {},
+      "mensaje": "No se encontraron registros de suministros con los filtros aplicados para el activo 1624."
+    },
+    "d_filtros_simples": {
+      "solo_tipo_medicamento": {
+        "tipo_suministro_filtro": "MEDICAMENTO",
+        "total_registros_filtrados": 125,
+        "monto_total_filtrado": "9375938.7500"
+      },
+      "solo_origen_manual": {
+        "origen_precio_filtro": "MANUAL",
+        "total_registros_filtrados": 251,
+        "monto_total_filtrado": "32181891.3900"
+      },
+      "solo_origen_m40_automatico": {
+        "origen_precio_filtro": "M40_AUTOMATICO",
+        "total_registros_filtrados": 249,
+        "monto_total_filtrado": "31571866.1100"
+      }
+    }
+  }
+}
+
