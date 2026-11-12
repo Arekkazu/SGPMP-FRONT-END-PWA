@@ -1,6 +1,10 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-83 TC-DIS-224: accesibilidad de la presentación separada de transformación biológica y precio de mercado |
+// | 2026-11-12 | Laura032005 | M06 RF-83 TC-DIS-224: corregir selector "Ver detalle" y buscar QA-RF83-MEDIDO (1859) en período 363, sembrado por el DBA |
+// | 2026-11-12 | Laura032005 | M06 RF-83 TC-DIS-224: el período 363 pertenece a otro Titular ("Agropecuaria Medicion QA") — usar irAPeriodo |
+// | 2026-11-12 | Laura032005 | M06 RF-83 TC-DIS-224: esperar a que cargue la tabla dentro del diálogo antes de comprobarla (carrera, no dato) |
+// | 2026-11-12 | Laura032005 | M06 RF-83 TC-DIS-224: acotar la tabla de mediciones por la región "Mediciones posteriores" — el texto del filtro matcheaba también "Líneas de asiento" |
 /**
  * TC-DIS-224 — Accesibilidad WCAG 2.1 AA de la presentación separada de los dos componentes de
  * la medición posterior (transformación biológica y cambio de precio de mercado)
@@ -24,7 +28,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
-  abrirSesion, anotar, auditarTabla, desviacion, escanear, irA, main, precondicion,
+  abrirSesion, anotar, auditarTabla, desviacion, escanear, irA, irAPeriodo, main, precondicion,
 } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-224';
@@ -47,6 +51,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Componentes de la medició
   });
 
   test('1. Desviación - la tabla principal de MedicionView combina ambos componentes en una sola columna', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const tabla = main(page).getByRole('table');
     precondicion(await tabla.count() > 0, 'no hay activos medidos en el período elegido (o no hay período abierto)');
@@ -61,14 +66,24 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Componentes de la medició
   });
 
   test('2. DetalleActivoModal - columnas propias por componente con encabezados asociados (1.3.1)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
-    const verDetalle = main(page).getByRole('button', { name: /^Ver detalle$/ }).first();
+    // QA-RF83-MEDIDO (1859), período 363, Titular "Agropecuaria Medicion QA" — 5 mediciones
+    // reales sembradas por el DBA.
+    await irAPeriodo(page, '363', 'Agropecuaria Medicion QA');
+    const campoBuscar = main(page).getByRole('searchbox');
+    if (await campoBuscar.count() > 0) await campoBuscar.fill('QA-RF83-MEDIDO');
+    const verDetalle = main(page).getByRole('button', { name: /^Ver el historial financiero de/ }).first();
+    await verDetalle.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     precondicion(await verDetalle.count() > 0, 'no hay ningún activo con mediciones para abrir su detalle');
     if (await verDetalle.count() === 0) return;
 
     await verDetalle.click();
     const dialogo = page.getByRole('dialog');
-    const tablaMediciones = dialogo.getByRole('table').filter({ has: page.getByText('Por transformación biológica') });
+    await dialogo.getByRole('table').first().waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
+    // "Por transformación biológica" también aparece dentro de "Líneas de asiento" (texto
+    // "Variación por transformación biológica"): se acota a la región propia por su nombre.
+    const tablaMediciones = dialogo.getByRole('region', { name: 'Mediciones posteriores' }).getByRole('table');
     precondicion(await tablaMediciones.count() > 0, 'el activo abierto no tiene mediciones posteriores registradas');
     if (await tablaMediciones.count() === 0) { await page.keyboard.press('Escape'); return; }
 
@@ -83,12 +98,18 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Componentes de la medició
   });
 
   test('3. Ganancia/pérdida con signo y texto explícito, no solo color (1.4.1)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
-    const verDetalle = main(page).getByRole('button', { name: /^Ver detalle$/ }).first();
+    await irAPeriodo(page, '363', 'Agropecuaria Medicion QA');
+    const campoBuscar = main(page).getByRole('searchbox');
+    if (await campoBuscar.count() > 0) await campoBuscar.fill('QA-RF83-MEDIDO');
+    const verDetalle = main(page).getByRole('button', { name: /^Ver el historial financiero de/ }).first();
+    await verDetalle.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     precondicion(await verDetalle.count() > 0, 'no hay ningún activo con mediciones para abrir su detalle');
     if (await verDetalle.count() === 0) return;
     await verDetalle.click();
     const dialogo = page.getByRole('dialog');
+    await dialogo.getByRole('table').first().waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     const celdasVariacion = dialogo.locator('td').filter({ hasText: /^[+-−]\$|^—$/ });
     const n = await celdasVariacion.count();
     anotar(testInfo, 'Celdas de variación con signo', String(n));
