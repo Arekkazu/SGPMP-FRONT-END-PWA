@@ -2,6 +2,8 @@
 // | Fecha      | Nombre                    | Que se hizo                                                        |
 // |------------|---------------------------|--------------------------------------------------------------------|
 // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G23 RF-77: comandos sandbox, API helper, loginUI y navegación |
+// | 2026-11-12 | Juan Sebastian Gutierrez  | G5 reintento 1: serializa las peticiones del navegador dentro del sandbox |
+// | 2026-11-12 | Juan Sebastian Gutierrez  | G8: la cola se libera con after:response (pasivo) en vez de interceptar la respuesta |
 //
 // Comandos del caso TC-M05-G23 (RF-77: Reporte de gastos acumulados y exportación).
 //
@@ -33,6 +35,13 @@ interface EstadoSandbox {
   bloqueadas: PeticionBloqueada[];
   sesiones: PeticionSesion[];
 }
+
+// G5: el sandbox del backend usa UNA Session SQLAlchemy por run_id (testing_sandbox.py:35-68,
+// database.py:306-337); peticiones simultáneas del mismo run pueden responder 500
+// (Modulo5/RF-76/TC-M05-G13/evidencias/sonda-concurrencia-20261112-121727: SEC 0/15, PAR 2/15).
+// Mientras el sandbox está abierto, las peticiones del navegador a la API pasan de una en una.
+// No cambia el contenido de ninguna petición ni respuesta; solo su orden en el tiempo.
+let colaSandbox: Promise<void> = Promise.resolve();
 
 const estado: EstadoSandbox = {
   runId: '',
@@ -185,7 +194,8 @@ Cypress.Commands.add('aplicarSandbox', () => {
     }
 
     // Inyectar cabeceras en llamadas a la API oficial
-    if (estado.activo && !estado.cerrado && estado.runId) {
+    const enSandbox = estado.activo && !estado.cerrado && !!estado.runId;
+    if (enSandbox) {
       req.headers['X-Test-Run-Id'] = estado.runId;
       req.headers['X-Sandbox-Secret'] = secreto();
       req.headers['X-Zona-Horaria'] = zona();
@@ -203,7 +213,32 @@ Cypress.Commands.add('aplicarSandbox', () => {
       }
     }
 
-    req.continue();
+    if (!enSandbox) {
+      req.continue();
+      return;
+    }
+    // G5: turno en la cola; se libera al llegar la respuesta o, como red de seguridad, a los 2 s
+    // (una petición abortada por el navegador nunca recibe respuesta y no debe retener la cola).
+    const turno = colaSandbox;
+    let liberar: () => void = () => undefined;
+    colaSandbox = new Promise<void>((resolver) => {
+      liberar = resolver;
+    });
+    let liberado = false;
+    const soltar = () => {
+      if (liberado) return;
+      liberado = true;
+      liberar();
+    };
+    return turno.then(() => {
+      const seguro = setTimeout(soltar, 2000);
+      // after:response es pasivo: no retiene ni reescribe la respuesta (descargas incluidas).
+      req.on('after:response', () => {
+        clearTimeout(seguro);
+        soltar();
+      });
+      req.continue();
+    });
   }).as('sandboxGlobal');
 });
 
@@ -218,6 +253,7 @@ Cypress.Commands.add('startSandbox', (runId: string) => {
   estado.tokenFuera = '';
   estado.bloqueadas = [];
   estado.sesiones = [];
+  colaSandbox = Promise.resolve();
   cy.aplicarSandbox();
   cy.log(`[SANDBOX] iniciado con runId: ${runId}`);
 });

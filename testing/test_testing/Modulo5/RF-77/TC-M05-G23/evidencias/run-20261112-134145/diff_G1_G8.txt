@@ -1,0 +1,451 @@
+diff --git a/testing/test_testing/Modulo5/RF-77/TC-M05-G23/evidencias/run-20261112-134145/pre_G/tc-m05-g23-reporte-gastos-exportacion.cy.ts b/testing/test_testing/Modulo5/RF-77/TC-M05-G23/tc-m05-g23-reporte-gastos-exportacion.cy.ts
+index bda8765e..ffabc88d 100755
+--- a/testing/test_testing/Modulo5/RF-77/TC-M05-G23/evidencias/run-20261112-134145/pre_G/tc-m05-g23-reporte-gastos-exportacion.cy.ts
++++ b/testing/test_testing/Modulo5/RF-77/TC-M05-G23/tc-m05-g23-reporte-gastos-exportacion.cy.ts
+@@ -2,6 +2,9 @@
+ // | Fecha      | Nombre                    | Que se hizo                                                          |
+ // |------------|---------------------------|----------------------------------------------------------------------|
+ // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G23 RF-77: reporte de gastos por activo y exportación PDF/CSV |
++// | 2026-11-12 | Juan Sebastian Gutierrez  | G1-G3 reintento 1 (INC-M05-269-G23): salida al staging, CP-08C/D/E (encabezado, desglose, tendencia) |
++// | 2026-11-12 | Juan Sebastian Gutierrez  | G6: CP-08C toma área/especie de /configuracion; CP-08D compara el monto por valor |
++// | 2026-11-12 | Juan Sebastian Gutierrez  | G7: CP-08C usa nombre_infraestructura (campo real del esquema) |
+ // =====================================================================
+ // TC-M05-G23 · RF-77 · Prioridad Alta
+ // Reporte de gastos acumulados por activo y exportación a formatos PDF y CSV
+@@ -21,7 +24,7 @@ type Estado = 'OK' | 'FALLA' | 'NO_EVALUADO' | 'NO_EJECUTABLE';
+ interface Checkpoint { paso: string; esperado: string; obtenido: string; estado: Estado }
+ type IdCp =
+   | 'CP-01' | 'CP-02' | 'CP-03' | 'CP-04' | 'CP-05'
+-  | 'CP-06' | 'CP-07' | 'CP-08A' | 'CP-08B' | 'CP-09';
++  | 'CP-06' | 'CP-07' | 'CP-08A' | 'CP-08B' | 'CP-08C' | 'CP-08D' | 'CP-08E' | 'CP-09';
+ 
+ const TC = 'TC-M05-G23';
+ const ACTIVO_ID = 57;
+@@ -34,7 +37,23 @@ const NOMBRE_PDF_ESPERADO = `Reporte_Gastos_${ACTIVO_ID}_${FECHA_DESDE}_${FECHA_
+ const ENCABEZADO_CSV_ESPERADO = 'fecha,categoria,descripcion,monto_cop,estado';
+ 
+ const RUN_ID = `tc-m05-g23-${Date.now()}`;
+-const ARCHIVO_RESULTADO = `resultados/resultado_${TC}.json`;
++// G1: toda la salida de la corrida va al staging (CYPRESS_STAGING_DIR); nunca a resultados/.
++const STG = String(Cypress.env('STAGING_DIR') || '').trim().replace(/\\/g, '/').replace(/\/+$/, '');
++const REINTENTO = Number(Cypress.env('REINTENTO') || 0);
++const DESCARGAS = `${STG}/descargas`;
++const ARCHIVO_RESULTADO = `${STG}/resultado_${TC}_reintento${REINTENTO}.json`;
++const FECHA_INICIO_CICLO = '2026-01-01'; // activo 57 (ver cabecera)
++const NOTA_SIN_BASE = 'No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual.';
++const NOTA_RECORTE = `El período anterior fue recortado al inicio del ciclo productivo (${FECHA_INICIO_CICLO}).`;
++
++/** Texto del PDF con espacios y guiones normalizados (pdf-parse corta líneas). */
++function norm(t: string): string {
++  return String(t || '').replace(/[\u2012-\u2015]/g, '-').replace(/\s+/g, ' ').trim();
++}
++function ddmmyyyy(iso: string): string {
++  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
++  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso);
++}
+ 
+ const ESPERADOS: Record<IdCp, { paso: string; esperado: string }> = {
+   'CP-01': {
+@@ -73,6 +92,18 @@ const ESPERADOS: Record<IdCp, { paso: string; esperado: string }> = {
+     paso: 'CP-08B Logo en el PDF',
+     esperado: 'Imagen embebida detectada en el PDF (/Subtype /Image)',
+   },
++  'CP-08C': {
++    paso: 'CP-08C Encabezado del PDF',
++    esperado: 'Encabezado identifica el activo 57, su tipo de activo, su infraestructura y su especie con los valores del propio activo (GET /activos-biologicos/57 + GET /configuracion/infraestructuras/{id} + GET /configuracion/especies; nombre o id), ninguno vacío ni "-" (RF-77 Proceso paso 7, Encabezado; CA-9)',
++  },
++  'CP-08D': {
++    paso: 'CP-08D Desglose mensual en el PDF',
++    esperado: 'El PDF incluye el desglose mensual con cada tramo del reporte (fechas iguales y monto de igual valor que desglose_temporal de la API), cada tramo dentro de un solo mes y del rango, y la suma de tramos = 10.0000 (RF-77 Proceso pasos 5 y 7; CA-5; CA-9)',
++  },
++  'CP-08E': {
++    paso: 'CP-08E Tendencia y notas en el PDF',
++    esperado: `El PDF muestra la tendencia sin base comparativa con la nota «${NOTA_SIN_BASE}» y la nota «${NOTA_RECORTE}» (RF-77 Proceso paso 6; CA-9)`,
++  },
+   'CP-09': {
+     paso: 'CP-09 Aislamiento post-rollback sin sandbox',
+     esperado: 'Rollback 2xx; consulta sin sandbox del reporte y ambos archivos -> 404 (REPORTE/ARCHIVO_NO_ENCONTRADO)',
+@@ -114,6 +145,8 @@ const ctx = {
+   cTypePdf: '' as string,
+   cDispPdf: '' as string,
+   rollbackHecho: false,
++  reporte: null as any,
++  observaciones: [] as string[],
+ };
+ 
+ function zona(): string {
+@@ -152,11 +185,21 @@ function loginAdmin(): Cypress.Chainable<string> {
+ // =====================================================================
+ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`, () => {
+   before(() => {
+-    const requeridas = ['API_BASE_URL', 'ADMIN_EMAIL', 'ADMIN_PASSWORD', 'TEST_SANDBOX_SECRET', 'ZONA_HORARIA'];
++    const requeridas = ['API_BASE_URL', 'ADMIN_EMAIL', 'ADMIN_PASSWORD', 'TEST_SANDBOX_SECRET', 'ZONA_HORARIA', 'STAGING_DIR', 'REINTENTO'];
+     const faltan = requeridas.filter((k) => !String(Cypress.env(k) || '').trim());
+     if (faltan.length) {
+       throw new Error(`[${TC}] Faltan variables de entorno: ${faltan.join(', ')}. Corrida abortada antes del login.`);
+     }
++    // G1: guardas de corrida oficial (sin reintentos y con toda la salida en el staging).
++    if (!Number.isInteger(REINTENTO) || REINTENTO < 1) throw new Error(`[${TC}] REINTENTO inválido: ${REINTENTO}`);
++    const retriesCfg: any = Cypress.config('retries');
++    const runMode = typeof retriesCfg === 'object' && retriesCfg !== null ? retriesCfg.runMode : retriesCfg;
++    if (runMode !== 0) throw new Error(`[${TC}] retries debe ser 0. Configurado: ${JSON.stringify(retriesCfg)}`);
++    const n = (x: string) => String(x || '').replace(/\\/g, '/').toLowerCase();
++    for (const k of ['downloadsFolder', 'screenshotsFolder'] as const) {
++      const v = n(String(Cypress.config(k) || ''));
++      if (!v.startsWith(n(STG))) throw new Error(`[${TC}] ${k} no apunta al staging: ${v} (staging ${n(STG)})`);
++    }
+     cy.fijarZonaHoraria(zona());
+     cy.startSandbox(RUN_ID);
+   });
+@@ -203,14 +246,14 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+                     elementos_gastos_activo: countActivo,
+                     muestra_formulario_login: tieneLogin,
+                     texto_visible_body_300: textoEnmascarado,
+-                    captura: `evidencias/capturas/${capturaNombre}.png`,
++                    captura: `${STG}/capturas/${capturaNombre}.png`,
+                     espera_adicional_30s: {
+                       aparecio_tras_falla: aparecioTrasFalla ? 'sí' : 'no',
+                       segundos: segundosTranscurridos,
+                     },
+                   };
+                   cy.task('escribirReporte', {
+-                    file: `evidencias/diag_cp02_${ts}.json`,
++                    file: `${STG}/diag_cp02_${ts}.json`,
+                     content: JSON.stringify(diag, null, 2),
+                   });
+                 } else {
+@@ -292,6 +335,7 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+       const body = res?.body ?? {};
+       const id = body.id_reporte_gasto_acumulado ?? body.id;
+       const gastoTotal = String(body.gasto_total_acumulado ?? '');
++      ctx.reporte = body;
+       ctx.idReporte = typeof id === 'number' ? id : Number(id) || null;
+ 
+       cy.get('#reporte-titulo', { timeout: 10000 }).then(($tit) => {
+@@ -364,7 +408,7 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+       return;
+     }
+ 
+-    const rutaCsv = `evidencias/descargas/${NOMBRE_CSV_ESPERADO}`;
++    const rutaCsv = `${DESCARGAS}/${NOMBRE_CSV_ESPERADO}`;
+     cy.task('esperarArchivo', { rutaArchivo: rutaCsv, timeoutMs: 15000 }).then((info: any) => {
+       if (!info?.existe) {
+         registrar(
+@@ -463,7 +507,7 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+       return;
+     }
+ 
+-    const rutaPdf = `evidencias/descargas/${NOMBRE_PDF_ESPERADO}`;
++    const rutaPdf = `${DESCARGAS}/${NOMBRE_PDF_ESPERADO}`;
+     cy.task('esperarArchivo', { rutaArchivo: rutaPdf, timeoutMs: 15000 }).then((info: any) => {
+       if (!info?.existe) {
+         registrar(
+@@ -503,7 +547,7 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+       return;
+     }
+ 
+-    const rutaPdf = `evidencias/descargas/${NOMBRE_PDF_ESPERADO}`;
++    const rutaPdf = `${DESCARGAS}/${NOMBRE_PDF_ESPERADO}`;
+ 
+     cy.task('leerPdf', rutaPdf).then((datos: any) => {
+       const texto = String(datos?.texto || '');
+@@ -537,7 +581,7 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+       return;
+     }
+ 
+-    const rutaPdf = `evidencias/descargas/${NOMBRE_PDF_ESPERADO}`;
++    const rutaPdf = `${DESCARGAS}/${NOMBRE_PDF_ESPERADO}`;
+     cy.task('leerPdf', rutaPdf).then((datos: any) => {
+       const tieneImagen = Boolean(datos?.tieneImagen);
+       const tamanoBytes = Number(datos?.tamanoBytes || 0);
+@@ -558,6 +602,120 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+     });
+   });
+ 
++  // -------------------------------------------------------------------
++  // CP-08C: Encabezado del PDF (INC-M05-269-G23, punto 2)
++  // -------------------------------------------------------------------
++  it('CP-08C · encabezado del PDF identifica activo, tipo, infraestructura y especie', () => {
++    exigirSandbox();
++    if (!ctx.idArchivoPdf || ctx.statusGetPdf === null) {
++      registrar('CP-08C', 'FALLA', 'No alcanzado: depende de CP-06/CP-07 (archivo PDF)');
++      return;
++    }
++    cy.apiSandbox({ method: 'GET', path: `/activos-biologicos/${ACTIVO_ID}` }).then((resAct) => {
++      const a: any = resAct.body || {};
++      const reqId = String(resAct.headers?.['x-request-id'] || 'N/A');
++      cy.apiSandbox({ method: 'GET', path: `/configuracion/infraestructuras/${a.id_infraestructura}` }).then((resInf) => {
++      cy.apiSandbox({ method: 'GET', path: '/configuracion/especies' }).then((resEsp) => {
++      const nomInfra = String(resInf.body?.nombre_infraestructura ?? a.nombre_infraestructura ?? '').trim(); // infraestructura_schema.py:17
++      const itemsEsp: any[] = Array.isArray(resEsp.body?.items) ? resEsp.body.items : [];
++      const esp = itemsEsp.find((e) => Number(e.id_especie) === Number(a.id_especie));
++      const nomEsp = String(esp?.nombre ?? a.nombre_especie ?? '').trim();
++      const tipoApi = String(a.tipo || '').toUpperCase();
++      const tipoEsperado = tipoApi === 'POBLACIONAL' ? 'lote' : tipoApi === 'INDIVIDUAL' ? 'individual' : '';
++      const activoOk = (v: string) => v !== '' && (v === String(a.identificador ?? '').trim() || v === String(ACTIVO_ID));
++      const infraOk = (v: string) => v !== '' && v !== '-' && ((nomInfra !== '' && v === nomInfra) || v === String(a.id_infraestructura ?? ''));
++      const especieOk = (v: string) => v !== '' && v !== '-' && ((nomEsp !== '' && v === nomEsp) || v === String(a.id_especie ?? ''));
++      cy.task('leerPdf', `${DESCARGAS}/${NOMBRE_PDF_ESPERADO}`).then((datos: any) => {
++        const texto = norm(String(datos?.texto || ''));
++        const m = texto.match(/Activo:\s*(.+?)\s*\((individual|lote)\)\s*\S?\s*Área:\s*(.+?)\s*\S?\s*Especie:\s*(.+?)\s+Período:/);
++        const limpiar = (v: string) => String(v || '').replace(/[\s·•|-]+$/, '').trim();
++        const vAct = m ? limpiar(m[1]) : '';
++        const vTipo = m ? m[2] : '';
++        const vInfra = m ? limpiar(m[3]) : '';
++        const vEsp = m ? limpiar(m[4]) : '';
++        const ok = resAct.status === 200 && !!m && activoOk(vAct) && vTipo === tipoEsperado && tipoEsperado !== '' && infraOk(vInfra) && especieOk(vEsp);
++        const idx = texto.indexOf('Activo:');
++        const linea = idx >= 0 ? texto.slice(idx, idx + 160) : 'no encontrada';
++        registrar(
++          'CP-08C',
++          ok,
++          `GET activo HTTP ${resAct.status} (identificador=${a.identificador}, tipo=${a.tipo}, id_infraestructura=${a.id_infraestructura}, id_especie=${a.id_especie}); GET infraestructura HTTP ${resInf.status} nombre=${nomInfra}; GET especies HTTP ${resEsp.status} nombre=${nomEsp} | PDF: activo="${vAct}", tipo="${vTipo}", área="${vInfra}", especie="${vEsp}" | línea PDF «${linea}» | X-Request-Id=${reqId}`,
++        );
++        if (m) ctx.observaciones.push('CP-08C: RF-77 paso 7 enumera activo_biologico_id, especie_id, tipo_activo e infraestructura_id; se acepta el nombre o el id del propio activo como identificación (CA-9).');
++      });
++      });
++      });
++    });
++  });
++
++  // -------------------------------------------------------------------
++  // CP-08D: Desglose mensual en el PDF (INC-M05-269-G23, punto 3)
++  // -------------------------------------------------------------------
++  it('CP-08D · desglose mensual del reporte presente en el PDF', () => {
++    exigirSandbox();
++    if (!ctx.idArchivoPdf || ctx.statusGetPdf === null) {
++      registrar('CP-08D', 'FALLA', 'No alcanzado: depende de CP-06/CP-07 (archivo PDF)');
++      return;
++    }
++    const tramos: any[] = Array.isArray(ctx.reporte?.desglose_temporal) ? ctx.reporte.desglose_temporal : [];
++    cy.task('leerPdf', `${DESCARGAS}/${NOMBRE_PDF_ESPERADO}`).then((datos: any) => {
++      const texto = norm(String(datos?.texto || ''));
++      const tieneTitulo = /Desglose mensual/i.test(texto);
++      const detalle: string[] = [];
++      let todosEnPdf = tramos.length > 0;
++      let todosEnUnMes = tramos.length > 0;
++      let suma = 0;
++      for (const t of tramos) {
++        const fi = String(t.fecha_inicio || '');
++        const ff = String(t.fecha_fin || '');
++        const monto = String(t.monto ?? '');
++        suma += Number(monto) || 0;
++        const fechas = norm(`${ddmmyyyy(fi)} – ${ddmmyyyy(ff)}:`);
++        const pos = texto.indexOf(fechas);
++        const mMonto = pos >= 0 ? texto.slice(pos + fechas.length).match(/^\s*(?:\$|COP)?\s*([\d.,]+)/) : null;
++        // Formato colombiano: punto de miles y coma decimal.
++        const valorPdf = mMonto ? Number(mMonto[1].replace(/\./g, '').replace(',', '.')) : NaN;
++        const enPdf = pos >= 0 && Math.abs(valorPdf - Number(monto)) < 0.00005;
++        const unMes = fi.slice(0, 7) === ff.slice(0, 7) && fi >= FECHA_DESDE && ff <= FECHA_HASTA;
++        if (!enPdf) todosEnPdf = false;
++        if (!unMes) todosEnUnMes = false;
++        detalle.push(`[${fi}..${ff} ${monto}: fechas en PDF ${pos >= 0 ? 'sí' : 'no'}; monto PDF=${mMonto ? mMonto[1] : 'no encontrado'}; coincide ${enPdf ? 'sí' : 'no'}; un mes y en rango ${unMes ? 'sí' : 'no'}]`);
++      }
++      const sumaTxt = suma.toFixed(4);
++      const ok = tieneTitulo && todosEnPdf && todosEnUnMes && sumaTxt === GASTO_ESPERADO;
++      const idx = texto.search(/Desglose/i);
++      registrar(
++        'CP-08D',
++        ok,
++        `tramos API=${tramos.length} ${detalle.join(' ')}; suma=${sumaTxt}; título "Desglose mensual" en PDF: ${tieneTitulo ? 'sí' : 'no'} | texto PDF «${idx >= 0 ? texto.slice(idx, idx + 160) : 'sin desglose'}»`,
++      );
++    });
++  });
++
++  // -------------------------------------------------------------------
++  // CP-08E: Tendencia y notas en el PDF (INC-M05-269-G23, punto 4)
++  // -------------------------------------------------------------------
++  it('CP-08E · tendencia y notas de RF-77 paso 6 en el PDF', () => {
++    exigirSandbox();
++    if (!ctx.idArchivoPdf || ctx.statusGetPdf === null) {
++      registrar('CP-08E', 'FALLA', 'No alcanzado: depende de CP-06/CP-07 (archivo PDF)');
++      return;
++    }
++    cy.task('leerPdf', `${DESCARGAS}/${NOMBRE_PDF_ESPERADO}`).then((datos: any) => {
++      const texto = norm(String(datos?.texto || ''));
++      const estadoOk = /sin[ _]base[ _]comparativa/i.test(texto);
++      const nota1 = texto.includes(norm(NOTA_SIN_BASE));
++      const nota2 = texto.includes(norm(NOTA_RECORTE));
++      const tApi: any = ctx.reporte?.tendencia || {};
++      const idx = texto.search(/Tendencia/i);
++      registrar(
++        'CP-08E',
++        estadoOk && nota1 && nota2,
++        `estado sin base comparativa en PDF: ${estadoOk ? 'sí' : 'no'}; nota sin base: ${nota1 ? 'sí' : 'no'}; nota recorte: ${nota2 ? 'sí' : 'no'} | API tendencia.estado=${tApi.estado}; API nota=«${tApi.nota ?? ''}» | texto PDF «${idx >= 0 ? texto.slice(idx, idx + 260) : 'sin tendencia'}»`,
++      );
++    });
++  });
++
+   // -------------------------------------------------------------------
+   // CP-09: Rollback del Sandbox y aislamiento
+   // -------------------------------------------------------------------
+@@ -820,9 +978,16 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+         };
+       });
+ 
++      const cpsFinal = cpsOficiales;
++      const okN = cpsFinal.filter((c) => c.estado === 'OK').length;
++      const fallaN = cpsFinal.filter((c) => c.estado === 'FALLA').length;
+       const reporteOficial = {
+         tc: TC,
+-        checkpoints: cpsOficiales,
++        reintento: REINTENTO,
++        summary: { total: cpsFinal.length, ok: okN, falla: fallaN, veredicto: fallaN === 0 && okN > 0 ? 'Aprobado' : 'Rechazado' },
++        checkpoints: cpsFinal,
++        observaciones: ctx.observaciones,
++        runs: [{ run_id: RUN_ID, rollback_http: ctx.rollbackHecho ? 'ver consola' : 'no ejecutado' }],
+       };
+ 
+       const reporteParcial = {
+@@ -831,40 +996,16 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+       };
+ 
+       if (!ctx.sandboxOk) {
+-        const rutaInvalida = `evidencias/run_INVALIDA_${stamp}.json`;
++        const rutaInvalida = `${STG}/run_INVALIDA_${stamp}.json`;
+         cy.task('escribirReporte', { file: rutaInvalida, content: JSON.stringify(reporteParcial, null, 2) });
+         console.log(`\n[${TC}] Sandbox NO confirmado: corrida INVÁLIDA por ambiente guardada en ${rutaInvalida}.\n`);
+         return;
+       }
+ 
+-      const rutaParcial = `evidencias/run_PARCIAL_${stamp}.json`;
++      const rutaParcial = `${STG}/run_PARCIAL_${stamp}.json`;
+       cy.task('escribirReporte', { file: rutaParcial, content: JSON.stringify(reporteParcial, null, 2) });
+-      console.log(`\n[${TC}] Reporte parcial guardado en ${rutaParcial}.\n`);
+-
+-      const guardarEnResultados =
+-        String(Cypress.env('REPORTE_EN_RESULTADOS') || '') === '1' ||
+-        String(process.env.CYPRESS_REPORTE_EN_RESULTADOS || '') === '1';
+-
+-      if (guardarEnResultados) {
+-        const requeridosOk: IdCp[] = ['CP-01', 'CP-02', 'CP-03', 'CP-04', 'CP-05', 'CP-06', 'CP-07', 'CP-08A', 'CP-09'];
+-        const noOkRequeridos = requeridosOk.filter((id) => resultados.get(id)?.estado !== 'OK');
+-        const cp08b = resultados.get('CP-08B');
+-        const cp08bValido = cp08b?.estado === 'OK' || cp08b?.estado === 'FALLA';
+-
+-        if (noOkRequeridos.length === 0 && cp08bValido) {
+-          cy.task('escribirReporte', { file: ARCHIVO_RESULTADO, content: JSON.stringify(reporteOficial, null, 2) });
+-          console.log(`\n[${TC}] Reporte oficial guardado en ${ARCHIVO_RESULTADO}.\n`);
+-        } else {
+-          const motivos: string[] = [];
+-          if (noOkRequeridos.length > 0) {
+-            motivos.push(`Checkpoints requeridos no OK: ${noOkRequeridos.join(', ')}`);
+-          }
+-          if (!cp08bValido) {
+-            motivos.push(`CP-08B en estado inválido (${cp08b?.estado})`);
+-          }
+-          console.log(`\n[${TC}] NO SE ESCRIBIÓ resultado oficial: ${motivos.join('; ')}\n`);
+-        }
+-      }
++      cy.task('escribirReporte', { file: ARCHIVO_RESULTADO, content: JSON.stringify(reporteOficial, null, 2) });
++      console.log(`\n[${TC}] Reporte oficial guardado en ${ARCHIVO_RESULTADO} (staging; NO en resultados/).\n`);
+     });
+   });
+ });
+diff --git a/testing/test_testing/Modulo5/RF-77/TC-M05-G23/evidencias/run-20261112-134145/pre_G/commands.ts b/testing/test_testing/Modulo5/RF-77/TC-M05-G23/commands.ts
+index 9fff04b2..acac27d2 100755
+--- a/testing/test_testing/Modulo5/RF-77/TC-M05-G23/evidencias/run-20261112-134145/pre_G/commands.ts
++++ b/testing/test_testing/Modulo5/RF-77/TC-M05-G23/commands.ts
+@@ -2,6 +2,8 @@
+ // | Fecha      | Nombre                    | Que se hizo                                                        |
+ // |------------|---------------------------|--------------------------------------------------------------------|
+ // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G23 RF-77: comandos sandbox, API helper, loginUI y navegación |
++// | 2026-11-12 | Juan Sebastian Gutierrez  | G5 reintento 1: serializa las peticiones del navegador dentro del sandbox |
++// | 2026-11-12 | Juan Sebastian Gutierrez  | G8: la cola se libera con after:response (pasivo) en vez de interceptar la respuesta |
+ //
+ // Comandos del caso TC-M05-G23 (RF-77: Reporte de gastos acumulados y exportación).
+ //
+@@ -34,6 +36,13 @@ interface EstadoSandbox {
+   sesiones: PeticionSesion[];
+ }
+ 
++// G5: el sandbox del backend usa UNA Session SQLAlchemy por run_id (testing_sandbox.py:35-68,
++// database.py:306-337); peticiones simultáneas del mismo run pueden responder 500
++// (Modulo5/RF-76/TC-M05-G13/evidencias/sonda-concurrencia-20261112-121727: SEC 0/15, PAR 2/15).
++// Mientras el sandbox está abierto, las peticiones del navegador a la API pasan de una en una.
++// No cambia el contenido de ninguna petición ni respuesta; solo su orden en el tiempo.
++let colaSandbox: Promise<void> = Promise.resolve();
++
+ const estado: EstadoSandbox = {
+   runId: '',
+   activo: false,
+@@ -185,7 +194,8 @@ Cypress.Commands.add('aplicarSandbox', () => {
+     }
+ 
+     // Inyectar cabeceras en llamadas a la API oficial
+-    if (estado.activo && !estado.cerrado && estado.runId) {
++    const enSandbox = estado.activo && !estado.cerrado && !!estado.runId;
++    if (enSandbox) {
+       req.headers['X-Test-Run-Id'] = estado.runId;
+       req.headers['X-Sandbox-Secret'] = secreto();
+       req.headers['X-Zona-Horaria'] = zona();
+@@ -203,7 +213,32 @@ Cypress.Commands.add('aplicarSandbox', () => {
+       }
+     }
+ 
+-    req.continue();
++    if (!enSandbox) {
++      req.continue();
++      return;
++    }
++    // G5: turno en la cola; se libera al llegar la respuesta o, como red de seguridad, a los 2 s
++    // (una petición abortada por el navegador nunca recibe respuesta y no debe retener la cola).
++    const turno = colaSandbox;
++    let liberar: () => void = () => undefined;
++    colaSandbox = new Promise<void>((resolver) => {
++      liberar = resolver;
++    });
++    let liberado = false;
++    const soltar = () => {
++      if (liberado) return;
++      liberado = true;
++      liberar();
++    };
++    return turno.then(() => {
++      const seguro = setTimeout(soltar, 2000);
++      // after:response es pasivo: no retiene ni reescribe la respuesta (descargas incluidas).
++      req.on('after:response', () => {
++        clearTimeout(seguro);
++        soltar();
++      });
++      req.continue();
++    });
+   }).as('sandboxGlobal');
+ });
+ 
+@@ -218,6 +253,7 @@ Cypress.Commands.add('startSandbox', (runId: string) => {
+   estado.tokenFuera = '';
+   estado.bloqueadas = [];
+   estado.sesiones = [];
++  colaSandbox = Promise.resolve();
+   cy.aplicarSandbox();
+   cy.log(`[SANDBOX] iniciado con runId: ${runId}`);
+ });
+diff --git a/testing/test_testing/Modulo5/RF-77/TC-M05-G23/evidencias/run-20261112-134145/pre_G/cypress.config.js b/testing/test_testing/Modulo5/RF-77/TC-M05-G23/cypress.config.js
+index b1fb649b..4fdf4eff 100755
+--- a/testing/test_testing/Modulo5/RF-77/TC-M05-G23/evidencias/run-20261112-134145/pre_G/cypress.config.js
++++ b/testing/test_testing/Modulo5/RF-77/TC-M05-G23/cypress.config.js
+@@ -1,6 +1,7 @@
+ // | Fecha      | Nombre                    | Que se hizo                                                   |
+ // |------------|---------------------------|---------------------------------------------------------------|
+ // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G23 RF-77: config Cypress con sandbox, PDF task y descargas |
++// | 2026-11-12 | Juan Sebastian Gutierrez  | G4 reintento 1: descargas, capturas y videos al staging (CYPRESS_STAGING_DIR) |
+ // TC-M05-G23 · RF-77 · Reporte de gastos acumulados por activo y exportación PDF/CSV.
+ //
+ // Reglas de este archivo:
+@@ -178,6 +179,15 @@ module.exports = defineConfig({
+         },
+       });
+ 
++      // G4: con CYPRESS_STAGING_DIR, descargas, capturas y videos van al staging de la corrida
++      // (la evidencia de rondas anteriores en evidencias/descargas no se sobrescribe).
++      const stg = String(process.env.CYPRESS_STAGING_DIR || '').trim();
++      if (stg) {
++        config.downloadsFolder = resolve(stg, 'descargas');
++        config.screenshotsFolder = resolve(stg, 'capturas');
++        config.videosFolder = resolve(stg, 'videos');
++        for (const d of [config.downloadsFolder, config.screenshotsFolder]) mkdirSync(d, { recursive: true });
++      }
+       return config;
+     },
+   },

@@ -1,0 +1,72 @@
+diff --git a/testing/test_testing/Modulo5/RF-76/TC-M05-G13/evidencias/run-20261112-123527/pre_F/commands.ts b/testing/test_testing/Modulo5/RF-76/TC-M05-G13/commands.ts
+index 725d8d28..39dcae52 100755
+--- a/testing/test_testing/Modulo5/RF-76/TC-M05-G13/evidencias/run-20261112-123527/pre_F/commands.ts
++++ b/testing/test_testing/Modulo5/RF-76/TC-M05-G13/commands.ts
+@@ -6,6 +6,7 @@
+ // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: trazabilidad peticiones /sesiones para diagnostico |
+ // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: helpers visitar y rutaApp para APP_BASE_PATH    |
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: trazas_http.jsonl en cy.request y helper A6     |
++// | 2026-11-12 | Juan Sebastian Gutierrez  | F1: serializa las peticiones del navegador dentro del sandbox (el sandbox comparte una Session por run_id) |
+ //
+ // Comandos del caso TC-M05-G13 (proyecto autocontenido, se carga como supportFile).
+ //
+@@ -43,6 +44,14 @@ interface EstadoSandbox {
+   sesiones: PeticionSesion[];
+ }
+ 
++// F1: el sandbox del backend usa UNA Session SQLAlchemy por run_id (testing_sandbox.py:35-68,
++// database.py:306-337); dos peticiones simultaneas del mismo run comparten esa sesion y una
++// puede responder 500 (sonda sonda-concurrencia-20261112-121727: SEC 0/15, PAR 2/15).
++// Mientras el sandbox esta abierto, las peticiones del navegador a la API pasan de una en una.
++// No cambia el contenido de ninguna peticion ni respuesta; solo su orden en el tiempo.
++let colaSandbox: Promise<void> = Promise.resolve();
++export const serializacion = { encoladas: 0, liberadasPorTimeout: 0 };
++
+ const estado: EstadoSandbox = {
+   runId: '',
+   activo: false,
+@@ -219,6 +228,9 @@ Cypress.Commands.add('startSandbox', (runId: string) => {
+   estado.tokenFuera = '';
+   estado.bloqueadas = [];
+   estado.sesiones = [];
++  colaSandbox = Promise.resolve();
++  serializacion.encoladas = 0;
++  serializacion.liberadasPorTimeout = 0;
+   cy.log(`[SANDBOX] corrida transaccional ${runId}`);
+   cy.aplicarSandbox();
+ });
+@@ -263,7 +275,25 @@ Cypress.Commands.add('aplicarSandbox', () => {
+     req.headers['X-Test-Run-Id'] = estado.runId;
+     req.headers['X-Sandbox-Secret'] = secreto();
+     estado.peticiones += 1;
+-    req.continue((res) => {
++    // F1: turno en la cola; se libera al llegar la respuesta o, como red de seguridad, a los 20 s.
++    const turno = colaSandbox;
++    let liberar: () => void = () => undefined;
++    colaSandbox = new Promise<void>((resolver) => {
++      liberar = resolver;
++    });
++    serializacion.encoladas += 1;
++    let liberado = false;
++    const soltar = (porTimeout: boolean) => {
++      if (liberado) return;
++      liberado = true;
++      if (porTimeout) serializacion.liberadasPorTimeout += 1;
++      liberar();
++    };
++    return turno.then(() => {
++      const seguro = setTimeout(() => soltar(true), 20000);
++      req.continue((res) => {
++      clearTimeout(seguro);
++      soltar(false);
+       // Registro de diagnóstico para peticiones de /sesiones (Paso 0): método, ruta y código HTTP
+       if (req.url.includes('/sesiones')) {
+         let ruta = '';
+@@ -280,6 +310,7 @@ Cypress.Commands.add('aplicarSandbox', () => {
+       }
+       // El middleware del backend devuelve X-Test-Run-Id solo si aceptó la corrida.
+       if (String(res.headers['x-test-run-id'] || '') === estado.runId) estado.confirmado = true;
++      });
+     });
+   });
+ });

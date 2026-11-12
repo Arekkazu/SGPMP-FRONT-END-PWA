@@ -1,0 +1,99 @@
+{
+  "tc": "TC-M05-G23",
+  "reintento": 1,
+  "summary": {
+    "total": 13,
+    "ok": 11,
+    "falla": 2,
+    "veredicto": "Rechazado"
+  },
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "esperado": "Sandbox aceptado por el backend antes del login y ruta distinta de /login",
+      "obtenido": "ruta /sigab-test/dashboard; sandbox confirmado: sí; token capturado: sí; peticiones con sandbox: 4",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "esperado": "Formulario de reporte visible con campo #gastos-desde interactivo",
+      "obtenido": "Formulario visible con campo #gastos-desde",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "esperado": "POST /suministros/reportes-gastos -> 200, gasto_total_acumulado = \"10.0000\", panel de detalle visible",
+      "obtenido": "HTTP 200; id_reporte=273; gasto_total_acumulado=10.0000; panelVisible=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "esperado": "POST /exportacion -> 201, nombre_archivo = Gastos_57_2026-01-01_2026-07-31.csv, vigencia 24 h exactas",
+      "obtenido": "HTTP 201; nombre_archivo=Gastos_57_2026-01-01_2026-07-31.csv; vigencia=24.00 h; id_archivo=4c713362-4b24-49fa-8d5d-fb5332cab194; GET descarga capturado HTTP 200",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "esperado": "GET -> 200 text/csv; archivo descargado con 5 columnas exactas y suma de montos = 10.0000",
+      "obtenido": "HTTP 200; Content-Type=text/csv; charset=utf-8; encabezadoOk=true; filas=1; sumaMonto=10.0000 (esperado 10.0000)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "esperado": "POST /exportacion -> 201, nombre_archivo = Reporte_Gastos_57_2026-01-01_2026-07-31.pdf, vigencia 24 h exactas",
+      "obtenido": "HTTP 201; nombre_archivo=Reporte_Gastos_57_2026-01-01_2026-07-31.pdf; vigencia=24.00 h; id_archivo=28fb7794-d269-4cb8-8d3b-9831d49eaf2e; GET descarga capturado HTTP 200",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "esperado": "GET -> 200 application/pdf, tamaño > 0, primeros 5 bytes \"%PDF-\"",
+      "obtenido": "HTTP 200; Content-Type=application/pdf; tamaño=6158 bytes; magic=%PDF-",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08A",
+      "esperado": "1 página, título \"Reporte de Gastos Acumulados\", fecha de generación presente en el texto",
+      "obtenido": "encabezado=\"Reporte de Gastos Acumulados\"; fecha=\"12/11/2026 14:07 (UTC-05:00)\"; paginas=1; tamanoBytes=6158",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08B",
+      "esperado": "Imagen embebida detectada en el PDF (/Subtype /Image)",
+      "obtenido": "tieneImagen=false; infra_status=200; iv_status=200; id_finca=1; registro_iv_existe=true; logo_path_no_nulo=true; extension=.png; static_status=404; archivo=\"Reporte_Gastos_57_2026-01-01_2026-07-31.pdf\"; causa no determinada",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-08C",
+      "esperado": "Encabezado identifica el activo 57, su tipo de activo, su infraestructura y su especie con los valores del propio activo (GET /activos-biologicos/57 + GET /configuracion/infraestructuras/{id} + GET /configuracion/especies; nombre o id), ninguno vacío ni \"-\" (RF-77 Proceso paso 7, Encabezado; CA-9)",
+      "obtenido": "GET activo HTTP 200 (identificador=TEST-GESTOR-ACTIVO-1, tipo=INDIVIDUAL, id_infraestructura=2, id_especie=1); GET infraestructura HTTP 200 nombre=Estanque-02; GET especies HTTP 200 nombre=Tilapia Roja | PDF: activo=\"TEST-GESTOR-ACTIVO-1\", tipo=\"individual\", área=\"Estanque-02\", especie=\"Tilapia Roja\" | línea PDF «Activo: TEST-GESTOR-ACTIVO-1 (individual) · Área: Estanque-02 · Especie: Tilapia Roja Período: 01/01/2026 - 31/07/2026 (Mensual) Gasto total acumulado: $ 10 Fec» | X-Request-Id=252f146d-3286-4175-b0b6-88f84be9aea8",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08D",
+      "esperado": "El PDF incluye el desglose mensual con cada tramo del reporte (fechas iguales y monto de igual valor que desglose_temporal de la API), cada tramo dentro de un solo mes y del rango, y la suma de tramos = 10.0000 (RF-77 Proceso pasos 5 y 7; CA-5; CA-9)",
+      "obtenido": "tramos API=1 [2026-07-31..2026-07-31 10.0000: fechas en PDF sí; monto PDF=10; coincide sí; un mes y en rango sí]; suma=10.0000; título \"Desglose mensual\" en PDF: sí | texto PDF «Desglose mensual: 31/07/2026 - 31/07/2026: $ 10 Tendencia frente al período anterior: sin base comparativa No existen gastos registrados en el período anterior »",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08E",
+      "esperado": "El PDF muestra la tendencia sin base comparativa con la nota «No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual.» y la nota «El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).» (RF-77 Proceso paso 6; CA-9)",
+      "obtenido": "estado sin base comparativa en PDF: sí; nota sin base: sí; nota recorte: no | API tendencia.estado=SIN_BASE_COMPARATIVA; API nota=«No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual.» | texto PDF «Tendencia frente al período anterior: sin base comparativa No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual.»",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-09",
+      "esperado": "Rollback 2xx; consulta sin sandbox del reporte y ambos archivos -> 404 (REPORTE/ARCHIVO_NO_ENCONTRADO)",
+      "obtenido": "rollback HTTP 200; spa_sesiones=0; intento 1: [rep 404 REPORTE_NO_ENCONTRADO reqId:21c24ec8-b9ee-4af5-95f3-159f08e4388a, csv 404 ARCHIVO_NO_ENCONTRADO reqId:194ae034-4a09-467b-b72a-40d555b2932f, pdf 404 ARCHIVO_NO_ENCONTRADO reqId:92559ebc-cb59-4b6e-bdce-63e362cdff88] (aislamiento confirmado)",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "CP-08C: RF-77 paso 7 enumera activo_biologico_id, especie_id, tipo_activo e infraestructura_id; se acepta el nombre o el id del propio activo como identificación (CA-9)."
+  ],
+  "runs": [
+    {
+      "run_id": "tc-m05-g23-1794510418097",
+      "rollback_http": "ver consola"
+    }
+  ]
+}

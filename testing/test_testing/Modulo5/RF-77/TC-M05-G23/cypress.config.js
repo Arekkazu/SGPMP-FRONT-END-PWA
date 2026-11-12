@@ -1,6 +1,7 @@
 // | Fecha      | Nombre                    | Que se hizo                                                   |
 // |------------|---------------------------|---------------------------------------------------------------|
 // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G23 RF-77: config Cypress con sandbox, PDF task y descargas |
+// | 2026-11-12 | Juan Sebastian Gutierrez  | G4 reintento 1: descargas, capturas y videos al staging (CYPRESS_STAGING_DIR) |
 // TC-M05-G23 · RF-77 · Reporte de gastos acumulados por activo y exportación PDF/CSV.
 //
 // Reglas de este archivo:
@@ -178,6 +179,15 @@ module.exports = defineConfig({
         },
       });
 
+      // G4: con CYPRESS_STAGING_DIR, descargas, capturas y videos van al staging de la corrida
+      // (la evidencia de rondas anteriores en evidencias/descargas no se sobrescribe).
+      const stg = String(process.env.CYPRESS_STAGING_DIR || '').trim();
+      if (stg) {
+        config.downloadsFolder = resolve(stg, 'descargas');
+        config.screenshotsFolder = resolve(stg, 'capturas');
+        config.videosFolder = resolve(stg, 'videos');
+        for (const d of [config.downloadsFolder, config.screenshotsFolder]) mkdirSync(d, { recursive: true });
+      }
       return config;
     },
   },
