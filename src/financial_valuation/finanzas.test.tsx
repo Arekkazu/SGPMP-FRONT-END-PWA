@@ -10,6 +10,7 @@
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
 // | 2026-11-10 | Arekkazu | TC-DIS-242/244/261 RF-87/93: diálogo descrito con foco en Cancelar, NIT ausente, badges con icono y resultado con Ganancia/Pérdida |
 // | 2026-11-10 | Arekkazu | TC-DIS-233/257/262 RF-86/92/93: Productor con período, aprobador del informe y panel de pendientes |
+// | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año; navegación en dos niveles |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -28,7 +29,7 @@ import { EstadoResultadosView } from './pages/EstadoResultadosView';
 import { TrazabilidadView } from './pages/TrazabilidadView';
 import { RevelacionesView } from './pages/RevelacionesView';
 import { PendientesView } from './pages/PendientesView';
-import { EstadoBadge, ProveedorPeriodo, Variacion, aFraccion, aPorcentaje, etiquetaPeriodo, formatoMoneda } from './components/comunes';
+import { BarraPeriodo, EstadoBadge, ProveedorPeriodo, Variacion, aFraccion, aPorcentaje, etiquetaPeriodo, formatoMoneda } from './components/comunes';
 import { signo, sumar } from './lib/decimal';
 import { digitoVerificacion } from '../configuration/components/TitularFincaModal';
 
@@ -485,5 +486,41 @@ describe('Lo que pedía backend en la evaluación QA M06 (TC-DIS-233/257/262)', 
     expect(await screen.findByText('Sin precio vigente')).toBeInTheDocument();
     expect(screen.getByText('El período no se puede cerrar con hechos pendientes')).toBeInTheDocument();
     expect(peticiones.find((p) => p.url === '/finanzas/lineas')?.params).toEqual({ id_periodo_contable: 7, estado: 'PENDIENTE_CUENTA' });
+  });
+});
+
+describe('Período contable por titular y año (usabilidad 11-11)', () => {
+  const diciembre = { ...periodo, id_periodo_contable: 3, fecha_inicio: '2025-12-01', fecha_fin: '2025-12-31', estado: 'CERRADO', fecha_cierre: '2026-01-02T00:00:00Z' };
+
+  it('elige primero el titular, pide solo sus períodos y separa los años', async () => {
+    sesion.permisos = [permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/titulares'] = { data: [{ numero_id_tributaria: '900123456', razon_social: 'El Rosal S.A.S.' }, { numero_id_tributaria: null, razon_social: null }] };
+    respuestas['GET /finanzas/periodos'] = { data: [periodo, diciembre] };
+    render(<MemoryRouter><ProveedorPeriodo><BarraPeriodo /></ProveedorPeriodo></MemoryRouter>);
+
+    const titular = await screen.findByRole('combobox', { name: 'Titular' });
+    expect(within(titular).getAllByRole('option').map((o) => o.textContent)).toEqual(['El Rosal S.A.S. · NIT 900123456', 'Sin titular asignado']);
+    await waitFor(() => expect(peticiones.find((p) => p.url === '/finanzas/periodos')?.params).toEqual({ numero_id_tributaria: '900123456' }));
+
+    const lista = screen.getByRole('combobox', { name: /Período contable/ });
+    await waitFor(() => expect(lista).toHaveValue('7'));
+    expect(within(lista).getAllByRole('option')).toHaveLength(1);
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Año' }), '2025');
+    expect(lista).toHaveValue('3');
+    await userEvent.click(screen.getByRole('button', { name: 'Ir al período en curso' }));
+    expect(lista).toHaveValue('7');
+
+    await userEvent.selectOptions(titular, 'sin-titular');
+    await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/periodos' && p.params?.sin_titular === true)).toBe(true));
+  });
+
+  it('con un solo titular y un solo año queda solo el selector de período', async () => {
+    sesion.permisos = [permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/titulares'] = { data: [{ numero_id_tributaria: '900123456', razon_social: null }] };
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    render(<MemoryRouter><ProveedorPeriodo><BarraPeriodo /></ProveedorPeriodo></MemoryRouter>);
+    await waitFor(() => expect(screen.getByRole('combobox', { name: /Período contable/ })).toHaveValue('7'));
+    expect(screen.queryByRole('combobox', { name: 'Titular' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Año' })).toBeNull();
   });
 });

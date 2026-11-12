@@ -8,6 +8,7 @@
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-02 RF-87: la prevalidación lista cada línea sin trazabilidad con su activo y lo que falta |
 // | 2026-11-10 | Arekkazu | TC-DIS-252/254/265 RF-COT/91/94: estado al cierre de la cotización, nivel del fallo de la cadena y origen del evento |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
+// | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -181,6 +182,9 @@ export interface ResultadoCosto {
   id_grupo_reparto: string | null; aviso: string | null;
 }
 
+/** Titular tributario con períodos contables; NIT nulo = períodos sin titular asignado. */
+export interface Titular { numero_id_tributaria: string | null; razon_social: string | null }
+export interface FiltroPeriodos { numero_id_tributaria?: string; sin_titular?: boolean }
 export interface Periodo {
   id_periodo_contable: number; numero_id_tributaria: string; razon_social?: string | null; tipo_cierre: TipoCierre; fecha_inicio: string; fecha_fin: string;
   estado: 'ABIERTO' | 'EN_CIERRE' | 'CERRADO' | string; fecha_cierre: string | null;
