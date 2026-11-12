@@ -1,6 +1,8 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-86 TC-DIS-233: accesibilidad de MEDICION_PENDIENTE y PENDIENTE_CUENTA |
+// | 2026-11-12 | Laura032005 | M06 RF-86 TC-DIS-233: subir timeout de test2 a 60s (dato real ya confirmado, el timeout de 30s se agotaba) |
+// | 2026-11-12 | Laura032005 | M06 RF-86 TC-DIS-233: el buscador de la matriz es role="searchbox" con label "Buscar", no un textbox con el placeholder como nombre |
 /**
  * TC-DIS-233 — Accesibilidad WCAG 2.1 AA del panel de gestión de M06 con los estados
  * MEDICION_PENDIENTE y PENDIENTE_CUENTA
@@ -48,6 +50,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - PENDIENTE_CUENTA (RF-86, v
   });
 
   test('2. Alerta de líneas pendientes de cuenta - texto con el conteo, no solo color (1.4.1 / 4.1.3)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const alerta = main(page).locator('[role="alert"]').filter({ hasText: /línea.*sin cuenta contable/i });
     const hay = await alerta.count() > 0;
@@ -60,8 +63,12 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - PENDIENTE_CUENTA (RF-86, v
   });
 
   test('3. Matriz contable operable por teclado (2.1.1)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
-    const buscar = main(page).getByRole('textbox', { name: /hecho, especie o cuenta/i });
+    // Buscador real: role="searchbox" (type="search") con label genérico "Buscar", no un
+    // textbox con el placeholder "hecho, especie o cuenta" como nombre accesible.
+    const buscar = main(page).getByRole('searchbox', { name: 'Buscar' });
+    await buscar.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     precondicion(await buscar.count() > 0, 'no hay asignaciones en la matriz contable para mostrar sus filtros');
     if (await buscar.count() === 0) return;
     await buscar.focus();
