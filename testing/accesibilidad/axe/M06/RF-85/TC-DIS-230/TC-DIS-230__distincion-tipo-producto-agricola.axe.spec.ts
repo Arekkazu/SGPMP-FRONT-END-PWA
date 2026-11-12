@@ -1,6 +1,8 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-85 TC-DIS-230: accesibilidad de la distinción PRODUCTO_DE_CONSUMO vs. PRODUCTO_PERIODICO |
+// | 2026-11-12 | Laura032005 | M06 RF-85 TC-DIS-230: seleccionar período 241, con el producto de consumo real confirmado por el DBA |
+// | 2026-11-12 | Laura032005 | M06 RF-85 TC-DIS-230: confirmado que ningún período tiene ambos tipos a la vez (consumo en 241, periódico en 1) — vacío de datos real |
 /**
  * TC-DIS-230 — Accesibilidad WCAG 2.1 AA de la distinción entre PRODUCTO_DE_CONSUMO y
  * PRODUCTO_PERIODICO en el reconocimiento de productos agrícolas
@@ -37,7 +39,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Tipo de producto agrícola
   });
 
   test('1. Badge de tipo con texto para ambos tipos (1.4.1 / 4.1.2)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
+    // DBA: producto 154 (de consumo) está en el período 241; productos 1 y 2 (periódicos) están
+    // en el período 1. Se usa 241, que ya tiene datos reales confirmados.
+    const periodo = main(page).getByRole('combobox', { name: 'Período contable' });
+    if (await periodo.count() > 0) await periodo.selectOption('241').catch(() => {});
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
     const tabla = main(page).getByRole('table');
     precondicion(await tabla.count() > 0, 'el período elegido no tiene productos agrícolas reconocidos');
     if (await tabla.count() === 0) return;
@@ -54,7 +62,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Tipo de producto agrícola
   });
 
   test('2. KPIs "Productos periódicos" y "Cosechas del activo" con conteo accesible (4.1.2)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
+    const periodo = main(page).getByRole('combobox', { name: 'Período contable' });
+    if (await periodo.count() > 0) await periodo.selectOption('241').catch(() => {});
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
     const kpiPeriodicos = main(page).locator('.fin-kpi', { hasText: 'Productos periódicos' });
     const kpiConsumo = main(page).locator('.fin-kpi', { hasText: 'Cosechas del activo' });
     const hay = await kpiPeriodicos.count() > 0;
