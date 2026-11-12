@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-260 RF-93: tabla alternativa a las gráficas del estado de resultados |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-260 RF-93: reejecución con el estado de resultados real #32 (octubre) |
 /**
  * TC-DIS-260 — Verificar accesibilidad WCAG 2.1 AA de la tabla alternativa a las gráficas del
  * dashboard del Estado de Resultados [CRÍTICO]
@@ -45,6 +46,8 @@ test.describe('TC-DIS-260 — Tabla alternativa a las gráficas del Estado de Re
 
   test('a. Estado de resultados real; precondición: estado generado para un período cerrado', async ({}, testInfo) => {
     await irFinanzas(page, 'estado-resultados', /Estado de resultados/);
+    // Reejecución 2026-11-11: período real de Finca El Rosal (NIT 901458732).
+    await elegirPeriodo(page, 253);
     await escanear(page, TC_ID, __dirname, 'estado-real', testInfo, LH);
     const versiones = await main(page).locator('table tbody tr').count();
     anotar(testInfo, 'Estado real', `${versiones} versión(es) en el período elegido`);
