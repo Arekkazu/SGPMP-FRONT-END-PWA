@@ -1,3 +1,10 @@
+## [1.4.0-rc.38](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.37...v1.4.0-rc.38) (2026-11-12)
+
+### Bug Fixes
+
+* **rf82-rf94-mod6:** secciones de finanzas en dos niveles y periodo por titular y año ([7c8c3f6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7c8c3f6f1dc2c2e4f9beb5954c55e13a981c5692)), closes [#fin-periodo](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/fin-periodo)
+* **rf89-mod6:** precio corregido visible y la correccion conserva fecha y fuente (TC-M06-G106) ([966a0cd](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/966a0cdff4521c496c95d17ae67bc3fad04c9a0d)), closes [#1074](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1074)
+
 ## [1.4.0-rc.37](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.36...v1.4.0-rc.37) (2026-11-12)
 
 ### Features
