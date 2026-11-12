@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-252 RF-COT: estados de la cotización, modificación y anulación |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-252 RF-COT: reejecución; en el período cerrado solo cuentan modificar y anular |
 /**
  * TC-DIS-252 — Verificar accesibilidad WCAG 2.1 AA de los estados de la cotización (Cotizada /
  * Vencida / Anulada y estado al cierre) y de los flujos de modificación y anulación
@@ -89,7 +90,8 @@ test.describe('TC-DIS-252 — Estados de la cotización, modificación y anulaci
     desviacion(t.encabezados.some((e) => /al cierre/i.test(e)) || (await main(page).getByText(/estado al cierre/i).count()) > 0,
       '1.3.1: no se distinguen "estado al cierre" y "estado actual" en la cotización del período cerrado');
     const filaCerrada = tabla.locator('tbody tr').nth(3);
-    const acciones = await filaCerrada.getByRole('button').count();
+    // Reejecución 2026-11-11: «Ver» (consulta) es válido en un período cerrado; solo cuentan modificar y anular.
+    const acciones = await filaCerrada.getByRole('button', { name: /modificar|anular/i }).count();
     const textoFila = (await filaCerrada.innerText()).replace(/\s+/g, ' ');
     anotar(testInfo, 'Cotización del período cerrado', `${textoFila} · botones: ${acciones}`);
     expect.soft(acciones, 'En la cotización del período cerrado se ofrecen modificar o anular').toBe(0);
