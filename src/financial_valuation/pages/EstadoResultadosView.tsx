@@ -4,6 +4,7 @@
 // | 2026-11-05 | Arekkazu | M06 RF-93 prototipo: generación con filtros de especie, finca y activo; versiones en lista |
 // | 2026-11-10 | Arekkazu | INC-M06-337/344 RF-86/93: acumulado del período abierto y desglose del mantenimiento |
 // | 2026-11-10 | Arekkazu | TC-DIS-260..264 RF-93: gráficas con tabla alternativa, signo y «Ganancia/Pérdida» en texto, filtros completos y descarga anunciada |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 import React, { useEffect, useState } from 'react';
 import { BarChart3, CheckCircle2, Download, FilterX, Plus } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -43,24 +44,26 @@ interface Segmento { etiqueta: string; valor: number; color: string }
 
 /**
  * Gráfica de barras horizontales en SVG con nombre accesible (WCAG 1.1.1); la tabla de al lado es su
- * alternativa textual. Colores con etiqueta y porcentaje en texto: no se distingue solo por el color.
+ * alternativa textual. Cada barra lleva su etiqueta completa encima y su monto en texto: no se distingue
+ * solo por el color. El largo es proporcional al mayor monto; un porcentaje sobre la suma de ingresos,
+ * gastos y resultado no significa nada (N-03).
  */
 function GraficaBarras({ id, titulo, segmentos, resumen }: { id: string; titulo: string; segmentos: Segmento[]; resumen: string }) {
-  const total = segmentos.reduce((s, x) => s + Math.abs(x.valor), 0);
-  const alto = segmentos.length * 28 + 8;
+  const maximo = Math.max(0, ...segmentos.map((x) => Math.abs(x.valor)));
+  const alto = segmentos.length * 40 + 8;
   return (
     <figure style={{ margin: 0 }}>
       <figcaption id={`${id}-cap`} style={{ fontWeight: 700, marginBottom: 'var(--s2)' }}>{titulo}</figcaption>
       <svg role="img" aria-labelledby={`${id}-cap ${id}-desc`} width="100%" viewBox={`0 0 400 ${alto}`} style={{ maxWidth: 480, display: 'block' }}>
         <desc id={`${id}-desc`}>{resumen}</desc>
         {segmentos.map((s, i) => {
-          const ancho = total ? (Math.abs(s.valor) / total) * 220 : 0;
-          const y = i * 28 + 4;
+          const ancho = Math.max(maximo ? (Math.abs(s.valor) / maximo) * 250 : 0, 1);
+          const y = i * 40 + 4;
           return (
             <g key={s.etiqueta}>
-              <text x="0" y={y + 15} fontSize="11" fill="var(--text-secondary)">{s.etiqueta.length > 26 ? `${s.etiqueta.slice(0, 25)}…` : s.etiqueta}</text>
-              <rect x="170" y={y + 4} width={Math.max(ancho, 1)} height="14" rx="3" fill={s.color} />
-              <text x={175 + Math.max(ancho, 1)} y={y + 15} fontSize="11" fill="var(--text-primary)">{total ? `${((Math.abs(s.valor) / total) * 100).toFixed(0)} %` : '0 %'}</text>
+              <text x="0" y={y + 12} fontSize="11" fill="var(--text-secondary)">{s.etiqueta}</text>
+              <rect x="0" y={y + 18} width={ancho} height="14" rx="3" fill={s.color} />
+              <text x={ancho + 6} y={y + 29} fontSize="11" fill="var(--text-primary)">{formatoMoneda(s.valor)}</text>
             </g>
           );
         })}

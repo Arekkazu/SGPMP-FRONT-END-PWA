@@ -2,13 +2,14 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-77: reporte de gastos con desglose por categoría, período y tendencia |
 // | 2026-11-10 | Arekkazu | TC-DIS-202 RF-77: el desglose por categoría es una tabla (categoría, subtotal, porcentaje) y la barra solo la ilustra |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 import React from 'react';
 import { FileDown, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { useT } from '../../shared/i18n/useT';
-import { formatoCantidad, formatoFecha, formatoMoneda } from '../lib/formato';
+import { formatoCantidad, formatoEtiquetaPeriodo, formatoFecha, formatoMoneda } from '../lib/formato';
 import type { ReporteGasto } from '../types';
 import { PANEL, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM } from './estilos';
 
@@ -107,7 +108,7 @@ export function ReporteGastoDetalle({ reporte: r, puedeExportar, exportando, onl
             <thead><tr><th style={TH}>{t('gastos.periodo')}</th><th style={TH_NUM}>{t('gastos.monto')}</th></tr></thead>
             <tbody>
               {r.desglose_temporal.map((p) => (
-                <tr key={p.fecha_inicio}><td style={TD}>{p.etiqueta}<div style={SECUNDARIO}>{formatoFecha(p.fecha_inicio)} – {formatoFecha(p.fecha_fin)}</div></td><td style={TD_NUM}>{formatoMoneda(p.monto)}</td></tr>
+                <tr key={p.fecha_inicio}><td style={TD}>{formatoEtiquetaPeriodo(p.etiqueta)}<div style={SECUNDARIO}>{formatoFecha(p.fecha_inicio)} – {formatoFecha(p.fecha_fin)}</div></td><td style={TD_NUM}>{formatoMoneda(p.monto)}</td></tr>
               ))}
             </tbody>
           </table>

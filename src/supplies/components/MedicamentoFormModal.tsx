@@ -2,13 +2,14 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-76: formulario de aplicación de medicamento |
 // | 2026-11-10 | Arekkazu | TC-DIS-214 RF-76: población del lote y dosis por individuo calculadas en vivo |
-import React, { useState } from 'react';
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
+import React, { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
-import { Alert } from '../../shared/design-system/Alert';
+import { AvisoServidor } from './AvisoServidor';
 import { useT } from '../../shared/i18n/useT';
 import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 import { hoyLocal } from '../../shared/lib/fecha';
@@ -53,15 +54,19 @@ interface Props {
 
 const ahora = () => new Date().toTimeString().slice(0, 5);
 
-export function MedicamentoFormModal({ activos, cargandoActivos, enviando, error, onGuardar, onCerrar }: Props) {
+// RF-76 precondición 3: se medica un activo ACTIVO o EN_TRATAMIENTO; el selector no ofrece los demás.
+const ESTADOS_REGISTRABLES = ['ACTIVO', 'EN_TRATAMIENTO'];
+
+export function MedicamentoFormModal({ activos: todos, cargandoActivos, enviando, error, onGuardar, onCerrar }: Props) {
   const { t } = useT('supplies');
+  const activos = useMemo(() => todos.filter((a) => ESTADOS_REGISTRABLES.includes(a.nombre_estado ?? '')), [todos]);
   const [idActivo, setIdActivo] = useState<number | null>(null);
   const poblacion = usePoblacionActivo(idActivo);
   const { register, control, handleSubmit, watch, setError, formState: { errors } } = useForm<Form>({
     mode: 'onBlur',
     defaultValues: {
       activo: '', nombre_medicamento: '', fecha_aplicacion: hoyLocal(), hora_aplicacion: ahora(), via_administracion: '',
-      dosis_aplicada: '', unidad_dosis: '', periodo_retiro_dias: '0', costo_unitario: '', nombre_veterinario: '',
+      dosis_aplicada: '', unidad_dosis: '', periodo_retiro_dias: '', costo_unitario: '', nombre_veterinario: '',
       motivo_aplicacion: '', lote: '', fecha_vencimiento_lote: '', observaciones: '',
     },
   });
@@ -105,7 +110,6 @@ export function MedicamentoFormModal({ activos, cargandoActivos, enviando, error
       )}
     >
       <form onSubmit={handleSubmit(enviar)} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
-        {alertaGeneral && error && <Alert variant={error.status === 409 ? 'error' : 'warning'} title={error.message} />}
         <Controller
           name="activo"
           control={control}
@@ -185,6 +189,7 @@ export function MedicamentoFormModal({ activos, cargandoActivos, enviando, error
           <Input id="medicamento-vence" label={t('medicamento.vence_lote')} type="date" hint={t('comun.opcional')} error={errors.fecha_vencimiento_lote?.message} {...register('fecha_vencimiento_lote')} />
         </div>
         <AreaTexto id="medicamento-obs" label={t('comun.observaciones')} maxLength={500} hint={t('comun.opcional')} {...register('observaciones')} />
+        {alertaGeneral && error && <AvisoServidor error={error} />}
       </form>
     </ModalShell>
   );

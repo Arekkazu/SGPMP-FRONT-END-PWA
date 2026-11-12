@@ -6,6 +6,7 @@
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-02 RF-87: la prevalidación lista cada línea sin trazabilidad con su activo y lo que falta |
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
 // | 2026-11-10 | Arekkazu | TC-DIS-242..246 RF-87: diálogo descrito, avance por pasos anunciado, estados con icono, tablas de bloqueos, «Cancelar cierre» y comprobantes con débito/crédito |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Download, Lock, XCircle } from 'lucide-react';
@@ -104,10 +105,10 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
   useEffect(() => {
     if (!cerrado) {
       prevalidar(id);
-      if (puedeVerPropuestas) cargarPropuestas();
+      if (puedeVerPropuestas) cargarPropuestas(periodo.numero_id_tributaria);
     }
     cargarComprobantes(id);
-  }, [id, cerrado, puedeVerPropuestas, prevalidar, cargarPropuestas, cargarComprobantes]);
+  }, [id, cerrado, puedeVerPropuestas, prevalidar, cargarPropuestas, cargarComprobantes, periodo.numero_id_tributaria]);
   // Mientras el POST del cierre corre, el paso en curso se lee del período (ultimo_cierre.paso_actual).
   useEffect(() => {
     if (!cierre.cargando) { setPaso(null); return; }

@@ -3,6 +3,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-90: costos del activo (manuales, factura de proveedor, reparto y clasificación) |
 // | 2026-11-05 | Arekkazu | M06 RF-90 prototipo: costos del período consolidados por naturaleza y tipo, con filtros |
 // | 2026-11-10 | Arekkazu | TC-DIS-247..250 RF-90: consolidados en tabla (tipo, origen, activo), errores bajo cada campo, vista previa del reparto y cuenta débito resuelta |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Receipt, Tags, Trash2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -24,7 +25,7 @@ import type { ActivoValorado, Asignacion, Costo, CostoPayload, Naturaleza, Orige
 import { sumar } from '../lib/decimal';
 import {
   AreaTexto, BadgeTono, CeldaActivo, EncabezadoVista, EstadoBadge, ErrorApi, Listado, MotivoModal, SECUNDARIO, SinPeriodo, TABLA, TD, TD_NUM, TH,
-  TH_NUM, formatoFecha, formatoMoneda, nombrePeriodo, useAsync, useListado, usePeriodo,
+  TH_NUM, formatoFecha, formatoMoneda, formatoPorcentaje, nombrePeriodo, useAsync, useListado, usePeriodo,
 } from '../components/comunes';
 
 const ORIGENES_MANUALES: OrigenCosto[] = ['MANO_OBRA_PROPIA', 'COMPRA_PROVEEDOR', 'SERVICIO_TERCERO'];
@@ -32,7 +33,7 @@ const NATURALEZAS: Naturaleza[] = ['MANTENIMIENTO', 'INVERSION', 'VENTA'];
 const TONO_NATURALEZA = { MANTENIMIENTO: 'success', VENTA: 'info', INVERSION: 'warning' } as const;
 /** Un reverso resta del total. */
 const firmado = (c: Costo) => (c.es_reverso ? `-${c.monto_costo}` : c.monto_costo);
-const pct = (parte: string, total: string) => (Number(total) ? `${((Number(parte) / Number(total)) * 100).toFixed(1)} %` : '—');
+const pct = (parte: string, total: string) => (Number(total) ? formatoPorcentaje((Number(parte) / Number(total)) * 100) : '—');
 
 /** Tabla de subtotales con encabezado de fila (WCAG 1.3.1): la alternativa a cualquier barra. */
 function Subtotales({ titulo, filas, total }: { titulo: string; filas: Array<[string, string]>; total: string }) {
@@ -380,7 +381,7 @@ function CostoModal({ activos, onCerrar, onGuardado }: { activos: ActivoValorado
                       <tr key={a.id_activo_biologico}>
                         <th scope="row" style={{ ...TD, textAlign: 'left' }}>{a.identificador}</th>
                         <td style={TD}>{tipoActivo(a)}</td>
-                        <td style={TD_NUM}>{metodo === 'POR_BIOMASA' ? t('costos.segun_peso') : `${(100 / seleccionados.length).toFixed(1)} %`}</td>
+                        <td style={TD_NUM}>{metodo === 'POR_BIOMASA' ? t('costos.segun_peso') : formatoPorcentaje(100 / seleccionados.length)}</td>
                         <td style={TD_NUM}>{metodo === 'POR_BIOMASA' || !montoReparto ? t('costos.al_guardar') : formatoMoneda(parte + (i === 0 ? residuo : 0))}</td>
                         <td style={TD}>
                           <Button variant="ghost" size="sm" data-quitar onClick={() => quitar(a.id_activo_biologico, i)} aria-label={t('costos.quitar_activo', { activo: a.identificador })}>

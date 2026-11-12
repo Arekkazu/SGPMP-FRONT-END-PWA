@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-80: detalle de un evento de auditoría con su estado anterior y nuevo |
 // | 2026-11-10 | Arekkazu | TC-DIS-208 RF-80: clasificación y entidad traducidas, nunca el valor crudo |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 import React from 'react';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { Alert } from '../../shared/design-system/Alert';
@@ -11,7 +12,6 @@ import { formatoFecha, formatoMoneda } from '../lib/formato';
 import type { EventoAuditoriaSuministro } from '../types';
 import { EstadoRegistroBadge } from './EstadoRegistroBadge';
 import { ClasificacionBadge } from './ClasificacionBadge';
-import { humanizar } from '../../shared/lib/etiquetas';
 import { SECUNDARIO } from './estilos';
 
 interface Props { evento: EventoAuditoriaSuministro | null; cargando: boolean; error: ApiError | null; onCerrar: () => void }
@@ -30,7 +30,7 @@ function Json({ titulo, datos }: { titulo: string; datos: Record<string, unknown
 export function EventoAuditoriaModal({ evento: e, cargando, error, onCerrar }: Props) {
   const { t } = useT('supplies');
   return (
-    <ModalShell title={e ? t('auditoria.detalle_titulo', { id: e.id_auditoria_suministro }) : t('auditoria.detalle')} onClose={onCerrar} maxWidth={720}>
+    <ModalShell title={e ? t('auditoria.detalle_titulo', { entidad: t(`entidad.${e.entidad_afectada}`, { defaultValue: t('entidad.otra') }), fecha: formatoFecha(e.fecha_evento, true) }) : t('auditoria.detalle')} onClose={onCerrar} maxWidth={720}>
       {error && <Alert variant="error" title={error.message} />}
       {!e ? <p style={SECUNDARIO}>{cargando ? t('comun.cargando') : ''}</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s5)' }}>
@@ -38,10 +38,10 @@ export function EventoAuditoriaModal({ evento: e, cargando, error, onCerrar }: P
           <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--s4)', margin: 0 }}>
             {([
               [t('auditoria.operacion'), t(`evento.${e.tipo_operacion}`, { defaultValue: e.tipo_operacion })],
-              [t('auditoria.entidad'), t(`entidad.${e.entidad_afectada}`, { defaultValue: humanizar(e.entidad_afectada) })],
+              [t('auditoria.entidad'), t(`entidad.${e.entidad_afectada}`, { defaultValue: t('entidad.otra') })],
               [t('comun.fecha'), formatoFecha(e.fecha_evento, true)],
-              [t('auditoria.usuario'), `#${e.id_usuario}`],
-              [t('comun.activo'), e.id_activo_biologico ? `#${e.id_activo_biologico}` : '—'],
+              [t('auditoria.usuario'), e.nombre_usuario ?? t('auditoria.otro_usuario')],
+              [t('comun.activo'), e.id_activo_biologico ? e.nombre_activo ?? t('comun.activo_n', { id: e.id_activo_biologico }) : '—'],
               [t('auditoria.costo'), e.costo_afectado ? formatoMoneda(e.costo_afectado) : '—'],
               [t('auditoria.clasificacion'), <span key="c" style={{ display: 'inline-flex', gap: 'var(--s2)', alignItems: 'center', flexWrap: 'wrap' }}><ClasificacionBadge clasificacion={e.clasificacion_registro} />{e.retencion_aplicable && <span style={SECUNDARIO}>{t('auditoria.retencion', { valor: e.retencion_aplicable })}</span>}</span>],
               [t('auditoria.ip'), e.ip_origen ?? '—'],

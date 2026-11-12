@@ -7,6 +7,7 @@
 // | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-02 RF-87: la prevalidación lista cada línea sin trazabilidad con su activo y lo que falta |
 // | 2026-11-10 | Arekkazu | TC-DIS-252/254/265 RF-COT/91/94: estado al cierre de la cotización, nivel del fallo de la cadena y origen del evento |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -181,7 +182,7 @@ export interface ResultadoCosto {
 }
 
 export interface Periodo {
-  id_periodo_contable: number; numero_id_tributaria: string; tipo_cierre: TipoCierre; fecha_inicio: string; fecha_fin: string;
+  id_periodo_contable: number; numero_id_tributaria: string; razon_social?: string | null; tipo_cierre: TipoCierre; fecha_inicio: string; fecha_fin: string;
   estado: 'ABIERTO' | 'EN_CIERRE' | 'CERRADO' | string; fecha_cierre: string | null;
   ultimo_cierre: { id_cierre: number; estado: string; paso_actual: number | null; error_detalle: string | null;
     fecha_inicio: string; fecha_fin: string | null; nombre_usuario_ejecutor?: string | null } | null;

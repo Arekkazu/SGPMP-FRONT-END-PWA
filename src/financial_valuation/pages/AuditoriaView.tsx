@@ -3,6 +3,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-94: consulta legible de la auditoría financiera con integridad por evento |
 // | 2026-11-05 | Arekkazu | M06 RF-94 prototipo: panel de monitoreo por severidad, últimos eventos y exploración filtrada |
 // | 2026-11-10 | Arekkazu | TC-DIS-265/266 RF-94: filtros por fechas, usuario, origen y activo; columnas de período y origen; severidad con icono; detalle del evento |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 import React, { useEffect, useState } from 'react';
 import { Eye, FilterX, ScrollText, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -20,7 +21,7 @@ import type { EventoAuditoria, Severidad } from '../types';
 import { EventoFinancieroModal } from '../components/EventoFinancieroModal';
 import {
   BadgeTono, EncabezadoVista, EstadoVacio, ErrorApi, Indicadores, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM, formatoFecha,
-  formatoMoneda, nombrePeriodo, useAsync, usePeriodo,
+  formatoMoneda, formatoPorcentaje, nombrePeriodo, useAsync, usePeriodo,
 } from '../components/comunes';
 
 const SEVERIDADES: Severidad[] = ['CRITICAL', 'ERROR', 'WARNING', 'INFO'];
@@ -115,7 +116,7 @@ export function AuditoriaView() {
                     <tr key={s}>
                       <th scope="row" style={{ ...TD, textAlign: 'left', fontWeight: 500 }}><BadgeTono tono={VARIANTE[s]}>{t(`severidad.${s}`)}</BadgeTono></th>
                       <td style={TD_NUM}>{resumen?.[s] ?? 0}</td>
-                      <td style={TD_NUM}>{total ? `${(((resumen?.[s] ?? 0) / total) * 100).toFixed(0)} %` : '0 %'}</td>
+                      <td style={TD_NUM}>{formatoPorcentaje(total ? ((resumen?.[s] ?? 0) / total) * 100 : 0, 0)}</td>
                     </tr>
                   ))}
                 </tbody>

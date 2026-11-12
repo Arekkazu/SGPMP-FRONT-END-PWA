@@ -3,6 +3,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-82/RF-84/RF-88: propuestas de reconocimiento inicial y confirmación |
 // | 2026-11-05 | Arekkazu | M06 RF-82 prototipo: indicadores, avisos y una tabla con propuestas y reconocidos filtrable |
 // | 2026-11-08 | destroyerban | INC-M06-316-G16 RF-84: referencia documental de los costos manuales |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, ClipboardCheck, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -42,11 +43,13 @@ export function ReconocimientosView() {
   const [detalle, setDetalle] = useState<Fila | null>(null);
   const { ejecutar: cargarPropuestas } = propuestas;
   const { ejecutar: cargarActivos } = activos;
-  const cargar = () => { cargarPropuestas(); if (puedeVerActivos) cargarActivos(); };
+  // Solo los activos del titular del período elegido (M6-03): con El Rosal no deben salir los de otras fincas.
+  const nit = periodo?.numero_id_tributaria ?? null;
+  const cargar = () => { cargarPropuestas(nit); if (puedeVerActivos) cargarActivos(nit); };
   useEffect(() => {
-    if (puedeLeer) cargarPropuestas();
-    if (puedeLeer && puedeVerActivos) cargarActivos();
-  }, [puedeLeer, puedeVerActivos, cargarPropuestas, cargarActivos]);
+    if (puedeLeer) cargarPropuestas(nit);
+    if (puedeLeer && puedeVerActivos) cargarActivos(nit);
+  }, [puedeLeer, puedeVerActivos, cargarPropuestas, cargarActivos, nit]);
 
   const filas: Fila[] = [
     ...(propuestas.data ?? []).map((p): Fila => ({
