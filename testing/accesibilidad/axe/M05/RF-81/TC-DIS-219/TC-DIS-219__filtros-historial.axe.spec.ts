@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M05 RF-81 TC-DIS-219: accesibilidad de los filtros y mensajes de estado del historial |
+// | 2026-11-11 | Laura032005 | M05 RF-81 TC-DIS-219: reejecución con datos reales del DBA; timeout ampliado a 60s por el volumen de registros de BOV-114-TIL; tests 2 y 4 ya no toman el primero del combobox a ciegas, ahora apuntan a BOV-114-TIL (1627) |
 /**
  * TC-DIS-219 — [CRÍTICO] Accesibilidad WCAG 2.1 AA de los filtros del Historial de Suministros
  * y de sus mensajes de estado
@@ -44,6 +45,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Filtros del historial de s
   });
 
   test('1. Cada filtro con etiqueta asociada (3.3.2) y sin fieldset/legend que agrupe los rangos (desviación)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const form = page.getByRole('search');
     await expect.soft(form, 'el panel de filtros debe exponerse como región de búsqueda (role="search")').toBeVisible();
@@ -64,11 +66,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Filtros del historial de s
   });
 
   test('2. E5 - rango de fechas y de costos inválidos se identifican en texto junto al filtro (3.3.1)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const combo = main(page).getByRole('combobox', { name: 'Activo biológico' });
-    await combo.focus();
-    await combo.press('ArrowDown');
-    await combo.press('Enter');
+    // BOV-114-TIL (id 1627): ciclo real con suministros (dato del DBA), en vez del primero que
+    // ofrezca el combobox a ciegas.
+    await combo.fill('1627');
+    await combo.blur();
 
     await page.getByRole('textbox', { name: 'Desde' }).fill('2026-06-01');
     await page.getByRole('textbox', { name: 'Hasta' }).fill('2026-01-01');
@@ -87,6 +91,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Filtros del historial de s
   });
 
   test('3. E1 - sin resultados anunciado mediante role="status" (4.1.3)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const combo = main(page).getByRole('combobox', { name: 'Activo biológico' });
     await combo.focus();
@@ -107,15 +112,18 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Filtros del historial de s
   });
 
   test('4. Actualización del resumen al aplicar filtros válidos (4.1.3)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const combo = main(page).getByRole('combobox', { name: 'Activo biológico' });
-    await combo.focus();
-    await combo.press('ArrowDown');
-    await combo.press('Enter');
+    // BOV-114-TIL (id 1627): ciclo real con suministros (dato del DBA).
+    await combo.fill('1627');
+    await combo.blur();
     await page.getByRole('button', { name: 'Consultar', exact: true }).click();
     await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
 
     const resumen = page.getByLabel('Resumen del historial');
+    // Igual que la tabla en otros casos: puede resolverse un instante después de networkidle.
+    await resumen.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
     const existe = await resumen.count() > 0;
     precondicion(existe, 'el activo consultado no devolvió un resumen de historial (sin suministros)');
     if (existe) {
