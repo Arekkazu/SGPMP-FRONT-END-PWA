@@ -1,3 +1,13 @@
+## [1.4.0-rc.37](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.36...v1.4.0-rc.37) (2026-11-12)
+
+### Features
+
+* **rf86-rf87-rf92-rf93-mod6:** panel de pendientes, periodo para quien consulta reportes, aprobador y cancelar cierre ([54c0daf](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/54c0daf946ffeec8b20e435fea515c683d1c8bad))
+
+### Bug Fixes
+
+* **rf16-rf74-rf94-mod5-mod6-mod9:** reporte de usabilidad de suministros y finanzas del 11-11 ([aec42c8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/aec42c846ad013f037a54b150ed2f41bd33c0a34))
+
 ## [1.4.0-rc.36](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.35...v1.4.0-rc.36) (2026-11-11)
 
 ### Bug Fixes
