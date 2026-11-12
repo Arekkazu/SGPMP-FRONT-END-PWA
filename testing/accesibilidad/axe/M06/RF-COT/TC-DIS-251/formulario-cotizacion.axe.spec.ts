@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-251 RF-COT: formulario de registro de cotización de venta   |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-251 RF-COT: reejecución; vencimiento válido para los errores del backend |
 /**
  * TC-DIS-251 — Verificar accesibilidad WCAG 2.1 AA del formulario de registro de cotización de venta
  * y de sus mensajes de error por campo
@@ -116,16 +117,21 @@ test.describe('TC-DIS-251 — Formulario de registro de cotización de venta', (
     desviacion(fa6Campo > 0, '3.3.1: el error de valor propuesto aparece en la alerta global del formulario, no debajo del campo');
 
     await dialogo.locator('#cot-valor').fill('4600000');
-    await dialogo.locator('#cot-vencimiento').fill('2026-01-01');
     for (const e of ERRORES) {
       actual = e;
+      // Reejecución 2026-11-11: la app ahora valida en el cliente que el vencimiento no sea anterior a la
+      // emisión. Con una fecha pasada fija, ACTIVO_NO_DISPONIBLE y VALOR_RAZONABLE_NO_DISPONIBLE nunca
+      // llegaban al backend simulado: solo el caso de fecha usa una fecha anterior a la emisión.
+      await dialogo.locator('#cot-vencimiento').fill(e[2] === 'fecha_vencimiento' ? '2026-01-01' : '2026-12-31');
       await dialogo.getByRole('button', { name: 'Guardar', exact: true }).click();
       await page.waitForTimeout(700);
       const alertas = (await dialogo.locator('[role="alert"]').allInnerTexts()).map((a) => a.replace(/\s+/g, ' ').trim());
       const campo = e[2] === 'fecha_vencimiento' ? '#cot-vencimiento-err' : 'fieldset [role="alert"]';
       const bajo = await dialogo.locator(campo).count();
       anotar(testInfo, `${e[0]} (Datos simulados)`, `${alertas.join(' ¦ ') || '(sin anuncio)'} · junto al campo: ${bajo}`);
-      expect.soft(alertas.some((a) => a.includes(e[1].slice(0, 25))), `3.3.1: ${e[0]} no se anuncia con role="alert"`).toBe(true);
+      // Para la fecha vale el mensaje del cliente («El vencimiento no puede ser anterior…») o el del backend.
+      const anunciado = (a: string) => (e[2] === 'fecha_vencimiento' ? /vencimiento no puede ser anterior/i.test(a) : a.includes(e[1].slice(0, 25)));
+      expect.soft(alertas.some(anunciado), `3.3.1: ${e[0]} no se anuncia con role="alert"`).toBe(true);
       desviacion(bajo > 0, `3.3.1: ${e[0]} sale en la alerta global, no junto al campo afectado (${e[2]})`);
       const crudos = await textosCrudos(dialogo);
       desviacion(!crudos.some((c) => c.includes(e[0])), `el código interno ${e[0]} aparece en pantalla`);
