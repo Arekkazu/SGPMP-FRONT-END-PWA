@@ -2,13 +2,14 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-75: formulario de registro de consumo de alimento |
 // | 2026-11-10 | Arekkazu | TC-DIS-209/210 RF-75: fecha contra el cambio de fase (E3) y consumo por individuo en vivo para lotes |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Combobox } from '../../shared/design-system/Combobox';
-import { Alert } from '../../shared/design-system/Alert';
+import { AvisoServidor } from './AvisoServidor';
 import { useT } from '../../shared/i18n/useT';
 import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 import { hoyLocal } from '../../shared/lib/fecha';
@@ -43,8 +44,12 @@ interface Props {
   onCerrar: () => void;
 }
 
-export function ConsumoFormModal({ activos, cargandoActivos, tiposAlimento, cargandoTipos, enviando, error, onGuardar, onCerrar }: Props) {
+// RF-75 precondición 3: solo se registra consumo a un activo ACTIVO; el selector no ofrece los demás.
+const ESTADOS_REGISTRABLES = ['ACTIVO'];
+
+export function ConsumoFormModal({ activos: todos, cargandoActivos, tiposAlimento, cargandoTipos, enviando, error, onGuardar, onCerrar }: Props) {
   const { t } = useT('supplies');
+  const activos = useMemo(() => todos.filter((a) => ESTADOS_REGISTRABLES.includes(a.nombre_estado ?? '')), [todos]);
   const [idActivo, setIdActivo] = useState<number | null>(null);
   const poblacion = usePoblacionActivo(idActivo);
   const catalogo = useMemo(() => tiposAlimento.map((a) => ({ id: a.id_tipo_alimento, nombre: a.nombre })), [tiposAlimento]);
@@ -98,7 +103,6 @@ export function ConsumoFormModal({ activos, cargandoActivos, tiposAlimento, carg
       )}
     >
       <form onSubmit={handleSubmit(enviar)} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
-        {alertaGeneral && error && <Alert variant={error.status === 409 ? 'error' : 'warning'} title={error.message} />}
         <Controller
           name="activo"
           control={control}
@@ -175,6 +179,7 @@ export function ConsumoFormModal({ activos, cargandoActivos, tiposAlimento, carg
           {consumoIndividuo && <> · {t('consumo.por_individuo_vivo', { valor: formatoCantidad(consumoIndividuo), unidad })}</>}
         </p>
         <AreaTexto id="consumo-obs" label={t('comun.observaciones')} maxLength={500} hint={t('comun.opcional')} error={errors.observaciones?.message} {...register('observaciones')} />
+        {alertaGeneral && error && <AvisoServidor error={error} />}
       </form>
     </ModalShell>
   );

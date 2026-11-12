@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: tipos de dominio del módulo de suministros |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 // =====================================================================
 // Módulo 5 — Suministros · Tipos de dominio
 // Contrato: OpenAPI de src/supplies (rama integracion/rfc012-016).
@@ -48,6 +49,8 @@ export interface ConsumoAlimento {
   fecha_registro: string | null;
   justificacion_anulacion: string | null;
   fecha_hora_anulacion: string | null;
+  /** Nombre visible del activo (lo trae el listado). */
+  identificador_activo?: string | null;
 }
 
 export interface RegistrarConsumoPayload {
@@ -101,6 +104,7 @@ export interface Medicamento {
   estado_registro: EstadoRegistro;
   justificacion_anulacion: string | null;
   fecha_hora_anulacion: string | null;
+  identificador_activo?: string | null;
 }
 
 export interface RegistroMedicamentoRespuesta {
@@ -284,6 +288,8 @@ export interface GenerarReportePayload {
 export interface ReporteGasto {
   id_reporte_gasto_acumulado: number | null;
   id_activo_biologico: number | null;
+  /** Nombre visible del activo del alcance (lo trae el historial). */
+  nombre_activo?: string | null;
   id_infraestructura: number | null;
   id_especie: number | null;
   fecha_inicio: string;
@@ -411,6 +417,9 @@ export interface EventoAuditoriaSuministro {
   hash_integridad?: string | null;
   registro_incompleto?: boolean | null;
   detalle_causa?: string | null;
+  nombre_activo?: string | null;
+  /** Nulo si el rol no puede leer el nombre de ese usuario. */
+  nombre_usuario?: string | null;
 }
 
 export interface FiltrosAuditoria {

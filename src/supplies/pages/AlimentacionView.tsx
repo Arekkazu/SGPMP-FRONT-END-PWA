@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-75: registro, consulta y anulación de consumos de alimento |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Wheat, Ban } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -37,6 +38,7 @@ export function AlimentacionView() {
   const [formAbierto, setFormAbierto] = useState(false);
   const [aAnular, setAAnular] = useState<ConsumoAlimento | null>(null);
   const nombres = useMemo(() => new Map(activos.map((a) => [a.id_activo_biologico, nombreActivo(a)])), [activos]);
+  const nombreDe = (id: number, nombre?: string | null) => nombre ?? nombres.get(id) ?? t('comun.activo_n', { id });
 
   const { ejecutar: listar } = lista;
   useEffect(() => { if (puedeLeer) listar(filtros); }, [puedeLeer, filtros, listar]);
@@ -81,8 +83,7 @@ export function AlimentacionView() {
               {items.map((c) => (
                 <tr key={c.id_consumo_alimeto}>
                   <td style={TD}>
-                    {nombres.get(c.id_activo_biologico) ?? `#${c.id_activo_biologico}`}
-                    <div style={SECUNDARIO}>#{c.id_activo_biologico}</div>
+                    {nombreDe(c.id_activo_biologico, c.identificador_activo)}
                   </td>
                   <td style={TD}>{c.tipo_alimento}</td>
                   <td style={TD}>
@@ -99,9 +100,15 @@ export function AlimentacionView() {
                   {puedeAnular && (
                     <td style={TD}>
                       {c.estado_registro === 'VALIDADO' && (
-                        <Button variant="ghost" size="sm" disabled={!online} onClick={() => { anulacion.limpiar(); setAAnular(c); }}>
-                          <Ban size={16} aria-hidden />{t('comun.anular')}
-                        </Button>
+                        <>
+                          <Button variant="ghost" size="sm" disabled={!online} onClick={() => { anulacion.limpiar(); setAAnular(c); }}
+                            aria-describedby={`anular-consumo-${c.id_consumo_alimeto}`}>
+                            <Ban size={16} aria-hidden />{t('comun.anular')}
+                          </Button>
+                          <span id={`anular-consumo-${c.id_consumo_alimeto}`} className="ds-sr-only">
+                            {t('comun.anular_contexto', { que: c.tipo_alimento, activo: nombreDe(c.id_activo_biologico, c.identificador_activo), fecha: formatoFecha(c.fecha_consumo) })}
+                          </span>
+                        </>
                       )}
                     </td>
                   )}
@@ -129,7 +136,9 @@ export function AlimentacionView() {
       )}
       {aAnular && (
         <MotivoModal
-          titulo={t('consumo.anular_titulo', { id: aAnular.id_consumo_alimeto })}
+          titulo={t('consumo.anular_titulo', {
+            alimento: aAnular.tipo_alimento, activo: nombreDe(aAnular.id_activo_biologico, aAnular.identificador_activo), fecha: formatoFecha(aAnular.fecha_consumo),
+          })}
           descripcion={t('consumo.anular_descripcion')}
           etiqueta={t('comun.justificacion_anulacion')}
           confirmar={t('comun.confirmar_anulacion')}

@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-04 | Arekkazu | M06 RF-84/RF-88/RF-109: periodicidad, parámetros por especie, costos de venta y matriz |
 // | 2026-11-05 | Arekkazu | M06 prototipos: matriz contable con búsqueda y filtros; sin ids en pantalla |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 import React, { useEffect, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -187,7 +188,8 @@ function FilaEspecie({ especie, costo, puedeEditar, onGuardado }: {
       {celdaPct('i', t('col.pct_impuestos'))}
       {puedeEditar && (
         <td style={TD}>
-          <Button variant="secondary" size="sm" loading={parametro.cargando || costos.cargando} onClick={guardar}>
+          <Button variant="secondary" size="sm" loading={parametro.cargando || costos.cargando} onClick={guardar}
+            aria-label={`${t('comun.guardar')} ${especie.especie}`}>
             <Save size={14} aria-hidden />{t('comun.guardar')}
           </Button>
         </td>

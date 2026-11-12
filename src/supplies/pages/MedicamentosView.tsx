@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-76: registro, consulta y anulación de aplicaciones de medicamento |
 // | 2026-11-10 | Arekkazu | TC-DIS-214 RF-76: columna de dosis por individuo para los lotes |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Pill, Ban } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -40,6 +41,7 @@ export function MedicamentosView() {
   const [formAbierto, setFormAbierto] = useState(false);
   const [aAnular, setAAnular] = useState<Medicamento | null>(null);
   const nombres = useMemo(() => new Map(activos.map((a) => [a.id_activo_biologico, nombreActivo(a)])), [activos]);
+  const nombreDe = (id: number, nombre?: string | null) => nombre ?? nombres.get(id) ?? t('comun.activo_n', { id });
   const hoy = hoyLocal();
 
   const { ejecutar: listar } = lista;
@@ -88,8 +90,7 @@ export function MedicamentosView() {
                 return (
                   <tr key={m.id_registro_medicamento}>
                     <td style={TD}>
-                      {nombres.get(m.id_activo_biologico) ?? `#${m.id_activo_biologico}`}
-                      <div style={SECUNDARIO}>#{m.id_activo_biologico}</div>
+                      {nombreDe(m.id_activo_biologico, m.identificador_activo)}
                     </td>
                     <td style={TD}>
                       {m.nombre_medicamento}
@@ -116,7 +117,8 @@ export function MedicamentosView() {
                     {puedeAnular && (
                       <td style={TD}>
                         {m.estado_registro === 'VALIDADO' && (
-                          <Button variant="ghost" size="sm" disabled={!online} onClick={() => { anulacion.limpiar(); setAAnular(m); }}>
+                          <Button variant="ghost" size="sm" disabled={!online} onClick={() => { anulacion.limpiar(); setAAnular(m); }}
+                            aria-label={t('comun.anular_aria', { que: m.nombre_medicamento, activo: nombreDe(m.id_activo_biologico, m.identificador_activo) })}>
                             <Ban size={16} aria-hidden />{t('comun.anular')}
                           </Button>
                         )}
@@ -150,7 +152,10 @@ export function MedicamentosView() {
       )}
       {aAnular && (
         <MotivoModal
-          titulo={t('medicamento.anular_titulo', { id: aAnular.id_registro_medicamento })}
+          titulo={t('medicamento.anular_titulo', {
+            medicamento: aAnular.nombre_medicamento, activo: nombreDe(aAnular.id_activo_biologico, aAnular.identificador_activo),
+            fecha: formatoFecha(aAnular.fecha_aplicacion),
+          })}
           descripcion={t('medicamento.anular_descripcion')}
           etiqueta={t('comun.justificacion_anulacion')}
           confirmar={t('comun.confirmar_anulacion')}

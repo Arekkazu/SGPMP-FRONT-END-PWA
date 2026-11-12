@@ -3,6 +3,8 @@
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: piezas comunes de las vistas del módulo financiero |
 // | 2026-11-05 | Arekkazu | M06 prototipos: período global, indicadores, listado con búsqueda, filtros y pie |
 // | 2026-11-10 | Arekkazu | TC-DIS-244..266 RF-87..94: badges con icono, NIT ausente, páginas numeradas, resultado con Ganancia/Pérdida y descarga anunciada |
+// | 2026-11-10 | Arekkazu | TC-DIS-262 RF-93: el período lo elige también quien solo consulta reportes (prefiere el último cerrado) |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AlertTriangle, Ban, CheckCircle2, Clock, FilterX, Info, Search, SearchX, XCircle } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
@@ -23,9 +25,10 @@ import { guardarArchivo as guardarBlob } from '../../supplies/lib/descarga';
 import type { Archivo } from '../api/finanzasApi';
 import { EstadoVacio } from '../../supplies/components/EstadoVacio';
 import { formatoFecha, formatoMoneda } from '../../supplies/lib/formato';
+import { hoyLocal } from '../../shared/lib/fecha';
 import { finanzasApi } from '../api/finanzasApi';
 import { signo } from '../lib/decimal';
-import { ACCION_R, R_CIERRE } from '../rbac';
+import { ACCION_R, R_CIERRE, R_ESTADO_RESULTADOS, R_REVELACIONES } from '../rbac';
 import type { Periodo } from '../types';
 import '../finanzas.css';
 
@@ -34,7 +37,7 @@ export { EstadoVacio } from '../../supplies/components/EstadoVacio';
 export { MotivoModal } from '../../supplies/components/MotivoModal';
 export { AreaTexto } from '../../supplies/components/AreaTexto';
 export { useAsync } from '../../supplies/hooks/useAsync';
-export { formatoCantidad, formatoFecha, formatoMoneda } from '../../supplies/lib/formato';
+export { formatoCantidad, formatoFecha, formatoMoneda, formatoPorcentaje } from '../../supplies/lib/formato';
 export { guardarArchivo } from '../../supplies/lib/descarga';
 export { PANEL, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM, FILTROS } from '../../supplies/components/estilos';
 
@@ -111,8 +114,9 @@ export function etiquetaNit(nit: string | null | undefined): string {
   return nit ? `NIT ${nit}` : i18n.t('comun.sin_nit', { ns: 'finanzas' });
 }
 
+/** «Noviembre de 2026 · El Rosal S.A.S. · NIT 901458732»: el NIT solo no dice de qué finca es. */
 export function etiquetaPeriodo(p: Periodo): string {
-  return `${nombrePeriodo(p)} · ${etiquetaNit(p.numero_id_tributaria)}`;
+  return [nombrePeriodo(p), p.razon_social, etiquetaNit(p.numero_id_tributaria)].filter(Boolean).join(' · ');
 }
 
 /** Entrega el archivo y anuncia que la descarga quedó lista (WCAG 4.1.3). */
@@ -121,10 +125,18 @@ export function descargarArchivo(a: Archivo) {
   pushToast('success', i18n.t('comun.descarga_lista', { ns: 'finanzas' }), a.nombre);
 }
 
-/** El abierto más reciente; si no hay ninguno abierto, el más reciente. */
-function preferido(periodos: Periodo[]): Periodo {
+/**
+ * Quien opera el cierre empieza en el abierto más reciente; quien solo consulta reportes, en el último cerrado
+ * (es el único con estado de resultados y revelaciones aprobados). Si no hay, el más reciente.
+ */
+function preferido(periodos: Periodo[], soloConsulta: boolean): Periodo {
+  // Un período que todavía no empieza no es el «más reciente»: arrancar en uno futuro confundía (M6-03).
+  const hoy = hoyLocal();
   const recientes = [...periodos].sort((a, b) => b.fecha_inicio.localeCompare(a.fecha_inicio));
-  return recientes.find((p) => p.estado === 'ABIERTO') ?? recientes[0];
+  const vigentes = recientes.filter((p) => p.fecha_inicio <= hoy);
+  const base = vigentes.length > 0 ? vigentes : recientes;
+  if (soloConsulta) return base.find((p) => p.estado === 'CERRADO') ?? base[0];
+  return base.find((p) => p.estado === 'ABIERTO' && p.fecha_fin >= hoy) ?? base.find((p) => p.estado === 'ABIERTO') ?? base[0];
 }
 
 interface ContextoPeriodo {
@@ -144,14 +156,18 @@ const PeriodoCtx = createContext<ContextoPeriodo>({
 
 /** Un solo período para todas las vistas: cambiar de pestaña no lo pierde (prototipo: selector de la barra superior). */
 export function ProveedorPeriodo({ children }: { children: React.ReactNode }) {
-  const disponible = usePermissionPorNombre(R_CIERRE, ACCION_R);
+  const leeCierre = usePermissionPorNombre(R_CIERRE, ACCION_R);
+  const leeEstado = usePermissionPorNombre(R_ESTADO_RESULTADOS, ACCION_R);
+  const leeRevelaciones = usePermissionPorNombre(R_REVELACIONES, ACCION_R);
+  // El backend acepta cualquiera de los tres para listar los períodos (RF-93: el Productor consulta lo aprobado).
+  const disponible = leeCierre || leeEstado || leeRevelaciones;
   const { data, cargando, error, ejecutar } = useAsync(finanzasApi.periodos);
   const [id, setId] = useState<number | null>(null);
   useEffect(() => { if (disponible) ejecutar(); }, [disponible, ejecutar]);
   const periodos = data ?? [];
   useEffect(() => {
-    if (periodos.length > 0 && !periodos.some((p) => p.id_periodo_contable === id)) setId(preferido(periodos).id_periodo_contable);
-  }, [periodos, id]);
+    if (periodos.length > 0 && !periodos.some((p) => p.id_periodo_contable === id)) setId(preferido(periodos, !leeCierre).id_periodo_contable);
+  }, [periodos, id, leeCierre]);
   const valor: ContextoPeriodo = {
     periodos, periodo: periodos.find((p) => p.id_periodo_contable === id) ?? null, elegir: setId,
     recargar: () => { ejecutar(); }, cargando, error, disponible,

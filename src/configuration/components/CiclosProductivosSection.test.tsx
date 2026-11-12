@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-10 | Arekkazu | #512 RF-16/RF-37: ciclos productivos con sus fases en orden |
+// | 2026-11-11 | Arekkazu | USAB-M05-M09 N-02 RF-16/37: una sola palabra, «fase», para las etapas de la especie |
 /**
  * #512: no había pantalla para crear ciclos productivos con sus fases, y sin ellos un activo no abre su
  * ciclo (RF-37) ni se le registra alimento o medicamento (RF-75, RF-76).
@@ -38,9 +39,9 @@ describe('Ciclos productivos (#512)', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Nuevo ciclo productivo/ }));
     const dialogo = within(screen.getByRole('dialog'));
     await userEvent.type(dialogo.getByLabelText(/Nombre del ciclo/), 'Cría y levante');
-    await userEvent.selectOptions(dialogo.getByLabelText(/^Etapa/), '2');
+    await userEvent.selectOptions(dialogo.getByLabelText(/^Fase(?!s)/), '2');
     await userEvent.click(dialogo.getByRole('button', { name: /Agregar/ }));
-    await userEvent.selectOptions(dialogo.getByLabelText(/^Etapa/), '1');
+    await userEvent.selectOptions(dialogo.getByLabelText(/^Fase(?!s)/), '1');
     await userEvent.click(dialogo.getByRole('button', { name: /Agregar/ }));
     await userEvent.click(dialogo.getByRole('button', { name: 'Subir Cría' }));
     await userEvent.click(dialogo.getByRole('button', { name: 'Guardar' }));
@@ -52,7 +53,7 @@ describe('Ciclos productivos (#512)', () => {
     vi.mocked(ciclosApi.listar).mockResolvedValue([]);
     vi.mocked(ciclosProductivosApi.listar).mockResolvedValue([]);
     render(<CiclosProductivosSection idEspecie={3} />);
-    expect(await screen.findByText('Primero registre las etapas')).toBeInTheDocument();
+    expect(await screen.findByText('Primero registre las fases')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Nuevo ciclo productivo/ })).toBeNull();
   });
 });
