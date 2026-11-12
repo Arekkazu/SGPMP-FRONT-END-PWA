@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-254 RF-91: cadena de trazabilidad de 4 niveles              |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-254 RF-91: reejecución con las líneas reales del período #241 |
 /**
  * TC-DIS-254 — Verificar accesibilidad WCAG 2.1 AA de la cadena de trazabilidad de 4 niveles
  * navegable con teclado y lector de pantalla [CRÍTICO]
@@ -23,7 +24,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import { anotar, desviacion, escanear, main, precondicion } from '../../../_shared/sigabA11y';
 import {
-  ACTIVOS, LINEAS, PERIODOS, abrirSesionRol, abrirYAuditarDialogo, cadena, cerrarConEscape, irFinanzas, quitarSimulaciones, simularGet, textosCrudos,
+  ACTIVOS, LINEAS, PERIODOS, abrirSesionRol, elegirPeriodo, abrirYAuditarDialogo, cadena, cerrarConEscape, irFinanzas, quitarSimulaciones, simularGet, textosCrudos,
 } from '../../_shared/finanzas';
 
 const TC_ID = 'TC-DIS-254';
@@ -71,6 +72,8 @@ test.describe('TC-DIS-254 — Cadena de trazabilidad de 4 niveles', () => {
 
   test('a. Trazabilidad real; precondición: línea con evidencia IoT y los 4 niveles', async ({}, testInfo) => {
     await irFinanzas(page, 'trazabilidad', /Trazabilidad contable/);
+    // Reejecución 2026-11-11: período real de Finca El Rosal (NIT 901458732).
+    await elegirPeriodo(page, 241);
     await escanear(page, TC_ID, __dirname, 'trazabilidad-real', testInfo, LH);
     const filas = await main(page).locator('table tbody tr').count();
     anotar(testInfo, 'Estado real', `${filas} línea(s) de asiento en el período elegido`);
