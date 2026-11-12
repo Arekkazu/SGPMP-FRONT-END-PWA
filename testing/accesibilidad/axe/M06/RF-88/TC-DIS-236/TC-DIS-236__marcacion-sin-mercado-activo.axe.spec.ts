@@ -2,6 +2,7 @@
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-88 TC-DIS-236: no hay formulario de marcación manual SIN_MERCADO_ACTIVO |
 // | 2026-11-07 | Laura032005 | M06 RF-88 TC-DIS-236: loguear como Contador (Administrador no tiene permiso valoracion_por_costo) |
+// | 2026-11-12 | Laura032005 | M06 RF-88 TC-DIS-236: test1 ya no es desviación — RFC-024 retiró el escenario B de RF-88, ahora documenta conformidad |
 /**
  * TC-DIS-236 — Accesibilidad WCAG 2.1 AA del formulario de marcación SIN_MERCADO_ACTIVO con
  * razon_sin_mercado obligatoria y de la advertencia cuando RF-89 sí tiene precio
@@ -24,7 +25,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
-  abrirSesion, anotar, credencialesPorRol, desviacion, escanear, irA, main, precondicion,
+  abrirSesion, anotar, credencialesPorRol, escanear, irA, main, precondicion,
 } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-236';
@@ -49,11 +50,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Marcación SIN_MERCADO_ACT
     await contexto?.close();
   });
 
-  test('1. Desviación - no existe un formulario manual con razon_sin_mercado obligatoria', async ({}, testInfo) => {
+  test('1. Alcance - razon_sin_mercado de solo lectura, conforme a RF-88 v2.0 (RFC-024)', async ({}, testInfo) => {
     await irA(page, RUTA, TITULO);
     const campoRazon = main(page).getByRole('textbox', { name: /raz[óo]n/i });
     anotar(testInfo, 'Campos "razón" editables en la vista', String(await campoRazon.count()));
-    desviacion(await campoRazon.count() > 0, 'razon_sin_mercado es de solo lectura (texto en la columna "Razón" de la tabla y en el Alert del detalle); la marcación al costo la decide el backend automáticamente en el reconocimiento, no un formulario del Contador');
+    anotar(testInfo, 'Alcance', 'RFC-024 retiró el escenario B de RF-88 (marcación manual de SIN_MERCADO_ACTIVO): la marcación al costo la decide el backend automáticamente en el reconocimiento (RF-82), no un formulario del Contador. Que no exista un campo editable es lo correcto, no una desviación.');
   });
 
   test('2. Advertencia real - activo al costo cuya especie ya tiene precio vigente (1.4.1 / 4.1.3)', async ({}, testInfo) => {
