@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-257 RF-92: estados del informe y secciones bloqueadas       |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-257 RF-92: reejecución; «datos suficientes» y sección bloqueada simulada |
 /**
  * TC-DIS-257 — Verificar accesibilidad WCAG 2.1 AA de los estados del informe (Borrador / Aprobado /
  * Archivado / Rechazado) y de las secciones bloqueadas o con advertencia
@@ -93,7 +94,7 @@ test.describe('TC-DIS-257 — Estados del informe de revelaciones', () => {
     const indice = await main(page).locator('nav a[href^="#"], a[href^="#rev-"]').count();
     desviacion(indice > 0, '2.4.1: no hay un índice de secciones (Párr. 40–57) para saltar con teclado');
     const texto = (await main(page).innerText()).replace(/\s+/g, ' ');
-    desviacion(/datos insuficientes/i.test(texto), '1.4.1: la sección con datos insuficientes no lo dice en texto');
+    desviacion(/datos (in)?suficientes/i.test(texto), '1.4.1: la sección con datos insuficientes no lo dice en texto');
     desviacion(/bloquead/i.test(texto), '1.4.1: no hay marca en texto de sección bloqueada por error en una fuente (ni indicación de la información de origen afectada)');
     const alerta = await main(page).locator('[role="alert"]').filter({ hasText: /difiere|consistencia/i }).count();
     expect.soft(alerta, 'La alerta de consistencia del borrador no se anuncia').toBeGreaterThan(0);
