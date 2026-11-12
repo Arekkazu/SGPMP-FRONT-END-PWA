@@ -1,3 +1,9 @@
+## [1.4.0-rc.39](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.38...v1.4.0-rc.39) (2026-11-12)
+
+### Bug Fixes
+
+* **rf75-rf76-rf78-rf80-rf81-mod5:** foco tras el rechazo de un duplicado y pagina pedida al instante (2a evaluacion QA) ([67a967f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/67a967f1f67023883f6a9a57fe16a7e15910125a))
+
 ## [1.4.0-rc.38](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.37...v1.4.0-rc.38) (2026-11-12)
 
 ### Bug Fixes
