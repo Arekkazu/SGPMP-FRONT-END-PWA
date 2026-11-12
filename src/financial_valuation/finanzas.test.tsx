@@ -11,6 +11,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-242/244/261 RF-87/93: diálogo descrito con foco en Cancelar, NIT ausente, badges con icono y resultado con Ganancia/Pérdida |
 // | 2026-11-10 | Arekkazu | TC-DIS-233/257/262 RF-86/92/93: Productor con período, aprobador del informe y panel de pendientes |
 // | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año; navegación en dos niveles |
+// | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -82,6 +83,34 @@ describe('FinanzasPage', () => {
 });
 
 describe('PreciosView (RF-89)', () => {
+  it('RF-89 v1.2: el precio corregido sale «Corregido», no se vuelve a corregir y la corrección conserva fecha y fuente', async () => {
+    sesion.permisos = [permiso('precios_mercado', 2), permiso('precios_mercado', 1), permiso('configuracion_contable', 2)];
+    respuestas['GET /finanzas/configuracion'] = { data: configuracion };
+    const base = { id_especie: 2, categoria: 'PESO_KG', unidad_medida: 'kg', fecha_vencimiento: null, id_metrica_produccion: null, justificacion: null, es_aplicado: false };
+    respuestas['GET /finanzas/precios'] = { data: [
+      { ...base, id_precio_mercado: 436, precio_unitario: '4000', fuente: 'UPRA', fecha_vigencia: '2026-10-01', evidencia: 'Boletín', id_precio_corregido: null, estado: 'CORREGIDO' },
+      { ...base, id_precio_mercado: 700, precio_unitario: '4200', fuente: 'UPRA', fecha_vigencia: '2026-10-01', evidencia: 'Boletín corregido', id_precio_corregido: 436, estado: 'ACTIVO', es_aplicado: true },
+    ] };
+    respuestas['POST /finanzas/precios'] = { data: { id_precio_mercado: 701, estado: 'ACTIVO', desviacion_pct: '2', fecha_vigencia: '2026-10-01' } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><PreciosView /></MemoryRouter>);
+
+    const fila = (await screen.findByText('Ya se corrigió: corrija la corrección')).closest('tr') as HTMLElement;
+    expect(within(fila).getByText('Corregido')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Corregir/ })).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: /Corregir/ }));
+    const dialogo = within(screen.getByRole('dialog'));
+    expect(dialogo.getByLabelText(/^Vigente desde/)).toHaveAttribute('readonly');
+    expect(dialogo.getByLabelText(/^Fuente/)).toBeDisabled();
+    await user.type(dialogo.getByLabelText(/Precio unitario/), '4300');
+    await user.type(dialogo.getByLabelText(/^Evidencia/), 'Boletín revisado');
+    await user.click(dialogo.getByRole('button', { name: 'Guardar' }));
+    await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/precios' && p.method === 'post')).toBe(true));
+    const cuerpo = JSON.parse(peticiones.find((p) => p.url === '/finanzas/precios' && p.method === 'post')!.data as string);
+    expect(cuerpo).toMatchObject({ id_precio_corregido: 700, fecha_vigencia: '2026-10-01', fuente: 'UPRA' });
+  });
+
   it('una desviación mayor al umbral pide confirmación y reenvía con confirmar_desviacion', async () => {
     sesion.permisos = [permiso('precios_mercado', 2), permiso('precios_mercado', 1), permiso('configuracion_contable', 2)];
     respuestas['GET /finanzas/configuracion'] = { data: configuracion };

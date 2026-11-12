@@ -6,6 +6,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-262 RF-93: el período lo elige también quien solo consulta reportes (prefiere el último cerrado) |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
+// | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Ban, CheckCircle2, Clock, FilterX, Info, RotateCcw, Search, SearchX, XCircle } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
@@ -54,7 +55,7 @@ const VARIANTE: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutr
   ESTIMADO: 'warning', VENCIDO: 'warning', VENCIDA: 'warning', INCOMPLETO: 'warning', MEDICION_PENDIENTE: 'warning',
   REVISION_REQUERIDA: 'warning', PENDIENTE: 'warning', PENDIENTE_TRAZABILIDAD: 'warning',
   RECHAZADO: 'error', ANULADO: 'error', ANULADA: 'error', FALLIDO: 'error', ERROR: 'error', BLOQUEADO: 'error',
-  REVERTIDO: 'neutral', REVERTIDA: 'neutral', SUPERADO: 'neutral', ARCHIVADO: 'neutral', EXCLUIDA: 'neutral',
+  REVERTIDO: 'neutral', REVERTIDA: 'neutral', SUPERADO: 'neutral', CORREGIDO: 'neutral', ARCHIVADO: 'neutral', EXCLUIDA: 'neutral',
 };
 
 /** Icono de cada tono: el color nunca es el único indicador de estado (WCAG 1.4.1). */
