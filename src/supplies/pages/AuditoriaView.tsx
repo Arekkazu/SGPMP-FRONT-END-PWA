@@ -3,6 +3,7 @@
 // | 2026-10-23 | Arekkazu | M05 RF-80: bitácora de auditoría del módulo con filtros, detalle y exportación |
 // | 2026-11-10 | Arekkazu | TC-DIS-208 RF-80: columna de clasificación con icono y filtros por actor y entidad afectada |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
+// | 2026-11-12 | Arekkazu | TC-DIS-218 RF-80: la paginación muestra la página pedida al instante, sin esperar al servidor |
 import React, { useEffect, useState } from 'react';
 import { Search, FileDown, Eye, ScrollText } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -172,7 +173,7 @@ export function AuditoriaView() {
               </tbody>
             </table>
           </ScrollRegion>
-          {data && <Paginacion pagina={data.pagina} totalPaginas={Math.ceil(data.total / data.registros_por_pagina)} total={data.total} onCambiar={(p) => setFiltros((f) => ({ ...f, pagina: p }))} />}
+          {data && <Paginacion pagina={filtros.pagina ?? data.pagina} totalPaginas={Math.ceil(data.total / data.registros_por_pagina)} total={data.total} onCambiar={(p) => setFiltros((f) => ({ ...f, pagina: p }))} />}
         </>
       )}
 
