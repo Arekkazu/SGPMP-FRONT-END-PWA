@@ -1,6 +1,8 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-86 TC-DIS-234: accesibilidad de la tabla de líneas de asiento (débito/crédito) |
+// | 2026-11-12 | Laura032005 | M06 RF-86 TC-DIS-234: corregir selector "Ver detalle" y buscar QA-RF83-MEDIDO (1859) en período 363, sembrado por el DBA |
+// | 2026-11-12 | Laura032005 | M06 RF-86 TC-DIS-234: el período 363 pertenece a otro Titular ("Agropecuaria Medicion QA") — usar irAPeriodo; esperar tabla async en el diálogo |
 /**
  * TC-DIS-234 — Accesibilidad WCAG 2.1 AA de la tabla de líneas de asiento (cuenta débito y
  * cuenta crédito) generadas por RF-86
@@ -24,7 +26,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
-  abrirSesion, anotar, auditarTabla, desviacion, escanear, irA, main, precondicion,
+  abrirSesion, anotar, auditarTabla, desviacion, escanear, irA, irAPeriodo, main, precondicion,
 } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-234';
@@ -47,13 +49,21 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Tabla de líneas de asient
   });
 
   test('1. Tabla de líneas de asiento - encabezados asociados, cuenta débito/crédito legible (1.3.1 / 1.3.2)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
-    const verDetalle = main(page).getByRole('button', { name: /^Ver detalle$/ }).first();
+    // QA-RF83-MEDIDO (1859), período 363, Titular "Agropecuaria Medicion QA" — 5 mediciones
+    // reales sembradas por el DBA.
+    await irAPeriodo(page, '363', 'Agropecuaria Medicion QA');
+    const campoBuscar = main(page).getByRole('searchbox');
+    if (await campoBuscar.count() > 0) await campoBuscar.fill('QA-RF83-MEDIDO');
+    const verDetalle = main(page).getByRole('button', { name: /^Ver el historial financiero de/ }).first();
+    await verDetalle.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     precondicion(await verDetalle.count() > 0, 'no hay ningún activo medido para abrir su detalle');
     if (await verDetalle.count() === 0) return;
 
     await verDetalle.click();
     const dialogo = page.getByRole('dialog');
+    await dialogo.getByRole('table').first().waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     const tablaLineas = dialogo.getByRole('table').filter({ has: page.getByText('Débito / crédito') });
     precondicion(await tablaLineas.count() > 0, 'el activo abierto no tiene líneas de asiento registradas');
     if (await tablaLineas.count() === 0) { await page.keyboard.press('Escape'); return; }
@@ -70,12 +80,18 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Tabla de líneas de asient
   });
 
   test('2. Desviación - sin controles de orden ni paginación propios para esta tabla', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
-    const verDetalle = main(page).getByRole('button', { name: /^Ver detalle$/ }).first();
+    await irAPeriodo(page, '363', 'Agropecuaria Medicion QA');
+    const campoBuscar = main(page).getByRole('searchbox');
+    if (await campoBuscar.count() > 0) await campoBuscar.fill('QA-RF83-MEDIDO');
+    const verDetalle = main(page).getByRole('button', { name: /^Ver el historial financiero de/ }).first();
+    await verDetalle.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     precondicion(await verDetalle.count() > 0, 'no hay ningún activo medido para abrir su detalle');
     if (await verDetalle.count() === 0) return;
     await verDetalle.click();
     const dialogo = page.getByRole('dialog');
+    await dialogo.getByRole('table').first().waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     const ordenar = dialogo.getByRole('button', { name: /ordenar/i });
     anotar(testInfo, 'Controles de orden en la tabla de líneas', String(await ordenar.count()));
     desviacion(await ordenar.count() > 0, 'DetalleActivoModal no ofrece ordenar ni paginar la tabla de líneas de asiento: muestra la lista completa del activo');
