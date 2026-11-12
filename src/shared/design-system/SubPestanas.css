@@ -1,11 +1,13 @@
-/* Sub-navegación en píldoras. En móvil la fila se desplaza en horizontal en
-   vez de partirse en dos líneas. */
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-11-11 | Arekkazu | USAB-M05-M06: las píldoras pasan a otra línea en vez de deslizarse de lado | */
+
+/* Sub-navegación en píldoras. Las que no caben pasan a otra línea: deslizar de lado
+   escondía pestañas y cansaba en el celular (usabilidad 11-11, WCAG 1.4.10). */
 .ds-subpestanas {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--s2);
-  overflow-x: auto;
-  scrollbar-width: thin;
-  padding-bottom: var(--s1);
   margin-bottom: var(--s6);
 }
 

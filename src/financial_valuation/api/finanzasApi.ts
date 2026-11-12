@@ -10,12 +10,13 @@
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
 // | 2026-11-10 | Arekkazu | TC-DIS-265 RF-94: filtros de la bitácora por fechas, usuario, origen y activo |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
+// | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
 import { http } from '../../shared/api/http';
 import type {
   Acumulado, ActivoValorado, Asignacion, Cadena, CalculoPeriodo, CosechaPendiente, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
   CostosManuales, Cotizacion, EstadoDetalle, EstadoResumen, HistorialActivo, InformeDetalle, InformePayload, InformeResumen,
   Linea, Naturaleza, PaginaAuditoria, Periodo, Precio, PrecioPayload, Prevalidacion, Propuesta, ResultadoCierre,
-  ResultadoCosto, Simulacion, TipoAjuste, EventoPendiente } from '../types';
+  ResultadoCosto, Simulacion, TipoAjuste, EventoPendiente, FiltroPeriodos, Titular } from '../types';
 
 const B = '/finanzas';
 
@@ -99,7 +100,9 @@ export const finanzasApi = {
     post<unknown>(`/costos/${id}/clasificacion`, { naturaleza_costo: naturaleza, justificacion }),
 
   // Períodos y cierre (RF-87) y trazabilidad (RF-91)
-  periodos: () => get<Periodo[]>('/periodos'),
+  titulares: () => get<Titular[]>('/titulares'),
+  /** Del titular elegido; `sin_titular` trae los períodos anteriores al titular de la finca. */
+  periodos: (filtro?: FiltroPeriodos) => get<Periodo[]>('/periodos', filtro ? { ...filtro } : undefined),
   prevalidar: (id: number) => get<Prevalidacion>(`/periodos/${id}/prevalidacion`),
   cerrar: (id: number, body: { autorizar_exclusiones: boolean; incluir_activos_sin_precio: boolean; activos_estimados?: number[] }) =>
     post<ResultadoCierre>(`/periodos/${id}/cierre`, body),

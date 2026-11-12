@@ -3,6 +3,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: shell del módulo financiero NIC 41 con pestañas por permiso |
 // | 2026-11-05 | Arekkazu | M06 prototipos: secciones agrupadas como el prototipo y un período para todo el módulo |
 // | 2026-11-10 | Arekkazu | TC-DIS-233 RF-86: sección Pendientes (medición pendiente y sin cuenta contable) |
+// | 2026-11-11 | Arekkazu | USAB-M06 RF-82..94: cuatro grupos de secciones (máx. cinco) en dos niveles, sin fila que no termina |
 import React from 'react';
 import { Redirect, Route, Switch, useLocation } from 'react-router-dom';
 import {
@@ -41,10 +42,12 @@ interface Seccion { id: string; recurso: string; icono: React.ReactNode; vista: 
 
 const ICONO = { size: 15, 'aria-hidden': true } as const;
 
-// Mismos grupos y orden que el menú del prototipo; Cotizaciones y Configuración no estaban en él y van al final.
+// Cuatro grupos de cinco secciones como máximo, en el orden en que trabaja el contador: con las 16 en una
+// sola fila había que deslizar mucho para encontrar una (reporte de usabilidad, 11-11). «Datos y reportes»
+// del prototipo, que tenía ocho, se parte en Reportes y Datos.
 const GRUPOS: Array<{ id: string; secciones: Seccion[] }> = [
   {
-    id: 'reconocimiento_valoracion', secciones: [
+    id: 'valoracion', secciones: [
       { id: 'reconocimiento', recurso: R_RECONOCIMIENTO, icono: <Tag {...ICONO} />, vista: ReconocimientosView, conPeriodo: true },
       { id: 'medicion', recurso: R_VALORACION, icono: <RefreshCw {...ICONO} />, vista: MedicionView, conPeriodo: true },
       { id: 'valor-razonable', recurso: R_VALORACION, icono: <Calculator {...ICONO} />, vista: CalculoView, conPeriodo: true },
@@ -53,20 +56,24 @@ const GRUPOS: Array<{ id: string; secciones: Seccion[] }> = [
     ],
   },
   {
-    id: 'resultados_periodo', secciones: [
+    id: 'cierre', secciones: [
       { id: 'variaciones', recurso: R_VALORACION, icono: <BarChart3 {...ICONO} />, vista: VariacionesView, conPeriodo: true },
       { id: 'pendientes', recurso: R_VALORACION, icono: <ClipboardList {...ICONO} />, vista: PendientesView, conPeriodo: true },
       { id: 'cierre', recurso: R_CIERRE, icono: <Lock {...ICONO} />, vista: CierreView, conPeriodo: true },
     ],
   },
   {
-    id: 'datos_reportes', secciones: [
+    id: 'reportes', secciones: [
+      { id: 'estado-resultados', recurso: R_ESTADO_RESULTADOS, icono: <FileText {...ICONO} />, vista: EstadoResultadosView, conPeriodo: true },
+      { id: 'revelaciones', recurso: R_REVELACIONES, icono: <BookOpen {...ICONO} />, vista: RevelacionesView, conPeriodo: true },
+      { id: 'trazabilidad', recurso: R_TRAZABILIDAD, icono: <GitBranch {...ICONO} />, vista: TrazabilidadView, conPeriodo: true },
+      { id: 'auditoria', recurso: R_AUDITORIA, icono: <ShieldCheck {...ICONO} />, vista: AuditoriaView, conPeriodo: true },
+    ],
+  },
+  {
+    id: 'datos', secciones: [
       { id: 'precios', recurso: R_PRECIOS, icono: <DollarSign {...ICONO} />, vista: PreciosView, conPeriodo: false },
       { id: 'costos', recurso: R_COSTOS, icono: <Receipt {...ICONO} />, vista: CostosView, conPeriodo: true },
-      { id: 'trazabilidad', recurso: R_TRAZABILIDAD, icono: <GitBranch {...ICONO} />, vista: TrazabilidadView, conPeriodo: true },
-      { id: 'revelaciones', recurso: R_REVELACIONES, icono: <BookOpen {...ICONO} />, vista: RevelacionesView, conPeriodo: true },
-      { id: 'estado-resultados', recurso: R_ESTADO_RESULTADOS, icono: <FileText {...ICONO} />, vista: EstadoResultadosView, conPeriodo: true },
-      { id: 'auditoria', recurso: R_AUDITORIA, icono: <ShieldCheck {...ICONO} />, vista: AuditoriaView, conPeriodo: true },
       { id: 'cotizaciones', recurso: R_COTIZACIONES, icono: <Handshake {...ICONO} />, vista: CotizacionesView, conPeriodo: false },
       { id: 'configuracion', recurso: R_CONFIGURACION, icono: <Settings {...ICONO} />, vista: ConfiguracionContableView, conPeriodo: false },
     ],

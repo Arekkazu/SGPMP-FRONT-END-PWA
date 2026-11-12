@@ -2,9 +2,10 @@
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-20: solo se muestran las pestañas que el rol puede abrir |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-20: la ruta responde como su pestaña y el módulo abre en la primera permitida |
+// | 2026-11-11 | Arekkazu | USAB-M06 RF-82..94: navegación en dos niveles con más de 8 secciones |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PestanaProtegida, PestanasModulo, usePrimeraPestana, type GrupoPestanas } from './PestanasModulo';
 
@@ -60,5 +61,31 @@ describe('PestanasModulo', () => {
     render(<Inicio />);
 
     expect(screen.getByText('/telemetria/monitoreo')).toBeInTheDocument();
+  });
+});
+
+describe('PestanasModulo en dos niveles (usabilidad 11-11)', () => {
+  const seccion = (grupo: string, n: number) => ({ label: `${grupo} ${n}`, path: `/finanzas/${grupo}-${n}`, icon: null });
+  const grupos: GrupoPestanas[] = [
+    { titulo: 'Valoración', pestanas: [1, 2, 3, 4, 5].map((n) => seccion('valoracion', n)) },
+    { titulo: 'Cierre', pestanas: [1, 2, 3].map((n) => seccion('cierre', n)) },
+    { titulo: 'Reportes', pestanas: [1, 2, 3, 4].map((n) => seccion('reportes', n)) },
+  ];
+
+  it('con más de 8 secciones en grupos con nombre muestra los grupos y solo las secciones del grupo actual', () => {
+    render(<MemoryRouter initialEntries={['/finanzas/cierre-2']}><PestanasModulo ariaLabel="Secciones" grupos={grupos} /></MemoryRouter>);
+    const nav = screen.getByRole('navigation', { name: 'Secciones' });
+    expect(within(nav).getByRole('button', { name: 'Cierre' })).toHaveAttribute('aria-current', 'true');
+    expect(within(nav).getByRole('button', { name: 'Valoración' })).not.toHaveAttribute('aria-current');
+    const secciones = within(nav).getByRole('group', { name: 'Cierre' });
+    expect(within(secciones).getAllByRole('button').map((b) => b.textContent)).toEqual(['cierre 1', 'cierre 2', 'cierre 3']);
+    expect(within(secciones).getByRole('button', { name: 'cierre 2' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('button', { name: 'valoracion 1' })).toBeNull();
+  });
+
+  it('con pocas secciones sigue en una sola fila', () => {
+    render(<MemoryRouter initialEntries={['/finanzas/cierre-1']}><PestanasModulo ariaLabel="Secciones" grupos={grupos.slice(1, 2)} /></MemoryRouter>);
+    expect(screen.queryByRole('group')).toBeNull();
+    expect(screen.getByRole('button', { name: 'cierre 1' })).toHaveAttribute('aria-current', 'page');
   });
 });

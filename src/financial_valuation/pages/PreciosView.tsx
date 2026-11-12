@@ -3,6 +3,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-89: repositorio de precios de mercado con vigencia, desviación y corrección |
 // | 2026-11-05 | Arekkazu | M06 RF-89 prototipo: avisos de especies sin precio, por vencer y programados; filtros completos |
 // | 2026-11-10 | Arekkazu | #510 RF-89: un error al confirmar la desviación se muestra en vez del aviso |
+// | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
 import React, { useEffect, useMemo, useState } from 'react';
 import { PencilLine, Plus, Tag } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -128,10 +129,14 @@ export function PreciosView() {
                   <td style={{ ...TD, maxWidth: 260, overflowWrap: 'anywhere' }}>{p.evidencia}{p.justificacion && <span className="fin-secundario">{p.justificacion}</span>}</td>
                   {puedeRegistrar && puedeVerConfig && (
                     <td style={TD}>
+                      {p.estado === 'CORREGIDO'
+                        ? <span className="fin-secundario">{t('precios.ya_corregido')}</span>
+                        : (
                       <Button variant="ghost" size="sm" onClick={() => setModal({ corrige: p })}
                         aria-label={t('precios.corregir_aria', { especie: nombre(p.id_especie), fecha: formatoFecha(p.fecha_vigencia) })}>
                         <PencilLine size={14} aria-hidden />{t('precios.corregir')}
                       </Button>
+                        )}
                     </td>
                   )}
                 </tr>
@@ -234,10 +239,11 @@ function PrecioModal({ especies, corrige, especieInicial, onCerrar, onGuardado }
         )}
         <Input id="pr-precio" label={t('precios.precio_unitario')} required inputMode="decimal" value={f.precio} onChange={set('precio')} error={errores.precio}
           hint={t(`precios.unidad_${f.categoria}`)} />
-        <Select id="pr-fuente" label={t('col.fuente')} required value={f.fuente} onChange={set('fuente')} hint={t('precios.fuente_ayuda')}>
+        <Select id="pr-fuente" label={t('col.fuente')} required value={f.fuente} onChange={set('fuente')} hint={t('precios.fuente_ayuda')} disabled={!!corrige}>
           {(['MERCADO_ACTIVO', 'UPRA', 'ESTIMADA'] as const).map((x) => <option key={x} value={x}>{t(`fuente.${x}`)}</option>)}
         </Select>
-        <Input id="pr-vigencia" label={t('col.vigencia')} type="date" required value={f.vigencia} onChange={set('vigencia')} error={errores.vigencia} hint={t('precios.vigencia_ayuda')} />
+        <Input id="pr-vigencia" label={t('col.vigencia')} type="date" required value={f.vigencia} onChange={set('vigencia')} error={errores.vigencia}
+          readOnly={!!corrige} aria-readonly={!!corrige} hint={corrige ? t('precios.vigencia_correccion') : t('precios.vigencia_ayuda')} />
         <Input id="pr-vencimiento" label={t('col.vencimiento')} type="date" value={f.vencimiento} onChange={set('vencimiento')} error={errores.vencimiento} />
       </div>
       <div style={{ display: 'grid', gap: 'var(--s4)', marginTop: 'var(--s4)' }}>
