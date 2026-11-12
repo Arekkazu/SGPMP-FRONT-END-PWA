@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-08 | SaraSofGonzalez | TC-DIS-204 RF-77: PDF exportado del Reporte de Gastos              |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-204 RF-77: reejecución; abre el reporte real del activo #1032 aunque haya otros en el historial |
 /**
  * TC-DIS-204 — [CRÍTICO] Accesibilidad del PDF exportado del Reporte de Gastos Acumulados
  * RF-77 · CU-03 · Rol: Productor o Administrador
@@ -43,7 +44,10 @@ test.describe('TC-DIS-204 — PDF exportado del Reporte de Gastos', () => {
     anotar(testInfo, 'Historial real antes de la prueba', `${h?.total ?? '?'} reporte(s)`);
     const seccion = page.locator('section[aria-labelledby="reporte-titulo"]');
     if ((h?.total ?? 0) > 0) {
-      await main(page).getByRole('region', { name: 'Reportes generados' }).getByRole('button', { name: 'Ver', exact: true }).first().click();
+      // El reporte real del caso es el del activo #1032; si no aparece, el primero del historial.
+      const historial = main(page).getByRole('region', { name: 'Reportes generados' });
+      const fila = historial.locator('tbody tr').filter({ hasText: '#1032' });
+      await ((await fila.count()) ? fila.first() : historial).getByRole('button', { name: 'Ver', exact: true }).first().click();
     } else {
       await permitir(/\/suministros\/reportes-gastos\/?$/);
       await page.locator('#gastos-desde').fill('2026-09-01');

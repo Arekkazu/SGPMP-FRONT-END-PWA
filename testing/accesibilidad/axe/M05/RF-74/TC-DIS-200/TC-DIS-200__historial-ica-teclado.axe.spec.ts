@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-08 | SaraSofGonzalez | TC-DIS-200 RF-74: navegación por teclado del historial de ICA      |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-200 RF-74: reejecución con el activo real #1627 (Finca El Rosal) |
 /**
  * TC-DIS-200 — Accesibilidad WCAG 2.1 AA de la navegación por teclado del historial de ICA por período
  * RF-74 · CU-02 · Rol: Productor, Veterinario o Administrador
@@ -10,7 +11,7 @@
  * teclado, con foco visible); 2.4.3 (orden lógico selector → historial → botón). Notas: incluir el
  * acceso al detalle de un cálculo puntual desde el historial.
  *
- * Datos: activo REAL #943 de TEST con historial en los 3 períodos (Admin). El POST /calcular se
+ * Datos: activo REAL BOV-114-TIL (#1627, Finca El Rosal) con ICA calculado en los 3 períodos (Admin). El POST /calcular se
  * responde en la prueba porque deja un resultado que no se borra ("Datos simulados").
  */
 import { expect, test } from '@playwright/test';
@@ -19,7 +20,7 @@ import { anotar, describirFoco, desviacion, escanear, irA, main, recorrerConTab 
 import { focoVisible, resultadoIca, sesionDelCaso, simularEscritura } from '../../_shared/suministros';
 
 const TC_ID = 'TC-DIS-200';
-const ACTIVO = 943;
+const ACTIVO = 1627;
 const LH = ['historial-ica'];
 
 test.use({ actionTimeout: 15_000, locale: 'es-CO', launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });

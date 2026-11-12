@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-08 | SaraSofGonzalez | TC-DIS-208 RF-80: bitácora de auditoría de suministros             |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-208 RF-80: reejecución; cuenta solo los badges de resultado y el «Ver» con nombre propio |
 /**
  * TC-DIS-208 — Accesibilidad WCAG 2.1 AA de la bitácora de Auditoría y Trazabilidad de Registros de
  * Suministros
@@ -91,13 +92,14 @@ test.describe('TC-DIS-208 — Bitácora de auditoría de suministros', () => {
     const tabla = main(page).getByRole('region', { name: 'Auditoría de suministros' }).locator('table');
     await tabla.waitFor({ timeout: 30_000 });
     await escanear(page, TC_ID, __dirname, 'resultados-simulados', testInfo, LH);
-    const b = await badges(tabla);
+    const RESULTADOS = /^(Exitoso|Fallido|Parcial|Rechazado|Advertencia)$/;
+    const b = (await badges(tabla)).filter((x) => RESULTADOS.test(x.texto));
     anotar(testInfo, 'Badges de resultado', b.map((x) => `${x.texto}${x.icono ? ' +ícono' : ' (sin ícono)'}`).join(' ¦ '));
     expect.soft(b.length, 'No aparecen los 5 resultados').toBe(5);
     expect.soft(b.every((x) => x.texto.length > 0), '1.4.1: un resultado no tiene texto').toBe(true);
     expect.soft(await textosCrudos(tabla), '1.4.1: un resultado se muestra como valor crudo').toEqual([]);
 
-    await tabla.getByRole('button', { name: 'Ver', exact: true }).first().focus();
+    await tabla.getByRole('button', { name: /^Ver/ }).first().focus();
     await page.keyboard.press('Enter');
     const dialogo = page.getByRole('dialog');
     await expect(dialogo).toBeVisible();
