@@ -1,6 +1,9 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-86 TC-DIS-235: accesibilidad de los 4 tipos de variación y del mensaje de rechazo |
+// | 2026-11-12 | Laura032005 | M06 RF-86 TC-DIS-235: seleccionar período 363, con los 4 tipos de variación reales sembrados por el DBA |
+// | 2026-11-12 | Laura032005 | M06 RF-86 TC-DIS-235: el período 363 pertenece a otro Titular ("Agropecuaria Medicion QA") — usar irAPeriodo |
+// | 2026-11-12 | Laura032005 | M06 RF-86 TC-DIS-235: buscar QA-RF83-MEDIDO (evita paginación) y usar cuenta Contador (Admin no tiene ACCION_E sobre valoracion_activos) |
 /**
  * TC-DIS-235 — Accesibilidad WCAG 2.1 AA de los cuatro tipos de variación (ganancia y pérdida
  * por transformación biológica y por precio de mercado) y del mensaje de rechazo del registro
@@ -22,7 +25,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
-  abrirSesion, anotar, desviacion, escanear, irA, main, precondicion, PREFIJO_API,
+  abrirSesion, anotar, credencialesPorRol, desviacion, escanear, irA, irAPeriodo, main, precondicion, PREFIJO_API,
 } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-235';
@@ -37,7 +40,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Tipos de variación y rech
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    ({ contexto, page } = await abrirSesion(browser, testInfo));
+    // RF-86: Rol Contador. Admin no tiene ACCION_E sobre valoracion_activos — "Procesar eventos
+    // pendientes" no aparece con esa cuenta.
+    ({ contexto, page } = await abrirSesion(browser, testInfo, credencialesPorRol('CONTADOR')));
   });
 
   test.afterAll(async () => {
@@ -45,7 +50,19 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Tipos de variación y rech
   });
 
   test('1. Los 4 tipos de variación con Badge de texto, no solo color (1.4.1 / 1.4.3)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
+    // Período 363, Titular "Agropecuaria Medicion QA", activo 1859 (QA-RF83-MEDIDO): los 4
+    // tipos sembrados por el DBA (406-410; 407/408 duplicados por un bug de backend ya
+    // reportado, no afecta esta prueba).
+    await irAPeriodo(page, '363', 'Agropecuaria Medicion QA');
+    // Acotado a QA-RF83-MEDIDO (1859): el período completo puede tener muchas más variaciones
+    // de otros activos y la paginación del Listado dejaría algún tipo fuera de la página actual.
+    const campoBuscar = main(page).getByRole('searchbox');
+    if (await campoBuscar.count() > 0) {
+      await campoBuscar.fill('QA-RF83-MEDIDO');
+      await page.waitForTimeout(500);
+    }
     const tipos = ['Ganancia por crecimiento biológico', 'Pérdida por deterioro biológico', 'Ganancia por alza de precios', 'Pérdida por baja de precios'];
     const presentes: string[] = [];
     for (const tipo of tipos) {
@@ -58,6 +75,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Tipos de variación y rech
   });
 
   test('2. Rechazo al procesar eventos - mensaje de error anunciado (3.3.1 / 4.1.3, vía intercepción)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     await page.route(`**${PREFIJO_API}/finanzas/eventos/procesar*`, async (route) => {
       await route.fulfill({ status: 422, contentType: 'application/json', body: JSON.stringify({ code: 'EVENTO_SIN_ACTIVO', message: 'El evento productivo no tiene un activo biológico asociado.' }) });
@@ -74,6 +92,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Tipos de variación y rech
   });
 
   test('3. Desviación - no hay formulario de registro manual de variación con evento_origen_id', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const formulario = main(page).getByRole('button', { name: /registrar variaci[óo]n/i });
     anotar(testInfo, 'Botón de registro manual de variación', String(await formulario.count()));
