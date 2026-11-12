@@ -1,6 +1,8 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-83 TC-DIS-225: accesibilidad de la alerta MEDICION_PENDIENTE |
+// | 2026-11-12 | Laura032005 | M06 RF-83 TC-DIS-225: test2 filtra por estado "pendiente" para no depender de la página en la que cae la fila (carrera/paginación, no dato) |
+// | 2026-11-12 | Laura032005 | M06 RF-83 TC-DIS-225: confirmado que MEDICION_PENDIENTE y SIN_MEDICION son estados distintos; no hay datos de MEDICION_PENDIENTE en el ambiente actual (vacío de datos real, no bug de test) |
 /**
  * TC-DIS-225 — Accesibilidad WCAG 2.1 AA de la alerta MEDICION_PENDIENTE cuando no existe
  * precio de mercado
@@ -59,8 +61,21 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Estado MEDICION_PENDIENTE 
 
   test('2. Badge "Medición pendiente" con texto, no solo color (1.4.1 / 1.4.3)', async ({}, testInfo) => {
     await irA(page, RUTA, TITULO);
+    // La fila pendiente puede quedar fuera de la página actual del listado paginado: se filtra
+    // por estado (ya operable por teclado, ver test 3) para no depender de en qué página cae.
+    const filtroEstado = main(page).getByRole('combobox', { name: 'Estado' });
+    if (await filtroEstado.count() > 0) {
+      const opciones = await filtroEstado.locator('option').allTextContents();
+      anotar(testInfo, 'Opciones reales del filtro de estado', opciones.join(', '));
+      // MEDICION_PENDIENTE ("Medición pendiente") y SIN_MEDICION ("Sin medición") son dos
+      // estados distintos (finanzas.json): el filtro solo ofrece los que existen en los datos.
+      const pendiente = opciones.find((o) => /^medici[óo]n pendiente$/i.test(o));
+      if (pendiente) await filtroEstado.selectOption({ label: pendiente });
+      await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+    }
     const filaPendiente = main(page).locator('tr.fin-fila--atencion').first();
-    precondicion(await filaPendiente.count() > 0, 'no hay ninguna fila con MEDICION_PENDIENTE visible en la página actual del listado');
+    await filaPendiente.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
+    precondicion(await filaPendiente.count() > 0, 'no hay ningún activo en estado MEDICION_PENDIENTE (distinto de SIN_MEDICION) en el ambiente: el filtro de Estado no ofrece esa opción, así que no hay ninguno en los datos actuales');
     if (await filaPendiente.count() === 0) return;
     const badge = filaPendiente.getByText('Medición pendiente', { exact: true });
     await expect.soft(badge, '1.4.1: el estado debe leerse como texto, no solo inferirse del color de la fila').toBeVisible();
