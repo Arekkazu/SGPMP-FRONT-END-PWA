@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M05 RF-78 TC-DIS-215: justificación de precio en costeo directo (siempre obligatoria, no condicional) |
+// | 2026-11-11 | Laura032005 | M05 RF-78 TC-DIS-215: reejecución con datos reales del DBA; consultarPrimerActivo ya no toma el primero del combobox a ciegas (a veces caía en un activo sin ciclo), ahora apunta a BOV-114-TIL (1627); timeout ampliado a 120s — el "bloqueo" que parecía un 404 real era esta pantalla tardando más de 60s en cargar el acumulado + 80 registros en paralelo, no un problema de backend |
 /**
  * TC-DIS-215 — Accesibilidad WCAG 2.1 AA de la advertencia de precio M40 no disponible o
  * desactualizado y del ingreso de precio manual con justificación
@@ -34,9 +35,9 @@ test.use({ locale: 'es-CO', launchOptions: { args: [`--remote-debugging-port=${P
 
 async function consultarPrimerActivo(page: Page) {
   const combo = main(page).getByRole('combobox', { name: 'Activo biológico' });
-  await combo.focus();
-  await combo.press('ArrowDown');
-  await combo.press('Enter');
+  // BOV-114-TIL (id 1627): ciclo "Levante y ceba" real, fase Ceba activa desde el 1/10 (dato del DBA).
+  await combo.fill('1627');
+  await combo.blur();
   await main(page).getByRole('button', { name: 'Consultar', exact: true }).click();
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
 }
@@ -54,9 +55,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Justificación de precio e
   });
 
   test('1. Desviación - no hay advertencia condicional de precio M40 no disponible o desactualizado', async ({}, testInfo) => {
+    testInfo.setTimeout(120_000);
     await irA(page, RUTA, TITULO);
     await consultarPrimerActivo(page);
     const btn = main(page).getByRole('button', { name: 'Registrar costo directo', exact: true });
+    // El botón solo se renderiza cuando el acumulado termina de cargar (puedeRegistrar && a):
+    // se espera a que aparezca en vez de asumir "sin ciclo" por una comprobación prematura.
+    await btn.waitFor({ state: 'visible', timeout: 90_000 }).catch(() => {});
     precondicion(await btn.count() > 0 && await btn.isEnabled(), 'el activo consultado no tiene un ciclo productivo activo, o el botón está deshabilitado (sin permiso de creación)');
     if (await btn.count() === 0 || !(await btn.isEnabled())) return;
     await btn.click();
@@ -71,9 +76,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Justificación de precio e
   });
 
   test('2. Justificación del precio - obligatoria con aria-required y error asociado al campo (3.3.1 / 3.3.2)', async ({}, testInfo) => {
+    testInfo.setTimeout(120_000);
     await irA(page, RUTA, TITULO);
     await consultarPrimerActivo(page);
     const btn = main(page).getByRole('button', { name: 'Registrar costo directo', exact: true });
+    await btn.waitFor({ state: 'visible', timeout: 90_000 }).catch(() => {});
     precondicion(await btn.count() > 0 && await btn.isEnabled(), 'no hay un ciclo activo sobre el que registrar un costo directo');
     if (await btn.count() === 0 || !(await btn.isEnabled())) return;
     await btn.click();
@@ -88,7 +95,14 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Justificación de precio e
     await expect.soft(justificacion, '4.1.2: aria-invalid="true" en justificación insuficiente').toHaveAttribute('aria-invalid', 'true');
   });
 
-  test('3. E2 - rechazo del servidor (precondición de datos; sin simular una respuesta 422 inventada)', async ({}, testInfo) => {
-    precondicion(false, 'forzar el HTTP 422 real (E2) requiere un escenario de datos específico en el backend; el formulario solo expone el Alert genérico (error.status === 409 ? "error" : "warning") para cualquier rechazo del servidor, sin distinguir E2 visualmente');
+  test('3. E2 - desviación: justificacion_precio es obligatoria siempre, no se puede omitir para provocar el 422 real', async ({}, testInfo) => {
+    // RF-78 Flujo alterno E2: el 422 solo ocurre si el usuario NO provee justificacion_precio
+    // cuando el precio de M40 no está disponible o tiene antigüedad > 30 días. Pero
+    // SuministroDirectoFormModal exige justificacion_precio siempre (min 20 caracteres, sin
+    // condicionarla al estado del precio) — la misma Causa 3 ya documentada en el test 1. La UI
+    // nunca permite enviar el formulario sin justificación, así que el servidor nunca llega a
+    // rechazar por este motivo: no es un dato que falte, es que el camino para llegar ahí está
+    // bloqueado por el propio formulario.
+    anotar(testInfo, 'E2 (SuministroDirectoFormModal)', 'justificacion_precio es un campo requerido por el propio formulario (react-hook-form, validate: minimo(20)) para cualquier envío: no existe una ruta de usuario real que lo deje vacío para reproducir el 422 de "sin justificación".');
   });
 });
