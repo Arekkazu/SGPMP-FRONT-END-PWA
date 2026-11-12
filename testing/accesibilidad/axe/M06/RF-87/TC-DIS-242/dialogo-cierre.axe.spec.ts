@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-242 RF-87: diálogo de confirmación del cierre del período   |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-242 RF-87: reejecución; el período puede ir en la descripción accesible del botón |
 /**
  * TC-DIS-242 — Verificar accesibilidad WCAG 2.1 AA del diálogo de confirmación de la acción
  * irreversible de cierre del período contable [CRÍTICO]
@@ -87,7 +88,12 @@ test.describe('TC-DIS-242 — Diálogo de confirmación del cierre del período'
     expect.soft(d.focoSaleDelDialogo, `2.1.2: el foco sale del diálogo con Tab/Shift+Tab: ${d.recorrido.join(' → ')}`).toBe(false);
     expect.soft(d.controlesSinFocoVisible, '2.4.7: controles del diálogo sin indicador de foco visible').toEqual([]);
     const confirmar = d.botones.find((b) => /cerrar per[ií]odo/i.test(b)) ?? '';
-    desviacion(/\d{4}|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre/i.test(confirmar),
+    // El período puede ir en el nombre o en la descripción accesible del botón (aria-describedby).
+    const descConfirmar = await page.getByRole('dialog').getByRole('button', { name: /cerrar per[ií]odo/i }).first()
+      .evaluate((b) => (b.getAttribute('aria-describedby') ?? '').split(/\s+/).map((id) => document.getElementById(id)?.textContent ?? '').join(' ').trim())
+      .catch(() => '');
+    anotar(testInfo, 'Botón de confirmación', `nombre="${confirmar}" · descripción accesible="${descConfirmar || '—'}"`);
+    desviacion(/\d{4}|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre/i.test(`${confirmar} ${descConfirmar}`),
       `3.3.4: el botón de confirmación ("${confirmar}") no nombra el período que se cierra`);
 
     const esc = await cerrarConEscape(page, disparador);
