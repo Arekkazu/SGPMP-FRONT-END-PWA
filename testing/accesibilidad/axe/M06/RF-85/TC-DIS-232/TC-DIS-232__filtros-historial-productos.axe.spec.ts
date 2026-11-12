@@ -2,6 +2,10 @@
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-85 TC-DIS-232: accesibilidad de los filtros del historial de productos agrícolas |
 // | 2026-11-07 | Laura032005 | M06 RF-85 TC-DIS-232: no evaluar foco en un filtro deshabilitado por falta de datos (no es un fallo de teclado) |
+// | 2026-11-12 | Laura032005 | M06 RF-85 TC-DIS-232: seleccionar período 241, con el producto real confirmado por el DBA |
+// | 2026-11-12 | Laura032005 | M06 RF-85 TC-DIS-232: esperar a que cargue el buscador tras cambiar de período (carrera, no dato); confirmado que el filtro de rango de valores ya existe |
+// | 2026-11-12 | Laura032005 | M06 RF-85 TC-DIS-232: el buscador es role="searchbox" con label genérico "Buscar" (type="search"); "Producto, activo o finca" es solo el placeholder |
+// | 2026-11-12 | Laura032005 | M06 RF-85 TC-DIS-232: usar .first() en "Limpiar filtros" — hay 2 en la página con el mismo nombre accesible |
 /**
  * TC-DIS-232 — Accesibilidad WCAG 2.1 AA de los filtros y del estado vacío del historial de
  * reconocimientos de productos agrícolas (activo, período, tipo de producto y rango de valores)
@@ -43,8 +47,14 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Filtros del historial de p
   });
 
   test('1. Filtros reales (Tipo, Producto, Especie, búsqueda) con etiqueta asociada (3.3.2 / 2.1.1)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
-    const filtros = [['textbox', 'Buscar'], ['combobox', 'Tipo'], ['combobox', 'Producto'], ['combobox', 'Especie']] as const;
+    const periodo = main(page).getByRole('combobox', { name: 'Período contable' });
+    if (await periodo.count() > 0) await periodo.selectOption('241').catch(() => {});
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+    // El campo de búsqueda es type="search" (role="searchbox"), con label genérico "Buscar";
+    // "Producto, activo o finca" es solo el placeholder, no el nombre accesible.
+    const filtros = [['searchbox', 'Buscar'], ['combobox', 'Tipo'], ['combobox', 'Producto'], ['combobox', 'Especie']] as const;
     let algunoPresente = false;
     for (const [role, name] of filtros) {
       const campo = main(page).getByRole(role, { name });
@@ -71,8 +81,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Filtros del historial de p
   });
 
   test('2. Sin coincidencias tras filtrar - estado anunciado con acción para limpiar (4.1.3)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
-    const buscar = main(page).getByRole('textbox', { name: 'Buscar' });
+    const periodo = main(page).getByRole('combobox', { name: 'Período contable' });
+    if (await periodo.count() > 0) await periodo.selectOption('241', { timeout: 5_000 }).catch(() => {});
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+    const buscar = main(page).getByRole('searchbox', { name: 'Buscar' });
+    await buscar.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     precondicion(await buscar.count() > 0, 'no hay productos reconocidos para poder filtrar');
     if (await buscar.count() === 0) return;
 
@@ -81,7 +96,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Filtros del historial de p
     await expect.soft(sinCoincidencias, '4.1.3: el estado sin coincidencias debe anunciarse').toBeVisible();
     const enRegionViva = await sinCoincidencias.evaluate((e) => !!e.closest('[role="status"]'));
     expect.soft(enRegionViva, '4.1.3: el estado vacío (EstadoVacio) debe estar en role="status"').toBe(true);
-    const limpiar = main(page).getByRole('button', { name: 'Limpiar filtros', exact: true });
+    const limpiar = main(page).getByRole('button', { name: 'Limpiar filtros', exact: true }).first();
     await expect.soft(limpiar, '2.1.1: debe existir una acción accesible para limpiar los filtros').toBeVisible();
 
     await escanear(page, TC_ID, __dirname, 'sin-coincidencias', testInfo, PASOS_LIGHTHOUSE);
