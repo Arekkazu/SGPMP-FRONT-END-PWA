@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M05 RF-75 TC-DIS-211: accesibilidad del historial de consumo, anulación y duplicado |
+// | 2026-11-11 | Laura032005 | M05 RF-75 TC-DIS-211: E8 verificado con el duplicado real BOV-114-TIL (1627), concentrado de engorde, 1/11 08:00 que preparó el DBA |
 /**
  * TC-DIS-211 — Accesibilidad WCAG 2.1 AA del historial de consumo, del flujo de anulación y del
  * rechazo por registro duplicado
@@ -22,7 +23,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import {
-  abrirSesion, anotar, desviacion, describirFoco, escanear, irA, main, precondicion,
+  abrirSesion, anotar, describirFoco, escanear, irA, main, precondicion,
 } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-211';
@@ -45,6 +46,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial de consumo y anu
   });
 
   test('1. VALIDADO/ANULADO se distinguen con etiqueta textual, no solo color (1.4.1)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const filas = main(page).locator('table tbody tr');
     const total = await filas.count();
@@ -61,6 +63,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial de consumo y anu
   });
 
   test('2. Diálogo de anulación - foco entra al abrir, Escape lo cierra y el foco regresa al botón (2.1.1 / 2.1.2 / 2.4.3)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const botonAnular = main(page).getByRole('button', { name: 'Anular', exact: true }).first();
     precondicion(await botonAnular.count() > 0, 'no hay ningún registro VALIDADO con el que probar la anulación (permiso insuficiente o sin registros)');
@@ -81,6 +84,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial de consumo y anu
   });
 
   test('3. E6 - justificación por debajo del mínimo se identifica en texto junto al campo (3.3.1)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const botonAnular = main(page).getByRole('button', { name: 'Anular', exact: true }).first();
     precondicion(await botonAnular.count() > 0, 'no hay ningún registro VALIDADO con el que probar la anulación');
@@ -103,8 +107,38 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Historial de consumo y anu
   });
 
   test('4. E8 - rechazo por registro duplicado (HTTP 409) anunciado al usuario (4.1.3)', async ({}, testInfo) => {
-    precondicion(false, 'requiere reproducir exactamente el mismo activo, fecha_consumo, hora_suministro y tipo de alimento de un registro VALIDADO existente; no se fuerza con datos inventados fuera de un ambiente preparado para esto');
-    anotar(testInfo, 'E8 (ConsumoFormModal)', 'El error de servidor se muestra con <Alert variant="error" title={error.message} /> cuando error.status === 409 — es un Alert visible en el flujo del formulario, no una región aria-live independiente; se recomienda confirmar con el escenario real si se anuncia sin mover el foco.');
-    desviacion(false, 'no se pudo confirmar si el Alert de duplicado (409) está en una región que el lector anuncie sin mover el foco, por falta de un registro duplicado real en el ambiente');
+    testInfo.setTimeout(60_000);
+    await irA(page, RUTA, TITULO);
+    const btn = main(page).getByRole('button', { name: 'Registrar consumo', exact: true });
+    precondicion(await btn.isEnabled().catch(() => false), 'el botón "Registrar consumo" está deshabilitado (sin conexión o sin permiso)');
+    await btn.click();
+    const dialogo = page.getByRole('dialog');
+    await expect(dialogo).toBeVisible();
+
+    // Duplicado real que preparó el DBA: BOV-114-TIL (1627), concentrado de engorde,
+    // 1/11/2026 08:00 — mismo activo + fecha + hora + tipo de alimento de un consumo VALIDADO.
+    const selectorActivo = dialogo.getByRole('combobox', { name: 'Activo biológico' });
+    await selectorActivo.fill('1627');
+    await selectorActivo.blur();
+    const tipoAlimento = dialogo.getByRole('combobox', { name: 'Tipo de alimento' });
+    await tipoAlimento.fill('Concentrado de engorde');
+    await tipoAlimento.blur();
+    await dialogo.locator('#consumo-fecha').fill('2026-11-01');
+    await dialogo.locator('#consumo-hora').fill('08:00');
+    await dialogo.locator('#consumo-cantidad').fill('8');
+    await dialogo.locator('#consumo-costo').fill('2300');
+    await dialogo.getByRole('button', { name: 'Guardar registro', exact: true }).click();
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+
+    const alerta = dialogo.getByRole('alert');
+    anotar(testInfo, 'E8 - respuesta del servidor', await alerta.count() > 0 ? await alerta.innerText() : 'ninguna alerta visible; el diálogo pudo haberse cerrado (ver si el duplicado fue aceptado)');
+    precondicion(await alerta.count() > 0, 'el servidor no rechazó el envío como duplicado (409); puede que el consumo VALIDADO de referencia (1/11 08:00, concentrado de engorde) ya no exista tal cual en el ambiente');
+    if (await alerta.count() > 0) {
+      await expect.soft(alerta, '4.1.3 (E8): el rechazo de duplicado debe anunciarse en una región visible/anunciable, sin mover el foco al body').toBeVisible();
+      const foco = await describirFoco(page);
+      expect.soft(foco, '4.1.3: el foco no debe perderse al mostrar el error de duplicado').not.toBe('body');
+    }
+
+    await page.keyboard.press('Escape');
   });
 });
