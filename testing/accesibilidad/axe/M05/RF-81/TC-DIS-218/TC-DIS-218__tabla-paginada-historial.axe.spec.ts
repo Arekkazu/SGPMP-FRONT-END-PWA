@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M05 RF-81 TC-DIS-218: accesibilidad de la tabla paginada del historial de suministros |
+// | 2026-11-11 | Laura032005 | M05 RF-81 TC-DIS-218: reejecución con datos reales del DBA (80 registros en BOV-114-TIL, ya hay paginación real); timeout ampliado a 60s; consultarPrimerActivo ya no toma el primero del combobox a ciegas, ahora apunta a BOV-114-TIL (1627); tests 1 y 2 esperaban la tabla sin dar tiempo a que cargara (carrera), ya corregido |
 /**
  * TC-DIS-218 — [CRÍTICO] Accesibilidad WCAG 2.1 AA de la tabla paginada del Historial de
  * Suministros y de su navegación por teclado
@@ -38,9 +39,9 @@ test.use({ locale: 'es-CO', launchOptions: { args: [`--remote-debugging-port=${P
 
 async function consultarPrimerActivo(page: Page) {
   const combo = main(page).getByRole('combobox', { name: 'Activo biológico' });
-  await combo.focus();
-  await combo.press('ArrowDown');
-  await combo.press('Enter');
+  // BOV-114-TIL (id 1627): ciclo "Levante y ceba" real, fase Ceba activa desde el 1/10 (dato del DBA).
+  await combo.fill('1627');
+  await combo.blur();
   await main(page).getByRole('button', { name: 'Consultar', exact: true }).click();
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
 }
@@ -58,9 +59,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Tabla paginada del histori
   });
 
   test('1. Tabla con encabezados asociados a sus celdas (1.3.1) y sin dependencia única del color (1.4.1)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     await consultarPrimerActivo(page);
     const tabla = main(page).getByRole('table');
+    // La tabla puede resolverse un instante después de networkidle: se espera antes de decidir
+    // si la precondición no se cumple (carrera observada en TC-DIS-216).
+    await tabla.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
     precondicion(await tabla.count() > 0, 'el activo consultado no tiene suministros en el historial');
     if (await tabla.count() === 0) return;
 
@@ -76,9 +81,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Tabla paginada del histori
   });
 
   test('2. Paginación operable por teclado, orden de foco lógico (2.1.1 / 2.4.3 / 2.4.7)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     await consultarPrimerActivo(page);
     const siguiente = page.getByRole('button', { name: 'Siguiente', exact: true });
+    // Igual que con la tabla: el botón puede tardar un instante en reflejar el total real de
+    // páginas tras networkidle.
+    await main(page).getByRole('table').waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
     precondicion(await siguiente.count() > 0 && await siguiente.isEnabled(), 'el historial del activo consultado tiene una sola página (no hay "Siguiente" habilitado)');
     if (await siguiente.count() === 0 || !(await siguiente.isEnabled())) return;
 
@@ -97,6 +106,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Tabla paginada del histori
   });
 
   test('3. Desviación - la página actual se comunica en texto plano, no con aria-current (4.1.2)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     await consultarPrimerActivo(page);
     const conAriaCurrent = await page.locator('[aria-current]').count();
