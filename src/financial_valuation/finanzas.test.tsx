@@ -9,6 +9,9 @@
 // | 2026-11-10 | Arekkazu | #510 RF-89: un error al confirmar la desviación se muestra en vez del aviso |
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
 // | 2026-11-10 | Arekkazu | TC-DIS-242/244/261 RF-87/93: diálogo descrito con foco en Cancelar, NIT ausente, badges con icono y resultado con Ganancia/Pérdida |
+// | 2026-11-10 | Arekkazu | TC-DIS-233/257/262 RF-86/92/93: Productor con período, aprobador del informe y panel de pendientes |
+// | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año; navegación en dos niveles |
+// | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -25,7 +28,9 @@ import { CalculoView } from './pages/CalculoView';
 import { ProductosView } from './pages/ProductosView';
 import { EstadoResultadosView } from './pages/EstadoResultadosView';
 import { TrazabilidadView } from './pages/TrazabilidadView';
-import { EstadoBadge, ProveedorPeriodo, Variacion, aFraccion, aPorcentaje, etiquetaPeriodo, formatoMoneda } from './components/comunes';
+import { RevelacionesView } from './pages/RevelacionesView';
+import { PendientesView } from './pages/PendientesView';
+import { BarraPeriodo, EstadoBadge, ProveedorPeriodo, Variacion, aFraccion, aPorcentaje, etiquetaPeriodo, formatoMoneda } from './components/comunes';
 import { signo, sumar } from './lib/decimal';
 import { digitoVerificacion } from '../configuration/components/TitularFincaModal';
 
@@ -78,6 +83,34 @@ describe('FinanzasPage', () => {
 });
 
 describe('PreciosView (RF-89)', () => {
+  it('RF-89 v1.2: el precio corregido sale «Corregido», no se vuelve a corregir y la corrección conserva fecha y fuente', async () => {
+    sesion.permisos = [permiso('precios_mercado', 2), permiso('precios_mercado', 1), permiso('configuracion_contable', 2)];
+    respuestas['GET /finanzas/configuracion'] = { data: configuracion };
+    const base = { id_especie: 2, categoria: 'PESO_KG', unidad_medida: 'kg', fecha_vencimiento: null, id_metrica_produccion: null, justificacion: null, es_aplicado: false };
+    respuestas['GET /finanzas/precios'] = { data: [
+      { ...base, id_precio_mercado: 436, precio_unitario: '4000', fuente: 'UPRA', fecha_vigencia: '2026-10-01', evidencia: 'Boletín', id_precio_corregido: null, estado: 'CORREGIDO' },
+      { ...base, id_precio_mercado: 700, precio_unitario: '4200', fuente: 'UPRA', fecha_vigencia: '2026-10-01', evidencia: 'Boletín corregido', id_precio_corregido: 436, estado: 'ACTIVO', es_aplicado: true },
+    ] };
+    respuestas['POST /finanzas/precios'] = { data: { id_precio_mercado: 701, estado: 'ACTIVO', desviacion_pct: '2', fecha_vigencia: '2026-10-01' } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><PreciosView /></MemoryRouter>);
+
+    const fila = (await screen.findByText('Ya se corrigió: corrija la corrección')).closest('tr') as HTMLElement;
+    expect(within(fila).getByText('Corregido')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Corregir/ })).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: /Corregir/ }));
+    const dialogo = within(screen.getByRole('dialog'));
+    expect(dialogo.getByLabelText(/^Vigente desde/)).toHaveAttribute('readonly');
+    expect(dialogo.getByLabelText(/^Fuente/)).toBeDisabled();
+    await user.type(dialogo.getByLabelText(/Precio unitario/), '4300');
+    await user.type(dialogo.getByLabelText(/^Evidencia/), 'Boletín revisado');
+    await user.click(dialogo.getByRole('button', { name: 'Guardar' }));
+    await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/precios' && p.method === 'post')).toBe(true));
+    const cuerpo = JSON.parse(peticiones.find((p) => p.url === '/finanzas/precios' && p.method === 'post')!.data as string);
+    expect(cuerpo).toMatchObject({ id_precio_corregido: 700, fecha_vigencia: '2026-10-01', fuente: 'UPRA' });
+  });
+
   it('una desviación mayor al umbral pide confirmación y reenvía con confirmar_desviacion', async () => {
     sesion.permisos = [permiso('precios_mercado', 2), permiso('precios_mercado', 1), permiso('configuracion_contable', 2)];
     respuestas['GET /finanzas/configuracion'] = { data: configuracion };
@@ -436,5 +469,87 @@ describe('Accesibilidad QA M06 (TC-DIS-242/244/261)', () => {
     const { container } = render(<><Variacion valor="460000" etiqueta /><Variacion valor="-1190000" etiqueta /></>);
     expect(container).toHaveTextContent(/\+\$.*Ganancia/);
     expect(container).toHaveTextContent(/-\$.*Pérdida/);
+  });
+});
+
+describe('Lo que pedía backend en la evaluación QA M06 (TC-DIS-233/257/262)', () => {
+  const cerrado = { ...periodo, id_periodo_contable: 6, fecha_inicio: '2026-10-01', fecha_fin: '2026-10-31', estado: 'CERRADO', fecha_cierre: '2026-11-01T00:00:00Z' };
+
+  it('quien solo lee el estado de resultados elige período (empieza en el último cerrado) y ve la versión aprobada', async () => {
+    sesion.permisos = [permiso('estado_resultados', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo, cerrado] };
+    respuestas['GET /finanzas/periodos/6/estados-resultados'] = { data: [{ id_estado: 71, id_periodo_contable: 6, total_ingresos: '1650000', total_gastos: '1190000',
+      resultado_neto: '460000', estado: 'APROBADO', fecha_generacion: '2026-11-01T08:00:00Z', filtros: {}, version: 2, fecha_aprobacion: '2026-11-02T09:00:00Z' }] };
+    respuestas['GET /finanzas/estados-resultados/71'] = { data: { id_estado: 71, id_periodo_contable: 6, total_ingresos: '1650000', total_gastos: '1190000',
+      resultado_neto: '460000', estado: 'APROBADO', fecha_generacion: '2026-11-01T08:00:00Z', filtros: {}, version: 2, fecha_aprobacion: '2026-11-02T09:00:00Z',
+      nombre_aprobador: 'Ana Contadora', componentes: {}, hash_consistencia: 'x' } };
+    render(<MemoryRouter><ProveedorPeriodo><EstadoResultadosView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText(/Ana Contadora/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Ganancia/).length).toBeGreaterThan(0);
+    expect(peticiones.some((p) => p.url === '/finanzas/periodos/7/estado-resultados/acumulado')).toBe(false);
+    expect(screen.queryByRole('button', { name: /Generar/ })).toBeNull();
+  });
+
+  it('el historial del informe muestra quién lo aprobó', async () => {
+    sesion.permisos = [permiso('revelaciones_nic41', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [cerrado] };
+    respuestas['GET /finanzas/periodos/6/revelaciones'] = { data: [{ id_informe: 83, version_informe: '2026-10-V1', estado: 'APROBADO',
+      fecha_generacion: '2026-11-01T08:00:00Z', fecha_aprobacion: '2026-11-02T09:00:00Z', razon_rechazo: null, hash_informe: 'e', nombre_aprobador: 'Ana Contadora' }] };
+    respuestas['GET /finanzas/revelaciones/83'] = { data: { id_informe: 83, version_informe: '2026-10-V1', estado: 'APROBADO', fecha_generacion: '2026-11-01T08:00:00Z',
+      fecha_aprobacion: '2026-11-02T09:00:00Z', razon_rechazo: null, hash_informe: 'e'.repeat(64), nombre_aprobador: 'Ana Contadora', contenido: {} } };
+    render(<MemoryRouter><ProveedorPeriodo><RevelacionesView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByRole('columnheader', { name: 'Aprobado por' })).toBeInTheDocument();
+    expect((await screen.findAllByText('Ana Contadora')).length).toBeGreaterThan(0);
+  });
+
+  it('el panel de pendientes junta la medición pendiente y los hechos sin cuenta', async () => {
+    sesion.permisos = [permiso('valoracion_activos', 2), permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/periodos/7/eventos-pendientes'] = { data: [{ id_evento: 4, id_activo_biologico: 1, identificador: 'BOV-101', tipo_activo: 'INDIVIDUAL',
+      id_especie: 1, especie: 'Bovino', finca: 'La Esperanza', clasificacion: null, fecha_evento: '2026-11-05', motivo: 'Sin precio vigente', fecha_procesamiento: '2026-11-05T10:00:00Z' }] };
+    respuestas['GET /finanzas/lineas'] = { data: [{ id_linea_asiento_nic41: 9, tipo_hecho: 'MANO_OBRA_PROPIA', sentido: 'UNICO', valor: '50000', fecha_hecho: '2026-11-06',
+      id_periodo_contable: 7, id_activo_biologico: null, tabla_origen: 'x', id_origen: 1, tipo_evidencia: 'REGISTRO_MANUAL', subtipo_costo: null, es_estimacion: false,
+      es_reverso: false, cuenta_debito: null, cuenta_credito: null, estado: 'PENDIENTE_CUENTA' }] };
+    render(<MemoryRouter><ProveedorPeriodo><PendientesView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('BOV-101')).toBeInTheDocument();
+    expect(await screen.findByText('Sin precio vigente')).toBeInTheDocument();
+    expect(screen.getByText('El período no se puede cerrar con hechos pendientes')).toBeInTheDocument();
+    expect(peticiones.find((p) => p.url === '/finanzas/lineas')?.params).toEqual({ id_periodo_contable: 7, estado: 'PENDIENTE_CUENTA' });
+  });
+});
+
+describe('Período contable por titular y año (usabilidad 11-11)', () => {
+  const diciembre = { ...periodo, id_periodo_contable: 3, fecha_inicio: '2025-12-01', fecha_fin: '2025-12-31', estado: 'CERRADO', fecha_cierre: '2026-01-02T00:00:00Z' };
+
+  it('elige primero el titular, pide solo sus períodos y separa los años', async () => {
+    sesion.permisos = [permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/titulares'] = { data: [{ numero_id_tributaria: '900123456', razon_social: 'El Rosal S.A.S.' }, { numero_id_tributaria: null, razon_social: null }] };
+    respuestas['GET /finanzas/periodos'] = { data: [periodo, diciembre] };
+    render(<MemoryRouter><ProveedorPeriodo><BarraPeriodo /></ProveedorPeriodo></MemoryRouter>);
+
+    const titular = await screen.findByRole('combobox', { name: 'Titular' });
+    expect(within(titular).getAllByRole('option').map((o) => o.textContent)).toEqual(['El Rosal S.A.S. · NIT 900123456', 'Sin titular asignado']);
+    await waitFor(() => expect(peticiones.find((p) => p.url === '/finanzas/periodos')?.params).toEqual({ numero_id_tributaria: '900123456' }));
+
+    const lista = screen.getByRole('combobox', { name: /Período contable/ });
+    await waitFor(() => expect(lista).toHaveValue('7'));
+    expect(within(lista).getAllByRole('option')).toHaveLength(1);
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Año' }), '2025');
+    expect(lista).toHaveValue('3');
+    await userEvent.click(screen.getByRole('button', { name: 'Ir al período en curso' }));
+    expect(lista).toHaveValue('7');
+
+    await userEvent.selectOptions(titular, 'sin-titular');
+    await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/periodos' && p.params?.sin_titular === true)).toBe(true));
+  });
+
+  it('con un solo titular y un solo año queda solo el selector de período', async () => {
+    sesion.permisos = [permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/titulares'] = { data: [{ numero_id_tributaria: '900123456', razon_social: null }] };
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    render(<MemoryRouter><ProveedorPeriodo><BarraPeriodo /></ProveedorPeriodo></MemoryRouter>);
+    await waitFor(() => expect(screen.getByRole('combobox', { name: /Período contable/ })).toHaveValue('7'));
+    expect(screen.queryByRole('combobox', { name: 'Titular' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Año' })).toBeNull();
   });
 });

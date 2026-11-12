@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-77: generar reportes de gastos (síncrono o en cola), exportarlos y consultar el historial |
 // | 2026-11-10 | Arekkazu | CP119/H-M05-03 RF-77: alcance agregado por especie o infraestructura cuando no se elige un activo |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 import React, { useEffect, useState } from 'react';
 import { FileBarChart2, RefreshCw, Eye } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -190,7 +191,7 @@ export function ReporteGastosView() {
             <tbody>
               {items.map((r) => (
                 <tr key={r.id_reporte_gasto_acumulado ?? r.fecha_generacion}>
-                  <td style={TD}>{formatoFecha(r.fecha_inicio)} – {formatoFecha(r.fecha_fin)}{r.id_activo_biologico && <div style={SECUNDARIO}>#{r.id_activo_biologico}</div>}</td>
+                  <td style={TD}>{formatoFecha(r.fecha_inicio)} – {formatoFecha(r.fecha_fin)}{r.id_activo_biologico && <div style={SECUNDARIO}>{r.nombre_activo ?? t('comun.activo_n', { id: r.id_activo_biologico })}</div>}</td>
                   <td style={TD}>{t(`granularidad.${r.tipo_periodo}`, { defaultValue: r.tipo_periodo })}</td>
                   <td style={TD_NUM}>{formatoMoneda(r.gasto_total_acumulado)}</td>
                   <td style={TD}>{formatoFecha(r.fecha_generacion, true)}</td>

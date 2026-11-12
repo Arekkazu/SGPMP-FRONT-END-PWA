@@ -1,3 +1,26 @@
+## [1.4.0-rc.39](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.38...v1.4.0-rc.39) (2026-11-12)
+
+### Bug Fixes
+
+* **rf75-rf76-rf78-rf80-rf81-mod5:** foco tras el rechazo de un duplicado y pagina pedida al instante (2a evaluacion QA) ([67a967f](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/67a967f1f67023883f6a9a57fe16a7e15910125a))
+
+## [1.4.0-rc.38](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.37...v1.4.0-rc.38) (2026-11-12)
+
+### Bug Fixes
+
+* **rf82-rf94-mod6:** secciones de finanzas en dos niveles y periodo por titular y año ([7c8c3f6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7c8c3f6f1dc2c2e4f9beb5954c55e13a981c5692)), closes [#fin-periodo](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/fin-periodo)
+* **rf89-mod6:** precio corregido visible y la correccion conserva fecha y fuente (TC-M06-G106) ([966a0cd](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/966a0cdff4521c496c95d17ae67bc3fad04c9a0d)), closes [#1074](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1074)
+
+## [1.4.0-rc.37](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.36...v1.4.0-rc.37) (2026-11-12)
+
+### Features
+
+* **rf86-rf87-rf92-rf93-mod6:** panel de pendientes, periodo para quien consulta reportes, aprobador y cancelar cierre ([54c0daf](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/54c0daf946ffeec8b20e435fea515c683d1c8bad))
+
+### Bug Fixes
+
+* **rf16-rf74-rf94-mod5-mod6-mod9:** reporte de usabilidad de suministros y finanzas del 11-11 ([aec42c8](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/aec42c846ad013f037a54b150ed2f41bd33c0a34))
+
 ## [1.4.0-rc.36](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.35...v1.4.0-rc.36) (2026-11-11)
 
 ### Bug Fixes

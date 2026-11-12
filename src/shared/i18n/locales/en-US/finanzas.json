@@ -16,7 +16,8 @@
     "estado-resultados": "Income statement",
     "auditoria": "Audit log",
     "cotizaciones": "Quotes",
-    "configuracion": "Accounting settings"
+    "configuracion": "Accounting settings",
+    "pendientes": "Pending"
   },
   "comun": {
     "acciones": "Actions",
@@ -53,7 +54,12 @@
     "sin_nit": "No tax ID assigned",
     "sin_resultado": "No result",
     "ganancia": "Profit",
-    "perdida": "Loss"
+    "perdida": "Loss",
+    "titular": "Taxpayer",
+    "anio": "Year",
+    "sin_titular": "No taxpayer assigned",
+    "ir_periodo_en_curso": "Go to the current period",
+    "ir_ultimo_cerrado": "Go to the last closed period"
   },
   "col": {
     "activo": "Asset",
@@ -151,7 +157,8 @@
     "BLOQUEADO": "Blocked",
     "REVISION_REQUERIDA": "Needs review",
     "MEDICION_PENDIENTE": "Measurement pending",
-    "ERROR": "With error"
+    "ERROR": "With error",
+    "CORREGIDO": "Corrected"
   },
   "tipo_cierre": {
     "MENSUAL": "Monthly",
@@ -312,8 +319,8 @@
     "corregir": "Correct",
     "corregir_aria": "Correct the {{especie}} price effective from {{fecha}}",
     "corregir_titulo": "Correct the {{especie}} price effective from {{fecha}}",
-    "corregir_ayuda": "The correction is a new price that replaces the previous one from its effective date.",
-    "corrige": "Corrects the price effective from {{fecha}}",
+    "corregir_ayuda": "The correction takes the place of the price it corrects: it keeps its species, category, source and date; only the price, the evidence and the expiry change. Valuations already recorded are not recalculated; accountants are notified to review them.",
+    "corrige": "Corrects the price of {{fecha}}",
     "aplicado": "In use",
     "vacio_titulo": "No prices recorded",
     "vacio_detalle": "Record each species' market price to recognize and measure its assets at fair value.",
@@ -353,7 +360,9 @@
     "especie_categoria": "Species / category",
     "precio_unitario_col": "Unit price",
     "indefinida": "Indefinite",
-    "especie_sin_nombre": "Inactive species"
+    "especie_sin_nombre": "Inactive species",
+    "ya_corregido": "Already corrected: correct the correction",
+    "vigencia_correccion": "The correction keeps the date of the price it corrects."
   },
   "recon": {
     "titulo": "Initial recognition",
@@ -664,7 +673,9 @@
     "progreso_ayuda": "The close runs on the server; this screen refreshes on its own.",
     "resumen_decisiones": "{{excluidos}} assets will be excluded, {{estimados}} will be measured with an estimate and {{pendientes}} still lack a decision.",
     "solo_contador": "Only the Accountant can start the close",
-    "solo_contador_detalle": "Your role can view the period and its vouchers; it has no permission to close it."
+    "solo_contador_detalle": "Your role can view the period and its vouchers; it has no permission to close it.",
+    "cancelar_no": "Cancel close (No)",
+    "no_iniciado": "The close of {{periodo}} did not start: the period remains open and no record changed."
   },
   "cot": {
     "titulo": "Quotes",
@@ -789,7 +800,10 @@
     "sin_actividad": "No activity in the period",
     "sin_estado_productor": "The Accountant has not generated the income statement for this period yet.",
     "vacio_detalle_consulta": "It will appear once the Accountant generates it when closing the period.",
-    "ver_aria": "View version {{n}}"
+    "ver_aria": "View version {{n}}",
+    "aprobado_por": "Approved by",
+    "aprobador_sin_nombre": "User without a registered name",
+    "periodo_abierto_productor": "This period is still open: its income statement will be available once the Accountant closes and approves it."
   },
   "rev": {
     "titulo": "IAS 41 disclosures",
@@ -910,7 +924,9 @@
     "justificacion_corta": "The justification needs at least 20 characters.",
     "quitar_compromiso": "Remove commitment {{n}}",
     "quitar_pignorado": "Remove pledge {{n}}",
-    "seccion_bloqueada": "Blocked section: the source of this data returned an error and could not be completed."
+    "seccion_bloqueada": "Blocked section: the source of this data returned an error and could not be completed.",
+    "aprobador": "Approved by",
+    "aprobador_sin_nombre": "User without a registered name"
   },
   "aud": {
     "titulo": "Financial audit log",
@@ -1026,9 +1042,10 @@
     "MIXTO": "Mixed"
   },
   "grupos": {
-    "reconocimiento_valoracion": "Recognition and valuation",
-    "resultados_periodo": "Period results",
-    "datos_reportes": "Data and reports"
+    "valoracion": "Valuation",
+    "cierre": "Closing",
+    "reportes": "Reports",
+    "datos": "Data"
   },
   "tipo_sanitario": {
     "VACUNACION": "Vaccination",
@@ -1205,7 +1222,8 @@
     "neta": "Net change in the period",
     "resumen_ayuda": "Changes are recognized in profit or loss for the period in which they arise (IAS 41 ¶26).",
     "vacio_titulo": "No changes in the period",
-    "vacio_detalle": "They appear when a measurement changes an asset's fair value."
+    "vacio_detalle": "They appear when a measurement changes an asset's fair value.",
+    "registro_automatico": "Each variation comes from a measured event (weighing, birth, price change) and stays linked to it; it is not entered by hand. To record those of new events, process the pending events."
   },
   "traza": {
     "titulo": "Accounting traceability",
@@ -1272,5 +1290,27 @@
     "motivo_origen": "the line's source record does not exist",
     "motivo_cierre": "the line was not included in a closing voucher",
     "motivo_generico": "incomplete link"
+  },
+  "pendientes": {
+    "titulo": "Period pending items",
+    "descripcion": "Facts that cannot be recorded yet: pending measurements and facts without an accounting account.",
+    "descripcion_periodo": "Facts of {{periodo}} that cannot be recorded yet: pending measurements and facts without an accounting account.",
+    "kpi_medicion": "Pending measurement",
+    "kpi_medicion_detalle": "Events that produced no variation",
+    "kpi_cuenta": "No accounting account",
+    "kpi_cuenta_detalle": "Facts without a debit/credit pair in the matrix",
+    "bloquean_cierre": "The period cannot be closed with pending facts",
+    "bloquean_cierre_detalle": "Process the pending events and complete the accounting matrix; facts without an account are recorded automatically once it is complete.",
+    "medicion_titulo": "Events with pending measurement",
+    "sin_medicion": "No pending measurements",
+    "sin_medicion_detalle": "Every event of the period has its measurement recorded.",
+    "motivo": "Reason",
+    "sin_motivo": "No reason recorded",
+    "ir_medicion": "Go to Subsequent measurement",
+    "cuenta_titulo": "Facts without an accounting account",
+    "sin_cuenta": "No facts pending an account",
+    "sin_cuenta_detalle": "The accounting matrix covers every fact of the period.",
+    "ir_configuracion": "Go to Accounting configuration",
+    "pedir_configuracion": "Ask the Accountant to complete the accounting matrix in Accounting configuration."
   }
 }

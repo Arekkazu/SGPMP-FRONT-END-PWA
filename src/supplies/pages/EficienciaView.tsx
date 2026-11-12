@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74: ICA vigente e historial por activo, cálculo bajo demanda y batch |
 // | 2026-11-10 | Arekkazu | TC-DIS-198/200 RF-74: alerta anunciada al quedar en Crítica, foco sobre el resultado y detalle por cálculo |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 import React, { useRef, useState } from 'react';
 import { Calculator, Eye, Search, Gauge as IconoGauge } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -13,6 +14,7 @@ import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useT } from '../../shared/i18n/useT';
+import { avisarExito } from '../../shared/hooks/useToast';
 import { ACCION_E, ACCION_R, RECURSO_BATCH_ICA, RECURSO_ICA } from '../rbac';
 import { useEficiencia } from '../hooks/useEficiencia';
 import { useActivosSuministros } from '../hooks/useActivosSuministros';
@@ -21,7 +23,7 @@ import { PERIODOS_ICA, type PeriodoEvaluacion, type ResultadoIca } from '../type
 import { EncabezadoVista } from '../components/EncabezadoVista';
 import { EstadoVacio } from '../components/EstadoVacio';
 import { EstadoRegistroBadge } from '../components/EstadoRegistroBadge';
-import { SelectorActivo } from '../components/SelectorActivo';
+import { SelectorActivo, nombreActivo } from '../components/SelectorActivo';
 import { BatchIcaPanel } from '../components/BatchIcaPanel';
 import { FILTROS, PANEL, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM } from '../components/estilos';
 
@@ -109,14 +111,18 @@ export function EficienciaView() {
   };
   const calcular = async () => {
     if (!consultado) return;
-    if (await calculo.ejecutar(consultado.id, consultado.periodo)) await consultar(consultado.id, consultado.periodo);
-    else resultadoRef.current?.focus();
+    if (await calculo.ejecutar(consultado.id, consultado.periodo)) {
+      await consultar(consultado.id, consultado.periodo);
+      avisarExito('estado', t('ica.calculado_ok'));
+    } else resultadoRef.current?.focus();
   };
 
   const v = vigente.data;
   const r = v?.tiene_resultado ? v.resultado : null;
   const critico = !!r && calculado(r) && r.clasificacion_ca === 'CRITICA';
   const filas = historial.data?.items ?? [];
+  const elegido = consultado && activos.find((a) => a.id_activo_biologico === consultado.id);
+  const activoConsultado = elegido ? nombreActivo(elegido) : t('comun.activo_n', { id: consultado?.id });
 
   return (
     <>
@@ -138,7 +144,7 @@ export function EficienciaView() {
           <section ref={resultadoRef} tabIndex={-1} aria-labelledby="ica-vigente" style={{ ...PANEL, outline: 'none' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--s3)', flexWrap: 'wrap', marginBottom: 'var(--s4)' }}>
               <h2 id="ica-vigente" style={{ margin: 0, fontSize: 'var(--fs-heading-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {t('ica.vigente', { periodo: t(`periodo.${consultado.periodo}`) })}
+                {t('ica.vigente', { activo: activoConsultado, periodo: t(`periodo.${consultado.periodo}`) })}
               </h2>
               {puedeCalcular && (
                 <Button variant="primary" size="sm" disabled={!online} loading={calculo.cargando} onClick={calcular}>

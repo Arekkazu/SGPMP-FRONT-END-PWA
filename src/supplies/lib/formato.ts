@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: formato de montos y cantidades del backend (Decimal) |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 B-01 RF-77/90: porcentajes y meses con el formato del idioma |
 import i18n from '../../shared/i18n';
 
 /**
@@ -23,6 +24,21 @@ export function formatoCantidad(valor: string | number | null | undefined, maxDe
   const n = numero(valor);
   if (n === null) return '—';
   return new Intl.NumberFormat(i18n.language, { maximumFractionDigits: maxDecimales }).format(n);
+}
+
+/** Porcentaje ya multiplicado por 100 (`70.6` → «70,6 %»), con el separador del idioma activo. */
+export function formatoPorcentaje(valor: string | number | null | undefined, maxDecimales = 1): string {
+  const n = numero(valor);
+  if (n === null) return '—';
+  return new Intl.NumberFormat(i18n.language, { style: 'percent', maximumFractionDigits: maxDecimales }).format(n / 100);
+}
+
+/** Rótulo de un período del backend: «2026-10» → «octubre de 2026»; un día → su fecha; lo demás, tal cual. */
+export function formatoEtiquetaPeriodo(etiqueta: string): string {
+  if (/^\d{4}-\d{2}$/.test(etiqueta)) {
+    return new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(new Date(`${etiqueta}-01T00:00:00`));
+  }
+  return /^\d{4}-\d{2}-\d{2}$/.test(etiqueta) ? formatoFecha(etiqueta) : etiqueta;
 }
 
 /** "2026-10-23" o ISO → fecha corta local; texto vacío → "—". */

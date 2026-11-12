@@ -3,6 +3,7 @@
 // | 2026-10-23 | Arekkazu | M05 RF-75/76/79: justificación obligatoria para anular o corregir |
 // | 2026-11-04 | Arekkazu | M06 RF-90: campo adicional opcional sobre la justificación |
 // | 2026-11-10 | Arekkazu | TC-DIS-252/258 RF-COT/92: la descripción va por aria-describedby y el foco inicial queda en Cancelar |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 import React, { useState } from 'react';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { Button } from '../../shared/design-system/Button';
@@ -70,7 +71,7 @@ export function MotivoModal({ titulo, descripcion, etiqueta, confirmar, min, max
         onChange={(e) => setTexto(e.target.value)}
         onBlur={() => setTocado(true)}
         error={mensaje}
-        hint={t('comun.contador', { n: largo, max })}
+        hint={opcional || !min ? t('comun.contador', { n: largo, max }) : t('comun.contador_min', { min, n: largo, max })}
       />
     </ModalShell>
   );

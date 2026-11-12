@@ -3,8 +3,12 @@
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: piezas comunes de las vistas del módulo financiero |
 // | 2026-11-05 | Arekkazu | M06 prototipos: período global, indicadores, listado con búsqueda, filtros y pie |
 // | 2026-11-10 | Arekkazu | TC-DIS-244..266 RF-87..94: badges con icono, NIT ausente, páginas numeradas, resultado con Ganancia/Pérdida y descarga anunciada |
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { AlertTriangle, Ban, CheckCircle2, Clock, FilterX, Info, Search, SearchX, XCircle } from 'lucide-react';
+// | 2026-11-10 | Arekkazu | TC-DIS-262 RF-93: el período lo elige también quien solo consulta reportes (prefiere el último cerrado) |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
+// | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
+// | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, Ban, CheckCircle2, Clock, FilterX, Info, RotateCcw, Search, SearchX, XCircle } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
@@ -23,10 +27,11 @@ import { guardarArchivo as guardarBlob } from '../../supplies/lib/descarga';
 import type { Archivo } from '../api/finanzasApi';
 import { EstadoVacio } from '../../supplies/components/EstadoVacio';
 import { formatoFecha, formatoMoneda } from '../../supplies/lib/formato';
+import { hoyLocal } from '../../shared/lib/fecha';
 import { finanzasApi } from '../api/finanzasApi';
 import { signo } from '../lib/decimal';
-import { ACCION_R, R_CIERRE } from '../rbac';
-import type { Periodo } from '../types';
+import { ACCION_R, R_CIERRE, R_ESTADO_RESULTADOS, R_REVELACIONES } from '../rbac';
+import type { FiltroPeriodos, Periodo, Titular } from '../types';
 import '../finanzas.css';
 
 export { EncabezadoVista } from '../../supplies/components/EncabezadoVista';
@@ -34,7 +39,7 @@ export { EstadoVacio } from '../../supplies/components/EstadoVacio';
 export { MotivoModal } from '../../supplies/components/MotivoModal';
 export { AreaTexto } from '../../supplies/components/AreaTexto';
 export { useAsync } from '../../supplies/hooks/useAsync';
-export { formatoCantidad, formatoFecha, formatoMoneda } from '../../supplies/lib/formato';
+export { formatoCantidad, formatoFecha, formatoMoneda, formatoPorcentaje } from '../../supplies/lib/formato';
 export { guardarArchivo } from '../../supplies/lib/descarga';
 export { PANEL, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM, FILTROS } from '../../supplies/components/estilos';
 
@@ -50,7 +55,7 @@ const VARIANTE: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutr
   ESTIMADO: 'warning', VENCIDO: 'warning', VENCIDA: 'warning', INCOMPLETO: 'warning', MEDICION_PENDIENTE: 'warning',
   REVISION_REQUERIDA: 'warning', PENDIENTE: 'warning', PENDIENTE_TRAZABILIDAD: 'warning',
   RECHAZADO: 'error', ANULADO: 'error', ANULADA: 'error', FALLIDO: 'error', ERROR: 'error', BLOQUEADO: 'error',
-  REVERTIDO: 'neutral', REVERTIDA: 'neutral', SUPERADO: 'neutral', ARCHIVADO: 'neutral', EXCLUIDA: 'neutral',
+  REVERTIDO: 'neutral', REVERTIDA: 'neutral', SUPERADO: 'neutral', CORREGIDO: 'neutral', ARCHIVADO: 'neutral', EXCLUIDA: 'neutral',
 };
 
 /** Icono de cada tono: el color nunca es el único indicador de estado (WCAG 1.4.1). */
@@ -111,8 +116,9 @@ export function etiquetaNit(nit: string | null | undefined): string {
   return nit ? `NIT ${nit}` : i18n.t('comun.sin_nit', { ns: 'finanzas' });
 }
 
+/** «Noviembre de 2026 · El Rosal S.A.S. · NIT 901458732»: el NIT solo no dice de qué finca es. */
 export function etiquetaPeriodo(p: Periodo): string {
-  return `${nombrePeriodo(p)} · ${etiquetaNit(p.numero_id_tributaria)}`;
+  return [nombrePeriodo(p), p.razon_social, etiquetaNit(p.numero_id_tributaria)].filter(Boolean).join(' · ');
 }
 
 /** Entrega el archivo y anuncia que la descarga quedó lista (WCAG 4.1.3). */
@@ -121,13 +127,34 @@ export function descargarArchivo(a: Archivo) {
   pushToast('success', i18n.t('comun.descarga_lista', { ns: 'finanzas' }), a.nombre);
 }
 
-/** El abierto más reciente; si no hay ninguno abierto, el más reciente. */
-function preferido(periodos: Periodo[]): Periodo {
+/**
+ * Quien opera el cierre empieza en el abierto más reciente; quien solo consulta reportes, en el último cerrado
+ * (es el único con estado de resultados y revelaciones aprobados). Si no hay, el más reciente.
+ */
+function preferido(periodos: Periodo[], soloConsulta: boolean): Periodo {
+  // Un período que todavía no empieza no es el «más reciente»: arrancar en uno futuro confundía (M6-03).
+  const hoy = hoyLocal();
   const recientes = [...periodos].sort((a, b) => b.fecha_inicio.localeCompare(a.fecha_inicio));
-  return recientes.find((p) => p.estado === 'ABIERTO') ?? recientes[0];
+  const vigentes = recientes.filter((p) => p.fecha_inicio <= hoy);
+  const base = vigentes.length > 0 ? vigentes : recientes;
+  if (soloConsulta) return base.find((p) => p.estado === 'CERRADO') ?? base[0];
+  return base.find((p) => p.estado === 'ABIERTO' && p.fecha_fin >= hoy) ?? base.find((p) => p.estado === 'ABIERTO') ?? base[0];
+}
+
+/** Valor del selector de titular para los períodos sin titular (anteriores al titular de la finca, RF-19). */
+const SIN_TITULAR = 'sin-titular';
+const valorTitular = (x: Titular) => x.numero_id_tributaria ?? SIN_TITULAR;
+const filtroDe = (titular: string): FiltroPeriodos => (titular === SIN_TITULAR ? { sin_titular: true } : { numero_id_tributaria: titular });
+const anioDe = (p: Periodo) => p.fecha_inicio.slice(0, 4);
+
+/** «El Rosal S.A.S. · NIT 901458732», o «Sin titular asignado». */
+function etiquetaTitular(x: Titular): string {
+  if (!x.numero_id_tributaria) return i18n.t('comun.sin_titular', { ns: 'finanzas' });
+  return [x.razon_social, etiquetaNit(x.numero_id_tributaria)].filter(Boolean).join(' · ');
 }
 
 interface ContextoPeriodo {
+  /** Los períodos del titular elegido (no los de todos los titulares). */
   periodos: Periodo[];
   periodo: Periodo | null;
   elegir: (id: number) => void;
@@ -136,49 +163,109 @@ interface ContextoPeriodo {
   error: ApiError | null;
   /** El rol puede leer los períodos contables. */
   disponible: boolean;
+  titulares: Titular[];
+  /** NIT del titular elegido, o SIN_TITULAR. */
+  titular: string | null;
+  elegirTitular: (valor: string) => void;
+  /** Por donde arranca este rol en el titular: el período en curso, o el último cerrado para quien solo consulta. */
+  sugerido: Periodo | null;
+  soloConsulta: boolean;
 }
 
 const PeriodoCtx = createContext<ContextoPeriodo>({
   periodos: [], periodo: null, elegir: () => undefined, recargar: () => undefined, cargando: false, error: null, disponible: false,
+  titulares: [], titular: null, elegirTitular: () => undefined, sugerido: null, soloConsulta: false,
 });
 
-/** Un solo período para todas las vistas: cambiar de pestaña no lo pierde (prototipo: selector de la barra superior). */
+/**
+ * Un solo período para todas las vistas: cambiar de pestaña no lo pierde (prototipo: selector de la barra superior).
+ * Se elige primero el titular y solo se cargan sus períodos: con todas las fincas y todos los meses en una
+ * sola lista, el selector crecía sin fin (reporte de usabilidad, 11-11).
+ */
 export function ProveedorPeriodo({ children }: { children: React.ReactNode }) {
-  const disponible = usePermissionPorNombre(R_CIERRE, ACCION_R);
+  const leeCierre = usePermissionPorNombre(R_CIERRE, ACCION_R);
+  const leeEstado = usePermissionPorNombre(R_ESTADO_RESULTADOS, ACCION_R);
+  const leeRevelaciones = usePermissionPorNombre(R_REVELACIONES, ACCION_R);
+  // El backend acepta cualquiera de los tres para listar los períodos (RF-93: el Productor consulta lo aprobado).
+  const disponible = leeCierre || leeEstado || leeRevelaciones;
+  const soloConsulta = !leeCierre;
+  const titulares = useAsync(finanzasApi.titulares);
   const { data, cargando, error, ejecutar } = useAsync(finanzasApi.periodos);
+  const [titular, setTitular] = useState<string | null>(null);
   const [id, setId] = useState<number | null>(null);
-  useEffect(() => { if (disponible) ejecutar(); }, [disponible, ejecutar]);
-  const periodos = data ?? [];
+  const { ejecutar: cargarTitulares } = titulares;
+  useEffect(() => { if (disponible) cargarTitulares(); }, [disponible, cargarTitulares]);
+  const lista = titulares.data;
+  // El primero: el backend los ordena por razón social y deja al final los períodos sin titular.
+  useEffect(() => { if (titular === null && lista && lista.length > 0) setTitular(valorTitular(lista[0])); }, [lista, titular]);
+  // Sin titulares (backend anterior, o ninguno visible) se piden todos los períodos, como antes.
+  const sinTitulares = !!titulares.error || (!!lista && lista.length === 0);
+  const cargar = useCallback(() => {
+    if (titular !== null) ejecutar(filtroDe(titular));
+    else if (sinTitulares) ejecutar();
+  }, [titular, sinTitulares, ejecutar]);
+  useEffect(() => { if (disponible) cargar(); }, [disponible, cargar]);
+  const periodos = useMemo(() => data ?? [], [data]);
+  const sugerido = useMemo(() => (periodos.length > 0 ? preferido(periodos, soloConsulta) : null), [periodos, soloConsulta]);
   useEffect(() => {
-    if (periodos.length > 0 && !periodos.some((p) => p.id_periodo_contable === id)) setId(preferido(periodos).id_periodo_contable);
-  }, [periodos, id]);
+    if (sugerido && !periodos.some((p) => p.id_periodo_contable === id)) setId(sugerido.id_periodo_contable);
+  }, [periodos, id, sugerido]);
   const valor: ContextoPeriodo = {
     periodos, periodo: periodos.find((p) => p.id_periodo_contable === id) ?? null, elegir: setId,
-    recargar: () => { ejecutar(); }, cargando, error, disponible,
+    recargar: cargar, cargando: cargando || titulares.cargando, error: error ?? null, disponible,
+    titulares: lista ?? [], titular, elegirTitular: setTitular, sugerido, soloConsulta,
   };
   return <PeriodoCtx.Provider value={valor}>{children}</PeriodoCtx.Provider>;
 }
 
 export const usePeriodo = () => useContext(PeriodoCtx);
 
+/**
+ * Titular › Año › Período: tres listas cortas y nativas (teclado, lector de pantalla y celular sin nada extra).
+ * El titular solo aparece si hay más de uno y el año solo si el titular tiene períodos de más de un año.
+ * `#fin-periodo` conserva el id del período como valor: lo usan las pruebas de accesibilidad de QA.
+ */
 export function BarraPeriodo() {
   const { t } = useT('finanzas');
-  const { periodos, periodo, elegir, cargando, error, disponible } = usePeriodo();
+  const { periodos, periodo, elegir, cargando, error, disponible, titulares, titular, elegirTitular, sugerido, soloConsulta } = usePeriodo();
   if (!disponible) return null;
   const recientes = [...periodos].sort((a, b) => b.fecha_inicio.localeCompare(a.fecha_inicio));
+  const anios = [...new Set(recientes.map(anioDe))];
+  const anio = periodo ? anioDe(periodo) : anios[0];
+  const delAnio = recientes.filter((p) => anioDe(p) === anio);
+  const elegirAnio = (a: string) => elegir(preferido(recientes.filter((p) => anioDe(p) === a), soloConsulta).id_periodo_contable);
   return (
     <div className="fin-periodo">
+      {titulares.length > 1 && (
+        <div className="fin-periodo__campo fin-periodo__campo--titular">
+          <Select id="fin-titular" label={t('comun.titular')} value={titular ?? ''} onChange={(e) => elegirTitular(e.target.value)}>
+            {titulares.map((x) => <option key={valorTitular(x)} value={valorTitular(x)}>{etiquetaTitular(x)}</option>)}
+          </Select>
+        </div>
+      )}
+      {anios.length > 1 && (
+        <div className="fin-periodo__campo fin-periodo__campo--anio">
+          <Select id="fin-anio" label={t('comun.anio')} value={anio} disabled={cargando} onChange={(e) => elegirAnio(e.target.value)}>
+            {anios.map((a) => <option key={a} value={a}>{a}</option>)}
+          </Select>
+        </div>
+      )}
       <div className="fin-periodo__campo">
         <Select id="fin-periodo" label={t('comun.periodo')} value={periodo?.id_periodo_contable ?? ''} disabled={cargando || periodos.length === 0}
           error={error?.message} onChange={(e) => elegir(Number(e.target.value))}>
           {periodos.length === 0 && <option value="">{cargando ? t('comun.cargando') : t('comun.sin_periodos_corto')}</option>}
-          {recientes.map((p) => (
+          {delAnio.map((p) => (
             <option key={p.id_periodo_contable} value={p.id_periodo_contable}>
-              {etiquetaPeriodo(p)} · {t(`estado.${p.estado}`, { defaultValue: t('comun.sin_estado') })}
+              {nombrePeriodo(p)} · {t(`estado.${p.estado}`, { defaultValue: t('comun.sin_estado') })}
             </option>
           ))}
         </Select>
       </div>
+      {sugerido && periodo && sugerido.id_periodo_contable !== periodo.id_periodo_contable && (
+        <Button variant="ghost" size="md" onClick={() => elegir(sugerido.id_periodo_contable)}>
+          <RotateCcw size={16} aria-hidden />{soloConsulta ? t('comun.ir_ultimo_cerrado') : t('comun.ir_periodo_en_curso')}
+        </Button>
+      )}
     </div>
   );
 }

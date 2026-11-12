@@ -1,7 +1,8 @@
 /* | Fecha      | Nombre   | Que se hizo |
    |------------|----------|-------------|
    | 2026-11-05 | Arekkazu | M06 prototipos: período global, indicadores, barra de filtros y pie de tabla |
-   | 2026-11-10 | Arekkazu | TC-DIS-249/251/254 RF-90/COT/91: eslabones expandibles y casillas con zona táctil de 48px | */
+   | 2026-11-10 | Arekkazu | TC-DIS-249/251/254 RF-90/COT/91: eslabones expandibles y casillas con zona táctil de 48px |
+   | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: barra de período con titular, año y período que se acomodan en el celular | */
 
 /* Período contable de todo el módulo (en el prototipo vive en la barra superior). */
 .fin-periodo {
@@ -16,8 +17,25 @@
 }
 
 .fin-periodo__campo {
-  flex: 0 1 360px;
+  flex: 1 1 200px;
+  max-width: 360px;
   min-width: 0;
+}
+
+/* El año cabe en poco: en el celular comparte la fila con el período. */
+.fin-periodo__campo--anio {
+  flex: 0 0 112px;
+}
+
+/* El titular es el texto más largo: en el celular va solo en su fila y no se corta el NIT. */
+.fin-periodo__campo--titular {
+  flex-basis: 320px;
+}
+
+@media (max-width: 479px) {
+  .fin-periodo {
+    justify-content: flex-start;
+  }
 }
 
 .fin-contenido {

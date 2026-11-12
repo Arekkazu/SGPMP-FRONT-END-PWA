@@ -2,6 +2,8 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-81: historial de suministros por activo, filtros, resumen y exportación |
 // | 2026-11-10 | Arekkazu | TC-DIS-218/219 RF-81: rangos agrupados con fieldset, columnas de unidad y origen, resumen anunciado |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
+// | 2026-11-12 | Arekkazu | TC-DIS-218 RF-81: la paginación muestra la página pedida al instante, sin esperar al servidor |
 import React, { useEffect, useState } from 'react';
 import { Search, FileDown, History } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -106,7 +108,7 @@ export function HistorialView() {
     <>
       <EncabezadoVista
         titulo={t('historial.titulo')}
-        descripcion={t('historial.descripcion')}
+        descripcion={t('historial.subtitulo')}
         acciones={filtros && (
           <>
             <Button variant="secondary" size="md" disabled={!online} loading={exportacion.cargando} onClick={() => exportar('PDF')}><FileDown size={16} aria-hidden />PDF</Button>
@@ -234,7 +236,7 @@ export function HistorialView() {
                 </table>
               </ScrollRegion>
               {resumen && (
-                <Paginacion pagina={resumen.pagina_actual} totalPaginas={resumen.total_paginas} total={resumen.total_registros_filtrados}
+                <Paginacion pagina={filtros.pagina ?? resumen.pagina_actual} totalPaginas={resumen.total_paginas} total={resumen.total_registros_filtrados}
                   onCambiar={(p) => setFiltros((f) => (f ? { ...f, pagina: p } : f))} />
               )}
             </>

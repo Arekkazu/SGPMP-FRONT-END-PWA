@@ -56,7 +56,13 @@
     "activo_sin_visibles": "No hay activos visibles para tu usuario: revisa la finca que tienes asignada o escribe el ID del activo.",
     "cerrar": "Cerrar",
     "si": "Sí",
-    "no": "No"
+    "no": "No",
+    "activo_n": "Activo {{id}}",
+    "lote_n": "Lote {{id}}",
+    "animal_n": "Animal {{id}}",
+    "anular_aria": "Anular {{que}} de {{activo}}",
+    "anular_contexto": "{{que}} de {{activo}}, {{fecha}}",
+    "contador_min": "Mínimo {{min}} caracteres · {{n}} / {{max}}"
   },
   "estado": {
     "VALIDADO": "Validado",
@@ -101,7 +107,7 @@
   },
   "origen": {
     "MANUAL": "Precio manual",
-    "M40_AUTOMATICO": "Precio automático (M40)"
+    "M40_AUTOMATICO": "Precio automático"
   },
   "via": {
     "ORAL": "Oral",
@@ -141,7 +147,7 @@
     "por_individuo": "Por individuo",
     "vacio_titulo": "Sin consumos registrados",
     "vacio_detalle": "Cuando registres una ración aparecerá aquí. Ajusta los filtros si buscas un periodo concreto.",
-    "anular_titulo": "Anular consumo #{{id}}",
+    "anular_titulo": "Anular {{alimento}} de {{activo}} ({{fecha}})",
     "anular_descripcion": "El registro queda en el historial como anulado y su costo se descuenta del ciclo productivo. Esta acción no se puede deshacer.",
     "sin_tipos": "No hay alimentos activos en el catálogo. Pídele al administrador que los registre.",
     "sin_activo_elegido": "Elige primero el activo",
@@ -188,7 +194,7 @@
     "sin_retiro": "Sin retiro",
     "vacio_titulo": "Sin aplicaciones registradas",
     "vacio_detalle": "Las aplicaciones de medicamento aparecerán aquí con su periodo de retiro.",
-    "anular_titulo": "Anular aplicación #{{id}}",
+    "anular_titulo": "Anular {{medicamento}} de {{activo}} ({{fecha}})",
     "anular_descripcion": "La aplicación queda como anulada, su costo se descuenta del ciclo y deja de contar para el periodo de retiro. Esta acción no se puede deshacer.",
     "dosis_individuo_pendiente": "Se calcula al escribir la dosis",
     "dosis_individuo_unidad": "Dosis por individuo ({{unidad}})",
@@ -201,7 +207,7 @@
     "periodo_evaluacion": "Periodo de evaluación",
     "vacio_titulo": "Elige un activo",
     "vacio_detalle": "Consulta su ICA vigente y la evolución de sus cálculos anteriores.",
-    "vigente": "ICA vigente · {{periodo}}",
+    "vigente": "ICA vigente · {{activo}} · {{periodo}}",
     "calcular": "Calcular ahora",
     "conversion": "Conversión alimenticia",
     "conversion_corta": "CA",
@@ -225,7 +231,8 @@
     "intento": "Intento",
     "alerta_critica": "Conversión alimenticia crítica: {{valor}}",
     "alerta_critica_detalle": "El activo gasta más de 5 kilos de alimento por kilo ganado. Revisa la ración y la salud del animal; se generó una alerta para el equipo.",
-    "ver_detalle_aria": "Ver el detalle del cálculo {{periodo}}"
+    "ver_detalle_aria": "Ver el detalle del cálculo {{periodo}}",
+    "calculado_ok": "ICA calculado"
   },
   "batch": {
     "titulo": "Cálculo automático (batch)",
@@ -292,7 +299,7 @@
     "motivo_correccion": "Motivo de la corrección",
     "motivo_correccion_hint": "Mínimo 20 caracteres.",
     "sin_precio_referencia": "Precio de referencia no disponible",
-    "sin_precio_referencia_detalle": "El sistema no tiene un precio automático para servicios veterinarios ni inseminaciones: ingresa el precio real y justifica de dónde sale."
+    "sin_precio_referencia_detalle": "No hay un precio de mercado automático de los últimos 30 días para servicios veterinarios ni inseminaciones: ingresa el precio real y justifica de dónde sale."
   },
   "nic41": {
     "titulo": "Provisión NIC-41",
@@ -404,7 +411,8 @@
     "descargar": "Descargar exportación",
     "rango_fechas": "Rango de fechas",
     "rango_costo": "Rango de costo",
-    "unidad": "Unidad"
+    "unidad": "Unidad",
+    "subtitulo": "Alimento, medicamentos y correcciones de un activo, con su costo y el ciclo en que se registraron."
   },
   "evento": {
     "SUMINISTRO_REGISTRADO": "Suministro registrado",
@@ -437,12 +445,11 @@
     "entidad": "Entidad",
     "costo": "Costo afectado",
     "usuario": "Usuario",
-    "usuario_n": "Usuario #{{id}}",
     "ip": "IP de origen",
     "vacio_titulo": "Sin eventos",
     "vacio_detalle": "No hay eventos de auditoría con esos filtros.",
     "detalle": "Evento de auditoría",
-    "detalle_titulo": "Evento #{{id}}",
+    "detalle_titulo": "{{entidad}} · {{fecha}}",
     "incompleto": "Registro de auditoría incompleto",
     "antes": "Antes",
     "despues": "Después",
@@ -450,8 +457,9 @@
     "actor_hint": "Número del usuario que hizo la operación.",
     "entidad_hint": "Elige una de la lista o escribe su nombre.",
     "sin_clasificacion": "Sin clasificar",
-    "ver_aria": "Ver el detalle del evento {{id}}",
-    "retencion": "Se conserva {{valor}}"
+    "ver_aria": "Ver el detalle: {{entidad}}, {{fecha}}",
+    "retencion": "Se conserva {{valor}}",
+    "otro_usuario": "Otro usuario"
   },
   "entidad": {
     "registro_suministro": "Registro de suministro",
@@ -461,6 +469,22 @@
     "provision_nic41": "Provisión NIC-41",
     "reporte_gastos_acumulados": "Reporte de gastos",
     "historial_suministros": "Historial de suministros",
-    "exportacion_historial": "Exportación del historial"
+    "exportacion_historial": "Exportación del historial",
+    "registros_consumo_alimentos": "Consumo de alimento",
+    "registros_medicamentos": "Aplicación de medicamento",
+    "costos_productivos": "Costo del ciclo",
+    "resultado_ica": "Cálculo del ICA",
+    "outbox_provisiones_m06": "Envío de costos a Finanzas",
+    "archivos_exportacion_suministros": "Archivo exportado",
+    "exportacion_reporte_gastos": "Exportación del reporte de gastos",
+    "otra": "Otro registro"
+  },
+  "estado_activo": {
+    "ACTIVO": "Activo",
+    "INACTIVO": "Inactivo",
+    "EN_TRATAMIENTO": "En tratamiento",
+    "AISLADO": "Aislado",
+    "CERRADO": "Cerrado",
+    "BAJA": "Dado de baja"
   }
 }

@@ -9,12 +9,14 @@
 // | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
 // | 2026-11-10 | Arekkazu | TC-DIS-265 RF-94: filtros de la bitácora por fechas, usuario, origen y activo |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
+// | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
 import { http } from '../../shared/api/http';
 import type {
   Acumulado, ActivoValorado, Asignacion, Cadena, CalculoPeriodo, CosechaPendiente, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
   CostosManuales, Cotizacion, EstadoDetalle, EstadoResumen, HistorialActivo, InformeDetalle, InformePayload, InformeResumen,
   Linea, Naturaleza, PaginaAuditoria, Periodo, Precio, PrecioPayload, Prevalidacion, Propuesta, ResultadoCierre,
-  ResultadoCosto, Simulacion, TipoAjuste, EventoPendiente } from '../types';
+  ResultadoCosto, Simulacion, TipoAjuste, EventoPendiente, FiltroPeriodos, Titular } from '../types';
 
 const B = '/finanzas';
 
@@ -57,7 +59,8 @@ export const finanzasApi = {
     post<{ id_precio_mercado: number; estado: string; desviacion_pct: string | null; fecha_vigencia: string }>('/precios', p),
 
   // Reconocimiento inicial (RF-82, RF-88 escenario A)
-  propuestas: () => get<Propuesta[]>('/reconocimientos/propuestas'),
+  /** Del titular del período si se da (sin NIT, todos los visibles). */
+  propuestas: (nit?: string | null) => get<Propuesta[]>('/reconocimientos/propuestas', nit ? { numero_id_tributaria: nit } : undefined),
   propuesta: (idActivo: number, clasificacion?: Clasificacion) =>
     get<Propuesta>(`/reconocimientos/propuestas/${idActivo}`, clasificacion ? { clasificacion } : undefined),
   confirmar: (idActivo: number, body: {
@@ -67,7 +70,7 @@ export const finanzasApi = {
   revertir: (idActivo: number, motivo: string) => post<unknown>(`/reconocimientos/${idActivo}/reversion`, { motivo_reversion: motivo }),
 
   // Valoración (RF-83 a RF-86) y modelo de costo (RF-88)
-  activos: () => get<ActivoValorado[]>('/activos'),
+  activos: (nit?: string | null) => get<ActivoValorado[]>('/activos', nit ? { numero_id_tributaria: nit } : undefined),
   historial: (idActivo: number) => get<HistorialActivo>(`/activos/${idActivo}`),
   simular: (idActivo: number) => get<Simulacion>(`/activos/${idActivo}/simulacion`),
   procesarEventos: () => post<{ eventos: Record<string, number>; provisiones_m05: Record<string, number> }>('/eventos/procesar'),
@@ -97,7 +100,9 @@ export const finanzasApi = {
     post<unknown>(`/costos/${id}/clasificacion`, { naturaleza_costo: naturaleza, justificacion }),
 
   // Períodos y cierre (RF-87) y trazabilidad (RF-91)
-  periodos: () => get<Periodo[]>('/periodos'),
+  titulares: () => get<Titular[]>('/titulares'),
+  /** Del titular elegido; `sin_titular` trae los períodos anteriores al titular de la finca. */
+  periodos: (filtro?: FiltroPeriodos) => get<Periodo[]>('/periodos', filtro ? { ...filtro } : undefined),
   prevalidar: (id: number) => get<Prevalidacion>(`/periodos/${id}/prevalidacion`),
   cerrar: (id: number, body: { autorizar_exclusiones: boolean; incluir_activos_sin_precio: boolean; activos_estimados?: number[] }) =>
     post<ResultadoCierre>(`/periodos/${id}/cierre`, body),
