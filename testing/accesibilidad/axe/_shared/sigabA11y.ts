@@ -87,6 +87,30 @@ export function main(page: Page) {
   return page.getByRole('main');
 }
 
+/**
+ * Selecciona el Titular (empresa) y luego el Período contable en las vistas de Finanzas NIC 41
+ * (BarraPeriodo en comunes.tsx). El combobox "Período contable" solo lista los períodos del
+ * Titular actualmente elegido: sin cambiar el Titular primero, un período de otra empresa
+ * (p. ej. uno sembrado por el DBA para una finca QA) nunca aparece como opción, y
+ * `selectOption` sin timeout explícito espera el presupuesto completo del test antes de fallar.
+ * `contieneTitular` es un substring del texto de la opción (p. ej. "Agropecuaria Medicion QA");
+ * se omite para dejar el Titular por defecto (el primero, normalmente "Agropecuaria El Rosal").
+ */
+export async function irAPeriodo(page: Page, idPeriodo: string, contieneTitular?: string) {
+  if (contieneTitular) {
+    const titular = main(page).getByRole('combobox', { name: 'Titular' });
+    if (await titular.count() > 0) {
+      const opciones = await titular.locator('option').allTextContents();
+      const match = opciones.find((o) => o.includes(contieneTitular));
+      if (match) await titular.selectOption({ label: match }, { timeout: 5_000 }).catch(() => {});
+      await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+    }
+  }
+  const periodo = main(page).getByRole('combobox', { name: 'Período contable' });
+  if (await periodo.count() > 0) await periodo.selectOption(idPeriodo, { timeout: 5_000 }).catch(() => {});
+  await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+}
+
 /** GET de la API cuyo pathname termina en `sufijo` (sin el prefijo /back-sigab-test). */
 export function esGet(sufijo: string | RegExp) {
   return (r: Response) => {
