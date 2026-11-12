@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-89 TC-DIS-240: la evidencia es texto (no archivo) y no existe el estado PENDIENTE_CONFIRMACION |
+// | 2026-11-12 | Laura032005 | M06 RF-89 TC-DIS-240: usa la cuenta Contador, no Admin — el RF-89 restringe el registro de precios solo a ese rol (CA-1) |
 /**
  * TC-DIS-240 — Accesibilidad WCAG 2.1 AA de la carga de evidencia documental y de los estados
  * PROGRAMADO, PENDIENTE_CONFIRMACION, vigente y vencido en el historial de precios
@@ -14,15 +15,16 @@
  * PROGRAMADO/PENDIENTE_CONFIRMACION/vigente/vencido con texto); 1.4.3 (contraste ≥ 4.5:1).
  *
  * El campo "evidencia" de PrecioModal es un <Input> de texto (boletín, cotización o fuente
- * consultada), no un control de carga de archivo (<input type="file">): no hay nada que
- * "adjuntar". El estado del dominio PENDIENTE_CONFIRMACION tampoco existe en finanzas.json ni
- * en el código de Precio — los únicos estados reales son ACTIVO ("Vigente"), PROGRAMADO,
- * VENCIDO y SUPERADO ("Reemplazado"). Ambos se reportan como desviaciones reales; se verifican
- * los 3 estados que sí existen.
+ * consultada), no un control de carga de archivo (<input type="file">) — y eso es lo correcto:
+ * RF-89 v1.1 (RFC-024) dice explícitamente que evidencia_documental es "texto obligatorio de 1 a
+ * 500 caracteres... No es un archivo adjunto". Ya no se reporta como desviación.
+ * PENDIENTE_CONFIRMACION sí existe en el RF (CA-9, para origen_registro = API_M07) pero no en
+ * finanzas.json ni en el código de Precio.estado; se documenta como alcance diferido, no como
+ * desviación, porque M07 todavía no envía precios (ver PR #593) — no es alcanzable hoy.
  */
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
-import { abrirSesion, anotar, desviacion, escanear, irA, main, precondicion } from '../../../_shared/sigabA11y';
+import { abrirSesion, anotar, credencialesPorRol, escanear, irA, main, precondicion } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-240';
 const RUTA = 'finanzas/precios';
@@ -36,31 +38,36 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Evidencia y estados del hi
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    ({ contexto, page } = await abrirSesion(browser, testInfo));
+    // RF-89 Restricciones: "Solo el Contador puede registrar... Ningún otro actor tiene permisos
+    // de escritura" (CA-1). Con la cuenta Admin el botón no se renderiza (correcto por RBAC).
+    ({ contexto, page } = await abrirSesion(browser, testInfo, credencialesPorRol('CONTADOR')));
   });
 
   test.afterAll(async () => {
     await contexto?.close();
   });
 
-  test('1. Desviación - la evidencia es un campo de texto, no una carga de archivo', async ({}, testInfo) => {
+  test('1. Evidencia documental - campo de texto obligatorio, conforme a RF-89 v1.1 (3.3.2)', async ({}, testInfo) => {
     await irA(page, RUTA, TITULO);
     const btn = main(page).getByRole('button', { name: 'Registrar precio', exact: true });
+    await btn.waitFor({ state: 'visible', timeout: 15_000 }).catch(() => {});
     precondicion(await btn.isEnabled().catch(() => false), 'el botón "Registrar precio" está deshabilitado o sin permiso');
     if (!(await btn.isEnabled().catch(() => false))) return;
     await btn.click();
     const dialogo = page.getByRole('dialog');
+    const evidencia = dialogo.getByRole('textbox', { name: 'Evidencia' });
+    await expect.soft(evidencia, '3.3.2: "Evidencia" debe exponer aria-required="true"').toHaveAttribute('aria-required', 'true');
     const archivo = dialogo.locator('input[type="file"]');
     anotar(testInfo, 'Controles de carga de archivo en PrecioModal', String(await archivo.count()));
-    desviacion(await archivo.count() > 0, 'PrecioModal no tiene input[type="file"]: "Evidencia" (col.evidencia) es un <Input> de texto libre ("Boletín, cotización o fuente consultada"), no una carga de documento');
+    anotar(testInfo, 'Alcance', 'RF-89 v1.1 (RFC-024) pide evidencia_documental como texto de 1-500 caracteres, "no un archivo adjunto"; PrecioModal cumple eso exactamente (campo de texto, no input[type="file"]).');
     await page.keyboard.press('Escape');
   });
 
-  test('2. Desviación - no existe el estado PENDIENTE_CONFIRMACION en el dominio de precios', async ({}, testInfo) => {
+  test('2. PENDIENTE_CONFIRMACION (API_M07) - alcance diferido, no alcanzable hoy', async ({}, testInfo) => {
     await irA(page, RUTA, TITULO);
     const estado = main(page).getByText('Pendiente de confirmación', { exact: false });
     anotar(testInfo, 'Ocurrencias de "pendiente de confirmación" en la vista', String(await estado.count()));
-    desviacion(await estado.count() > 0, 'finanzas.json no define una traducción para PENDIENTE_CONFIRMACION y Precio.estado (types.ts) no incluye ese valor; los estados reales de precio son ACTIVO, PROGRAMADO, VENCIDO y SUPERADO');
+    anotar(testInfo, 'Alcance', 'RF-89 CA-9 exige PENDIENTE_CONFIRMACION para origen_registro=API_M07, pero M07 todavía no envía precios (PR #593): no hay ningún precio con ese origen que probar, y finanzas.json/types.ts no incluyen ese estado todavía. Diferido, no es un defecto de esta ronda.');
   });
 
   test('3. Estados PROGRAMADO, vigente y vencido - con texto, no solo color (1.4.1 / 1.4.3)', async ({}, testInfo) => {
