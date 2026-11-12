@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-89 TC-DIS-239: accesibilidad del formulario de registro de precio de mercado |
+// | 2026-11-12 | Laura032005 | M06 RF-89 TC-DIS-239: usa la cuenta Contador, no Admin — el RF-89 restringe el registro de precios solo a ese rol (CA-1) |
 /**
  * TC-DIS-239 — Accesibilidad WCAG 2.1 AA del formulario de registro de precio de mercado (campos
  * obligatorios, justificación condicional para fuente ESTIMADA, validaciones y confirmación
@@ -24,7 +25,7 @@
  */
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
-import { abrirSesion, anotar, escanear, irA, main, precondicion, PREFIJO_API } from '../../../_shared/sigabA11y';
+import { abrirSesion, anotar, credencialesPorRol, escanear, irA, main, precondicion, PREFIJO_API } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-239';
 const RUTA = 'finanzas/precios';
@@ -35,6 +36,7 @@ test.use({ locale: 'es-CO', launchOptions: { args: [`--remote-debugging-port=${P
 
 async function abrirFormulario(page: Page) {
   const btn = main(page).getByRole('button', { name: 'Registrar precio', exact: true });
+  await btn.waitFor({ state: 'visible', timeout: 15_000 }).catch(() => {});
   precondicion(await btn.isEnabled().catch(() => false), 'el botón "Registrar precio" está deshabilitado o no tiene permiso');
   await btn.click();
   const dialogo = page.getByRole('dialog');
@@ -47,7 +49,9 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Formulario de registro de 
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    ({ contexto, page } = await abrirSesion(browser, testInfo));
+    // RF-89 Restricciones: "Solo el Contador puede registrar... Ningún otro actor tiene permisos
+    // de escritura" (CA-1). Con la cuenta Admin el botón no se renderiza (correcto por RBAC).
+    ({ contexto, page } = await abrirSesion(browser, testInfo, credencialesPorRol('CONTADOR')));
   });
 
   test.afterAll(async () => {
