@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-247 RF-90: registros pendientes de clasificación            |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-247 RF-90: reejecución con los costos reales del período #241 |
 /**
  * TC-DIS-247 — Verificar accesibilidad WCAG 2.1 AA de los registros pendientes de clasificación
  * señalados en texto en la gestión de costos del período
@@ -22,7 +23,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import { anotar, auditarTabla, desviacion, escanear, estaEnRegionViva, main, precondicion } from '../../../_shared/sigabA11y';
 import {
-  ACTIVOS, COSTOS, PERIODOS, abrirSesionRol, abrirYAuditarDialogo, badges, concederPermisos, irFinanzas, quitarSimulaciones, simularEscritura, simularGet, textosCrudos,
+  ACTIVOS, COSTOS, PERIODOS, abrirSesionRol, elegirPeriodo, abrirYAuditarDialogo, badges, concederPermisos, irFinanzas, quitarSimulaciones, simularEscritura, simularGet, textosCrudos,
 } from '../../_shared/finanzas';
 
 const TC_ID = 'TC-DIS-247';
@@ -54,6 +55,8 @@ test.describe('TC-DIS-247 — Registros pendientes de clasificación en los cost
 
   test('a. Gestión de costos real; precondición: costos de las 3 naturalezas y 2 pendientes de clasificación', async ({}, testInfo) => {
     await irFinanzas(page, 'costos', /Costos del período/);
+    // Reejecución 2026-11-11: período real de Finca El Rosal (NIT 901458732).
+    await elegirPeriodo(page, 241);
     await escanear(page, TC_ID, __dirname, 'costos-real', testInfo, LH);
     const filas = await main(page).locator('table tbody tr').count();
     anotar(testInfo, 'Estado real', `${filas} costo(s) en el período elegido`);
