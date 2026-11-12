@@ -1,6 +1,8 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M05 RF-78 TC-DIS-217: accesibilidad del flujo de corrección de registros de suministro |
+// | 2026-11-11 | Laura032005 | M05 RF-78 TC-DIS-217: reejecución con datos reales del DBA; consultarPrimerActivo ya no toma el primero del combobox a ciegas (a veces caía en un activo sin ciclo), ahora apunta a BOV-114-TIL (1627); se probó con Gestor de Granja por un posible tema de permiso en "Corregir", mismo resultado — con más contexto, el "bloqueo" era esta pantalla tardando más de 60s en cargar (acumulado + 80 registros en paralelo), no backend ni permisos; timeout ampliado a 120s |
+// | 2026-11-11 | Laura032005 | M05 RF-78 TC-DIS-217: con la ficha de RF-78 (Restricción 8) se reemplaza el placeholder de E6 por una reproducción real (corregir el mismo registro dos veces sin cambiar cantidad/precio); E7 se documenta como no reproducible desde la UI (id_registro_original siempre se adjunta automáticamente), no como dato faltante |
 /**
  * TC-DIS-217 — Accesibilidad WCAG 2.1 AA del flujo de corrección de registros de suministro y
  * de sus mensajes de rechazo
@@ -36,9 +38,9 @@ test.use({ locale: 'es-CO', launchOptions: { args: [`--remote-debugging-port=${P
 
 async function consultarPrimerActivo(page: Page) {
   const combo = main(page).getByRole('combobox', { name: 'Activo biológico' });
-  await combo.focus();
-  await combo.press('ArrowDown');
-  await combo.press('Enter');
+  // BOV-114-TIL (id 1627): ciclo "Levante y ceba" real, fase Ceba activa desde el 1/10 (dato del DBA).
+  await combo.fill('1627');
+  await combo.blur();
   await main(page).getByRole('button', { name: 'Consultar', exact: true }).click();
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
 }
@@ -48,6 +50,10 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Corrección de registros d
   let page: Page;
 
   test.beforeAll(async ({ browser }, testInfo) => {
+    // Se probó con Gestor de Granja por una teoría de permisos que resultó ser falsa: esa cuenta
+    // no tiene asignada la finca de BOV-114-TIL ("No hay activos visibles para tu usuario"), lo
+    // que causaba el mismo 404 "sin ciclo" por una razón totalmente distinta (RLS por finca, no
+    // falta del ciclo). Admin sí ve todas las fincas (dato del DBA): se vuelve a esa cuenta.
     ({ contexto, page } = await abrirSesion(browser, testInfo));
   });
 
@@ -56,9 +62,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Corrección de registros d
   });
 
   test('1. Acción "Corregir" operable por teclado - foco entra al diálogo con la referencia al registro original (2.1.1 / 2.4.7 / 1.3.1)', async ({}, testInfo) => {
+    testInfo.setTimeout(120_000);
     await irA(page, RUTA, TITULO);
     await consultarPrimerActivo(page);
     const corregir = main(page).getByRole('button', { name: 'Corregir', exact: true }).first();
+    await corregir.waitFor({ state: 'visible', timeout: 90_000 }).catch(() => {});
     precondicion(await corregir.count() > 0, 'no hay un registro de tipo REGISTRO (no CORRECCION) sobre el que probar la corrección, o falta el permiso U');
     if (await corregir.count() === 0) return;
 
@@ -77,9 +85,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Corrección de registros d
   });
 
   test('2. motivo_correccion - obligatorio en texto, no solo con asterisco (3.3.2) y error asociado (3.3.1)', async ({}, testInfo) => {
+    testInfo.setTimeout(120_000);
     await irA(page, RUTA, TITULO);
     await consultarPrimerActivo(page);
     const corregir = main(page).getByRole('button', { name: 'Corregir', exact: true }).first();
+    await corregir.waitFor({ state: 'visible', timeout: 90_000 }).catch(() => {});
     precondicion(await corregir.count() > 0, 'no hay un registro corregible disponible');
     if (await corregir.count() === 0) return;
 
@@ -99,9 +109,11 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Corrección de registros d
   });
 
   test('3. E3 - desviación: la fecha no es editable en la corrección, no se puede provocar desde este modal', async ({}, testInfo) => {
+    testInfo.setTimeout(120_000);
     await irA(page, RUTA, TITULO);
     await consultarPrimerActivo(page);
     const corregir = main(page).getByRole('button', { name: 'Corregir', exact: true }).first();
+    await corregir.waitFor({ state: 'visible', timeout: 90_000 }).catch(() => {});
     precondicion(await corregir.count() > 0, 'no hay un registro corregible disponible');
     if (await corregir.count() === 0) return;
     await corregir.click();
@@ -112,8 +124,53 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Corrección de registros d
     await page.keyboard.press('Escape');
   });
 
-  test('4. E6 y E7 - rechazos del servidor (precondición de datos; no se fuerzan con datos inventados)', async ({}, testInfo) => {
-    precondicion(false, 'E6 (duplicado, HTTP 409) y E7 (corrección sin registro original válido, HTTP 422) requieren un estado de datos concurrente o un registro inconsistente que no se reproduce con el ambiente disponible');
-    anotar(testInfo, 'E6/E7 (CorreccionSuministroModal)', 'Ambos se mostrarían con el mismo <Alert variant={error.status === 409 ? "error" : "warning"}> genérico usado en el resto de formularios de este módulo.');
+  test('4. E6 - rechazo por corrección duplicada (HTTP 409), reproducida con el mismo registro dos veces (RF-78 Restricción 8)', async ({}, testInfo) => {
+    testInfo.setTimeout(120_000);
+    await irA(page, RUTA, TITULO);
+    await consultarPrimerActivo(page);
+    const corregir = main(page).getByRole('button', { name: 'Corregir', exact: true }).first();
+    await corregir.waitFor({ state: 'visible', timeout: 90_000 }).catch(() => {});
+    precondicion(await corregir.count() > 0, 'no hay un registro corregible disponible');
+    if (await corregir.count() === 0) return;
+
+    // RF-78 Restricción 8: un registro (incluida una corrección) es duplicado si coincide en
+    // activo+ciclo+tipo+fecha_aplicacion+cantidad+precio_unitario_resuelto. CorreccionSuministroModal
+    // precarga cantidad/precio del original: enviar la corrección dos veces sin cambiarlos
+    // reproduce el 409 real, sin inventar datos ni tocar la base de datos.
+    const enviarCorreccionSinCambios = async () => {
+      await corregir.click();
+      const dialogo = page.getByRole('dialog');
+      await expect(dialogo).toBeVisible();
+      await dialogo.getByRole('textbox', { name: 'Justificación del precio' }).fill('Mismo precio de catálogo, sin cambios en esta corrección');
+      await dialogo.getByRole('textbox', { name: 'Motivo de la corrección' }).fill('Reproducción del caso E6 (RF-DIS-217, duplicado 409)');
+      await dialogo.getByRole('button', { name: 'Registrar corrección', exact: true }).click();
+      await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+    };
+
+    await enviarCorreccionSinCambios();
+    const primeraAlerta = page.getByRole('alert');
+    anotar(testInfo, 'E6 - primer envío', await primeraAlerta.count() > 0 ? await primeraAlerta.innerText() : 'sin alerta; diálogo cerrado (corrección aceptada)');
+    await page.keyboard.press('Escape').catch(() => {});
+
+    await enviarCorreccionSinCambios();
+    const segundaAlerta = page.getByRole('alert');
+    const huboAlerta = await segundaAlerta.count() > 0;
+    anotar(testInfo, 'E6 - segundo envío (idéntico)', huboAlerta ? await segundaAlerta.innerText() : 'sin alerta; el backend aceptó dos correcciones idénticas (no aplicó la Restricción 8 de deduplicación)');
+    if (huboAlerta) {
+      await expect.soft(segundaAlerta, '4.1.3 (E6): el rechazo de duplicado debe anunciarse en una región visible/anunciable, sin perder el foco a body').toBeVisible();
+      const foco = await describirFoco(page);
+      expect.soft(foco, '4.1.3: el foco no debe perderse al mostrar el error de duplicado').not.toBe('body');
+    }
+  });
+
+  test('5. E7 - desviación: id_registro_original siempre se adjunta automáticamente, no se puede omitir desde este modal', async ({}, testInfo) => {
+    // RF-78 Flujo alterno E7: "tipo_operacion = CORRECCION pero id_registro_original está
+    // ausente o no existe → HTTP 422". CorreccionSuministroModal solo se abre a partir de un
+    // "Corregir" sobre una fila real (prop `original: LineaHistorial`): el id del registro
+    // original siempre viaja con la solicitud, nunca vacío. No hay manera de omitirlo desde la
+    // UI tal como está implementada — se documenta como desviación de alcance, no como dato
+    // faltante: no existe un camino de usuario real que reproduzca E7 sin manipular la base de
+    // datos para dejar una corrección con una referencia inválida.
+    anotar(testInfo, 'E7 (CorreccionSuministroModal)', 'id_registro_original se toma de `original.id_registro_suministro` (la fila real que abrió el modal) y siempre viaja con la solicitud; la UI no ofrece ningún camino para enviarlo vacío o inválido.');
   });
 });
