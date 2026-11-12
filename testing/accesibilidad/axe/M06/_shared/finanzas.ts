@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-242..266 RF-87..94: utilidades de las pruebas de accesibilidad de M06 |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-242..266 RF-87..94: reejecución; activos simulados con el campo tipo, tema por el botón real y PDF con flujos comprimidos |
 /**
  * Utilidades de los specs de accesibilidad de M06 (Finanzas NIC 41, /finanzas/*).
  *
@@ -19,6 +20,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import zlib from 'zlib';
 import { expect, type Browser, type BrowserContext, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
 import { iniciarSesion, PREFIJO_API } from '../../_shared/sigabA11y';
 
@@ -134,9 +136,9 @@ export const PERIODOS = [
 export const prevalidacionLimpia = { bloqueos: [], activos_sin_precio: [], lineas_sin_trazabilidad: [], puede_cerrar: true, requiere_autorizacion: false };
 
 export const ACTIVOS = [
-  { id_activo_biologico: 7001, identificador: 'BOV-101', especie: 'Bovino', id_especie: 1, finca: 'Finca Simulada', id_finca: 31, valor_razonable_neto: '4500000.00', valorado_por_costo: false, valor_contable_por_costo: null, tipo_activo: 'INDIVIDUAL' },
-  { id_activo_biologico: 7002, identificador: 'BOV-102', especie: 'Bovino', id_especie: 1, finca: 'Finca Simulada', id_finca: 31, valor_razonable_neto: '3800000.00', valorado_por_costo: false, valor_contable_por_costo: null, tipo_activo: 'INDIVIDUAL' },
-  { id_activo_biologico: 7003, identificador: 'LOTE-TIL-07', especie: 'Tilapia', id_especie: 4, finca: 'Finca Simulada', id_finca: 31, valor_razonable_neto: '12600000.00', valorado_por_costo: false, valor_contable_por_costo: null, tipo_activo: 'POBLACIONAL' },
+  { id_activo_biologico: 7001, identificador: 'BOV-101', especie: 'Bovino', id_especie: 1, finca: 'Finca Simulada', id_finca: 31, valor_razonable_neto: '4500000.00', valorado_por_costo: false, valor_contable_por_costo: null, tipo_activo: 'INDIVIDUAL', tipo: 'INDIVIDUAL' },
+  { id_activo_biologico: 7002, identificador: 'BOV-102', especie: 'Bovino', id_especie: 1, finca: 'Finca Simulada', id_finca: 31, valor_razonable_neto: '3800000.00', valorado_por_costo: false, valor_contable_por_costo: null, tipo_activo: 'INDIVIDUAL', tipo: 'INDIVIDUAL' },
+  { id_activo_biologico: 7003, identificador: 'LOTE-TIL-07', especie: 'Tilapia', id_especie: 4, finca: 'Finca Simulada', id_finca: 31, valor_razonable_neto: '12600000.00', valorado_por_costo: false, valor_contable_por_costo: null, tipo_activo: 'POBLACIONAL', tipo: 'POBLACIONAL' },
 ];
 
 export function costo(id: number, extra: Record<string, unknown>) {
@@ -223,6 +225,8 @@ export function informeDetalle(id: number) {
         { activo: 'LOTE-TIL-07', valor_inicio: '11800000.00', compras: '0', transformacion_biologica: '800000.00', precio_mercado: '0', bajas: '0', valor_cierre: '12600000.00' },
       ],
       parr_54_56_activos_al_costo: 'DATOS_INSUFICIENTES',
+      // Sección cuya fuente falló: el backend la marca con un código de error (reejecución 2026-11-11).
+      parr_53_riesgos: 'BLOQUEADA_ERROR_FUENTE',
       parr_49_restricciones_compromisos: { compromisos: [], activos_pignorados: [] },
       alertas_consistencia: [{ campo: 'parr_50_conciliacion', detalle: 'El valor de cierre de BOV-101 difiere del comprobante en $ 5.000.' }],
     },
@@ -326,9 +330,19 @@ export function badges(alcance: Locator): Promise<{ texto: string; icono: boolea
 }
 
 /** Activa el tema oscuro como lo hace useTheme ([data-theme="dark"] en <html>). */
+/**
+ * Cambia el tema con el botón de la barra superior, como lo haría el usuario (reejecución 2026-11-11).
+ * Antes se escribía `data-theme` a mano, lo que no reproduce lo que la app hace al cambiar de tema
+ * (por ejemplo, con el color institucional de la finca). El PATCH que guarda la preferencia se aborta.
+ */
 export async function temaOscuro(page: Page, activo: boolean) {
-  await page.evaluate((a) => (a ? document.documentElement.setAttribute('data-theme', 'dark') : document.documentElement.removeAttribute('data-theme')), activo);
-  await page.waitForTimeout(300);
+  const actual = (await page.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'dark';
+  if (actual !== activo) {
+    const boton = page.getByRole('button', { name: activo ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro' });
+    if (await boton.first().isVisible().catch(() => false)) await boton.first().click();
+    else await page.evaluate((a) => (a ? document.documentElement.setAttribute('data-theme', 'dark') : document.documentElement.removeAttribute('data-theme')), activo);
+  }
+  await page.waitForTimeout(400);
 }
 
 /** Indicadores de foco visibles en el elemento enfocado (outline o box-shadow). */
@@ -448,14 +462,78 @@ export async function guardarDescarga(dirSpec: string, nombre: string, contenido
   return destino;
 }
 
-/** Revisión estructural mínima de un PDF: etiquetado, idioma y título (no reemplaza a PAC). */
+/**
+ * Revisión estructural mínima de un PDF: etiquetado, idioma y título (no reemplaza a PAC).
+ * Reejecución 2026-11-11: los PDF del backend declaran /MarkInfo como referencia indirecta y pueden
+ * guardar objetos en flujos comprimidos (FlateDecode); la versión anterior solo aceptaba el
+ * diccionario en línea y daba un falso negativo. Se busca en el texto plano y en cada flujo.
+ */
 export function revisarPdf(bytes: Buffer) {
-  const t = bytes.toString('latin1');
+  const plano = bytes.toString('latin1');
+  const flujos: string[] = [];
+  const re = /stream\r?\n/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(plano))) {
+    const inicio = m.index + m[0].length;
+    const fin = plano.indexOf('endstream', inicio);
+    if (fin < 0) break;
+    try { flujos.push(zlib.inflateSync(bytes.subarray(inicio, fin)).toString('latin1')); } catch { /* flujo no comprimido o binario */ }
+    re.lastIndex = fin;
+  }
+  const t = [plano, ...flujos].join('\n');
   return {
     esPdf: t.startsWith('%PDF'),
-    etiquetado: /\/StructTreeRoot/.test(t) && /\/MarkInfo\s*<<[^>]*\/Marked\s+true/.test(t),
+    // /MarkInfo puede ser un diccionario en línea o una referencia indirecta (`/MarkInfo 80 0 R`).
+    etiquetado: /\/StructTreeRoot/.test(t) && /\/MarkInfo\s*(<<|\d+\s+\d+\s+R)/.test(t) && /\/Marked\s+true/.test(t),
     idioma: /\/Lang\s*\(/.test(t),
     titulo: /\/Title\s*[(<]/.test(t),
     mostrarTitulo: /\/DisplayDocTitle\s+true/.test(t),
   };
+}
+
+/** Entradas de un ZIP (un .xlsx es un ZIP): nombre → contenido en texto. Solo lectura, sin dependencias. */
+function leerZip(buf: Buffer): Map<string, string> {
+  const archivos = new Map<string, string>();
+  const fin = buf.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  if (fin < 0) return archivos;
+  let p = buf.readUInt32LE(fin + 16);
+  const total = buf.readUInt16LE(fin + 10);
+  for (let i = 0; i < total && buf.readUInt32LE(p) === 0x02014b50; i++) {
+    const metodo = buf.readUInt16LE(p + 10);
+    const comprimido = buf.readUInt32LE(p + 20);
+    const largoNombre = buf.readUInt16LE(p + 28);
+    const largoExtra = buf.readUInt16LE(p + 30);
+    const largoComentario = buf.readUInt16LE(p + 32);
+    const local = buf.readUInt32LE(p + 42);
+    const nombre = buf.subarray(p + 46, p + 46 + largoNombre).toString('utf8');
+    const inicio = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
+    const datos = buf.subarray(inicio, inicio + comprimido);
+    try { archivos.set(nombre, (metodo === 8 ? zlib.inflateRawSync(datos) : datos).toString('utf8')); } catch { /* entrada ilegible */ }
+    p += 46 + largoNombre + largoExtra + largoComentario;
+  }
+  return archivos;
+}
+
+/**
+ * Revisión estructural de un Excel (.xlsx): nombre de cada hoja, celdas combinadas y las primeras
+ * filas de la primera hoja como texto (reejecución 2026-11-11, TC-DIS-259 y TC-DIS-264).
+ */
+export function revisarExcel(bytes: Buffer) {
+  const zip = leerZip(bytes);
+  const libro = zip.get('xl/workbook.xml') ?? '';
+  const desescapar = (s: string) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'");
+  const hojas = [...libro.matchAll(/<sheet [^>]*name="([^"]+)"/g)].map((m) => desescapar(m[1]));
+  const compartidas = [...(zip.get('xl/sharedStrings.xml') ?? '').matchAll(/<si>([\s\S]*?)<\/si>/g)]
+    .map((m) => desescapar([...m[1].matchAll(/<t[^>]*>([^<]*)<\/t>/g)].map((t) => t[1]).join('')));
+  const nombresHoja = [...zip.keys()].filter((k) => /^xl\/worksheets\/sheet\d+\.xml$/.test(k)).sort();
+  const combinadas = nombresHoja.reduce((n, k) => n + ((zip.get(k) ?? '').match(/<mergeCell /g)?.length ?? 0), 0);
+  const primera = zip.get(nombresHoja[0] ?? '') ?? '';
+  const filas = [...primera.matchAll(/<row [^>]*>([\s\S]*?)<\/row>/g)].slice(0, 6).map((f) =>
+    [...f[1].matchAll(/<c ([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)].map((c) => {
+      const v = /<v>([^<]*)<\/v>/.exec(c[2] ?? '')?.[1];
+      const enLinea = /<t[^>]*>([^<]*)<\/t>/.exec(c[2] ?? '')?.[1];
+      if (enLinea !== undefined) return desescapar(enLinea);
+      return /t="s"/.test(c[1]) && v !== undefined ? compartidas[Number(v)] ?? '' : desescapar(v ?? '');
+    }));
+  return { esXlsx: hojas.length > 0, hojas, combinadas, filas };
 }
