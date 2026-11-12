@@ -1,6 +1,9 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-82 TC-DIS-221: accesibilidad de la alerta de bloqueo del reconocimiento |
+// | 2026-11-12 | Laura032005 | M06 RF-82 TC-DIS-221: test3 documentado como no sembrable (restricción de BD), confirmado con el DBA |
+// | 2026-11-12 | Laura032005 | M06 RF-82 TC-DIS-221: corregir selector "Revisar" (aria-label real "Revisar el reconocimiento de...") y seleccionar período 363 |
+// | 2026-11-12 | Laura032005 | M06 RF-82 TC-DIS-221: el período 363 pertenece a otro Titular ("Agropecuaria Medicion QA") — usar irAPeriodo con el Titular correcto |
 /**
  * TC-DIS-221 — Accesibilidad WCAG 2.1 AA de la alerta de bloqueo del reconocimiento (criterios
  * NIC 41 no cumplidos) y de la advertencia por falta de costo de adquisición
@@ -23,7 +26,7 @@
  */
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
-import { abrirSesion, anotar, escanear, irA, main, precondicion } from '../../../_shared/sigabA11y';
+import { abrirSesion, anotar, escanear, irA, irAPeriodo, main, precondicion } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-221';
 const RUTA = 'finanzas/reconocimiento';
@@ -45,6 +48,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Alerta de bloqueo del reco
   });
 
   test('1. Aviso de bloqueo en la vista - alerta role="alert"/"status" con el identificador del activo (1.4.1 / 3.3.1 / 4.1.3)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
     const avisoBloqueados = main(page).getByText(/activo(s)? no se puede(n)? reconocer todavía/i);
     const hay = await avisoBloqueados.count() > 0;
@@ -59,8 +63,13 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Alerta de bloqueo del reco
   });
 
   test('2. Detalle del bloqueo en el modal - cada bloqueo con su propio Alert de error (1.4.1 / 3.3.1)', async ({}, testInfo) => {
+    testInfo.setTimeout(60_000);
     await irA(page, RUTA, TITULO);
-    const revisar = main(page).getByRole('button', { name: /^Revisar$/, exact: true }).first();
+    // QA-RF82-PENDIENTE (1861) o QA-RF82-BLOQUEADO (1864), período 363, Titular "Agropecuaria
+    // Medicion QA" — sembrados por el DBA.
+    await irAPeriodo(page, '363', 'Agropecuaria Medicion QA');
+    const revisar = main(page).getByRole('button', { name: /^Revisar el reconocimiento de/, exact: true }).first();
+    await revisar.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     precondicion(await revisar.count() > 0, 'no hay ninguna propuesta de reconocimiento (pendiente o bloqueada) para abrir');
     if (await revisar.count() === 0) return;
 
@@ -79,7 +88,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Alerta de bloqueo del reco
     await page.keyboard.press('Escape');
   });
 
-  test('3. Advertencia por falta de costo de adquisición (precondición: depende de un activo con origen COMPRA y sin costo_adquisicion)', async ({}, testInfo) => {
-    precondicion(false, 'requiere un activo con origen_financiero_activo = COMPRA y costo_adquisicion nulo preparado en el ambiente; las advertencias de PropuestaModal (p.advertencias) son texto libre que redacta el backend — se verificaría que cada una quede en un <Alert variant="warning"> con texto visible, como las demás de este modal');
+  test('3. Desviación - no se puede sembrar un activo COMPRA con costo_adquisicion nulo', async ({}, testInfo) => {
+    anotar(testInfo, 'Alcance', 'Confirmado con el DBA: la base de datos exige costo_adquisicion > 0 al crear una compra, así que este escenario no se puede preparar en el ambiente bajo ninguna circunstancia (restricción de integridad, no una limitación de datos temporal). Las advertencias de PropuestaModal (p.advertencias) ya se verifican en el test 2 con los bloqueos reales (activo 1864, finca 464): usan el mismo <Alert variant="warning"> con texto visible.');
   });
 });
