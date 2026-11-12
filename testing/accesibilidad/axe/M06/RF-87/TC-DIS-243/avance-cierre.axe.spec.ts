@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-243 RF-87: anuncio del avance del cierre de 9 pasos         |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-243 RF-87: reejecución; barra y anuncios se leen antes del escaneo |
 /**
  * TC-DIS-243 — Verificar accesibilidad WCAG 2.1 AA de aria-live en el avance del cierre masivo de
  * 9 pasos [CRÍTICO]
@@ -30,7 +31,7 @@ import {
 const TC_ID = 'TC-DIS-243';
 const VIEWPORTS = (process.env.TC_DIS_243_VIEWPORTS ?? 'movil,tablet,escritorio').split(',').map((v) => v.trim());
 const LH = ['cierre-en-curso', 'cierre-fallido'];
-const ESPERA = 8000;
+const ESPERA = 12_000; // por debajo del timeout de 15 s de Axios
 
 test.use({ actionTimeout: 15_000, launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
 
@@ -82,12 +83,15 @@ test.describe('TC-DIS-243 — Anuncio del avance del cierre de 9 pasos', () => {
     await confirmarCierre(page);
     await page.waitForTimeout(800);
     const focoDurante = await describirFocoDialogo(page);
-    await escanear(page, TC_ID, __dirname, 'cierre-en-curso', testInfo, LH);
-
+    // Reejecución 2026-11-11: la barra y las regiones vivas se leen ANTES del escaneo. En escritorio el
+    // escaneo incluye Lighthouse, que tarda más que el cierre simulado: leídas después, la barra ya no
+    // existía y el resultado dependía del viewport.
     const barra = await page.locator('[role="progressbar"]').evaluateAll((els) => els.map((e) => ({
       now: e.getAttribute('aria-valuenow'), max: e.getAttribute('aria-valuemax'), text: e.getAttribute('aria-valuetext'), nombre: e.getAttribute('aria-label') ?? e.getAttribute('aria-labelledby'),
     })));
-    const anuncios = await anunciosDurante(page, ESPERA);
+    const escucha = anunciosDurante(page, ESPERA + 5000);
+    await escanear(page, TC_ID, __dirname, 'cierre-en-curso', testInfo, LH);
+    const anuncios = await escucha;
     anotar(testInfo, 'Durante el cierre', `progressbar: ${JSON.stringify(barra)} · foco: ${focoDurante}`);
     anotar(testInfo, 'Regiones vivas observadas', anuncios.join(' ¦ ') || '(ninguna)');
 
