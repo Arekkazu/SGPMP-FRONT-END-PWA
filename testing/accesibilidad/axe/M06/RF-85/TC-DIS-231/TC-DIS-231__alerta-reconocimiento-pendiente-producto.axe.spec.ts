@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo |
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-85 TC-DIS-231: no existe alerta RECONOCIMIENTO_PENDIENTE ni ingreso manual de costos para productos |
+// | 2026-11-12 | Laura032005 | M06 RF-85 TC-DIS-231: confirmado con el DBA que "precio nulo" no se puede sembrar (restricción de BD); documentado como alcance, no precondición pendiente |
 /**
  * TC-DIS-231 — Accesibilidad WCAG 2.1 AA de la alerta RECONOCIMIENTO_PENDIENTE y del ingreso
  * manual de costos de venta
@@ -23,7 +24,7 @@
  */
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
-import { abrirSesion, anotar, desviacion, escanear, irA, main, precondicion } from '../../../_shared/sigabA11y';
+import { abrirSesion, anotar, desviacion, escanear, irA, main } from '../../../_shared/sigabA11y';
 
 const TC_ID = 'TC-DIS-231';
 const RUTA = 'finanzas/productos';
@@ -57,7 +58,7 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - RECONOCIMIENTO_PENDIENTE d
       await expect.soft(sinPrecio.first(), '1.4.1: "Sin precio" debe leerse como texto, no depender del color').toBeVisible();
       await escanear(page, TC_ID, __dirname, 'sin-precio', testInfo, PASOS_LIGHTHOUSE);
     } else {
-      precondicion(false, 'ningún producto del período tiene precio_mercado_producto nulo');
+      anotar(testInfo, 'Alcance', 'Confirmado con el DBA: la base de datos exige precio_mercado_producto al crear un producto, así que no se puede sembrar uno con precio nulo (restricción de integridad). El evento 1373 quedó pendiente de reconocer, pero eso no se refleja como "Sin precio" en ProductosView (que solo lista lo ya reconocido).');
     }
   });
 
