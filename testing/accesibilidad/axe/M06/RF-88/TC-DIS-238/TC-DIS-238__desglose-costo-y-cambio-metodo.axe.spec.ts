@@ -2,6 +2,8 @@
 // |------------|-------------|-------------|
 // | 2026-11-06 | Laura032005 | M06 RF-88 TC-DIS-238: accesibilidad del desglose de valor contable y del cambio de método sin confirmación |
 // | 2026-11-07 | Laura032005 | M06 RF-88 TC-DIS-238: loguear como Contador (Administrador no tiene permiso valoracion_por_costo) |
+// | 2026-11-12 | Laura032005 | M06 RF-88 TC-DIS-238: corregir selector "Ver detalle" (aria-label real), encabezado esperado y comparación en minúsculas (CSS uppercase), y buscar un activo al costo real en vez de ".first()" |
+// | 2026-11-12 | Laura032005 | M06 RF-88 TC-DIS-238: esperar a que cargue el contenido async del diálogo (heading/botón) antes de comprobarlo — carrera, no permiso |
 /**
  * TC-DIS-238 — Accesibilidad WCAG 2.1 AA del desglose del valor contable por costo, de la marca
  * diferenciada del método COSTO y de la confirmación del cambio a VALOR_RAZONABLE
@@ -50,12 +52,15 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Desglose del valor contabl
     const tabla = main(page).getByRole('table');
     precondicion(await tabla.count() > 0, 'no hay activos al costo ni con precio estimado en el ambiente');
     if (await tabla.count() === 0) return;
+    // thead usa text-transform: uppercase (CSS) — allInnerTexts() refleja el texto renderizado,
+    // no el literal de la traducción: se compara en minúsculas para no depender del estilo.
     const encabezados = await tabla.locator('thead th').allInnerTexts();
     anotar(testInfo, 'Encabezados', encabezados.join(' | '));
-    expect.soft(encabezados, '1.3.1: debe incluir costo inicial, depreciación y valor en libros').toEqual(
-      expect.arrayContaining(['Costo de adquisición', 'Depreciación acumulada']),
+    const encabezadosNorm = encabezados.map((e) => e.toLowerCase());
+    expect.soft(encabezadosNorm, '1.3.1: debe incluir costo inicial, depreciación y valor en libros').toEqual(
+      expect.arrayContaining(['costo inicial', 'depreciación acumulada']),
     );
-    const metodoBadge = tabla.getByText('Valoración por costo', { exact: true });
+    const metodoBadge = tabla.getByText(/valoraci[óo]n por costo/i);
     const hayMetodo = await metodoBadge.count() > 0;
     precondicion(hayMetodo, 'ningún activo visible está valorado por costo (todos podrían tener precio estimado)');
     if (hayMetodo) await expect.soft(metodoBadge.first(), '1.4.1: el método COSTO debe leerse como texto').toBeVisible();
@@ -64,12 +69,19 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Desglose del valor contabl
 
   test('2. Desglose costo−depreciación−deterioro en el detalle - dl con dt/dd asociados (1.3.1)', async ({}, testInfo) => {
     await irA(page, RUTA, TITULO);
-    const verDetalle = main(page).getByRole('button', { name: /^Ver detalle$/ }).first();
+    // La vista mezcla filas "al costo" y "estimadas": se busca un activo al costo real
+    // (QA-RF88-AL-COSTO, 1858, sembrado por el DBA) en vez de confiar en ".first()".
+    const campoBuscar = main(page).getByRole('searchbox');
+    if (await campoBuscar.count() > 0) await campoBuscar.fill('QA-RF88-AL-COSTO');
+    // Accesible name real: "Ver el historial financiero de {activo}" (valor.ver_detalle_aria).
+    const verDetalle = main(page).getByRole('button', { name: /^Ver el historial financiero de/ }).first();
+    await verDetalle.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     precondicion(await verDetalle.count() > 0, 'no hay un activo al costo para abrir su detalle');
     if (await verDetalle.count() === 0) return;
     await verDetalle.click();
     const dialogo = page.getByRole('dialog');
     const subtitulo = dialogo.getByRole('heading', { name: 'Modelo de costo' });
+    await subtitulo.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     const hayModeloCosto = await subtitulo.count() > 0;
     precondicion(hayModeloCosto, 'el activo abierto no está valorado al costo (DetalleActivoModal solo muestra esta sección cuando costo.es_activa)');
     if (hayModeloCosto) {
@@ -85,12 +97,16 @@ test.describe(`${TC_ID} - Accesibilidad WCAG 2.1 AA - Desglose del valor contabl
 
   test('3. Desviación - "Pasar a valor razonable" no abre un diálogo de confirmación (2.4.3)', async ({}, testInfo) => {
     await irA(page, RUTA, TITULO);
-    const verDetalle = main(page).getByRole('button', { name: /^Ver detalle$/ }).first();
+    const campoBuscar = main(page).getByRole('searchbox');
+    if (await campoBuscar.count() > 0) await campoBuscar.fill('QA-RF88-AL-COSTO');
+    const verDetalle = main(page).getByRole('button', { name: /^Ver el historial financiero de/ }).first();
+    await verDetalle.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     precondicion(await verDetalle.count() > 0, 'no hay un activo al costo para abrir su detalle');
     if (await verDetalle.count() === 0) return;
     await verDetalle.click();
     const detalle = page.getByRole('dialog');
     const pasar = detalle.getByRole('button', { name: 'Pasar a valor razonable', exact: true });
+    await pasar.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
     const hayBoton = await pasar.count() > 0;
     precondicion(hayBoton, 'no se tiene el permiso ACCION_U sobre valoracion_por_costo para ver el botón');
     if (hayBoton) {
