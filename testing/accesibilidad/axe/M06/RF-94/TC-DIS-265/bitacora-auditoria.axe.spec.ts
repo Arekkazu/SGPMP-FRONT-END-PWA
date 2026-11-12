@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-265 RF-94: bitácora de auditoría financiera                 |
+// | 2026-11-11 | SaraSofGonzalez | TC-DIS-265 RF-94: reejecución con la bitácora real del período #241 |
 /**
  * TC-DIS-265 — Verificar accesibilidad WCAG 2.1 AA de la vista legible de la bitácora de Auditoría
  * del Módulo Financiero (tabla, filtros y paginación)
@@ -22,7 +23,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import { anotar, auditarTabla, desviacion, escanear, estaEnRegionViva, main, precondicion } from '../../../_shared/sigabA11y';
-import { PERIODOS, abrirSesionRol, badges, focoVisible, irFinanzas, quitarSimulaciones, simularGet, textosCrudos } from '../../_shared/finanzas';
+import { PERIODOS, abrirSesionRol, elegirPeriodo, badges, focoVisible, irFinanzas, quitarSimulaciones, simularGet, textosCrudos } from '../../_shared/finanzas';
 
 const TC_ID = 'TC-DIS-265';
 const VIEWPORTS = (process.env.TC_DIS_265_VIEWPORTS ?? 'movil,tablet,escritorio').split(',').map((v) => v.trim());
@@ -64,6 +65,8 @@ test.describe('TC-DIS-265 — Bitácora de auditoría financiera', () => {
 
   test('a. [3.3.1] Bitácora real; filtro obligatorio y precondición de eventos', async ({}, testInfo) => {
     await irFinanzas(page, 'auditoria', /Bitácora de auditoría/);
+    // Reejecución 2026-11-11: período real de Finca El Rosal (NIT 901458732).
+    await elegirPeriodo(page, 241);
     await escanear(page, TC_ID, __dirname, 'bitacora-real', testInfo, LH);
     const texto = (await main(page).innerText()).replace(/\s+/g, ' ');
     const total = /EVENTOS DEL PER[IÍ]ODO\s*(\d+)/i.exec(texto)?.[1] ?? '?';
