@@ -3,6 +3,8 @@
 // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: config Cypress con sandbox y .env.test       |
 // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: host unico resuelto (CYPRESS_API_BASE_URL)  |
 // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: soporte CYPRESS_APP_BASE_PATH y prefijo app |
+// | 2026-11-12 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: task appendTrace para trazas_http.jsonl (A6) |
+// | 2026-11-12 | Juan Sebastian Gutierrez  | D1-D2: retries 0 en el archivo y carpetas de capturas/videos al staging desde setupNodeEvents |
 // TC-M05-G13 · RF-76 · CU03 – Registro de aplicación de medicamento según modalidad.
 //
 // Reglas de este archivo:
@@ -12,7 +14,7 @@
 // - Zona horaria fija America/Bogota (también en el script npm) para que la fecha por
 //   defecto del formulario, X-Zona-Horaria y el cálculo de hoy+N coincidan.
 const { defineConfig } = require('cypress');
-const { writeFileSync, mkdirSync, existsSync } = require('fs');
+const { writeFileSync, appendFileSync, mkdirSync, existsSync } = require('fs');
 const { dirname, resolve } = require('path');
 
 const ZONA_HORARIA = 'America/Bogota';
@@ -106,7 +108,7 @@ module.exports = defineConfig({
     // Un solo navegador y una sola sesión: los it() comparten la página y el JWT
     // en memoria (la SPA no lo persiste), así que no se aísla entre pruebas.
     testIsolation: false,
-    retries: { runMode: 1, openMode: 0 },
+    retries: { runMode: 0, openMode: 0 },
     numTestsKeptInMemory: 0,
 
     modifyObstructiveCode: false,
@@ -134,7 +136,18 @@ module.exports = defineConfig({
           console.log('  [writeResult] ->', abs);
           return abs;
         },
+        appendTrace({ file, line }) {
+          const abs = resolve(config.projectRoot || __dirname, file);
+          mkdirSync(dirname(abs), { recursive: true });
+          appendFileSync(abs, line + '\n', 'utf8');
+          return null;
+        },
       });
+      if (process.env.CYPRESS_STAGING_DIR && process.env.CYPRESS_STAGING_DIR.trim()) {
+        const stg = process.env.CYPRESS_STAGING_DIR.trim();
+        config.screenshotsFolder = resolve(stg, 'screenshots');
+        config.videosFolder = resolve(stg, 'videos');
+      }
       return config;
     },
   },

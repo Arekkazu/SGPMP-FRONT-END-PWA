@@ -4,6 +4,7 @@
 // | 2026-11-05 | Arekkazu | M06 RF-89 prototipo: avisos de especies sin precio, por vencer y programados; filtros completos |
 // | 2026-11-10 | Arekkazu | #510 RF-89: un error al confirmar la desviación se muestra en vez del aviso |
 // | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 N-08 RF-89: «Precio corregido» al guardar una corrección y fila corregida sin «corrija la corrección» |
 import React, { useEffect, useMemo, useState } from 'react';
 import { PencilLine, Plus, Tag } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -192,7 +193,7 @@ function PrecioModal({ especies, corrige, especieInicial, onCerrar, onGuardado }
     };
     const r = await registro.ejecutar(payload);
     if (r) {
-      pushToast('success', t('precios.guardado'), r.estado === 'PROGRAMADO' ? t('precios.programado', { fecha: formatoFecha(r.fecha_vigencia) }) : undefined);
+      pushToast('success', t(corrige ? 'precios.corregido_ok' : 'precios.guardado'), r.estado === 'PROGRAMADO' ? t('precios.programado', { fecha: formatoFecha(r.fecha_vigencia) }) : undefined);
       onGuardado();
     }
   };

@@ -3,6 +3,7 @@
 // | 2026-11-05 | Arekkazu | M06 RF-83 prototipo: medición posterior del período por activo, con indicadores y filtros |
 // | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
 // | 2026-11-10 | Arekkazu | TC-DIS-224 RF-83: columnas propias para la transformación biológica y el cambio de precio |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 R-03 RF-83: en el celular cada medición es una tarjeta |
 import React, { useEffect, useState } from 'react';
 import { Play, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -120,7 +121,7 @@ export function MedicionView() {
           <Listado l={l} idBase="medicion" sustantivo={t('medicion.sustantivo')} buscar={t('medicion.buscar')} cargando={activos.cargando || mediciones.cargando}
             vacio={{ icono: <RefreshCw size={28} aria-hidden />, titulo: t('valor.vacio_titulo'), detalle: t('valor.vacio_detalle') }}>
             {(visibles) => (
-              <table style={TABLA}>
+              <table className="ds-tabla-tarjetas" style={TABLA}>
                 <thead>
                   <tr>
                     <th style={TH}>{t('col.activo')}</th><th style={TH}>{t('col.clasificacion')}</th><th style={TH_NUM}>{t('col.valor_anterior')}</th>
@@ -132,23 +133,23 @@ export function MedicionView() {
                 <tbody>
                   {visibles.map((f) => (
                     <tr key={f.activo.id_activo_biologico} className={f.estado === 'MEDICION_PENDIENTE' ? 'fin-fila--atencion' : undefined}>
-                      <td style={TD}><CeldaActivo identificador={f.activo.identificador} especie={f.activo.especie} finca={f.activo.finca} /></td>
-                      <td style={TD}>{f.activo.clasificacion ? t(`clasificacion.${f.activo.clasificacion}`) : t('comun.sin_definir')}</td>
-                      <td style={TD_NUM}>{f.anterior ? formatoMoneda(f.anterior) : t('medicion.sin_valor_periodo')}</td>
-                      <td style={TD_NUM}>
+                      <td className="ds-celda-titulo" style={TD}><CeldaActivo identificador={f.activo.identificador} especie={f.activo.especie} finca={f.activo.finca} /></td>
+                      <td data-label={t('col.clasificacion')} style={TD}>{f.activo.clasificacion ? t(`clasificacion.${f.activo.clasificacion}`) : t('comun.sin_definir')}</td>
+                      <td data-label={t('col.valor_anterior')} style={TD_NUM}>{f.anterior ? formatoMoneda(f.anterior) : t('medicion.sin_valor_periodo')}</td>
+                      <td data-label={t('col.valor_actual')} style={TD_NUM}>
                         {f.actual ? formatoMoneda(f.actual) : f.activo.valorado_por_costo ? formatoMoneda(f.activo.valor_contable_por_costo) : t('medicion.sin_valor_periodo')}
                         {f.ultima && <span className="fin-secundario">{formatoFecha(f.ultima)}</span>}
                       </td>
-                      <td style={TD_NUM}>{f.total ? <Variacion valor={f.transformacion} /> : t('medicion.sin_variacion')}</td>
-                      <td style={TD_NUM}>{f.total ? <Variacion valor={f.precio} /> : t('medicion.sin_variacion')}</td>
-                      <td style={TD_NUM}>{f.total ? <Variacion valor={f.total} /> : t('medicion.sin_variacion')}</td>
-                      <td style={TD}>{f.estado !== 'COMPLETADO' ? t('sin_mercado.no_aplica')
+                      <td data-label={t('col.transformacion')} style={TD_NUM}>{f.total ? <Variacion valor={f.transformacion} /> : t('medicion.sin_variacion')}</td>
+                      <td data-label={t('col.precio_mercado')} style={TD_NUM}>{f.total ? <Variacion valor={f.precio} /> : t('medicion.sin_variacion')}</td>
+                      <td data-label={t('col.variacion_total')} style={TD_NUM}>{f.total ? <Variacion valor={f.total} /> : t('medicion.sin_variacion')}</td>
+                      <td data-label={t('medicion.valor_estimado')} style={TD}>{f.estado !== 'COMPLETADO' ? t('sin_mercado.no_aplica')
                         : f.estimado ? <Badge variant="warning">{t('valor.estimado')}</Badge> : t('medicion.con_precio_vigente')}</td>
-                      <td style={TD}>
+                      <td className="ds-celda-destacada" style={TD}>
                         <Badge variant={TONO_ESTADO[f.estado]}>{t(`medicion.estado_${f.estado}`)}</Badge>
                         {f.motivo && <span className="fin-secundario">{f.motivo}</span>}
                       </td>
-                      <td style={TD}>
+                      <td className="ds-celda-accion" style={TD}>
                         <Button variant="ghost" size="sm" onClick={() => setDetalle(f.activo)}
                           aria-label={t('valor.ver_detalle_aria', { activo: f.activo.identificador })}>{t('valor.ver_detalle')}</Button>
                       </td>

@@ -5,6 +5,8 @@
 // | 2026-11-10 | Arekkazu | INC-M06-337/344 RF-86/93: acumulado del período abierto y desglose del mantenimiento |
 // | 2026-11-10 | Arekkazu | TC-DIS-260..264 RF-93: gráficas con tabla alternativa, signo y «Ganancia/Pérdida» en texto, filtros completos y descarga anunciada |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
+// | 2026-11-12 | Arekkazu | TC-DIS-262/263 RF-93: activo individual y lote poblacional por separado; gráficas vacías con texto y sin «−$ 0» |
+// | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: activo excluido con su motivo en palabras y el resultado que quedó fuera |
 import React, { useEffect, useState } from 'react';
 import { BarChart3, CheckCircle2, Download, FilterX, Plus } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -17,7 +19,7 @@ import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { finanzasApi } from '../api/finanzasApi';
 import { ACCION_C, ACCION_R, ACCION_U, R_CIERRE, R_ESTADO_RESULTADOS, R_VALORACION } from '../rbac';
-import type { ActivoValorado, Dec, EstadoResumen } from '../types';
+import type { ActivoExcluidoCierre, ActivoValorado, Dec, EstadoResumen } from '../types';
 import { signo } from '../lib/decimal';
 import {
   Datos, EncabezadoVista, EstadoBadge, ErrorApi, Listado, PANEL, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM,
@@ -33,8 +35,6 @@ const GASTOS = [
   'inversiones_llevadas_a_gasto', 'bajas_activos', 'depreciacion_activos_costo', 'deterioro_activos_costo',
   'perdida_ajustes_periodos_anteriores',
 ];
-const TIPOS_ACTIVO = ['INDIVIDUAL', 'POBLACIONAL'];
-
 /** Opciones únicas (id → nombre) de los activos, ordenadas por nombre. */
 function unicos(activos: ActivoValorado[], id: (a: ActivoValorado) => number, nombre: (a: ActivoValorado) => string) {
   return [...new Map(activos.map((a) => [id(a), nombre(a)])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
@@ -54,6 +54,7 @@ function GraficaBarras({ id, titulo, segmentos, resumen }: { id: string; titulo:
   return (
     <figure style={{ margin: 0 }}>
       <figcaption id={`${id}-cap`} style={{ fontWeight: 700, marginBottom: 'var(--s2)' }}>{titulo}</figcaption>
+      {segmentos.length === 0 ? <p style={{ ...SECUNDARIO, margin: 0 }}>{resumen}</p> : (
       <svg role="img" aria-labelledby={`${id}-cap ${id}-desc`} width="100%" viewBox={`0 0 400 ${alto}`} style={{ maxWidth: 480, display: 'block' }}>
         <desc id={`${id}-desc`}>{resumen}</desc>
         {segmentos.map((s, i) => {
@@ -68,6 +69,7 @@ function GraficaBarras({ id, titulo, segmentos, resumen }: { id: string; titulo:
           );
         })}
       </svg>
+      )}
     </figure>
   );
 }
@@ -81,7 +83,7 @@ export function EstadoResultadosView() {
   const leeCierre = usePermissionPorNombre(R_CIERRE, ACCION_R);
   const { periodo, disponible } = usePeriodo();
   const [idEstado, setIdEstado] = useState<number | null>(null);
-  const filtroVacio = { especie: '', finca: '', infraestructura: '', tipo: '', activo: '' };
+  const filtroVacio = { especie: '', finca: '', infraestructura: '', activo: '', lote: '' };
   const [filtro, setFiltro] = useState(filtroVacio);
   const estados = useAsync(finanzasApi.estados);
   const detalle = useAsync(finanzasApi.estado);
@@ -114,10 +116,13 @@ export function EstadoResultadosView() {
   const especies = unicos(todos, (a) => a.id_especie, (a) => a.especie);
   const fincas = unicos(todos, (a) => a.id_finca, (a) => a.finca);
   const infraestructuras = unicos(todos.filter((a) => !filtro.finca || a.id_finca === Number(filtro.finca)), (a) => a.id_infraestructura, (a) => a.infraestructura);
-  // Filtros encadenados: el activo solo puede ser de la especie, la finca, la infraestructura y el tipo elegidos.
+  // Filtros encadenados: el activo o el lote solo pueden ser de la especie, la finca y la infraestructura elegidas.
   const cumple = (a: ActivoValorado, f: typeof filtro) => (!f.especie || a.id_especie === Number(f.especie)) && (!f.finca || a.id_finca === Number(f.finca))
-    && (!f.infraestructura || a.id_infraestructura === Number(f.infraestructura)) && (!f.tipo || a.tipo === f.tipo);
+    && (!f.infraestructura || a.id_infraestructura === Number(f.infraestructura));
   const candidatos = todos.filter((a) => cumple(a, filtro));
+  // TC-DIS-263: el activo individual y el lote poblacional se filtran por separado.
+  const individuales = candidatos.filter((a) => a.tipo !== 'POBLACIONAL');
+  const lotes = candidatos.filter((a) => a.tipo === 'POBLACIONAL');
   const hayFiltros = Object.values(filtro).some(Boolean);
   const alcance = (e: EstadoResumen) => {
     const f = e.filtros;
@@ -140,13 +145,17 @@ export function EstadoResultadosView() {
   const cambiar = (k: keyof typeof filtro) => (ev: React.ChangeEvent<HTMLSelectElement>) => {
     const siguiente = { ...filtro, [k]: ev.target.value };
     if (k === 'finca') siguiente.infraestructura = '';
-    if (k !== 'activo' && siguiente.activo && !todos.some((x) => x.id_activo_biologico === Number(siguiente.activo) && cumple(x, siguiente))) siguiente.activo = '';
+    if (k === 'activo' && siguiente.activo) siguiente.lote = '';  // el estado se genera por uno solo
+    if (k === 'lote' && siguiente.lote) siguiente.activo = '';
+    for (const c of ['activo', 'lote'] as const) {
+      if (k !== c && siguiente[c] && !todos.some((x) => x.id_activo_biologico === Number(siguiente[c]) && cumple(x, siguiente))) siguiente[c] = '';
+    }
     setFiltro(siguiente);
   };
 
   const generar = async () => {
     if (!idPeriodo) return;
-    const activoElegido = filtro.activo ? Number(filtro.activo) : null;
+    const activoElegido = Number(filtro.activo || filtro.lote) || null;
     const r = await generacion.ejecutar(idPeriodo, {
       ...(filtro.especie ? { id_especie: Number(filtro.especie) } : {}), ...(filtro.finca ? { id_finca: Number(filtro.finca) } : {}),
       ...(activoElegido ? { id_activo_biologico: activoElegido } : {}),
@@ -194,7 +203,7 @@ export function EstadoResultadosView() {
     const sg = segmentos(componentes, GASTOS);
     const sr: Segmento[] = [
       { etiqueta: t('er.ingresos'), valor: Number(ingresos), color: 'var(--sem-success)' },
-      { etiqueta: t('er.gastos'), valor: -Number(gastos), color: 'var(--sem-error)' },
+      { etiqueta: t('er.gastos'), valor: -Number(gastos) || 0, color: 'var(--sem-error)' },  // sin gastos, «$ 0» y no «−$ 0»
       { etiqueta: `${t('er.resultado')} (${t(signo(neto) < 0 ? 'comun.perdida' : 'comun.ganancia')})`, valor: Number(neto), color: signo(neto) < 0 ? 'var(--sem-error)' : 'var(--brand-500)' },
     ];
     return (
@@ -209,7 +218,7 @@ export function EstadoResultadosView() {
       </section>
     );
   };
-  const excluidos = (e?.componentes.activos_excluidos_cierre as Array<{ id_activo_biologico: number; identificador?: string; motivo?: string }> | undefined) ?? [];
+  const excluidos = (e?.componentes.activos_excluidos_cierre as ActivoExcluidoCierre[] | undefined) ?? [];
   const sinEstados = !!periodo && !estados.cargando && (estados.data ?? []).length === 0;
 
   return (
@@ -261,14 +270,13 @@ export function EstadoResultadosView() {
                       <option value="">{t('comun.todas')}</option>
                       {infraestructuras.map(([id, nombre]) => <option key={id} value={id}>{nombre}</option>)}
                     </Select>
-                    <Select id="er-tipo" label={t('er.filtro_tipo_activo')} value={filtro.tipo} onChange={cambiar('tipo')}>
+                    <Select id="er-activo" label={t('er.activo_individual')} value={filtro.activo} onChange={cambiar('activo')} disabled={individuales.length === 0}>
                       <option value="">{t('comun.todos')}</option>
-                      {TIPOS_ACTIVO.map((x) => <option key={x} value={x}>{t(`cadena.tipo_${x}`)}</option>)}
+                      {individuales.map((x) => <option key={x.id_activo_biologico} value={x.id_activo_biologico}>{x.identificador} · {x.especie}</option>)}
                     </Select>
-                    <Select id="er-activo" label={filtro.tipo === 'POBLACIONAL' ? t('er.lote') : filtro.tipo === 'INDIVIDUAL' ? t('er.activo_individual') : t('er.activo_lote')}
-                      value={filtro.activo} onChange={cambiar('activo')} disabled={candidatos.length === 0}>
+                    <Select id="er-lote" label={t('er.lote_poblacional')} value={filtro.lote} onChange={cambiar('lote')} disabled={lotes.length === 0}>
                       <option value="">{t('comun.todos')}</option>
-                      {candidatos.map((x) => <option key={x.id_activo_biologico} value={x.id_activo_biologico}>{x.identificador} · {x.especie} · {t(`cadena.tipo_${x.tipo}`, { defaultValue: x.tipo })}</option>)}
+                      {lotes.map((x) => <option key={x.id_activo_biologico} value={x.id_activo_biologico}>{x.identificador} · {x.especie}</option>)}
                     </Select>
                     {hayFiltros && (
                       <div className="fin-filtros__limpiar">
@@ -276,7 +284,7 @@ export function EstadoResultadosView() {
                       </div>
                     )}
                   </div>
-                  {(filtro.infraestructura || filtro.tipo) && <p style={{ ...SECUNDARIO, margin: 'var(--s2) 0 0' }}>{t('er.filtros_acotan')}</p>}
+                  {filtro.infraestructura && <p style={{ ...SECUNDARIO, margin: 'var(--s2) 0 0' }}>{t('er.filtros_acotan')}</p>}
                 </>
               )}
               <div className="fin-acciones" style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: 'var(--s4)' }}>
@@ -355,7 +363,13 @@ export function EstadoResultadosView() {
               <Subtitulo id="er-excluidos">{t('er.excluidos')}</Subtitulo>
               <Alert variant="warning" title={t('er.excluidos_detalle', { count: excluidos.length })} />
               <ul style={{ margin: 'var(--s3) 0 0', paddingLeft: 'var(--s5)', lineHeight: 'var(--lh-relaxed)' }}>
-                {excluidos.map((x) => <li key={x.id_activo_biologico}>{x.identificador ?? t('er.activo_filtrado')}{x.motivo ? ` · ${x.motivo}` : ''}</li>)}
+                {excluidos.map((x) => (
+                  <li key={x.id_activo_biologico}>
+                    <strong>{x.identificador ?? t('er.activo_filtrado')}</strong>
+                    {': '}{x.detalle ?? t(`motivo.${x.motivo}`, { defaultValue: t('motivo.PENDIENTE_PRECIO') })}
+                    {x.montos_excluidos && <> {t('er.excluido_resultado')} <Variacion valor={x.montos_excluidos.resultado_neto} etiqueta /></>}
+                  </li>
+                ))}
               </ul>
             </section>
           )}

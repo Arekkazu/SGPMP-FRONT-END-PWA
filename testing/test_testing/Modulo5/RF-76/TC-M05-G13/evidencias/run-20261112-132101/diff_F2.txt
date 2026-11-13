@@ -1,0 +1,63 @@
+diff --git a/testing/test_testing/Modulo5/RF-76/TC-M05-G13/evidencias/run-20261112-132101/pre_F2/tc-m05-g13-registro-medicamento.cy.ts b/testing/test_testing/Modulo5/RF-76/TC-M05-G13/tc-m05-g13-registro-medicamento.cy.ts
+index 5066942b..d6dfd899 100755
+--- a/testing/test_testing/Modulo5/RF-76/TC-M05-G13/evidencias/run-20261112-132101/pre_F2/tc-m05-g13-registro-medicamento.cy.ts
++++ b/testing/test_testing/Modulo5/RF-76/TC-M05-G13/tc-m05-g13-registro-medicamento.cy.ts
+@@ -8,6 +8,7 @@
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: A1-A6 reintento 1, fuente, A3 estricto, T00/T99 y trazas |
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | C1-C7 reintento 1 (navegador limpio tras T00, guarda retries/screenshots, correos_reales, CP-07/12 no alcanzado, capturas, traza auth) |
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | E1-E3: SPA descargada antes del rollback, guarda de ambiente de permisos, CP-06 según RF-76 Proceso 10 |
++// | 2026-11-12 | Juan Sebastian Gutierrez  | F2: CP-09/CP-10 leen el rótulo asociado (label[for]) del campo de solo lectura; antes no reconocían «Población actual del lote» ni el rótulo fuera de .ds-field__wrap |
+ // =====================================================================
+ // TC-M05-G13 · RF-76 · CU03 · Prioridad Alta
+ // Registro de aplicación de medicamento según modalidad (POST /suministros/medicamentos)
+@@ -144,7 +145,7 @@ const RE = {
+   exito: /aplicaci[oó]n registrada|application recorded/i,
+   enRetiro: /en retiro hasta|withdrawal until/i,
+   validado: /\b(validado|validated)\b/i,
+-  cantidad: /cantidad actual|individuos actuales|current (quantity|headcount|count)|current individuals/i,
++  cantidad: /cantidad actual|individuos actuales|poblaci[oó]n actual|current (quantity|headcount|count|population)|current individuals/i,
+   dosisInd: /dosis por individuo|dose per (individual|animal|head)/i,
+ };
+ 
+@@ -167,24 +168,28 @@ function filaRegistro(doc: Document, idActivo: number): HTMLTableRowElement | un
+     return t.includes(`#${idActivo}`) && t.includes(MEDICAMENTO) && RE.enRetiro.test(t);
+   });
+ }
+-/** CP-09: ¿hay en el diálogo un rótulo de cantidad actual con el valor 10 en solo lectura? */
++/** F2: texto del rótulo asociado a un campo (label[for=id]; si no hay, el contenedor .ds-field). */
++function rotuloDe(doc: Document, campo: HTMLInputElement): string {
++  const porId = campo.id ? doc.querySelector(`label[for="${CSS.escape(campo.id)}"]`) : null;
++  return texto(porId || campo.closest('label') || campo.closest('.ds-field'));
++}
++/** F2: campos de solo lectura dentro del diálogo. */
++function camposSoloLectura(d: HTMLElement): HTMLInputElement[] {
++  return Array.from(d.querySelectorAll<HTMLInputElement>('input')).filter(
++    (i) => i.readOnly || i.getAttribute('aria-readonly') === 'true',
++  );
++}
++/** CP-09: ¿hay en el diálogo un campo de solo lectura rotulado como cantidad/población actual con el valor 10? */
+ function muestraCantidadActual(doc: Document): boolean {
+   const d = dialogo(doc);
+-  if (!d || !RE.cantidad.test(texto(d))) return false;
+-  const soloLectura = Array.from(d.querySelectorAll<HTMLInputElement>('input[readonly], input[aria-readonly="true"], [aria-readonly="true"]'))
+-    .some((i) => String((i as HTMLInputElement).value ?? texto(i)).trim() === String(CANTIDAD_POB));
+-  const textoPlano = Array.from(d.querySelectorAll('output, dd, p, span, div'))
+-    .some((e) => e.children.length === 0 && RE.cantidad.test(texto(e.parentElement)) && new RegExp(`(^|\\D)${CANTIDAD_POB}(\\D|$)`).test(texto(e)));
+-  return soloLectura || textoPlano;
++  if (!d) return false;
++  return camposSoloLectura(d).some((i) => RE.cantidad.test(rotuloDe(doc, i)) && i.value.trim() === String(CANTIDAD_POB));
+ }
+-/** CP-10: ¿hay en el diálogo un rótulo de dosis por individuo con el valor 2,0? */
++/** CP-10: ¿hay en el diálogo un campo de solo lectura rotulado como dosis por individuo con el valor 2 (2,0 / 2.000 / 2 ml)? */
+ function muestraDosisPorIndividuo(doc: Document): boolean {
+   const d = dialogo(doc);
+-  if (!d || !RE.dosisInd.test(texto(d))) return false;
+-  return Array.from(d.querySelectorAll('input, output, dd, p, span, div')).some((e) => {
+-    const valor = e instanceof HTMLInputElement ? e.value : e.children.length === 0 ? texto(e) : '';
+-    return /^\s*2([.,]0+)?(\s|$)/.test(valor) && RE.dosisInd.test(texto(e.closest('div, label, dl, fieldset') || e.parentElement));
+-  });
++  if (!d) return false;
++  return camposSoloLectura(d).some((i) => RE.dosisInd.test(rotuloDe(doc, i)) && /^\s*2([.,]0+)?(\s|$)/.test(i.value));
+ }
+ 
+ function num(v: unknown): number {

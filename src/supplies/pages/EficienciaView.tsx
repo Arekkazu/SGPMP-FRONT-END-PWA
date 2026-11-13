@@ -3,6 +3,7 @@
 // | 2026-10-23 | Arekkazu | M05 RF-74: ICA vigente e historial por activo, cálculo bajo demanda y batch |
 // | 2026-11-10 | Arekkazu | TC-DIS-198/200 RF-74: alerta anunciada al quedar en Crítica, foco sobre el resultado y detalle por cálculo |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 N-06/R-01 RF-74: la clasificación del ICA dice «Eficiencia …» y su rango; historial en tarjetas en el celular |
 import React, { useRef, useState } from 'react';
 import { Calculator, Eye, Search, Gauge as IconoGauge } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -49,6 +50,12 @@ function ResultadoVigente({ r }: { r: ResultadoIca }) {
           {ok ? formatoCantidad(r.ca_calculado, 2) : '—'}
         </p>
         <EstadoRegistroBadge estado={ok && r.clasificacion_ca ? r.clasificacion_ca : r.estado_resultado} />
+        {/* N-06: «Baja» sola se confunde con un animal dado de baja; se dice qué mide y desde qué valor aplica. */}
+        {ok && r.clasificacion_ca && (
+          <p style={{ margin: 'var(--s2) 0 0', maxWidth: 220, fontSize: 'var(--fs-label-md)', color: 'var(--text-secondary)' }}>
+            {t(`ica.rango_${r.clasificacion_ca}`, { defaultValue: '' })}
+          </p>
+        )}
       </div>
       <dl style={{ flex: '1 1 320px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--s4)', margin: 0 }}>
         <Dato etiqueta={t('ica.alimento')} valor={r.alimento_consumido_total_kg ? `${formatoCantidad(r.alimento_consumido_total_kg)} kg` : '—'} />
@@ -169,7 +176,7 @@ export function EficienciaView() {
             <p style={{ ...SECUNDARIO, fontSize: 'var(--fs-body-md)' }}>{historial.cargando ? t('comun.cargando') : t('ica.historial_vacio')}</p>
           ) : (
             <ScrollRegion label={t('ica.historial')}>
-              <table style={TABLA} aria-busy={historial.cargando}>
+              <table className="ds-tabla-tarjetas" style={TABLA} aria-busy={historial.cargando}>
                 <thead>
                   <tr>
                     <th style={TH}>{t('ica.periodo')}</th>
@@ -186,16 +193,16 @@ export function EficienciaView() {
                     const etiqueta = `${formatoFecha(x.fecha_inicio_periodo)} – ${formatoFecha(x.fecha_fin_periodo)}`;
                     return (
                       <tr key={x.id_resultado_ica ?? `${x.fecha_inicio_periodo}-${x.intento}`}>
-                        <td style={TD}>
+                        <td className="ds-celda-titulo" style={TD}>
                           {etiqueta}
                           {x.es_vigente && <div style={{ ...SECUNDARIO, color: 'var(--brand-600)', fontWeight: 600 }}>{t('ica.es_vigente')}</div>}
                         </td>
-                        <td style={TD_NUM}>{x.ca_calculado !== null ? formatoCantidad(x.ca_calculado, 2) : '—'}</td>
-                        <td style={TD}><EstadoRegistroBadge estado={x.clasificacion_ca ?? x.estado_resultado} /></td>
-                        <td style={TD_NUM}>{x.data_quality_score} %</td>
-                        <td style={TD}>{t(`ica.tipo_${x.tipo_calculo}`, { defaultValue: x.tipo_calculo })}</td>
-                        <td style={TD}>{formatoFecha(x.fecha_calculo, true)}</td>
-                        <td style={TD}>
+                        <td data-label={t('ica.conversion')} style={TD_NUM}>{x.ca_calculado !== null ? formatoCantidad(x.ca_calculado, 2) : '—'}</td>
+                        <td className="ds-celda-destacada" style={TD}><EstadoRegistroBadge estado={x.clasificacion_ca ?? x.estado_resultado} /></td>
+                        <td data-label={t('ica.calidad')} style={TD_NUM}>{x.data_quality_score} %</td>
+                        <td data-label={t('ica.tipo_calculo')} style={TD}>{t(`ica.tipo_${x.tipo_calculo}`, { defaultValue: x.tipo_calculo })}</td>
+                        <td data-label={t('ica.calculado')} style={TD}>{formatoFecha(x.fecha_calculo, true)}</td>
+                        <td className="ds-celda-accion" style={TD}>
                           <Button variant="ghost" size="sm" onClick={() => setDetalle(x)} aria-label={t('ica.ver_detalle_aria', { periodo: etiqueta })}>
                             <Eye size={16} aria-hidden />{t('comun.ver')}
                           </Button>

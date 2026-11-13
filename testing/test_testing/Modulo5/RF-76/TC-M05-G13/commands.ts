@@ -5,6 +5,8 @@
 // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: intercept fail-closed y registro peticiones bloq |
 // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: trazabilidad peticiones /sesiones para diagnostico |
 // | 2026-11-06 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: helpers visitar y rutaApp para APP_BASE_PATH    |
+// | 2026-11-12 | Juan Sebastian Gutierrez  | TC-M05-G13 RF-76: trazas_http.jsonl en cy.request y helper A6     |
+// | 2026-11-12 | Juan Sebastian Gutierrez  | F1: serializa las peticiones del navegador dentro del sandbox (el sandbox comparte una Session por run_id) |
 //
 // Comandos del caso TC-M05-G13 (proyecto autocontenido, se carga como supportFile).
 //
@@ -41,6 +43,14 @@ interface EstadoSandbox {
   bloqueadas: PeticionBloqueada[];
   sesiones: PeticionSesion[];
 }
+
+// F1: el sandbox del backend usa UNA Session SQLAlchemy por run_id (testing_sandbox.py:35-68,
+// database.py:306-337); dos peticiones simultaneas del mismo run comparten esa sesion y una
+// puede responder 500 (sonda sonda-concurrencia-20261112-121727: SEC 0/15, PAR 2/15).
+// Mientras el sandbox esta abierto, las peticiones del navegador a la API pasan de una en una.
+// No cambia el contenido de ninguna peticion ni respuesta; solo su orden en el tiempo.
+let colaSandbox: Promise<void> = Promise.resolve();
+export const serializacion = { encoladas: 0, liberadasPorTimeout: 0 };
 
 const estado: EstadoSandbox = {
   runId: '',
@@ -154,6 +164,59 @@ function cabeceraAuth(valor: string | string[] | undefined): string {
   return typeof v === 'string' && /^Bearer\s+\S+/i.test(v) ? v.replace(/^Bearer\s+/i, '') : '';
 }
 
+export function extraerRequestId(headers: Record<string, any> | undefined): string {
+  if (!headers) return 'N/A';
+  const v = headers['x-request-id'] || headers['X-Request-Id'] || headers['x-trace-id'] || headers['traceparent'];
+  const s = Array.isArray(v) ? v[0] : v;
+  return s ? String(s) : 'N/A';
+}
+
+export function sanitizarCuerpoMed(body: any): Record<string, unknown> | undefined {
+  if (!body || typeof body !== 'object') return undefined;
+  const med = body.medicamento && typeof body.medicamento === 'object' ? body.medicamento : body;
+  const out: Record<string, unknown> = {};
+  for (const k of [
+    'id_registro_medicamento',
+    'id_activo_biologico',
+    'estado_registro',
+    'fecha_fin_retiro',
+    'costo_total_medicamento',
+    'dosis_por_individuo',
+    'error_code',
+    'message',
+    'detail',
+  ]) {
+    if (Object.prototype.hasOwnProperty.call(med, k)) out[k] = med[k];
+    else if (Object.prototype.hasOwnProperty.call(body, k)) out[k] = body[k];
+  }
+  return out;
+}
+
+export function registrarTraza(traza: {
+  paso: string;
+  metodo: string;
+  ruta: string;
+  http: number;
+  error_code: string | null;
+  x_request_id: string;
+  hora_utc?: string;
+  cuerpo?: Record<string, unknown>;
+}): void {
+  const staging = String(Cypress.env('STAGING_DIR') || '').trim();
+  if (!staging) return;
+  const linea = JSON.stringify({
+    paso: traza.paso,
+    metodo: traza.metodo,
+    ruta: traza.ruta,
+    http: traza.http,
+    error_code: traza.error_code,
+    x_request_id: traza.x_request_id,
+    hora_utc: traza.hora_utc || new Date().toISOString(),
+    ...(traza.cuerpo ? { cuerpo: traza.cuerpo } : {}),
+  });
+  cy.task('appendTrace', { file: `${staging}/trazas_http.jsonl`, line: linea }, { log: false });
+}
+
 Cypress.Commands.add('startSandbox', (runId: string) => {
   if (!runId) throw new Error('[TC-M05-G13] startSandbox requiere un runId.');
   estado.runId = runId;
@@ -165,6 +228,9 @@ Cypress.Commands.add('startSandbox', (runId: string) => {
   estado.tokenFuera = '';
   estado.bloqueadas = [];
   estado.sesiones = [];
+  colaSandbox = Promise.resolve();
+  serializacion.encoladas = 0;
+  serializacion.liberadasPorTimeout = 0;
   cy.log(`[SANDBOX] corrida transaccional ${runId}`);
   cy.aplicarSandbox();
 });
@@ -209,7 +275,25 @@ Cypress.Commands.add('aplicarSandbox', () => {
     req.headers['X-Test-Run-Id'] = estado.runId;
     req.headers['X-Sandbox-Secret'] = secreto();
     estado.peticiones += 1;
-    req.continue((res) => {
+    // F1: turno en la cola; se libera al llegar la respuesta o, como red de seguridad, a los 20 s.
+    const turno = colaSandbox;
+    let liberar: () => void = () => undefined;
+    colaSandbox = new Promise<void>((resolver) => {
+      liberar = resolver;
+    });
+    serializacion.encoladas += 1;
+    let liberado = false;
+    const soltar = (porTimeout: boolean) => {
+      if (liberado) return;
+      liberado = true;
+      if (porTimeout) serializacion.liberadasPorTimeout += 1;
+      liberar();
+    };
+    return turno.then(() => {
+      const seguro = setTimeout(() => soltar(true), 20000);
+      req.continue((res) => {
+      clearTimeout(seguro);
+      soltar(false);
       // Registro de diagnóstico para peticiones de /sesiones (Paso 0): método, ruta y código HTTP
       if (req.url.includes('/sesiones')) {
         let ruta = '';
@@ -226,6 +310,7 @@ Cypress.Commands.add('aplicarSandbox', () => {
       }
       // El middleware del backend devuelve X-Test-Run-Id solo si aceptó la corrida.
       if (String(res.headers['x-test-run-id'] || '') === estado.runId) estado.confirmado = true;
+      });
     });
   });
 });
@@ -243,6 +328,14 @@ Cypress.Commands.add('rollbackSandbox', (runId: string) => {
     .then((res) => {
       estado.cerrado = true;
       cy.log(`[SANDBOX] rollback → HTTP ${res.status}`);
+      registrarTraza({
+        paso: 'rollbackSandbox',
+        metodo: 'DELETE',
+        ruta: `/test-control/runs/${encodeURIComponent(runId)}`,
+        http: res.status,
+        error_code: res.body?.error_code ?? null,
+        x_request_id: extraerRequestId(res.headers as Record<string, any>),
+      });
       return cy.wrap(res, { log: false });
     });
 });
@@ -290,6 +383,18 @@ Cypress.Commands.add('apiSandbox', ({ method, path, body }: OpcionesApi) => {
     },
     failOnStatusCode: false,
     log: false,
+  }).then((res) => {
+    const esPostMed = method === 'POST' && path.startsWith('/suministros/medicamentos');
+    registrarTraza({
+      paso: 'apiSandbox',
+      metodo: method,
+      ruta: path,
+      http: res.status,
+      error_code: res.body?.error_code ?? null,
+      x_request_id: extraerRequestId(res.headers as Record<string, any>),
+      ...(esPostMed ? { cuerpo: sanitizarCuerpoMed(res.body) } : {}),
+    });
+    return cy.wrap(res, { log: false });
   });
 });
 
@@ -306,6 +411,16 @@ Cypress.Commands.add('apiSinSandbox', (path: string, token: 'sandbox' | 'fuera')
     headers: { Authorization: `Bearer ${valor}`, 'X-Zona-Horaria': zona() },
     failOnStatusCode: false,
     log: false,
+  }).then((res) => {
+    registrarTraza({
+      paso: 'apiSinSandbox',
+      metodo: 'GET',
+      ruta: path,
+      http: res.status,
+      error_code: res.body?.error_code ?? null,
+      x_request_id: extraerRequestId(res.headers as Record<string, any>),
+    });
+    return cy.wrap(res, { log: false });
   });
 });
 
