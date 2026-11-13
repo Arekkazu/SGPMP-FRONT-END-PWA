@@ -2,21 +2,25 @@
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-242..266 RF-87..94: utilidades de las pruebas de accesibilidad de M06 |
 // | 2026-11-11 | SaraSofGonzalez | TC-DIS-242..266 RF-87..94: reejecución; activos simulados con el campo tipo, tema por el botón real y PDF con flujos comprimidos |
+// | 2026-11-12 | Laura032005 | TC-DIS-256/259 RF-91/92: agregar rol 'auditor' (TEST_AUDITOR_EMAIL ya disponible en .env.test) |
 /**
  * Utilidades de los specs de accesibilidad de M06 (Finanzas NIC 41, /finanzas/*).
  *
- * Complementa `_shared/sigabA11y.ts`: sesión por rol (Admin o Productor), simulación de lecturas
- * del módulo, concesión simulada de permisos visuales y la evidencia que repiten los criterios de
- * M06 (diálogos de acción irreversible, textos crudos en pantalla, tema oscuro, descargas).
+ * Complementa `_shared/sigabA11y.ts`: sesión por rol (Admin, Productor o Auditor externo),
+ * simulación de lecturas del módulo, concesión simulada de permisos visuales y la evidencia que
+ * repiten los criterios de M06 (diálogos de acción irreversible, textos crudos en pantalla, tema
+ * oscuro, descargas).
  *
  * PROTECCIÓN DE DATOS: el contexto aborta toda escritura (POST/PUT/PATCH/DELETE) salvo el login.
  * Cerrar un período, aprobar un informe o anular una cotización son hechos inmutables (NIC 41):
  * ninguno llega al backend. Las respuestas a esas escrituras se simulan con page.route y la prueba
  * lo deja anotado como "Datos simulados".
  *
- * El ambiente TEST no tiene cuentas de Contador ni de Auditor externo: las vistas se recorren con la
- * cuenta Admin. Donde el criterio depende de un permiso que Admin no tiene, el permiso se concede
- * en la respuesta de GET /sesiones/me/permisos (solo control visual: el backend sigue rechazando).
+ * El ambiente TEST no tiene cuenta de Contador propia en esta utilidad (sí hay TEST_CONTADOR_*,
+ * usada directamente por otros specs de M06 fuera de abrirSesionRol): las vistas se recorren con
+ * la cuenta Admin o, desde 2026-11-12, con la cuenta real de Auditor externo (TEST_AUDITOR_*).
+ * Donde el criterio depende de un permiso que Admin no tiene, el permiso se concede en la
+ * respuesta de GET /sesiones/me/permisos (solo control visual: el backend sigue rechazando).
  */
 import fs from 'fs';
 import path from 'path';
@@ -28,10 +32,10 @@ const HAR_ASSETS = path.join(__dirname, '../../../../.har-cache/assets.har');
 
 // ── Sesión ───────────────────────────────────────────────────────────────────
 
-export type Rol = 'admin' | 'productor';
+export type Rol = 'admin' | 'productor' | 'auditor';
 
 function credenciales(rol: Rol) {
-  const pref = rol === 'admin' ? 'TEST_ADMIN' : 'TEST_PRODUCTOR';
+  const pref = { admin: 'TEST_ADMIN', productor: 'TEST_PRODUCTOR', auditor: 'TEST_AUDITOR' }[rol];
   const email = process.env[`${pref}_EMAIL`] ?? '';
   const password = process.env[`${pref}_PASSWORD`] ?? '';
   expect(email, `Faltan ${pref}_EMAIL / ${pref}_PASSWORD en testing/.env.test`).not.toBe('');

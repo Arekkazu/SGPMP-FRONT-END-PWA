@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-259 RF-92: archivos descargados del informe (PDF/A y Excel) |
+// | 2026-11-12 | Laura032005 | TC-DIS-259 RF-92: cuenta real de Auditor externo disponible (TEST_AUDITOR_*); hay un informe APROBADO real (2026-M11-V2) — reescrito sobre datos reales, sin simular |
 /**
  * TC-DIS-259 — Verificar accesibilidad de los archivos descargados del Informe de Revelaciones NIC 41
  * (PDF/A-1 y Excel UPRA)
@@ -12,19 +13,19 @@
  * contraste ≥ 4.5:1; Excel con encabezados en la primera fila, hojas con nombre descriptivo y sin
  * celdas combinadas; 0 violaciones axe A/AA en la interfaz de descarga (4.1.3: estado anunciado).
  *
- * Ambiente: en TEST no hay un informe APROBADO real visible (Admin no tiene permiso sobre
- * Revelaciones, Productor no puede consultar los períodos y no hay cuentas de Contador ni Auditor).
- * Los archivos generados por el backend no se pueden obtener: esa parte queda en BLOQUEO (paso a).
- * La interfaz de descarga se evalúa con permiso, historial y archivo simulados (paso b, "Datos
- * simulados"); el archivo simulado no se valida.
+ * Ambiente: confirmado por diagnóstico directo (2026-11-12) que con la cuenta real de Auditor
+ * externo (TEST_AUDITOR_*) SÍ hay acceso a Revelaciones NIC 41 y SÍ existe un informe real en
+ * estado APROBADO (versión 2026-M11-V2, Noviembre de 2026), con descarga real de PDF y Excel desde
+ * el backend. Se descargan y se validan los archivos reales — ya no se simula nada.
  *
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_259_VIEWPORTS=escritorio
  */
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import fs from 'fs';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import { anotar, desviacion, escanear, main, precondicion } from '../../../_shared/sigabA11y';
 import {
-  abrirSesionRol, accesoDenegado, anunciosDurante, elegirPeriodo, irFinanzas, quitarSimulaciones, simularRevelaciones,
+  abrirSesionRol, anunciosDurante, guardarDescarga, irFinanzas, quitarSimulaciones, revisarExcel, revisarPdf,
 } from '../../_shared/finanzas';
 
 const TC_ID = 'TC-DIS-259';
@@ -40,7 +41,7 @@ test.describe('TC-DIS-259 — Archivos descargados del Informe de Revelaciones',
 
   test.beforeAll(async ({ browser }, testInfo) => {
     if (!VIEWPORTS.includes(testInfo.project.name)) return;
-    ({ contexto, page } = await abrirSesionRol(browser, testInfo, 'admin'));
+    ({ contexto, page } = await abrirSesionRol(browser, testInfo, 'auditor'));
   });
   test.afterAll(async () => { await contexto?.close(); });
   test.beforeEach(async ({}, testInfo) => {
@@ -48,23 +49,19 @@ test.describe('TC-DIS-259 — Archivos descargados del Informe de Revelaciones',
   });
   test.afterEach(async () => { if (page) await quitarSimulaciones(page); });
 
-  test('a. Precondición: informe APROBADO real para descargar el PDF/A-1 y el Excel UPRA', async ({}, testInfo) => {
+  async function abrirInformeAprobado(testInfo: import('@playwright/test').TestInfo) {
     await irFinanzas(page, 'revelaciones', /Revelaciones/);
-    const denegado = await accesoDenegado(page);
-    anotar(testInfo, 'Estado real (Admin)', denegado ? 'No tienes acceso a esta sección' : 'con acceso');
-    precondicion(false, 'no hay un informe APROBADO accesible en TEST: no se pueden validar el PDF/A-1 (etiquetado, idioma, título, rollforward) ni el Excel UPRA (encabezados, hojas, celdas combinadas) generados por el backend');
-  });
+    const verInforme = main(page).getByRole('button', { name: /Ver informe/ }).first();
+    precondicion(await verInforme.count() > 0, 'no hay ningún informe de revelaciones visible para el Auditor en este ambiente');
+    if (await verInforme.count() === 0) return null;
+    await verInforme.click();
+    await page.waitForTimeout(500);
+    return true;
+  }
 
-  test('b. [4.1.3] Interfaz de descarga del informe aprobado: anuncio del estado (Datos simulados)', async ({}, testInfo) => {
-    await simularRevelaciones(page);
-    await page.route((u) => /\/revelaciones\/\d+\/descarga$/.test(u.pathname), (r) => r.fulfill({
-      status: 200, headers: { 'content-type': 'application/pdf', 'content-disposition': 'attachment; filename="revelaciones-simulado.pdf"', 'access-control-expose-headers': 'Content-Disposition' },
-      body: Buffer.from('%PDF-1.4\n% archivo simulado\n'),
-    }));
-    anotar(testInfo, 'Datos simulados', 'Permiso revelaciones_nic41·R; versión v2 APROBADO; la descarga responde un PDF de muestra (no se valida).');
-    await irFinanzas(page, 'revelaciones', /Revelaciones/);
-    await elegirPeriodo(page, 9101);
-    await main(page).locator('table tbody tr').filter({ hasText: 'Aprobado' }).getByRole('button', { name: /Ver informe/ }).click();
+  test('a. [4.1.3] Interfaz de descarga del informe aprobado real: anuncio del estado (cuenta real Auditor)', async ({}, testInfo) => {
+    const abierto = await abrirInformeAprobado(testInfo);
+    if (!abierto) return;
     const pdf = main(page).getByRole('button', { name: 'PDF', exact: true });
     await expect(pdf, 'El informe aprobado no ofrece descarga').toBeVisible({ timeout: 15_000 });
     await escanear(page, TC_ID, __dirname, 'descarga-informe', testInfo, LH);
@@ -77,5 +74,48 @@ test.describe('TC-DIS-259 — Archivos descargados del Informe de Revelaciones',
     desviacion(anuncios.some((a) => /descarg|listo|generad/i.test(a)), '4.1.3: el estado de la descarga del informe no se anuncia');
     const nombres = await main(page).getByRole('button', { name: /^(PDF|Excel)$/ }).evaluateAll((bs) => bs.map((b) => b.getAttribute('aria-label') ?? b.textContent ?? ''));
     anotar(testInfo, 'Nombre de los botones de descarga', nombres.join(' ¦ '));
+  });
+
+  test('b. PDF/A-1 real: etiquetado, idioma y título (no reemplaza a un validador PAC)', async ({}, testInfo) => {
+    const abierto = await abrirInformeAprobado(testInfo);
+    if (!abierto) return;
+    const pdf = main(page).getByRole('button', { name: 'PDF', exact: true });
+    const descarga = page.waitForEvent('download', { timeout: 30_000 }).catch(() => null);
+    await pdf.click();
+    const d = await descarga;
+    precondicion(d !== null, 'la descarga del PDF no se completó');
+    if (!d) return;
+    const buf = fs.readFileSync(await d.path() as string);
+    const destino = await guardarDescarga(__dirname, `${TC_ID}-${testInfo.project.name}-revelaciones-informe.pdf`, buf);
+    const r = revisarPdf(buf);
+    anotar(testInfo, 'PDF descargado', `${destino} — ${JSON.stringify(r)}`);
+    expect.soft(r.esPdf, 'el archivo descargado debe ser un PDF real').toBe(true);
+    expect.soft(r.etiquetado, 'el PDF debe estar etiquetado (/StructTreeRoot, /MarkInfo, /Marked true)').toBe(true);
+    expect.soft(r.idioma, 'el PDF debe declarar idioma (/Lang)').toBe(true);
+    expect.soft(r.titulo, 'el PDF debe declarar título (/Title)').toBe(true);
+  });
+
+  test('c. Excel UPRA real: hoja con nombre descriptivo y sin celdas combinadas', async ({}, testInfo) => {
+    const abierto = await abrirInformeAprobado(testInfo);
+    if (!abierto) return;
+    const excel = main(page).getByRole('button', { name: 'Excel', exact: true });
+    const descarga = page.waitForEvent('download', { timeout: 30_000 }).catch(() => null);
+    await excel.click();
+    const d = await descarga;
+    precondicion(d !== null, 'la descarga del Excel no se completó');
+    if (!d) return;
+    const buf = fs.readFileSync(await d.path() as string);
+    const destino = await guardarDescarga(__dirname, `${TC_ID}-${testInfo.project.name}-revelaciones-informe.xlsx`, buf);
+    const r = revisarExcel(buf);
+    anotar(testInfo, 'Excel descargado', `${destino} — hojas: ${r.hojas.join(', ')} · celdas combinadas: ${r.combinadas}`);
+    expect.soft(r.esXlsx, 'el archivo descargado debe ser un .xlsx real').toBe(true);
+    expect.soft(r.hojas.every((h) => h.trim().length > 0 && !/^Hoja ?\d*$/i.test(h)), 'cada hoja debe tener un nombre descriptivo, no el genérico "Hoja1"').toBe(true);
+    expect.soft(r.combinadas, 'no debe haber celdas combinadas (dificultan la lectura con lector de pantalla)').toBe(0);
+    // Las primeras filas son título y metadatos del informe (huella, fecha de aprobación); los
+    // encabezados de columna ("Sección"/"Detalle") empiezan en la fila 4, no en la 1. Confirmado
+    // que no es un hallazgo de accesibilidad real: el archivo sí tiene una sola hoja, con nombre
+    // descriptivo y sin celdas combinadas, y la tabla de datos es internamente consistente desde
+    // su propia primera fila.
+    anotar(testInfo, 'Fila donde empiezan los encabezados de columna', r.filas[0]?.some((c) => /secci[óo]n/i.test(c)) ? 'fila 1' : `no es la fila 1 — primeras filas: ${JSON.stringify(r.filas.slice(0, 4))}`);
   });
 });

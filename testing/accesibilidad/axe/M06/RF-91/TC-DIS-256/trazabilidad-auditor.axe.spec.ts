@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-256 RF-91: vista de trazabilidad de solo lectura (Auditor)  |
+// | 2026-11-12 | Laura032005 | TC-DIS-256 RF-91: cuenta real de Auditor externo disponible (TEST_AUDITOR_*); paso a reescrito con login y navegación reales |
 /**
  * TC-DIS-256 — Verificar accesibilidad WCAG 2.1 AA de la vista de trazabilidad de solo lectura para
  * el Auditor externo [CRÍTICO]
@@ -12,10 +13,16 @@
  * (el acceso no permitido a períodos no cerrados se anuncia con role="alert" o aria-live); 2.1.1 y
  * 2.4.7.
  *
- * Ambiente: TEST no tiene una cuenta con rol AUDITOR. El paso a deja la precondición sin cumplir
- * (BLOQUEO del rol). El paso b evalúa con Admin lo que la vista ofrece en un período CERRADO con
- * asientos simulados (sin re-verificación, carácter de solo lectura). La restricción por rol a
- * períodos abiertos no se puede reproducir sin la cuenta ("Datos simulados").
+ * Ambiente: ya existe una cuenta real con rol AUDITOR (TEST_AUDITOR_*). Confirmado por diagnóstico
+ * directo (2026-11-12): con esa cuenta, Trazabilidad contable (/finanzas/trazabilidad) responde
+ * "No tienes acceso a esta sección — Tu rol no tiene permiso para ver «Líneas de asiento del
+ * período»" para TODOS los Titulares y períodos probados (abiertos, en cierre y cerrados por
+ * igual) — es un hueco de permisos (RBAC) del rol AUDITOR sobre `lineas_asiento_nic41` en este
+ * ambiente, no una restricción condicionada al estado del período como describe RF-91, y no una
+ * falta de datos. El paso a verifica esa denegación real (sí es accesible: role="status", nombra
+ * el recurso). El escenario positivo (Auditor leyendo un período CERRADO) no se puede ejercer con
+ * esta cuenta en este ambiente; el paso b lo cubre con Admin y datos simulados, como respaldo de
+ * la mecánica de la UI (cadena navegable, sin acciones de re-verificación).
  *
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_256_VIEWPORTS=escritorio
  */
@@ -28,7 +35,7 @@ import {
 
 const TC_ID = 'TC-DIS-256';
 const VIEWPORTS = (process.env.TC_DIS_256_VIEWPORTS ?? 'movil,tablet,escritorio').split(',').map((v) => v.trim());
-const LH = ['periodo-cerrado'];
+const LH = ['acceso-real-auditor', 'periodo-cerrado'];
 
 test.use({ actionTimeout: 15_000, launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
 
@@ -47,10 +54,31 @@ test.describe('TC-DIS-256 — Trazabilidad de solo lectura para el Auditor exter
   });
   test.afterEach(async () => { if (page) await quitarSimulaciones(page); });
 
-  test('a. Precondición: cuenta con rol Auditor externo', async ({}, testInfo) => {
-    const hay = !!process.env.TEST_AUDITOR_EMAIL;
-    anotar(testInfo, 'Cuentas en testing/.env.test', 'Admin, Productor, Veterinario; no hay TEST_AUDITOR_*');
-    precondicion(hay, 'TEST no tiene una cuenta con rol AUDITOR: no se puede verificar la vista real del Auditor ni el mensaje de acceso no permitido a períodos abiertos (BLOQUEO)');
+  test('a. [3.3.1 / 4.1.3] Acceso real del Auditor externo a Trazabilidad contable (cuenta real TEST_AUDITOR_*)', async ({ browser }, testInfo) => {
+    const { contexto: ctxAuditor, page: pageAuditor } = await abrirSesionRol(browser, testInfo, 'auditor');
+    await irFinanzas(pageAuditor, 'trazabilidad', /Trazabilidad contable/);
+    // El primer acceso del Auditor dispara un toast "Permisos actualizados...recargará
+    // automáticamente"; esa recarga debe terminar antes de leer el estado real de la vista.
+    await pageAuditor.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+    await pageAuditor.waitForTimeout(1_500);
+    // "acceso" solo no basta: el toast anterior también es role="status" y contiene esa palabra
+    // ("...reflejar los nuevos accesos"). Se filtra por la frase exacta de la denegación real.
+    const estado = main(pageAuditor).locator('[role="status"], [role="alert"]').filter({ hasText: /no tienes acceso/i });
+    const hayDenegacion = await estado.count() > 0;
+    const texto = hayDenegacion ? await estado.first().innerText() : '(sin mensaje de denegación: el Auditor pudo ver la vista)';
+    anotar(testInfo, 'Respuesta real de Trazabilidad para el Auditor', texto);
+    if (hayDenegacion) {
+      await expect.soft(estado.first(), '4.1.3: la denegación debe estar en una región que el lector anuncie').toHaveAttribute('role', /status|alert/);
+      expect.soft(texto, '3.3.1: debe nombrar el recurso al que no tiene acceso, no un mensaje genérico').toMatch(/líneas de asiento|trazabilidad/i);
+      anotar(testInfo, 'Alcance', 'Confirmado con un diagnóstico directo sobre todos los Titulares del ambiente: el rol AUDITOR no tiene permiso de lectura sobre líneas_asiento_nic41 para NINGÚN período (abierto, en cierre o cerrado) — es un hueco de permisos (RBAC) de este ambiente, no una restricción condicionada al estado del período como describe RF-91, y no fue posible sembrarlo porque no depende de datos sino de la configuración de permisos del rol. El escenario positivo (Auditor leyendo un período cerrado) se cubre en el paso b con Admin y datos simulados.');
+      await escanear(pageAuditor, TC_ID, __dirname, 'acceso-real-auditor', testInfo, LH);
+    } else {
+      // Si en algún momento se habilita el permiso, el Auditor debería ver la cadena sin acciones de edición.
+      const acciones = await main(pageAuditor).getByRole('button', { name: /Verificar|Editar|Modificar/i }).count();
+      expect.soft(acciones, '4.1.2: el Auditor no debe ver acciones de re-verificación o edición').toBe(0);
+      await escanear(pageAuditor, TC_ID, __dirname, 'acceso-real-auditor', testInfo, LH);
+    }
+    await ctxAuditor.close();
   });
 
   test('b. [1.3.1 / 4.1.2 / 2.1.1] Período cerrado: cadena navegable y sin acciones de re-verificación (Admin, Datos simulados)', async ({}, testInfo) => {
