@@ -271,7 +271,9 @@
     "SIN_PRECIO": "The species has no current market price.",
     "SIN_MAGNITUD": "The asset has no recorded weight or count.",
     "SIN_COSTOS_VENTA": "The species has no costs to sell configured.",
-    "VALOR_NETO_NO_POSITIVO": "Costs to sell equal or exceed the fair value."
+    "VALOR_NETO_NO_POSITIVO": "Costs to sell equal or exceed the fair value.",
+    "PENDIENTE_PRECIO": "The species had no current market price at the close.",
+    "SIN_BASE": "The asset has no recorded base valuation."
   },
   "config": {
     "titulo": "Accounting settings",
@@ -361,8 +363,9 @@
     "precio_unitario_col": "Unit price",
     "indefinida": "Indefinite",
     "especie_sin_nombre": "Inactive species",
-    "ya_corregido": "Already corrected: correct the correction",
-    "vigencia_correccion": "The correction keeps the date of the price it corrects."
+    "ya_corregido": "Corrected by the current price",
+    "vigencia_correccion": "The correction keeps the date of the price it corrects.",
+    "corregido_ok": "Price corrected."
   },
   "recon": {
     "titulo": "Initial recognition",
@@ -746,6 +749,7 @@
     "excluidos": "Assets excluded from the close",
     "excluidos_detalle_one": "{{count}} asset was excluded from remeasurement for lack of a price.",
     "excluidos_detalle_other": "{{count}} assets were excluded from remeasurement for lack of a price.",
+    "excluido_resultado": "Result left out of the statement:",
     "c": {
       "ganancia_reconocimiento_inicial": "Gain on initial recognition",
       "ganancia_transformacion_biologica": "Gain from biological transformation",
@@ -769,7 +773,6 @@
     "desglose_detalle": "Each version separates income and expenses by recognition, transformation, price, produce and costs.",
     "generar_titulo": "Generate income statement",
     "filtros_opcionales": "Optional filters",
-    "activo_lote": "Asset or lot",
     "filtros_ayuda": "Filters narrow the scope of the statement. Without filters, it is the consolidated one.",
     "versiones": "Versions in the period",
     "sustantivo": "versions",
@@ -786,8 +789,7 @@
     "consulta_detalle": "The Accountant generates and approves the statement when closing the period; you can view it here once published.",
     "consulta_titulo": "Period results",
     "filtro_infraestructura": "Infrastructure",
-    "filtro_tipo_activo": "Asset type",
-    "filtros_acotan": "Infrastructure and type narrow the asset list; the statement is generated for the chosen asset.",
+    "filtros_acotan": "Infrastructure narrows the list of assets and batches; the statement is generated for the chosen asset or batch.",
     "gasto_etiqueta": "expense",
     "generando": "Generating the income statement…",
     "generar_motivo": "The statement is generated once the period is closed.",
@@ -795,15 +797,15 @@
     "grafica_ingresos": "Income composition",
     "grafica_resultado": "Income, expenses and net result",
     "graficas": "Charts",
-    "graficas_ayuda": "Each chart has a table with the same data; the percentage accompanies each bar.",
-    "lote": "Batch",
+    "graficas_ayuda": "Each chart has a table with the same data.",
     "sin_actividad": "No activity in the period",
     "sin_estado_productor": "The Accountant has not generated the income statement for this period yet.",
     "vacio_detalle_consulta": "It will appear once the Accountant generates it when closing the period.",
     "ver_aria": "View version {{n}}",
     "aprobado_por": "Approved by",
-    "aprobador_sin_nombre": "User without a registered name",
-    "periodo_abierto_productor": "This period is still open: its income statement will be available once the Accountant closes and approves it."
+    "aprobador_sin_nombre": "Another user (no permission to see their name)",
+    "periodo_abierto_productor": "The Accountant has not generated the income statement for this period yet: it will be available once they close and approve it.",
+    "lote_poblacional": "Population batch"
   },
   "rev": {
     "titulo": "IAS 41 disclosures",
@@ -926,7 +928,7 @@
     "quitar_pignorado": "Remove pledge {{n}}",
     "seccion_bloqueada": "Blocked section: the source of this data returned an error and could not be completed.",
     "aprobador": "Approved by",
-    "aprobador_sin_nombre": "User without a registered name"
+    "aprobador_sin_nombre": "Another user (no permission to see their name)"
   },
   "aud": {
     "titulo": "Financial audit log",
@@ -1247,7 +1249,9 @@
     "sin_activo": "Period-level, no asset",
     "activo_sin_reconocer": "Asset outside the books",
     "solo_lectura": "Closed period: read-only traceability",
-    "solo_lectura_detalle": "The chains of this period are neither re-verified nor modified; they are only consulted."
+    "solo_lectura_detalle": "The chains of this period are neither re-verified nor modified; they are only consulted.",
+    "solo_cerrados": "You can only view the traceability of closed periods",
+    "solo_cerrados_detalle": "This period is still open and its entries may still change. Choose a closed period to see its traceability chain."
   },
   "ajuste": {
     "abrir": "Adjust",
