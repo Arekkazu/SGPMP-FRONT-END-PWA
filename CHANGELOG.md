@@ -1,3 +1,9 @@
+## [1.4.0-rc.41](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.40...v1.4.0-rc.41) (2026-11-13)
+
+### Bug Fixes
+
+* **rf93-mod6:** el activo excluido del cierre muestra su motivo en palabras y el resultado que quedo fuera ([b4bc940](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b4bc940528d2c5be78a341a64345384682395ba4)), closes [#1095](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1095)
+
 ## [1.4.0-rc.40](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.39...v1.4.0-rc.40) (2026-11-13)
 
 ### Bug Fixes
