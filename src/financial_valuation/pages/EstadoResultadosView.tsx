@@ -6,6 +6,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-260..264 RF-93: gráficas con tabla alternativa, signo y «Ganancia/Pérdida» en texto, filtros completos y descarga anunciada |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-12 | Arekkazu | TC-DIS-262/263 RF-93: activo individual y lote poblacional por separado; gráficas vacías con texto y sin «−$ 0» |
+// | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: activo excluido con su motivo en palabras y el resultado que quedó fuera |
 import React, { useEffect, useState } from 'react';
 import { BarChart3, CheckCircle2, Download, FilterX, Plus } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -18,7 +19,7 @@ import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { finanzasApi } from '../api/finanzasApi';
 import { ACCION_C, ACCION_R, ACCION_U, R_CIERRE, R_ESTADO_RESULTADOS, R_VALORACION } from '../rbac';
-import type { ActivoValorado, Dec, EstadoResumen } from '../types';
+import type { ActivoExcluidoCierre, ActivoValorado, Dec, EstadoResumen } from '../types';
 import { signo } from '../lib/decimal';
 import {
   Datos, EncabezadoVista, EstadoBadge, ErrorApi, Listado, PANEL, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM,
@@ -217,7 +218,7 @@ export function EstadoResultadosView() {
       </section>
     );
   };
-  const excluidos = (e?.componentes.activos_excluidos_cierre as Array<{ id_activo_biologico: number; identificador?: string; motivo?: string }> | undefined) ?? [];
+  const excluidos = (e?.componentes.activos_excluidos_cierre as ActivoExcluidoCierre[] | undefined) ?? [];
   const sinEstados = !!periodo && !estados.cargando && (estados.data ?? []).length === 0;
 
   return (
@@ -362,7 +363,13 @@ export function EstadoResultadosView() {
               <Subtitulo id="er-excluidos">{t('er.excluidos')}</Subtitulo>
               <Alert variant="warning" title={t('er.excluidos_detalle', { count: excluidos.length })} />
               <ul style={{ margin: 'var(--s3) 0 0', paddingLeft: 'var(--s5)', lineHeight: 'var(--lh-relaxed)' }}>
-                {excluidos.map((x) => <li key={x.id_activo_biologico}>{x.identificador ?? t('er.activo_filtrado')}{x.motivo ? ` · ${x.motivo}` : ''}</li>)}
+                {excluidos.map((x) => (
+                  <li key={x.id_activo_biologico}>
+                    <strong>{x.identificador ?? t('er.activo_filtrado')}</strong>
+                    {': '}{x.detalle ?? t(`motivo.${x.motivo}`, { defaultValue: t('motivo.PENDIENTE_PRECIO') })}
+                    {x.montos_excluidos && <> {t('er.excluido_resultado')} <Variacion valor={x.montos_excluidos.resultado_neto} etiqueta /></>}
+                  </li>
+                ))}
               </ul>
             </section>
           )}
