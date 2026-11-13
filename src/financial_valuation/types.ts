@@ -9,6 +9,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-252/254/265 RF-COT/91/94: estado al cierre de la cotización, nivel del fallo de la cadena y origen del evento |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
+// | 2026-11-12 | Arekkazu | TC-DIS-256 RF-91: la línea de asiento trae el nombre y el tipo de su activo |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -145,6 +146,7 @@ export interface Linea {
   tipo_evidencia: string; subtipo_costo: Subtipo | null; es_estimacion: boolean; es_reverso: boolean;
   cuenta_debito: string | null; cuenta_credito: string | null; estado: string; estado_trazabilidad?: string;
   id_comprobante_nic41?: number | null;
+  identificador_activo?: string | null; tipo_activo?: string | null;
 }
 export interface HistorialActivo {
   activo: { id_activo_biologico: number; identificador: string; especie: string; finca: string; razon_social: string | null;

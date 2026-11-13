@@ -3,6 +3,7 @@
 // | 2026-11-05 | Arekkazu | M06 RF-91 prototipo: líneas de asiento del período con su cadena, indicadores y filtros |
 // | 2026-11-10 | Arekkazu | INC-M06-351-G45 RF-87: ajustar una línea de un período cerrado |
 // | 2026-11-10 | Arekkazu | TC-DIS-254..256 RF-91: tipo de activo para la cadena, foco que se queda en «Verificar» y aviso de solo lectura del período cerrado |
+// | 2026-11-12 | Arekkazu | TC-DIS-256 RF-91: el auditor externo consulta las líneas sin permiso de valoración (solo períodos cerrados) |
 import React, { useEffect, useRef, useState } from 'react';
 import { GitBranch, Link2, PencilLine, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -12,7 +13,7 @@ import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { finanzasApi } from '../api/finanzasApi';
-import { ACCION_E, ACCION_R, R_CIERRE, R_TRAZABILIDAD, R_VALORACION } from '../rbac';
+import { ACCION_C, ACCION_E, ACCION_R, R_CIERRE, R_COSTOS, R_TRAZABILIDAD, R_VALORACION } from '../rbac';
 import type { Linea } from '../types';
 import { AjusteModal } from '../components/AjusteModal';
 import { CadenaModal } from '../components/CadenaModal';
@@ -25,8 +26,13 @@ export function TrazabilidadView() {
   const { t } = useT('finanzas');
   const puedeLeer = usePermissionPorNombre(R_TRAZABILIDAD, ACCION_R);
   const puedeVerificar = usePermissionPorNombre(R_TRAZABILIDAD, ACCION_E);
-  const puedeVerLineas = usePermissionPorNombre(R_VALORACION, ACCION_R);
+  // TC-DIS-256: las líneas las lee quien consulta la trazabilidad (el auditor, solo períodos cerrados por la BD);
+  // la lista de activos valorados es solo para quien lee la valoración.
+  const puedeVerActivos = usePermissionPorNombre(R_VALORACION, ACCION_R);
   const puedeAjustar = usePermissionPorNombre(R_CIERRE, ACCION_E);
+  // RF-91: sin visión completa (ejecutar el cierre o registrar costos) la BD solo muestra períodos cerrados.
+  const registraCostos = usePermissionPorNombre(R_COSTOS, ACCION_C);
+  const visionCompleta = puedeAjustar || registraCostos;
   const { periodo } = usePeriodo();
   const lineas = useAsync(finanzasApi.lineas);
   const activos = useAsync(finanzasApi.activos);
@@ -42,12 +48,12 @@ export function TrazabilidadView() {
   const id = periodo?.id_periodo_contable;
   const { ejecutar: cargarLineas } = lineas;
   const { ejecutar: cargarActivos } = activos;
-  useEffect(() => { if (puedeLeer && puedeVerLineas && id) cargarLineas(id); }, [puedeLeer, puedeVerLineas, id, cargarLineas]);
-  useEffect(() => { if (puedeLeer && puedeVerLineas) cargarActivos(); }, [puedeLeer, puedeVerLineas, cargarActivos]);
+  useEffect(() => { if (puedeLeer && id) cargarLineas(id); }, [puedeLeer, id, cargarLineas]);
+  useEffect(() => { if (puedeLeer && puedeVerActivos) cargarActivos(); }, [puedeLeer, puedeVerActivos, cargarActivos]);
 
   const identificador = new Map((activos.data ?? []).map((a) => [a.id_activo_biologico, a.identificador]));
-  const tipoDe = (l: Linea) => (l.id_activo_biologico ? (activos.data ?? []).find((a) => a.id_activo_biologico === l.id_activo_biologico)?.tipo ?? null : null);
-  const activoDe = (l: Linea) => (l.id_activo_biologico ? identificador.get(l.id_activo_biologico) ?? t('traza.activo_sin_reconocer') : t('traza.sin_activo'));
+  const tipoDe = (l: Linea) => (l.id_activo_biologico ? l.tipo_activo ?? (activos.data ?? []).find((a) => a.id_activo_biologico === l.id_activo_biologico)?.tipo ?? null : null);
+  const activoDe = (l: Linea) => (l.id_activo_biologico ? l.identificador_activo ?? identificador.get(l.id_activo_biologico) ?? t('traza.activo_sin_reconocer') : t('traza.sin_activo'));
   const l = useListado(lineas.data, (x) => `${activoDe(x)} ${t(`hecho.${x.tipo_hecho}`)}`, [
     { id: 'traza', etiqueta: t('col.trazabilidad'), valor: (x) => x.estado_trazabilidad, texto: (v) => t(`estado.${v}`), femenino: true },
     { id: 'evidencia', etiqueta: t('col.evidencia'), valor: (x) => x.tipo_evidencia, texto: (v) => t(`evidencia.${v}`, { defaultValue: t('evidencia.REGISTRO_MANUAL') }), femenino: true },
@@ -56,7 +62,6 @@ export function TrazabilidadView() {
   ]);
 
   if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.trazabilidad')} />;
-  if (!puedeVerLineas) return <AccesoDenegado seccion={t('cierre.lineas')} />;
   const lista = lineas.data ?? [];
   const cuenta = (e: string) => lista.filter((x) => x.estado_trazabilidad === e).length;
   const incompletas = cuenta('PENDIENTE_TRAZABILIDAD');
@@ -86,7 +91,9 @@ export function TrazabilidadView() {
       <div className="fin-avisos">
         {periodo?.estado === 'CERRADO'
           ? <Alert variant="info" title={t('traza.solo_lectura')} description={t('traza.solo_lectura_detalle')} />
-          : <Alert variant="info" title={t('traza.aviso_titulo')} description={t('traza.aviso_detalle')} />}
+          : periodo && !visionCompleta
+            ? <Alert variant="warning" title={t('traza.solo_cerrados')} description={t('traza.solo_cerrados_detalle')} />
+            : <Alert variant="info" title={t('traza.aviso_titulo')} description={t('traza.aviso_detalle')} />}
         {incompletas > 0 && <Alert variant="warning" title={t('traza.incompletas', { count: incompletas })} description={t('traza.incompletas_detalle')} />}
       </div>
       <ErrorApi error={lineas.error ?? verificacion.error} />
