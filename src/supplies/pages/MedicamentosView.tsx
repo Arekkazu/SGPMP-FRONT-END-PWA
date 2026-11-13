@@ -3,6 +3,7 @@
 // | 2026-10-23 | Arekkazu | M05 RF-76: registro, consulta y anulación de aplicaciones de medicamento |
 // | 2026-11-10 | Arekkazu | TC-DIS-214 RF-76: columna de dosis por individuo para los lotes |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 RF-76: un retiro vencido dice «Terminó el …»; tabla en tarjetas en el celular (R-01) |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Pill, Ban } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -70,7 +71,7 @@ export function MedicamentosView() {
         <EstadoVacio icono={<Pill size={28} aria-hidden />} titulo={t('medicamento.vacio_titulo')} detalle={t('medicamento.vacio_detalle')} />
       ) : (
         <ScrollRegion label={t('medicamento.titulo')}>
-          <table style={TABLA} aria-busy={lista.cargando}>
+          <table className="ds-tabla-tarjetas" style={TABLA} aria-busy={lista.cargando}>
             <thead>
               <tr>
                 <th style={TH}>{t('comun.activo')}</th>
@@ -89,33 +90,33 @@ export function MedicamentosView() {
                 const enRetiro = m.estado_registro === 'VALIDADO' && !!m.fecha_fin_retiro && m.fecha_fin_retiro >= hoy;
                 return (
                   <tr key={m.id_registro_medicamento}>
-                    <td style={TD}>
+                    <td className="ds-celda-titulo" style={TD}>
                       {nombreDe(m.id_activo_biologico, m.identificador_activo)}
                     </td>
-                    <td style={TD}>
+                    <td data-label={t('medicamento.nombre')} style={TD}>
                       {m.nombre_medicamento}
                       <div style={SECUNDARIO}>{m.via_aplicacion ? t(`via.${m.via_aplicacion}`, { defaultValue: humanizar(m.via_aplicacion) }) : '—'}{m.nombre_veterinario ? ` · ${m.nombre_veterinario}` : ''}</div>
                     </td>
-                    <td style={TD}>
+                    <td data-label={t('comun.fecha')} style={TD}>
                       {formatoFecha(m.fecha_aplicacion)}
                       {m.hora_aplicacion && <div style={SECUNDARIO}>{m.hora_aplicacion.slice(0, 5)}</div>}
                     </td>
-                    <td style={TD_NUM}>{formatoCantidad(m.cantidad)} {m.unidad_dosis}</td>
-                    <td style={TD_NUM}>{m.dosis_por_individuo ? `${formatoCantidad(m.dosis_por_individuo)} ${m.unidad_dosis}` : <span style={SECUNDARIO}>{t('consumo.no_aplica_individual')}</span>}</td>
-                    <td style={TD}>
+                    <td data-label={t('medicamento.dosis_col')} style={TD_NUM}>{formatoCantidad(m.cantidad)} {m.unidad_dosis}</td>
+                    <td data-label={t('consumo.por_individuo')} style={TD_NUM}>{m.dosis_por_individuo ? `${formatoCantidad(m.dosis_por_individuo)} ${m.unidad_dosis}` : <span style={SECUNDARIO}>{t('consumo.no_aplica_individual')}</span>}</td>
+                    <td data-label={t('medicamento.retiro_col')} style={TD}>
                       {m.fecha_fin_retiro
                         ? <span style={{ color: enRetiro ? 'var(--sem-warning)' : 'var(--text-secondary)', fontWeight: enRetiro ? 600 : 400 }}>
-                            {enRetiro ? t('medicamento.en_retiro_hasta', { fecha: formatoFecha(m.fecha_fin_retiro) }) : formatoFecha(m.fecha_fin_retiro)}
+                            {t(enRetiro ? 'medicamento.en_retiro_hasta' : 'medicamento.retiro_termino', { fecha: formatoFecha(m.fecha_fin_retiro) })}
                           </span>
                         : <span style={SECUNDARIO}>{t('medicamento.sin_retiro')}</span>}
                     </td>
-                    <td style={TD_NUM}>{formatoMoneda(m.costo_total_medicamento)}</td>
-                    <td style={TD}>
+                    <td data-label={t('comun.costo_total')} style={TD_NUM}>{formatoMoneda(m.costo_total_medicamento)}</td>
+                    <td className="ds-celda-destacada" style={TD}>
                       <EstadoRegistroBadge estado={m.estado_registro} />
                       {m.justificacion_anulacion && <div style={{ ...SECUNDARIO, maxWidth: 260, marginTop: 'var(--s1)' }}>{m.justificacion_anulacion}</div>}
                     </td>
                     {puedeAnular && (
-                      <td style={TD}>
+                      <td className="ds-celda-accion" style={TD}>
                         {m.estado_registro === 'VALIDADO' && (
                           <Button variant="ghost" size="sm" disabled={!online} onClick={() => { anulacion.limpiar(); setAAnular(m); }}
                             aria-label={t('comun.anular_aria', { que: m.nombre_medicamento, activo: nombreDe(m.id_activo_biologico, m.identificador_activo) })}>

@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: formato de montos y cantidades del backend (Decimal) |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 B-01 RF-77/90: porcentajes y meses con el formato del idioma |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 B-01 RF-77/90: el porcentaje lleva el mismo espacio en todas las pantallas |
 import i18n from '../../shared/i18n';
 
 /**
@@ -30,6 +31,8 @@ export function formatoCantidad(valor: string | number | null | undefined, maxDe
 export function formatoPorcentaje(valor: string | number | null | undefined, maxDecimales = 1): string {
   const n = numero(valor);
   if (n === null) return '—';
+  // B-01: en español siempre con espacio, como el resto de pantallas («100 %»); Intl de es-CO lo pega («70,6%»).
+  if (i18n.language.startsWith('es')) return `${formatoCantidad(n, maxDecimales)}\u00a0%`;
   return new Intl.NumberFormat(i18n.language, { style: 'percent', maximumFractionDigits: maxDecimales }).format(n / 100);
 }
 

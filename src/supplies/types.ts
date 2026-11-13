@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: tipos de dominio del módulo de suministros |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 N-05 RF-74: nombre del activo en los fallos y motivo de la interrupción |
 // =====================================================================
 // Módulo 5 — Suministros · Tipos de dominio
 // Contrato: OpenAPI de src/supplies (rama integracion/rfc012-016).
@@ -175,12 +176,20 @@ export interface EstadoBatchIca {
   cantidad_activos_pendientes: number;
   cantidad_fallidos: number;
   causa_interrupcion: string | null;
+  motivo_interrupcion?: string | null;
   num_workers: number;
+}
+
+/** Opción del filtro «Usuario» de la bitácora de M05 (N-07). */
+export interface ActorAuditoria {
+  id_usuario: number;
+  nombre: string;
 }
 
 export interface FalloIca {
   id_fallo: number | null;
   id_activo_biologico: number;
+  nombre_activo?: string | null;
   periodo_evaluacion: string | null;
   causa_fallo: string;
   intentos: number;

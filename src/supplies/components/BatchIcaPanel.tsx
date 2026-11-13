@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74 Flujo C: panel de corridas, cola y fallos del batch ICA |
 // | 2026-11-10 | Arekkazu | INC-M05-511 RF-74: la causa de interrupción del batch se muestra en palabras |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 N-05 RF-74: fallos con el código del activo y toda interrupción con su causa en palabras |
 import React, { useCallback, useEffect, useState } from 'react';
 import { Play, ListRestart, RotateCcw, Square } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -86,7 +87,7 @@ export function BatchIcaPanel({ online }: { online: boolean }) {
                   <td style={TD_NUM}>{c.cantidad_fallidos}</td>
                   <td style={TD}>
                     <EstadoRegistroBadge estado={c.estado} />
-                    {c.causa_interrupcion && <div style={{ ...SECUNDARIO, marginTop: 'var(--s1)' }}>{t(`batch.causa_${c.causa_interrupcion}`, { defaultValue: t('batch.causa_otra') })}</div>}
+                    {c.estado === 'INTERRUMPIDO' && <div style={{ ...SECUNDARIO, marginTop: 'var(--s1)' }}>{causaInterrupcion(t, c)}</div>}
                   </td>
                   {puedeEjecutar && (
                     <td style={TD}>
@@ -121,7 +122,7 @@ export function BatchIcaPanel({ online }: { online: boolean }) {
               <tbody>
                 {pendientesFallo.map((f) => (
                   <tr key={f.id_fallo ?? f.id_activo_biologico}>
-                    <td style={TD}>#{f.id_activo_biologico}</td>
+                    <td style={TD}>{f.nombre_activo ?? t('comun.activo_n', { id: f.id_activo_biologico })}</td>
                     <td style={TD}>{f.causa_fallo}</td>
                     <td style={TD_NUM}>{f.intentos}</td>
                     <td style={TD}>{formatoFecha(f.timestamp_ultimo_intento, true)}</td>
@@ -161,3 +162,16 @@ export function BatchIcaPanel({ online }: { online: boolean }) {
     </section>
   );
 }
+
+const CAUSAS_CONOCIDAS = ['MANUAL', 'VENTANA_EXCEDIDA', 'REINICIO_SERVIDOR'];
+
+/** N-05: una corrida interrumpida siempre dice por qué. Antes de #1097 el motivo escrito por el usuario
+ * quedaba en lugar de la causa y la pantalla solo decía «Interrumpida». */
+function causaInterrupcion(t: (k: string, o?: Record<string, unknown>) => string, c: { causa_interrupcion: string | null; motivo_interrupcion?: string | null }) {
+  const causa = c.causa_interrupcion?.trim();
+  if (!causa) return t('batch.causa_sin_registrar');
+  if (!CAUSAS_CONOCIDAS.includes(causa)) return t('batch.causa_usuario_motivo', { motivo: causa });
+  const texto = t(`batch.causa_${causa}`);
+  return c.motivo_interrupcion ? t('batch.causa_con_motivo', { causa: texto, motivo: c.motivo_interrupcion }) : texto;
+}
+

@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-75: registro, consulta y anulación de consumos de alimento |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 R-01 RF-75: en el celular cada consumo es una tarjeta con estado y «Anular» a la vista |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Wheat, Ban } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -66,7 +67,7 @@ export function AlimentacionView() {
         <EstadoVacio icono={<Wheat size={28} aria-hidden />} titulo={t('consumo.vacio_titulo')} detalle={t('consumo.vacio_detalle')} />
       ) : (
         <ScrollRegion label={t('consumo.titulo')}>
-          <table style={TABLA} aria-busy={lista.cargando}>
+          <table className="ds-tabla-tarjetas" style={TABLA} aria-busy={lista.cargando}>
             <thead>
               <tr>
                 <th style={TH}>{t('comun.activo')}</th>
@@ -82,23 +83,23 @@ export function AlimentacionView() {
             <tbody>
               {items.map((c) => (
                 <tr key={c.id_consumo_alimeto}>
-                  <td style={TD}>
+                  <td className="ds-celda-titulo" style={TD}>
                     {nombreDe(c.id_activo_biologico, c.identificador_activo)}
                   </td>
-                  <td style={TD}>{c.tipo_alimento}</td>
-                  <td style={TD}>
+                  <td data-label={t('consumo.tipo_alimento_col')} style={TD}>{c.tipo_alimento}</td>
+                  <td data-label={t('comun.fecha')} style={TD}>
                     {formatoFecha(c.fecha_consumo)}
                     {c.hora_suministro && <div style={SECUNDARIO}>{c.hora_suministro.slice(0, 5)}</div>}
                   </td>
-                  <td style={TD_NUM}>{formatoCantidad(c.cantidad_suministrada)} {c.tipo_unidad}</td>
-                  <td style={TD_NUM}>{c.consumo_por_individuo_kg ? `${formatoCantidad(c.consumo_por_individuo_kg)} kg` : '—'}</td>
-                  <td style={TD_NUM}>{formatoMoneda(c.costo_total)}</td>
-                  <td style={TD}>
+                  <td data-label={t('consumo.cantidad_col')} style={TD_NUM}>{formatoCantidad(c.cantidad_suministrada)} {c.tipo_unidad}</td>
+                  <td data-label={t('consumo.por_individuo')} style={TD_NUM}>{c.consumo_por_individuo_kg ? `${formatoCantidad(c.consumo_por_individuo_kg)} kg` : '—'}</td>
+                  <td data-label={t('comun.costo_total')} style={TD_NUM}>{formatoMoneda(c.costo_total)}</td>
+                  <td className="ds-celda-destacada" style={TD}>
                     <EstadoRegistroBadge estado={c.estado_registro} />
                     {c.justificacion_anulacion && <div style={{ ...SECUNDARIO, maxWidth: 260, marginTop: 'var(--s1)' }}>{c.justificacion_anulacion}</div>}
                   </td>
                   {puedeAnular && (
-                    <td style={TD}>
+                    <td className="ds-celda-accion" style={TD}>
                       {c.estado_registro === 'VALIDADO' && (
                         <>
                           <Button variant="ghost" size="sm" disabled={!online} onClick={() => { anulacion.limpiar(); setAAnular(c); }}

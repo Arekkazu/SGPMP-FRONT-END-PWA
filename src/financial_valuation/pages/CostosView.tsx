@@ -4,6 +4,7 @@
 // | 2026-11-05 | Arekkazu | M06 RF-90 prototipo: costos del período consolidados por naturaleza y tipo, con filtros |
 // | 2026-11-10 | Arekkazu | TC-DIS-247..250 RF-90: consolidados en tabla (tipo, origen, activo), errores bajo cada campo, vista previa del reparto y cuenta débito resuelta |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 B-01 RF-90: el subtotal usa el mismo formato de porcentaje que sus filas |
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Receipt, Tags, Trash2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -44,7 +45,7 @@ function Subtotales({ titulo, filas, total }: { titulo: string; filas: Array<[st
         <thead><tr><th style={TH}>{titulo}</th><th style={TH_NUM}>{t('col.monto')}</th><th style={TH_NUM}>{t('costos.participacion')}</th></tr></thead>
         <tbody>
           {filas.map(([k, v]) => <tr key={k}><th scope="row" style={{ ...TD, textAlign: 'left', fontWeight: 500 }}>{k}</th><td style={TD_NUM}>{formatoMoneda(v)}</td><td style={TD_NUM}>{pct(v, total)}</td></tr>)}
-          <tr><th scope="row" style={{ ...TD, textAlign: 'left', fontWeight: 700 }}>{t('costos.subtotal')}</th><td style={{ ...TD_NUM, fontWeight: 700 }}>{formatoMoneda(total)}</td><td style={TD_NUM}>100 %</td></tr>
+          <tr><th scope="row" style={{ ...TD, textAlign: 'left', fontWeight: 700 }}>{t('costos.subtotal')}</th><td style={{ ...TD_NUM, fontWeight: 700 }}>{formatoMoneda(total)}</td><td style={TD_NUM}>{formatoPorcentaje(100)}</td></tr>
         </tbody>
       </table>
     </ScrollRegion>
