@@ -12,6 +12,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-233/257/262 RF-86/92/93: Productor con período, aprobador del informe y panel de pendientes |
 // | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año; navegación en dos niveles |
 // | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 N-08 RF-89: la fila corregida dice «Corregido por el precio vigente» |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -95,7 +96,7 @@ describe('PreciosView (RF-89)', () => {
     const user = userEvent.setup();
     render(<MemoryRouter><PreciosView /></MemoryRouter>);
 
-    const fila = (await screen.findByText('Ya se corrigió: corrija la corrección')).closest('tr') as HTMLElement;
+    const fila = (await screen.findByText('Corregido por el precio vigente')).closest('tr') as HTMLElement;
     expect(within(fila).getByText('Corregido')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Corregir/ })).toHaveLength(1);
 

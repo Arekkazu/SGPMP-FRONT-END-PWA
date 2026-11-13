@@ -1,8 +1,10 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: pruebas del formato de montos, fechas y decimales |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 B-01 RF-77/90: el porcentaje lleva el mismo espacio en todas las pantallas |
 import { describe, expect, it } from 'vitest';
-import { decimalPositivo, formatoCantidad, formatoFecha, formatoMoneda } from './formato';
+import i18n from '../../shared/i18n';
+import { decimalPositivo, formatoCantidad, formatoFecha, formatoMoneda, formatoPorcentaje } from './formato';
 
 describe('formato de M05', () => {
   it('normaliza decimales positivos con coma o punto y rechaza cero, negativos y texto', () => {
@@ -27,5 +29,14 @@ describe('formato de M05', () => {
 
   it('un día suelto conserva su fecha local (no retrocede por UTC)', () => {
     expect(formatoFecha('2026-10-23')).toMatch(/23/);
+  });
+});
+
+describe('formatoPorcentaje', () => {
+  it('en español separa el signo con un espacio, igual que «100 %» de la calidad de datos', async () => {
+    await i18n.changeLanguage('es-CO');
+    expect(formatoPorcentaje(70.6)).toBe('70,6\u00a0%');
+    expect(formatoPorcentaje(100)).toBe('100\u00a0%');
+    expect(formatoPorcentaje(null)).toBe('—');
   });
 });

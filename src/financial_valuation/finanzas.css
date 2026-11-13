@@ -2,7 +2,8 @@
    |------------|----------|-------------|
    | 2026-11-05 | Arekkazu | M06 prototipos: período global, indicadores, barra de filtros y pie de tabla |
    | 2026-11-10 | Arekkazu | TC-DIS-249/251/254 RF-90/COT/91: eslabones expandibles y casillas con zona táctil de 48px |
-   | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: barra de período con titular, año y período que se acomodan en el celular | */
+   | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: barra de período con titular, año y período que se acomodan en el celular |
+   | 2026-11-12 | Arekkazu | USAB-M05-M06 R-03 RF-90: tarjetas apiladas por debajo de 900 px y acción de fila fija | */
 
 /* Período contable de todo el módulo (en el prototipo vive en la barra superior). */
 .fin-periodo {
@@ -195,8 +196,16 @@
   margin-bottom: var(--s5);
 }
 
-@media (min-width: 768px) {
+/* R-03: a 768 px dos tarjetas con tabla de tres columnas no caben («Participación» se cortaba). */
+@media (min-width: 900px) {
   .fin-columnas { grid-template-columns: 1fr 1fr; }
+}
+
+/* R-03: la tabla se desliza en tablet, pero la acción de cada fila queda a la vista. */
+.fin-accion-fija {
+  position: sticky;
+  right: 0;
+  background: var(--surface-card);
 }
 
 .fin-tarjeta {

@@ -4,6 +4,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-218/219 RF-81: rangos agrupados con fieldset, columnas de unidad y origen, resumen anunciado |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 // | 2026-11-12 | Arekkazu | TC-DIS-218 RF-81: la paginación muestra la página pedida al instante, sin esperar al servidor |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 R-02 RF-81: el rango de fechas pasa a dos filas en celulares grandes |
 import React, { useEffect, useState } from 'react';
 import { Search, FileDown, History } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -121,7 +122,8 @@ export function HistorialView() {
         {/* Los rangos van agrupados (fieldset + legend): el lector anuncia a qué rango pertenece cada extremo (WCAG 1.3.1). */}
         <fieldset style={GRUPO}>
           <legend className="ds-field__label" style={{ padding: 0 }}>{t('historial.rango_fechas')}</legend>
-          <div className="ds-fg2" style={{ gap: 'var(--s3)' }}>
+          {/* R-02: «Desde» y «Hasta» pasan a dos filas cuando no caben, sin desbordar la página (500-700 px). */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s3)' }}>
             <Input id="historial-desde" label={t('comun.desde')} type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
             <Input id="historial-hasta" label={t('comun.hasta')} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} error={rangoInvalido ? t('comun.rango_invalido') : undefined} />
           </div>

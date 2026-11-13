@@ -3,6 +3,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-84/RF-88/RF-109: periodicidad, parámetros por especie, costos de venta y matriz |
 // | 2026-11-05 | Arekkazu | M06 prototipos: matriz contable con búsqueda y filtros; sin ids en pantalla |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 R-03 RF-82/88: especies en tarjetas en el celular; en tablet «Guardar» a la vista y selectores sin recortar |
 import React, { useEffect, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -101,12 +102,12 @@ function Especies({ config, puedeEditar, onGuardado }: SeccionProps) {
       <Subtitulo>{t('config.especies')}</Subtitulo>
       <p style={{ ...SECUNDARIO, margin: '0 0 var(--s3)' }}>{t('config.especies_ayuda')}</p>
       <ScrollRegion label={t('config.especies')}>
-        <table style={TABLA}>
+        <table className="ds-tabla-tarjetas" style={TABLA}>
           <thead>
             <tr>
               <th style={TH}>{t('col.especie')}</th><th style={TH}>{t('col.clasificacion')}</th><th style={TH}>{t('col.categoria')}</th>
               <th style={TH}>{t('col.vida_util')}</th><th style={TH}>{t('col.pct_transporte')}</th><th style={TH}>{t('col.pct_comisiones')}</th>
-              <th style={TH}>{t('col.pct_impuestos')}</th>{puedeEditar && <th style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th>}
+              <th style={TH}>{t('col.pct_impuestos')}</th>{puedeEditar && <th className="fin-accion-fija" style={TH}><span className="ds-sr-only">{t('comun.acciones')}</span></th>}
             </tr>
           </thead>
           <tbody>
@@ -152,7 +153,7 @@ function FilaEspecie({ especie, costo, puedeEditar, onGuardado }: {
   };
 
   const celdaPct = (k: 't' | 'c' | 'i', etiqueta: string) => (
-    <td style={TD}>
+    <td data-label={etiqueta} style={TD}>
       <Input id={`${id}-${k}`} aria-label={`${etiqueta} · ${especie.especie}`} type="number" min={0} max={100} step="any" value={pct[k]}
         disabled={!puedeEditar} onChange={(e) => setPct({ ...pct, [k]: e.target.value })} style={{ width: 90 }} />
     </td>
@@ -160,26 +161,26 @@ function FilaEspecie({ especie, costo, puedeEditar, onGuardado }: {
 
   return (
     <tr>
-      <td style={TD}>
+      <td className="ds-celda-titulo" style={TD}>
         <strong>{especie.especie}</strong>
         {(aviso || error) && <div role="alert" style={{ color: 'var(--sem-error)', fontSize: 'var(--fs-body-sm)', marginTop: 'var(--s1)' }}>{aviso ?? error?.message}</div>}
       </td>
-      <td style={TD}>
-        <Select id={`${id}-clas`} aria-label={`${t('col.clasificacion')} · ${especie.especie}`} value={clasificacion} disabled={!puedeEditar}
+      <td data-label={t('col.clasificacion')} style={TD}>
+        <Select id={`${id}-clas`} style={{ minWidth: 170 }} aria-label={`${t('col.clasificacion')} · ${especie.especie}`} value={clasificacion} disabled={!puedeEditar}
           onChange={(e) => setClasificacion(e.target.value as Clasificacion)}>
           <option value="">{t('comun.sin_definir')}</option>
           <option value="PRODUCCION">{t('clasificacion.PRODUCCION')}</option>
           <option value="CONSUMO">{t('clasificacion.CONSUMO')}</option>
         </Select>
       </td>
-      <td style={TD}>
-        <Select id={`${id}-cat`} aria-label={`${t('col.categoria')} · ${especie.especie}`} value={categoria} disabled={!puedeEditar}
+      <td data-label={t('col.categoria')} style={TD}>
+        <Select id={`${id}-cat`} style={{ minWidth: 150 }} aria-label={`${t('col.categoria')} · ${especie.especie}`} value={categoria} disabled={!puedeEditar}
           onChange={(e) => setCategoria(e.target.value as 'PESO_KG' | 'POR_CABEZA')}>
           <option value="PESO_KG">{t('categoria.PESO_KG')}</option>
           <option value="POR_CABEZA">{t('categoria.POR_CABEZA')}</option>
         </Select>
       </td>
-      <td style={TD}>
+      <td data-label={t('col.vida_util')} style={TD}>
         <Input id={`${id}-vida`} aria-label={`${t('col.vida_util')} · ${especie.especie}`} type="number" min={1} step={1} value={vida}
           disabled={!puedeEditar} onChange={(e) => setVida(e.target.value)} style={{ width: 90 }} />
       </td>
@@ -187,7 +188,7 @@ function FilaEspecie({ especie, costo, puedeEditar, onGuardado }: {
       {celdaPct('c', t('col.pct_comisiones'))}
       {celdaPct('i', t('col.pct_impuestos'))}
       {puedeEditar && (
-        <td style={TD}>
+        <td className="ds-celda-accion fin-accion-fija" style={TD}>
           <Button variant="secondary" size="sm" loading={parametro.cargando || costos.cargando} onClick={guardar}
             aria-label={`${t('comun.guardar')} ${especie.especie}`}>
             <Save size={14} aria-hidden />{t('comun.guardar')}

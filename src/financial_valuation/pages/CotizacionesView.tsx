@@ -3,6 +3,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-COT: cotizaciones de venta con valor razonable de referencia y control por versión |
 // | 2026-11-05 | Arekkazu | M06 RF-COT prototipo: búsqueda y filtros por estado y activo; sin ids en pantalla |
 // | 2026-11-10 | Arekkazu | TC-DIS-251..253 RF-COT: detalle por cotización, estado al cierre, conteo y referencia de solo lectura, errores bajo el campo y nombres para el Productor |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 R-03 RF-COT: en el celular cada cotización es una tarjeta |
 import React, { useEffect, useState } from 'react';
 import { Eye, FileSignature, PencilLine, Plus, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -77,7 +78,7 @@ export function CotizacionesView() {
       <Listado l={l} idBase="cot" sustantivo={t('cot.sustantivo')} buscar={t('cot.buscar')} cargando={cotizaciones.cargando}
         vacio={{ icono: <FileSignature size={28} aria-hidden />, titulo: t('cot.vacio_titulo'), detalle: t('cot.vacio_detalle') }}>
         {(visibles) => (
-          <table style={TABLA}>
+          <table className="ds-tabla-tarjetas" style={TABLA}>
             <thead>
               <tr>
                 <th style={TH}>{t('col.fecha')}</th><th style={TH}>{t('col.activos')}</th><th style={TH_NUM}>{t('col.valor_referencia')}</th>
@@ -93,16 +94,16 @@ export function CotizacionesView() {
                 const vigente = c.estado === 'COTIZADO' && !cerrada;
                 return (
                   <tr key={c.id_cotizacion}>
-                    <td style={{ ...TD, whiteSpace: 'nowrap' }}>{formatoFecha(c.fecha_emision)}<span className="fin-secundario">{t('cot.version', { n: c.version })}</span></td>
-                    <td style={TD}>{c.activos_cotizados.map(nombre).join(', ')}
+                    <td data-label={t('col.fecha')} style={{ ...TD, whiteSpace: 'nowrap' }}>{formatoFecha(c.fecha_emision)}<span className="fin-secundario">{t('cot.version', { n: c.version })}</span></td>
+                    <td className="ds-celda-titulo" style={TD}>{c.activos_cotizados.map(nombre).join(', ')}
                       {c.condiciones && <span className="fin-secundario">{c.condiciones}</span>}</td>
-                    <td style={TD_NUM}>{formatoMoneda(c.valor_razonable_referencia)}</td>
-                    <td style={TD_NUM}><strong>{formatoMoneda(c.valor_cotizacion_propuesto)}</strong></td>
-                    <td style={TD_NUM}><Variacion valor={sumar([c.valor_cotizacion_propuesto, `-${c.valor_razonable_referencia}`])} /></td>
-                    <td style={{ ...TD, whiteSpace: 'nowrap' }}>{c.fecha_vencimiento ? formatoFecha(c.fecha_vencimiento) : t('cot.sin_vencimiento')}</td>
-                    <td style={TD}><EstadoBadge estado={c.estado} />{c.motivo_anulacion && <span className="fin-secundario">{c.motivo_anulacion}</span>}</td>
-                    {hayCerradas && <td style={TD}>{cerrada ? <EstadoBadge estado={c.estado_al_cierre ?? c.estado} /> : <span style={SECUNDARIO}>{t('cot.periodo_abierto')}</span>}</td>}
-                    <td style={{ ...TD, whiteSpace: 'nowrap' }}>
+                    <td data-label={t('col.valor_referencia')} style={TD_NUM}>{formatoMoneda(c.valor_razonable_referencia)}</td>
+                    <td data-label={t('col.valor_propuesto')} style={TD_NUM}><strong>{formatoMoneda(c.valor_cotizacion_propuesto)}</strong></td>
+                    <td data-label={t('cot.diferencia')} style={TD_NUM}><Variacion valor={sumar([c.valor_cotizacion_propuesto, `-${c.valor_razonable_referencia}`])} /></td>
+                    <td data-label={t('col.vencimiento')} style={{ ...TD, whiteSpace: 'nowrap' }}>{c.fecha_vencimiento ? formatoFecha(c.fecha_vencimiento) : t('cot.sin_vencimiento')}</td>
+                    <td className="ds-celda-destacada" style={TD}><EstadoBadge estado={c.estado} />{c.motivo_anulacion && <span className="fin-secundario">{c.motivo_anulacion}</span>}</td>
+                    {hayCerradas && <td data-label={t('cot.estado_al_cierre')} style={TD}>{cerrada ? <EstadoBadge estado={c.estado_al_cierre ?? c.estado} /> : <span style={SECUNDARIO}>{t('cot.periodo_abierto')}</span>}</td>}
+                    <td className="ds-celda-accion" style={{ ...TD, whiteSpace: 'nowrap' }}>
                       <Button variant="ghost" size="sm" onClick={() => setDetalle(c)} aria-label={t('cot.ver_aria', { cotizacion: describir(c) })}><Eye size={14} aria-hidden />{t('cot.ver')}</Button>
                       {vigente && puedeModificar && <Button variant="ghost" size="sm" onClick={() => setEditar(c)} aria-label={t('cot.modificar_aria', { cotizacion: describir(c) })}><PencilLine size={14} aria-hidden /></Button>}
                       {vigente && puedeAnular && <Button variant="ghost" size="sm" onClick={() => { anulacion.limpiar(); setAnular(c); }} aria-label={t('cot.anular_aria', { cotizacion: describir(c) })}><XCircle size={14} aria-hidden /></Button>}
