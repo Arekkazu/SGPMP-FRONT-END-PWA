@@ -1,3 +1,10 @@
+## [1.4.0-rc.40](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.39...v1.4.0-rc.40) (2026-11-13)
+
+### Bug Fixes
+
+* **rf16-rf74-rf75-rf76-rf80-rf81-rf89-rf90-mod5-mod6-mod9:** reporte de usabilidad de suministros y finanzas del 12-11 ([52f1b7e](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/52f1b7eea422be2a9bef5d03971de63b614b231e))
+* **rf27-rf91-rf93-mod6:** contraste del tema oscuro tras cambiar de tema, filtros y vista del productor del estado de resultados y trazabilidad del auditor (2a evaluacion QA) ([d1af145](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d1af1451333380a8334244241d37218fbc8bcb0a))
+
 ## [1.4.0-rc.39](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.38...v1.4.0-rc.39) (2026-11-12)
 
 ### Bug Fixes
