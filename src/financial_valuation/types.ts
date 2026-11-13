@@ -10,6 +10,7 @@
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
 // | 2026-11-12 | Arekkazu | TC-DIS-256 RF-91: la línea de asiento trae el nombre y el tipo de su activo |
+// | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: activo excluido del cierre con su motivo y lo que quedó fuera del estado |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -233,6 +234,11 @@ export interface EstadoResumen {
 export interface EstadoDetalle extends EstadoResumen {
   nombre_aprobador?: string | null;
   componentes: Record<string, Dec | unknown[] | Record<string, Dec>>; hash_consistencia: string;
+}
+/** Activo excluido del cierre (RF-93 FA-3/FA-4): ``motivo`` es un código; ``montos_excluidos``, lo que quedó fuera del estado. */
+export interface ActivoExcluidoCierre {
+  id_activo_biologico: number; identificador?: string; motivo?: string; detalle?: string;
+  montos_excluidos?: { componentes: Record<string, Dec>; total_ingresos: Dec; total_gastos: Dec; resultado_neto: Dec };
 }
 /** Acumulado del período (también abierto), sin versión. */
 export interface Acumulado {
