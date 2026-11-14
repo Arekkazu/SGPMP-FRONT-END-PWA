@@ -6,6 +6,7 @@
 // | 2026-11-12 | Arekkazu | TC-DIS-218 RF-81: la paginación muestra la página pedida al instante, sin esperar al servidor |
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 R-02 RF-81: el rango de fechas pasa a dos filas en celulares grandes |
 // | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario; el selector de activo se acota a esa finca |
 import React, { useEffect, useState } from 'react';
 import { Search, FileDown, History } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -31,6 +32,7 @@ import { EstadoVacio } from '../components/EstadoVacio';
 import { SelectorActivo } from '../components/SelectorActivo';
 import { Paginacion } from '../components/Paginacion';
 import { FILTROS, PANEL, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM } from '../components/estilos';
+import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 
 const POR_PAGINA = 50;
 // La fila de filtros se alinea arriba: una leyenda visible encima de los rótulos bajaba los inputs del grupo
@@ -45,6 +47,7 @@ export function HistorialView() {
   const { consulta, exportacion, descarga, consultarTrabajo } = useHistorialSuministros();
   const [texto, setTexto] = useState('');
   const [idActivo, setIdActivo] = useState<number | null>(null);
+  const [idFinca, setIdFinca] = useState<number | null>(null);
   const [errorActivo, setErrorActivo] = useState<string>();
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
@@ -120,7 +123,8 @@ export function HistorialView() {
         )}
       />
       <form onSubmit={buscar} role="search" style={{ ...FILTROS, marginBottom: 'var(--s5)' }}>
-        <SelectorActivo id="historial-activo" activos={activos} cargando={cargandoActivos} value={texto} required error={errorActivo} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
+        <SelectorFinca id="historial-finca" idFinca={idFinca} onChange={(id) => { setIdFinca(id); setTexto(''); setIdActivo(null); }} />
+        <SelectorActivo id="historial-activo" activos={activos} cargando={cargandoActivos} idFinca={idFinca} value={texto} required error={errorActivo} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
         {/* Los rangos van agrupados (fieldset + legend): el lector anuncia a qué rango pertenece cada extremo (WCAG 1.3.1). */}
         <fieldset style={GRUPO}>
           <legend className="ds-sr-only">{t('historial.rango_fechas')}</legend>

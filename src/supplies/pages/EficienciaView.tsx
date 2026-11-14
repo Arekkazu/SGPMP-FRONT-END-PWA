@@ -5,6 +5,7 @@
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 N-06/R-01 RF-74: la clasificación del ICA dice «Eficiencia …» y su rango; historial en tarjetas en el celular |
 // | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario; el selector de activo se acota a esa finca |
 import React, { useRef, useState } from 'react';
 import { Calculator, Eye, Search, Gauge as IconoGauge } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -28,6 +29,7 @@ import { EstadoRegistroBadge } from '../components/EstadoRegistroBadge';
 import { SelectorActivo, nombreActivo } from '../components/SelectorActivo';
 import { BatchIcaPanel } from '../components/BatchIcaPanel';
 import { FILTROS, PANEL, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM } from '../components/estilos';
+import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: React.ReactNode }) {
   return (
@@ -96,6 +98,7 @@ export function EficienciaView() {
   const { vigente, historial, calculo } = useEficiencia();
   const [texto, setTexto] = useState('');
   const [idActivo, setIdActivo] = useState<number | null>(null);
+  const [idFinca, setIdFinca] = useState<number | null>(null);
   const [periodo, setPeriodo] = useState<PeriodoEvaluacion>('MENSUAL');
   const [consultado, setConsultado] = useState<{ id: number; periodo: PeriodoEvaluacion } | null>(null);
   const [errorActivo, setErrorActivo] = useState<string>();
@@ -136,7 +139,8 @@ export function EficienciaView() {
     <>
       <EncabezadoVista titulo={t('ica.titulo')} descripcion={t('ica.descripcion')} />
       <form onSubmit={buscar} style={{ ...FILTROS, marginBottom: 'var(--s5)' }}>
-        <SelectorActivo id="ica-activo" activos={activos} cargando={cargandoActivos} value={texto} required error={errorActivo} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
+        <SelectorFinca id="ica-finca" idFinca={idFinca} onChange={(id) => { setIdFinca(id); setTexto(''); setIdActivo(null); }} />
+        <SelectorActivo id="ica-activo" activos={activos} cargando={cargandoActivos} idFinca={idFinca} value={texto} required error={errorActivo} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
         <Select id="ica-periodo" label={t('ica.periodo_evaluacion')} value={periodo} onChange={(e) => setPeriodo(e.target.value as PeriodoEvaluacion)}>
           {PERIODOS_ICA.map((p) => <option key={p} value={p}>{t(`periodo.${p}`)}</option>)}
         </Select>

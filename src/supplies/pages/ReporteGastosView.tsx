@@ -4,6 +4,7 @@
 // | 2026-11-10 | Arekkazu | CP119/H-M05-03 RF-77: alcance agregado por especie o infraestructura cuando no se elige un activo |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 // | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario; el selector de activo se acota a esa finca |
 import React, { useEffect, useState } from 'react';
 import { FileBarChart2, RefreshCw, Eye } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -31,6 +32,7 @@ import { SelectorActivo } from '../components/SelectorActivo';
 import { ReporteGastoDetalle } from '../components/ReporteGastoDetalle';
 import { EstadoRegistroBadge } from '../components/EstadoRegistroBadge';
 import { FILTROS, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM } from '../components/estilos';
+import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 
 const CATEGORIAS: CategoriaGasto[] = ['ALIMENTACION', 'MEDICACION'];
 const GRANULARIDADES: GranularidadDesglose[] = ['CICLO_COMPLETO', 'MENSUAL', 'SEMANAL'];
@@ -56,12 +58,10 @@ export function ReporteGastosView() {
   const [idFinca, setIdFinca] = useState('');
   const [idInfraestructura, setIdInfraestructura] = useState('');
   const especies = useAsync(catalogosApi.especies);
-  const fincas = useAsync(catalogosApi.fincas);
   const infraestructuras = useAsync(catalogosApi.infraestructuras);
   const { ejecutar: cargarEspecies } = especies;
-  const { ejecutar: cargarFincas } = fincas;
   const { ejecutar: cargarInfraestructuras, limpiar: limpiarInfraestructuras } = infraestructuras;
-  useEffect(() => { if (puedeGenerar) { cargarEspecies(); cargarFincas(); } }, [puedeGenerar, cargarEspecies, cargarFincas]);
+  useEffect(() => { if (puedeGenerar) cargarEspecies(); }, [puedeGenerar, cargarEspecies]);
   useEffect(() => {
     setIdInfraestructura('');
     if (idFinca) cargarInfraestructuras(Number(idFinca)); else limpiarInfraestructuras();
@@ -123,17 +123,15 @@ export function ReporteGastosView() {
           <Select id="gastos-granularidad" label={t('gastos.desglose')} value={granularidad} onChange={(e) => setGranularidad(e.target.value as GranularidadDesglose)}>
             {GRANULARIDADES.map((g) => <option key={g} value={g}>{t(`granularidad.${g}`)}</option>)}
           </Select>
-          <SelectorActivo id="gastos-activo" label={t('gastos.activo_opcional')} activos={activos} cargando={cargandoActivos} value={texto} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
+          <SelectorActivo id="gastos-activo" label={t('gastos.activo_opcional')} activos={activos} cargando={cargandoActivos} idFinca={idFinca ? Number(idFinca) : null} value={texto} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
           {idActivo === null && (
             <>
               <Select id="gastos-especie" label={t('gastos.especie_opcional')} value={idEspecie} onChange={(e) => setIdEspecie(e.target.value)} hint={t('gastos.alcance_hint')}>
                 <option value="">{t('comun.todas')}</option>
                 {(especies.data ?? []).map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
               </Select>
-              <Select id="gastos-finca" label={t('gastos.finca_opcional')} value={idFinca} onChange={(e) => setIdFinca(e.target.value)}>
-                <option value="">{t('comun.todas')}</option>
-                {(fincas.data ?? []).map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}
-              </Select>
+              <SelectorFinca id="gastos-finca" label={t('gastos.finca_opcional')} idFinca={idFinca ? Number(idFinca) : null}
+                onChange={(id) => setIdFinca(id != null ? String(id) : '')} />
               <Select id="gastos-infraestructura" label={t('gastos.infraestructura_opcional')} value={idInfraestructura} disabled={!idFinca}
                 hint={!idFinca ? t('gastos.infraestructura_hint') : undefined} onChange={(e) => setIdInfraestructura(e.target.value)}>
                 <option value="">{t('comun.todas')}</option>
