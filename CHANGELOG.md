@@ -1,3 +1,9 @@
+## [1.4.0-rc.42](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.41...v1.4.0-rc.42) (2026-11-14)
+
+### Bug Fixes
+
+* **sso:** AgroFusion devuelve al usuario a /sso?token= y la app solo escuchaba /sso/callback ([d688fd9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d688fd9dfbdb6cdaff8556794b73a566b60c0ee8))
+
 ## [1.4.0-rc.41](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.40...v1.4.0-rc.41) (2026-11-13)
 
 ### Bug Fixes
