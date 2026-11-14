@@ -1,3 +1,15 @@
+## [1.4.0-rc.44](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.43...v1.4.0-rc.44) (2026-11-14)
+
+### Features
+
+* **rf25-mod9:** filtro por finca del usuario en los listados de Finanzas ([a013eba](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a013eba4100a896f9a67257d2230d0f5f20a9be0))
+* **rf75-mod5:** filtro por finca del usuario en Suministros ([8b1b4ca](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8b1b4ca8103ee481212a7feb44c87a1a56d2c852))
+* **rf98-mod7:** titular entre los de las fincas del usuario en Integración contable ([f41b651](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f41b651866fda11777cb6b3851f4227ae129c5e7))
+
+### Bug Fixes
+
+* **rf77-mod5:** las infraestructuras del reporte de gastos salen de /usuarios/me/fincas/{id}/infraestructuras y no dan 403 al Contador ([33c466a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/33c466ac1e7ce9e2b2cdd3c04501a55f83187593))
+
 ## [1.4.0-rc.43](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.42...v1.4.0-rc.43) (2026-11-14)
 
 ### Bug Fixes
