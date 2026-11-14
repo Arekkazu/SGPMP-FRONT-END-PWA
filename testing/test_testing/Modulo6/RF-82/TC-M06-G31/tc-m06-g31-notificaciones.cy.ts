@@ -49,7 +49,7 @@ function exigir(t: Mocha.Context, r: any, que: string): boolean {
   const estado = r && r.estado ? r.estado : 'ERROR';
   const motivo = r && r.motivo ? r.motivo : 'sin detalle';
   cy.task('log', `[${estado}] ${que}: ${motivo}`).then(() => {
-    if (estado === 'BLOQUEADO' || estado === 'NO_CONCLUYENTE') t.skip();
+    // Criterio de QA (13-nov): una precondición que no se cumple deja el caso en rojo con el motivo, nunca omitido.
     throw new Error(`${que}: ${motivo}`);
   });
   return false;
@@ -141,7 +141,9 @@ describe('TC-M06-G31 · Interfaz: notificaciones y alertas al Contador (RF-82, R
         const nuevas = (despues.items as { id: number; mensaje: string }[]).filter((i) => !idsAntes.has(i.id));
         if (nuevas.length === 0) {
           cy.task('log', `[NO VERIFICABLE] 141: el backend no generó ninguna notificación para el Contador (no leídas ${ctx.base.no_leidas} -> ${despues.no_leidas}); no hay nada que aislar. Eventos de auditoría del activo: ${JSON.stringify(ctx.datos.auditoria)}`)
-            .then(() => this.skip());
+            .then(() => {
+              throw new Error(`NO VERIFICABLE (en rojo por criterio de QA): el backend no generó ninguna notificación para el Contador (no leídas ${ctx.base.no_leidas} -> ${despues.no_leidas}); no hay nada que aislar. Misma causa que el caso 139 (INC-M06-327).`);
+            });
           return;
         }
         cy.leerBandeja(`TC-M06-${id}-bandeja-${rol}`).then((b) => {

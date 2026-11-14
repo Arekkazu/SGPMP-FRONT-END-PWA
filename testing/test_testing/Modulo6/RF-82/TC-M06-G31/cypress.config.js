@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                                   |
 // |------------|-------------|-------------------------------------------------------------------------------|
 // | 2026-11-09 | Laura032005 | TC-M06-G31 RF-82..85: configuración de Cypress para la bandeja de notificaciones |
+// | 2026-11-12 | Daniela Castillo | M06 reprueba V2.0: el reporte HTML pasa a llamarse resultado_TC-M06-G31-V2.0.html |
 const { defineConfig } = require('cypress');
 const { tareas } = require('./m06-api');
 
@@ -16,7 +17,7 @@ module.exports = defineConfig({
   reporter: 'mochawesome',
   reporterOptions: {
     reportDir: 'RESULTADOS',
-    reportFilename: 'resultado_TC-M06-G31',
+    reportFilename: 'resultado_TC-M06-G31-V2.0',
     html: true,
     json: false,
     overwrite: true,
