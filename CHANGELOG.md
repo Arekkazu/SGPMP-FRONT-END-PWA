@@ -1,3 +1,10 @@
+## [1.4.0-rc.43](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.42...v1.4.0-rc.43) (2026-11-14)
+
+### Bug Fixes
+
+* **rf75-mod5:** las filas de campos se alinean arriba y sus botones van en .ds-campo-accion ([19a41c6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/19a41c6d3ef7f3e8fe7e500fd408fcb30cd5c464))
+* **rf92-mod6:** los textos de Finanzas no citan párrafos de la NIC 41 ([02cdfa1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/02cdfa17c2ec8cdf5f7c9beeaf6a0ee102500b04))
+
 ## [1.4.0-rc.42](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.41...v1.4.0-rc.42) (2026-11-14)
 
 ### Bug Fixes
