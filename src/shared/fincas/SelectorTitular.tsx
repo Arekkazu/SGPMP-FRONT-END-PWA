@@ -14,13 +14,16 @@ interface Props {
   label?: string;
   hint?: string;
   required?: boolean;
+  error?: string;
+  /** Al elegir una opción, pulsar Enter o salir del campo: para filtrar sin consultar en cada tecla. */
+  onConfirm?: (nit: string) => void;
 }
 
 /**
  * Integración contable trabaja por titular, no por finca: las opciones son los NIT de las fincas
  * del usuario (todas para el Administrador), con las fincas de cada uno como detalle.
  */
-export function SelectorTitular({ id, value, onChange, label, hint, required }: Props) {
+export function SelectorTitular({ id, value, onChange, label, hint, required, error, onConfirm }: Props) {
   const { t } = useT('common');
   const { fincas, cargando } = useMisFincas();
   const opciones = useMemo(() => {
@@ -41,7 +44,11 @@ export function SelectorTitular({ id, value, onChange, label, hint, required }: 
       opciones={opciones}
       value={value}
       onChange={(v) => onChange(v.replace(/\D/g, ''))}
+      onSelect={(o) => onConfirm?.(o.valor)}
+      onEnter={(v) => onConfirm?.(v.replace(/\D/g, ''))}
+      onBlur={() => onConfirm?.(value)}
       required={required}
+      error={error}
       placeholder={cargando ? t('finca.cargando') : t('finca.titular_placeholder')}
       hint={hint ?? (!cargando && opciones.length === 0 ? t('finca.sin_titulares') : undefined)}
     />

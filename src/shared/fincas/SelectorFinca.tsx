@@ -1,7 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: combobox de las fincas del usuario para los filtros |
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Combobox } from '../design-system/Combobox';
 import { useT } from '../i18n/useT';
 import { etiquetaDeCatalogo, idDeCatalogo, resolverCatalogo } from '../lib/catalogo';
@@ -27,13 +27,22 @@ export function SelectorFinca({ id, idFinca, onChange, label }: Props) {
     detalle: f.razon_social ?? undefined,
   })), [fincas]);
 
-  // «Limpiar filtros» vuelve el id a null desde afuera: el texto lo sigue.
-  useEffect(() => { if (idFinca === null) { setTexto(''); setSinResolver(false); } }, [idFinca]);
+  // Solo un cambio que llega de afuera («Limpiar filtros», una finca precargada) reescribe el texto: el que
+  // sale de lo que se va escribiendo no, o «El Rosal (» (que deja de coincidir) borraría lo escrito.
+  const enviado = useRef<number | null>(idFinca);
+  const avisar = (id: number | null) => { enviado.current = id; onChange(id); };
+  useEffect(() => {
+    if (idFinca === enviado.current) return;
+    enviado.current = idFinca;
+    const f = fincas.find((x) => x.id_finca === idFinca);
+    setTexto(f ? etiquetaDeCatalogo(f.nombre, f.id_finca) : '');
+    setSinResolver(false);
+  }, [idFinca, fincas]);
 
   const resolver = () => {
     const r = resolverCatalogo(texto, catalogo);
     setSinResolver(r.estado === 'sin_resolver');
-    if (r.estado === 'resuelto') { setTexto(r.texto); onChange(r.id); }
+    if (r.estado === 'resuelto') { setTexto(r.texto); avisar(r.id); }
   };
 
   return (
@@ -42,7 +51,7 @@ export function SelectorFinca({ id, idFinca, onChange, label }: Props) {
       label={label ?? t('finca.etiqueta')}
       opciones={opciones}
       value={texto}
-      onChange={(v) => { setTexto(v); setSinResolver(false); onChange(v.trim() ? idDeCatalogo(v, catalogo) : null); }}
+      onChange={(v) => { setTexto(v); setSinResolver(false); avisar(v.trim() ? idDeCatalogo(v, catalogo) : null); }}
       onBlur={resolver}
       onEnter={resolver}
       placeholder={cargando ? t('finca.cargando') : t('finca.placeholder')}

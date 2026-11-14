@@ -22,7 +22,7 @@ export function useMisFincas() {
   useEffect(() => {
     let vigente = true;
     http.get<{ items: FincaDelUsuario[] }>('/usuarios/me/fincas')
-      .then((r) => { if (vigente) setFincas(r.data.items); })
+      .then((r) => { if (vigente) setFincas(r.data?.items ?? []); })
       .catch(() => { /* sin sugerencias: el campo acepta el ID */ })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };

@@ -14,6 +14,7 @@
 // | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 N-08 RF-89: la fila corregida dice «Corregido por el precio vigente» |
 // | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: el activo excluido muestra su motivo en palabras y el resultado que quedó fuera |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-86: el listado se filtra por una finca del usuario |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -263,6 +264,31 @@ describe('VariacionesView (RF-86)', () => {
     expect(within(screen.getByRole('table')).queryByText('T-1')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
     expect(screen.getByText('Mostrando 3 de 3 variaciones')).toBeInTheDocument();
+  });
+
+  it('filtra por una finca del usuario con el combobox y «Limpiar filtros» lo vacía', async () => {
+    sesion.permisos = [permiso('valoracion_activos', 2), permiso('cierre_periodo', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /usuarios/me/fincas'] = { data: { items: [
+      { id_finca: 10, nombre: 'La Esperanza', numero_id_tributaria: '900123456', razon_social: 'Ganadería SAS' },
+      { id_finca: 20, nombre: 'El Rosal', numero_id_tributaria: '900123456', razon_social: 'Ganadería SAS' },
+    ] } };
+    respuestas['GET /finanzas/periodos/7/variaciones'] = { data: [
+      { ...variacion(1, 'T-1', 'GANANCIA_PRECIO_MERCADO', '0.10', 'VERIFICADO'), id_finca: 10 },
+      { ...variacion(2, 'T-2', 'GANANCIA_PRECIO_MERCADO', '0.20', 'VERIFICADO'), id_finca: 20, finca: 'El Rosal' },
+    ] };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><VariacionesView /></ProveedorPeriodo></MemoryRouter>);
+    expect(await screen.findByText('Mostrando 2 de 2 variaciones')).toBeInTheDocument();
+    const finca = screen.getByRole('combobox', { name: 'Finca' });
+    await user.type(finca, 'rosal');
+    await user.tab();  // al salir, «rosal» se resuelve a la única finca que coincide
+    expect(finca).toHaveValue('El Rosal (#20)');
+    expect(screen.getByText('Mostrando 1 de 2 variaciones')).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).queryByText('T-1')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+    expect(finca).toHaveValue('');
+    expect(screen.getByText('Mostrando 2 de 2 variaciones')).toBeInTheDocument();
   });
 });
 

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: tipos de la API /integracion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-98: la auditoría se filtra por titular |
 
 export type Canal = 'IDENTIDAD_M2M' | 'CONSULTA_AAEF';
 export type EstadoCliente = 'ACTIVO' | 'SUSPENDIDO' | 'REVOCADO';
@@ -38,7 +39,7 @@ export interface EventoIntegracion {
   correo_usuario: string | null; nombre_cliente: string | null; integridad: 'INTEGRO' | 'CORRUPTO';
 }
 export interface PaginaEventos { items: EventoIntegracion[]; pagina: number; tamano: number; total: number }
-export interface FiltrosAuditoria { tipo_evento?: string; desde?: string; hasta?: string; codigo_http?: number }
+export interface FiltrosAuditoria { tipo_evento?: string; desde?: string; hasta?: string; codigo_http?: number; numero_id_tributaria?: string }
 
 // Documento AAEF tal como lo recibe AgroFusion (RF-97 5.4).
 export interface LineaAaef { Code: string; Name: string; Description: string; accounting_account: string[]; Value: number }
