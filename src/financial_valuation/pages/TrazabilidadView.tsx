@@ -4,6 +4,7 @@
 // | 2026-11-10 | Arekkazu | INC-M06-351-G45 RF-87: ajustar una línea de un período cerrado |
 // | 2026-11-10 | Arekkazu | TC-DIS-254..256 RF-91: tipo de activo para la cadena, foco que se queda en «Verificar» y aviso de solo lectura del período cerrado |
 // | 2026-11-12 | Arekkazu | TC-DIS-256 RF-91: el auditor externo consulta las líneas sin permiso de valoración (solo períodos cerrados) |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
 import React, { useEffect, useRef, useState } from 'react';
 import { GitBranch, Link2, PencilLine, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -19,7 +20,7 @@ import { AjusteModal } from '../components/AjusteModal';
 import { CadenaModal } from '../components/CadenaModal';
 import {
   EncabezadoVista, EstadoBadge, ErrorApi, Indicadores, Listado, SinPeriodo, TABLA, TD, TD_NUM, TH, TH_NUM, formatoFecha, formatoMoneda,
-  nombrePeriodo, useAsync, useListado, usePeriodo,
+  nombrePeriodo, useAsync, criterioFinca, useListado, usePeriodo,
 } from '../components/comunes';
 
 export function TrazabilidadView() {
@@ -55,6 +56,7 @@ export function TrazabilidadView() {
   const tipoDe = (l: Linea) => (l.id_activo_biologico ? l.tipo_activo ?? (activos.data ?? []).find((a) => a.id_activo_biologico === l.id_activo_biologico)?.tipo ?? null : null);
   const activoDe = (l: Linea) => (l.id_activo_biologico ? l.identificador_activo ?? identificador.get(l.id_activo_biologico) ?? t('traza.activo_sin_reconocer') : t('traza.sin_activo'));
   const l = useListado(lineas.data, (x) => `${activoDe(x)} ${t(`hecho.${x.tipo_hecho}`)}`, [
+    criterioFinca(t('col.finca'), (x) => x.id_finca),
     { id: 'traza', etiqueta: t('col.trazabilidad'), valor: (x) => x.estado_trazabilidad, texto: (v) => t(`estado.${v}`), femenino: true },
     { id: 'evidencia', etiqueta: t('col.evidencia'), valor: (x) => x.tipo_evidencia, texto: (v) => t(`evidencia.${v}`, { defaultValue: t('evidencia.REGISTRO_MANUAL') }), femenino: true },
     { id: 'hecho', etiqueta: t('col.tipo_hecho'), valor: (x) => x.tipo_hecho, texto: (v) => t(`hecho.${v}`) },
