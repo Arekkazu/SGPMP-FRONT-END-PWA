@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: volver a la pantalla donde se estaba después del login |
+// | 2026-11-14 | Arekkazu | SSO AgroFusion: AgroFusion devuelve a /sso?token=, no a /sso/callback |
 
 // Rutas públicas (ver AppRoutes en App.tsx): no tiene sentido volver a ellas.
 export const RUTAS_PUBLICAS = [
@@ -10,6 +11,7 @@ export const RUTAS_PUBLICAS = [
   '/reenviar-activacion',
   '/recuperar-contrasena',
   '/restablecer-contrasena',
+  '/sso',
   '/sso/callback',
 ];
 
