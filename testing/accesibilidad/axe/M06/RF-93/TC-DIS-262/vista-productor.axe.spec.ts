@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                        |
 // |------------|-----------------|--------------------------------------------------------------------|
 // | 2026-11-07 | SaraSofGonzalez | TC-DIS-262 RF-93: vista simplificada del estado de resultados (Productor) |
+// | 2026-11-13 | SaraSofGonzalez | TC-DIS-262 RF-93: tercera ejecución; aviso de estado no generado con períodos simulados |
 /**
  * TC-DIS-262 — Verificar accesibilidad WCAG 2.1 AA de la vista simplificada del Estado de Resultados
  * para el Productor [CRÍTICO]
@@ -12,20 +13,20 @@
  * etiquetas en lenguaje no técnico); 4.1.2 (sin controles de generación sin función); 4.1.3 (se
  * anuncia "el Contador aún no ha generado el estado de este período").
  *
- * Ambiente: cuenta Productor real de TEST. La vista real se evalúa tal cual (paso a). No se puede
- * simular un estado aprobado para el Productor sin alterar sus permisos (la vista depende del permiso
- * de períodos contables), así que el caso se limita a lo que el Productor ve hoy.
+ * Ambiente: cuenta Productor real de TEST. La vista real se evalúa tal cual (paso a). Esa cuenta no
+ * tiene períodos contables, así que el aviso de estado no generado se evalúa con períodos simulados
+ * (paso b, "Datos simulados"); los permisos del Productor no se modifican.
  *
  * Viewports: movil / tablet / escritorio. Para restringir: TC_DIS_262_VIEWPORTS=escritorio
  */
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
 import { anotar, desviacion, escanear, estaEnRegionViva, main } from '../../../_shared/sigabA11y';
-import { abrirSesionRol, irFinanzas, quitarSimulaciones, textosCrudos } from '../../_shared/finanzas';
+import { PERIODOS, abrirSesionRol, elegirPeriodo, irFinanzas, quitarSimulaciones, simularGet, textosCrudos } from '../../_shared/finanzas';
 
 const TC_ID = 'TC-DIS-262';
 const VIEWPORTS = (process.env.TC_DIS_262_VIEWPORTS ?? 'movil,tablet,escritorio').split(',').map((v) => v.trim());
-const LH = ['vista-productor'];
+const LH = ['vista-productor', 'sin-estado-productor'];
 
 test.use({ actionTimeout: 15_000, launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
 
@@ -56,10 +57,29 @@ test.describe('TC-DIS-262 — Vista simplificada del Estado de Resultados para e
     const sinPeriodos = /no puede consultar los per[ií]odos/i.test(texto);
     desviacion(!sinPeriodos, '1.1.1/1.3.1: el Productor no puede ver ningún estado de resultados: la vista dice "Tu rol no puede consultar los períodos contables" y no ofrece vistas predefinidas, resumen ni gráficas');
     desviacion(!/cierra el per[ií]odo|genera(r)? (su|el) estado/i.test(texto), '2.4.6: la vista del Productor muestra instrucciones del Contador ("Cierra el período para generar su estado"), no lenguaje para el Productor');
-    const mensaje = main(page).getByText(/Contador aún no ha generado|no ha generado el estado/i);
-    const anunciado = (await mensaje.count()) ? await estaEnRegionViva(mensaje.first()) : false;
-    desviacion(anunciado, '4.1.3: no se anuncia "el Contador aún no ha generado el estado de este período"');
+    const sinPeriodosPropios = /a[uú]n no hay per[ií]odos|sin per[ií]odos contables/i.test(texto);
+    anotar(testInfo, 'Períodos del Productor real', sinPeriodosPropios ? 'Sin períodos contables: el mensaje de estado no generado se evalúa en el paso b (datos simulados)' : 'Con períodos');
     const crudos = await textosCrudos(main(page));
     desviacion(crudos.length === 0, `regla de textos visibles: valores crudos → ${crudos.join(' ¦ ')}`);
+  });
+
+  // Tercera ejecución 2026-11-13: el Productor de TEST no tiene períodos, así que el aviso de estado no
+  // generado no se puede alcanzar con datos reales. Se simulan sus períodos (uno cerrado sin estado y
+  // uno abierto) y una lista vacía de estados; solo cambian lecturas, sus permisos no se tocan.
+  test('b. [4.1.3] Período sin estado generado: el aviso se anuncia (Datos simulados)', async ({}, testInfo) => {
+    await simularGet(page, /^\/finanzas\/periodos\/?$/, PERIODOS);
+    await simularGet(page, /^\/finanzas\/periodos\/\d+\/estados-resultados$/, []);
+    anotar(testInfo, 'Datos simulados', 'Períodos de septiembre (cerrado), octubre (en cierre) y noviembre (abierto) sin estados de resultados.');
+    await irFinanzas(page, 'estado-resultados', /Estado de resultados/);
+    for (const [id, nombre] of [[9101, 'cerrado'], [9103, 'abierto']] as const) {
+      await elegirPeriodo(page, id);
+      const mensaje = main(page).getByText(/Contador a[uú]n no ha generado/i).first();
+      await mensaje.waitFor({ timeout: 10_000 }).catch(() => {});
+      const visible = (await mensaje.count()) > 0;
+      const anunciado = visible ? await estaEnRegionViva(mensaje) : false;
+      anotar(testInfo, `Período ${nombre}`, visible ? `${(await mensaje.innerText()).trim()} · en región viva: ${anunciado}` : '(sin aviso)');
+      desviacion(anunciado, `4.1.3: en el período ${nombre} sin estado no se anuncia "el Contador aún no ha generado el estado de este período"`);
+    }
+    await escanear(page, TC_ID, __dirname, 'sin-estado-productor', testInfo, LH);
   });
 });
