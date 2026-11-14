@@ -6,6 +6,7 @@
 // | 2026-11-12 | Arekkazu | TC-DIS-218 RF-80: la paginación muestra la página pedida al instante, sin esperar al servidor |
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 R-01/N-07 RF-80: eventos en tarjetas en el celular; usuario elegido por nombre |
 // | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario; el selector de activo se acota a esa finca |
 import React, { useEffect, useState } from 'react';
 import { Search, FileDown, Eye, ScrollText } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -31,6 +32,7 @@ import { Paginacion } from '../components/Paginacion';
 import { EventoAuditoriaModal } from '../components/EventoAuditoriaModal';
 import { ClasificacionBadge } from '../components/ClasificacionBadge';
 import { FILTROS, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM } from '../components/estilos';
+import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 
 const POR_PAGINA = 50;
 const OPERACIONES = [
@@ -57,6 +59,7 @@ export function AuditoriaView() {
   const { lista, actores, detalle, exportacion } = useAuditoriaSuministros();
   const [texto, setTexto] = useState('');
   const [idActivo, setIdActivo] = useState<number | null>(null);
+  const [idFinca, setIdFinca] = useState<number | null>(null);
   const [operacion, setOperacion] = useState('');
   const [resultado, setResultado] = useState('');
   const [clasificacion, setClasificacion] = useState('');
@@ -87,6 +90,7 @@ export function AuditoriaView() {
       id_usuario: idUsuario ? Number(idUsuario) : undefined,
       entidad_afectada: entidad.trim() || undefined,
       id_activo_biologico: idActivo ?? undefined,
+      id_finca: idFinca ?? undefined,
       fecha_desde: desde || undefined,
       fecha_hasta: hasta || undefined,
       pagina: 1,
@@ -126,7 +130,8 @@ export function AuditoriaView() {
           <option value="NIC41">{t('auditoria.clase_NIC41')}</option>
           <option value="TECNICO">{t('auditoria.clase_TECNICO')}</option>
         </Select>
-        <SelectorActivo id="auditoria-activo" activos={activos} cargando={cargandoActivos} value={texto} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
+        <SelectorFinca id="auditoria-finca" idFinca={idFinca} onChange={(id) => { setIdFinca(id); setTexto(''); setIdActivo(null); }} />
+        <SelectorActivo id="auditoria-activo" activos={activos} cargando={cargandoActivos} idFinca={idFinca} value={texto} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
         <Select id="auditoria-usuario" label={t('auditoria.actor')} value={idUsuario} onChange={(e) => setIdUsuario(e.target.value)}>
           <option value="">{t('comun.todos')}</option>
           {(actores.data ?? []).map((a) => <option key={a.id_usuario} value={a.id_usuario}>{a.nombre}</option>)}

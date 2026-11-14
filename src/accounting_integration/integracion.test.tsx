@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: pestañas por permiso, secreto una sola vez, 06 apagado, vista previa y auditoría legible |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-97: el NIT es un combobox de los titulares de las fincas del usuario |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -109,7 +110,7 @@ describe('VistaPreviaView', () => {
     sesion.permisos = [permiso('exportacion_contable', 2)];
     respuestas['GET /integracion/aaef/vista-previa/productores/900123456'] = { status: 422, data: { error_code: 'PERIODO_NO_CERRADO', message: 'El período 2026-11 no está cerrado. Solo se pueden consultar períodos cerrados.' } };
     enRuta(<VistaPreviaView />);
-    await userEvent.type(screen.getByLabelText(/NIT del productor/), '900123456');
+    await userEvent.type(screen.getByRole('combobox', { name: /NIT del productor/ }), '900123456');
     await userEvent.type(screen.getByLabelText(/Desde/), '2026-11-01');
     await userEvent.type(screen.getByLabelText(/Hasta/), '2026-11-30');
     await userEvent.click(screen.getByRole('button', { name: /Ver documento/ }));

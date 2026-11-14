@@ -5,6 +5,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-265/266 RF-94: filtros por fechas, usuario, origen y activo; columnas de período y origen; severidad con icono; detalle del evento |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-94: la bitácora se filtra por finca del usuario |
 import React, { useEffect, useState } from 'react';
 import { Eye, FilterX, ScrollText, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -24,6 +25,7 @@ import {
   BadgeTono, EncabezadoVista, EstadoVacio, ErrorApi, Indicadores, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM, formatoFecha,
   formatoMoneda, formatoPorcentaje, nombrePeriodo, useAsync, usePeriodo,
 } from '../components/comunes';
+import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 
 const SEVERIDADES: Severidad[] = ['CRITICAL', 'ERROR', 'WARNING', 'INFO'];
 const VARIANTE = { INFO: 'info', WARNING: 'warning', ERROR: 'error', CRITICAL: 'error' } as const;
@@ -60,6 +62,7 @@ export function AuditoriaView() {
   const [origen, setOrigen] = useState('');
   const [usuario, setUsuario] = useState('');
   const [activo, setActivo] = useState('');
+  const [idFinca, setIdFinca] = useState<number | null>(null);
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
   const [orden, setOrden] = useState<'DESC' | 'ASC'>('DESC');
@@ -75,15 +78,16 @@ export function AuditoriaView() {
   const rangoInvalido = !!desde && !!hasta && desde > hasta;
   useEffect(() => { if (puedeLeer && id) cargarRecientes({ id_periodo_contable: id, pagina: 1, tamano: 5, orden: 'DESC' }); }, [puedeLeer, id, cargarRecientes]);
   useEffect(() => { if (puedeLeer && puedeVerActivos) cargarActivos(); }, [puedeLeer, puedeVerActivos, cargarActivos]);
-  useEffect(() => { setPagina(1); }, [id, severidad, tipo, origen, usuario, activo, desde, hasta, orden]);
+  useEffect(() => { setPagina(1); }, [id, severidad, tipo, origen, usuario, activo, idFinca, desde, hasta, orden]);
   useEffect(() => {
     if (!puedeLeer || !id || rangoInvalido) return;
     consultar({
       id_periodo_contable: id, severidad: severidad || undefined, tipo_evento: tipo || undefined, origen_registro: origen || undefined,
       id_usuario: usuario ? Number(usuario) : undefined, id_activo_biologico: activo ? Number(activo) : undefined,
+      id_finca: idFinca ?? undefined,
       desde: inicioDelDiaUtc(desde), hasta: finDelDiaUtc(hasta), pagina, tamano: POR_PAGINA, orden,
     });
-  }, [puedeLeer, id, severidad, tipo, origen, usuario, activo, desde, hasta, orden, pagina, rangoInvalido, consultar]);
+  }, [puedeLeer, id, severidad, tipo, origen, usuario, activo, idFinca, desde, hasta, orden, pagina, rangoInvalido, consultar]);
 
   if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.auditoria')} />;
   const resumen = recientes.data?.resumen_severidad;
@@ -91,8 +95,8 @@ export function AuditoriaView() {
   const datos = consulta.data;
   const eventos = datos?.eventos ?? [];
   const paginas = Math.max(1, Math.ceil((datos?.total_registros ?? 0) / POR_PAGINA));
-  const hayFiltros = !!severidad || !!tipo || !!origen || !!usuario || !!activo || !!desde || !!hasta;
-  const limpiar = () => { setSeveridad(''); setTipo(''); setOrigen(''); setUsuario(''); setActivo(''); setDesde(''); setHasta(''); };
+  const hayFiltros = !!severidad || !!tipo || !!origen || !!usuario || !!activo || idFinca !== null || !!desde || !!hasta;
+  const limpiar = () => { setSeveridad(''); setTipo(''); setOrigen(''); setUsuario(''); setActivo(''); setIdFinca(null); setDesde(''); setHasta(''); };
   const nombrePeriodoActual = periodo ? nombrePeriodo(periodo) : '';
 
   return (
@@ -158,10 +162,11 @@ export function AuditoriaView() {
                 {ORIGENES.map((o) => <option key={o} value={o}>{t(`aud.origen_${o}`)}</option>)}
               </Select>
               <Input id="aud-usuario" label={t('aud.usuario')} type="number" step={1} min={1} value={usuario} onChange={(e) => setUsuario(e.target.value)} hint={t('aud.usuario_hint')} />
+              <SelectorFinca id="aud-finca" idFinca={idFinca} onChange={setIdFinca} />
               {puedeVerActivos ? (
                 <Select id="aud-activo" label={t('col.activo')} value={activo} onChange={(e) => setActivo(e.target.value)} disabled={(activos.data ?? []).length === 0}>
                   <option value="">{t('comun.todos')}</option>
-                  {(activos.data ?? []).map((a) => <option key={a.id_activo_biologico} value={a.id_activo_biologico}>{a.identificador} · {a.especie}</option>)}
+                  {(activos.data ?? []).filter((a) => idFinca === null || a.id_finca === idFinca).map((a) => <option key={a.id_activo_biologico} value={a.id_activo_biologico}>{a.identificador} · {a.especie}</option>)}
                 </Select>
               ) : (
                 <Input id="aud-activo" label={t('aud.activo_id')} type="number" step={1} min={1} value={activo} onChange={(e) => setActivo(e.target.value)} />

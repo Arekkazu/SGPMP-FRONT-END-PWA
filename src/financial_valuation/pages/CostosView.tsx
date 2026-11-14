@@ -5,6 +5,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-247..250 RF-90: consolidados en tabla (tipo, origen, activo), errores bajo cada campo, vista previa del reparto y cuenta débito resuelta |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 B-01 RF-90: el subtotal usa el mismo formato de porcentaje que sus filas |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Receipt, Tags, Trash2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -26,7 +27,7 @@ import type { ActivoValorado, Asignacion, Costo, CostoPayload, Naturaleza, Orige
 import { sumar } from '../lib/decimal';
 import {
   AreaTexto, BadgeTono, CeldaActivo, EncabezadoVista, EstadoBadge, ErrorApi, Listado, MotivoModal, SECUNDARIO, SinPeriodo, TABLA, TD, TD_NUM, TH,
-  TH_NUM, formatoFecha, formatoMoneda, formatoPorcentaje, nombrePeriodo, useAsync, useListado, usePeriodo,
+  TH_NUM, formatoFecha, formatoMoneda, formatoPorcentaje, nombrePeriodo, useAsync, criterioFinca, useListado, usePeriodo,
 } from '../components/comunes';
 
 const ORIGENES_MANUALES: OrigenCosto[] = ['MANO_OBRA_PROPIA', 'COMPRA_PROVEEDOR', 'SERVICIO_TERCERO'];
@@ -71,6 +72,7 @@ export function CostosView() {
   useEffect(() => { if (puedeVerActivos) cargarActivos(); }, [puedeVerActivos, cargarActivos]);
 
   const l = useListado(costos.data, (c) => `${c.activo ?? ''} ${c.especie} ${c.finca} ${c.tercero_razon_social ?? ''} ${c.factura_numero ?? ''}`, [
+    criterioFinca(t('col.finca'), (x) => x.id_finca),
     { id: 'naturaleza', etiqueta: t('col.naturaleza'), valor: (c) => c.naturaleza_costo ?? 'SIN_CLASIFICAR', texto: (v) => t(`naturaleza.${v}`), femenino: true },
     { id: 'subtipo', etiqueta: t('col.subtipo'), valor: (c) => c.subtipo_costo, texto: (v) => t(`subtipo.${v}`) },
     { id: 'estado', etiqueta: t('col.estado'), valor: (c) => c.estado, texto: (v) => t(`estado.${v}`) },

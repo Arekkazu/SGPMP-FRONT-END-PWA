@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-05 | Arekkazu | M06 RF-86 prototipo: variaciones del período por tipo, fuente y trazabilidad con resumen |
 // | 2026-11-10 | Arekkazu | TC-DIS-235 RF-86: el Contador inicia el registro procesando los eventos pendientes; el rechazo se anuncia |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
 import React, { useEffect, useState } from 'react';
 import { BarChart3, Link2, Play } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -17,7 +18,7 @@ import { sumar } from '../lib/decimal';
 import { CadenaModal } from '../components/CadenaModal';
 import {
   CeldaActivo, EncabezadoVista, EstadoBadge, ErrorApi, Indicadores, Listado, SECUNDARIO, SinPeriodo, TABLA, TD, TD_NUM, TH, TH_NUM,
-  Variacion, formatoFecha, formatoMoneda, nombrePeriodo, useAsync, useListado, usePeriodo,
+  Variacion, formatoFecha, formatoMoneda, nombrePeriodo, useAsync, criterioFinca, useListado, usePeriodo,
 } from '../components/comunes';
 
 /** El tipo dice si es ganancia o pérdida; el monto se firma con él. */
@@ -37,6 +38,7 @@ export function VariacionesView() {
   useEffect(() => { if (puedeLeer && id) cargar(id); }, [puedeLeer, id, cargar]);
 
   const l = useListado(variaciones.data, (v) => `${v.identificador} ${v.especie} ${v.finca}`, [
+    criterioFinca(t('col.finca'), (x) => x.id_finca),
     { id: 'tipo', etiqueta: t('variaciones.tipo'), valor: (v) => v.tipo, texto: (v) => t(`variaciones.tipo_${v}`) },
     { id: 'trazabilidad', etiqueta: t('col.trazabilidad'), valor: (v) => v.estado_trazabilidad, texto: (v) => t(`estado.${v}`), femenino: true },
     { id: 'activo', etiqueta: t('col.activo'), valor: (v) => v.identificador, texto: (v) => v },

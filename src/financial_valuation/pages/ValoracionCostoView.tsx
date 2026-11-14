@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-05 | Arekkazu | M06 RF-88 prototipo: activos al costo y con precio estimado, sin el paso de valor razonable a costo (¶31) |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
 import React, { useEffect, useState } from 'react';
 import { Scale } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -16,7 +17,7 @@ import { sumar } from '../lib/decimal';
 import { DetalleActivoModal } from '../components/DetalleActivoModal';
 import {
   CeldaActivo, EncabezadoVista, ErrorApi, Indicadores, Listado, TABLA, TD, TD_NUM, TH, TH_NUM, formatoFecha, formatoMoneda, useAsync,
-  useListado,
+  criterioFinca, useListado,
 } from '../components/comunes';
 
 type Metodo = 'COSTO' | 'ESTIMADO';
@@ -39,6 +40,7 @@ export function ValoracionCostoView() {
   const conPrecio = new Set((precios.data ?? []).filter((p) => p.estado === 'ACTIVO').map((p) => p.id_especie));
   const filas = (activos.data ?? []).filter((a) => a.valorado_por_costo || a.tiene_valor_estimado);
   const l = useListado(filas, (a) => `${a.identificador} ${a.especie} ${a.finca}`, [
+    criterioFinca(t('col.finca'), (x) => x.id_finca),
     { id: 'metodo', etiqueta: t('col.metodo'), valor: metodo, texto: (v) => t(`sin_mercado.metodo_${v}`) },
     { id: 'especie', etiqueta: t('col.especie'), valor: (a) => a.especie, texto: (v) => v, femenino: true },
     { id: 'clasificacion', etiqueta: t('col.clasificacion'), valor: (a) => a.clasificacion, texto: (v) => t(`clasificacion.${v}`), femenino: true },

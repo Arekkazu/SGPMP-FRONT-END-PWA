@@ -4,6 +4,7 @@
 // | 2026-11-09 | destroyerban | INC-M06-323-G27 RF-85: cosechas pendientes e ingreso manual de sus costos de venta |
 // | 2026-11-10 | Arekkazu | TC-DIS-232 RF-85: filtro por rango de valor del producto |
 // | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
 import React, { useEffect, useState } from 'react';
 import { Package, PenLine, Play } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -21,7 +22,7 @@ import { sumar } from '../lib/decimal';
 import type { CosechaPendiente, CostosManuales } from '../types';
 import {
   AreaTexto, EncabezadoVista, ErrorApi, Indicadores, Listado, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM, formatoCantidad,
-  formatoFecha, formatoMoneda, nombrePeriodo, useAsync, useListado, usePeriodo,
+  formatoFecha, formatoMoneda, nombrePeriodo, useAsync, criterioFinca, useListado, usePeriodo,
 } from '../components/comunes';
 
 export function ProductosView() {
@@ -45,6 +46,7 @@ export function ProductosView() {
   const rangoInvalido = !!valorMin && !!valorMax && Number(valorMin) > Number(valorMax);
   const enRango = (productos.data ?? []).filter((p) => (!valorMin || Number(p.valor_producto) >= Number(valorMin)) && (!valorMax || Number(p.valor_producto) <= Number(valorMax)));
   const l = useListado(productos.data ? enRango : null, (p) => `${p.producto_agricola} ${p.identificador} ${p.especie} ${p.finca}`, [
+    criterioFinca(t('col.finca'), (x) => x.id_finca),
     { id: 'tipo', etiqueta: t('productos.tipo'), valor: (p) => p.tipo, texto: (v) => t(`productos.tipo_${v}`, { defaultValue: t('productos.tipo_PRODUCTO_DE_CONSUMO') }) },
     { id: 'producto', etiqueta: t('productos.producto'), valor: (p) => p.producto_agricola, texto: (v) => v },
     { id: 'especie', etiqueta: t('col.especie'), valor: (p) => p.especie, texto: (v) => v, femenino: true },

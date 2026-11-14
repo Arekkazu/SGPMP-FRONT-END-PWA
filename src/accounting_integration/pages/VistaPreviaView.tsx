@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-97 / RF-AE02 5.10: vista previa del documento contable que recibe AgroFusion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-97: el NIT se elige entre los titulares de las fincas del usuario |
 import React, { useEffect, useState } from 'react';
 import { Download, FileSearch } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -14,6 +15,7 @@ import { finanzasApi } from '../../financial_valuation/api/finanzasApi';
 import { ErrorApi, EstadoVacio, EncabezadoVista, PANEL, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM, formatoFecha, formatoMoneda, guardarArchivo, nombrePeriodo, useAsync } from '../../financial_valuation/components/comunes';
 import { integracionApi } from '../api/integracionApi';
 import { ACCION_R, R_EXPORTACION } from '../rbac';
+import { SelectorTitular } from '../../shared/fincas/SelectorTitular';
 
 const R_CIERRE = 'cierre_periodo';
 
@@ -52,8 +54,7 @@ export function VistaPreviaView() {
           </Select>
         )}
         <div style={{ display: 'grid', gap: 'var(--s4)', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', marginTop: 'var(--s4)' }}>
-          <Input label={t('documento.nit')} hint={t('documento.nit_ayuda')} inputMode="numeric" value={nit}
-            onChange={(e) => setNit(e.target.value.replace(/\D/g, ''))} required />
+          <SelectorTitular id="doc-nit" label={t('documento.nit')} hint={t('documento.nit_ayuda')} value={nit} onChange={setNit} required />
           <Input label={t('documento.desde')} type="date" value={desde} onChange={(e) => setDesde(e.target.value)} required />
           <Input label={t('documento.hasta')} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} required />
         </div>
