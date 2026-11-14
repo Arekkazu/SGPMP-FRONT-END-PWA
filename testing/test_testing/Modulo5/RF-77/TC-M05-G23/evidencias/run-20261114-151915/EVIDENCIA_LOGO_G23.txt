@@ -1,0 +1,156 @@
+================================================================================
+EVIDENCIA SOLO LECTURA - logo del PDF (CP-08B) - TC-M05-G23
+Fecha local: 2026-11-14T15:25:48.5236914-05:00
+================================================================================
+
+1. API (sandbox propio; solo GET; rollback al final)
+  run_id tc-m05-g23-evid-logo-1794687948530
+  POST /sesiones/ -> HTTP 200 | X-Request-Id=b35ac8cd-7ce7-4f6e-9254-4a1df2c0c54e
+  GET /activos-biologicos/57 -> HTTP 200 | X-Request-Id=e973c41a-b552-4350-be30-a5f89c801396
+    cuerpo: {"id_activo_biologico":57,"id_especie":1,"tipo":"INDIVIDUAL","identificador":"TEST-GESTOR-ACTIVO-1","fecha_inicio_ciclo":"2026-01-01","detalles_procedencia":null,"origen_financiero":"compra","costo_adquisicion":"100.0000","soporte_documental":"factura-test-001","descripcion":null,"id_infraestructura":2,"atributos_dinamicos":null,"id_estado":1,"nombre_estado":"ACTIVO","id_usuario":30,"fecha_creacion":"2026-07-31T05:15:45.490280Z","fecha_actualizacion":null,"detalle_individual":null,"detalle_poblacional":null,"nombre_especie":null,"nombre_infraestructura":null,"advertencia_edad":null,"estado_densidad":null}
+  GET /configuracion/infraestructuras/2 -> HTTP 200 | X-Request-Id=6fa4f1ba-5acc-48db-acc0-ff6c36c0d5c3
+    cuerpo: {"id_infraestructura":2,"nombre_infraestructura":"Estanque-02","tipo_area":"Estanque","superficie":"1800.00","id_finca":1,"descripcion_infraestructura":"Estanque secundario para fase juvenil de tilapia","es_activo":true,"fecha_actualizacion":null,"especies":[1,2],"especie_id":null,"tipo_modelo_asignado":null,"nivel_criticidad":"MEDIA","capacidad_maxima":18000}
+  id_finca leido de la respuesta: 1
+  GET /configuracion/identidad-visual/1 -> HTTP 200 | X-Request-Id=255498a2-a080-4fed-a1ed-3212aadd7a18
+    cuerpo: {"id_identidad_visual":1,"id_finca":1,"id_usuario":1,"logo_path":"/assets/logos/remanso.png","primary_color":"#1A6B3C","secondary_color":"#A8D5B5","org_display_name":"Acuícola El Remanso","version":9,"fecha_creacion":"2026-04-28T14:42:28.213141Z","accesibilidad":{"minimo_aa":4.5,"primary_color":{"claro":{"fondo":"#FFFFFF","ratio":6.54,"cumple_aa":true,"color_ajustado":"#1A6B3C","aviso":null},"oscuro":{"fondo":"#171A15","ratio":2.69,"cumple_aa":false,"color_ajustado":"#249453","aviso":"Aviso de accesibilidad: El color institucional configurado tiene bajo contraste en el modo oscuro. Se aplicará una variante aclarada/oscurecida automáticamente para garantizar la legibilidad."}},"secondary_color":{"claro":{"fondo":"#FFFFFF","ratio":1.63,"cumple_aa":false,"color_ajustado":"#3F8252","aviso":"Aviso de accesibilidad: El color institucional configurado tiene bajo contraste en el modo claro. Se aplicará una variante aclarada/oscurecida automáticamente para garantizar la legibilidad."},"oscuro":{"fondo":"#171A15","ratio":10.75,"cumple_aa":true,"color_ajustado":"#A8D5B5","aviso":null}}}}
+  DELETE /test-control/runs/tc-m05-g23-evid-logo-1794687948530 -> HTTP 200 | X-Request-Id=03deeaa6-0526-4578-8537-a70aad1b007b
+
+2. CODIGO DEL BACKEND EN origin/test (git grep; sin checkout)
+  origin/test = 64c691237e59b8008044aa972c8883eb1a746805
+  --- archivos de src/supplies que mencionan logo / imagen en el PDF
+  origin/test:src/supplies/application/use_cases/auditoria/consultar_auditoria_suministros_use_case.py:6:``CONSULTA_HISTORIAL_EJECUTADA`` sí está en el catálogo — ver el gap cerrado
+  origin/test:src/supplies/application/use_cases/auditoria/exportar_auditoria_suministros_use_case.py:114:_ORIGEN_PRECIO = {"MANUAL": "Precio manual", "M40_AUTOMATICO": "Precio automático", "CATALOGO": "Catálogo"}
+  origin/test:src/supplies/application/use_cases/costeo_suministros/registrar_suministro_directo_use_case.py:12:suministro del catálogo (E4 → 422) → Fase 1/1b ciclo ACTIVO (E1 → 409) y
+  origin/test:src/supplies/application/use_cases/costeo_suministros/registrar_suministro_directo_use_case.py:156:        # E4 — tipo de suministro del catálogo.
+  origin/test:src/supplies/application/use_cases/costeo_suministros/registrar_suministro_directo_use_case.py:161:                    f"El tipo de suministro {dto.tipo_suministro} no está en el catálogo activo. Configúrelo "
+  origin/test:src/supplies/application/use_cases/exportacion/generador_archivos.py:12:- PDF con encabezado (logo si existe, título y fecha de generación) y 25
+  origin/test:src/supplies/application/use_cases/exportacion/generador_archivos.py:18:  Va etiquetado (TC-DIS-204): título como H1, líneas como P, logo como Figure con
+  origin/test:src/supplies/application/use_cases/exportacion/generador_archivos.py:51:    ruta_logo: Optional[str] = None
+  origin/test:src/supplies/application/use_cases/exportacion/generador_archivos.py:99:    from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+  origin/test:src/supplies/application/use_cases/exportacion/generador_archivos.py:149:    if doc.ruta_logo:
+  origin/test:src/supplies/application/use_cases/exportacion/generador_archivos.py:150:        logo = _Imagen(doc.ruta_logo, width=80, height=40, kind="proportional")
+  origin/test:src/supplies/application/use_cases/exportacion/generador_archivos.py:151:        logo._etiqueta = etiquetas.nuevo("Figure", raiz, alt="Logo de la finca")
+  origin/test:src/supplies/application/use_cases/exportacion/generador_archivos.py:152:        elementos.append(logo)
+  origin/test:src/supplies/application/use_cases/exportacion/generador_archivos.py:360:    """Valor de catálogo en palabras: primero la etiqueta conocida; si no hay, «VALOR_CRUDO» → «Valor crudo»."""
+  origin/test:src/supplies/application/use_cases/historial_suministros/exportar_historial_sincrono_use_case.py:5:# | 2026-11-10 | Arekkazu         | CP088 RF-81: PDF y Excel con encabezados, fechas, montos y catálogos en palabras; sin recorte |
+  origin/test:src/supplies/application/use_cases/historial_suministros/exportar_historial_sincrono_use_case.py:84:_ORIGEN = {"MANUAL": "Precio manual", "M40_AUTOMATICO": "Precio automático", "CATALOGO": "Catálogo", "TODOS": "Todos"}
+  origin/test:src/supplies/application/use_cases/historial_suministros/procesar_cola_historial_suministros_use_case.py:7:Análogo a ``ProcesarColaReportesGastosUseCase`` (RF-77) y, en última
+  origin/test:src/supplies/application/use_cases/reporte_gastos/exportar_reporte_gastos_use_case.py:14:  encabezado, logo y fecha de generación. Un fallo del motor PDF se audita y
+  origin/test:src/supplies/application/use_cases/reporte_gastos/exportar_reporte_gastos_use_case.py:49:from src.supplies.domain.repositories.logo_institucional_port import LogoInstitucionalPort
+  origin/test:src/supplies/application/use_cases/reporte_gastos/exportar_reporte_gastos_use_case.py:96:        logo_port: LogoInstitucionalPort,
+  origin/test:src/supplies/application/use_cases/reporte_gastos/exportar_reporte_gastos_use_case.py:103:        self.logo_port = logo_port
+  origin/test:src/supplies/application/use_cases/reporte_gastos/exportar_reporte_gastos_use_case.py:262:            ruta_logo=self.logo_port.ruta_logo(
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py:170:                    message=f"La especie {filtros.id_especie} no existe en el catálogo.",
+  origin/test:src/supplies/application/use_cases/reporte_gastos/procesar_cola_reportes_gastos_use_case.py:7:Análogo a ``EjecutarBatchICAUseCase`` (RF-74): procesa hasta
+  origin/test:src/supplies/application/use_cases/suministros/listar_tipos_alimento_use_case.py:3:# | 2026-10-23 | Arekkazu         | M05 RF-75: catálogo de tipos de alimento      |
+  origin/test:src/supplies/application/use_cases/suministros/listar_tipos_alimento_use_case.py:4:"""Caso de uso: listar el catálogo de tipos de alimento (RF-75).
+  origin/test:src/supplies/application/use_cases/suministros/listar_tipos_alimento_use_case.py:8:lo que el cliente ofrece para elegirlo. El catálogo es global, no por finca.
+  origin/test:src/supplies/application/use_cases/suministros/registrar_consumo_alimento_use_case.py:12:del activo, ciclo abierto, catálogo de alimento) y persiste el registro. El
+  origin/test:src/supplies/application/use_cases/suministros/registrar_consumo_alimento_use_case.py:104:                message=f"El tipo de alimento con ID {dto.id_tipo_alimento} no existe en el catálogo.",
+  origin/test:src/supplies/domain/entities/consumo_alimento.py:11:catálogo; aquí se conserva para exponerlo tras releer el registro persistido.
+  origin/test:src/supplies/domain/repositories/ciclo_abierto_port.py:7:``id_gestion_fases`` (no ``id_ciclo_productivo``, que es un catálogo/plantilla
+  origin/test:src/supplies/domain/repositories/consumo_alimento_repository.py:4:# | 2026-10-23 | Arekkazu         | M05 RF-75: catálogo de tipos de alimento      |
+  origin/test:src/supplies/domain/repositories/consumo_alimento_repository.py:24:    """Vista de solo lectura del catálogo de tipos de alimento (RF-75)."""
+  origin/test:src/supplies/domain/repositories/consumo_alimento_repository.py:42:        """Devuelve el tipo de alimento del catálogo o ``None`` si no existe."""
+  origin/test:src/supplies/domain/repositories/consumo_alimento_repository.py:47:        """Catálogo de tipos de alimento ordenado por nombre; con ``solo_activos`` omite los inactivos."""
+  origin/test:src/supplies/domain/repositories/logo_institucional_port.py:3:# | 2026-10-22 | Arekkazu         | M05 RF-77: logo en el encabezado del PDF      |
+  origin/test:src/supplies/domain/repositories/logo_institucional_port.py:4:"""Puerto del logotipo institucional (RF-26) para el encabezado del PDF de RF-77."""
+  origin/test:src/supplies/domain/repositories/logo_institucional_port.py:11:class LogoInstitucionalPort(ABC):
+  origin/test:src/supplies/domain/repositories/logo_institucional_port.py:13:    def ruta_logo(self, *, id_activo_biologico: Optional[int] = None,
+  origin/test:src/supplies/domain/repositories/logo_institucional_port.py:15:        """Ruta en disco del logo PNG/JPEG de la finca, o ``None`` si no hay uno utilizable."""
+  origin/test:src/supplies/domain/value_objects/eventos_auditoria_suministro_enums.py:3:# | 2026-10-22 | Arekkazu         | M05 RF-80: catálogo completo y retención      |
+  origin/test:src/supplies/domain/value_objects/eventos_auditoria_suministro_enums.py:34:# Un tipo que no esté en el catálogo de M05 se trata como NIC41 (ambigüedad → conservador).
+  origin/test:src/supplies/domain/value_objects/eventos_auditoria_suministro_enums.py:42:_EVENTOS_CATALOGO = {e.value for e in TipoEventoAuditoriaSuministro}
+  origin/test:src/supplies/domain/value_objects/eventos_auditoria_suministro_enums.py:47:    if tipo_operacion in _EVENTOS_NIC41 or tipo_operacion not in _EVENTOS_CATALOGO:
+  origin/test:src/supplies/domain/value_objects/tipo_suministro.py:32:# Restricción 11: unidad única por tipo, sin conversiones. Configuración (M09) no tiene catálogo de
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:3:# | 2026-10-22 | Arekkazu         | M05 RF-77: logo de la finca (RF-26, M09)      |
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:4:"""Adaptador de :class:`LogoInstitucionalPort` contra ``modulo9.identidad_visuales`` (RF-26).
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:8:deja el encabezado sin logo.
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:18:from src.shared.almacen_logos import DIRECTORIO_LOGOS, RUTA_PUBLICA_LOGOS
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:19:from src.supplies.domain.repositories.logo_institucional_port import LogoInstitucionalPort
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:21:_SQL_LOGO = text(
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:23:    SELECT iv.logo_path
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:27:    WHERE iv.logo_path IS NOT NULL
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:35:class LogoFincaM09Adapter(LogoInstitucionalPort):
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:39:    def ruta_logo(self, *, id_activo_biologico: Optional[int] = None,
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:43:        logo = self.db.execute(
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:44:            _SQL_LOGO, {"id_activo": id_activo_biologico, "id_infra": id_infraestructura}
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:46:        if not logo or not logo.lower().endswith((".png", ".jpg", ".jpeg")):
+  origin/test:src/supplies/infrastructure/adapters/logo_finca_m09_adapter.py:48:        ruta = os.path.join(DIRECTORIO_LOGOS, logo.removeprefix(RUTA_PUBLICA_LOGOS).lstrip("/"))
+  origin/test:src/supplies/infrastructure/dto/registrar_consumo_alimento_dto.py:7:El alimento se elige del catálogo ``modulo5.tipos_alimentos`` (su nombre es el
+  origin/test:src/supplies/infrastructure/dto/registrar_suministro_directo_dto.py:11:Las reglas de negocio (tipo fuera del catálogo E4, justificación E2, fecha E3,
+  origin/test:src/supplies/infrastructure/factories/reporte_gastos_factory.py:35:from src.supplies.infrastructure.adapters.logo_finca_m09_adapter import LogoFincaM09Adapter
+  origin/test:src/supplies/infrastructure/factories/reporte_gastos_factory.py:79:        logo_port=LogoFincaM09Adapter(db),
+  origin/test:src/supplies/infrastructure/factories/suministros_factory.py:4:# | 2026-10-23 | Arekkazu         | M05 RF-75: catálogo de tipos de alimento      |
+  origin/test:src/supplies/infrastructure/models/acumulado_ciclo_model.py:5:(``id_gestion_fases`` — no ``id_ciclo_productivo``, que es un catálogo
+  origin/test:src/supplies/infrastructure/models/ciclo_productivo_model.py:1:"""Modelo ORM mínimo para ``modulo9.ciclos_productivos`` (catálogo, M09).
+  origin/test:src/supplies/infrastructure/models/fallo_generacion_reporte_gasto_model.py:4:técnicos persistentes tras agotar los reintentos configurados, análogo a
+  origin/test:src/supplies/infrastructure/models/registro_consumo_alimento_model.py:12:  INSERT) con el precio del catálogo activo.
+  origin/test:src/supplies/infrastructure/repositories/consumo_alimento_repository.py:4:# | 2026-10-23 | Arekkazu         | M05 RF-75: catálogo de tipos de alimento      |
+  origin/test:src/supplies/infrastructure/repositories/historial_suministro_read_repository.py:12:catálogo. Aquí se resuelve la descripción uniendo directamente contra
+  origin/test:src/supplies/infrastructure/routers/consumo_alimento_router.py:4:# | 2026-10-23 | Arekkazu         | M05 RF-75: catálogo de tipos de alimento      |
+  origin/test:src/supplies/infrastructure/routers/consumo_alimento_router.py:11:  GET    /suministros/consumo-alimentos/tipos-alimento — Catálogo de tipos de alimento
+  origin/test:src/supplies/infrastructure/routers/consumo_alimento_router.py:133:    summary="Catálogo de tipos de alimento para registrar un consumo (RF-75)",
+  origin/test:src/supplies/infrastructure/schema/consumo_alimento_schema.py:3:# | 2026-10-23 | Arekkazu         | M05 RF-75: catálogo de tipos de alimento      |
+  origin/test:src/supplies/infrastructure/schema/consumo_alimento_schema.py:48:    """Entrada del catálogo ``modulo5.tipos_alimentos`` para elegir el alimento (RF-75)."""
+  --- identidad visual (configuracion) usada por suministros
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:12:from src.configuration.domain.entities.identidad_visual import IdentidadVisual
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:13:from src.configuration.domain.repositories.auditoria_identidad_visual_repository import AuditoriaIdentidadVisualRepository
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:14:from src.configuration.domain.repositories.identidad_visual_repository import IdentidadVisualRepository
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:17:from src.configuration.infrastructure.dto.actualizar_identidad_visual_dto import ActualizarIdentidadVisualDTO
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:23:class ActualizarIdentidadVisualUseCase:
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:31:        identidad_repo: IdentidadVisualRepository,
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:32:        auditoria_repo: AuditoriaIdentidadVisualRepository,
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:41:        dto: ActualizarIdentidadVisualDTO,
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:45:    ) -> IdentidadVisual:
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:49:                code="IDENTIDAD_VISUAL_NO_ENCONTRADA",
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:59:        logo_path = None
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:61:            logo_path = guardar_logo(logo_bytes, logo_content_type)
+  origin/test:src/configuration/application/use_cases/personalizacion/actualizar_identidad_visual_use_case.py:67:            logo_path=logo_path,
+  origin/test:src/configuration/application/use_cases/personalizacion/consultar_auditoria_identidad_visual_use_case.py:4:from src.configuration.domain.entities.auditoria_identidad_visual import AuditoriaIdentidadVisual
+  origin/test:src/configuration/application/use_cases/personalizacion/consultar_auditoria_identidad_visual_use_case.py:5:from src.configuration.domain.repositories.auditoria_identidad_visual_repository import AuditoriaIdentidadVisualRepository
+  origin/test:src/configuration/application/use_cases/personalizacion/consultar_auditoria_identidad_visual_use_case.py:6:from src.configuration.domain.repositories.identidad_visual_repository import IdentidadVisualRepository
+  origin/test:src/configuration/application/use_cases/personalizacion/consultar_auditoria_identidad_visual_use_case.py:10:class ConsultarAuditoriaIdentidadVisualUseCase:
+  origin/test:src/configuration/application/use_cases/personalizacion/consultar_auditoria_identidad_visual_use_case.py:15:        auditoria_repo: AuditoriaIdentidadVisualRepository,
+  origin/test:src/configuration/application/use_cases/personalizacion/consultar_auditoria_identidad_visual_use_case.py:16:        identidad_repo: IdentidadVisualRepository,
+  origin/test:src/configuration/application/use_cases/personalizacion/consultar_auditoria_identidad_visual_use_case.py:21:    def execute(self, id_finca: int) -> list[AuditoriaIdentidadVisual]:
+  origin/test:src/configuration/application/use_cases/personalizacion/consultar_auditoria_identidad_visual_use_case.py:24:                code="IDENTIDAD_VISUAL_NO_ENCONTRADA",
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:12:from src.configuration.domain.entities.identidad_visual import IdentidadVisual
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:13:from src.configuration.domain.repositories.auditoria_identidad_visual_repository import AuditoriaIdentidadVisualRepository
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:14:from src.configuration.domain.repositories.identidad_visual_repository import IdentidadVisualRepository
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:17:from src.configuration.infrastructure.dto.guardar_identidad_visual_dto import GuardarIdentidadVisualDTO
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:23:class GuardarIdentidadVisualUseCase:
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:29:        identidad_repo: IdentidadVisualRepository,
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:30:        auditoria_repo: AuditoriaIdentidadVisualRepository,
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:38:        dto: GuardarIdentidadVisualDTO,
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:42:    ) -> IdentidadVisual:
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:46:                code="IDENTIDAD_VISUAL_EXISTENTE",
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:53:        logo_path = guardar_logo(logo_bytes, logo_content_type) if logo_bytes else None
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:55:        entidad = IdentidadVisual.crear(
+  origin/test:src/configuration/application/use_cases/personalizacion/guardar_identidad_visual_use_case.py:58:            logo_path=logo_path,
+  origin/test:src/configuration/application/use_cases/personalizacion/obtener_contexto_use_case.py:13:from src.configuration.domain.repositories.identidad_visual_repository import IdentidadVisualRepository
+  origin/test:src/configuration/application/use_cases/personalizacion/obtener_contexto_use_case.py:23:        identidad_repo: IdentidadVisualRepository,
+  origin/test:src/configuration/application/use_cases/personalizacion/obtener_contexto_use_case.py:44:        contexto.identidad_visual = identidad
+  origin/test:src/configuration/application/use_cases/personalizacion/obtener_identidad_visual_use_case.py:6:from src.configuration.domain.entities.identidad_visual import IdentidadVisual
+  origin/test:src/configuration/application/use_cases/personalizacion/obtener_identidad_visual_use_case.py:7:from src.configuration.domain.repositories.identidad_visual_repository import IdentidadVisualRepository
+  origin/test:src/configuration/application/use_cases/personalizacion/obtener_identidad_visual_use_case.py:10:class ObtenerIdentidadVisualUseCase:
+  origin/test:src/configuration/application/use_cases/personalizacion/obtener_identidad_visual_use_case.py:13:    def __init__(self, identidad_repo: IdentidadVisualRepository) -> None:
+  origin/test:src/configuration/application/use_cases/personalizacion/obtener_identidad_visual_use_case.py:16:    def execute(self, id_finca: int) -> Optional[IdentidadVisual]:
+  origin/test:src/configuration/domain/entities/auditoria_identidad_visual.py:10:class AuditoriaIdentidadVisual:
+  origin/test:src/configuration/domain/entities/contexto_interfaz.py:12:from src.configuration.domain.entities.identidad_visual import IdentidadVisual
+  origin/test:src/configuration/domain/entities/contexto_interfaz.py:33:    identidad_visual: Optional[IdentidadVisual] = None
+  origin/test:src/configuration/domain/entities/identidad_visual.py:1:"""Entidad de dominio ``IdentidadVisual`` — identidad visual institucional por finca (RF-26).
+  origin/test:src/configuration/domain/entities/identidad_visual.py:17:class IdentidadVisual:
+  origin/test:src/configuration/domain/entities/identidad_visual.py:25:    logo_path: Optional[str]
+  origin/test:src/configuration/domain/entities/identidad_visual.py:31:    id_identidad_visual: Optional[int] = None
+  origin/test:src/configuration/domain/entities/identidad_visual.py:39:        logo_path: Optional[str],
+  origin/test:src/configuration/domain/entities/identidad_visual.py:43:    ) -> IdentidadVisual:
+  origin/test:src/configuration/domain/entities/identidad_visual.py:47:            logo_path=logo_path,
+  origin/test:src/configuration/domain/entities/identidad_visual.py:59:        logo_path: Optional[str],
+  origin/test:src/configuration/domain/entities/identidad_visual.py:65:        if logo_path is not None:
+  origin/test:src/configuration/domain/entities/identidad_visual.py:66:            self.logo_path = logo_path
+  origin/test:src/configuration/domain/entities/identidad_visual.py:75:            "logo_path": self.logo_path,
+  origin/test:src/configuration/domain/entities/identidad_visual.py:83:        if not isinstance(other, IdentidadVisual):
+  origin/test:src/configuration/domain/entities/identidad_visual.py:85:        if self.id_identidad_visual is None or other.id_identidad_visual is None:
+  origin/test:src/configuration/domain/entities/identidad_visual.py:87:        return self.id_identidad_visual == other.id_identidad_visual
+  origin/test:src/configuration/domain/entities/identidad_visual.py:90:        return hash(self.id_identidad_visual)

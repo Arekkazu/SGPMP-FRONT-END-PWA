@@ -1,0 +1,58 @@
+diff --git a/evidencias/prep-R3-20261114/pre_R3/tc-m05-g23-reporte-gastos-exportacion.cy.ts b/tc-m05-g23-reporte-gastos-exportacion.cy.ts
+index 42301db..2041e4a 100755
+--- a/evidencias/prep-R3-20261114/pre_R3/tc-m05-g23-reporte-gastos-exportacion.cy.ts
++++ b/tc-m05-g23-reporte-gastos-exportacion.cy.ts
+@@ -6,6 +6,7 @@
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | G6: CP-08C toma área/especie de /configuracion; CP-08D compara el monto por valor |
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | G7: CP-08C usa nombre_infraestructura (campo real del esquema) |
+ // | 2026-11-14 | Juan Sebastian Gutierrez  | H1-H5 reintento 2 (INC CP-08E, PR backend #1118): CP-08E exige las dos notas también en la API; CP-08F nuevo (recorte parcial, API); rollback_http real en runs |
++// | 2026-11-14 | Juan Sebastian Gutierrez  | H6 reintento 3: CP-08B se retira por ambiente (logo de la finca 1 no disponible en TEST; INC-M05-269-G23 abierto); su resultado va a observaciones |
+ // =====================================================================
+ // TC-M05-G23 · RF-77 · Prioridad Alta
+ // Reporte de gastos acumulados por activo y exportación a formatos PDF y CSV
+@@ -117,6 +118,10 @@ const ESPERADOS: Record<IdCp, { paso: string; esperado: string }> = {
+   },
+ };
+ const ORDEN = Object.keys(ESPERADOS) as IdCp[];
++// H6: checkpoints retirados del conteo, con su motivo. Se ejecutan igual y su resultado va a observaciones.
++const RETIRADOS: Partial<Record<IdCp, string>> = {
++  'CP-08B': 'Retirado por ambiente: en TEST el archivo del logo de la finca 1 no está disponible (almacenamiento de logos no persistente; falta configurar LOGOS_STORAGE_PATH en un volumen persistente y volver a subir el logo). Acción pendiente registrada en INC-M05-269-G23, que sigue abierto. El requisito (RF-77, RNF Usabilidad: logo en el PDF) se re-prueba cuando se complete esa acción. En el reintento 2 (run-20261114-151915) el PDF salió sin imagen.',
++};
+ 
+ const resultados = new Map<IdCp, Checkpoint>();
+ for (const id of ORDEN) {
+@@ -983,9 +988,9 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+   // Veredicto final
+   // -------------------------------------------------------------------
+   it('Veredicto · evaluar resultado final de la corrida', () => {
+-    const fallasReales = ORDEN.filter((id) => resultados.get(id)?.estado === 'FALLA');
++    const fallasReales = ORDEN.filter((id) => !RETIRADOS[id] && resultados.get(id)?.estado === 'FALLA');
+     const incompletos = ORDEN.filter(
+-      (id) => resultados.get(id)?.estado === 'NO_EVALUADO' || resultados.get(id)?.estado === 'NO_EJECUTABLE',
++      (id) => !RETIRADOS[id] && (resultados.get(id)?.estado === 'NO_EVALUADO' || resultados.get(id)?.estado === 'NO_EJECUTABLE'),
+     );
+ 
+     if (fallasReales.length > 0) {
+@@ -1015,7 +1020,13 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+       const pad = (n: number) => String(n).padStart(2, '0');
+       const stamp = `${ahora.getFullYear()}${pad(ahora.getMonth() + 1)}${pad(ahora.getDate())}-${pad(ahora.getHours())}${pad(ahora.getMinutes())}${pad(ahora.getSeconds())}`;
+ 
+-      const cpsOficiales = ORDEN.map((id) => {
++      for (const id of ORDEN) {
++        if (RETIRADOS[id]) {
++          const cp = resultados.get(id);
++          ctx.observaciones.push(`${id} (retirado, no cuenta): estado observado ${cp?.estado ?? 'N/A'} | ${cp?.obtenido ?? ''}`);
++        }
++      }
++      const cpsOficiales = ORDEN.filter((id) => !RETIRADOS[id]).map((id) => {
+         const cp = resultados.get(id)!;
+         const estadoFinal: 'OK' | 'FALLA' = cp.estado === 'OK' ? 'OK' : 'FALLA';
+         return {
+@@ -1035,6 +1046,7 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+         summary: { total: cpsFinal.length, ok: okN, falla: fallaN, veredicto: fallaN === 0 && okN > 0 ? 'Aprobado' : 'Rechazado' },
+         checkpoints: cpsFinal,
+         observaciones: ctx.observaciones,
++        retirados: ORDEN.filter((id) => RETIRADOS[id]).map((id) => ({ paso: id, motivo: RETIRADOS[id] as string })),
+         runs: [{ run_id: RUN_ID, rollback_http: ctx.rollbackHttp ?? 'no ejecutado' }],
+       };
+ 

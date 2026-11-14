@@ -1,0 +1,85 @@
+﻿
+System.Management.Automation.RemoteException
+DevTools listening on ws://127.0.0.1:56047/devtools/browser/8656e8f5-d94b-45dd-a2a9-2ab86d653530
+Missing baseUrl in compilerOptions. tsconfig-paths will be skipped
+[TC-M05-G23] API HOST resuelto: api.inmero.co
+[TC-M05-G23] APP BASE PATH: /sigab-test
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        13.17.0                                                                        │
+  │ Browser:        Chrome 157 (headless)                                                          │
+  │ Node Version:   v26.1.0 (C:\nvm4w\nodejs\node.exe)                                             │
+  │ Specs:          1 found (tc-m05-g23-reporte-gastos-exportacion.cy.ts)                          │
+  │ Searched:       C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo │
+  │                 5\RF-77\TC-M05-G23\tc-m05-g23-reporte-gastos-exportacion.cy.ts                 │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  tc-m05-g23-reporte-gastos-exportacion.cy.ts                                     (1 of 1)
+
+
+  TC-M05-G23 · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV
+    √ CP-01 · login Administrador dentro del sandbox transaccional (3946ms)
+    √ CP-02 · navegar a /suministros/gastos y verificar formulario (7067ms)
+    √ CP-03 · generar reporte de gastos por UI (activo 57, mensual, 2026-01-01 a 2026-07-31) (13673ms)
+    √ CP-04 · exportar reporte a CSV por UI y verificar respuesta de exportación (2648ms)
+    √ CP-05 · verificar descarga en disco y estructura del CSV (5 columnas y suma montos) (286ms)
+    √ CP-06 · exportar reporte a PDF por UI y verificar respuesta de exportación (2462ms)
+    √ CP-07 · verificar descarga en disco y validación de binario PDF (%PDF-) (74ms)
+    √ CP-08A · verificar texto, encabezado, fecha y páginas del PDF (784ms)
+    √ CP-08B · verificar presencia de logo institucional embebido en el PDF (32ms)
+    √ CP-08C · encabezado del PDF identifica activo, tipo, infraestructura y especie (1068ms)
+    √ CP-08D · desglose mensual del reporte presente en el PDF (32ms)
+    √ CP-08E · tendencia y notas de RF-77 paso 6 en el PDF (32ms)
+    √ CP-08F · recorte parcial del período anterior (API, regresión del INC) (397ms)
+    √ CP-09 · rollback del sandbox y verificación de aislamiento post-rollback (404) (963ms)
+    √ CP-08B · contexto de logo (post-rollback) (812ms)
+    1) Veredicto · evaluar resultado final de la corrida
+  [escribirReporte] -> C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-77\TC-M05-G23\evidencias\run-20261114-151915\run_PARCIAL_20261114-152018.json
+  [escribirReporte] -> C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-77\TC-M05-G23\evidencias\run-20261114-151915\resultado_TC-M05-G23_reintento2.json
+
+
+  15 passing (35s)
+  1 failing
+
+  1) TC-M05-G23 · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV
+       Veredicto · evaluar resultado final de la corrida:
+     AssertionError: RECHAZADO: Checkpoints en FALLA real: CP-08B
+      at Context.eval (webpack://tc-m05-g23-reporte-gastos/./tc-m05-g23-reporte-gastos-exportacion.cy.ts:845:0)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        16                                                                               │
+  │ Passing:      15                                                                               │
+  │ Failing:      1                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     34 seconds                                                                       │
+  │ Spec Ran:     tc-m05-g23-reporte-gastos-exportacion.cy.ts                                      │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ×  tc-m05-g23-reporte-gastos-exportaci      00:34       16       15        1        -        - │
+  │    on.cy.ts                                                                                    │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ×  1 of 1 failed (100%)                     00:34       16       15        1        -        -  
+

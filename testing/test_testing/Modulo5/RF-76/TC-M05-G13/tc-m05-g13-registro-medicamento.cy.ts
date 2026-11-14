@@ -9,6 +9,8 @@
 // | 2026-11-12 | Juan Sebastian Gutierrez  | C1-C7 reintento 1 (navegador limpio tras T00, guarda retries/screenshots, correos_reales, CP-07/12 no alcanzado, capturas, traza auth) |
 // | 2026-11-12 | Juan Sebastian Gutierrez  | E1-E3: SPA descargada antes del rollback, guarda de ambiente de permisos, CP-06 según RF-76 Proceso 10 |
 // | 2026-11-12 | Juan Sebastian Gutierrez  | F2: CP-09/CP-10 leen el rótulo asociado (label[for]) del campo de solo lectura; antes no reconocían «Población actual del lote» ni el rótulo fuera de .ds-field__wrap |
+// | 2026-11-14 | Juan Sebastian Gutierrez  | R2: CP-09/CP-10 con obtenido real (id, rótulo, valor, atributo); solo lectura admite disabled; CP-10 recálculo 20→50→20; observaciones del body del POST y de la región aria-live |
+// | 2026-11-14 | Juan Sebastian Gutierrez  | R3 (mismo reintento 2): sonda GET /sesiones/me/permisos en T00/T99; si falla el ambiente, CP-04..06, CP-09..11 y CP-13 no escriben (sin registros ni correos) |
 // =====================================================================
 // TC-M05-G13 · RF-76 · CU03 · Prioridad Alta
 // Registro de aplicación de medicamento según modalidad (POST /suministros/medicamentos)
@@ -50,7 +52,7 @@ const ESPERADOS: Record<IdCp, { paso: string; esperado: string; fuente: string }
   'CP-07': { paso: 'CP-07 Estado del activo 778 (RF-44)', esperado: 'GET /activos-biologicos/778 → EN_TRATAMIENTO', fuente: 'RF-76 CA-3; Restricción 7 (vía RF-44)' },
   'CP-08': { paso: 'CP-08 Precondición activo 776', esperado: 'GET /activos-biologicos/776 → ACTIVO, POBLACIONAL, cantidad_actual = 10', fuente: 'RF-76 Proceso 2; Dependencia RF-36 (cantidad_actual)' },
   'CP-09': { paso: 'CP-09 Cantidad actual visible en el formulario (776)', esperado: 'Al elegir #776 se muestra la cantidad actual (10) en solo lectura', fuente: 'RF-76 Proceso 4 (POBLACIONAL: cantidad_actual en solo lectura)' },
-  'CP-10': { paso: 'CP-10 Dosis por individuo en vivo (776)', esperado: 'Al escribir dosis 20 aparece la dosis por individuo 2,0 en el formulario', fuente: 'RF-76 Proceso 4 (POBLACIONAL: dosis_por_individuo calculada en tiempo real)' },
+  'CP-10': { paso: 'CP-10 Dosis por individuo en vivo (776)', esperado: 'Al escribir dosis 20 aparece la dosis por individuo 2 en un campo de solo lectura; al cambiarla a 50 se recalcula a 5 y al volver a 20, a 2 (sin guardar)', fuente: 'RF-76 Proceso 4 (POBLACIONAL: dosis_por_individuo calculada en tiempo real = dosis_total / cantidad_actual) y Restricción 8 (calculado automáticamente y de solo lectura)' },
   'CP-11': { paso: 'CP-11 Guardar POBLACIONAL → respuesta API', esperado: '201 (200 solo si ya estaba EN_TRATAMIENTO); VALIDADO; dosis_por_individuo = "2.0000"; costo_total_medicamento = 4000; fecha_fin_retiro = hoy+3', fuente: 'RF-76 CA-2; Restricciones 6 y 8; Proceso 8a; Salida 3 y 4; HTTP según openapi TEST' },
   'CP-12': { paso: 'CP-12 Estado del activo 776 (RF-44)', esperado: 'GET /activos-biologicos/776 → EN_TRATAMIENTO', fuente: 'RF-76 CA-3; Restricción 7 (vía RF-44)' },
   'CP-13': { paso: 'CP-13 dosis_por_individuo enviada en el body (999)', esperado: '4xx, o 2xx con dosis_por_individuo = "2.0000"; nunca queda guardado 999', fuente: 'RF-76 Restricción 8 (dosis_por_individuo calculada y de solo lectura); nota 2 del caso G13' },
@@ -83,7 +85,12 @@ interface SnapshotInocuidad {
   activos: Record<number, { http: number; estado: string; x_request_id: string }>;
   medicamentos: Record<number, SnapshotListado>;
   auditoria?: { http: number; total?: number; id_maximo?: number | null; x_request_id: string };
+  /** R3: sonda de solo lectura GET /sesiones/me/permisos con el token de la fase. */
+  permisos?: { http: number; error_code: string | null; x_request_id: string };
 }
+
+/** R3: resultado de la sonda de permisos por fase (T00/T99). */
+const permisosSnap: Record<string, { http: number; error_code: string | null; x_request_id: string }> = {};
 
 interface CorreoReal {
   paso: string;
@@ -176,8 +183,22 @@ function rotuloDe(doc: Document, campo: HTMLInputElement): string {
 /** F2: campos de solo lectura dentro del diálogo. */
 function camposSoloLectura(d: HTMLElement): HTMLInputElement[] {
   return Array.from(d.querySelectorAll<HTMLInputElement>('input')).filter(
-    (i) => i.readOnly || i.getAttribute('aria-readonly') === 'true',
+    (i) => i.readOnly || i.getAttribute('aria-readonly') === 'true' || i.disabled,
   );
+}
+/** A3: Detalle de todos los inputs cuyo rótulo cumpla re (sean o no de solo lectura). */
+function detalleCampos(doc: Document, re: RegExp): string {
+  const d = dialogo(doc);
+  if (!d) return 'sin diálogo abierto';
+  const inputs = Array.from(d.querySelectorAll<HTMLInputElement>('input')).filter((i) => re.test(rotuloDe(doc, i)));
+  if (inputs.length === 0) return 'ningún campo del diálogo tiene un rótulo que cumpla ' + re.source;
+  return inputs
+    .map((i) => {
+      const rot = rotuloDe(doc, i).slice(0, 60);
+      const ariaRo = i.getAttribute('aria-readonly') || 'no';
+      return `id=${i.id || 'sin id'}; rótulo="${rot}"; valor="${i.value}"; readonly=${i.readOnly}; aria-readonly=${ariaRo}; disabled=${i.disabled}`;
+    })
+    .join(' || ');
 }
 /** CP-09: ¿hay en el diálogo un campo de solo lectura rotulado como cantidad/población actual con el valor 10? */
 function muestraCantidadActual(doc: Document): boolean {
@@ -185,11 +206,18 @@ function muestraCantidadActual(doc: Document): boolean {
   if (!d) return false;
   return camposSoloLectura(d).some((i) => RE.cantidad.test(rotuloDe(doc, i)) && i.value.trim() === String(CANTIDAD_POB));
 }
+/** A4: Validador de dosis por individuo para cualquier valor n. */
+function muestraDosisValor(n: number): (doc: Document) => boolean {
+  const reValor = new RegExp(`^\\s*${n}([.,]0+)?(\\s|$)`);
+  return (doc: Document) => {
+    const d = dialogo(doc);
+    if (!d) return false;
+    return camposSoloLectura(d).some((i) => RE.dosisInd.test(rotuloDe(doc, i)) && reValor.test(i.value));
+  };
+}
 /** CP-10: ¿hay en el diálogo un campo de solo lectura rotulado como dosis por individuo con el valor 2 (2,0 / 2.000 / 2 ml)? */
 function muestraDosisPorIndividuo(doc: Document): boolean {
-  const d = dialogo(doc);
-  if (!d) return false;
-  return camposSoloLectura(d).some((i) => RE.dosisInd.test(rotuloDe(doc, i)) && /^\s*2([.,]0+)?(\s|$)/.test(i.value));
+  return muestraDosisValor(2)(doc);
 }
 
 function num(v: unknown): number {
@@ -202,6 +230,14 @@ function exigirSandbox(): void {
   if (!ctx.sandboxOk) {
     throw new Error('[TC-M05-G13] El sandbox no quedó confirmado en CP-01: se detiene el bloque para no escribir fuera de él.');
   }
+}
+/** R3: si el ambiente ya está marcado como inválido, el bloque no escribe (no crea registros ni dispara correos). */
+function bloqueoPorAmbiente(ids: IdCp[]): boolean {
+  if (!ctx.ambienteInvalido) return false;
+  for (const id of ids) {
+    registrar(id, false, `No alcanzado: corrida inválida por ambiente (${ctx.ambienteInvalido}); el bloque no escribe para no crear registros ni enviar correos`);
+  }
+  return true;
 }
 
 // ── Formulario (selectores estables #medicamento-*) ─────────────────────
@@ -370,7 +406,12 @@ function ejecutarSnapshotInocuidad(fase: 'T00' | 'T99', runId: string): Cypress.
       reqApi(`${fase}-activo-776`, 'GET', `/activos-biologicos/${ACTIVO_POB}`, token).then((a776) =>
         reqApi(`${fase}-meds-778`, 'GET', `/suministros/medicamentos?id_activo_biologico=${ACTIVO_IND}`, token).then((m778) =>
           reqApi(`${fase}-meds-776`, 'GET', `/suministros/medicamentos?id_activo_biologico=${ACTIVO_POB}`, token).then((m776) =>
-            reqApi(`${fase}-auditoria`, 'GET', '/suministros/auditoria', token).then((aud) =>
+            reqApi(`${fase}-auditoria`, 'GET', '/suministros/auditoria', token).then((aud0) =>
+              reqApi(`${fase}-permisos`, 'GET', '/sesiones/me/permisos', token).then((perm) => {
+                permisosSnap[fase] = { http: perm.status, error_code: perm.body?.error_code ?? null, x_request_id: extraerRequestId(perm.headers as Record<string, any>) };
+                return cy.wrap(aud0, { log: false });
+              }),
+            ).then((aud) =>
               reqApi(`${fase}-rollback`, 'DELETE', `/test-control/runs/${encodeURIComponent(runId)}`).then((rb) => {
                 ctx.runs.push({ run_id: runId, rollback_http: rb.status });
                 if (rb.status < 200 || rb.status >= 300) {
@@ -403,6 +444,7 @@ function ejecutarSnapshotInocuidad(fase: 'T00' | 'T99', runId: string): Cypress.
                     const ids = items.map((x) => Number(x.id_auditoria_suministro ?? x.id ?? 0)).filter((n) => n > 0);
                     return { http: aud.status, total, id_maximo: ids.length ? Math.max(...ids) : null, x_request_id: reqId };
                   })(),
+                  permisos: permisosSnap[fase],
                 };
                 return cy.wrap(snap, { log: false });
               }),
@@ -447,6 +489,12 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
     const t00RunId = `tc-m05-g13-t00-${Date.now()}`;
     ejecutarSnapshotInocuidad('T00', t00RunId).then((snap) => {
       ctx.t00 = snap;
+      // R3: puerta de ambiente. Si la API de permisos falla, la SPA no puede mostrar Suministros: la corrida no escribirá.
+      const p00 = snap.permisos;
+      ctx.observaciones.push(`T00 permisos HTTP ${p00?.http ?? 'sin respuesta'}${p00?.error_code ? ` (${p00.error_code})` : ''} | X-Request-Id=${p00?.x_request_id || '(sin id)'}`);
+      if (!p00 || p00.http !== 200) {
+        ctx.ambienteInvalido = `T00 GET /sesiones/me/permisos HTTP ${p00?.http ?? 'sin respuesta'} X-Request-Id ${p00?.x_request_id || '(sin id)'}`;
+      }
       if (snap.auditoria?.http === 200) {
         ctx.observaciones.push(`T00 auditoría HTTP 200: total=${snap.auditoria.total}, id_maximo=${snap.auditoria.id_maximo}`);
       } else {
@@ -587,7 +635,7 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
                 const hayNo200 = interPermisos.length === 0 || interPermisos.some((p) => p.response?.statusCode !== 200);
                 if (hayNo200) {
                   const strReqId = listPermisosReqId.length ? listPermisosReqId.join(', ') : 'ninguno';
-                  ctx.ambienteInvalido = `permisos HTTP ${strPermisos} X-Request-Id ${strReqId}`;
+                  ctx.ambienteInvalido = (ctx.ambienteInvalido ? `${ctx.ambienteInvalido} ; ` : '') + `UI permisos HTTP ${strPermisos} X-Request-Id ${strReqId}`;
                 }
               });
             });
@@ -605,6 +653,7 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
 
   it('CP-04..CP-06 · registro INDIVIDUAL (activo 778) desde la UI', () => {
     exigirSandbox();
+    if (bloqueoPorAmbiente(['CP-04', 'CP-05', 'CP-06'])) return;
     const fechaFin = sumarDias(ctx.hoy, 7);
 
     const verificarUI = () => {
@@ -721,23 +770,65 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
   it('CP-09..CP-11 · registro POBLACIONAL (activo 776) desde la UI', () => {
     exigirSandbox();
     if (ctx.enviado2) return; // reintento: el POST ya salió, no se duplica
+    if (bloqueoPorAmbiente(['CP-09', 'CP-10', 'CP-11'])) return;
 
     cy.document({ log: false }).then((doc) => {
       if (!dialogo(doc)) abrirFormulario();
     });
 
-    // CP-09 · cantidad actual en solo lectura (DEFECTO CONOCIDO: hoy no existe)
+    // CP-09 · cantidad actual en solo lectura
     elegirActivo(ACTIVO_POB);
     cy.esperarCondicion(muestraCantidadActual, 8000).then((ok) => {
-      registrar('CP-09', ok, (ok ? `se muestra la cantidad actual ${CANTIDAD_POB} en solo lectura` : 'el formulario no muestra la cantidad actual del activo poblacional') + ' | captura=CP-09_cantidad_776');
-      cy.screenshot('CP-09_cantidad_776');
+      cy.document({ log: false }).then((doc) => {
+        const det = detalleCampos(doc, RE.cantidad);
+        const obtenido = ok
+          ? `${det} | captura=CP-09_cantidad_776`
+          : `PENDIENTE_DIAGNOSTICO | no hay campo de solo lectura rotulado como cantidad/población actual con valor 10 | ${det} | captura=CP-09_cantidad_776`;
+        registrar('CP-09', ok, obtenido);
+        cy.screenshot('CP-09_cantidad_776');
+      });
     });
 
-    // CP-10 · dosis por individuo en vivo (DEFECTO CONOCIDO: hoy no existe)
-    cy.get('#medicamento-dosis').clear().type(String(DOSIS_POB));
-    cy.esperarCondicion(muestraDosisPorIndividuo, 8000).then((ok) => {
-      registrar('CP-10', ok, (ok ? 'se muestra la dosis por individuo 2,0 en vivo' : `el formulario no muestra la dosis por individuo al escribir ${DOSIS_POB}`) + ' | captura=CP-10_dosis_776');
-      cy.screenshot('CP-10_dosis_776');
+    // CP-10 · dosis por individuo en vivo
+    cy.get('#medicamento-dosis').clear().type('20');
+    cy.esperarCondicion(muestraDosisValor(2), 8000).then((v20a) => {
+      cy.document({ log: false }).then((doc20a) => {
+        const d20a = detalleCampos(doc20a, RE.dosisInd);
+        cy.screenshot('CP-10a_dosis20_776');
+
+        cy.get('#medicamento-dosis').clear().type('50');
+        cy.esperarCondicion(muestraDosisValor(5), 8000).then((v50) => {
+          cy.document({ log: false }).then((doc50) => {
+            const d50 = detalleCampos(doc50, RE.dosisInd);
+            cy.screenshot('CP-10b_dosis50_776');
+
+            cy.get('#medicamento-dosis').clear().type(String(DOSIS_POB));
+            cy.esperarCondicion(muestraDosisValor(2), 8000).then((v20b) => {
+              cy.document({ log: false }).then((doc20b) => {
+                const d20b = detalleCampos(doc20b, RE.dosisInd);
+                cy.screenshot('CP-10c_dosis20_776');
+
+                const ok10 = v20a && v50 && v20b;
+                let obtenido10 = `dosis 20 → ${v20a ? 'OK' : 'NO'} ${d20a} ; dosis 50 → ${v50 ? 'OK' : 'NO'} ${d50} ; dosis 20 → ${v20b ? 'OK' : 'NO'} ${d20b} | capturas=CP-10a_dosis20_776,CP-10b_dosis50_776,CP-10c_dosis20_776`;
+                if (!ok10) {
+                  obtenido10 = `PENDIENTE_DIAGNOSTICO | ${obtenido10}`;
+                }
+                registrar('CP-10', ok10, obtenido10);
+
+                const dlg = dialogo(doc20b);
+                const liveEls = dlg ? Array.from(dlg.querySelectorAll('[aria-live]')) : [];
+                if (liveEls.length === 0) {
+                  ctx.observaciones.push('CP-10 aria-live: sin región aria-live en el diálogo');
+                } else {
+                  for (const el of liveEls) {
+                    ctx.observaciones.push(`CP-10 aria-live: «${texto(el)}»`);
+                  }
+                }
+              });
+            });
+          });
+        });
+      });
     });
 
     // CP-11 · se evalúa aunque CP-09/CP-10 fallen
@@ -745,6 +836,11 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
     interceptarPost('postPob');
     cy.contains('[role="dialog"] button', RE.guardar).click();
     cy.wait('@postPob', { timeout: 60000 }).then((inter) => {
+      const tieneDosisInd = Object.prototype.hasOwnProperty.call(inter.request.body, 'dosis_por_individuo');
+      ctx.observaciones.push(
+        'CP-11 body del POST UI: dosis_por_individuo ' +
+          (tieneDosisInd ? `presente=${inter.request.body.dosis_por_individuo}` : 'ausente'),
+      );
       ctx.enviado2 = true;
       const r = evaluarRegistro(inter, ACTIVO_POB, 3, 4000, 2);
       registrarTraza({
@@ -789,6 +885,7 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
   it('CP-13 · dosis_por_individuo enviada en el body no se acepta como entrada', () => {
     exigirSandbox();
     if (ctx.enviado13) return; // reintento: no se repite la escritura
+    if (bloqueoPorAmbiente(['CP-13'])) return;
     cy.apiSandbox({ method: 'POST', path: '/suministros/medicamentos', body: cuerpoPostDirecto() }).then((r) => {
       ctx.enviado13 = true;
       const reqIdPost = extraerRequestId(r.headers as Record<string, any>);

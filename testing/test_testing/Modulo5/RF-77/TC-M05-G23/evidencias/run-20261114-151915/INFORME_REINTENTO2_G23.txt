@@ -1,0 +1,262 @@
+================================================================================
+INFORME DE REEVALUACION (REINTENTO 2) - TC-M05-G23 (RF-77) - runner QA
+Fecha local: 2026-11-14T15:19:16.0317123-05:00
+Staging: C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-77\TC-M05-G23\evidencias\run-20261114-151915
+================================================================================
+
+0. CONTROL PREVIO
+--------------------------------------------------------------------------------
+Rutas verificadas con Test-Path: TC, REPO, spec, commands.ts, cypress.config.js, resultados\, .env.test
+  tc-m05-g23-reporte-gastos-exportacion.cy.ts    5B0C944977DD0AFC92D83D936CC00F2B74B1A229222CBF76A46826708F39A120 (COINCIDE)
+  commands.ts                                    8101F9E643DF9DE19F82B1D9FFE280D4819142EF80B4E8953F994ADB5CCD363F (COINCIDE)
+  cypress.config.js                              C5AB91D74013CB1B5923255CC1D9C94990174A5644095CB4E841A8D411CAF8AE (COINCIDE)
+
+resultados\ ANTES de la corrida:
+  .gitkeep                                       1 bytes  2026-11-06 23:05:01  01BA4719C80B6FE911B091A7C05124B64EEECE964E09C058EF8F9805DACA546B
+  resultado_TC-M05-G23.json                   3271 bytes  2026-11-07 05:37:33  FA7F1B64DC5D82D9D9C622BDA17E5600A558B3E0161558F757BD7E32008E97F1
+  resultado_TC-M05-G23_reintento1.json        6193 bytes  2026-11-12 14:08:29  A028D18082EB0DE041879EF44979BC88EC8B206945F0D1D09B7B325813A2C587
+No existe resultado_TC-M05-G23_reintento2.json en resultados\ ni en evidencias\: OK
+
+1. CODIGO DEL FIX EN EL BACKEND (informativo; la puerta es la sonda de la seccion 2)
+--------------------------------------------------------------------------------
+  From https://github.com/Arekkazu/sgpmp-backend
+     94787ed9..c7322b71  dev          -> origin/dev
+   * [new branch]        fix/m05-inc353-g37-auditoria-rechazos-rf79-rf81 -> origin/fix/m05-inc353-g37-auditoria-rechazos-rf79-rf81
+   * [new branch]        fix/m06-reversion-fecha-m02-2026-11-14 -> origin/fix/m06-reversion-fecha-m02-2026-11-14
+   * [new tag]           v1.4.0-rc.65 -> v1.4.0-rc.65
+  --- git log origin/test --grep 1118
+  96dc71ca65ec0e9022856dae88190add85a586e9 | 2026-11-14T03:12:59Z | 2026-11-14T03:12:59Z | semantic-release-bot | chore(release): 1.4.0-rc.62 [skip ci]
+  7cdae5e0321b12653aa6520185aa167cb5f91516 | 2026-11-13T21:40:20-05:00 | 2026-11-13T21:40:20-05:00 | Arekkazu | test(rf92-mod6): las pruebas del lote siguen a los cambios cruzados de #1115, #1117 y #1119
+  20920b649dc1f4e2dea4eeff23a3555deb93057b | 2026-11-13T21:40:20-05:00 | 2026-11-13T21:40:20-05:00 | Arekkazu | fix(rf92-mod6): el Revisor Fiscal recibe 403 y no 404 en la descarga del informe y en el estado de resultados no aprobado (RFC-027)
+  1187cb192ad0ef8d51e7a7090b44604a3fa06d98 | 2026-10-29T09:14:34-05:00 | 2026-10-29T09:14:34-05:00 | Arekkazu | fix(rf73-prediction): eventos de la bitacora M04 con su tipo y campos minimos (CU09 H-01/H-02/H-03/H-04)
+  d00c55247acad876167b1b51e2e49fbde12dca4d | 2026-10-12T20:36:55Z | 2026-10-12T20:36:55Z | semantic-release-bot | chore(release): 1.2.0 [skip ci]
+  f1945c65081a340452a4fa5a23c6f8a9d92d7587 | 2026-10-12T04:58:26Z | 2026-10-12T04:58:26Z | semantic-release-bot | chore(release): 1.2.0-rc.6 [skip ci]
+  --- ultimo commit en origin/test que toca el caso de uso del reporte
+  e3e5bd2572ee99836f15df1ee7b1e0042fabc53b | 2026-11-13T13:29:19-05:00 | 2026-11-13T13:29:19-05:00 | Arekkazu | fix(rf77-mod5): el reporte de gastos avisa el recorte al inicio del ciclo aunque el periodo anterior quede vacio (INC-M05-360-G23)
+  e84650d37464db79e35d69d58f45c5aed7c78b60 | 2026-11-10T09:49:02-05:00 | 2026-11-10T09:49:02-05:00 | Arekkazu | Merge PR #1024 (fix/qa-m05-m06-lote-2026-11-08) en la integracion del lote M05/M06
+  d2eea05326b568d54c2a0e3fde986da2c5c2b12c | 2026-11-08T16:09:39-05:00 | 2026-11-08T16:09:39-05:00 | Arekkazu | fix(rf74-rf78-mod5): reintentos de fallos tecnicos y textos visibles de suministros
+  --- _periodo_anterior en origin/test
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py:345:    def _periodo_anterior(self, filtros: FiltrosReporteGasto, activo,
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-346-                          ids_permitidos: Optional[list[int]]) -> tuple[Decimal, bool, Optional[date]]:
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-347-        """Calcula el gasto del período anterior equivalente (Proceso paso 6 de RF-77)."""
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-348-        dias = filtros.dias
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-349-        fecha_fin_anterior = filtros.fecha_inicio - timedelta(days=1)
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-350-        fecha_inicio_anterior = fecha_fin_anterior - timedelta(days=dias - 1)
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-351-
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-352-        recortado = False
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-353-        fecha_recorte: Optional[date] = None
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-354-        if (
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-355-            activo is not None
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-356-            and activo.fecha_inicio_ciclo is not None
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-357-            and fecha_inicio_anterior < activo.fecha_inicio_ciclo
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-358-        ):
+  origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-359-            # Paso 6: se recorta al inicio del ciclo y se avisa, aunque el período anterior quede vacío
+
+2. SONDA DE DESPLIEGUE DEL FIX (API, sandbox propio, sin UI)
+--------------------------------------------------------------------------------
+  run_id: tc-m05-g23-sonda-1794687558377
+  POST /sesiones/ -> HTTP 200 | X-Request-Id=b5fab68c-cca0-4971-a309-673ba7f254ce
+  POST /suministros/reportes-gastos (activo 57, MENSUAL, 2026-01-01..2026-07-31) -> HTTP 200 | X-Request-Id=850e23c3-3c5d-41e2-8518-671aae73a21a
+  DELETE /test-control/runs/tc-m05-g23-sonda-1794687558377 -> HTTP 200 | X-Request-Id=971f971c-4f2b-42fb-8280-64f453acad0b
+  gasto_total_acumulado=10.0000
+  tendencia.estado=SIN_BASE_COMPARATIVA
+  tendencia.nota=No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual. El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).
+  Puerta de despliegue: PASO (tendencia.nota trae la nota de recorte)
+
+3. CODIGO EJECUTADO
+--------------------------------------------------------------------------------
+Cambios H1-H5 de QA para el reintento 2: ver evidencias\prep-R2-20261114\diff_R2.txt
+Copias del codigo ejecutado en codigo_ejecutado\ (extension .txt).
+
+4. VERIFICACION ESTATICA
+--------------------------------------------------------------------------------
+  /test-control/query: 0 (debe ser 0)
+  it/describe .only/.skip: 0 (debe ser 0)
+  retries { runMode: 0, openMode: 0 } en cypress.config.js: 1 (debe ser >= 1)
+  credenciales en claro en spec/commands/config: 0 (debe ser 0)
+  tsc: errores en spec/commands = 0 (linea base: 0)
+  cypress verify: OK
+  git status y git diff HEAD de la carpeta del TC: git_status_pre.txt y git_diff_HEAD_G23.txt
+
+5. EJECUCION OFICIAL UNICA
+--------------------------------------------------------------------------------
+Comando: pnpm exec cypress run --browser chrome --spec 'tc-m05-g23-reporte-gastos-exportacion.cy.ts' --config retries=0
+Exit code de Cypress: 1 (= numero de it() fallidos)
+Inicio: 2026-11-14T15:19:30.0159355-05:00  Fin: 2026-11-14T15:20:18.7145722-05:00  Duracion: 49 s
+Reintentos de Cypress en la consola: 0 (debe ser 0)
+Reporte generado: resultado_TC-M05-G23_reintento2.json  -> OFICIAL
+Resumen: total=14 ok=13 falla=1 veredicto=Rechazado
+  run tc-m05-g23-1794687583615  rollback HTTP 200
+
+6. CHECKPOINTS (copiados del JSON, sin resumir)
+--------------------------------------------------------------------------------
+[OK] CP-01
+    esperado: Sandbox aceptado por el backend antes del login y ruta distinta de /login
+    obtenido: ruta /sigab-test/dashboard; sandbox confirmado: sí; token capturado: sí; peticiones con sandbox: 4
+[OK] CP-02
+    esperado: Formulario de reporte visible con campo #gastos-desde interactivo
+    obtenido: Formulario visible con campo #gastos-desde
+[OK] CP-03
+    esperado: POST /suministros/reportes-gastos -> 200, gasto_total_acumulado = "10.0000", panel de detalle visible
+    obtenido: HTTP 200; id_reporte=284; gasto_total_acumulado=10.0000; panelVisible=true
+[OK] CP-04
+    esperado: POST /exportacion -> 201, nombre_archivo = Gastos_57_2026-01-01_2026-07-31.csv, vigencia 24 h exactas
+    obtenido: HTTP 201; nombre_archivo=Gastos_57_2026-01-01_2026-07-31.csv; vigencia=24.00 h; id_archivo=ce78f0da-a6bd-44a1-a3f3-31bf422e68b3; GET descarga capturado HTTP 200
+[OK] CP-05
+    esperado: GET -> 200 text/csv; archivo descargado con 5 columnas exactas y suma de montos = 10.0000
+    obtenido: HTTP 200; Content-Type=text/csv; charset=utf-8; encabezadoOk=true; filas=1; sumaMonto=10.0000 (esperado 10.0000)
+[OK] CP-06
+    esperado: POST /exportacion -> 201, nombre_archivo = Reporte_Gastos_57_2026-01-01_2026-07-31.pdf, vigencia 24 h exactas
+    obtenido: HTTP 201; nombre_archivo=Reporte_Gastos_57_2026-01-01_2026-07-31.pdf; vigencia=24.00 h; id_archivo=8376b4de-d6ad-4477-a51f-719d91f15e80; GET descarga capturado HTTP 200
+[OK] CP-07
+    esperado: GET -> 200 application/pdf, tamaño > 0, primeros 5 bytes "%PDF-"
+    obtenido: HTTP 200; Content-Type=application/pdf; tamaño=6221 bytes; magic=%PDF-
+[OK] CP-08A
+    esperado: 1 página, título "Reporte de Gastos Acumulados", fecha de generación presente en el texto
+    obtenido: encabezado="Reporte de Gastos Acumulados"; fecha="14/11/2026 15:20 (UTC-05:00)"; paginas=1; tamanoBytes=6221
+[FALLA] CP-08B
+    esperado: Imagen embebida detectada en el PDF (/Subtype /Image)
+    obtenido: tieneImagen=false; infra_status=200; iv_status=200; id_finca=1; registro_iv_existe=true; logo_path_no_nulo=true; extension=.png; static_status=404; archivo="Reporte_Gastos_57_2026-01-01_2026-07-31.pdf"; causa no determinada
+[OK] CP-08C
+    esperado: Encabezado identifica el activo 57, su tipo de activo, su infraestructura y su especie con los valores del propio activo (GET /activos-biologicos/57 + GET /configuracion/infraestructuras/{id} + GET /configuracion/especies; nombre o id), ninguno vacío ni "-" (RF-77 Proceso paso 7, Encabezado; CA-9)
+    obtenido: GET activo HTTP 200 (identificador=TEST-GESTOR-ACTIVO-1, tipo=INDIVIDUAL, id_infraestructura=2, id_especie=1); GET infraestructura HTTP 200 nombre=Estanque-02; GET especies HTTP 200 nombre=Tilapia Roja | PDF: activo="TEST-GESTOR-ACTIVO-1", tipo="individual", área="Estanque-02", especie="Tilapia Roja" | línea PDF «Activo: TEST-GESTOR-ACTIVO-1 (individual) · Área: Estanque-02 · Especie: Tilapia Roja Período: 01/01/2026 - 31/07/2026 (Mensual) Gasto total acumulado: $ 10 Fec» | X-Request-Id=95a688a7-73f8-4ed2-a9c8-505b88ef3c1b
+[OK] CP-08D
+    esperado: El PDF incluye el desglose mensual con cada tramo del reporte (fechas iguales y monto de igual valor que desglose_temporal de la API), cada tramo dentro de un solo mes y del rango, y la suma de tramos = 10.0000 (RF-77 Proceso pasos 5 y 7; CA-5; CA-9)
+    obtenido: tramos API=1 [2026-07-31..2026-07-31 10.0000: fechas en PDF sí; monto PDF=10; coincide sí; un mes y en rango sí]; suma=10.0000; título "Desglose mensual" en PDF: sí | texto PDF «Desglose mensual: 31/07/2026 - 31/07/2026: $ 10 Tendencia frente al período anterior: sin base comparativa No existen gastos registrados en el período anterior »
+[OK] CP-08E
+    esperado: La API (tendencia.estado = SIN_BASE_COMPARATIVA; tendencia.nota) y el PDF muestran la tendencia sin base comparativa con la nota «No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual.» y la nota «El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).» (RF-77 Proceso paso 6; CA-9)
+    obtenido: PDF: estado sin base comparativa: sí; nota sin base: sí; nota recorte: sí | API: estado SIN_BASE_COMPARATIVA: sí; nota sin base: sí; nota recorte: sí | API tendencia.estado=SIN_BASE_COMPARATIVA; API nota=«No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual. El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).» | texto PDF «Tendencia frente al período anterior: sin base comparativa No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual. El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).»
+[OK] CP-08F
+    esperado: POST /suministros/reportes-gastos del activo 57, 2026-03-01 a 2026-07-31 (153 días; anterior 2025-09-29 a 2026-02-28, recortado al 2026-01-01) -> 200, tendencia.estado = SIN_BASE_COMPARATIVA y tendencia.nota con «No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual.» y «El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).» (RF-77 Proceso paso 6; criterio de re-prueba del INC)
+    obtenido: HTTP 200; campo cambiado fecha_inicio_reporte=2026-03-01; id_reporte=285; gasto_total_acumulado=10.0000; tendencia.estado=SIN_BASE_COMPARATIVA; nota sin base: sí; nota recorte: sí; nota=«No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual. El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).» | X-Request-Id=93922f96-66f4-492f-ab72-c9f5d62a75d9
+[OK] CP-09
+    esperado: Rollback 2xx; consulta sin sandbox del reporte y ambos archivos -> 404 (REPORTE/ARCHIVO_NO_ENCONTRADO)
+    obtenido: rollback HTTP 200; spa_sesiones=0; intento 1: [rep 404 REPORTE_NO_ENCONTRADO reqId:878dedc5-9a25-42b7-bae8-b106de8b98d4, csv 404 ARCHIVO_NO_ENCONTRADO reqId:0f84b6b3-bec7-4b86-9d77-f1833947ab19, pdf 404 ARCHIVO_NO_ENCONTRADO reqId:473a4c60-df93-4054-ae45-a7e187649faf] (aislamiento confirmado)
+
+Capturas y descargas en el staging:
+  descargas\Gastos_57_2026-01-01_2026-07-31.csv (93 bytes)
+  descargas\Reporte_Gastos_57_2026-01-01_2026-07-31.pdf (6221 bytes)
+
+7. OBSERVACIONES
+--------------------------------------------------------------------------------
+  - CP-08C: RF-77 paso 7 enumera activo_biologico_id, especie_id, tipo_activo e infraestructura_id; se acepta el nombre o el id del propio activo como identificación (CA-9).
+
+8. ESCANEO DE SECRETOS Y RESULTADOS
+--------------------------------------------------------------------------------
+  Escaneo de secretos: 14 archivos de texto; patrones: ADMIN_PASSWORD, TEST_SANDBOX_SECRET, TEST_SANDBOX_SECRET_ultimos20, ADMIN_EMAIL, prefijo_JWT; hallazgos: 0
+
+resultados\ DESPUES de la corrida:
+  .gitkeep                                 01BA4719C80B6FE911B091A7C05124B64EEECE964E09C058EF8F9805DACA546B
+  resultado_TC-M05-G23.json                FA7F1B64DC5D82D9D9C622BDA17E5600A558B3E0161558F757BD7E32008E97F1
+  resultado_TC-M05-G23_reintento1.json     A028D18082EB0DE041879EF44979BC88EC8B206945F0D1D09B7B325813A2C587
+  resultados\ sin cambios: SI
+
+ANEXO: JSON COMPLETO DEL REPORTE
+--------------------------------------------------------------------------------
+{
+  "tc": "TC-M05-G23",
+  "reintento": 2,
+  "summary": {
+    "total": 14,
+    "ok": 13,
+    "falla": 1,
+    "veredicto": "Rechazado"
+  },
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "esperado": "Sandbox aceptado por el backend antes del login y ruta distinta de /login",
+      "obtenido": "ruta /sigab-test/dashboard; sandbox confirmado: sí; token capturado: sí; peticiones con sandbox: 4",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "esperado": "Formulario de reporte visible con campo #gastos-desde interactivo",
+      "obtenido": "Formulario visible con campo #gastos-desde",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "esperado": "POST /suministros/reportes-gastos -> 200, gasto_total_acumulado = \"10.0000\", panel de detalle visible",
+      "obtenido": "HTTP 200; id_reporte=284; gasto_total_acumulado=10.0000; panelVisible=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "esperado": "POST /exportacion -> 201, nombre_archivo = Gastos_57_2026-01-01_2026-07-31.csv, vigencia 24 h exactas",
+      "obtenido": "HTTP 201; nombre_archivo=Gastos_57_2026-01-01_2026-07-31.csv; vigencia=24.00 h; id_archivo=ce78f0da-a6bd-44a1-a3f3-31bf422e68b3; GET descarga capturado HTTP 200",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "esperado": "GET -> 200 text/csv; archivo descargado con 5 columnas exactas y suma de montos = 10.0000",
+      "obtenido": "HTTP 200; Content-Type=text/csv; charset=utf-8; encabezadoOk=true; filas=1; sumaMonto=10.0000 (esperado 10.0000)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "esperado": "POST /exportacion -> 201, nombre_archivo = Reporte_Gastos_57_2026-01-01_2026-07-31.pdf, vigencia 24 h exactas",
+      "obtenido": "HTTP 201; nombre_archivo=Reporte_Gastos_57_2026-01-01_2026-07-31.pdf; vigencia=24.00 h; id_archivo=8376b4de-d6ad-4477-a51f-719d91f15e80; GET descarga capturado HTTP 200",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "esperado": "GET -> 200 application/pdf, tamaño > 0, primeros 5 bytes \"%PDF-\"",
+      "obtenido": "HTTP 200; Content-Type=application/pdf; tamaño=6221 bytes; magic=%PDF-",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08A",
+      "esperado": "1 página, título \"Reporte de Gastos Acumulados\", fecha de generación presente en el texto",
+      "obtenido": "encabezado=\"Reporte de Gastos Acumulados\"; fecha=\"14/11/2026 15:20 (UTC-05:00)\"; paginas=1; tamanoBytes=6221",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08B",
+      "esperado": "Imagen embebida detectada en el PDF (/Subtype /Image)",
+      "obtenido": "tieneImagen=false; infra_status=200; iv_status=200; id_finca=1; registro_iv_existe=true; logo_path_no_nulo=true; extension=.png; static_status=404; archivo=\"Reporte_Gastos_57_2026-01-01_2026-07-31.pdf\"; causa no determinada",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-08C",
+      "esperado": "Encabezado identifica el activo 57, su tipo de activo, su infraestructura y su especie con los valores del propio activo (GET /activos-biologicos/57 + GET /configuracion/infraestructuras/{id} + GET /configuracion/especies; nombre o id), ninguno vacío ni \"-\" (RF-77 Proceso paso 7, Encabezado; CA-9)",
+      "obtenido": "GET activo HTTP 200 (identificador=TEST-GESTOR-ACTIVO-1, tipo=INDIVIDUAL, id_infraestructura=2, id_especie=1); GET infraestructura HTTP 200 nombre=Estanque-02; GET especies HTTP 200 nombre=Tilapia Roja | PDF: activo=\"TEST-GESTOR-ACTIVO-1\", tipo=\"individual\", área=\"Estanque-02\", especie=\"Tilapia Roja\" | línea PDF «Activo: TEST-GESTOR-ACTIVO-1 (individual) · Área: Estanque-02 · Especie: Tilapia Roja Período: 01/01/2026 - 31/07/2026 (Mensual) Gasto total acumulado: $ 10 Fec» | X-Request-Id=95a688a7-73f8-4ed2-a9c8-505b88ef3c1b",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08D",
+      "esperado": "El PDF incluye el desglose mensual con cada tramo del reporte (fechas iguales y monto de igual valor que desglose_temporal de la API), cada tramo dentro de un solo mes y del rango, y la suma de tramos = 10.0000 (RF-77 Proceso pasos 5 y 7; CA-5; CA-9)",
+      "obtenido": "tramos API=1 [2026-07-31..2026-07-31 10.0000: fechas en PDF sí; monto PDF=10; coincide sí; un mes y en rango sí]; suma=10.0000; título \"Desglose mensual\" en PDF: sí | texto PDF «Desglose mensual: 31/07/2026 - 31/07/2026: $ 10 Tendencia frente al período anterior: sin base comparativa No existen gastos registrados en el período anterior »",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08E",
+      "esperado": "La API (tendencia.estado = SIN_BASE_COMPARATIVA; tendencia.nota) y el PDF muestran la tendencia sin base comparativa con la nota «No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual.» y la nota «El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).» (RF-77 Proceso paso 6; CA-9)",
+      "obtenido": "PDF: estado sin base comparativa: sí; nota sin base: sí; nota recorte: sí | API: estado SIN_BASE_COMPARATIVA: sí; nota sin base: sí; nota recorte: sí | API tendencia.estado=SIN_BASE_COMPARATIVA; API nota=«No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual. El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).» | texto PDF «Tendencia frente al período anterior: sin base comparativa No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual. El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).»",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08F",
+      "esperado": "POST /suministros/reportes-gastos del activo 57, 2026-03-01 a 2026-07-31 (153 días; anterior 2025-09-29 a 2026-02-28, recortado al 2026-01-01) -> 200, tendencia.estado = SIN_BASE_COMPARATIVA y tendencia.nota con «No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual.» y «El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).» (RF-77 Proceso paso 6; criterio de re-prueba del INC)",
+      "obtenido": "HTTP 200; campo cambiado fecha_inicio_reporte=2026-03-01; id_reporte=285; gasto_total_acumulado=10.0000; tendencia.estado=SIN_BASE_COMPARATIVA; nota sin base: sí; nota recorte: sí; nota=«No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual. El período anterior fue recortado al inicio del ciclo productivo (2026-01-01).» | X-Request-Id=93922f96-66f4-492f-ab72-c9f5d62a75d9",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-09",
+      "esperado": "Rollback 2xx; consulta sin sandbox del reporte y ambos archivos -> 404 (REPORTE/ARCHIVO_NO_ENCONTRADO)",
+      "obtenido": "rollback HTTP 200; spa_sesiones=0; intento 1: [rep 404 REPORTE_NO_ENCONTRADO reqId:878dedc5-9a25-42b7-bae8-b106de8b98d4, csv 404 ARCHIVO_NO_ENCONTRADO reqId:0f84b6b3-bec7-4b86-9d77-f1833947ab19, pdf 404 ARCHIVO_NO_ENCONTRADO reqId:473a4c60-df93-4054-ae45-a7e187649faf] (aislamiento confirmado)",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "CP-08C: RF-77 paso 7 enumera activo_biologico_id, especie_id, tipo_activo e infraestructura_id; se acepta el nombre o el id del propio activo como identificación (CA-9)."
+  ],
+  "runs": [
+    {
+      "run_id": "tc-m05-g23-1794687583615",
+      "rollback_http": 200
+    }
+  ]
+}
+================================================================================
+FIN DEL INFORME

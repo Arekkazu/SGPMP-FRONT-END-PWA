@@ -1,0 +1,37 @@
+| fecha | autor | que se hizo |
+| 2026-11-14 | Juan Sebastian Gutierrez | Verificacion independiente de CP-08B (logo) sobre el PDF del reintento 2 de TC-M05-G23 |
+
+Archivo analizado: descargas\Reporte_Gastos_57_2026-01-01_2026-07-31.pdf (6221 bytes)
+SHA-256: 801382C5BF231C6E56F0ED4B0F5D8A2EE1ACC3A2DCB326924094FD373651F0FF
+Metadatos: %PDF-1.4, 1 pagina, Producer "ReportLab PDF Library", Creator/Author "SIGAB", CreationDate 2026-11-14T20:20:14Z
+
+OBSERVADO (sin usar el detector del spec):
+1. pdfimages -list (poppler): 0 imagenes en el documento.
+2. Recursos de la pagina 1 (pypdf): solo /Font y /ProcSet. No hay /XObject.
+3. Contenido de la pagina 1: 0 operadores "Do" (dibujo de XObject) y 0 imagenes en linea (BI/ID/EI).
+4. El archivo no usa object streams (no hay /ObjStm) y no contiene "/XObject" en ningun objeto
+   (qpdf --qdf --object-streams=disable). La busqueda literal "/Subtype /Image" del spec no puede dar
+   un falso negativo por compresion en este archivo.
+5. Render de la pagina (pdftoppm, 80 ppp; captura CP-08B_pdf_renderizado.png): titulo "Reporte de Gastos
+   Acumulados", fecha de generacion, activo/area/especie, periodo, tabla y tendencia. No hay logo
+   ni ningun elemento grafico aparte de la tabla.
+
+CONCLUSION: el PDF exportado no contiene logo. La FALLA de CP-08B es del producto, no del detector.
+Fuente del esperado: RF-77, Requerimientos no funcionales (Usabilidad): "La exportacion a PDF debe
+generar un documento con encabezado, logo y fecha de generacion." Tambien TC-M05-054 (Excel de casos).
+
+LO QUE NO SE PUEDE AFIRMAR CON EL "obtenido" DE CP-08B (contexto post-rollback del spec):
+- "static_status=404" sale de una URL armada por el script (<API>/uploads/logos/<logo_path>), no de una ruta
+  documentada del backend. No demuestra que el archivo del logo falte en el servidor.
+- "id_finca=1" puede ser el valor por defecto del script (resInfra.body?.id_finca ?? 1), no el dato real.
+- Por eso el INC no debe decir "falta el archivo del logo"; la causa queda como hipotesis hasta revisar el codigo.
+
+CORRECCION (2026-11-14, tras leer la respuesta de Desarrollo al INC-M05-269-G23 sobre PR #1071):
+- La ruta publica /uploads/logos/... SI es la del backend (Desarrollo la cita). Pero el spec armo la URL
+  como <API>/uploads/logos/ + logo_path, y logo_path ya trae "/assets/logos/remanso.png"; la URL consultada
+  fue .../uploads/logos/assets/logos/remanso.png. Ese 404 sigue sin ser evidencia limpia y no se cita.
+- Causa segun Desarrollo (no verificada por QA): en TEST los logos se guardan en /tmp, que se borra en cada
+  despliegue; falta configurar LOGOS_STORAGE_PATH en un volumen persistente y volver a subir el logo de la
+  finca 1. Es una accion de ambiente (Implementacion TEST) ya registrada en INC-M05-269-G23, que sigue abierto.
+- Consistente con lo observado: la finca 1 tiene logo_path configurado (EVIDENCIA_LOGO_G23.txt) y el PDF sale
+  sin imagen porque LogoFincaM09Adapter no encuentra el archivo y devuelve None (logo_finca_m09_adapter.py:46-48).
