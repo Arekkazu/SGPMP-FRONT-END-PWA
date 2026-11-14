@@ -4,6 +4,7 @@
 // | 2026-11-10 | Arekkazu | INC-M06-297-G34-02 RF-86: un evento suspendido posterior a la última medición deja el activo pendiente |
 // | 2026-11-10 | Arekkazu | TC-DIS-224 RF-83: columnas propias para la transformación biológica y el cambio de precio |
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 R-03 RF-83: en el celular cada medición es una tarjeta |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
 import React, { useEffect, useState } from 'react';
 import { Play, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -20,7 +21,7 @@ import { sumar, signo } from '../lib/decimal';
 import { DetalleActivoModal } from '../components/DetalleActivoModal';
 import {
   CeldaActivo, EncabezadoVista, ErrorApi, Indicadores, Listado, SinPeriodo, TABLA, TD, TD_NUM, TH, TH_NUM, Variacion,
-  formatoFecha, formatoMoneda, nombrePeriodo, useAsync, useListado, usePeriodo,
+  formatoFecha, formatoMoneda, nombrePeriodo, useAsync, criterioFinca, useListado, usePeriodo,
 } from '../components/comunes';
 
 type EstadoMedicion = 'COMPLETADO' | 'MEDICION_PENDIENTE' | 'SIN_MEDICION' | 'AL_COSTO';
@@ -75,6 +76,7 @@ export function MedicionView() {
 
   const filas = (activos.data ?? []).map((a) => porActivo(a, mediciones.data ?? [], suspendidos.data ?? []));
   const l = useListado(filas, (f) => `${f.activo.identificador} ${f.activo.especie} ${f.activo.finca}`, [
+    criterioFinca(t('col.finca'), (f) => f.activo.id_finca),
     { id: 'estado', etiqueta: t('col.estado'), valor: (f) => f.estado, texto: (v) => t(`medicion.estado_${v}`) },
     { id: 'clasificacion', etiqueta: t('col.clasificacion'), valor: (f) => f.activo.clasificacion, texto: (v) => t(`clasificacion.${v}`), femenino: true },
     { id: 'especie', etiqueta: t('col.especie'), valor: (f) => f.activo.especie, texto: (v) => v, femenino: true },

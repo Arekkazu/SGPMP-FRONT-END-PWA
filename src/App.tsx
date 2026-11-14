@@ -4,6 +4,7 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: cierre por inactividad con motivo y ruta de retorno |
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: módulo financiero NIC 41 (ruta /finanzas) |
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: integración contable con AgroFusion (ruta /integracion) |
+// | 2026-11-14 | Arekkazu | SSO AgroFusion: AgroFusion devuelve a /sso?token=, no a /sso/callback |
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
@@ -362,6 +363,8 @@ function AppRoutes() {
       <Route exact path="/reenviar-activacion" component={ReenviarPage} />
       <Route exact path="/recuperar-contrasena" component={RecuperarPage} />
       <Route exact path="/restablecer-contrasena" component={RestablecerPage} />
+      {/* AgroFusion devuelve siempre a https://inmero.co/{proyecto}/sso?token=... */}
+      <Route exact path="/sso" component={SsoCallbackPage} />
       <Route exact path="/sso/callback" component={SsoCallbackPage} />
 
       {/* Rutas autenticadas sin AppShell y sin guardia de perfil incompleto */}

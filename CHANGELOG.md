@@ -1,3 +1,28 @@
+## [1.4.0-rc.44](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.43...v1.4.0-rc.44) (2026-11-14)
+
+### Features
+
+* **rf25-mod9:** filtro por finca del usuario en los listados de Finanzas ([a013eba](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a013eba4100a896f9a67257d2230d0f5f20a9be0))
+* **rf75-mod5:** filtro por finca del usuario en Suministros ([8b1b4ca](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8b1b4ca8103ee481212a7feb44c87a1a56d2c852))
+* **rf98-mod7:** titular entre los de las fincas del usuario en Integración contable ([f41b651](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f41b651866fda11777cb6b3851f4227ae129c5e7))
+
+### Bug Fixes
+
+* **rf77-mod5:** las infraestructuras del reporte de gastos salen de /usuarios/me/fincas/{id}/infraestructuras y no dan 403 al Contador ([33c466a](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/33c466ac1e7ce9e2b2cdd3c04501a55f83187593))
+
+## [1.4.0-rc.43](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.42...v1.4.0-rc.43) (2026-11-14)
+
+### Bug Fixes
+
+* **rf75-mod5:** las filas de campos se alinean arriba y sus botones van en .ds-campo-accion ([19a41c6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/19a41c6d3ef7f3e8fe7e500fd408fcb30cd5c464))
+* **rf92-mod6:** los textos de Finanzas no citan párrafos de la NIC 41 ([02cdfa1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/02cdfa17c2ec8cdf5f7c9beeaf6a0ee102500b04))
+
+## [1.4.0-rc.42](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.41...v1.4.0-rc.42) (2026-11-14)
+
+### Bug Fixes
+
+* **sso:** AgroFusion devuelve al usuario a /sso?token= y la app solo escuchaba /sso/callback ([d688fd9](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d688fd9dfbdb6cdaff8556794b73a566b60c0ee8))
+
 ## [1.4.0-rc.41](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.40...v1.4.0-rc.41) (2026-11-13)
 
 ### Bug Fixes

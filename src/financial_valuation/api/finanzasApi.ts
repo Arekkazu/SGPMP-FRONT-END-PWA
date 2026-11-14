@@ -11,6 +11,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-265 RF-94: filtros de la bitácora por fechas, usuario, origen y activo |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-94: la bitácora acepta id_finca |
 import { http } from '../../shared/api/http';
 import type {
   Acumulado, ActivoValorado, Asignacion, Cadena, CalculoPeriodo, CosechaPendiente, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
@@ -140,7 +141,7 @@ export const finanzasApi = {
   descargarInforme: (id: number, formato: 'pdf' | 'excel') => archivo(`/revelaciones/${id}/descarga`, formato, `revelaciones-${id}`),
 
   // Auditoría (RF-94)
-  auditoria: (filtros: { id_periodo_contable?: number; id_activo_biologico?: number; tipo_evento?: string; severidad?: string;
+  auditoria: (filtros: { id_periodo_contable?: number; id_activo_biologico?: number; id_finca?: number; tipo_evento?: string; severidad?: string;
     id_usuario?: number; origen_registro?: string; desde?: string; hasta?: string; pagina: number; tamano?: number; orden?: 'ASC' | 'DESC' }) =>
     get<PaginaAuditoria>('/auditoria', { tamano: 50, ...filtros, formato: 'LEGIBLE' }),
 };

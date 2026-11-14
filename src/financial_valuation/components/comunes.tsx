@@ -7,6 +7,8 @@
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
 // | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: criterio «Finca» de los listados con el combobox de las fincas del usuario |
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Ban, CheckCircle2, Clock, FilterX, Info, RotateCcw, Search, SearchX, XCircle } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
@@ -32,6 +34,7 @@ import { finanzasApi } from '../api/finanzasApi';
 import { signo } from '../lib/decimal';
 import { ACCION_R, R_CIERRE, R_ESTADO_RESULTADOS, R_REVELACIONES } from '../rbac';
 import type { FiltroPeriodos, Periodo, Titular } from '../types';
+import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 import '../finanzas.css';
 
 export { EncabezadoVista } from '../../supplies/components/EncabezadoVista';
@@ -326,6 +329,14 @@ export interface Criterio<T> {
   /** Rótulo de cada opción. Las opciones salen de los datos: ningún filtro ofrece algo que no existe. */
   texto: (v: string) => string;
   femenino?: boolean;
+  /** Filtro por finca: se elige entre las fincas del usuario con `SelectorFinca`; `valor` devuelve el id. */
+  finca?: boolean;
+}
+
+/** Criterio «Finca» de un listado: `idFinca` lee el id de la finca de cada fila. */
+export function criterioFinca<T>(etiqueta: string, idFinca: (x: T) => number | null | undefined): Criterio<T> {
+  return { id: 'finca', etiqueta, valor: (x) => { const id = idFinca(x); return id != null ? String(id) : null; }, texto: (v) => v,
+    femenino: true, finca: true };
 }
 
 export function useListado<T>(lista: T[] | null, buscarEn: (x: T) => string, criterios: Criterio<T>[], porPagina = 20) {
@@ -380,6 +391,10 @@ export function Listado<T>({ l, idBase, titulo, acciones, buscar, sustantivo, ca
               value={l.busqueda} onChange={(e) => l.setBusqueda(e.target.value)} autoComplete="off" />
           </div>
           {l.criterios.map((c) => {
+            if (c.finca) {
+              return <SelectorFinca key={c.id} id={`${idBase}-${c.id}`} label={c.etiqueta} idFinca={l.filtros[c.id] ? Number(l.filtros[c.id]) : null}
+                onChange={(idFinca) => l.setFiltro(c.id, idFinca != null ? String(idFinca) : '')} />;
+            }
             const opciones = l.opciones(c);
             return (
               <Select key={c.id} id={`${idBase}-${c.id}`} label={c.etiqueta} value={l.filtros[c.id] ?? ''}
@@ -390,7 +405,7 @@ export function Listado<T>({ l, idBase, titulo, acciones, buscar, sustantivo, ca
             );
           })}
           {l.hayFiltros && (
-            <div className="fin-filtros__limpiar">
+            <div className="ds-campo-accion">
               <Button variant="ghost" size="md" onClick={l.limpiar}><FilterX size={16} aria-hidden />{t('comun.limpiar_filtros')}</Button>
             </div>
           )}

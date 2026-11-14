@@ -1,5 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-14 | Arekkazu | SSO AgroFusion: AgroFusion devuelve a /sso?token=, no a /sso/callback |
 // Punto de entrada al SSO de AgroFusion. El proveedor autentica y devuelve al
-// usuario a /sso/callback?sso_token=..., que es lo que canjea `useSsoCallback`.
+// usuario a /sso?token=... (el dashboard de AgroFusion arma esa URL con el código
+// del proyecto en minúscula), que es lo que canjea `useSsoCallback`.
 //
 // La URL es por ambiente, asi que si no esta definida el boton se muestra
 // deshabilitado en vez de desaparecer: un boton ausente se lee como "esta app

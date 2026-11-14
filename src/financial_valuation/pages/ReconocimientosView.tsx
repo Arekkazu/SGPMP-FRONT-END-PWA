@@ -4,6 +4,7 @@
 // | 2026-11-05 | Arekkazu | M06 RF-82 prototipo: indicadores, avisos y una tabla con propuestas y reconocidos filtrable |
 // | 2026-11-08 | destroyerban | INC-M06-316-G16 RF-84: referencia documental de los costos manuales |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, ClipboardCheck, RefreshCw } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -22,12 +23,12 @@ import type { Clasificacion, CostosManuales, Dec, Propuesta } from '../types';
 import { DetalleActivoModal } from '../components/DetalleActivoModal';
 import {
   AreaTexto, CeldaActivo, Datos, EncabezadoVista, EstadoBadge, ErrorApi, Indicadores, Listado, SECUNDARIO, Subtitulo, TABLA, TD,
-  TD_NUM, TH, TH_NUM, formatoCantidad, formatoFecha, formatoMoneda, nombrePeriodo, useAsync, useListado, usePeriodo,
+  TD_NUM, TH, TH_NUM, formatoCantidad, formatoFecha, formatoMoneda, nombrePeriodo, useAsync, criterioFinca, useListado, usePeriodo,
 } from '../components/comunes';
 
 type EstadoFila = 'PENDIENTE' | 'BLOQUEADO' | 'CONFIRMADO';
 interface Fila {
-  id: number; identificador: string; especie: string; finca: string; origen: string; metodo: string | null; valor: Dec | null;
+  id: number; identificador: string; especie: string; id_finca: number; finca: string; origen: string; metodo: string | null; valor: Dec | null;
   fecha: string | null; estado: EstadoFila; propuesta?: Propuesta;
 }
 
@@ -53,16 +54,17 @@ export function ReconocimientosView() {
 
   const filas: Fila[] = [
     ...(propuestas.data ?? []).map((p): Fila => ({
-      id: p.id_activo_biologico, identificador: p.identificador, especie: p.especie, finca: p.finca, origen: p.origen_financiero,
+      id: p.id_activo_biologico, identificador: p.identificador, especie: p.especie, id_finca: p.id_finca, finca: p.finca, origen: p.origen_financiero,
       metodo: p.indicador_valoracion, valor: p.valor_inicial, fecha: p.fecha_reconocimiento,
       estado: p.es_confirmable ? 'PENDIENTE' : 'BLOQUEADO', propuesta: p,
     })),
     ...(activos.data ?? []).map((a): Fila => ({
-      id: a.id_activo_biologico, identificador: a.identificador, especie: a.especie, finca: a.finca, origen: a.origen_financiero,
+      id: a.id_activo_biologico, identificador: a.identificador, especie: a.especie, id_finca: a.id_finca, finca: a.finca, origen: a.origen_financiero,
       metodo: a.indicador_reconocimiento, valor: a.valor_inicial, fecha: a.fecha_reconocimiento, estado: 'CONFIRMADO',
     })),
   ];
   const l = useListado(filas, (f) => `${f.identificador} ${f.especie} ${f.finca}`, [
+    criterioFinca(t('col.finca'), (f) => f.id_finca),
     { id: 'estado', etiqueta: t('col.estado'), valor: (f) => f.estado, texto: (v) => t(`estado.${v}`) },
     { id: 'metodo', etiqueta: t('col.metodo'), valor: (f) => f.metodo, texto: (v) => t(`metodo.${v}`) },
     { id: 'especie', etiqueta: t('col.especie'), valor: (f) => f.especie, texto: (v) => v, femenino: true },

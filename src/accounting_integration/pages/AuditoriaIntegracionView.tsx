@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-102: historial de la integración con integridad por registro y exportación |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-98: filtro por titular entre los de las fincas del usuario |
 import React, { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Download, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -16,6 +17,7 @@ import {
 import { integracionApi } from '../api/integracionApi';
 import { ACCION_E, ACCION_R, R_AUDITORIA, R_AUDITORIA_CIERRES } from '../rbac';
 import type { EventoIntegracion, FiltrosAuditoria } from '../types';
+import { SelectorTitular } from '../../shared/fincas/SelectorTitular';
 
 // Catálogo del backend (enum_evento_integracion_tipo_evento): un valor fuera de él responde 400.
 export const TIPOS_EVENTO = [
@@ -29,6 +31,7 @@ export const TIPOS_EVENTO = [
 const TIPOS_AUDITOR = ['PAQUETE_AAEF_CONSULTADO', 'VISTA_AAEF_GENERADA', 'CONTRATO_ACTIVADO'] as const;
 const CODIGOS_HTTP = [200, 400, 401, 403, 404, 405, 410, 422, 429, 500, 503];
 const TAMANO = 50;
+const NIT_VALIDO = /^\d{6,15}$/;
 
 export function AuditoriaIntegracionView() {
   const { t } = useT('integracion');
@@ -39,6 +42,7 @@ export function AuditoriaIntegracionView() {
   const exportacion = useAsync(integracionApi.exportarAuditoria);
   const [filtros, setFiltros] = useState<FiltrosAuditoria>({});
   const [pagina, setPagina] = useState(1);
+  const [nit, setNit] = useState('');
   const puedeLeer = completa || restringida;
   const { ejecutar } = consulta;
   const cargar = useCallback(() => { if (puedeLeer) ejecutar(filtros, pagina, TAMANO); }, [puedeLeer, ejecutar, filtros, pagina]);
@@ -66,6 +70,9 @@ export function AuditoriaIntegracionView() {
           <option value="">{t('auditoria.todos')}</option>
           {tipos.map((x) => <option key={x} value={x}>{t(`evento.${x}`)}</option>)}
         </Select>
+        <SelectorTitular id="aud-int-titular" value={nit} onChange={setNit}
+          error={nit && !NIT_VALIDO.test(nit) ? t('auditoria.titular_invalido') : undefined}
+          onConfirm={(v) => { if (!v || NIT_VALIDO.test(v)) filtrar({ numero_id_tributaria: v || undefined }); }} />
         <Input label={t('auditoria.desde')} type="date" value={filtros.desde ?? ''} onChange={(e) => filtrar({ desde: e.target.value || undefined })} />
         <Input label={t('auditoria.hasta')} type="date" value={filtros.hasta ?? ''} onChange={(e) => filtrar({ hasta: e.target.value || undefined })} />
         {completa && (

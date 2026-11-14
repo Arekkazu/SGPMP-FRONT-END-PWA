@@ -7,6 +7,8 @@
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-12 | Arekkazu | TC-DIS-262/263 RF-93: activo individual y lote poblacional por separado; gráficas vacías con texto y sin «−$ 0» |
 // | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: activo excluido con su motivo en palabras y el resultado que quedó fuera |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-93: la finca del estado de resultados se elige con el combobox de las fincas del usuario |
 import React, { useEffect, useState } from 'react';
 import { BarChart3, CheckCircle2, Download, FilterX, Plus } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -25,6 +27,7 @@ import {
   Datos, EncabezadoVista, EstadoBadge, ErrorApi, Listado, PANEL, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM,
   Variacion, descargarArchivo, formatoFecha, formatoMoneda, nombrePeriodo, useAsync, useListado, usePeriodo,
 } from '../components/comunes';
+import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 
 const INGRESOS = [
   'ganancia_reconocimiento_inicial', 'ganancia_transformacion_biologica', 'ganancia_precio_mercado',
@@ -142,8 +145,8 @@ export function EstadoResultadosView() {
   if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.estado-resultados')} />;
   const e = detalle.data;
   const a = acumulado.data;
-  const cambiar = (k: keyof typeof filtro) => (ev: React.ChangeEvent<HTMLSelectElement>) => {
-    const siguiente = { ...filtro, [k]: ev.target.value };
+  const fijar = (k: keyof typeof filtro, valor: string) => {
+    const siguiente = { ...filtro, [k]: valor };
     if (k === 'finca') siguiente.infraestructura = '';
     if (k === 'activo' && siguiente.activo) siguiente.lote = '';  // el estado se genera por uno solo
     if (k === 'lote' && siguiente.lote) siguiente.activo = '';
@@ -152,6 +155,7 @@ export function EstadoResultadosView() {
     }
     setFiltro(siguiente);
   };
+  const cambiar = (k: keyof typeof filtro) => (ev: React.ChangeEvent<HTMLSelectElement>) => fijar(k, ev.target.value);
 
   const generar = async () => {
     if (!idPeriodo) return;
@@ -262,10 +266,8 @@ export function EstadoResultadosView() {
                       <option value="">{t('comun.todas')}</option>
                       {especies.map(([id, nombre]) => <option key={id} value={id}>{nombre}</option>)}
                     </Select>
-                    <Select id="er-finca" label={t('col.finca')} value={filtro.finca} onChange={cambiar('finca')} disabled={fincas.length === 0}>
-                      <option value="">{t('comun.todas')}</option>
-                      {fincas.map(([id, nombre]) => <option key={id} value={id}>{nombre}</option>)}
-                    </Select>
+                    <SelectorFinca id="er-finca" label={t('col.finca')} idFinca={filtro.finca ? Number(filtro.finca) : null}
+                      onChange={(id) => fijar('finca', id != null ? String(id) : '')} />
                     <Select id="er-infraestructura" label={t('er.filtro_infraestructura')} value={filtro.infraestructura} onChange={cambiar('infraestructura')} disabled={infraestructuras.length === 0}>
                       <option value="">{t('comun.todas')}</option>
                       {infraestructuras.map(([id, nombre]) => <option key={id} value={id}>{nombre}</option>)}
@@ -279,7 +281,7 @@ export function EstadoResultadosView() {
                       {lotes.map((x) => <option key={x.id_activo_biologico} value={x.id_activo_biologico}>{x.identificador} · {x.especie}</option>)}
                     </Select>
                     {hayFiltros && (
-                      <div className="fin-filtros__limpiar">
+                      <div className="ds-campo-accion">
                         <Button variant="ghost" size="md" onClick={() => setFiltro(filtroVacio)}><FilterX size={16} aria-hidden />{t('comun.limpiar_filtros')}</Button>
                       </div>
                     )}

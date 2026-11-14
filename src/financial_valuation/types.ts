@@ -11,6 +11,7 @@
 // | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
 // | 2026-11-12 | Arekkazu | TC-DIS-256 RF-91: la línea de asiento trae el nombre y el tipo de su activo |
 // | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: activo excluido del cierre con su motivo y lo que quedó fuera del estado |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -74,7 +75,7 @@ export interface PrecioPayload {
 
 export interface Hecho { tipo_hecho: TipoHecho; sentido: Sentido; valor: Dec }
 export interface Propuesta {
-  id_activo_biologico: number; identificador: string; tipo: string; especie: string; id_especie: number; finca: string;
+  id_activo_biologico: number; identificador: string; tipo: string; especie: string; id_especie: number; id_finca: number; finca: string;
   estado: string; origen_financiero: string; costo_adquisicion: Dec | null; soporte_documental: string | null;
   fecha_reconocimiento: string; es_apertura: boolean; clasificacion: Clasificacion | null;
   indicador_valoracion: 'VALOR_RAZONABLE' | 'VALORACION_POR_COSTO' | null; valor_inicial: Dec | null; costos_venta: Dec | null;
@@ -97,7 +98,7 @@ export interface ActivoValorado {
 
 /** Datos del activo que acompañan a cada registro de los listados del período. */
 interface ActivoDelRegistro {
-  id_activo_biologico: number; identificador: string; tipo_activo: string; id_especie: number; especie: string; finca: string;
+  id_activo_biologico: number; identificador: string; tipo_activo: string; id_especie: number; especie: string; id_finca: number; finca: string;
   clasificacion: Clasificacion | null;
 }
 export interface MedicionPeriodo extends ActivoDelRegistro {
@@ -147,7 +148,7 @@ export interface Linea {
   tipo_evidencia: string; subtipo_costo: Subtipo | null; es_estimacion: boolean; es_reverso: boolean;
   cuenta_debito: string | null; cuenta_credito: string | null; estado: string; estado_trazabilidad?: string;
   id_comprobante_nic41?: number | null;
-  identificador_activo?: string | null; tipo_activo?: string | null;
+  identificador_activo?: string | null; tipo_activo?: string | null; id_finca?: number;
 }
 export interface HistorialActivo {
   activo: { id_activo_biologico: number; identificador: string; especie: string; finca: string; razon_social: string | null;
@@ -170,7 +171,7 @@ export interface Costo {
   id_periodo_contable: number; estado: string; politica_capitalizacion: string; justificacion: string | null;
   tercero_razon_social: string | null; factura_prefijo: string | null; factura_numero: string | null;
   id_grupo_reparto: string | null; metodo_reparto: string | null; es_reverso: boolean; id_origen_m05: string | null;
-  id_especie: number; especie: string; finca: string;
+  id_especie: number; especie: string; id_finca: number; finca: string;
 }
 export interface CostoPayload {
   subtipo_costo: Subtipo; origen_costo: OrigenCosto; monto_costo: string; fecha_costo: string;

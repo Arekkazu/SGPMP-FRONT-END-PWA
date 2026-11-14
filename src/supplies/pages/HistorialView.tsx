@@ -5,6 +5,8 @@
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 // | 2026-11-12 | Arekkazu | TC-DIS-218 RF-81: la paginación muestra la página pedida al instante, sin esperar al servidor |
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 R-02 RF-81: el rango de fechas pasa a dos filas en celulares grandes |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario; el selector de activo se acota a esa finca |
 import React, { useEffect, useState } from 'react';
 import { Search, FileDown, History } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -30,10 +32,12 @@ import { EstadoVacio } from '../components/EstadoVacio';
 import { SelectorActivo } from '../components/SelectorActivo';
 import { Paginacion } from '../components/Paginacion';
 import { FILTROS, PANEL, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM } from '../components/estilos';
+import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 
 const POR_PAGINA = 50;
-// Marco del grupo de un rango; el borde apoya la agrupación, el legend la nombra.
-const GRUPO: React.CSSProperties = { border: '1px solid var(--surface-border)', borderRadius: 'var(--r-md)', padding: 'var(--s2) var(--s3) var(--s1)', margin: 0, minWidth: 0 };
+// La fila de filtros se alinea arriba: una leyenda visible encima de los rótulos bajaba los inputs del grupo
+// por debajo de los vecinos. Queda para el lector de pantalla; los rótulos de cada extremo se ven.
+const GRUPO: React.CSSProperties = { border: 0, padding: 0, margin: 0, minWidth: 0 };
 
 export function HistorialView() {
   const { t } = useT('supplies');
@@ -43,6 +47,7 @@ export function HistorialView() {
   const { consulta, exportacion, descarga, consultarTrabajo } = useHistorialSuministros();
   const [texto, setTexto] = useState('');
   const [idActivo, setIdActivo] = useState<number | null>(null);
+  const [idFinca, setIdFinca] = useState<number | null>(null);
   const [errorActivo, setErrorActivo] = useState<string>();
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
@@ -118,10 +123,11 @@ export function HistorialView() {
         )}
       />
       <form onSubmit={buscar} role="search" style={{ ...FILTROS, marginBottom: 'var(--s5)' }}>
-        <SelectorActivo id="historial-activo" activos={activos} cargando={cargandoActivos} value={texto} required error={errorActivo} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
+        <SelectorFinca id="historial-finca" idFinca={idFinca} onChange={(id) => { setIdFinca(id); setTexto(''); setIdActivo(null); }} />
+        <SelectorActivo id="historial-activo" activos={activos} cargando={cargandoActivos} idFinca={idFinca} value={texto} required error={errorActivo} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
         {/* Los rangos van agrupados (fieldset + legend): el lector anuncia a qué rango pertenece cada extremo (WCAG 1.3.1). */}
         <fieldset style={GRUPO}>
-          <legend className="ds-field__label" style={{ padding: 0 }}>{t('historial.rango_fechas')}</legend>
+          <legend className="ds-sr-only">{t('historial.rango_fechas')}</legend>
           {/* R-02: «Desde» y «Hasta» pasan a dos filas cuando no caben, sin desbordar la página (500-700 px). */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s3)' }}>
             <Input id="historial-desde" label={t('comun.desde')} type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
@@ -135,14 +141,14 @@ export function HistorialView() {
           {ORIGENES_PRECIO.map((x) => <option key={x} value={x}>{x === 'TODOS' ? t('comun.todos') : t(`origen.${x}`)}</option>)}
         </Select>
         <fieldset style={GRUPO}>
-          <legend className="ds-field__label" style={{ padding: 0 }}>{t('historial.rango_costo')}</legend>
+          <legend className="ds-sr-only">{t('historial.rango_costo')}</legend>
           <div className="ds-fg2" style={{ gap: 'var(--s3)' }}>
             <Input id="historial-min" label={t('historial.costo_min')} type="number" step="any" min={0} value={costoMin} onChange={(e) => setCostoMin(e.target.value)} />
             <Input id="historial-max" label={t('historial.costo_max')} type="number" step="any" min={0} value={costoMax} onChange={(e) => setCostoMax(e.target.value)}
               error={costosInvalidos ? t('historial.costos_invalidos') : undefined} />
           </div>
         </fieldset>
-        <div style={{ paddingBottom: 'var(--s1)' }}>
+        <div className="ds-campo-accion">
           <Button type="submit" variant="secondary" size="md" loading={consulta.cargando}><Search size={16} aria-hidden />{t('comun.consultar')}</Button>
         </div>
       </form>

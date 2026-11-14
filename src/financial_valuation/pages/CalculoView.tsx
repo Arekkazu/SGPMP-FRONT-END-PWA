@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-05 | Arekkazu | M06 RF-84 prototipo: valor razonable menos costos de venta a hoy e historial del período |
 // | 2026-11-09 | destroyerban | INC-M06-317-G17 RF-84: validar con justificación un cálculo con valor neto ≤ 0 |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
 import React, { useEffect, useState } from 'react';
 import { Calculator, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -18,7 +19,7 @@ import { ACCION_E, ACCION_R, R_VALORACION } from '../rbac';
 import type { CalculoPeriodo } from '../types';
 import {
   AreaTexto, CeldaActivo, Datos, EncabezadoVista, EstadoBadge, ErrorApi, Listado, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH,
-  TH_NUM, formatoCantidad, formatoFecha, formatoMoneda, useAsync, useListado, usePeriodo,
+  TH_NUM, formatoCantidad, formatoFecha, formatoMoneda, useAsync, criterioFinca, useListado, usePeriodo,
 } from '../components/comunes';
 
 export function CalculoView() {
@@ -40,6 +41,7 @@ export function CalculoView() {
   useEffect(() => { if (idActivo) simular(Number(idActivo)); else limpiarSimulacion(); }, [idActivo, simular, limpiarSimulacion]);
 
   const l = useListado(calculos.data, (c) => `${c.identificador} ${c.especie} ${c.finca}`, [
+    criterioFinca(t('col.finca'), (x) => x.id_finca),
     { id: 'tipo', etiqueta: t('calculo.tipo'), valor: (c) => (c.es_producto ? 'PRODUCTO' : 'ACTIVO'), texto: (v) => t(`calculo.tipo_${v}`) },
     { id: 'metodo', etiqueta: t('calculo.metodo_costos'), valor: (c) => c.metodo_costo, texto: (v) => t(`metodo_costo.${v}`) },
     { id: 'estado', etiqueta: t('col.estado'), valor: (c) => c.estado, texto: (v) => t(`estado.${v}`) },

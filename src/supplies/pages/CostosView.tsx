@@ -1,6 +1,8 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-78/RF-79: acumulado del ciclo, costos directos, correcciones y NIC-41 |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario; el selector de activo se acota a esa finca |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, PencilLine, Coins } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -23,6 +25,7 @@ import { SuministroDirectoFormModal } from '../components/SuministroDirectoFormM
 import { CorreccionSuministroModal } from '../components/CorreccionSuministroModal';
 import { Nic41Panel } from '../components/Nic41Panel';
 import { FILTROS, PANEL, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM } from '../components/estilos';
+import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 
 export function CostosView() {
   const { t } = useT('supplies');
@@ -35,6 +38,7 @@ export function CostosView() {
   const { acumulado, registros, registro, correccion } = useCosteo();
   const [texto, setTexto] = useState('');
   const [idActivo, setIdActivo] = useState<number | null>(null);
+  const [idFinca, setIdFinca] = useState<number | null>(null);
   const [consultado, setConsultado] = useState<number | null>(null);
   const [errorActivo, setErrorActivo] = useState<string>();
   const [formAbierto, setFormAbierto] = useState(false);
@@ -77,8 +81,9 @@ export function CostosView() {
         )}
       />
       <form onSubmit={buscar} style={{ ...FILTROS, marginBottom: 'var(--s5)' }}>
-        <SelectorActivo id="costeo-activo" activos={activos} cargando={cargandoActivos} value={texto} required error={errorActivo} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
-        <div style={{ paddingBottom: 'var(--s1)' }}>
+        <SelectorFinca id="costeo-finca" idFinca={idFinca} onChange={(id) => { setIdFinca(id); setTexto(''); setIdActivo(null); }} />
+        <SelectorActivo id="costeo-activo" activos={activos} cargando={cargandoActivos} idFinca={idFinca} value={texto} required error={errorActivo} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
+        <div className="ds-campo-accion">
           <Button type="submit" variant="secondary" size="md" loading={acumulado.cargando}><Search size={16} aria-hidden />{t('comun.consultar')}</Button>
         </div>
       </form>

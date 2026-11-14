@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: pestañas por permiso, contrato de API, anulación y formulario de consumo |
 // | 2026-11-10 | Arekkazu | TC-DIS-198/200/209/210/218 RF-74/75/81: alerta de CA crítica, foco tras consultar, consumo por individuo, fecha vs fase y paginación con aria-current |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-75: la finca acota los activos y viaja como id_finca |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -95,6 +96,31 @@ describe('AlimentacionView (RF-75)', () => {
     fireEvent.click(within(dialogo).getByRole('button', { name: 'Confirmar anulación' }));
     await waitFor(() => expect(peticiones.find((p) => p.method === 'post')?.url).toBe('/suministros/consumo-alimentos/9/anulacion'));
     expect(JSON.parse(peticiones.find((p) => p.method === 'post')!.data as string)).toEqual({ justificacion_anulacion: 'corto — ración duplicada por error' });
+  });
+
+  it('la finca elegida acota los activos sugeridos y viaja como id_finca', async () => {
+    respuestas['GET /usuarios/me/fincas'] = { data: { items: [
+      { id_finca: 10, nombre: 'La Esperanza', numero_id_tributaria: null, razon_social: null },
+      { id_finca: 20, nombre: 'El Rosal', numero_id_tributaria: null, razon_social: null },
+    ] } };
+    respuestas['GET /activos-biologicos'] = { data: { total_paginas: 1, registros: [
+      { id_activo_biologico: 5, tipo: 'INDIVIDUAL', identificador: 'BOV-ESP', nombre_especie: 'Bovino', nombre_infraestructura: 'Corral',
+        nombre_estado: null, id_finca: 10, nombre_finca: 'La Esperanza' },
+      { id_activo_biologico: 6, tipo: 'INDIVIDUAL', identificador: 'BOV-ROS', nombre_especie: 'Bovino', nombre_infraestructura: 'Corral',
+        nombre_estado: null, id_finca: 20, nombre_finca: 'El Rosal' },
+    ] } };
+    sesion.permisos = [{ id_recurso: 47, id_accion: 2 }];
+    const user = userEvent.setup();
+    render(<MemoryRouter><AlimentacionView /></MemoryRouter>);
+    const finca = await screen.findByRole('combobox', { name: 'Finca' });
+    await user.type(finca, 'El Rosal (#20)');
+    await user.click(screen.getByRole('button', { name: /Mostrar opciones de Activo/ }));
+    const lista = await screen.findByRole('listbox');
+    expect(within(lista).getByText(/BOV-ROS/)).toBeInTheDocument();
+    expect(within(lista).queryByText(/BOV-ESP/)).not.toBeInTheDocument();
+    peticiones.length = 0;
+    await user.click(screen.getByRole('button', { name: 'Buscar' }));
+    await waitFor(() => expect(peticiones.find((p) => p.url === '/suministros/consumo-alimentos')?.params).toMatchObject({ id_finca: 20 }));
   });
 });
 
