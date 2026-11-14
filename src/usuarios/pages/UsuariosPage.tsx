@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-24 | Arekkazu | USAB-M03-M04 T-20: aviso único de sin acceso (AccesoDenegado) |
+// | 2026-11-14 | Arekkazu | QA-M06: fila de campos alineada arriba (CLAUDE.md, filas de campos); el botón va en .ds-campo-accion |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
@@ -132,7 +133,7 @@ export function UsuariosPage() {
       )}
 
       {/* Filtros */}
-      <div style={{ display: 'flex', gap: 'var(--s3)', marginBottom: 'var(--s5)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: 'var(--s3)', marginBottom: 'var(--s5)', flexWrap: 'wrap', alignItems: 'flex-start' }}>
         <div style={{ flex: 1, minWidth: 150 }}>
           <Input
             label={t('usuariospage.nombre')}
@@ -172,7 +173,7 @@ export function UsuariosPage() {
             {estadoOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </Select>
         </div>
-        <div>
+        <div className="ds-campo-accion">
           <Button variant="primary" size="md" onClick={buscar}>
             <Search size={16} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('usuariospage.buscar')}</Button>
         </div>

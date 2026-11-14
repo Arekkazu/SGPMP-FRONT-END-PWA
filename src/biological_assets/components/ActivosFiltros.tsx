@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-14 | Arekkazu | QA-M06: fila de campos alineada arriba (CLAUDE.md, filas de campos) |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Search } from 'lucide-react';
@@ -55,7 +58,7 @@ export function ActivosFiltros({ value, onChange }: Props) {
         display: 'flex',
         gap: 'var(--s4)',
         flexWrap: 'wrap',
-        alignItems: 'flex-end',
+        alignItems: 'flex-start',
         marginBottom: 'var(--s5)',
       }}
     >

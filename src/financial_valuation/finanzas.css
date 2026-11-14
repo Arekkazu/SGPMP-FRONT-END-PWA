@@ -3,13 +3,14 @@
    | 2026-11-05 | Arekkazu | M06 prototipos: período global, indicadores, barra de filtros y pie de tabla |
    | 2026-11-10 | Arekkazu | TC-DIS-249/251/254 RF-90/COT/91: eslabones expandibles y casillas con zona táctil de 48px |
    | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: barra de período con titular, año y período que se acomodan en el celular |
-   | 2026-11-12 | Arekkazu | USAB-M05-M06 R-03 RF-90: tarjetas apiladas por debajo de 900 px y acción de fila fija | */
+   | 2026-11-12 | Arekkazu | USAB-M05-M06 R-03 RF-90: tarjetas apiladas por debajo de 900 px y acción de fila fija |
+   | 2026-11-14 | Arekkazu | QA-M06: período y filtros alineados arriba; el botón de limpiar va en .ds-campo-accion | */
 
 /* Período contable de todo el módulo (en el prototipo vive en la barra superior). */
 .fin-periodo {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start; /* el error del período no sube su select sobre el del año */
   justify-content: flex-end;
   gap: var(--s3);
   padding: var(--s3) var(--page-pad);
@@ -124,7 +125,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: var(--s3) var(--s4);
-  align-items: end;
+  align-items: start; /* la ayuda bajo un filtro no lo desalinea; el botón va en .ds-campo-accion */
   padding: var(--s4) var(--s5);
   border-bottom: 1px solid var(--surface-border);
 }
@@ -135,12 +136,6 @@
 
 @media (min-width: 768px) {
   .fin-filtros__busqueda { grid-column: span 2; }
-}
-
-.fin-filtros__limpiar {
-  display: flex;
-  align-items: flex-end;
-  min-height: var(--s9);
 }
 
 .fin-listado__pie {

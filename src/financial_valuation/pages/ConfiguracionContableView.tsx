@@ -4,6 +4,7 @@
 // | 2026-11-05 | Arekkazu | M06 prototipos: matriz contable con búsqueda y filtros; sin ids en pantalla |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 R-03 RF-82/88: especies en tarjetas en el celular; en tablet «Guardar» a la vista y selectores sin recortar |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 import React, { useEffect, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -85,7 +86,7 @@ function General({ config, puedeEditar, onGuardado }: SeccionProps) {
           {[7, 15, 30].map((d) => <option key={d} value={d}>{t('config.dias', { count: d })}</option>)}
         </Select>
         {puedeEditar && (
-          <div style={{ paddingBottom: 'var(--s1)' }}>
+          <div className="ds-campo-accion">
             <Button type="submit" variant="primary" size="md" loading={guardado.cargando}><Save size={16} aria-hidden />{t('comun.guardar')}</Button>
           </div>
         )}
@@ -261,7 +262,7 @@ function Matriz({ config, puedeCrear, puedeEditar, onGuardado }: SeccionProps & 
           )}
           <Input id="mz-debito" label={t('col.cuenta_debito')} inputMode="numeric" required value={debito} onChange={(e) => setDebito(e.target.value.trim())} error={aviso} />
           <Input id="mz-credito" label={t('col.cuenta_credito')} inputMode="numeric" required value={credito} onChange={(e) => setCredito(e.target.value.trim())} />
-          <div style={{ paddingBottom: 'var(--s1)' }}>
+          <div className="ds-campo-accion">
             <Button type="submit" variant="primary" size="md" loading={alta.cargando}><Plus size={16} aria-hidden />{t('config.asignar')}</Button>
           </div>
         </form>

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-03 | Arekkazu | QA-M02 RF-47: métricas actuales sin «null» ni claves crudas |
+// | 2026-11-14 | Arekkazu | QA-M06: fila de campos alineada arriba (CLAUDE.md, filas de campos) |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { formatearFechaHora } from '../../shared/i18n/formato';
@@ -88,7 +89,7 @@ export function DatosAnaliticosSection({ idActivo }: Props) {
       <div style={CARD}>
         <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
           <BarChart3 size={16} aria-hidden />{t('datosanaliticossection.datos_consolidados')}</h2>
-        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-start' }}>
           <div>
             <label style={LABEL} htmlFor="dc-tipo">{t('datosanaliticossection.tipo_de_dato')}</label>
             <select id="dc-tipo" style={SELECT} value={tipoDato} onChange={(e) => setTipoDato(e.target.value as TipoDato)}>

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-75/RF-76: filtros por activo, rango de fechas y estado |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 import React, { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -56,7 +57,7 @@ export function FiltrosRegistrosBar({ prefijo, activos, cargandoActivos, cargand
         <option value="VALIDADO">{t('estado.VALIDADO')}</option>
         <option value="ANULADO">{t('estado.ANULADO')}</option>
       </Select>
-      <div style={{ display: 'flex', gap: 'var(--s2)', paddingBottom: 'var(--s1)' }}>
+      <div className="ds-campo-accion">
         <Button type="submit" variant="secondary" size="md" loading={cargando}><Search size={16} aria-hidden />{t('comun.buscar')}</Button>
         <Button type="button" variant="ghost" size="md" onClick={limpiar} aria-label={t('comun.limpiar_filtros')}><X size={16} aria-hidden /></Button>
       </div>

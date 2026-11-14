@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-14 | Arekkazu | QA-M06: ninguna fila nueva de campos alineada abajo (la ayuda o el error desalinean los inputs) |
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -13,11 +16,11 @@ import { join, relative } from 'node:path';
 
 const SRC = join(__dirname, '..', '..');
 
-function archivosTsx(dir: string): string[] {
+function archivosTsx(dir: string, extension = /\.tsx$/): string[] {
   return readdirSync(dir).flatMap((entrada) => {
     const ruta = join(dir, entrada);
-    if (statSync(ruta).isDirectory()) return archivosTsx(ruta);
-    return ruta.endsWith('.tsx') ? [ruta] : [];
+    if (statSync(ruta).isDirectory()) return archivosTsx(ruta, extension);
+    return extension.test(ruta) && !ruta.includes('.test.') ? [ruta] : [];
   });
 }
 
@@ -51,5 +54,48 @@ describe('rejillas responsive', () => {
     }
 
     expect(infractores, 'usa la clase .ds-fg2 / .ds-fg3 de Layout.css').toEqual([]);
+  });
+});
+
+// Una fila de campos alineada abajo (`align-items: end`) se ve bien hasta que un
+// campo trae ayuda o error debajo: ese campo se alarga y su input sube sobre los
+// vecinos. Pasó en Suministros, Finanzas y Auditoría, cada vez en una fila nueva.
+// La fila se alinea arriba y sus botones van en `.ds-campo-accion` (Input.css).
+//
+// Estas filas se revisaron el 2026-11-14 y no tienen campos con ayuda ni error
+// debajo: encabezados (título a un lado, control al otro), pestañas, rótulos
+// largos que partirían línea arriba, o filas hechas a mano con su propio ajuste.
+// Si una gana un campo con ayuda o error, sale de aquí y pasa a alinearse arriba.
+const FILAS_REVISADAS = new Set([
+  'shared/design-system/Layout.css', // el modal se apoya abajo (bottom sheet), no es una fila de campos
+  'accounting_integration/pages/ClientesView.tsx',
+  'configuration/components/CiclosProductivosSection.tsx',
+  'financial_valuation/pages/RevelacionesView.tsx',
+  'prediction/components/DistribucionOtaFormModal.tsx',
+  'prediction/components/HistorialFiltros.tsx',
+  'prediction/components/MapaPropagacion.tsx',
+  'prediction/pages/DistribucionOtaView.tsx',
+  'prediction/pages/HistorialView.tsx',
+  'supplies/components/Nic41Panel.tsx',
+  'telemetry/components/DispositivosLista.tsx',
+  'telemetry/pages/MonitoreoView.tsx',
+]);
+
+describe('filas de campos', () => {
+  it('ninguna fila nueva se alinea abajo', () => {
+    const abajo = /align-items:\s*(flex-)?end\b|alignItems:\s*['"](flex-)?end['"]/;
+    const infractores: string[] = [];
+
+    for (const ruta of archivosTsx(SRC, /\.(tsx|ts|css)$/)) {
+      const rel = relative(SRC, ruta).replaceAll('\\', '/');
+      if (FILAS_REVISADAS.has(rel)) continue;
+      readFileSync(ruta, 'utf-8')
+        .split('\n')
+        .forEach((linea, i) => {
+          if (abajo.test(linea)) infractores.push(`${rel}:${i + 1}`);
+        });
+    }
+
+    expect(infractores, 'alinea la fila arriba y pon sus botones en .ds-campo-accion').toEqual([]);
   });
 });

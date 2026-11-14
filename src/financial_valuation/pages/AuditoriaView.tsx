@@ -4,6 +4,7 @@
 // | 2026-11-05 | Arekkazu | M06 RF-94 prototipo: panel de monitoreo por severidad, últimos eventos y exploración filtrada |
 // | 2026-11-10 | Arekkazu | TC-DIS-265/266 RF-94: filtros por fechas, usuario, origen y activo; columnas de período y origen; severidad con icono; detalle del evento |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 import React, { useEffect, useState } from 'react';
 import { Eye, FilterX, ScrollText, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -172,7 +173,7 @@ export function AuditoriaView() {
                 <option value="ASC">{t('aud.orden_asc')}</option>
               </Select>
               {hayFiltros && (
-                <div className="fin-filtros__limpiar">
+                <div className="ds-campo-accion">
                   <Button variant="ghost" size="md" onClick={limpiar}><FilterX size={16} aria-hidden />{t('comun.limpiar_filtros')}</Button>
                 </div>
               )}

@@ -5,6 +5,7 @@
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 // | 2026-11-12 | Arekkazu | TC-DIS-218 RF-80: la paginación muestra la página pedida al instante, sin esperar al servidor |
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 R-01/N-07 RF-80: eventos en tarjetas en el celular; usuario elegido por nombre |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 import React, { useEffect, useState } from 'react';
 import { Search, FileDown, Eye, ScrollText } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -134,7 +135,7 @@ export function AuditoriaView() {
         <datalist id="auditoria-entidades">{ENTIDADES.map((e) => <option key={e} value={e}>{t(`entidad.${e}`, { defaultValue: t('entidad.otra') })}</option>)}</datalist>
         <Input id="auditoria-desde" label={t('comun.desde')} type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
         <Input id="auditoria-hasta" label={t('comun.hasta')} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} error={rangoInvalido ? t('comun.rango_invalido') : undefined} />
-        <div style={{ paddingBottom: 'var(--s1)' }}>
+        <div className="ds-campo-accion">
           <Button type="submit" variant="secondary" size="md" loading={lista.cargando}><Search size={16} aria-hidden />{t('comun.buscar')}</Button>
         </div>
       </form>

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-78/RF-79: acumulado del ciclo, costos directos, correcciones y NIC-41 |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, PencilLine, Coins } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -78,7 +79,7 @@ export function CostosView() {
       />
       <form onSubmit={buscar} style={{ ...FILTROS, marginBottom: 'var(--s5)' }}>
         <SelectorActivo id="costeo-activo" activos={activos} cargando={cargandoActivos} value={texto} required error={errorActivo} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
-        <div style={{ paddingBottom: 'var(--s1)' }}>
+        <div className="ds-campo-accion">
           <Button type="submit" variant="secondary" size="md" loading={acumulado.cargando}><Search size={16} aria-hidden />{t('comun.consultar')}</Button>
         </div>
       </form>

@@ -4,6 +4,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-198/200 RF-74: alerta anunciada al quedar en Crítica, foco sobre el resultado y detalle por cálculo |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 N-06/R-01 RF-74: la clasificación del ICA dice «Eficiencia …» y su rango; historial en tarjetas en el celular |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 import React, { useRef, useState } from 'react';
 import { Calculator, Eye, Search, Gauge as IconoGauge } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -139,7 +140,7 @@ export function EficienciaView() {
         <Select id="ica-periodo" label={t('ica.periodo_evaluacion')} value={periodo} onChange={(e) => setPeriodo(e.target.value as PeriodoEvaluacion)}>
           {PERIODOS_ICA.map((p) => <option key={p} value={p}>{t(`periodo.${p}`)}</option>)}
         </Select>
-        <div style={{ paddingBottom: 'var(--s1)' }}>
+        <div className="ds-campo-accion">
           <Button type="submit" variant="secondary" size="md" loading={vigente.cargando}><Search size={16} aria-hidden />{t('comun.consultar')}</Button>
         </div>
       </form>
