@@ -3,6 +3,7 @@
 // | 2026-10-23 | Arekkazu | M05 RF-77: generar reportes de gastos (síncrono o en cola), exportarlos y consultar el historial |
 // | 2026-11-10 | Arekkazu | CP119/H-M05-03 RF-77: alcance agregado por especie o infraestructura cuando no se elige un activo |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 import React, { useEffect, useState } from 'react';
 import { FileBarChart2, RefreshCw, Eye } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -155,7 +156,7 @@ export function ReporteGastosView() {
             </div>
             {categorias.length === 0 && <span className="ds-field__error" role="alert">{t('gastos.categoria_requerida')}</span>}
           </fieldset>
-          <div style={{ paddingBottom: 'var(--s1)' }}>
+          <div className="ds-campo-accion">
             <Button type="submit" variant="primary" size="md" disabled={!online || idCola !== null} loading={generacion.cargando}>
               <FileBarChart2 size={16} aria-hidden />{t('gastos.generar')}
             </Button>

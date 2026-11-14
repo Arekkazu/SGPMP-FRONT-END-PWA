@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | AJF-01 RF-46: alertas IoT, cambios de riesgo, diagnósticos y contagio en el historial, con icono y enlace |
+// | 2026-11-14 | Arekkazu | QA-M06: fila de campos alineada arriba (CLAUDE.md, filas de campos) |
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BellRing, Brain, Stethoscope, ShieldAlert } from 'lucide-react';
@@ -163,7 +164,7 @@ export function HistorialSection({ idActivo }: Props) {
         <History size={16} aria-hidden />{t('historialsection.historial_consolidado')}</h2>
 
       {/* Filtros */}
-      <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 'var(--s5)' }}>
+      <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: 'var(--s5)' }}>
         <div>
           <label style={LABEL} htmlFor="hist-cat">{t('historialsection.categoria')}</label>
           <select id="hist-cat" style={SELECT} value={categoria} onChange={(e) => setCategoria(e.target.value as '' | CategoriaHistorial)}>

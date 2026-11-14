@@ -7,6 +7,7 @@
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
 // | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Ban, CheckCircle2, Clock, FilterX, Info, RotateCcw, Search, SearchX, XCircle } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
@@ -390,7 +391,7 @@ export function Listado<T>({ l, idBase, titulo, acciones, buscar, sustantivo, ca
             );
           })}
           {l.hayFiltros && (
-            <div className="fin-filtros__limpiar">
+            <div className="ds-campo-accion">
               <Button variant="ghost" size="md" onClick={l.limpiar}><FilterX size={16} aria-hidden />{t('comun.limpiar_filtros')}</Button>
             </div>
           )}

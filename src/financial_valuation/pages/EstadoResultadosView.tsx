@@ -7,6 +7,7 @@
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-12 | Arekkazu | TC-DIS-262/263 RF-93: activo individual y lote poblacional por separado; gráficas vacías con texto y sin «−$ 0» |
 // | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: activo excluido con su motivo en palabras y el resultado que quedó fuera |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 import React, { useEffect, useState } from 'react';
 import { BarChart3, CheckCircle2, Download, FilterX, Plus } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -279,7 +280,7 @@ export function EstadoResultadosView() {
                       {lotes.map((x) => <option key={x.id_activo_biologico} value={x.id_activo_biologico}>{x.identificador} · {x.especie}</option>)}
                     </Select>
                     {hayFiltros && (
-                      <div className="fin-filtros__limpiar">
+                      <div className="ds-campo-accion">
                         <Button variant="ghost" size="md" onClick={() => setFiltro(filtroVacio)}><FilterX size={16} aria-hidden />{t('comun.limpiar_filtros')}</Button>
                       </div>
                     )}
