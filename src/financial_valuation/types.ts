@@ -13,6 +13,7 @@
 // | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: activo excluido del cierre con su motivo y lo que quedó fuera del estado |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
 // | 2026-11-15 | Arekkazu | INC-M06-364-G71 RF-45/RF-93: valor de la venta en la baja e ingreso por venta en el estado de resultados |
+// | 2026-11-15 | Arekkazu | QA-M06 CU08 H-02 RF-89: productos de cada especie en la configuración contable |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -48,6 +49,8 @@ export interface ConfiguracionGeneral {
 export interface ParametroEspecie {
   id_especie: number; especie: string; clasificacion: Clasificacion | null;
   categoria_precio: Exclude<CategoriaPrecio, 'PRODUCTO'> | null; vida_util_meses: number | null;
+  /** Métricas activas de la especie: el Contador no lee Configuración → Métricas (CU08 H-02). */
+  productos?: Array<{ id_metrica_produccion: number; nombre: string; unidad_medida: string }>;
 }
 export interface CostoVenta {
   id_parametro_costo_venta: number; id_especie: number; especie: string;
