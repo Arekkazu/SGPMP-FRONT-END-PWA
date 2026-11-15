@@ -12,6 +12,7 @@
 // | 2026-11-12 | Arekkazu | TC-DIS-256 RF-91: la línea de asiento trae el nombre y el tipo de su activo |
 // | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: activo excluido del cierre con su motivo y lo que quedó fuera del estado |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
+// | 2026-11-15 | Arekkazu | INC-M06-364-G71 RF-45/RF-93: valor de la venta en la baja e ingreso por venta en el estado de resultados |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -245,6 +246,8 @@ export interface ActivoExcluidoCierre {
 export interface Acumulado {
   componentes: Record<string, Dec>; desglose_costos_mantenimiento: Record<string, Dec>; total_ingresos: Dec; total_gastos: Dec;
   resultado_neto: Dec; estado_periodo: string; es_definitivo: boolean;
+  /** Ventas del período registradas sin valor: su ingreso no aparece (INC-M06-364-G71). */
+  ventas_sin_valor?: number;
 }
 export type TipoAjuste = 'AUMENTAR' | 'DISMINUIR';
 export interface InformeResumen {
