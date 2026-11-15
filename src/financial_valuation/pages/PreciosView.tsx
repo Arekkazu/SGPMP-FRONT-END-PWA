@@ -5,7 +5,8 @@
 // | 2026-11-10 | Arekkazu | #510 RF-89: un error al confirmar la desviación se muestra en vez del aviso |
 // | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 N-08 RF-89: «Precio corregido» al guardar una corrección y fila corregida sin «corrija la corrección» |
-import React, { useEffect, useMemo, useState } from 'react';
+// | 2026-11-15 | Arekkazu | QA-M06 CU08 H-02 RF-89: los productos salen de la configuración contable, no de Configuración → Métricas |
+import React, { useEffect, useState } from 'react';
 import { PencilLine, Plus, Tag } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
@@ -17,11 +18,10 @@ import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
 import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
-import { metricasApi } from '../../configuration/api/especiesConfigApi';
 import { decimalPositivo } from '../../supplies/lib/formato';
 import { finanzasApi } from '../api/finanzasApi';
 import { ACCION_C, ACCION_R, R_CONFIGURACION, R_PRECIOS } from '../rbac';
-import type { CategoriaPrecio, FuentePrecio, Precio, PrecioPayload } from '../types';
+import type { CategoriaPrecio, FuentePrecio, ParametroEspecie, Precio, PrecioPayload } from '../types';
 import {
   AreaTexto, EncabezadoVista, EstadoBadge, ErrorApi, Listado, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM,
   formatoFecha, formatoMoneda, useAsync, useListado,
@@ -155,7 +155,7 @@ export function PreciosView() {
 }
 
 function PrecioModal({ especies, corrige, especieInicial, onCerrar, onGuardado }: {
-  especies: Array<{ id_especie: number; especie: string }>; corrige?: Precio; especieInicial?: number; onCerrar: () => void; onGuardado: () => void;
+  especies: ParametroEspecie[]; corrige?: Precio; especieInicial?: number; onCerrar: () => void; onGuardado: () => void;
 }) {
   const { t } = useT('finanzas');
   const [f, setF] = useState({
@@ -167,10 +167,7 @@ function PrecioModal({ especies, corrige, especieInicial, onCerrar, onGuardado }
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [desviacion, setDesviacion] = useState<string | null>(null);
   const registro = useAsync(finanzasApi.registrarPrecio);
-  const metricas = useAsync(metricasApi.listar);
-  const { ejecutar: cargarMetricas } = metricas;
-  useEffect(() => { if (f.categoria === 'PRODUCTO' && f.especie) cargarMetricas(Number(f.especie), true); }, [f.categoria, f.especie, cargarMetricas]);
-  const productos = useMemo(() => (metricas.data ?? []).filter((m) => m.es_activo), [metricas.data]);
+  const productos = especies.find((e) => e.id_especie === Number(f.especie))?.productos ?? [];
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => { setDesviacion(null); setF({ ...f, [k]: e.target.value }); };
 
   const enviar = async (confirmar: boolean) => {
@@ -233,7 +230,7 @@ function PrecioModal({ especies, corrige, especieInicial, onCerrar, onGuardado }
         </Select>
         {f.categoria === 'PRODUCTO' && (
           <Select id="pr-metrica" label={t('precios.producto')} required value={f.metrica} onChange={set('metrica')} error={errores.metrica}
-            disabled={!!corrige || metricas.cargando} hint={f.especie && !metricas.cargando && productos.length === 0 ? t('precios.sin_productos') : undefined}>
+            disabled={!!corrige} hint={f.especie && productos.length === 0 ? t('precios.sin_productos') : undefined}>
             <option value="">{t('comun.elegir')}</option>
             {productos.map((m) => <option key={m.id_metrica_produccion} value={m.id_metrica_produccion}>{m.nombre} ({m.unidad_medida})</option>)}
           </Select>
