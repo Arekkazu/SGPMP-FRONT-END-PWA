@@ -1,0 +1,32 @@
+﻿From https://github.com/Arekkazu/sgpmp-backend
+   94787ed9..c7322b71  dev          -> origin/dev
+ * [new branch]        fix/m05-inc353-g37-auditoria-rechazos-rf79-rf81 -> origin/fix/m05-inc353-g37-auditoria-rechazos-rf79-rf81
+ * [new branch]        fix/m06-reversion-fecha-m02-2026-11-14 -> origin/fix/m06-reversion-fecha-m02-2026-11-14
+ * [new tag]           v1.4.0-rc.65 -> v1.4.0-rc.65
+--- git log origin/test --grep 1118
+96dc71ca65ec0e9022856dae88190add85a586e9 | 2026-11-14T03:12:59Z | 2026-11-14T03:12:59Z | semantic-release-bot | chore(release): 1.4.0-rc.62 [skip ci]
+7cdae5e0321b12653aa6520185aa167cb5f91516 | 2026-11-13T21:40:20-05:00 | 2026-11-13T21:40:20-05:00 | Arekkazu | test(rf92-mod6): las pruebas del lote siguen a los cambios cruzados de #1115, #1117 y #1119
+20920b649dc1f4e2dea4eeff23a3555deb93057b | 2026-11-13T21:40:20-05:00 | 2026-11-13T21:40:20-05:00 | Arekkazu | fix(rf92-mod6): el Revisor Fiscal recibe 403 y no 404 en la descarga del informe y en el estado de resultados no aprobado (RFC-027)
+1187cb192ad0ef8d51e7a7090b44604a3fa06d98 | 2026-10-29T09:14:34-05:00 | 2026-10-29T09:14:34-05:00 | Arekkazu | fix(rf73-prediction): eventos de la bitacora M04 con su tipo y campos minimos (CU09 H-01/H-02/H-03/H-04)
+d00c55247acad876167b1b51e2e49fbde12dca4d | 2026-10-12T20:36:55Z | 2026-10-12T20:36:55Z | semantic-release-bot | chore(release): 1.2.0 [skip ci]
+f1945c65081a340452a4fa5a23c6f8a9d92d7587 | 2026-10-12T04:58:26Z | 2026-10-12T04:58:26Z | semantic-release-bot | chore(release): 1.2.0-rc.6 [skip ci]
+--- ultimo commit en origin/test que toca el caso de uso del reporte
+e3e5bd2572ee99836f15df1ee7b1e0042fabc53b | 2026-11-13T13:29:19-05:00 | 2026-11-13T13:29:19-05:00 | Arekkazu | fix(rf77-mod5): el reporte de gastos avisa el recorte al inicio del ciclo aunque el periodo anterior quede vacio (INC-M05-360-G23)
+e84650d37464db79e35d69d58f45c5aed7c78b60 | 2026-11-10T09:49:02-05:00 | 2026-11-10T09:49:02-05:00 | Arekkazu | Merge PR #1024 (fix/qa-m05-m06-lote-2026-11-08) en la integracion del lote M05/M06
+d2eea05326b568d54c2a0e3fde986da2c5c2b12c | 2026-11-08T16:09:39-05:00 | 2026-11-08T16:09:39-05:00 | Arekkazu | fix(rf74-rf78-mod5): reintentos de fallos tecnicos y textos visibles de suministros
+--- _periodo_anterior en origin/test
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py:345:    def _periodo_anterior(self, filtros: FiltrosReporteGasto, activo,
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-346-                          ids_permitidos: Optional[list[int]]) -> tuple[Decimal, bool, Optional[date]]:
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-347-        """Calcula el gasto del período anterior equivalente (Proceso paso 6 de RF-77)."""
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-348-        dias = filtros.dias
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-349-        fecha_fin_anterior = filtros.fecha_inicio - timedelta(days=1)
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-350-        fecha_inicio_anterior = fecha_fin_anterior - timedelta(days=dias - 1)
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-351-
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-352-        recortado = False
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-353-        fecha_recorte: Optional[date] = None
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-354-        if (
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-355-            activo is not None
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-356-            and activo.fecha_inicio_ciclo is not None
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-357-            and fecha_inicio_anterior < activo.fecha_inicio_ciclo
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-358-        ):
+origin/test:src/supplies/application/use_cases/reporte_gastos/generar_reporte_gastos_use_case.py-359-            # Paso 6: se recorta al inicio del ciclo y se avisa, aunque el período anterior quede vacío

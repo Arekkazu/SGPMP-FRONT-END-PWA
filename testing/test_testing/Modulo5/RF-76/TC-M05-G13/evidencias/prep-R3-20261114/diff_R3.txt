@@ -1,0 +1,109 @@
+diff --git a/evidencias/prep-R3-20261114/pre_R3/tc-m05-g13-registro-medicamento.cy.ts b/tc-m05-g13-registro-medicamento.cy.ts
+index 3500e6e..e56f244 100755
+--- a/evidencias/prep-R3-20261114/pre_R3/tc-m05-g13-registro-medicamento.cy.ts
++++ b/tc-m05-g13-registro-medicamento.cy.ts
+@@ -10,6 +10,7 @@
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | E1-E3: SPA descargada antes del rollback, guarda de ambiente de permisos, CP-06 según RF-76 Proceso 10 |
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | F2: CP-09/CP-10 leen el rótulo asociado (label[for]) del campo de solo lectura; antes no reconocían «Población actual del lote» ni el rótulo fuera de .ds-field__wrap |
+ // | 2026-11-14 | Juan Sebastian Gutierrez  | R2: CP-09/CP-10 con obtenido real (id, rótulo, valor, atributo); solo lectura admite disabled; CP-10 recálculo 20→50→20; observaciones del body del POST y de la región aria-live |
++// | 2026-11-14 | Juan Sebastian Gutierrez  | R3 (mismo reintento 2): sonda GET /sesiones/me/permisos en T00/T99; si falla el ambiente, CP-04..06, CP-09..11 y CP-13 no escriben (sin registros ni correos) |
+ // =====================================================================
+ // TC-M05-G13 · RF-76 · CU03 · Prioridad Alta
+ // Registro de aplicación de medicamento según modalidad (POST /suministros/medicamentos)
+@@ -84,8 +85,13 @@ interface SnapshotInocuidad {
+   activos: Record<number, { http: number; estado: string; x_request_id: string }>;
+   medicamentos: Record<number, SnapshotListado>;
+   auditoria?: { http: number; total?: number; id_maximo?: number | null; x_request_id: string };
++  /** R3: sonda de solo lectura GET /sesiones/me/permisos con el token de la fase. */
++  permisos?: { http: number; error_code: string | null; x_request_id: string };
+ }
+ 
++/** R3: resultado de la sonda de permisos por fase (T00/T99). */
++const permisosSnap: Record<string, { http: number; error_code: string | null; x_request_id: string }> = {};
++
+ interface CorreoReal {
+   paso: string;
+   activo: number;
+@@ -225,6 +231,14 @@ function exigirSandbox(): void {
+     throw new Error('[TC-M05-G13] El sandbox no quedó confirmado en CP-01: se detiene el bloque para no escribir fuera de él.');
+   }
+ }
++/** R3: si el ambiente ya está marcado como inválido, el bloque no escribe (no crea registros ni dispara correos). */
++function bloqueoPorAmbiente(ids: IdCp[]): boolean {
++  if (!ctx.ambienteInvalido) return false;
++  for (const id of ids) {
++    registrar(id, false, `No alcanzado: corrida inválida por ambiente (${ctx.ambienteInvalido}); el bloque no escribe para no crear registros ni enviar correos`);
++  }
++  return true;
++}
+ 
+ // ── Formulario (selectores estables #medicamento-*) ─────────────────────
+ interface DatosForm {
+@@ -392,7 +406,12 @@ function ejecutarSnapshotInocuidad(fase: 'T00' | 'T99', runId: string): Cypress.
+       reqApi(`${fase}-activo-776`, 'GET', `/activos-biologicos/${ACTIVO_POB}`, token).then((a776) =>
+         reqApi(`${fase}-meds-778`, 'GET', `/suministros/medicamentos?id_activo_biologico=${ACTIVO_IND}`, token).then((m778) =>
+           reqApi(`${fase}-meds-776`, 'GET', `/suministros/medicamentos?id_activo_biologico=${ACTIVO_POB}`, token).then((m776) =>
+-            reqApi(`${fase}-auditoria`, 'GET', '/suministros/auditoria', token).then((aud) =>
++            reqApi(`${fase}-auditoria`, 'GET', '/suministros/auditoria', token).then((aud0) =>
++              reqApi(`${fase}-permisos`, 'GET', '/sesiones/me/permisos', token).then((perm) => {
++                permisosSnap[fase] = { http: perm.status, error_code: perm.body?.error_code ?? null, x_request_id: extraerRequestId(perm.headers as Record<string, any>) };
++                return cy.wrap(aud0, { log: false });
++              }),
++            ).then((aud) =>
+               reqApi(`${fase}-rollback`, 'DELETE', `/test-control/runs/${encodeURIComponent(runId)}`).then((rb) => {
+                 ctx.runs.push({ run_id: runId, rollback_http: rb.status });
+                 if (rb.status < 200 || rb.status >= 300) {
+@@ -425,6 +444,7 @@ function ejecutarSnapshotInocuidad(fase: 'T00' | 'T99', runId: string): Cypress.
+                     const ids = items.map((x) => Number(x.id_auditoria_suministro ?? x.id ?? 0)).filter((n) => n > 0);
+                     return { http: aud.status, total, id_maximo: ids.length ? Math.max(...ids) : null, x_request_id: reqId };
+                   })(),
++                  permisos: permisosSnap[fase],
+                 };
+                 return cy.wrap(snap, { log: false });
+               }),
+@@ -469,6 +489,12 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
+     const t00RunId = `tc-m05-g13-t00-${Date.now()}`;
+     ejecutarSnapshotInocuidad('T00', t00RunId).then((snap) => {
+       ctx.t00 = snap;
++      // R3: puerta de ambiente. Si la API de permisos falla, la SPA no puede mostrar Suministros: la corrida no escribirá.
++      const p00 = snap.permisos;
++      ctx.observaciones.push(`T00 permisos HTTP ${p00?.http ?? 'sin respuesta'}${p00?.error_code ? ` (${p00.error_code})` : ''} | X-Request-Id=${p00?.x_request_id || '(sin id)'}`);
++      if (!p00 || p00.http !== 200) {
++        ctx.ambienteInvalido = `T00 GET /sesiones/me/permisos HTTP ${p00?.http ?? 'sin respuesta'} X-Request-Id ${p00?.x_request_id || '(sin id)'}`;
++      }
+       if (snap.auditoria?.http === 200) {
+         ctx.observaciones.push(`T00 auditoría HTTP 200: total=${snap.auditoria.total}, id_maximo=${snap.auditoria.id_maximo}`);
+       } else {
+@@ -609,7 +635,7 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
+                 const hayNo200 = interPermisos.length === 0 || interPermisos.some((p) => p.response?.statusCode !== 200);
+                 if (hayNo200) {
+                   const strReqId = listPermisosReqId.length ? listPermisosReqId.join(', ') : 'ninguno';
+-                  ctx.ambienteInvalido = `permisos HTTP ${strPermisos} X-Request-Id ${strReqId}`;
++                  ctx.ambienteInvalido = (ctx.ambienteInvalido ? `${ctx.ambienteInvalido} ; ` : '') + `UI permisos HTTP ${strPermisos} X-Request-Id ${strReqId}`;
+                 }
+               });
+             });
+@@ -627,6 +653,7 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
+ 
+   it('CP-04..CP-06 · registro INDIVIDUAL (activo 778) desde la UI', () => {
+     exigirSandbox();
++    if (bloqueoPorAmbiente(['CP-04', 'CP-05', 'CP-06'])) return;
+     const fechaFin = sumarDias(ctx.hoy, 7);
+ 
+     const verificarUI = () => {
+@@ -743,6 +770,7 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
+   it('CP-09..CP-11 · registro POBLACIONAL (activo 776) desde la UI', () => {
+     exigirSandbox();
+     if (ctx.enviado2) return; // reintento: el POST ya salió, no se duplica
++    if (bloqueoPorAmbiente(['CP-09', 'CP-10', 'CP-11'])) return;
+ 
+     cy.document({ log: false }).then((doc) => {
+       if (!dialogo(doc)) abrirFormulario();
+@@ -857,6 +885,7 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
+   it('CP-13 · dosis_por_individuo enviada en el body no se acepta como entrada', () => {
+     exigirSandbox();
+     if (ctx.enviado13) return; // reintento: no se repite la escritura
++    if (bloqueoPorAmbiente(['CP-13'])) return;
+     cy.apiSandbox({ method: 'POST', path: '/suministros/medicamentos', body: cuerpoPostDirecto() }).then((r) => {
+       ctx.enviado13 = true;
+       const reqIdPost = extraerRequestId(r.headers as Record<string, any>);

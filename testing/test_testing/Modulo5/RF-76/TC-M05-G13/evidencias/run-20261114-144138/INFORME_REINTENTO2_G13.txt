@@ -1,0 +1,569 @@
+================================================================================
+INFORME DE REEVALUACIÓN (REINTENTO 2) — TC-M05-G13 (RF-76)
+Ambiente: TEST oficial (https://api.inmero.co/sigab-test)
+Fecha: 2026-11-14
+Staging: C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-76\TC-M05-G13\evidencias\run-20261114-144138
+================================================================================
+
+0. CONTROL PREVIO (PARTE 0)
+--------------------------------------------------------------------------------
+0.1 Staging creado:
+    C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-76\TC-M05-G13\evidencias\run-20261114-144138
+    Verificación Test-Path: True
+
+0.2 SHA-256 iniciales de archivos de control (Get-FileHash):
+    tc-m05-g13-registro-medicamento.cy.ts: DE6880C37BC454C079EDF7A1C11B69E74BD83F5D11837B1034C515FDB7DD28AC (COINCIDE)
+    commands.ts:                          8C5CCED4BF64492584B0ADCEA9B0D54D59664513726F94892E516D60E1532CB7 (COINCIDE)
+    cypress.config.js:                    7CAFD300F9551C01344531488503394BCD556B758F1BBB705214C269BB28EB3F (COINCIDE)
+
+0.3 Inventario de TC\resultados\ antes de ejecución:
+    .gitkeep                             | 0 bytes    | 2026-11-06 15:39:12 | E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
+    resultado_TC-M05-G13.json            | 4420 bytes | 2026-11-06 19:43:26 | 4DA139DEA9A57A84B1E01587EC1F6075EDE4BFCA5F321AD1C2FC0891636A0464
+    resultado_TC-M05-G13_reintento1.json | 9795 bytes | 2026-11-12 13:32:46 | AFC7D3318C9833D5288A4012BCA1D437A90F7961273944A4D51BC1554F2947B5
+    Archivos con patrón *reintento2* encontrados previamente en el TC: 0
+
+0.4 Inventario del reintento 1 (resultado_TC-M05-G13_reintento1.json):
+    Veredicto: Rechazado (12 OK / 2 FALLA)
+    Tabla completa de checkpoints (14 filas):
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------
+    paso | esperado | fuente | obtenido | estado
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------
+    CP-01 Sandbox + login Veterinario | Sandbox aceptado por el backend antes del login y ruta distinta de /login | RF-76 Precondiciones 1 (RF-02); Actores (Veterinario); procedimiento QA del sandbox | ruta /sigab-test/dashboard; sandbox confirmado por el backend: sí; token capturado: sí; peticiones con sandbox: 4 | OK
+    CP-02 Navegación Suministros → Medicamentos | Ruta /suministros/medicamentos y título «Aplicación de medicamentos» visible | RF-76 Proceso 1 | ruta /sigab-test/suministros/medicamentos; menú Suministros: sí; pestaña Medicamentos: sí; título visible: sí | captura=CP-02_navegacion | OK
+    CP-03 Abrir formulario de registro | Botón «Registrar aplicación» habilitado; se abre role=dialog | RF-76 Proceso 3 | botón habilitado: sí; diálogo abierto: sí | captura=CP-03_formulario | OK
+    CP-04 Llenar formulario INDIVIDUAL (activo 778) | Campos diligenciados, fecha por defecto = hoy (Bogotá), hora 08:00 y sin errores de campo | RF-76 Proceso 4-5; Entradas (fecha_aplicacion, hora_aplicacion) | fecha por defecto 2026-11-12 (hoy 2026-11-12); hora 08:00; errores de campo: ninguno | OK
+    CP-05 Guardar INDIVIDUAL → respuesta API | 201 (200 solo si ya estaba EN_TRATAMIENTO); VALIDADO; fecha_fin_retiro = hoy+7; costo_total_medicamento = 5000; dosis_por_individuo = null; body sin dosis_por_individuo | RF-76 Proceso 8a; Restricción 6; Salida 1 y 4; HTTP según openapi TEST; VALIDADO según nota del caso G13 | HTTP 201; estado_registro=VALIDADO; fecha_fin_retiro=2026-11-19 (esperada 2026-11-19); costo_total_medicamento=5000.0000; dosis_por_individuo (clave presente: sí; valor: null); body sin dosis_por_individuo | X-Request-Id=236f9e2e-e2ff-407e-9ef4-a97130b33d68 | OK
+    CP-06 UI tras registrar INDIVIDUAL | Toast de éxito con el resumen del registro, incluida la fecha de fin de retiro (hoy+7) | RF-76 Proceso 10; Salida 6 | Aplicación registrada El medicamento fue registrado correctamente. El período de retiro vigente del activo se extiende hasta 2026-11-19. | OK
+    CP-07 Estado del activo 778 (RF-44) | GET /activos-biologicos/778 → EN_TRATAMIENTO | RF-76 CA-3; Restricción 7 (vía RF-44) | HTTP 200; estado EN_TRATAMIENTO (inicial ACTIVO) | X-Request-Id=740a5e8d-a4f4-4954-97e8-5ad4f202275c | OK
+    CP-08 Precondición activo 776 | GET /activos-biologicos/776 → ACTIVO, POBLACIONAL, cantidad_actual = 10 | RF-76 Proceso 2; Dependencia RF-36 (cantidad_actual) | HTTP 200; tipo POBLACIONAL; estado ACTIVO; cantidad_actual 10 | OK
+    CP-09 Cantidad actual visible en el formulario (776) | Al elegir #776 se muestra la cantidad actual (10) en solo lectura | RF-76 Proceso 4 (POBLACIONAL: cantidad_actual en solo lectura) | el formulario no muestra la cantidad actual del activo poblacional | captura=CP-09_cantidad_776 | FALLA
+    CP-10 Dosis por individuo en vivo (776) | Al escribir dosis 20 aparece la dosis por individuo 2,0 en el formulario | RF-76 Proceso 4 (POBLACIONAL: dosis_por_individuo calculada en tiempo real) | el formulario no muestra la dosis por individuo al escribir 20 | captura=CP-10_dosis_776 | FALLA
+    CP-11 Guardar POBLACIONAL → respuesta API | 201 (200 solo si ya estaba EN_TRATAMIENTO); VALIDADO; dosis_por_individuo = "2.0000"; costo_total_medicamento = 4000; fecha_fin_retiro = hoy+3 | RF-76 CA-2; Restricciones 6 y 8; Proceso 8a; Salida 3 y 4; HTTP según openapi TEST | HTTP 201; estado_registro=VALIDADO; fecha_fin_retiro=2026-11-15 (esperada 2026-11-15); costo_total_medicamento=4000.0000; dosis_por_individuo="2.0000"; body sin dosis_por_individuo | X-Request-Id=f076f42f-6ab9-4df9-88ad-472f62a19fc5 | OK
+    CP-12 Estado del activo 776 (RF-44) | GET /activos-biologicos/776 → EN_TRATAMIENTO | RF-76 CA-3; Restricción 7 (vía RF-44) | HTTP 200; estado EN_TRATAMIENTO (inicial ACTIVO) | X-Request-Id=fd3a6710-445b-46e4-8bfe-bb49564cf428 | OK
+    CP-13 dosis_por_individuo enviada en el body (999) | 4xx, o 2xx con dosis_por_individuo = "2.0000"; nunca queda guardado 999 | RF-76 Restricción 8 (dosis_por_individuo calculada y de solo lectura); nota 2 del caso G13 | HTTP 200; respuesta dosis_por_individuo="2.0000"; guardado="2.0000" | X-Request-Id=8e47f7d6-aa29-44a3-8a1d-0f407c1c9541 | OK
+    CP-14 Rollback del sandbox y verificación fuera de él | Rollback 2xx; sin sandbox no aparecen los registros de la corrida y 778/776 conservan su estado inicial | Verificado por API: T99 vs T00 (listado completo por activo: total, id máximo y ausencia de los ids creados) | Procedimiento QA del sandbox transaccional (no es requisito de RF-76) | rollback HTTP 200; 778 estado T00=ACTIVO/T99=ACTIVO (reqId=d82e56c1-a8d8-474b-89b9-240d0008944c); 776 estado T00=ACTIVO/T99=ACTIVO (reqId=6d9e38ac-4022-4098-96f6-228a4e23114a); 778 meds T00(tot=0,max=null)/T99(tot=0,max=null,reqId=39d31a7e-cdce-4876-8e76-e70e622c0fff); 776 meds T00(tot=0,max=null)/T99(tot=0,max=null,reqId=1bcf29d2-7ca8-4c2d-a454-b204c9abf515); ids creados (275, 276, 277): id 778 #275 presente: NO; id 776 #276 presente: NO; id 776 #277 presente: NO | OK
+
+1. ANÁLISIS DEL CÓDIGO DEL FIX (0.5)
+--------------------------------------------------------------------------------
+Commits relacionados:
+  - Primer commit que introduce cada ID:
+    Commit: 37caa5c499fb52ff390fc9069c753130468649ec
+    Fecha de autor:  2026-11-10T22:47:31-05:00
+    Fecha de commit: 2026-11-10T22:47:31-05:00
+    Autor: Arekkazu
+    Mensaje: fix(rf74-rf94-mod5-mod6): accesibilidad y desviaciones de la primera evaluacion QA de suministros y finanzas
+  - Commits posteriores de verificación/accesibilidad en test:
+    7b36b883b970173c5a72bf65b532fe4a7076cf29 | 2026-11-11T22:55:15-05:00 | Laura032005 | test(m05): reejecutar TC-DIS-214 con datos reales del DBA (RF-76)
+    67a967f1f67023883f6a9a57fe16a7e15910125a | 2026-11-12T00:14:10-05:00 | Arekkazu    | fix(rf75-rf76-rf78-rf80-rf81-mod5): foco tras el rechazo de un duplicado y pagina pedida al instante (2a evaluacion QA)
+    c800e720c8d8aced3aa5d7775248924ec49d95de | 2026-11-13T11:02:34-05:00 | Laura032005 | test(m05): reconfirmar TC-DIS-214 tras el fix de foco en el rechazo de duplicado (409) (RF-RF-76)
+    a0736eaf3c341528e49e21e94f1de72ae0ab06d1 | 2026-11-13T11:05:14-05:00 | Laura032005 | Merge pull request #665 from Arekkazu/test-access-tc-dis-214
+
+Archivo y líneas de ambos campos en origin/test:
+  Archivo: src/supplies/components/MedicamentoFormModal.tsx
+  Línea 159:
+    <Input id="medicamento-cantidad-actual" label={t('consumo.cantidad_actual')} value={textoPoblacion} readOnly aria-readonly="true" tabIndex={-1} />
+  Línea 160:
+    <Input id="medicamento-dosis-por-individuo" label={t('medicamento.dosis_individuo_unidad', { unidad })} value={textoIndividuo} readOnly aria-readonly="true" tabIndex={-1} />
+  Línea 172 (región aria-live asociada):
+    <p aria-live="polite" style={{ margin: 0, fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)' }}>
+
+Atributos de solo lectura:
+  Ambos campos tienen explícitamente: readOnly aria-readonly="true" tabIndex={-1}
+  Cita de línea: readOnly aria-readonly="true" tabIndex={-1}
+
+Respuesta explícita:
+  ¿El primer commit que introduce cada id es anterior o posterior a 2026-11-06T16:42-05:00 (ronda 1)?
+  RESPUESTA: Es POSTERIOR a 2026-11-06T16:42-05:00.
+  El commit 37caa5c499fb52ff390fc9069c753130468649ec fue creado el 2026-11-10T22:47:31-05:00 (4 días después de la ronda 1).
+
+2. CONTROL DE DESPLIEGUE EN TEST (0.6)
+--------------------------------------------------------------------------------
+URL base: https://api.inmero.co/sigab-test/
+Total de archivos analizados: 49 scripts JS descargados del host oficial.
+Hallazgos específicos:
+  - SuministrosPage-BEYsq-o6.js (Tamaño: 102324 bytes, SHA-256: 7D65D7C38633046911286B1C1ADB32AF96FE9E9DB2EC6E6FDAF8E571ED64743E):
+    * medicamento-cantidad-actual: 1 coincidencia
+    * medicamento-dosis-por-individuo: 1 coincidencia
+  - index-CqQonju6.js e index-legacy-Ds1fEm8s.js:
+    * Población actual: 1 coincidencia en catálogos de traducción.
+Evidencia generada: staging\despliegue_bundle.txt
+Veredicto Puerta 0.6: PASÓ. La corrección se encuentra efectivamente construida y servida en el bundle del ambiente TEST.
+
+3. DIFF APLICADO (CONTENIDO COMPLETO DE diff_R2.txt)
+--------------------------------------------------------------------------------
+diff --git "a/C:\\Users\\Juansegutt\\Integrador\\SGPMP-FRONT-END-PWA\\testing\\test_testing\\Modulo5\\RF-76\\TC-M05-G13\\evidencias\\run-20261114-144138\\pre_R2\\tc-m05-g13-registro-medicamento.cy.ts" "b/C:\\Users\\Juansegutt\\Integrador\\SGPMP-FRONT-END-PWA\\testing\\test_testing\\Modulo5\\RF-76\\TC-M05-G13\\tc-m05-g13-registro-medicamento.cy.ts"
+index d6dfd899..3500e6ea 100644
+--- "a/C:\\Users\\Juansegutt\\Integrador\\SGPMP-FRONT-END-PWA\\testing\\test_testing\\Modulo5\\RF-76\\TC-M05-G13\\evidencias\\run-20261114-144138\\pre_R2\\tc-m05-g13-registro-medicamento.cy.ts"
++++ "b/C:\\Users\\Juansegutt\\Integrador\\SGPMP-FRONT-END-PWA\\testing\\test_testing\\Modulo5\\RF-76\\TC-M05-G13\\tc-m05-g13-registro-medicamento.cy.ts"
+@@ -9,6 +9,7 @@
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | C1-C7 reintento 1 (navegador limpio tras T00, guarda retries/screenshots, correos_reales, CP-07/12 no alcanzado, capturas, traza auth) |
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | E1-E3: SPA descargada antes del rollback, guarda de ambiente de permisos, CP-06 según RF-76 Proceso 10 |
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | F2: CP-09/CP-10 leen el rótulo asociado (label[for]) del campo de solo lectura; antes no reconocían «Población actual del lote» ni el rótulo fuera de .ds-field__wrap |
++// | 2026-11-14 | Juan Sebastian Gutierrez  | R2: CP-09/CP-10 con obtenido real (id, rótulo, valor, atributo); solo lectura admite disabled; CP-10 recálculo 20→50→20; observaciones del body del POST y de la región aria-live |
+ // =====================================================================
+ // TC-M05-G13 · RF-76 · CU03 · Prioridad Alta
+ // Registro de aplicación de medicamento según modalidad (POST /suministros/medicamentos)
+@@ -50,7 +51,7 @@ const ESPERADOS: Record<IdCp, { paso: string; esperado: string; fuente: string }
+   'CP-07': { paso: 'CP-07 Estado del activo 778 (RF-44)', esperado: 'GET /activos-biologicos/778 → EN_TRATAMIENTO', fuente: 'RF-76 CA-3; Restricción 7 (vía RF-44)' },
+   'CP-08': { paso: 'CP-08 Precondición activo 776', esperado: 'GET /activos-biologicos/776 → ACTIVO, POBLACIONAL, cantidad_actual = 10', fuente: 'RF-76 Proceso 2; Dependencia RF-36 (cantidad_actual)' },
+   'CP-09': { paso: 'CP-09 Cantidad actual visible en el formulario (776)', esperado: 'Al elegir #776 se muestra la cantidad actual (10) en solo lectura', fuente: 'RF-76 Proceso 4 (POBLACIONAL: cantidad_actual en solo lectura)' },
+-  'CP-10': { paso: 'CP-10 Dosis por individuo en vivo (776)', esperado: 'Al escribir dosis 20 aparece la dosis por individuo 2,0 en el formulario', fuente: 'RF-76 Proceso 4 (POBLACIONAL: dosis_por_individuo calculada en tiempo real)' },
++  'CP-10': { paso: 'CP-10 Dosis por individuo en vivo (776)', esperado: 'Al escribir dosis 20 aparece la dosis por individuo 2 en un campo de solo lectura; al cambiarla a 50 se recalcula a 5 y al volver a 20, a 2 (sin guardar)', fuente: 'RF-76 Proceso 4 (POBLACIONAL: dosis_por_individuo calculada en tiempo real = dosis_total / cantidad_actual) y Restricción 8 (calculado automáticamente y de solo lectura)' },
+   'CP-11': { paso: 'CP-11 Guardar POBLACIONAL → respuesta API', esperado: '201 (200 solo si ya estaba EN_TRATAMIENTO); VALIDADO; dosis_por_individuo = "2.0000"; costo_total_medicamento = 4000; fecha_fin_retiro = hoy+3', fuente: 'RF-76 CA-2; Restricciones 6 y 8; Proceso 8a; Salida 3 y 4; HTTP según openapi TEST' },
+   'CP-12': { paso: 'CP-12 Estado del activo 776 (RF-44)', esperado: 'GET /activos-biologicos/776 → EN_TRATAMIENTO', fuente: 'RF-76 CA-3; Restricción 7 (vía RF-44)' },
+   'CP-13': { paso: 'CP-13 dosis_por_individuo enviada en el body (999)', esperado: '4xx, o 2xx con dosis_por_individuo = "2.0000"; nunca queda guardado 999', fuente: 'RF-76 Restricción 8 (dosis_por_individuo calculada y de solo lectura); nota 2 del caso G13' },
+@@ -176,20 +177,41 @@ function rotuloDe(doc: Document, campo: HTMLInputElement): string {
+ /** F2: campos de solo lectura dentro del diálogo. */
+ function camposSoloLectura(d: HTMLElement): HTMLInputElement[] {
+   return Array.from(d.querySelectorAll<HTMLInputElement>('input')).filter(
+-    (i) => i.readOnly || i.getAttribute('aria-readonly') === 'true',
++    (i) => i.readOnly || i.getAttribute('aria-readonly') === 'true' || i.disabled,
+   );
+ }
++/** A3: Detalle de todos los inputs cuyo rótulo cumpla re (sean o no de solo lectura). */
++function detalleCampos(doc: Document, re: RegExp): string {
++  const d = dialogo(doc);
++  if (!d) return 'sin diálogo abierto';
++  const inputs = Array.from(d.querySelectorAll<HTMLInputElement>('input')).filter((i) => re.test(rotuloDe(doc, i)));
++  if (inputs.length === 0) return 'ningún campo del diálogo tiene un rótulo que cumpla ' + re.source;
++  return inputs
++    .map((i) => {
++      const rot = rotuloDe(doc, i).slice(0, 60);
++      const ariaRo = i.getAttribute('aria-readonly') || 'no';
++      return `id=${i.id || 'sin id'}; rótulo="${rot}"; valor="${i.value}"; readonly=${i.readOnly}; aria-readonly=${ariaRo}; disabled=${i.disabled}`;
++    })
++    .join(' || ');
++}
+ /** CP-09: ¿hay en el diálogo un campo de solo lectura rotulado como cantidad/población actual con el valor 10? */
+ function muestraCantidadActual(doc: Document): boolean {
+   const d = dialogo(doc);
+   if (!d) return false;
+   return camposSoloLectura(d).some((i) => RE.cantidad.test(rotuloDe(doc, i)) && i.value.trim() === String(CANTIDAD_POB));
+ }
++/** A4: Validador de dosis por individuo para cualquier valor n. */
++function muestraDosisValor(n: number): (doc: Document) => boolean {
++  const reValor = new RegExp(`^\\s*${n}([.,]0+)?(\\s|$)`);
++  return (doc: Document) => {
++    const d = dialogo(doc);
++    if (!d) return false;
++    return camposSoloLectura(d).some((i) => RE.dosisInd.test(rotuloDe(doc, i)) && reValor.test(i.value));
++  };
++}
+ /** CP-10: ¿hay en el diálogo un campo de solo lectura rotulado como dosis por individuo con el valor 2 (2,0 / 2.000 / 2 ml)? */
+ function muestraDosisPorIndividuo(doc: Document): boolean {
+-  const d = dialogo(doc);
+-  if (!d) return false;
+-  return camposSoloLectura(d).some((i) => RE.dosisInd.test(rotuloDe(doc, i)) && /^\s*2([.,]0+)?(\s|$)/.test(i.value));
++  return muestraDosisValor(2)(doc);
+ }
+ 
+ function num(v: unknown): number {
+@@ -726,18 +748,59 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
+       if (!dialogo(doc)) abrirFormulario();
+     });
+ 
+-    // CP-09 · cantidad actual en solo lectura (DEFECTO CONOCIDO: hoy no existe)
++    // CP-09 · cantidad actual en solo lectura
+     elegirActivo(ACTIVO_POB);
+     cy.esperarCondicion(muestraCantidadActual, 8000).then((ok) => {
+-      registrar('CP-09', ok, (ok ? `se muestra la cantidad actual ${CANTIDAD_POB} en solo lectura` : 'el formulario no muestra la cantidad actual del activo poblacional') + ' | captura=CP-09_cantidad_776');
+-      cy.screenshot('CP-09_cantidad_776');
++      cy.document({ log: false }).then((doc) => {
++        const det = detalleCampos(doc, RE.cantidad);
++        const obtenido = ok
++          ? `${det} | captura=CP-09_cantidad_776`
++          : `PENDIENTE_DIAGNOSTICO | no hay campo de solo lectura rotulado como cantidad/población actual con valor 10 | ${det} | captura=CP-09_cantidad_776`;
++        registrar('CP-09', ok, obtenido);
++        cy.screenshot('CP-09_cantidad_776');
++      });
+     });
+ 
+-    // CP-10 · dosis por individuo en vivo (DEFECTO CONOCIDO: hoy no existe)
+-    cy.get('#medicamento-dosis').clear().type(String(DOSIS_POB));
+-    cy.esperarCondicion(muestraDosisPorIndividuo, 8000).then((ok) => {
+-      registrar('CP-10', ok, (ok ? 'se muestra la dosis por individuo 2,0 en vivo' : `el formulario no muestra la dosis por individuo al escribir ${DOSIS_POB}`) + ' | captura=CP-10_dosis_776');
+-      cy.screenshot('CP-10_dosis_776');
++    // CP-10 · dosis por individuo en vivo
++    cy.get('#medicamento-dosis').clear().type('20');
++    cy.esperarCondicion(muestraDosisValor(2), 8000).then((v20a) => {
++      cy.document({ log: false }).then((doc20a) => {
++        const d20a = detalleCampos(doc20a, RE.dosisInd);
++        cy.screenshot('CP-10a_dosis20_776');
++
++        cy.get('#medicamento-dosis').clear().type('50');
++        cy.esperarCondicion(muestraDosisValor(5), 8000).then((v50) => {
++          cy.document({ log: false }).then((doc50) => {
++            const d50 = detalleCampos(doc50, RE.dosisInd);
++            cy.screenshot('CP-10b_dosis50_776');
++
++            cy.get('#medicamento-dosis').clear().type(String(DOSIS_POB));
++            cy.esperarCondicion(muestraDosisValor(2), 8000).then((v20b) => {
++              cy.document({ log: false }).then((doc20b) => {
++                const d20b = detalleCampos(doc20b, RE.dosisInd);
++                cy.screenshot('CP-10c_dosis20_776');
++
++                const ok10 = v20a && v50 && v20b;
++                let obtenido10 = `dosis 20 → ${v20a ? 'OK' : 'NO'} ${d20a} ; dosis 50 → ${v50 ? 'OK' : 'NO'} ${d50} ; dosis 20 → ${v20b ? 'OK' : 'NO'} ${d20b} | capturas=CP-10a_dosis20_776,CP-10b_dosis50_776,CP-10c_dosis20_776`;
++                if (!ok10) {
++                  obtenido10 = `PENDIENTE_DIAGNOSTICO | ${obtenido10}`;
++                }
++                registrar('CP-10', ok10, obtenido10);
++
++                const dlg = dialogo(doc20b);
++                const liveEls = dlg ? Array.from(dlg.querySelectorAll('[aria-live]')) : [];
++                if (liveEls.length === 0) {
++                  ctx.observaciones.push('CP-10 aria-live: sin región aria-live en el diálogo');
++                } else {
++                  for (const el of liveEls) {
++                    ctx.observaciones.push(`CP-10 aria-live: «${texto(el)}»`);
++                  }
++                }
++              });
++            });
++          });
++        });
++      });
+     });
+ 
+     // CP-11 · se evalúa aunque CP-09/CP-10 fallen
+@@ -745,6 +808,11 @@ describe(`${TC} · RF-76 · Registro de aplicación de medicamento según modali
+     interceptarPost('postPob');
+     cy.contains('[role="dialog"] button', RE.guardar).click();
+     cy.wait('@postPob', { timeout: 60000 }).then((inter) => {
++      const tieneDosisInd = Object.prototype.hasOwnProperty.call(inter.request.body, 'dosis_por_individuo');
++      ctx.observaciones.push(
++        'CP-11 body del POST UI: dosis_por_individuo ' +
++          (tieneDosisInd ? `presente=${inter.request.body.dosis_por_individuo}` : 'ausente'),
++      );
+       ctx.enviado2 = true;
+       const r = evaluarRegistro(inter, ACTIVO_POB, 3, 4000, 2);
+       registrarTraza({
+
+
+4. VERIFICACIÓN ESTÁTICA Y SHA FINALES
+--------------------------------------------------------------------------------
+- tsc --noEmit -p TC\tsconfig.json: Ejecutado. Los únicos errores corresponden a tipos preexistentes en cy.get('@permisos.all') y carpetas archivadas; ningún error introducido por A1..A8.
+- cypress verify: SUCCESS (Verified Cypress! C:\Users\Juansegutt\AppData\Local\Cypress\Cache\13.17.0\Cypress)
+- Búsquedas en spec, commands.ts y cypress.config.js:
+    * /test-control/query: 0 coincidencias
+    * it.only / it.skip / describe.only / describe.skip: 0 coincidencias
+    * Credenciales en claro: 0 coincidencias
+- Retries configurado y efectivo: 0 (cypress.config.js { runMode: 0, openMode: 0 } y guarda estricta en spec)
+- Archivo git_diff_HEAD_G13.txt: Generado en staging (10403 bytes)
+- SHA-256 finales:
+    tc-m05-g13-registro-medicamento.cy.ts: 3E5AC2F24111B54E4DA87B821351D7BC9036541D1CDB4783E3785143007090EB
+    commands.ts:                          8C5CCED4BF64492584B0ADCEA9B0D54D59664513726F94892E516D60E1532CB7 (IDÉNTICO A 0.2)
+    cypress.config.js:                    7CAFD300F9551C01344531488503394BCD556B758F1BBB705214C269BB28EB3F (IDÉNTICO A 0.2)
+
+5. EJECUCIÓN OFICIAL ÚNICA
+--------------------------------------------------------------------------------
+Comando ejecutado: staging\scripts\ejecutar_oficial_2.ps1
+  -> pnpm exec cypress run --browser chrome --spec 'tc-m05-g13-registro-medicamento.cy.ts'
+Exit code: 3 (registrado en exit_code.txt)
+Inicio:    2026-11-14T14:48:10.8184354-05:00
+Fin:       2026-11-14T14:51:15.0252242-05:00
+Duración total: 3m 4s (tiempo Cypress spec: 2m 11s)
+Runs y Rollbacks ejecutados:
+  1. Run T00:       tc-m05-g13-t00-1794685742972 | Rollback HTTP: 200 (x_request_id: c6114100-9fa8-4320-bf67-395eae2ff037)
+  2. Run Principal: tc-m05-g13-1794685742843     | Rollback HTTP: 200 (x_request_id: 0130bfb1-090d-458e-9845-a56967bdeab5)
+  3. Run T99:       tc-m05-g13-t99-1794685873288 | Rollback HTTP: 200 (x_request_id: fad7e44f-beb4-416e-9e38-1c5a6f0bed54)
+
+DIAGNÓSTICO CRÍTICO DE AMBIENTE:
+  Durante la navegación inicial de la sesión, la llamada obligatoria del frontend:
+  GET /sesiones/me/permisos
+  Retornó HTTP 500 (ERROR_INTERNO) con X-Request-Id: 5682def0-3057-4b8a-afb2-96e4b7b95df2.
+  Consecuencia: La SPA no pudo inicializar la matriz de permisos del usuario Veterinario autenticado, por lo que
+  el ítem de menú 'Suministros' no se renderizó en el sidebar de la UI (menú Suministros: no; pestaña Medicamentos: no).
+  Al no poder navegar al formulario por la UI, los pasos UI quedaron bloqueados.
+  La guarda de ambiente del spec detectó el error 500 en permisos y marcó la corrida como:
+  'Corrida inválida por ambiente: permisos HTTP 500 X-Request-Id 5682def0-3057-4b8a-afb2-96e4b7b95df2'
+  Guardando el reporte computable como run_INVALIDA_20261114-145114.json en el staging.
+
+6. TABLA CONSOLIDADA DE CHECKPOINTS (14 FILAS REALES)
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+paso | esperado (fuente) | obtenido REAL | estado | X-Request-Id / Captura
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+CP-01 | Sandbox aceptado por el backend antes del login y ruta distinta de /login (RF-76 Precondiciones 1 (RF-02); Actores (Veterinario); procedimiento QA del sandbox) | ruta /sigab-test/dashboard; sandbox confirmado por el backend: sí; token capturado: sí; peticiones con sandbox: 4 | OK | N/A
+CP-02 | Ruta /suministros/medicamentos y título «Aplicación de medicamentos» visible (RF-76 Proceso 1) | ruta /sigab-test/suministros; menú Suministros: no; pestaña Medicamentos: no; título visible: no | captura=CP-02_navegacion | FALLA | CP-02_navegacion.png (Permisos HTTP 500)
+CP-03 | Botón «Registrar aplicación» habilitado; se abre role=dialog (RF-76 Proceso 3) | botón habilitado: no; diálogo abierto: no | captura=CP-03_formulario | FALLA | CP-03_formulario.png
+CP-04 | Campos diligenciados, fecha por defecto = hoy (Bogotá), hora 08:00 y sin errores de campo (RF-76 Proceso 4-5; Entradas (fecha_aplicacion, hora_aplicacion)) | No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress). | FALLA | N/A
+CP-05 | 201 (200 solo si ya estaba EN_TRATAMIENTO); VALIDADO; fecha_fin_retiro = hoy+7; costo_total_medicamento = 5000; dosis_por_individuo = null; body sin dosis_por_individuo (RF-76 Proceso 8a; Restricción 6; Salida 1 y 4; HTTP según openapi TEST; VALIDADO según nota del caso G13) | No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress). | FALLA | N/A
+CP-06 | Toast de éxito con el resumen del registro, incluida la fecha de fin de retiro (hoy+7) (RF-76 Proceso 10; Salida 6) | No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress). | FALLA | N/A
+CP-07 | GET /activos-biologicos/778 → EN_TRATAMIENTO (RF-76 CA-3; Restricción 7 (vía RF-44)) | No alcanzado: CP-05 no registró la aplicación (No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).); estado actual ACTIVO | X-Request-Id=45adae38-aa88-4f86-93c0-3a95f1223697 | FALLA | X-Request-Id=45adae38-aa88-4f86-93c0-3a95f1223697
+CP-08 | GET /activos-biologicos/776 → ACTIVO, POBLACIONAL, cantidad_actual = 10 (RF-76 Proceso 2; Dependencia RF-36 (cantidad_actual)) | HTTP 200; tipo POBLACIONAL; estado ACTIVO; cantidad_actual 10 | OK | N/A
+CP-09 | Al elegir #776 se muestra la cantidad actual (10) en solo lectura (RF-76 Proceso 4 (POBLACIONAL: cantidad_actual en solo lectura)) | No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress). | FALLA | N/A
+CP-10 | Al escribir dosis 20 aparece la dosis por individuo 2 en un campo de solo lectura; al cambiarla a 50 se recalcula a 5 y al volver a 20, a 2 (sin guardar) (RF-76 Proceso 4 (POBLACIONAL: dosis_por_individuo calculada en tiempo real = dosis_total / cantidad_actual) y Restricción 8 (calculado automáticamente y de solo lectura)) | No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress). | FALLA | N/A
+CP-11 | 201 (200 solo si ya estaba EN_TRATAMIENTO); VALIDADO; dosis_por_individuo = "2.0000"; costo_total_medicamento = 4000; fecha_fin_retiro = hoy+3 (RF-76 CA-2; Restricciones 6 y 8; Proceso 8a; Salida 3 y 4; HTTP según openapi TEST) | No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress). | FALLA | N/A
+CP-12 | GET /activos-biologicos/776 → EN_TRATAMIENTO (RF-76 CA-3; Restricción 7 (vía RF-44)) | No alcanzado: CP-11 no registró la aplicación (No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).); estado actual ACTIVO | X-Request-Id=5e9abb88-f6b0-4cfc-bee4-9bebd0127df9 | FALLA | X-Request-Id=5e9abb88-f6b0-4cfc-bee4-9bebd0127df9
+CP-13 | 4xx, o 2xx con dosis_por_individuo = "2.0000"; nunca queda guardado 999 (RF-76 Restricción 8 (dosis_por_individuo calculada y de solo lectura); nota 2 del caso G13) | HTTP 201; respuesta dosis_por_individuo="2.0000"; guardado="2.0000" | X-Request-Id=976d55ce-bf2b-40fd-949b-9f75b7dfcf1a | OK | X-Request-Id=976d55ce-bf2b-40fd-949b-9f75b7dfcf1a
+CP-14 | Rollback 2xx; sin sandbox no aparecen los registros de la corrida y 778/776 conservan su estado inicial | Verificado por API: T99 vs T00 (listado completo por activo: total, id máximo y ausencia de los ids creados) (Procedimiento QA del sandbox transaccional (no es requisito de RF-76)) | rollback HTTP 200; 778 estado T00=ACTIVO/T99=ACTIVO (reqId=1a83206c-230e-480c-9006-d1bbb7037473); 776 estado T00=ACTIVO/T99=ACTIVO (reqId=85c57205-f297-49cf-a4af-c9608f3ab0a3); 778 meds T00(tot=0,max=null)/T99(tot=0,max=null,reqId=d6ae1dc9-73d5-4dbd-9144-024820528565); 776 meds T00(tot=0,max=null)/T99(tot=0,max=null,reqId=8c1e7b19-22e1-4bcf-abd3-dd86437e6543); ids creados (283): id 776 #283 presente: NO | OK | Rollback HTTP 200
+
+7. OBSERVACIONES Y DECLARACIÓN DE CORREOS REALES
+--------------------------------------------------------------------------------
+Observaciones registradas en el JSON:
+  1. T00 auditoría HTTP 403
+  2. Navegador limpiado tras T00: cookies restantes 0
+  3. auth: permisos HTTP 500; refresh HTTP ninguno
+  4. Corrida inválida por ambiente: permisos HTTP 500 X-Request-Id 5682def0-3057-4b8a-afb2-96e4b7b95df2
+
+DECLARACIÓN DE CORREOS REALES DE AVISO DE RETIRO (Regla 10):
+  El rollback del sandbox revierte fielmente los registros en la base de datos PostgreSQL, pero el backend
+  despacha correos reales de aviso de retiro que no se pueden deshacer. Se declaran a continuación los datos:
+  - Paso:                    CP-13
+  - Activo involucrado:      776 (POBLACIONAL)
+  - ID Registro Medicamento: 283
+  - Período de retiro:       3 días
+  - Hora UTC de despacho:    2026-11-14T19:51:12.918Z
+  - Respuesta API:           HTTP 201 Created
+  (Nota: En esta corrida no se generaron correos para CP-05 ni CP-11 debido al bloqueo previo de navegación UI).
+
+8. INOCUIDAD, ESCANEO DE SECRETOS Y ESTADO DE RESULTADOS
+--------------------------------------------------------------------------------
+8.1 Inocuidad de Base de Datos (B5):
+    Comparación T00 vs T99:
+      - Activo 778: Estado T00 = ACTIVO | Estado T99 = ACTIVO (IDÉNTICO)
+      - Activo 776: Estado T00 = ACTIVO | Estado T99 = ACTIVO (IDÉNTICO)
+      - Medicamentos 778: Total T00 = 0 | Total T99 = 0 | Máximo ID = null (IDÉNTICO)
+      - Medicamentos 776: Total T00 = 0 | Total T99 = 0 | Máximo ID = null (IDÉNTICO)
+      - Verificación del ID creado #283 fuera del sandbox: NO PRESENTE en T99
+    Conclusión: Delta = 0. Inocuidad 100% confirmada. La base de datos quedó en el estado original exacto.
+
+8.2 Escaneo de Secretos (B4):
+    Archivos auditados en staging (.json, .txt, .html, .log, .xml, .md, .jsonl): 8 archivos
+    Patrones buscados (en memoria, sin imprimir): VET_PASSWORD (completa y últimos 20 caracteres),
+    TEST_SANDBOX_SECRET (completa y últimos 20 caracteres), VET_EMAIL y prefijo JWT ('ey' + 'J').
+    Resultado: TOTAL DE HALLAZGOS = 0 (Limpio).
+
+8.3 Estado del directorio oficial TC\resultados\ (Regla 8):
+    .gitkeep                             | 0 bytes    | SHA-256: E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
+    resultado_TC-M05-G13.json            | 4420 bytes | SHA-256: 4DA139DEA9A57A84B1E01587EC1F6075EDE4BFCA5F321AD1C2FC0891636A0464
+    resultado_TC-M05-G13_reintento1.json | 9795 bytes | SHA-256: AFC7D3318C9833D5288A4012BCA1D437A90F7961273944A4D51BC1554F2947B5
+    El directorio permanece 100% intacto; ningún archivo fue copiado, movido ni alterado.
+
+ANEXO: JSON COMPLETO DE LA CORRIDA (run_INVALIDA_20261114-145114.json)
+--------------------------------------------------------------------------------
+{
+  "tc": "TC-M05-G13",
+  "reintento": 2,
+  "summary": {
+    "total": 14,
+    "ok": 4,
+    "falla": 10,
+    "veredicto": "Rechazado"
+  },
+  "checkpoints": [
+    {
+      "paso": "CP-01 Sandbox + login Veterinario",
+      "esperado": "Sandbox aceptado por el backend antes del login y ruta distinta de /login",
+      "fuente": "RF-76 Precondiciones 1 (RF-02); Actores (Veterinario); procedimiento QA del sandbox",
+      "obtenido": "ruta /sigab-test/dashboard; sandbox confirmado por el backend: sÃ­; token capturado: sÃ­; peticiones con sandbox: 4",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02 NavegaciÃ³n Suministros â†’ Medicamentos",
+      "esperado": "Ruta /suministros/medicamentos y tÃ­tulo Â«AplicaciÃ³n de medicamentosÂ» visible",
+      "fuente": "RF-76 Proceso 1",
+      "obtenido": "ruta /sigab-test/suministros; menÃº Suministros: no; pestaÃ±a Medicamentos: no; tÃ­tulo visible: no | captura=CP-02_navegacion",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-03 Abrir formulario de registro",
+      "esperado": "BotÃ³n Â«Registrar aplicaciÃ³nÂ» habilitado; se abre role=dialog",
+      "fuente": "RF-76 Proceso 3",
+      "obtenido": "botÃ³n habilitado: no; diÃ¡logo abierto: no | captura=CP-03_formulario",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-04 Llenar formulario INDIVIDUAL (activo 778)",
+      "esperado": "Campos diligenciados, fecha por defecto = hoy (BogotÃ¡), hora 08:00 y sin errores de campo",
+      "fuente": "RF-76 Proceso 4-5; Entradas (fecha_aplicacion, hora_aplicacion)",
+      "obtenido": "No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-05 Guardar INDIVIDUAL â†’ respuesta API",
+      "esperado": "201 (200 solo si ya estaba EN_TRATAMIENTO); VALIDADO; fecha_fin_retiro = hoy+7; costo_total_medicamento = 5000; dosis_por_individuo = null; body sin dosis_por_individuo",
+      "fuente": "RF-76 Proceso 8a; RestricciÃ³n 6; Salida 1 y 4; HTTP segÃºn openapi TEST; VALIDADO segÃºn nota del caso G13",
+      "obtenido": "No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-06 UI tras registrar INDIVIDUAL",
+      "esperado": "Toast de Ã©xito con el resumen del registro, incluida la fecha de fin de retiro (hoy+7)",
+      "fuente": "RF-76 Proceso 10; Salida 6",
+      "obtenido": "No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-07 Estado del activo 778 (RF-44)",
+      "esperado": "GET /activos-biologicos/778 â†’ EN_TRATAMIENTO",
+      "fuente": "RF-76 CA-3; RestricciÃ³n 7 (vÃ­a RF-44)",
+      "obtenido": "No alcanzado: CP-05 no registrÃ³ la aplicaciÃ³n (No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).); estado actual ACTIVO | X-Request-Id=45adae38-aa88-4f86-93c0-3a95f1223697",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-08 PrecondiciÃ³n activo 776",
+      "esperado": "GET /activos-biologicos/776 â†’ ACTIVO, POBLACIONAL, cantidad_actual = 10",
+      "fuente": "RF-76 Proceso 2; Dependencia RF-36 (cantidad_actual)",
+      "obtenido": "HTTP 200; tipo POBLACIONAL; estado ACTIVO; cantidad_actual 10",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-09 Cantidad actual visible en el formulario (776)",
+      "esperado": "Al elegir #776 se muestra la cantidad actual (10) en solo lectura",
+      "fuente": "RF-76 Proceso 4 (POBLACIONAL: cantidad_actual en solo lectura)",
+      "obtenido": "No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-10 Dosis por individuo en vivo (776)",
+      "esperado": "Al escribir dosis 20 aparece la dosis por individuo 2 en un campo de solo lectura; al cambiarla a 50 se recalcula a 5 y al volver a 20, a 2 (sin guardar)",
+      "fuente": "RF-76 Proceso 4 (POBLACIONAL: dosis_por_individuo calculada en tiempo real = dosis_total / cantidad_actual) y RestricciÃ³n 8 (calculado automÃ¡ticamente y de solo lectura)",
+      "obtenido": "No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-11 Guardar POBLACIONAL â†’ respuesta API",
+      "esperado": "201 (200 solo si ya estaba EN_TRATAMIENTO); VALIDADO; dosis_por_individuo = \"2.0000\"; costo_total_medicamento = 4000; fecha_fin_retiro = hoy+3",
+      "fuente": "RF-76 CA-2; Restricciones 6 y 8; Proceso 8a; Salida 3 y 4; HTTP segÃºn openapi TEST",
+      "obtenido": "No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-12 Estado del activo 776 (RF-44)",
+      "esperado": "GET /activos-biologicos/776 â†’ EN_TRATAMIENTO",
+      "fuente": "RF-76 CA-3; RestricciÃ³n 7 (vÃ­a RF-44)",
+      "obtenido": "No alcanzado: CP-11 no registrÃ³ la aplicaciÃ³n (No alcanzado: un paso previo del mismo bloque se detuvo (ver la salida de Cypress).); estado actual ACTIVO | X-Request-Id=5e9abb88-f6b0-4cfc-bee4-9bebd0127df9",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-13 dosis_por_individuo enviada en el body (999)",
+      "esperado": "4xx, o 2xx con dosis_por_individuo = \"2.0000\"; nunca queda guardado 999",
+      "fuente": "RF-76 RestricciÃ³n 8 (dosis_por_individuo calculada y de solo lectura); nota 2 del caso G13",
+      "obtenido": "HTTP 201; respuesta dosis_por_individuo=\"2.0000\"; guardado=\"2.0000\" | X-Request-Id=976d55ce-bf2b-40fd-949b-9f75b7dfcf1a",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-14 Rollback del sandbox y verificaciÃ³n fuera de Ã©l",
+      "esperado": "Rollback 2xx; sin sandbox no aparecen los registros de la corrida y 778/776 conservan su estado inicial | Verificado por API: T99 vs T00 (listado completo por activo: total, id mÃ¡ximo y ausencia de los ids creados)",
+      "fuente": "Procedimiento QA del sandbox transaccional (no es requisito de RF-76)",
+      "obtenido": "rollback HTTP 200; 778 estado T00=ACTIVO/T99=ACTIVO (reqId=1a83206c-230e-480c-9006-d1bbb7037473); 776 estado T00=ACTIVO/T99=ACTIVO (reqId=85c57205-f297-49cf-a4af-c9608f3ab0a3); 778 meds T00(tot=0,max=null)/T99(tot=0,max=null,reqId=d6ae1dc9-73d5-4dbd-9144-024820528565); 776 meds T00(tot=0,max=null)/T99(tot=0,max=null,reqId=8c1e7b19-22e1-4bcf-abd3-dd86437e6543); ids creados (283): id 776 #283 presente: NO",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "T00 auditorÃ­a HTTP 403",
+    "Navegador limpiado tras T00: cookies restantes 0",
+    "auth: permisos HTTP 500; refresh HTTP ninguno",
+    "Corrida invÃ¡lida por ambiente: permisos HTTP 500 X-Request-Id 5682def0-3057-4b8a-afb2-96e4b7b95df2"
+  ],
+  "retirados": [],
+  "correos_reales": [
+    {
+      "paso": "CP-13",
+      "activo": 776,
+      "id_registro_medicamento": 283,
+      "periodo_retiro_dias": 3,
+      "hora_utc": "2026-11-14T19:51:12.918Z",
+      "http": 201
+    }
+  ],
+  "inocuidad": {
+    "t00": {
+      "run_id": "tc-m05-g13-t00-1794685742972",
+      "rollback_http": 200,
+      "activos": {
+        "776": {
+          "http": 200,
+          "estado": "ACTIVO",
+          "x_request_id": "4a4ac520-bffc-4a9a-ba5e-0d959a1086ef"
+        },
+        "778": {
+          "http": 200,
+          "estado": "ACTIVO",
+          "x_request_id": "2530675a-6b3f-4d52-a0ef-8fad3f917dd4"
+        }
+      },
+      "medicamentos": {
+        "776": {
+          "http": 200,
+          "completo": true,
+          "total": 0,
+          "items_count": 0,
+          "id_maximo": null,
+          "ids": [],
+          "x_request_id": "11bbd772-a299-457f-b9be-49130004873f"
+        },
+        "778": {
+          "http": 200,
+          "completo": true,
+          "total": 0,
+          "items_count": 0,
+          "id_maximo": null,
+          "ids": [],
+          "x_request_id": "9fd1c8e3-b70b-40c5-b060-ddf3fa00b3ae"
+        }
+      },
+      "auditoria": {
+        "http": 403,
+        "x_request_id": "edbbdb36-743a-4495-a243-97f909aefbb1"
+      }
+    },
+    "t99": {
+      "run_id": "tc-m05-g13-t99-1794685873288",
+      "rollback_http": 200,
+      "activos": {
+        "776": {
+          "http": 200,
+          "estado": "ACTIVO",
+          "x_request_id": "85c57205-f297-49cf-a4af-c9608f3ab0a3"
+        },
+        "778": {
+          "http": 200,
+          "estado": "ACTIVO",
+          "x_request_id": "1a83206c-230e-480c-9006-d1bbb7037473"
+        }
+      },
+      "medicamentos": {
+        "776": {
+          "http": 200,
+          "completo": true,
+          "total": 0,
+          "items_count": 0,
+          "id_maximo": null,
+          "ids": [],
+          "x_request_id": "8c1e7b19-22e1-4bcf-abd3-dd86437e6543"
+        },
+        "778": {
+          "http": 200,
+          "completo": true,
+          "total": 0,
+          "items_count": 0,
+          "id_maximo": null,
+          "ids": [],
+          "x_request_id": "d6ae1dc9-73d5-4dbd-9144-024820528565"
+        }
+      },
+      "auditoria": {
+        "http": 403,
+        "x_request_id": "4fc47a35-3b44-40b0-ade8-3624259aa9cb"
+      }
+    }
+  },
+  "runs": [
+    {
+      "run_id": "tc-m05-g13-t00-1794685742972",
+      "rollback_http": 200
+    },
+    {
+      "run_id": "tc-m05-g13-1794685742843",
+      "rollback_http": 200
+    },
+    {
+      "run_id": "tc-m05-g13-t99-1794685873288",
+      "rollback_http": 200
+    }
+  ]
+}
+================================================================================
+FIN DEL INFORME

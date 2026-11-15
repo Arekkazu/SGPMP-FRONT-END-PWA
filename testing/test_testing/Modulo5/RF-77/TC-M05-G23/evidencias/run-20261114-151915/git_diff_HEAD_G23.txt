@@ -1,0 +1,137 @@
+﻿warning: in the working copy of 'testing/test_testing/Modulo5/RF-77/TC-M05-G23/tc-m05-g23-reporte-gastos-exportacion.cy.ts', LF will be replaced by CRLF the next time Git touches it
+diff --git a/testing/test_testing/Modulo5/RF-77/TC-M05-G23/tc-m05-g23-reporte-gastos-exportacion.cy.ts b/testing/test_testing/Modulo5/RF-77/TC-M05-G23/tc-m05-g23-reporte-gastos-exportacion.cy.ts
+index ffabc88d..42301db3 100644
+--- a/testing/test_testing/Modulo5/RF-77/TC-M05-G23/tc-m05-g23-reporte-gastos-exportacion.cy.ts
++++ b/testing/test_testing/Modulo5/RF-77/TC-M05-G23/tc-m05-g23-reporte-gastos-exportacion.cy.ts
+@@ -5,6 +5,7 @@
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | G1-G3 reintento 1 (INC-M05-269-G23): salida al staging, CP-08C/D/E (encabezado, desglose, tendencia) |
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | G6: CP-08C toma área/especie de /configuracion; CP-08D compara el monto por valor |
+ // | 2026-11-12 | Juan Sebastian Gutierrez  | G7: CP-08C usa nombre_infraestructura (campo real del esquema) |
++// | 2026-11-14 | Juan Sebastian Gutierrez  | H1-H5 reintento 2 (INC CP-08E, PR backend #1118): CP-08E exige las dos notas también en la API; CP-08F nuevo (recorte parcial, API); rollback_http real en runs |
+ // =====================================================================
+ // TC-M05-G23 · RF-77 · Prioridad Alta
+ // Reporte de gastos acumulados por activo y exportación a formatos PDF y CSV
+@@ -24,7 +25,7 @@ type Estado = 'OK' | 'FALLA' | 'NO_EVALUADO' | 'NO_EJECUTABLE';
+ interface Checkpoint { paso: string; esperado: string; obtenido: string; estado: Estado }
+ type IdCp =
+   | 'CP-01' | 'CP-02' | 'CP-03' | 'CP-04' | 'CP-05'
+-  | 'CP-06' | 'CP-07' | 'CP-08A' | 'CP-08B' | 'CP-08C' | 'CP-08D' | 'CP-08E' | 'CP-09';
++  | 'CP-06' | 'CP-07' | 'CP-08A' | 'CP-08B' | 'CP-08C' | 'CP-08D' | 'CP-08E' | 'CP-08F' | 'CP-09';
+ 
+ const TC = 'TC-M05-G23';
+ const ACTIVO_ID = 57;
+@@ -45,6 +46,8 @@ const ARCHIVO_RESULTADO = `${STG}/resultado_${TC}_reintento${REINTENTO}.json`;
+ const FECHA_INICIO_CICLO = '2026-01-01'; // activo 57 (ver cabecera)
+ const NOTA_SIN_BASE = 'No existen gastos registrados en el período anterior equivalente. No es posible calcular variación porcentual.';
+ const NOTA_RECORTE = `El período anterior fue recortado al inicio del ciclo productivo (${FECHA_INICIO_CICLO}).`;
++// H4: rango del recorte PARCIAL (153 días): anterior 2025-09-29..2026-02-28 -> recortado a 2026-01-01..2026-02-28.
++const FECHA_DESDE_PARCIAL = '2026-03-01';
+ 
+ /** Texto del PDF con espacios y guiones normalizados (pdf-parse corta líneas). */
+ function norm(t: string): string {
+@@ -102,7 +105,11 @@ const ESPERADOS: Record<IdCp, { paso: string; esperado: string }> = {
+   },
+   'CP-08E': {
+     paso: 'CP-08E Tendencia y notas en el PDF',
+-    esperado: `El PDF muestra la tendencia sin base comparativa con la nota «${NOTA_SIN_BASE}» y la nota «${NOTA_RECORTE}» (RF-77 Proceso paso 6; CA-9)`,
++    esperado: `La API (tendencia.estado = SIN_BASE_COMPARATIVA; tendencia.nota) y el PDF muestran la tendencia sin base comparativa con la nota «${NOTA_SIN_BASE}» y la nota «${NOTA_RECORTE}» (RF-77 Proceso paso 6; CA-9)`,
++  },
++  'CP-08F': {
++    paso: 'CP-08F Recorte parcial del período anterior (API, regresión)',
++    esperado: `POST /suministros/reportes-gastos del activo 57, ${FECHA_DESDE_PARCIAL} a ${FECHA_HASTA} (153 días; anterior 2025-09-29 a 2026-02-28, recortado al 2026-01-01) -> 200, tendencia.estado = SIN_BASE_COMPARATIVA y tendencia.nota con «${NOTA_SIN_BASE}» y «${NOTA_RECORTE}» (RF-77 Proceso paso 6; criterio de re-prueba del INC)`,
+   },
+   'CP-09': {
+     paso: 'CP-09 Aislamiento post-rollback sin sandbox',
+@@ -145,7 +152,9 @@ const ctx = {
+   cTypePdf: '' as string,
+   cDispPdf: '' as string,
+   rollbackHecho: false,
++  rollbackHttp: null as number | null,
+   reporte: null as any,
++  bodyReporte: null as any,
+   observaciones: [] as string[],
+ };
+ 
+@@ -336,6 +345,7 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+       const id = body.id_reporte_gasto_acumulado ?? body.id;
+       const gastoTotal = String(body.gasto_total_acumulado ?? '');
+       ctx.reporte = body;
++      ctx.bodyReporte = interception.request?.body ?? null; // H3: cuerpo real que envía la UI (para CP-08F)
+       ctx.idReporte = typeof id === 'number' ? id : Number(id) || null;
+ 
+       cy.get('#reporte-titulo', { timeout: 10000 }).then(($tit) => {
+@@ -707,11 +717,47 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+       const nota1 = texto.includes(norm(NOTA_SIN_BASE));
+       const nota2 = texto.includes(norm(NOTA_RECORTE));
+       const tApi: any = ctx.reporte?.tendencia || {};
++      const notaApi = norm(String(tApi.nota ?? ''));
++      const apiEstadoOk = tApi.estado === 'SIN_BASE_COMPARATIVA';
++      const apiNota1 = notaApi.includes(norm(NOTA_SIN_BASE));
++      const apiNota2 = notaApi.includes(norm(NOTA_RECORTE));
+       const idx = texto.search(/Tendencia/i);
+       registrar(
+         'CP-08E',
+-        estadoOk && nota1 && nota2,
+-        `estado sin base comparativa en PDF: ${estadoOk ? 'sí' : 'no'}; nota sin base: ${nota1 ? 'sí' : 'no'}; nota recorte: ${nota2 ? 'sí' : 'no'} | API tendencia.estado=${tApi.estado}; API nota=«${tApi.nota ?? ''}» | texto PDF «${idx >= 0 ? texto.slice(idx, idx + 260) : 'sin tendencia'}»`,
++        estadoOk && nota1 && nota2 && apiEstadoOk && apiNota1 && apiNota2,
++        `PDF: estado sin base comparativa: ${estadoOk ? 'sí' : 'no'}; nota sin base: ${nota1 ? 'sí' : 'no'}; nota recorte: ${nota2 ? 'sí' : 'no'} | API: estado SIN_BASE_COMPARATIVA: ${apiEstadoOk ? 'sí' : 'no'}; nota sin base: ${apiNota1 ? 'sí' : 'no'}; nota recorte: ${apiNota2 ? 'sí' : 'no'} | API tendencia.estado=${tApi.estado}; API nota=«${tApi.nota ?? ''}» | texto PDF «${idx >= 0 ? texto.slice(idx, idx + 260) : 'sin tendencia'}»`,
++      );
++    });
++  });
++
++  // -------------------------------------------------------------------
++  // CP-08F (H4): recorte PARCIAL del período anterior, por API dentro del sandbox
++  // -------------------------------------------------------------------
++  it('CP-08F · recorte parcial del período anterior (API, regresión del INC)', () => {
++    exigirSandbox();
++    const base = ctx.bodyReporte;
++    if (!base || typeof base !== 'object') {
++      registrar('CP-08F', false, 'No alcanzado: no se capturó el cuerpo del POST de CP-03');
++      return;
++    }
++    const cuerpo: Record<string, any> = { ...base };
++    const claves = Object.keys(cuerpo).filter((k) => cuerpo[k] === FECHA_DESDE);
++    if (claves.length !== 1) {
++      registrar('CP-08F', false, `PENDIENTE_DIAGNOSTICO | el cuerpo de CP-03 no tiene exactamente un campo con ${FECHA_DESDE}; claves: ${Object.keys(base).join(', ')}`);
++      return;
++    }
++    cuerpo[claves[0]] = FECHA_DESDE_PARCIAL;
++    cy.apiSandbox({ method: 'POST', path: '/suministros/reportes-gastos', body: cuerpo }).then((r) => {
++      const t: any = r.body?.tendencia || {};
++      const nota = norm(String(t.nota ?? ''));
++      const n1 = nota.includes(norm(NOTA_SIN_BASE));
++      const n2 = nota.includes(norm(NOTA_RECORTE));
++      const reqId = String((r.headers as any)?.['x-request-id'] || 'N/A');
++      const ok = r.status === 200 && t.estado === 'SIN_BASE_COMPARATIVA' && n1 && n2;
++      registrar(
++        'CP-08F',
++        ok,
++        `${ok ? '' : 'PENDIENTE_DIAGNOSTICO | '}HTTP ${r.status}; campo cambiado ${claves[0]}=${FECHA_DESDE_PARCIAL}; id_reporte=${r.body?.id_reporte_gasto_acumulado ?? r.body?.id ?? '-'}; gasto_total_acumulado=${r.body?.gasto_total_acumulado ?? '-'}; tendencia.estado=${t.estado}; nota sin base: ${n1 ? 'sí' : 'no'}; nota recorte: ${n2 ? 'sí' : 'no'}; nota=«${t.nota ?? ''}» | X-Request-Id=${reqId}`,
+       );
+     });
+   });
+@@ -734,6 +780,7 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+ 
+     cy.rollbackSandbox(RUN_ID).then((resRollback) => {
+       ctx.rollbackHecho = true;
++      ctx.rollbackHttp = resRollback.status;
+       const rollbackOk = resRollback.status >= 200 && resRollback.status < 300;
+ 
+       if (!rollbackOk) {
+@@ -955,6 +1002,7 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+     if (!ctx.rollbackHecho) {
+       cy.rollbackSandbox(RUN_ID).then((res) => {
+         ctx.rollbackHecho = true;
++        ctx.rollbackHttp = res.status;
+         const cp = resultados.get('CP-09');
+         if (cp && cp.estado === 'FALLA' && cp.obtenido.startsWith('No alcanzado')) {
+           registrar('CP-09', false, `No alcanzado; rollback de respaldo en after() -> HTTP ${res.status}`);
+@@ -987,7 +1035,7 @@ describe(`${TC} · RF-77 · Reporte de gastos acumulados y exportación PDF/CSV`
+         summary: { total: cpsFinal.length, ok: okN, falla: fallaN, veredicto: fallaN === 0 && okN > 0 ? 'Aprobado' : 'Rechazado' },
+         checkpoints: cpsFinal,
+         observaciones: ctx.observaciones,
+-        runs: [{ run_id: RUN_ID, rollback_http: ctx.rollbackHecho ? 'ver consola' : 'no ejecutado' }],
++        runs: [{ run_id: RUN_ID, rollback_http: ctx.rollbackHttp ?? 'no ejecutado' }],
+       };
+ 
+       const reporteParcial = {

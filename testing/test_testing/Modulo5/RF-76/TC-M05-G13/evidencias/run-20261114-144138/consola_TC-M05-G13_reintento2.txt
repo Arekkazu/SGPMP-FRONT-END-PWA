@@ -1,0 +1,104 @@
+﻿
+node.exe : 
+En C:\nvm4w\nodejs\pnpm.ps1: 16 Carácter: 5
++     & "$basedir/node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs"  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+DevTools listening on ws://127.0.0.1:64994/devtools/browser/93f3fa46-c1cb-4673-9563-3e33e584b71a
+Missing baseUrl in compilerOptions. tsconfig-paths will be skipped
+[TC-M05-G13] API HOST resuelto: api.inmero.co
+[TC-M05-G13] APP BASE PATH: /sigab-test
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        13.17.0                                                                        │
+  │ Browser:        Chrome 157 (headless)                                                          │
+  │ Node Version:   v26.1.0 (C:\nvm4w\nodejs\node.exe)                                             │
+  │ Specs:          1 found (tc-m05-g13-registro-medicamento.cy.ts)                                │
+  │ Searched:       C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo │
+  │                 5\RF-76\TC-M05-G13\tc-m05-g13-registro-medicamento.cy.ts                       │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  tc-m05-g13-registro-medicamento.cy.ts                                           (1 of 1)
+
+
+  TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+    √ CP-01..CP-03 · login del Veterinario dentro del sandbox y apertura del formulario (96658ms)
+    1) CP-04..CP-06 · registro INDIVIDUAL (activo 778) desde la UI
+    √ CP-07 · el activo 778 queda EN_TRATAMIENTO (RF-44) (201ms)
+    √ CP-08 · precondición del activo poblacional 776 (183ms)
+    2) CP-09..CP-11 · registro POBLACIONAL (activo 776) desde la UI
+    √ CP-12 · el activo 776 queda EN_TRATAMIENTO (RF-44) (190ms)
+    √ CP-13 · dosis_por_individuo enviada en el body no se acepta como entrada (2770ms)
+    √ CP-14 · rollback del sandbox y verificación fuera de él (1494ms)
+    3) Veredicto · la corrida falla si hay al menos un checkpoint en FALLA
+  [writeResult] -> C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\RF-76\TC-M05-G13\evidencias\run-20261114-144138\run_INVALIDA_20261114-145114.json
+
+
+  6 passing (2m)
+  3 failing
+
+  1) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       CP-04..CP-06 · registro INDIVIDUAL (activo 778) desde la UI:
+     AssertionError: Timed out retrying after 15000ms: Expected to find element: `#medicamento-fecha`, but never found it.
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:561:0)
+
+  2) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       CP-09..CP-11 · registro POBLACIONAL (activo 776) desde la UI:
+     AssertionError: Timed out retrying after 15000ms: Expected to find element: `#medicamento-activo`, but never found it.
+      at elegirActivo (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:200:0)
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:635:0)
+
+  3) TC-M05-G13 · RF-76 · Registro de aplicación de medicamento según modalidad
+       Veredicto · la corrida falla si hay al menos un checkpoint en FALLA:
+     AssertionError: Checkpoints en FALLA: CP-02, CP-03, CP-04, CP-05, CP-06, CP-07, CP-09, CP-10, CP-11, CP-12: expected [ Array(10) ] to have a length of 0 but got 10
+      at Context.eval (webpack://tc-m05-g13-registro-medicamento/./tc-m05-g13-registro-medicamento.cy.ts:835:79)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        9                                                                                │
+  │ Passing:      6                                                                                │
+  │ Failing:      3                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  2                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     2 minutes, 11 seconds                                                            │
+  │ Spec Ran:     tc-m05-g13-registro-medicamento.cy.ts                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\     (1258x622)
+     RF-76\TC-M05-G13\evidencias\run-20261114-144138\screenshots\tc-m05-g13-registro-               
+     medicamento.cy.ts\CP-02_navegacion.png                                                         
+  -  C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo5\     (1258x622)
+     RF-76\TC-M05-G13\evidencias\run-20261114-144138\screenshots\tc-m05-g13-registro-               
+     medicamento.cy.ts\CP-03_formulario.png                                                         
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ×  tc-m05-g13-registro-medicamento.cy.      02:11        9        6        3        -        - │
+  │    ts                                                                                          │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ×  1 of 1 failed (100%)                     02:11        9        6        3        -        -  
+
