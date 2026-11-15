@@ -1,3 +1,9 @@
+## [1.4.0-rc.47](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.46...v1.4.0-rc.47) (2026-11-15)
+
+### Bug Fixes
+
+* **rf89-mod6:** el contador elige el producto del precio desde la configuracion contable (QA-M06 CU08 H-02) ([170b685](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/170b6850449875ffb5975fb0d45e2d78c8646b02))
+
 ## [1.4.0-rc.46](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.45...v1.4.0-rc.46) (2026-11-15)
 
 ### Bug Fixes
