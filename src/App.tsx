@@ -5,6 +5,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: módulo financiero NIC 41 (ruta /finanzas) |
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: integración contable con AgroFusion (ruta /integracion) |
 // | 2026-11-14 | Arekkazu | SSO AgroFusion: AgroFusion devuelve a /sso?token=, no a /sso/callback |
+// | 2026-11-14 | Arekkazu | M08 RF-103: un push refresca al instante los widgets de alertas |
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
@@ -52,6 +53,8 @@ import { useT } from './shared/i18n/useT';
 import { NotificationTray } from './notificaciones/components/NotificationTray';
 import { useNotificaciones } from './notificaciones/hooks/useNotificaciones';
 import { usePushNotifications } from './notificaciones/hooks/usePushNotifications';
+import type { MessagePayload } from 'firebase/messaging';
+import { EVENTO_PUSH } from './dashboard/hooks/useWidgetDatos';
 
 /* Auth pages */
 import { LoginPage } from './auth/pages/LoginPage';
@@ -144,8 +147,10 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   const idUsuario = userInfo?.id_usuario
     ?? (Number.isInteger(idDesdeClaims) && idDesdeClaims > 0 ? idDesdeClaims : null);
   const notificaciones = useNotificaciones(idUsuario);
-  const refrescarPorPush = useCallback(() => {
+  const refrescarPorPush = useCallback((payload?: MessagePayload) => {
     void notificaciones.cargar(true);
+    // RF-103 CA-2: los widgets de alertas del dashboard se piden en el acto, sin esperar su ciclo.
+    window.dispatchEvent(new CustomEvent(EVENTO_PUSH, { detail: payload?.data ?? {} }));
   }, [notificaciones.cargar]);
   const push = usePushNotifications({ idUsuario, onNotification: refrescarPorPush });
 
@@ -227,6 +232,10 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
           onLoadMore={() => void notificaciones.cargarMas()}
           onMarkAsRead={notificaciones.marcarComoLeida}
           onMarkAllAsRead={notificaciones.marcarTodasLeidas}
+          filtros={notificaciones.filtros}
+          onCambiarFiltros={notificaciones.setFiltros}
+          onAtender={notificaciones.atender}
+          onDescartar={notificaciones.descartar}
           markingAll={notificaciones.marcandoTodas}
           onEnablePush={push.requestNotificationPermission}
           onDismissError={notificaciones.clearError}

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo                                                  |
+// |------------|----------|--------------------------------------------------------------|
+// | 2026-11-14 | Arekkazu | M08 RF-105: el aviso del service worker trae los datos del push |
 import { useCallback, useEffect, useState } from 'react';
 import { getToken, onMessage, type MessagePayload } from 'firebase/messaging';
 import {
@@ -205,7 +208,7 @@ export function usePushNotifications({
     });
 
     const recibirDesdeServiceWorker = (event: MessageEvent) => {
-      if (event.data?.type === 'SGPMP_FCM_NOTIFICATION') onNotification?.();
+      if (event.data?.type === 'SGPMP_FCM_NOTIFICATION') onNotification?.({ data: event.data.data ?? {} } as MessagePayload);
     };
     navigator.serviceWorker?.addEventListener('message', recibirDesdeServiceWorker);
 
