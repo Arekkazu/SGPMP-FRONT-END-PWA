@@ -9,6 +9,7 @@
 // | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: activo excluido con su motivo en palabras y el resultado que quedó fuera |
 // | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-93: la finca del estado de resultados se elige con el combobox de las fincas del usuario |
+// | 2026-11-15 | Arekkazu | INC-M06-364-G71 RF-93: ingreso por venta de activos, pérdidas por bajas sin recuperación y aviso de ventas sin valor |
 import React, { useEffect, useState } from 'react';
 import { BarChart3, CheckCircle2, Download, FilterX, Plus } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -31,13 +32,22 @@ import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 
 const INGRESOS = [
   'ganancia_reconocimiento_inicial', 'ganancia_transformacion_biologica', 'ganancia_precio_mercado',
-  'ingresos_productos_agricolas', 'ganancia_ajustes_periodos_anteriores',
+  'ingresos_productos_agricolas', 'ingresos_venta_activos', 'ganancia_ajustes_periodos_anteriores',
 ];
 const GASTOS = [
   'perdida_reconocimiento_inicial', 'perdida_transformacion_biologica', 'perdida_precio_mercado', 'costos_mantenimiento',
-  'inversiones_llevadas_a_gasto', 'bajas_activos', 'depreciacion_activos_costo', 'deterioro_activos_costo',
+  'inversiones_llevadas_a_gasto', 'bajas_activos', 'perdidas_bajas_sin_recuperacion', 'depreciacion_activos_costo',
+  'deterioro_activos_costo',
   'perdida_ajustes_periodos_anteriores',
 ];
+/** Ventas registradas sin valor: su ingreso no está en el estado (INC-M06-364-G71). */
+function AvisoVentasSinValor({ cantidad }: { cantidad?: number }) {
+  const { t } = useT('finanzas');
+  if (!cantidad) return null;
+  return <Alert variant="warning" title={t('er.ventas_sin_valor_titulo')} description={t('er.ventas_sin_valor', { count: cantidad })}
+                style={{ margin: 'var(--s4) 0' }} />;
+}
+
 /** Opciones únicas (id → nombre) de los activos, ordenadas por nombre. */
 function unicos(activos: ActivoValorado[], id: (a: ActivoValorado) => number, nombre: (a: ActivoValorado) => string) {
   return [...new Map(activos.map((a) => [id(a), nombre(a)])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
@@ -236,6 +246,7 @@ export function EstadoResultadosView() {
         <section aria-labelledby="er-acumulado" style={{ marginBottom: 'var(--s5)' }}>
           <Subtitulo id="er-acumulado">{t('er.acumulado_titulo')}</Subtitulo>
           <p style={{ ...SECUNDARIO, marginTop: 0 }}>{t('er.acumulado_detalle')}</p>
+          <AvisoVentasSinValor cantidad={a.ventas_sin_valor} />
           <section style={PANEL} aria-label={t('er.resumen')}>
             <Datos filas={[[t('er.ingresos'), formatoMoneda(a.total_ingresos)], [t('er.gastos'), Number(a.total_gastos) ? <span key="g" className="fin-neg">−{formatoMoneda(a.total_gastos)}</span> : formatoMoneda(a.total_gastos)],
               [t('er.resultado'), <Variacion key="r" valor={a.resultado_neto} etiqueta />]]} />
@@ -355,6 +366,7 @@ export function EstadoResultadosView() {
             </div>
             {e.estado !== 'APROBADO' && <p style={{ ...SECUNDARIO, margin: 'var(--s3) 0 0' }}>{t('er.descarga_aprobado')}</p>}
           </section>
+          <AvisoVentasSinValor cantidad={e.componentes.ventas_sin_valor as unknown as number | undefined} />
           <div className="fin-columnas" style={{ marginTop: 'var(--s5)' }}>
             <ScrollRegion label={t('er.ingresos')}>{tablaComponentes(e.componentes, INGRESOS, t('er.ingresos'), e.total_ingresos, false)}</ScrollRegion>
             <ScrollRegion label={t('er.gastos')}>{tablaComponentes(e.componentes, GASTOS, t('er.gastos'), e.total_gastos, true)}</ScrollRegion>
