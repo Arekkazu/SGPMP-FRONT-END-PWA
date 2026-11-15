@@ -1,3 +1,9 @@
+## [1.4.0-rc.46](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.45...v1.4.0-rc.46) (2026-11-15)
+
+### Bug Fixes
+
+* **rf92-mod6:** la conciliacion muestra como monto los asientos trasladados por el cierre y la seccion de riesgos rotula tipo y cantidad (TC-M06-G62, TC-M06-G64) ([3921fb6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3921fb688da0db307f2d720e36693245c58113ba)), closes [#1153](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1153) [Arekkazu/sgpmp-backend#1151](https://github.com/Arekkazu/sgpmp-backend/issues/1151) [Arekkazu/sgpmp-backend#1152](https://github.com/Arekkazu/sgpmp-backend/issues/1152)
+
 ## [1.4.0-rc.45](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.44...v1.4.0-rc.45) (2026-11-15)
 
 ### Features
