@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-11-15 | Arekkazu | INC-M06-364-G71 RF-45: en una venta se registra lo recibido y su factura o remisión |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -12,12 +13,15 @@ import { FormSelect, FormTextArea, FORM_COL, errorServidor } from './formControl
 import type { ApiError } from '../../shared/api/errors';
 import type { RegistrarEventoBajaDTO, TipoBaja } from '../types';
 import { hoyLocal } from '../../shared/lib/fecha';
+import { formatoMoneda } from '../../supplies/lib/formato';
 
 interface FormValues {
   tipo_baja: TipoBaja;
   fecha_baja: string;
   motivo_baja: string;
   cantidad_afectada: string;
+  valor_venta: string;
+  referencia_venta: string;
 }
 
 interface Props {
@@ -33,15 +37,17 @@ interface Props {
 
 export function RegistrarBajaModal({ esPoblacional, cantidadDisponible, saving, saveError, onClose, onConfirmar }: Props) {
   const { t } = useT('biologicalAssets');
-  const { register, handleSubmit, getValues, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, getValues, watch, formState: { errors } } = useForm<FormValues>({
     mode: 'onBlur',
     defaultValues: { tipo_baja: 'muerte', fecha_baja: hoyLocal() },
   });
   // La baja es irreversible: el envío pasa por un resumen que hay que confirmar (TC-DIS-128/129).
   const [pendiente, setPendiente] = useState<RegistrarEventoBajaDTO | null>(null);
+  // INC-M06-364-G71: lo recibido por la venta es el ingreso que muestra el estado de resultados.
+  const esVenta = watch('tipo_baja') === 'venta';
 
   // El error con campo ya va debajo de su control: repetirlo en la alerta lo anuncia dos veces (TC-DIS-128).
-  const errorEnCampo = ['tipo_baja', 'fecha_baja', 'cantidad_afectada', 'motivo_baja']
+  const errorEnCampo = ['tipo_baja', 'fecha_baja', 'cantidad_afectada', 'motivo_baja', 'valor_venta', 'referencia_venta']
     .some((campo) => errorServidor(saveError, campo));
 
   const confirmar = async () => {
@@ -59,6 +65,10 @@ export function RegistrarBajaModal({ esPoblacional, cantidadDisponible, saving, 
     };
     if (esPoblacional && v.cantidad_afectada) {
       dto.cantidad_afectada = Number(v.cantidad_afectada);
+    }
+    if (v.tipo_baja === 'venta') {
+      dto.valor_venta = Number(v.valor_venta).toFixed(2);
+      if (v.referencia_venta.trim()) dto.referencia_venta = v.referencia_venta.trim();
     }
     setPendiente(dto);
   };
@@ -95,6 +105,14 @@ export function RegistrarBajaModal({ esPoblacional, cantidadDisponible, saving, 
               <>
                 <dt style={{ color: 'var(--text-muted)' }}>{t('registrarbajamodal.cantidad_afectada')}</dt>
                 <dd style={{ margin: 0 }}>{pendiente.cantidad_afectada ?? t('registrarbajamodal.baja_total_del_lote')}</dd>
+              </>
+            )}
+            {pendiente.valor_venta && (
+              <>
+                <dt style={{ color: 'var(--text-muted)' }}>{t('registrarbajamodal.valor_de_la_venta')}</dt>
+                <dd style={{ margin: 0 }}>{formatoMoneda(pendiente.valor_venta)}</dd>
+                <dt style={{ color: 'var(--text-muted)' }}>{t('registrarbajamodal.factura_o_remision')}</dt>
+                <dd style={{ margin: 0, overflowWrap: 'anywhere' }}>{pendiente.referencia_venta ?? t('registrarbajamodal.sin_referencia')}</dd>
               </>
             )}
             <dt style={{ color: 'var(--text-muted)' }}>{t('registrarbajamodal.motivo_de_la_baja')}</dt>
@@ -137,6 +155,30 @@ export function RegistrarBajaModal({ esPoblacional, cantidadDisponible, saving, 
                 },
               })}
             />
+          )}
+
+          {esVenta && (
+            <>
+              <Input
+                label={t('registrarbajamodal.valor_de_la_venta')} required type="number" min={0.01} step={0.01} inputMode="decimal"
+                hint={t('registrarbajamodal.valor_de_la_venta_ayuda')}
+                error={errors.valor_venta?.message ?? errorServidor(saveError, 'valor_venta')}
+                {...register('valor_venta', {
+                  shouldUnregister: true,
+                  validate: (v) => {
+                    const n = Number(v);
+                    if (!v || !Number.isFinite(n) || n <= 0) return t('registrarbajamodal.valor_venta_obligatorio');
+                    return /^\d+(\.\d{1,2})?$/.test(v.trim()) || t('registrarbajamodal.valor_venta_decimales');
+                  },
+                })}
+              />
+              <Input
+                label={t('registrarbajamodal.factura_o_remision')} maxLength={100}
+                placeholder={t('registrarbajamodal.factura_o_remision_ejemplo')}
+                error={errorServidor(saveError, 'referencia_venta')}
+                {...register('referencia_venta', { shouldUnregister: true })}
+              />
+            </>
           )}
 
           <FormTextArea
