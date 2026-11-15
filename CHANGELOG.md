@@ -1,3 +1,9 @@
+## [1.4.0-rc.45](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.44...v1.4.0-rc.45) (2026-11-15)
+
+### Features
+
+* **rf45-rf93-mod2-mod6:** valor de la venta en la baja e ingreso por venta en el estado de resultados (INC-M06-364-G71) ([3d04701](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3d04701131423baaccca302886dd606bd880426c))
+
 ## [1.4.0-rc.44](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.43...v1.4.0-rc.44) (2026-11-14)
 
 ### Features
