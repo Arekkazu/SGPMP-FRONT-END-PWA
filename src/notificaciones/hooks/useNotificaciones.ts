@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo                                                        |
+// |------------|----------|--------------------------------------------------------------------|
+// | 2026-11-14 | Arekkazu | M08 RF-105: filtros, 50 por página, atender y descartar notificaciones |
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ApiError } from '../../shared/api/errors';
 import { notificacionesApi } from '../api/notificacionesApi';
@@ -7,9 +10,13 @@ import {
   obtenerNotificacionesCache,
   reemplazarNotificacionesCache,
 } from '../db/notificacionesTable';
-import type { NotificacionInternaResponse } from '../types';
+import type { FiltrosNotificaciones, NotificacionInternaResponse } from '../types';
 
-const TAMANO_PAGINA = 20;
+// RF-105 restricción 7: el panel carga 50 notificaciones por página.
+const TAMANO_PAGINA = 50;
+
+/** Filtros de la bandeja (RF-105); sin `estado` se ve el panel principal (nuevas y leídas). */
+export type FiltrosBandeja = Pick<FiltrosNotificaciones, 'nivel' | 'estado' | 'modulo'>;
 const INTERVALO_ACTUALIZACION_MS = 60_000;
 
 function comoApiError(error: unknown): ApiError {
@@ -47,6 +54,8 @@ export function useNotificaciones(idUsuario: number | null) {
   const [error, setError] = useState<ApiError | null>(null);
   const [fromCache, setFromCache] = useState(false);
   const [marcandoIds, setMarcandoIds] = useState<Set<number>>(new Set());
+  const [criticasPendientes, setCriticasPendientes] = useState(0);
+  const [filtros, setFiltros] = useState<FiltrosBandeja>({});
   const idUsuarioActual = useRef(idUsuario);
   const solicitudActual = useRef(0);
   const marcandoIdsActuales = useRef<Set<number>>(new Set());
@@ -81,6 +90,7 @@ export function useNotificaciones(idUsuario: number | null) {
       const respuesta = await notificacionesApi.listar({
         pagina: 1,
         tamano: TAMANO_PAGINA,
+        ...filtros,
       });
       if (
         idUsuarioActual.current !== usuarioSolicitado
@@ -89,6 +99,7 @@ export function useNotificaciones(idUsuario: number | null) {
 
       setTotal(respuesta.total);
       setNoLeidas(respuesta.no_leidas);
+      setCriticasPendientes(respuesta.criticas_pendientes ?? 0);
 
       // Un refresco silencioso (intervalo, focus o push entrante) pide solo la
       // primera página: sustituir la lista con ella descartaría las que el
@@ -160,6 +171,7 @@ export function useNotificaciones(idUsuario: number | null) {
       const respuesta = await notificacionesApi.listar({
         pagina: siguientePagina,
         tamano: TAMANO_PAGINA,
+        ...filtros,
       });
       if (idUsuarioActual.current !== usuarioSolicitado) return;
       setNotificaciones((actuales) => combinarSinDuplicados(actuales, respuesta.items));
@@ -178,7 +190,7 @@ export function useNotificaciones(idUsuario: number | null) {
     } finally {
       if (idUsuarioActual.current === usuarioSolicitado) setLoadingMore(false);
     }
-  }, [fromCache, idUsuario, loadingMore, notificaciones.length, pagina, total]);
+  }, [fromCache, idUsuario, loadingMore, notificaciones.length, pagina, total, filtros]);
 
   const marcarComoLeida = useCallback(async (idNotificacion: number): Promise<boolean> => {
     const anterior = notificaciones.find((item) => item.id_notificacion === idNotificacion);
@@ -251,6 +263,31 @@ export function useNotificaciones(idUsuario: number | null) {
     }
   }, [idUsuario, cargar]);
 
+  // RF-105: atender (con la acción documentada en una crítica) o descartar. Si el backend la rechaza
+  // (acción muy corta, crítica que no se descarta) devuelve su mensaje para mostrarlo junto al campo.
+  const cerrar = useCallback(async (
+    idNotificacion: number,
+    accion: () => Promise<NotificacionInternaResponse>,
+  ): Promise<string | null> => {
+    if (idUsuario == null) return null;
+    setError(null);
+    try {
+      const cerrada = await accion();
+      // En el panel principal lo atendido o descartado ya no va; en el historial se actualiza.
+      setNotificaciones((items) => (filtros.estado
+        ? items.map((item) => (item.id_notificacion === idNotificacion ? cerrada : item))
+        : items.filter((item) => item.id_notificacion !== idNotificacion)));
+      await cargar(true);
+      return null;
+    } catch (requestError) {
+      return comoApiError(requestError).message;
+    }
+  }, [idUsuario, cargar, filtros.estado]);
+  const atender = useCallback((idNotificacion: number, accionDocumentada?: string) =>
+    cerrar(idNotificacion, () => notificacionesApi.marcarAtendida(idNotificacion, accionDocumentada)), [cerrar]);
+  const descartar = useCallback((idNotificacion: number) =>
+    cerrar(idNotificacion, () => notificacionesApi.descartar(idNotificacion)), [cerrar]);
+
   const clearError = useCallback(() => setError(null), []);
 
   return {
@@ -268,6 +305,11 @@ export function useNotificaciones(idUsuario: number | null) {
     marcarComoLeida,
     marcarTodasLeidas,
     marcandoTodas,
+    criticasPendientes,
+    filtros,
+    setFiltros,
+    atender,
+    descartar,
     clearError,
   };
 }
