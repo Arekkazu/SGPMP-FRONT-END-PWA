@@ -15,6 +15,7 @@
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 N-08 RF-89: la fila corregida dice «Corregido por el precio vigente» |
 // | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: el activo excluido muestra su motivo en palabras y el resultado que quedó fuera |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-86: el listado se filtra por una finca del usuario |
+// | 2026-11-15 | Arekkazu | QA-M06 CU08 H-02 RF-89: el Contador elige el producto sin leer Configuración → Métricas |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -112,6 +113,20 @@ describe('PreciosView (RF-89)', () => {
     await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/precios' && p.method === 'post')).toBe(true));
     const cuerpo = JSON.parse(peticiones.find((p) => p.url === '/finanzas/precios' && p.method === 'post')!.data as string);
     expect(cuerpo).toMatchObject({ id_precio_corregido: 700, fecha_vigencia: '2026-10-01', fuente: 'UPRA' });
+  });
+
+  it('CU08 H-02: el Contador elige el producto de la configuración contable sin leer Configuración → Métricas', async () => {
+    sesion.permisos = [permiso('precios_mercado', 2), permiso('precios_mercado', 1), permiso('configuracion_contable', 2)];
+    const leche = { id_metrica_produccion: 216, nombre: 'Produccion de leche', unidad_medida: 'L' };
+    respuestas['GET /finanzas/configuracion'] = { data: { ...configuracion, especies: [{ ...especie, productos: [leche] }] } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><PreciosView /></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: /Registrar precio/ }));
+    const dialogo = within(screen.getByRole('dialog'));
+    await user.selectOptions(dialogo.getByLabelText(/^Especie/), '2');
+    await user.selectOptions(dialogo.getByLabelText(/^Categoría/), 'PRODUCTO');
+    expect(dialogo.getByRole('option', { name: 'Produccion de leche (L)' })).toBeInTheDocument();
+    expect(peticiones.some((p) => p.url?.startsWith('/configuracion/metricas'))).toBe(false);
   });
 
   it('una desviación mayor al umbral pide confirmación y reenvía con confirmar_desviacion', async () => {

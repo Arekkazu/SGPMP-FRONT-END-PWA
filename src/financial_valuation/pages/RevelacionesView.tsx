@@ -3,6 +3,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-92: informe de revelaciones NIC 41 por párrafo (borrador, aprobación y descarga) |
 // | 2026-11-05 | Arekkazu | M06 RF-92 prototipo: historial de versiones del período con filtros; sin JSON ni claves crudas |
 // | 2026-11-10 | Arekkazu | TC-DIS-257..259 RF-92: índice de secciones, filas identificadas, justificación bajo el campo, aprobación confirmada, aprobador y descarga anunciada |
+// | 2026-11-15 | Arekkazu | TC-M06-G62 RF-92: la columna de asientos trasladados por el cierre se muestra como monto |
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileText, Plus, Trash2, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -32,7 +33,8 @@ const SECCIONES = [
 /** Campos monetarios del contenido; el resto se muestra tal cual. */
 const MONEDA = new Set([
   'valor_cierre', 'valor_inicio', 'compras', 'bajas', 'cosechas', 'precio_mercado', 'transformacion_biologica',
-  'nacimientos_y_otros_ingresos', 'depreciacion_y_deterioro', 'reconocimiento_inicial', 'total', 'valor_neto',
+  'nacimientos_y_otros_ingresos', 'depreciacion_y_deterioro', 'asientos_trasladados_por_cierre', 'reconocimiento_inicial',
+  'total', 'valor_neto',
   'valor_razonable_bruto', 'precio_unitario', 'costo', 'depreciacion_acumulada', 'deterioro_acumulado', 'valor_contable',
   'monto_estimado', 'monto_garantia', 'impacto_economico_cop',
 ]);
