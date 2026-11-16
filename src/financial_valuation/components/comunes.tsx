@@ -10,6 +10,7 @@
 // | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: criterio «Finca» de los listados con el combobox de las fincas del usuario |
 // | 2026-11-15 | Arekkazu | QA-M06 CU13 H-04 RF-94: insignia de severidad compartida por la bitácora y su detalle |
+// | 2026-11-16 | Arekkazu | QA-M06 CU03 H-01 RF-84 FA-2/FA-3: color del cálculo validado manualmente |
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Ban, CheckCircle2, Clock, FilterX, Info, RotateCcw, Search, SearchX, XCircle } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
@@ -54,7 +55,7 @@ const VARIANTE: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutr
   ACTIVO: 'success', VIGENTE: 'success', REGISTRADO: 'success', REGISTRADA: 'success', CERRADO: 'success',
   APROBADO: 'success', VERIFICADO: 'success', CONFIRMADO: 'success', ACEPTADO: 'success', CALCULADO: 'success',
   COMPLETADO: 'success', CONVERTIDA_EN_VENTA: 'success',
-  PROGRAMADO: 'info', GENERADO: 'info', BORRADOR: 'info', COTIZADO: 'info', ABIERTO: 'info',
+  PROGRAMADO: 'info', GENERADO: 'info', VALIDADO_MANUALMENTE: 'info', BORRADOR: 'info', COTIZADO: 'info', ABIERTO: 'info',
   PENDIENTE_CUENTA: 'warning', PENDIENTE_CLASIFICACION: 'warning', VERIFICACION_PENDIENTE: 'warning', EN_CIERRE: 'warning',
   ESTIMADO: 'warning', VENCIDO: 'warning', VENCIDA: 'warning', INCOMPLETO: 'warning', MEDICION_PENDIENTE: 'warning',
   REVISION_REQUERIDA: 'warning', PENDIENTE: 'warning', PENDIENTE_TRAZABILIDAD: 'warning',
