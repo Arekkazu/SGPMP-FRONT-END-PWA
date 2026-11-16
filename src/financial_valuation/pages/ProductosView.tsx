@@ -5,6 +5,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-232 RF-85: filtro por rango de valor del producto |
 // | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
+// | 2026-11-15 | Arekkazu | QA-M06 CU04 H-02 RF-85: cosechas pendientes acotadas al titular del selector |
 import React, { useEffect, useState } from 'react';
 import { Package, PenLine, Play } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -38,7 +39,9 @@ export function ProductosView() {
   const { ejecutar: cargar } = productos;
   const { ejecutar: cargarPendientes } = pendientes;
   useEffect(() => { if (puedeLeer && id) cargar(id); }, [puedeLeer, id, cargar]);
-  useEffect(() => { if (puedeLeer) cargarPendientes(); }, [puedeLeer, cargarPendientes]);
+  // Solo las cosechas del titular del período elegido (CU04 H-02), como Reconocimiento inicial.
+  const nit = periodo?.numero_id_tributaria ?? null;
+  useEffect(() => { if (puedeLeer && id) cargarPendientes(nit); }, [puedeLeer, id, cargarPendientes, nit]);
 
   // Rango de valor del producto (RF-85): se aplica antes del buscador y los demás filtros, todos con AND.
   const [valorMin, setValorMin] = useState('');
@@ -60,7 +63,7 @@ export function ProductosView() {
     if (!r) return;
     pushToast('success', t('valor.procesado', { eventos: r.eventos.PROCESADO ?? 0, provisiones: r.provisiones_m05.PROCESADO ?? 0 }));
     if (id) cargar(id);
-    cargarPendientes();
+    cargarPendientes(nit);
   };
   const listaPendientes = pendientes.data ?? [];
 
@@ -114,7 +117,7 @@ export function ProductosView() {
       )}
       {costeando && (
         <CostosCosechaModal cosecha={costeando} onCerrar={() => setCosteando(null)}
-          onReconocida={() => { setCosteando(null); cargarPendientes(); if (id) cargar(id); }} />
+          onReconocida={() => { setCosteando(null); cargarPendientes(nit); if (id) cargar(id); }} />
       )}
       {!periodo ? <SinPeriodo /> : (
         <>

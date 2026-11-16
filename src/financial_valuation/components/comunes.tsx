@@ -9,6 +9,7 @@
 // | 2026-11-11 | Arekkazu | TC-M06-G106 RF-89 v1.2: estado Corregido, sin «Corregir» sobre un precio ya corregido y fecha y fuente fijas al corregir |
 // | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: criterio «Finca» de los listados con el combobox de las fincas del usuario |
+// | 2026-11-15 | Arekkazu | QA-M06 CU13 H-04 RF-94: insignia de severidad compartida por la bitácora y su detalle |
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Ban, CheckCircle2, Clock, FilterX, Info, RotateCcw, Search, SearchX, XCircle } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
@@ -78,6 +79,14 @@ const ICONO_ESTADO: Record<string, React.ReactNode> = {
 /** Badge de estado con icono + texto según su tono. */
 export function BadgeTono({ tono, icono, children }: { tono: Tono; icono?: React.ReactNode; children: React.ReactNode }) {
   return <Badge variant={tono}>{icono ?? ICONO_TONO[tono]}{children}</Badge>;
+}
+
+const TONO_SEVERIDAD: Record<string, Tono> = { INFO: 'info', WARNING: 'warning', ERROR: 'error', CRITICAL: 'error' };
+
+/** Severidad de un evento de la bitácora (RF-94). EstadoBadge no la conoce y mostraba «Sin estado» (CU13 H-04). */
+export function SeveridadBadge({ severidad }: { severidad: string }) {
+  const { t } = useT('finanzas');
+  return <BadgeTono tono={TONO_SEVERIDAD[severidad] ?? 'neutral'}>{t(`severidad.${severidad}`, { defaultValue: t('severidad.INFO') })}</BadgeTono>;
 }
 
 export function EstadoBadge({ estado }: { estado: string | null | undefined }) {

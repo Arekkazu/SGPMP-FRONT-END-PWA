@@ -16,6 +16,7 @@
 // | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: el activo excluido muestra su motivo en palabras y el resultado que quedó fuera |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-86: el listado se filtra por una finca del usuario |
 // | 2026-11-15 | Arekkazu | QA-M06 CU08 H-02 RF-89: el Contador elige el producto sin leer Configuración → Métricas |
+// | 2026-11-15 | Arekkazu | QA-M06 v5 CU04 H-02/H-03, CU13 H-02/H-04/H-05: titular en cosechas, valor del activo, usuario por nombre, severidad y huella |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -30,6 +31,8 @@ import { VariacionesView } from './pages/VariacionesView';
 import { ReconocimientosView } from './pages/ReconocimientosView';
 import { CalculoView } from './pages/CalculoView';
 import { ProductosView } from './pages/ProductosView';
+import { AuditoriaView } from './pages/AuditoriaView';
+import { DetalleActivoModal } from './components/DetalleActivoModal';
 import { EstadoResultadosView } from './pages/EstadoResultadosView';
 import { TrazabilidadView } from './pages/TrazabilidadView';
 import { RevelacionesView } from './pages/RevelacionesView';
@@ -446,6 +449,12 @@ describe('ProductosView (RF-85 FA-1/FA-2)', () => {
   };
   const envios = () => peticiones.filter((p) => p.url === '/finanzas/productos/pendientes/500/reconocimiento' && p.method === 'post');
 
+  it('CU04 H-02: pide solo las cosechas pendientes del titular del período elegido', async () => {
+    await abrir();
+    const pedidas = peticiones.filter((p) => p.url === '/finanzas/productos/pendientes' && p.method === 'get');
+    expect(pedidas.map((p) => p.params)).toEqual([{ numero_id_tributaria: '900123456' }]);
+  });
+
   it('lista las cosechas pendientes y solo ofrece costos manuales donde aplican', async () => {
     await abrir();
     expect(screen.getAllByText('Falta costos de venta para el producto Leche.')).toHaveLength(2);
@@ -609,5 +618,45 @@ describe('Período contable por titular y año (usabilidad 11-11)', () => {
     await waitFor(() => expect(screen.getByRole('combobox', { name: /Período contable/ })).toHaveValue('7'));
     expect(screen.queryByRole('combobox', { name: 'Titular' })).toBeNull();
     expect(screen.queryByRole('combobox', { name: 'Año' })).toBeNull();
+  });
+});
+
+describe('QA M06 v5: valor del activo y bitácora (CU04 H-03, CU13 H-02/H-04/H-05)', () => {
+  it('CU04 H-03: el valor en libros es el del activo, no el del último producto cosechado', async () => {
+    sesion.permisos = [permiso('valoracion_activos', 2)];
+    const calculo = (id: number, valor_neto: string) => ({ id_calculo_valor_razonable: id, valor_neto, estado: 'CALCULADO' });
+    respuestas['GET /finanzas/activos/2517'] = { data: {
+      activo: { id_activo_biologico: 2517, identificador: 'QA-SG-M06-BOV-04', especie: 'Bovino', finca: 'Finca Qa Sg Mseis',
+        razon_social: 'QA SG M06 SAS', numero_id_tributaria: '901555123', peso_kg: '480', cantidad_actual: null, costo_adquisicion: '4200000' },
+      reconocimientos: [], calculos: [calculo(2001, '33840.0000'), calculo(1998, '4308000.0000')], mediciones: [], productos: [],
+      valoracion_costo: null, lineas: [], valor_en_libros_actual: '4308000.0000',
+    } };
+    render(<DetalleActivoModal idActivo={2517} identificador="QA-SG-M06-BOV-04" onCerrar={() => {}} onCambio={() => {}} />);
+    const valor = (await screen.findByText('Valor en libros')).nextElementSibling as HTMLElement;
+    expect(valor.textContent).toMatch(/4\.308\.000/);
+  });
+
+  it('CU13 H-02/H-04/H-05: usuario por nombre, severidad del evento y huella en el detalle', async () => {
+    sesion.permisos = [permiso('auditoria_financiera', 2), permiso('cierre_periodo', 2)];
+    const evento = { id_evento: '9', descripcion_evento: 'Cotización registrada', tipo_evento: 'COTIZACION_REGISTRADA',
+      fecha_hora: '2026-11-14T14:58:00Z', actor: 'QA Contador Sg', activo: 'QA-SG-M06-BOV-01', id_periodo_contable: 7,
+      resumen_payload: { activos: [2515] }, monto_afectado: '3800000', severidad: 'INFO', integridad_verificable: true,
+      hash_integridad: 'a'.repeat(64), origen: 'Repositorio central' };
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/auditoria/usuarios'] = { data: [{ id_usuario: 171, nombre: 'QA Contador Sg' }] };
+    respuestas['GET /finanzas/auditoria'] = { data: { eventos: [evento], total_registros: 1, resumen_severidad: { INFO: 1 } } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><AuditoriaView /></ProveedorPeriodo></MemoryRouter>);
+
+    const usuario = await screen.findByRole('combobox', { name: /^Usuario/ });
+    await waitFor(() => expect(within(usuario).getByRole('option', { name: 'QA Contador Sg' })).toBeInTheDocument());
+    await user.selectOptions(usuario, '171');
+    await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/auditoria' && p.params?.id_usuario === 171)).toBe(true));
+
+    await user.click(screen.getAllByRole('button', { name: /Ver el detalle del evento/ })[0]);
+    const dialogo = within(screen.getByRole('dialog'));
+    expect(dialogo.getByText('Información')).toBeInTheDocument();
+    expect(dialogo.queryByText('Sin estado')).toBeNull();
+    expect(dialogo.getByRole('button', { name: /Mostrar la huella completa/ })).toBeInTheDocument();
   });
 });
