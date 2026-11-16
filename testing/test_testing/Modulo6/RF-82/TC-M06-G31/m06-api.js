@@ -159,6 +159,7 @@ async function titular(c) {
 
 // La cuenta del ingeniero (id 158) pasa a Contador dentro del run; el rollback la restaura.
 async function contador(c) {
+  if (process.env.CYPRESS_QA_CONTADOR_FIJO === '1') return;
   const d = await prep(llamar('GET', `/usuarios/${ID_USUARIO_INGENIERO}/detalle`, { token: c.admin, run: c.run }), [200], 'detalle del usuario 158');
   await prep(llamar('PATCH', `/usuarios/${ID_USUARIO_INGENIERO}`, {
     token: c.admin, run: c.run,
