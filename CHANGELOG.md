@@ -1,3 +1,9 @@
+## [1.4.0-rc.50](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.49...v1.4.0-rc.50) (2026-11-16)
+
+### Bug Fixes
+
+* **rf92-mod6:** el indice de secciones del informe de revelaciones lleva a la seccion ([ae08252](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ae08252118abac1b6ce7511337e08a06d8ba17e9)), closes [#271](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/271)
+
 ## [1.4.0-rc.49](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.48...v1.4.0-rc.49) (2026-11-16)
 
 ### Bug Fixes
