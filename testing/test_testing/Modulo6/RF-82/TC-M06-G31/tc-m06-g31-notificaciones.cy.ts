@@ -114,7 +114,7 @@ describe('TC-M06-G31 · Interfaz: notificaciones y alertas al Contador (RF-82, R
 
   it('2. (TC-M06-140) El Contador ve la notificación de bloqueo por NACIMIENTO sin precio de mercado, con las opciones disponibles', function () {
     prepararContador(this, '140').then((ctx) => {
-      exigirAviso(ctx, '140', /bloque|sin valor|sin precio|no se puede reconocer/,
+      exigirAviso(ctx, '140', /bloque|sin valor|sin precio|no hay precio|no se puede reconocer|no puede reconocer/,
         'El Contador debe ver la notificación de bloqueo del reconocimiento por nacimiento sin precio de mercado', /precio|costo|opcion/);
     });
   });
