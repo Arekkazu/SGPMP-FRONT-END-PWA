@@ -1,3 +1,10 @@
+## [1.4.0-rc.48](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.47...v1.4.0-rc.48) (2026-11-16)
+
+### Bug Fixes
+
+* **rf85-mod6:** las cosechas pendientes son las del titular elegido y el detalle muestra el valor en libros del activo (QA-M06 CU04 H-02/H-03) ([7266aa7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7266aa7274f0587230bab78b46fd16ea37785752))
+* **rf94-mod6:** la bitacora filtra por usuario elegido por nombre y el detalle muestra la severidad y la huella del evento (QA-M06 CU13 H-02/H-04/H-05) ([446a0a0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/446a0a047c15b62be4f2dcb1fb41f1f1be012c8f))
+
 ## [1.4.0-rc.47](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.46...v1.4.0-rc.47) (2026-11-15)
 
 ### Bug Fixes
