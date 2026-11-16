@@ -6,6 +6,7 @@
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-94: la bitácora se filtra por finca del usuario |
+// | 2026-11-15 | Arekkazu | QA-M06 CU13 H-02/H-04 RF-94: usuario elegido por nombre; severidad con su propia insignia |
 import React, { useEffect, useState } from 'react';
 import { Eye, FilterX, ScrollText, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -22,13 +23,12 @@ import { ACCION_R, R_AUDITORIA, R_VALORACION } from '../rbac';
 import type { EventoAuditoria, Severidad } from '../types';
 import { EventoFinancieroModal } from '../components/EventoFinancieroModal';
 import {
-  BadgeTono, EncabezadoVista, EstadoVacio, ErrorApi, Indicadores, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM, formatoFecha,
-  formatoMoneda, formatoPorcentaje, nombrePeriodo, useAsync, usePeriodo,
+  EncabezadoVista, EstadoVacio, ErrorApi, Indicadores, SECUNDARIO, SinPeriodo, Subtitulo, TABLA, TD, TD_NUM, TH, TH_NUM, formatoFecha,
+  formatoMoneda, formatoPorcentaje, nombrePeriodo, SeveridadBadge, useAsync, usePeriodo,
 } from '../components/comunes';
 import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 
 const SEVERIDADES: Severidad[] = ['CRITICAL', 'ERROR', 'WARNING', 'INFO'];
-const VARIANTE = { INFO: 'info', WARNING: 'warning', ERROR: 'error', CRITICAL: 'error' } as const;
 const ORIGENES = ['REPOSITORIO', 'FALLBACK'] as const;
 // Catálogo de tipos que acepta el backend (un valor fuera de él responde 400).
 const TIPOS = [
@@ -71,13 +71,17 @@ export function AuditoriaView() {
   const recientes = useAsync(finanzasApi.auditoria);
   const consulta = useAsync(finanzasApi.auditoria);
   const activos = useAsync(finanzasApi.activos);
+  const actores = useAsync(finanzasApi.auditoriaUsuarios);
   const id = periodo?.id_periodo_contable;
   const { ejecutar: cargarRecientes } = recientes;
   const { ejecutar: consultar } = consulta;
   const { ejecutar: cargarActivos } = activos;
+  const { ejecutar: cargarActores } = actores;
   const rangoInvalido = !!desde && !!hasta && desde > hasta;
   useEffect(() => { if (puedeLeer && id) cargarRecientes({ id_periodo_contable: id, pagina: 1, tamano: 5, orden: 'DESC' }); }, [puedeLeer, id, cargarRecientes]);
   useEffect(() => { if (puedeLeer && puedeVerActivos) cargarActivos(); }, [puedeLeer, puedeVerActivos, cargarActivos]);
+  // CU13 H-02: el usuario se elige por nombre entre quienes tienen eventos en el período (otro período, otra lista).
+  useEffect(() => { setUsuario(''); if (puedeLeer && id) cargarActores(id); }, [puedeLeer, id, cargarActores]);
   useEffect(() => { setPagina(1); }, [id, severidad, tipo, origen, usuario, activo, idFinca, desde, hasta, orden]);
   useEffect(() => {
     if (!puedeLeer || !id || rangoInvalido) return;
@@ -119,7 +123,7 @@ export function AuditoriaView() {
                 <tbody>
                   {SEVERIDADES.map((s) => (
                     <tr key={s}>
-                      <th scope="row" style={{ ...TD, textAlign: 'left', fontWeight: 500 }}><BadgeTono tono={VARIANTE[s]}>{t(`severidad.${s}`)}</BadgeTono></th>
+                      <th scope="row" style={{ ...TD, textAlign: 'left', fontWeight: 500 }}><SeveridadBadge severidad={s} /></th>
                       <td style={TD_NUM}>{resumen?.[s] ?? 0}</td>
                       <td style={TD_NUM}>{formatoPorcentaje(total ? ((resumen?.[s] ?? 0) / total) * 100 : 0, 0)}</td>
                     </tr>
@@ -161,7 +165,12 @@ export function AuditoriaView() {
                 <option value="">{t('comun.todos')}</option>
                 {ORIGENES.map((o) => <option key={o} value={o}>{t(`aud.origen_${o}`)}</option>)}
               </Select>
-              <Input id="aud-usuario" label={t('aud.usuario')} type="number" step={1} min={1} value={usuario} onChange={(e) => setUsuario(e.target.value)} hint={t('aud.usuario_hint')} />
+              <Select id="aud-usuario" label={t('aud.usuario')} value={usuario} onChange={(e) => setUsuario(e.target.value)} hint={t('aud.usuario_hint')}>
+                <option value="">{t('comun.todos')}</option>
+                {(actores.data ?? []).map((u) => (
+                  <option key={u.id_usuario} value={u.id_usuario}>{u.nombre === 'Usuario sin nombre registrado' ? t('aud.usuario_sin_nombre') : u.nombre}</option>
+                ))}
+              </Select>
               <SelectorFinca id="aud-finca" idFinca={idFinca} onChange={setIdFinca} />
               {puedeVerActivos ? (
                 <Select id="aud-activo" label={t('col.activo')} value={activo} onChange={(e) => setActivo(e.target.value)} disabled={(activos.data ?? []).length === 0}>
@@ -207,7 +216,7 @@ export function AuditoriaView() {
                         <td style={TD}>{e.activo ?? t('aud.sin_activo')}</td>
                         <td style={TD}>{e.id_periodo_contable === id ? nombrePeriodoActual : e.id_periodo_contable ? t('aud.otro_periodo') : t('aud.sin_periodo')}</td>
                         <td style={TD_NUM}>{e.monto_afectado ? formatoMoneda(e.monto_afectado) : t('aud.sin_monto')}</td>
-                        <td style={TD}><BadgeTono tono={VARIANTE[e.severidad as Severidad] ?? 'neutral'}>{t(`severidad.${e.severidad}`, { defaultValue: t('severidad.INFO') })}</BadgeTono></td>
+                        <td style={TD}><SeveridadBadge severidad={e.severidad} /></td>
                         <td style={TD}>{origenDe(t, e)}</td>
                         <td style={TD}>
                           {e.integridad_verificable
