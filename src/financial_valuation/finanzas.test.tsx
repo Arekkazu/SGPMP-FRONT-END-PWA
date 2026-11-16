@@ -18,9 +18,10 @@
 // | 2026-11-15 | Arekkazu | QA-M06 CU08 H-02 RF-89: el Contador elige el producto sin leer Configuración → Métricas |
 // | 2026-11-15 | Arekkazu | QA-M06 v5 CU04 H-02/H-03, CU13 H-02/H-04/H-05: titular en cosechas, valor del activo, usuario por nombre, severidad y huella |
 // | 2026-11-16 | Arekkazu | QA-M06 CU03 H-01 RF-84 FA-2/FA-3: el cálculo validado se lista como validado manualmente |
+// | 2026-11-16 | Arekkazu | Hotfix RF-92: el índice de secciones lleva a la sección sin salir del informe |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AxiosAdapter, InternalAxiosRequestConfig } from 'axios';
@@ -571,6 +572,20 @@ describe('Lo que pedía backend en la evaluación QA M06 (TC-DIS-233/257/262)', 
     render(<MemoryRouter><ProveedorPeriodo><RevelacionesView /></ProveedorPeriodo></MemoryRouter>);
     expect(await screen.findByRole('columnheader', { name: 'Aprobado por' })).toBeInTheDocument();
     expect((await screen.findAllByText('Ana Contadora')).length).toBeGreaterThan(0);
+  });
+
+  it('el índice del informe lleva a la sección sin navegar fuera de la página', async () => {
+    sesion.permisos = [permiso('revelaciones_nic41', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [cerrado] };
+    respuestas['GET /finanzas/periodos/6/revelaciones'] = { data: [{ id_informe: 83, version_informe: '2026-10-V1', estado: 'BORRADOR',
+      fecha_generacion: '2026-11-01T08:00:00Z', fecha_aprobacion: null, razon_rechazo: null, hash_informe: 'e' }] };
+    respuestas['GET /finanzas/revelaciones/83'] = { data: { id_informe: 83, version_informe: '2026-10-V1', estado: 'BORRADOR', fecha_generacion: '2026-11-01T08:00:00Z',
+      fecha_aprobacion: null, razon_rechazo: null, hash_informe: 'e'.repeat(64), contenido: { parr_41_43_descripcion: [], parr_53_riesgos: [] } } };
+    render(<MemoryRouter><ProveedorPeriodo><RevelacionesView /></ProveedorPeriodo></MemoryRouter>);
+    const enlace = await screen.findByRole('link', { name: 'Riesgos climáticos, sanitarios y otros' });
+    // Con <base href> el ancla relativa iría al inicio de la app: el clic no debe navegar.
+    expect(fireEvent.click(enlace)).toBe(false);
+    expect(document.getElementById('rev-parr_53_riesgos')).toHaveFocus();
   });
 
   it('el panel de pendientes junta la medición pendiente y los hechos sin cuenta', async () => {
