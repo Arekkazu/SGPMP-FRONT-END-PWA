@@ -15,6 +15,7 @@
 // | 2026-11-15 | Arekkazu | INC-M06-364-G71 RF-45/RF-93: valor de la venta en la baja e ingreso por venta en el estado de resultados |
 // | 2026-11-15 | Arekkazu | QA-M06 CU08 H-02 RF-89: productos de cada especie en la configuración contable |
 // | 2026-11-15 | Arekkazu | QA-M06 CU04 H-03 RF-85: el historial trae el valor en libros del activo |
+// | 2026-11-16 | Arekkazu | QA-M06 CU03 H-01 RF-84 FA-2/FA-3: justificación del cálculo validado manualmente |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -125,7 +126,7 @@ export interface VariacionPeriodo extends ActivoDelRegistro {
 export interface CalculoPeriodo extends ActivoDelRegistro {
   id_calculo_valor_razonable: number; magnitud: Dec; unidad_magnitud: string; precio_unitario: Dec; valor_razonable_bruto: Dec;
   costos_venta: Dec; valor_neto: Dec; metodo_costo: string; estado: string; tiene_valor_estimado: boolean; es_producto: boolean;
-  fecha_calculo: string;
+  fecha_calculo: string; justificacion_validacion?: string | null;
 }
 export interface ProductoPeriodo extends ActivoDelRegistro {
   id_reconocimiento_producto_agricola: number; producto_agricola: string; cantidad_cosechada: Dec; unidad_medida: string;

@@ -17,6 +17,7 @@
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-86: el listado se filtra por una finca del usuario |
 // | 2026-11-15 | Arekkazu | QA-M06 CU08 H-02 RF-89: el Contador elige el producto sin leer Configuración → Métricas |
 // | 2026-11-15 | Arekkazu | QA-M06 v5 CU04 H-02/H-03, CU13 H-02/H-04/H-05: titular en cosechas, valor del activo, usuario por nombre, severidad y huella |
+// | 2026-11-16 | Arekkazu | QA-M06 CU03 H-01 RF-84 FA-2/FA-3: el cálculo validado se lista como validado manualmente |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -389,7 +390,7 @@ describe('CalculoView (RF-84)', () => {
   const abrirValidacion = async () => {
     sesion.permisos = [permiso('valoracion_activos', 2), permiso('valoracion_activos', 5), permiso('cierre_periodo', 2)];
     respuestas['GET /finanzas/periodos'] = { data: [periodo] };
-    respuestas['GET /finanzas/periodos/7/calculos'] = [{ data: [calculo] }, { data: [{ ...calculo, estado: 'CALCULADO' }] }];
+    respuestas['GET /finanzas/periodos/7/calculos'] = [{ data: [calculo] }, { data: [{ ...calculo, estado: 'VALIDADO_MANUALMENTE', justificacion_validacion: 'Transporte extraordinario por cierre de la vía principal.' }] }];
     respuestas['POST /finanzas/calculos/55/validacion'] = { data: { id_calculo_valor_razonable: 55, estado: 'CALCULADO', valor_neto: '-100000' } };
     const user = userEvent.setup();
     render(<MemoryRouter><ProveedorPeriodo><CalculoView /></ProveedorPeriodo></MemoryRouter>);
@@ -416,6 +417,9 @@ describe('CalculoView (RF-84)', () => {
     await waitFor(() => expect(validaciones()).toHaveLength(1));
     expect(JSON.parse(validaciones()[0].data as string)).toEqual({ justificacion: 'Transporte extraordinario por cierre de la vía principal.' });
     await waitFor(() => expect(screen.queryByText('1 cálculo requiere revisión')).not.toBeInTheDocument());
+    // CU03 H-01: la fila queda marcada como validada a mano, con su justificación, no como un «Calculado» más.
+    expect(screen.getAllByText('Validado manualmente').length).toBeGreaterThan(0);
+    expect(screen.getByText('Justificación: Transporte extraordinario por cierre de la vía principal.')).toBeInTheDocument();
   });
 
   it('sin permiso de ejecutar no muestra el botón', async () => {

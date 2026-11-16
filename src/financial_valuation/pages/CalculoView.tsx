@@ -3,6 +3,7 @@
 // | 2026-11-05 | Arekkazu | M06 RF-84 prototipo: valor razonable menos costos de venta a hoy e historial del período |
 // | 2026-11-09 | destroyerban | INC-M06-317-G17 RF-84: validar con justificación un cálculo con valor neto ≤ 0 |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
+// | 2026-11-16 | Arekkazu | QA-M06 CU03 H-01 RF-84 FA-2/FA-3: el cálculo validado se marca y muestra su justificación |
 import React, { useEffect, useState } from 'react';
 import { Calculator, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -120,7 +121,12 @@ export function CalculoView() {
                     <td style={TD_NUM}><span className="fin-neg">−{formatoMoneda(x.costos_venta)}</span></td>
                     <td style={TD_NUM}><strong>{formatoMoneda(x.valor_neto)}</strong>{x.tiene_valor_estimado && <span className="fin-secundario">{t('valor.estimado')}</span>}</td>
                     <td style={TD}>{t(`metodo_costo.${x.metodo_costo}`, { defaultValue: t('metodo_costo.PARAMETRIZADO') })}</td>
-                    <td style={TD}><EstadoBadge estado={x.estado} /></td>
+                    <td style={TD}>
+                      <EstadoBadge estado={x.estado} />
+                      {x.justificacion_validacion && (
+                        <span className="fin-secundario">{t('calculo.justificacion_validacion', { texto: x.justificacion_validacion })}</span>
+                      )}
+                    </td>
                     {puedeValidar && (
                       <td style={TD}>
                         {x.estado === 'REVISION_REQUERIDA' && (
