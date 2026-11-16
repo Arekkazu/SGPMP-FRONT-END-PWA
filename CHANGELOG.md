@@ -1,3 +1,9 @@
+## [1.4.0-rc.49](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.48...v1.4.0-rc.49) (2026-11-16)
+
+### Bug Fixes
+
+* **rf84-mod6:** el calculo validado a mano se marca como validado manualmente con su justificacion (QA-M06 CU03 H-01) ([8cc4c25](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8cc4c25624ec3f8c92b70eb2db8ea09638d4ce00))
+
 ## [1.4.0-rc.48](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.47...v1.4.0-rc.48) (2026-11-16)
 
 ### Bug Fixes
