@@ -14,6 +14,7 @@
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario en el listado |
 // | 2026-11-15 | Arekkazu | INC-M06-364-G71 RF-45/RF-93: valor de la venta en la baja e ingreso por venta en el estado de resultados |
 // | 2026-11-15 | Arekkazu | QA-M06 CU08 H-02 RF-89: productos de cada especie en la configuración contable |
+// | 2026-11-15 | Arekkazu | QA-M06 CU04 H-03 RF-85: el historial trae el valor en libros del activo |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -160,6 +161,8 @@ export interface HistorialActivo {
   reconocimientos: Array<{ id_reconocimiento_inicial: number; estado: string; indicador_valoracion: string;
     valor_razonable_neto_inicial: Dec | null; fecha_reconocimiento: string; es_apertura: boolean; justificacion_reversion: string | null }>;
   calculos: Calculo[]; mediciones: Medicion[]; productos: Array<Record<string, unknown>>;
+  /** Valor del activo a valor razonable (sin los cálculos de productos cosechados); null si está al costo. */
+  valor_en_libros_actual: Dec | null;
   valoracion_costo: { costos_adquisicion: Dec; vida_util_meses: number | null; depreciacion_acumulada: Dec;
     deterioro_acumulado: Dec; valor_contable_por_costo: Dec; razon_sin_mercado: string | null; es_activa: boolean } | null;
   lineas: Linea[];
@@ -269,7 +272,7 @@ export interface InformePayload {
 export interface EventoAuditoria {
   id_evento: string; descripcion_evento: string; tipo_evento: string; fecha_hora: string; actor: string;
   activo: string | null; id_periodo_contable: number | null; resumen_payload: Record<string, unknown> | null;
-  monto_afectado: Dec | null; severidad: string; integridad_verificable: boolean;
+  monto_afectado: Dec | null; severidad: string; integridad_verificable: boolean; hash_integridad?: string | null;
   /** Vista legible: «Repositorio central» o «Sincronizado desde respaldo». */
   origen?: string | null;
 }

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-05 | Arekkazu | M06 prototipos: historial financiero del activo, compartido por las vistas de valoración |
+// | 2026-11-15 | Arekkazu | QA-M06 CU04 H-03 RF-85: el valor en libros es el del activo, no el del último producto cosechado |
 import React, { useEffect, useState } from 'react';
 import { Calculator, Undo2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -38,7 +39,6 @@ export function DetalleActivoModal({ idActivo, identificador, onCerrar, onCambio
 
   const h = historial.data;
   const costo = h?.valoracion_costo?.es_activa ? h.valoracion_costo : null;
-  const ultimo = h?.calculos[0];
   const refrescar = () => { cargar(idActivo); onCambio(); };
 
   const pasarAValorRazonable = async () => {
@@ -76,7 +76,7 @@ export function DetalleActivoModal({ idActivo, identificador, onCerrar, onCambio
             [t('col.magnitud'), magnitud],
             [t('col.costo_adquisicion'), h.activo.costo_adquisicion ? formatoMoneda(h.activo.costo_adquisicion) : t('valor.sin_costo')],
             [t('col.valor_libros'), costo ? formatoMoneda(costo.valor_contable_por_costo)
-              : ultimo ? formatoMoneda(ultimo.valor_neto) : t('valor.sin_calculo')],
+              : h.valor_en_libros_actual != null ? formatoMoneda(h.valor_en_libros_actual) : t('valor.sin_calculo')],
           ]} />
 
           <div className="fin-acciones" style={{ marginTop: 'var(--s4)' }}>
