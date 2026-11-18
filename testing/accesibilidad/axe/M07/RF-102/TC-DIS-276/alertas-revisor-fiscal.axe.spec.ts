@@ -11,9 +11,10 @@
  * color); 1.4.3; 3.3.1 (mensaje de acceso restringido claro); 2.1.1. El Revisor Fiscal no puede
  * exportar ni ver la IP de origen ni los motivos de rechazo de credenciales; solo ve períodos cerrados.
  *
- * PENDIENTE (líder): RF-102 se contradice sobre si el Revisor Fiscal ve "Contrato activado" de períodos
- * cerrados (§11.4) o ningún evento de contratos (§4.3). Este spec solo anota qué tipos de evento le
- * ofrece el filtro; no lo juzga hasta que se decida.
+ * Definición del líder (2026-11-18): el Revisor Fiscal es el rol de SIGCON y vale el §11.4 de RF-102:
+ * solo ve "AgroFusion consultó el documento contable", "Vista previa del documento contable" y
+ * "Versión del contrato activada", de períodos cerrados, sin exportar. Puede cambiar cuando
+ * desarrollo defina el alcance técnico.
  *
  * Datos: registro alterado de Datos_Semilla §5.2 (lo inserta desarrollo; la tabla es de solo inserción).
  * Revisor Fiscal real: TEST_REVISOR_FISCAL, con lectura sobre auditoria_integracion_cierres. Las
@@ -79,6 +80,9 @@ test.describe('TC-DIS-276 — Alerta de registro alterado y vista del Revisor Fi
       const texto = await main(s.page).innerText();
       const tipos = await main(s.page).getByLabel('Evento').locator('option').allInnerTexts();
       anotar(testInfo, 'Tipos de evento que ofrece el filtro al Revisor', tipos.join(' | '));
+      const permitidos = /^(AgroFusion consultó el documento contable|Vista previa del documento contable|Versión del contrato activada)$/;
+      const sobrantes = tipos.map((x) => x.trim()).filter((x) => x && !/^todos/i.test(x) && !permitidos.test(x));
+      expect.soft(sobrantes, 'RF-102 §11.4: el Revisor Fiscal ve tipos de evento que no le corresponden').toEqual([]);
       expect.soft(exportar, 'El Revisor Fiscal puede exportar (RF-102 lo prohíbe)').toBe(0);
       expect.soft(/Desde \d{1,3}(\.\d{1,3}){3}/.test(texto), 'El Revisor Fiscal ve la IP de origen').toBe(false);
       expect.soft(/Cliente suspendido|credencial/i.test(texto), 'El Revisor Fiscal ve motivos de rechazo de credenciales').toBe(false);

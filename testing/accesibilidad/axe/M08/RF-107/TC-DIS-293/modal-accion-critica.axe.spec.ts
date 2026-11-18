@@ -9,7 +9,11 @@
  * Criterio: 0 violaciones axe A/AA en 4.1.2 (dialog con aria-modal y nombre); 2.4.3 (foco atrapado y
  * devuelto); 2.1.1 (Confirmar y Cancelar por teclado); 1.3.1 (resumen de lo que va a ocurrir y de lo que
  * no se puede deshacer); 3.3.4; 1.4.3. RF-107: el modal no se cierra con Escape ni con clic fuera, solo
- * con Confirmar o Cancelar. La exportación a SIGCON queda fuera (RFC-017).
+ * con Confirmar o Cancelar.
+ * Definición del líder (2026-11-18): la acción de integración con SIGCON también es crítica. Hoy la
+ * pantalla de Integración no tiene ninguna acción que exporte o envíe a SIGCON (solo la vista previa
+ * del documento contable, de lectura), así que no hay modal que revisar: se agrega aquí cuando
+ * desarrollo la construya.
  *
  * Datos y protección: ninguna de las 4 acciones se confirma; además el contexto aborta toda escritura.
  *   - Cierre de período: Administrador, período y prevalidación simulados como en M06 TC-DIS-243.
