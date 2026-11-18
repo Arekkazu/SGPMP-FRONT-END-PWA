@@ -115,6 +115,8 @@ test.describe('TC-DIS-272 — Secreto visible una sola vez al rotar la credencia
     const sigueVisible = await page.getByText(SECRETO_SIMULADO).count();
     anotar(testInfo, 'Tras cerrar', `foco: ${foco} · el secreto sigue en pantalla: ${sigueVisible > 0}`);
     expect.soft(sigueVisible, 'El secreto se puede volver a ver tras cerrar').toBe(0);
-    desviacion(/Cambiar la credencial de QA Cliente Rotacion/.test(foco), `2.4.3: al cerrar, el foco no vuelve al botón que inició la rotación (queda en ${foco})`);
+    // describirFocoDialogo corta el nombre a 40 caracteres: se compara con el disparador, no con el texto.
+    const focoEnDisparador = await disparador().evaluate((e) => document.activeElement === e).catch(() => false);
+    desviacion(focoEnDisparador,`2.4.3: al cerrar, el foco no vuelve al botón que inició la rotación (queda en ${foco})`);
   });
 });
