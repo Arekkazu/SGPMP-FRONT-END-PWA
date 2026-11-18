@@ -1,12 +1,20 @@
+// | Fecha      | Nombre   | Que se hizo                                                          |
+// |------------|----------|----------------------------------------------------------------------|
+// | 2026-11-14 | Arekkazu | M08 RF-103: «Configurar widget» y frecuencia de actualización         |
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useT } from '../../shared/i18n/useT';
-import { Check, Plus, RotateCcw, Save, type LucideIcon } from 'lucide-react';
+import { Check, Plus, RotateCcw, Save, SlidersHorizontal, type LucideIcon } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { useDashboardLayout } from '../hooks/useDashboardLayout';
-import type { WidgetCatalogoItem, WidgetConfigDTO } from '../types';
+import type { ParametrosWidget, WidgetCatalogoItem, WidgetConfigDTO } from '../types';
+import { Select } from '../../shared/design-system/Select';
+import { ConfigurarWidgetModal } from './ConfigurarWidgetModal';
+
+// RF-103 restricción 2: actualización automática entre 15 y 120 segundos (30 por defecto).
+const FRECUENCIAS = [15, 30, 60, 120];
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 import { iconoWidget } from '../iconos';
 
@@ -139,6 +147,10 @@ export function DashboardLayoutSection() {
   const [confirmRestore, setConfirmRestore] = useState(false);
   const [saved, setSaved] = useState(false);
   const [limiteAviso, setLimiteAviso] = useState(false);
+  // RF-103: opciones elegidas por widget (por id) y frecuencia de actualización del dashboard.
+  const [parametros, setParametros] = useState<Record<number, ParametrosWidget>>({});
+  const [frecuencia, setFrecuencia] = useState(30);
+  const [configurando, setConfigurando] = useState<WidgetCatalogoItem | null>(null);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -146,6 +158,8 @@ export function DashboardLayoutSection() {
     if (!layout) return;
     setLocalGrid(gridFromLayout(layout.grid, widgets));
     setActiveWidgets(layout.active_widget);
+    setParametros(Object.fromEntries(layout.grid.map((c) => [c.id_widget, c.parametros ?? {}])));
+    setFrecuencia(layout.frecuencia_actualizacion ?? 30);
   }, [layout, widgets]);
 
   // Check if a widget key is currently in the grid
@@ -231,6 +245,7 @@ export function DashboardLayoutSection() {
             span_columnas: cell.span,
             visible: true,
             orden: orden++,
+            parametros: parametros[cell.idWidget] ?? {},
           });
         }
       }
@@ -241,6 +256,7 @@ export function DashboardLayoutSection() {
       layout_config: layoutConfig,
       active_widget: activeWidgets,
       version_perfil: layout?.version_perfil ?? null,
+      frecuencia_actualizacion: frecuencia,
     };
   };
 
@@ -323,6 +339,13 @@ export function DashboardLayoutSection() {
 
       <p className="ds-sr-only" aria-live="polite">{anuncio}</p>
 
+      <div style={{ maxWidth: 260, marginBottom: 'var(--s4)' }}>
+        <Select id="dashboard-frecuencia" label={t('dashboardlayoutsection.actualizar_cada')} value={frecuencia}
+          disabled={!canAct} onChange={(e) => setFrecuencia(Number(e.target.value))}>
+          {FRECUENCIAS.map((s) => <option key={s} value={s}>{t('dashboardlayoutsection.segundos', { segundos: s })}</option>)}
+        </Select>
+      </div>
+
       {seleccion && (
         <div style={{ marginBottom: 'var(--s4)' }}>
           <Alert
@@ -333,6 +356,13 @@ export function DashboardLayoutSection() {
               : t('dashboardlayoutsection.haz_clic_en_una_celda_vacia_de_la_grilla')}
           />
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2)', marginTop: 'var(--s2)' }}>
+            {seleccion.origen && (catalogo.find((w) => w.clave === seleccion.key)?.opciones?.length ?? 0) > 0 && (
+              <Button variant="secondary" size="sm" disabled={!canAct}
+                onClick={() => setConfigurando(catalogo.find((w) => w.clave === seleccion.key) ?? null)}>
+                <SlidersHorizontal size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
+                {t('dashboardlayoutsection.configurar')}
+              </Button>
+            )}
             {seleccion.origen && (
               <Button variant="danger" size="sm" onClick={quitarSeleccionado} disabled={!canAct}>
                 {t('dashboardlayoutsection.quitar_del_dashboard')}
@@ -513,6 +543,20 @@ export function DashboardLayoutSection() {
           </div>
         </div>
       </div>
+
+      {configurando && (
+        <ConfigurarWidgetModal
+          widget={configurando}
+          parametros={parametros[configurando.id_widget] ?? {}}
+          onCancelar={() => setConfigurando(null)}
+          onAplicar={(p) => {
+            setParametros((previo) => ({ ...previo, [configurando.id_widget]: p }));
+            setAnuncio(t('dashboardlayoutsection.opciones_aplicadas', { nombre: configurando.nombre }));
+            setConfigurando(null);
+            setSeleccion(null);
+          }}
+        />
+      )}
 
       {confirmRestore && (
         <ConfirmModal

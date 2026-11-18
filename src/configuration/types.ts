@@ -8,6 +8,7 @@
 // | 2026-11-04 | Arekkazu | RF-19 v1.1: titular tributario de la finca (M06 cierra por titular) |
 // | 2026-11-10 | Arekkazu | #512 RF-16/RF-37: ciclos productivos con sus fases en orden |
 // | 2026-11-10 | Arekkazu | #391/#392 RF-16: densidad máxima por etapa |
+// | 2026-11-14 | Arekkazu | M08 RF-103: opciones por widget, frecuencia y cómo se dibuja |
 import type { TipoModelo } from '../prediction/types';
 
 /** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
@@ -704,7 +705,11 @@ export interface WidgetConfigDTO {
   span_columnas: number;
   visible: boolean;
   orden: number;
+  /** Opciones elegidas en «Configurar widget» (RF-103); vacío = las del widget por defecto. */
+  parametros?: ParametrosWidget;
 }
+
+export type ParametrosWidget = Record<string, number | string | number[] | null>;
 
 export interface DashboardLayoutResponse {
   id_dashboard_layout: number | null;
@@ -712,6 +717,8 @@ export interface DashboardLayoutResponse {
   grid: WidgetConfigDTO[];
   active_widget: string[];
   fecha_actualizacion: string | null;
+  /** Segundos entre actualizaciones automáticas del dashboard (RF-103, 15 a 120). */
+  frecuencia_actualizacion: number;
   // Se reenvia en el PATCH para que el backend detecte que el perfil cambio
   // mientras el usuario editaba (RF-28, conflicto de concurrencia).
   version_perfil: number | null;
@@ -721,6 +728,15 @@ export interface GuardarDashboardDTO {
   layout_config: WidgetConfigDTO[];
   active_widget: string[];
   version_perfil?: number | null;
+  frecuencia_actualizacion?: number;
+}
+
+/** Opción configurable de un widget: áreas, especies y sensores salen de la finca activa. */
+export interface OpcionWidget {
+  nombre: string;
+  tipo: 'areas' | 'area' | 'especies' | 'sensores' | 'lista';
+  valores: (number | string)[];
+  defecto: number | string | number[] | null;
 }
 
 // El catalogo lo define el backend (modulo9.widgets) y viene filtrado por el rol
@@ -732,6 +748,13 @@ export interface WidgetCatalogoItem {
   nombre: string;
   grupo: string;
   span_predeterminado: 1 | 2;
+  /** Cómo se dibuja (RF-103): semaforo, lecturas, cifra, conversion, lista, barras, estados, linea. */
+  visual?: string | null;
+  opciones?: OpcionWidget[];
+  /** False: funciona sin finca activa (widgets contables). */
+  requiere_finca?: boolean;
+  /** Se pide de nuevo apenas llega un push de alerta. */
+  reacciona_a_alertas?: boolean;
 }
 
 export interface WidgetDatosResponse {

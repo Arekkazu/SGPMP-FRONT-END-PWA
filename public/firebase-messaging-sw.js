@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo                                             |
+// |------------|----------|---------------------------------------------------------|
+// | 2026-11-14 | Arekkazu | M08 RF-105: reenvía a la pestaña los datos del push       |
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
 });
@@ -30,7 +33,8 @@ self.addEventListener('push', (event) => {
         includeUncontrolled: true,
       });
       windows.forEach((client) => {
-        client.postMessage({ type: 'SGPMP_FCM_NOTIFICATION' });
+        // RF-105: los datos del push (destino, nivel, área) le dicen a la app qué refrescar.
+        client.postMessage({ type: 'SGPMP_FCM_NOTIFICATION', data });
       });
       await self.registration.showNotification(title, options);
     } catch {
