@@ -1,3 +1,40 @@
+## [1.4.0-rc.50](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.49...v1.4.0-rc.50) (2026-11-16)
+
+### Bug Fixes
+
+* **rf92-mod6:** el indice de secciones del informe de revelaciones lleva a la seccion ([ae08252](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ae08252118abac1b6ce7511337e08a06d8ba17e9)), closes [#271](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/271)
+
+## [1.4.0-rc.49](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.48...v1.4.0-rc.49) (2026-11-16)
+
+### Bug Fixes
+
+* **rf84-mod6:** el calculo validado a mano se marca como validado manualmente con su justificacion (QA-M06 CU03 H-01) ([8cc4c25](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/8cc4c25624ec3f8c92b70eb2db8ea09638d4ce00))
+
+## [1.4.0-rc.48](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.47...v1.4.0-rc.48) (2026-11-16)
+
+### Bug Fixes
+
+* **rf85-mod6:** las cosechas pendientes son las del titular elegido y el detalle muestra el valor en libros del activo (QA-M06 CU04 H-02/H-03) ([7266aa7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7266aa7274f0587230bab78b46fd16ea37785752))
+* **rf94-mod6:** la bitacora filtra por usuario elegido por nombre y el detalle muestra la severidad y la huella del evento (QA-M06 CU13 H-02/H-04/H-05) ([446a0a0](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/446a0a047c15b62be4f2dcb1fb41f1f1be012c8f))
+
+## [1.4.0-rc.47](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.46...v1.4.0-rc.47) (2026-11-15)
+
+### Bug Fixes
+
+* **rf89-mod6:** el contador elige el producto del precio desde la configuracion contable (QA-M06 CU08 H-02) ([170b685](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/170b6850449875ffb5975fb0d45e2d78c8646b02))
+
+## [1.4.0-rc.46](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.45...v1.4.0-rc.46) (2026-11-15)
+
+### Bug Fixes
+
+* **rf92-mod6:** la conciliacion muestra como monto los asientos trasladados por el cierre y la seccion de riesgos rotula tipo y cantidad (TC-M06-G62, TC-M06-G64) ([3921fb6](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3921fb688da0db307f2d720e36693245c58113ba)), closes [#1153](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/1153) [Arekkazu/sgpmp-backend#1151](https://github.com/Arekkazu/sgpmp-backend/issues/1151) [Arekkazu/sgpmp-backend#1152](https://github.com/Arekkazu/sgpmp-backend/issues/1152)
+
+## [1.4.0-rc.45](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.44...v1.4.0-rc.45) (2026-11-15)
+
+### Features
+
+* **rf45-rf93-mod2-mod6:** valor de la venta en la baja e ingreso por venta en el estado de resultados (INC-M06-364-G71) ([3d04701](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3d04701131423baaccca302886dd606bd880426c))
+
 ## [1.4.0-rc.44](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.43...v1.4.0-rc.44) (2026-11-14)
 
 ### Features

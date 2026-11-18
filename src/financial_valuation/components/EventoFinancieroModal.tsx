@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-10 | Arekkazu | TC-DIS-266 RF-94: detalle legible de un evento de auditoría, huella expandible y copiable, aviso de información truncada |
+// | 2026-11-15 | Arekkazu | QA-M06 CU13 H-04/H-05 RF-94: severidad con su insignia y huella desde hash_integridad del evento |
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Copy } from 'lucide-react';
 import { ModalShell } from '../../shared/design-system/ModalShell';
@@ -8,7 +9,7 @@ import { Button } from '../../shared/design-system/Button';
 import { Alert } from '../../shared/design-system/Alert';
 import { useT } from '../../shared/i18n/useT';
 import type { EventoAuditoria } from '../types';
-import { Datos, EstadoBadge, SECUNDARIO, formatoFecha, formatoMoneda } from './comunes';
+import { Datos, SECUNDARIO, SeveridadBadge, formatoFecha, formatoMoneda } from './comunes';
 
 /** Rótulo legible de una clave del payload: «monto_afectado» → «Monto afectado». */
 function rotulo(clave: string): string {
@@ -32,7 +33,8 @@ export function EventoFinancieroModal({ evento: e, periodo, onCerrar }: Props) {
   const [copiado, setCopiado] = useState(false);
   const payload = (e.resumen_payload ?? {}) as Record<string, unknown>;
   const { hash, hash_integridad, truncado, tamano_original_kb, ...datos } = payload as Record<string, unknown> & { truncado?: boolean; tamano_original_kb?: number };
-  const huella = (hash ?? hash_integridad) as string | undefined;
+  // CU13 H-05: el backend entrega la huella en el evento (hash_integridad), no dentro de sus datos.
+  const huella = (e.hash_integridad ?? hash ?? hash_integridad) as string | undefined;
   const copiar = async () => {
     if (!huella) return;
     try { await navigator.clipboard.writeText(huella); setCopiado(true); setTimeout(() => setCopiado(false), 4000); } catch { setCopiado(false); }
@@ -50,7 +52,7 @@ export function EventoFinancieroModal({ evento: e, periodo, onCerrar }: Props) {
         [t('aud.actor'), e.actor],
         [t('col.activo'), e.activo ?? t('aud.sin_activo')],
         [t('comun.periodo'), periodo],
-        [t('aud.severidad'), <EstadoBadge key="s" estado={e.severidad} />],
+        [t('aud.severidad'), <SeveridadBadge key="s" severidad={e.severidad} />],
         [t('col.monto'), e.monto_afectado ? formatoMoneda(e.monto_afectado) : t('aud.sin_monto')],
         [t('aud.origen'), e.origen ?? t('aud.origen_desconocido')],
       ]} />

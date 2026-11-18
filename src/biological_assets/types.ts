@@ -6,6 +6,7 @@
 // | 2026-11-02 | Arekkazu | AJF-01 RF-46: categorías de telemetría y predicción en el historial |
 // | 2026-11-03 | Arekkazu | QA-M02 RF-49: la ficha solo consulta los sensores asociados; ya no crea asociaciones |
 // | 2026-11-10 | Arekkazu | #393 RF-36: estado de la densidad del lote en el listado y en sus datos |
+// | 2026-11-15 | Arekkazu | INC-M06-364-G71 RF-45/RF-93: valor de la venta en la baja e ingreso por venta en el estado de resultados |
 // =====================================================================
 // Módulo 2 — Activos Biológicos · Tipos de dominio
 // Contrato: do-it/biological_assets/.../api_reference_m02_activos_biologicos.md
@@ -289,6 +290,8 @@ export interface EventoBajaResponse {
   cantidad_afectada: number;
   tipo: string;
   motivo_baja: string | null;
+  valor_venta?: string | null;      // solo en una venta
+  referencia_venta?: string | null;
 }
 
 export interface EventoSanitarioResponse {
@@ -360,6 +363,8 @@ export interface RegistrarEventoBajaDTO {
   fecha_baja: string;                      // date
   motivo_baja: string;
   cantidad_afectada?: number | null;       // solo LOTE (baja parcial)
+  valor_venta?: string;                    // solo venta: lo recibido (decimal con 2 cifras)
+  referencia_venta?: string;               // solo venta: factura o remisión
 }
 
 export interface RegistrarEventoSanitarioDTO {

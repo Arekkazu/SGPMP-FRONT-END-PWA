@@ -156,6 +156,7 @@
     "PENDIENTE": "Por confirmar",
     "BLOQUEADO": "Bloqueado",
     "REVISION_REQUERIDA": "Requiere revisión",
+    "VALIDADO_MANUALMENTE": "Validado manualmente",
     "MEDICION_PENDIENTE": "Medición pendiente",
     "ERROR": "Con error",
     "CORREGIDO": "Corregido"
@@ -755,13 +756,15 @@
       "ganancia_transformacion_biologica": "Ganancia por transformación biológica",
       "ganancia_precio_mercado": "Ganancia por precio de mercado",
       "ingresos_productos_agricolas": "Productos agrícolas",
+      "ingresos_venta_activos": "Ventas de activos biológicos",
       "ganancia_ajustes_periodos_anteriores": "Ajustes de períodos anteriores (ganancia)",
       "perdida_reconocimiento_inicial": "Pérdida en el reconocimiento inicial",
       "perdida_transformacion_biologica": "Pérdida por transformación biológica",
       "perdida_precio_mercado": "Pérdida por precio de mercado",
       "costos_mantenimiento": "Costos de mantenimiento",
       "inversiones_llevadas_a_gasto": "Inversiones llevadas a gasto",
-      "bajas_activos": "Bajas de activos",
+      "bajas_activos": "Valor en libros de activos vendidos o sacrificados",
+      "perdidas_bajas_sin_recuperacion": "Pérdidas por bajas sin recuperación",
       "depreciacion_activos_costo": "Depreciación de activos al costo",
       "deterioro_activos_costo": "Deterioro de activos al costo",
       "perdida_ajustes_periodos_anteriores": "Ajustes de períodos anteriores (pérdida)"
@@ -805,7 +808,10 @@
     "aprobado_por": "Aprobado por",
     "aprobador_sin_nombre": "Otro usuario (sin permiso para ver su nombre)",
     "periodo_abierto_productor": "El Contador aún no ha generado el estado de resultados de este período: estará disponible cuando lo cierre y lo apruebe.",
-    "lote_poblacional": "Lote poblacional"
+    "lote_poblacional": "Lote poblacional",
+    "ventas_sin_valor_titulo": "Hay ventas sin valor registrado",
+    "ventas_sin_valor_one": "{{count}} venta del período no tiene registrado lo que se recibió: su ingreso no aparece en el estado y solo cuenta su valor en libros. Regístralo en las ventas nuevas desde Activos biológicos.",
+    "ventas_sin_valor_other": "{{count}} ventas del período no tienen registrado lo que se recibió: su ingreso no aparece en el estado y solo cuenta su valor en libros. Regístralo en las ventas nuevas desde Activos biológicos."
   },
   "rev": {
     "titulo": "Revelaciones NIC 41",
@@ -870,6 +876,9 @@
       "cosechas": "Cosechas",
       "bajas": "Bajas",
       "depreciacion_y_deterioro": "Depreciación y deterioro",
+      "asientos_trasladados_por_cierre": "Asientos trasladados por el cierre",
+      "tipo": "Tipo",
+      "cantidad": "Cantidad",
       "magnitud": "Magnitud",
       "unidad_magnitud": "Unidad",
       "precio_unitario": "Precio unitario",
@@ -986,7 +995,7 @@
     "truncado": "Información truncada",
     "truncado_detalle": "El detalle original pesaba {{kb}} KB y se recortó para la bitácora; aquí se muestra el resumen conservado.",
     "usuario": "Usuario",
-    "usuario_hint": "Número del usuario que hizo la operación.",
+    "usuario_hint": "Quienes hicieron operaciones en el período.",
     "ver": "Ver",
     "ver_aria": "Ver el detalle del evento {{evento}} del {{fecha}}"
   },
@@ -1107,6 +1116,7 @@
     "aviso_revision_detalle": "Sus costos de venta igualan o superan el valor de mercado. Corrige los costos o valida el resultado con una justificación.",
     "validar": "Validar",
     "validar_aria": "Validar el cálculo de {{activo}}",
+    "justificacion_validacion": "Justificación: {{texto}}",
     "validar_titulo": "Validar el cálculo de {{activo}}",
     "validar_ayuda": "El valor neto es menor o igual a cero. Al validarlo aceptas el resultado y queda registrado con tu justificación y la fecha.",
     "validar_confirmar": "Validar el cálculo",

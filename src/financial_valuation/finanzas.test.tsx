@@ -15,9 +15,13 @@
 // | 2026-11-12 | Arekkazu | USAB-M05-M06 N-08 RF-89: la fila corregida dice «Corregido por el precio vigente» |
 // | 2026-11-12 | Arekkazu | Lote M05/M06 11-12 RF-93: el activo excluido muestra su motivo en palabras y el resultado que quedó fuera |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-86: el listado se filtra por una finca del usuario |
+// | 2026-11-15 | Arekkazu | QA-M06 CU08 H-02 RF-89: el Contador elige el producto sin leer Configuración → Métricas |
+// | 2026-11-15 | Arekkazu | QA-M06 v5 CU04 H-02/H-03, CU13 H-02/H-04/H-05: titular en cosechas, valor del activo, usuario por nombre, severidad y huella |
+// | 2026-11-16 | Arekkazu | QA-M06 CU03 H-01 RF-84 FA-2/FA-3: el cálculo validado se lista como validado manualmente |
+// | 2026-11-16 | Arekkazu | Hotfix RF-92: el índice de secciones lleva a la sección sin salir del informe |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AxiosAdapter, InternalAxiosRequestConfig } from 'axios';
@@ -29,6 +33,8 @@ import { VariacionesView } from './pages/VariacionesView';
 import { ReconocimientosView } from './pages/ReconocimientosView';
 import { CalculoView } from './pages/CalculoView';
 import { ProductosView } from './pages/ProductosView';
+import { AuditoriaView } from './pages/AuditoriaView';
+import { DetalleActivoModal } from './components/DetalleActivoModal';
 import { EstadoResultadosView } from './pages/EstadoResultadosView';
 import { TrazabilidadView } from './pages/TrazabilidadView';
 import { RevelacionesView } from './pages/RevelacionesView';
@@ -112,6 +118,20 @@ describe('PreciosView (RF-89)', () => {
     await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/precios' && p.method === 'post')).toBe(true));
     const cuerpo = JSON.parse(peticiones.find((p) => p.url === '/finanzas/precios' && p.method === 'post')!.data as string);
     expect(cuerpo).toMatchObject({ id_precio_corregido: 700, fecha_vigencia: '2026-10-01', fuente: 'UPRA' });
+  });
+
+  it('CU08 H-02: el Contador elige el producto de la configuración contable sin leer Configuración → Métricas', async () => {
+    sesion.permisos = [permiso('precios_mercado', 2), permiso('precios_mercado', 1), permiso('configuracion_contable', 2)];
+    const leche = { id_metrica_produccion: 216, nombre: 'Produccion de leche', unidad_medida: 'L' };
+    respuestas['GET /finanzas/configuracion'] = { data: { ...configuracion, especies: [{ ...especie, productos: [leche] }] } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><PreciosView /></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: /Registrar precio/ }));
+    const dialogo = within(screen.getByRole('dialog'));
+    await user.selectOptions(dialogo.getByLabelText(/^Especie/), '2');
+    await user.selectOptions(dialogo.getByLabelText(/^Categoría/), 'PRODUCTO');
+    expect(dialogo.getByRole('option', { name: 'Produccion de leche (L)' })).toBeInTheDocument();
+    expect(peticiones.some((p) => p.url?.startsWith('/configuracion/metricas'))).toBe(false);
   });
 
   it('una desviación mayor al umbral pide confirmación y reenvía con confirmar_desviacion', async () => {
@@ -371,7 +391,7 @@ describe('CalculoView (RF-84)', () => {
   const abrirValidacion = async () => {
     sesion.permisos = [permiso('valoracion_activos', 2), permiso('valoracion_activos', 5), permiso('cierre_periodo', 2)];
     respuestas['GET /finanzas/periodos'] = { data: [periodo] };
-    respuestas['GET /finanzas/periodos/7/calculos'] = [{ data: [calculo] }, { data: [{ ...calculo, estado: 'CALCULADO' }] }];
+    respuestas['GET /finanzas/periodos/7/calculos'] = [{ data: [calculo] }, { data: [{ ...calculo, estado: 'VALIDADO_MANUALMENTE', justificacion_validacion: 'Transporte extraordinario por cierre de la vía principal.' }] }];
     respuestas['POST /finanzas/calculos/55/validacion'] = { data: { id_calculo_valor_razonable: 55, estado: 'CALCULADO', valor_neto: '-100000' } };
     const user = userEvent.setup();
     render(<MemoryRouter><ProveedorPeriodo><CalculoView /></ProveedorPeriodo></MemoryRouter>);
@@ -398,6 +418,9 @@ describe('CalculoView (RF-84)', () => {
     await waitFor(() => expect(validaciones()).toHaveLength(1));
     expect(JSON.parse(validaciones()[0].data as string)).toEqual({ justificacion: 'Transporte extraordinario por cierre de la vía principal.' });
     await waitFor(() => expect(screen.queryByText('1 cálculo requiere revisión')).not.toBeInTheDocument());
+    // CU03 H-01: la fila queda marcada como validada a mano, con su justificación, no como un «Calculado» más.
+    expect(screen.getAllByText('Validado manualmente').length).toBeGreaterThan(0);
+    expect(screen.getByText('Justificación: Transporte extraordinario por cierre de la vía principal.')).toBeInTheDocument();
   });
 
   it('sin permiso de ejecutar no muestra el botón', async () => {
@@ -430,6 +453,12 @@ describe('ProductosView (RF-85 FA-1/FA-2)', () => {
     return user;
   };
   const envios = () => peticiones.filter((p) => p.url === '/finanzas/productos/pendientes/500/reconocimiento' && p.method === 'post');
+
+  it('CU04 H-02: pide solo las cosechas pendientes del titular del período elegido', async () => {
+    await abrir();
+    const pedidas = peticiones.filter((p) => p.url === '/finanzas/productos/pendientes' && p.method === 'get');
+    expect(pedidas.map((p) => p.params)).toEqual([{ numero_id_tributaria: '900123456' }]);
+  });
 
   it('lista las cosechas pendientes y solo ofrece costos manuales donde aplican', async () => {
     await abrir();
@@ -545,6 +574,20 @@ describe('Lo que pedía backend en la evaluación QA M06 (TC-DIS-233/257/262)', 
     expect((await screen.findAllByText('Ana Contadora')).length).toBeGreaterThan(0);
   });
 
+  it('el índice del informe lleva a la sección sin navegar fuera de la página', async () => {
+    sesion.permisos = [permiso('revelaciones_nic41', 2)];
+    respuestas['GET /finanzas/periodos'] = { data: [cerrado] };
+    respuestas['GET /finanzas/periodos/6/revelaciones'] = { data: [{ id_informe: 83, version_informe: '2026-10-V1', estado: 'BORRADOR',
+      fecha_generacion: '2026-11-01T08:00:00Z', fecha_aprobacion: null, razon_rechazo: null, hash_informe: 'e' }] };
+    respuestas['GET /finanzas/revelaciones/83'] = { data: { id_informe: 83, version_informe: '2026-10-V1', estado: 'BORRADOR', fecha_generacion: '2026-11-01T08:00:00Z',
+      fecha_aprobacion: null, razon_rechazo: null, hash_informe: 'e'.repeat(64), contenido: { parr_41_43_descripcion: [], parr_53_riesgos: [] } } };
+    render(<MemoryRouter><ProveedorPeriodo><RevelacionesView /></ProveedorPeriodo></MemoryRouter>);
+    const enlace = await screen.findByRole('link', { name: 'Riesgos climáticos, sanitarios y otros' });
+    // Con <base href> el ancla relativa iría al inicio de la app: el clic no debe navegar.
+    expect(fireEvent.click(enlace)).toBe(false);
+    expect(document.getElementById('rev-parr_53_riesgos')).toHaveFocus();
+  });
+
   it('el panel de pendientes junta la medición pendiente y los hechos sin cuenta', async () => {
     sesion.permisos = [permiso('valoracion_activos', 2), permiso('cierre_periodo', 2)];
     respuestas['GET /finanzas/periodos'] = { data: [periodo] };
@@ -594,5 +637,45 @@ describe('Período contable por titular y año (usabilidad 11-11)', () => {
     await waitFor(() => expect(screen.getByRole('combobox', { name: /Período contable/ })).toHaveValue('7'));
     expect(screen.queryByRole('combobox', { name: 'Titular' })).toBeNull();
     expect(screen.queryByRole('combobox', { name: 'Año' })).toBeNull();
+  });
+});
+
+describe('QA M06 v5: valor del activo y bitácora (CU04 H-03, CU13 H-02/H-04/H-05)', () => {
+  it('CU04 H-03: el valor en libros es el del activo, no el del último producto cosechado', async () => {
+    sesion.permisos = [permiso('valoracion_activos', 2)];
+    const calculo = (id: number, valor_neto: string) => ({ id_calculo_valor_razonable: id, valor_neto, estado: 'CALCULADO' });
+    respuestas['GET /finanzas/activos/2517'] = { data: {
+      activo: { id_activo_biologico: 2517, identificador: 'QA-SG-M06-BOV-04', especie: 'Bovino', finca: 'Finca Qa Sg Mseis',
+        razon_social: 'QA SG M06 SAS', numero_id_tributaria: '901555123', peso_kg: '480', cantidad_actual: null, costo_adquisicion: '4200000' },
+      reconocimientos: [], calculos: [calculo(2001, '33840.0000'), calculo(1998, '4308000.0000')], mediciones: [], productos: [],
+      valoracion_costo: null, lineas: [], valor_en_libros_actual: '4308000.0000',
+    } };
+    render(<DetalleActivoModal idActivo={2517} identificador="QA-SG-M06-BOV-04" onCerrar={() => {}} onCambio={() => {}} />);
+    const valor = (await screen.findByText('Valor en libros')).nextElementSibling as HTMLElement;
+    expect(valor.textContent).toMatch(/4\.308\.000/);
+  });
+
+  it('CU13 H-02/H-04/H-05: usuario por nombre, severidad del evento y huella en el detalle', async () => {
+    sesion.permisos = [permiso('auditoria_financiera', 2), permiso('cierre_periodo', 2)];
+    const evento = { id_evento: '9', descripcion_evento: 'Cotización registrada', tipo_evento: 'COTIZACION_REGISTRADA',
+      fecha_hora: '2026-11-14T14:58:00Z', actor: 'QA Contador Sg', activo: 'QA-SG-M06-BOV-01', id_periodo_contable: 7,
+      resumen_payload: { activos: [2515] }, monto_afectado: '3800000', severidad: 'INFO', integridad_verificable: true,
+      hash_integridad: 'a'.repeat(64), origen: 'Repositorio central' };
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/auditoria/usuarios'] = { data: [{ id_usuario: 171, nombre: 'QA Contador Sg' }] };
+    respuestas['GET /finanzas/auditoria'] = { data: { eventos: [evento], total_registros: 1, resumen_severidad: { INFO: 1 } } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><AuditoriaView /></ProveedorPeriodo></MemoryRouter>);
+
+    const usuario = await screen.findByRole('combobox', { name: /^Usuario/ });
+    await waitFor(() => expect(within(usuario).getByRole('option', { name: 'QA Contador Sg' })).toBeInTheDocument());
+    await user.selectOptions(usuario, '171');
+    await waitFor(() => expect(peticiones.some((p) => p.url === '/finanzas/auditoria' && p.params?.id_usuario === 171)).toBe(true));
+
+    await user.click(screen.getAllByRole('button', { name: /Ver el detalle del evento/ })[0]);
+    const dialogo = within(screen.getByRole('dialog'));
+    expect(dialogo.getByText('Información')).toBeInTheDocument();
+    expect(dialogo.queryByText('Sin estado')).toBeNull();
+    expect(dialogo.getByRole('button', { name: /Mostrar la huella completa/ })).toBeInTheDocument();
   });
 });

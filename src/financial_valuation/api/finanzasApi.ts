@@ -12,6 +12,7 @@
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-11 | Arekkazu | USAB-M06 RF-87/93: período por titular y año, listas cortas en vez de todos los períodos en un solo selector |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-94: la bitácora acepta id_finca |
+// | 2026-11-15 | Arekkazu | QA-M06 CU04 H-02 / CU13 H-02 RF-85/94: cosechas del titular seleccionado; usuarios de la bitácora |
 import { http } from '../../shared/api/http';
 import type {
   Acumulado, ActivoValorado, Asignacion, Cadena, CalculoPeriodo, CosechaPendiente, MedicionPeriodo, ProductoPeriodo, VariacionPeriodo, Clasificacion, Comprobante, Configuracion, ConfiguracionGeneral, Costo, CostoPayload,
@@ -89,7 +90,8 @@ export const finanzasApi = {
     post<{ id_calculo_valor_razonable: number; estado: string; valor_neto: string }>(`/calculos/${idCalculo}/validacion`, { justificacion }),
   productos: (idPeriodo: number) => get<ProductoPeriodo[]>(`/periodos/${idPeriodo}/productos`),
   // RF-85 FA-1/FA-2: cosechas pendientes por falta de precio o de costos de venta.
-  cosechasPendientes: () => get<CosechaPendiente[]>('/productos/pendientes'),
+  cosechasPendientes: (nit?: string | null) =>
+    get<CosechaPendiente[]>('/productos/pendientes', nit ? { numero_id_tributaria: nit } : undefined),
   reconocerCosecha: (idEvento: number, body: { costos_manuales: CostosManuales; justificacion: string }) =>
     post<{ id_evento: number; resultado: string }>(`/productos/pendientes/${idEvento}/reconocimiento`, body),
 
@@ -144,4 +146,7 @@ export const finanzasApi = {
   auditoria: (filtros: { id_periodo_contable?: number; id_activo_biologico?: number; id_finca?: number; tipo_evento?: string; severidad?: string;
     id_usuario?: number; origen_registro?: string; desde?: string; hasta?: string; pagina: number; tamano?: number; orden?: 'ASC' | 'DESC' }) =>
     get<PaginaAuditoria>('/auditoria', { tamano: 50, ...filtros, formato: 'LEGIBLE' }),
+  /** Quienes tienen eventos en el período, por nombre: opciones del filtro Usuario (CU13 H-02). */
+  auditoriaUsuarios: (idPeriodo: number) =>
+    get<Array<{ id_usuario: number; nombre: string }>>('/auditoria/usuarios', { id_periodo_contable: idPeriodo }),
 };
