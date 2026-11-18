@@ -1,9 +1,12 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-02 | Arekkazu | RF-110: color por tipo de área para el grafo de topología |
+// | 2026-11-14 | Arekkazu | M08 RF-103: íconos de los widgets nuevos del dashboard |
 import {
   Beef, Bird, Building2, ChartColumn, ChartLine, Cloud, Cpu, Droplets, Fence, Fish, FlaskConical, Hourglass, House,
   OctagonAlert, Package, Radio, Sprout, Sun, Thermometer, Trees, TriangleAlert, Warehouse, Waves, Wind, Wrench,
+  CalendarClock, ClipboardCheck, Gauge, HeartPulse, ListChecks, PawPrint, PlugZap, Stethoscope, Syringe, Tags,
+  TrafficCone, Wallet, Wheat, WifiOff,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -68,6 +71,21 @@ const POR_WIDGET: Record<string, LucideIcon> = {
   prod_bovinos: Beef,
   fincas_estado: House,
   cfg_pendiente: Hourglass,
+  semaforo_areas: TrafficCone,
+  inventario_especies: PawPrint,
+  valor_inventario: Wallet,
+  ultimos_eventos: ListChecks,
+  conversion_alimenticia: Wheat,
+  riesgo_sanitario_alto: HeartPulse,
+  distribucion_riesgo: ChartColumn,
+  retroalimentacion_pendiente: Stethoscope,
+  alertas_sanitarias: Syringe,
+  periodos_abiertos: CalendarClock,
+  reconocimientos_pendientes: ClipboardCheck,
+  integraciones_fallidas: PlugZap,
+  precios_por_vencer: Tags,
+  dispositivos_sin_senal: WifiOff,
+  lecturas_area: Gauge,
 };
 
 export function iconoWidget(clave: string): LucideIcon {

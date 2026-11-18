@@ -1,3 +1,16 @@
+## [1.4.0-rc.51](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.50...v1.4.0-rc.51) (2026-11-18)
+
+### Features
+
+* **rf103-mod8:** dashboard con widgets de cada módulo, configurables y en tiempo real ([fc88433](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/fc884338ae5bf56ab54063af182c385f9b83d12b))
+* **rf105-mod8:** bandeja con niveles, filtros, atender con acción documentada y descartar ([268c0ab](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/268c0abf8307119991ee86a677e3af0f1a0a8b35))
+
+## [1.4.0-rc.50](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.49...v1.4.0-rc.50) (2026-11-16)
+
+### Bug Fixes
+
+* **rf92-mod6:** el indice de secciones del informe de revelaciones lleva a la seccion ([ae08252](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ae08252118abac1b6ce7511337e08a06d8ba17e9)), closes [#271](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/271)
+
 ## [1.4.0-rc.49](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.48...v1.4.0-rc.49) (2026-11-16)
 
 ### Bug Fixes
