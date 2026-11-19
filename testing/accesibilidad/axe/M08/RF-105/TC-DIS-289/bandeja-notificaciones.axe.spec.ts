@@ -19,7 +19,7 @@
  */
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
-import { anotar, desviacion, escanear, estaEnRegionViva, precondicion } from '../../../_shared/sigabA11y';
+import { anotar, camposSinNombre, desviacion, escanear, estaEnRegionViva, precondicion } from '../../../_shared/sigabA11y';
 import {
   NOTIFICACIONES_VET, abrirBandeja, abrirSesionM08, anunciosDurante, bandeja, botonCampana, describirFocoDialogo, focoVisible, irA,
   quitarSimulaciones, simularEscritura, simularNotificaciones, textosCrudos,
@@ -86,24 +86,36 @@ test.describe('TC-DIS-289 — Bandeja de notificaciones', () => {
     const crudos = await textosCrudos(b);
     const eventoN = lista.filter((n) => /Evento \d+/.test(n.texto)).map((n) => n.texto.slice(0, 40));
     desviacion(crudos.length === 0 && eventoN.length === 0, `regla de textos visibles: códigos en la bandeja → ${[...crudos, ...eventoN].join(' ¦ ')}`);
+    // RF-105: las críticas pendientes van primero (se evalúa con el orden real del backend).
+    const niveles = lista.map((n) => n.nivel?.toLowerCase() ?? '');
+    const ultimaCritica = niveles.map((n) => /cr[ií]tic/.test(n)).lastIndexOf(true);
+    const primeraNoCritica = niveles.findIndex((n) => !/cr[ií]tic/.test(n));
+    anotar(testInfo, 'Orden por nivel (primeras 6)', niveles.slice(0, 6).map((n) => n || 'sin nivel').join(', '));
+    desviacion(ultimaCritica === -1 || primeraNoCritica === -1 || ultimaCritica < primeraNoCritica, 'RF-105: las alertas críticas no van primero en la bandeja');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
     expect.soft(await campana.evaluate((e) => document.activeElement === e), '2.4.3: al cerrar con Escape el foco no vuelve a la campana').toBe(true);
   });
 
-  test('b. [1.4.1 / 2.1.1] Orden por nivel, agrupación y "Mostrar más" con teclado (Datos simulados)', async ({}, testInfo) => {
+  test('b. [1.4.1 / 3.3.2 / 2.1.1] Nivel en texto, agrupación, filtros y "Mostrar más" con teclado (Datos simulados)', async ({}, testInfo) => {
     await simularNotificaciones(page);
-    anotar(testInfo, 'Datos simulados', `${NOTIFICACIONES_VET.length} notificaciones de §9.1 (3 críticas, 17 advertencias, 35 informativas), por fecha descendente como las entrega el backend.`);
+    anotar(testInfo, 'Datos simulados', `${NOTIFICACIONES_VET.length} notificaciones de §9.1 (3 críticas, 13 advertencias —"Humedad alta" agrupada con 5 ocurrencias—, 35 informativas).`);
     await irA(page, 'dashboard');
     const b = await abrirBandeja(page);
     await escanear(page, TC_ID, __dirname, 'bandeja-simulada', testInfo, LH);
     const lista = await leerItems();
-    anotar(testInfo, 'Primeras 3', lista.slice(0, 3).map((n) => n.texto.slice(0, 60)).join(' ¦ '));
-    desviacion(/Alerta cr[ií]tica/.test(lista[0]?.texto ?? '') && /Alerta cr[ií]tica/.test(lista[1]?.texto ?? ''), 'RF-105: las alertas críticas sin leer no van primero (el orden es solo por fecha)');
-    const humedad = lista.filter((n) => /Humedad alta/.test(n.texto)).length;
-    desviacion(humedad <= 1, `RF-105: las ${humedad} advertencias de "Humedad alta" del mismo activo no se agrupan`);
+    const sinNivel = lista.filter((n) => !n.nivel).map((n) => n.texto.slice(0, 50));
+    anotar(testInfo, 'Notificaciones sin nivel en texto', `${sinNivel.length} de ${lista.length} · p. ej. ${sinNivel.slice(0, 2).join(' ¦ ') || '(ninguna)'}`);
+    desviacion(sinNivel.length === 0, `1.4.1: ${sinNivel.length} notificaciones no dicen su nivel en texto (las informativas no llevan rótulo)`);
+    const humedad = lista.find((n) => /Humedad alta/.test(n.texto))?.texto ?? '';
+    anotar(testInfo, 'Notificación agrupada', humedad);
+    expect.soft(humedad, 'RF-105: la notificación agrupada no dice cuántas veces se repitió').toMatch(/se repiti[oó] 5 veces/);
+    expect.soft(await camposSinNombre(b), '3.3.2: filtros de la bandeja sin etiqueta').toEqual([]);
+    for (const filtro of ['Nivel', 'Estado', 'Módulo']) {
+      expect.soft(await b.getByLabel(filtro, { exact: true }).count(), `3.3.2: falta el filtro "${filtro}"`).toBe(1);
+    }
     const mas = b.getByRole('button', { name: 'Mostrar más' });
-    precondicion(await mas.count() > 0, 'la bandeja no ofrece "Mostrar más" con 55 notificaciones');
+    precondicion(await mas.count() > 0, `la bandeja no ofrece "Mostrar más" con ${NOTIFICACIONES_VET.length} notificaciones`);
     if (!(await mas.count())) return;
     await mas.focus();
     expect.soft(await focoVisible(page), '2.4.7: "Mostrar más" no muestra el foco').toBe(true);
@@ -116,7 +128,7 @@ test.describe('TC-DIS-289 — Bandeja de notificaciones', () => {
     await escanear(page, TC_ID, __dirname, 'bandeja-mas', testInfo, LH);
     anotar(testInfo, 'Mostrar más', `${antes} → ${despues} · foco: ${await describirFocoDialogo(page)} · anuncios: ${vistos.join(' ¦ ') || '(ninguno)'}`);
     expect.soft(despues, '2.1.1: "Mostrar más" con teclado no carga más notificaciones').toBeGreaterThan(antes);
-    desviacion(despues - antes >= 30 || antes >= 50, 'RF-105: la bandeja pagina de a 20, no de a 50');
+    expect.soft(antes, 'RF-105: la primera página de la bandeja no trae 50 notificaciones').toBe(50);
     expect.soft(await describirFocoDialogo(page), '2.4.3: tras "Mostrar más" el foco sale de la bandeja').toContain('(diálogo)');
   });
 
@@ -127,7 +139,7 @@ test.describe('TC-DIS-289 — Bandeja de notificaciones', () => {
     // Tras marcar, la app vuelve a pedir la lista: se refleja la notificación ya leída.
     page.on('request', (r) => {
       const m = /\/notificaciones\/(\d+)\/leida$/.exec(new URL(r.url()).pathname);
-      if (m && r.method() === 'PATCH') { const n = lista.find((x) => x.id_notificacion === Number(m[1])); if (n) n.es_leido = true; }
+      if (m && r.method() === 'PATCH') { const n = lista.find((x) => x.id_notificacion === Number(m[1])); if (n) { n.es_leido = true; n.estado = 'LEIDA'; } }
     });
     anotar(testInfo, 'Datos simulados', 'PATCH /notificaciones/{id}/leida responde 200 sin llegar al backend.');
     await irA(page, 'dashboard');
