@@ -5,6 +5,7 @@
 // | 2026-10-29 | Arekkazu | PEND-456 RF-66/RF-68: Monitor y Contagio con el permiso de su endpoint real |
 // | 2026-10-29 | Arekkazu | USAB-M04 prototipo 13.9 RF-66/RF-68: Estado sanitario y 4 pestañas principales; el resto en grupos |
 // | 2026-11-03 | Arekkazu | RF-65: se retira la pestaña Motor (configuración del motor) por decisión del equipo |
+// | 2026-11-18 | Arekkazu | M08 RF-106: pestaña Historial predictivo (Veterinario y Administrador) |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Switch, Route, Redirect } from 'react-router-dom';
@@ -24,6 +25,7 @@ import { MonitorInferenciaView } from './MonitorInferenciaView';
 import { RiesgoContagioView } from './RiesgoContagioView';
 import { PatologiasView } from './PatologiasView';
 import { HistorialView } from './HistorialView';
+import { HistorialPredictivoView } from './HistorialPredictivoView';
 import { RetroalimentacionView } from './RetroalimentacionView';
 import { ModelosView } from './ModelosView';
 import { DistribucionOtaView } from './DistribucionOtaView';
@@ -45,8 +47,12 @@ const TABS_PRINCIPAL: PestanaModulo[] = [
 
 const MONITOR: PestanaModulo = { label: 'Inferencias', path: '/prediccion/monitor', icon: <Activity size={15} aria-hidden />, permiso: [RECURSO_HISTORIAL, ACCION_R] };
 const CONTAGIO: PestanaModulo = { label: 'Contagio', path: '/prediccion/contagio', icon: <ShieldAlert size={15} aria-hidden />, permiso: [RECURSO_MOTOR, ACCION_R] };
+// RF-106: recurso propio ubicado por nombre (su id cambia entre ambientes); solo Veterinario y Administrador.
+const HISTORIAL_PREDICTIVO: PestanaModulo = { label: 'Historial predictivo', path: '/prediccion/historial-predictivo',
+  icon: <HeartPulse size={15} aria-hidden />, permisoNombre: ['historial_clinico_predictivo', ACCION_R] };
 const TABS_SEGUIMIENTO: PestanaModulo[] = [
   { label: 'Historial', path: '/prediccion/historial', icon: <History size={15} aria-hidden />, permiso: [RECURSO_HISTORIAL, ACCION_R] },
+  HISTORIAL_PREDICTIVO,
   { label: 'Retroalimentación', path: '/prediccion/retroalimentacion', icon: <MessageSquareText size={15} aria-hidden />, permiso: [RECURSO_RETRO, ACCION_R] },
   MONITOR,
   CONTAGIO,
@@ -86,6 +92,7 @@ export function PrediccionPage() {
         <Route exact path="/prediccion/estado"><PestanaProtegida pestana={ESTADO_SANITARIO}><EstadoSanitarioView /></PestanaProtegida></Route>
         <Route exact path="/prediccion/patologias" component={PatologiasView} />
         <Route exact path="/prediccion/historial" component={HistorialView} />
+        <Route exact path="/prediccion/historial-predictivo"><PestanaProtegida pestana={HISTORIAL_PREDICTIVO}><HistorialPredictivoView /></PestanaProtegida></Route>
         <Route exact path="/prediccion/retroalimentacion" component={RetroalimentacionView} />
         <Route exact path="/prediccion/modelos" component={ModelosView} />
         <Route exact path="/prediccion/distribucion" component={DistribucionOtaView} />

@@ -7,6 +7,7 @@
 // | 2026-11-10 | Arekkazu | INC-M06-346-G43-03 RF-87 FA-2: decisión por activo sin precio en el cierre |
 // | 2026-11-10 | Arekkazu | TC-DIS-242..246 RF-87: diálogo descrito, avance por pasos anunciado, estados con icono, tablas de bloqueos, «Cancelar cierre» y comprobantes con débito/crédito |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
+// | 2026-11-18 | Arekkazu | M08 RF-107 tipo 5: la confirmación del cierre no se cierra con Escape ni con clic afuera |
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Download, Lock, XCircle } from 'lucide-react';
@@ -388,7 +389,7 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
       )}
 
       {confirmando && (
-        <ModalShell title={t('cierre.confirmar_titulo', { periodo: nombrePeriodo(periodo) })} onClose={() => setConfirmando(false)} maxWidth={480}
+        <ModalShell bloqueante title={t('cierre.confirmar_titulo', { periodo: nombrePeriodo(periodo) })} onClose={() => setConfirmando(false)} maxWidth={480}
           descripcion={t('cierre.confirmar_detalle', { periodo: etiquetaPeriodo(periodo) })}
           footer={(
             <>

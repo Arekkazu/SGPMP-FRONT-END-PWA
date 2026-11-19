@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-05 | Arekkazu | M06 prototipos: historial financiero del activo, compartido por las vistas de valoración |
 // | 2026-11-15 | Arekkazu | QA-M06 CU04 H-03 RF-85: el valor en libros es el del activo, no el del último producto cosechado |
+// | 2026-11-18 | Arekkazu | M08 RF-107 tipo 5: la reversión del reconocimiento se confirma en un diálogo bloqueante |
 import React, { useEffect, useState } from 'react';
 import { Calculator, Undo2 } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -50,7 +51,7 @@ export function DetalleActivoModal({ idActivo, identificador, onCerrar, onCambio
     return (
       <MotivoModal
         titulo={t('valor.revertir_titulo')} descripcion={t('valor.revertir_ayuda')} etiqueta={t('valor.motivo')} confirmar={t('valor.revertir')}
-        min={20} max={2000} peligro enviando={reversion.cargando} error={reversion.error}
+        min={20} max={2000} peligro bloqueante enviando={reversion.cargando} error={reversion.error}
         onCerrar={() => setRevertir(false)}
         onConfirmar={async (motivo) => {
           if (await reversion.ejecutar(idActivo, motivo)) { setRevertir(false); pushToast('success', t('valor.revertido')); refrescar(); }

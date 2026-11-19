@@ -5,17 +5,19 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-20: Telemetría y Predicción visibles con cualquiera de sus permisos de lectura |
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: Finanzas NIC 41 en el menú (recursos por nombre) |
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: Integración contable en el menú (recursos por nombre) |
+// | 2026-11-18 | Arekkazu | M08 RF-104: módulo Reportes, visible con permiso para generar al menos un reporte |
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Shield, ClipboardList,
-  User, LogOut, Settings, Sprout, Activity, BrainCircuit, Package, Landmark, ArrowLeftRight
+  User, LogOut, Settings, Sprout, Activity, BrainCircuit, Package, Landmark, ArrowLeftRight, FileText
 } from 'lucide-react';
 import { useT } from '../i18n/useT';
 import { useAuth } from '../auth/useAuth';
 import { useContexto } from '../contexto/useContexto';
 import { resolverLogoUrl } from '../identidad/identidad';
 import { Isotipo } from './Isotipo';
+import { ACCION_EJECUTAR, RECURSOS_REPORTES } from '../../reportes/tipos';
 import './Sidebar.css';
 
 interface NavItem {
@@ -27,6 +29,8 @@ interface NavItem {
   requirePermission?: Array<[number, number]>;
   /** Como `requirePermission`, con lectura sobre recursos ubicados por nombre (su id cambia entre ambientes). */
   requireLecturaNombre?: string[];
+  /** Con cualquiera de estos [nombre_recurso, id_accion] (recursos cuyo id cambia entre ambientes). */
+  requireNombre?: Array<[string, number]>;
 }
 
 // T-20: un módulo se ve si el rol puede abrir alguna de sus pestañas. Antes Predicción
@@ -50,6 +54,9 @@ const NAV_ITEMS: NavItem[] = [
   // M07: integración contable con AgroFusion (Contador, Administrador y auditor externo).
   { claveLabel: 'modulos.integracion', path: '/integracion', icon: <ArrowLeftRight size={16} aria-hidden />, requireLecturaNombre: [
     'exportacion_contable', 'clientes_externos', 'contratos_aaef', 'auditoria_integracion', 'auditoria_integracion_cierres'] },
+  // M08 RF-104: con permiso para generar al menos un reporte (Ejecutar sobre `reporte_<tipo>`).
+  { claveLabel: 'modulos.reportes', path: '/reportes', icon: <FileText size={16} aria-hidden />,
+    requireNombre: RECURSOS_REPORTES.map((r): [string, number] => [r, ACCION_EJECUTAR]) },
   { claveLabel: 'modulos.usuarios', path: '/usuarios', icon: <Users size={16} aria-hidden />, requirePermission: lectura(1) },
   { claveLabel: 'modulos.roles', path: '/roles', icon: <Shield size={16} aria-hidden />, requirePermission: lectura(2) },
   { claveLabel: 'modulos.auditoria', path: '/auditoria', icon: <ClipboardList size={16} aria-hidden />, requirePermission: lectura(6) },
@@ -76,7 +83,9 @@ function NavItemComponent({ item, onNavigate }: { item: NavItem; onNavigate?: ()
   const { t } = useT('nav');
   const { pathname } = useLocation();
   const { permisos } = useAuth();
-  const hasPermission = item.requireLecturaNombre
+  const hasPermission = item.requireNombre
+    ? item.requireNombre.some(([nombre, accion]) => (permisos ?? []).some((p) => p.nombre_recurso === nombre && p.id_accion === accion))
+    : item.requireLecturaNombre
     ? item.requireLecturaNombre.some((nombre) => (permisos ?? []).some((p) => p.nombre_recurso === nombre && p.id_accion === 2))
     : !item.requirePermission || item.requirePermission.some(
       ([recurso, accion]) => (permisos ?? []).some((p) => p.id_recurso === recurso && p.id_accion === accion),

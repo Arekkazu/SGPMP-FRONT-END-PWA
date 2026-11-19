@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-18 | Arekkazu | M08 RF-107: el mock de permisos incluye la búsqueda por nombre (catálogo de mensajes) |
 import React from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,9 +11,9 @@ import { ConfigurationPage } from './ConfigurationPage';
 vi.mock('../../shared/auth/useAuth', () => ({ useAuth: () => ({
   permisos: [{ id_recurso: 8, id_accion: 2 }, { id_recurso: 21, id_accion: 2 }],
 }) }));
-vi.mock('../../shared/rbac/usePermission', () => ({ usePermission: () => true }));
+vi.mock('../../shared/rbac/usePermission', () => ({ usePermission: () => true, usePermissionPorNombre: () => false }));
 vi.mock('../../shared/hooks/useOnlineStatus', () => ({ useOnlineStatus: () => true }));
-vi.mock('../../shared/api/http', () => ({ http: { get: vi.fn(), post: vi.fn(), patch: vi.fn() } }));
+vi.mock('../../shared/api/http', () => ({ http: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 vi.mock('../../shared/hooks/useToast', () => ({ avisarExito: vi.fn() }));
 vi.mock('../hooks/useEspecies', () => ({ useEspecies: () => ({
   especies: [], loading: false, saving: false, error: null, saveError: null,
