@@ -3,6 +3,7 @@
 // | 2026-10-29 | Arekkazu | INC-M03-82-G192 RF-62: política de visión en la pestaña Sistema |
 // | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: ventana de retroalimentación en la pestaña Sistema |
 // | 2026-10-30 | Arekkazu | INC-M03-135-G01 RF-49: sub-pestaña Especies compatibles en IoT |
+// | 2026-11-18 | Arekkazu | M08 RF-107 RNF-03: catálogo de mensajes de error en Sistema |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, RefreshCw, Search } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -34,6 +35,7 @@ import { EspeciesCompatiblesSection } from '../components/EspeciesCompatiblesSec
 import { IdentidadVisualSection } from '../components/IdentidadVisualSection';
 import { TemaVisualSection } from '../components/TemaVisualSection';
 import { IdiomaSection } from '../components/IdiomaSection';
+import { MensajesErrorSection } from '../components/MensajesErrorSection';
 import { DashboardLayoutSection } from '../components/DashboardLayoutSection';
 import { PlantillasTable } from '../components/PlantillasTable';
 import type { EspecieResponse, TipoAreaResponse } from '../types';
@@ -520,6 +522,7 @@ export function ConfigurationPage() {
             <ParametrosSection onEditStateChange={setParametrosEditState} />
             <PoliticaVisionSection />
             <VentanaRetroalimentacionSection />
+            <MensajesErrorSection />
           </>
         )}
         {activeTab === 'plantillas' && <PlantillasTable />}

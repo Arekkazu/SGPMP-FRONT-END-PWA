@@ -1,3 +1,7 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-11-18 | Arekkazu | M08 RF-107: botón de acción correctiva en el aviso de error |
+*/
 .ds-alert {
   display: flex;
   gap: var(--s3);
@@ -67,3 +71,19 @@
   border-color: var(--sem-info-border);
   color: var(--sem-info);
 }
+
+/* RF-107 tipo 2: botón de acción correctiva dentro del aviso de error. */
+.ds-alert__accion {
+  align-self: flex-start;
+  margin-top: var(--s2);
+  min-height: 32px;
+  padding: 0 var(--s3);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ds-alert__accion:focus-visible { outline: 2px solid var(--focus-ring, currentColor); outline-offset: 2px; }
