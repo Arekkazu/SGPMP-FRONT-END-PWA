@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                                    |
 // |------------|-------------|--------------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-282..294 RF-105/106/107: utilidades de las pruebas de accesibilidad de M08 |
+// | 2026-11-19 | Laura032005 | TC-DIS-286..290 RF-104/105: bandeja con nivel y ocurrencias, búsqueda de activo y reportes |
 /**
  * Utilidades de los specs de accesibilidad de M08 que sí tienen pantalla:
  *   - RF-106 (282–285): el historial de Predicción (/prediccion/historial, HistorialView).
@@ -29,7 +30,7 @@ import { concederPermisos, prevalidacionLimpia, simularGet } from '../../M06/_sh
 
 export {
   NIT, PERIODOS, abrirYAuditarDialogo, anunciosDurante, badges, cerrarConEscape, concederPermisos, describirFocoDialogo, errorApi,
-  focoVisible, guardarDescarga, irFinanzas, periodo, quitarSimulaciones, simularEscritura, simularGet, temaOscuro, textosCrudos,
+  focoVisible, guardarDescarga, irFinanzas, periodo, revisarExcel, revisarPdf, quitarSimulaciones, simularEscritura, simularGet, temaOscuro, textosCrudos,
 } from '../../M06/_shared/finanzas';
 export { alertas, dialogo, simularClientes } from '../../M07/_shared/integracion';
 
@@ -217,36 +218,52 @@ export async function abrirBandeja(page: Page) {
 }
 
 type Nivel = 'CRITICA' | 'ADVERTENCIA' | 'INFORMATIVA';
-// tipo_evento numérico de modulo1.tipos_eventos: el backend todavía no tiene tipos propios de M08.
-const TIPO: Record<Nivel, number> = { CRITICA: 24, ADVERTENCIA: 4, INFORMATIVA: 26 };
+// tipo_evento numérico de modulo1.tipos_eventos; las de M08 se nombran por su módulo (RF-105).
+const TIPO: Record<Nivel, number> = { CRITICA: 90, ADVERTENCIA: 91, INFORMATIVA: 92 };
 
-function notificacion(id: number, nivel: Nivel, leida: boolean, mensaje: string, fecha: string) {
-  return { id_notificacion: id, id_evento: 70_000 + id, tipo_evento: TIPO[nivel], mensaje, fecha_envio: fecha, es_leido: leida, nivel };
+/** Forma de NotificacionInternaResponse con los campos de RF-105 (src/notificaciones/types.ts). */
+export function notificacion(id: number, nivel: Nivel, leida: boolean, mensaje: string, fecha: string, modulo: string, ocurrencias = 1) {
+  return {
+    id_notificacion: id, id_evento: 70_000 + id, tipo_evento: TIPO[nivel], mensaje, fecha_envio: fecha, es_leido: leida,
+    nivel, estado: leida ? 'LEIDA' : 'NUEVA', modulo, url: null, ocurrencias, fecha_ultima_ocurrencia: fecha,
+    fecha_lectura: leida ? fecha : null, fecha_atencion: null, accion_documentada: null as string | null,
+    puede_descartarse: nivel !== 'CRITICA', puede_atenderse: true,
+  };
 }
+export type NotificacionSimulada = ReturnType<typeof notificacion>;
 
-/** Las 60 notificaciones del Veterinario (Datos_Semilla §9.1), sin las 5 de más de 90 días. */
-export const NOTIFICACIONES_VET = (() => {
-  const l: ReturnType<typeof notificacion>[] = [];
+/**
+ * Las notificaciones del Veterinario de Datos_Semilla §9.1, sin las 5 de más de 90 días. Las 5 de "Humedad alta"
+ * del mismo activo llegan agrupadas en una sola con 5 ocurrencias, como las agrupa el backend (RF-105).
+ */
+export const NOTIFICACIONES_VET: NotificacionSimulada[] = (() => {
+  const l: NotificacionSimulada[] = [];
   let id = 1;
-  const add = (nivel: Nivel, leida: boolean, mensaje: string, fecha: string) => l.push(notificacion(id++, nivel, leida, mensaje, fecha));
-  add('CRITICA', false, 'Alerta crítica | Patología con riesgo alto | BOV-M08-001 Lucero, Corral de Ordeño | Revise al animal y registre la atención', '2026-11-16T07:30:00-05:00');
-  add('CRITICA', false, 'Alerta crítica | Temperatura fuera de rango | Corral de Ordeño, 35 °C | Verifique la ventilación del corral', '2026-11-16T09:00:00-05:00');
-  add('CRITICA', true, 'Alerta crítica | Patología con riesgo alto | BOV-M08-022 | Revise al animal y registre la atención', '2026-11-14T10:00:00-05:00');
-  for (let i = 0; i < 12; i++) add('ADVERTENCIA', i >= 6, 'Advertencia | Precio de mercado próximo a vencer | Bovino de levante | Actualice el precio', `2026-11-${String(15 - i).padStart(2, '0')}T11:00:00-05:00`);
-  for (let h = 8; h <= 12; h++) add('ADVERTENCIA', false, 'Advertencia | Humedad alta | Potrero Sur, BOV-M08-010 | Revise el área', `2026-11-16T${String(h).padStart(2, '0')}:00:00-05:00`);
-  for (let i = 0; i < 35; i++) add('INFORMATIVA', i >= 15, 'Información | Reporte listo para descargar | Reporte de telemetría | Descárguelo antes de 48 horas', new Date(Date.UTC(2026, 10, 15, 15) - i * 2.3 * 86_400_000).toISOString());
-  // El backend las entrega por fecha descendente.
+  const add = (nivel: Nivel, leida: boolean, mensaje: string, fecha: string, modulo: string, ocurrencias = 1) =>
+    l.push(notificacion(id++, nivel, leida, mensaje, fecha, modulo, ocurrencias));
+  add('CRITICA', false, 'Alerta crítica | Patología con riesgo alto | BOV-M08-001 Lucero, Corral de Ordeño | Revise al animal y registre la atención', '2026-11-16T07:30:00-05:00', 'prediccion');
+  add('CRITICA', false, 'Alerta crítica | Temperatura fuera de rango | Corral de Ordeño, 35 °C | Verifique la ventilación del corral', '2026-11-16T09:00:00-05:00', 'telemetria');
+  add('CRITICA', true, 'Alerta crítica | Patología con riesgo alto | BOV-M08-022 | Revise al animal y registre la atención', '2026-11-14T10:00:00-05:00', 'prediccion');
+  for (let i = 0; i < 12; i++) add('ADVERTENCIA', i >= 6, 'Advertencia | Precio de mercado próximo a vencer | Bovino de levante | Actualice el precio', `2026-11-${String(15 - i).padStart(2, '0')}T11:00:00-05:00`, 'finanzas');
+  add('ADVERTENCIA', false, 'Advertencia | Humedad alta | Potrero Sur, BOV-M08-010 | Revise el área', '2026-11-16T12:00:00-05:00', 'telemetria', 5);
+  for (let i = 0; i < 35; i++) add('INFORMATIVA', i >= 15, 'Información | Reporte listo para descargar | Reporte de telemetría | Descárguelo antes de 48 horas', new Date(Date.UTC(2026, 10, 15, 15) - i * 2.3 * 86_400_000).toISOString(), 'reportes');
   return l.sort((a, b) => b.fecha_envio.localeCompare(a.fecha_envio));
 })();
 
-/** GET /notificaciones paginado (pagina, tamano) con total y no_leidas. */
-export async function simularNotificaciones(page: Page, lista = NOTIFICACIONES_VET) {
+/** GET /notificaciones paginado (pagina, tamano) con total, no_leidas y criticas_pendientes; filtra por nivel y estado. */
+export async function simularNotificaciones(page: Page, lista: NotificacionSimulada[] = NOTIFICACIONES_VET) {
   await simularGet(page, /^\/notificaciones\/?$/, (u: URL) => {
     const pagina = Number(u.searchParams.get('pagina') ?? 1);
-    const tamano = Number(u.searchParams.get('tamano') ?? 20);
+    const tamano = Number(u.searchParams.get('tamano') ?? 50);
+    const nivel = u.searchParams.get('nivel');
+    const estado = u.searchParams.get('estado');
+    const filtradas = lista
+      .filter((n) => !nivel || n.nivel === nivel)
+      .filter((n) => (estado ? n.estado === estado : ['NUEVA', 'LEIDA'].includes(n.estado)));
     return {
-      total: lista.length, no_leidas: lista.filter((n) => !n.es_leido).length, pagina, tamano,
-      items: lista.slice((pagina - 1) * tamano, pagina * tamano),
+      total: filtradas.length, no_leidas: lista.filter((n) => n.estado === 'NUEVA').length, pagina, tamano,
+      criticas_pendientes: lista.filter((n) => n.nivel === 'CRITICA' && ['NUEVA', 'LEIDA'].includes(n.estado)).length,
+      items: filtradas.slice((pagina - 1) * tamano, pagina * tamano),
     };
   });
 }
@@ -296,8 +313,80 @@ export async function clicFuera(page: Page) {
   return page.locator('[role="dialog"], [role="alertdialog"]').last().isVisible();
 }
 
+/**
+ * Busca el id de un activo por su identificador de negocio (p. ej. BOV-ESP-001) recorriendo con la sesión real
+ * las páginas de GET /activos-biologicos (solo lecturas: reutiliza la petición que hace la propia lista).
+ */
+export async function buscarIdActivo(page: Page, identificador: string): Promise<number | null> {
+  let id: number | null = null;
+  const patron = (u: URL) => /\/activos-biologicos$/.test(u.pathname) && u.searchParams.has('pagina');
+  await page.route(patron, async (route) => {
+    for (let p = 1; p <= 30 && id === null; p++) {
+      const u = new URL(route.request().url());
+      u.searchParams.set('pagina', String(p));
+      u.searchParams.set('page_size', '100');
+      const r = await route.fetch({ url: u.toString() }).catch(() => null);
+      const j = (await r?.json().catch(() => null)) as { registros?: Array<{ identificador?: string; id_activo_biologico?: number }>; total_paginas?: number } | null;
+      const a = j?.registros?.find((x) => x.identificador === identificador);
+      if (a?.id_activo_biologico) id = a.id_activo_biologico;
+      if (!j || p >= (j.total_paginas ?? 1)) break;
+    }
+    await route.fallback();
+  });
+  await page.goto('activos-biologicos');
+  await page.waitForLoadState('networkidle', { timeout: 60_000 }).catch(() => {});
+  await page.unroute(patron);
+  return id;
+}
+
 /** Palabras en mayúsculas que la vista muestra tal cual (tipos de evento y valores de enum sin traducir). */
 export async function enumsCrudos(alcance: Locator, palabras: string[]): Promise<string[]> {
   const texto = await alcance.innerText().catch(() => '');
   return palabras.filter((p) => new RegExp(`\\b${p}\\b`).test(texto));
+}
+
+// ── RF-104: reportes ────────────────────────────────────────────────────────
+
+export const irReportes = (page: Page) => irA(page, 'reportes', /^Reportes$/);
+
+/**
+ * La vista previa (POST /reportes/vista-previa) solo lee, y generar (POST /reportes) crea un archivo temporal
+ * de "Mis reportes" (48 h) sin tocar datos de negocio: se dejan pasar al backend, saltando el bloqueo de
+ * escrituras del contexto. Cancelar sigue bloqueado.
+ */
+export async function permitirReportes(page: Page) {
+  await page.route((u) => /\/reportes(\/vista-previa)?$/.test(u.pathname), (route) =>
+    (route.request().method() === 'POST' ? route.continue() : route.fallback()));
+}
+
+/** Tipos de reporte que ofrece el selector "Reporte" (valor y rótulo), sin la opción vacía. */
+export function tiposReporte(page: Page): Promise<{ valor: string; rotulo: string; grupo: string }[]> {
+  return page.locator('#tipo-reporte option').evaluateAll((os) => os
+    .filter((o) => (o as HTMLOptionElement).value)
+    .map((o) => ({ valor: (o as HTMLOptionElement).value, rotulo: (o.textContent ?? '').trim(), grupo: (o.parentElement as HTMLOptGroupElement | null)?.label ?? '' })));
+}
+
+/** Elige el tipo de reporte con el teclado (foco en el select y selección por valor). */
+export async function elegirReporte(page: Page, tipo: string) {
+  const sel = page.locator('#tipo-reporte');
+  await expect(sel).toBeEnabled({ timeout: 30_000 });
+  await sel.focus();
+  await sel.selectOption(tipo);
+  await page.waitForTimeout(500);
+}
+
+/** Selecciona la primera opción real de cada filtro de referencia obligatorio vacío y fija fechas si faltan. */
+export async function llenarFiltrosObligatorios(page: Page, desde = '2026-10-01', hasta = '2026-11-15') {
+  const campos = page.locator('[id^="filtro-"][aria-required="true"], [id^="filtro-"][required]');
+  for (let i = 0; i < await campos.count(); i++) {
+    const c = campos.nth(i);
+    const tag = await c.evaluate((e) => e.tagName);
+    if (tag === 'SELECT') {
+      const opciones = await c.locator('option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value).filter(Boolean));
+      if (opciones.length && !(await c.inputValue())) await c.selectOption(opciones[0]);
+    } else if ((await c.getAttribute('type')) === 'date' && !(await c.inputValue())) {
+      const id = (await c.getAttribute('id')) ?? '';
+      await c.fill(/fin|hasta/.test(id) ? hasta : desde);
+    }
+  }
 }
