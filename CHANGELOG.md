@@ -1,3 +1,12 @@
+## [1.4.0-rc.52](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.51...v1.4.0-rc.52) (2026-11-19)
+
+### Features
+
+* **rf104-mod8:** pantalla de reportes con filtros por catalogo, vista previa, PDF/Excel y mis reportes ([606c723](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/606c72392207733352e129292f70cb27dfbd54ff))
+* **rf105-mod8:** preferencias de push y correo por nivel en Mi perfil ([f37d92b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/f37d92bbb870d6020b03e91bb5a7baae3395c07e))
+* **rf106-mod8:** historial clinico predictivo con linea de tiempo, TVCO y pendientes de evaluar ([2d79b93](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2d79b9383b9d65448c07ab491b38c2ddbb16cc11))
+* **rf107-mod8:** avisos en cola, confirmaciones bloqueantes, estado de sincronizacion y catalogo de errores ([4283dd5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4283dd52b8024abfbfe653347cac57999b35785d))
+
 ## [1.4.0-rc.51](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.50...v1.4.0-rc.51) (2026-11-18)
 
 ### Features
