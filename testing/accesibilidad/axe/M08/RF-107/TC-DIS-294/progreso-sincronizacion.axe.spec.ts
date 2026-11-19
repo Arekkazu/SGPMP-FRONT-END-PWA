@@ -5,7 +5,8 @@
  * TC-DIS-294 — Verificar accesibilidad WCAG 2.1 AA del indicador de proceso en curso (spinner y barra de
  * progreso) y del ícono de estado de sincronización (SINCRONIZADO, SINCRONIZANDO, OFFLINE, CONFLICTO)
  * RF-107 · CU-05 Proveer retroalimentación visual de acciones del sistema · Rol: Administrador · Prioridad: Media
- * Ruta: /finanzas/cierre (proceso largo con progreso calculable) y la barra superior (sincronización)
+ * Ruta: /finanzas/cierre (proceso largo con progreso calculable) e indicador de sincronización, presente en
+ * todas las pantallas (EstadoSincronizacion, agregado el 2026-11-18)
  *
  * Criterio: 0 violaciones axe A/AA en 4.1.2 (progressbar con nombre, rol y valor); 4.1.3 (inicio, avance
  * y fin anunciados); 1.4.1 (estado con texto); 1.1.1 (íconos con alternativa); 2.1.1 (ícono de
@@ -20,15 +21,15 @@
  */
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { PUERTO_LIGHTHOUSE } from '../../../_shared/lighthouse';
-import { anotar, desviacion, escanear, main } from '../../../_shared/sigabA11y';
+import { anotar, desviacion, escanear } from '../../../_shared/sigabA11y';
 import {
-  EXITO_CIERRE, PERIODOS, abrirSesionM08, anunciosDurante, botonCerrarPeriodo, confirmarCierre, irA, irFinanzas, prepararCierre,
-  quitarSimulaciones, simularEscritura,
+  EXITO_CIERRE, PERIODOS, abrirSesionM08, anunciosDurante, botonCerrarPeriodo, cerrarConEscape, confirmarCierre, focoVisible, irA, irFinanzas,
+  prepararCierre, quitarSimulaciones, simularEscritura,
 } from '../../_shared/m08';
 
 const TC_ID = 'TC-DIS-294';
 const VIEWPORTS = (process.env.TC_DIS_294_VIEWPORTS ?? 'movil,tablet,escritorio').split(',').map((v) => v.trim());
-const LH = ['cierre-en-curso', 'sin-conexion'];
+const LH = ['cierre-en-curso', 'detalle-sincronizacion', 'sin-conexion'];
 const ESPERA = 10_000; // por debajo del timeout de 15 s de Axios
 
 test.use({ actionTimeout: 15_000, launchOptions: { args: [`--remote-debugging-port=${PUERTO_LIGHTHOUSE}`] } });
@@ -92,29 +93,43 @@ test.describe('TC-DIS-294 — Progreso de un proceso largo y estado de sincroniz
     expect.soft(!bloqueo.visible || bloqueo.busy === 'true' || bloqueo.deshabilitado === 'true', 'RF-107: durante el proceso se puede volver a iniciar el cierre').toBe(true);
   });
 
-  test('b. [1.4.1 / 1.1.1 / 2.1.1 / 4.1.3] Estado de sincronización: ícono, detalle por módulo y sin conexión', async ({}, testInfo) => {
+  test('b. [1.4.1 / 1.1.1 / 2.1.1 / 4.1.3] Estado de sincronización: texto, detalle por módulo y sin conexión', async ({}, testInfo) => {
     await irA(page, 'dashboard');
-    const banner = page.getByRole('banner');
-    const indicador = banner.getByRole('button', { name: /sincroniz|conexi[oó]n|offline/i }).or(banner.getByRole('status'));
+    const indicador = page.getByRole('button', { name: /^Estado de sincronizaci[oó]n:/ });
     const hay = await indicador.count() > 0;
-    anotar(testInfo, 'Controles de la barra superior', (await banner.getByRole('button').evaluateAll((bs) => bs.map((b) => b.getAttribute('aria-label') ?? b.textContent ?? ''))).join(' | '));
-    desviacion(hay, 'RF-107: no hay ícono de estado de sincronización (sincronizado, sincronizando, sin conexión, conflicto) en la barra superior');
-    if (hay) {
-      await indicador.first().focus();
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(500);
-      desviacion(await page.getByText(/por m[oó]dulo|pendientes de sincronizar/i).count() > 0, '2.1.1: el ícono de sincronización no abre el detalle por módulo con el teclado');
+    expect.soft(hay, 'RF-107: no hay indicador de estado de sincronización').toBe(true);
+    if (!hay) return;
+    const info = await indicador.evaluate((b) => ({
+      nombre: b.getAttribute('aria-label') ?? '', texto: (b as HTMLElement).innerText.trim(), icono: !!b.querySelector('svg'),
+    }));
+    anotar(testInfo, 'Indicador con conexión', JSON.stringify(info));
+    expect.soft(info.texto, '1.4.1: el estado no se dice en texto, solo con el ícono o el color').toMatch(/Sincronizado|Sincronizando|Sin conexi[oó]n|Conflicto/);
+    // Detalle por módulo con el teclado.
+    await indicador.focus();
+    expect.soft(await focoVisible(page), '2.4.7: el indicador no muestra el foco').toBe(true);
+    await page.keyboard.press('Enter');
+    const detalle = page.getByRole('dialog', { name: /Sincronizaci[oó]n de datos/ });
+    await expect.soft(detalle, '2.1.1: el indicador no abre el detalle por módulo con el teclado').toBeVisible();
+    if (await detalle.isVisible()) {
+      await escanear(page, TC_ID, __dirname, 'detalle-sincronizacion', testInfo, LH);
+      const filas = await detalle.locator('tbody th[scope="row"]').allInnerTexts();
+      anotar(testInfo, 'Módulos del detalle', filas.join(', '));
+      expect.soft(filas.length, '1.3.1: el detalle no lista los módulos').toBeGreaterThan(0);
+      const esc = await cerrarConEscape(page, indicador);
+      expect.soft(esc.focoEnDisparador, `2.4.3: al cerrar el detalle el foco no vuelve al indicador (queda en ${esc.foco})`).toBe(true);
     }
-    // Sin conexión: qué se anuncia y dónde.
+    // Sin conexión: el texto cambia y se anuncia.
     const anuncios = anunciosDurante(page, 4000);
     await page.context().setOffline(true);
     const vistos = await anuncios;
+    const offline = await indicador.evaluate((b) => ({ nombre: b.getAttribute('aria-label') ?? '', texto: (b as HTMLElement).innerText.trim() }));
     await escanear(page, TC_ID, __dirname, 'sin-conexion', testInfo, LH);
-    const avisos = await page.locator('[role="alert"], [role="status"]').allInnerTexts();
-    anotar(testInfo, 'Al quedar sin conexión', `anuncios: ${vistos.join(' ¦ ') || '(ninguno)'} · avisos visibles: ${avisos.map((a) => a.replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ¦ ') || '(ninguno)'}`);
-    desviacion(vistos.some((a) => /sin conexi[oó]n|offline/i.test(a)), '4.1.3: perder la conexión no se anuncia en texto');
+    anotar(testInfo, 'Sin conexión', `${JSON.stringify(offline)} · anuncios: ${vistos.join(' ¦ ') || '(ninguno)'}`);
+    expect.soft(offline.texto, 'RF-107: el indicador no cambia a "Sin conexión" al perder la red').toMatch(/Sin conexi[oó]n/);
+    desviacion(vistos.some((a) => /sin conexi[oó]n/i.test(a)), '4.1.3: el cambio a "Sin conexión" no se anuncia (el indicador no está en una región viva)');
     await page.context().setOffline(false);
-    const conflicto = await main(page).getByText(/conflicto/i).count();
-    anotar(testInfo, 'Estado CONFLICTO', conflicto ? 'visible' : 'no se puede provocar ni ver desde la interfaz');
+    await page.waitForTimeout(1500);
+    anotar(testInfo, 'Al volver la conexión', (await indicador.innerText()).trim());
+    anotar(testInfo, 'Estado CONFLICTO', 'no se puede provocar desde la interfaz sin escrituras; se revisa por el texto del componente (Conflicto)');
   });
 });
