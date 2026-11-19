@@ -5,7 +5,9 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M4-03/N-03 RF-72: diagnósticos de la especie del activo y activo con nombre |
 // | 2026-11-03 | Arekkazu | RF-72: bandeja real del backend en vez de datos de ejemplo |
 // | 2026-11-03 | Claude   | RF-72: botón Reintentar si la bandeja no carga |
-import React, { useEffect, useMemo, useState } from 'react';
+// | 2026-11-18 | Arekkazu | M08 RF-106: abre el formulario con la predicción elegida en el historial predictivo |
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { MessageSquareText, ClipboardCheck, Clock, TimerOff } from 'lucide-react';
@@ -69,9 +71,16 @@ export function RetroalimentacionView() {
   const [sel, setSel] = useState<InferenciaPorEvaluar | null>(null);
   const [okFlash, setOkFlash] = useState(false);
 
+  // RF-106 CA-4: desde el historial predictivo llega ?resultado=<id>&activo=<id>: la bandeja se acota a ese
+  // animal y el formulario se abre con esa predicción.
+  const busqueda = new URLSearchParams(useLocation().search);
+  const resultadoPedido = useRef(busqueda.get('resultado'));
+  const activoPedido = Number(busqueda.get('activo')) || undefined;
+
   const filtros = (estado = fEstado, riesgo = fRiesgo): FiltrosBandejaRetro => ({
     estado_evaluacion: (estado || undefined) as EstadoEvaluacion | undefined,
     nivel_riesgo: riesgo === '' ? undefined : Number(riesgo),
+    id_activo_biologico: activoPedido,
   });
 
   useEffect(() => {
@@ -112,6 +121,14 @@ export function RetroalimentacionView() {
     if (!r.puede_evaluar) return t('retroalimentacionview.motivo_vencida');
     return null;
   };
+
+  useEffect(() => {
+    const items = bandeja.datos?.items;
+    if (!items || !resultadoPedido.current) return;
+    const pedido = items.find((r) => r.id_resultado_inferencia === resultadoPedido.current);
+    resultadoPedido.current = null;
+    if (pedido && motivoNoEvaluable(pedido) === null) setSel(pedido);
+  }, [bandeja.datos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!puedeVer) return <PermissionDenied seccion="Retroalimentación clínica" />;
 
