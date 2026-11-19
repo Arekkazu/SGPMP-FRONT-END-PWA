@@ -2,10 +2,12 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: envía la zona horaria del navegador en X-Zona-Horaria |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: motivo del cierre de sesión y vuelta a la pantalla anterior |
+// | 2026-11-18 | Arekkazu | M08 RF-107 tipo 4: peticiones en curso para el estado de sincronización |
 import axios, { type AxiosError } from 'axios';
 import { tokenStore } from '../auth/tokenStore';
 import { mapToApiError } from './errors';
 import { guardarRutaRetorno } from '../auth/rutaRetorno';
+import { peticionIniciada, peticionTerminada } from '../sync/estadoSincronizacion';
 
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000',
@@ -33,6 +35,23 @@ http.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// RF-107 tipo 4: cada petición cuenta para el indicador SINCRONIZANDO / SINCRONIZADO. El de respuesta va antes del
+// manejo del 401: el reintento tras refrescar el token es otra petición y se cuenta en su propia cadena.
+http.interceptors.request.use((config) => {
+  peticionIniciada();
+  return config;
+});
+http.interceptors.response.use(
+  (res) => {
+    peticionTerminada(res.config?.url, true);
+    return res;
+  },
+  (error) => {
+    peticionTerminada(error?.config?.url, false);
+    return Promise.reject(error);
+  },
+);
 
 const PUBLIC_AUTH_ENDPOINTS = ['/sesiones/', '/sesiones/sso', '/sesiones/refresh'];
 

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-18 | Arekkazu | M08 RF-105 R6: preferencias de notificación del usuario |
 import React, { useEffect, useState } from 'react';
 import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -6,6 +9,7 @@ import { usePerfil } from '../hooks/usePerfil';
 import { PerfilForm } from '../components/PerfilForm';
 import { CambiarContrasenaForm } from '../components/CambiarContrasenaForm';
 import { Alert } from '../../shared/design-system/Alert';
+import { PreferenciasNotificaciones } from '../../notificaciones/components/PreferenciasNotificaciones';
 import { Badge } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
@@ -245,6 +249,7 @@ export function PerfilPage() {
           />
         </PerfilModal>
       )}
+      <PreferenciasNotificaciones />
     </div>
   );
 }

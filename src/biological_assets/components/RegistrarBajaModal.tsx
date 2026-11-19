@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-11-15 | Arekkazu | INC-M06-364-G71 RF-45: en una venta se registra lo recibido y su factura o remisión |
+// | 2026-11-18 | Arekkazu | M08 RF-107 tipo 5: el paso de confirmación de la baja no se cierra con Escape ni con clic afuera |
 import React, { useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { useForm } from 'react-hook-form';
@@ -74,7 +75,7 @@ export function RegistrarBajaModal({ esPoblacional, cantidadDisponible, saving, 
   };
 
   return (
-    <ModalShell title={t('registrarbajamodal.registrar_baja')} onClose={onClose} maxWidth={480}>
+    <ModalShell title={t('registrarbajamodal.registrar_baja')} onClose={onClose} maxWidth={480} bloqueante={pendiente !== null}>
       <Alert
         variant="warning"
         title={t('registrarbajamodal.registro_de_baja')}

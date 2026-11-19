@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-101: clientes externos (AgroFusion), credencial y canales |
+// | 2026-11-18 | Arekkazu | M08 RF-107 tipo 5: revocar un cliente externo se confirma en un diálogo bloqueante |
 import React, { useEffect, useState } from 'react';
 import { Copy, KeyRound, PauseCircle, PencilLine, PlayCircle, Plus, RotateCw, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -102,7 +103,8 @@ export function ClientesView() {
       {estado && (
         <MotivoModal titulo={t(`clientes.${estado.accion}`)} descripcion={t(`clientes.${estado.accion}_ayuda`, { cliente: estado.cliente.nombre })}
           etiqueta={t('clientes.motivo')} confirmar={t(`clientes.${estado.accion}`)} min={estado.accion === 'reactivar' ? 0 : 5} max={500}
-          opcional={estado.accion === 'reactivar'} peligro={estado.accion !== 'reactivar'} enviando={cambio.cargando} error={cambio.error}
+          opcional={estado.accion === 'reactivar'} peligro={estado.accion !== 'reactivar'}
+          bloqueante={estado.accion === 'revocar'} enviando={cambio.cargando} error={cambio.error}
           onCerrar={() => setEstado(null)}
           onConfirmar={async (motivo) => {
             if (await cambio.ejecutar(estado.cliente.id_cliente_externo, estado.accion, motivo || undefined)) {

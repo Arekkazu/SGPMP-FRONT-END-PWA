@@ -6,6 +6,7 @@
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: integración contable con AgroFusion (ruta /integracion) |
 // | 2026-11-14 | Arekkazu | SSO AgroFusion: AgroFusion devuelve a /sso?token=, no a /sso/callback |
 // | 2026-11-14 | Arekkazu | M08 RF-103: un push refresca al instante los widgets de alertas |
+// | 2026-11-18 | Arekkazu | M08 RF-104..107: ruta /reportes, indicador de sincronización, catálogo de errores y avisos con navegación |
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
@@ -39,6 +40,10 @@ import { useTemaSesion } from './shared/tema/useTemaSesion';
 import { useSyncOnReconnect } from './shared/sync/useSyncOnReconnect';
 import { ContextoProvider } from './shared/contexto/ContextoProvider';
 import { ToastHost } from './shared/design-system/ToastHost';
+import { EstadoSincronizacion } from './shared/design-system/EstadoSincronizacion';
+import { cargarCatalogoErrores } from './shared/api/catalogoErrores';
+import { http } from './shared/api/http';
+import i18n from './shared/i18n';
 import { useContexto } from './shared/contexto/useContexto';
 import { BienvenidaSinFinca } from './shared/contexto/BienvenidaSinFinca';
 import { SinEspeciesEmptyState } from './shared/contexto/SinEspeciesEmptyState';
@@ -83,6 +88,7 @@ const PrediccionPage = lazy(() => import('./prediction/pages/PrediccionPage').th
 const SuministrosPage = lazy(() => import('./supplies/pages/SuministrosPage').then((m) => ({ default: m.SuministrosPage })));
 const FinanzasPage = lazy(() => import('./financial_valuation/pages/FinanzasPage').then((m) => ({ default: m.FinanzasPage })));
 const IntegracionPage = lazy(() => import('./accounting_integration/pages/IntegracionPage').then((m) => ({ default: m.IntegracionPage })));
+const ReportesPage = lazy(() => import('./reportes/pages/ReportesPage').then((m) => ({ default: m.ReportesPage })));
 
 /** Mientras llega el chunk de la pagina: anuncio para el lector, sin salto visual. */
 function CargandoPagina() {
@@ -123,6 +129,16 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   // Sin service worker con Background Sync en este proyecto: la cola de escrituras
   // offline se reintenta aquí en cuanto vuelve el evento `online` del navegador.
   useSyncOnReconnect(token !== null);
+  // RF-107 RNF-03: los mensajes de error que el Administrador configuró en M09, en el idioma del usuario.
+  const [idioma, setIdioma] = useState(i18n.language);
+  useEffect(() => {
+    const cambio = (lng: string) => setIdioma(lng);
+    i18n.on('languageChanged', cambio);
+    return () => { i18n.off('languageChanged', cambio); };
+  }, []);
+  useEffect(() => {
+    if (token) void cargarCatalogoErrores(http, idioma);
+  }, [token, idioma]);
   const { sinFinca, sinEspecies } = useContexto();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -273,6 +289,7 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
             children
           )}
         </main>
+        <EstadoSincronizacion />
       </div>
     </div>
   );
@@ -392,6 +409,7 @@ function AppRoutes() {
       <PrivateRoute path="/suministros" component={SuministrosPage} />
       <PrivateRoute path="/finanzas" component={FinanzasPage} />
       <PrivateRoute path="/integracion" component={IntegracionPage} />
+      <PrivateRoute path="/reportes" component={ReportesPage} />
 
       {/* Default */}
       <Route exact path="/" component={RutaRaiz} />
@@ -406,8 +424,9 @@ const App: React.FC = () => (
       <ContextoProvider>
         <IonReactRouter basename={import.meta.env.BASE_URL}>
           <AppRoutes />
+          {/* Dentro del router: el botón de acción correctiva de un aviso navega (RF-107 tipo 2). */}
+          <ToastHost />
         </IonReactRouter>
-        <ToastHost />
       </ContextoProvider>
     </AuthProvider>
   </IonApp>
