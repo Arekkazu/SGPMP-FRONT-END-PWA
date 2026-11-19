@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: cliente de la API /integracion |
+// | 2026-11-19 | Arekkazu | INC-M07-373-G37 RF-98: período de gracia configurado en M09 |
 import { http } from '../../shared/api/http';
 import type {
   Anexo, ClienteExterno, ClientePayload, ClienteRegistrado, ConfiguracionCliente, Contrato, EnvelopeAaef, FiltrosAuditoria,
@@ -48,7 +49,7 @@ export const integracionApi = {
     mapeadores: string[]; periodo_gracia_dias?: number; descripcion?: string;
   }) => post<Contrato>('/contratos', p),
   activarContrato: (id: number) => post<Contrato>(`/contratos/${id}/activar`),
-  deprecarContrato: (id: number, dias_gracia: number) => post<Contrato>(`/contratos/${id}/deprecar`, { dias_gracia }),
+  deprecarContrato: (id: number, dias_gracia?: number) => post<Contrato>(`/contratos/${id}/deprecar`, { dias_gracia }),
 
   // Auditoría de integración (RF-102)
   auditoria: (filtros: FiltrosAuditoria, pagina: number, tamano = 50) =>
