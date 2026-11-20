@@ -2,8 +2,9 @@
 // |------------|----------|--------------------------------------------------------------------|
 // | 2026-10-29 | Arekkazu | INC-M03-82-G192 RF-62: política de visión configurable desde M09   |
 // | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: mismo contrato para la ventana de retroalimentación |
+// | 2026-11-19 | Arekkazu | INC-M07-373-G37 RF-98: período de gracia del contrato contable |
 import { useCallback, useState } from 'react';
-import { politicaVisionApi, ventanaRetroalimentacionApi, type ParametroPolitica, type ParametrosApi } from '../api/politicaVisionApi';
+import { graciaContratoApi, politicaVisionApi, ventanaRetroalimentacionApi, type ParametroPolitica, type ParametrosApi } from '../api/politicaVisionApi';
 import type { ApiError } from '../../shared/api/errors';
 import { avisarExito } from '../../shared/hooks/useToast';
 
@@ -47,3 +48,4 @@ export function useParametrosConfigurables(api: ParametrosApi) {
 
 export const usePoliticaVision = () => useParametrosConfigurables(politicaVisionApi);
 export const useVentanaRetroalimentacion = () => useParametrosConfigurables(ventanaRetroalimentacionApi);
+export const useGraciaContrato = () => useParametrosConfigurables(graciaContratoApi);
