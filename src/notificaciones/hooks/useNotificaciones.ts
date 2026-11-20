@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo                                                        |
 // |------------|----------|--------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-105: filtros, 50 por página, atender y descartar notificaciones |
+// | 2026-11-19 | Arekkazu | M8-04 RF-105: los filtros de la bandeja llegan a la consulta |
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ApiError } from '../../shared/api/errors';
 import { notificacionesApi } from '../api/notificacionesApi';
@@ -139,7 +140,8 @@ export function useNotificaciones(idUsuario: number | null) {
         setLoading(false);
       }
     }
-  }, [idUsuario]);
+    // M8-04: con `filtros` en las dependencias, cambiar un filtro vuelve a consultar con él.
+  }, [idUsuario, filtros]);
 
   useEffect(() => {
     if (idUsuario == null) return;

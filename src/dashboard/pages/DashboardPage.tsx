@@ -1,11 +1,13 @@
 // | Fecha      | Nombre   | Que se hizo                                                             |
 // |------------|----------|-------------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: widgets con datos propios, finca activa, sincronización y aviso de críticas |
+// | 2026-11-19 | Arekkazu | M8-11/M8-14 RF-103: rol sin panel va a su sección y sin indicador de sincronización repetido |
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Cloud, CloudOff, LayoutGrid, OctagonAlert } from 'lucide-react';
+import { Link, Redirect } from 'react-router-dom';
+import { LayoutGrid, OctagonAlert } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
 import { useAuth } from '../../shared/auth/useAuth';
+import { R_AUDITORIA, R_AUDITORIA_CIERRES } from '../../accounting_integration/rbac';
 import { Alert } from '../../shared/design-system/Alert';
 import { Select } from '../../shared/design-system/Select';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -38,7 +40,7 @@ function useCriticasPendientes(enLinea: boolean): number {
 
 export function DashboardPage() {
   const { t } = useT('dashboard');
-  const { claims, userInfo } = useAuth();
+  const { claims, userInfo, permisos } = useAuth();
   const idUsuario = userInfo?.id_usuario ?? null;
   // T-12: el saludo iba sin nombre cuando el JWT no traía `nombre`.
   const nombre = (claims?.nombre ?? userInfo?.nombre ?? '').trim().split(/\s+/)[0];
@@ -62,6 +64,11 @@ export function DashboardPage() {
       .map((c) => ({ celda: c, widget: porId.get(c.id_widget)! }));
   }, [layout, catalogo]);
   const finca = fincas.find((f) => f.id_finca === idFinca);
+  // M8-11: un rol sin panel de indicadores (el Auditor externo) no ve un error: va a la sección que sí usa.
+  const sinPanel = error?.status === 403;
+  const leeAuditoria = (permisos ?? []).some((p) => p.id_accion === 2
+    && (p.nombre_recurso === R_AUDITORIA || p.nombre_recurso === R_AUDITORIA_CIERRES));
+  if (sinPanel && leeAuditoria) return <Redirect to="/integracion" />;
   const frecuencia = layout?.frecuencia_actualizacion ?? 30;
 
   return (
@@ -83,11 +90,6 @@ export function DashboardPage() {
               {fincas.map((f) => <option key={f.id_finca} value={f.id_finca}>{f.nombre}</option>)}
             </Select>
           )}
-          <span role="status" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600,
-            color: enLinea ? 'var(--sem-success)' : 'var(--sem-error)', paddingBottom: 8 }}>
-            {enLinea ? <Cloud size={16} aria-hidden /> : <CloudOff size={16} aria-hidden />}
-            {t(enLinea ? 'sincronizacion.SINCRONIZADO' : 'sincronizacion.OFFLINE')}
-          </span>
         </div>
       </div>
 
@@ -105,7 +107,10 @@ export function DashboardPage() {
         <Alert variant="warning" title={t('widget.sin_conexion')} style={{ marginBottom: 'var(--s5)' }} />
       )}
 
-      {error && (
+      {sinPanel ? (
+        <Alert variant="info" title={t('dashboardpage.sin_panel')} description={t('dashboardpage.sin_panel_detalle')}
+          style={{ marginBottom: 'var(--s5)' }} />
+      ) : error && (
         <Alert variant="error" title={t('dashboardpage.no_se_pudo_cargar_el_dashboard')} description={error.message}
           style={{ marginBottom: 'var(--s5)' }} />
       )}
@@ -121,7 +126,7 @@ export function DashboardPage() {
             <div key={i} style={{ height: 170, borderRadius: 'var(--r-xl)', background: 'var(--surface-hover)', animation: 'pulse 1.4s infinite' }} />
           ))}
         </div>
-      ) : celdas.length > 0 ? (
+      ) : sinPanel ? null : celdas.length > 0 ? (
         <div className="dashboard-grid">
           {celdas.map(({ celda, widget }) => (
             <WidgetCard key={widget.id_widget} celda={celda} widget={widget} idFinca={idFinca}

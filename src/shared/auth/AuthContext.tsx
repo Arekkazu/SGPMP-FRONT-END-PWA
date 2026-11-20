@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | FE-09 RF-17: nombre_recurso en los permisos del usuario |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: al recargar con la sesión cerrada se explica el motivo |
+// | 2026-11-19 | Arekkazu | M8-11 RF-25: sin aviso de permisos actualizados por un 403 previo a cargarlos |
 import React, { createContext, useState, useCallback, useEffect } from 'react';
 import { tokenStore } from './tokenStore';
 import {
@@ -274,7 +275,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .then((res) => {
           if (!sonPermisosIguales(permisos, res.data.permisos)) {
             setPermisos(res.data.permisos);
-            setPermisosActualizadosEn(Date.now());
+            // M8-11: un 403 que llega antes de cargar los permisos (null) no es un cambio de permisos.
+            if (permisos !== null) setPermisosActualizadosEn(Date.now());
           }
         })
         .catch(() => {
