@@ -2,7 +2,8 @@
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-97 / RF-AE02 5.10: vista previa del documento contable que recibe AgroFusion |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-97: el NIT se elige entre los titulares de las fincas del usuario |
-import React, { useEffect, useState } from 'react';
+// | 2026-11-19 | Arekkazu | M7-01/M7-05 RF-AE01: sin documento anterior tras un rechazo, titular visible y períodos consultables |
+import React, { useEffect, useMemo, useState } from 'react';
 import { Download, FileSearch } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
@@ -16,6 +17,7 @@ import { ErrorApi, EstadoVacio, EncabezadoVista, PANEL, SECUNDARIO, TABLA, TD, T
 import { integracionApi } from '../api/integracionApi';
 import { ACCION_R, R_EXPORTACION } from '../rbac';
 import { SelectorTitular } from '../../shared/fincas/SelectorTitular';
+import { useMisFincas } from '../../shared/fincas/useMisFincas';
 
 const R_CIERRE = 'cierre_periodo';
 
@@ -25,14 +27,25 @@ export function VistaPreviaView() {
   const puedeVerPeriodos = usePermissionPorNombre(R_CIERRE, ACCION_R);
   const periodos = useAsync(finanzasApi.periodos);
   const vista = useAsync(integracionApi.vistaPrevia);
-  const [nit, setNit] = useState('');
-  const [desde, setDesde] = useState('');
-  const [hasta, setHasta] = useState('');
+  const [nit, setNitEstado] = useState('');
+  const [desde, setDesdeEstado] = useState('');
+  const [hasta, setHastaEstado] = useState('');
+  const [consultado, setConsultado] = useState('');
+  const { fincas } = useMisFincas();
+  // Razón social de cada titular de las fincas del usuario: solo esos períodos se pueden consultar (M7-05).
+  const razones = useMemo(() => new Map(fincas.filter((f) => f.numero_id_tributaria)
+    .map((f) => [f.numero_id_tributaria as string, f.razon_social])), [fincas]);
   const { ejecutar: cargarPeriodos } = periodos;
+  const { limpiar: limpiarVista } = vista;
+  // M7-01: el documento en pantalla es siempre el de la consulta actual; si cambia algo, se quita.
+  const setNit = (v: string) => { setNitEstado(v); limpiarVista(); };
+  const setDesde = (v: string) => { setDesdeEstado(v); limpiarVista(); };
+  const setHasta = (v: string) => { setHastaEstado(v); limpiarVista(); };
   useEffect(() => { if (puedeLeer && puedeVerPeriodos) cargarPeriodos(); }, [puedeLeer, puedeVerPeriodos, cargarPeriodos]);
 
   if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.documento')} />;
-  const cerrados = (periodos.data ?? []).filter((p) => p.estado === 'CERRADO');
+  const cerrados = (periodos.data ?? []).filter((p) => p.estado === 'CERRADO' && p.numero_id_tributaria
+    && razones.has(p.numero_id_tributaria));
   const completo = /^\d{6,15}$/.test(nit) && desde && hasta;
   const env = vista.data?.envelope;
 
@@ -48,7 +61,8 @@ export function VistaPreviaView() {
             <option value="">{t('documento.elegir_periodo')}</option>
             {cerrados.map((p) => (
               <option key={p.id_periodo_contable} value={p.id_periodo_contable}>
-                {t('documento.opcion_periodo', { periodo: nombrePeriodo(p), nit: p.numero_id_tributaria })}
+                {t('documento.opcion_periodo', { periodo: nombrePeriodo(p), nit: p.numero_id_tributaria,
+                  titular: razones.get(p.numero_id_tributaria) ?? t('documento.sin_razon_social') })}
               </option>
             ))}
           </Select>
@@ -59,10 +73,10 @@ export function VistaPreviaView() {
           <Input label={t('documento.hasta')} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} required />
         </div>
         <div style={{ display: 'flex', gap: 'var(--s3)', marginTop: 'var(--s4)', flexWrap: 'wrap' }}>
-          <Button variant="primary" size="md" disabled={!completo} loading={vista.cargando} onClick={() => vista.ejecutar(nit, desde, hasta)}>
+          <Button variant="primary" size="md" disabled={!completo} loading={vista.cargando} onClick={() => { vista.limpiar(); setConsultado(nit); vista.ejecutar(nit, desde, hasta); }}>
             <FileSearch size={18} aria-hidden />{t('documento.generar')}
           </Button>
-          {vista.data && (
+          {vista.data && !vista.error && (
             <Button variant="secondary" size="md" onClick={() => guardarArchivo(
               new Blob([vista.data!.texto], { type: 'application/json' }), `documento_contable_${nit}_${desde}_${hasta}.json`)}>
               <Download size={18} aria-hidden />{t('documento.descargar')}
@@ -71,8 +85,11 @@ export function VistaPreviaView() {
         </div>
       </section>
       <ErrorApi error={vista.error} />
-      {env && (
+      {env && !vista.error && (
         <>
+          <h2 style={{ margin: '0 0 var(--s3)', fontSize: 'var(--fs-title-sm, 1.1rem)' }}>
+            {t('documento.de_titular', { titular: razones.get(consultado) ?? t('documento.sin_razon_social'), nit: consultado })}
+          </h2>
           <Alert variant="info" title={t('documento.lo_que_recibe', { version: vista.data!.version })} style={{ marginBottom: 'var(--s4)' }} />
           <div className="fin-indicadores" style={{ display: 'flex', gap: 'var(--s5)', marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>
             <Indicador etiqueta={t('documento.documentos')} valor={String(env.summary.TotalInvoices)} />

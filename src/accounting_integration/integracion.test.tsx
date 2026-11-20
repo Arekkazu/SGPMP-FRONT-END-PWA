@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: pestañas por permiso, secreto una sola vez, 06 apagado, vista previa y auditoría legible |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-97: el NIT es un combobox de los titulares de las fincas del usuario |
+// | 2026-11-19 | Arekkazu | M7-01/03/04/05/07: formulario vacío con errores, activar con confirmación y documento del titular |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -59,6 +60,20 @@ describe('ClientesView', () => {
     respuestas['POST /integracion/clientes'] = { status: 201, data: { client_id: 'agrofusion', client_secret: 's3cr3t0-de-prueba-generado' } };
     enRuta(<ClientesView />);
     await userEvent.click(await screen.findByRole('button', { name: /Registrar sistema/ }));
+    // M7-07: empieza vacío y sin permisos; M7-04: Guardar dice qué falta en cada campo.
+    expect((screen.getByLabelText(/Nombre del sistema/) as HTMLInputElement).value).toBe('');
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(screen.getByText('Escriba el nombre del sistema.')).toBeTruthy();
+    expect(screen.getByText(/Marque al menos una cosa/)).toBeTruthy();
+    expect(peticiones.some((p) => p.method === 'post')).toBe(false);
+    await userEvent.type(screen.getByLabelText(/Nombre del sistema/), 'AgroFusion');
+    await userEvent.type(screen.getByLabelText(/Código interno/), 'AGROFUSION');
+    await userEvent.type(screen.getByLabelText(/client_id/), 'agrofusion');
+    await userEvent.type(screen.getByLabelText(/Dirección o red/), '190.85.12.400');
+    for (const casilla of screen.getAllByRole('checkbox')) await userEvent.click(casilla);
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(screen.getByText(/números de 0 a 255/)).toBeTruthy();
+    await userEvent.clear(screen.getByLabelText(/Dirección o red/));
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
     expect(await screen.findByText('s3cr3t0-de-prueba-generado')).toBeTruthy();
     const cuerpo = JSON.parse(String(peticiones.find((p) => p.method === 'post')?.data));
@@ -98,10 +113,13 @@ describe('VistaPreviaView', () => {
     sesion.permisos = [permiso('exportacion_contable', 2), permiso('cierre_periodo', 2)];
     respuestas['GET /finanzas/periodos'] = { data: [{ id_periodo_contable: 3, numero_id_tributaria: '900123456', tipo_cierre: 'MENSUAL', fecha_inicio: '2026-10-01', fecha_fin: '2026-10-31', estado: 'CERRADO', fecha_cierre: null, ultimo_cierre: null }] };
     respuestas['GET /integracion/aaef/vista-previa/productores/900123456'] = { data: envelope, headers: { 'x-version-contrato-aaef': '3.0', 'x-content-sha256': 'f'.repeat(64) } };
+    respuestas['GET /usuarios/me/fincas'] = { data: { items: [{ id_finca: 1, nombre: 'El Rosal', numero_id_tributaria: '900123456', razon_social: 'Agro SAS' }] } };
     enRuta(<VistaPreviaView />);
     await userEvent.selectOptions(await screen.findByLabelText('Período cerrado'), '3');
+    expect(screen.getByRole('option', { name: /Agro SAS \(NIT 900123456\)/ })).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: /Ver documento/ }));
     expect(await screen.findByText('FE-88231')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Documento de Agro SAS · NIT 900123456' })).toBeTruthy();
     expect(screen.getByText(/versión 3.0 del contrato contable/)).toBeTruthy();
     expect(peticiones.at(-1)?.params).toEqual({ desde: '2026-10-01', hasta: '2026-10-31' });
   });
@@ -115,6 +133,29 @@ describe('VistaPreviaView', () => {
     await userEvent.type(screen.getByLabelText(/Hasta/), '2026-11-30');
     await userEvent.click(screen.getByRole('button', { name: /Ver documento/ }));
     expect(await screen.findByText(/El período 2026-11 no está cerrado/)).toBeTruthy();
+  });
+});
+
+describe('ContratosView: activar', () => {
+  it('M7-03: deshabilita Activar con su motivo y confirma antes de activar', async () => {
+    sesion.permisos = [permiso('contratos_aaef', 2), permiso('contratos_aaef', 3)];
+    const base = { tipo_cambio: 'MAJOR', fecha_vigencia: '2026-12-01', id_mapeo_anexo_aaef: null, mapeadores: ['COMPRAS'],
+      periodo_gracia_dias: 90, descripcion: null, estado: 'PENDIENTE', fecha_activacion: null, fecha_deprecacion: null,
+      fecha_inactivacion: null };
+    respuestas['GET /integracion/contratos'] = { data: [
+      { ...base, id_version_contrato_aaef: 1, contrato_version: '5.0', motivo_no_activable: 'La versión 5.0 no tiene un anexo de mapeo aprobado.', versiones_que_retira: [] },
+      { ...base, id_version_contrato_aaef: 2, contrato_version: '3.1', motivo_no_activable: null, versiones_que_retira: ['2.1'] },
+    ] };
+    respuestas['POST /integracion/contratos/2/activar'] = { data: {} };
+    enRuta(<ContratosView />);
+    const botones = await screen.findAllByRole('button', { name: /Activar/ });
+    expect((botones[0] as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/no tiene un anexo de mapeo aprobado/)).toBeTruthy();
+    await userEvent.click(botones[1]);
+    expect(peticiones.some((p) => p.method === 'post')).toBe(false);
+    expect(screen.getByText(/Se retirarán con plazo: 2.1/)).toBeTruthy();
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Activar/ }));
+    await waitFor(() => expect(peticiones.some((p) => p.url === '/integracion/contratos/2/activar')).toBe(true));
   });
 });
 

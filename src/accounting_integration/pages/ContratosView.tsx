@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-98 / RF-AE02: anexo de mapeo y versiones del contrato contable |
+// | 2026-11-19 | Arekkazu | M7-02/03/09/10 RF-98: aprobar y activar con confirmación, tablas que deslizan, textos |
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, FileCheck2, FileSignature, Plus, PlayCircle, TimerOff } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -38,10 +39,10 @@ export function ContratosView() {
   const puedeAprobarInterno = usePermissionPorNombre(R_CONTRATOS, ACCION_E);
   const anexos = useAsync(integracionApi.anexos);
   const contratos = useAsync(integracionApi.contratos);
-  const revision = useAsync(integracionApi.enviarARevision);
-  const activacion = useAsync(integracionApi.activarContrato);
   const [nuevoAnexo, setNuevoAnexo] = useState(false);
+  const [aprobarInterno, setAprobarInterno] = useState<Anexo | null>(null);
   const [aprobar, setAprobar] = useState<Anexo | null>(null);
+  const [activar, setActivar] = useState<Contrato | null>(null);
   const [nuevoContrato, setNuevoContrato] = useState(false);
   const [deprecar, setDeprecar] = useState<Contrato | null>(null);
   const { ejecutar: cargarAnexos } = anexos;
@@ -51,12 +52,17 @@ export function ContratosView() {
   if (!puedeLeer) return <AccesoDenegado seccion={t('tabs.contrato')} />;
   const recargar = () => { cargarAnexos(); cargarContratos(); };
   const nombreAnexo = (id: number | null) => (anexos.data ?? []).find((a) => a.id_mapeo_anexo_aaef === id)?.codigo_anexo ?? t('contrato.sin_anexo');
+  // «Convive con la anterior» solo tiene sentido si hay una versión anterior.
+  const numero = (v: string) => v.split('.').map(Number);
+  const tieneAnterior = (c: Contrato) => (contratos.data ?? []).some((o) => {
+    const [a, b] = numero(o.contrato_version); const [x, y] = numero(c.contrato_version);
+    return a < x || (a === x && b < y);
+  });
 
   return (
     <>
       <EncabezadoVista titulo={t('contrato.titulo')} descripcion={t('contrato.descripcion')} />
       <Alert variant="info" title={t('contrato.comprobante_apagado')} style={{ marginBottom: 'var(--s5)' }} />
-      <ErrorApi error={revision.error ?? activacion.error} />
 
       <section aria-label={t('contrato.anexos')} style={{ marginBottom: 'var(--s6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s3)' }}>
@@ -67,6 +73,7 @@ export function ContratosView() {
         {anexos.data?.length === 0 ? (
           <EstadoVacio icono={<FileCheck2 size={28} aria-hidden />} titulo={t('contrato.anexos_vacio')} detalle={t('contrato.anexos_vacio_detalle')} />
         ) : (
+          <div style={{ overflowX: 'auto' }}>
           <table style={TABLA}>
             <thead><tr>
               <th style={TH}>{t('contrato.col_anexo')}</th><th style={TH}>{t('contrato.col_estado')}</th>
@@ -84,9 +91,8 @@ export function ContratosView() {
                   </td>
                   <td style={{ ...TD, whiteSpace: 'nowrap' }}>
                     {a.estado === 'BORRADOR' && puedeAprobarInterno && (
-                      <Button variant="secondary" size="sm" loading={revision.cargando} onClick={async () => {
-                        if (await revision.ejecutar(a.id_mapeo_anexo_aaef)) { pushToast('success', t('contrato.en_revision_listo')); recargar(); }
-                      }}><CheckCircle2 size={14} aria-hidden />{t('contrato.aprobar_contador')}</Button>
+                      <Button variant="secondary" size="sm" onClick={() => setAprobarInterno(a)}>
+                        <CheckCircle2 size={14} aria-hidden />{t('contrato.aprobar_contador')}</Button>
                     )}
                     {a.estado === 'EN_REVISION' && puedeActualizar && (
                       <Button variant="secondary" size="sm" onClick={() => setAprobar(a)}><FileCheck2 size={14} aria-hidden />{t('contrato.aprobar_prueba')}</Button>
@@ -96,6 +102,7 @@ export function ContratosView() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 
@@ -108,6 +115,7 @@ export function ContratosView() {
         {contratos.data?.length === 0 ? (
           <EstadoVacio icono={<FileSignature size={28} aria-hidden />} titulo={t('contrato.versiones_vacio')} detalle={t('contrato.versiones_vacio_detalle')} />
         ) : (
+          <div style={{ overflowX: 'auto' }}>
           <table style={TABLA}>
             <thead><tr>
               <th style={TH}>{t('contrato.col_version')}</th><th style={TH}>{t('contrato.col_estado')}</th>
@@ -117,7 +125,8 @@ export function ContratosView() {
             <tbody>
               {(contratos.data ?? []).map((c) => (
                 <tr key={c.id_version_contrato_aaef}>
-                  <td style={TD}><strong>{c.contrato_version}</strong><span className="fin-secundario">{t(`tipo_cambio.${c.tipo_cambio}`)}</span></td>
+                  <td style={TD}><strong>{c.contrato_version}</strong><span className="fin-secundario">
+                    {t(`tipo_cambio.${c.tipo_cambio === 'MINOR' && !tieneAnterior(c) ? 'MINOR_PRIMERA' : c.tipo_cambio}`)}</span></td>
                   <td style={TD}><Estado estado={c.estado} /></td>
                   <td style={TD}>{c.mapeadores.map((m) => t(`mapeador.${m}`)).join(', ')}<span className="fin-secundario">{nombreAnexo(c.id_mapeo_anexo_aaef)}</span></td>
                   <td style={{ ...TD, whiteSpace: 'nowrap' }}>
@@ -127,9 +136,15 @@ export function ContratosView() {
                   </td>
                   <td style={{ ...TD, whiteSpace: 'nowrap' }}>
                     {c.estado === 'PENDIENTE' && puedeActualizar && (
-                      <Button variant="secondary" size="sm" loading={activacion.cargando} onClick={async () => {
-                        if (await activacion.ejecutar(c.id_version_contrato_aaef)) { pushToast('success', t('contrato.activado_listo')); recargar(); }
-                      }}><PlayCircle size={14} aria-hidden />{t('contrato.activar')}</Button>
+                      <>
+                        <Button variant="secondary" size="sm" disabled={!!c.motivo_no_activable}
+                          aria-describedby={c.motivo_no_activable ? `motivo-${c.id_version_contrato_aaef}` : undefined}
+                          onClick={() => setActivar(c)}><PlayCircle size={14} aria-hidden />{t('contrato.activar')}</Button>
+                        {c.motivo_no_activable && (
+                          <span id={`motivo-${c.id_version_contrato_aaef}`} className="fin-secundario"
+                            style={{ whiteSpace: 'normal', maxWidth: 260 }}>{c.motivo_no_activable}</span>
+                        )}
+                      </>
                     )}
                     {c.estado === 'ACTIVO' && puedeActualizar && (
                       <Button variant="ghost" size="sm" onClick={() => setDeprecar(c)}><TimerOff size={14} aria-hidden />{t('contrato.deprecar')}</Button>
@@ -139,10 +154,15 @@ export function ContratosView() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 
       {nuevoAnexo && <AnexoModal onCerrar={() => setNuevoAnexo(false)} onGuardado={() => { setNuevoAnexo(false); recargar(); }} />}
+      {aprobarInterno && <AprobacionInternaModal anexo={aprobarInterno} onCerrar={() => setAprobarInterno(null)}
+        onGuardado={() => { setAprobarInterno(null); pushToast('success', t('contrato.en_revision_listo')); recargar(); }} />}
+      {activar && <ActivarModal contrato={activar} onCerrar={() => setActivar(null)}
+        onGuardado={() => { setActivar(null); pushToast('success', t('contrato.activado_listo')); recargar(); }} />}
       {aprobar && <AprobarModal anexo={aprobar} onCerrar={() => setAprobar(null)} onGuardado={() => { setAprobar(null); recargar(); }} />}
       {nuevoContrato && <ContratoModal anexos={(anexos.data ?? []).filter((a) => a.estado !== 'BORRADOR')}
         onCerrar={() => setNuevoContrato(false)} onGuardado={() => { setNuevoContrato(false); recargar(); }} />}
@@ -159,6 +179,46 @@ function Pie({ onCerrar, onGuardar, valido, cargando, texto }: {
     <Button variant="secondary" size="md" onClick={onCerrar}>{t('comun.cancelar')}</Button>
     <Button variant="primary" size="md" disabled={!valido} loading={cargando} onClick={onGuardar}>{texto}</Button>
   </>;
+}
+
+/** M7-02 / RF-107 R3: aprobar el anexo no tiene vuelta atrás, así que se confirma y se justifica. */
+function AprobacionInternaModal({ anexo, onCerrar, onGuardado }: { anexo: Anexo; onCerrar: () => void; onGuardado: () => void }) {
+  const { t } = useT('integracion');
+  const revision = useAsync(integracionApi.enviarARevision);
+  const [justificacion, setJustificacion] = useState('');
+  const [intentado, setIntentado] = useState(false);
+  const corta = justificacion.trim().length < 20;
+  return (
+    <ModalShell title={t('contrato.aprobar_contador_titulo', { anexo: anexo.codigo_anexo })} onClose={onCerrar} maxWidth={560} bloqueante
+      descripcion={t('contrato.aprobar_contador_ayuda')}
+      footer={<Pie onCerrar={onCerrar} valido cargando={revision.cargando} texto={t('contrato.aprobar_contador')} onGuardar={async () => {
+        setIntentado(true);
+        if (!corta && await revision.ejecutar(anexo.id_mapeo_anexo_aaef, justificacion.trim())) onGuardado();
+      }} />}>
+      <ErrorApi error={revision.error} />
+      <AreaTexto id="anexo-justificacion" label={t('contrato.justificacion')} hint={t('contrato.justificacion_ayuda')}
+        value={justificacion} onChange={(e) => setJustificacion(e.target.value)} maxLength={1000} required
+        error={intentado && corta ? t('contrato.justificacion_corta') : undefined} />
+    </ModalShell>
+  );
+}
+
+/** M7-03 / RF-107 R3: activar cambia lo que recibe AgroFusion; se confirma diciendo qué versión se retira. */
+function ActivarModal({ contrato, onCerrar, onGuardado }: { contrato: Contrato; onCerrar: () => void; onGuardado: () => void }) {
+  const { t } = useT('integracion');
+  const activacion = useAsync(integracionApi.activarContrato);
+  return (
+    <ModalShell title={t('contrato.activar_titulo', { version: contrato.contrato_version })} onClose={onCerrar} maxWidth={520} bloqueante
+      footer={<Pie onCerrar={onCerrar} valido cargando={activacion.cargando} texto={t('contrato.activar')} onGuardar={async () => {
+        if (await activacion.ejecutar(contrato.id_version_contrato_aaef)) onGuardado();
+      }} />}>
+      <ErrorApi error={activacion.error} />
+      <p style={{ marginTop: 0 }}>{t('contrato.activar_resumen', { version: contrato.contrato_version, fecha: formatoFecha(contrato.fecha_vigencia) })}</p>
+      <Alert variant={contrato.versiones_que_retira.length ? 'warning' : 'info'} title={contrato.versiones_que_retira.length
+        ? t('contrato.activar_retira', { versiones: contrato.versiones_que_retira.join(', ') })
+        : t('contrato.activar_no_retira')} />
+    </ModalShell>
+  );
 }
 
 function AnexoModal({ onCerrar, onGuardado }: { onCerrar: () => void; onGuardado: () => void }) {
