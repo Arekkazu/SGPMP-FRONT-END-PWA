@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-104: elegir reporte, filtros, vista previa, PDF/Excel, segundo plano y mis reportes |
+// | 2026-11-19 | Arekkazu | M08 RF-104: vista previa con la estructura de las plantillas V1.1 |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Download, Eye, FileText, X } from 'lucide-react';
@@ -16,7 +17,7 @@ import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { reportesApi } from '../api/reportesApi';
 import { FiltrosReporte } from '../components/FiltrosReporte';
-import { TablaReporte } from '../components/TablaReporte';
+import { VistaPreviaReporte } from '../components/VistaPreviaReporte';
 import {
   GRUPO_REPORTE, type EstadoReporte, type FormatoReporte, type Reporte, type ReporteCatalogo, type TipoReporte,
   type ValoresFiltros, type VistaPrevia,
@@ -274,40 +275,7 @@ export function ReportesPage() {
 
       {previa && (
         <section style={SECCION} aria-labelledby="titulo-previa">
-          <h2 id="titulo-previa" style={{ margin: '0 0 var(--s3)', fontSize: 'var(--fs-title-sm, 18px)' }}>
-            {t('previa.titulo', { titulo: previa.titulo })}
-          </h2>
-          <dl style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s2) var(--s5)', margin: '0 0 var(--s4)' }}>
-            {previa.encabezado.map((e) => (
-              <div key={e.dato}><dt style={{ fontWeight: 600 }}>{e.dato}</dt><dd style={{ margin: 0 }}>{e.valor}</dd></div>
-            ))}
-          </dl>
-          {previa.sin_datos ? (
-            <Alert variant="info" title={t('previa.sin_datos')} description={previa.mensaje ?? undefined} />
-          ) : (
-            <>
-              <p role="status" style={{ fontWeight: 600 }}>
-                {t('previa.registros', { count: previa.numero_registros, registros: formatearNumero(previa.numero_registros) })}
-              </p>
-              {previa.en_segundo_plano && (
-                <Alert variant="info" title={t('previa.segundo_plano')} description={t('previa.segundo_plano_detalle')} />
-              )}
-              {previa.aclaraciones.map((a) => <p key={a}>{a}</p>)}
-              {previa.resumen.map((tabla) => <TablaReporte key={tabla.titulo} tabla={tabla} />)}
-              {previa.detalle && <TablaReporte tabla={previa.detalle} />}
-              {previa.secciones.map((s) => (
-                <div key={s.titulo} style={{ borderTop: '2px solid var(--brand-600, #2f5d3a)', paddingTop: 'var(--s3)', marginTop: 'var(--s3)' }}>
-                  <h3 style={{ margin: '0 0 var(--s2)', fontSize: 'var(--fs-body-lg, 16px)' }}>{s.titulo}</h3>
-                  {s.textos.map((x) => <p key={x}>{x}</p>)}
-                  {s.tablas.map((tabla) => <TablaReporte key={tabla.titulo} tabla={tabla} />)}
-                </div>
-              ))}
-              {previa.finales.map((tabla) => <TablaReporte key={tabla.titulo} tabla={tabla} />)}
-              {previa.advertencias.length > 0 && (
-                <Alert variant="warning" title={t('previa.advertencias')} description={previa.advertencias.join(' ')} />
-              )}
-            </>
-          )}
+          <VistaPreviaReporte previa={previa} />
         </section>
       )}
 

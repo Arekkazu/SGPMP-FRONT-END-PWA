@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: cliente de la API /integracion |
+// | 2026-11-19 | Arekkazu | M7-02 RF-98: la aprobación interna del anexo lleva justificación |
 // | 2026-11-19 | Arekkazu | INC-M07-373-G37 RF-98: período de gracia configurado en M09 |
 import { http } from '../../shared/api/http';
 import type {
@@ -40,7 +41,7 @@ export const integracionApi = {
   // Anexo y contratos (RF-AE02, RF-98)
   anexos: () => get<Anexo[]>('/anexos'),
   registrarAnexo: (p: Pick<Anexo, 'codigo_anexo' | 'version_anexo' | 'ruta_documento' | 'sha256_documento'>) => post<Anexo>('/anexos', p),
-  enviarARevision: (id: number) => post<Anexo>(`/anexos/${id}/revision`),
+  enviarARevision: (id: number, justificacion: string) => post<Anexo>(`/anexos/${id}/revision`, { justificacion }),
   aprobarAnexo: (id: number, p: { id_intercambio: string; ack_aceptado: boolean; observaciones?: string }) =>
     post<Anexo>(`/anexos/${id}/aprobar`, p),
   contratos: () => get<Contrato[]>('/contratos'),

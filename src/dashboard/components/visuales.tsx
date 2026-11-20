@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo                                                        |
 // |------------|----------|--------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: cómo se dibuja cada widget (semáforo, cifras, listas…)  |
+// | 2026-11-19 | Arekkazu | M8-16 RF-103: plurales correctos y nombres de área completos en el semáforo |
 import React, { Suspense, lazy } from 'react';
 import { AlertTriangle, CheckCircle2, CircleSlash, OctagonAlert } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -46,7 +47,7 @@ function Semaforo({ datos }: { datos: Datos }) {
         {areas.map((a) => (
           <li key={String(a.id_infraestructura)} style={{ display: 'flex', justifyContent: 'space-between', gap: 6,
             alignItems: 'center', fontSize: 13, color: 'var(--text-secondary)' }}>
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{texto(a.nombre)}</span>
+            <span style={{ overflowWrap: 'anywhere' }}>{texto(a.nombre)}</span>
             <EstadoSemaforo estado={String(a.estado)} />
           </li>
         ))}
@@ -100,7 +101,7 @@ function Cifra({ datos }: { datos: Datos }) {
       <p style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)' }}>
         {formatearNumero(datos.valor_total as number, COP)}
       </p>
-      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('valor.activos', { cantidad: datos.activos })}</span>
+      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('valor.activos', { cantidad: datos.activos, count: Number(datos.activos) })}</span>
       {datos.vista === 'POR_METODO' && (
         <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: '1fr auto', gap: '2px 12px', fontSize: 13 }}>
           <dt style={{ color: 'var(--text-secondary)' }}>{t('valor.razonable')}</dt>
@@ -194,7 +195,7 @@ function Estados({ datos }: { datos: Datos }) {
   const conteo = (datos.conteo ?? {}) as Record<string, number>;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
-      <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{t('estados_iot.total', { cantidad: datos.total })}</span>
+      <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{t('estados_iot.total', { cantidad: datos.total, count: Number(datos.total) })}</span>
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {Object.entries(conteo).map(([estado, n]) => (
           <li key={estado} style={{ padding: '2px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700,
@@ -231,7 +232,7 @@ function Linea1({ clave, f }: { clave: string; f: Fila }) {
       return <>{texto(f.cliente)}<small> {t(`valores.estado_integracion.${String(f.estado)}`, { defaultValue: String(f.estado) })} · {formatearRelativo(f.fecha as string)}</small></>;
     case 'precios_por_vencer':
       return <>{texto(f.especie)} · {formatearNumero(f.precio_unitario as number, COP)} / {texto(f.unidad_medida)}
-        <small> {Number(f.dias_restantes) === 0 ? t('lista.vence_hoy') : t('lista.vence_en', { dias: f.dias_restantes })}</small></>;
+        <small> {Number(f.dias_restantes) === 0 ? t('lista.vence_hoy') : t('lista.vence_en', { dias: f.dias_restantes, count: Number(f.dias_restantes) })}</small></>;
     case 'dispositivos_sin_senal':
       return <>{texto(f.serial)} · {texto(f.area)}<small> {t(`valores.estado_dispositivo.${String(f.estado)}`, { defaultValue: String(f.estado) })} · {f.fecha_ultimo_contacto ? t('lista.ultimo_contacto', { cuando: formatearRelativo(f.fecha_ultimo_contacto as string) }) : t('lista.nunca')}</small></>;
     case 'cal_sensores':
@@ -239,7 +240,7 @@ function Linea1({ clave, f }: { clave: string; f: Fila }) {
     case 'cfg_pendiente':
       return <>{texto(f.serial)}<small> {texto(f.area)}</small></>;
     case 'fincas_estado':
-      return <>{texto(f.nombre)}<small> {t('lista.areas_dispositivos', { areas: f.areas_activas ?? 0, dispositivos: f.dispositivos_activos ?? 0 })}</small></>;
+      return <>{texto(f.nombre)}<small> {t('lista.areas', { count: Number(f.areas_activas ?? 0) })} · {t('lista.dispositivos', { count: Number(f.dispositivos_activos ?? 0) })}</small></>;
     case 'ultimos_eventos':
       return <>{t(`valores.tipo_evento.${String(f.tipo)}`, { defaultValue: String(f.tipo) })} · {texto(f.activo)}<small> {formatearRelativo(f.fecha as string)}</small></>;
     default:

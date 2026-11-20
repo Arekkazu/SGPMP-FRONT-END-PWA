@@ -7,6 +7,7 @@
 // | 2026-11-14 | Arekkazu | SSO AgroFusion: AgroFusion devuelve a /sso?token=, no a /sso/callback |
 // | 2026-11-14 | Arekkazu | M08 RF-103: un push refresca al instante los widgets de alertas |
 // | 2026-11-18 | Arekkazu | M08 RF-104..107: ruta /reportes, indicador de sincronización, catálogo de errores y avisos con navegación |
+// | 2026-11-19 | Arekkazu | M8-14 RF-107: indicador de sincronización en la barra superior, no flotando sobre el contenido |
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
@@ -228,6 +229,7 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
           notificationCount={notificaciones.noLeidas}
           notificationsOpen={notificationsOpen}
           onNotificationsClick={alternarNotificaciones}
+          estado={<EstadoSincronizacion />}
         />
         <NotificationTray
           open={notificationsOpen}
@@ -289,7 +291,6 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
             children
           )}
         </main>
-        <EstadoSincronizacion />
       </div>
     </div>
   );

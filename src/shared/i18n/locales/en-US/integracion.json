@@ -3,18 +3,20 @@
   "tabs": {
     "aria": "Accounting integration sections",
     "documento": "Accounting document",
-    "clientes": "AgroFusion access",
+    "clientes": "External systems",
     "contrato": "Contract and annex",
     "auditoria": "Audit"
   },
   "comun": { "acciones": "Actions", "cancelar": "Cancel", "guardar": "Save" },
   "documento": {
+    "sin_razon_social": "Holder without a registered business name",
+    "de_titular": "Document of {{titular}} · Tax ID {{nit}}",
     "titulo": "Accounting document for AgroFusion",
     "descripcion": "Review what AgroFusion will receive for the producer over a range of closed periods, before it is transferred to accounting.",
     "consulta": "Document query",
     "periodo_cerrado": "Closed period",
     "elegir_periodo": "Choose a closed period…",
-    "opcion_periodo": "{{periodo}} · Tax ID {{nit}}",
+    "opcion_periodo": "{{periodo}} · {{titular}} (Tax ID {{nit}})",
     "nit": "Producer tax ID (NIT)",
     "nit_ayuda": "Digits only, without the check digit.",
     "desde": "From (first day of a period)",
@@ -39,7 +41,18 @@
     "huella": "Content fingerprint: {{hash}}"
   },
   "clientes": {
-    "titulo": "AgroFusion access",
+    "vencida": "Expired credential",
+    "vencio": "Expired on {{fecha}}",
+    "cambiar_credencial": "Change the credential",
+    "error_nombre": "Enter the system name.",
+    "error_codigo": "Use only uppercase letters, numbers and underscores, starting with a letter. Example: COGANAHUILA_INT.",
+    "error_client_id": "Enter the identifier the system uses to request access.",
+    "error_vence": "Choose the credential expiration date.",
+    "error_canales": "Select at least one thing the system can do.",
+    "error_limite": "Requests per minute must be 1 or more.",
+    "error_ip": "Enter a valid address with numbers from 0 to 255. Example: 203.0.113.10 or 203.0.113.0/24.",
+    "error_ttl": "The duration must be between 5 and 60 minutes.",
+    "titulo": "External systems",
     "descripcion": "External systems that can request access to the integration, their credential and what they can query.",
     "registrar": "Register system",
     "editar": "Edit {{cliente}}",
@@ -106,6 +119,15 @@
   },
   "estado_cliente": { "ACTIVO": "Active", "SUSPENDIDO": "Suspended", "REVOCADO": "Revoked" },
   "contrato": {
+    "aprobar_contador_titulo": "Approve annex {{anexo}}",
+    "aprobar_contador_ayuda": "Once approved, the annex moves to “In review” and cannot go back to draft. The AgroFusion test is still pending. Explain why you approve it: it is kept in the audit log.",
+    "justificacion": "Justification",
+    "justificacion_ayuda": "At least 20 characters. For example: “I checked the mapping against the producer’s chart of accounts”.",
+    "justificacion_corta": "Write at least 20 characters to justify the approval.",
+    "activar_titulo": "Activate version {{version}}",
+    "activar_resumen": "From now on AgroFusion will receive the document with version {{version}} (scheduled start: {{fecha}}).",
+    "activar_retira": "These versions will be retired with a grace period: {{versiones}}.",
+    "activar_no_retira": "No version is retired: it coexists with the active ones.",
     "titulo": "Accounting contract and mapping annex",
     "descripcion": "Versions of the format delivered to AgroFusion and the annex that defines each field.",
     "comprobante_apagado": "For now only purchase invoices are sent. The IAS 41 voucher will be enabled once external accounting accepts it.",
@@ -165,6 +187,7 @@
     "descripcion_campo": "Description (optional)"
   },
   "estado": {
+    "OBSOLETO": "Obsolete",
     "BORRADOR": "Draft",
     "EN_REVISION": "Under review",
     "APROBADO": "Approved",
@@ -173,7 +196,7 @@
     "DEPRECADO": "Retiring",
     "INACTIVO": "Retired"
   },
-  "tipo_cambio": { "MAJOR": "Major change (retires the previous one with notice)", "MINOR": "Minor change (coexists with the previous one)" },
+  "tipo_cambio": { "MINOR_PRIMERA": "Minor change", "MAJOR": "Major change (retires the previous one with notice)", "MINOR": "Minor change (coexists with the previous one)" },
   "mapeador": { "COMPRAS": "Purchase invoices", "COMPROBANTE_NIC41": "IAS 41 voucher" },
   "auditoria": {
     "titular_invalido": "The tax ID must have 6 to 15 digits, without the check digit.",

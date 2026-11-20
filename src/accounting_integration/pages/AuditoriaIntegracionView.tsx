@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-102: historial de la integración con integridad por registro y exportación |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-98: filtro por titular entre los de las fincas del usuario |
+// | 2026-11-19 | Arekkazu | M7-11 RF-102: nombre de quien actuó y el motivo como detalle |
 import React, { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Download, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -113,13 +114,16 @@ export function AuditoriaIntegracionView() {
 function Fila({ e }: { e: EventoIntegracion }) {
   const { t } = useT('integracion');
   const ok = e.codigo_resultado === 'OK' || e.codigo_resultado === null;
-  const quien = [e.nombre_cliente, e.correo_usuario].filter(Boolean).join(' · ') || t('auditoria.sistema');
+  const quien = [e.nombre_cliente, e.nombre_usuario ?? e.correo_usuario].filter(Boolean).join(' · ') || t('auditoria.sistema');
+  // Lo que el evento guardó en palabras (motivo de una suspensión, justificación del anexo, causa de un rechazo).
+  const texto = (clave: string) => (typeof e.json_detalle?.[clave] === 'string' ? (e.json_detalle[clave] as string) : null);
   const detalle = [
     e.numero_id_tributaria && t('auditoria.productor', { nit: e.numero_id_tributaria }),
     e.fecha_desde && e.fecha_hasta && t('auditoria.rango', { desde: formatoFecha(e.fecha_desde), hasta: formatoFecha(e.fecha_hasta) }),
     e.version_contrato && t('auditoria.version', { version: e.version_contrato }),
     e.latencia_ms !== null && t('auditoria.latencia', { ms: e.latencia_ms }),
     e.ip_origen && t('auditoria.ip', { ip: e.ip_origen }),
+    texto('motivo'), texto('justificacion'), texto('mensaje'),
   ].filter(Boolean);
   return (
     <tr>

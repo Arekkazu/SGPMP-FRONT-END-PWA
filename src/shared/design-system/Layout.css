@@ -3,7 +3,8 @@
    | 2026-10-25 | Arekkazu | USAB-M03-M04 T-23: tablas que se vuelven tarjetas por debajo de 768px |
    | 2026-10-29 | Arekkazu | TC-DIS-150/179 a11y: clase global .ds-sr-only (solo lector de pantalla) |
    | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: .ds-kv, lista rótulo → valor (antes rejilla inline en BufferView) |
-   | 2026-11-18 | Arekkazu | M08 RF-107: aviso de saturación, historial de avisos, barra de sincronización y proceso en curso |  */
+   | 2026-11-18 | Arekkazu | M08 RF-107: aviso de saturación, historial de avisos, barra de sincronización y proceso en curso |
+   | 2026-11-19 | Arekkazu | M8-14 RF-107: el indicador de sincronización deja de flotar sobre el contenido |  */
 
 /* Rejillas de contenido del DS v2.0 ("Reglas responsive por componente").
  *
@@ -319,12 +320,9 @@
 .ds-toasts__tipo { font-weight: 700; }
 .ds-toasts__meta { font-size: var(--fs-body-sm, 13px); color: var(--text-secondary); }
 
-/* --- RF-107 tipo 4: barra de estado de sincronización (siempre visible, abajo) --- */
+/* --- RF-107 tipo 4: estado de sincronización, siempre visible en la barra superior --- */
+/* M8-14: antes flotaba abajo a la izquierda y tapaba «Actualizado a las…», etiquetas y botones. */
 .ds-sync {
-  position: fixed;
-  z-index: 120;
-  left: var(--s4);
-  bottom: var(--s4);
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
@@ -338,7 +336,6 @@
   font-size: var(--fs-body-sm, 13px);
   font-weight: 600;
   cursor: pointer;
-  box-shadow: var(--shadow-md);
 }
 .ds-sync:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .ds-sync--SINCRONIZADO { color: var(--success-700, #15803d); }

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-104: tipos de reporte, contratos del API y recursos RBAC |
+// | 2026-11-19 | Arekkazu | M08 RF-104: parámetros, indicadores y autor de la vista previa |
 
 /** Los 18 reportes de RF-104. Cada uno tiene el recurso `reporte_<tipo>` con la acción Ejecutar. */
 export const TIPOS_REPORTE = [
@@ -71,6 +72,9 @@ export interface VistaPrevia {
   finales: TablaPrevia[];
   advertencias: string[];
   aclaraciones: string[];
+  generado_por?: string | null;
+  parametros?: { dato: string; valor: string }[];
+  indicadores?: { etiqueta: string; valor: string | number | null; tipo: TipoColumna }[];
 }
 
 export type EstadoReporte = 'EN_PROCESO' | 'GENERADO' | 'FALLIDO' | 'CANCELADO' | 'EXPIRADO';
