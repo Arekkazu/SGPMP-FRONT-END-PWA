@@ -1,3 +1,14 @@
+## [1.4.0-rc.54](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.53...v1.4.0-rc.54) (2026-11-20)
+
+### Features
+
+* **rf104-mod8:** vista previa de reportes con la estructura de las plantillas V1.1 ([2415dff](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2415dffab788a3abf8345fa5e45af547b731621e))
+
+### Bug Fixes
+
+* **rf103-mod8:** filtros de la bandeja, panel sin errores para el Auditor y niveles de riesgo unificados ([cb84def](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/cb84def7479d81d3e1d2584a30949e7297fe9f5e))
+* **rf98-mod7:** confirmaciones del anexo y del contrato, errores por campo y documento del titular ([b42b421](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b42b421d919f9221cca22ef75cee4ace98cda8fb))
+
 ## [1.4.0-rc.53](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.52...v1.4.0-rc.53) (2026-11-20)
 
 ### Bug Fixes
