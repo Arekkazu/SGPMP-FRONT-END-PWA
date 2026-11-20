@@ -3,6 +3,7 @@
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: pestañas por permiso, secreto una sola vez, 06 apagado, vista previa y auditoría legible |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-97: el NIT es un combobox de los titulares de las fincas del usuario |
 // | 2026-11-19 | Arekkazu | M7-01/03/04/05/07: formulario vacío con errores, activar con confirmación y documento del titular |
+// | 2026-11-20 | Arekkazu | QA-M07 CU04 H-01: el registro se confirma, también si se guardó sin respuesta a tiempo |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -20,6 +21,10 @@ import { AuditoriaIntegracionView } from './pages/AuditoriaIntegracionView';
 const sesion = vi.hoisted(() => ({ permisos: [] as { id_recurso: number; nombre_recurso: string; id_accion: number }[] }));
 vi.mock('../shared/auth/useAuth', () => ({ useAuth: () => sesion }));
 const permiso = (nombre_recurso: string, id_accion: number) => ({ id_recurso: 0, nombre_recurso, id_accion });
+const toasts = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock('../shared/hooks/useToast', async (original) => ({
+  ...(await original<typeof import('../shared/hooks/useToast')>()), pushToast: toasts.push,
+}));
 
 const peticiones: InternalAxiosRequestConfig[] = [];
 let respuestas: Record<string, { status?: number; data: unknown; headers?: Record<string, string> }>;
@@ -27,13 +32,14 @@ const adapterOriginal = http.defaults.adapter;
 const adapter: AxiosAdapter = async (config) => {
   peticiones.push(config);
   const r = respuestas[`${config.method?.toUpperCase()} ${config.url}`] ?? { data: [] };
+  if (r.status === 0) return Promise.reject(Object.assign(new Error('timeout'), { isAxiosError: true, code: 'ECONNABORTED', config }));
   if ((r.status ?? 200) >= 400) {
     return Promise.reject(Object.assign(new Error('HTTP'), { isAxiosError: true, config, response: { status: r.status, data: r.data, headers: {}, config } }));
   }
   return { config, status: r.status ?? 200, statusText: 'OK', headers: r.headers ?? {}, data: r.data };
 };
 
-beforeEach(() => { peticiones.length = 0; respuestas = {}; http.defaults.adapter = adapter; });
+beforeEach(() => { peticiones.length = 0; respuestas = {}; toasts.push.mockClear(); http.defaults.adapter = adapter; });
 afterEach(() => { cleanup(); http.defaults.adapter = adapterOriginal; });
 
 const enRuta = (ui: React.ReactElement, ruta = '/integracion') => render(<MemoryRouter initialEntries={[ruta]}>{ui}</MemoryRouter>);
@@ -97,6 +103,54 @@ describe('ContratosView', () => {
     await waitFor(() => expect(peticiones.some((p) => p.method === 'post')).toBe(true));
     const cuerpo = JSON.parse(String(peticiones.find((p) => p.method === 'post')?.data));
     expect(cuerpo).toMatchObject({ contrato_version: '3.0', tipo_cambio: 'MAJOR', id_mapeo_anexo_aaef: 4, mapeadores: ['COMPRAS'], periodo_gracia_dias: 90 });
+  });
+
+  const anexoAprobado = { id_mapeo_anexo_aaef: 4, codigo_anexo: 'AAEF-ANEXO-3.0', version_anexo: '3.0', ruta_documento: 'docs/anexo.md', sha256_documento: 'a'.repeat(64), estado: 'APROBADO', fecha_aprobacion_interna: null, fecha_aprobacion: '2026-11-06T10:00:00Z' };
+  const pendiente = { id_version_contrato_aaef: 82, contrato_version: '8.2', tipo_cambio: 'MINOR', estado: 'PENDIENTE', fecha_vigencia: '2030-12-31', id_mapeo_anexo_aaef: 4, mapeadores: ['COMPRAS'], periodo_gracia_dias: null, motivo_no_activable: null, versiones_que_retira: [] };
+
+  const registrar82 = async () => {
+    await userEvent.click(await screen.findByRole('button', { name: /Registrar versión/ }));
+    const campo = screen.getByLabelText(/^Versión/);
+    await userEvent.clear(campo);
+    await userEvent.type(campo, '8.2');
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+  };
+
+  it('CU04 H-01: al registrar cierra el formulario, confirma en estado Pendiente y recarga la tabla', async () => {
+    sesion.permisos = [permiso('contratos_aaef', 2), permiso('contratos_aaef', 1)];
+    respuestas['GET /integracion/anexos'] = { data: [anexoAprobado] };
+    respuestas['GET /integracion/contratos'] = { data: [] };
+    respuestas['POST /integracion/contratos'] = { status: 201, data: pendiente };
+    enRuta(<ContratosView />);
+    await registrar82();
+    await waitFor(() => expect(toasts.push).toHaveBeenCalledWith('success', expect.stringContaining('8.2 quedó registrada en estado Pendiente')));
+    expect(screen.queryByRole('button', { name: 'Guardar' })).toBeNull();
+    expect(peticiones.filter((p) => p.method === 'get' && p.url === '/integracion/contratos')).toHaveLength(2);
+  });
+
+  it('CU04 H-01: si la respuesta no llega a tiempo pero la versión quedó guardada, no muestra error', async () => {
+    sesion.permisos = [permiso('contratos_aaef', 2), permiso('contratos_aaef', 1)];
+    respuestas['GET /integracion/anexos'] = { data: [anexoAprobado] };
+    respuestas['GET /integracion/contratos'] = { data: [] };
+    respuestas['POST /integracion/contratos'] = { status: 0, data: null };
+    enRuta(<ContratosView />);
+    await screen.findByRole('button', { name: /Registrar versión/ });
+    respuestas['GET /integracion/contratos'] = { data: [pendiente] };  // el servidor la guardó
+    await registrar82();
+    await waitFor(() => expect(toasts.push).toHaveBeenCalledWith('success', expect.stringContaining('8.2')));
+    expect(screen.queryByText(/error inesperado/i)).toBeNull();
+  });
+
+  it('CU04 H-01: si no llegó respuesta y la versión no está, sí muestra el error', async () => {
+    sesion.permisos = [permiso('contratos_aaef', 2), permiso('contratos_aaef', 1)];
+    respuestas['GET /integracion/anexos'] = { data: [anexoAprobado] };
+    respuestas['GET /integracion/contratos'] = { data: [] };
+    respuestas['POST /integracion/contratos'] = { status: 0, data: null };
+    enRuta(<ContratosView />);
+    await registrar82();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar' })).toBeTruthy());
+    expect(toasts.push).not.toHaveBeenCalled();
+    expect(await screen.findByText(/error inesperado/i)).toBeTruthy();
   });
 });
 
