@@ -3,6 +3,7 @@
 // | 2026-11-06 | Arekkazu | M07 RF-98 / RF-AE02: anexo de mapeo y versiones del contrato contable |
 // | 2026-11-19 | Arekkazu | M7-02/03/09/10 RF-98: aprobar y activar con confirmación, tablas que deslizan, textos |
 // | 2026-11-19 | Arekkazu | INC-M07-373-G37 RF-98: período de gracia configurado en M09 |
+// | 2026-11-20 | Arekkazu | QA-M07 CU04 H-01 RF-98: confirmar el registro y no dar error si se guardó sin respuesta a tiempo |
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, FileCheck2, FileSignature, Plus, PlayCircle, TimerOff } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -21,6 +22,7 @@ import {
 import { integracionApi } from '../api/integracionApi';
 import { graciaContratoApi } from '../../configuration/api/politicaVisionApi';
 import { ACCION_C, ACCION_E, ACCION_R, ACCION_U, R_CONTRATOS } from '../rbac';
+import type { ApiError } from '../../shared/api/errors';
 import type { Anexo, Contrato } from '../types';
 
 const COLOR = {
@@ -179,7 +181,8 @@ export function ContratosView() {
         onGuardado={() => { setActivar(null); pushToast('success', t('contrato.activado_listo')); recargar(); }} />}
       {aprobar && <AprobarModal anexo={aprobar} onCerrar={() => setAprobar(null)} onGuardado={() => { setAprobar(null); recargar(); }} />}
       {nuevoContrato && <ContratoModal anexos={(anexos.data ?? []).filter((a) => a.estado !== 'BORRADOR')} gracia={gracia}
-        onCerrar={() => setNuevoContrato(false)} onGuardado={() => { setNuevoContrato(false); recargar(); }} />}
+        onCerrar={() => setNuevoContrato(false)}
+        onGuardado={(c) => { setNuevoContrato(false); pushToast('success', t('contrato.registrado_listo', { version: c.contrato_version })); recargar(); }} />}
       {deprecar && <DeprecarModal contrato={deprecar} gracia={gracia} onCerrar={() => setDeprecar(null)} onGuardado={() => { setDeprecar(null); recargar(); }} />}
     </>
   );
@@ -284,9 +287,27 @@ function AprobarModal({ anexo, onCerrar, onGuardado }: { anexo: Anexo; onCerrar:
   );
 }
 
-function ContratoModal({ anexos, gracia: plazo, onCerrar, onGuardado }: { anexos: Anexo[]; gracia: Gracia; onCerrar: () => void; onGuardado: () => void }) {
+type RegistroContrato = Parameters<typeof integracionApi.registrarContrato>[0];
+
+/** CU04 H-01: si la respuesta no llega a tiempo (status 0) el servidor pudo guardarla igual; antes de mostrar
+ * un error se busca la versión en el listado, y si está se da por registrada. */
+async function registrarComprobando(p: RegistroContrato): Promise<Contrato> {
+  try {
+    return await integracionApi.registrarContrato(p);
+  } catch (e) {
+    if ((e as ApiError).status !== 0) throw e;
+    const guardada = (await integracionApi.contratos().catch(() => [] as Contrato[]))
+      .find((c) => c.contrato_version === p.contrato_version && c.estado === 'PENDIENTE');
+    if (guardada) return guardada;
+    throw e;
+  }
+}
+
+function ContratoModal({ anexos, gracia: plazo, onCerrar, onGuardado }: {
+  anexos: Anexo[]; gracia: Gracia; onCerrar: () => void; onGuardado: (c: Contrato) => void;
+}) {
   const { t } = useT('integracion');
-  const registro = useAsync(integracionApi.registrarContrato);
+  const registro = useAsync(registrarComprobando);
   const [version, setVersion] = useState('3.0');
   const [tipo, setTipo] = useState<'MAJOR' | 'MINOR'>('MAJOR');
   const [vigencia, setVigencia] = useState(new Date().toISOString().slice(0, 10));
@@ -298,10 +319,11 @@ function ContratoModal({ anexos, gracia: plazo, onCerrar, onGuardado }: { anexos
   return (
     <ModalShell title={t('contrato.registrar_version')} onClose={onCerrar} maxWidth={600}
       footer={<Pie onCerrar={onCerrar} valido={valido} cargando={registro.cargando} texto={t('comun.guardar')} onGuardar={async () => {
-        if (await registro.ejecutar({
+        const registrado = await registro.ejecutar({
           contrato_version: version, tipo_cambio: tipo, fecha_vigencia: vigencia, id_mapeo_anexo_aaef: Number(anexo),
           mapeadores: ['COMPRAS'], periodo_gracia_dias: tipo === 'MAJOR' && gracia !== '' ? Number(gracia) : undefined, descripcion: descripcion.trim() || undefined,
-        })) onGuardado();
+        });
+        if (registrado) onGuardado(registrado);
       }} />}>
       {anexos.length === 0 && <Alert variant="warning" title={t('contrato.sin_anexo_aprobado')} style={{ marginBottom: 'var(--s4)' }} />}
       <ErrorApi error={registro.error} />
