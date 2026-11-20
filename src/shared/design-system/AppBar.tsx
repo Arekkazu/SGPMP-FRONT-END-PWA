@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-19 | Arekkazu | M8-14 RF-107: el estado de sincronización vive en la barra superior |
 import React from 'react';
 import { Bell, Sun, Moon, Menu } from 'lucide-react';
 import { useT } from '../i18n/useT';
@@ -11,6 +14,8 @@ interface AppBarProps {
   notificationsOpen?: boolean;
   onNotificationsClick?: () => void;
   pageTitle?: string;
+  /** Indicador de estado (sincronización) que va a la derecha, antes del tema y la campana. */
+  estado?: React.ReactNode;
 }
 
 export function AppBar({
@@ -19,6 +24,7 @@ export function AppBar({
   notificationsOpen = false,
   onNotificationsClick,
   pageTitle,
+  estado,
 }: AppBarProps) {
   const { t } = useT('nav');
   const { userInfo } = useAuth();
@@ -50,6 +56,7 @@ export function AppBar({
       </div>
 
       <div className="ds-appbar__right">
+        {estado}
         <button
           type="button"
           className="ds-appbar__icon-btn"

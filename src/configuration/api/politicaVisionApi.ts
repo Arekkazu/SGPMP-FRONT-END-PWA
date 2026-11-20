@@ -2,6 +2,7 @@
 // |------------|----------|--------------------------------------------------------------------|
 // | 2026-10-29 | Arekkazu | INC-M03-82-G192 RF-62: política de visión configurable desde M09   |
 // | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: mismo contrato para la ventana de retroalimentación |
+// | 2026-11-19 | Arekkazu | INC-M07-373-G37 RF-98: período de gracia del contrato contable |
 import { http } from '../../shared/api/http';
 import type { ApiError } from '../../shared/api/errors';
 
@@ -43,3 +44,5 @@ export type ParametrosApi = ReturnType<typeof parametrosApi>;
 export const politicaVisionApi = parametrosApi('/configuracion/politica-vision');
 /** RF-72: ventana_retroalimentacion_dias (7 a 365). */
 export const ventanaRetroalimentacionApi = parametrosApi('/configuracion/parametros-retroalimentacion');
+/** RF-98: aaef_gracia_minima_dias y aaef_gracia_defecto_dias (1 a 3650). */
+export const graciaContratoApi = parametrosApi('/configuracion/parametros-integracion-contable');

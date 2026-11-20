@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-19 | Arekkazu | M8-04 RF-105: el filtro de nivel llega a la consulta |
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { notificacionesApi } from '../api/notificacionesApi';
@@ -47,6 +50,16 @@ describe('useNotificaciones', () => {
     reemplazarCacheMock.mockReset();
     reemplazarCacheMock.mockResolvedValue();
     cacheLecturaMock.mockResolvedValue();
+  });
+
+  it('M8-04: al cambiar un filtro vuelve a consultar con él', async () => {
+    listarMock.mockResolvedValue({ total: 0, no_leidas: 0, pagina: 1, tamano: 50, items: [] });
+    const { result } = renderHook(() => useNotificaciones(4));
+    await waitFor(() => expect(listarMock).toHaveBeenCalledTimes(1));
+
+    act(() => result.current.setFiltros({ nivel: 'ADVERTENCIA' }));
+
+    await waitFor(() => expect(listarMock).toHaveBeenLastCalledWith(expect.objectContaining({ nivel: 'ADVERTENCIA' })));
   });
 
   it('usa el contador global del backend y confirma la lectura', async () => {

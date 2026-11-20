@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: tipos de la API /integracion |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-98: la auditoría se filtra por titular |
+// | 2026-11-19 | Arekkazu | M7-03/M7-11 RF-98/RF-102: condiciones de activación y nombre de quien actuó |
 
 export type Canal = 'IDENTIDAD_M2M' | 'CONSULTA_AAEF';
 export type EstadoCliente = 'ACTIVO' | 'SUSPENDIDO' | 'REVOCADO';
@@ -29,6 +30,10 @@ export interface Contrato {
   id_mapeo_anexo_aaef: number | null; mapeadores: string[]; periodo_gracia_dias: number | null; descripcion: string | null;
   estado: 'PENDIENTE' | 'ACTIVO' | 'DEPRECADO' | 'INACTIVO' | string; fecha_activacion: string | null;
   fecha_deprecacion: string | null; fecha_inactivacion: string | null;
+  /** Por qué «Activar» no procede (mismas reglas del servidor); null si se puede activar. */
+  motivo_no_activable: string | null;
+  /** Versiones que pasan a retirarse si se activa esta. */
+  versiones_que_retira: string[];
 }
 
 export interface EventoIntegracion {
@@ -36,7 +41,8 @@ export interface EventoIntegracion {
   endpoint: string | null; metodo_http: string | null; codigo_http: number | null; codigo_resultado: string | null;
   latencia_ms: number | null; ip_origen: string | null; numero_id_tributaria: string | null; fecha_desde: string | null;
   fecha_hasta: string | null; version_contrato: string | null; tamano_payload_bytes: number | null;
-  correo_usuario: string | null; nombre_cliente: string | null; integridad: 'INTEGRO' | 'CORRUPTO';
+  nombre_usuario: string | null; correo_usuario: string | null; nombre_cliente: string | null;
+  json_detalle: Record<string, unknown> | null; integridad: 'INTEGRO' | 'CORRUPTO';
 }
 export interface PaginaEventos { items: EventoIntegracion[]; pagina: number; tamano: number; total: number }
 export interface FiltrosAuditoria { tipo_evento?: string; desde?: string; hasta?: string; codigo_http?: number; numero_id_tributaria?: string }

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-106: cliente del historial clínico predictivo |
+// | 2026-11-19 | Arekkazu | M8-01 RF-106: las predicciones en modo sombra llegan marcadas |
 import { http } from '../../shared/api/http';
 
 export interface MarcadorHistorial {
@@ -11,6 +12,8 @@ export interface MarcadorHistorial {
   nivel_riesgo?: number;
   confianza?: number | null;
   condicion?: string;
+  /** Predicción de un modelo en modo sombra (de prueba): se muestra, pero no generó alerta. */
+  modo_sombra?: boolean;
   descripcion?: string;
   valoracion?: 'CORRECTO' | 'PARCIAL' | 'INCORRECTO' | 'SIN_EVENTO';
   veterinario?: string;

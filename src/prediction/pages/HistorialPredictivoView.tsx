@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-106: línea de tiempo de predicciones, eventos y retroalimentaciones con TVCO |
+// | 2026-11-19 | Arekkazu | M8-01 RF-106: predicción de un modelo de prueba marcada como tal |
 import React, { useEffect, useMemo, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
@@ -124,7 +125,8 @@ export function HistorialPredictivoView() {
     return (
       <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', padding: 'var(--s2)', maxWidth: 280 }}>
         <strong>{formatearFechaHora(m.fecha)}</strong>
-        {m.tipo === 'PREDICCION' && <div>{t('historialpredictivo.tt_prediccion', { nivel: etiquetaNivel(m.nivel_riesgo ?? 0), condicion: m.condicion })}</div>}
+        {m.tipo === 'PREDICCION' && <div>{t('historialpredictivo.tt_prediccion', { nivel: etiquetaNivel(m.nivel_riesgo ?? 0), condicion: m.condicion })}
+          {m.modo_sombra && <span style={{ display: 'block' }}>{t('retroalimentacionview.de_prueba')}</span>}</div>}
         {m.tipo === 'EVENTO_SANITARIO' && <div>{m.descripcion} · {m.veterinario}</div>}
         {m.tipo === 'RETROALIMENTACION' && (
           <div>
