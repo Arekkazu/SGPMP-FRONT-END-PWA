@@ -1,3 +1,9 @@
+## [1.4.0-rc.53](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.52...v1.4.0-rc.53) (2026-11-20)
+
+### Bug Fixes
+
+* **rf98-mod7:** periodo de gracia del contrato contable configurable desde M09 ([6248c8b](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/6248c8b2d77a164fc99e8613ccbbe056e8a26c57))
+
 ## [1.4.0-rc.52](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.51...v1.4.0-rc.52) (2026-11-19)
 
 ### Features
