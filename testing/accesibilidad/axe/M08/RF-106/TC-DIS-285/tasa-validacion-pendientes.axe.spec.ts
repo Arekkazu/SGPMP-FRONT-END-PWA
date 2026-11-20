@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                                     |
 // |------------|-------------|---------------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-285 RF-106: tasa de validación clínica, inferencias pendientes y exportación |
+// | 2026-11-20 | SaraSofGonzalez | TC-DIS-285 RF-106: botones de retroalimentación buscados solo en el panel de resultados |
 /**
  * TC-DIS-285 — Verificar accesibilidad WCAG 2.1 AA de la tasa de validación clínica, de la lista de
  * inferencias pendientes de retroalimentación y de la exportación del reporte
@@ -91,7 +92,8 @@ test.describe('TC-DIS-285 — Tasa de validación clínica, pendientes y exporta
     anotar(testInfo, 'Datos simulados', `${CANELA}: 25 inferencias sin retroalimentación (más de 48 h). El envío del formulario se aborta.`);
     await irHistorial(page);
     await consultarHistorial(page, CANELA, '2026-09-01', '2026-11-17');
-    const botones = main(page).getByRole('button', { name: /retroalimenta/i });
+    // Solo el panel de resultados: <main> también tiene la pestaña «Retroalimentación» de la navegación.
+    const botones = main(page).getByRole('tabpanel').getByRole('button', { name: /retroalimenta/i });
     const total = await botones.count();
     precondicion(total > 0, 'el Veterinario de TEST no tiene permiso para registrar retroalimentación (no aparece "Retroalimentar")');
     if (!total) return;
