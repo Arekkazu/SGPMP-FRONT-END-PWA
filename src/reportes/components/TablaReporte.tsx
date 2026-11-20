@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-104: tabla de la vista previa con montos, fechas y porcentajes formateados |
+// | 2026-11-19 | Arekkazu | M08 RF-104: tabla sin título cuando el encabezado de la sección ya la nombra |
 import React from 'react';
 import { formatearFechaHora, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -12,7 +13,7 @@ function fechaDia(valor: string): string {
   return `${d}/${m}/${a}`;
 }
 
-export function celda(valor: string | number | null, tipo: TipoColumna, sinDato: string): string {
+export function celda(valor: string | number | null | undefined, tipo: TipoColumna, sinDato: string): string {
   if (valor === null || valor === undefined || valor === '') return sinDato;
   if (typeof valor === 'string' && !/^-?\d/.test(valor)) return valor;
   switch (tipo) {
@@ -33,11 +34,11 @@ const TH: React.CSSProperties = { padding: 'var(--s2) var(--s3)', borderBottom: 
 const TD: React.CSSProperties = { padding: 'var(--s2) var(--s3)', borderBottom: '1px solid var(--surface-border)',
   verticalAlign: 'top' };
 
-export function TablaReporte({ tabla }: { tabla: TablaPrevia }) {
+export function TablaReporte({ tabla, sinTitulo = false }: { tabla: TablaPrevia; sinTitulo?: boolean }) {
   const { t } = useT('reportes');
   return (
     <section style={{ marginBottom: 'var(--s5)' }}>
-      <h4 style={{ margin: '0 0 var(--s2)', fontSize: 'var(--fs-body-md)' }}>{tabla.titulo}</h4>
+      {!sinTitulo && <h4 style={{ margin: '0 0 var(--s2)', fontSize: 'var(--fs-body-md)' }}>{tabla.titulo}</h4>}
       {tabla.filas.length === 0 ? (
         <p style={{ margin: 0, color: 'var(--text-secondary)' }}>{t('previa.tabla_vacia')}</p>
       ) : (
