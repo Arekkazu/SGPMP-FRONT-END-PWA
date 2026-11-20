@@ -1,3 +1,9 @@
+## [1.4.0-rc.55](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.54...v1.4.0-rc.55) (2026-11-20)
+
+### Bug Fixes
+
+* **rf98-mod7:** registrar una version del contrato confirma en estado pendiente ([4bbb987](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4bbb9872c38e66052d0342b3dc34c8f883aa0a28))
+
 ## [1.4.0-rc.54](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.53...v1.4.0-rc.54) (2026-11-20)
 
 ### Features
