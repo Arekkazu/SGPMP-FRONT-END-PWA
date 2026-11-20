@@ -2,12 +2,14 @@
 // |------------|-------------|--------------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-282..294 RF-105/106/107: utilidades de las pruebas de accesibilidad de M08 |
 // | 2026-11-19 | Laura032005 | TC-DIS-286..290 RF-104/105: bandeja con nivel y ocurrencias, búsqueda de activo y reportes |
+// | 2026-11-20 | SaraSofGonzalez | TC-DIS-277..285 RF-103/106: título del historial sin distinguir mayúsculas; 277–281 ya tienen spec |
 /**
  * Utilidades de los specs de accesibilidad de M08 que sí tienen pantalla:
  *   - RF-106 (282–285): el historial de Predicción (/prediccion/historial, HistorialView).
  *   - RF-105 (289): la bandeja de notificaciones (campana de la barra superior, NotificationTray).
  *   - RF-107 (292–294): avisos, modales de acción crítica y progreso, sobre pantallas ya existentes.
- * Los demás casos de M08 (277–281, 286–288, 290, 291) están Bloqueados: su pantalla no existe.
+ * RF-103 (277–281), el dashboard operativo, tiene sus utilidades en dashboard.ts.
+ * Los demás casos de M08 (286–288, 290, 291) están Bloqueados: su pantalla no existe.
  *
  * Reutiliza la evidencia genérica de M06 (diálogos, regiones vivas, textos crudos, tema, simulación)
  * y los datos simulados de clientes de M07 (revocación, RF-107).
@@ -91,7 +93,7 @@ export const RANGO_LUCERO = { desde: '2026-06-01', hasta: '2026-11-17' };
 /** Los cuatro rótulos de nivel que usa el historial (los de M04, decisión del 2026-11-17). */
 export const NIVELES = ['Normal', 'Riesgo bajo', 'Riesgo alto', 'Crítico'];
 
-export const irHistorial = (page: Page) => irA(page, 'prediccion/historial', /Historial diagn/);
+export const irHistorial = (page: Page) => irA(page, 'prediccion/historial', /Historial diagn/i);
 
 /**
  * Elige el activo escribiéndolo en "Activo o lote" (Combobox: Enter resuelve el texto), fija el rango
