@@ -1,0 +1,37 @@
+﻿
+Running 1 test using 1 worker
+
+(node:18732) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › ..\..\.gemini\antigravity\brain\fba4f544-b319-46fe-9419-fe3e7a91aaf0\scratch\control_guardia.pw.ts:304:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) (5.3s)
+
+
+  1) [chromium] › ..\..\.gemini\antigravity\brain\fba4f544-b319-46fe-9419-fe3e7a91aaf0\scratch\control_guardia.pw.ts:304:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) 
+
+    Error: POST /sigab-test/api/reportes
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "POST /sigab-test/api/reportes",
+    + ]
+
+      494 |     `bundle: ${index.join(', ') || '(sin index-*.js)'}; ${scripts.length} scripts revisados`);
+      495 |
+    > 496 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+          |                                               ^
+      497 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+      498 | });
+      499 |
+        at C:\Users\Juansegutt\.gemini\antigravity\brain\fba4f544-b319-46fe-9419-fe3e7a91aaf0\scratch\control_guardia.pw.ts:496:47
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G022\evidencias\prueba_herramienta_v2\playwright_guardia\pw-salida\control_guardia.pw.ts-TC-M-300aa-vegador-real-CP-11-a-CP-14--chromium\error-context.md
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G022\evidencias\prueba_herramienta_v2\playwright_guardia\pw-salida\control_guardia.pw.ts-TC-M-300aa-vegador-real-CP-11-a-CP-14--chromium\error-context.md
+
+  1 failed
+    [chromium] › ..\..\.gemini\antigravity\brain\fba4f544-b319-46fe-9419-fe3e7a91aaf0\scratch\control_guardia.pw.ts:304:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) 

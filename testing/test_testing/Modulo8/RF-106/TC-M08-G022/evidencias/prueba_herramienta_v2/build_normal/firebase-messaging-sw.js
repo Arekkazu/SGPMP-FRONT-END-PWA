@@ -1,0 +1,71 @@
+// | Fecha      | Nombre   | Que se hizo                                             |
+// |------------|----------|---------------------------------------------------------|
+// | 2026-11-14 | Arekkazu | M08 RF-105: reenvía a la pestaña los datos del push       |
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  event.waitUntil((async () => {
+    try {
+      const payload = event.data.json();
+      const notification = payload.notification || {};
+      const data = payload.data || {};
+      const title = notification.title || data.title || 'Notificación';
+      const options = {
+        body: notification.body || data.body || '',
+        icon: notification.icon || 'favicon.png',
+        badge: 'favicon.png',
+        tag: data.id_notificacion
+          ? `notificacion-${data.id_notificacion}`
+          : 'sgpmp-notificacion',
+        data: { ...data, url: data.url || 'dashboard' },
+      };
+
+      const windows = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      windows.forEach((client) => {
+        // RF-105: los datos del push (destino, nivel, área) le dicen a la app qué refrescar.
+        client.postMessage({ type: 'SGPMP_FCM_NOTIFICATION', data });
+      });
+      await self.registration.showNotification(title, options);
+    } catch {
+      // Un payload inválido no debe interrumpir otros eventos del Service Worker.
+    }
+  })());
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  // Relativo al scope del SW: la app puede vivir bajo una subruta (VITE_BASE_PATH).
+  const scope = self.registration.scope;
+  const requestedUrl = event.notification.data?.url || 'dashboard';
+  let targetUrl = new URL('dashboard', scope).href;
+  try {
+    const parsedUrl = new URL(requestedUrl, scope);
+    if (parsedUrl.origin === self.location.origin) targetUrl = parsedUrl.href;
+  } catch {
+    // Mantiene el destino seguro por defecto.
+  }
+
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true,
+    });
+    const client = windows[0];
+    if (client) {
+      if ('navigate' in client) await client.navigate(targetUrl);
+      return client.focus();
+    }
+    return self.clients.openWindow(targetUrl);
+  })());
+});

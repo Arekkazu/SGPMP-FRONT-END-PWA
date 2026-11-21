@@ -1,0 +1,953 @@
+// | 2026-11-20 | Juan Sebastian Gutierrez | TC-M08-G019 (TC-M08-048, 049 y 050; RF-106): acceso, rango de fechas y filtros de la vista del historial predictivo |
+// | 2026-11-20 | Juan Sebastian Gutierrez | v1.2 (revision de Claude): en CP-01, CP-02 y CP-04 la seleccion del activo se registra en el obtenido; un acceso denegado da FALLA y no "No alcanzado" |
+// | 2026-11-20 | Juan Sebastian Gutierrez | v1.1 (revision de Claude): espera de estabilidad de la grafica, obtenido real de TVCO y totales, sin esperas que dejen "No alcanzado", precondicion fallida = todo FALLA |
+//
+// Respuestas simuladas con la forma real de consultar_historial_predictivo_use_case.py; reporte JSON propio en STAGING_DIR;
+// cada checkpoint arranca en FALLA "No alcanzado"; obtenido = lo leído del DOM o de la URL real de la petición.
+
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import React from 'react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import i18n from '../../../../../../../../src/shared/i18n';
+import { http } from '../../../../../../../../src/shared/api/http';
+import { AuthContext, type PermisoUsuario } from '../../../../../../../../src/shared/auth/AuthContext';
+import { PrediccionPage } from '../../../../../../../../src/prediction/pages/PrediccionPage';
+
+const TC = 'TC-M08-G019';
+const AQUI = dirname(fileURLToPath(import.meta.url));
+const RAIZ_FRONT = resolve(AQUI, '../../../../../../../..');
+
+// ---------------------------------------------------------------------------------------------------------------
+// Checkpoints (13)
+// ---------------------------------------------------------------------------------------------------------------
+type Estado = 'OK' | 'FALLA';
+interface Checkpoint {
+  paso: string;
+  caso: string;
+  esperado: string;
+  fuente: string;
+  obtenido: string;
+  estado: Estado;
+}
+
+const CPS: Checkpoint[] = [
+  {
+    paso: 'CP-01',
+    caso: '048 Veterinario, activo ACTIVO (885)',
+    esperado: 'pestaña "Historial predictivo" visible; la vista consulta GET /historial-predictivo/885; TVCO "25% (4 validadas)"; 6 puntos en la línea; 3 marcadores de evento; 4 marcadores de valoración; 2 pendientes con botón "Registrar retroalimentación"; sin "No tienes acceso a esta sección"',
+    fuente: 'RF-106 Restricción 1; CA-6; Precondición 2',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-02',
+    caso: '048 Veterinario, activo EN_TRATAMIENTO (2945)',
+    esperado: 'Igual que CP-01 con GET /historial-predictivo/2945',
+    fuente: 'RF-106 Precondición 2; Restricción 1',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-03',
+    caso: '048 Productor',
+    esperado: 'sin pestaña "Historial predictivo"; la ruta muestra "No tienes acceso a esta sección" y el detalle con «Historial predictivo»; 0 peticiones a /historial-predictivo/; no aparece el combobox "Animal o lote" ni ninguna TVCO (texto con %)',
+    fuente: 'RF-106 Restricción 1 ("El Productor no tiene acceso al historial predictivo detallado con probabilidades"); CA-6',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-04',
+    caso: '048 Administrador',
+    esperado: 'igual que CP-01 (la vista carga)',
+    fuente: 'Lanzamiento v7 (el Administrador tiene lectura del historial; migración a7c3e91f5b20:72-73). Decisión de Sebastian 2026-11-20: se sigue la entrega; difiere de RF-106 Restricción 1 y CA-6 (ver observaciones)',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-05',
+    caso: '049 Rango por defecto',
+    esperado: 'sin tocar fechas, la petición lleva fecha_inicio=2025-11-20 y fecha_fin=2026-11-20, y los campos Desde/Hasta muestran esas fechas (calcula el esperado con tu propia aritmética de calendario, no con la de la vista)',
+    fuente: 'RF-106 Entradas (fecha_inicio: 12 meses antes de hoy; fecha_fin: hoy)',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-06',
+    caso: '049 Rango de 24 meses exactos',
+    esperado: 'con Desde=2024-11-20, la petición lleva fecha_inicio=2024-11-20 y fecha_fin=2026-11-20; respuesta 200; 8 puntos en la línea (incluida p1 de 2024-11-25); sin aviso de error',
+    fuente: 'RF-106 Restricción 2',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-07',
+    caso: '049 Rango de 24 meses + 1 día',
+    esperado: 'con Desde=2024-11-19 y la respuesta 400 del Swagger, no se dibuja la línea de tiempo (0 puntos), aparece "No se pudo cargar el historial" con un texto que contiene "24 meses", y los campos siguen habilitados con Desde=2024-11-19; luego, con Desde=2025-11-20 (subrango) vuelve la línea con 6 puntos y sin aviso',
+    fuente: 'RF-106 Restricción 2 ("el Veterinario puede seleccionar un subrango"); Swagger de TEST (rango máximo de 24 meses -> 400)',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-08',
+    caso: '049 Cambio de rango sin recargar',
+    esperado: 'desde la vista cargada por defecto (6 puntos, TVCO "25% (4 validadas)"), con Desde=2026-08-20 la nueva petición lleva fecha_inicio=2026-08-20; la TVCO pasa a "33% (3 validadas)", el total pasa a "4 predicciones" y la línea a 4 puntos; el combobox es el MISMO nodo del DOM (===) con el mismo valor y la ruta no cambia',
+    fuente: 'RF-106 CA-10',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-09',
+    caso: '050 Sin eventos sanitarios',
+    esperado: 'antes 3 marcadores de evento; al desmarcar "Eventos sanitarios", la última petición lleva incluir_eventos_sanitarios=false y quedan 0 marcadores de evento y 4 de valoración',
+    fuente: 'RF-106 Entradas (incluir_eventos_sanitarios)',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-10',
+    caso: '050 Sin retroalimentación',
+    esperado: 'antes 4 marcadores de valoración; al desmarcar "Retroalimentaciones", la última petición lleva incluir_retroalimentacion=false y quedan 0 de valoración y 3 de evento',
+    fuente: 'RF-106 Entradas (incluir_retroalimentacion)',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-11',
+    caso: '050 Solo nivel 3',
+    esperado: 'al desmarcar Sin riesgo, Bajo y Medio, la última petición lleva nivel_riesgo=3 una sola vez y ningún otro valor de nivel_riesgo; la línea tiene 2 puntos',
+    fuente: 'RF-106 Entradas (filtro_nivel_riesgo)',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-12',
+    caso: '050 Niveles 2 y 3',
+    esperado: 'desde todos marcados, al desmarcar Sin riesgo y Bajo, la última petición lleva exactamente nivel_riesgo=2&nivel_riesgo=3; la línea tiene 4 puntos',
+    fuente: 'RF-106 Entradas (filtro_nivel_riesgo)',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-13',
+    caso: '050 Lineal y Agrupado',
+    esperado: 'en Lineal 6 puntos y sin "grupo de eventos cercanos"; al elegir "Agrupada", la última petición lleva modo_visualizacion=AGRUPADO, siguen 6 puntos y aparece "1 grupo de eventos cercanos"',
+    fuente: 'RF-106 Entradas (modo_visualizacion)',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+];
+
+const observaciones: string[] = [];
+const precondiciones: Array<{ nombre: string; ok: boolean; detalle: string }> = [];
+
+function anotar(paso: string, ok: boolean, obtenido: string): void {
+  const cp = CPS.find((c) => c.paso === paso);
+  if (!cp) throw new Error(`Checkpoint desconocido ${paso}`);
+  cp.obtenido = obtenido;
+  cp.estado = ok ? 'OK' : 'FALLA';
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Recharts mock (jsdom)
+// ---------------------------------------------------------------------------------------------------------------
+vi.mock('recharts', async () => {
+  const real = await vi.importActual<typeof import('recharts')>('recharts');
+  return {
+    ...real,
+    ResponsiveContainer: ({ children }: { children: React.ReactElement }) =>
+      React.cloneElement(children, { width: 800, height: 320 }),
+  };
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Datos simulados (forma real de consultar_historial_predictivo_use_case.py)
+// ---------------------------------------------------------------------------------------------------------------
+interface MarcadorRaw {
+  tipo: 'PREDICCION' | 'EVENTO_SANITARIO' | 'RETROALIMENTACION';
+  fecha: string;
+  id_resultado_inferencia?: string;
+  id_evento?: number;
+  nivel_riesgo?: number;
+  confianza?: number | null;
+  condicion?: string;
+  modo_sombra?: boolean;
+  descripcion?: string;
+  valoracion?: 'CORRECTO' | 'PARCIAL' | 'INCORRECTO' | 'SIN_EVENTO';
+  veterinario?: string;
+  observaciones?: string | null;
+  tiene_retroalimentacion?: boolean;
+  en_conflicto?: boolean;
+}
+
+const TODAS_PREDICCIONES: MarcadorRaw[] = [
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p1', fecha: '2024-11-25T15:00:00Z', nivel_riesgo: 1, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: false, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p2', fecha: '2025-06-10T15:00:00Z', nivel_riesgo: 0, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: false, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p3', fecha: '2026-01-15T15:00:00Z', nivel_riesgo: 2, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: false, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p4', fecha: '2026-07-01T11:34:36Z', nivel_riesgo: 3, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: true, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p5', fecha: '2026-09-15T15:00:00Z', nivel_riesgo: 2, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: true, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p6', fecha: '2026-10-25T00:00:00Z', nivel_riesgo: 3, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: true, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p7', fecha: '2026-10-28T19:36:22Z', nivel_riesgo: 1, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: true, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p8', fecha: '2026-11-10T15:00:00Z', nivel_riesgo: 0, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: false, en_conflicto: false },
+];
+
+const TODOS_EVENTOS: MarcadorRaw[] = [
+  { tipo: 'EVENTO_SANITARIO', id_evento: 2684, fecha: '2026-10-25T05:06:22Z', descripcion: 'Evento 2684', veterinario: 'Vet QA' },
+  { tipo: 'EVENTO_SANITARIO', id_evento: 2685, fecha: '2026-10-26T21:36:22Z', descripcion: 'Evento 2685', veterinario: 'Vet QA' },
+  { tipo: 'EVENTO_SANITARIO', id_evento: 2686, fecha: '2026-10-28T20:06:22Z', descripcion: 'Evento 2686', veterinario: 'Vet QA' },
+];
+
+const TODAS_RETROS: MarcadorRaw[] = [
+  { tipo: 'RETROALIMENTACION', id_resultado_inferencia: 'p6', valoracion: 'CORRECTO', fecha: '2026-11-01T15:00:00Z', veterinario: 'Vet QA', observaciones: null, en_conflicto: false },
+  { tipo: 'RETROALIMENTACION', id_resultado_inferencia: 'p7', valoracion: 'INCORRECTO', fecha: '2026-11-02T15:00:00Z', veterinario: 'Vet QA', observaciones: null, en_conflicto: false },
+  { tipo: 'RETROALIMENTACION', id_resultado_inferencia: 'p5', valoracion: 'PARCIAL', fecha: '2026-10-01T15:00:00Z', veterinario: 'Vet QA', observaciones: null, en_conflicto: false },
+  { tipo: 'RETROALIMENTACION', id_resultado_inferencia: 'p4', valoracion: 'SIN_EVENTO', fecha: '2026-07-05T15:00:00Z', veterinario: 'Vet QA', observaciones: null, en_conflicto: false },
+];
+
+// ---------------------------------------------------------------------------------------------------------------
+// Red simulada en el cliente http
+// ---------------------------------------------------------------------------------------------------------------
+interface PeticionRegistrada {
+  metodo: string;
+  url: string;
+  uri: string;
+  config: InternalAxiosRequestConfig;
+}
+
+let peticiones: PeticionRegistrada[] = [];
+const adaptadorOriginal = http.defaults.adapter;
+
+function adaptadorSimulado(config: InternalAxiosRequestConfig): Promise<AxiosResponse> {
+  const metodo = (config.method ?? 'get').toUpperCase();
+  const uri = http.getUri(config);
+  peticiones.push({ metodo, url: config.url ?? '', uri, config });
+
+  const url = config.url ?? '';
+
+  // a) Opciones de activo
+  if (url.includes('/reportes/opciones/activo')) {
+    const data = [
+      { valor: 885, etiqueta: 'QA-885 · Bovino' },
+      { valor: 2945, etiqueta: 'QA-2945 · Bovino' },
+    ];
+    return Promise.resolve({ data, status: 200, statusText: 'OK', headers: {}, config, request: {} });
+  }
+
+  // b) Historial predictivo por id
+  const matchHp = url.match(/\/historial-predictivo\/(\d+)/);
+  if (matchHp) {
+    const idActivo = Number(matchHp[1]);
+    const queryStr = uri.includes('?') ? uri.slice(uri.indexOf('?') + 1) : '';
+    const params = new URLSearchParams(queryStr);
+
+    const fecha_inicio = params.get('fecha_inicio') ?? '2025-11-20';
+    const fecha_fin = params.get('fecha_fin') ?? '2026-11-20';
+    const nivelesParam = params.getAll('nivel_riesgo').map(Number);
+    const incluirEventos = params.get('incluir_eventos_sanitarios') !== 'false';
+    const incluirRetro = params.get('incluir_retroalimentacion') !== 'false';
+    const modoVis = (params.get('modo_visualizacion') as 'LINEAL' | 'AGRUPADO') || 'LINEAL';
+
+    // Regla: fecha_inicio > fecha_fin -> 400 VAL_ENTRADA
+    if (fecha_inicio > fecha_fin) {
+      const body = {
+        error_code: 'VAL_ENTRADA',
+        message: 'La fecha de inicio no puede ser posterior a la fecha de fin.',
+        fields: [{ field: 'fecha_inicio', message: 'La fecha de inicio no puede ser posterior a la fecha de fin.' }],
+        timestamp: '2026-11-20T17:00:00Z',
+      };
+      const respuesta: AxiosResponse = { data: body, status: 400, statusText: 'Bad Request', headers: {}, config, request: {} };
+      return Promise.reject(new AxiosError('Request failed with status code 400', 'ERR_BAD_REQUEST', config, {}, respuesta));
+    }
+
+    // Regla: fecha_inicio < fecha_fin - 24 meses de calendario -> 400 VAL_ENTRADA
+    // (Es el comportamiento del Swagger de TEST, no el defecto INC de G018: déjalo comentado así en el código.)
+    const [finY, finM, finD] = fecha_fin.split('-').map(Number);
+    const limite24m = new Date(Date.UTC(finY - 2, finM - 1, finD)).toISOString().slice(0, 10);
+    if (fecha_inicio < limite24m) {
+      const body = {
+        error_code: 'VAL_ENTRADA',
+        message: 'El rango máximo es de 24 meses. Elige un rango más corto.',
+        fields: [{ field: 'fecha_inicio', message: 'El rango máximo es de 24 meses. Elige un rango más corto.' }],
+        timestamp: '2026-11-20T17:00:00Z',
+      };
+      const respuesta: AxiosResponse = { data: body, status: 400, statusText: 'Bad Request', headers: {}, config, request: {} };
+      return Promise.reject(new AxiosError('Request failed with status code 400', 'ERR_BAD_REQUEST', config, {}, respuesta));
+    }
+
+    // Rango de fechas de Bogotá (05:00:00Z a sigDia 04:59:59.999Z)
+    const inicioUtc = new Date(`${fecha_inicio}T05:00:00Z`).getTime();
+    const [fY, fM, fD] = fecha_fin.split('-').map(Number);
+    const sigDia = new Date(Date.UTC(fY, fM - 1, fD + 1)).toISOString().slice(0, 10);
+    const finUtc = new Date(`${sigDia}T04:59:59.999Z`).getTime();
+
+    const enRango = (fechaIso: string) => {
+      const t = new Date(fechaIso).getTime();
+      return t >= inicioUtc && t <= finUtc;
+    };
+
+    const prediccionesEnRango = TODAS_PREDICCIONES.filter((p) => enRango(p.fecha));
+    const eventosEnRango = TODOS_EVENTOS.filter((e) => enRango(e.fecha));
+    const retrosEnRango = TODAS_RETROS.filter((r) => enRango(r.fecha));
+
+    // nivel_riesgo filtra SOLO las predicciones devueltas; sin nivel_riesgo, todas.
+    const prediccionesDevueltas = nivelesParam.length > 0
+      ? prediccionesEnRango.filter((p) => nivelesParam.includes(p.nivel_riesgo ?? 0))
+      : [...prediccionesEnRango];
+
+    // incluir_eventos_sanitarios=false -> eventos_sanitarios []; incluir_retroalimentacion=false -> retroalimentaciones [].
+    const eventosDevueltos = incluirEventos ? eventosEnRango : [];
+    const retrosDevueltas = incluirRetro ? retrosEnRango : [];
+
+    // metadatos se calcula SIN aplicar nivel ni incluir_*:
+    // total_inferencias = predicciones en rango;
+    // total_eventos_sanitarios y total_retroalimentaciones = los del rango;
+    // total_pendientes = predicciones en rango sin valoración y con más de 48 h;
+    // total_conflictos 0.
+    const retrosIds = new Set(retrosEnRango.map((r) => r.id_resultado_inferencia));
+    const hace48h = new Date('2026-11-18T17:00:00Z').getTime();
+    const pendientesPreds = prediccionesEnRango.filter(
+      (p) => !retrosIds.has(p.id_resultado_inferencia) && new Date(p.fecha).getTime() <= hace48h,
+    );
+
+    const total_inferencias = prediccionesEnRango.length;
+    const total_eventos_sanitarios = eventosEnRango.length;
+    const total_retroalimentaciones = retrosEnRango.length;
+    const total_pendientes = pendientesPreds.length;
+    const total_conflictos = 0;
+
+    // tvco:
+    // validadas = predicciones en rango con valoración en rango;
+    // porcentaje = CORRECTO/validadas*100 (null si 0);
+    // texto = `${Math.round(porcentaje)}% (${validadas} validadas)` o "Sin datos suficientes para calcular";
+    // tvco_denominador = validadas;
+    // tvco_excluidas_conflicto 0;
+    // excluidas_sin_retroalimentacion = total_inferencias − validadas;
+    // tasa_error = 100 − porcentaje.
+    const validadasPreds = prediccionesEnRango.filter((p) => retrosIds.has(p.id_resultado_inferencia));
+    const validadas = validadasPreds.length;
+    const correctas = retrosEnRango.filter(
+      (r) => r.valoracion === 'CORRECTO' && prediccionesEnRango.some((p) => p.id_resultado_inferencia === r.id_resultado_inferencia),
+    ).length;
+
+    const porcentaje = validadas > 0 ? (correctas / validadas) * 100 : null;
+    const textoTvco = porcentaje !== null ? `${Math.round(porcentaje)}% (${validadas} validadas)` : 'Sin datos suficientes para calcular';
+    const tasa_error = porcentaje !== null ? 100 - porcentaje : null;
+
+    const tvco = {
+      porcentaje,
+      texto: textoTvco,
+      tvco_denominador: validadas,
+      tvco_excluidas_conflicto: 0,
+      excluidas_sin_retroalimentacion: total_inferencias - validadas,
+      tasa_error,
+    };
+
+    // pendientes: {total, pagina:1, por_pagina:20, items:[{id_resultado_inferencia, fecha_inferencia, nivel_riesgo, condicion}]}
+    // con las predicciones de total_pendientes, nivel DESC y fecha DESC.
+    const itemsPendientes = [...pendientesPreds]
+      .sort((a, b) => (b.nivel_riesgo ?? 0) - (a.nivel_riesgo ?? 0) || new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+      .map((p) => ({
+        id_resultado_inferencia: p.id_resultado_inferencia ?? '',
+        fecha_inferencia: p.fecha,
+        nivel_riesgo: p.nivel_riesgo ?? 0,
+        condicion: p.condicion ?? 'Mastitis',
+      }));
+
+    const pendientes = {
+      total: total_pendientes,
+      pagina: 1,
+      por_pagina: 20,
+      items: itemsPendientes,
+    };
+
+    // grupos: pares de marcadores DEVUELTOS (predicciones, eventos y valoraciones) a 60 min o menos,
+    // cada par como un arreglo de dos marcadores; con todos los niveles y todo incluido sale solo [p7, 2686].
+    const marcadoresDevueltos = [
+      ...prediccionesDevueltas,
+      ...eventosDevueltos,
+      ...retrosDevueltas,
+    ].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+
+    const grupos: MarcadorRaw[][] = [];
+    for (let i = 0; i < marcadoresDevueltos.length - 1; i++) {
+      const m1 = marcadoresDevueltos[i];
+      const m2 = marcadoresDevueltos[i + 1];
+      const diffMin = Math.abs(new Date(m2.fecha).getTime() - new Date(m1.fecha).getTime()) / (60 * 1000);
+      if (diffMin <= 60) {
+        grupos.push([m1, m2]);
+      }
+    }
+
+    const activo = {
+      id_activo_biologico: idActivo,
+      identificador: `QA-${idActivo}`,
+      especie: 'Bovino',
+      finca: 'Finca QA 184',
+      estado: idActivo === 2945 ? 'EN_TRATAMIENTO' : 'ACTIVO',
+    };
+
+    const dataRespuesta = {
+      activo,
+      rango_fechas_aplicado: { fecha_inicio, fecha_fin },
+      ventana_correspondencia_horas: 12,
+      modo_visualizacion: modoVis,
+      predicciones: prediccionesDevueltas,
+      eventos_sanitarios: eventosDevueltos,
+      retroalimentaciones: retrosDevueltas,
+      grupos,
+      correspondencias: [],
+      tvco,
+      pendientes,
+      metadatos: {
+        total_inferencias,
+        total_eventos_sanitarios,
+        total_retroalimentaciones,
+        total_pendientes,
+        total_conflictos,
+      },
+      fuentes_no_disponibles: [],
+      mensaje: null,
+    };
+
+    const respuesta: AxiosResponse = {
+      data: dataRespuesta,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+      request: {},
+    };
+    return Promise.resolve(respuesta);
+  }
+
+  // c) Cualquier otra petición -> 404
+  const body404 = {
+    error_code: 'RUTA_NO_SIMULADA',
+    message: `Ruta no simulada: ${metodo} ${url}`,
+    fields: [],
+    timestamp: '2026-11-20T17:00:00Z',
+  };
+  const respuesta404: AxiosResponse = { data: body404, status: 404, statusText: 'Not Found', headers: {}, config, request: {} };
+  return Promise.reject(new AxiosError('Request failed with status code 404', 'ERR_BAD_REQUEST', config, {}, respuesta404));
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Autenticación y permisos
+// ---------------------------------------------------------------------------------------------------------------
+const PERMISOS_VET: PermisoUsuario[] = [
+  { id_recurso: 9106, nombre_recurso: 'historial_clinico_predictivo', id_accion: 2 },
+  { id_recurso: 42, nombre_recurso: 'historial_diagnostico', id_accion: 2 },
+  { id_recurso: 45, nombre_recurso: 'retroalimentacion_clinica', id_accion: 2 },
+];
+const PERMISOS_ADMIN: PermisoUsuario[] = [
+  { id_recurso: 42, nombre_recurso: 'historial_diagnostico', id_accion: 2 },
+];
+const PERMISOS_PRODUCTOR: PermisoUsuario[] = [
+  { id_recurso: 42, nombre_recurso: 'historial_diagnostico', id_accion: 2 },
+];
+
+function crearAuth(rol: 'VETERINARIO' | 'ADMINISTRADOR' | 'PRODUCTOR', permisos: PermisoUsuario[]) {
+  return {
+    token: 'token-qa',
+    claims: null,
+    userInfo: {
+      id_usuario: 97,
+      nombre: 'Usuario',
+      apellidos: 'QA',
+      correo_electronico: `${rol.toLowerCase()}@sgpmp.test`,
+      nombre_rol: rol,
+      estado_cuenta: 'ACTIVA',
+    },
+    permisos,
+    perfilIncompleto: false,
+    isBootstrapping: false,
+    errorRestaurandoSesion: false,
+    reintentarRestaurarSesion: () => {},
+    sesionOffline: false,
+    permisosActualizadosEn: null,
+    setSession: () => {},
+    clearSession: () => {},
+    refreshUserInfo: async () => {},
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Utilidades de interacción y conteo en DOM
+// ---------------------------------------------------------------------------------------------------------------
+function contarPuntosLinea(): number {
+  return document.querySelectorAll('.recharts-line-dots circle').length;
+}
+
+function contarMarcadoresEvento(): number {
+  return document.querySelectorAll('.recharts-scatter-symbol path').length;
+}
+
+function contarMarcadoresValoracion(): number {
+  return document.querySelectorAll('.recharts-scatter-symbol text').length;
+}
+
+/** Texto de la TVCO tal como se ve (la tarjeta pone el valor justo despues de la etiqueta). */
+function leerTvco(): string {
+  const etiqueta = screen.queryByText('Tasa de validación clínica');
+  return etiqueta?.nextElementSibling?.textContent ?? '(no visible)';
+}
+
+/** Texto del total de predicciones tal como se ve. */
+function leerTotalInferencias(): string {
+  return screen.queryByText(/^\d+ predicci(ón|ones)$/)?.textContent ?? '(no visible)';
+}
+
+/** Firma de lo que hay en pantalla; no depende de ningun esperado. */
+function firma(): string {
+  return [contarPuntosLinea(), contarMarcadoresEvento(), contarMarcadoresValoracion(), leerTvco(),
+    screen.queryByText('No se pudo cargar el historial') !== null].join('|');
+}
+
+/**
+ * Espera a que termine la carga y a que la grafica quede quieta: la misma firma en dos lecturas seguidas
+ * separadas 50 ms (recharts puede redibujar despues de que desaparece "Cargando historial...").
+ */
+async function esperarEstable(): Promise<void> {
+  await waitFor(() => expect(screen.queryByText('Cargando historial...')).toBeNull(), { timeout: 3000 });
+  let anterior = '';
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 50));
+    const actual = firma();
+    if (actual === anterior) return;
+    anterior = actual;
+  }
+}
+
+function montar(rol: 'VETERINARIO' | 'ADMINISTRADOR' | 'PRODUCTOR' = 'VETERINARIO', permisos = PERMISOS_VET) {
+  const auth = crearAuth(rol, permisos);
+  return render(
+    <AuthContext.Provider value={auth}>
+      <MemoryRouter initialEntries={['/prediccion/historial-predictivo']}>
+        <PrediccionPage />
+      </MemoryRouter>
+    </AuthContext.Provider>,
+  );
+}
+
+async function seleccionarActivo(etiqueta: string): Promise<void> {
+  const combo = await screen.findByRole('combobox', { name: /Animal o lote/ });
+  await waitFor(() => expect(peticiones.some((p) => p.url.includes('/reportes/opciones/activo'))).toBe(true));
+  await new Promise((r) => setTimeout(r, 0));
+  fireEvent.change(combo, { target: { value: etiqueta } });
+  await esperarEstable();
+}
+
+/** Igual que seleccionarActivo, pero devuelve el error en vez de lanzarlo ('' si se pudo), para CP-01, CP-02 y CP-04. */
+async function intentarSeleccionar(etiqueta: string): Promise<string> {
+  try {
+    await seleccionarActivo(etiqueta);
+    return '';
+  } catch (e) {
+    return String((e as Error)?.message ?? e).split('\n')[0].slice(0, 160);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Ciclo de vida
+// ---------------------------------------------------------------------------------------------------------------
+beforeAll(async () => {
+  await i18n.changeLanguage('es-CO');
+
+  // Precondiciones literales
+  const predPage = readFileSync(join(RAIZ_FRONT, 'src/prediction/pages/PrediccionPage.tsx'), 'utf8');
+  const prec1 = "permisoNombre: ['historial_clinico_predictivo', ACCION_R]";
+  precondiciones.push({ nombre: 'PrediccionPage.tsx contiene permisoNombre', ok: predPage.includes(prec1), detalle: prec1 });
+
+  const histView = readFileSync(join(RAIZ_FRONT, 'src/prediction/pages/HistorialPredictivoView.tsx'), 'utf8');
+  const prec2 = 'nivel_riesgo: niveles.length < NIVELES.length ? niveles : undefined';
+  precondiciones.push({ nombre: 'HistorialPredictivoView.tsx contiene filtro nivel_riesgo', ok: histView.includes(prec2), detalle: prec2 });
+
+  const prec3 = "{error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={t('historialpredictivo.no_cargo')} description={error.message} />}";
+  precondiciones.push({ nombre: 'HistorialPredictivoView.tsx contiene Alert de error', ok: histView.includes(prec3), detalle: prec3 });
+
+  const apiCode = readFileSync(join(RAIZ_FRONT, 'src/prediction/api/historialPredictivoApi.ts'), 'utf8');
+  const prec4 = 'paramsSerializer: { indexes: null }';
+  precondiciones.push({ nombre: 'historialPredictivoApi.ts contiene paramsSerializer', ok: apiCode.includes(prec4), detalle: prec4 });
+
+  const pestanasCode = readFileSync(join(RAIZ_FRONT, 'src/shared/design-system/PestanasModulo.tsx'), 'utf8');
+  const prec5 = 'return tiene(permisos, pestana) ? <>{children}</> : <AccesoDenegado seccion={pestana.label} />;';
+  precondiciones.push({ nombre: 'PestanasModulo.tsx contiene proteccion de pestana', ok: pestanasCode.includes(prec5), detalle: prec5 });
+});
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-11-20T17:00:00Z'));
+  peticiones = [];
+  http.defaults.adapter = adaptadorSimulado;
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+  http.defaults.adapter = adaptadorOriginal;
+});
+
+afterAll(() => {
+  const fallidas = precondiciones.filter((p) => !p.ok).map((p) => p.nombre);
+  if (fallidas.length > 0 || precondiciones.length === 0) {
+    for (const c of CPS) {
+      c.obtenido = `Precondición no cumplida (${fallidas.join('; ') || 'sin precondiciones evaluadas'}); medido: ${c.obtenido}`;
+      c.estado = 'FALLA';
+    }
+  }
+  const ok = CPS.filter((c) => c.estado === 'OK').length;
+  const falla = CPS.length - ok;
+
+  // Agregar observaciones fijas
+  observaciones.push('OBS-4: la respuesta no trae filtros_aplicados ni activo_seleccionado (forma real del backend; G018 OBS-NOMBRES); lo aplicado se refleja en los controles.');
+  observaciones.push('OBS-5: Administrador con lectura (CP-04) frente a RF-106 Restricción 1 y CA-6: decisión de Sebastian 2026-11-20 de seguir la entrega v7; para los líderes.');
+
+  const reporte = {
+    tc: TC,
+    reintento: Number(process.env.REINTENTO ?? '0'),
+    run_id: process.env.RUN_ID ?? '',
+    fecha: new Date().toISOString(),
+    summary: { total: CPS.length, ok, falla, veredicto: falla === 0 ? 'Aprobado' : 'Rechazado' },
+    precondiciones,
+    checkpoints: CPS,
+    observaciones,
+    retirados: [] as Array<{ paso: string; motivo: string }>,
+  };
+
+  const dir = process.env.STAGING_DIR;
+  if (!dir) return;
+  mkdirSync(dir, { recursive: true });
+  const n = reporte.reintento;
+  writeFileSync(join(dir, `resultado_${TC}${n > 0 ? `_reintento${n}` : ''}.json`), `${JSON.stringify(reporte, null, 2)}\n`, 'utf8');
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Suites de pruebas
+// ---------------------------------------------------------------------------------------------------------------
+describe('TC-M08-048 Acceso al historial predictivo (RF-106 Restricción 1)', () => {
+  it('CP-01 Veterinario, activo ACTIVO (885)', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    const tabVisible = screen.queryByRole('button', { name: /Historial predictivo/i }) !== null;
+    const errSel = await intentarSeleccionar('QA-885 · Bovino');
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const consultaOk = ultima?.metodo === 'GET' && ultima?.url.includes('/historial-predictivo/885');
+    const tvco = leerTvco();
+    const tvcoOk = tvco === '25% (4 validadas)';
+    const puntos = contarPuntosLinea();
+    const eventos = contarMarcadoresEvento();
+    const retros = contarMarcadoresValoracion();
+    const botonesRetro = screen.queryAllByRole('button', { name: 'Registrar retroalimentación' }).length;
+    const sinAccesoDenegado = screen.queryByText('No tienes acceso a esta sección') === null;
+
+    const ok = errSel === '' && tabVisible && consultaOk && tvcoOk && puntos === 6 && eventos === 3 && retros === 4 && botonesRetro === 2 && sinAccesoDenegado;
+    const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (${errSel})`}; pestana=${tabVisible}; peticion=${ultima ? `${ultima.metodo} ${ultima.url}` : 'ninguna'}; tvco="${tvco}"; puntos=${puntos}; eventos=${eventos}; retros=${retros}; pendientes_con_boton=${botonesRetro}; sin_acceso_denegado=${sinAccesoDenegado}`;
+    anotar('CP-01', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-02 Veterinario, activo EN_TRATAMIENTO (2945)', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    const tabVisible = screen.queryByRole('button', { name: /Historial predictivo/i }) !== null;
+    const errSel = await intentarSeleccionar('QA-2945 · Bovino');
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const consultaOk = ultima?.metodo === 'GET' && ultima?.url.includes('/historial-predictivo/2945');
+    const tvco = leerTvco();
+    const tvcoOk = tvco === '25% (4 validadas)';
+    const puntos = contarPuntosLinea();
+    const eventos = contarMarcadoresEvento();
+    const retros = contarMarcadoresValoracion();
+    const botonesRetro = screen.queryAllByRole('button', { name: 'Registrar retroalimentación' }).length;
+    const sinAccesoDenegado = screen.queryByText('No tienes acceso a esta sección') === null;
+
+    const ok = errSel === '' && tabVisible && consultaOk && tvcoOk && puntos === 6 && eventos === 3 && retros === 4 && botonesRetro === 2 && sinAccesoDenegado;
+    const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (${errSel})`}; pestana=${tabVisible}; peticion=${ultima ? `${ultima.metodo} ${ultima.url}` : 'ninguna'}; tvco="${tvco}"; puntos=${puntos}; eventos=${eventos}; retros=${retros}; pendientes_con_boton=${botonesRetro}; sin_acceso_denegado=${sinAccesoDenegado}`;
+    anotar('CP-02', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-03 Productor', async () => {
+    montar('PRODUCTOR', PERMISOS_PRODUCTOR);
+    await new Promise((r) => setTimeout(r, 20));
+
+    const tabVisible = screen.queryByRole('button', { name: /Historial predictivo/i }) !== null;
+    const sinAccesoTitulo = screen.queryByText('No tienes acceso a esta sección') !== null;
+    const detalleConNombre = screen.queryByText(/«Historial predictivo»/) !== null;
+    const peticionesHp = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).length;
+    const combobox = screen.queryByRole('combobox', { name: /Animal o lote/ }) !== null;
+    const tieneTvco = /\d+%/.test(document.body.textContent ?? '');
+
+    const ok = !tabVisible && sinAccesoTitulo && detalleConNombre && peticionesHp === 0 && !combobox && !tieneTvco;
+    const obtenido = `sin_pestana=${!tabVisible}; sin_acceso_titulo=${sinAccesoTitulo}; detalle_con_nombre=${detalleConNombre}; peticiones_hp=${peticionesHp}; combobox=${combobox}; tiene_tvco=${tieneTvco}`;
+    anotar('CP-03', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-04 Administrador', async () => {
+    montar('ADMINISTRADOR', PERMISOS_ADMIN);
+    const tabVisible = screen.queryByRole('button', { name: /Historial predictivo/i }) !== null;
+    const errSel = await intentarSeleccionar('QA-885 · Bovino');
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const consultaOk = ultima?.metodo === 'GET' && ultima?.url.includes('/historial-predictivo/885');
+    const tvco = leerTvco();
+    const tvcoOk = tvco === '25% (4 validadas)';
+    const puntos = contarPuntosLinea();
+    const eventos = contarMarcadoresEvento();
+    const retros = contarMarcadoresValoracion();
+    const botonesRetro = screen.queryAllByRole('button', { name: 'Registrar retroalimentación' }).length;
+    const sinAccesoDenegado = screen.queryByText('No tienes acceso a esta sección') === null;
+
+    const ok = errSel === '' && tabVisible && consultaOk && tvcoOk && puntos === 6 && eventos === 3 && retros === 4 && botonesRetro === 2 && sinAccesoDenegado;
+    const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (${errSel})`}; pestana=${tabVisible}; peticion=${ultima ? `${ultima.metodo} ${ultima.url}` : 'ninguna'}; tvco="${tvco}"; puntos=${puntos}; eventos=${eventos}; retros=${retros}; pendientes_con_boton=${botonesRetro}; sin_acceso_denegado=${sinAccesoDenegado}`;
+    anotar('CP-04', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+});
+
+describe('TC-M08-049 Rango de fechas del historial predictivo (RF-106 Entradas y Restricción 2)', () => {
+  it('CP-05 Rango por defecto', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    await seleccionarActivo('QA-885 · Bovino');
+
+    const inputDesde = document.getElementById('hp-desde') as HTMLInputElement;
+    const inputHasta = document.getElementById('hp-hasta') as HTMLInputElement;
+
+    const hoyRef = new Date('2026-11-20T17:00:00Z');
+    const espFin = `${hoyRef.getFullYear()}-${String(hoyRef.getMonth() + 1).padStart(2, '0')}-${String(hoyRef.getDate()).padStart(2, '0')}`;
+    const d12m = new Date(Date.UTC(hoyRef.getFullYear() - 1, hoyRef.getMonth(), hoyRef.getDate()));
+    const espInicio = d12m.toISOString().slice(0, 10);
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const query = new URLSearchParams(ultima?.uri.includes('?') ? ultima.uri.slice(ultima.uri.indexOf('?') + 1) : '');
+    const reqInicio = query.get('fecha_inicio');
+    const reqFin = query.get('fecha_fin');
+
+    const ok = reqInicio === espInicio && reqFin === espFin && inputDesde.value === espInicio && inputHasta.value === espFin;
+    const obtenido = `peticion fecha_inicio=${reqInicio}, fecha_fin=${reqFin}; campos Desde=${inputDesde?.value}, Hasta=${inputHasta?.value}`;
+    anotar('CP-05', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-06 Rango de 24 meses exactos', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    await seleccionarActivo('QA-885 · Bovino');
+
+    const inputDesde = document.getElementById('hp-desde') as HTMLInputElement;
+    fireEvent.change(inputDesde, { target: { value: '2024-11-20' } });
+    await esperarEstable();
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const query = new URLSearchParams(ultima?.uri.includes('?') ? ultima.uri.slice(ultima.uri.indexOf('?') + 1) : '');
+    const reqInicio = query.get('fecha_inicio');
+    const reqFin = query.get('fecha_fin');
+    const puntos = contarPuntosLinea();
+    const sinError = screen.queryByText('No se pudo cargar el historial') === null;
+
+    const ok = reqInicio === '2024-11-20' && reqFin === '2026-11-20' && puntos === 8 && sinError;
+    const obtenido = `peticion fecha_inicio=${reqInicio}, fecha_fin=${reqFin}; puntos=${puntos}; sin_error=${sinError}`;
+    anotar('CP-06', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-07 Rango de 24 meses + 1 día', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    await seleccionarActivo('QA-885 · Bovino');
+
+    const inputDesde = document.getElementById('hp-desde') as HTMLInputElement;
+    fireEvent.change(inputDesde, { target: { value: '2024-11-19' } });
+    await esperarEstable();
+
+    // Medición OBS-1
+    const peticion400 = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const salioPeticion400 = peticion400?.uri.includes('fecha_inicio=2024-11-19') ?? false;
+    const minAttr = inputDesde.getAttribute('min');
+    observaciones.push(`OBS-1: en CP-07, peticion con fecha_inicio=2024-11-19 salio al servidor: ${salioPeticion400 ? 'SI' : 'NO'}; atributo min de #hp-desde: ${minAttr ?? 'null'}`);
+
+    const puntosErr = contarPuntosLinea();
+    const errTitulo = screen.queryByText('No se pudo cargar el historial') !== null;
+    const errTexto24m = screen.queryByText(/24 meses/) !== null;
+    const habilitadoDesde = !inputDesde.disabled && inputDesde.value === '2024-11-19';
+
+    // Recuperación con subrango válido
+    fireEvent.change(inputDesde, { target: { value: '2025-11-20' } });
+    await esperarEstable();
+
+    const puntosRec = contarPuntosLinea();
+    const sinErrorRec = screen.queryByText('No se pudo cargar el historial') === null;
+
+    const ok = puntosErr === 0 && errTitulo && errTexto24m && habilitadoDesde && puntosRec === 6 && sinErrorRec;
+    const obtenido = `con 24m+1d: puntos=${puntosErr}, titulo_error=${errTitulo}, texto_24m=${errTexto24m}, habilitado=${habilitadoDesde}; tras volver a subrango: puntos=${puntosRec}, sin_error=${sinErrorRec}`;
+    anotar('CP-07', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-08 Cambio de rango sin recargar', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    await seleccionarActivo('QA-885 · Bovino');
+
+    const nodoAntes = screen.getByRole('combobox', { name: /Animal o lote/ }) as HTMLInputElement;
+    const valorAntes = nodoAntes.value;
+    const rutaAntes = window.location.pathname;
+
+    const puntosAntes = contarPuntosLinea();
+    const tvcoAntes = leerTvco();
+
+    const inputDesde = document.getElementById('hp-desde') as HTMLInputElement;
+    fireEvent.change(inputDesde, { target: { value: '2026-08-20' } });
+    await esperarEstable();
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const query = new URLSearchParams(ultima?.uri.includes('?') ? ultima.uri.slice(ultima.uri.indexOf('?') + 1) : '');
+    const reqInicio = query.get('fecha_inicio');
+
+    const tvcoDespues = leerTvco();
+    const totalDespues = leerTotalInferencias();
+    const tvcoNuevo = tvcoDespues === '33% (3 validadas)';
+    const totalPred = totalDespues === '4 predicciones';
+    const puntos = contarPuntosLinea();
+    const nodoDespues = screen.getByRole('combobox', { name: /Animal o lote/ }) as HTMLInputElement;
+    const mismoNodo = nodoDespues === nodoAntes;
+    const mismoValor = nodoDespues.value === valorAntes;
+    const mismaRuta = window.location.pathname === rutaAntes;
+
+    const ok = puntosAntes === 6 && tvcoAntes === '25% (4 validadas)' && reqInicio === '2026-08-20' && tvcoNuevo && totalPred && puntos === 4 && mismoNodo && mismoValor && mismaRuta;
+    const obtenido = `antes: puntos=${puntosAntes}, tvco="${tvcoAntes}"; peticion fecha_inicio=${reqInicio}; tvco="${tvcoDespues}"; total="${totalDespues}"; puntos=${puntos}; combobox_mismo_nodo=${mismoNodo}; combobox_mismo_valor=${mismoValor}; misma_ruta=${mismaRuta}`;
+    anotar('CP-08', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+});
+
+describe('TC-M08-050 Filtros del historial predictivo (RF-106 Entradas)', () => {
+  it('CP-09 Sin eventos sanitarios', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    await seleccionarActivo('QA-885 · Bovino');
+
+    const eventosAntes = contarMarcadoresEvento();
+
+    const chkEventos = screen.getByLabelText('Eventos sanitarios');
+    fireEvent.click(chkEventos);
+    await esperarEstable();
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const query = new URLSearchParams(ultima?.uri.includes('?') ? ultima.uri.slice(ultima.uri.indexOf('?') + 1) : '');
+    const reqEventos = query.get('incluir_eventos_sanitarios');
+
+    const eventosDespues = contarMarcadoresEvento();
+    const retrosDespues = contarMarcadoresValoracion();
+
+    // Medición OBS-3
+    const textoTotalEventos = screen.queryByText(/^\d+ eventos? sanitarios?$/)?.textContent ?? '(no visible)';
+    observaciones.push(`OBS-3: en CP-09, el texto del total de eventos sanitarios después de ocultarlos: "${textoTotalEventos}"`);
+
+    const ok = eventosAntes === 3 && reqEventos === 'false' && eventosDespues === 0 && retrosDespues === 4;
+    const obtenido = `antes: eventos=${eventosAntes}; peticion incluir_eventos_sanitarios=${reqEventos}; eventos=${eventosDespues}; retros=${retrosDespues}`;
+    anotar('CP-09', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-10 Sin retroalimentación', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    await seleccionarActivo('QA-885 · Bovino');
+
+    const retrosAntes = contarMarcadoresValoracion();
+
+    const chkRetros = screen.getByLabelText('Retroalimentaciones');
+    fireEvent.click(chkRetros);
+    await esperarEstable();
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const query = new URLSearchParams(ultima?.uri.includes('?') ? ultima.uri.slice(ultima.uri.indexOf('?') + 1) : '');
+    const reqRetros = query.get('incluir_retroalimentacion');
+
+    const retrosDespues = contarMarcadoresValoracion();
+    const eventosDespues = contarMarcadoresEvento();
+
+    const ok = retrosAntes === 4 && reqRetros === 'false' && retrosDespues === 0 && eventosDespues === 3;
+    const obtenido = `antes: retros=${retrosAntes}; peticion incluir_retroalimentacion=${reqRetros}; retros=${retrosDespues}; eventos=${eventosDespues}`;
+    anotar('CP-10', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-11 Solo nivel 3', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    await seleccionarActivo('QA-885 · Bovino');
+
+    fireEvent.click(screen.getByLabelText('Sin riesgo'));
+    await esperarEstable();
+    fireEvent.click(screen.getByLabelText('Bajo'));
+    await esperarEstable();
+    fireEvent.click(screen.getByLabelText('Medio'));
+    await esperarEstable();
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const query = new URLSearchParams(ultima?.uri.includes('?') ? ultima.uri.slice(ultima.uri.indexOf('?') + 1) : '');
+    const niveles = query.getAll('nivel_riesgo');
+    const puntos = contarPuntosLinea();
+
+    const ok = niveles.length === 1 && niveles[0] === '3' && puntos === 2;
+    const obtenido = `peticion nivel_riesgo=[${niveles.join(',')}]; puntos=${puntos}`;
+    anotar('CP-11', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+
+    // Medición OBS-2: desmarcar también Alto (los 4 desmarcados)
+    fireEvent.click(screen.getByLabelText('Alto'));
+    await esperarEstable();
+    const ultObs2 = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const qObs2 = new URLSearchParams(ultObs2?.uri.includes('?') ? ultObs2.uri.slice(ultObs2.uri.indexOf('?') + 1) : '');
+    const nivelesObs2 = qObs2.getAll('nivel_riesgo');
+    const puntosObs2 = contarPuntosLinea();
+    observaciones.push(`OBS-2: con los 4 niveles desmarcados: parámetros nivel_riesgo: [${nivelesObs2.join(',')}]; puntos en la línea: ${puntosObs2}`);
+  });
+
+  it('CP-12 Niveles 2 y 3', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    await seleccionarActivo('QA-885 · Bovino');
+
+    fireEvent.click(screen.getByLabelText('Sin riesgo'));
+    await esperarEstable();
+    fireEvent.click(screen.getByLabelText('Bajo'));
+    await esperarEstable();
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const queryStr = ultima?.uri.includes('?') ? ultima.uri.slice(ultima.uri.indexOf('?') + 1) : '';
+    const query = new URLSearchParams(queryStr);
+    const niveles = query.getAll('nivel_riesgo');
+    const puntos = contarPuntosLinea();
+    const tieneQueryExacta = queryStr.includes('nivel_riesgo=2&nivel_riesgo=3');
+
+    const ok = tieneQueryExacta && niveles.length === 2 && niveles[0] === '2' && niveles[1] === '3' && puntos === 4;
+    const obtenido = `peticion nivel_riesgo=[${niveles.join(',')}]; queryStr contiene "nivel_riesgo=2&nivel_riesgo=3": ${tieneQueryExacta}; puntos=${puntos}`;
+    anotar('CP-12', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-13 Lineal y Agrupado', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    await seleccionarActivo('QA-885 · Bovino');
+
+    const puntosLineal = contarPuntosLinea();
+    const sinGruposLineal = screen.queryByText(/grupo de eventos cercanos/) === null;
+
+    fireEvent.click(screen.getByLabelText('Agrupada'));
+    await esperarEstable();
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/')).pop();
+    const query = new URLSearchParams(ultima?.uri.includes('?') ? ultima.uri.slice(ultima.uri.indexOf('?') + 1) : '');
+    const modoReq = query.get('modo_visualizacion');
+    const puntosAgrupado = contarPuntosLinea();
+    const conGrupos = screen.queryByText('1 grupo de eventos cercanos') !== null;
+
+    const ok = puntosLineal === 6 && sinGruposLineal && modoReq === 'AGRUPADO' && puntosAgrupado === 6 && conGrupos;
+    const obtenido = `en Lineal: puntos=${puntosLineal}, sin_grupos=${sinGruposLineal}; en Agrupada: modo=${modoReq}, puntos=${puntosAgrupado}, grupo_presente=${conGrupos}`;
+    anotar('CP-13', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+});

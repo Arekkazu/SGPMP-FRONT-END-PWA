@@ -1,0 +1,135 @@
+{
+  "tc": "TC-M08-G027",
+  "reintento": 0,
+  "run_id": "prueba-local",
+  "fecha": "2026-11-21T12:16:37.172Z",
+  "summary": {
+    "total": 11,
+    "ok": 7,
+    "falla": 4,
+    "veredicto": "Rechazado"
+  },
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "esperado": "Operación con tiempo_estimado_operacion=3000 y duración real 3000 ms: el indicador (role=\"status\" con aria-busy=\"true\" de ProcesoEnCurso) NO aparece en t0+0, t0+1000 ni t0+2999",
+      "fuente": "RF-107 Entradas R129; 8.5 paso 3 («menor o igual a 3.000 ms: no se activa el indicador»)",
+      "obtenido": "visible en [0, 1000, 2999] ms; texto=\"Generando el reporte...\"; lecturas del campo=0",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-02",
+      "esperado": "tiempo_estimado_operacion=3001 y duración 3001 ms: indicador visible en t0+0 y t0+3000 con el texto exacto de reportes.json generar.generando",
+      "fuente": "RF-107 Entradas R129; 8.5 paso 3",
+      "obtenido": "t0+0=visible (\"Generando el reporte...\"), t0+3000=visible (\"Generando el reporte...\"); lecturas=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "esperado": "Durante CP-02 (progreso null): hay spinner (svg.ds-btn__spinner dentro del indicador) y NO hay role=\"progressbar\"",
+      "fuente": "RF-107 Entradas R129, R131; 8.5 paso 3 («null: spinner con el mensaje»)",
+      "obtenido": "spinners=1, progressbars=0, texto=\"Generando el reporte...\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "esperado": "Operación de 45.000 ms. t1 = instante en que el indicador aparece. En t1+30.000 NO hay texto común proceso.largo",
+      "fuente": "RF-107 8.5 paso 3 («supera los 30 segundos»); TC-M08-063 d («30,000 s no»)",
+      "obtenido": "t1+29.999=ausente; t1+30.000=presente (\"Esta operación puede tardar unos minutos. Puedes seguir usando otras secciones del sistema mientras esperas.\")",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-05",
+      "esperado": "Misma operación: en t1+30.001 el texto exacto de proceso.largo está visible dentro del indicador",
+      "fuente": "RF-107 8.5 paso 3",
+      "obtenido": "t1+30.001=\"Esta operación puede tardar unos minutos. Puedes seguir usando otras secciones del sistema mientras esperas.\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "esperado": "EXITOSO a los 5.000 ms: en t0+5.000 (tras estabilidad) el indicador ya no está y hay un banner de éxito con el texto de avisos.generado",
+      "fuente": "RF-107 8.5 paso 4 (EXITOSO)",
+      "obtenido": "indicador=no; banners_exito=1 [\"El reporte «Inventario biológico» está listo 10 registros. La descarga empieza ahora.\"]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "esperado": "FALLIDO (422) a los 5.000 ms: indicador ausente y un error visible (Alert de la sección o banner) con el message del 422",
+      "fuente": "RF-107 8.5 paso 4 (FALLIDO)",
+      "obtenido": "indicador=no; errores=1 [seccion:\"No se pudo generar el reporte El rango de fechas supera el máximo permitido.\"]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08",
+      "esperado": "Sin respuesta: el simulador agota el timeout de 60.000 ms. En t0+60.000 (tras estabilidad): indicador ausente y visible exactamente «La operación no pudo completarse. Intenta nuevamente.»",
+      "fuente": "RF-107 8.5 paso 3 («supera el tiempo máximo permitido: FA-3») y FA-3",
+      "obtenido": "indicador=no; textos_error=[\"Ocurrió un error inesperado. Intenta nuevamente.\"]",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-09",
+      "esperado": "En /finanzas/cierre, tras «Cerrar período» -> confirmar en el modal, con el POST de cierre pendiente: el botón «Cerrar período» (y «cierre.cancelar_no» si está en pantalla) está deshabilitado Y tiene un tooltip que cumple /^Espera a que finalice .+ antes de continuar\\.$/",
+      "fuente": "RF-107 8.3 «Bloqueo de operaciones dependientes»; 8.5 paso 3",
+      "obtenido": "\"Cerrar período\" {disabled=false, aria-disabled=true, aria-busy=true, tooltip=\"sin tooltip\"}",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-10",
+      "esperado": "Con el mismo cierre pendiente: history.push('/reportes') del anfitrión cambia la ubicación a /reportes y se ve el título de ReportesPage; ningún elemento del documento tiene inert ni aria-modal=\"true\"",
+      "fuente": "RF-107 Restricciones («No bloquea la navegación»); 8.3",
+      "obtenido": "ruta=\"/reportes\", titulo=\"Reportes\", inert=0, aria-modal=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-11",
+      "esperado": "Con el POST de cierre AÚN pendiente: navegar a /integracion/clientes y pulsar el botón de revocar de «QA Cliente G027». Esperado: 0 role=\"dialog\" abiertos y un mensaje visible (alert/status/toast) que contenga «espera» y («finalice» o «termine») sin distinguir mayúsculas",
+      "fuente": "RF-107 8.2 nivel 1 («bloquea el intento y muestra un mensaje informativo»)",
+      "obtenido": "dialogos=0 []; mensajes=[\"Espera a que finalice el cierre del período antes de continuar.\"]; cierre pendiente=sí",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "OBS-1: tiempo_estimado_operacion aparece 0 veces en src\\ ni lo envía el backend (lectura de Claude, backend 135bc318); lecturas medidas: CP-01=0, CP-02=0.",
+    "OBS-2: ProcesoEnCurso acepta progreso 0-100 (barra), pero ningún llamador le pasa progreso (usos con prop progreso en src\\: 0).",
+    "OBS-3: el «tiempo máximo permitido» de FA-3 no lo define el RF; se tomó el timeout del cliente de generar (60.000 ms, reportesApi.ts).",
+    "OBS-4: el cierre usa su propia barra de RF-87 («Progreso» de CierreView), no ProcesoEnCurso."
+  ],
+  "retirados": [
+    {
+      "paso": "063 (b) avance N/Total del cierre (CA-07)",
+      "motivo": "fuera de la entrega v7, sección 9"
+    }
+  ],
+  "precondiciones": [
+    {
+      "nombre": "P1 ProcesoEnCurso.tsx contiene const AVISO_LARGO_MS = 30_000;",
+      "ok": true,
+      "detalle": "encontrado"
+    },
+    {
+      "nombre": "P2 ReportesPage.tsx contiene <ProcesoEnCurso mensaje={t('generar.generando')} />",
+      "ok": true,
+      "detalle": "encontrado"
+    },
+    {
+      "nombre": "P3 reportesApi.ts generar usa { timeout: 60000 }",
+      "ok": true,
+      "detalle": "encontrado"
+    },
+    {
+      "nombre": "P4 CierreView.tsx contiene <ModalShell bloqueante title={t('cierre.confirmar_titulo'",
+      "ok": true,
+      "detalle": "encontrado"
+    },
+    {
+      "nombre": "P5 ClientesView.tsx contiene bloqueante={estado.accion === 'revocar'}",
+      "ok": true,
+      "detalle": "encontrado"
+    },
+    {
+      "nombre": "P6 Reloj simulado avanza Date.now() con vi.advanceTimersByTimeAsync",
+      "ok": true,
+      "detalle": "delta=100 ms"
+    }
+  ]
+}

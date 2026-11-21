@@ -1,0 +1,99 @@
+// Servidor de prueba de la herramienta (TC-M08-G021, parte Playwright). Sirve un build local en /sigab-test/ y una API
+// simulada en /sigab-test/api con la forma real del backend. No es parte de la corrida oficial.
+// Uso: node servidor.mjs <dir_build> <escenario: normal|backend_24h|grupo_desorden> <puerto>
+import http from 'node:http';
+import { readFileSync, existsSync, statSync, appendFileSync } from 'node:fs';
+import { join, extname } from 'node:path';
+
+const [dirBuild, escenario = 'normal', puertoTxt = '4173'] = process.argv.slice(2);
+const PUERTO = Number(puertoTxt);
+const LOG = process.env.MOCK_LOG ?? '/tmp/mock.log';
+const HORA = 3_600_000;
+const ms = (s) => new Date(s).getTime();
+const iso = (s) => new Date(s).toISOString().replace('.000Z', '+00:00');
+
+// 885 sintetico: los tres pares de CA-7 con las fechas reales de los eventos del DBA
+const uuid = (pre, n) => `${pre}-0000-4000-8000-${String(n).padStart(12, '0')}`;
+const preds = [
+  ['aa000001', '2026-07-01T12:00:00Z', 0], ['aa000002', '2026-07-20T12:00:00Z', 1], ['aa000003', '2026-08-10T12:00:00Z', 2],
+  ['aa000004', '2026-09-01T12:00:00Z', 3], ['aa000005', '2026-09-20T12:00:00Z', 2], ['aa000006', '2026-10-10T12:00:00Z', 1],
+  ['d1f3cc43', '2026-10-24T19:06:22Z', 2], ['f056f99d', '2026-10-26T21:06:22Z', 3], ['511a6d66', '2026-10-28T00:06:22Z', 1],
+].map(([p, f, n], i) => ({ clase: 'PREDICCION', fecha: f, datos: { id_resultado_inferencia: uuid(p, i + 1), nivel_riesgo: n, confianza: 0.8,
+  condicion: 'Condición QA', modo_sombra: false, tiene_retroalimentacion: i < 4, en_conflicto: false } }));
+const eventos = [
+  [2684, '2026-10-25T05:06:22Z', 'DIAGNOSTICO'], [2685, '2026-10-26T21:36:22Z', 'CONTROL_PREVENTIVO'], [2686, '2026-10-28T20:06:22Z', 'TRATAMIENTO'],
+].map(([id, f, t]) => ({ clase: 'EVENTO_SANITARIO', fecha: f, datos: { id_evento: id, tipo: t, descripcion: `Evento ${id}`, veterinario: 'Vet QA' } }));
+const retros = ['CORRECTO', 'INCORRECTO', 'PARCIAL', 'SIN_EVENTO'].map((v, i) => ({ clase: 'RETROALIMENTACION', fecha: `2026-11-20T15:${String(8 + i).padStart(2, '0')}:00Z`,
+  datos: { id_resultado_inferencia: preds[i].datos.id_resultado_inferencia, valoracion: v, veterinario: 'Vet QA', observaciones: null, en_conflicto: false } }));
+const serial = (m) => ({ tipo: m.clase, fecha: iso(m.fecha), ...m.datos });
+const PRIORIDAD = { RETROALIMENTACION: 0, EVENTO_SANITARIO: 1, PREDICCION: 2 };
+
+function correspondencias(ventanaH) {
+  const out = [];
+  for (const p of preds) for (const e of eventos) {
+    const d = Math.abs(ms(e.fecha) - ms(p.fecha));
+    if (d <= ventanaH * HORA) {
+      const m = Math.floor(d / 60_000);
+      out.push({ id_resultado_inferencia: p.datos.id_resultado_inferencia, id_evento: e.datos.id_evento, diferencia_minutos: m,
+        diferencia: `Diferencia: ${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}`, colision: d <= HORA });
+    }
+  }
+  return out;
+}
+function grupos(ordenBackend) {
+  const todos = [...preds, ...eventos, ...retros].sort((a, b) => ms(a.fecha) - ms(b.fecha));
+  const gs = [];
+  for (const m of todos) {
+    const u = gs[gs.length - 1];
+    if (u && ms(m.fecha) - ms(u[u.length - 1].fecha) <= HORA) u.push(m); else gs.push([m]);
+  }
+  return gs.filter((g) => g.length > 1).map((g) => (ordenBackend ? [...g].sort((a, b) => (PRIORIDAD[a.clase] - PRIORIDAD[b.clase]) || (ms(a.fecha) - ms(b.fecha))) : g));
+}
+function historial(params) {
+  return {
+    activo: { id_activo_biologico: 885, identificador: 'QA-G88-266-IND-001', especie: 'Qa', finca: 'Finca 184', estado: 'ACTIVO' },
+    rango_fechas_aplicado: { fecha_inicio: params.get('fecha_inicio'), fecha_fin: params.get('fecha_fin') },
+    ventana_correspondencia_horas: 12,
+    predicciones: preds.map(serial), eventos_sanitarios: eventos.map(serial), retroalimentaciones: retros.map(serial),
+    grupos: grupos(escenario !== 'grupo_desorden').map((g) => g.map(serial)),
+    correspondencias: correspondencias(escenario === 'backend_24h' ? 24 : 12),
+    tvco: { porcentaje: 25, texto: '25% (4 validadas; 5 excluidas: sin retro)', tvco_denominador: 4, tvco_excluidas_conflicto: 0, excluidas_sin_retroalimentacion: 5, tasa_error: 75 },
+    pendientes: { total: 0, pagina: 1, por_pagina: 20, items: [] },
+    metadatos: { total_inferencias: 9, total_eventos_sanitarios: 3, total_retroalimentaciones: 4, total_pendientes: 0, total_conflictos: 0 },
+    fuentes_no_disponibles: [], mensaje: null, modo_visualizacion: params.get('modo_visualizacion') ?? 'LINEAL',
+  };
+}
+
+const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+const TOKEN = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: '97', jti: 'qa', rol: 3, exp: Math.floor(Date.now() / 1000) + 7200, iat: Math.floor(Date.now() / 1000) })}.firma`;
+let conSesion = false;
+const PERMISOS = [
+  { id_recurso: 9106, nombre_recurso: 'historial_clinico_predictivo', id_accion: 2 },
+  { id_recurso: 42, nombre_recurso: 'historial_diagnostico', id_accion: 2 },
+  { id_recurso: 45, nombre_recurso: 'retroalimentacion_clinica', id_accion: 2 },
+];
+const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.woff2': 'font/woff2' };
+
+http.createServer((req, res) => {
+  const url = new URL(req.url, `http://127.0.0.1:${PUERTO}`);
+  const json = (code, body) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); };
+  if (url.pathname.startsWith('/sigab-test/api/')) {
+    const r = url.pathname.slice('/sigab-test/api'.length);
+    appendFileSync(LOG, `${req.method} ${r}${url.search}\n`);
+    if (req.method === 'POST' && /^\/sesiones\/?$/.test(r)) { conSesion = true; return json(200, { token: TOKEN, tipo: 'bearer', expira_en: 7200, message: 'ok' }); }
+    if (req.method === 'POST' && r.startsWith('/sesiones/refresh')) return conSesion ? json(200, { token: TOKEN, tipo: 'bearer', expira_en: 7200, message: 'ok' }) : json(401, { error_code: 'SESION_INVALIDA', message: 'Sin sesión', fields: [] });
+    if (req.method === 'DELETE' && /^\/sesiones\/?$/.test(r)) { conSesion = false; return json(200, { message: 'ok' }); }
+    if (req.method !== 'GET') return json(201, { qa: 'escritura que la guardia debio abortar' });
+    if (r === '/usuarios/me') return json(200, { id_usuario: 97, nombre: 'Vet', apellidos: 'QA', correo_electronico: 'vet@qa.test', nombre_rol: 'VETERINARIO', estado_cuenta: 'ACTIVA' });
+    if (r.startsWith('/sesiones/me/permisos')) return json(200, { permisos: PERMISOS });
+    if (r.startsWith('/reportes/opciones/activo')) return json(200, [{ valor: 885, etiqueta: 'QA-G88-266-IND-001 · Qa Semaforo Dinamico' }]);
+    if (r.startsWith('/historial-predictivo/885')) return json(200, historial(url.searchParams));
+    if (r.startsWith('/configuracion/mensajes-error')) return json(200, []);
+    return json(404, { error_code: 'RUTA_NO_SIMULADA', message: `No simulada ${r}`, fields: [] });
+  }
+  let ruta = url.pathname.replace(/^\/sigab-test\/?/, '');
+  let archivo = join(dirBuild, ruta || 'index.html');
+  if (!existsSync(archivo) || statSync(archivo).isDirectory()) archivo = join(dirBuild, 'index.html');
+  res.writeHead(200, { 'content-type': TIPOS[extname(archivo)] ?? 'application/octet-stream' });
+  res.end(readFileSync(archivo));
+}).listen(PUERTO, '127.0.0.1', () => console.log(`mock ${escenario} en ${PUERTO} sirviendo ${dirBuild}`));

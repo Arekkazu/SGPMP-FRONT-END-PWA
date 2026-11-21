@@ -1,0 +1,1 @@
+System.register([],function(e,t){"use strict";return{execute:function(){e("h",function(e){if(!e)return"—";if(!e.includes("_")&&/\p{Ll}/u.test(e))return e;const t=e.replace(/[_\s]+/g," ").trim().toLowerCase();return t.charAt(0).toUpperCase()+t.slice(1)})}}});

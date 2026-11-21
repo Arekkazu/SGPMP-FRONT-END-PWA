@@ -1,0 +1,31 @@
+﻿
+Running 1 test using 1 worker
+
+(node:11948) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G024\tc-m08-g024.pw.ts:505:1 › TC-M08-G024 rendimiento Chromium y WebKit (CP-01 a CP-06) (19.7s)
+
+
+  1) [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G024\tc-m08-g024.pw.ts:505:1 › TC-M08-G024 rendimiento Chromium y WebKit (CP-01 a CP-06) 
+
+    Error: CP-05, CP-06
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      687 |
+      688 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+    > 689 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+          |                                                                                                                      ^
+      690 | });
+      691 |
+        at C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo8\RF-106\TC-M08-G024\tc-m08-g024.pw.ts:689:118
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G024\evidencias\prueba_herramienta_v1\normal_3\pw-salida\tc-m08-g024.pw.ts-TC-M08-G-3f885-ium-y-WebKit-CP-01-a-CP-06--chromium\error-context.md
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G024\evidencias\prueba_herramienta_v1\normal_3\pw-salida\tc-m08-g024.pw.ts-TC-M08-G-3f885-ium-y-WebKit-CP-01-a-CP-06--chromium\error-context.md
+
+  1 failed
+    [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G024\tc-m08-g024.pw.ts:505:1 › TC-M08-G024 rendimiento Chromium y WebKit (CP-01 a CP-06) 

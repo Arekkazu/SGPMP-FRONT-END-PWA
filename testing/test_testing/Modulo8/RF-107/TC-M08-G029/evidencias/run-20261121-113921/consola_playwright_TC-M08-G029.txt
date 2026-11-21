@@ -1,0 +1,36 @@
+﻿✓ Lockfile passes supply-chain policies (verified 1d ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+Done in 1.8s using pnpm v11.25.0
+
+Running 1 test using 1 worker
+
+(node:39024) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › testing\test_testing\Modulo8\RF-107\TC-M08-G029\tc-m08-g029.pw.ts:425:1 › TC-M08-G029 baja de activo con confirmación (CP-01 a CP-06) (15.0s)
+
+
+  1) [chromium] › testing\test_testing\Modulo8\RF-107\TC-M08-G029\tc-m08-g029.pw.ts:425:1 › TC-M08-G029 baja de activo con confirmación (CP-01 a CP-06) 
+
+    Error: CP-05
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      881 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+      882 |   expect(respuestas428, respuestas428.join('; ')).toEqual([]);
+    > 883 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+          |                                                                                                                      ^
+      884 | });
+      885 |
+        at C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo8\RF-107\TC-M08-G029\tc-m08-g029.pw.ts:883:118
+
+    Error Context: testing\test_testing\Modulo8\RF-107\TC-M08-G029\evidencias\run-20261121-113921\pw-salida\tc-m08-g029.pw.ts-TC-M08-G-f3ce4-confirmación-CP-01-a-CP-06--chromium\error-context.md
+
+    Error Context: testing\test_testing\Modulo8\RF-107\TC-M08-G029\evidencias\run-20261121-113921\pw-salida\tc-m08-g029.pw.ts-TC-M08-G-f3ce4-confirmación-CP-01-a-CP-06--chromium\error-context.md
+
+  1 failed
+    [chromium] › testing\test_testing\Modulo8\RF-107\TC-M08-G029\tc-m08-g029.pw.ts:425:1 › TC-M08-G029 baja de activo con confirmación (CP-01 a CP-06) 

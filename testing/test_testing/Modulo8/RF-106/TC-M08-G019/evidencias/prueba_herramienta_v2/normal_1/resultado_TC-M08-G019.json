@@ -1,0 +1,153 @@
+{
+  "tc": "TC-M08-G019",
+  "reintento": 0,
+  "run_id": "",
+  "fecha": "2026-11-20T22:31:56.715Z",
+  "summary": {
+    "total": 13,
+    "ok": 13,
+    "falla": 0,
+    "veredicto": "Aprobado"
+  },
+  "precondiciones": [
+    {
+      "nombre": "PrediccionPage.tsx contiene permisoNombre",
+      "ok": true,
+      "detalle": "permisoNombre: ['historial_clinico_predictivo', ACCION_R]"
+    },
+    {
+      "nombre": "HistorialPredictivoView.tsx contiene filtro nivel_riesgo",
+      "ok": true,
+      "detalle": "nivel_riesgo: niveles.length < NIVELES.length ? niveles : undefined"
+    },
+    {
+      "nombre": "HistorialPredictivoView.tsx contiene Alert de error",
+      "ok": true,
+      "detalle": "{error && <Alert variant={error.status === 403 ? 'warning' : 'error'} title={t('historialpredictivo.no_cargo')} description={error.message} />}"
+    },
+    {
+      "nombre": "historialPredictivoApi.ts contiene paramsSerializer",
+      "ok": true,
+      "detalle": "paramsSerializer: { indexes: null }"
+    },
+    {
+      "nombre": "PestanasModulo.tsx contiene proteccion de pestana",
+      "ok": true,
+      "detalle": "return tiene(permisos, pestana) ? <>{children}</> : <AccesoDenegado seccion={pestana.label} />;"
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "caso": "048 Veterinario, activo ACTIVO (885)",
+      "esperado": "pestaña \"Historial predictivo\" visible; la vista consulta GET /historial-predictivo/885; TVCO \"25% (4 validadas)\"; 6 puntos en la línea; 3 marcadores de evento; 4 marcadores de valoración; 2 pendientes con botón \"Registrar retroalimentación\"; sin \"No tienes acceso a esta sección\"",
+      "fuente": "RF-106 Restricción 1; CA-6; Precondición 2",
+      "obtenido": "pestana=true; peticion=GET /historial-predictivo/885; tvco=\"25% (4 validadas)\"; puntos=6; eventos=3; retros=4; pendientes_con_boton=2; sin_acceso_denegado=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "caso": "048 Veterinario, activo EN_TRATAMIENTO (2945)",
+      "esperado": "Igual que CP-01 con GET /historial-predictivo/2945",
+      "fuente": "RF-106 Precondición 2; Restricción 1",
+      "obtenido": "pestana=true; peticion=GET /historial-predictivo/2945; tvco=\"25% (4 validadas)\"; puntos=6; eventos=3; retros=4; pendientes_con_boton=2; sin_acceso_denegado=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "caso": "048 Productor",
+      "esperado": "sin pestaña \"Historial predictivo\"; la ruta muestra \"No tienes acceso a esta sección\" y el detalle con «Historial predictivo»; 0 peticiones a /historial-predictivo/; no aparece el combobox \"Animal o lote\" ni ninguna TVCO (texto con %)",
+      "fuente": "RF-106 Restricción 1 (\"El Productor no tiene acceso al historial predictivo detallado con probabilidades\"); CA-6",
+      "obtenido": "sin_pestana=true; sin_acceso_titulo=true; detalle_con_nombre=true; peticiones_hp=0; combobox=false; tiene_tvco=false",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "caso": "048 Administrador",
+      "esperado": "igual que CP-01 (la vista carga)",
+      "fuente": "Lanzamiento v7 (el Administrador tiene lectura del historial; migración a7c3e91f5b20:72-73). Decisión de Sebastian 2026-11-20: se sigue la entrega; difiere de RF-106 Restricción 1 y CA-6 (ver observaciones)",
+      "obtenido": "pestana=true; peticion=GET /historial-predictivo/885; tvco=\"25% (4 validadas)\"; puntos=6; eventos=3; retros=4; pendientes_con_boton=2; sin_acceso_denegado=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "caso": "049 Rango por defecto",
+      "esperado": "sin tocar fechas, la petición lleva fecha_inicio=2025-11-20 y fecha_fin=2026-11-20, y los campos Desde/Hasta muestran esas fechas (calcula el esperado con tu propia aritmética de calendario, no con la de la vista)",
+      "fuente": "RF-106 Entradas (fecha_inicio: 12 meses antes de hoy; fecha_fin: hoy)",
+      "obtenido": "peticion fecha_inicio=2025-11-20, fecha_fin=2026-11-20; campos Desde=2025-11-20, Hasta=2026-11-20",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "caso": "049 Rango de 24 meses exactos",
+      "esperado": "con Desde=2024-11-20, la petición lleva fecha_inicio=2024-11-20 y fecha_fin=2026-11-20; respuesta 200; 8 puntos en la línea (incluida p1 de 2024-11-25); sin aviso de error",
+      "fuente": "RF-106 Restricción 2",
+      "obtenido": "peticion fecha_inicio=2024-11-20, fecha_fin=2026-11-20; puntos=8; sin_error=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "caso": "049 Rango de 24 meses + 1 día",
+      "esperado": "con Desde=2024-11-19 y la respuesta 400 del Swagger, no se dibuja la línea de tiempo (0 puntos), aparece \"No se pudo cargar el historial\" con un texto que contiene \"24 meses\", y los campos siguen habilitados con Desde=2024-11-19; luego, con Desde=2025-11-20 (subrango) vuelve la línea con 6 puntos y sin aviso",
+      "fuente": "RF-106 Restricción 2 (\"el Veterinario puede seleccionar un subrango\"); Swagger de TEST (rango máximo de 24 meses -> 400)",
+      "obtenido": "con 24m+1d: puntos=0, titulo_error=true, texto_24m=true, habilitado=true; tras volver a subrango: puntos=6, sin_error=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08",
+      "caso": "049 Cambio de rango sin recargar",
+      "esperado": "desde la vista cargada por defecto (6 puntos, TVCO \"25% (4 validadas)\"), con Desde=2026-08-20 la nueva petición lleva fecha_inicio=2026-08-20; la TVCO pasa a \"33% (3 validadas)\", el total pasa a \"4 predicciones\" y la línea a 4 puntos; el combobox es el MISMO nodo del DOM (===) con el mismo valor y la ruta no cambia",
+      "fuente": "RF-106 CA-10",
+      "obtenido": "antes: puntos=6, tvco=\"25% (4 validadas)\"; peticion fecha_inicio=2026-08-20; tvco=\"33% (3 validadas)\"; total=\"4 predicciones\"; puntos=4; combobox_mismo_nodo=true; combobox_mismo_valor=true; misma_ruta=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-09",
+      "caso": "050 Sin eventos sanitarios",
+      "esperado": "antes 3 marcadores de evento; al desmarcar \"Eventos sanitarios\", la última petición lleva incluir_eventos_sanitarios=false y quedan 0 marcadores de evento y 4 de valoración",
+      "fuente": "RF-106 Entradas (incluir_eventos_sanitarios)",
+      "obtenido": "antes: eventos=3; peticion incluir_eventos_sanitarios=false; eventos=0; retros=4",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-10",
+      "caso": "050 Sin retroalimentación",
+      "esperado": "antes 4 marcadores de valoración; al desmarcar \"Retroalimentaciones\", la última petición lleva incluir_retroalimentacion=false y quedan 0 de valoración y 3 de evento",
+      "fuente": "RF-106 Entradas (incluir_retroalimentacion)",
+      "obtenido": "antes: retros=4; peticion incluir_retroalimentacion=false; retros=0; eventos=3",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-11",
+      "caso": "050 Solo nivel 3",
+      "esperado": "al desmarcar Sin riesgo, Bajo y Medio, la última petición lleva nivel_riesgo=3 una sola vez y ningún otro valor de nivel_riesgo; la línea tiene 2 puntos",
+      "fuente": "RF-106 Entradas (filtro_nivel_riesgo)",
+      "obtenido": "peticion nivel_riesgo=[3]; puntos=2",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-12",
+      "caso": "050 Niveles 2 y 3",
+      "esperado": "desde todos marcados, al desmarcar Sin riesgo y Bajo, la última petición lleva exactamente nivel_riesgo=2&nivel_riesgo=3; la línea tiene 4 puntos",
+      "fuente": "RF-106 Entradas (filtro_nivel_riesgo)",
+      "obtenido": "peticion nivel_riesgo=[2,3]; queryStr contiene \"nivel_riesgo=2&nivel_riesgo=3\": true; puntos=4",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-13",
+      "caso": "050 Lineal y Agrupado",
+      "esperado": "en Lineal 6 puntos y sin \"grupo de eventos cercanos\"; al elegir \"Agrupada\", la última petición lleva modo_visualizacion=AGRUPADO, siguen 6 puntos y aparece \"1 grupo de eventos cercanos\"",
+      "fuente": "RF-106 Entradas (modo_visualizacion)",
+      "obtenido": "en Lineal: puntos=6, sin_grupos=true; en Agrupada: modo=AGRUPADO, puntos=6, grupo_presente=true",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "OBS-1: en CP-07, peticion con fecha_inicio=2024-11-19 salio al servidor: SI; atributo min de #hp-desde: null",
+    "OBS-3: en CP-09, el texto del total de eventos sanitarios después de ocultarlos: \"3 eventos sanitarios\"",
+    "OBS-2: con los 4 niveles desmarcados: parámetros nivel_riesgo: []; puntos en la línea: 6",
+    "OBS-4: la respuesta no trae filtros_aplicados ni activo_seleccionado (forma real del backend; G018 OBS-NOMBRES); lo aplicado se refleja en los controles.",
+    "OBS-5: Administrador con lectura (CP-04) frente a RF-106 Restricción 1 y CA-6: decisión de Sebastian 2026-11-20 de seguir la entrega v7; para los líderes."
+  ],
+  "retirados": []
+}

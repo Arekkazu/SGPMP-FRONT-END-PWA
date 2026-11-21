@@ -1,0 +1,106 @@
+{
+  "tc": "TC-M08-G031",
+  "reintento": 0,
+  "run_id": "qa-m08-g031-control_sin_offline",
+  "fecha": "2026-11-21T18:02:59.312Z",
+  "summary": {
+    "total": 11,
+    "ok": 5,
+    "falla": 6,
+    "veredicto": "Rechazado"
+  },
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "esperado": "SINCRONIZADO: online, cola vacía y sin peticiones => button.ds-sync con clase ds-sync--SINCRONIZADO, texto «Sincronizado» y svg con clase lucide-cloud-check",
+      "fuente": "RF-107 8.4; TC-M08-071",
+      "obtenido": "clase=\"ds-sync ds-sync--SINCRONIZADO\"; texto=\"Sincronizado\"; svg=\"lucide lucide-cloud-check\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "esperado": "SINCRONIZANDO: online y peticionIniciada() sin terminar => ds-sync--SINCRONIZANDO y texto «Sincronizando»",
+      "fuente": "RF-107 8.4; TC-M08-071",
+      "obtenido": "clase=\"ds-sync ds-sync--SINCRONIZANDO\"; texto=\"Sincronizando\"; svg=\"lucide lucide-cloud-cog\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "esperado": "OFFLINE: navigator.onLine=false y evento offline => ds-sync--OFFLINE, texto «Sin conexión» y svg lucide-cloud-off",
+      "fuente": "RF-107 8.4; TC-M08-071",
+      "obtenido": "clase=\"ds-sync ds-sync--SINCRONIZADO\"; texto=\"Sincronizado\"; svg=\"lucide lucide-cloud-check\"",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-04",
+      "esperado": "CONFLICTO: online con 1 conflicto en getConflictos => ds-sync--CONFLICTO, texto «Conflicto» y svg lucide-cloud-alert",
+      "fuente": "RF-107 8.4; TC-M08-071",
+      "obtenido": "clase=\"ds-sync ds-sync--CONFLICTO\"; texto=\"Conflicto\"; svg=\"lucide lucide-cloud-alert\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "esperado": "Panel (CA-15): diálogo con .ds-sync__tabla y exactamente 6 filas en orden Activos biológicos, Telemetría, Predicción, Suministros, Finanzas, Integración contable; cada fila con 4 celdas td",
+      "fuente": "RF-107 CA-15; 8.4; TC-M08-071",
+      "obtenido": "dialogo=true; filas=[Activos biológicos, Telemetría, Predicción, Suministros, Finanzas, Integración contable]; celdas_por_fila=[4, 4, 4, 4, 4, 4]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "esperado": "Formato último sincronizado (8.4): con último exitoso de Activos a las 2026-11-21T20:00:00Z, la celda de Activos es exactamente «2026-11-21 15:00»",
+      "fuente": "RF-107 8.4 («AAAA-MM-DD HH:MM»); TC-M08-071",
+      "obtenido": "celda_activos=\"21/11/2026 3:00 p. m.\"",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-07",
+      "esperado": "Pendientes (8.4): (a) SINCRONIZADO => las 6 filas con 0; (b) OFFLINE con 2 operaciones en cola para activos => fila Activos en «Sin conexión» con 2",
+      "fuente": "RF-107 8.4; TC-M08-071",
+      "obtenido": "(a) [Activos biológicos:0, Telemetría:0, Predicción:0, Suministros:0, Finanzas:0, Integración contable:0]; (b) Activos estado=\"Sincronizando\", pendientes=\"2\"",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-08",
+      "esperado": "Acción disponible (8.4): CONFLICTO (Activos) <button> «Resolver conflicto»; OFFLINE (Activos) <a>/<button> «Ver cola»; SINCRONIZANDO (Suministros) <a>/<button> «Ver detalle»; SINCRONIZADO sin botón ni enlace",
+      "fuente": "RF-107 8.4; TC-M08-071",
+      "obtenido": "conflicto(Activos)=[texto plano \"Resuelve el conflicto en el módulo\"]; offline(Activos)=[texto plano \"Espera a que terminen los envíos\"]; sincronizando(Suministros)=[texto plano \"Espera a que terminen los envíos\"]; sincronizado(interactivos=0/6)",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-09",
+      "esperado": "Contenido OFFLINE (8.4): tras avanzar 5 min en OFFLINE con 2 acciones encoladas, el panel contiene (i) tiempo transcurrido, (ii) registrar_evento y registrar_crecimiento, y (iii) mención de caché (/cach[eé]/i)",
+      "fuente": "RF-107 8.4; TC-M08-071",
+      "obtenido": "tiempo=false; acciones(registrar_evento=false, registrar_crecimiento=false); cache=false; texto=\"Sincronización de datosHay datos enviándose o recibiéndose.MóduloEstadoÚltimo intercambioPendientesQué hacerActivos biológicosSincronizando21/11/2026 3:00 p. m.2Espera a que terminen los envíosTelemetríaSincronizadoSin intercambio en esta sesión0—PredicciónSincronizadoSin intercambio en esta sesión0—SuministrosSincronizadoSin intercambio en esta sesión0—FinanzasSincronizadoSin intercambio en esta sesión0—Integración contableSincronizadoSin intercambio en esta sesión0—\"",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-10",
+      "esperado": "Contenido CONFLICTO (8.4): en escenario CP-04 el panel contiene valor local «Lote QA 1», valor del servidor (/servidor/i) y una fecha de la divergencia",
+      "fuente": "RF-107 8.4; TC-M08-071",
+      "obtenido": "local=false; servidor=true; fecha=false; texto=\"Sincronización de datosAlgunos datos cambiaron en el servidor mientras estabas sin conexión. Revísalos en el módulo correspondiente.MóduloEstadoÚltimo intercambioPendientesQué hacerActivos biológicosConflicto21/11/2026 3:00 p. m.1Resuelve el conflicto en el móduloTelemetríaSincronizadoSin intercambio en esta sesión0—PredicciónSincronizadoSin intercambio en esta sesión0—SuministrosSincronizadoSin intercambio en esta sesión0—FinanzasSincronizadoSin intercambio en esta sesión0—Integración contableSincronizadoSin intercambio en esta sesión0—\"",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-11",
+      "esperado": "SINCRONIZANDO por módulo (8.4): online con 3 operaciones en cola para suministros sin conflicto => fila Suministros en «Sincronizando» con 3 pendientes",
+      "fuente": "RF-107 8.4; TC-M08-071",
+      "obtenido": "Suministros estado=\"Sincronizando\", pendientes=\"3\"",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "OBS-1: panel en ventana centrada (ModalShell) y no lateral (8.4) — dialogo_presente=sí, clase=\"ds-modal\", titulo=\"Sincronización de datos\". Enlazada a INC-M08-NN-G026, defecto 4.",
+    "OBS-2: el ícono está en la barra superior (App.tsx:232, AppBar); la «barra inferior» corresponde al Tipo 4 de la Descripción (versión anterior).",
+    "OBS-3: texto/aviso mostrado al pasar a CONFLICTO frente a FA-7 (que la 8.x no nombra) — aria=\"Estado de sincronización: Conflicto. Ver detalle\"; descripcion_dialogo=\"Sincronización de datosAlgunos datos cambiaron en el servidor mientras estabas sin conexión. Revísalos en el módulo correspondiente.MóduloEs\".",
+    "OBS-4: svg de SINCRONIZANDO=\"lucide lucide-cloud-cog\" (lucide-cloud-cog: engranaje, no reloj). Clases de color por estado: ds-sync--SINCRONIZADO, ds-sync--SINCRONIZANDO, ds-sync--OFFLINE, ds-sync--CONFLICTO (jsdom no aplica CSS).",
+    "OBS-5: con solo una petición en vuelo (CP-02), estado por módulo de cada fila — Activos biológicos=Sincronizado, Telemetría=Sincronizado, Predicción=Sincronizado, Suministros=Sincronizado, Finanzas=Sincronizado, Integración contable=Sincronizado."
+  ],
+  "retirados": [],
+  "precondiciones": [
+    {
+      "nombre": "Zona horaria America/Bogota activa",
+      "ok": true,
+      "detalle": "timeZone=America/Bogota"
+    }
+  ]
+}

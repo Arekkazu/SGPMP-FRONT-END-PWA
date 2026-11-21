@@ -1,0 +1,5 @@
+CORRIDA NO OFICIAL (archivada por Claude, 2026-11-20 22:35, por la regla de corrida invalida).
+RUN qa-m08-g022-20261120-223000, exit 3: precondicion falsa de la herramienta en la parte B de Playwright.
+Las fechas simuladas eran fecha de la prediccion + 1 dia; el 885 tiene una prediccion 24 h despues de la primera (2026-07-02T11:34:36Z), asi que la fecha simulada choco con ella (<= 1 h).
+No es un defecto del producto. Se corrige el spec de Playwright (v1.2: busca horas libres) y se repite la corrida como ronda 1.
+No se promueve. Escaneo: 0 hallazgos. Solo hubo login y refresh como peticiones distintas de GET.

@@ -1,0 +1,381 @@
+// Servidor de prueba de la herramienta (TC-M08-G030). Sirve un build local en /sigab-test/ y una API
+// simulada en /sigab-test/api con dos cuentas (Veterinario y Administrador) y rotacion de token.
+// No es parte de la corrida oficial.
+// Uso: node servidor_api_simulada.mjs.txt <dir_build> <escenario> <puerto>
+import http from 'node:http';
+import { readFileSync, existsSync, statSync, appendFileSync } from 'node:fs';
+import { join, extname } from 'node:path';
+
+const [dirBuild, escenario = 'normal', puertoTxt = '4173'] = process.argv.slice(2);
+const PUERTO = Number(puertoTxt);
+const LOG = process.env.MOCK_LOG ?? 'mock.log';
+const AHORA = Date.now();
+const HORA = 3_600_000;
+const DIA = 86_400_000;
+const iso = (t) => new Date(t).toISOString().replace('.000Z', '+00:00');
+const uuid = (n) => `aa03000${n}-0000-4000-8000-${String(n).padStart(12, '0')}`;
+
+const CUENTA_VET = {
+  clave: 'vet',
+  id: 97,
+  rol: 3,
+  usuario: {
+    id_usuario: 97,
+    nombre: 'Vet',
+    apellidos: 'QA',
+    correo_electronico: 'vet.mock@prueba.local',
+    nombre_rol: 'VETERINARIO',
+    estado_cuenta: 'ACTIVA',
+  },
+  permisos: [
+    { id_recurso: 29, nombre_recurso: 'activos_biologicos', id_accion: 1 },
+    { id_recurso: 29, nombre_recurso: 'activos_biologicos', id_accion: 2 },
+    { id_recurso: 29, nombre_recurso: 'activos_biologicos', id_accion: 3 },
+    { id_recurso: 29, nombre_recurso: 'activos_biologicos', id_accion: 4 },
+    { id_recurso: 29, nombre_recurso: 'activos_biologicos', id_accion: 5 },
+    { id_recurso: 9106, nombre_recurso: 'historial_clinico_predictivo', id_accion: 2 },
+    { id_recurso: 42, nombre_recurso: 'historial_diagnostico', id_accion: 2 },
+    { id_recurso: 45, nombre_recurso: 'retroalimentacion_clinica', id_accion: 2 },
+    { id_recurso: 45, nombre_recurso: 'retroalimentacion_clinica', id_accion: 1 },
+  ],
+};
+
+const CUENTA_ADMIN = {
+  clave: 'admin',
+  id: 1,
+  rol: 1,
+  usuario: {
+    id_usuario: 1,
+    nombre: 'Admin',
+    apellidos: 'QA',
+    correo_electronico: 'admin.mock@prueba.local',
+    nombre_rol: 'ADMINISTRADOR',
+    estado_cuenta: 'ACTIVA',
+  },
+  permisos: [
+    { id_recurso: 9201, nombre_recurso: 'cierre_periodo', id_accion: 2 },
+    { id_recurso: 9201, nombre_recurso: 'cierre_periodo', id_accion: 5 },
+    { id_recurso: 9202, nombre_recurso: 'reconocimiento_inicial', id_accion: 2 },
+    { id_recurso: 9203, nombre_recurso: 'revelaciones_nic41', id_accion: 2 },
+  ],
+};
+
+const basePreds = [
+  { id: uuid(1), nivel: 3, fecha: AHORA - 25 * DIA, condicion: 'Estrés térmico' },
+  { id: uuid(2), nivel: 0, fecha: AHORA - 26 * DIA, condicion: 'Condición no identificada' },
+  { id: uuid(3), nivel: 1, fecha: AHORA - 27 * DIA, condicion: 'Deshidratación' },
+  { id: uuid(4), nivel: 2, fecha: AHORA - 140 * DIA, condicion: 'Gastroenteritis infecciosa' },
+  { id: uuid(5), nivel: 1, fecha: AHORA - 30 * DIA, condicion: 'Septicemia' },
+  { id: uuid(6), nivel: 3, fecha: AHORA - 1 * DIA, condicion: 'Hipotermia' },
+];
+
+const baseRetros = [
+  {
+    tipo: 'RETROALIMENTACION',
+    fecha: iso(AHORA - 20 * DIA),
+    id_resultado_inferencia: uuid(5),
+    valoracion: 'CORRECTO',
+    veterinario: 'QA Vet',
+    observaciones: null,
+    en_conflicto: false,
+  },
+];
+
+function historial(params) {
+  const conRetro = new Set(baseRetros.map((r) => r.id_resultado_inferencia));
+  const preds = basePreds.map((p) => ({
+    tipo: 'PREDICCION',
+    fecha: iso(p.fecha),
+    id_resultado_inferencia: p.id,
+    nivel_riesgo: p.nivel,
+    confianza: 0.85,
+    condicion: p.condicion,
+    modo_sombra: false,
+    tiene_retroalimentacion: conRetro.has(p.id),
+    en_conflicto: false,
+  }));
+  const pend = basePreds
+    .filter((p) => !conRetro.has(p.id) && AHORA - p.fecha > 48 * HORA)
+    .sort((a, b) => (b.nivel - a.nivel) || (b.fecha - a.fecha));
+  return {
+    activo: { id_activo_biologico: 885, identificador: 'QA-G88-266-IND-001', especie: 'Qa', finca: 'Finca 184', estado: 'ACTIVO' },
+    rango_fechas_aplicado: { fecha_inicio: params.get('fecha_inicio'), fecha_fin: params.get('fecha_fin') },
+    ventana_correspondencia_horas: 12,
+    predicciones: preds,
+    eventos_sanitarios: [],
+    retroalimentaciones: baseRetros,
+    grupos: [],
+    correspondencias: [],
+    tvco: {
+      porcentaje: 100,
+      texto: '100% (1 validada; 5 excluidas: sin retro)',
+      tvco_denominador: 1,
+      tvco_excluidas_conflicto: 0,
+      excluidas_sin_retroalimentacion: 5,
+      tasa_error: 0,
+    },
+    pendientes: {
+      total: pend.length,
+      pagina: 1,
+      por_pagina: 20,
+      items: pend.map((p) => ({
+        id_resultado_inferencia: p.id,
+        fecha_inferencia: iso(p.fecha),
+        nivel_riesgo: p.nivel,
+        condicion: p.condicion,
+      })),
+    },
+    metadatos: {
+      total_inferencias: preds.length,
+      total_eventos_sanitarios: 0,
+      total_retroalimentaciones: baseRetros.length,
+      total_pendientes: pend.length,
+      total_conflictos: 0,
+    },
+    fuentes_no_disponibles: [],
+    mensaje: null,
+    modo_visualizacion: params.get('modo_visualizacion') ?? 'LINEAL',
+  };
+}
+
+const ACTIVO_885 = {
+  id_activo_biologico: 885,
+  identificador: 'QA-G88-266-IND-001',
+  nombre: 'Qa Semaforo Dinamico',
+  tipo: 'INDIVIDUAL',
+  tipo_gestion: 'INDIVIDUAL',
+  nombre_estado: 'ACTIVO',
+  estado_operativo: 'ACTIVO',
+  especie: 'Qa',
+  raza: 'QA',
+  id_especie: 1,
+  id_finca: 184,
+  finca: 'Finca 184',
+  nombre_finca: 'Finca 184',
+  peso_actual_kg: '420.00',
+  cantidad_actual: 1,
+  fecha_nacimiento: '2024-01-15',
+  fecha_registro: '2024-02-01T10:00:00+00:00',
+  sexo: 'HEMBRA',
+  proposito: 'PRODUCCION',
+};
+
+const FICHA_885 = {
+  id_activo_biologico: 885,
+  identificador: 'QA-G88-266-IND-001',
+  tipo: 'INDIVIDUAL',
+  estado_actual: 'ACTIVO',
+  especie: 'Qa',
+  raza: 'QA',
+  sexo: 'HEMBRA',
+  fecha_nacimiento: '2024-01-15',
+  fecha_registro: '2024-02-01',
+  peso_actual: 420,
+  unidad_peso: 'kg',
+  fecha_ultimo_peso: null,
+  finca: 'Finca 184',
+  cantidad_actual: 1,
+  dias_en_sistema: 600,
+  fase_productiva_activa: 'Adulto',
+  infraestructura_asociada: null,
+  advertencias: [],
+  eventos_sanitarios: [],
+  eventos_crecimiento: [],
+  eventos_productivos: [],
+  eventos_reproductivos: [],
+  indicadores: [],
+  accesos_directos: [],
+};
+
+const TITULARES = [
+  { numero_id_tributaria: '900123456', razon_social: 'Finca QA S.A.S.' },
+];
+
+const PERIODOS = [
+  {
+    id_periodo_contable: 101,
+    numero_id_tributaria: '900123456',
+    razon_social: 'Finca QA S.A.S.',
+    tipo_cierre: 'MENSUAL',
+    fecha_inicio: '2026-11-01',
+    fecha_fin: '2026-11-30',
+    estado: 'ABIERTO',
+    fecha_cierre: null,
+    ultimo_cierre: null,
+  },
+];
+
+const PREVALIDACION_101 = {
+  bloqueos: [],
+  activos_sin_precio: [],
+  lineas_sin_trazabilidad: [],
+  puede_cerrar: true,
+  requiere_autorizacion: false,
+};
+
+// Base64url con espacio inicial antes de '{' para evitar prefijo JWT en el payload
+// manteniendo compatibilidad con JSON.parse(atob(...)) de AuthContext.
+const b64ConEspacio = (o) => Buffer.from(' ' + JSON.stringify(o)).toString('base64url');
+let reqSeq = 0;
+let tokenSeq = 0;
+let sesionSeq = 0;
+
+/** @type {Map<string, { cuenta: typeof CUENTA_VET, tokenActivo: string | null }>} */
+const sesiones = new Map();
+/** @type {Map<string, { sesionId: string, cuenta: typeof CUENTA_VET, revocado: boolean }>} */
+const tokens = new Map();
+let ultimaSesionId = null;
+
+function emitirToken(sesionId, cuenta) {
+  const ses = sesiones.get(sesionId);
+  if (ses && ses.tokenActivo) {
+    const prev = tokens.get(ses.tokenActivo);
+    if (prev) prev.revocado = true;
+  }
+  const jti = `qa-g030-${++tokenSeq}`;
+  const ahoraSeg = Math.floor(Date.now() / 1000);
+  const tok = `token-mock.${b64ConEspacio({ sub: String(cuenta.id), jti, rol: cuenta.rol, exp: ahoraSeg + 7200, iat: ahoraSeg })}.firma`;
+  tokens.set(tok, { sesionId, cuenta, revocado: false });
+  if (ses) ses.tokenActivo = tok;
+  return tok;
+}
+
+function leerCookieSesion(req) {
+  const cookie = req.headers.cookie || '';
+  const m = /(?:^|;\s*)qa_sid=([^;]+)/.exec(cookie);
+  return m ? m[1] : null;
+}
+
+function leerBody(req) {
+  return new Promise((resolve) => {
+    const chunks = [];
+    req.on('data', (c) => chunks.push(c));
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+  });
+}
+
+function resolverCuentaDesdeAuth(req) {
+  const auth = req.headers.authorization || '';
+  const m = /^Bearer\s+(.+)$/i.exec(auth);
+  if (!m) {
+    const sid = leerCookieSesion(req) || ultimaSesionId;
+    const ses = sid ? sesiones.get(sid) : null;
+    return { ok: true, cuenta: ses ? ses.cuenta : CUENTA_VET };
+  }
+  const info = tokens.get(m[1]);
+  if (!info) return { ok: false, code: 401, error_code: 'TOKEN_INVALIDO' };
+  if (info.revocado) return { ok: false, code: 401, error_code: 'TOKEN_REVOCADO' };
+  return { ok: true, cuenta: info.cuenta };
+}
+
+const TIPOS = {
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.json': 'application/json',
+  '.woff2': 'font/woff2',
+};
+
+http.createServer(async (req, res) => {
+  const url = new URL(req.url, `http://127.0.0.1:${PUERTO}`);
+  const rid = `qa-g030-${++reqSeq}`;
+  const json = (code, body, extraHeaders = {}) => {
+    res.writeHead(code, { 'content-type': 'application/json', 'x-request-id': rid, ...extraHeaders });
+    res.end(JSON.stringify(body));
+  };
+
+  if (url.pathname.startsWith('/sigab-test/api/')) {
+    const r = url.pathname.slice('/sigab-test/api'.length);
+
+    if (req.method === 'POST' && /^\/sesiones\/?$/.test(r)) {
+      const raw = await leerBody(req);
+      let email = '';
+      try {
+        const parsed = JSON.parse(raw || '{}');
+        email = String(parsed.correo_electronico || parsed.email || '').toLowerCase();
+      } catch { /* ignore */ }
+      const cuenta = email.includes('admin') ? CUENTA_ADMIN : CUENTA_VET;
+      const sid = `sid-${++sesionSeq}-${cuenta.clave}`;
+      sesiones.set(sid, { cuenta, tokenActivo: null });
+      ultimaSesionId = sid;
+      const tok = emitirToken(sid, cuenta);
+      appendFileSync(LOG, `${req.method} ${r}${url.search} cuenta=${cuenta.clave}\n`);
+      return json(200, { token: tok, tipo: 'bearer', expira_en: 7200, message: 'ok' }, {
+        'set-cookie': `qa_sid=${sid}; Path=/; HttpOnly; SameSite=Lax`,
+      });
+    }
+
+    if (req.method === 'POST' && r.startsWith('/sesiones/refresh')) {
+      const sid = leerCookieSesion(req);
+      const ses = sid ? sesiones.get(sid) : null;
+      appendFileSync(LOG, `${req.method} ${r}${url.search} sid=${sid || 'none'}\n`);
+      if (!ses) return json(401, { error_code: 'SESION_INVALIDA', message: 'Sin sesión', fields: [] });
+      const tok = emitirToken(sid, ses.cuenta);
+      return json(200, { token: tok, tipo: 'bearer', expira_en: 7200, message: 'ok' });
+    }
+
+    if (req.method === 'DELETE' && /^\/sesiones\/?$/.test(r)) {
+      const sid = leerCookieSesion(req);
+      const ses = sid ? sesiones.get(sid) : null;
+      if (ses && ses.tokenActivo) {
+        const info = tokens.get(ses.tokenActivo);
+        if (info) info.revocado = true;
+      }
+      if (sid) sesiones.delete(sid);
+      appendFileSync(LOG, `${req.method} ${r}${url.search} sid=${sid || 'none'}\n`);
+      return json(200, { message: 'ok' }, {
+        'set-cookie': 'qa_sid=; Path=/; Max-Age=0',
+      });
+    }
+
+    if (req.method !== 'GET') {
+      appendFileSync(LOG, `ESCRITURA_NO_PERMITIDA ${req.method} ${r}${url.search}\n`);
+      return json(201, { qa: 'escritura que la guardia debio abortar' });
+    }
+
+    const auth = resolverCuentaDesdeAuth(req);
+    if (!auth.ok) {
+      appendFileSync(LOG, `${req.method} ${r}${url.search} -> 401 ${auth.error_code}\n`);
+      return json(401, { error_code: auth.error_code, message: 'Token revocado o invalido', fields: [] });
+    }
+    const cuenta = auth.cuenta;
+    appendFileSync(LOG, `${req.method} ${r}${url.search} cuenta=${cuenta.clave}\n`);
+
+    if (r === '/usuarios/me') return json(200, cuenta.usuario);
+    if (r === '/usuarios/me/fincas') return json(200, [{ id_finca: 184, nombre_finca: 'Finca 184' }]);
+    if (r.startsWith('/sesiones/me/permisos')) return json(200, { permisos: cuenta.permisos });
+    if (r.startsWith('/configuracion/mensajes-error')) return json(200, []);
+    if (r.startsWith('/configuracion/interfaz/contexto')) return json(200, {});
+    if (r.startsWith('/configuracion/personalizacion/idioma')) return json(200, { idioma: 'es-CO' });
+    if (r.startsWith('/configuracion/personalizacion/tema')) return json(200, { tema: 'light' });
+    if (r.startsWith('/configuracion/personalizacion/dashboard/widgets')) return json(200, []);
+    if (r.startsWith('/configuracion/personalizacion/dashboard')) return json(200, {});
+    if (r.startsWith('/notificaciones')) return json(200, { items: [], total: 0, no_leidas: 0 });
+
+    if (r.startsWith('/reportes/opciones/activo')) return json(200, [{ valor: 885, etiqueta: 'QA-G88-266-IND-001 · Qa Semaforo Dinamico' }]);
+    if (r.startsWith('/historial-predictivo/885')) return json(200, historial(url.searchParams));
+
+    if (r === '/activos-biologicos' || r === '/activos-biologicos/') {
+      return json(200, { items: [ACTIVO_885], total: 1, pagina: 1, por_pagina: 20 });
+    }
+    if (r === '/activos-biologicos/885/ficha-integral') return json(200, FICHA_885);
+    if (r === '/activos-biologicos/885/eventos') return json(200, []);
+    if (r === '/activos-biologicos/885') return json(200, ACTIVO_885);
+
+    if (r.startsWith('/finanzas/titulares')) return json(200, TITULARES);
+    if (r === '/finanzas/periodos' || r === '/finanzas/periodos/') return json(200, PERIODOS);
+    if (r === '/finanzas/periodos/101/prevalidacion') return json(200, PREVALIDACION_101);
+    if (r === '/finanzas/periodos/101/comprobantes') return json(200, []);
+    if (r.startsWith('/finanzas/reconocimientos/propuestas')) return json(200, []);
+
+    return json(404, { error_code: 'RUTA_NO_SIMULADA', message: `No simulada ${r}`, fields: [] });
+  }
+
+  let ruta = url.pathname.replace(/^\/sigab-test\/?/, '');
+  let archivo = join(dirBuild, ruta || 'index.html');
+  if (!existsSync(archivo) || statSync(archivo).isDirectory()) archivo = join(dirBuild, 'index.html');
+  res.writeHead(200, { 'content-type': TIPOS[extname(archivo)] ?? 'application/octet-stream' });
+  res.end(readFileSync(archivo));
+}).listen(PUERTO, '127.0.0.1', () => console.log(`mock ${escenario} en ${PUERTO} sirviendo ${dirBuild}`));

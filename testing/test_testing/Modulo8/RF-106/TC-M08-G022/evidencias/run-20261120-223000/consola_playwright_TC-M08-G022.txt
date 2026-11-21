@@ -1,0 +1,28 @@
+﻿
+Running 1 test using 1 worker
+
+(node:13644) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G022\tc-m08-g022.pw.ts:313:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) (13.2s)
+
+
+  1) [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G022\tc-m08-g022.pw.ts:313:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) 
+
+    Error: Precondicion falsa: Parte B: ninguna de las 3 fechas simuladas queda a menos de 1 h de una predicción (fechas=[2026-07-02T11:34:36.477+00:00, 2026-07-31T12:34:36.477+00:00, 2026-08-02T12:34:36.477+00:00])
+
+      60 |   if (!ok) {
+      61 |     for (const c of CPS) { c.obtenido = `Precondición no cumplida (${nombre}): ${detalle}`; c.estado = 'FALLA'; }
+    > 62 |     throw new Error(`Precondicion falsa: ${nombre} (${detalle})`);
+         |           ^
+      63 |   }
+      64 | }
+      65 | function captura(page: Page, nombre: string): Promise<unknown> {
+        at precondicion (C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo8\RF-106\TC-M08-G022\tc-m08-g022.pw.ts:62:11)
+        at C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo8\RF-106\TC-M08-G022\tc-m08-g022.pw.ts:425:3
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G022\evidencias\run-20261120-223000\pw-salida\tc-m08-g022.pw.ts-TC-M08-G-80bf8-vegador-real-CP-11-a-CP-14--chromium\error-context.md
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G022\evidencias\run-20261120-223000\pw-salida\tc-m08-g022.pw.ts-TC-M08-G-80bf8-vegador-real-CP-11-a-CP-14--chromium\error-context.md
+
+  1 failed
+    [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G022\tc-m08-g022.pw.ts:313:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) 

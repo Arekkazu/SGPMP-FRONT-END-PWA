@@ -1,0 +1,1 @@
+import{r as m}from"./react-BRNvlXxE.js";import{H as o}from"./vendor-tdJu5LBv.js";const s=/^(?:m[oó]dulo|m)\s*0*([1-9])$/i;function e(t){const n=(t!=null?t:"").trim().match(s);return n?Number(n[1]):null}function i(){const{t}=o("common");return m.useCallback(n=>{const u=e(n);return u===null?n!=null?n:"":t("modulos.m".concat(u))},[t])}export{i as u};

@@ -1,0 +1,36 @@
+﻿✓ Lockfile passes supply-chain policies (verified 1d ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+Done in 1.9s using pnpm v11.25.0
+
+Running 1 test using 1 worker
+
+(node:17788) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G023\tc-m08-g023.pw.ts:297:1 › TC-M08-G023 navegador real (CP-01 a CP-06) (14.3s)
+
+
+  1) [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G023\tc-m08-g023.pw.ts:297:1 › TC-M08-G023 navegador real (CP-01 a CP-06) 
+
+    Error: CP-02
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      611 |   // -- 11. Verificacion final
+      612 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+    > 613 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+          |                                                                                                                      ^
+      614 | });
+      615 |
+        at C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo8\RF-106\TC-M08-G023\tc-m08-g023.pw.ts:613:118
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G023\evidencias\prueba_herramienta_v2\normal_1\pw-salida\tc-m08-g023.pw.ts-TC-M08-G023-navegador-real-CP-01-a-CP-06--chromium\error-context.md
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G023\evidencias\prueba_herramienta_v2\normal_1\pw-salida\tc-m08-g023.pw.ts-TC-M08-G023-navegador-real-CP-01-a-CP-06--chromium\error-context.md
+
+  1 failed
+    [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G023\tc-m08-g023.pw.ts:297:1 › TC-M08-G023 navegador real (CP-01 a CP-06) 

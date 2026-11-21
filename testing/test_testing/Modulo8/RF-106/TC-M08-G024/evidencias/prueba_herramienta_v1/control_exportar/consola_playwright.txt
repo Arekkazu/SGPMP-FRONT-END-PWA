@@ -1,0 +1,37 @@
+﻿
+Running 1 test using 1 worker
+
+(node:38680) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › ..\..\.gemini\antigravity\brain\ae34bc1d-8cba-4e7c-8a4f-648b731eabc8\scratch\qa_g024_exportar\control_exportar.pw.ts:505:1 › TC-M08-G024 rendimiento Chromium y WebKit (CP-01 a CP-06) (20.8s)
+
+
+  1) [chromium] › ..\..\.gemini\antigravity\brain\ae34bc1d-8cba-4e7c-8a4f-648b731eabc8\scratch\qa_g024_exportar\control_exportar.pw.ts:505:1 › TC-M08-G024 rendimiento Chromium y WebKit (CP-01 a CP-06) 
+
+    Error: POST /sigab-test/api/reportes
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "POST /sigab-test/api/reportes",
+    + ]
+
+      688 |   );
+      689 |
+    > 690 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+          |                                               ^
+      691 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+      692 | });
+      693 |
+        at C:\Users\Juansegutt\.gemini\antigravity\brain\ae34bc1d-8cba-4e7c-8a4f-648b731eabc8\scratch\qa_g024_exportar\control_exportar.pw.ts:690:47
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G024\evidencias\prueba_herramienta_v1\control_exportar\pw-salida\control_exportar.pw.ts-TC--c70bf-ium-y-WebKit-CP-01-a-CP-06--chromium\error-context.md
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G024\evidencias\prueba_herramienta_v1\control_exportar\pw-salida\control_exportar.pw.ts-TC--c70bf-ium-y-WebKit-CP-01-a-CP-06--chromium\error-context.md
+
+  1 failed
+    [chromium] › ..\..\.gemini\antigravity\brain\ae34bc1d-8cba-4e7c-8a4f-648b731eabc8\scratch\qa_g024_exportar\control_exportar.pw.ts:505:1 › TC-M08-G024 rendimiento Chromium y WebKit (CP-01 a CP-06) 

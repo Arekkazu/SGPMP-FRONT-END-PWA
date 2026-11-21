@@ -1,0 +1,37 @@
+﻿
+Running 1 test using 1 worker
+
+(node:32992) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › ..\..\.gemini\antigravity\brain\ae34bc1d-8cba-4e7c-8a4f-648b731eabc8\scratch\qa_g023_guardia\control_sin_simulacion.pw.ts:296:1 › TC-M08-G023 navegador real (CP-01 a CP-06) (39.4s)
+
+
+  1) [chromium] › ..\..\.gemini\antigravity\brain\ae34bc1d-8cba-4e7c-8a4f-648b731eabc8\scratch\qa_g023_guardia\control_sin_simulacion.pw.ts:296:1 › TC-M08-G023 navegador real (CP-01 a CP-06) 
+
+    Error: POST /sigab-test/api/prediccion/retroalimentacion
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "POST /sigab-test/api/prediccion/retroalimentacion",
+    + ]
+
+      595 |
+      596 |   // -- 11. Verificacion final
+    > 597 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+          |                                               ^
+      598 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+      599 | });
+      600 |
+        at C:\Users\Juansegutt\.gemini\antigravity\brain\ae34bc1d-8cba-4e7c-8a4f-648b731eabc8\scratch\qa_g023_guardia\control_sin_simulacion.pw.ts:597:47
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G023\evidencias\prueba_herramienta_v1\control_sin_simulacion\pw-salida\control_sin_simulacion.pw.-7f16a-vegador-real-CP-01-a-CP-06--chromium\error-context.md
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G023\evidencias\prueba_herramienta_v1\control_sin_simulacion\pw-salida\control_sin_simulacion.pw.-7f16a-vegador-real-CP-01-a-CP-06--chromium\error-context.md
+
+  1 failed
+    [chromium] › ..\..\.gemini\antigravity\brain\ae34bc1d-8cba-4e7c-8a4f-648b731eabc8\scratch\qa_g023_guardia\control_sin_simulacion.pw.ts:296:1 › TC-M08-G023 navegador real (CP-01 a CP-06) 

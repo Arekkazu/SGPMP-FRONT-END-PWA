@@ -1,0 +1,141 @@
+{
+  "tc": "TC-M08-G023",
+  "reintento": 0,
+  "run_id": "prueba-local",
+  "fecha": "2026-11-21T10:20:07.405Z",
+  "ambiente": "http://127.0.0.1:4173/sigab-test/",
+  "summary": {
+    "total": 6,
+    "ok": 5,
+    "falla": 1,
+    "veredicto": "Rechazado"
+  },
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "caso": "TC-M08-058, pendiente de nivel >= 2 dentro de la ventana de RF-72",
+      "esperado": "Al pulsar «Registrar retroalimentación» en la primera predicción pendiente de nivel >= 2 con menos de 89 días, la app va a /prediccion/retroalimentacion?resultado=<id>&activo=885 y abre el formulario «Retroalimentación clínica» de RF-72 con ese id_resultado_inferencia y el activo 885",
+      "fuente": "RF-106 CA-4; Postcondición 2; Proceso 5",
+      "obtenido": "li_pantalla=0 | url=\"/sigab-test/prediccion/retroalimentacion?resultado=aa023001-0000-4000-8000-000000000001&activo=885\" | bandeja={HTTP=200, x-request-id=\"qa-g023-56\", total=2, ventana_dias=90, id_en_items=sí (estado_evaluacion=PENDIENTE, puede_evaluar=true)} | dialogo=sí (title=\"aa023001-0000-4000-8000-000000000001\", linea_activo=\"Activo biológico: QA-G88-266-IND-001\")",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "caso": "TC-M08-058, pendiente de nivel <= 1 dentro de la ventana de RF-72",
+      "esperado": "Al pulsar «Registrar retroalimentación» en la primera predicción pendiente de nivel <= 1 con menos de 89 días, la app va a /prediccion/retroalimentacion?resultado=<id>&activo=885 y abre el formulario «Retroalimentación clínica» de RF-72 con ese id_resultado_inferencia y el activo 885",
+      "fuente": "RF-106 CA-4; Postcondición 2; Proceso 5 («Cada ítem tiene un botón \"Registrar retroalimentación\" que abre el formulario de RF-72 prellenado»)",
+      "obtenido": "li_pantalla=2 | url=\"/sigab-test/prediccion/retroalimentacion?resultado=aa023003-0000-4000-8000-000000000003&activo=885\" | bandeja={HTTP=200, x-request-id=\"qa-g023-61\", total=2, ventana_dias=90, id_en_items=no} | dialogo=no",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-03",
+      "caso": "TC-M08-058, registro CORRECTO (POST simulado)",
+      "esperado": "Con «Correcto» y «Registrar evaluación», el formulario envía un solo POST /prediccion/retroalimentacion con id_resultado_inferencia = el de CP-01, id_activo_biologico = 885 y estado_retroalimentacion = CORRECTO; con la respuesta 201 el formulario se cierra y se muestra «Evaluación registrada»",
+      "fuente": "RF-106 Restricción 3 y CA-4; contrato de POST /prediccion/retroalimentacion (RF-72, Swagger)",
+      "obtenido": "posts=1, body={id_resultado_inferencia=\"aa023001-0000-4000-8000-000000000001\", id_activo_biologico=885, estado_retroalimentacion=\"CORRECTO\"}, dialogo_cerrado=true, aviso=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "caso": "TC-M08-058, fuentes que consulta la vista",
+      "esperado": "Mientras la pantalla es el historial predictivo (carga inicial y vuelta), la app consulta GET /historial-predictivo/885 (>= 2 veces, todas 200) y no hace ninguna petición a /prediccion/inferencias",
+      "fuente": "RF-106 Descripción («RF-106 NUNCA consulta RF-66 directamente»); endpoints de TC-M08-058",
+      "obtenido": "GET /historial-predictivo/885=2 (status=[200, 200]); /prediccion/inferencias en historial=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "caso": "TC-M08-058, la vista es de solo lectura",
+      "esperado": "La vista del historial no tiene controles para registrar ni editar valoraciones (0 role=dialog, 0 role=radiogroup, 0 textarea, 0 botones «Correcto», «Parcial», «Incorrecto», «Sin evento» o «Registrar evaluación»; en la lista de pendientes solo hay botones «Registrar retroalimentación», «Anterior» y «Siguiente»), no envía a la API peticiones distintas de GET (salvo la sesión) y el botón solo navega a RF-72",
+      "fuente": "RF-106 Restricción 3; Descripción («No modifica retroalimentaciones existentes»)",
+      "obtenido": "dialogs=0, radiogroups=0, textareas=0, botones_valoracion=0 [], botones_pend=[Registrar retroalimentación], no_get_historial=0, no_get_clic_cp01=0, no_get_clic_cp02=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "caso": "TC-M08-058, volver a la vista",
+      "esperado": "Al volver (atrás) al historial y elegir otra vez el 885, sale un GET /historial-predictivo/885 nuevo (200) y la vista muestra la TVCO y la lista de pendientes de esa respuesta",
+      "fuente": "RF-106 Postcondición 4 («La tasa de acierto mostrada es consistente con los datos actuales de RF-72»)",
+      "obtenido": "HTTP=200, x-request-id=\"qa-g023-59\", respuesta_tvco=\"100% (1 validada; 5 excluidas: sin retro)\", pantalla_tvco=\"100% (1 validada; 5 excluidas: sin retro)\", li=4/4 (domOk=true), id_CP01_sigue_en_pendientes=true",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "Lectura de código (HEAD 3358b032): ninguna ruta de src/ enlaza a /prediccion/historial-predictivo fuera de PrediccionPage; no hay acceso desde el dashboard de RF-103 (RF-106 Proceso 1; v7 no lo menciona).",
+    "Pendientes con más de 90 días en la lista (con botón presente): 1 [aa023004].",
+    "Ruta tras el registro en RF-72: /sigab-test/prediccion/retroalimentacion?resultado=aa023001-0000-4000-8000-000000000001&activo=885.",
+    "Al volver con atrás: combobox \"Animal o lote\"=\"\", GET /historial-predictivo sin volver a elegir=0.",
+    "Al volver al historial, el id de CP-01 (aa023001) sigue en pendientes (con POST simulado se espera que siga).",
+    "Peticiones a /prediccion/inferencias en otras pantallas: 0. Respuestas clave registradas: 5.",
+    "Despliegue: bundle index-KOocaMGx.js en http://127.0.0.1:4173/sigab-test/."
+  ],
+  "retirados": [
+    {
+      "paso": "TC-M08-058: POST /prediccion/retroalimentacion real responde 201",
+      "motivo": "No se escribe en TEST (decisión de Sebastian, 2026-11-21): tras el registro, el backend revisa la degradación del modelo con una sesión del sistema, fuera del sandbox (retroalimentacion_clinica_router.py:104; tasa_validacion_m04_adapter.py), y puede crear un aviso real tipo 45 para los Administradores. El POST se simula con page.route (CP-03)"
+    },
+    {
+      "paso": "TC-M08-058: al volver, la inferencia sale de pendientes, aparece su check y la TVCO se recalcula",
+      "motivo": "Necesita una escritura real y el historial lee en una sesión aparte que no ve el sandbox (instantanea_reportes.py; historial_predictivo_router.py:59). El cálculo de pendientes y TVCO con datos reales del 885 está verificado en TC-M08-G022 (CP-11 y CP-12)"
+    }
+  ],
+  "precondiciones": [
+    {
+      "nombre": "Credenciales del Veterinario en memoria",
+      "ok": true,
+      "detalle": "QA_VET_EMAIL / QA_VET_PASSWORD presentes"
+    },
+    {
+      "nombre": "Login del Veterinario 97 (una sola vez)",
+      "ok": true,
+      "detalle": "URL tras el login: /sigab-test/dashboard"
+    },
+    {
+      "nombre": "El activo 885 figura entre los animales o lotes del Veterinario",
+      "ok": true,
+      "detalle": "1 opciones"
+    },
+    {
+      "nombre": "GET /historial-predictivo/885 (Lineal) responde 200",
+      "ok": true,
+      "detalle": "HTTP 200"
+    },
+    {
+      "nombre": "Línea base del 885",
+      "ok": true,
+      "detalle": "pendientes=4, alto=aa023001 (nivel=3, fecha=2026-10-27T10:19:48.512Z, edad=25d), bajo=aa023003 (nivel=1, fecha=2026-10-25T10:19:48.512Z, edad=27d)"
+    },
+    {
+      "nombre": "El pendiente de nivel <= 1 de la línea base sigue en la lista",
+      "ok": true,
+      "detalle": "indice=2, id=aa023003"
+    },
+    {
+      "nombre": "El frontend desplegado contiene los textos y ruta de RF-106 / RF-72",
+      "ok": true,
+      "detalle": "bundle: index-KOocaMGx.js; 28 scripts revisados"
+    },
+    {
+      "nombre": "Ninguna escritura no permitida hacia TEST",
+      "ok": true,
+      "detalle": "3 peticiones distintas de GET, todas permitidas"
+    }
+  ],
+  "escrituras": [
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/",
+      "resultado": "al servidor (login 1)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/prediccion/retroalimentacion",
+      "resultado": "simulada con page.route (no llega a TEST)"
+    }
+  ]
+}

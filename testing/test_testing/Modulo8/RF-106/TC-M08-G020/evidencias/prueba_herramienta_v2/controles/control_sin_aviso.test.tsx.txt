@@ -1,0 +1,1002 @@
+// | 2026-11-20 | Juan Sebastian Gutierrez | TC-M08-G020 (TC-M08-051 y 057; RF-106): linea de tiempo, marcadores, hora de Bogota y estados vacios o parciales |
+//
+// Respuestas simuladas con la forma real de consultar_historial_predictivo_use_case.py; reporte JSON propio en STAGING_DIR;
+// cada checkpoint arranca en FALLA "No alcanzado"; obtenido = lo medido del DOM o de la URL real de la petición.
+
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import React from 'react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import i18n from '../../../../../../../../src/shared/i18n';
+import { http } from '../../../../../../../../src/shared/api/http';
+import { AuthContext, type PermisoUsuario } from '../../../../../../../../src/shared/auth/AuthContext';
+import { PrediccionPage } from '../../../../../../../../src/prediction/pages/PrediccionPage';
+
+const TC = 'TC-M08-G020';
+const AQUI = dirname(fileURLToPath(import.meta.url));
+const RAIZ_FRONT = resolve(AQUI, '../../../../../../../..');
+
+// ---------------------------------------------------------------------------------------------------------------
+// Checkpoints (8)
+// ---------------------------------------------------------------------------------------------------------------
+type Estado = 'OK' | 'FALLA';
+interface Checkpoint {
+  paso: string;
+  caso: string;
+  esperado: string;
+  fuente: string;
+  obtenido: string;
+  estado: Estado;
+}
+
+const CPS: Checkpoint[] = [
+  {
+    paso: 'CP-01',
+    caso: '051 Línea por nivel de riesgo (885)',
+    esperado: '7 puntos; ordenados por cx, sus niveles son 0,1,2,3,2,1,0; puntos del mismo nivel tienen el mismo cy (±1 px) y a mayor nivel menor cy (estricto); el eje Y muestra exactamente "Sin riesgo", "Bajo", "Medio", "Alto"',
+    fuente: 'RF-106 Proceso 3 (eje Y: nivel 0-3; línea con el nivel_riesgo)',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-02',
+    caso: '051 Eventos sanitarios (885)',
+    esperado: '2 marcadores de evento con relleno rojo (fill que contiene "--danger-600" o "#dc2626"); posición temporal: para TODOS los marcadores (puntos, eventos y valoraciones), (x − xmin)/(xmax − xmin) = (t − tmin)/(tmax − tmin) con tolerancia 0,01; y el evento 2684 tiene el mismo x que el punto p2 (±1 px)',
+    fuente: 'RF-106 Proceso 3 (rojo sólido); CA-2',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-03',
+    caso: '051 Valoraciones (885)',
+    esperado: '4 marcadores; ordenados por x, sus textos son exactamente ✓, ✗, ◐, ○ (CORRECTO, INCORRECTO, PARCIAL, SIN_EVENTO)',
+    fuente: 'RF-106 Proceso 3',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-04',
+    caso: '051 Hora de Bogotá (885)',
+    esperado: 'en la lista de pendientes, la parte de fecha y hora (texto antes del primer " · ") de p1, p2 y p3 es igual a new Date(iso).toLocaleString(\'es-CO\', { dateStyle: \'short\', timeStyle: \'short\', timeZone: \'America/Bogota\' }) para 2026-10-10T15:00:00Z, 2026-10-11T03:00:00Z y 2026-10-11T05:00:00Z, es decir 10/10 10:00, 10/10 22:00 y 11/10 00:00 en Bogotá. Calcula el esperado con timeZone explícito, no con el formateador de la app',
+    fuente: 'RF-106 Restricción 5a; Proceso 2.1 (medido con el equipo en America/Bogota; decisión de Sebastian 2026-11-20)',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-05',
+    caso: '051 Eje X en el rango seleccionado (885, rango por defecto 2025-11-20 a 2026-11-20)',
+    esperado: 'tomando como dominio el rango elegido en días completos de Bogotá (inicio 2025-11-20T05:00:00Z, fin 2026-11-21T04:59:59.999Z), la posición relativa en el área de trazado (x − x1)/(x2 − x1) del primer marcador (p1, 2026-10-10T15:00:00Z) y del último (valoración de 2026-10-31T12:00:00Z) es (t − inicio)/(fin − inicio) con tolerancia 0,02 (≈ 0,886 y ≈ 0,943; calcula tú el valor exacto)',
+    fuente: 'RF-106 Proceso 3 ("Eje X: tiempo (rango seleccionado)")',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-06',
+    caso: '057 a Sin inferencias (3001)',
+    esperado: 'aparece el aviso informativo con el texto literal del mensaje; no aparece "No se pudo cargar el historial"; existen \'.recharts-xAxis\' y \'.recharts-yAxis\'; 0 puntos de línea; 1 marcador de evento; TVCO "Sin datos suficientes para calcular"; luego, con Desde=2026-01-01, sale una nueva petición con fecha_inicio=2026-01-01 y el aviso sigue visible',
+    fuente: 'RF-106 CA-13; Precondición 3',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-07',
+    caso: '057 b Fuente de eventos no disponible (3002)',
+    esperado: 'aviso "Algunos datos no están disponibles en este momento" cuyo detalle contiene "Eventos sanitarios"; 7 puntos; 4 valoraciones; 0 eventos; sin "No se pudo cargar el historial"',
+    fuente: 'RF-106 RNF-06; CA-13',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+  {
+    paso: 'CP-08',
+    caso: '057 c Fuente de retroalimentación no disponible (3003)',
+    esperado: 'el mismo aviso con "Retroalimentación clínica" en el detalle; 7 puntos; 2 eventos; 0 valoraciones; sin "No se pudo cargar el historial"',
+    fuente: 'RF-106 RNF-06; CA-13',
+    obtenido: 'No alcanzado',
+    estado: 'FALLA',
+  },
+];
+
+const observaciones: string[] = [];
+const precondiciones: Array<{ nombre: string; ok: boolean; detalle: string }> = [];
+
+function anotar(paso: string, ok: boolean, obtenido: string): void {
+  const cp = CPS.find((c) => c.paso === paso);
+  if (!cp) throw new Error(`Checkpoint desconocido ${paso}`);
+  cp.obtenido = obtenido;
+  cp.estado = ok ? 'OK' : 'FALLA';
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Recharts mock (jsdom)
+// ---------------------------------------------------------------------------------------------------------------
+vi.mock('recharts', async () => {
+  const real = await vi.importActual<typeof import('recharts')>('recharts');
+  return {
+    ...real,
+    ResponsiveContainer: ({ children }: { children: React.ReactElement }) =>
+      React.cloneElement(children, { width: 800, height: 320 }),
+  };
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Datos simulados (forma real de consultar_historial_predictivo_use_case.py)
+// ---------------------------------------------------------------------------------------------------------------
+interface MarcadorRaw {
+  tipo: 'PREDICCION' | 'EVENTO_SANITARIO' | 'RETROALIMENTACION';
+  fecha: string;
+  id_resultado_inferencia?: string;
+  id_evento?: number;
+  nivel_riesgo?: number;
+  confianza?: number | null;
+  condicion?: string;
+  modo_sombra?: boolean;
+  descripcion?: string;
+  valoracion?: 'CORRECTO' | 'PARCIAL' | 'INCORRECTO' | 'SIN_EVENTO';
+  veterinario?: string;
+  observaciones?: string | null;
+  tiene_retroalimentacion?: boolean;
+  en_conflicto?: boolean;
+}
+
+const PREDICCIONES_BASE: MarcadorRaw[] = [
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p1', fecha: '2026-10-10T15:00:00Z', nivel_riesgo: 0, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: false, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p2', fecha: '2026-10-11T03:00:00Z', nivel_riesgo: 1, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: false, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p3', fecha: '2026-10-11T05:00:00Z', nivel_riesgo: 2, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: false, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p4', fecha: '2026-10-20T12:00:00Z', nivel_riesgo: 3, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: true, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p5', fecha: '2026-10-22T12:00:00Z', nivel_riesgo: 2, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: true, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p6', fecha: '2026-10-24T12:00:00Z', nivel_riesgo: 1, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: true, en_conflicto: false },
+  { tipo: 'PREDICCION', id_resultado_inferencia: 'p7', fecha: '2026-10-26T12:00:00Z', nivel_riesgo: 0, confianza: 0.8, condicion: 'Mastitis', modo_sombra: false, tiene_retroalimentacion: true, en_conflicto: false },
+];
+
+const EVENTOS_BASE: MarcadorRaw[] = [
+  { tipo: 'EVENTO_SANITARIO', id_evento: 2684, fecha: '2026-10-11T03:00:00Z', descripcion: 'Evento', veterinario: 'Vet QA' },
+  { tipo: 'EVENTO_SANITARIO', id_evento: 2685, fecha: '2026-10-18T12:00:00Z', descripcion: 'Evento', veterinario: 'Vet QA' },
+];
+
+const RETROS_BASE: MarcadorRaw[] = [
+  { tipo: 'RETROALIMENTACION', id_resultado_inferencia: 'p4', valoracion: 'CORRECTO', fecha: '2026-10-28T12:00:00Z', veterinario: 'Vet QA', observaciones: null, en_conflicto: false },
+  { tipo: 'RETROALIMENTACION', id_resultado_inferencia: 'p5', valoracion: 'INCORRECTO', fecha: '2026-10-29T12:00:00Z', veterinario: 'Vet QA', observaciones: null, en_conflicto: false },
+  { tipo: 'RETROALIMENTACION', id_resultado_inferencia: 'p6', valoracion: 'PARCIAL', fecha: '2026-10-30T12:00:00Z', veterinario: 'Vet QA', observaciones: null, en_conflicto: false },
+  { tipo: 'RETROALIMENTACION', id_resultado_inferencia: 'p7', valoracion: 'SIN_EVENTO', fecha: '2026-10-31T12:00:00Z', veterinario: 'Vet QA', observaciones: null, en_conflicto: false },
+];
+
+function pendientesDeBase(preds: MarcadorRaw[]) {
+  const ids = ['p3', 'p2', 'p1'];
+  return {
+    total: 3,
+    pagina: 1,
+    por_pagina: 20,
+    items: ids.map((id) => {
+      const p = preds.find((x) => x.id_resultado_inferencia === id)!;
+      return {
+        id_resultado_inferencia: p.id_resultado_inferencia ?? id,
+        fecha_inferencia: p.fecha,
+        nivel_riesgo: p.nivel_riesgo ?? 0,
+        condicion: p.condicion ?? 'Mastitis',
+      };
+    }),
+  };
+}
+
+const TVCO_BASE = {
+  porcentaje: 25,
+  texto: '25% (4 validadas)',
+  tvco_denominador: 4,
+  tvco_excluidas_conflicto: 0,
+  excluidas_sin_retroalimentacion: 3,
+  tasa_error: 75,
+};
+
+const TVCO_SIN_DATOS = {
+  porcentaje: null,
+  texto: 'Sin datos suficientes para calcular',
+  tvco_denominador: 0,
+  tvco_excluidas_conflicto: 0,
+  excluidas_sin_retroalimentacion: 0,
+  tasa_error: null,
+};
+
+// Texto literal del backend: consultar_historial_predictivo_use_case.py:40
+const MENSAJE_SIN_INFERENCIAS = 'Este animal no tiene predicciones en el rango elegido. Prueba con otro rango de fechas; los eventos sanitarios registrados sí se muestran.';
+
+// ---------------------------------------------------------------------------------------------------------------
+// Red simulada en el cliente http
+// ---------------------------------------------------------------------------------------------------------------
+interface PeticionRegistrada {
+  metodo: string;
+  url: string;
+  uri: string;
+  config: InternalAxiosRequestConfig;
+}
+
+let peticiones: PeticionRegistrada[] = [];
+const adaptadorOriginal = http.defaults.adapter;
+
+function adaptadorSimulado(config: InternalAxiosRequestConfig): Promise<AxiosResponse> {
+  const metodo = (config.method ?? 'get').toUpperCase();
+  const uri = http.getUri(config);
+  peticiones.push({ metodo, url: config.url ?? '', uri, config });
+
+  const url = config.url ?? '';
+
+  // a) Opciones de activo
+  if (url.includes('/reportes/opciones/activo')) {
+    const data = [
+      { valor: 885, etiqueta: 'QA-885 · Bovino' },
+      { valor: 3001, etiqueta: 'QA-3001 · Sin inferencias' },
+      { valor: 3002, etiqueta: 'QA-3002 · Sin eventos' },
+      { valor: 3003, etiqueta: 'QA-3003 · Sin retroalimentacion' },
+      { valor: 3004, etiqueta: 'QA-3004 · Error 500' },
+    ];
+    return Promise.resolve({ data, status: 200, statusText: 'OK', headers: {}, config, request: {} });
+  }
+
+  // b) Historial predictivo por id
+  const matchHp = url.match(/\/historial-predictivo\/(\d+)/);
+  if (matchHp) {
+    const idActivo = Number(matchHp[1]);
+    const queryStr = uri.includes('?') ? uri.slice(uri.indexOf('?') + 1) : '';
+    const params = new URLSearchParams(queryStr);
+
+    const fecha_inicio = params.get('fecha_inicio') ?? '2025-11-20';
+    const fecha_fin = params.get('fecha_fin') ?? '2026-11-20';
+    const modoVis = (params.get('modo_visualizacion') as 'LINEAL' | 'AGRUPADO') || 'LINEAL';
+
+    if (idActivo === 3004) {
+      // código ilustrativo; forma de error_handlers.py; solo para una observación
+      const body500 = {
+        error_code: 'ERROR_INTERNO',
+        message: 'Ocurrió un error interno.',
+        fields: [],
+        timestamp: '2026-11-20T17:00:00Z',
+      };
+      const respuesta500: AxiosResponse = { data: body500, status: 500, statusText: 'Internal Server Error', headers: {}, config, request: {} };
+      return Promise.reject(new AxiosError('Request failed with status code 500', 'ERR_BAD_RESPONSE', config, {}, respuesta500));
+    }
+
+    const activo = {
+      id_activo_biologico: idActivo,
+      identificador: `QA-${idActivo}`,
+      especie: 'Bovino',
+      finca: 'Finca QA 184',
+      estado: 'ACTIVO',
+    };
+
+    if (idActivo === 885) {
+      const preds = PREDICCIONES_BASE.map((p) => ({ ...p }));
+      const dataRespuesta = {
+        activo,
+        rango_fechas_aplicado: { fecha_inicio, fecha_fin },
+        ventana_correspondencia_horas: 12,
+        modo_visualizacion: modoVis,
+        predicciones: preds,
+        eventos_sanitarios: EVENTOS_BASE.map((e) => ({ ...e })),
+        retroalimentaciones: RETROS_BASE.map((r) => ({ ...r })),
+        grupos: [],
+        correspondencias: [],
+        tvco: { ...TVCO_BASE },
+        pendientes: pendientesDeBase(preds),
+        metadatos: {
+          total_inferencias: 7,
+          total_eventos_sanitarios: 2,
+          total_retroalimentaciones: 4,
+          total_pendientes: 3,
+          total_conflictos: 0,
+        },
+        fuentes_no_disponibles: [] as string[],
+        mensaje: null as string | null,
+      };
+      return Promise.resolve({ data: dataRespuesta, status: 200, statusText: 'OK', headers: {}, config, request: {} });
+    }
+
+    if (idActivo === 3001) {
+      const dataRespuesta = {
+        activo,
+        rango_fechas_aplicado: { fecha_inicio, fecha_fin },
+        ventana_correspondencia_horas: 12,
+        modo_visualizacion: modoVis,
+        predicciones: [] as MarcadorRaw[],
+        eventos_sanitarios: [ { ...EVENTOS_BASE[1] } ],
+        retroalimentaciones: [] as MarcadorRaw[],
+        grupos: [],
+        correspondencias: [],
+        tvco: { ...TVCO_SIN_DATOS },
+        pendientes: { total: 0, pagina: 1, por_pagina: 20, items: [] },
+        metadatos: {
+          total_inferencias: 0,
+          total_eventos_sanitarios: 1,
+          total_retroalimentaciones: 0,
+          total_pendientes: 0,
+          total_conflictos: 0,
+        },
+        fuentes_no_disponibles: [] as string[],
+        // texto literal del backend, consultar_historial_predictivo_use_case.py:40
+        mensaje: MENSAJE_SIN_INFERENCIAS,
+      };
+      return Promise.resolve({ data: dataRespuesta, status: 200, statusText: 'OK', headers: {}, config, request: {} });
+    }
+
+    if (idActivo === 3002) {
+      const preds = PREDICCIONES_BASE.map((p) => ({ ...p }));
+      const dataRespuesta = {
+        activo,
+        rango_fechas_aplicado: { fecha_inicio, fecha_fin },
+        ventana_correspondencia_horas: 12,
+        modo_visualizacion: modoVis,
+        predicciones: preds,
+        eventos_sanitarios: [] as MarcadorRaw[],
+        retroalimentaciones: RETROS_BASE.map((r) => ({ ...r })),
+        grupos: [],
+        correspondencias: [],
+        tvco: { ...TVCO_BASE },
+        pendientes: pendientesDeBase(preds),
+        metadatos: {
+          total_inferencias: 7,
+          total_eventos_sanitarios: 0,
+          total_retroalimentaciones: 4,
+          total_pendientes: 3,
+          total_conflictos: 0,
+        },
+        fuentes_no_disponibles: [],
+        mensaje: null as string | null,
+      };
+      return Promise.resolve({ data: dataRespuesta, status: 200, statusText: 'OK', headers: {}, config, request: {} });
+    }
+
+    if (idActivo === 3003) {
+      const preds = PREDICCIONES_BASE.map((p) => ({ ...p, tiene_retroalimentacion: false }));
+      const dataRespuesta = {
+        activo,
+        rango_fechas_aplicado: { fecha_inicio, fecha_fin },
+        ventana_correspondencia_horas: 12,
+        modo_visualizacion: modoVis,
+        predicciones: preds,
+        eventos_sanitarios: EVENTOS_BASE.map((e) => ({ ...e })),
+        retroalimentaciones: [] as MarcadorRaw[],
+        grupos: [],
+        correspondencias: [],
+        tvco: { ...TVCO_SIN_DATOS },
+        pendientes: pendientesDeBase(preds),
+        metadatos: {
+          total_inferencias: 7,
+          total_eventos_sanitarios: 2,
+          total_retroalimentaciones: 0,
+          total_pendientes: 3,
+          total_conflictos: 0,
+        },
+        fuentes_no_disponibles: ['Retroalimentación clínica'],
+        mensaje: null as string | null,
+      };
+      return Promise.resolve({ data: dataRespuesta, status: 200, statusText: 'OK', headers: {}, config, request: {} });
+    }
+  }
+
+  // c) Cualquier otra petición -> 404
+  const body404 = {
+    error_code: 'RUTA_NO_SIMULADA',
+    message: `Ruta no simulada: ${metodo} ${url}`,
+    fields: [],
+    timestamp: '2026-11-20T17:00:00Z',
+  };
+  const respuesta404: AxiosResponse = { data: body404, status: 404, statusText: 'Not Found', headers: {}, config, request: {} };
+  return Promise.reject(new AxiosError('Request failed with status code 404', 'ERR_BAD_REQUEST', config, {}, respuesta404));
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Autenticación y permisos
+// ---------------------------------------------------------------------------------------------------------------
+const PERMISOS_VET: PermisoUsuario[] = [
+  { id_recurso: 9106, nombre_recurso: 'historial_clinico_predictivo', id_accion: 2 },
+  { id_recurso: 42, nombre_recurso: 'historial_diagnostico', id_accion: 2 },
+  { id_recurso: 45, nombre_recurso: 'retroalimentacion_clinica', id_accion: 2 },
+];
+
+function crearAuth(rol: 'VETERINARIO' | 'ADMINISTRADOR' | 'PRODUCTOR', permisos: PermisoUsuario[]) {
+  return {
+    token: 'token-qa',
+    claims: null,
+    userInfo: {
+      id_usuario: 97,
+      nombre: 'Usuario',
+      apellidos: 'QA',
+      correo_electronico: `${rol.toLowerCase()}@sgpmp.test`,
+      nombre_rol: rol,
+      estado_cuenta: 'ACTIVA',
+    },
+    permisos,
+    perfilIncompleto: false,
+    isBootstrapping: false,
+    errorRestaurandoSesion: false,
+    reintentarRestaurarSesion: () => {},
+    sesionOffline: false,
+    permisosActualizadosEn: null,
+    setSession: () => {},
+    clearSession: () => {},
+    refreshUserInfo: async () => {},
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Utilidades de interacción y lectura de la gráfica en DOM
+// ---------------------------------------------------------------------------------------------------------------
+function contarPuntosLinea(): number {
+  return document.querySelectorAll('.recharts-line-dots circle').length;
+}
+
+function contarMarcadoresEvento(): number {
+  return document.querySelectorAll('.recharts-scatter-symbol path').length;
+}
+
+function contarMarcadoresValoracion(): number {
+  return document.querySelectorAll('.recharts-scatter-symbol text').length;
+}
+
+function leerPuntosLinea(): Array<{ cx: number; cy: number }> {
+  return Array.from(document.querySelectorAll('.recharts-line-dots circle')).map((el) => ({
+    cx: Number(el.getAttribute('cx')),
+    cy: Number(el.getAttribute('cy')),
+  }));
+}
+
+function leerMarcadoresEvento(): Array<{ x: number; y: number; fill: string }> {
+  return Array.from(document.querySelectorAll('.recharts-scatter-symbol path')).map((el) => {
+    const cxAttr = el.getAttribute('cx');
+    const cyAttr = el.getAttribute('cy');
+    let x = Number.NaN;
+    let y = Number.NaN;
+    if (cxAttr !== null && cyAttr !== null) {
+      x = Number(cxAttr);
+      y = Number(cyAttr);
+    } else {
+      const tr = el.getAttribute('transform') ?? el.parentElement?.getAttribute('transform') ?? '';
+      const m = tr.match(/translate\(\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?|NaN)\s*(?:,\s*|\s+)([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?|NaN)\s*\)/i);
+      if (m) {
+        x = Number(m[1]);
+        y = Number(m[2]);
+      } else {
+        const d = el.getAttribute('d') ?? '';
+        const nums = Array.from(d.matchAll(/[ML]\s*([+-]?\d+(?:\.\d+)?)\s*,?\s*([+-]?\d+(?:\.\d+)?)/gi));
+        if (nums.length > 0) {
+          const xs = nums.map((n) => Number(n[1]));
+          const ys = nums.map((n) => Number(n[2]));
+          x = (Math.min(...xs) + Math.max(...xs)) / 2;
+          y = (Math.min(...ys) + Math.max(...ys)) / 2;
+        }
+      }
+    }
+    const fill = el.getAttribute('fill') ?? el.parentElement?.getAttribute('fill') ?? el.closest('.recharts-scatter')?.getAttribute('fill') ?? '';
+    return { x, y, fill };
+  });
+}
+
+function leerMarcadoresValoracion(): Array<{ x: number; y: number; texto: string }> {
+  return Array.from(document.querySelectorAll('.recharts-scatter-symbol text')).map((el) => ({
+    x: Number(el.getAttribute('x')),
+    y: Number(el.getAttribute('y')),
+    texto: (el.textContent ?? '').trim(),
+  }));
+}
+
+function leerEtiquetasEjeY(): string[] {
+  return Array.from(document.querySelectorAll('.recharts-yAxis-tick-labels .recharts-cartesian-axis-tick-value')).map((el) =>
+    (el.textContent ?? '').trim(),
+  );
+}
+
+function leerEtiquetasEjeX(): string[] {
+  return Array.from(document.querySelectorAll('.recharts-xAxis-tick-labels .recharts-cartesian-axis-tick-value')).map((el) =>
+    (el.textContent ?? '').trim(),
+  );
+}
+
+function leerExtremosEjeX(): { x1: number; x2: number } {
+  const line = document.querySelector('.recharts-xAxis line.recharts-cartesian-axis-line');
+  return {
+    x1: line ? Number(line.getAttribute('x1')) : Number.NaN,
+    x2: line ? Number(line.getAttribute('x2')) : Number.NaN,
+  };
+}
+
+/** Texto de la TVCO tal como se ve (la tarjeta pone el valor justo despues de la etiqueta). */
+function leerTvco(): string {
+  const etiqueta = screen.queryByText('Tasa de validación clínica');
+  return etiqueta?.nextElementSibling?.textContent ?? '(no visible)';
+}
+
+/** Firma de lo que hay en pantalla; no depende de ningun esperado. */
+function firma(): string {
+  return [contarPuntosLinea(), contarMarcadoresEvento(), contarMarcadoresValoracion(), leerTvco(),
+    screen.queryByText('No se pudo cargar el historial') !== null].join('|');
+}
+
+/**
+ * Espera a que termine la carga y a que la grafica quede quieta: la misma firma en dos lecturas seguidas
+ * separadas 50 ms (recharts puede redibujar despues de que desaparece "Cargando historial...").
+ */
+async function esperarEstable(): Promise<void> {
+  await waitFor(() => expect(screen.queryByText('Cargando historial...')).toBeNull(), { timeout: 3000 });
+  let anterior = '';
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 50));
+    const actual = firma();
+    if (actual === anterior) return;
+    anterior = actual;
+  }
+}
+
+function montar(rol: 'VETERINARIO' | 'ADMINISTRADOR' | 'PRODUCTOR' = 'VETERINARIO', permisos = PERMISOS_VET) {
+  const auth = crearAuth(rol, permisos);
+  return render(
+    <AuthContext.Provider value={auth}>
+      <MemoryRouter initialEntries={['/prediccion/historial-predictivo']}>
+        <PrediccionPage />
+      </MemoryRouter>
+    </AuthContext.Provider>,
+  );
+}
+
+async function seleccionarActivo(etiqueta: string): Promise<void> {
+  const combo = await screen.findByRole('combobox', { name: /Animal o lote/ });
+  await waitFor(() => expect(peticiones.some((p) => p.url.includes('/reportes/opciones/activo'))).toBe(true));
+  await new Promise((r) => setTimeout(r, 0));
+  fireEvent.change(combo, { target: { value: etiqueta } });
+  await esperarEstable();
+}
+
+async function intentarSeleccionar(etiqueta: string): Promise<string> {
+  try {
+    await seleccionarActivo(etiqueta);
+    return '';
+  } catch (e) {
+    return String((e as Error)?.message ?? e).split('\n')[0].slice(0, 160);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Ciclo de vida
+// ---------------------------------------------------------------------------------------------------------------
+beforeAll(async () => {
+  await i18n.changeLanguage('es-CO');
+
+  // Precondiciones literales (2.3)
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  precondiciones.push({
+    nombre: 'Zona horaria del proceso es America/Bogota',
+    ok: tz === 'America/Bogota',
+    detalle: `timeZone=${tz}`,
+  });
+
+  const predPage = readFileSync(join(RAIZ_FRONT, 'src/prediction/pages/PrediccionPage.tsx'), 'utf8');
+  const prec2 = "permisoNombre: ['historial_clinico_predictivo', ACCION_R]";
+  precondiciones.push({
+    nombre: 'PrediccionPage.tsx contiene permisoNombre',
+    ok: predPage.includes(prec2),
+    detalle: prec2,
+  });
+
+  const histView = readFileSync(join(RAIZ_FRONT, 'src/prediction/pages/HistorialPredictivoView.tsx'), 'utf8');
+  const prec3 = '<span>{formatearFechaHora(p.fecha_inferencia)} · {etiquetaNivel(p.nivel_riesgo)} · {p.condicion}</span>';
+  precondiciones.push({
+    nombre: 'HistorialPredictivoView.tsx contiene formato de item pendiente',
+    ok: histView.includes(prec3),
+    detalle: prec3,
+  });
+
+  const prec4 = '{datos.mensaje && <Alert variant="info" title={datos.mensaje} />}';
+  precondiciones.push({
+    nombre: 'HistorialPredictivoView.tsx contiene Alert de mensaje informativo',
+    ok: histView.includes(prec4),
+    detalle: prec4,
+  });
+});
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-11-20T17:00:00Z'));
+  peticiones = [];
+  http.defaults.adapter = adaptadorSimulado;
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+  http.defaults.adapter = adaptadorOriginal;
+});
+
+afterAll(() => {
+  const fallidas = precondiciones.filter((p) => !p.ok).map((p) => p.nombre);
+  if (fallidas.length > 0 || precondiciones.length === 0) {
+    for (const c of CPS) {
+      c.obtenido = `Precondición no cumplida (${fallidas.join('; ') || 'sin precondiciones evaluadas'}); medido: ${c.obtenido}`;
+      c.estado = 'FALLA';
+    }
+  }
+  const ok = CPS.filter((c) => c.estado === 'OK').length;
+  const falla = CPS.length - ok;
+
+  const reporte = {
+    tc: TC,
+    reintento: Number(process.env.REINTENTO ?? '0'),
+    run_id: process.env.RUN_ID ?? '',
+    fecha: new Date().toISOString(),
+    summary: { total: CPS.length, ok, falla, veredicto: falla === 0 ? 'Aprobado' : 'Rechazado' },
+    precondiciones,
+    checkpoints: CPS,
+    observaciones,
+    retirados: [] as Array<{ paso: string; motivo: string }>,
+  };
+
+  const dir = process.env.STAGING_DIR;
+  if (!dir) return;
+  mkdirSync(dir, { recursive: true });
+  const n = reporte.reintento;
+  writeFileSync(join(dir, `resultado_${TC}${n > 0 ? `_reintento${n}` : ''}.json`), `${JSON.stringify(reporte, null, 2)}\n`, 'utf8');
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Suites de pruebas
+// ---------------------------------------------------------------------------------------------------------------
+describe('TC-M08-051 Línea de tiempo, marcadores y hora de Bogotá (RF-106 Proceso 3 y Restricción 5a)', () => {
+  it('CP-01 Línea por nivel de riesgo (885)', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    const errSel = await intentarSeleccionar('QA-885 · Bovino');
+
+    const pts = leerPuntosLinea().sort((a, b) => a.cx - b.cx);
+    const etiquetasY = leerEtiquetasEjeY();
+
+    // Medición OBS-1 y OBS-4 en 885
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const reqHp = peticiones.filter((p) => p.url.includes('/historial-predictivo/885')).pop();
+    const hdrTz = (reqHp?.config.headers as Record<string, unknown> | undefined)?.['X-Zona-Horaria'] ?? '(no enviado)';
+    const ejUtc = new Date('2026-10-11T03:00:00Z').toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short', timeZone: 'UTC' });
+    const ejBog = new Date('2026-10-11T03:00:00Z').toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Bogota' });
+    observaciones.push(
+      `OBS-1: zona del proceso=${tz}; header X-Zona-Horaria enviado=${String(hdrTz)}; formatearFechaHora usa toLocaleString sin timeZone (src/shared/i18n/formato.ts:49): 2026-10-11T03:00:00Z en America/Bogota="${ejBog}", en UTC="${ejUtc}". Decisión de Sebastian 2026-11-20: se acepta como lo maneja la app; para los líderes.`,
+    );
+    const ticksX = leerEtiquetasEjeX();
+    observaciones.push(`OBS-4: marcas del eje X en 885 (${ticksX.length}): [${ticksX.map((t) => `"${t}"`).join(', ')}]`);
+
+    // Niveles esperados según orden temporal de p1..p7: 0, 1, 2, 3, 2, 1, 0
+    // Deducción de niveles a partir de cy:
+    // Puntos de igual nivel esperado: (0,6)->n0, (1,5)->n1, (2,4)->n2, (3)->n3
+    const n7 = pts.length === 7;
+    const cys = pts.map((p) => Number(p.cy.toFixed(2)));
+
+    // Mapear los cy únicos ordenados de mayor cy (menor nivel) a menor cy (mayor nivel)
+    const nivelesEsperados = [0, 1, 2, 3, 2, 1, 0];
+    let mismoNivelMismoCy = false;
+    let mayorNivelMenorCy = false;
+    let nivelesDeducidos: number[] = [];
+
+    if (n7) {
+      const cyN0a = pts[0].cy;
+      const cyN0b = pts[6].cy;
+      const cyN1a = pts[1].cy;
+      const cyN1b = pts[5].cy;
+      const cyN2a = pts[2].cy;
+      const cyN2b = pts[4].cy;
+      const cyN3 = pts[3].cy;
+
+      mismoNivelMismoCy =
+        Math.abs(cyN0a - cyN0b) <= 1 &&
+        Math.abs(cyN1a - cyN1b) <= 1 &&
+        Math.abs(cyN2a - cyN2b) <= 1;
+
+      const cy0 = (cyN0a + cyN0b) / 2;
+      const cy1 = (cyN1a + cyN1b) / 2;
+      const cy2 = (cyN2a + cyN2b) / 2;
+      const cy3 = cyN3;
+
+      mayorNivelMenorCy = cy3 < cy2 && cy2 < cy1 && cy1 < cy0;
+
+      // Deducir el nivel de cada punto comparando su cy contra los 4 centros o niveles únicos
+      const paleta = [
+        { nivel: 0, cy: cy0 },
+        { nivel: 1, cy: cy1 },
+        { nivel: 2, cy: cy2 },
+        { nivel: 3, cy: cy3 },
+      ];
+      nivelesDeducidos = pts.map((p) => {
+        if (!mayorNivelMenorCy) {
+          // Si todos tienen el mismo cy (por ej. control niveles=0), devolver nivel 0 si coincide con el fondo
+          return Math.abs(p.cy - cy0) <= 1 ? 0 : -1;
+        }
+        const match = paleta.find((pal) => Math.abs(p.cy - pal.cy) <= 1);
+        return match ? match.nivel : -1;
+      });
+    }
+
+    const nivelesOk =
+      nivelesDeducidos.length === 7 &&
+      nivelesDeducidos.every((n, i) => n === nivelesEsperados[i]);
+
+    const ejeYEsperado = ['Sin riesgo', 'Bajo', 'Medio', 'Alto'];
+    const ejeYOk =
+      etiquetasY.length === 4 &&
+      etiquetasY.every((t, i) => t === ejeYEsperado[i]);
+
+    const ok =
+      errSel === '' &&
+      n7 &&
+      nivelesOk &&
+      mismoNivelMismoCy &&
+      mayorNivelMenorCy &&
+      ejeYOk;
+
+    const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (${errSel})`}; puntos=${pts.length}; cy_por_x=[${cys.join(', ')}]; niveles_deducidos=[${nivelesDeducidos.join(',')}]; mismo_nivel_mismo_cy=${mismoNivelMismoCy}; mayor_nivel_menor_cy=${mayorNivelMenorCy}; eje_y=[${etiquetasY.map((e) => `"${e}"`).join(', ')}]`;
+    anotar('CP-01', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-02 Eventos sanitarios (885)', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    const errSel = await intentarSeleccionar('QA-885 · Bovino');
+
+    const pts = leerPuntosLinea().sort((a, b) => a.cx - b.cx);
+    const evs = leerMarcadoresEvento().sort((a, b) => a.x - b.x);
+    const rets = leerMarcadoresValoracion().sort((a, b) => a.x - b.x);
+
+    const nEventosOk = evs.length === 2;
+    const rojoOk =
+      evs.length > 0 &&
+      evs.every((e) => e.fill.includes('--danger-600') || e.fill.toLowerCase().includes('#dc2626'));
+
+    // Tiempos reales de la respuesta recibida o del conjunto 885
+    const tPreds = PREDICCIONES_BASE.map((p) => new Date(p.fecha).getTime()).sort((a, b) => a - b);
+    const tEvs = EVENTOS_BASE.map((e) => new Date(e.fecha).getTime()).sort((a, b) => a - b);
+    const tRets = RETROS_BASE.map((r) => new Date(r.fecha).getTime()).sort((a, b) => a - b);
+
+    const todosX = [...pts.map((p) => p.cx), ...evs.map((e) => e.x), ...rets.map((r) => r.x)];
+    const todosT = [...tPreds, ...tEvs, ...tRets];
+
+    const xmin = Math.min(...todosX);
+    const xmax = Math.max(...todosX);
+    const tmin = Math.min(...todosT);
+    const tmax = Math.max(...todosT);
+
+    let maxErrRel = Number.POSITIVE_INFINITY;
+    let conteosCoinciden = pts.length === tPreds.length && evs.length === tEvs.length && rets.length === tRets.length;
+
+    if (conteosCoinciden && xmax > xmin && tmax > tmin) {
+      const pares: Array<{ x: number; t: number }> = [
+        ...pts.map((p, i) => ({ x: p.cx, t: tPreds[i] })),
+        ...evs.map((e, i) => ({ x: e.x, t: tEvs[i] })),
+        ...rets.map((r, i) => ({ x: r.x, t: tRets[i] })),
+      ];
+      maxErrRel = Math.max(
+        ...pares.map(({ x, t }) => Math.abs((x - xmin) / (xmax - xmin) - (t - tmin) / (tmax - tmin))),
+      );
+    }
+
+    const posRelOk = conteosCoinciden && maxErrRel <= 0.01;
+
+    // Evento 2684 (primer evento en BASE, 2026-10-11T03:00:00Z) vs p2 (segundo punto en BASE, 2026-10-11T03:00:00Z)
+    const xEv2684 = evs[0]?.x ?? Number.NaN;
+    const xP2 = pts[1]?.cx ?? Number.NaN;
+    const diffEv2684P2 = Math.abs(xEv2684 - xP2);
+    const mismoXP2Ok = Number.isFinite(diffEv2684P2) && diffEv2684P2 <= 1;
+
+    const ok = errSel === '' && nEventosOk && rojoOk && posRelOk && mismoXP2Ok;
+    const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (${errSel})`}; eventos=${evs.length}; fills=[${evs.map((e) => `"${e.fill}"`).join(', ')}]; max_error_pos_rel=${Number.isFinite(maxErrRel) ? maxErrRel.toFixed(6) : 'N/A'}; x_ev2684=${Number.isFinite(xEv2684) ? xEv2684.toFixed(2) : 'NaN'}, x_p2=${Number.isFinite(xP2) ? xP2.toFixed(2) : 'NaN'} (diff=${Number.isFinite(diffEv2684P2) ? diffEv2684P2.toFixed(2) : 'NaN'} px)`;
+    anotar('CP-02', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-03 Valoraciones (885)', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    const errSel = await intentarSeleccionar('QA-885 · Bovino');
+
+    const rets = leerMarcadoresValoracion().sort((a, b) => a.x - b.x);
+    const textos = rets.map((r) => r.texto);
+    const esperados = ['✓', '✗', '◐', '○'];
+
+    const ok =
+      errSel === '' &&
+      rets.length === 4 &&
+      textos.every((t, i) => t === esperados[i]);
+
+    const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (${errSel})`}; valoraciones=${rets.length}; textos_por_x=[${textos.map((t) => `"${t}"`).join(', ')}]`;
+    anotar('CP-03', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-04 Hora de Bogotá (885)', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    const errSel = await intentarSeleccionar('QA-885 · Bovino');
+
+    const fmtBogota = (iso: string) =>
+      new Date(iso).toLocaleString('es-CO', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+        timeZone: 'America/Bogota',
+      });
+
+    // En pendientes.items el orden es p3 (2026-10-11T05:00:00Z), p2 (2026-10-11T03:00:00Z), p1 (2026-10-10T15:00:00Z)
+    const espP1 = fmtBogota('2026-10-10T15:00:00Z');
+    const espP2 = fmtBogota('2026-10-11T03:00:00Z');
+    const espP3 = fmtBogota('2026-10-11T05:00:00Z');
+
+    const itemsDom = Array.from(document.querySelectorAll('li span'))
+      .filter((el) => el.closest('li')?.getAttribute('role') !== 'option')
+      .map((el) => (el.textContent ?? '').trim())
+      .filter((t) => t.includes(' · '));
+
+    const partesFechaHora = itemsDom.map((t) => t.split(' · ')[0]);
+    // itemsDom viene en orden de pendientes.items: [p3, p2, p1]
+    const medP3 = partesFechaHora[0] ?? '(no visible)';
+    const medP2 = partesFechaHora[1] ?? '(no visible)';
+    const medP1 = partesFechaHora[2] ?? '(no visible)';
+
+    const ok =
+      errSel === '' &&
+      partesFechaHora.length === 3 &&
+      medP1 === espP1 &&
+      medP2 === espP2 &&
+      medP3 === espP3;
+
+    const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (${errSel})`}; pendientes_medidos={p1: "${medP1}", p2: "${medP2}", p3: "${medP3}"}; esperados_bogota={p1: "${espP1}", p2: "${espP2}", p3: "${espP3}"}`;
+    anotar('CP-04', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-05 Eje X en el rango seleccionado (885, rango por defecto 2025-11-20 a 2026-11-20)', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    const errSel = await intentarSeleccionar('QA-885 · Bovino');
+
+    const { x1, x2 } = leerExtremosEjeX();
+    const pts = leerPuntosLinea().sort((a, b) => a.cx - b.cx);
+    const rets = leerMarcadoresValoracion().sort((a, b) => a.x - b.x);
+
+    const xP1 = pts[0]?.cx ?? Number.NaN;
+    const xUltRetro = rets[rets.length - 1]?.x ?? Number.NaN;
+
+    const inicioRango = new Date('2025-11-20T05:00:00Z').getTime();
+    const finRango = new Date('2026-11-21T04:59:59.999Z').getTime();
+    const tP1 = new Date('2026-10-10T15:00:00Z').getTime();
+    const tUltRetro = new Date('2026-10-31T12:00:00Z').getTime();
+
+    const espRelP1 = (tP1 - inicioRango) / (finRango - inicioRango);
+    const espRelUlt = (tUltRetro - inicioRango) / (finRango - inicioRango);
+
+    const medRelP1 = x2 > x1 ? (xP1 - x1) / (x2 - x1) : Number.NaN;
+    const medRelUlt = x2 > x1 ? (xUltRetro - x1) / (x2 - x1) : Number.NaN;
+
+    const okP1 = Number.isFinite(medRelP1) && Math.abs(medRelP1 - espRelP1) <= 0.02;
+    const okUlt = Number.isFinite(medRelUlt) && Math.abs(medRelUlt - espRelUlt) <= 0.02;
+
+    const ok = errSel === '' && okP1 && okUlt;
+    const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (${errSel})`}; ejeX=[x1=${x1}, x2=${x2}]; p1: x=${Number.isFinite(xP1) ? xP1.toFixed(2) : 'NaN'}, pos_rel_medida=${Number.isFinite(medRelP1) ? medRelP1.toFixed(4) : 'NaN'} (esperada=${espRelP1.toFixed(4)}); ultimo_marcador: x=${Number.isFinite(xUltRetro) ? xUltRetro.toFixed(2) : 'NaN'}, pos_rel_medida=${Number.isFinite(medRelUlt) ? medRelUlt.toFixed(4) : 'NaN'} (esperada=${espRelUlt.toFixed(4)})`;
+    anotar('CP-05', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+});
+
+describe('TC-M08-057 Estados vacíos o parciales del historial predictivo (RF-106 CA-13 y RNF-06)', () => {
+  it('CP-06 057 a Sin inferencias (3001)', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    const errSel = await intentarSeleccionar('QA-3001 · Sin inferencias');
+
+    const avisoVisibleAntes = screen.queryByText(MENSAJE_SIN_INFERENCIAS) !== null;
+    const sinErrorAntes = screen.queryByText('No se pudo cargar el historial') === null;
+    const existeXAxis = document.querySelector('.recharts-xAxis') !== null;
+    const existeYAxis = document.querySelector('.recharts-yAxis') !== null;
+    const puntosAntes = contarPuntosLinea();
+    const evsAntes = leerMarcadoresEvento();
+    const tvcoAntes = leerTvco();
+
+    // Medición OBS-5: en 3001 (un solo marcador), x del marcador de evento y si es un número finito
+    const xUnicoEvento = evsAntes[0]?.x ?? Number.NaN;
+    observaciones.push(
+      `OBS-5: en 3001 (un solo marcador de evento), x=${String(xUnicoEvento)}, Number.isFinite(x)=${Number.isFinite(xUnicoEvento)}`,
+    );
+
+    // Cambiar Desde=2026-01-01
+    const inputDesde = document.getElementById('hp-desde') as HTMLInputElement | null;
+    if (inputDesde) {
+      fireEvent.change(inputDesde, { target: { value: '2026-01-01' } });
+      await esperarEstable();
+    }
+
+    const ultima = peticiones.filter((p) => p.url.includes('/historial-predictivo/3001')).pop();
+    const query = new URLSearchParams(ultima?.uri.includes('?') ? ultima.uri.slice(ultima.uri.indexOf('?') + 1) : '');
+    const reqInicio = query.get('fecha_inicio');
+    const avisoVisibleDespues = screen.queryByText(MENSAJE_SIN_INFERENCIAS) !== null;
+
+    const ok =
+      errSel === '' &&
+      avisoVisibleAntes &&
+      sinErrorAntes &&
+      existeXAxis &&
+      existeYAxis &&
+      puntosAntes === 0 &&
+      evsAntes.length === 1 &&
+      tvcoAntes === 'Sin datos suficientes para calcular' &&
+      reqInicio === '2026-01-01' &&
+      avisoVisibleDespues;
+
+    const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (${errSel})`}; aviso_mensaje=${avisoVisibleAntes}; sin_error=${sinErrorAntes}; xAxis=${existeXAxis}; yAxis=${existeYAxis}; puntos=${puntosAntes}; eventos=${evsAntes.length}; tvco="${tvcoAntes}"; tras Desde=2026-01-01: peticion_fecha_inicio=${reqInicio}, aviso_sigue_visible=${avisoVisibleDespues}`;
+    anotar('CP-06', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-07 057 b Fuente de eventos no disponible (3002)', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    const errSel = await intentarSeleccionar('QA-3002 · Sin eventos');
+
+    const tituloAviso = 'Algunos datos no están disponibles en este momento';
+    const nodoTitulo = screen.queryByText(tituloAviso);
+    const avisoVisible = nodoTitulo !== null;
+    const alertaContenedor = nodoTitulo?.closest('[role="alert"], [role="status"]') ?? nodoTitulo?.parentElement?.parentElement;
+    const textoAlerta = alertaContenedor?.textContent ?? '';
+    const detalleContieneEventos = textoAlerta.includes('Eventos sanitarios');
+
+    // Medición OBS-2
+    observaciones.push(
+      `OBS-2: textos reales frente al CU04: en 3001 se muestra "${MENSAJE_SIN_INFERENCIAS}" (CU04: "No se registran inferencias predictivas para este activo en el periodo seleccionado"); en 3002 se muestra título="${nodoTitulo?.textContent ?? '(no visible)'}" y detalle="Eventos sanitarios" (CU04: "Datos de eventos/retroalimentación temporalmente no disponibles").`,
+    );
+
+    const puntos = contarPuntosLinea();
+    const valoraciones = contarMarcadoresValoracion();
+    const eventos = contarMarcadoresEvento();
+    const sinError = screen.queryByText('No se pudo cargar el historial') === null;
+
+    const ok =
+      errSel === '' &&
+      avisoVisible &&
+      detalleContieneEventos &&
+      puntos === 7 &&
+      valoraciones === 4 &&
+      eventos === 0 &&
+      sinError;
+
+    const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (${errSel})`}; aviso_parcial=${avisoVisible}; detalle_eventos=${detalleContieneEventos} (texto="${textoAlerta}"); puntos=${puntos}; valoraciones=${valoraciones}; eventos=${eventos}; sin_error=${sinError}`;
+    anotar('CP-07', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-08 057 c Fuente de retroalimentación no disponible (3003)', async () => {
+    montar('VETERINARIO', PERMISOS_VET);
+    const errSel = await intentarSeleccionar('QA-3003 · Sin retroalimentacion');
+
+    const tituloAviso = 'Algunos datos no están disponibles en este momento';
+    const nodoTitulo = screen.queryByText(tituloAviso);
+    const avisoVisible = nodoTitulo !== null;
+    const alertaContenedor = nodoTitulo?.closest('[role="alert"], [role="status"]') ?? nodoTitulo?.parentElement?.parentElement;
+    const textoAlerta = alertaContenedor?.textContent ?? '';
+    const detalleContieneRetro = textoAlerta.includes('Retroalimentación clínica');
+
+    const puntos = contarPuntosLinea();
+    const eventos = contarMarcadoresEvento();
+    const valoraciones = contarMarcadoresValoracion();
+    const sinError = screen.queryByText('No se pudo cargar el historial') === null;
+
+    const ok =
+      errSel === '' &&
+      avisoVisible &&
+      detalleContieneRetro &&
+      puntos === 7 &&
+      eventos === 2 &&
+      valoraciones === 0 &&
+      sinError;
+
+    const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (${errSel})`}; aviso_parcial=${avisoVisible}; detalle_retro=${detalleContieneRetro} (texto="${textoAlerta}"); puntos=${puntos}; eventos=${eventos}; valoraciones=${valoraciones}; sin_error=${sinError}`;
+    anotar('CP-08', ok, obtenido);
+
+    // Medición OBS-3: con 3004 (500): título y texto de lo que muestra la vista
+    await intentarSeleccionar('QA-3004 · Error 500');
+    const nodoErr500 = screen.queryByText('No se pudo cargar el historial');
+    const contErr500 = nodoErr500?.closest('[role="alert"], [role="status"]') ?? nodoErr500?.parentElement?.parentElement;
+    const descErr500 = nodoErr500?.nextElementSibling?.textContent ?? contErr500?.textContent ?? '(no visible)';
+    observaciones.push(
+      `OBS-3: con 3004 (HTTP 500 ERROR_INTERNO): título="${nodoErr500?.textContent ?? '(no visible)'}", detalle="${descErr500}"`,
+    );
+
+    expect(ok, obtenido).toBe(true);
+  });
+});

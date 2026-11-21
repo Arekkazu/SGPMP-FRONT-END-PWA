@@ -1,0 +1,106 @@
+{
+  "tc": "TC-M08-G022",
+  "parte": "playwright",
+  "reintento": 0,
+  "run_id": "qa-m08-g022-20261120-223000",
+  "fecha": "2026-11-21T03:30:32.131Z",
+  "ambiente": "https://api.inmero.co/sigab-test/",
+  "summary": {
+    "total": 4,
+    "ok": 0,
+    "falla": 4,
+    "veredicto": "Rechazado"
+  },
+  "precondiciones": [
+    {
+      "nombre": "Credenciales del Veterinario en memoria",
+      "ok": true,
+      "detalle": "QA_VET_EMAIL / QA_VET_PASSWORD presentes"
+    },
+    {
+      "nombre": "Login del Veterinario 97 (una sola vez)",
+      "ok": true,
+      "detalle": "URL tras el login: /sigab-test/dashboard"
+    },
+    {
+      "nombre": "El activo 885 figura entre los animales o lotes del Veterinario",
+      "ok": true,
+      "detalle": "10 opciones"
+    },
+    {
+      "nombre": "GET /historial-predictivo/885 (Lineal) responde 200",
+      "ok": true,
+      "detalle": "HTTP 200"
+    },
+    {
+      "nombre": "Línea base del 885: >=2 predicciones (>=1 con valoración y >=1 sin valoración), 2 <= pendientes <= 20 con >=2 niveles",
+      "ok": true,
+      "detalle": "predicciones=24, con_valoracion=4, sin_valoracion=20, pendientes=20, niveles_pendientes=[0,1,2,3], ahora=2026-11-21T03:30:28.000Z (header Date)"
+    },
+    {
+      "nombre": "Parte B: existen dos predicciones pA y pB con al menos 10 días de diferencia",
+      "ok": true,
+      "detalle": "pA=2363c367@2026-07-01T11:34:36.477639+00:00, pB=7d597a54@2026-07-30T12:34:36.477639+00:00"
+    },
+    {
+      "nombre": "Parte B: ninguna de las 3 fechas simuladas queda a menos de 1 h de una predicción",
+      "ok": false,
+      "detalle": "fechas=[2026-07-02T11:34:36.477+00:00, 2026-07-31T12:34:36.477+00:00, 2026-08-02T12:34:36.477+00:00]"
+    },
+    {
+      "nombre": "Ninguna escritura no permitida hacia TEST",
+      "ok": true,
+      "detalle": "2 peticiones distintas de GET, todas permitidas"
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-11",
+      "caso": "TC-M08-054, 885 real",
+      "esperado": "La TVCO de la respuesta coincide con la calculada con la regla del RF a partir de \"predicciones\" y \"retroalimentaciones\" de la misma respuesta (porcentaje, tvco_denominador, tasa_error y texto con el formato de CA-3), y la vista muestra ese texto",
+      "fuente": "RF-106 Proceso 4; CA-3; Salida (tasa_error)",
+      "obtenido": "Precondición no cumplida (Parte B: ninguna de las 3 fechas simuladas queda a menos de 1 h de una predicción): fechas=[2026-07-02T11:34:36.477+00:00, 2026-07-31T12:34:36.477+00:00, 2026-08-02T12:34:36.477+00:00]",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-12",
+      "caso": "TC-M08-056, 885 real",
+      "esperado": "\"pendientes\" contiene exactamente las predicciones sin valoración con más de 48 h, ordenadas por nivel_riesgo descendente y luego por fecha descendente, y la lista de la vista muestra los mismos ítems en ese orden, cada uno con \"Registrar retroalimentación\"",
+      "fuente": "RF-106 Proceso 5; CA-9; CA-4",
+      "obtenido": "Precondición no cumplida (Parte B: ninguna de las 3 fechas simuladas queda a menos de 1 h de una predicción): fechas=[2026-07-02T11:34:36.477+00:00, 2026-07-31T12:34:36.477+00:00, 2026-08-02T12:34:36.477+00:00]",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-13",
+      "caso": "TC-M08-055, navegador, conflicto simulado",
+      "esperado": "Al pasar el ratón sobre una de las dos valoraciones en conflicto se muestran ambas: autor, valoración y fecha y hora de cada una (\"QA Vet A → Correcta · <ts_A> / QA Vet B → Incorrecta · <ts_B>\")",
+      "fuente": "RF-106 Restricción 6 a (tooltip \"[Vet A] → [valor_A] · [ts_A] / [Vet B] → [valor_B] · [ts_B]\"); CA-8 (b)",
+      "obtenido": "Precondición no cumplida (Parte B: ninguna de las 3 fechas simuladas queda a menos de 1 h de una predicción): fechas=[2026-07-02T11:34:36.477+00:00, 2026-07-31T12:34:36.477+00:00, 2026-08-02T12:34:36.477+00:00]",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-14",
+      "caso": "TC-M08-055, navegador, conflicto simulado",
+      "esperado": "El ícono de conflicto de las dos valoraciones es un triángulo amarillo",
+      "fuente": "RF-106 Restricción 6 a; CA-8 (a)",
+      "obtenido": "Precondición no cumplida (Parte B: ninguna de las 3 fechas simuladas queda a menos de 1 h de una predicción): fechas=[2026-07-02T11:34:36.477+00:00, 2026-07-31T12:34:36.477+00:00, 2026-08-02T12:34:36.477+00:00]",
+      "estado": "FALLA"
+    }
+  ],
+  "observaciones": [
+    "Línea base 885: 24 predicciones (4 con valoración, 20 sin valoración), 3 eventos, 4 retroalimentaciones, 20 pendientes (niveles=[0,1,2,3])."
+  ],
+  "retirados": [],
+  "escrituras": [
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/sesiones/",
+      "resultado": "al servidor (login 1)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    }
+  ]
+}
