@@ -1,9 +1,10 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-107: aviso de saturación con el historial de la sesión y botón de acción correctiva |
-import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import { useToast, type RegistroToast } from '../hooks/useToast';
+// | 2026-11-21 | Arekkazu | INC-M08-385-G026 RF-107: cola descartada al cambiar de módulo; historial lateral con hora mostrada y duración |
+import React, { useEffect, useRef, useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
+import { descartarCola, useToast, type RegistroToast } from '../hooks/useToast';
 import { useT } from '../i18n/useT';
 import { formatearHora } from '../i18n/formato';
 import { Alert } from './Alert';
@@ -20,6 +21,13 @@ export function ToastHost() {
   const { t } = useT('common');
   const history = useHistory();
   const [verHistorial, setVerHistorial] = useState(false);
+  // RF-107 8.3: al salir del módulo (primer segmento de la ruta: /prediccion, /reportes…) se descarta su cola.
+  const modulo = useLocation().pathname.split('/')[1] ?? '';
+  const moduloPrevio = useRef(modulo);
+  useEffect(() => {
+    if (moduloPrevio.current !== modulo) descartarCola();
+    moduloPrevio.current = modulo;
+  }, [modulo]);
   const primerError = toasts.find((x) => x.variant === 'error' || x.variant === 'warning');
   const visibles = saturado ? toasts.filter((x) => x !== primerError) : toasts;
   return (
@@ -42,13 +50,19 @@ export function ToastHost() {
         ))}
       </div>
       {verHistorial && (
-        <ModalShell title={t('avisos.historial_titulo')} onClose={() => setVerHistorial(false)} maxWidth={600}>
+        <ModalShell title={t('avisos.historial_titulo')} onClose={() => setVerHistorial(false)} lateral>
           <ol className="ds-toasts__historial">
             {historial.map((h: RegistroToast) => (
               <li key={h.id}>
-                <span className={`ds-toasts__tipo ds-toasts__tipo--${h.variant}`}>{t(`avisos.tipo.${h.variant}`)}</span>
+                <span className={`ds-toasts__tipo ds-toasts__tipo--${h.variant}`}>
+                  {h.bloquea_interfaz ? t('avisos.tipo.critica') : t(`avisos.tipo.${h.variant}`)}
+                </span>
                 <span>{h.title}{h.description ? ` — ${h.description}` : ''}</span>
-                <span className="ds-toasts__meta">{formatearHora(new Date(h.creado))} · {t(`avisos.estado.${h.estado}`)}</span>
+                <span className="ds-toasts__meta">
+                  {/* La hora es la de aparición; lo que aún espera en cola dice cuándo llegó. */}
+                  {formatearHora(new Date(h.timestamp_mostrado ?? h.creado))} · {t(`avisos.estado.${h.estado}`)}
+                  {h.duracion_visible !== null && ` · ${t('avisos.duracion', { segundos: Math.round(h.duracion_visible / 1000) })}`}
+                </span>
               </li>
             ))}
           </ol>

@@ -4,7 +4,8 @@
    | 2026-10-29 | Arekkazu | TC-DIS-150/179 a11y: clase global .ds-sr-only (solo lector de pantalla) |
    | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: .ds-kv, lista rótulo → valor (antes rejilla inline en BufferView) |
    | 2026-11-18 | Arekkazu | M08 RF-107: aviso de saturación, historial de avisos, barra de sincronización y proceso en curso |
-   | 2026-11-19 | Arekkazu | M8-14 RF-107: el indicador de sincronización deja de flotar sobre el contenido |  */
+   | 2026-11-19 | Arekkazu | M8-14 RF-107: el indicador de sincronización deja de flotar sobre el contenido |
+   | 2026-11-21 | Arekkazu | INC-M08-385-G026 RF-107: avisos arriba bajo el encabezado e historial en panel lateral |  */
 
 /* Rejillas de contenido del DS v2.0 ("Reglas responsive por componente").
  *
@@ -112,6 +113,24 @@
   /* Excepcion documentada: detalles con tablas o matrices (matriz de
      confusion, payload de auditoria, niveles de umbral) no caben en 560px. */
   .ds-modal__panel--wide { max-width: 720px; }
+}
+
+/* RF-107 8.3: el historial de avisos se abre como panel lateral (borde derecho, alto completo). */
+.ds-modal--lateral {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0;
+}
+.ds-modal--lateral .ds-modal__panel {
+  max-width: 420px;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  border-width: 0 0 0 1px;
+}
+@media (min-width: 768px) {
+  .ds-modal--lateral { padding: 0; align-items: stretch; }
+  .ds-modal--lateral .ds-modal__panel { max-width: 420px; max-height: 100dvh; border-radius: 0; }
 }
 
 /* Scroll horizontal de tablas (ScrollRegion): enfocable con teclado. */
@@ -262,12 +281,13 @@
   display: none;
 }
 
-/* Cola de toasts (T-02): esquina inferior en escritorio, ancho completo en móvil. */
+/* Cola de toasts (T-02): RF-107 8.2 los quiere arriba, bajo el encabezado; a la derecha en escritorio y a ancho
+   completo en móvil. */
 .ds-toasts {
   position: fixed;
   z-index: 300;
+  top: calc(var(--topbar-h) + var(--s3));
   right: var(--s4);
-  bottom: var(--s4);
   left: var(--s4);
   display: flex;
   flex-direction: column;

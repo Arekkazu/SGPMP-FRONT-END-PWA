@@ -2,11 +2,14 @@
 // |------------|----------|-------------|
 // | 2026-11-10 | Arekkazu | TC-DIS-242/252/258 RF-87/COT/92: nombre por aria-labelledby y descripción por aria-describedby |
 // | 2026-11-18 | Arekkazu | M08 RF-107: modal bloqueante (sin Escape, sin clic afuera ni botón cerrar) |
-import React, { useId } from 'react';
+// | 2026-11-21 | Arekkazu | INC-M08-385-G026/392-G027 RF-107: el modal crítico va al historial, no se abre con una operación en curso; panel lateral |
+import React, { useEffect, useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { useT } from '../i18n/useT';
 import { Button } from './Button';
 import { useModalA11y } from '../hooks/useModalA11y';
+import { operacionEnCurso } from '../hooks/operacionEnCurso';
+import { pushToast, registrarModalCritico } from '../hooks/useToast';
 
 interface ModalShellProps {
   title: string;
@@ -29,6 +32,8 @@ interface ModalShellProps {
    * la X: solo con sus botones Confirmar o Cancelar.
    */
   bloqueante?: boolean;
+  /** RF-107 8.3: panel pegado al borde derecho y de alto completo, en vez de ventana centrada. */
+  lateral?: boolean;
 }
 
 function variante(maxWidth: number): string {
@@ -43,11 +48,26 @@ function variante(maxWidth: number): string {
  * diálogo destructivo) o al primero enfocable; Escape cierra y el foco vuelve
  * al disparador (useModalA11y).
  */
-export function ModalShell({ title, onClose, children, footer, descripcion, maxWidth = 520, bloqueante = false }: ModalShellProps) {
+export function ModalShell({ title, onClose, children, footer, descripcion, maxWidth = 520, bloqueante = false, lateral = false }: ModalShellProps) {
   const dialogRef = useModalA11y(onClose, { escape: !bloqueante });
   const { t } = useT('common');
   const idTitulo = useId();
   const idDescripcion = useId();
+  // RF-107 8.2 nivel 1: con una operación en curso (aunque se haya lanzado en otra sección) la acción crítica no
+  // se abre: se avisa que hay que esperar. Si se abre, queda en el historial de la sesión (8.5).
+  const [bloqueadoPor, setBloqueadoPor] = useState(() => (bloqueante ? operacionEnCurso() : null));
+  useEffect(() => {
+    if (!bloqueante) return undefined;
+    const operacion = operacionEnCurso();
+    if (operacion) {
+      setBloqueadoPor(operacion);
+      pushToast('info', t('proceso.espera', { operacion }));
+      onClose();
+      return undefined;
+    }
+    return registrarModalCritico(title);
+  }, [bloqueante]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (bloqueadoPor) return null;
   return (
     <div
       ref={dialogRef}
@@ -55,7 +75,7 @@ export function ModalShell({ title, onClose, children, footer, descripcion, maxW
       aria-modal="true"
       aria-labelledby={idTitulo}
       aria-describedby={descripcion ? idDescripcion : undefined}
-      className="ds-modal"
+      className={`ds-modal${lateral ? ' ds-modal--lateral' : ''}`}
       onClick={(e) => { if (!bloqueante && e.target === e.currentTarget) onClose(); }}
     >
       <div className={`ds-modal__panel${variante(maxWidth)}`} style={{ padding: 'var(--s6)' }}>

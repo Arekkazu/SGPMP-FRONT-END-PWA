@@ -16,6 +16,7 @@
 // | 2026-11-15 | Arekkazu | QA-M06 CU08 H-02 RF-89: productos de cada especie en la configuración contable |
 // | 2026-11-15 | Arekkazu | QA-M06 CU04 H-03 RF-85: el historial trae el valor en libros del activo |
 // | 2026-11-16 | Arekkazu | QA-M06 CU03 H-01 RF-84 FA-2/FA-3: justificación del cálculo validado manualmente |
+// | 2026-11-21 | Arekkazu | INC-M08-393-G028 RF-107: la prevalidación trae los activos que se revaluarán |
 /** Los Decimal del backend llegan como texto y no se suman en el cliente. */
 export type Dec = string;
 
@@ -209,6 +210,8 @@ export interface Prevalidacion {
     id_linea: number; tipo_hecho: TipoHecho; faltantes: string[]; id_activo_biologico?: number | null; identificador?: string | null;
   }>;
   puede_cerrar: boolean; requiere_autorizacion: boolean;
+  /** RF-107 8.5: cuántos activos revaluará el cierre si no se estima ninguno de los que no tienen precio. */
+  activos_a_revaluar?: number;
 }
 export interface ResultadoCierre {
   id_cierre: number; periodo: string; estado: string; activos_procesados: number;
