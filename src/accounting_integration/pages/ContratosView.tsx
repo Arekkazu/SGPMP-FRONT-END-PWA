@@ -4,9 +4,11 @@
 // | 2026-11-19 | Arekkazu | M7-02/03/09/10 RF-98: aprobar y activar con confirmación, tablas que deslizan, textos |
 // | 2026-11-19 | Arekkazu | INC-M07-373-G37 RF-98: período de gracia configurado en M09 |
 // | 2026-11-20 | Arekkazu | QA-M07 CU04 H-01 RF-98: confirmar el registro y no dar error si se guardó sin respuesta a tiempo |
+// | 2026-11-20 | Arekkazu | A11Y-M07 TC-DIS-267 RF-98: tablas de anexos y versiones en ScrollRegion |
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, FileCheck2, FileSignature, Plus, PlayCircle, TimerOff } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
@@ -89,7 +91,7 @@ export function ContratosView() {
         {anexos.data?.length === 0 ? (
           <EstadoVacio icono={<FileCheck2 size={28} aria-hidden />} titulo={t('contrato.anexos_vacio')} detalle={t('contrato.anexos_vacio_detalle')} />
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <ScrollRegion label={t('contrato.anexos')}>
           <table style={TABLA}>
             <thead><tr>
               <th style={TH}>{t('contrato.col_anexo')}</th><th style={TH}>{t('contrato.col_estado')}</th>
@@ -118,7 +120,7 @@ export function ContratosView() {
               ))}
             </tbody>
           </table>
-          </div>
+          </ScrollRegion>
         )}
       </section>
 
@@ -131,7 +133,7 @@ export function ContratosView() {
         {contratos.data?.length === 0 ? (
           <EstadoVacio icono={<FileSignature size={28} aria-hidden />} titulo={t('contrato.versiones_vacio')} detalle={t('contrato.versiones_vacio_detalle')} />
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <ScrollRegion label={t('contrato.versiones')}>
           <table style={TABLA}>
             <thead><tr>
               <th style={TH}>{t('contrato.col_version')}</th><th style={TH}>{t('contrato.col_estado')}</th>
@@ -170,7 +172,7 @@ export function ContratosView() {
               ))}
             </tbody>
           </table>
-          </div>
+          </ScrollRegion>
         )}
       </section>
 
