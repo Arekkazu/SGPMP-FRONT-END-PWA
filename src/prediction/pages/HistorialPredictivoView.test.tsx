@@ -2,11 +2,14 @@
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-106: TVCO, pendientes y acceso al formulario de retroalimentación |
 // | 2026-11-20 | Arekkazu | QA-M08 CU04 H-02 RF-106: la marca de la evaluación queda sobre su predicción |
+// | 2026-11-21 | Arekkazu | INC-M08-387-G020/391-G024 RF-106: eje en el rango elegido, zoom y límite de marcadores |
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import { HistorialPredictivoView, puntosDelHistorial } from './HistorialPredictivoView';
+import {
+  HistorialPredictivoView, LIMITE_MARCADORES, marcadoresVisibles, moverVentana, puntosDelHistorial, rangoDelEje,
+} from './HistorialPredictivoView';
 import { historialPredictivoApi } from '../api/historialPredictivoApi';
 import { reportesApi } from '../../reportes/api/reportesApi';
 
@@ -62,4 +65,35 @@ it('la marca de cada evaluación queda sobre el punto de su predicción, no en l
   expect(retros[0]).toMatchObject({ x: new Date('2026-11-15T21:13:00Z').getTime(), y: 1.3, valoracion: 'CORRECTO' });
   // Si su predicción no está a la vista (filtro de nivel), queda en la franja de evaluaciones en su fecha.
   expect(retros[1]).toMatchObject({ x: new Date('2026-11-20T23:55:00Z').getTime(), y: 3.3 });
+});
+
+it('el eje X va del inicio del día «Desde» al final del día «Hasta», no del primer al último dato', () => {
+  const [a, b] = rangoDelEje({ rango_fechas_aplicado: { fecha_inicio: '2025-11-20', fecha_fin: '2026-11-20' } } as Parameters<typeof rangoDelEje>[0]);
+  expect(a).toBe(new Date('2025-11-20T00:00:00').getTime());
+  expect(b).toBe(new Date('2026-11-20T23:59:59.999').getTime());
+  // El 1/7/2026 queda cerca del 61 % del ancho (criterio de QA G020).
+  expect((new Date('2026-07-01T12:00:00').getTime() - a) / (b - a)).toBeCloseTo(0.61, 2);
+});
+
+it('acercar, alejar y desplazar no salen del rango consultado', () => {
+  const rango: [number, number] = [0, 1000 * 3_600_000];
+  const cerca = moverVentana(rango, rango, 'acercar');
+  expect(cerca).toEqual([250 * 3_600_000, 750 * 3_600_000]);
+  expect(moverVentana(cerca, rango, 'antes')).toEqual([0, 500 * 3_600_000]);
+  expect(moverVentana([0, 500 * 3_600_000], rango, 'antes')).toEqual([0, 500 * 3_600_000]);
+  expect(moverVentana(cerca, rango, 'alejar')).toEqual(rango);
+});
+
+it('con más de 1.000 marcadores muestrea la línea y deja todos los eventos y evaluaciones', () => {
+  const serie = (n: number) => Array.from({ length: n }, (_, i) => ({ x: i }));
+  const todo = { linea: serie(1460), eventos: serie(240), retros: serie(300) };
+  const dibujo = marcadoresVisibles(todo, [0, 5000]);
+  expect(dibujo.eventos).toHaveLength(240);
+  expect(dibujo.retros).toHaveLength(300);
+  expect(dibujo.linea.length + dibujo.eventos.length + dibujo.retros.length).toBeLessThanOrEqual(LIMITE_MARCADORES);
+  expect(dibujo.omitidas).toBe(1460 - dibujo.linea.length);
+  // Al acercar la ventana a una parte, esa parte se ve completa.
+  expect(marcadoresVisibles(todo, [0, 99]).linea).toHaveLength(100);
+  // Con 1.000 o menos, todos.
+  expect(marcadoresVisibles({ linea: serie(500), eventos: serie(250), retros: serie(250) }, [0, 5000]).omitidas).toBe(0);
 });

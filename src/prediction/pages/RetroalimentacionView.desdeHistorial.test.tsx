@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-20 | Arekkazu | QA-M08 CU04 H-01/H-02 RF-106: desde el historial abre el formulario y el filtro por animal se ve |
+// | 2026-11-21 | Arekkazu | INC-M08-390-G023 RF-106: la bandeja pide la predicción y explica si no se puede evaluar |
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -52,4 +53,20 @@ test('dice de qué animal es la lista y deja ver todos', () => {
   cargar.mockClear();
   fireEvent.click(screen.getByRole('button', { name: 'Ver todos los animales' }));
   expect(cargar).toHaveBeenCalledWith(expect.objectContaining({ id_activo_biologico: undefined }), 1);
+});
+
+test('pide a la bandeja la predicción elegida y, si ya no está, dice por qué no abre el formulario', () => {
+  datos = { ...respuesta, items: [] };
+  cargar.mockClear();
+  render(vista());
+  expect(cargar).toHaveBeenCalledWith(expect.objectContaining({ id_activo_biologico: 7, id_resultado_inferencia: 'abc' }), 1);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(screen.getByText(/ya no se puede evaluar: pasó el plazo/)).toBeInTheDocument();
+});
+
+test('si la predicción ya la evaluaste, lo dice en vez de no hacer nada', () => {
+  datos = { ...respuesta, items: [{ ...fila, evaluada_por_mi: true }] };
+  render(vista());
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(screen.getAllByText('Ya registraste tu evaluación de esta inferencia.').length).toBeGreaterThan(0);
 });

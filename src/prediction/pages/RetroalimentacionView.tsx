@@ -7,6 +7,7 @@
 // | 2026-11-03 | Claude   | RF-72: botón Reintentar si la bandeja no carga |
 // | 2026-11-18 | Arekkazu | M08 RF-106: abre el formulario con la predicción elegida en el historial predictivo |
 // | 2026-11-20 | Arekkazu | QA-M08 CU04 H-01/H-02 RF-106: el formulario se abre aunque los datos lleguen después; filtro por animal visible y quitable |
+// | 2026-11-21 | Arekkazu | INC-M08-390-G023 RF-106: la predicción pedida llega en la bandeja sea cual sea su riesgo; si no se puede evaluar, se dice por qué |
 import React, { useEffect, useMemo, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
@@ -82,11 +83,16 @@ export function RetroalimentacionView() {
   // descartaba con la primera respuesta, aunque la fila aún no se pudiera evaluar (QA M08 CU04 H-02).
   const [resultadoPedido, setResultadoPedido] = useState<string | null>(null);
   useEffect(() => setResultadoPedido(busqueda.get('resultado')), [busqueda]);
+  // Por qué no se abrió el formulario de la predicción pedida (antes no pasaba nada y no se decía nada).
+  const [avisoPedido, setAvisoPedido] = useState<string | null>(null);
 
   const filtros = (estado = fEstado, riesgo = fRiesgo): FiltrosBandejaRetro => ({
     estado_evaluacion: (estado || undefined) as EstadoEvaluacion | undefined,
     nivel_riesgo: riesgo === '' ? undefined : Number(riesgo),
     id_activo_biologico: activoPedido,
+    // La bandeja solo lista episodios de riesgo moderado o alto, con alerta o ya evaluados: la predicción pedida desde
+    // el historial (riesgo bajo o sin riesgo incluidos) entra aparte y va primero (QA M08 G023).
+    id_resultado_inferencia: busqueda.get('resultado') ?? undefined,
   });
 
   useEffect(() => {
@@ -129,11 +135,21 @@ export function RetroalimentacionView() {
   };
 
   useEffect(() => {
-    const pedido = resultadoPedido && bandeja.datos?.items.find((r) => r.id_resultado_inferencia === resultadoPedido);
-    if (!pedido || motivoNoEvaluable(pedido) !== null) return;
+    if (!resultadoPedido || !bandeja.datos || bandeja.loading) return;
+    const pedido = bandeja.datos.items.find((r) => r.id_resultado_inferencia === resultadoPedido);
+    if (!pedido) {
+      // Fuera del rango de la bandeja: la ventana de evaluación ya pasó hace tiempo.
+      setAvisoPedido(t('retroalimentacionview.pedido_no_disponible'));
+      setResultadoPedido(null);
+      return;
+    }
+    const motivo = motivoNoEvaluable(pedido);
+    // El motivo puede ser pasajero (sin conexión, permisos aún cargando): se dice y se sigue esperando.
+    setAvisoPedido(motivo);
+    if (motivo !== null) return;
     setResultadoPedido(null);
     setSel(pedido);
-  }, [bandeja.datos, resultadoPedido, puedeRegistrar, online]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [bandeja.datos, bandeja.loading, resultadoPedido, puedeRegistrar, online]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!puedeVer) return <PermissionDenied seccion="Retroalimentación clínica" />;
 
@@ -153,6 +169,10 @@ export function RetroalimentacionView() {
           {t('retroalimentacionview.que_aparece', { dias: datos?.ventana_dias ?? '—' })}
         </p>
 
+        {avisoPedido && (
+          <Alert variant="info" title={t('retroalimentacionview.pedido_no_abre')} description={avisoPedido}
+                 onDismiss={() => setAvisoPedido(null)} style={{ marginBottom: 'var(--s4)' }} />
+        )}
         {okFlash && <Alert variant="success" title={t('retroalimentacionview.evaluacion_registrada')} description={t('retroalimentacionview.la_retroalimentacion_clinica_quedo')} style={{ marginBottom: 'var(--s4)' }} />}
         {!online && <Alert variant="warning" title={t('retroalimentacionview.sin_conexion')} description={t('retroalimentacionview.el_registro_de_evaluaciones_esta')} style={{ marginBottom: 'var(--s4)' }} />}
         {!puedeRegistrar && <Alert variant="info" title={t('retroalimentacionview.solo_supervision')} description={t('retroalimentacionview.tu_rol_puede_consultar_las_evaluaciones')} style={{ marginBottom: 'var(--s4)' }} />}
