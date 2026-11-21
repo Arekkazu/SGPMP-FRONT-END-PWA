@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo                                                  |
 // |------------|----------|--------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-105: crítica sin descartar y acción documentada         |
+// | 2026-11-20 | Arekkazu | QA-M08 CU03 H-02/H-03: un solo estado del push y nivel en los informativos |
 import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -14,11 +15,12 @@ const base: NotificacionInternaResponse = {
   puede_atenderse: true, puede_descartarse: false,
 };
 
-function bandeja(notificacion: NotificacionInternaResponse, onAtender = vi.fn(), onDescartar = vi.fn()) {
+function bandeja(notificacion: NotificacionInternaResponse, onAtender = vi.fn(), onDescartar = vi.fn(),
+  pushError: string | null = null) {
   render(
     <MemoryRouter>
       <NotificationTray open notificaciones={[notificacion]} total={1} noLeidas={1} loading={false} loadingMore={false}
-        hasMore={false} fromCache={false} marcandoIds={new Set()} pushPermission="granted" pushLoading={false}
+        hasMore={false} fromCache={false} marcandoIds={new Set()} pushPermission="granted" pushLoading={false} pushError={pushError}
         onClose={vi.fn()} onRefresh={vi.fn()} onLoadMore={vi.fn()} onMarkAsRead={vi.fn()} onEnablePush={vi.fn()}
         onDismissError={vi.fn()} onAtender={onAtender} onDescartar={onDescartar} onCambiarFiltros={vi.fn()} />
     </MemoryRouter>,
@@ -44,6 +46,23 @@ describe('Bandeja de notificaciones (RF-105)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('al menos 20 caracteres'));
     expect(onAtender).toHaveBeenCalledWith(5, 'ok');
+  });
+
+  it('un aviso informativo también dice su nivel', () => {
+    bandeja({ ...base, nivel: 'INFORMATIVA', modulo: 'cuentas', puede_descartarse: true });
+    expect(within(screen.getByRole('article')).getByText('Informativa')).toBeInTheDocument();
+  });
+
+  it('con permiso pero sin registrar el dispositivo, solo dice que el push no está activo', () => {
+    bandeja(base, vi.fn(), vi.fn(), 'No fue posible activar las notificaciones push en este dispositivo.');
+    expect(screen.queryByText(/activadas en este dispositivo/)).toBeNull();
+    expect(screen.getByText(/no están activas en este dispositivo/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Intentar de nuevo' })).toBeInTheDocument();
+  });
+
+  it('con el push registrado dice que está activado', () => {
+    bandeja(base);
+    expect(screen.getByText('Notificaciones push activadas en este dispositivo.')).toBeInTheDocument();
   });
 
   it('una advertencia se puede descartar', async () => {

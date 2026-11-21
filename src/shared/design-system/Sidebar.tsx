@@ -6,6 +6,7 @@
 // | 2026-11-04 | Arekkazu | M06 RF-82..94: Finanzas NIC 41 en el menú (recursos por nombre) |
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: Integración contable en el menú (recursos por nombre) |
 // | 2026-11-18 | Arekkazu | M08 RF-104: módulo Reportes, visible con permiso para generar al menos un reporte |
+// | 2026-11-20 | Arekkazu | QA-M08 CU01 H-01 RF-103: muestra la finca elegida en el selector del panel |
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -15,6 +16,7 @@ import {
 import { useT } from '../i18n/useT';
 import { useAuth } from '../auth/useAuth';
 import { useContexto } from '../contexto/useContexto';
+import { useFincaActiva } from '../fincas/useFincaActiva';
 import { resolverLogoUrl } from '../identidad/identidad';
 import { Isotipo } from './Isotipo';
 import { ACCION_EJECUTAR, RECURSOS_REPORTES } from '../../reportes/tipos';
@@ -124,7 +126,11 @@ export function Sidebar({ onLogout, open, onNavigate }: SidebarProps) {
   React.useEffect(() => setLogoRoto(false), [identidad?.logo_path]);
   const logoUrl = logoRoto ? null : resolverLogoUrl(identidad?.logo_path);
   const nombreOrg = identidad?.org_display_name || t('marca.nombre');
-  const subtitulo = contexto?.finca_activa || t('marca.descripcion');
+  // La finca elegida en el selector del panel (RF-103 R6), no la que el backend da por defecto. Solo para quien
+  // tiene finca activa propia: el Administrador no tiene y conserva la descripción del producto.
+  const { fincas, idFinca } = useFincaActiva(userInfo?.id_usuario ?? null);
+  const elegida = contexto?.finca_activa ? fincas.find((f) => f.id_finca === idFinca)?.nombre : undefined;
+  const subtitulo = elegida || contexto?.finca_activa || t('marca.descripcion');
 
   const nombreUsuario = userInfo ? capitalizar(`${userInfo.nombre} ${userInfo.apellidos}`) : '';
   const initials =
