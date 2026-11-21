@@ -61,10 +61,10 @@ export function moverVentana([a, b]: Ventana, [min, max]: Ventana, accion: 'acer
 
 /**
  * RNF-05: solo se dibuja lo que cae en la ventana visible. Si aun así pasa de LIMITE_MARCADORES, la línea de riesgo
- * (la serie densa) se muestrea parejo para dejar sitio a eventos y evaluaciones, que se dibujan siempre; acercar la
- * ventana muestra el resto.
+ * (la serie densa) se reduce por tramos de predicciones seguidas, quedándose en cada tramo con la de mayor riesgo para
+ * no esconder un pico; eventos y evaluaciones se dibujan siempre. Acercar la ventana muestra el resto.
  */
-export function marcadoresVisibles<L extends { x: number }, E extends { x: number }, R extends { x: number }>(
+export function marcadoresVisibles<L extends { x: number; nivel?: number }, E extends { x: number }, R extends { x: number }>(
   series: { linea: L[]; eventos: E[]; retros: R[] }, [a, b]: Ventana,
 ) {
   const dentro = <P extends { x: number }>(l: P[]) => l.filter((p) => p.x >= a && p.x <= b);
@@ -76,7 +76,10 @@ export function marcadoresVisibles<L extends { x: number }, E extends { x: numbe
     return { linea: todas, eventos, retros, omitidas: 0 };
   }
   const paso = Math.ceil(todas.length / cupo);
-  const linea = todas.filter((_, i) => i % paso === 0 || i === todas.length - 1);
+  const linea: L[] = [];
+  for (let i = 0; i < todas.length; i += paso) {
+    linea.push(todas.slice(i, i + paso).reduce((max, p) => ((p.nivel ?? 0) > (max.nivel ?? 0) ? p : max)));
+  }
   return { linea, eventos, retros, omitidas: todas.length - linea.length };
 }
 
@@ -343,7 +346,7 @@ export function HistorialPredictivoView() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="x" type="number" scale="time" domain={visible ?? ['dataMin', 'dataMax']} ticks={ticks}
                          allowDataOverflow tickFormatter={etiquetaTick} />
-                  <YAxis domain={[0, 4]} ticks={NIVELES} tickFormatter={(v) => etiquetaNivel(Number(v))} width={70} />
+                  <YAxis domain={[0, 4]} ticks={NIVELES} tickFormatter={(v) => etiquetaNivel(Number(v))} width={88} />
                   {conectores.map(({ clave, p, e }) => (
                     <ReferenceLine key={clave} segment={[{ x: p.x, y: p.nivel }, { x: e.x, y: Y_EVENTO }]} ifOverflow="hidden"
                                    stroke="var(--text-secondary)" strokeDasharray="4 3" className="hp-conector" />

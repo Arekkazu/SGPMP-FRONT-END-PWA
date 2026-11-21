@@ -92,6 +92,9 @@ it('con más de 1.000 marcadores muestrea la línea y deja todos los eventos y e
   expect(dibujo.retros).toHaveLength(300);
   expect(dibujo.linea.length + dibujo.eventos.length + dibujo.retros.length).toBeLessThanOrEqual(LIMITE_MARCADORES);
   expect(dibujo.omitidas).toBe(1460 - dibujo.linea.length);
+  // Cada tramo conserva su predicción de mayor riesgo: un muestreo por paso fijo dejaba solo las de nivel 0.
+  const conNivel = { linea: Array.from({ length: 1460 }, (_, i) => ({ x: i, nivel: i % 4 })), eventos: serie(240), retros: serie(300) };
+  expect(marcadoresVisibles(conNivel, [0, 5000]).linea.every((p) => p.nivel === 3)).toBe(true);
   // Al acercar la ventana a una parte, esa parte se ve completa.
   expect(marcadoresVisibles(todo, [0, 99]).linea).toHaveLength(100);
   // Con 1.000 o menos, todos.
