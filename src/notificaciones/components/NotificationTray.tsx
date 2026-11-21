@@ -1,11 +1,12 @@
 // | Fecha      | Nombre   | Que se hizo                                                            |
 // |------------|----------|------------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-105: nivel, ocurrencias, filtros, atender con acción y descartar  |
+// | 2026-11-20 | Arekkazu | QA-M08 CU03 H-02/H-03 RF-105/107: un solo estado del push y nivel con ícono en todos los avisos |
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { Bell, BellRing, Check, RefreshCw, X } from 'lucide-react';
+import { AlertOctagon, AlertTriangle, Bell, BellRing, Check, Info, RefreshCw, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import type { PushPermission } from '../hooks/usePushNotifications';
 import { MODULOS_NOTIFICACION, type NotificacionInternaResponse } from '../types';
@@ -75,9 +76,11 @@ interface NotificationTrayProps {
   onDescartar?: (idNotificacion: number) => Promise<string | null>;
 }
 
-const COLOR_NIVEL: Record<string, { color: string; fondo: string }> = {
-  CRITICA: { color: 'var(--sem-error)', fondo: 'var(--sem-error-bg)' },
-  ADVERTENCIA: { color: 'var(--sem-warning)', fondo: 'var(--sem-warning-bg)' },
+// Todo aviso muestra su nivel con ícono y texto (RF-105 Salida), también el informativo.
+const COLOR_NIVEL: Record<string, { color: string; fondo: string; Icono: typeof Info }> = {
+  CRITICA: { color: 'var(--sem-error)', fondo: 'var(--sem-error-bg)', Icono: AlertOctagon },
+  ADVERTENCIA: { color: 'var(--sem-warning)', fondo: 'var(--sem-warning-bg)', Icono: AlertTriangle },
+  INFORMATIVA: { color: 'var(--sem-info)', fondo: 'var(--sem-info-bg)', Icono: Info },
 };
 
 /** Atender (con la acción documentada, obligatoria en una crítica) o descartar una notificación. */
@@ -140,13 +143,14 @@ function formatFecha(fecha: string): string {
   return formatearFechaHora(date, { dateStyle: 'short', timeStyle: 'short' });
 }
 
-function estadoPush(permission: PushPermission): string | null {
-  if (permission === 'granted') return 'Notificaciones push activadas en este dispositivo.';
-  if (permission === 'denied') {
-    return 'El navegador bloqueó las notificaciones push. Puedes habilitarlas desde sus permisos.';
-  }
-  if (permission === 'unsupported') return 'Este navegador no admite Firebase Cloud Messaging.';
-  if (permission === 'unconfigured') return 'Firebase no está configurado para este entorno.';
+// Clave del estado del push. Con permiso pero sin registrar el dispositivo, el push NO está activo:
+// antes salían a la vez «activadas» y «no fue posible activar» (QA M08 CU03 H-02).
+function estadoPush(permission: PushPermission, conError: boolean): string | null {
+  if (conError) return 'push_no_activo';
+  if (permission === 'granted') return 'push_activadas';
+  if (permission === 'denied') return 'push_bloqueadas';
+  if (permission === 'unsupported') return 'push_no_soportado';
+  if (permission === 'unconfigured') return 'push_no_disponible';
   return null;
 }
 
@@ -190,7 +194,7 @@ export function NotificationTray({
 
   if (!open) return null;
 
-  const pushStatus = estadoPush(pushPermission);
+  const pushStatus = estadoPush(pushPermission, Boolean(pushError));
 
   return (
     <div className="notification-tray__overlay" onMouseDown={onClose}>
@@ -257,10 +261,15 @@ export function NotificationTray({
                   onClick={() => void onEnablePush()}
                 >{t('notificationtray.activar_notificaciones_push')}</Button>
               </>
+            ) : pushError ? (
+              <>
+                <span className="notification-tray__error" role="alert">{t(`notificationtray.${pushStatus}`)}</span>
+                <Button type="button" variant="secondary" size="sm" loading={pushLoading}
+                  onClick={() => void onEnablePush()}>{t('notificationtray.reintentar_push')}</Button>
+              </>
             ) : (
-              <span>{pushStatus}</span>
+              pushStatus && <span>{t(`notificationtray.${pushStatus}`)}</span>
             )}
-            {pushError && <span className="notification-tray__error">{pushError}</span>}
           </div>
         </div>
 
@@ -326,11 +335,15 @@ export function NotificationTray({
                   {/* Nunca «Evento 32»: sin título propio del tipo, se nombra el módulo. */}
                   {TIPOS_EVENTO[notificacion.tipo_evento]
                     ?? t(`notificationtray.modulo.${notificacion.modulo ?? 'otro'}`, { defaultValue: t('notificationtray.aviso') })}
-                  {notificacion.nivel && COLOR_NIVEL[notificacion.nivel] && (
-                    <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 999, ...{ color: COLOR_NIVEL[notificacion.nivel].color, background: COLOR_NIVEL[notificacion.nivel].fondo } }}>
-                      {t(`notificationtray.nivel.${notificacion.nivel}`)}
-                    </span>
-                  )}
+                  {(() => {
+                    const nivel = COLOR_NIVEL[notificacion.nivel ?? 'INFORMATIVA'] ?? COLOR_NIVEL.INFORMATIVA;
+                    return (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, padding: '1px 8px', borderRadius: 999, color: nivel.color, background: nivel.fondo }}>
+                        <nivel.Icono size={12} aria-hidden />
+                        {t(`notificationtray.nivel.${notificacion.nivel ?? 'INFORMATIVA'}`)}
+                      </span>
+                    );
+                  })()}
                   {(notificacion.ocurrencias ?? 1) > 1 && (
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('notificationtray.repeticiones', { cantidad: notificacion.ocurrencias })}</span>
                   )}

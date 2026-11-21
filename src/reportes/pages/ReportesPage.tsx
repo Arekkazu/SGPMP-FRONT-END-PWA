@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-104: elegir reporte, filtros, vista previa, PDF/Excel, segundo plano y mis reportes |
 // | 2026-11-19 | Arekkazu | M08 RF-104: vista previa con la estructura de las plantillas V1.1 |
+// | 2026-11-21 | Arekkazu | INC-M08-392-G027 RF-107: la generación queda en curso para el resto del sistema y los botones explican el bloqueo |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Download, Eye, FileText, X } from 'lucide-react';
@@ -9,6 +10,7 @@ import { Alert } from '../../shared/design-system/Alert';
 import { Badge, type BadgeVariant } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
 import { ProcesoEnCurso } from '../../shared/design-system/ProcesoEnCurso';
+import { enOperacion } from '../../shared/hooks/operacionEnCurso';
 import { Select } from '../../shared/design-system/Select';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
@@ -131,6 +133,9 @@ export function ReportesPage() {
     setErrorAccion(error);
   };
 
+  // RF-107 8.3: lo que se deshabilita por la generación en curso dice por qué y hasta cuándo.
+  const esperaGeneracion = generando ? t('proceso.espera', { ns: 'common', operacion: t('generar.operacion') }) : undefined;
+
   const verPrevia = async () => {
     if (!reporte || !validar()) return;
     setCargandoPrevia(true);
@@ -167,7 +172,9 @@ export function ReportesPage() {
     setGenerando(true);
     setErrorAccion(null);
     try {
-      const r = await reportesApi.generar(reporte.tipo_reporte, formato, valores);
+      // RF-107 8.2: mientras se genera, ninguna acción crítica se abre (tampoco desde otra sección).
+      const r = await enOperacion(t('generar.operacion'),
+        () => reportesApi.generar(reporte.tipo_reporte, formato, valores));
       if (r.estado === 'GENERADO') {
         pushToast('success', t('avisos.generado', { titulo: r.titulo }),
           t('avisos.generado_detalle', { registros: formatearNumero(r.numero_registros ?? 0) }),
@@ -247,12 +254,12 @@ export function ReportesPage() {
                 </fieldset>
                 <div style={{ display: 'flex', gap: 'var(--s3)', flexWrap: 'wrap', marginTop: 'var(--s4)' }}>
                   <Button variant="secondary" onClick={() => void verPrevia()} loading={cargandoPrevia}
-                          disabled={!online || cargandoPrevia || generando}>
+                          disabled={!online || cargandoPrevia || generando} title={esperaGeneracion}>
                     <Eye size={16} aria-hidden /> {t('generar.ver_previa')}
                   </Button>
                   <Button onClick={() => void generar()} loading={generando}
                           disabled={!online || generando || !previa || previa.sin_datos}
-                          title={!previa ? t('generar.primero_previa') : undefined}>
+                          title={esperaGeneracion ?? (!previa ? t('generar.primero_previa') : undefined)}>
                     <Download size={16} aria-hidden /> {t('generar.confirmar', { formato: t(`formatos.${formato}`) })}
                   </Button>
                 </div>

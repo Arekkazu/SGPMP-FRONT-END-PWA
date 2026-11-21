@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo                                                              |
 // |------------|----------|--------------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: «Configurar widget», controles armados desde sus opciones     |
+// | 2026-11-20 | Arekkazu | QA-M08 CU01 H-01 RF-103: useFincaActiva se importa de shared/fincas |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Button } from '../../shared/design-system/Button';
@@ -8,7 +9,7 @@ import { Select } from '../../shared/design-system/Select';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 import { useAuth } from '../../shared/auth/useAuth';
 import { dashboardApi, type ValorOpcion } from '../../dashboard/api/dashboardApi';
-import { useFincaActiva } from '../../dashboard/hooks/useFincaActiva';
+import { useFincaActiva } from '../../shared/fincas/useFincaActiva';
 import type { OpcionWidget, ParametrosWidget, WidgetCatalogoItem } from '../types';
 
 interface Props {
