@@ -3,9 +3,11 @@
 // | 2026-11-06 | Arekkazu | M07 RF-97 / RF-AE02 5.10: vista previa del documento contable que recibe AgroFusion |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-97: el NIT se elige entre los titulares de las fincas del usuario |
 // | 2026-11-19 | Arekkazu | M7-01/M7-05 RF-AE01: sin documento anterior tras un rechazo, titular visible y períodos consultables |
+// | 2026-11-20 | Arekkazu | A11Y-M07 RF-AE01: tabla de documentos en ScrollRegion |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Download, FileSearch } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
@@ -99,7 +101,7 @@ export function VistaPreviaView() {
           {env.invoices.length === 0 ? (
             <EstadoVacio icono={<FileSearch size={28} aria-hidden />} titulo={t('documento.vacio_titulo')} detalle={t('documento.vacio_detalle')} />
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <ScrollRegion label={t('documento.documentos')}>
               <table style={TABLA}>
                 <thead>
                   <tr>
@@ -127,7 +129,7 @@ export function VistaPreviaView() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollRegion>
           )}
           <p style={{ ...SECUNDARIO, marginTop: 'var(--s4)', wordBreak: 'break-all' }}>{t('documento.huella', { hash: vista.data!.hash })}</p>
         </>
