@@ -1,0 +1,49 @@
+﻿✓ Lockfile passes supply-chain policies (verified 1d ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+Done in 1.8s using pnpm v11.25.0
+
+ RUN  v4.1.11 C:/Users/Juansegutt/Integrador/SGPMP-FRONT-END-PWA
+
+(node:24740) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx > TC-M08-054 TVCO y tasa de error (RF-106 Proceso 4; CA-3; Restricción 4) > CP-01 TVCO 75% (5001) 523ms
+ × testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx > TC-M08-054 TVCO y tasa de error (RF-106 Proceso 4; CA-3; Restricción 4) > CP-02 Tasa de error 25%, 100% y 0% (5001, 5004, 5005) 790ms
+   → QA-5001 (25%): (sin tasa de error visible; TVCO="75% (4 validadas; 1 excluida: sin retro)") | QA-5004 (100%): (sin tasa de error visible; TVCO="0% (3 validadas)") | QA-5005 (0%): (sin tasa de error visible; TVCO="100% (3 validadas)"): expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx > TC-M08-054 TVCO y tasa de error (RF-106 Proceso 4; CA-3; Restricción 4) > CP-03 TVCO 50% con PARCIAL y SIN_EVENTO (5002) 248ms
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx > TC-M08-054 TVCO y tasa de error (RF-106 Proceso 4; CA-3; Restricción 4) > CP-04 Sin datos suficientes para calcular (5003) 321ms
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx > TC-M08-054 TVCO y tasa de error (RF-106 Proceso 4; CA-3; Restricción 4) > CP-05 TVCO 0% y 100% (5004, 5005) 482ms
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx > TC-M08-055 Conflictos de retroalimentación (RF-106 Restricción 6; CA-8) > CP-06 Íconos de conflicto en 5006 221ms
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx > TC-M08-055 Conflictos de retroalimentación (RF-106 Restricción 6; CA-8) > CP-07 TVCO con conflicto excluido y total de conflictos 1 (5006) 249ms
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx > TC-M08-055 Conflictos de retroalimentación (RF-106 Restricción 6; CA-8) > CP-08 Dos valoraciones concordantes sin conflicto (5007) 250ms
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx > TC-M08-056 Pendientes de evaluar y paginación (RF-106 Proceso 5; CA-9; CA-4) > CP-09 Página 1 de pendientes (5008, 20 ítems en orden) 253ms
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx > TC-M08-056 Pendientes de evaluar y paginación (RF-106 Proceso 5; CA-9; CA-4) > CP-10 Paginación Siguiente y Anterior (5008) 850ms
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+System.Management.Automation.RemoteException
+ FAIL  testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx > TC-M08-054 TVCO y tasa de error (RF-106 Proceso 4; CA-3; Restricción 4) > CP-02 Tasa de error 25%, 100% y 0% (5001, 5004, 5005)
+AssertionError: QA-5001 (25%): (sin tasa de error visible; TVCO="75% (4 validadas; 1 excluida: sin retro)") | QA-5004 (100%): (sin tasa de error visible; TVCO="0% (3 validadas)") | QA-5005 (0%): (sin tasa de error visible; TVCO="100% (3 validadas)"): expected false to be true // Object.is equality
+System.Management.Automation.RemoteException
+- Expected
++ Received
+System.Management.Automation.RemoteException
+- true
++ false
+System.Management.Automation.RemoteException
+ ❯ testing/test_testing/Modulo8/RF-106/TC-M08-G022/tc-m08-g022.test.tsx:618:26
+    616|     const obtenido = partes.join(' | ');
+    617|     anotar('CP-02', ok, obtenido);
+    618|     expect(ok, obtenido).toBe(true);
+       |                          ^
+    619|   });
+    620|
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+System.Management.Automation.RemoteException
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  22:30:04
+   Duration  11.27s (transform 2.18s, setup 300ms, import 5.70s, tests 4.20s, environment 770ms)
+

@@ -1,0 +1,42 @@
+CP-01 | TC-M08-058, pendiente de nivel >= 2 dentro de la ventana de RF-72 | OK
+  Esperado: Al pulsar «Registrar retroalimentación» en la primera predicción pendiente de nivel >= 2 con menos de 89 días, la app va a /prediccion/retroalimentacion?resultado=<id>&activo=885 y abre el formulario «Retroalimentación clínica» de RF-72 con ese id_resultado_inferencia y el activo 885
+  Obtenido: li_pantalla=0 | url="/sigab-test/prediccion/retroalimentacion?resultado=511a6d66-a862-4822-bf47-2634333531b3&activo=885" | bandeja={HTTP=200, x-request-id="f4da4551-b898-4d72-b012-16eafb0dc976", total=7, ventana_dias=90, id_en_items=sí (estado_evaluacion=PENDIENTE, puede_evaluar=true)} | dialogo=sí (title="511a6d66-a862-4822-bf47-2634333531b3", linea_activo="Activo biológico: QA-G88-266-IND-001")
+  Fuente:   RF-106 CA-4; Postcondición 2; Proceso 5
+CP-02 | TC-M08-058, pendiente de nivel <= 1 dentro de la ventana de RF-72 | FALLA
+  Esperado: Al pulsar «Registrar retroalimentación» en la primera predicción pendiente de nivel <= 1 con menos de 89 días, la app va a /prediccion/retroalimentacion?resultado=<id>&activo=885 y abre el formulario «Retroalimentación clínica» de RF-72 con ese id_resultado_inferencia y el activo 885
+  Obtenido: li_pantalla=5 | url="/sigab-test/prediccion/retroalimentacion?resultado=d1f3cc43-3bf9-4492-a5b9-ec0cc5025d7e&activo=885" | bandeja={HTTP=200, x-request-id="654f0820-1687-4c16-941a-4bdda3989f9c", total=7, ventana_dias=90, id_en_items=no} | dialogo=no
+  Fuente:   RF-106 CA-4; Postcondición 2; Proceso 5 («Cada ítem tiene un botón "Registrar retroalimentación" que abre el formulario de RF-72 prellenado»)
+CP-03 | TC-M08-058, registro CORRECTO (POST simulado) | OK
+  Esperado: Con «Correcto» y «Registrar evaluación», el formulario envía un solo POST /prediccion/retroalimentacion con id_resultado_inferencia = el de CP-01, id_activo_biologico = 885 y estado_retroalimentacion = CORRECTO; con la respuesta 201 el formulario se cierra y se muestra «Evaluación registrada»
+  Obtenido: posts=1, body={id_resultado_inferencia="511a6d66-a862-4822-bf47-2634333531b3", id_activo_biologico=885, estado_retroalimentacion="CORRECTO"}, dialogo_cerrado=true, aviso=true
+  Fuente:   RF-106 Restricción 3 y CA-4; contrato de POST /prediccion/retroalimentacion (RF-72, Swagger)
+CP-04 | TC-M08-058, fuentes que consulta la vista | OK
+  Esperado: Mientras la pantalla es el historial predictivo (carga inicial y vuelta), la app consulta GET /historial-predictivo/885 (>= 2 veces, todas 200) y no hace ninguna petición a /prediccion/inferencias
+  Obtenido: GET /historial-predictivo/885=2 (status=[200, 200]); /prediccion/inferencias en historial=0
+  Fuente:   RF-106 Descripción («RF-106 NUNCA consulta RF-66 directamente»); endpoints de TC-M08-058
+CP-05 | TC-M08-058, la vista es de solo lectura | OK
+  Esperado: La vista del historial no tiene controles para registrar ni editar valoraciones (0 role=dialog, 0 role=radiogroup, 0 textarea, 0 botones «Correcto», «Parcial», «Incorrecto», «Sin evento» o «Registrar evaluación»; en la lista de pendientes solo hay botones «Registrar retroalimentación», «Anterior» y «Siguiente»), no envía a la API peticiones distintas de GET (salvo la sesión) y el botón solo navega a RF-72
+  Obtenido: dialogs=0, radiogroups=0, textareas=0, botones_valoracion=0 [], botones_pend=[Registrar retroalimentación], no_get_historial=0, no_get_clic_cp01=0, no_get_clic_cp02=0
+  Fuente:   RF-106 Restricción 3; Descripción («No modifica retroalimentaciones existentes»)
+CP-06 | TC-M08-058, volver a la vista | OK
+  Esperado: Al volver (atrás) al historial y elegir otra vez el 885, sale un GET /historial-predictivo/885 nuevo (200) y la vista muestra la TVCO y la lista de pendientes de esa respuesta
+  Obtenido: HTTP=200, x-request-id="de75eb78-c115-4f22-a728-cc0d935a6387", respuesta_tvco="25% (4 validadas; 20 excluidas: sin retro)", pantalla_tvco="25% (4 validadas; 20 excluidas: sin retro)", li=20/20 (domOk=true), id_CP01_sigue_en_pendientes=true
+  Fuente:   RF-106 Postcondición 4 («La tasa de acierto mostrada es consistente con los datos actuales de RF-72»)
+
+Retirados:
+- TC-M08-058: POST /prediccion/retroalimentacion real responde 201: No se escribe en TEST (decisión de Sebastian, 2026-11-21): tras el registro, el backend revisa la degradación del modelo con una sesión del sistema, fuera del sandbox (retroalimentacion_clinica_router.py:104; tasa_validacion_m04_adapter.py), y puede crear un aviso real tipo 45 para los Administradores. El POST se simula con page.route (CP-03)
+- TC-M08-058: al volver, la inferencia sale de pendientes, aparece su check y la TVCO se recalcula: Necesita una escritura real y el historial lee en una sesión aparte que no ve el sandbox (instantanea_reportes.py; historial_predictivo_router.py:59). El cálculo de pendientes y TVCO con datos reales del 885 está verificado en TC-M08-G022 (CP-11 y CP-12)
+
+Observaciones (no cuentan para el veredicto):
+- Lectura de código (HEAD 3358b032): ninguna ruta de src/ enlaza a /prediccion/historial-predictivo fuera de PrediccionPage; no hay acceso desde el dashboard de RF-103 (RF-106 Proceso 1; v7 no lo menciona).
+- Pendientes con más de 90 días en la lista (con botón presente): 10 [cb261b4f, 2363c367, d929c162, 7c215bf1, 8f7c7542, 50e68201, 11e12f40, ac952c1d, fb07d478, 7d597a54].
+- Ruta tras el registro en RF-72: /sigab-test/prediccion/retroalimentacion?resultado=511a6d66-a862-4822-bf47-2634333531b3&activo=885.
+- Al volver con atrás: combobox "Animal o lote"="", GET /historial-predictivo sin volver a elegir=0.
+- Al volver al historial, el id de CP-01 (511a6d66) sigue en pendientes (con POST simulado se espera que siga).
+- Peticiones a /prediccion/inferencias en otras pantallas: 0. Respuestas clave registradas: 5.
+- Despliegue: bundle index-CP69g8wQ.js en https://api.inmero.co/sigab-test/.
+
+Peticiones distintas de GET:
+- POST /api-sgpmp-test/sesiones/ -> al servidor (login 1)
+- POST /api-sgpmp-test/sesiones/refresh -> al servidor (sesion)
+- POST /api-sgpmp-test/prediccion/retroalimentacion -> simulada con page.route (no llega a TEST)

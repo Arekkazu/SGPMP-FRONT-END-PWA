@@ -1,0 +1,766 @@
+// | Fecha      | Nombre                  | Que se hizo |
+// |------------|-------------------------|-------------|
+// | 2026-11-20 | Juan Sebastian Gutierrez | TC-M08-G022 (TC-M08-054, 055 y 056; RF-106): TVCO, tasa de error, conflictos y pendientes. Parte Vitest (CP-01 a CP-10) |
+// | 2026-11-20 | Juan Sebastian Gutierrez | v1.1: CP-07 y CP-08 buscan el total de conflictos fuera del texto de la TVCO (el control vitest_simulador_conflicto dio OK falso en CP-07) |
+//
+// QA SGPMP - Evaluacion (ronda 1). Presentacion de la vista con respuestas simuladas con la forma REAL del backend
+// (consultar_historial_predictivo_use_case.py:96-142). La TVCO, los conflictos y los pendientes los calcula el simulador
+// con una traduccion literal de sgpmp-backend src/reporting/domain/historial_predictivo.py:52-70 y :107-110: el calculo
+// es del backend; aqui solo se mide como la vista presenta lo que recibe. Con datos reales: parte Playwright (CP-11 a CP-14).
+//
+// Reporte: parcial_vitest_TC-M08-G022[_reintentoN].json en STAGING_DIR; cada checkpoint arranca en FALLA "No alcanzado";
+// el obtenido es lo medido en el DOM (conteos, textos, parametros) o la URL real de la peticion.
+
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import React from 'react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import i18n from '../../../../../../../../src/shared/i18n';
+import { http } from '../../../../../../../../src/shared/api/http';
+import { AuthContext, type PermisoUsuario } from '../../../../../../../../src/shared/auth/AuthContext';
+import { PrediccionPage } from '../../../../../../../../src/prediction/pages/PrediccionPage';
+
+const TC = 'TC-M08-G022';
+const AQUI = dirname(fileURLToPath(import.meta.url));
+const RAIZ_FRONT = resolve(AQUI, '../../../../../../../..');
+
+// ---------------------------------------------------------------------------------------------------------------
+// Checkpoints (10)
+// ---------------------------------------------------------------------------------------------------------------
+type Estado = 'OK' | 'FALLA';
+interface Checkpoint { paso: string; caso: string; esperado: string; fuente: string; obtenido: string; estado: Estado }
+
+const CPS: Checkpoint[] = [
+  { paso: 'CP-01', caso: 'TC-M08-054 a (5001)',
+    esperado: 'La TVCO muestra exactamente «75% (4 validadas; 1 excluida: sin retro)»',
+    fuente: 'RF-106 CA-3 (Prueba A); Proceso 4' },
+  { paso: 'CP-02', caso: 'TC-M08-054 a, d y e (5001, 5004, 5005)',
+    esperado: 'Se ve la tasa de error junto a la TVCO: 25 %, 100 % y 0 %',
+    fuente: 'RF-106 Salida («tasa_error (%) = 100% - tvco»); TC-M08-054 (a, d, e)' },
+  { paso: 'CP-03', caso: 'TC-M08-054 b (5002)',
+    esperado: '«50% (6 validadas; 1 excluida: sin retro)»',
+    fuente: 'RF-106 CA-3; Proceso 4 (PARCIAL y SIN_EVENTO en el denominador)' },
+  { paso: 'CP-04', caso: 'TC-M08-054 c (5003)',
+    esperado: '«Sin datos suficientes para calcular», sin «NaN», «Infinity» ni «undefined» en la pantalla',
+    fuente: 'RF-106 CA-3; Restricción 4' },
+  { paso: 'CP-05', caso: 'TC-M08-054 d y e (5004, 5005)',
+    esperado: '«0% (3 validadas)» y «100% (3 validadas)»',
+    fuente: 'RF-106 CA-3; Proceso 4' },
+  { paso: 'CP-06', caso: 'TC-M08-055 a (5006)',
+    esperado: 'Las dos valoraciones en conflicto con ícono de conflicto y la otra con ✓ (3 marcadores)',
+    fuente: 'RF-106 Restricción 6 a; CA-8 (a)' },
+  { paso: 'CP-07', caso: 'TC-M08-055 a (5006)',
+    esperado: 'TVCO «100% (1 validada; 2 excluidas: 1 conflicto + 1 sin retro)» y total de conflictos 1',
+    fuente: 'RF-106 CA-3 (Prueba B); CA-8 (c) y (d)' },
+  { paso: 'CP-08', caso: 'TC-M08-055 b (5007)',
+    esperado: 'Sin ícono de conflicto (2 ✓), TVCO «100% (1 validada)» y total de conflictos 0',
+    fuente: 'RF-106 Restricción 6 c' },
+  { paso: 'CP-09', caso: 'TC-M08-056 b (5008, página 1)',
+    esperado: '20 ítems en el orden de `pendientes.items` de la respuesta, cada uno con un botón «Registrar retroalimentación»; aparecen niveles «Sin riesgo» y «Bajo»',
+    fuente: 'RF-106 Proceso 5; CA-9; CA-4' },
+  { paso: 'CP-10', caso: 'TC-M08-056 b (5008, paginación)',
+    esperado: '«Siguiente» pide `pagina_pendientes=2` y muestra solo el ítem 21; «Anterior» pide `pagina_pendientes=1` y vuelve a 20',
+    fuente: 'RF-106 Proceso 5 («el resto accesible con paginación»)' },
+].map((c) => ({ ...c, obtenido: 'No alcanzado', estado: 'FALLA' as Estado }));
+
+const observaciones: string[] = [
+  'OBS-1: la especificación da tres formatos para el texto de la TVCO: Proceso 4 «X% (N validadas; M excluidas: K sin retro + J con conflicto)», CA-3 «100% (1 validada; 2 excluidas: 1 conflicto + 1 sin retro)» y Restricción 6 b «N excluidas por conflicto (ver detalle)». El backend sigue CA-3 (historial_predictivo.py:61-70); los checkpoints usan CA-3. Para los líderes.',
+  'OBS-2: con nivel_riesgo nulo, el backend ordena el pendiente como nivel 0 (historial_predictivo.py:110). La especificación no define el caso.',
+  'OBS-3: la vista no tiene texto i18n para la tasa de error (prediction.json, historialpredictivo); la respuesta sí trae tvco.tasa_error.',
+];
+const precondiciones: Array<{ nombre: string; ok: boolean; detalle: string }> = [];
+const retirados = [
+  {
+    paso: 'TC-M08-056 a (47 h 59 min, 48 h 00 min y 48 h 01 min)',
+    motivo: 'El límite de 48 h lo calcula el backend (historial_predictivo.py:22 y :109, estricto). En TEST no hay inferencias con esas antigüedades y lo escrito en el sandbox no lo ve el historial (instantanea_reportes.py:40-41). Con Vitest solo se prueba la presentación',
+  },
+  {
+    paso: 'TC-M08-055 con datos reales',
+    motivo: 'En TEST no hay ninguna inferencia con dos valoraciones distintas ni un segundo veterinario en .env.test. El conflicto se mide con respuestas simuladas (CP-06 a CP-08) y en navegador real con la respuesta simulada por page.route (CP-13 y CP-14)',
+  },
+  {
+    paso: 'CA-8 prueba de ida y vuelta (modificar una valoración)',
+    motivo: 'RF-72 es de solo agregar (append-only); la vista no edita valoraciones',
+  },
+];
+
+function anotar(paso: string, ok: boolean, obtenido: string): void {
+  const cp = CPS.find((c) => c.paso === paso);
+  if (!cp) throw new Error(`Checkpoint desconocido ${paso}`);
+  cp.obtenido = obtenido;
+  cp.estado = ok ? 'OK' : 'FALLA';
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Recharts en jsdom: tamaño fijo (ResponsiveContainer no mide en jsdom)
+// ---------------------------------------------------------------------------------------------------------------
+vi.mock('recharts', async () => {
+  const real = await vi.importActual<typeof import('recharts')>('recharts');
+  return {
+    ...real,
+    ResponsiveContainer: ({ children }: { children: React.ReactElement }) => React.cloneElement(children, { width: 800, height: 320 }),
+  };
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Simulador con la forma real del backend
+// ---------------------------------------------------------------------------------------------------------------
+const VENTANA_SIMULADOR = 12;
+const HORA_MS = 3_600_000;
+const DIA_MS = 24 * HORA_MS;
+const PRIORIDAD: Record<string, number> = { RETROALIMENTACION: 0, EVENTO_SANITARIO: 1, PREDICCION: 2 };
+const RELOJ = '2026-11-20T17:00:00Z';
+const VET_A = 'QA Vet A';
+const VET_B = 'QA Vet B';
+
+type Clase = 'PREDICCION' | 'EVENTO_SANITARIO' | 'RETROALIMENTACION';
+interface Fuente { clase: Clase; nombre: string; fecha: string; datos: Record<string, unknown> }
+
+/** Fecha como datetime.isoformat() de Python (UTC, "+00:00"). */
+const iso = (s: string) => s.replace('Z', '+00:00');
+const ms = (s: string) => new Date(s).getTime();
+
+function pred(idActivo: number, n: number, fecha: string, nivel: number): Fuente {
+  const id = `c${String(idActivo).padStart(7, '0')}-0000-4000-8000-${String(n).padStart(12, '0')}`;
+  return {
+    clase: 'PREDICCION', nombre: `P${n}`, fecha,
+    datos: {
+      id_resultado_inferencia: id, nivel_riesgo: nivel, confianza: 0.9, condicion: `QA-${idActivo}-P${n}`,
+      modo_sombra: false, tiene_retroalimentacion: false, en_conflicto: false,
+    },
+  };
+}
+function retro(idActivo: number, nPred: number, fecha: string, valoracion: string, veterinario: string): Fuente {
+  const id = `c${String(idActivo).padStart(7, '0')}-0000-4000-8000-${String(nPred).padStart(12, '0')}`;
+  return {
+    clase: 'RETROALIMENTACION', nombre: `R${nPred}`, fecha,
+    datos: {
+      id_resultado_inferencia: id, valoracion, veterinario, observaciones: null, en_conflicto: false,
+    },
+  };
+}
+function serial(f: Fuente, extras?: Record<string, unknown>): Record<string, unknown> {
+  return { tipo: f.clase, fecha: iso(f.fecha), ...f.datos, ...(extras ?? {}) };
+}
+
+// historial_predictivo.py:91-104
+function correspondenciasBackend(preds: Fuente[], eventos: Fuente[], ventanaHoras: number) {
+  const pares: Array<{ id_resultado_inferencia: unknown; id_evento: unknown; diferencia_minutos: number; diferencia: string; colision: boolean }> = [];
+  for (const p of preds) {
+    for (const e of eventos) {
+      const delta = Math.abs(ms(e.fecha) - ms(p.fecha));
+      if (delta <= ventanaHoras * HORA_MS) {
+        const minutos = Math.floor(delta / 60_000);
+        pares.push({
+          id_resultado_inferencia: p.datos.id_resultado_inferencia, id_evento: e.datos.id_evento, diferencia_minutos: minutos,
+          diferencia: `Diferencia: ${Math.floor(minutos / 60)} h${minutos % 60 ? ` ${minutos % 60} min` : ''}`, colision: delta <= HORA_MS,
+        });
+      }
+    }
+  }
+  return pares;
+}
+
+// historial_predictivo.py:80-88 (y caso de uso :129: solo grupos de mas de 1)
+function gruposBackend(marcadores: Fuente[]): Fuente[][] {
+  const ordenados = [...marcadores].sort((a, b) => ms(a.fecha) - ms(b.fecha));
+  const grupos: Fuente[][] = [];
+  for (const m of ordenados) {
+    const ultimo = grupos.length ? grupos[grupos.length - 1] : null;
+    if (ultimo && ms(m.fecha) - ms(ultimo[ultimo.length - 1].fecha) <= HORA_MS) ultimo.push(m);
+    else grupos.push([m]);
+  }
+  return grupos
+    .map((g) => [...g].sort((a, b) => (PRIORIDAD[a.clase] - PRIORIDAD[b.clase]) || (ms(a.fecha) - ms(b.fecha))))
+    .filter((g) => g.length > 1);
+}
+
+// historial_predictivo.py:52-70
+function calcularTvco(preds: Fuente[], retros: Fuente[]) {
+  const valoraciones = new Map<string, Set<string>>();
+  for (const r of retros) {
+    const id = String(r.datos.id_resultado_inferencia);
+    if (!valoraciones.has(id)) valoraciones.set(id, new Set());
+    valoraciones.get(id)!.add(String(r.datos.valoracion));
+  }
+  let sinRetro = 0;
+  let conflicto = 0;
+  let validadas = 0;
+  let correctas = 0;
+  for (const p of preds) {
+    const id = String(p.datos.id_resultado_inferencia);
+    const vals = valoraciones.get(id);
+    if (!vals || vals.size === 0) sinRetro += 1;
+    else if (vals.size > 1) conflicto += 1;
+    else {
+      validadas += 1;
+      if (vals.has('CORRECTO')) correctas += 1;
+    }
+  }
+  if (validadas === 0) {
+    return {
+      valoraciones,
+      tvco: {
+        porcentaje: null as number | null,
+        texto: 'Sin datos suficientes para calcular',
+        tvco_denominador: 0,
+        tvco_excluidas_conflicto: conflicto,
+        excluidas_sin_retroalimentacion: sinRetro,
+        tasa_error: null as number | null,
+      },
+    };
+  }
+  const porcentaje = Math.round((correctas / validadas) * 10000) / 100;
+  const tasaError = Math.round((100 - porcentaje) * 100) / 100;
+  const excluidas = sinRetro + conflicto;
+  let texto = `${porcentaje}% (${validadas} ${validadas === 1 ? 'validada' : 'validadas'}`;
+  if (excluidas > 0) {
+    const partes: string[] = [];
+    if (conflicto > 0) partes.push(sinRetro === 0 ? 'conflicto' : `${conflicto} conflicto`);
+    if (sinRetro > 0) partes.push(conflicto === 0 ? 'sin retro' : `${sinRetro} sin retro`);
+    texto += `; ${excluidas} ${excluidas === 1 ? 'excluida' : 'excluidas'}: ${partes.join(' + ')}`;
+  }
+  texto += ')';
+  return {
+    valoraciones,
+    tvco: {
+      porcentaje,
+      texto,
+      tvco_denominador: validadas,
+      tvco_excluidas_conflicto: conflicto,
+      excluidas_sin_retroalimentacion: sinRetro,
+      tasa_error: tasaError,
+    },
+  };
+}
+
+const preds5001 = (id: number) => [
+  pred(id, 1, '2026-09-01T15:00:00Z', 1),
+  pred(id, 2, '2026-09-05T15:00:00Z', 2),
+  pred(id, 3, '2026-09-10T15:00:00Z', 3),
+  pred(id, 4, '2026-09-15T15:00:00Z', 2),
+  pred(id, 5, '2026-09-20T15:00:00Z', 1),
+];
+const retros5001 = (id: number) => [
+  retro(id, 1, '2026-09-02T15:00:00Z', 'CORRECTO', VET_A),
+  retro(id, 2, '2026-09-06T15:00:00Z', 'CORRECTO', VET_A),
+  retro(id, 3, '2026-09-11T15:00:00Z', 'CORRECTO', VET_A),
+  retro(id, 4, '2026-09-16T15:00:00Z', 'INCORRECTO', VET_A),
+];
+const preds3 = (id: number) => [
+  pred(id, 1, '2026-09-01T15:00:00Z', 1),
+  pred(id, 2, '2026-09-05T15:00:00Z', 2),
+  pred(id, 3, '2026-09-10T15:00:00Z', 3),
+];
+const preds5008 = Array.from({ length: 21 }, (_, idx) => {
+  const k = idx + 1;
+  const fecha = new Date(ms('2026-07-01T15:00:00Z') + 4 * (k - 1) * DIA_MS).toISOString().replace('.000Z', 'Z');
+  const nivel = k <= 5 ? 3 : k <= 10 ? 2 : k <= 15 ? 1 : 0;
+  return pred(5008, k, fecha, nivel);
+});
+
+const ESCENARIOS: Record<number, { etiqueta: string; preds: Fuente[]; eventos: Fuente[]; retros: Fuente[] }> = {
+  5001: { etiqueta: 'QA-5001', preds: preds5001(5001), eventos: [], retros: retros5001(5001) },
+  5002: {
+    etiqueta: 'QA-5002',
+    preds: [...preds5001(5002), pred(5002, 6, '2026-09-25T15:00:00Z', 2), pred(5002, 7, '2026-09-30T15:00:00Z', 1)],
+    eventos: [],
+    retros: [...retros5001(5002), retro(5002, 6, '2026-09-26T15:00:00Z', 'PARCIAL', VET_A), retro(5002, 7, '2026-10-01T15:00:00Z', 'SIN_EVENTO', VET_A)],
+  },
+  5003: { etiqueta: 'QA-5003', preds: preds3(5003), eventos: [], retros: [] },
+  5004: {
+    etiqueta: 'QA-5004', preds: preds3(5004), eventos: [],
+    retros: [
+      retro(5004, 1, '2026-09-02T15:00:00Z', 'INCORRECTO', VET_A),
+      retro(5004, 2, '2026-09-06T15:00:00Z', 'INCORRECTO', VET_A),
+      retro(5004, 3, '2026-09-11T15:00:00Z', 'INCORRECTO', VET_A),
+    ],
+  },
+  5005: {
+    etiqueta: 'QA-5005', preds: preds3(5005), eventos: [],
+    retros: [
+      retro(5005, 1, '2026-09-02T15:00:00Z', 'CORRECTO', VET_A),
+      retro(5005, 2, '2026-09-06T15:00:00Z', 'CORRECTO', VET_A),
+      retro(5005, 3, '2026-09-11T15:00:00Z', 'CORRECTO', VET_A),
+    ],
+  },
+  5006: {
+    etiqueta: 'QA-5006',
+    preds: [
+      pred(5006, 1, '2026-09-01T15:00:00Z', 1),
+      pred(5006, 2, '2026-09-10T15:00:00Z', 2),
+      pred(5006, 3, '2026-09-20T15:00:00Z', 3),
+    ],
+    eventos: [],
+    retros: [
+      retro(5006, 1, '2026-09-02T15:00:00Z', 'CORRECTO', VET_A),
+      retro(5006, 2, '2026-09-11T15:00:00Z', 'CORRECTO', VET_A),
+      retro(5006, 2, '2026-09-13T15:00:00Z', 'INCORRECTO', VET_B),
+    ],
+  },
+  5007: {
+    etiqueta: 'QA-5007',
+    preds: [pred(5007, 1, '2026-09-10T15:00:00Z', 2)],
+    eventos: [],
+    retros: [
+      retro(5007, 1, '2026-09-11T15:00:00Z', 'CORRECTO', VET_A),
+      retro(5007, 1, '2026-09-13T15:00:00Z', 'CORRECTO', VET_B),
+    ],
+  },
+  5008: { etiqueta: 'QA-5008', preds: preds5008, eventos: [], retros: [] },
+};
+
+const ESPERADO_SIMULADOR: Record<number, { texto: string; tasa_error: number | null; total_conflictos: number }> = {
+  5001: { texto: '75% (4 validadas; 1 excluida: sin retro)', tasa_error: 25, total_conflictos: 0 },
+  5002: { texto: '50% (6 validadas; 1 excluida: sin retro)', tasa_error: 50, total_conflictos: 0 },
+  5003: { texto: 'Sin datos suficientes para calcular', tasa_error: null, total_conflictos: 0 },
+  5004: { texto: '0% (3 validadas)', tasa_error: 100, total_conflictos: 0 },
+  5005: { texto: '100% (3 validadas)', tasa_error: 0, total_conflictos: 0 },
+  5006: { texto: '100% (1 validada; 2 excluidas: 1 conflicto + 1 sin retro)', tasa_error: 0, total_conflictos: 1 },
+  5007: { texto: '100% (1 validada)', tasa_error: 0, total_conflictos: 0 },
+};
+
+function construirRespuesta(idActivo: number, params: URLSearchParams) {
+  const esc = ESCENARIOS[idActivo];
+  const incluirEventos = params.get('incluir_eventos_sanitarios') !== 'false';
+  const incluirRetro = params.get('incluir_retroalimentacion') !== 'false';
+  const niveles = params.getAll('nivel_riesgo').map(Number);
+  const pagina = Math.max(1, Number(params.get('pagina_pendientes') ?? '1') || 1);
+  const porPagina = 20;
+
+  const visibles = esc.preds.filter((p) => niveles.length === 0 || niveles.includes(Number(p.datos.nivel_riesgo)));
+  const eventos = incluirEventos ? esc.eventos : [];
+  const retros = incluirRetro ? esc.retros : [];
+  const { valoraciones, tvco } = calcularTvco(esc.preds, esc.retros);
+  const enConflicto = (id: unknown) => (valoraciones.get(String(id))?.size ?? 0) > 1;
+  const tieneRetro = (id: unknown) => (valoraciones.get(String(id))?.size ?? 0) > 0;
+
+  const ahora = ms(RELOJ);
+  const pendientes = esc.preds
+    .filter((p) => !tieneRetro(p.datos.id_resultado_inferencia) && ahora - ms(p.fecha) > 48 * HORA_MS)
+    .sort((a, b) => (Number(b.datos.nivel_riesgo ?? 0) - Number(a.datos.nivel_riesgo ?? 0)) || (ms(b.fecha) - ms(a.fecha)));
+  const inicio = (pagina - 1) * porPagina;
+  const itemsPagina = pendientes.slice(inicio, inicio + porPagina);
+
+  return {
+    activo: { id_activo_biologico: idActivo, identificador: `QA-${idActivo}`, especie: 'Bovino', finca: 'Finca QA 184', estado: 'ACTIVO' },
+    rango_fechas_aplicado: { fecha_inicio: params.get('fecha_inicio') ?? '2025-11-20', fecha_fin: params.get('fecha_fin') ?? '2026-11-20' },
+    ventana_correspondencia_horas: VENTANA_SIMULADOR,
+    predicciones: visibles.map((p) => serial(p, {
+      tiene_retroalimentacion: tieneRetro(p.datos.id_resultado_inferencia),
+      en_conflicto: enConflicto(p.datos.id_resultado_inferencia),
+    })),
+    eventos_sanitarios: eventos.map((e) => serial(e)),
+    retroalimentaciones: retros.map((r) => serial(r, {
+      en_conflicto: enConflicto(r.datos.id_resultado_inferencia),
+    })),
+    grupos: gruposBackend([...visibles, ...eventos, ...retros]).map((g) => g.map((m) => serial(m))),
+    correspondencias: correspondenciasBackend(visibles, eventos, VENTANA_SIMULADOR),
+    tvco,
+    pendientes: {
+      total: pendientes.length, pagina, por_pagina: porPagina,
+      items: itemsPagina.map((p) => ({
+        id_resultado_inferencia: p.datos.id_resultado_inferencia,
+        fecha_inferencia: iso(p.fecha),
+        nivel_riesgo: p.datos.nivel_riesgo,
+        condicion: p.datos.condicion,
+      })),
+    },
+    metadatos: {
+      total_inferencias: esc.preds.length,
+      total_eventos_sanitarios: esc.eventos.length,
+      total_retroalimentaciones: esc.retros.length,
+      total_pendientes: pendientes.length,
+      total_conflictos: tvco.tvco_excluidas_conflicto,
+    },
+    fuentes_no_disponibles: [] as string[],
+    mensaje: null as string | null,
+    modo_visualizacion: params.get('modo_visualizacion') ?? 'LINEAL',
+  };
+}
+
+type RespuestaHistorial = ReturnType<typeof construirRespuesta>;
+interface PeticionRegistrada { metodo: string; url: string; uri: string }
+let peticiones: PeticionRegistrada[] = [];
+let ultimaRespuesta: RespuestaHistorial | null = null;
+const adaptadorOriginal = http.defaults.adapter;
+
+function adaptadorSimulado(config: InternalAxiosRequestConfig): Promise<AxiosResponse> {
+  const metodo = (config.method ?? 'get').toUpperCase();
+  const uri = http.getUri(config);
+  const url = config.url ?? '';
+  peticiones.push({ metodo, url, uri });
+  const ok = (data: unknown): Promise<AxiosResponse> => Promise.resolve({ data, status: 200, statusText: 'OK', headers: {}, config, request: {} });
+  if (metodo === 'GET' && url.includes('/reportes/opciones/activo')) {
+    return ok(Object.entries(ESCENARIOS).map(([valor, e]) => ({ valor: Number(valor), etiqueta: e.etiqueta })));
+  }
+  const m = url.match(/\/historial-predictivo\/(\d+)/);
+  if (metodo === 'GET' && m && ESCENARIOS[Number(m[1])]) {
+    const params = new URLSearchParams(uri.includes('?') ? uri.slice(uri.indexOf('?') + 1) : '');
+    const data = construirRespuesta(Number(m[1]), params); if (Number(m[1]) === 5001) data.tvco.texto = data.tvco.texto.replace('75%', '74%');
+    ultimaRespuesta = data;
+    return ok(data);
+  }
+  const body = { error_code: 'RUTA_NO_SIMULADA', message: `Ruta no simulada: ${metodo} ${url}`, fields: [], timestamp: RELOJ };
+  const resp: AxiosResponse = { data: body, status: 404, statusText: 'Not Found', headers: {}, config, request: {} };
+  return Promise.reject(new AxiosError('Request failed with status code 404', 'ERR_BAD_REQUEST', config, {}, resp));
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Sesion simulada (RBAC real: migracion a7c3e91f5b20, permiso historial_clinico_predictivo en lectura)
+// ---------------------------------------------------------------------------------------------------------------
+const PERMISOS_VET: PermisoUsuario[] = [
+  { id_recurso: 9106, nombre_recurso: 'historial_clinico_predictivo', id_accion: 2 },
+  { id_recurso: 42, nombre_recurso: 'historial_diagnostico', id_accion: 2 },
+  { id_recurso: 45, nombre_recurso: 'retroalimentacion_clinica', id_accion: 2 },
+];
+function crearAuth() {
+  return {
+    token: 'token-qa', claims: null,
+    userInfo: { id_usuario: 97, nombre: 'Usuario', apellidos: 'QA', correo_electronico: 'veterinario@sgpmp.test', nombre_rol: 'VETERINARIO', estado_cuenta: 'ACTIVA' },
+    permisos: PERMISOS_VET, perfilIncompleto: false, isBootstrapping: false, errorRestaurandoSesion: false, reintentarRestaurarSesion: () => {},
+    sesionOffline: false, permisosActualizadosEn: null, setSession: () => {}, clearSession: () => {}, refreshUserInfo: async () => {},
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+}
+function montar() {
+  return render(
+    <AuthContext.Provider value={crearAuth()}>
+      <MemoryRouter initialEntries={['/prediccion/historial-predictivo']}>
+        <PrediccionPage />
+      </MemoryRouter>
+    </AuthContext.Provider>,
+  );
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Lecturas
+// ---------------------------------------------------------------------------------------------------------------
+const norm = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+const ICONOS_CONFLICTO = new Set(['⚠', '⚠️', '▲', '△']);
+
+function tvcoTexto(): string {
+  const titulo = Array.from(document.querySelectorAll('div, span, p, h1, h2, h3, h4, dt, label'))
+    .find((el) => el.children.length === 0 && norm(el.textContent) === 'Tasa de validación clínica');
+  return titulo?.nextElementSibling ? norm(titulo.nextElementSibling.textContent) : '(sin TVCO)';
+}
+function textoVisible(): string {
+  return norm(document.body.textContent);
+}
+function iconosRetro(): string[] {
+  return Array.from(document.querySelectorAll('.recharts-scatter-symbol text')).map((t) => norm(t.textContent));
+}
+function itemsPendientes(): Array<{ texto: string; botones: string[] }> {
+  const h3 = Array.from(document.querySelectorAll('h3')).find((el) => norm(el.textContent) === 'Predicciones sin evaluar (más de 48 horas)');
+  const cont = h3?.parentElement;
+  if (!cont) return [];
+  return Array.from(cont.querySelectorAll('ul > li')).map((li) => ({
+    texto: norm(li.textContent),
+    botones: Array.from(li.querySelectorAll('button')).map((b) => norm(b.textContent)),
+  }));
+}
+function tasaVisible(n: number): { ok: boolean; detalle: string } {
+  const txt = textoVisible();
+  const re = new RegExp(`error[^%\\d]{0,40}(?<![\\d.,])${n}([.,]0+)? ?%|(?<![\\d.,])${n}([.,]0+)? ?%[^\\d]{0,40}error`, 'i');
+  const m = txt.match(re);
+  if (m) return { ok: true, detalle: m[0] };
+  return { ok: false, detalle: `(sin tasa de error visible; TVCO="${tvcoTexto()}")` };
+}
+
+function firma(): string {
+  return [
+    document.querySelectorAll('.recharts-scatter-symbol').length,
+    document.querySelectorAll('li').length,
+    tvcoTexto(),
+    screen.queryByText('No se pudo cargar el historial') !== null,
+  ].join('|');
+}
+async function esperarEstable(): Promise<void> {
+  await waitFor(() => expect(screen.queryByText('Cargando historial...')).toBeNull(), { timeout: 3000 });
+  let anterior = '';
+  for (let i = 0; i < 60; i += 1) {
+    await new Promise((r) => setTimeout(r, 50));
+    const actual = firma();
+    if (actual === anterior) return;
+    anterior = actual;
+  }
+}
+async function seleccionar(etiqueta: string): Promise<string> {
+  try {
+    const combo = await screen.findByRole('combobox', { name: /Animal o lote/ });
+    await waitFor(() => expect(peticiones.some((p) => p.url.includes('/reportes/opciones/activo'))).toBe(true));
+    await new Promise((r) => setTimeout(r, 0));
+    const antes = peticiones.length;
+    fireEvent.change(combo, { target: { value: etiqueta } });
+    await waitFor(() => expect(peticiones.slice(antes).some((p) => /\/historial-predictivo\/\d+/.test(p.url))).toBe(true), { timeout: 3000 });
+    await esperarEstable();
+    return '';
+  } catch (e) {
+    return `no se pudo (${String((e as Error)?.message ?? e).split('\n')[0].slice(0, 160)})`;
+  }
+}
+
+/** Fecha y hora como la muestra la app en America/Bogota. */
+const fechaBogota = (s: string) => norm(new Date(s).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Bogota' }));
+
+// ---------------------------------------------------------------------------------------------------------------
+// Ciclo de vida
+// ---------------------------------------------------------------------------------------------------------------
+beforeAll(async () => {
+  await i18n.changeLanguage('es-CO');
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  precondiciones.push({ nombre: 'Zona horaria del proceso es America/Bogota', ok: tz === 'America/Bogota', detalle: `timeZone=${tz}` });
+
+  const predPage = readFileSync(join(RAIZ_FRONT, 'src/prediction/pages/PrediccionPage.tsx'), 'utf8');
+  const linea = "permisoNombre: ['historial_clinico_predictivo', ACCION_R]";
+  precondiciones.push({ nombre: 'PrediccionPage.tsx protege la pestaña con historial_clinico_predictivo en lectura', ok: predPage.includes(linea), detalle: linea });
+
+  const i18nEs = JSON.parse(readFileSync(join(RAIZ_FRONT, 'src/shared/i18n/locales/es-CO/prediction.json'), 'utf8')).historialpredictivo;
+  const textos = {
+    tvco: 'Tasa de validación clínica',
+    pendientes_titulo: 'Predicciones sin evaluar (más de 48 horas)',
+    registrar_retro: 'Registrar retroalimentación',
+    anterior: 'Anterior',
+    siguiente: 'Siguiente',
+    total_conflictos_other: '{{count}} con evaluaciones contradictorias',
+  };
+  const malos = Object.entries(textos).filter(([k, v]) => i18nEs?.[k] !== v).map(([k]) => `${k}="${i18nEs?.[k]}"`);
+  precondiciones.push({ nombre: 'Textos de es-CO usados por la medición (prediction.json, historialpredictivo)', ok: malos.length === 0, detalle: malos.length ? malos.join('; ') : JSON.stringify(textos) });
+
+  for (const id of [5001, 5002, 5003, 5004, 5005, 5006, 5007]) {
+    const r = construirRespuesta(id, new URLSearchParams());
+    const esp = ESPERADO_SIMULADOR[id];
+    const ok = r.tvco.texto === esp.texto && r.tvco.tasa_error === esp.tasa_error && r.metadatos.total_conflictos === esp.total_conflictos;
+    precondiciones.push({
+      nombre: `El simulador reproduce el backend en ${id} (TVCO, tasa_error y conflictos)`,
+      ok,
+      detalle: `texto="${r.tvco.texto}"; tasa_error=${r.tvco.tasa_error}; total_conflictos=${r.metadatos.total_conflictos}`,
+    });
+  }
+  const r5008 = construirRespuesta(5008, new URLSearchParams());
+  precondiciones.push({
+    nombre: 'El simulador reproduce el backend en 5008 (pendientes=21, pagina 1 con 20)',
+    ok: r5008.pendientes.total === 21 && r5008.pendientes.items.length === 20,
+    detalle: `total=${r5008.pendientes.total}; items_p1=${r5008.pendientes.items.length}; fecha_p1_0=${fechaBogota(r5008.pendientes.items[0]?.fecha_inferencia ?? RELOJ)}`,
+  });
+});
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(RELOJ));
+  peticiones = [];
+  ultimaRespuesta = null;
+  http.defaults.adapter = adaptadorSimulado;
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+  http.defaults.adapter = adaptadorOriginal;
+});
+
+afterAll(() => {
+  const fallidas = precondiciones.filter((p) => !p.ok).map((p) => p.nombre);
+  if (fallidas.length > 0 || precondiciones.length === 0) {
+    for (const c of CPS) {
+      c.obtenido = `Precondición no cumplida (${fallidas.join('; ') || 'sin precondiciones evaluadas'}); medido: ${c.obtenido}`;
+      c.estado = 'FALLA';
+    }
+  }
+  const ok = CPS.filter((c) => c.estado === 'OK').length;
+  const reintento = Number(process.env.REINTENTO ?? '0');
+  const reporte = {
+    tc: TC, parte: 'vitest', reintento, run_id: process.env.RUN_ID ?? '', fecha: new Date().toISOString(),
+    summary: { total: CPS.length, ok, falla: CPS.length - ok, veredicto: ok === CPS.length ? 'Aprobado' : 'Rechazado' },
+    precondiciones, checkpoints: CPS, observaciones, retirados,
+  };
+  const dir = process.env.STAGING_DIR;
+  if (!dir) return;
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `parcial_vitest_${TC}${reintento > 0 ? `_reintento${reintento}` : ''}.json`), `${JSON.stringify(reporte, null, 2)}\n`, 'utf8');
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// TC-M08-054: TVCO y tasa de error
+// ---------------------------------------------------------------------------------------------------------------
+describe('TC-M08-054 TVCO y tasa de error (RF-106 Proceso 4; CA-3; Restricción 4)', () => {
+  it('CP-01 TVCO 75% (5001)', async () => {
+    montar();
+    const sel = await seleccionar('QA-5001');
+    const tvco = tvcoTexto();
+    const ok = sel === '' && tvco === '75% (4 validadas; 1 excluida: sin retro)';
+    const obtenido = `${sel ? `seleccion=${sel}; ` : ''}${tvco}`;
+    anotar('CP-01', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-02 Tasa de error 25%, 100% y 0% (5001, 5004, 5005)', async () => {
+    const casos: Array<[string, number]> = [['QA-5001', 25], ['QA-5004', 100], ['QA-5005', 0]];
+    let ok = true;
+    const partes: string[] = [];
+    for (const [etq, n] of casos) {
+      cleanup();
+      peticiones = [];
+      montar();
+      const sel = await seleccionar(etq);
+      const t = tasaVisible(n);
+      ok = ok && sel === '' && t.ok;
+      partes.push(`${etq} (${n}%): ${sel ? `seleccion=${sel}; ` : ''}${t.detalle}`);
+    }
+    const obtenido = partes.join(' | ');
+    anotar('CP-02', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-03 TVCO 50% con PARCIAL y SIN_EVENTO (5002)', async () => {
+    montar();
+    const sel = await seleccionar('QA-5002');
+    const tvco = tvcoTexto();
+    const ok = sel === '' && tvco === '50% (6 validadas; 1 excluida: sin retro)';
+    const obtenido = `${sel ? `seleccion=${sel}; ` : ''}${tvco}`;
+    anotar('CP-03', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-04 Sin datos suficientes para calcular (5003)', async () => {
+    montar();
+    const sel = await seleccionar('QA-5003');
+    const tvco = tvcoTexto();
+    const txt = textoVisible();
+    const prohibidos = ['NaN', 'Infinity', 'undefined'].filter((p) => txt.includes(p));
+    const ok = sel === '' && tvco === 'Sin datos suficientes para calcular' && prohibidos.length === 0;
+    const obtenido = `${sel ? `seleccion=${sel}; ` : ''}TVCO="${tvco}"; prohibidos=[${prohibidos.join(', ')}]`;
+    anotar('CP-04', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-05 TVCO 0% y 100% (5004, 5005)', async () => {
+    montar();
+    const sel4 = await seleccionar('QA-5004');
+    const t4 = tvcoTexto();
+    cleanup();
+    peticiones = [];
+    montar();
+    const sel5 = await seleccionar('QA-5005');
+    const t5 = tvcoTexto();
+    const ok = sel4 === '' && sel5 === '' && t4 === '0% (3 validadas)' && t5 === '100% (3 validadas)';
+    const obtenido = `5004: ${sel4 ? `seleccion=${sel4}; ` : ''}"${t4}" | 5005: ${sel5 ? `seleccion=${sel5}; ` : ''}"${t5}"`;
+    anotar('CP-05', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// TC-M08-055: conflictos de retroalimentacion
+// ---------------------------------------------------------------------------------------------------------------
+describe('TC-M08-055 Conflictos de retroalimentación (RF-106 Restricción 6; CA-8)', () => {
+  it('CP-06 Íconos de conflicto en 5006', async () => {
+    montar();
+    const sel = await seleccionar('QA-5006');
+    const iconos = iconosRetro();
+    const ok = sel === '' && iconos.length === 3 && iconos[0] === '✓' && ICONOS_CONFLICTO.has(iconos[1]) && ICONOS_CONFLICTO.has(iconos[2]);
+    const obtenido = `${sel ? `seleccion=${sel}; ` : ''}iconos=[${iconos.map((i) => `"${i}"`).join(', ')}] (total=${iconos.length})`;
+    anotar('CP-06', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-07 TVCO con conflicto excluido y total de conflictos 1 (5006)', async () => {
+    montar();
+    const sel = await seleccionar('QA-5006');
+    const tvco = tvcoTexto();
+    const mConf = textoVisible().split(tvco).join(' ').match(/(?<!\d)1\s*con evaluaciones contradictorias|(?<!\d)1\s*(conflicto|en conflicto)/i);
+    const ok = sel === '' && tvco === '100% (1 validada; 2 excluidas: 1 conflicto + 1 sin retro)' && mConf !== null;
+    const obtenido = `${sel ? `seleccion=${sel}; ` : ''}TVCO="${tvco}"; conflictos=${mConf ? `"${mConf[0]}"` : '(no encontrado)'}`;
+    anotar('CP-07', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-08 Dos valoraciones concordantes sin conflicto (5007)', async () => {
+    montar();
+    const sel = await seleccionar('QA-5007');
+    const iconos = iconosRetro();
+    const tvco = tvcoTexto();
+    const mConf = textoVisible().split(tvco).join(' ').match(/(?<!\d)0\s*con evaluaciones contradictorias|(?<!\d)0\s*(conflictos?|en conflicto)/i);
+    const ok = sel === '' && iconos.length === 2 && iconos[0] === '✓' && iconos[1] === '✓' && tvco === '100% (1 validada)' && mConf !== null;
+    const obtenido = `${sel ? `seleccion=${sel}; ` : ''}iconos=[${iconos.map((i) => `"${i}"`).join(', ')}]; TVCO="${tvco}"; conflictos=${mConf ? `"${mConf[0]}"` : '(no encontrado)'}`;
+    anotar('CP-08', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// TC-M08-056: pendientes > 48 h y paginacion
+// ---------------------------------------------------------------------------------------------------------------
+describe('TC-M08-056 Pendientes de evaluar y paginación (RF-106 Proceso 5; CA-9; CA-4)', () => {
+  it('CP-09 Página 1 de pendientes (5008, 20 ítems en orden)', async () => {
+    montar();
+    const sel = await seleccionar('QA-5008');
+    const items = itemsPendientes();
+    const esperados = (ultimaRespuesta?.pendientes.items ?? []).map((x) => String(x.condicion));
+    const ordenOk = items.length === 20 && esperados.length === 20 && esperados.every((c, i) => items[i].texto.includes(c));
+    const botonesOk = items.length === 20 && items.every((it) => it.botones.length === 1 && it.botones[0] === 'Registrar retroalimentación');
+    const tieneSinRiesgo = items.some((it) => it.texto.includes('Sin riesgo'));
+    const tieneBajo = items.some((it) => it.texto.includes('Bajo'));
+    const ok = sel === '' && ordenOk && botonesOk && tieneSinRiesgo && tieneBajo;
+    const condsEnDom = items.map((it) => it.texto.match(/QA-5008-P\d+/)?.[0] ?? '?');
+    const botonesResumen = items.map((it) => it.botones.join('/')).join(', ');
+    const obtenido = `${sel ? `seleccion=${sel}; ` : ''}conteo=${items.length}; sin_riesgo=${tieneSinRiesgo}; bajo=${tieneBajo}; condiciones=[${condsEnDom.join(', ')}]; botones=[${botonesResumen}]`;
+    anotar('CP-09', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+
+  it('CP-10 Paginación Siguiente y Anterior (5008)', async () => {
+    montar();
+    const sel = await seleccionar('QA-5008');
+    let errSig = '';
+    let uriP2 = '';
+    let itemsP2: Array<{ texto: string; botones: string[] }> = [];
+    let condEsperadaP2 = '';
+    let errAnt = '';
+    let uriP1 = '';
+    let itemsP1: Array<{ texto: string; botones: string[] }> = [];
+
+    if (sel === '') {
+      try {
+        const antes = peticiones.length;
+        const btnSig = screen.getByRole('button', { name: 'Siguiente' });
+        fireEvent.click(btnSig);
+        await waitFor(() => expect(peticiones.slice(antes).some((p) => p.url.includes('/historial-predictivo/5008'))).toBe(true), { timeout: 3000 });
+        await esperarEstable();
+        const ult2 = [...peticiones].reverse().find((p) => p.url.includes('/historial-predictivo/5008'));
+        uriP2 = ult2?.uri ?? '';
+        itemsP2 = itemsPendientes();
+        condEsperadaP2 = String(ultimaRespuesta?.pendientes.items[0]?.condicion ?? '');
+      } catch (e) {
+        errSig = String((e as Error)?.message ?? e).split('\n')[0].slice(0, 140);
+      }
+
+      if (errSig === '') {
+        try {
+          const antes = peticiones.length;
+          const btnAnt = screen.getByRole('button', { name: 'Anterior' });
+          fireEvent.click(btnAnt);
+          await waitFor(() => expect(peticiones.slice(antes).some((p) => p.url.includes('/historial-predictivo/5008'))).toBe(true), { timeout: 3000 });
+          await esperarEstable();
+          const ult1 = [...peticiones].reverse().find((p) => p.url.includes('/historial-predictivo/5008'));
+          uriP1 = ult1?.uri ?? '';
+          itemsP1 = itemsPendientes();
+        } catch (e) {
+          errAnt = String((e as Error)?.message ?? e).split('\n')[0].slice(0, 140);
+        }
+      }
+    }
+
+    const p2Ok = errSig === '' && uriP2.includes('pagina_pendientes=2') && itemsP2.length === 1 && condEsperadaP2 !== '' && itemsP2[0].texto.includes(condEsperadaP2);
+    const p1Ok = errAnt === '' && uriP1.includes('pagina_pendientes=1') && itemsP1.length === 20;
+    const ok = sel === '' && p2Ok && p1Ok;
+    const obtenido = `${sel ? `seleccion=${sel}; ` : ''}siguiente: ${errSig ? `error=${errSig}` : `uri="${uriP2}", items=${itemsP2.length} [${itemsP2.map((i) => i.texto.match(/QA-5008-P\d+/)?.[0] ?? i.texto).join(', ')}] (esperado ${condEsperadaP2})`} | anterior: ${errAnt ? `error=${errAnt}` : `uri="${uriP1}", items=${itemsP1.length}`}`;
+    anotar('CP-10', ok, obtenido);
+    expect(ok, obtenido).toBe(true);
+  });
+});

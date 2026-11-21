@@ -1,0 +1,104 @@
+﻿
+ RUN  v4.1.11 C:/Users/Juansegutt/Integrador/SGPMP-FRONT-END-PWA
+
+(node:29080) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-01 operacion <= 3.000 ms no activa indicador 213ms
+   → expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-02 y CP-03 operacion 3.001 ms muestra indicador con spinner y sin progressbar 61ms
+stderr | testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-07 FALLIDO (422) a los 5.000 ms cierra indicador y muestra error con el message del 422
+[i18n] falta la clave "common:errores.por_codigo.VALIDACION_REPORTE" en es-CO — se muestra el espanol
+System.Management.Automation.RemoteException
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-04 y CP-05 aviso proceso.largo ausente en t1+30.000 y visible en t1+30.001 61ms
+   → expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-06 EXITOSO a los 5.000 ms cierra indicador y muestra banner de exito 45ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-07 FALLIDO (422) a los 5.000 ms cierra indicador y muestra error con el message del 422 52ms
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-08 timeout 60.000 ms cierra indicador y muestra mensaje FA-3 44ms
+   → expected false to be true // Object.is equality
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-064 Bloqueo de operaciones dependientes y navegacion (RF-107 8.2 y 8.3) > CP-09, CP-10 y CP-11 cierre pendiente: tooltip en controles, navegacion libre y bloqueo de revocacion 118ms
+   → expected false to be true // Object.is equality
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+System.Management.Automation.RemoteException
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-01 operacion <= 3.000 ms no activa indicador
+AssertionError: expected false to be true // Object.is equality
+System.Management.Automation.RemoteException
+- Expected
++ Received
+System.Management.Automation.RemoteException
+- true
++ false
+System.Management.Automation.RemoteException
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx:542:16
+    540|       `${visiblesEn.length ? `visible en [${visiblesEn.join(', ')}] ms…
+    541|     );
+    542|     expect(ok).toBe(true);
+       |                ^
+    543|   });
+    544|
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+System.Management.Automation.RemoteException
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-04 y CP-05 aviso proceso.largo ausente en t1+30.000 y visible en t1+30.001
+AssertionError: expected false to be true // Object.is equality
+System.Management.Automation.RemoteException
+- Expected
++ Received
+System.Management.Automation.RemoteException
+- true
++ false
+System.Management.Automation.RemoteException
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx:632:26
+    630|     const ok05 = en30001 === textoLargoEsperado;
+    631|     anotar('CP-05', ok05, `t1+30.001="${en30001 || '(ausente)'}"`);
+    632|     expect(ok04 && ok05).toBe(true);
+       |                          ^
+    633|   });
+    634|
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+System.Management.Automation.RemoteException
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-08 timeout 60.000 ms cierra indicador y muestra mensaje FA-3
+AssertionError: expected false to be true // Object.is equality
+System.Management.Automation.RemoteException
+- Expected
++ Received
+System.Management.Automation.RemoteException
+- true
++ false
+System.Management.Automation.RemoteException
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx:713:18
+    711|         `indicador=${ind ? 'sí' : 'no'}; textos_error=[${textos.map((x…
+    712|       );
+    713|       expect(ok).toBe(true);
+       |                  ^
+    714|     } finally {
+    715|       diferida.resolver({ status: 201, data: crearReporteExito() });
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+System.Management.Automation.RemoteException
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-064 Bloqueo de operaciones dependientes y navegacion (RF-107 8.2 y 8.3) > CP-09, CP-10 y CP-11 cierre pendiente: tooltip en controles, navegacion libre y bloqueo de revocacion
+AssertionError: expected false to be true // Object.is equality
+System.Management.Automation.RemoteException
+- Expected
++ Received
+System.Management.Automation.RemoteException
+- true
++ false
+System.Management.Automation.RemoteException
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx:856:84
+    854|       }
+    855|
+    856|       expect(ok09 && ok10 && CPS.find((c) => c.paso === 'CP-11')?.esta…
+       |                                                                                    ^
+    857|     } finally {
+    858|       cierreDiferido.resolver({
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+System.Management.Automation.RemoteException
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 3 passed (7)
+   Start at  07:15:55
+   Duration  5.80s (transform 1.21s, setup 299ms, import 3.44s, tests 923ms, environment 817ms)
+

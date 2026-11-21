@@ -1,0 +1,599 @@
+// | Fecha      | Nombre                   | Que se hizo |
+// |------------|--------------------------|-------------|
+// | 2026-11-21 | Juan Sebastian Gutierrez | TC-M08-G023 (TC-M08-058; RF-106): acceso a RF-72 desde pendientes, POST simulado y solo lectura v1 |
+//
+// QA SGPMP - Evaluacion (ronda 1). Navegador real (Chromium) contra el frontend desplegado en TEST, cuenta Veterinario 97,
+// activo 885. Solo lectura: el POST /prediccion/retroalimentacion se simula con page.route (no llega a TEST).
+//
+// SOLO LECTURA:
+//   - Solo pasan al servidor los GET y la sesion (POST /sesiones/ una vez, POST /sesiones/refresh, DELETE /sesiones/).
+//   - POST /prediccion/retroalimentacion se responde con page.route (201 simulado, no llega al servidor).
+//   - Cualquier otro metodo se aborta; si es de la API, la corrida es invalida (precondicion falsa en afterAll).
+//   - POST /usuarios/me/fcm-token y hosts de Google/Firebase se abortan y se anotan.
+// Credenciales solo en memoria (QA_VET_EMAIL / QA_VET_PASSWORD, las pone el runner). Sin traza ni video.
+//
+// Reporte: JSON final propio en STAGING_DIR (resultado_TC-M08-G023[_reintentoN].json). Cada checkpoint arranca en FALLA "No alcanzado".
+import { test, expect, type Page, type Route, type Request, type Response } from '@playwright/test';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const TC = 'TC-M08-G023';
+const ACTIVO = 885;
+const BASE = (process.env.QA_FRONT_URL ?? 'https://api.inmero.co/sigab-test/').replace(/\/?$/, '/');
+const STAGING = process.env.STAGING_DIR ?? '';
+const REINTENTO = Number(process.env.REINTENTO ?? '0');
+const HORA_MS = 3_600_000;
+const DIA_MS = 24 * HORA_MS;
+const VENTANA_SEGURA_MS = 89 * DIA_MS;
+
+type Estado = 'OK' | 'FALLA';
+interface Checkpoint { paso: string; caso: string; esperado: string; fuente: string; obtenido: string; estado: Estado }
+const CPS: Checkpoint[] = [
+  {
+    paso: 'CP-01',
+    caso: 'TC-M08-058, pendiente de nivel >= 2 dentro de la ventana de RF-72',
+    esperado: 'Al pulsar «Registrar retroalimentación» en la primera predicción pendiente de nivel >= 2 con menos de 89 días, la app va a /prediccion/retroalimentacion?resultado=<id>&activo=885 y abre el formulario «Retroalimentación clínica» de RF-72 con ese id_resultado_inferencia y el activo 885',
+    fuente: 'RF-106 CA-4; Postcondición 2; Proceso 5',
+  },
+  {
+    paso: 'CP-02',
+    caso: 'TC-M08-058, pendiente de nivel <= 1 dentro de la ventana de RF-72',
+    esperado: 'Al pulsar «Registrar retroalimentación» en la primera predicción pendiente de nivel <= 1 con menos de 89 días, la app va a /prediccion/retroalimentacion?resultado=<id>&activo=885 y abre el formulario «Retroalimentación clínica» de RF-72 con ese id_resultado_inferencia y el activo 885',
+    fuente: 'RF-106 CA-4; Postcondición 2; Proceso 5 («Cada ítem tiene un botón "Registrar retroalimentación" que abre el formulario de RF-72 prellenado»)',
+  },
+  {
+    paso: 'CP-03',
+    caso: 'TC-M08-058, registro CORRECTO (POST simulado)',
+    esperado: 'Con «Correcto» y «Registrar evaluación», el formulario envía un solo POST /prediccion/retroalimentacion con id_resultado_inferencia = el de CP-01, id_activo_biologico = 885 y estado_retroalimentacion = CORRECTO; con la respuesta 201 el formulario se cierra y se muestra «Evaluación registrada»',
+    fuente: 'RF-106 Restricción 3 y CA-4; contrato de POST /prediccion/retroalimentacion (RF-72, Swagger)',
+  },
+  {
+    paso: 'CP-04',
+    caso: 'TC-M08-058, fuentes que consulta la vista',
+    esperado: 'Mientras la pantalla es el historial predictivo (carga inicial y vuelta), la app consulta GET /historial-predictivo/885 (>= 2 veces, todas 200) y no hace ninguna petición a /prediccion/inferencias',
+    fuente: 'RF-106 Descripción («RF-106 NUNCA consulta RF-66 directamente»); endpoints de TC-M08-058',
+  },
+  {
+    paso: 'CP-05',
+    caso: 'TC-M08-058, la vista es de solo lectura',
+    esperado: 'La vista del historial no tiene controles para registrar ni editar valoraciones (0 role=dialog, 0 role=radiogroup, 0 textarea, 0 botones «Correcto», «Parcial», «Incorrecto», «Sin evento» o «Registrar evaluación»; en la lista de pendientes solo hay botones «Registrar retroalimentación», «Anterior» y «Siguiente»), no envía a la API peticiones distintas de GET (salvo la sesión) y el botón solo navega a RF-72',
+    fuente: 'RF-106 Restricción 3; Descripción («No modifica retroalimentaciones existentes»)',
+  },
+  {
+    paso: 'CP-06',
+    caso: 'TC-M08-058, volver a la vista',
+    esperado: 'Al volver (atrás) al historial y elegir otra vez el 885, sale un GET /historial-predictivo/885 nuevo (200) y la vista muestra la TVCO y la lista de pendientes de esa respuesta',
+    fuente: 'RF-106 Postcondición 4 («La tasa de acierto mostrada es consistente con los datos actuales de RF-72»)',
+  },
+].map((c) => ({ ...c, obtenido: 'No alcanzado', estado: 'FALLA' as Estado }));
+
+const RETIRADOS: Array<{ paso: string; motivo: string }> = [
+  {
+    paso: 'TC-M08-058: POST /prediccion/retroalimentacion real responde 201',
+    motivo: 'No se escribe en TEST (decisión de Sebastian, 2026-11-21): tras el registro, el backend revisa la degradación del modelo con una sesión del sistema, fuera del sandbox (retroalimentacion_clinica_router.py:104; tasa_validacion_m04_adapter.py), y puede crear un aviso real tipo 45 para los Administradores. El POST se simula con page.route (CP-03)',
+  },
+  {
+    paso: 'TC-M08-058: al volver, la inferencia sale de pendientes, aparece su check y la TVCO se recalcula',
+    motivo: 'Necesita una escritura real y el historial lee en una sesión aparte que no ve el sandbox (instantanea_reportes.py; historial_predictivo_router.py:59). El cálculo de pendientes y TVCO con datos reales del 885 está verificado en TC-M08-G022 (CP-11 y CP-12)',
+  },
+];
+
+const precondiciones: Array<{ nombre: string; ok: boolean; detalle: string }> = [];
+const observaciones: string[] = [
+  'Lectura de código (HEAD 3358b032): ninguna ruta de src/ enlaza a /prediccion/historial-predictivo fuera de PrediccionPage; no hay acceso desde el dashboard de RF-103 (RF-106 Proceso 1; v7 no lo menciona).',
+];
+const escrituras: Array<{ metodo: string; ruta: string; resultado: string }> = [];
+const violaciones: string[] = [];
+
+function anotar(paso: string, ok: boolean, obtenido: string): void {
+  const cp = CPS.find((c) => c.paso === paso)!;
+  cp.obtenido = obtenido;
+  cp.estado = ok ? 'OK' : 'FALLA';
+}
+function precondicion(nombre: string, ok: boolean, detalle: string): void {
+  precondiciones.push({ nombre, ok, detalle });
+  if (!ok) {
+    for (const c of CPS) { c.obtenido = `Precondición no cumplida (${nombre}): ${detalle}`; c.estado = 'FALLA'; }
+    throw new Error(`Precondicion falsa: ${nombre} (${detalle})`);
+  }
+}
+function captura(page: Page, nombre: string): Promise<unknown> {
+  if (!STAGING) return Promise.resolve();
+  return page.screenshot({
+    path: join(STAGING, `captura_${TC}_${nombre}.png`),
+    mask: [page.locator('.ds-appbar__right'), page.locator('.ds-sidebar__footer')],
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Guardia de escrituras + simulacion del POST de retroalimentacion
+// ---------------------------------------------------------------------------------------------------------------
+let logins = 0;
+async function guardia(route: Route, req: Request): Promise<void> {
+  const metodo = req.method();
+  if (metodo === 'GET' || metodo === 'HEAD' || metodo === 'OPTIONS') return route.continue();
+  const url = new URL(req.url());
+  const ruta = url.pathname;
+  if (/googleapis\.com|gstatic\.com|firebaseio\.com|firebase\.com/.test(url.hostname)) {
+    escrituras.push({ metodo, ruta: `${url.hostname}${ruta}`, resultado: 'abortada (host externo)' });
+    return route.abort();
+  }
+  if (metodo === 'POST' && /\/sesiones\/?$/.test(ruta)) {
+    logins += 1;
+    escrituras.push({ metodo, ruta, resultado: `al servidor (login ${logins})` });
+    if (logins > 1) { violaciones.push(`segundo login (${ruta})`); return route.abort(); }
+    return route.continue();
+  }
+  if ((metodo === 'POST' && /\/sesiones\/refresh\/?$/.test(ruta)) || (metodo === 'DELETE' && /\/sesiones\/?$/.test(ruta))) {
+    escrituras.push({ metodo, ruta, resultado: 'al servidor (sesion)' });
+    return route.continue();
+  }
+  if (metodo === 'POST' && /\/usuarios\/me\/fcm-token\/?$/.test(ruta)) {
+    escrituras.push({ metodo, ruta, resultado: 'abortada (registro de push)' });
+    return route.abort();
+  }
+  escrituras.push({ metodo, ruta, resultado: 'ABORTADA (no permitida)' });
+  violaciones.push(`${metodo} ${ruta}`);
+  return route.abort();
+}
+
+const postsSimulados: Array<Record<string, unknown>> = [];
+async function simularRegistro(route: Route, req: Request): Promise<void> {
+  if (req.method() !== 'POST') return route.fallback();
+  const body = (req.postDataJSON() ?? {}) as Record<string, unknown>;
+  postsSimulados.push(body);
+  const ruta = new URL(req.url()).pathname;
+  escrituras.push({ metodo: 'POST', ruta, resultado: 'simulada con page.route (no llega a TEST)' });
+  return route.fulfill({
+    status: 201,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      id_retroalimentacion: '0a023000-0000-4000-8000-000000000001',
+      id_resultado_inferencia: body.id_resultado_inferencia,
+      id_activo_biologico: body.id_activo_biologico,
+      estado_retroalimentacion: body.estado_retroalimentacion,
+      diagnosticos_reales: body.diagnosticos_reales ?? null,
+      fuente_diagnostico: body.fuente_diagnostico ?? null,
+      es_fuente_desconocida: body.fuente_diagnostico == null,
+      es_conflicto_retroalimentacion: false,
+      observaciones_clinicas: body.observaciones_clinicas ?? null,
+      id_usuario_veterinario: 97,
+      fecha_retroalimentacion: new Date().toISOString(),
+      estado_registro: 'ACTIVO',
+    }),
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Utilidades
+// ---------------------------------------------------------------------------------------------------------------
+type Marcador = Record<string, unknown> & { fecha: string };
+interface Tvco {
+  porcentaje: number | null;
+  texto: string;
+  tvco_denominador: number;
+  tvco_excluidas_conflicto: number;
+  excluidas_sin_retroalimentacion: number;
+  tasa_error: number | null;
+}
+interface PendienteItem {
+  id_resultado_inferencia: string;
+  fecha_inferencia: string;
+  nivel_riesgo: number | null;
+  condicion: string;
+}
+interface Historial {
+  activo: { identificador: string | null };
+  predicciones: Marcador[];
+  eventos_sanitarios: Marcador[];
+  retroalimentaciones: Marcador[];
+  grupos: Marcador[][];
+  correspondencias: Array<Record<string, unknown>>;
+  tvco: Tvco;
+  pendientes: { total: number; pagina: number; por_pagina: number; items: PendienteItem[] };
+  metadatos: {
+    total_inferencias: number;
+    total_eventos_sanitarios: number;
+    total_retroalimentaciones: number;
+    total_pendientes: number;
+    total_conflictos: number;
+  };
+}
+interface BandejaItem {
+  id_resultado_inferencia: string;
+  estado_evaluacion: string;
+  puede_evaluar: boolean;
+}
+interface BandejaResp {
+  total: number;
+  ventana_dias: number;
+  items: BandejaItem[];
+}
+interface RegistroPeticion {
+  metodo: string;
+  ruta: string;
+  search: string;
+  host: string;
+  pantalla: string;
+  t: number;
+  status?: number;
+  requestId?: string;
+}
+
+const norm = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+const ms = (s: string) => new Date(s).getTime();
+const corto = (v: unknown) => String(v ?? '').slice(0, 8);
+const NIVEL_LABEL: Record<number, string> = { 0: 'Sin riesgo', 1: 'Bajo', 2: 'Medio', 3: 'Alto' };
+
+function fechaBogota(s: string): string {
+  return norm(new Date(s).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Bogota' }));
+}
+
+async function esperarEstable(page: Page): Promise<void> {
+  await expect(page.getByText('Cargando historial...')).toHaveCount(0, { timeout: 30_000 });
+  let anterior = '';
+  const limite = Date.now() + 10_000;
+  while (Date.now() < limite) {
+    await page.waitForTimeout(250);
+    const f = await page.evaluate(() => [
+      document.querySelectorAll('.recharts-scatter-symbol').length,
+      document.querySelectorAll('li').length,
+    ].join('|'));
+    if (f === anterior) return;
+    anterior = f;
+  }
+}
+
+async function elegirActivo(page: Page, etiqueta: string): Promise<Response> {
+  const esHistorial = (r: Response) => new RegExp(`/historial-predictivo/${ACTIVO}\\?`).test(r.url())
+    && r.url().includes('modo_visualizacion=LINEAL')
+    && r.request().method() === 'GET';
+  const respLineal = page.waitForResponse(esHistorial, { timeout: 30_000 });
+  const combo = page.getByRole('combobox', { name: 'Animal o lote' });
+  await combo.fill(etiqueta);
+  const opcionLista = page.getByRole('option', { name: etiqueta, exact: true });
+  if (await opcionLista.count()) await opcionLista.first().click();
+  return respLineal;
+}
+
+function esNoGetApi(p: RegistroPeticion): boolean {
+  if (p.metodo === 'GET' || p.metodo === 'HEAD' || p.metodo === 'OPTIONS') return false;
+  if (/googleapis\.com|gstatic\.com|firebaseio\.com|firebase\.com/.test(p.host)) return false;
+  if (/\/sesiones(\/refresh)?\/?$/.test(p.ruta)) return false;
+  if (/\/usuarios\/me\/fcm-token\/?$/.test(p.ruta)) return false;
+  return true;
+}
+
+test.afterAll(() => {
+  if (violaciones.length) precondiciones.push({ nombre: 'Ninguna escritura no permitida hacia TEST', ok: false, detalle: violaciones.join('; ') });
+  else precondiciones.push({ nombre: 'Ninguna escritura no permitida hacia TEST', ok: true, detalle: `${escrituras.length} peticiones distintas de GET, todas permitidas` });
+  if (precondiciones.some((p) => !p.ok)) {
+    const nombres = precondiciones.filter((p) => !p.ok).map((p) => p.nombre).join('; ');
+    for (const c of CPS) if (!c.obtenido.startsWith('Precondición no cumplida')) { c.obtenido = `Precondición no cumplida (${nombres}); medido: ${c.obtenido}`; c.estado = 'FALLA'; }
+  }
+  const ok = CPS.filter((c) => c.estado === 'OK').length;
+  const reporte = {
+    tc: TC,
+    reintento: REINTENTO,
+    run_id: process.env.RUN_ID ?? '',
+    fecha: new Date().toISOString(),
+    ambiente: BASE,
+    summary: { total: CPS.length, ok, falla: CPS.length - ok, veredicto: ok === CPS.length ? 'Aprobado' : 'Rechazado' },
+    checkpoints: CPS,
+    observaciones,
+    retirados: RETIRADOS,
+    precondiciones,
+    escrituras,
+  };
+  if (!STAGING) return;
+  mkdirSync(STAGING, { recursive: true });
+  writeFileSync(join(STAGING, `resultado_${TC}${REINTENTO > 0 ? `_reintento${REINTENTO}` : ''}.json`), `${JSON.stringify(reporte, null, 2)}\n`, 'utf8');
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Recorrido unico (un solo login)
+// ---------------------------------------------------------------------------------------------------------------
+test('TC-M08-G023 navegador real (CP-01 a CP-06)', async ({ page }) => {
+  test.setTimeout(300_000);
+  const correo = process.env.QA_VET_EMAIL ?? '';
+  const clave = process.env.QA_VET_PASSWORD ?? '';
+  precondicion('Credenciales del Veterinario en memoria', correo.length > 3 && clave.length > 3, 'QA_VET_EMAIL / QA_VET_PASSWORD presentes');
+
+  const scripts: Array<{ nombre: string; cuerpo: string }> = [];
+  const peticiones: RegistroPeticion[] = [];
+  const mapaReq = new Map<Request, RegistroPeticion>();
+  const respuestasClave: Array<{ ruta: string; status: number; requestId: string }> = [];
+
+  page.on('request', (req) => {
+    let u: URL;
+    try { u = new URL(req.url()); } catch { return; }
+    let pantalla = '';
+    try { pantalla = new URL(page.url()).pathname; } catch { pantalla = ''; }
+    const entry: RegistroPeticion = { metodo: req.method(), ruta: u.pathname, search: u.search, host: u.hostname, pantalla, t: Date.now() };
+    peticiones.push(entry);
+    mapaReq.set(req, entry);
+  });
+
+  page.on('response', async (r) => {
+    const entry = mapaReq.get(r.request());
+    const reqId = r.headers()['x-request-id'] ?? '';
+    if (entry) {
+      entry.status = r.status();
+      entry.requestId = reqId;
+    }
+    try {
+      const ruta = new URL(r.url()).pathname;
+      if (ruta.includes(`/historial-predictivo/${ACTIVO}`) || ruta.includes('/prediccion/retroalimentacion/bandeja')) {
+        respuestasClave.push({ ruta, status: r.status(), requestId: reqId });
+      }
+    } catch { /* url no valida */ }
+    if (r.request().resourceType() !== 'script') return;
+    try { scripts.push({ nombre: new URL(r.url()).pathname.split('/').pop() ?? '', cuerpo: await r.text() }); } catch { /* recurso sin cuerpo */ }
+  });
+
+  await page.route('**/*', guardia);
+
+  // -- 1. Login (una sola vez; un fallo no se reintenta)
+  await page.goto(`${BASE}login`);
+  await page.locator('input[autocomplete="email"]').fill(correo);
+  await page.locator('input[autocomplete="current-password"]').fill(clave);
+  await page.getByRole('button', { name: 'Ingresar' }).click();
+  await page.waitForURL((u) => !u.pathname.endsWith('/login'), { timeout: 30_000 }).catch(() => undefined);
+  precondicion('Login del Veterinario 97 (una sola vez)', !page.url().endsWith('/login'), `URL tras el login: ${new URL(page.url()).pathname}`);
+
+  // -- 2. Historial predictivo del 885 en Lineal
+  const respOpciones = page.waitForResponse((r) => /\/reportes\/opciones\/activo/.test(r.url()) && r.request().method() === 'GET', { timeout: 30_000 });
+  await page.goto(`${BASE}prediccion/historial-predictivo`);
+  const opciones = (await (await respOpciones).json()) as Array<{ valor: number; etiqueta: string }>;
+  const opcion = opciones.find((o) => Number(o.valor) === ACTIVO);
+  precondicion(`El activo ${ACTIVO} figura entre los animales o lotes del Veterinario`, !!opcion, `${opciones.length} opciones`);
+  const r1 = await elegirActivo(page, opcion!.etiqueta);
+  precondicion(`GET /historial-predictivo/${ACTIVO} (Lineal) responde 200`, r1.status() === 200, `HTTP ${r1.status()}`);
+  const headerDate = r1.headers().date;
+  const ahora = headerDate ? ms(headerDate) : Date.now();
+  const h1 = (await r1.json()) as Historial;
+  await esperarEstable(page);
+
+  const enVentana = (p: PendienteItem): boolean => {
+    const edad = ahora - ms(p.fecha_inferencia);
+    return edad > 48 * HORA_MS && edad < VENTANA_SEGURA_MS;
+  };
+  const idxAlto = h1.pendientes.items.findIndex((p) => Number(p.nivel_riesgo ?? 0) >= 2 && enVentana(p));
+  const idxBajo = h1.pendientes.items.findIndex((p) => Number(p.nivel_riesgo ?? 0) <= 1 && enVentana(p));
+  const itemAlto = idxAlto >= 0 ? h1.pendientes.items[idxAlto] : null;
+  const itemBajo = idxBajo >= 0 ? h1.pendientes.items[idxBajo] : null;
+  const edadDias = (f: string) => Math.round(((ahora - ms(f)) / DIA_MS) * 10) / 10;
+  precondicion(
+    `Línea base del ${ACTIVO}`,
+    h1.pendientes.total >= 2 && idxAlto >= 0 && idxBajo >= 0,
+    `pendientes=${h1.pendientes.total}, alto=${itemAlto ? `${corto(itemAlto.id_resultado_inferencia)} (nivel=${itemAlto.nivel_riesgo}, fecha=${itemAlto.fecha_inferencia}, edad=${edadDias(itemAlto.fecha_inferencia)}d)` : '(ausente)'}, bajo=${itemBajo ? `${corto(itemBajo.id_resultado_inferencia)} (nivel=${itemBajo.nivel_riesgo ?? 0}, fecha=${itemBajo.fecha_inferencia}, edad=${edadDias(itemBajo.fecha_inferencia)}d)` : '(ausente)'}`,
+  );
+
+  const mayores90 = h1.pendientes.items.filter((p) => ahora - ms(p.fecha_inferencia) > 90 * DIA_MS);
+  observaciones.push(`Pendientes con más de 90 días en la lista (con botón presente): ${mayores90.length} [${mayores90.map((p) => corto(p.id_resultado_inferencia)).join(', ')}].`);
+
+  // -- 3. CP-05 (parte estatica en el historial)
+  const estatica = await page.evaluate(() => {
+    const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+    const prohibidos = ['Correcto', 'Parcial', 'Incorrecto', 'Sin evento', 'Registrar evaluación'];
+    const botonesValoracion = Array.from(document.querySelectorAll('button, [role="button"], [role="radio"]'))
+      .map((el) => n(el.textContent))
+      .filter((txt) => prohibidos.some((p) => txt === p || txt.startsWith(`${p} `)));
+    const h3 = Array.from(document.querySelectorAll('h3')).find((el) => n(el.textContent) === 'Predicciones sin evaluar (más de 48 horas)');
+    const cont = h3?.parentElement;
+    const botonesPend = cont ? Array.from(new Set(Array.from(cont.querySelectorAll('button')).map((b) => n(b.textContent)))) : [];
+    return {
+      dialogs: document.querySelectorAll('[role="dialog"]').length,
+      radiogroups: document.querySelectorAll('[role="radiogroup"]').length,
+      textareas: document.querySelectorAll('textarea').length,
+      botonesValoracion,
+      botonesPend,
+    };
+  });
+  const permitidosPend = new Set(['Registrar retroalimentación', 'Anterior', 'Siguiente']);
+  const botonesPendNoPermitidos = estatica.botonesPend.filter((b) => !permitidosPend.has(b));
+
+  const identificadorEsperado = h1.activo?.identificador ?? `#${ACTIVO}`;
+
+  async function probarClicPendiente(
+    idx: number,
+    item: PendienteItem,
+    nombreCaptura: string,
+  ): Promise<{ ok: boolean; obtenido: string; dialogoVisible: boolean; noGetEnClic: RegistroPeticion[] }> {
+    const tarjetaPend = page.locator('h3', { hasText: 'Predicciones sin evaluar (más de 48 horas)' }).locator('..');
+    const botonPend = tarjetaPend.locator('ul > li').nth(idx).getByRole('button', { name: 'Registrar retroalimentación' });
+    const idxReqAntes = peticiones.length;
+    const promBandeja = page.waitForResponse(
+      (r) => /\/prediccion\/retroalimentacion\/bandeja/.test(r.url()) && r.request().method() === 'GET',
+      { timeout: 30_000 },
+    ).catch(() => null);
+
+    await botonPend.click();
+    await page.waitForURL((u) => u.pathname.endsWith('/prediccion/retroalimentacion'), { timeout: 15_000 }).catch(() => undefined);
+    const tCambioUrl = Date.now();
+    const respBandeja = await promBandeja;
+
+    const noGetEnClic = peticiones
+      .slice(idxReqAntes)
+      .filter((p) => p.t <= tCambioUrl && p.pantalla.endsWith('/prediccion/historial-predictivo') && esNoGetApi(p));
+
+    let infoBandeja = 'sin respuesta';
+    if (respBandeja) {
+      let bodyB: BandejaResp | null = null;
+      try { bodyB = (await respBandeja.json()) as BandejaResp; } catch { bodyB = null; }
+      const hallado = bodyB?.items?.find((it) => it.id_resultado_inferencia === item.id_resultado_inferencia);
+      infoBandeja = `HTTP=${respBandeja.status()}, x-request-id="${respBandeja.headers()['x-request-id'] ?? ''}", total=${bodyB?.total ?? '?'}, ventana_dias=${bodyB?.ventana_dias ?? '?'}, id_en_items=${hallado ? `sí (estado_evaluacion=${hallado.estado_evaluacion}, puede_evaluar=${hallado.puede_evaluar})` : 'no'}`;
+    }
+
+    const dialogo = page.getByRole('dialog', { name: 'Retroalimentación clínica', exact: true });
+    const limite = Date.now() + 8_000;
+    let dialogoVisible = false;
+    while (Date.now() < limite) {
+      if (await dialogo.isVisible().catch(() => false)) { dialogoVisible = true; break; }
+      await page.waitForTimeout(200);
+    }
+
+    const uActual = new URL(page.url());
+    const rutaYSearch = `${uActual.pathname}${uActual.search}`;
+    let titleContexto = '';
+    let lineaActivo = '';
+    let textoDialogo = '';
+    if (dialogoVisible) {
+      const titles = await dialogo.locator('[title]').evaluateAll((els) => els.map((e) => e.getAttribute('title') ?? ''));
+      titleContexto = titles.find((t) => t === item.id_resultado_inferencia) ?? titles[0] ?? '';
+      textoDialogo = norm(await dialogo.textContent());
+      const inner = await dialogo.innerText().catch(() => '');
+      lineaActivo = norm(inner.split('\n').find((l) => l.includes('Activo biológico:')) ?? '');
+    }
+
+    const ok = uActual.pathname.endsWith('/prediccion/retroalimentacion')
+      && uActual.searchParams.get('resultado') === item.id_resultado_inferencia
+      && uActual.searchParams.get('activo') === String(ACTIVO)
+      && dialogoVisible
+      && titleContexto === item.id_resultado_inferencia
+      && textoDialogo.includes(identificadorEsperado);
+
+    const obtenido = `url="${rutaYSearch}" | bandeja={${infoBandeja}} | dialogo=${dialogoVisible ? 'sí' : 'no'}${dialogoVisible ? ` (title="${titleContexto}", linea_activo="${lineaActivo}")` : ''}`;
+    await captura(page, nombreCaptura);
+    return { ok, obtenido, dialogoVisible, noGetEnClic };
+  }
+
+  // -- 4. CP-01: pendiente de nivel >= 2
+  const res01 = await probarClicPendiente(idxAlto, itemAlto!, 'CP-01_formulario_rf72');
+  anotar('CP-01', res01.ok, res01.obtenido);
+
+  // -- 5. CP-03: registro CORRECTO (POST simulado)
+  if (!res01.dialogoVisible) {
+    anotar('CP-03', false, 'formulario no abierto en CP-01: no se pudo registrar');
+  } else {
+    const dialogo = page.getByRole('dialog', { name: 'Retroalimentación clínica', exact: true });
+    await dialogo.getByRole('radio', { name: /^Correcto/ }).click();
+    await dialogo.getByRole('button', { name: 'Registrar evaluación' }).click();
+
+    const limPost = Date.now() + 15_000;
+    while (Date.now() < limPost && postsSimulados.length < 1) {
+      await page.waitForTimeout(200);
+    }
+    const limUi = Date.now() + 10_000;
+    let dialogoCerrado = false;
+    let avisoVisible = false;
+    while (Date.now() < limUi) {
+      dialogoCerrado = !(await dialogo.isVisible().catch(() => false));
+      avisoVisible = await page.getByText('Evaluación registrada').isVisible().catch(() => false);
+      if (dialogoCerrado && avisoVisible) break;
+      await page.waitForTimeout(200);
+    }
+    const nPosts = postsSimulados.length;
+    const b0 = postsSimulados[0] ?? null;
+    const ok03 = nPosts === 1
+      && b0?.id_resultado_inferencia === itemAlto!.id_resultado_inferencia
+      && Number(b0?.id_activo_biologico) === ACTIVO
+      && b0?.estado_retroalimentacion === 'CORRECTO'
+      && dialogoCerrado
+      && avisoVisible;
+    anotar(
+      'CP-03',
+      ok03,
+      `posts=${nPosts}, body=${b0 ? `{id_resultado_inferencia="${b0.id_resultado_inferencia}", id_activo_biologico=${b0.id_activo_biologico}, estado_retroalimentacion="${b0.estado_retroalimentacion}"}` : 'null'}, dialogo_cerrado=${dialogoCerrado}, aviso=${avisoVisible}`,
+    );
+    const uPost = new URL(page.url());
+    observaciones.push(`Ruta tras el registro en RF-72: ${uPost.pathname}${uPost.search}.`);
+  }
+
+  // -- 6. Vuelta al historial y CP-06
+  const getsHistAntesVuelta = peticiones.filter((p) => p.metodo === 'GET' && new RegExp(`/historial-predictivo/${ACTIVO}$`).test(p.ruta)).length;
+  await page.goBack();
+  await page.waitForURL((u) => u.pathname.endsWith('/prediccion/historial-predictivo'), { timeout: 15_000 }).catch(() => undefined);
+  await page.waitForTimeout(3_000);
+  const valorComboAlVolver = await page.getByRole('combobox', { name: 'Animal o lote' }).inputValue().catch(() => '(no disponible)');
+  const getsAutoAlVolver = peticiones.filter((p) => p.metodo === 'GET' && /\/historial-predictivo\//.test(p.ruta)).length - getsHistAntesVuelta;
+  observaciones.push(`Al volver con atrás: combobox "Animal o lote"="${valorComboAlVolver}", GET /historial-predictivo sin volver a elegir=${getsAutoAlVolver}.`);
+
+  const r2 = await elegirActivo(page, opcion!.etiqueta);
+  await esperarEstable(page);
+  const h2 = (await r2.json()) as Historial;
+
+  const getsHistDespuesVuelta = peticiones.filter((p) => p.metodo === 'GET' && new RegExp(`/historial-predictivo/${ACTIVO}$`).test(p.ruta)).length;
+  const tvcoCardLoc = page.locator('xpath=//div[normalize-space(.)="Tasa de validación clínica"]/following-sibling::div[1]');
+  const tvcoPantalla2 = (await tvcoCardLoc.count()) ? norm(await tvcoCardLoc.first().textContent()) : '(sin TVCO)';
+  const lisDom2 = await page.evaluate(() => {
+    const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+    const h3 = Array.from(document.querySelectorAll('h3')).find((el) => n(el.textContent) === 'Predicciones sin evaluar (más de 48 horas)');
+    const cont = h3?.parentElement;
+    if (!cont) return [] as Array<{ texto: string; botones: string[] }>;
+    return Array.from(cont.querySelectorAll('ul > li')).map((li) => ({
+      texto: n(li.textContent),
+      botones: Array.from(li.querySelectorAll('button')).map((b) => n(b.textContent)),
+    }));
+  });
+  const domOk2 = lisDom2.length === h2.pendientes.items.length && h2.pendientes.items.every((it, i) => {
+    const fecha = fechaBogota(it.fecha_inferencia);
+    const nivel = NIVEL_LABEL[Number(it.nivel_riesgo ?? 0)] ?? '';
+    return lisDom2[i].texto.includes(fecha) && lisDom2[i].texto.includes(nivel) && lisDom2[i].botones.includes('Registrar retroalimentación');
+  });
+  const idAltoSigue = h2.pendientes.items.some((p) => p.id_resultado_inferencia === itemAlto!.id_resultado_inferencia);
+  const ok06 = getsHistDespuesVuelta > getsHistAntesVuelta && r2.status() === 200 && tvcoPantalla2 === h2.tvco.texto && domOk2;
+  anotar(
+    'CP-06',
+    ok06,
+    `HTTP=${r2.status()}, x-request-id="${r2.headers()['x-request-id'] ?? ''}", respuesta_tvco="${h2.tvco.texto}", pantalla_tvco="${tvcoPantalla2}", li=${lisDom2.length}/${h2.pendientes.items.length} (domOk=${domOk2}), id_CP01_sigue_en_pendientes=${idAltoSigue}`,
+  );
+  observaciones.push(`Al volver al historial, el id de CP-01 (${corto(itemAlto!.id_resultado_inferencia)}) ${idAltoSigue ? 'sigue' : 'no sigue'} en pendientes (con POST simulado se espera que siga).`);
+
+  // -- 7. CP-02: pendiente de nivel <= 1
+  const idxBajo2 = h2.pendientes.items.findIndex((p) => p.id_resultado_inferencia === itemBajo!.id_resultado_inferencia);
+  precondicion(
+    'El pendiente de nivel <= 1 de la línea base sigue en la lista',
+    idxBajo2 >= 0,
+    idxBajo2 >= 0 ? `indice=${idxBajo2}, id=${corto(itemBajo!.id_resultado_inferencia)}` : `id=${corto(itemBajo!.id_resultado_inferencia)} ausente`,
+  );
+  const res02 = await probarClicPendiente(idxBajo2, itemBajo!, 'CP-02_rf72');
+  anotar('CP-02', res02.ok, res02.obtenido);
+
+  // -- 8. CP-04: fuentes que consulta la vista
+  const enHistorial = peticiones.filter((p) => p.pantalla.endsWith('/prediccion/historial-predictivo'));
+  const getsHist = enHistorial.filter((p) => p.metodo === 'GET' && new RegExp(`/historial-predictivo/${ACTIVO}$`).test(p.ruta));
+  const infsHist = enHistorial.filter((p) => p.ruta.includes('/prediccion/inferencias'));
+  const infsOtras = peticiones.filter((p) => !p.pantalla.endsWith('/prediccion/historial-predictivo') && p.ruta.includes('/prediccion/inferencias'));
+  const ok04 = getsHist.length >= 2 && getsHist.every((p) => p.status === 200) && infsHist.length === 0;
+  anotar(
+    'CP-04',
+    ok04,
+    `GET /historial-predictivo/${ACTIVO}=${getsHist.length} (status=[${getsHist.map((p) => p.status ?? 'sin_resp').join(', ')}]); /prediccion/inferencias en historial=${infsHist.length}${infsHist.length ? ` [${infsHist.map((p) => `${p.metodo} ${p.ruta}`).join(', ')}]` : ''}`,
+  );
+  observaciones.push(`Peticiones a /prediccion/inferencias en otras pantallas: ${infsOtras.length}. Respuestas clave registradas: ${respuestasClave.length}.`);
+
+  // -- 9. CP-05: la vista es de solo lectura
+  const noGetHistorial = enHistorial.filter(esNoGetApi);
+  const ok05 = estatica.dialogs === 0
+    && estatica.radiogroups === 0
+    && estatica.textareas === 0
+    && estatica.botonesValoracion.length === 0
+    && botonesPendNoPermitidos.length === 0
+    && noGetHistorial.length === 0
+    && res01.noGetEnClic.length === 0
+    && res02.noGetEnClic.length === 0;
+  anotar(
+    'CP-05',
+    ok05,
+    `dialogs=${estatica.dialogs}, radiogroups=${estatica.radiogroups}, textareas=${estatica.textareas}, botones_valoracion=${estatica.botonesValoracion.length} [${estatica.botonesValoracion.join(', ')}], botones_pend=[${estatica.botonesPend.join(', ')}], no_get_historial=${noGetHistorial.length}, no_get_clic_cp01=${res01.noGetEnClic.length}, no_get_clic_cp02=${res02.noGetEnClic.length}`,
+  );
+
+  // -- 10. Precondicion de despliegue con los scripts que cargo la app
+  const todo = scripts.map((s) => s.cuerpo).join('\n');
+  const index = [...new Set(scripts.map((s) => s.nombre).filter((n) => /^index-.*\.js$/.test(n)))];
+  await page.goto('about:blank');
+  observaciones.push(`Despliegue: bundle ${index.join(', ') || '(no identificado)'} en ${BASE}.`);
+  precondicion(
+    'El frontend desplegado contiene los textos y ruta de RF-106 / RF-72',
+    todo.includes('Registrar retroalimentación')
+      && todo.includes('Predicciones sin evaluar (más de 48 horas)')
+      && todo.includes('Registrar evaluación')
+      && todo.includes('/prediccion/retroalimentacion?resultado='),
+    `bundle: ${index.join(', ') || '(sin index-*.js)'}; ${scripts.length} scripts revisados`,
+  );
+
+  // -- 11. Verificacion final
+  expect(violaciones, violaciones.join('; ')).toEqual([]);
+  expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+});

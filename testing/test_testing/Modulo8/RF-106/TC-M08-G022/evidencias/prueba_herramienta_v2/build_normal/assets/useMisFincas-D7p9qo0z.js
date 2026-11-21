@@ -1,0 +1,1 @@
+import{r as e}from"./react-BRNvlXxE.js";import{l as o}from"./index-KOocaMGx.js";function m(){const[r,n]=e.useState([]),[i,c]=e.useState(!0);return e.useEffect(()=>{let t=!0;return o.get("/usuarios/me/fincas").then(f=>{var s,a;t&&n((a=(s=f.data)==null?void 0:s.items)!=null?a:[])}).catch(()=>{}).finally(()=>{t&&c(!1)}),()=>{t=!1}},[]),{fincas:r,cargando:i}}export{m as u};

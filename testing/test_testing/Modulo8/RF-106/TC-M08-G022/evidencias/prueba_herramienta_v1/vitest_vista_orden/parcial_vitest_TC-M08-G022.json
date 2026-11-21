@@ -1,0 +1,171 @@
+{
+  "tc": "TC-M08-G022",
+  "parte": "vitest",
+  "reintento": 0,
+  "run_id": "prueba-vitest-vista-orden",
+  "fecha": "2026-11-21T02:57:52.533Z",
+  "summary": {
+    "total": 10,
+    "ok": 8,
+    "falla": 2,
+    "veredicto": "Rechazado"
+  },
+  "precondiciones": [
+    {
+      "nombre": "Zona horaria del proceso es America/Bogota",
+      "ok": true,
+      "detalle": "timeZone=America/Bogota"
+    },
+    {
+      "nombre": "PrediccionPage.tsx protege la pestaña con historial_clinico_predictivo en lectura",
+      "ok": true,
+      "detalle": "permisoNombre: ['historial_clinico_predictivo', ACCION_R]"
+    },
+    {
+      "nombre": "Textos de es-CO usados por la medición (prediction.json, historialpredictivo)",
+      "ok": true,
+      "detalle": "{\"tvco\":\"Tasa de validación clínica\",\"pendientes_titulo\":\"Predicciones sin evaluar (más de 48 horas)\",\"registrar_retro\":\"Registrar retroalimentación\",\"anterior\":\"Anterior\",\"siguiente\":\"Siguiente\",\"total_conflictos_other\":\"{{count}} con evaluaciones contradictorias\"}"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 5001 (TVCO, tasa_error y conflictos)",
+      "ok": true,
+      "detalle": "texto=\"75% (4 validadas; 1 excluida: sin retro)\"; tasa_error=25; total_conflictos=0"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 5002 (TVCO, tasa_error y conflictos)",
+      "ok": true,
+      "detalle": "texto=\"50% (6 validadas; 1 excluida: sin retro)\"; tasa_error=50; total_conflictos=0"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 5003 (TVCO, tasa_error y conflictos)",
+      "ok": true,
+      "detalle": "texto=\"Sin datos suficientes para calcular\"; tasa_error=null; total_conflictos=0"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 5004 (TVCO, tasa_error y conflictos)",
+      "ok": true,
+      "detalle": "texto=\"0% (3 validadas)\"; tasa_error=100; total_conflictos=0"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 5005 (TVCO, tasa_error y conflictos)",
+      "ok": true,
+      "detalle": "texto=\"100% (3 validadas)\"; tasa_error=0; total_conflictos=0"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 5006 (TVCO, tasa_error y conflictos)",
+      "ok": true,
+      "detalle": "texto=\"100% (1 validada; 2 excluidas: 1 conflicto + 1 sin retro)\"; tasa_error=0; total_conflictos=1"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 5007 (TVCO, tasa_error y conflictos)",
+      "ok": true,
+      "detalle": "texto=\"100% (1 validada)\"; tasa_error=0; total_conflictos=0"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 5008 (pendientes=21, pagina 1 con 20)",
+      "ok": true,
+      "detalle": "total=21; items_p1=20; fecha_p1_0=17/07/26, 10:00 a. m."
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "caso": "TC-M08-054 a (5001)",
+      "esperado": "La TVCO muestra exactamente «75% (4 validadas; 1 excluida: sin retro)»",
+      "fuente": "RF-106 CA-3 (Prueba A); Proceso 4",
+      "obtenido": "75% (4 validadas; 1 excluida: sin retro)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "caso": "TC-M08-054 a, d y e (5001, 5004, 5005)",
+      "esperado": "Se ve la tasa de error junto a la TVCO: 25 %, 100 % y 0 %",
+      "fuente": "RF-106 Salida («tasa_error (%) = 100% - tvco»); TC-M08-054 (a, d, e)",
+      "obtenido": "QA-5001 (25%): (sin tasa de error visible; TVCO=\"75% (4 validadas; 1 excluida: sin retro)\") | QA-5004 (100%): (sin tasa de error visible; TVCO=\"0% (3 validadas)\") | QA-5005 (0%): (sin tasa de error visible; TVCO=\"100% (3 validadas)\")",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-03",
+      "caso": "TC-M08-054 b (5002)",
+      "esperado": "«50% (6 validadas; 1 excluida: sin retro)»",
+      "fuente": "RF-106 CA-3; Proceso 4 (PARCIAL y SIN_EVENTO en el denominador)",
+      "obtenido": "50% (6 validadas; 1 excluida: sin retro)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "caso": "TC-M08-054 c (5003)",
+      "esperado": "«Sin datos suficientes para calcular», sin «NaN», «Infinity» ni «undefined» en la pantalla",
+      "fuente": "RF-106 CA-3; Restricción 4",
+      "obtenido": "TVCO=\"Sin datos suficientes para calcular\"; prohibidos=[]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "caso": "TC-M08-054 d y e (5004, 5005)",
+      "esperado": "«0% (3 validadas)» y «100% (3 validadas)»",
+      "fuente": "RF-106 CA-3; Proceso 4",
+      "obtenido": "5004: \"0% (3 validadas)\" | 5005: \"100% (3 validadas)\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "caso": "TC-M08-055 a (5006)",
+      "esperado": "Las dos valoraciones en conflicto con ícono de conflicto y la otra con ✓ (3 marcadores)",
+      "fuente": "RF-106 Restricción 6 a; CA-8 (a)",
+      "obtenido": "iconos=[\"✓\", \"⚠\", \"⚠\"] (total=3)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "caso": "TC-M08-055 a (5006)",
+      "esperado": "TVCO «100% (1 validada; 2 excluidas: 1 conflicto + 1 sin retro)» y total de conflictos 1",
+      "fuente": "RF-106 CA-3 (Prueba B); CA-8 (c) y (d)",
+      "obtenido": "TVCO=\"100% (1 validada; 2 excluidas: 1 conflicto + 1 sin retro)\"; conflictos=\"1 conflicto\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08",
+      "caso": "TC-M08-055 b (5007)",
+      "esperado": "Sin ícono de conflicto (2 ✓), TVCO «100% (1 validada)» y total de conflictos 0",
+      "fuente": "RF-106 Restricción 6 c",
+      "obtenido": "iconos=[\"✓\", \"✓\"]; TVCO=\"100% (1 validada)\"; conflictos=\"0 con evaluaciones contradictorias\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-09",
+      "caso": "TC-M08-056 b (5008, página 1)",
+      "esperado": "20 ítems en el orden de `pendientes.items` de la respuesta, cada uno con un botón «Registrar retroalimentación»; aparecen niveles «Sin riesgo» y «Bajo»",
+      "fuente": "RF-106 Proceso 5; CA-9; CA-4",
+      "obtenido": "conteo=20; sin_riesgo=true; bajo=true; condiciones=[QA-5008-P17, QA-5008-P18, QA-5008-P19, QA-5008-P20, QA-5008-P21, QA-5008-P11, QA-5008-P12, QA-5008-P13, QA-5008-P14, QA-5008-P15, QA-5008-P6, QA-5008-P7, QA-5008-P8, QA-5008-P9, QA-5008-P10, QA-5008-P1, QA-5008-P2, QA-5008-P3, QA-5008-P4, QA-5008-P5]; botones=[Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación, Registrar retroalimentación]",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-10",
+      "caso": "TC-M08-056 b (5008, paginación)",
+      "esperado": "«Siguiente» pide `pagina_pendientes=2` y muestra solo el ítem 21; «Anterior» pide `pagina_pendientes=1` y vuelve a 20",
+      "fuente": "RF-106 Proceso 5 («el resto accesible con paginación»)",
+      "obtenido": "siguiente: uri=\"https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/historial-predictivo/5008?fecha_inicio=2025-11-20&fecha_fin=2026-11-20&modo_visualizacion=LINEAL&incluir_eventos_sanitarios=true&incluir_retroalimentacion=true&pagina_pendientes=2\", items=1 [QA-5008-P16] (esperado QA-5008-P16) | anterior: uri=\"https://sigab-backendtest-389pcb-a48238-158-69-200-27.sslip.io/api-sgpmp-test/historial-predictivo/5008?fecha_inicio=2025-11-20&fecha_fin=2026-11-20&modo_visualizacion=LINEAL&incluir_eventos_sanitarios=true&incluir_retroalimentacion=true&pagina_pendientes=1\", items=20",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "OBS-1: la especificación da tres formatos para el texto de la TVCO: Proceso 4 «X% (N validadas; M excluidas: K sin retro + J con conflicto)», CA-3 «100% (1 validada; 2 excluidas: 1 conflicto + 1 sin retro)» y Restricción 6 b «N excluidas por conflicto (ver detalle)». El backend sigue CA-3 (historial_predictivo.py:61-70); los checkpoints usan CA-3. Para los líderes.",
+    "OBS-2: con nivel_riesgo nulo, el backend ordena el pendiente como nivel 0 (historial_predictivo.py:110). La especificación no define el caso.",
+    "OBS-3: la vista no tiene texto i18n para la tasa de error (prediction.json, historialpredictivo); la respuesta sí trae tvco.tasa_error."
+  ],
+  "retirados": [
+    {
+      "paso": "TC-M08-056 a (47 h 59 min, 48 h 00 min y 48 h 01 min)",
+      "motivo": "El límite de 48 h lo calcula el backend (historial_predictivo.py:22 y :109, estricto). En TEST no hay inferencias con esas antigüedades y lo escrito en el sandbox no lo ve el historial (instantanea_reportes.py:40-41). Con Vitest solo se prueba la presentación"
+    },
+    {
+      "paso": "TC-M08-055 con datos reales",
+      "motivo": "En TEST no hay ninguna inferencia con dos valoraciones distintas ni un segundo veterinario en .env.test. El conflicto se mide con respuestas simuladas (CP-06 a CP-08) y en navegador real con la respuesta simulada por page.route (CP-13 y CP-14)"
+    },
+    {
+      "paso": "CA-8 prueba de ida y vuelta (modificar una valoración)",
+      "motivo": "RF-72 es de solo agregar (append-only); la vista no edita valoraciones"
+    }
+  ]
+}

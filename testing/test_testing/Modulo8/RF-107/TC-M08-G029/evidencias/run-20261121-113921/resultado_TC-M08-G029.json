@@ -1,0 +1,163 @@
+{
+  "tc": "TC-M08-G029",
+  "reintento": 0,
+  "run_id": "qa-m08-g029-20261121-113921",
+  "fecha": "2026-11-21T16:39:42.777Z",
+  "ambiente": "https://api.inmero.co/sigab-test/",
+  "summary": {
+    "total": 6,
+    "ok": 5,
+    "falla": 1,
+    "veredicto": "Aprobado"
+  },
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "esperado": "Heading «Confirma la baja» visible dentro del diálogo, botones «Volver» y «Confirmar baja» visibles, y 0 POST .../eventos/baja hasta ese momento",
+      "fuente": "TC-M08-070 a; RF-107 CA-03 y 8.5 paso 2",
+      "obtenido": "paso_abrir=ok; heading=\"Confirma la baja\"; botones=[\"Volver\", \"Confirmar baja\"]; post_baja=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "esperado": "Tras «Volver» y luego «Cancelar»: 0 diálogos abiertos; 0 POST .../eventos/baja en total; GET {api}/activos-biologicos/{A} con nombre_estado ACTIVO; 0 .ds-alert--success nuevas; 0 avisos nuevos en .ds-toasts",
+      "fuente": "TC-M08-070 a; FA-1 nombrado en la 8.5; Postcondiciones 3 y 5",
+      "obtenido": "dialogos=0; post_baja_total=0; get_estado=200/ACTIVO; nuevas_alert_success=0; nuevos_toasts=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "esperado": "Tras confirmar la baja: exactamente 1 POST nuevo .../eventos/baja con status 201, y luego GET {api}/activos-biologicos/{A} con nombre_estado BAJA",
+      "fuente": "TC-M08-070 b; Postcondición 3; 8.5",
+      "obtenido": "paso_abrir=ok; post_nuevos=1 (esperado_resp=true); reintentos_401=0; status=201; baja.tipo=perdida; error_code=ninguno; get_estado=200/BAJA",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "esperado": "Tras el 201: al menos 1 .ds-alert--success visible, 0 .ds-alert--error/--warning de «No se pudo registrar la baja» y 0 avisos de error en .ds-toasts",
+      "fuente": "TC-M08-070 b; CA-10",
+      "obtenido": "alert_success=1 [\"Evento registrado Baja registrada.\"]; alert_error_baja=0 []; toasts_error=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "esperado": "El texto completo (título + descripción, normalizado) del .ds-alert--success de la sección Eventos contiene el identificador exacto de A",
+      "fuente": "TC-M08-070 b; CA-09 (valores reales de datos_contexto, no genéricos)",
+      "obtenido": "texto=\"Evento registrado Baja registrada.\"; contiene_identificador(\"QA29-261121113931\")=false",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-06",
+      "esperado": "Con la vista desactualizada (GET del activo y de su ficha con el estado previo a la baja, simulado con page.route; el POST es real), al confirmar la baja repetida: POST responde 409 con error_code ACTIVO_YA_EN_BAJA; el texto de error visible en el diálogo tiene >= 5 palabras, sin códigos HTTP ni códigos internos (SNAKE_CASE); y 0 .ds-alert--success nuevas",
+      "fuente": "TC-M08-070 c; Restricción 1; CA-02; CA-10",
+      "obtenido": "post_nuevos=1; reintentos_401=0; status=409; error_code=ACTIVO_YA_EN_BAJA; palabras=29; patrones_tecnicos={http=false, num=false, snake=false}; nuevas_alert_success_p2=0; texto=\"No se pudo registrar la baja El activo 2950 ya ha sido dado de baja previamente. No se pueden registrar múltiples salidas definitivas para el mismo individuo o lote.\"",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "Activo de QA creado FUERA del sandbox (autorizado por Sebastian): id=2950, identificador=QA29-261121113931, finca del 885; queda en TEST.",
+    "Preparación ficha de A: intento 1: menu_activos=true, boton_baja=true.",
+    "OBS-ESC (INC-M08-NN-G025): con «Confirma la baja» visible se pulsó Escape y esperó 500 ms -> dialogo_sigue_abierto=false, post_baja_antes=0, post_baja_despues=0.",
+    "OBS-5 (G028): tras pulsar «Volver», el diálogo seguía abierto=true (cancelar exige dos pasos: «Volver» y luego «Cancelar»).",
+    "OBS-3 (G028): textos de botones en el flujo de baja = [\"Volver\", \"Confirmar baja\", \"Cancelar\"].",
+    "OBS-1 (G025 / INC-M08-NN-G026): alerta de éxito visible en sección Eventos=true, en banner global (.ds-toasts)=false.",
+    "Estado del botón «Baja» en página 1 después de la baja: visible=true, habilitado=false.",
+    "Preparación CP-06 (vista desactualizada): intento 1: menu_activos=true, boton_baja=true.",
+    "Mensaje literal del 409 en respuesta API: \"El activo 2950 ya ha sido dado de baja previamente. No se pueden registrar múltiples salidas definitivas para el mismo individuo o lote.\"; en diálogo: \"No se pudo registrar la baja El activo 2950 ya ha sido dado de baja previamente. No se pueden registrar múltiples salidas definitivas para el mismo individuo o lote.\".",
+    "Despliegue: bundle index-CP69g8wQ.js en https://api.inmero.co/sigab-test/.",
+    "Avisos observados en .ds-toasts durante todo el caso: ninguno (0)."
+  ],
+  "retirados": [],
+  "precondiciones": [
+    {
+      "nombre": "Credenciales del Veterinario, RUN_ID y secreto de sandbox en memoria",
+      "ok": true,
+      "detalle": "QA_VET_EMAIL, QA_VET_PASSWORD, QA_SANDBOX_SECRET y RUN_ID presentes"
+    },
+    {
+      "nombre": "Login único del Veterinario",
+      "ok": true,
+      "detalle": "URL tras el login: /sigab-test/dashboard; apiBase=detectada; token=presente"
+    },
+    {
+      "nombre": "GET /activos-biologicos/885 responde 200 INDIVIDUAL con raza y sexo",
+      "ok": true,
+      "detalle": "HTTP 200, error_code=ninguno, tipo=INDIVIDUAL, raza=Criolla QA, sexo=Hembra"
+    },
+    {
+      "nombre": "POST /activos-biologicos crea activo efímero A (201, ACTIVO, id válido)",
+      "ok": true,
+      "detalle": "HTTP 201, id=2950, estado=ACTIVO, identificador=QA29-261121113931"
+    },
+    {
+      "nombre": "0 violaciones de escritura y 0 respuestas 428 tras creación de A",
+      "ok": true,
+      "detalle": "violaciones=0, 428=0"
+    },
+    {
+      "nombre": "Ficha de A lista: permisos cargados y botón «Baja» visible (hasta 3 intentos)",
+      "ok": true,
+      "detalle": "intento 1: menu_activos=true, boton_baja=true"
+    },
+    {
+      "nombre": "Vista desactualizada simulada (CP-06): estado previo aplicado y botón «Baja» habilitado",
+      "ok": true,
+      "detalle": "baja_cp03=true; intento 1: menu_activos=true, boton_baja=true; respuestas_simuladas=2, estado_ficha_previo=ACTIVO, estado_activo_previo=ACTIVO, boton_habilitado=true"
+    },
+    {
+      "nombre": "0 violaciones de escritura y 0 respuestas 428",
+      "ok": true,
+      "detalle": "6 escrituras permitidas, 0 violaciones, 0 respuestas 428"
+    }
+  ],
+  "sandbox": {
+    "run_id": "qa-m08-g029-20261121-113921",
+    "modo": "SIN_SANDBOX",
+    "rollback_http": null,
+    "rollback_ok": false
+  },
+  "escrituras": [
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/sesiones/",
+      "status": 200,
+      "error_code": null,
+      "resultado": "al servidor (login 1)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/activos-biologicos",
+      "status": 201,
+      "error_code": null,
+      "resultado": "al servidor (spec crear activo A)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/sesiones/refresh",
+      "status": 200,
+      "error_code": null,
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/activos-biologicos/2950/eventos/baja",
+      "status": 201,
+      "error_code": null,
+      "resultado": "al servidor (baja #1)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/sesiones/refresh",
+      "status": 200,
+      "error_code": null,
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/activos-biologicos/2950/eventos/baja",
+      "status": 409,
+      "error_code": "ACTIVO_YA_EN_BAJA",
+      "resultado": "al servidor (baja #2)"
+    }
+  ]
+}

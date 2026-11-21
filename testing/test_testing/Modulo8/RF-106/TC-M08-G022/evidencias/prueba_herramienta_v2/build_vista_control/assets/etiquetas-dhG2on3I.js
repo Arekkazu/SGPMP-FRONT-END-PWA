@@ -1,0 +1,1 @@
+function r(e){if(!e)return"—";if(!e.includes("_")&&new RegExp("\\p{Ll}","u").test(e))return e;const t=e.replace(/[_\s]+/g," ").trim().toLowerCase();return t.charAt(0).toUpperCase()+t.slice(1)}export{r as h};

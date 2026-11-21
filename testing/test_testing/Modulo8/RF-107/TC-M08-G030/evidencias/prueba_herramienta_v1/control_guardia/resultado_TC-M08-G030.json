@@ -1,0 +1,486 @@
+{
+  "tc": "TC-M08-G030",
+  "reintento": 0,
+  "run_id": "qa-m08-g030-control_guardia",
+  "fecha": "2026-11-21T17:43:05.772Z",
+  "ambiente": "http://127.0.0.1:4173/sigab-test/",
+  "summary": {
+    "total": 13,
+    "ok": 0,
+    "falla": 13,
+    "veredicto": "Rechazado"
+  },
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "caso": "TC-M08-072 a (Chromium): paso a estado OFFLINE",
+      "esperado": "button.ds-sync muestra clase ds-sync--OFFLINE y texto «Sin conexión» en <= 5.000 ms tras perder red",
+      "fuente": "TC-M08-072 a; RF-107 CA-06",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: delta=24 ms; texto=\"Sin conexión\"; clase=\"ds-sync ds-sync--OFFLINE\"; navegador=Chromium",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-02",
+      "caso": "TC-M08-072 a (Chromium): retorno a estado SINCRONIZADO",
+      "esperado": "button.ds-sync muestra clase ds-sync--SINCRONIZADO en <= 10.000 ms tras recuperar red",
+      "fuente": "TC-M08-072 a; RF-107 CA-06",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: delta=12 ms; texto=\"Sincronizado\"; clase=\"ds-sync ds-sync--SINCRONIZADO\"; navegador=Chromium",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-03",
+      "caso": "TC-M08-072 c (Chromium): navegación sin conexión por menú lateral",
+      "esperado": "Sin red, clic en «Panel principal» y luego «Activos biológicos»: la ruta cambia en cada destino, no aparece «No se pudo mostrar esta sección» y el ícono sigue en ds-sync--OFFLINE",
+      "fuente": "TC-M08-072 c; RF-107 RNF-04",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: destino1=/sigab-test/dashboard (error_seccion=false, sync=\"ds-sync ds-sync--OFFLINE\"); destino2=/sigab-test/activos-biologicos (error_seccion=false, sync=\"ds-sync ds-sync--OFFLINE\"); navegador=Chromium",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-04",
+      "caso": "TC-M08-073 (Chromium): tiempo de banner de éxito (10 mediciones)",
+      "esperado": "POST /reportes 201 (simulado): los 10 deltas hasta .ds-alert--success «El historial sanitario se descargó» en .ds-toasts son <= 500 ms",
+      "fuente": "TC-M08-073; RF-107 CA-01; RNF-01",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: deltas=[18, 18, 19, 17, 14, 23, 19, 17, 23, 15] ms; peor=23 ms; navegador=Chromium",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-05",
+      "caso": "TC-M08-073 (Chromium): tiempo de banner de error (10 mediciones)",
+      "esperado": "POST /reportes 422 (simulado): los 10 deltas hasta .ds-alert--error «No se pudo exportar el historial» en .ds-toasts son <= 500 ms",
+      "fuente": "TC-M08-073; RF-107 RNF-01",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: deltas=[16, 17, 16, 22, 18, 15, 15, 17, 16, 14] ms; peor=22 ms; navegador=Chromium",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-06",
+      "caso": "TC-M08-073 (Chromium): tiempo de modal crítico «Confirma la baja» (10 mediciones)",
+      "esperado": "Al pulsar «Registrar baja», los 10 deltas hasta heading «Confirma la baja» son <= 200 ms y hay 0 POST .../eventos/baja",
+      "fuente": "TC-M08-073; RF-107 RNF-02",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: deltas=[4, 3, 2, 3, 2, 2, 3, 2, 3, 2] ms; peor=4 ms; post_baja=1; navegador=Chromium",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-07",
+      "caso": "TC-M08-072 a (WebKit): paso a estado OFFLINE",
+      "esperado": "button.ds-sync muestra clase ds-sync--OFFLINE y texto «Sin conexión» en <= 5.000 ms tras perder red",
+      "fuente": "TC-M08-072 a; RF-107 CA-06",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: delta=73 ms; texto=\"Sin conexión\"; clase=\"ds-sync ds-sync--OFFLINE\"; navegador=WebKit",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-08",
+      "caso": "TC-M08-072 a (WebKit): retorno a estado SINCRONIZADO",
+      "esperado": "button.ds-sync muestra clase ds-sync--SINCRONIZADO en <= 10.000 ms tras recuperar red",
+      "fuente": "TC-M08-072 a; RF-107 CA-06",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: delta=30 ms; texto=\"Sincronizado\"; clase=\"ds-sync ds-sync--SINCRONIZADO\"; navegador=WebKit",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-09",
+      "caso": "TC-M08-072 c (WebKit): navegación sin conexión por menú lateral",
+      "esperado": "Sin red, clic en «Panel principal» y luego «Activos biológicos»: la ruta cambia en cada destino, no aparece «No se pudo mostrar esta sección» y el ícono sigue en ds-sync--OFFLINE",
+      "fuente": "TC-M08-072 c; RF-107 RNF-04",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: destino1=/sigab-test/dashboard (error_seccion=false, sync=\"ds-sync ds-sync--OFFLINE\"); destino2=/sigab-test/activos-biologicos (error_seccion=false, sync=\"ds-sync ds-sync--OFFLINE\"); navegador=WebKit",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-10",
+      "caso": "TC-M08-073 (WebKit): tiempo de banner de éxito (10 mediciones)",
+      "esperado": "POST /reportes 201 (simulado): los 10 deltas hasta .ds-alert--success «El historial sanitario se descargó» en .ds-toasts son <= 500 ms",
+      "fuente": "TC-M08-073; RF-107 CA-01; RNF-01",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: deltas=[27, 36, 29, 33, 25, 24, 31, 33, 28, 27] ms; peor=36 ms; navegador=WebKit",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-11",
+      "caso": "TC-M08-073 (WebKit): tiempo de banner de error (10 mediciones)",
+      "esperado": "POST /reportes 422 (simulado): los 10 deltas hasta .ds-alert--error «No se pudo exportar el historial» en .ds-toasts son <= 500 ms",
+      "fuente": "TC-M08-073; RF-107 RNF-01",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: deltas=[23, 30, 36, 24, 35, 26, 23, 28, 22, 31] ms; peor=36 ms; navegador=WebKit",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-12",
+      "caso": "TC-M08-073 (WebKit): tiempo de modal crítico «Confirma la baja» (10 mediciones)",
+      "esperado": "Al pulsar «Registrar baja», los 10 deltas hasta heading «Confirma la baja» son <= 200 ms y hay 0 POST .../eventos/baja",
+      "fuente": "TC-M08-073; RF-107 RNF-02",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: deltas=[7, 5, 5, 5, 5, 4, 5, 5, 4, 4] ms; peor=7 ms; post_baja=0; navegador=WebKit",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-13",
+      "caso": "TC-M08-069 c (WebKit, Administrador): modal crítico de cierre de período",
+      "esperado": "Con el diálogo «Cerrar período» abierto: sigue abierto tras Escape (500 ms), tras clic en overlay fuera del panel (10,10) y tras fastForward(10:00); no hay botón X; la URL no es /login y hay 0 POST .../cierre",
+      "fuente": "TC-M08-069 c; RF-107 Restricción 3; CA-05; 8.5",
+      "obtenido": "Precondición no cumplida (Ninguna escritura no permitida hacia TEST); medido: inicial=sí; tras_escape=sí; tras_overlay=sí; boton_X=no; tras_10m=sí; url=/sigab-test/finanzas/cierre; post_cierre=0",
+      "estado": "FALLA"
+    }
+  ],
+  "observaciones": [
+    "Chromium versión: 159.0.8154.6.",
+    "Preparación Chromium dashboard: intento 1: menu(Activos biológicos)=true.",
+    "OBS-FA4 (Chromium): clase_icono=\"ds-sync ds-sync--OFFLINE\"; avisos_toasts=[\"No se pudo exportar el historial Ocurrió un error inesperado. Intenta nuevamente.\"]; esperado_rf=\"Sin conexión. La operación se reintentará automáticamente cuando vuelva la conexión.\".",
+    "Preparación ficha 885 (Chromium): intento 1: menu_activos=true, boton_baja=true.",
+    "WebKit versión: 27.2.",
+    "Preparación WebKit dashboard: intento 1: menu(Activos biológicos)=true.",
+    "OBS-FA4 (WebKit): clase_icono=\"ds-sync ds-sync--OFFLINE\"; avisos_toasts=[\"No se pudo exportar el historial Ocurrió un error inesperado. Intenta nuevamente.\"]; esperado_rf=\"Sin conexión. La operación se reintentará automáticamente cuando vuelva la conexión.\".",
+    "Preparación ficha 885 (WebKit): intento 1: menu_activos=true, boton_baja=true.",
+    "Preparación WebKit Finanzas: intento 1: menu(Finanzas NIC 41)=true.",
+    "Despliegue: bundle index-JzjIHaXs.js en http://127.0.0.1:4173/sigab-test/."
+  ],
+  "retirados": [],
+  "precondiciones": [
+    {
+      "nombre": "Credenciales de Veterinario y Administrador en memoria",
+      "ok": true,
+      "detalle": "QA_VET_EMAIL, QA_VET_PASSWORD, QA_ADMIN_EMAIL y QA_ADMIN_PASSWORD presentes"
+    },
+    {
+      "nombre": "Login único del Veterinario en Chromium",
+      "ok": true,
+      "detalle": "URL=/sigab-test/dashboard"
+    },
+    {
+      "nombre": "Cuenta Veterinario confirmada por GET /usuarios/me",
+      "ok": true,
+      "detalle": "id_usuario=97, nombre_rol=VETERINARIO"
+    },
+    {
+      "nombre": "El activo 885 figura en GET /reportes/opciones/activo",
+      "ok": true,
+      "detalle": "1 opciones"
+    },
+    {
+      "nombre": "Menú lateral cargado en Chromium (dashboard)",
+      "ok": true,
+      "detalle": "intento 1: menu(Activos biológicos)=true"
+    },
+    {
+      "nombre": "Activo 885 cargado en Historial predictivo (Chromium)",
+      "ok": true,
+      "detalle": "etiqueta=\"QA-G88-266-IND-001 · Qa Semaforo Dinamico\""
+    },
+    {
+      "nombre": "Ficha 885 lista con botón «Baja» (Chromium)",
+      "ok": true,
+      "detalle": "intento 1: menu_activos=true, boton_baja=true"
+    },
+    {
+      "nombre": "Sesión Veterinario activa en WebKit sin segundo login",
+      "ok": true,
+      "detalle": "URL=/sigab-test/dashboard"
+    },
+    {
+      "nombre": "Menú lateral cargado en WebKit (dashboard)",
+      "ok": true,
+      "detalle": "intento 1: menu(Activos biológicos)=true"
+    },
+    {
+      "nombre": "Activo 885 cargado en Historial predictivo (WebKit)",
+      "ok": true,
+      "detalle": "etiqueta=\"QA-G88-266-IND-001 · Qa Semaforo Dinamico\""
+    },
+    {
+      "nombre": "Ficha 885 lista con botón «Baja» (WebKit)",
+      "ok": true,
+      "detalle": "intento 1: menu_activos=true, boton_baja=true"
+    },
+    {
+      "nombre": "Login único del Administrador en WebKit",
+      "ok": true,
+      "detalle": "URL=/sigab-test/dashboard"
+    },
+    {
+      "nombre": "Cuenta Administrador confirmada por GET /usuarios/me",
+      "ok": true,
+      "detalle": "id_usuario=1, nombre_rol=ADMINISTRADOR"
+    },
+    {
+      "nombre": "Menú lateral cargado para Administrador en WebKit (Finanzas)",
+      "ok": true,
+      "detalle": "intento 1: menu(Finanzas NIC 41)=true"
+    },
+    {
+      "nombre": "Período contable cerrable con botón «Cerrar período» habilitado",
+      "ok": true,
+      "detalle": "botón «Cerrar período» habilitado"
+    },
+    {
+      "nombre": "Ninguna escritura no permitida hacia TEST",
+      "ok": false,
+      "detalle": "POST /sigab-test/api/activos-biologicos/885/eventos/baja"
+    }
+  ],
+  "escrituras": [
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/",
+      "resultado": "al servidor (login Veterinario)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "retenida y abortada (OBS-FA4)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/activos-biologicos/885/eventos/baja",
+      "resultado": "ABORTADA (baja no permitida #1)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "retenida y abortada (OBS-FA4)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 201 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada 422 (route.fulfill)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/",
+      "resultado": "al servidor (login Administrador)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    }
+  ]
+}

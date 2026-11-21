@@ -1,0 +1,50 @@
+CP-01 | OK
+  Esperado: Heading «Confirma la baja» visible dentro del diálogo, botones «Volver» y «Confirmar baja» visibles, y 0 POST .../eventos/baja hasta ese momento
+  Obtenido: paso_abrir=ok; heading="Confirma la baja"; botones=["Volver", "Confirmar baja"]; post_baja=0
+  Fuente:   TC-M08-070 a; RF-107 CA-03 y 8.5 paso 2
+CP-02 | OK
+  Esperado: Tras «Volver» y luego «Cancelar»: 0 diálogos abiertos; 0 POST .../eventos/baja en total; GET {api}/activos-biologicos/{A} con nombre_estado ACTIVO; 0 .ds-alert--success nuevas; 0 avisos nuevos en .ds-toasts
+  Obtenido: dialogos=0; post_baja_total=0; get_estado=200/ACTIVO; nuevas_alert_success=0; nuevos_toasts=0
+  Fuente:   TC-M08-070 a; FA-1 nombrado en la 8.5; Postcondiciones 3 y 5
+CP-03 | OK
+  Esperado: Tras confirmar la baja: exactamente 1 POST nuevo .../eventos/baja con status 201, y luego GET {api}/activos-biologicos/{A} con nombre_estado BAJA
+  Obtenido: paso_abrir=ok; post_nuevos=1 (esperado_resp=true); reintentos_401=0; status=201; baja.tipo=perdida; error_code=ninguno; get_estado=200/BAJA
+  Fuente:   TC-M08-070 b; Postcondición 3; 8.5
+CP-04 | OK
+  Esperado: Tras el 201: al menos 1 .ds-alert--success visible, 0 .ds-alert--error/--warning de «No se pudo registrar la baja» y 0 avisos de error en .ds-toasts
+  Obtenido: alert_success=1 ["Evento registrado Baja registrada."]; alert_error_baja=0 []; toasts_error=0
+  Fuente:   TC-M08-070 b; CA-10
+CP-05 | FALLA
+  Esperado: El texto completo (título + descripción, normalizado) del .ds-alert--success de la sección Eventos contiene el identificador exacto de A
+  Obtenido: texto="Evento registrado Baja registrada."; contiene_identificador("QA29-261121113931")=false
+  Fuente:   TC-M08-070 b; CA-09 (valores reales de datos_contexto, no genéricos)
+CP-06 | OK
+  Esperado: Con la vista desactualizada (GET del activo y de su ficha con el estado previo a la baja, simulado con page.route; el POST es real), al confirmar la baja repetida: POST responde 409 con error_code ACTIVO_YA_EN_BAJA; el texto de error visible en el diálogo tiene >= 5 palabras, sin códigos HTTP ni códigos internos (SNAKE_CASE); y 0 .ds-alert--success nuevas
+  Obtenido: post_nuevos=1; reintentos_401=0; status=409; error_code=ACTIVO_YA_EN_BAJA; palabras=29; patrones_tecnicos={http=false, num=false, snake=false}; nuevas_alert_success_p2=0; texto="No se pudo registrar la baja El activo 2950 ya ha sido dado de baja previamente. No se pueden registrar múltiples salidas definitivas para el mismo individuo o lote."
+  Fuente:   TC-M08-070 c; Restricción 1; CA-02; CA-10
+
+Sandbox:
+- run_id=qa-m08-g029-20261121-113921 | modo=SIN_SANDBOX | rollback_http= | rollback_ok=False
+
+Retirados:
+
+Observaciones (no cuentan para el veredicto):
+- Activo de QA creado FUERA del sandbox (autorizado por Sebastian): id=2950, identificador=QA29-261121113931, finca del 885; queda en TEST.
+- Preparación ficha de A: intento 1: menu_activos=true, boton_baja=true.
+- OBS-ESC (INC-M08-NN-G025): con «Confirma la baja» visible se pulsó Escape y esperó 500 ms -> dialogo_sigue_abierto=false, post_baja_antes=0, post_baja_despues=0.
+- OBS-5 (G028): tras pulsar «Volver», el diálogo seguía abierto=true (cancelar exige dos pasos: «Volver» y luego «Cancelar»).
+- OBS-3 (G028): textos de botones en el flujo de baja = ["Volver", "Confirmar baja", "Cancelar"].
+- OBS-1 (G025 / INC-M08-NN-G026): alerta de éxito visible en sección Eventos=true, en banner global (.ds-toasts)=false.
+- Estado del botón «Baja» en página 1 después de la baja: visible=true, habilitado=false.
+- Preparación CP-06 (vista desactualizada): intento 1: menu_activos=true, boton_baja=true.
+- Mensaje literal del 409 en respuesta API: "El activo 2950 ya ha sido dado de baja previamente. No se pueden registrar múltiples salidas definitivas para el mismo individuo o lote."; en diálogo: "No se pudo registrar la baja El activo 2950 ya ha sido dado de baja previamente. No se pueden registrar múltiples salidas definitivas para el mismo individuo o lote.".
+- Despliegue: bundle index-CP69g8wQ.js en https://api.inmero.co/sigab-test/.
+- Avisos observados en .ds-toasts durante todo el caso: ninguno (0).
+
+Peticiones distintas de GET:
+- POST /api-sgpmp-test/sesiones/ [status=200, error_code=] -> al servidor (login 1)
+- POST /api-sgpmp-test/activos-biologicos [status=201, error_code=] -> al servidor (spec crear activo A)
+- POST /api-sgpmp-test/sesiones/refresh [status=200, error_code=] -> al servidor (sesion)
+- POST /api-sgpmp-test/activos-biologicos/2950/eventos/baja [status=201, error_code=] -> al servidor (baja #1)
+- POST /api-sgpmp-test/sesiones/refresh [status=200, error_code=] -> al servidor (sesion)
+- POST /api-sgpmp-test/activos-biologicos/2950/eventos/baja [status=409, error_code=ACTIVO_YA_EN_BAJA] -> al servidor (baja #2)

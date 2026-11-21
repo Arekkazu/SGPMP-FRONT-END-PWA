@@ -1,0 +1,1030 @@
+// | Fecha      | Nombre                   | Que se hizo |
+// |------------|--------------------------|-------------|
+// | 2026-11-21 | Juan Sebastian Gutierrez | TC-M08-G030 (RF-107: TC-M08-072, 073 y 069 c): offline/online, tiempos de banners y modal crítico en Chromium y WebKit, y modal bloqueante de cierre en WebKit (solo lectura, sin sandbox) |
+//
+// QA SGPMP - Evaluacion (Fase 2). Navegador real (Chromium y WebKit) contra el frontend desplegado en TEST (o build local).
+// Solo lectura, sin sandbox: POST /reportes siempre se responde con route.fulfill; cualquier otra escritura distinta de
+// login/refresh/logout se aborta y registra como violacion. Parte A: Veterinario en Chromium y luego WebKit con storageState
+// (un solo login). Parte B: Administrador en WebKit (contexto nuevo, un solo login).
+//
+// Reporte: JSON final propio en STAGING_DIR (resultado_TC-M08-G030[_reintentoN].json). 13 checkpoints, todos arrancan en FALLA "No alcanzado".
+import { test, expect, webkit, type Page, type BrowserContext, type Route, type Request, type Response } from '@playwright/test';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const TC = 'TC-M08-G030';
+const ACTIVO = 885;
+const BASE = (process.env.QA_FRONT_URL ?? 'https://api.inmero.co/sigab-test/').replace(/\/?$/, '/');
+const STAGING = process.env.STAGING_DIR ?? '';
+const REINTENTO = Number(process.env.REINTENTO ?? '0');
+
+type Estado = 'OK' | 'FALLA';
+interface Checkpoint {
+  paso: string;
+  caso: string;
+  esperado: string;
+  fuente: string;
+  obtenido: string;
+  estado: Estado;
+}
+
+const CPS: Checkpoint[] = [
+  {
+    paso: 'CP-01',
+    caso: 'TC-M08-072 a (Chromium): paso a estado OFFLINE',
+    esperado: 'button.ds-sync muestra clase ds-sync--OFFLINE y texto «Sin conexión» en <= 5.000 ms tras perder red',
+    fuente: 'TC-M08-072 a; RF-107 CA-06',
+  },
+  {
+    paso: 'CP-02',
+    caso: 'TC-M08-072 a (Chromium): retorno a estado SINCRONIZADO',
+    esperado: 'button.ds-sync muestra clase ds-sync--SINCRONIZADO en <= 10.000 ms tras recuperar red',
+    fuente: 'TC-M08-072 a; RF-107 CA-06',
+  },
+  {
+    paso: 'CP-03',
+    caso: 'TC-M08-072 c (Chromium): navegación sin conexión por menú lateral',
+    esperado: 'Sin red, clic en «Panel principal» y luego «Activos biológicos»: la ruta cambia en cada destino, no aparece «No se pudo mostrar esta sección» y el ícono sigue en ds-sync--OFFLINE',
+    fuente: 'TC-M08-072 c; RF-107 RNF-04',
+  },
+  {
+    paso: 'CP-04',
+    caso: 'TC-M08-073 (Chromium): tiempo de banner de éxito (10 mediciones)',
+    esperado: 'POST /reportes 201 (simulado): los 10 deltas hasta .ds-alert--success «El historial sanitario se descargó» en .ds-toasts son <= 500 ms',
+    fuente: 'TC-M08-073; RF-107 CA-01; RNF-01',
+  },
+  {
+    paso: 'CP-05',
+    caso: 'TC-M08-073 (Chromium): tiempo de banner de error (10 mediciones)',
+    esperado: 'POST /reportes 422 (simulado): los 10 deltas hasta .ds-alert--error «No se pudo exportar el historial» en .ds-toasts son <= 500 ms',
+    fuente: 'TC-M08-073; RF-107 RNF-01',
+  },
+  {
+    paso: 'CP-06',
+    caso: 'TC-M08-073 (Chromium): tiempo de modal crítico «Confirma la baja» (10 mediciones)',
+    esperado: 'Al pulsar «Registrar baja», los 10 deltas hasta heading «Confirma la baja» son <= 200 ms y hay 0 POST .../eventos/baja',
+    fuente: 'TC-M08-073; RF-107 RNF-02',
+  },
+  {
+    paso: 'CP-07',
+    caso: 'TC-M08-072 a (WebKit): paso a estado OFFLINE',
+    esperado: 'button.ds-sync muestra clase ds-sync--OFFLINE y texto «Sin conexión» en <= 5.000 ms tras perder red',
+    fuente: 'TC-M08-072 a; RF-107 CA-06',
+  },
+  {
+    paso: 'CP-08',
+    caso: 'TC-M08-072 a (WebKit): retorno a estado SINCRONIZADO',
+    esperado: 'button.ds-sync muestra clase ds-sync--SINCRONIZADO en <= 10.000 ms tras recuperar red',
+    fuente: 'TC-M08-072 a; RF-107 CA-06',
+  },
+  {
+    paso: 'CP-09',
+    caso: 'TC-M08-072 c (WebKit): navegación sin conexión por menú lateral',
+    esperado: 'Sin red, clic en «Panel principal» y luego «Activos biológicos»: la ruta cambia en cada destino, no aparece «No se pudo mostrar esta sección» y el ícono sigue en ds-sync--OFFLINE',
+    fuente: 'TC-M08-072 c; RF-107 RNF-04',
+  },
+  {
+    paso: 'CP-10',
+    caso: 'TC-M08-073 (WebKit): tiempo de banner de éxito (10 mediciones)',
+    esperado: 'POST /reportes 201 (simulado): los 10 deltas hasta .ds-alert--success «El historial sanitario se descargó» en .ds-toasts son <= 500 ms',
+    fuente: 'TC-M08-073; RF-107 CA-01; RNF-01',
+  },
+  {
+    paso: 'CP-11',
+    caso: 'TC-M08-073 (WebKit): tiempo de banner de error (10 mediciones)',
+    esperado: 'POST /reportes 422 (simulado): los 10 deltas hasta .ds-alert--error «No se pudo exportar el historial» en .ds-toasts son <= 500 ms',
+    fuente: 'TC-M08-073; RF-107 RNF-01',
+  },
+  {
+    paso: 'CP-12',
+    caso: 'TC-M08-073 (WebKit): tiempo de modal crítico «Confirma la baja» (10 mediciones)',
+    esperado: 'Al pulsar «Registrar baja», los 10 deltas hasta heading «Confirma la baja» son <= 200 ms y hay 0 POST .../eventos/baja',
+    fuente: 'TC-M08-073; RF-107 RNF-02',
+  },
+  {
+    paso: 'CP-13',
+    caso: 'TC-M08-069 c (WebKit, Administrador): modal crítico de cierre de período',
+    esperado: 'Con el diálogo «Cerrar período» abierto: sigue abierto tras Escape (500 ms), tras clic en overlay fuera del panel (10,10) y tras fastForward(10:00); no hay botón X; la URL no es /login y hay 0 POST .../cierre',
+    fuente: 'TC-M08-069 c; RF-107 Restricción 3; CA-05; 8.5',
+  },
+].map((c) => ({ ...c, obtenido: 'No alcanzado', estado: 'FALLA' as Estado }));
+
+const RETIRADOS: Array<{ paso: string; motivo: string }> = [];
+const precondiciones: Array<{ nombre: string; ok: boolean; detalle: string }> = [];
+const observaciones: string[] = [];
+const escrituras: Array<{ metodo: string; ruta: string; resultado: string }> = [];
+const violaciones: string[] = [];
+
+const norm = (s: string | null | undefined): string =>
+  (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+
+function anotar(paso: string, ok: boolean, obtenido: string): void {
+  const cp = CPS.find((c) => c.paso === paso)!;
+  cp.obtenido = obtenido;
+  cp.estado = ok ? 'OK' : 'FALLA';
+}
+
+function precondicion(nombre: string, ok: boolean, detalle: string): void {
+  precondiciones.push({ nombre, ok, detalle });
+  if (!ok) {
+    for (const c of CPS) {
+      c.obtenido = `Precondición no cumplida (${nombre}): ${detalle}`;
+      c.estado = 'FALLA';
+    }
+    throw new Error(`Precondicion falsa: ${nombre} (${detalle})`);
+  }
+}
+
+async function captura(page: Page, nombre: string): Promise<void> {
+  if (!STAGING) return;
+  await page.screenshot({
+    path: join(STAGING, `captura_${TC}_${nombre}.png`),
+    mask: [page.locator('.ds-appbar__right'), page.locator('.ds-sidebar__footer')],
+  }).catch(() => undefined);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Estado de guardia, reportes simulados y token vigente
+// ---------------------------------------------------------------------------------------------------------------
+type ModoReportes = 'abortar' | 'retener' | 'ok201' | 'err422';
+let modoReportes: ModoReportes = 'abortar';
+let tRespReportes = 0;
+let liberarRetenido: (() => void) | null = null;
+let promRetenidoRecibido: Promise<void> | null = null;
+let resolverRetenidoRecibido: (() => void) | null = null;
+
+function armarRetencionReportes(): void {
+  modoReportes = 'retener';
+  liberarRetenido = null;
+  promRetenidoRecibido = new Promise<void>((res) => { resolverRetenidoRecibido = res; });
+}
+
+let apiBase = '';
+let authToken = '';
+let loginsCuentaActual = 0;
+let cuentaActual = 'Veterinario';
+let intentosPostBaja = 0;
+let intentosPostCierre = 0;
+
+function prepararGuardiaCuenta(nombreCuenta: string): void {
+  cuentaActual = nombreCuenta;
+  loginsCuentaActual = 0;
+  authToken = '';
+}
+
+async function registrarRutas(ctx: BrowserContext): Promise<void> {
+  await ctx.route('**/*', async (route: Route, req: Request) => {
+    const metodo = req.method();
+    const url = new URL(req.url());
+    const ruta = url.pathname;
+
+    if (/googleapis\.com|gstatic\.com|firebaseio\.com|firebase\.com/.test(url.hostname)) {
+      escrituras.push({ metodo, ruta: `${url.hostname}${ruta}`, resultado: 'abortada (host externo)' });
+      return route.abort();
+    }
+    if (metodo === 'POST' && /\/usuarios\/me\/fcm-token\/?$/.test(ruta)) {
+      escrituras.push({ metodo, ruta, resultado: 'abortada (registro de push)' });
+      return route.abort();
+    }
+
+    const tipo = req.resourceType();
+    if (tipo === 'fetch' || tipo === 'xhr') {
+      const hdrAuth = req.headers().authorization;
+      if (hdrAuth && /^Bearer\s+/i.test(hdrAuth)) {
+        authToken = hdrAuth.replace(/^Bearer\s+/i, '').trim();
+      }
+    }
+
+    if (metodo === 'GET' || metodo === 'HEAD' || metodo === 'OPTIONS') {
+      return route.continue();
+    }
+
+    if (metodo === 'POST' && /\/sesiones\/?$/.test(ruta)) {
+      loginsCuentaActual += 1;
+      if (!apiBase) apiBase = req.url().replace(/\/sesiones\/?$/, '');
+      if (loginsCuentaActual > 1) {
+        escrituras.push({ metodo, ruta, resultado: `ABORTADA (segundo login ${cuentaActual})` });
+        violaciones.push(`segundo login ${cuentaActual} (${ruta})`);
+        return route.abort();
+      }
+      escrituras.push({ metodo, ruta, resultado: `al servidor (login ${cuentaActual})` });
+      return route.continue();
+    }
+
+    if ((metodo === 'POST' && /\/sesiones\/refresh\/?$/.test(ruta)) || (metodo === 'DELETE' && /\/sesiones\/?$/.test(ruta))) {
+      escrituras.push({ metodo, ruta, resultado: 'al servidor (sesion)' });
+      return route.continue();
+    }
+
+    // POST /reportes: SIEMPRE simulado con route.fulfill (o abort en OBS-FA4), nunca llega al servidor
+    if (metodo === 'POST' && /\/reportes\/?$/.test(ruta)) {
+      if (modoReportes === 'ok201') {
+        escrituras.push({ metodo, ruta, resultado: 'simulada 201 (route.fulfill)' });
+        tRespReportes = Date.now();
+        return route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ id_reporte: 'qa-g030', estado: 'GENERADO', partes: [] }),
+        });
+      }
+      if (modoReportes === 'err422') {
+        escrituras.push({ metodo, ruta, resultado: 'simulada 422 (route.fulfill)' });
+        tRespReportes = Date.now();
+        return route.fulfill({
+          status: 422,
+          contentType: 'application/json',
+          body: JSON.stringify({ error_code: 'VAL_ENTRADA', message: 'Rango de fechas inválido.', fields: [] }),
+        });
+      }
+      if (modoReportes === 'retener') {
+        escrituras.push({ metodo, ruta, resultado: 'retenida y abortada (OBS-FA4)' });
+        resolverRetenidoRecibido?.();
+        await new Promise<void>((res) => { liberarRetenido = res; });
+        return route.abort('internetdisconnected');
+      }
+      escrituras.push({ metodo, ruta, resultado: 'abortada (reportes fuera de paso)' });
+      return route.abort();
+    }
+
+    if (metodo === 'POST' && /\/eventos\/baja\/?$/.test(ruta)) {
+      intentosPostBaja += 1;
+      escrituras.push({ metodo, ruta, resultado: `ABORTADA (baja no permitida #${intentosPostBaja})` });
+      violaciones.push(`${metodo} ${ruta}`);
+      return route.abort();
+    }
+
+    if (metodo === 'POST' && /\/cierre\/?$/.test(ruta)) {
+      intentosPostCierre += 1;
+      escrituras.push({ metodo, ruta, resultado: `ABORTADA (cierre no permitido #${intentosPostCierre})` });
+      violaciones.push(`${metodo} ${ruta}`);
+      return route.abort();
+    }
+
+    escrituras.push({ metodo, ruta, resultado: 'ABORTADA (no permitida)' });
+    violaciones.push(`${metodo} ${ruta}`);
+    return route.abort();
+  });
+}
+
+function enlazarRespuestas(page: Page, scripts?: Array<{ nombre: string }>): void {
+  page.on('response', async (resp: Response) => {
+    const req = resp.request();
+    const tipo = req.resourceType();
+    if (scripts && tipo === 'script') {
+      try { scripts.push({ nombre: new URL(resp.url()).pathname.split('/').pop() ?? '' }); } catch { /* ignorar */ }
+      return;
+    }
+    if (tipo !== 'fetch' && tipo !== 'xhr') return;
+    if (resp.status() >= 500) {
+      let ec = '';
+      try {
+        const b = (await resp.json()) as Record<string, unknown>;
+        if (typeof b?.error_code === 'string') ec = ` (${b.error_code})`;
+      } catch { /* ignorar */ }
+      observaciones.push(`Respuesta ${resp.status()} de la API: ${req.method()} ${new URL(resp.url()).pathname}${ec}.`);
+    }
+  });
+}
+
+// Script de instrumentacion en pagina para medir banners (MutationObserver) y modal critico (click capture + MutationObserver)
+const INIT_INSTRUMENTACION = () => {
+  const w = window as unknown as {
+    __qaBannerTarget: 'success' | 'error' | null;
+    __qaBannerTime: number | null;
+    __qaModalArmed: boolean;
+    __qaClickTime: number | null;
+    __qaModalTime: number | null;
+  };
+  w.__qaBannerTarget = null;
+  w.__qaBannerTime = null;
+  w.__qaModalArmed = false;
+  w.__qaClickTime = null;
+  w.__qaModalTime = null;
+
+  const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  document.addEventListener('click', (ev) => {
+    if (!w.__qaModalArmed) return;
+    const el = (ev.target as Element | null)?.closest?.('button');
+    if (el && n(el.textContent) === 'Registrar baja') {
+      w.__qaClickTime = performance.now();
+    }
+  }, true);
+
+  const revisar = () => {
+    if (w.__qaBannerTarget === 'success' && w.__qaBannerTime === null) {
+      const els = document.querySelectorAll('.ds-toasts .ds-alert--success');
+      for (const el of Array.from(els)) {
+        if (n(el.textContent).includes('El historial sanitario se descargó')) {
+          w.__qaBannerTime = Date.now();
+          break;
+        }
+      }
+    }
+    if (w.__qaBannerTarget === 'error' && w.__qaBannerTime === null) {
+      const els = document.querySelectorAll('.ds-toasts .ds-alert--error');
+      for (const el of Array.from(els)) {
+        if (n(el.textContent).includes('No se pudo exportar el historial')) {
+          w.__qaBannerTime = Date.now();
+          break;
+        }
+      }
+    }
+    if (w.__qaModalArmed && w.__qaModalTime === null) {
+      const dlg = document.querySelector('[role="dialog"]');
+      if (dlg) {
+        const hs = dlg.querySelectorAll('h1, h2, h3, h4, [role="heading"]');
+        for (const h of Array.from(hs)) {
+          if (n(h.textContent).includes('Confirma la baja')) {
+            w.__qaModalTime = performance.now();
+            break;
+          }
+        }
+      }
+    }
+  };
+
+  const obs = new MutationObserver(revisar);
+  const iniciar = () => {
+    const raiz = document.documentElement || document.body;
+    if (raiz) obs.observe(raiz, { childList: true, subtree: true, characterData: true });
+  };
+  if (document.documentElement) iniciar();
+  else window.addEventListener('DOMContentLoaded', iniciar);
+};
+
+async function verificarCuenta(page: Page, rolEsperado: 'VETERINARIO' | 'ADMINISTRADOR'): Promise<{ ok: boolean; detalle: string }> {
+  const resp = await page.request.get(`${apiBase}/usuarios/me`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+  });
+  if (resp.status() !== 200) {
+    return { ok: false, detalle: `GET /usuarios/me HTTP ${resp.status()}` };
+  }
+  const body = (await resp.json()) as Record<string, unknown>;
+  const id = body.id_usuario ?? 'N/A';
+  const rol = String(body.nombre_rol ?? '');
+  const ok = rol.toUpperCase().includes(rolEsperado === 'VETERINARIO' ? 'VETERINAR' : 'ADMIN');
+  return { ok, detalle: `id_usuario=${id}, nombre_rol=${rol}` };
+}
+
+async function prepararMenu(page: Page, textoMenu: string, etiqueta: string): Promise<{ ok: boolean; detalle: string }> {
+  let ultimo = '';
+  for (let intento = 1; intento <= 3; intento += 1) {
+    await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
+    const link = page.locator('.ds-sidebar').getByRole('link', { name: textoMenu }).first();
+    const ok = await link.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
+    ultimo = `intento ${intento}: menu(${textoMenu})=${ok}`;
+    if (ok) {
+      observaciones.push(`Preparación ${etiqueta}: ${ultimo}.`);
+      return { ok: true, detalle: ultimo };
+    }
+    observaciones.push(`Preparación ${etiqueta}: ${ultimo} (se recarga; no es checkpoint).`);
+    if (intento < 3) await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => undefined);
+  }
+  return { ok: false, detalle: ultimo };
+}
+
+async function prepararFicha885(page: Page, etiqueta: string): Promise<{ ok: boolean; detalle: string }> {
+  let ultimo = '';
+  for (let intento = 1; intento <= 3; intento += 1) {
+    await page.goto(`${BASE}activos-biologicos/${ACTIVO}`);
+    await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => undefined);
+    const menuOk = await page.locator('.ds-sidebar').getByRole('link', { name: 'Activos biológicos' }).first()
+      .waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
+    const tabEv = page.getByRole('button', { name: 'Eventos', exact: true });
+    if (await tabEv.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false)) {
+      await tabEv.click();
+    }
+    const btnBaja = page.getByRole('button', { name: 'Baja', exact: true });
+    const bajaOk = await btnBaja.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false)
+      && await btnBaja.isEnabled().catch(() => false);
+    ultimo = `intento ${intento}: menu_activos=${menuOk}, boton_baja=${bajaOk}`;
+    if (menuOk && bajaOk) {
+      observaciones.push(`Preparación ficha 885 (${etiqueta}): ${ultimo}.`);
+      return { ok: true, detalle: ultimo };
+    }
+    observaciones.push(`Preparación ficha 885 (${etiqueta}): ${ultimo} (se recarga; no es checkpoint).`);
+  }
+  return { ok: false, detalle: ultimo };
+}
+
+async function seleccionar885EnHistorial(page: Page, etiqueta885: string): Promise<boolean> {
+  const btnExportar = page.getByRole('button', { name: 'Exportar historial sanitario (PDF)' });
+  if (await btnExportar.isVisible().catch(() => false)) return true;
+
+  const combo = page.getByRole('combobox', { name: 'Animal o lote' });
+  const cVis = await combo.waitFor({ state: 'visible', timeout: 15_000 }).then(() => true).catch(() => false);
+  if (!cVis) return false;
+
+  for (let intento = 0; intento < 3; intento += 1) {
+    await combo.click().catch(() => undefined);
+    await combo.fill('').catch(() => undefined);
+    await combo.fill(etiqueta885).catch(() => undefined);
+    const opcion = page.getByRole('option', { name: etiqueta885, exact: true }).first();
+    if (await opcion.waitFor({ state: 'visible', timeout: 6_000 }).then(() => true).catch(() => false)) {
+      await opcion.click().catch(() => undefined);
+      if (await btnExportar.waitFor({ state: 'visible', timeout: 15_000 }).then(() => true).catch(() => false)) {
+        return true;
+      }
+    }
+    await page.waitForTimeout(500);
+  }
+  return btnExportar.isVisible().catch(() => false);
+}
+
+async function leerEstadoSync(page: Page): Promise<{ clase: string; texto: string }> {
+  return page.evaluate(() => {
+    const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+    const btn = document.querySelector('button.ds-sync');
+    if (!btn) return { clase: '(ausente)', texto: '(ausente)' };
+    const txt = btn.querySelector('.ds-sync__texto');
+    return { clase: btn.className, texto: n(txt?.textContent ?? btn.textContent) };
+  }).catch(() => ({ clase: '(error)', texto: '(error)' }));
+}
+
+async function medirCambioSync(
+  page: Page,
+  ctx: BrowserContext,
+  offline: boolean,
+  claseObjetivo: string,
+  textoObjetivo: string | null,
+  limiteMs: number,
+): Promise<{ ok: boolean; ms: number | null; clase: string; texto: string }> {
+  await page.evaluate(({ claseObj, txtObj }) => {
+    const w = window as unknown as { __qaSyncFin: number | null; __qaSyncStop?: boolean };
+    w.__qaSyncFin = null;
+    w.__qaSyncStop = false;
+    const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+    const tick = () => {
+      if (w.__qaSyncStop) return;
+      const btn = document.querySelector('button.ds-sync');
+      if (btn && btn.classList.contains(claseObj)) {
+        const txt = n(btn.querySelector('.ds-sync__texto')?.textContent ?? btn.textContent);
+        if (!txtObj || txt.includes(txtObj)) {
+          w.__qaSyncFin = Date.now();
+          return;
+        }
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, { claseObj: claseObjetivo, txtObj: textoObjetivo });
+
+  const t0 = Date.now();
+  await ctx.setOffline(offline);
+  await page.waitForFunction(
+    () => (window as unknown as { __qaSyncFin: number | null }).__qaSyncFin !== null,
+    { timeout: limiteMs + 1_000 },
+  ).catch(() => null);
+
+  const fin = await page.evaluate(() => {
+    const w = window as unknown as { __qaSyncFin: number | null; __qaSyncStop?: boolean };
+    w.__qaSyncStop = true;
+    return w.__qaSyncFin;
+  }).catch(() => null);
+  const actual = await leerEstadoSync(page);
+  const delta = fin !== null ? Math.max(0, fin - t0) : null;
+  const ok = delta !== null && delta <= limiteMs && actual.clase.includes(claseObjetivo)
+    && (!textoObjetivo || actual.texto.includes(textoObjetivo));
+  return { ok, ms: delta, clase: actual.clase, texto: actual.texto };
+}
+
+async function cerrarToasts(page: Page): Promise<void> {
+  for (let i = 0; i < 6; i += 1) {
+    const btn = page.locator('.ds-toasts .ds-alert__close').first();
+    if (!(await btn.isVisible().catch(() => false))) break;
+    await btn.click().catch(() => undefined);
+    await page.waitForTimeout(100);
+  }
+}
+
+async function irAHistorialPredictivoSpa(page: Page): Promise<void> {
+  const linkPred = page.locator('.ds-sidebar').getByRole('link', { name: 'Predicción IA' }).first();
+  if (await linkPred.waitFor({ state: 'visible', timeout: 10_000 }).then(() => true).catch(() => false)) {
+    await linkPred.click().catch(() => undefined);
+    await page.waitForURL((u) => u.pathname.includes('/prediccion'), { timeout: 10_000 }).catch(() => undefined);
+  }
+  const btnHp = page.getByRole('button', { name: 'Historial predictivo' }).first();
+  const btnSeg = page.getByRole('button', { name: 'Seguimiento' }).first();
+  await btnHp.or(btnSeg).first().waitFor({ state: 'visible', timeout: 15_000 }).catch(() => undefined);
+  if (!(await btnHp.isVisible().catch(() => false)) && await btnSeg.isVisible().catch(() => false)) {
+    await btnSeg.click().catch(() => undefined);
+  }
+  if (await btnHp.waitFor({ state: 'visible', timeout: 10_000 }).then(() => true).catch(() => false)) {
+    await btnHp.click().catch(() => undefined);
+    await page.waitForURL((u) => u.pathname.endsWith('/prediccion/historial-predictivo'), { timeout: 10_000 }).catch(() => undefined);
+  }
+}
+
+async function ejecutarParteA(
+  page: Page,
+  ctx: BrowserContext,
+  navegador: 'Chromium' | 'WebKit',
+  etiqueta885: string,
+  pasos: { cpOff: string; cpOn: string; cpNav: string; cpOkBanner: string; cpErrBanner: string; cpModal: string },
+): Promise<void> {
+  // 2. Con conexion, cargar /dashboard y navegar por SPA a /activos-biologicos y /prediccion/historial-predictivo
+  //    (asi los chunks lazy quedan resueltos en memoria sin recargar el documento)
+  await page.goto(`${BASE}dashboard`);
+  const prepDash = await prepararMenu(page, 'Activos biológicos', `${navegador} dashboard`);
+  precondicion(`Menú lateral cargado en ${navegador} (dashboard)`, prepDash.ok, prepDash.detalle);
+
+  await page.locator('.ds-sidebar').getByRole('link', { name: 'Activos biológicos' }).first().click();
+  await page.waitForURL((u) => u.pathname.endsWith('/activos-biologicos'), { timeout: 15_000 }).catch(() => undefined);
+  await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => undefined);
+
+  // 3. Ir por SPA a /prediccion/historial-predictivo y elegir el 885
+  await irAHistorialPredictivoSpa(page);
+  await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => undefined);
+  const selOk = await seleccionar885EnHistorial(page, etiqueta885);
+  precondicion(`Activo ${ACTIVO} cargado en Historial predictivo (${navegador})`, selOk, `etiqueta="${etiqueta885}"`);
+
+  // 4a. CP-01 / CP-07: paso a OFFLINE <= 5000 ms
+  const mOff = await medirCambioSync(page, ctx, true, 'ds-sync--OFFLINE', 'Sin conexión', 5_000);
+  anotar(
+    pasos.cpOff,
+    mOff.ok,
+    `delta=${mOff.ms !== null ? `${mOff.ms} ms` : 'timeout (>6000 ms)'}; texto="${mOff.texto}"; clase="${mOff.clase}"; navegador=${navegador}`,
+  );
+  await captura(page, `${pasos.cpOff}_offline`);
+
+  // 4b. CP-03 / CP-09: navegacion sin conexion por menu lateral -> Panel principal -> Activos biologicos
+  {
+    const linkPanel = page.locator('.ds-sidebar').getByRole('link', { name: 'Panel principal' }).first();
+    await linkPanel.click().catch(() => undefined);
+    await page.waitForTimeout(700);
+    const ruta1 = new URL(page.url()).pathname;
+    const err1 = await page.getByText('No se pudo mostrar esta sección').isVisible().catch(() => false);
+    const sync1 = await leerEstadoSync(page);
+
+    const linkActivos = page.locator('.ds-sidebar').getByRole('link', { name: 'Activos biológicos' }).first();
+    await linkActivos.click().catch(() => undefined);
+    await page.waitForTimeout(700);
+    const ruta2 = new URL(page.url()).pathname;
+    const err2 = await page.getByText('No se pudo mostrar esta sección').isVisible().catch(() => false);
+    const sync2 = await leerEstadoSync(page);
+
+    const okNav = ruta1.endsWith('/dashboard')
+      && ruta2.endsWith('/activos-biologicos')
+      && !err1 && !err2
+      && sync1.clase.includes('ds-sync--OFFLINE')
+      && sync2.clase.includes('ds-sync--OFFLINE');
+
+    anotar(
+      pasos.cpNav,
+      okNav,
+      `destino1=${ruta1} (error_seccion=${err1}, sync="${sync1.clase}"); destino2=${ruta2} (error_seccion=${err2}, sync="${sync2.clase}"); navegador=${navegador}`,
+    );
+
+    // Volver a /prediccion/historial-predictivo con clic en el menu, todavia sin red
+    await irAHistorialPredictivoSpa(page);
+    await page.waitForTimeout(300);
+  }
+
+  // 4c. CP-02 / CP-08: retorno a SINCRONIZADO <= 10000 ms
+  const mOn = await medirCambioSync(page, ctx, false, 'ds-sync--SINCRONIZADO', null, 10_000);
+  anotar(
+    pasos.cpOn,
+    mOn.ok,
+    `delta=${mOn.ms !== null ? `${mOn.ms} ms` : 'timeout (>11000 ms)'}; texto="${mOn.texto}"; clase="${mOn.clase}"; navegador=${navegador}`,
+  );
+
+  // Asegurar 885 elegido en /prediccion/historial-predictivo ya en linea (recarga limpia con red)
+  await page.goto(`${BASE}prediccion/historial-predictivo`);
+  await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => undefined);
+  await seleccionar885EnHistorial(page, etiqueta885);
+
+  // 5. OBS-FA4 (observacion, no checkpoint)
+  {
+    await cerrarToasts(page);
+    armarRetencionReportes();
+    const btnExportar = page.getByRole('button', { name: 'Exportar historial sanitario (PDF)' });
+    if (await btnExportar.isVisible().catch(() => false) && await btnExportar.isEnabled().catch(() => false)) {
+      await btnExportar.click();
+      await Promise.race([promRetenidoRecibido!, page.waitForTimeout(5_000)]);
+      await ctx.setOffline(true);
+      await page.waitForTimeout(150);
+      liberarRetenido?.();
+      await page.waitForTimeout(600);
+      const syncFa4 = await leerEstadoSync(page);
+      const toastsFa4 = await page.locator('.ds-toasts .ds-alert').allTextContents().then((a) => a.map(norm)).catch(() => []);
+      observaciones.push(
+        `OBS-FA4 (${navegador}): clase_icono="${syncFa4.clase}"; avisos_toasts=[${toastsFa4.map((x) => `"${x}"`).join(', ')}]; esperado_rf="Sin conexión. La operación se reintentará automáticamente cuando vuelva la conexión.".`,
+      );
+      await cerrarToasts(page);
+      await ctx.setOffline(false);
+      await page.waitForTimeout(400);
+    } else {
+      observaciones.push(`OBS-FA4 (${navegador}): botón «Exportar historial sanitario (PDF)» no disponible.`);
+    }
+    modoReportes = 'abortar';
+  }
+
+  // 6a. CP-04 / CP-10: 10 mediciones banner de exito (POST /reportes 201 simulado)
+  {
+    modoReportes = 'ok201';
+    const deltas: Array<number | null> = [];
+    const btnExportar = page.getByRole('button', { name: 'Exportar historial sanitario (PDF)' });
+    for (let i = 0; i < 10; i += 1) {
+      await cerrarToasts(page);
+      tRespReportes = 0;
+      await page.evaluate(() => {
+        const w = window as unknown as { __qaBannerTarget: string | null; __qaBannerTime: number | null };
+        w.__qaBannerTarget = 'success';
+        w.__qaBannerTime = null;
+      });
+      await btnExportar.click();
+      await page.waitForFunction(
+        () => (window as unknown as { __qaBannerTime: number | null }).__qaBannerTime !== null,
+        { timeout: 5_000 },
+      ).catch(() => null);
+      const tBanner = await page.evaluate(() => {
+        const w = window as unknown as { __qaBannerTarget: string | null; __qaBannerTime: number | null };
+        w.__qaBannerTarget = null;
+        return w.__qaBannerTime;
+      }).catch(() => null);
+      deltas.push(tBanner !== null && tRespReportes > 0 ? Math.max(0, tBanner - tRespReportes) : null);
+      await cerrarToasts(page);
+    }
+    modoReportes = 'abortar';
+    const validos = deltas.filter((d): d is number => d !== null);
+    const peor = validos.length ? Math.max(...validos) : null;
+    const ok04 = validos.length === 10 && validos.every((d) => d <= 500);
+    anotar(
+      pasos.cpOkBanner,
+      ok04,
+      `deltas=[${deltas.map((d) => (d === null ? 'timeout' : d)).join(', ')}] ms; peor=${peor ?? 'N/A'} ms; navegador=${navegador}`,
+    );
+  }
+
+  // 6b. CP-05 / CP-11: 10 mediciones banner de error (POST /reportes 422 simulado)
+  {
+    modoReportes = 'err422';
+    const deltas: Array<number | null> = [];
+    const btnExportar = page.getByRole('button', { name: 'Exportar historial sanitario (PDF)' });
+    for (let i = 0; i < 10; i += 1) {
+      await cerrarToasts(page);
+      tRespReportes = 0;
+      await page.evaluate(() => {
+        const w = window as unknown as { __qaBannerTarget: string | null; __qaBannerTime: number | null };
+        w.__qaBannerTarget = 'error';
+        w.__qaBannerTime = null;
+      });
+      await btnExportar.click();
+      await page.waitForFunction(
+        () => (window as unknown as { __qaBannerTime: number | null }).__qaBannerTime !== null,
+        { timeout: 5_000 },
+      ).catch(() => null);
+      const tBanner = await page.evaluate(() => {
+        const w = window as unknown as { __qaBannerTarget: string | null; __qaBannerTime: number | null };
+        w.__qaBannerTarget = null;
+        return w.__qaBannerTime;
+      }).catch(() => null);
+      deltas.push(tBanner !== null && tRespReportes > 0 ? Math.max(0, tBanner - tRespReportes) : null);
+      await cerrarToasts(page);
+    }
+    modoReportes = 'abortar';
+    const validos = deltas.filter((d): d is number => d !== null);
+    const peor = validos.length ? Math.max(...validos) : null;
+    const ok05 = validos.length === 10 && validos.every((d) => d <= 500);
+    anotar(
+      pasos.cpErrBanner,
+      ok05,
+      `deltas=[${deltas.map((d) => (d === null ? 'timeout' : d)).join(', ')}] ms; peor=${peor ?? 'N/A'} ms; navegador=${navegador}`,
+    );
+  }
+
+  // 7. CP-06 / CP-12: 10 mediciones del modal critico "Confirma la baja" (<= 200 ms, 0 POST baja)
+  {
+    const prepFicha = await prepararFicha885(page, navegador);
+    precondicion(`Ficha ${ACTIVO} lista con botón «Baja» (${navegador})`, prepFicha.ok, prepFicha.detalle);
+    const deltas: Array<number | null> = [];
+    const postBajaAntes = intentosPostBaja;
+
+    for (let i = 0; i < 10; i += 1) {
+      const btnBaja = page.getByRole('button', { name: 'Baja', exact: true });
+      await btnBaja.click();
+      const dlg = page.locator('[role="dialog"]').first();
+      await dlg.waitFor({ state: 'visible', timeout: 8_000 }).catch(() => undefined);
+      await dlg.locator('select').first().selectOption('perdida');
+      await dlg.locator('textarea').first().fill('QA TC-M08-G030 medicion RF-107');
+
+      await page.evaluate(() => {
+        const w = window as unknown as { __qaModalArmed: boolean; __qaClickTime: number | null; __qaModalTime: number | null };
+        w.__qaClickTime = null;
+        w.__qaModalTime = null;
+        w.__qaModalArmed = true;
+      });
+      await dlg.getByRole('button', { name: 'Registrar baja', exact: true }).click();
+      await page.waitForFunction(
+        () => (window as unknown as { __qaModalTime: number | null }).__qaModalTime !== null,
+        { timeout: 5_000 },
+      ).catch(() => null);
+
+      const res = await page.evaluate(() => {
+        const w = window as unknown as { __qaModalArmed: boolean; __qaClickTime: number | null; __qaModalTime: number | null };
+        w.__qaModalArmed = false;
+        return { t0: w.__qaClickTime, t1: w.__qaModalTime };
+      }).catch(() => ({ t0: null, t1: null }));
+
+      deltas.push(res.t0 !== null && res.t1 !== null ? Math.max(0, Math.round(res.t1 - res.t0)) : null);
+      if (i === 0) await captura(page, `${pasos.cpModal}_confirma_baja`);
+
+      // Volver y luego Cancelar (NUNCA Confirmar baja)
+      const btnVolver = page.locator('[role="dialog"]').getByRole('button', { name: 'Volver', exact: true });
+      if (await btnVolver.isVisible().catch(() => false)) await btnVolver.click();
+      await page.waitForTimeout(100);
+      const btnCancelar = page.locator('[role="dialog"]').getByRole('button', { name: 'Cancelar', exact: true });
+      if (await btnCancelar.isVisible().catch(() => false)) await btnCancelar.click();
+      await page.locator('[role="dialog"]').waitFor({ state: 'detached', timeout: 5_000 }).catch(() => undefined);
+    }
+
+    const postBajaNuevos = intentosPostBaja - postBajaAntes;
+    const validos = deltas.filter((d): d is number => d !== null);
+    const peor = validos.length ? Math.max(...validos) : null;
+    const ok06 = validos.length === 10 && validos.every((d) => d <= 200) && postBajaNuevos === 0;
+    anotar(
+      pasos.cpModal,
+      ok06,
+      `deltas=[${deltas.map((d) => (d === null ? 'timeout' : d)).join(', ')}] ms; peor=${peor ?? 'N/A'} ms; post_baja=${postBajaNuevos}; navegador=${navegador}`,
+    );
+  }
+}
+
+test.afterAll(() => {
+  if (violaciones.length) {
+    precondiciones.push({ nombre: 'Ninguna escritura no permitida hacia TEST', ok: false, detalle: violaciones.join('; ') });
+  } else {
+    precondiciones.push({ nombre: 'Ninguna escritura no permitida hacia TEST', ok: true, detalle: `${escrituras.length} peticiones distintas de GET, todas permitidas o simuladas` });
+  }
+  if (precondiciones.some((p) => !p.ok)) {
+    const nombres = precondiciones.filter((p) => !p.ok).map((p) => p.nombre).join('; ');
+    for (const c of CPS) {
+      if (!c.obtenido.startsWith('Precondición no cumplida')) {
+        c.obtenido = `Precondición no cumplida (${nombres}); medido: ${c.obtenido}`;
+        c.estado = 'FALLA';
+      }
+    }
+  }
+  const ok = CPS.filter((c) => c.estado === 'OK').length;
+  const reporte = {
+    tc: TC,
+    reintento: REINTENTO,
+    run_id: process.env.RUN_ID ?? '',
+    fecha: new Date().toISOString(),
+    ambiente: BASE,
+    summary: { total: CPS.length, ok, falla: CPS.length - ok, veredicto: ok === CPS.length ? 'Aprobado' : 'Rechazado' },
+    checkpoints: CPS,
+    observaciones,
+    retirados: RETIRADOS,
+    precondiciones,
+    escrituras,
+  };
+  if (!STAGING) return;
+  mkdirSync(STAGING, { recursive: true });
+  writeFileSync(
+    join(STAGING, `resultado_${TC}${REINTENTO > 0 ? `_reintento${REINTENTO}` : ''}.json`),
+    `${JSON.stringify(reporte, null, 2)}\n`,
+    'utf8',
+  );
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Recorrido unico: Parte A (Veterinario: Chromium -> WebKit con storageState) + Parte B (Admin: WebKit nuevo)
+// ---------------------------------------------------------------------------------------------------------------
+test('TC-M08-G030 offline, tiempos de banners/modal y cierre bloqueante (CP-01 a CP-13)', async ({ page, context, browser }) => {
+  test.setTimeout(900_000);
+  observaciones.push(`Chromium versión: ${browser.version()}.`);
+
+  const vetEmail = process.env.QA_VET_EMAIL ?? '';
+  const vetPass = process.env.QA_VET_PASSWORD ?? '';
+  const adminEmail = process.env.QA_ADMIN_EMAIL ?? '';
+  const adminPass = process.env.QA_ADMIN_PASSWORD ?? '';
+  precondicion(
+    'Credenciales de Veterinario y Administrador en memoria',
+    vetEmail.length > 3 && vetPass.length > 3 && adminEmail.length > 3 && adminPass.length > 3,
+    'QA_VET_EMAIL, QA_VET_PASSWORD, QA_ADMIN_EMAIL y QA_ADMIN_PASSWORD presentes',
+  );
+
+  const scripts: Array<{ nombre: string }> = [];
+  await context.addInitScript(INIT_INSTRUMENTACION);
+  prepararGuardiaCuenta('Veterinario');
+  await registrarRutas(context);
+  enlazarRespuestas(page, scripts);
+
+  // ---- PARTE A (Chromium): Login unico Veterinario
+  await page.goto(`${BASE}login`);
+  await page.locator('input[autocomplete="email"]').fill(vetEmail);
+  await page.locator('input[autocomplete="current-password"]').fill(vetPass);
+  await page.getByRole('button', { name: 'Ingresar' }).click();
+  await page.waitForURL((u) => !u.pathname.endsWith('/login'), { timeout: 30_000 }).catch(() => undefined);
+  await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => undefined);
+  const limAuth = Date.now() + 10_000;
+  while ((!authToken || !apiBase) && Date.now() < limAuth) await page.waitForTimeout(200);
+  precondicion(
+    'Login único del Veterinario en Chromium',
+    !page.url().endsWith('/login') && apiBase.length > 0 && authToken.length > 0,
+    `URL=${new URL(page.url()).pathname}`,
+  );
+
+  const verVet = await verificarCuenta(page, 'VETERINARIO');
+  precondicion('Cuenta Veterinario confirmada por GET /usuarios/me', verVet.ok, verVet.detalle);
+
+  // Obtener etiqueta del 885
+  const promOpc = page.waitForResponse(
+    (r) => /\/reportes\/opciones\/activo/.test(r.url()) && r.request().method() === 'GET',
+    { timeout: 30_000 },
+  ).catch(() => null);
+  await page.goto(`${BASE}prediccion/historial-predictivo`);
+  const respOpc = await promOpc;
+  const opciones = respOpc ? ((await respOpc.json().catch(() => [])) as Array<{ valor: number; etiqueta: string }>) : [];
+  const opcion885 = opciones.find((o) => Number(o.valor) === ACTIVO);
+  precondicion(`El activo ${ACTIVO} figura en GET /reportes/opciones/activo`, !!opcion885, `${opciones.length} opciones`);
+  const etiqueta885 = opcion885!.etiqueta;
+
+  await ejecutarParteA(page, context, 'Chromium', etiqueta885, {
+    cpOff: 'CP-01', cpOn: 'CP-02', cpNav: 'CP-03', cpOkBanner: 'CP-04', cpErrBanner: 'CP-05', cpModal: 'CP-06',
+  });
+
+  // Guardar storageState y cerrar Chromium ANTES de lanzar WebKit
+  const estadoVet = await context.storageState();
+  await page.goto('about:blank').catch(() => undefined);
+  await context.close().catch(() => undefined);
+
+  // ---- PARTE A (WebKit con storageState, sin segundo login)
+  const wb = await webkit.launch();
+  observaciones.push(`WebKit versión: ${wb.version()}.`);
+  try {
+    const ctxW = await wb.newContext({
+      storageState: estadoVet,
+      serviceWorkers: 'block',
+      viewport: { width: 1366, height: 768 },
+      locale: 'es-CO',
+      timezoneId: 'America/Bogota',
+    });
+    await ctxW.addInitScript(INIT_INSTRUMENTACION);
+    await registrarRutas(ctxW);
+    const pW = await ctxW.newPage();
+    enlazarRespuestas(pW);
+    try {
+      await pW.goto(`${BASE}dashboard`);
+      await pW.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => undefined);
+      precondicion('Sesión Veterinario activa en WebKit sin segundo login', !pW.url().endsWith('/login'), `URL=${new URL(pW.url()).pathname}`);
+
+      await ejecutarParteA(pW, ctxW, 'WebKit', etiqueta885, {
+        cpOff: 'CP-07', cpOn: 'CP-08', cpNav: 'CP-09', cpOkBanner: 'CP-10', cpErrBanner: 'CP-11', cpModal: 'CP-12',
+      });
+    } finally {
+      await pW.goto('about:blank').catch(() => undefined);
+      await ctxW.close().catch(() => undefined);
+    }
+
+    // ---- PARTE B (WebKit, Administrador, contexto nuevo con login directo)
+    const ctxAdmin = await wb.newContext({
+      serviceWorkers: 'block',
+      viewport: { width: 1366, height: 768 },
+      locale: 'es-CO',
+      timezoneId: 'America/Bogota',
+    });
+    prepararGuardiaCuenta('Administrador');
+    await registrarRutas(ctxAdmin);
+    const pAdmin = await ctxAdmin.newPage();
+    enlazarRespuestas(pAdmin);
+    try {
+      await pAdmin.goto(`${BASE}login`);
+      await pAdmin.locator('input[autocomplete="email"]').fill(adminEmail);
+      await pAdmin.locator('input[autocomplete="current-password"]').fill(adminPass);
+      await pAdmin.getByRole('button', { name: 'Ingresar' }).click();
+      await pAdmin.waitForURL((u) => !u.pathname.endsWith('/login'), { timeout: 30_000 }).catch(() => undefined);
+      await pAdmin.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => undefined);
+      const limAdmin = Date.now() + 10_000;
+      while (!authToken && Date.now() < limAdmin) await pAdmin.waitForTimeout(200);
+      precondicion(
+        'Login único del Administrador en WebKit',
+        !pAdmin.url().endsWith('/login') && authToken.length > 0,
+        `URL=${new URL(pAdmin.url()).pathname}`,
+      );
+
+      const verAdmin = await verificarCuenta(pAdmin, 'ADMINISTRADOR');
+      precondicion('Cuenta Administrador confirmada por GET /usuarios/me', verAdmin.ok, verAdmin.detalle);
+
+      await pAdmin.goto(`${BASE}finanzas/cierre`);
+      const prepFin = await prepararMenu(pAdmin, 'Finanzas NIC 41', 'WebKit Finanzas');
+      precondicion('Menú lateral cargado para Administrador en WebKit (Finanzas)', prepFin.ok, prepFin.detalle);
+
+      // Buscar primer periodo cuyo boton "Cerrar período" este habilitado
+      const btnCerrarPeriodo = pAdmin.getByRole('button', { name: 'Cerrar período', exact: true });
+      const selTitular = pAdmin.locator('#fin-titular');
+      const selPeriodo = pAdmin.locator('#fin-periodo');
+      const periodosVistos: string[] = [];
+      let encontrado = false;
+
+      const revisarPeriodoActual = async (): Promise<boolean> => {
+        await pAdmin.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
+        await pAdmin.waitForTimeout(300);
+        const vis = await btnCerrarPeriodo.isVisible().catch(() => false);
+        const hab = vis ? await btnCerrarPeriodo.isEnabled().catch(() => false) : false;
+        return vis && hab;
+      };
+
+      const revisarOpcionesPeriodo = async (): Promise<boolean> => {
+        if (await revisarPeriodoActual()) return true;
+        if (await selPeriodo.isVisible().catch(() => false)) {
+          const opts = await selPeriodo.locator('option').evaluateAll((els) =>
+            els.map((e) => ({ val: (e as HTMLOptionElement).value, txt: (e.textContent ?? '').trim() })),
+          );
+          for (const opt of opts) {
+            if (!opt.val) continue;
+            periodosVistos.push(`${opt.val}:${opt.txt}`);
+            await selPeriodo.selectOption(opt.val);
+            if (await revisarPeriodoActual()) return true;
+          }
+        }
+        return false;
+      };
+
+      if (await selTitular.isVisible().catch(() => false)) {
+        const tits = await selTitular.locator('option').evaluateAll((els) =>
+          els.map((e) => (e as HTMLOptionElement).value),
+        );
+        for (const tVal of tits) {
+          await selTitular.selectOption(tVal);
+          await pAdmin.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
+          if (await revisarOpcionesPeriodo()) { encontrado = true; break; }
+        }
+      } else {
+        encontrado = await revisarOpcionesPeriodo();
+      }
+
+      precondicion(
+        'Período contable cerrable con botón «Cerrar período» habilitado',
+        encontrado,
+        encontrado ? 'botón «Cerrar período» habilitado' : `ninguno habilitado; vistos=[${periodosVistos.join('; ')}]`,
+      );
+
+      // CP-13: instalar page.clock antes de abrir el dialogo
+      const postCierreAntes = intentosPostCierre;
+      await pAdmin.clock.install();
+      await btnCerrarPeriodo.click();
+      const dlgCierre = pAdmin.locator('[role="dialog"]').first();
+      const abiertoInicial = await dlgCierre.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
+      await captura(pAdmin, 'CP-13_cierre');
+
+      // 1) Escape (esperar 500 ms)
+      await pAdmin.keyboard.press('Escape');
+      await new Promise((r) => setTimeout(r, 500));
+      const abiertoTrasEsc = await dlgCierre.isVisible().catch(() => false);
+
+      // 2) Clic en overlay fuera del panel (esquina superior izquierda 10, 10)
+      await pAdmin.mouse.click(10, 10);
+      await new Promise((r) => setTimeout(r, 200));
+      const abiertoTrasOverlay = await dlgCierre.isVisible().catch(() => false);
+
+      // 3) Presencia de boton X de cierre
+      const tieneX = (await dlgCierre.locator('button[aria-label*="Cerrar" i], button[aria-label*="Close" i]').count().catch(() => 0)) > 0;
+
+      // 4) page.clock.fastForward('10:00')
+      await pAdmin.clock.fastForward('10:00');
+      await new Promise((r) => setTimeout(r, 200));
+      const abiertoTras10m = await dlgCierre.isVisible().catch(() => false);
+      const urlFinal = new URL(pAdmin.url()).pathname;
+      const enLogin = urlFinal.endsWith('/login');
+      const postCierreNuevos = intentosPostCierre - postCierreAntes;
+
+      if (enLogin) {
+        observaciones.push(`CP-13: fastForward('10:00') redirigió la app a ${urlFinal}.`);
+      }
+
+      // Cerrar con Cancelar
+      if (abiertoTras10m) {
+        const btnCan = dlgCierre.getByRole('button', { name: 'Cancelar', exact: true });
+        if (await btnCan.isVisible().catch(() => false)) await btnCan.click();
+      }
+
+      const ok13 = abiertoInicial
+        && abiertoTrasEsc
+        && abiertoTrasOverlay
+        && !tieneX
+        && abiertoTras10m
+        && !enLogin
+        && postCierreNuevos === 0;
+
+      anotar(
+        'CP-13',
+        ok13,
+        `inicial=${abiertoInicial ? 'sí' : 'no'}; tras_escape=${abiertoTrasEsc ? 'sí' : 'no'}; tras_overlay=${abiertoTrasOverlay ? 'sí' : 'no'}; boton_X=${tieneX ? 'sí' : 'no'}; tras_10m=${abiertoTras10m ? 'sí' : 'no'}; url=${urlFinal}; post_cierre=${postCierreNuevos}`,
+      );
+    } finally {
+      await pAdmin.goto('about:blank').catch(() => undefined);
+      await ctxAdmin.close().catch(() => undefined);
+    }
+  } finally {
+    await wb.close().catch(() => undefined);
+  }
+
+  const index = [...new Set(scripts.map((s) => s.nombre).filter((n) => /^index-.*\.js$/.test(n)))];
+  observaciones.push(`Despliegue: bundle ${index.join(', ') || '(no identificado)'} en ${BASE}.`);
+
+  expect(violaciones, violaciones.join('; ')).toEqual([]);
+  expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+});

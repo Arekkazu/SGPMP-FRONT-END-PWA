@@ -1,0 +1,147 @@
+// Servidor de prueba de la herramienta (TC-M08-G024). Sirve un build local en /sigab-test/ y una API
+// simulada en /sigab-test/api con la forma real del backend. No es parte de la corrida oficial.
+// Uso: node servidor_api_simulada.mjs.txt <dir_build> <escenario: normal> <puerto>
+import http from 'node:http';
+import { readFileSync, existsSync, statSync, appendFileSync } from 'node:fs';
+import { join, extname } from 'node:path';
+
+const [dirBuild, escenario = 'normal', puertoTxt = '4173'] = process.argv.slice(2);
+const PUERTO = Number(puertoTxt);
+const LOG = process.env.MOCK_LOG ?? 'mock.log';
+const AHORA = Date.now();
+const HORA = 3_600_000;
+const DIA = 86_400_000;
+const iso = (t) => new Date(t).toISOString().replace('.000Z', '+00:00');
+
+const uuid = (n) => `aa02400${n}-0000-4000-8000-${String(n).padStart(12, '0')}`;
+
+// 885 sintetico pequeno (misma forma que G023)
+const basePreds = [
+  { id: uuid(1), nivel: 3, fecha: AHORA - 25 * DIA, condicion: 'Estrés térmico' },
+  { id: uuid(2), nivel: 0, fecha: AHORA - 26 * DIA, condicion: 'Condición no identificada' },
+  { id: uuid(3), nivel: 1, fecha: AHORA - 27 * DIA, condicion: 'Deshidratación' },
+  { id: uuid(4), nivel: 2, fecha: AHORA - 140 * DIA, condicion: 'Gastroenteritis infecciosa' },
+  { id: uuid(5), nivel: 1, fecha: AHORA - 30 * DIA, condicion: 'Septicemia' },
+  { id: uuid(6), nivel: 3, fecha: AHORA - 1 * DIA, condicion: 'Hipotermia' },
+];
+
+const baseRetros = [
+  {
+    tipo: 'RETROALIMENTACION',
+    fecha: iso(AHORA - 20 * DIA),
+    id_resultado_inferencia: uuid(5),
+    valoracion: 'CORRECTO',
+    veterinario: 'QA Vet',
+    observaciones: null,
+    en_conflicto: false,
+  },
+];
+
+let reqSeq = 0;
+
+function historial(params) {
+  const conRetro = new Set(baseRetros.map((r) => r.id_resultado_inferencia));
+  const preds = basePreds.map((p) => ({
+    tipo: 'PREDICCION',
+    fecha: iso(p.fecha),
+    id_resultado_inferencia: p.id,
+    nivel_riesgo: p.nivel,
+    confianza: 0.85,
+    condicion: p.condicion,
+    modo_sombra: false,
+    tiene_retroalimentacion: conRetro.has(p.id),
+    en_conflicto: false,
+  }));
+  const pend = basePreds
+    .filter((p) => !conRetro.has(p.id) && AHORA - p.fecha > 48 * HORA)
+    .sort((a, b) => (b.nivel - a.nivel) || (b.fecha - a.fecha));
+  return {
+    activo: { id_activo_biologico: 885, identificador: 'QA-G88-266-IND-001', especie: 'Qa', finca: 'Finca 184', estado: 'ACTIVO' },
+    rango_fechas_aplicado: { fecha_inicio: params.get('fecha_inicio'), fecha_fin: params.get('fecha_fin') },
+    ventana_correspondencia_horas: 12,
+    predicciones: preds,
+    eventos_sanitarios: [],
+    retroalimentaciones: baseRetros,
+    grupos: [],
+    correspondencias: [],
+    tvco: {
+      porcentaje: 100,
+      texto: '100% (1 validada; 5 excluidas: sin retro)',
+      tvco_denominador: 1,
+      tvco_excluidas_conflicto: 0,
+      excluidas_sin_retroalimentacion: 5,
+      tasa_error: 0,
+    },
+    pendientes: {
+      total: pend.length,
+      pagina: 1,
+      por_pagina: 20,
+      items: pend.map((p) => ({
+        id_resultado_inferencia: p.id,
+        fecha_inferencia: iso(p.fecha),
+        nivel_riesgo: p.nivel,
+        condicion: p.condicion,
+      })),
+    },
+    metadatos: {
+      total_inferencias: preds.length,
+      total_eventos_sanitarios: 0,
+      total_retroalimentaciones: baseRetros.length,
+      total_pendientes: pend.length,
+      total_conflictos: 0,
+    },
+    fuentes_no_disponibles: [],
+    mensaje: null,
+    modo_visualizacion: params.get('modo_visualizacion') ?? 'LINEAL',
+  };
+}
+
+const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+const TOKEN = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: '97', jti: 'qa', rol: 3, exp: Math.floor(Date.now() / 1000) + 7200, iat: Math.floor(Date.now() / 1000) })}.firma`;
+let conSesion = false;
+const PERMISOS = [
+  { id_recurso: 9106, nombre_recurso: 'historial_clinico_predictivo', id_accion: 2 },
+  { id_recurso: 42, nombre_recurso: 'historial_diagnostico', id_accion: 2 },
+  { id_recurso: 45, nombre_recurso: 'retroalimentacion_clinica', id_accion: 2 },
+  { id_recurso: 45, nombre_recurso: 'retroalimentacion_clinica', id_accion: 1 },
+];
+const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.woff2': 'font/woff2' };
+
+http.createServer((req, res) => {
+  const url = new URL(req.url, `http://127.0.0.1:${PUERTO}`);
+  const rid = `qa-g024-${++reqSeq}`;
+  const json = (code, body) => { res.writeHead(code, { 'content-type': 'application/json', 'x-request-id': rid }); res.end(JSON.stringify(body)); };
+  if (url.pathname.startsWith('/sigab-test/api/')) {
+    const r = url.pathname.slice('/sigab-test/api'.length);
+    if (req.method === 'POST' && /^\/sesiones\/?$/.test(r)) {
+      appendFileSync(LOG, `${req.method} ${r}${url.search}\n`);
+      conSesion = true;
+      return json(200, { token: TOKEN, tipo: 'bearer', expira_en: 7200, message: 'ok' });
+    }
+    if (req.method === 'POST' && r.startsWith('/sesiones/refresh')) {
+      appendFileSync(LOG, `${req.method} ${r}${url.search}\n`);
+      return conSesion ? json(200, { token: TOKEN, tipo: 'bearer', expira_en: 7200, message: 'ok' }) : json(401, { error_code: 'SESION_INVALIDA', message: 'Sin sesión', fields: [] });
+    }
+    if (req.method === 'DELETE' && /^\/sesiones\/?$/.test(r)) {
+      appendFileSync(LOG, `${req.method} ${r}${url.search}\n`);
+      conSesion = false;
+      return json(200, { message: 'ok' });
+    }
+    if (req.method !== 'GET') {
+      appendFileSync(LOG, `ESCRITURA_NO_PERMITIDA ${req.method} ${r}${url.search}\n`);
+      return json(201, { qa: 'escritura que la guardia debio abortar' });
+    }
+    appendFileSync(LOG, `${req.method} ${r}${url.search}\n`);
+    if (r === '/usuarios/me') return json(200, { id_usuario: 97, nombre: 'Vet', apellidos: 'QA', correo_electronico: 'vet@qa.test', nombre_rol: 'VETERINARIO', estado_cuenta: 'ACTIVA' });
+    if (r.startsWith('/sesiones/me/permisos')) return json(200, { permisos: PERMISOS });
+    if (r.startsWith('/reportes/opciones/activo')) return json(200, [{ valor: 885, etiqueta: 'QA-G88-266-IND-001 · Qa Semaforo Dinamico' }]);
+    if (r.startsWith('/historial-predictivo/885')) return json(200, historial(url.searchParams));
+    if (r.startsWith('/configuracion/mensajes-error')) return json(200, []);
+    return json(404, { error_code: 'RUTA_NO_SIMULADA', message: `No simulada ${r}`, fields: [] });
+  }
+  let ruta = url.pathname.replace(/^\/sigab-test\/?/, '');
+  let archivo = join(dirBuild, ruta || 'index.html');
+  if (!existsSync(archivo) || statSync(archivo).isDirectory()) archivo = join(dirBuild, 'index.html');
+  res.writeHead(200, { 'content-type': TIPOS[extname(archivo)] ?? 'application/octet-stream' });
+  res.end(readFileSync(archivo));
+}).listen(PUERTO, '127.0.0.1', () => console.log(`mock ${escenario} en ${PUERTO} sirviendo ${dirBuild}`));

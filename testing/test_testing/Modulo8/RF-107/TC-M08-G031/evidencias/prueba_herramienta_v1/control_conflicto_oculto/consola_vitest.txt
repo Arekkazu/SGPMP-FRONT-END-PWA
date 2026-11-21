@@ -1,0 +1,168 @@
+﻿
+ RUN  v4.1.11 C:/Users/Juansegutt/Integrador/SGPMP-FRONT-END-PWA
+
+node.exe : (node:27728) ExperimentalWarning: localStorage is not available because --localstorage-file was not 
+provided.
+En C:\nvm4w\nodejs\pnpm.ps1: 16 Carácter: 5
++     & "$basedir/node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs"  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:27728) Ex...s not provided.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y 
+panel por modulo (RF-107 8.4 y CA-15) > CP-02 SINCRONIZANDO: online con peticion en curso
+An update to EstadoSincronizacion inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at 
+https://react.dev/link/wrap-tests-with-act
+
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y panel por modulo (RF-107 8.4 y CA-15) > CP-01 SINCRONIZADO: online, cola vacia y sin peticiones 148ms
+stderr | testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y 
+panel por modulo (RF-107 8.4 y CA-15) > CP-02 SINCRONIZANDO: online con peticion en curso
+An update to EstadoSincronizacion inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at 
+https://react.dev/link/wrap-tests-with-act
+
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y panel por modulo (RF-107 8.4 y CA-15) > CP-02 SINCRONIZANDO: online con peticion en curso 224ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y panel por modulo (RF-107 8.4 y CA-15) > CP-03 OFFLINE: navigator.onLine=false y evento offline 187ms
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y panel por modulo (RF-107 8.4 y CA-15) > CP-04 CONFLICTO: online con 1 conflicto en getConflictos 114ms
+   → expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y panel por modulo (RF-107 8.4 y CA-15) > CP-05 Panel (CA-15): 6 filas en orden esperado con 4 celdas td cada una 97ms
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y panel por modulo (RF-107 8.4 y CA-15) > CP-06 Formato del ultimo sincronizado (AAAA-MM-DD HH:MM) 106ms
+   → expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y panel por modulo (RF-107 8.4 y CA-15) > CP-07 Pendientes: (a) SINCRONIZADO 6 filas en 0; (b) OFFLINE con 2 en cola para activos 289ms
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y panel por modulo (RF-107 8.4 y CA-15) > CP-08 Accion disponible: botones/enlaces por estado y sin accion interactiva en SINCRONIZADO 490ms
+   → expected false to be true // Object.is equality
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y panel por modulo (RF-107 8.4 y CA-15) > CP-09 Contenido OFFLINE: tiempo transcurrido, acciones encoladas y modulos con cache 183ms
+   → expected false to be true // Object.is equality
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y panel por modulo (RF-107 8.4 y CA-15) > CP-10 Contenido CONFLICTO: valor local, valor del servidor y fecha de divergencia 97ms
+   → expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y panel por modulo (RF-107 8.4 y CA-15) > CP-11 SINCRONIZANDO por modulo: 3 operaciones en cola para suministros 101ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y 
+panel por modulo (RF-107 8.4 y CA-15) > CP-04 CONFLICTO: online con 1 conflicto en getConflictos
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx:360:16
+    358|       && ic.svgClase.includes('lucide-cloud-alert');
+    359|     anotar('CP-04', ok, `clase="${ic.clase}"; texto="${ic.texto}"; svg…
+    360|     expect(ok).toBe(true);
+       |                ^
+    361|   });
+    362|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y 
+panel por modulo (RF-107 8.4 y CA-15) > CP-06 Formato del ultimo sincronizado (AAAA-MM-DD HH:MM)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx:397:16
+    395|     const ok = ultimo === '2026-11-21 15:00';
+    396|     anotar('CP-06', ok, `celda_activos="${ultimo}"`);
+    397|     expect(ok).toBe(true);
+       |                ^
+    398|   });
+    399|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y 
+panel por modulo (RF-107 8.4 y CA-15) > CP-08 Accion disponible: botones/enlaces por estado y sin accion interactiva 
+en SINCRONIZADO
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx:480:16
+    478|       + `sincronizado(interactivos=${interactivosOk}/6)`,
+    479|     );
+    480|     expect(ok).toBe(true);
+       |                ^
+    481|   });
+    482|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y 
+panel por modulo (RF-107 8.4 y CA-15) > CP-09 Contenido OFFLINE: tiempo transcurrido, acciones encoladas y modulos con 
+cache
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx:506:16
+    504|       `tiempo=${tieneTiempo}; acciones(registrar_evento=${tieneEv}, re…
+    505|     );
+    506|     expect(ok).toBe(true);
+       |                ^
+    507|   });
+    508|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx > TC-M08-G031 Estado de sincronizacion y 
+panel por modulo (RF-107 8.4 y CA-15) > CP-10 Contenido CONFLICTO: valor local, valor del servidor y fecha de 
+divergencia
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G031/tc-m08-g031.test.tsx:525:16
+    523|       `local=${tieneLocal}; servidor=${tieneServidor}; fecha=${tieneFe…
+    524|     );
+    525|     expect(ok).toBe(true);
+       |                ^
+    526|   });
+    527|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 6 passed (11)
+   Start at  13:03:01
+   Duration  4.92s (transform 547ms, setup 263ms, import 1.44s, tests 2.07s, environment 765ms)
+

@@ -1,0 +1,1 @@
+import{j as s}from"./react-BRNvlXxE.js";function l({pestanas:e,activa:t,onCambiar:n,ariaLabel:i}){return s.jsx("nav",{className:"ds-subpestanas","aria-label":i,children:e.map(a=>s.jsx("button",{type:"button",className:"ds-subpestanas__item","aria-current":a.id===t?"page":void 0,onClick:()=>n(a.id),children:a.label},a.id))})}export{l as S};

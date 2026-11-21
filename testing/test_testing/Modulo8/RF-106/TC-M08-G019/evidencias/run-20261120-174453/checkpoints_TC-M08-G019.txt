@@ -1,0 +1,59 @@
+CP-01 | 048 Veterinario, activo ACTIVO (885) | OK
+  Esperado: pestaña "Historial predictivo" visible; la vista consulta GET /historial-predictivo/885; TVCO "25% (4 validadas)"; 6 puntos en la línea; 3 marcadores de evento; 4 marcadores de valoración; 2 pendientes con botón "Registrar retroalimentación"; sin "No tienes acceso a esta sección"
+  Obtenido: seleccion=ok; pestana=true; peticion=GET /historial-predictivo/885; tvco="25% (4 validadas)"; puntos=6; eventos=3; retros=4; pendientes_con_boton=2; sin_acceso_denegado=true
+  Fuente:   RF-106 Restricción 1; CA-6; Precondición 2
+CP-02 | 048 Veterinario, activo EN_TRATAMIENTO (2945) | OK
+  Esperado: Igual que CP-01 con GET /historial-predictivo/2945
+  Obtenido: seleccion=ok; pestana=true; peticion=GET /historial-predictivo/2945; tvco="25% (4 validadas)"; puntos=6; eventos=3; retros=4; pendientes_con_boton=2; sin_acceso_denegado=true
+  Fuente:   RF-106 Precondición 2; Restricción 1
+CP-03 | 048 Productor | OK
+  Esperado: sin pestaña "Historial predictivo"; la ruta muestra "No tienes acceso a esta sección" y el detalle con «Historial predictivo»; 0 peticiones a /historial-predictivo/; no aparece el combobox "Animal o lote" ni ninguna TVCO (texto con %)
+  Obtenido: sin_pestana=true; sin_acceso_titulo=true; detalle_con_nombre=true; peticiones_hp=0; combobox=false; tiene_tvco=false
+  Fuente:   RF-106 Restricción 1 ("El Productor no tiene acceso al historial predictivo detallado con probabilidades"); CA-6
+CP-04 | 048 Administrador | OK
+  Esperado: igual que CP-01 (la vista carga)
+  Obtenido: seleccion=ok; pestana=true; peticion=GET /historial-predictivo/885; tvco="25% (4 validadas)"; puntos=6; eventos=3; retros=4; pendientes_con_boton=2; sin_acceso_denegado=true
+  Fuente:   Lanzamiento v7 (el Administrador tiene lectura del historial; migración a7c3e91f5b20:72-73). Decisión de Sebastian 2026-11-20: se sigue la entrega; difiere de RF-106 Restricción 1 y CA-6 (ver observaciones)
+CP-05 | 049 Rango por defecto | OK
+  Esperado: sin tocar fechas, la petición lleva fecha_inicio=2025-11-20 y fecha_fin=2026-11-20, y los campos Desde/Hasta muestran esas fechas (calcula el esperado con tu propia aritmética de calendario, no con la de la vista)
+  Obtenido: peticion fecha_inicio=2025-11-20, fecha_fin=2026-11-20; campos Desde=2025-11-20, Hasta=2026-11-20
+  Fuente:   RF-106 Entradas (fecha_inicio: 12 meses antes de hoy; fecha_fin: hoy)
+CP-06 | 049 Rango de 24 meses exactos | OK
+  Esperado: con Desde=2024-11-20, la petición lleva fecha_inicio=2024-11-20 y fecha_fin=2026-11-20; respuesta 200; 8 puntos en la línea (incluida p1 de 2024-11-25); sin aviso de error
+  Obtenido: peticion fecha_inicio=2024-11-20, fecha_fin=2026-11-20; puntos=8; sin_error=true
+  Fuente:   RF-106 Restricción 2
+CP-07 | 049 Rango de 24 meses + 1 día | OK
+  Esperado: con Desde=2024-11-19 y la respuesta 400 del Swagger, no se dibuja la línea de tiempo (0 puntos), aparece "No se pudo cargar el historial" con un texto que contiene "24 meses", y los campos siguen habilitados con Desde=2024-11-19; luego, con Desde=2025-11-20 (subrango) vuelve la línea con 6 puntos y sin aviso
+  Obtenido: con 24m+1d: puntos=0, titulo_error=true, texto_24m=true, habilitado=true; tras volver a subrango: puntos=6, sin_error=true
+  Fuente:   RF-106 Restricción 2 ("el Veterinario puede seleccionar un subrango"); Swagger de TEST (rango máximo de 24 meses -> 400)
+CP-08 | 049 Cambio de rango sin recargar | OK
+  Esperado: desde la vista cargada por defecto (6 puntos, TVCO "25% (4 validadas)"), con Desde=2026-08-20 la nueva petición lleva fecha_inicio=2026-08-20; la TVCO pasa a "33% (3 validadas)", el total pasa a "4 predicciones" y la línea a 4 puntos; el combobox es el MISMO nodo del DOM (===) con el mismo valor y la ruta no cambia
+  Obtenido: antes: puntos=6, tvco="25% (4 validadas)"; peticion fecha_inicio=2026-08-20; tvco="33% (3 validadas)"; total="4 predicciones"; puntos=4; combobox_mismo_nodo=true; combobox_mismo_valor=true; misma_ruta=true
+  Fuente:   RF-106 CA-10
+CP-09 | 050 Sin eventos sanitarios | OK
+  Esperado: antes 3 marcadores de evento; al desmarcar "Eventos sanitarios", la última petición lleva incluir_eventos_sanitarios=false y quedan 0 marcadores de evento y 4 de valoración
+  Obtenido: antes: eventos=3; peticion incluir_eventos_sanitarios=false; eventos=0; retros=4
+  Fuente:   RF-106 Entradas (incluir_eventos_sanitarios)
+CP-10 | 050 Sin retroalimentación | OK
+  Esperado: antes 4 marcadores de valoración; al desmarcar "Retroalimentaciones", la última petición lleva incluir_retroalimentacion=false y quedan 0 de valoración y 3 de evento
+  Obtenido: antes: retros=4; peticion incluir_retroalimentacion=false; retros=0; eventos=3
+  Fuente:   RF-106 Entradas (incluir_retroalimentacion)
+CP-11 | 050 Solo nivel 3 | OK
+  Esperado: al desmarcar Sin riesgo, Bajo y Medio, la última petición lleva nivel_riesgo=3 una sola vez y ningún otro valor de nivel_riesgo; la línea tiene 2 puntos
+  Obtenido: peticion nivel_riesgo=[3]; puntos=2
+  Fuente:   RF-106 Entradas (filtro_nivel_riesgo)
+CP-12 | 050 Niveles 2 y 3 | OK
+  Esperado: desde todos marcados, al desmarcar Sin riesgo y Bajo, la última petición lleva exactamente nivel_riesgo=2&nivel_riesgo=3; la línea tiene 4 puntos
+  Obtenido: peticion nivel_riesgo=[2,3]; queryStr contiene "nivel_riesgo=2&nivel_riesgo=3": true; puntos=4
+  Fuente:   RF-106 Entradas (filtro_nivel_riesgo)
+CP-13 | 050 Lineal y Agrupado | OK
+  Esperado: en Lineal 6 puntos y sin "grupo de eventos cercanos"; al elegir "Agrupada", la última petición lleva modo_visualizacion=AGRUPADO, siguen 6 puntos y aparece "1 grupo de eventos cercanos"
+  Obtenido: en Lineal: puntos=6, sin_grupos=true; en Agrupada: modo=AGRUPADO, puntos=6, grupo_presente=true
+  Fuente:   RF-106 Entradas (modo_visualizacion)
+
+Observaciones (no cuentan para el veredicto):
+- OBS-1: en CP-07, peticion con fecha_inicio=2024-11-19 salio al servidor: SI; atributo min de #hp-desde: null
+- OBS-3: en CP-09, el texto del total de eventos sanitarios después de ocultarlos: "3 eventos sanitarios"
+- OBS-2: con los 4 niveles desmarcados: parámetros nivel_riesgo: []; puntos en la línea: 6
+- OBS-4: la respuesta no trae filtros_aplicados ni activo_seleccionado (forma real del backend; G018 OBS-NOMBRES); lo aplicado se refleja en los controles.
+- OBS-5: Administrador con lectura (CP-04) frente a RF-106 Restricción 1 y CA-6: decisión de Sebastian 2026-11-20 de seguir la entrega v7; para los líderes.

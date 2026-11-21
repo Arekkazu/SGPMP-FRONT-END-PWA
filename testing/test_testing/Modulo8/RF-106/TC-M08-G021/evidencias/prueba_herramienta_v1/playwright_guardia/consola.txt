@@ -1,0 +1,35 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › testing/test_testing/Modulo8/RF-106/TC-M08-G021/zz_control_guardia.pw.ts:241:1 › TC-M08-G021 parte navegador real (CP-10 a CP-17) (9.7s)
+
+
+  1) [chromium] › testing/test_testing/Modulo8/RF-106/TC-M08-G021/zz_control_guardia.pw.ts:241:1 › TC-M08-G021 parte navegador real (CP-10 a CP-17) 
+
+    Error: POST /sigab-test/api/reportes
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "POST /sigab-test/api/reportes",
+    + ]
+
+      401 |     `bundle: ${index.join(', ') || '(sin index-*.js)'}; ${scripts.length} scripts revisados`);
+      402 |
+    > 403 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+          |                                               ^
+      404 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+      405 | });
+      406 |
+        at /home/claude/fe/testing/test_testing/Modulo8/RF-106/TC-M08-G021/zz_control_guardia.pw.ts:403:47
+
+    Error Context: ../runs/pw_guardia/pw-salida/zz_control_guardia.pw.ts-T-22787-vegador-real-CP-10-a-CP-17--chromium/error-context.md
+
+    Error Context: ../runs/pw_guardia/pw-salida/zz_control_guardia.pw.ts-T-22787-vegador-real-CP-10-a-CP-17--chromium/error-context.md
+
+  1 failed
+    [chromium] › testing/test_testing/Modulo8/RF-106/TC-M08-G021/zz_control_guardia.pw.ts:241:1 › TC-M08-G021 parte navegador real (CP-10 a CP-17) 

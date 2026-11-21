@@ -1,0 +1,31 @@
+﻿
+Running 1 test using 1 worker
+
+(node:5524) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G022\tc-m08-g022.pw.ts:314:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) (10.9s)
+
+
+  1) [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G022\tc-m08-g022.pw.ts:314:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) 
+
+    Error: CP-13, CP-14
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      516 |
+      517 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+    > 518 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+          |                                                                                                                      ^
+      519 | });
+      520 |
+        at C:\Users\Juansegutt\Integrador\SGPMP-FRONT-END-PWA\testing\test_testing\Modulo8\RF-106\TC-M08-G022\tc-m08-g022.pw.ts:518:118
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G022\evidencias\run-20261120-223850\pw-salida\tc-m08-g022.pw.ts-TC-M08-G-80bf8-vegador-real-CP-11-a-CP-14--chromium\error-context.md
+
+    Error Context: testing\test_testing\Modulo8\RF-106\TC-M08-G022\evidencias\run-20261120-223850\pw-salida\tc-m08-g022.pw.ts-TC-M08-G-80bf8-vegador-real-CP-11-a-CP-14--chromium\error-context.md
+
+  1 failed
+    [chromium] › testing\test_testing\Modulo8\RF-106\TC-M08-G022\tc-m08-g022.pw.ts:314:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) 

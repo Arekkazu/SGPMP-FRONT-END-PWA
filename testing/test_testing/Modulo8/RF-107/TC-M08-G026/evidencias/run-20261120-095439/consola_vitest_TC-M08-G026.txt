@@ -1,0 +1,73 @@
+﻿✓ Lockfile passes supply-chain policies (verified 13h ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+Done in 1.9s using pnpm v11.25.0
+
+ RUN  v4.1.11 C:/Users/Juansegutt/Integrador/SGPMP-FRONT-END-PWA
+
+(node:20536) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-065 Cola de errores y saturacion (RF-107 8.2 y 8.3) > CP-01 y CP-02 tres errores visibles, el cuarto en cola y entra al cerrar el primero 84ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-065 Cola de errores y saturacion (RF-107 8.2 y 8.3) > CP-03 y CP-04 cinco sin aviso; seis con el aviso de saturacion en lugar del error mas antiguo 18ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-065 Cola de errores y saturacion (RF-107 8.2 y 8.3) > CP-05 el aviso de saturacion abre el historial de la sesion en orden cronologico 75ms
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-065 Cola de errores y saturacion (RF-107 8.2 y 8.3) > CP-06 la cola se descarta al navegar fuera del modulo que origino los errores 27ms
+   → expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2) > CP-07 el error se ubica debajo del exito y el exito se va por su temporizador 10ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2) > CP-08 un exito no desplaza ni oculta un error activo 8ms
+stderr | testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2) > CP-09 con el proceso en curso llega un error: el indicador se cierra y el error toma su lugar
+[i18n] falta la clave "common:errores.por_codigo.ERROR_INTERNO" en es-CO — se muestra el espanol
+System.Management.Automation.RemoteException
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2) > CP-09 con el proceso en curso llega un error: el indicador se cierra y el error toma su lugar 119ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2) > CP-10 con el modal critico abierto el icono de sincronizacion sigue en el DOM y no esta oculto 12ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-067 Sin mensajes duplicados (RF-107 8.3, CA-12) > CP-11 y CP-12 misma operacion: actualiza el banner visible y, cerrado, descarta el siguiente 10ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-067 Sin mensajes duplicados (RF-107 8.3, CA-12) > CP-13 misma operacion ya en cola: no se genera otro mensaje 13ms
+stderr | testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > Observaciones medidas > OBS-3 doble clic en Exportar (067 c, FA-6 de la version anterior)
+[i18n] falta la clave "common:errores.por_codigo.ERROR_INTERNO" en es-CO — se muestra el espanol
+System.Management.Automation.RemoteException
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-074 Metadatos e historial de sesion (RF-107 8.3 y 8.5) > CP-14 a CP-20 el historial de la sesion con exito, error, cola y modal critico 49ms
+   → CP-14 a CP-20: expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > Observaciones medidas > OBS-3 doble clic en Exportar (067 c, FA-6 de la version anterior) 84ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > Observaciones medidas > OBS-5, OBS-6 y OBS-8 casos que la 8.3 no define 19ms
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+System.Management.Automation.RemoteException
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-065 Cola de errores y saturacion (RF-107 8.2 y 8.3) > CP-06 la cola se descarta al navegar fuera del modulo que origino los errores
+AssertionError: expected false to be true // Object.is equality
+System.Management.Automation.RemoteException
+- Expected
++ Received
+System.Management.Automation.RemoteException
+- true
++ false
+System.Management.Automation.RemoteException
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx:422:16
+    420|     const ok = ruta === '/reportes' && enCola === 0 && !trasCerrar.inc…
+    421|     anotar('CP-06', ok, `Antes de navegar: ${antes}. Ruta tras navegar…
+    422|     expect(ok).toBe(true);
+       |                ^
+    423|   });
+    424| });
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+System.Management.Automation.RemoteException
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx > TC-M08-074 Metadatos e historial de sesion (RF-107 8.3 y 8.5) > CP-14 a CP-20 el historial de la sesion con exito, error, cola y modal critico
+AssertionError: CP-14 a CP-20: expected false to be true // Object.is equality
+System.Management.Automation.RemoteException
+- Expected
++ Received
+System.Management.Automation.RemoteException
+- true
++ false
+System.Management.Automation.RemoteException
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.test.tsx:698:88
+System.Management.Automation.RemoteException
+System.Management.Automation.RemoteException
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+System.Management.Automation.RemoteException
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+   Start at  09:54:43
+   Duration  4.34s (transform 837ms, setup 268ms, import 2.43s, tests 536ms, environment 783ms)
+

@@ -1,0 +1,1 @@
+System.register(["./react-legacy-UuxOHjxL.js"],function(e,r){"use strict";var t;return{setters:[e=>{t=e.j}],execute:function(){e("S",function({label:e,children:r}){return t.jsx("div",{className:"ds-scroll-region",tabIndex:0,role:"region","aria-label":e,children:r})})}}});

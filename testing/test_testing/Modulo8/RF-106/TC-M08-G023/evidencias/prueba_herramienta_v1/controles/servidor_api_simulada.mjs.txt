@@ -1,0 +1,241 @@
+// Servidor de prueba de la herramienta (TC-M08-G023). Sirve un build local en /sigab-test/ y una API
+// simulada en /sigab-test/api con la forma real del backend. No es parte de la corrida oficial.
+// Uso: node servidor_api_simulada.mjs.txt <dir_build> <escenario: normal|bandeja_con_bajo|bandeja_sin_alto|cambia_al_volver> <puerto>
+import http from 'node:http';
+import { readFileSync, existsSync, statSync, appendFileSync } from 'node:fs';
+import { join, extname } from 'node:path';
+
+const [dirBuild, escenario = 'normal', puertoTxt = '4173'] = process.argv.slice(2);
+const PUERTO = Number(puertoTxt);
+const LOG = process.env.MOCK_LOG ?? 'mock.log';
+const AHORA = Date.now();
+const HORA = 3_600_000;
+const DIA = 86_400_000;
+const ms = (s) => new Date(s).getTime();
+const iso = (t) => new Date(t).toISOString().replace('.000Z', '+00:00');
+
+const uuid = (n) => `aa02300${n}-0000-4000-8000-${String(n).padStart(12, '0')}`;
+
+// 885 sintetico: P1..P6
+const basePreds = [
+  { id: uuid(1), nivel: 3, fecha: AHORA - 25 * DIA, condicion: 'Estrés térmico', conRetro: false },
+  { id: uuid(2), nivel: 0, fecha: AHORA - 26 * DIA, condicion: 'Condición no identificada', conRetro: false },
+  { id: uuid(3), nivel: 1, fecha: AHORA - 27 * DIA, condicion: 'Deshidratación', conRetro: false },
+  { id: uuid(4), nivel: 2, fecha: AHORA - 140 * DIA, condicion: 'Gastroenteritis infecciosa', conRetro: false },
+  { id: uuid(5), nivel: 1, fecha: AHORA - 30 * DIA, condicion: 'Septicemia', conRetro: true },
+  { id: uuid(6), nivel: 3, fecha: AHORA - 1 * DIA, condicion: 'Hipotermia', conRetro: false },
+];
+
+const baseRetros = [
+  {
+    tipo: 'RETROALIMENTACION',
+    fecha: iso(AHORA - 20 * DIA),
+    id_resultado_inferencia: uuid(5),
+    valoracion: 'CORRECTO',
+    veterinario: 'QA Vet',
+    observaciones: null,
+    en_conflicto: false,
+  },
+];
+
+let histCalls = 0;
+let reqSeq = 0;
+
+function calcularTvco(preds, retros) {
+  const vals = new Map();
+  for (const r of retros) {
+    if (!vals.has(r.id_resultado_inferencia)) vals.set(r.id_resultado_inferencia, new Set());
+    vals.get(r.id_resultado_inferencia).add(r.valoracion);
+  }
+  let sinRetro = 0; let conflicto = 0; let validadas = 0; let correctas = 0;
+  for (const p of preds) {
+    const s = vals.get(p.id_resultado_inferencia);
+    if (!s || s.size === 0) sinRetro += 1;
+    else if (s.size > 1) conflicto += 1;
+    else { validadas += 1; if (s.has('CORRECTO')) correctas += 1; }
+  }
+  const porcentaje = Math.round((correctas / validadas) * 10000) / 100;
+  const tasaError = Math.round((100 - porcentaje) * 100) / 100;
+  const excluidas = sinRetro + conflicto;
+  let texto = `${porcentaje}% (${validadas} ${validadas === 1 ? 'validada' : 'validadas'}`;
+  if (excluidas > 0) {
+    const partes = [];
+    if (conflicto > 0) partes.push(sinRetro === 0 ? 'conflicto' : `${conflicto} conflicto`);
+    if (sinRetro > 0) partes.push(conflicto === 0 ? 'sin retro' : `${sinRetro} sin retro`);
+    texto += `; ${excluidas} ${excluidas === 1 ? 'excluida' : 'excluidas'}: ${partes.join(' + ')}`;
+  }
+  texto += ')';
+  return { porcentaje, texto, tvco_denominador: validadas, tvco_excluidas_conflicto: conflicto, excluidas_sin_retroalimentacion: sinRetro, tasa_error: tasaError };
+}
+
+function historial(params) {
+  histCalls += 1;
+  const cambiarP1 = escenario === 'cambia_al_volver' && histCalls >= 2;
+  const retros = cambiarP1
+    ? [
+      ...baseRetros,
+      {
+        tipo: 'RETROALIMENTACION',
+        fecha: iso(AHORA - 1000),
+        id_resultado_inferencia: uuid(1),
+        valoracion: 'CORRECTO',
+        veterinario: 'QA Vet',
+        observaciones: null,
+        en_conflicto: false,
+      },
+    ]
+    : [...baseRetros];
+
+  const conRetro = new Set(retros.map((r) => r.id_resultado_inferencia));
+  const preds = basePreds.map((p) => ({
+    tipo: 'PREDICCION',
+    fecha: iso(p.fecha),
+    id_resultado_inferencia: p.id,
+    nivel_riesgo: p.nivel,
+    confianza: 0.85,
+    condicion: p.condicion,
+    modo_sombra: false,
+    tiene_retroalimentacion: conRetro.has(p.id),
+    en_conflicto: false,
+  }));
+
+  const tvco = calcularTvco(preds, retros);
+  const pend = basePreds
+    .filter((p) => !conRetro.has(p.id) && AHORA - p.fecha > 48 * HORA)
+    .sort((a, b) => (b.nivel - a.nivel) || (b.fecha - a.fecha));
+
+  return {
+    activo: { id_activo_biologico: 885, identificador: 'QA-G88-266-IND-001', especie: 'Qa', finca: 'Finca 184', estado: 'ACTIVO' },
+    rango_fechas_aplicado: { fecha_inicio: params.get('fecha_inicio'), fecha_fin: params.get('fecha_fin') },
+    ventana_correspondencia_horas: 12,
+    predicciones: preds,
+    eventos_sanitarios: [],
+    retroalimentaciones: retros,
+    grupos: [],
+    correspondencias: [],
+    tvco,
+    pendientes: {
+      total: pend.length,
+      pagina: 1,
+      por_pagina: 20,
+      items: pend.map((p) => ({
+        id_resultado_inferencia: p.id,
+        fecha_inferencia: iso(p.fecha),
+        nivel_riesgo: p.nivel,
+        condicion: p.condicion,
+      })),
+    },
+    metadatos: {
+      total_inferencias: preds.length,
+      total_eventos_sanitarios: 0,
+      total_retroalimentaciones: retros.length,
+      total_pendientes: pend.length,
+      total_conflictos: tvco.tvco_excluidas_conflicto,
+    },
+    fuentes_no_disponibles: [],
+    mensaje: null,
+    modo_visualizacion: params.get('modo_visualizacion') ?? 'LINEAL',
+  };
+}
+
+function itemBandeja(p, opts) {
+  return {
+    id_resultado_inferencia: p.id,
+    id_activo_biologico: 885,
+    identificador_activo: 'QA-G88-266-IND-001',
+    especie: 'Qa',
+    nombre_finca: 'Finca 184',
+    nombre_area: 'Area 1',
+    nivel_riesgo: p.nivel,
+    id_patologia: null,
+    nombre_patologia: p.condicion,
+    confianza_global: 0.85,
+    fecha_inferencia: iso(p.fecha),
+    tiene_alerta_generada: p.nivel >= 2,
+    modo_sombra: false,
+    estado_evaluacion: opts.estado_evaluacion,
+    fecha_limite: iso(p.fecha + 90 * DIA),
+    numero_evaluaciones: opts.numero_evaluaciones,
+    evaluada_por_mi: opts.evaluada_por_mi,
+    activo_en_baja: false,
+    puede_evaluar: opts.puede_evaluar,
+  };
+}
+
+function bandeja(params) {
+  const idActivo = Number(params.get('id_activo_biologico'));
+  const items = [];
+  if (idActivo === 885) {
+    if (escenario !== 'bandeja_sin_alto') {
+      items.push(itemBandeja(basePreds[0], { estado_evaluacion: 'PENDIENTE', puede_evaluar: true, evaluada_por_mi: false, numero_evaluaciones: 0 }));
+    }
+    if (escenario === 'bandeja_con_bajo') {
+      items.push(itemBandeja(basePreds[2], { estado_evaluacion: 'PENDIENTE', puede_evaluar: true, evaluada_por_mi: false, numero_evaluaciones: 0 }));
+    }
+    items.push(itemBandeja(basePreds[4], { estado_evaluacion: 'EVALUADO', puede_evaluar: false, evaluada_por_mi: true, numero_evaluaciones: 1 }));
+  }
+  const pendientes = items.filter((i) => i.estado_evaluacion === 'PENDIENTE').length;
+  const evaluadas = items.filter((i) => i.estado_evaluacion === 'EVALUADO').length;
+  const vencidas = items.filter((i) => i.estado_evaluacion === 'VENTANA_VENCIDA').length;
+  return {
+    items,
+    total: items.length,
+    pagina: 1,
+    por_pagina: 25,
+    ventana_dias: 90,
+    indicadores: { pendientes, evaluadas, vencidas },
+  };
+}
+
+const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+const TOKEN = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: '97', jti: 'qa', rol: 3, exp: Math.floor(Date.now() / 1000) + 7200, iat: Math.floor(Date.now() / 1000) })}.firma`;
+let conSesion = false;
+const PERMISOS = [
+  { id_recurso: 9106, nombre_recurso: 'historial_clinico_predictivo', id_accion: 2 },
+  { id_recurso: 42, nombre_recurso: 'historial_diagnostico', id_accion: 2 },
+  { id_recurso: 45, nombre_recurso: 'retroalimentacion_clinica', id_accion: 2 },
+  { id_recurso: 45, nombre_recurso: 'retroalimentacion_clinica', id_accion: 1 },
+];
+const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json', '.woff2': 'font/woff2' };
+
+http.createServer((req, res) => {
+  const url = new URL(req.url, `http://127.0.0.1:${PUERTO}`);
+  const rid = `qa-g023-${++reqSeq}`;
+  const json = (code, body) => { res.writeHead(code, { 'content-type': 'application/json', 'x-request-id': rid }); res.end(JSON.stringify(body)); };
+  if (url.pathname.startsWith('/sigab-test/api/')) {
+    const r = url.pathname.slice('/sigab-test/api'.length);
+    if (req.method === 'POST' && /^\/sesiones\/?$/.test(r)) {
+      appendFileSync(LOG, `${req.method} ${r}${url.search}\n`);
+      conSesion = true;
+      return json(200, { token: TOKEN, tipo: 'bearer', expira_en: 7200, message: 'ok' });
+    }
+    if (req.method === 'POST' && r.startsWith('/sesiones/refresh')) {
+      appendFileSync(LOG, `${req.method} ${r}${url.search}\n`);
+      return conSesion ? json(200, { token: TOKEN, tipo: 'bearer', expira_en: 7200, message: 'ok' }) : json(401, { error_code: 'SESION_INVALIDA', message: 'Sin sesión', fields: [] });
+    }
+    if (req.method === 'DELETE' && /^\/sesiones\/?$/.test(r)) {
+      appendFileSync(LOG, `${req.method} ${r}${url.search}\n`);
+      conSesion = false;
+      return json(200, { message: 'ok' });
+    }
+    if (req.method !== 'GET') {
+      appendFileSync(LOG, `ESCRITURA_NO_PERMITIDA ${req.method} ${r}${url.search}\n`);
+      return json(201, { qa: 'escritura que la guardia o page.route debio atender' });
+    }
+    appendFileSync(LOG, `${req.method} ${r}${url.search}\n`);
+    if (r === '/usuarios/me') return json(200, { id_usuario: 97, nombre: 'Vet', apellidos: 'QA', correo_electronico: 'vet@qa.test', nombre_rol: 'VETERINARIO', estado_cuenta: 'ACTIVA' });
+    if (r.startsWith('/sesiones/me/permisos')) return json(200, { permisos: PERMISOS });
+    if (r.startsWith('/reportes/opciones/activo')) return json(200, [{ valor: 885, etiqueta: 'QA-G88-266-IND-001 · Qa Semaforo Dinamico' }]);
+    if (r.startsWith('/historial-predictivo/885')) return json(200, historial(url.searchParams));
+    if (r.startsWith('/prediccion/retroalimentacion/bandeja')) return json(200, bandeja(url.searchParams));
+    if (r.startsWith('/prediccion/patologias')) return json(200, { total: 0, items: [] });
+    if (r.startsWith('/prediccion/inferencias')) return json(200, { total: 0, items: [] });
+    if (r.startsWith('/configuracion/mensajes-error')) return json(200, []);
+    return json(404, { error_code: 'RUTA_NO_SIMULADA', message: `No simulada ${r}`, fields: [] });
+  }
+  let ruta = url.pathname.replace(/^\/sigab-test\/?/, '');
+  let archivo = join(dirBuild, ruta || 'index.html');
+  if (!existsSync(archivo) || statSync(archivo).isDirectory()) archivo = join(dirBuild, 'index.html');
+  res.writeHead(200, { 'content-type': TIPOS[extname(archivo)] ?? 'application/octet-stream' });
+  res.end(readFileSync(archivo));
+}).listen(PUERTO, '127.0.0.1', () => console.log(`mock ${escenario} en ${PUERTO} sirviendo ${dirBuild}`));
