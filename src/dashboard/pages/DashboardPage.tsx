@@ -2,6 +2,7 @@
 // |------------|----------|-------------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: widgets con datos propios, finca activa, sincronización y aviso de críticas |
 // | 2026-11-19 | Arekkazu | M8-11/M8-14 RF-103: rol sin panel va a su sección y sin indicador de sincronización repetido |
+// | 2026-11-21 | destroyerban | INC-M08-381-G004 RF-103: abre sin conexión con el último layout guardado |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import { LayoutGrid, OctagonAlert } from 'lucide-react';
@@ -11,11 +12,12 @@ import { R_AUDITORIA, R_AUDITORIA_CIERRES } from '../../accounting_integration/r
 import { Alert } from '../../shared/design-system/Alert';
 import { Select } from '../../shared/design-system/Select';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
-import { useDashboardLayout } from '../../configuration/hooks/useDashboardLayout';
+import { useDashboardLayout, type CacheLayout } from '../../configuration/hooks/useDashboardLayout';
 import { useContexto } from '../../shared/contexto/useContexto';
 import { notificacionesApi } from '../../notificaciones/api/notificacionesApi';
 import { WidgetCard } from '../components/WidgetCard';
 import { useFincaActiva } from '../hooks/useFincaActiva';
+import { guardarLayout, leerLayoutGuardado } from '../db/dashboardContextoTable';
 import { EVENTO_PUSH } from '../hooks/useWidgetDatos';
 import './DashboardPage.css';
 
@@ -46,8 +48,12 @@ export function DashboardPage() {
   const nombre = (claims?.nombre ?? userInfo?.nombre ?? '').trim().split(/\s+/)[0];
   const enLinea = useOnlineStatus();
   // El layout que el usuario guardó en Configuración → Personalización manda aquí; cada widget pide
-  // después sus propios datos (RF-103).
-  const { layout, catalogo, loading, error, cargar } = useDashboardLayout();
+  // después sus propios datos (RF-103). Se guarda en el navegador para abrir sin conexión (Fase 3).
+  const cacheLayout = useMemo<CacheLayout | null>(() => (idUsuario === null ? null : {
+    leer: () => leerLayoutGuardado(idUsuario),
+    guardar: (valor) => guardarLayout(idUsuario, valor),
+  }), [idUsuario]);
+  const { layout, catalogo, loading, error, cargar } = useDashboardLayout(cacheLayout);
   // RF-25, flujo alterno "Finca sin especies productivas configuradas": el aviso
   // reemplaza a los indicadores, que sin especies no tendrian nada que mostrar.
   const { sinEspecies } = useContexto();
@@ -111,7 +117,9 @@ export function DashboardPage() {
         <Alert variant="info" title={t('dashboardpage.sin_panel')} description={t('dashboardpage.sin_panel_detalle')}
           style={{ marginBottom: 'var(--s5)' }} />
       ) : error && (
-        <Alert variant="error" title={t('dashboardpage.no_se_pudo_cargar_el_dashboard')} description={error.message}
+        // Sin conexión y nada guardado en este equipo: se dice eso, no «error inesperado».
+        <Alert variant="error" title={t('dashboardpage.no_se_pudo_cargar_el_dashboard')}
+          description={!enLinea || error.status === 0 ? t('dashboardpage.sin_conexion_sin_guardado') : error.message}
           style={{ marginBottom: 'var(--s5)' }} />
       )}
 
@@ -133,7 +141,7 @@ export function DashboardPage() {
               frecuencia={frecuencia} idUsuario={idUsuario} enLinea={enLinea} />
           ))}
         </div>
-      ) : (
+      ) : error ? null : (
         <div style={{ padding: 'var(--s6)', background: 'var(--surface-card)', border: '1px solid var(--surface-border)',
           borderRadius: 'var(--r-xl)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--s3)' }}>
