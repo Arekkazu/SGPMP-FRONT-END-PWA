@@ -1,6 +1,6 @@
 /* | Fecha      | Nombre   | Que se hizo |
    |------------|----------|-------------|
-   | 2026-11-20 | Arekkazu | INICIO SIGAB: portada pública con los tokens del sistema de diseño (claro y oscuro) |  */
+   | 2026-11-20 | Arekkazu | INICIO SIGAB: portada pública con tokens (claro y oscuro) y animaciones que respetan «reducir movimiento» |  */
 
 /* Contenedor con su propio scroll: IonRouterOutlet posiciona cada página a pantalla completa. */
 .inicio {
@@ -147,4 +147,42 @@
   .botones a { width: 100%; }
   .senal { grid-template-columns: minmax(0, 1fr); }
   .aviso { max-width: 220px; font-size: var(--fs-body-sm); }
+}
+
+/* --- Animaciones ---
+ * Solo opacity y translate (el celular las anima sin recalcular la página) y nunca sobre
+ * `transform`, que ya lleva el giro del celular y de los avisos. Nada se mueve más de 5 s
+ * (WCAG 2.2.2) y con «reducir movimiento» la página queda quieta y completa. */
+@keyframes aparecer { from { opacity: 0; translate: 0 16px; } }
+@keyframes llegar { from { opacity: 0; translate: 0 -24px; } }
+@keyframes flotar { 50% { translate: 0 -6px; } }
+@keyframes marcar { 0% { opacity: 0; scale: 0.6; } 70% { scale: 1.12; } 100% { opacity: 1; scale: 1; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 1. Entrada de la portada, escalonada. */
+  .portadaTexto > * { animation: aparecer 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .portadaTexto > :nth-child(2) { animation-delay: 0.08s; }
+  .portadaTexto > :nth-child(3) { animation-delay: 0.16s; }
+  .portadaTexto > :nth-child(4) { animation-delay: 0.24s; }
+  .portadaTexto > :nth-child(5) { animation-delay: 0.32s; }
+  .celular { animation: aparecer 0.8s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+  /* 2. Los avisos llegan como notificaciones cuando el celular está en pantalla. */
+  .escena[data-visto="false"] .aviso { opacity: 0; }
+  .escena[data-visto="true"] .aviso1 { animation: llegar 0.5s 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both, flotar 2.4s 1.4s ease-in-out; }
+  .escena[data-visto="true"] .aviso2 { animation: llegar 0.5s 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both, flotar 2.4s 2.1s ease-in-out; }
+
+  /* 3. Sin señal → Enviado: lo guardado en el celular llega a la finca. */
+  .senal[data-visto="false"] .estadoCard { opacity: 0; }
+  .senal[data-visto="true"] .estadoCard:first-child { animation: aparecer 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .senal[data-visto="true"] .estadoCard:last-child { animation: aparecer 0.5s 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .senal[data-visto="true"] .estadoCard:last-child .pill { animation: marcar 0.45s 1.4s ease-out both; }
+}
+
+/* 5. Elevación al pasar el mouse: solo con puntero que flota (en pantalla táctil quedaba pegada). */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .tarjeta, .estadoCard { transition: translate 0.2s ease, box-shadow 0.2s ease; }
+  .tarjeta:hover, .estadoCard:hover { translate: 0 -4px; box-shadow: var(--shadow-lg); }
+  .botones a, .entrar { transition: background 0.15s, border-color 0.15s, opacity 0.15s, translate 0.15s; }
+  .botones a:hover, .entrar:hover { translate: 0 -1px; }
 }

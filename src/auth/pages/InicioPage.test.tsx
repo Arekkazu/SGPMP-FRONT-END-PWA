@@ -1,6 +1,6 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
-// | 2026-11-20 | Arekkazu | INICIO SIGAB: portada sin backend, enlaces de entrada y app instalada |
+// | 2026-11-20 | Arekkazu | INICIO SIGAB: portada sin backend, enlaces de entrada, app instalada y nada animado escondido |
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -49,6 +49,13 @@ test('al abrir, aplica el tema que el navegador recuerda', () => {
 
   expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   expect(screen.getByRole('button', { name: /modo claro/i })).toBeInTheDocument();
+});
+
+test('sin aviso de scroll del navegador, nada de lo animado queda escondido', () => {
+  // jsdom no trae IntersectionObserver: los avisos y la sincronización se marcan vistos de una vez.
+  const { container } = renderInicio();
+
+  expect(container.querySelectorAll('[data-visto="true"]')).toHaveLength(2);
 });
 
 test('reconoce la app instalada para mandarla directo al login', () => {

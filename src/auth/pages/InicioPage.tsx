@@ -1,7 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
-// | 2026-11-20 | Arekkazu | INICIO SIGAB: portada pública en «/» para quien llega sin sesión |
-import React, { useEffect, useState } from 'react';
+// | 2026-11-20 | Arekkazu | INICIO SIGAB: portada pública en «/» para quien llega sin sesión, con animaciones al verse en pantalla |
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Bell,
@@ -46,12 +46,40 @@ export function esAppInstalada(): boolean {
 const BOTON = 'ds-btn ds-btn--lg';
 
 /**
+ * `true` desde que el elemento entra en pantalla: las animaciones de los avisos y de la
+ * sincronización arrancan cuando alguien las ve (en el celular quedan más abajo). Sin
+ * IntersectionObserver se marca de una vez, para que nada quede escondido.
+ */
+function useVisto<T extends Element>() {
+  const ref = useRef<T>(null);
+  const [visto, setVisto] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setVisto(true);
+      return undefined;
+    }
+    const observador = new IntersectionObserver(([entrada]) => {
+      if (entrada.isIntersecting) {
+        setVisto(true);
+        observador.disconnect();
+      }
+    }, { threshold: 0.35 });
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, []);
+  return [ref, visto] as const;
+}
+
+/**
  * Portada de SIGAB para quien llega sin sesión: qué hace el sistema y cómo entrar o
  * registrarse. Sin backend: el tema se guarda solo en el navegador (sin sesión no hay
  * preferencia que guardar) y el idioma usa el mismo selector del login.
  */
 export function InicioPage() {
   const { t } = useT('auth');
+  const [escena, escenaVista] = useVisto<HTMLDivElement>();
+  const [senal, senalVista] = useVisto<HTMLDivElement>();
   // Sin sesión nadie aplica el tema al arrancar: el recordado o, si no hay, el del sistema.
   const [oscuro, setOscuro] = useState(() => (temaRecordado() ?? resolverTema(THEME_MODE.SISTEMA)) === 'dark');
 
@@ -106,7 +134,7 @@ export function InicioPage() {
               <p className={s.nota}><Smartphone size={18} aria-hidden />{t('inicio.nota_instalar')}</p>
             </div>
 
-            <div className={s.escena} role="img" aria-label={t('inicio.escena_aria')}>
+            <div ref={escena} data-visto={escenaVista} className={s.escena} role="img" aria-label={t('inicio.escena_aria')}>
               <span className={s.solDeco} aria-hidden="true" />
               <div className={s.celular} aria-hidden="true">
                 <div className={s.pantalla}>
@@ -179,7 +207,7 @@ export function InicioPage() {
                 ))}
               </ul>
             </div>
-            <div className={s.senal} aria-hidden="true">
+            <div ref={senal} data-visto={senalVista} className={s.senal} aria-hidden="true">
               <div className={s.estadoCard}>
                 <span className={`${s.pill} ${s.amarillo}`}><WifiOff size={14} />{t('inicio.campo.sin_senal')}</span>
                 <strong>{t('inicio.campo.pesaje')}</strong>
