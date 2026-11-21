@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-106: línea de tiempo de predicciones, eventos y retroalimentaciones con TVCO |
 // | 2026-11-19 | Arekkazu | M8-01 RF-106: predicción de un modelo de prueba marcada como tal |
+// | 2026-11-20 | Arekkazu | A11Y-M08 RF-106: marcadores con tokens semánticos que existen (antes caían en el hex claro) |
 import React, { useEffect, useMemo, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
@@ -235,8 +236,8 @@ export function HistorialPredictivoView() {
                   <YAxis domain={[0, 4]} ticks={NIVELES} tickFormatter={(v) => etiquetaNivel(Number(v))} width={70} />
                   <Tooltip content={marcadorTooltip} />
                   <Line data={puntos.linea} dataKey="nivel" type="stepAfter" stroke="var(--brand-600, #2f5d3a)" dot isAnimationActive={false} />
-                  <Scatter data={puntos.eventos} dataKey="y" fill="var(--danger-600, #dc2626)" shape="square" isAnimationActive={false} />
-                  <Scatter data={puntos.retros} dataKey="y" fill="var(--info-600, #2563eb)"
+                  <Scatter data={puntos.eventos} dataKey="y" fill="var(--sem-error)" shape="square" isAnimationActive={false} />
+                  <Scatter data={puntos.retros} dataKey="y" fill="var(--sem-info)"
                            shape={(p: { cx?: number; cy?: number; payload?: MarcadorHistorial }) => (
                              <text x={p.cx} y={p.cy} textAnchor="middle" dominantBaseline="central" fontSize={14}>
                                {p.payload?.en_conflicto ? '⚠' : ({ CORRECTO: '✓', INCORRECTO: '✗', PARCIAL: '◐', SIN_EVENTO: '○' } as Record<string, string>)[p.payload?.valoracion ?? ''] ?? '•'}
