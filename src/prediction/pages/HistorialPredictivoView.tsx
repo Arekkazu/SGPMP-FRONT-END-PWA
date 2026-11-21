@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-106: línea de tiempo de predicciones, eventos y retroalimentaciones con TVCO |
 // | 2026-11-19 | Arekkazu | M8-01 RF-106: predicción de un modelo de prueba marcada como tal |
+// | 2026-11-20 | Arekkazu | QA-M08 CU04 H-02 RF-106: la marca de cada evaluación va sobre su predicción |
 import React, { useEffect, useMemo, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
@@ -25,6 +26,25 @@ import {
 const NIVELES = [0, 1, 2, 3];
 const Y_EVENTO = 3.6;
 const Y_RETRO = 3.3;
+// La marca de la evaluación va justo encima del punto de la predicción evaluada (RF-106 CA-4).
+const SOBRE_PUNTO = 0.3;
+
+/** Series del gráfico: línea de riesgo, eventos y la marca de cada evaluación sobre su predicción. */
+export function puntosDelHistorial(datos: HistorialPredictivo | null) {
+  if (!datos) return { linea: [], eventos: [], retros: [] };
+  const tiempo = (m: MarcadorHistorial) => new Date(m.fecha).getTime();
+  return {
+    linea: datos.predicciones.map((p) => ({ x: tiempo(p), nivel: p.nivel_riesgo ?? 0, ...p })),
+    eventos: datos.eventos_sanitarios.map((e) => ({ x: tiempo(e), y: Y_EVENTO, ...e })),
+    // Antes iban en la fecha de la evaluación, en una franja fija: el punto evaluado quedaba sin marca y varias
+    // evaluaciones del mismo día se tapaban (QA M08 CU04 H-02). Sin su predicción a la vista, queda en la franja.
+    retros: datos.retroalimentaciones.map((r) => {
+      const p = datos.predicciones.find((x) => x.id_resultado_inferencia === r.id_resultado_inferencia);
+      return { ...r, x: p ? tiempo(p) : tiempo(r), y: p ? (p.nivel_riesgo ?? 0) + SOBRE_PUNTO : Y_RETRO };
+    }),
+  };
+}
+
 const TARJETA: React.CSSProperties = {
   background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg, 12px)',
   padding: 'var(--s4)', marginBottom: 'var(--s4)',
@@ -85,15 +105,7 @@ export function HistorialPredictivoView() {
     return () => { vivo = false; };
   }, [idActivo, desde, hasta, niveles, conEventos, conRetro, modo, pagina]);
 
-  const puntos = useMemo(() => {
-    if (!datos) return { linea: [], eventos: [], retros: [] };
-    const tiempo = (m: MarcadorHistorial) => new Date(m.fecha).getTime();
-    return {
-      linea: datos.predicciones.map((p) => ({ x: tiempo(p), nivel: p.nivel_riesgo ?? 0, ...p })),
-      eventos: datos.eventos_sanitarios.map((e) => ({ x: tiempo(e), y: Y_EVENTO, ...e })),
-      retros: datos.retroalimentaciones.map((r) => ({ x: tiempo(r), y: Y_RETRO, ...r })),
-    };
-  }, [datos]);
+  const puntos = useMemo(() => puntosDelHistorial(datos), [datos]);
 
   const exportar = async () => {
     if (idActivo === null) return;

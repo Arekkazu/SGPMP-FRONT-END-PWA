@@ -1,11 +1,12 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-106: TVCO, pendientes y acceso al formulario de retroalimentación |
+// | 2026-11-20 | Arekkazu | QA-M08 CU04 H-02 RF-106: la marca de la evaluación queda sobre su predicción |
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import { HistorialPredictivoView } from './HistorialPredictivoView';
+import { HistorialPredictivoView, puntosDelHistorial } from './HistorialPredictivoView';
 import { historialPredictivoApi } from '../api/historialPredictivoApi';
 import { reportesApi } from '../../reportes/api/reportesApi';
 
@@ -46,4 +47,19 @@ describe('Historial clínico predictivo (RF-106)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Registrar retroalimentación' }));
     expect(ruta).toBe('/prediccion/retroalimentacion?resultado=abc&activo=7');
   });
+});
+
+it('la marca de cada evaluación queda sobre el punto de su predicción, no en la fecha en que se evaluó', () => {
+  const { retros } = puntosDelHistorial({
+    predicciones: [{ tipo: 'PREDICCION', fecha: '2026-11-15T21:13:00Z', id_resultado_inferencia: 'p1', nivel_riesgo: 1 }],
+    retroalimentaciones: [
+      { tipo: 'RETROALIMENTACION', fecha: '2026-11-20T23:54:00Z', id_resultado_inferencia: 'p1', valoracion: 'CORRECTO' },
+      { tipo: 'RETROALIMENTACION', fecha: '2026-11-20T23:55:00Z', id_resultado_inferencia: 'oculta', valoracion: 'PARCIAL' },
+    ],
+    eventos_sanitarios: [],
+  } as unknown as Parameters<typeof puntosDelHistorial>[0]);
+
+  expect(retros[0]).toMatchObject({ x: new Date('2026-11-15T21:13:00Z').getTime(), y: 1.3, valoracion: 'CORRECTO' });
+  // Si su predicción no está a la vista (filtro de nivel), queda en la franja de evaluaciones en su fecha.
+  expect(retros[1]).toMatchObject({ x: new Date('2026-11-20T23:55:00Z').getTime(), y: 3.3 });
 });
