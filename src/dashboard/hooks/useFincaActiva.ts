@@ -1,8 +1,10 @@
 // | Fecha      | Nombre   | Que se hizo                                                  |
 // |------------|----------|--------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: finca activa del dashboard, recuerda la última    |
+// | 2026-11-21 | destroyerban | INC-M08-381-G004 RF-103: sin conexión usa las últimas fincas guardadas |
 import { useCallback, useEffect, useState } from 'react';
-import { useMisFincas } from '../../shared/fincas/useMisFincas';
+import { useMisFincas, type FincaDelUsuario } from '../../shared/fincas/useMisFincas';
+import { guardarFincas, leerFincasGuardadas } from '../db/dashboardContextoTable';
 
 const clave = (idUsuario: number | null) => `sgpmp:dashboard:finca:${idUsuario ?? 0}`;
 
@@ -20,13 +22,34 @@ function leer(idUsuario: number | null): number | null {
  * este navegador; si ya no es del usuario, la primera de las suyas. Con una sola finca no hay selector.
  */
 export function useFincaActiva(idUsuario: number | null) {
-  const { fincas, cargando } = useMisFincas();
+  const { fincas: delServidor, cargando: pidiendo, error } = useMisFincas();
   const [idFinca, setIdFinca] = useState<number | null>(() => leer(idUsuario));
+  // Sin conexión, las últimas fincas guardadas (RF-103 Fase 3): sin ellas la finca activa quedaría en
+  // null y ningún widget encontraría sus datos guardados, que van por usuario y finca.
+  const [guardadas, setGuardadas] = useState<FincaDelUsuario[] | null>(null);
+
+  useEffect(() => {
+    if (pidiendo || error || idUsuario === null || delServidor.length === 0) return;
+    void guardarFincas(idUsuario, delServidor);
+  }, [pidiendo, error, idUsuario, delServidor]);
+
+  useEffect(() => {
+    if (pidiendo || !error || idUsuario === null) return undefined;
+    let vigente = true;
+    void leerFincasGuardadas(idUsuario).then((f) => { if (vigente) setGuardadas(f ?? []); });
+    return () => { vigente = false; };
+  }, [pidiendo, error, idUsuario]);
+
+  const fincas = error ? (guardadas ?? []) : delServidor;
+  const cargando = pidiendo || (error && idUsuario !== null && guardadas === null);
 
   useEffect(() => {
     if (cargando) return;
-    if (!fincas.some((f) => f.id_finca === idFinca)) setIdFinca(fincas[0]?.id_finca ?? null);
-  }, [cargando, fincas, idFinca]);
+    if (fincas.some((f) => f.id_finca === idFinca)) return;
+    // La última usada se lee aquí también: el estado inicial se calculó cuando aún no había usuario.
+    const recordada = leer(idUsuario);
+    setIdFinca(fincas.find((f) => f.id_finca === recordada)?.id_finca ?? fincas[0]?.id_finca ?? null);
+  }, [cargando, fincas, idFinca, idUsuario]);
 
   const elegir = useCallback((id: number) => {
     setIdFinca(id);
