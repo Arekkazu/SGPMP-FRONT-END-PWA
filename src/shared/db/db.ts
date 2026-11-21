@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo                                               |
 // |------------|----------|-----------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: caché de los widgets del dashboard sin conexión |
+// | 2026-11-21 | destroyerban | INC-M08-381-G004 RF-103: caché del layout, catálogo y fincas del dashboard |
 import Dexie, { type Table } from 'dexie';
 import type { JwtClaims, PermisoUsuario, UserInfo } from '../auth/AuthContext';
 
@@ -252,6 +253,14 @@ export interface DashboardWidgetCacheRow {
   guardadoEn: number;
 }
 
+/** Lo que el dashboard necesita para abrirse sin conexión, además de los datos de cada widget. */
+export interface DashboardContextoCacheRow {
+  /** `${id_usuario}:layout` (layout + catálogo) o `${id_usuario}:fincas` */
+  id: string;
+  valor: unknown;
+  guardadoEn: number;
+}
+
 export class AppDB extends Dexie {
   usuarios!: Table<UsuarioCacheRow, number>;
   roles!: Table<RolCacheRow, number>;
@@ -275,6 +284,7 @@ export class AppDB extends Dexie {
   syncQueue!: Table<SyncOperation, number>;
   sesion_offline!: Table<SesionOfflineRow, number>;
   dashboard_widgets!: Table<DashboardWidgetCacheRow, string>;
+  dashboard_contexto!: Table<DashboardContextoCacheRow, string>;
 
   constructor() {
     super('sgpmp');
@@ -442,6 +452,31 @@ export class AppDB extends Dexie {
       auditoria_eventos: 'id_evento, fecha_evento, id_usuario, tipo_evento',
       sesion_offline: 'id',
       dashboard_widgets: 'id',
+    });
+    this.version(12).stores({
+      usuarios: 'id_usuario, correo_electronico, estado_cuenta',
+      roles: 'id_rol, nombre_rol',
+      syncQueue: '++id, modulo, creadoEn',
+      config_especies: 'id_especie, es_activo',
+      config_fincas: 'id_finca, es_activo',
+      activos_biologicos: 'id_activo_biologico, tipo, id_especie, id_estado',
+      telemetria_alertas: 'id_alerta, estado_alerta, severidad',
+      telemetria_sensores: 'id_sensor, id_infraestructura, estado_semaforo',
+      telemetria_unidades: 'id_infraestructura',
+      telemetria_dispositivos: 'id_dispositivo_iot, estado_actual',
+      prediccion_patologias: 'id_patologia, especie_aplicable, es_activo',
+      prediccion_motor: 'id_configuracion_motor, tipo_modelo',
+      prediccion_modelos: 'id_version_modelo, tipo_modelo, estado_version',
+      prediccion_despliegues: 'id_despliegue_ota, id_version_modelo, estado_despliegue',
+      prediccion_auditoria: 'id_evento, tipo_evento, severidad_evento',
+      prediccion_historial_eventos: 'id_evento, id_activo_biologico',
+      notificaciones: '[id_usuario+id_notificacion], id_usuario, fecha_envio',
+      fcm_registros: 'id_usuario, token',
+      ciclos_biologicos: 'id_ciclo_biologico, id_especie, es_activo',
+      auditoria_eventos: 'id_evento, fecha_evento, id_usuario, tipo_evento',
+      sesion_offline: 'id',
+      dashboard_widgets: 'id',
+      dashboard_contexto: 'id',
     });
   }
 }

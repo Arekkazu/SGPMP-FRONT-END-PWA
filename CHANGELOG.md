@@ -1,3 +1,23 @@
+## [1.4.0-rc.56](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.55...v1.4.0-rc.56) (2026-11-21)
+
+### Features
+
+* **inicio:** animaciones de la portada pensadas para celular ([3dd72f7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3dd72f753c885b06f28acc6c2bfd8b0d44c0ac36))
+* **inicio:** portada publica de SIGAB en la raiz para quien llega sin sesion ([4f2dc47](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4f2dc47d11c98ead4211c32842d78fa059753148))
+
+### Bug Fixes
+
+* **rf102-mod7:** tablas de integracion desplazables con teclado y un id por canal ([e98f673](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/e98f67380c6125616d06c8f87c4dd390b9b8e147))
+* **rf103-mod8:** contraste en tema oscuro del indicador de sincronizacion y de los enlaces ([de75521](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/de755215762d4488843deb8b842d6b268c843992))
+* **rf103-mod8:** la barra lateral muestra la finca elegida en el selector del panel ([5c10836](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5c10836179603538be3e36ff493eb7b1ee56e90a))
+* **rf103-mod8:** sin conexión el dashboard abre con los últimos widgets guardados y se sincroniza al volver la red ([12452c7](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/12452c7fa11f16145b14556f5c26b25616a0317a)), closes [Arekkazu/sgpmp-backend#1197](https://github.com/Arekkazu/sgpmp-backend/issues/1197)
+* **rf105-mod8:** un solo estado del push y nivel con icono en todos los avisos ([2727282](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2727282d5e94278cf707caabc19b9638fc751a29))
+* **rf106-mod8:** linea de tiempo del historial predictivo y acceso a la retroalimentacion (INC-M08-387..390-G020..G024) ([a74c51c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/a74c51cb36701967e1a4edcc8a429a9e8628596a))
+* **rf106-mod8:** retroalimentacion desde el historial y marcas sobre la prediccion evaluada ([7297f93](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/7297f9349ec755df673c6a37dcdd6c5b941187aa))
+* **rf106-mod8:** revision visual de la linea de tiempo y del aviso de espera (INC-M08-391-G024, 392-G027) ([d19d23c](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/d19d23c11131bc34b6b2bfa7c745d620d68ccc4a))
+* **rf107-mod8:** avisos, proceso en curso y confirmaciones criticas (INC-M08-385-G026, 392-G027, 393-G028) ([ac134ec](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/ac134ec1eddfb63cfb88106a7dbdc2b92a021f14))
+* **rf107-mod8:** escape respeta la confirmacion critica a la que pasa un modal abierto ([b370f75](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b370f754522fe63cf7ed6d20984fc907379959e5))
+
 ## [1.4.0-rc.55](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.54...v1.4.0-rc.55) (2026-11-20)
 
 ### Bug Fixes

@@ -3,9 +3,11 @@
 // | 2026-11-06 | Arekkazu | M07 RF-102: historial de la integración con integridad por registro y exportación |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-98: filtro por titular entre los de las fincas del usuario |
 // | 2026-11-19 | Arekkazu | M7-11 RF-102: nombre de quien actuó y el motivo como detalle |
+// | 2026-11-20 | Arekkazu | A11Y-M07 TC-DIS-274/275/276 RF-102: la tabla se desplaza con el teclado (ScrollRegion) |
 import React, { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Download, ShieldCheck } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
 import { Badge } from '../../shared/design-system/Badge';
@@ -87,7 +89,7 @@ export function AuditoriaIntegracionView() {
       {consulta.data?.items.length === 0 ? (
         <EstadoVacio icono={<ShieldCheck size={28} aria-hidden />} titulo={t('auditoria.vacio_titulo')} detalle={t('auditoria.vacio_detalle')} />
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <ScrollRegion label={t('auditoria.titulo')}>
           <table style={TABLA}>
             <thead><tr>
               <th style={TH}>{t('auditoria.col_fecha')}</th><th style={TH}>{t('auditoria.col_evento')}</th>
@@ -98,7 +100,7 @@ export function AuditoriaIntegracionView() {
               {(consulta.data?.items ?? []).map((e) => <Fila key={e.id_evento_integracion} e={e} />)}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       )}
       {total > TAMANO && (
         <nav aria-label={t('auditoria.paginacion')} style={{ display: 'flex', gap: 'var(--s3)', alignItems: 'center', marginTop: 'var(--s4)' }}>

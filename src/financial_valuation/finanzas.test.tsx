@@ -19,6 +19,7 @@
 // | 2026-11-15 | Arekkazu | QA-M06 v5 CU04 H-02/H-03, CU13 H-02/H-04/H-05: titular en cosechas, valor del activo, usuario por nombre, severidad y huella |
 // | 2026-11-16 | Arekkazu | QA-M06 CU03 H-01 RF-84 FA-2/FA-3: el cálculo validado se lista como validado manualmente |
 // | 2026-11-16 | Arekkazu | Hotfix RF-92: el índice de secciones lleva a la sección sin salir del informe |
+// | 2026-11-21 | Arekkazu | INC-M08-393-G028 RF-107: activos a revaluar en el diálogo del cierre; la reversión nombra el activo |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -677,5 +678,34 @@ describe('QA M06 v5: valor del activo y bitácora (CU04 H-03, CU13 H-02/H-04/H-0
     expect(dialogo.getByText('Información')).toBeInTheDocument();
     expect(dialogo.queryByText('Sin estado')).toBeNull();
     expect(dialogo.getByRole('button', { name: /Mostrar la huella completa/ })).toBeInTheDocument();
+  });
+});
+
+describe('RF-107 8.5: lo que dicen las confirmaciones críticas (INC-M08-393-G028)', () => {
+  it('el diálogo del cierre dice cuántos activos se revaluarán', async () => {
+    sesion.permisos = [permiso('cierre_periodo', 2), permiso('cierre_periodo', 5)];
+    respuestas['GET /finanzas/periodos'] = { data: [periodo] };
+    respuestas['GET /finanzas/periodos/7/prevalidacion'] = { data: { bloqueos: [], activos_sin_precio: [], lineas_sin_trazabilidad: [],
+      puede_cerrar: true, requiere_autorizacion: false, activos_a_revaluar: 12 } };
+    const user = userEvent.setup();
+    render(<MemoryRouter><ProveedorPeriodo><CierreView /></ProveedorPeriodo></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: 'Cerrar período' }));
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Se revaluarán 12 activos al precio de mercado vigente.');
+  });
+
+  it('el diálogo de reversión nombra el activo y advierte que no se puede deshacer', async () => {
+    sesion.permisos = [permiso('valoracion_activos', 2), permiso('reconocimiento_inicial', 4)];
+    respuestas['GET /finanzas/activos/2518'] = { data: {
+      activo: { id_activo_biologico: 2518, identificador: 'QA-AAEF-OVINO-01', especie: 'Ovino', finca: 'Finca', razon_social: 'QA SAS',
+        numero_id_tributaria: '901333217', peso_kg: '40', cantidad_actual: null, costo_adquisicion: '900000' },
+      reconocimientos: [{ id_reconocimiento: 1, estado: 'CONFIRMADO' }], calculos: [], mediciones: [], productos: [],
+      valoracion_costo: null, lineas: [], valor_en_libros_actual: '900000.0000',
+    } };
+    const user = userEvent.setup();
+    render(<DetalleActivoModal idActivo={2518} identificador="QA-AAEF-OVINO-01" onCerrar={() => {}} onCambio={() => {}} />);
+    await user.click(await screen.findByRole('button', { name: /Revertir/ }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(dialogo).toHaveTextContent('Revertir el reconocimiento inicial de QA-AAEF-OVINO-01');
+    expect(dialogo).toHaveTextContent('La reversión del reconocimiento de QA-AAEF-OVINO-01 es definitiva: no se puede deshacer.');
   });
 });

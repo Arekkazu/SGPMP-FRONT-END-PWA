@@ -4,6 +4,7 @@
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-97: el NIT es un combobox de los titulares de las fincas del usuario |
 // | 2026-11-19 | Arekkazu | M7-01/03/04/05/07: formulario vacío con errores, activar con confirmación y documento del titular |
 // | 2026-11-20 | Arekkazu | QA-M07 CU04 H-01: el registro se confirma, también si se guardó sin respuesta a tiempo |
+// | 2026-11-21 | Arekkazu | INC-M08-392-G027 RF-107 FA-3: el tiempo agotado dice que la operación no se completó |
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -138,7 +139,7 @@ describe('ContratosView', () => {
     respuestas['GET /integracion/contratos'] = { data: [pendiente] };  // el servidor la guardó
     await registrar82();
     await waitFor(() => expect(toasts.push).toHaveBeenCalledWith('success', expect.stringContaining('8.2')));
-    expect(screen.queryByText(/error inesperado/i)).toBeNull();
+    expect(screen.queryByText(/no pudo completarse/i)).toBeNull();
   });
 
   it('CU04 H-01: si no llegó respuesta y la versión no está, sí muestra el error', async () => {
@@ -150,7 +151,8 @@ describe('ContratosView', () => {
     await registrar82();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar' })).toBeTruthy());
     expect(toasts.push).not.toHaveBeenCalled();
-    expect(await screen.findByText(/error inesperado/i)).toBeTruthy();
+    // RF-107 FA-3: se agotó el tiempo, así que dice que no se completó (antes, «error inesperado»).
+    expect(await screen.findByText('La operación no pudo completarse. Intenta nuevamente.')).toBeTruthy();
   });
 });
 

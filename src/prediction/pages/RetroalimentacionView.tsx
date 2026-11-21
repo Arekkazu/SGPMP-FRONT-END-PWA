@@ -6,8 +6,10 @@
 // | 2026-11-03 | Arekkazu | RF-72: bandeja real del backend en vez de datos de ejemplo |
 // | 2026-11-03 | Claude   | RF-72: botón Reintentar si la bandeja no carga |
 // | 2026-11-18 | Arekkazu | M08 RF-106: abre el formulario con la predicción elegida en el historial predictivo |
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+// | 2026-11-20 | Arekkazu | QA-M08 CU04 H-01/H-02 RF-106: el formulario se abre aunque los datos lleguen después; filtro por animal visible y quitable |
+// | 2026-11-21 | Arekkazu | INC-M08-390-G023 RF-106: la predicción pedida llega en la bandeja sea cual sea su riesgo; si no se puede evaluar, se dice por qué |
+import React, { useEffect, useMemo, useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import { formatearFecha, formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { MessageSquareText, ClipboardCheck, Clock, TimerOff } from 'lucide-react';
@@ -73,21 +75,31 @@ export function RetroalimentacionView() {
 
   // RF-106 CA-4: desde el historial predictivo llega ?resultado=<id>&activo=<id>: la bandeja se acota a ese
   // animal y el formulario se abre con esa predicción.
-  const busqueda = new URLSearchParams(useLocation().search);
-  const resultadoPedido = useRef(busqueda.get('resultado'));
+  const { search } = useLocation();
+  const history = useHistory();
+  const busqueda = useMemo(() => new URLSearchParams(search), [search]);
   const activoPedido = Number(busqueda.get('activo')) || undefined;
+  // Se lee en cada cambio de la URL y solo se suelta cuando el formulario se abre: antes se leía al montar y se
+  // descartaba con la primera respuesta, aunque la fila aún no se pudiera evaluar (QA M08 CU04 H-02).
+  const [resultadoPedido, setResultadoPedido] = useState<string | null>(null);
+  useEffect(() => setResultadoPedido(busqueda.get('resultado')), [busqueda]);
+  // Por qué no se abrió el formulario de la predicción pedida (antes no pasaba nada y no se decía nada).
+  const [avisoPedido, setAvisoPedido] = useState<string | null>(null);
 
   const filtros = (estado = fEstado, riesgo = fRiesgo): FiltrosBandejaRetro => ({
     estado_evaluacion: (estado || undefined) as EstadoEvaluacion | undefined,
     nivel_riesgo: riesgo === '' ? undefined : Number(riesgo),
     id_activo_biologico: activoPedido,
+    // La bandeja solo lista episodios de riesgo moderado o alto, con alerta o ya evaluados: la predicción pedida desde
+    // el historial (riesgo bajo o sin riesgo incluidos) entra aparte y va primero (QA M08 G023).
+    id_resultado_inferencia: busqueda.get('resultado') ?? undefined,
   });
 
   useEffect(() => {
     if (!puedeVer) return;
     patologiasHook.cargar({ solo_activas: true });
     void bandeja.cargar(filtros(), 1);
-  }, [puedeVer]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [puedeVer, activoPedido]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // M4-03 / N-03: solo las patologías válidas de la especie del activo evaluado.
   const patologiasOpciones = useMemo(
@@ -123,12 +135,21 @@ export function RetroalimentacionView() {
   };
 
   useEffect(() => {
-    const items = bandeja.datos?.items;
-    if (!items || !resultadoPedido.current) return;
-    const pedido = items.find((r) => r.id_resultado_inferencia === resultadoPedido.current);
-    resultadoPedido.current = null;
-    if (pedido && motivoNoEvaluable(pedido) === null) setSel(pedido);
-  }, [bandeja.datos]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!resultadoPedido || !bandeja.datos || bandeja.loading) return;
+    const pedido = bandeja.datos.items.find((r) => r.id_resultado_inferencia === resultadoPedido);
+    if (!pedido) {
+      // Fuera del rango de la bandeja: la ventana de evaluación ya pasó hace tiempo.
+      setAvisoPedido(t('retroalimentacionview.pedido_no_disponible'));
+      setResultadoPedido(null);
+      return;
+    }
+    const motivo = motivoNoEvaluable(pedido);
+    // El motivo puede ser pasajero (sin conexión, permisos aún cargando): se dice y se sigue esperando.
+    setAvisoPedido(motivo);
+    if (motivo !== null) return;
+    setResultadoPedido(null);
+    setSel(pedido);
+  }, [bandeja.datos, bandeja.loading, resultadoPedido, puedeRegistrar, online]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!puedeVer) return <PermissionDenied seccion="Retroalimentación clínica" />;
 
@@ -148,6 +169,10 @@ export function RetroalimentacionView() {
           {t('retroalimentacionview.que_aparece', { dias: datos?.ventana_dias ?? '—' })}
         </p>
 
+        {avisoPedido && (
+          <Alert variant="info" title={t('retroalimentacionview.pedido_no_abre')} description={avisoPedido}
+                 onDismiss={() => setAvisoPedido(null)} style={{ marginBottom: 'var(--s4)' }} />
+        )}
         {okFlash && <Alert variant="success" title={t('retroalimentacionview.evaluacion_registrada')} description={t('retroalimentacionview.la_retroalimentacion_clinica_quedo')} style={{ marginBottom: 'var(--s4)' }} />}
         {!online && <Alert variant="warning" title={t('retroalimentacionview.sin_conexion')} description={t('retroalimentacionview.el_registro_de_evaluaciones_esta')} style={{ marginBottom: 'var(--s4)' }} />}
         {!puedeRegistrar && <Alert variant="info" title={t('retroalimentacionview.solo_supervision')} description={t('retroalimentacionview.tu_rol_puede_consultar_las_evaluaciones')} style={{ marginBottom: 'var(--s4)' }} />}
@@ -169,6 +194,16 @@ export function RetroalimentacionView() {
         </div>
 
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s4)', marginBottom: 'var(--s5)' }}>
+          {activoPedido !== undefined && (
+            // Desde el historial la bandeja llega acotada a un animal: se dice cuál y se puede quitar (QA M08 CU04 H-01).
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--s3)', marginBottom: 'var(--s3)' }}>
+              <span>{t('retroalimentacionview.filtro_animal', {
+                animal: datos?.items[0]?.identificador_activo ?? t('retroalimentacionview.animal_elegido') })}</span>
+              <Button variant="ghost" size="sm" onClick={() => history.replace('/prediccion/retroalimentacion')}>
+                {t('retroalimentacionview.quitar_filtro_animal')}
+              </Button>
+            </div>
+          )}
           <div style={FILTER_GRID}>
             <div>
               <label style={LABEL} htmlFor="retro-estado">{t('retroalimentacionview.estado_de_evaluacion')}</label>

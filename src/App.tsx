@@ -8,6 +8,7 @@
 // | 2026-11-14 | Arekkazu | M08 RF-103: un push refresca al instante los widgets de alertas |
 // | 2026-11-18 | Arekkazu | M08 RF-104..107: ruta /reportes, indicador de sincronización, catálogo de errores y avisos con navegación |
 // | 2026-11-19 | Arekkazu | M8-14 RF-107: indicador de sincronización en la barra superior, no flotando sobre el contenido |
+// | 2026-11-20 | Arekkazu | INICIO SIGAB: «/» sin sesión muestra la portada (la app instalada sigue yendo al login) |
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
@@ -72,6 +73,7 @@ import { RecuperarPage } from './auth/pages/RecuperarPage';
 import { RestablecerPage } from './auth/pages/RestablecerPage';
 import { SsoCallbackPage } from './auth/pages/SsoCallbackPage';
 import { CompletarPerfilSsoPage } from './auth/pages/CompletarPerfilSsoPage';
+import { InicioPage, esAppInstalada } from './auth/pages/InicioPage';
 import { SelectorIdioma } from './shared/design-system/SelectorIdioma';
 
 /* Private pages */
@@ -374,10 +376,12 @@ function AuthedRoute({
 // "/" es el start_url del manifest: la PWA instalada siempre abre aquí. Redirigir
 // a /login sin mirar la sesión mandaba al login a quien tenía la cookie de refresco
 // vigente, y sin red ni siquiera llegaba a usar la sesión offline guardada.
+// Sin sesión, el navegador muestra la portada; la app instalada va directo al login.
 function RutaRaiz() {
   const { token, sesionOffline, isBootstrapping } = useAuth();
   if (isBootstrapping) return null;
-  return <Redirect to={token || sesionOffline ? '/dashboard' : '/login'} />;
+  if (token || sesionOffline) return <Redirect to="/dashboard" />;
+  return esAppInstalada() ? <Redirect to="/login" /> : <InicioPage />;
 }
 
 function AppRoutes() {

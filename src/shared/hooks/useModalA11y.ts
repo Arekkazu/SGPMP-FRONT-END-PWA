@@ -3,6 +3,7 @@
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-24: el resto de la página queda inert mientras el modal está abierto |
 // | 2026-11-10 | Arekkazu | TC-DIS-242/252/258 RF-87/COT/92: el foco inicial puede ir a la acción segura ([data-autofocus]) |
 // | 2026-11-18 | Arekkazu | M08 RF-107 R3: los modales de acción crítica no se cierran con Escape |
+// | 2026-11-20 | Arekkazu | A11Y-M08 TC-DIS-293 RF-107: Escape lee la opción vigente, no la del montaje (baja que pasa a resumen) |
 import { useEffect, useRef } from 'react';
 
 const SELECTOR_FOCABLES =
@@ -53,10 +54,12 @@ function esVisible(el: HTMLElement): boolean {
  * conserva la última versión sin reiniciar el efecto.
  */
 export function useModalA11y(onClose: () => void, opciones: { escape?: boolean } = {}) {
-  const permiteEscape = opciones.escape !== false;
   const panelRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  // Un modal puede cambiar de paso (formulario → confirmación crítica) sin desmontarse.
+  const permiteEscapeRef = useRef(true);
+  permiteEscapeRef.current = opciones.escape !== false;
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -69,7 +72,7 @@ export function useModalA11y(onClose: () => void, opciones: { escape?: boolean }
       if (panel && pila[pila.length - 1] !== panel) return;
       if (event.key === 'Escape') {
         event.stopPropagation();
-        if (permiteEscape) onCloseRef.current();
+        if (permiteEscapeRef.current) onCloseRef.current();
         return;
       }
       if (event.key !== 'Tab' || !panel) return;

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-24: el fondo queda inert con el modal abierto |
+// | 2026-11-20 | Arekkazu | A11Y-M08 TC-DIS-293 RF-107: Escape respeta el paso crítico al que cambia el modal |
 /**
  * #199: con dos modales apilados (confirmación sobre formulario), Escape cierra
  * solo el de arriba; al cerrarlo, el de abajo vuelve a atender Escape.
@@ -64,5 +65,18 @@ describe('useModalA11y', () => {
       </div>,
     );
     expect(document.querySelector('[data-testid="fondo"]')).not.toHaveAttribute('inert');
+  });
+
+  it('TC-DIS-293: un modal que pasa a confirmación crítica deja de cerrarse con Escape', async () => {
+    function ModalConPasos({ onClose, critico }: { onClose: () => void; critico: boolean }) {
+      const ref = useModalA11y(onClose, { escape: !critico });
+      return <div ref={ref} role="dialog" aria-modal="true"><button type="button">dentro</button></div>;
+    }
+    const cerrar = vi.fn();
+    const { rerender } = render(<ModalConPasos onClose={cerrar} critico={false} />);
+    rerender(<ModalConPasos onClose={cerrar} critico />);
+
+    await userEvent.keyboard('{Escape}');
+    expect(cerrar).not.toHaveBeenCalled();
   });
 });
