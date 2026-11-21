@@ -2,6 +2,7 @@
 // |------------|----------|-------------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: widgets con datos propios, finca activa, sincronización y aviso de críticas |
 // | 2026-11-19 | Arekkazu | M8-11/M8-14 RF-103: rol sin panel va a su sección y sin indicador de sincronización repetido |
+// | 2026-11-20 | Arekkazu | QA-M08 CU01 H-01 RF-103: useFincaActiva se importa de shared/fincas |
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import { LayoutGrid, OctagonAlert } from 'lucide-react';
@@ -15,7 +16,7 @@ import { useDashboardLayout } from '../../configuration/hooks/useDashboardLayout
 import { useContexto } from '../../shared/contexto/useContexto';
 import { notificacionesApi } from '../../notificaciones/api/notificacionesApi';
 import { WidgetCard } from '../components/WidgetCard';
-import { useFincaActiva } from '../hooks/useFincaActiva';
+import { useFincaActiva } from '../../shared/fincas/useFincaActiva';
 import { EVENTO_PUSH } from '../hooks/useWidgetDatos';
 import './DashboardPage.css';
 
