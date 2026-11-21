@@ -1,8 +1,11 @@
+// | Fecha      | Nombre       | Que se hizo                                                          |
+// |------------|--------------|----------------------------------------------------------------------|
+// | 2026-11-21 | destroyerban | INC-M08-381-G004 RF-103: layout guardado sin conexión y resincronización |
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dashboardLayoutApi } from '../api/personalizacionApi';
 import type { ApiError } from '../../shared/api/errors';
-import { useDashboardLayout } from './useDashboardLayout';
+import { useDashboardLayout, type CacheLayout } from './useDashboardLayout';
 
 vi.mock('../api/personalizacionApi', () => ({
   dashboardLayoutApi: {
@@ -122,5 +125,102 @@ describe('useDashboardLayout', () => {
     // Un widget sin datos llega igual, para que conserve su lugar en la grilla.
     expect(result.current.datos[0].sin_datos).toBe(true);
     expect(result.current.datos[0].mensaje).toContain('Sin datos disponibles');
+  });
+});
+
+describe('useDashboardLayout sin conexión (INC-M08-381-G004, RF-103 Fase 3)', () => {
+  const SIN_RED: ApiError = { code: 'HTTP_0', message: 'Ocurrió un error inesperado.', status: 0 };
+  let guardado: { layout: typeof LAYOUT; catalogo: typeof CATALOGO } | null;
+  let cache: CacheLayout;
+
+  function enLinea(valor: boolean) {
+    Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => valor });
+  }
+
+  beforeEach(() => {
+    guardado = null;
+    cache = {
+      leer: vi.fn(async () => guardado),
+      guardar: vi.fn(async (valor) => { guardado = valor as typeof guardado; }),
+    };
+    enLinea(true);
+  });
+
+  afterEach(() => { enLinea(true); });
+
+  it('guarda en el navegador el layout y el catálogo que llegan del servidor', async () => {
+    const { result } = renderHook(() => useDashboardLayout(cache));
+    await act(async () => { await result.current.cargar(); });
+
+    expect(cache.guardar).toHaveBeenCalledWith({ layout: LAYOUT, catalogo: CATALOGO });
+    expect(result.current.desdeCache).toBe(false);
+  });
+
+  it('sin red abre con lo último guardado, sin error y sin esperar al servidor', async () => {
+    guardado = { layout: LAYOUT, catalogo: CATALOGO };
+    enLinea(false);
+    const { result } = renderHook(() => useDashboardLayout(cache));
+    await act(async () => { await result.current.cargar(); });
+
+    expect(api.obtener).not.toHaveBeenCalled();
+    expect(result.current.layout).toEqual(LAYOUT);
+    expect(result.current.catalogo).toEqual(CATALOGO);
+    expect(result.current.desdeCache).toBe(true);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('si la petición falla por la red (señal mala), también usa lo guardado', async () => {
+    guardado = { layout: LAYOUT, catalogo: CATALOGO };
+    api.obtener.mockRejectedValue(SIN_RED);
+    const { result } = renderHook(() => useDashboardLayout(cache));
+    await act(async () => { await result.current.cargar(); });
+
+    expect(result.current.layout).toEqual(LAYOUT);
+    expect(result.current.desdeCache).toBe(true);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('sin red y sin nada guardado informa el error', async () => {
+    api.obtener.mockRejectedValue(SIN_RED);
+    const { result } = renderHook(() => useDashboardLayout(cache));
+    await act(async () => { await result.current.cargar(); });
+
+    expect(result.current.layout).toBeNull();
+    expect(result.current.error?.status).toBe(0);
+  });
+
+  it('un 403 no se tapa con lo guardado', async () => {
+    guardado = { layout: LAYOUT, catalogo: CATALOGO };
+    api.obtener.mockRejectedValue(error('SIN_PERMISO', 403));
+    const { result } = renderHook(() => useDashboardLayout(cache));
+    await act(async () => { await result.current.cargar(); });
+
+    expect(result.current.error?.status).toBe(403);
+    expect(result.current.layout).toBeNull();
+  });
+
+  it('al volver la conexión pide el layout de nuevo y deja de usar lo guardado', async () => {
+    guardado = { layout: LAYOUT, catalogo: CATALOGO };
+    enLinea(false);
+    const { result } = renderHook(() => useDashboardLayout(cache));
+    await act(async () => { await result.current.cargar(); });
+    expect(result.current.desdeCache).toBe(true);
+
+    enLinea(true);
+    api.obtener.mockResolvedValue({ ...LAYOUT, version_perfil: 4 });
+    await act(async () => { window.dispatchEvent(new Event('online')); });
+
+    await waitFor(() => expect(result.current.layout?.version_perfil).toBe(4));
+    expect(result.current.desdeCache).toBe(false);
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('sin caché (Personalización) no escucha la conexión', async () => {
+    const { result } = renderHook(() => useDashboardLayout());
+    await act(async () => { await result.current.cargar(); });
+    api.obtener.mockClear();
+
+    await act(async () => { window.dispatchEvent(new Event('online')); });
+    expect(api.obtener).not.toHaveBeenCalled();
   });
 });

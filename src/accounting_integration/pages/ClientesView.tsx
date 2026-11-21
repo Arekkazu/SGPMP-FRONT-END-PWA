@@ -3,9 +3,11 @@
 // | 2026-11-06 | Arekkazu | M07 RF-101: clientes externos (AgroFusion), credencial y canales |
 // | 2026-11-18 | Arekkazu | M08 RF-107 tipo 5: revocar un cliente externo se confirma en un diálogo bloqueante |
 // | 2026-11-19 | Arekkazu | M7-04/06/07 RF-101: errores por campo, credencial vencida y formulario vacío |
+// | 2026-11-20 | Arekkazu | A11Y-M07 TC-DIS-271 RF-101: tabla en ScrollRegion y un id por canal en «Solicitudes por minuto» |
 import React, { useEffect, useState } from 'react';
 import { Copy, KeyRound, PauseCircle, PencilLine, PlayCircle, Plus, RotateCw, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
 import { Badge } from '../../shared/design-system/Badge';
@@ -53,7 +55,7 @@ export function ClientesView() {
       {clientes.data?.length === 0 ? (
         <EstadoVacio icono={<KeyRound size={28} aria-hidden />} titulo={t('clientes.vacio_titulo')} detalle={t('clientes.vacio_detalle')} />
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <ScrollRegion label={t('clientes.titulo')}>
           <table style={TABLA}>
             <thead>
               <tr>
@@ -101,7 +103,7 @@ export function ClientesView() {
               })}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       )}
       {nuevo && <ClienteModal onCerrar={() => setNuevo(false)} onRegistrado={(clientId, s) => { setNuevo(false); setSecreto({ clientId, secreto: s }); recargar(); }} />}
       {editar && <ClienteModal cliente={editar} onCerrar={() => setEditar(null)} onRegistrado={() => { setEditar(null); pushToast('success', t('clientes.guardado')); recargar(); }} />}
@@ -210,7 +212,8 @@ function ClienteModal({ cliente, onCerrar, onRegistrado }: {
                 <input type="checkbox" checked={limites[c] !== ''} onChange={(e) => setLimites({ ...limites, [c]: e.target.checked ? '60' : '' })} />
                 <span>{t(`canal.${c}`)}<span className="fin-secundario">{t(`canal_ayuda.${c}`)}</span></span>
               </label>
-              <Input label={t('clientes.limite_campo')} type="number" min={1} value={limites[c]} disabled={limites[c] === ''}
+              <Input id={`limite-por-minuto-${c}`} label={t('clientes.limite_campo')} aria-label={`${t('clientes.limite_campo')} · ${t(`canal.${c}`)}`}
+                type="number" min={1} value={limites[c]} disabled={limites[c] === ''}
                 onChange={(e) => setLimites({ ...limites, [c]: e.target.value })} />
             </div>
           ))}

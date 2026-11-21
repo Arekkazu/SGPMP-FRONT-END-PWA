@@ -4,7 +4,14 @@
    | 2026-10-29 | Arekkazu | TC-DIS-150/179 a11y: clase global .ds-sr-only (solo lector de pantalla) |
    | 2026-10-29 | Arekkazu | TC-DIS-148 RF-54: .ds-kv, lista rótulo → valor (antes rejilla inline en BufferView) |
    | 2026-11-18 | Arekkazu | M08 RF-107: aviso de saturación, historial de avisos, barra de sincronización y proceso en curso |
-   | 2026-11-19 | Arekkazu | M8-14 RF-107: el indicador de sincronización deja de flotar sobre el contenido |  */
+   | 2026-11-19 | Arekkazu | M8-14 RF-107: el indicador de sincronización deja de flotar sobre el contenido |
+   | 2026-11-20 | Arekkazu | A11Y-M08 RF-103/105/107: sincronización con tokens --sem-* y enlaces con --brand-600 (contraste en oscuro) |
+   | 2026-11-21 | Arekkazu | INC-M08-385-G026 RF-107: avisos arriba bajo el encabezado e historial en panel lateral |  */
+
+/* Enlaces: sin esto heredan el azul primario por defecto de Ionic (#0054e9), que
+ * en tema oscuro da 2,5–2,9:1. --brand-600 es el token de texto de enlace y
+ * tiene override oscuro. Una clase propia del enlace sigue mandando. */
+a { color: var(--brand-600); }
 
 /* Rejillas de contenido del DS v2.0 ("Reglas responsive por componente").
  *
@@ -112,6 +119,24 @@
   /* Excepcion documentada: detalles con tablas o matrices (matriz de
      confusion, payload de auditoria, niveles de umbral) no caben en 560px. */
   .ds-modal__panel--wide { max-width: 720px; }
+}
+
+/* RF-107 8.3: el historial de avisos se abre como panel lateral (borde derecho, alto completo). */
+.ds-modal--lateral {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0;
+}
+.ds-modal--lateral .ds-modal__panel {
+  max-width: 420px;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  border-width: 0 0 0 1px;
+}
+@media (min-width: 768px) {
+  .ds-modal--lateral { padding: 0; align-items: stretch; }
+  .ds-modal--lateral .ds-modal__panel { max-width: 420px; max-height: 100dvh; border-radius: 0; }
 }
 
 /* Scroll horizontal de tablas (ScrollRegion): enfocable con teclado. */
@@ -262,12 +287,13 @@
   display: none;
 }
 
-/* Cola de toasts (T-02): esquina inferior en escritorio, ancho completo en móvil. */
+/* Cola de toasts (T-02): RF-107 8.2 los quiere arriba, bajo el encabezado; a la derecha en escritorio y a ancho
+   completo en móvil. */
 .ds-toasts {
   position: fixed;
   z-index: 300;
+  top: calc(var(--topbar-h) + var(--s3));
   right: var(--s4);
-  bottom: var(--s4);
   left: var(--s4);
   display: flex;
   flex-direction: column;
@@ -305,10 +331,10 @@
   pointer-events: auto;
   min-height: var(--s9);
   padding: var(--s3) var(--s4);
-  border: 1px solid var(--warning-600, #b45309);
+  border: 1px solid var(--sem-warning-border);
   border-radius: var(--radius-md, 8px);
-  background: var(--warning-50, #fffbeb);
-  color: var(--warning-800, #78350f);
+  background: var(--sem-warning-bg);
+  color: var(--sem-warning);
   font: inherit;
   font-weight: 600;
   text-align: left;
@@ -338,10 +364,11 @@
   cursor: pointer;
 }
 .ds-sync:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.ds-sync--SINCRONIZADO { color: var(--success-700, #15803d); }
-.ds-sync--SINCRONIZANDO { color: var(--warning-700, #b45309); }
-.ds-sync--OFFLINE { color: var(--danger-700, #b91c1c); }
-.ds-sync--CONFLICTO { color: var(--warning-800, #92400e); }
+/* Tokens de texto semántico: --success-700 y compañía no existen y caían siempre en el hex del tema claro. */
+.ds-sync--SINCRONIZADO { color: var(--sem-success); }
+.ds-sync--SINCRONIZANDO { color: var(--sem-warning); }
+.ds-sync--OFFLINE { color: var(--sem-error); }
+.ds-sync--CONFLICTO { color: var(--sem-warning); }
 .ds-sync__tabla { width: 100%; border-collapse: collapse; font-size: var(--fs-body-md, 14px); }
 .ds-sync__tabla th, .ds-sync__tabla td { padding: var(--s2); border-bottom: 1px solid var(--border-subtle); text-align: left; }
 @media (max-width: 480px) { .ds-sync__texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }

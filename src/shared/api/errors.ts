@@ -4,6 +4,7 @@
 // | 2026-10-23 | Arekkazu | RF-29: el mensaje del backend se interpola en los códigos con datos variables |
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-11-18 | Arekkazu | M08 RF-107: el catálogo de mensajes de M09 manda sobre el texto de la respuesta |
+// | 2026-11-21 | Arekkazu | INC-M08-392-G027 RF-107 FA-3: el tiempo agotado dice que la operación no se completó |
 import type { AxiosError } from 'axios';
 
 import i18n from '../i18n';
@@ -36,7 +37,10 @@ export function mapToApiError(error: AxiosError): ApiError {
   const fields = data?.fields as BackendFieldError[] | undefined;
   const mensajeBackend = resolveMessage(status, data, fields);
   const catalogo = mensajeDelCatalogo(code);
-  const message = catalogo?.mensaje
+  // RF-107 FA-3: sin respuesta porque se agotó el tiempo, la operación no se completó y se puede reintentar.
+  const tiempoAgotado = !error.response && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT');
+  const message = (tiempoAgotado && i18n.t('errores.tiempo_agotado', { ns: 'common' }))
+    || catalogo?.mensaje
     || (code === 'CUENTA_BLOQUEADA' && bloqueoEnHoraLocal(mensajeBackend))
     || traducirPorCodigo(code, mensajeBackend);
   const field = fields?.[0]?.field ?? (data?.field as string | undefined);

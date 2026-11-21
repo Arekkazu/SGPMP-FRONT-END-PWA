@@ -8,6 +8,7 @@
 // | 2026-11-10 | Arekkazu | TC-DIS-242..246 RF-87: diálogo descrito, avance por pasos anunciado, estados con icono, tablas de bloqueos, «Cancelar cierre» y comprobantes con débito/crédito |
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-18 | Arekkazu | M08 RF-107 tipo 5: la confirmación del cierre no se cierra con Escape ni con clic afuera |
+// | 2026-11-21 | Arekkazu | INC-M08-392-G027/393-G028 RF-107: cierre en curso para todo el sistema, botón que explica el bloqueo y activos a revaluar en el diálogo |
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Download, Lock, XCircle } from 'lucide-react';
@@ -18,6 +19,7 @@ import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { pushToast } from '../../shared/hooks/useToast';
+import { enOperacion } from '../../shared/hooks/operacionEnCurso';
 import { useT } from '../../shared/i18n/useT';
 import { finanzasApi } from '../api/finanzasApi';
 import { ACCION_E, ACCION_R, R_CIERRE, R_RECONOCIMIENTO, R_REVELACIONES } from '../rbac';
@@ -160,11 +162,15 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
   const completas = checks.filter((c) => c.nivel === 'ok').length;
   const bloqueosActivos = checks.filter((c) => c.nivel === 'pendiente');
 
+  const aRevaluar = pv?.activos_a_revaluar == null ? null : pv.activos_a_revaluar + estimados;
+
   const ejecutar = async () => {
     setConfirmando(false);
     const activosEstimados = (pv?.activos_sin_precio ?? []).filter((a) => decisiones[a.id_activo_biologico] === 'estimar').map((a) => a.id_activo_biologico);
     const excluye = (pv?.activos_sin_precio ?? []).some((a) => decisiones[a.id_activo_biologico] === 'excluir');
-    const r = await cierre.ejecutar(id, { autorizar_exclusiones: excluye || autorizarLineas, incluir_activos_sin_precio: false, activos_estimados: activosEstimados });
+    // RF-107 8.2: mientras el cierre corre, ninguna otra acción crítica se abre (aunque el usuario cambie de sección).
+    const r = await enOperacion(t('cierre.operacion'), () => cierre.ejecutar(id, {
+      autorizar_exclusiones: excluye || autorizarLineas, incluir_activos_sin_precio: false, activos_estimados: activosEstimados }));
     if (r) {
       pushToast('success', t('cierre.cerrado', { periodo: nombrePeriodo(periodo) }), t('cierre.cerrado_detalle', { count: r.comprobantes.length }));
       onCerrado(r.id_periodo_siguiente);
@@ -331,7 +337,8 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
                   )}
                   {pv.requiere_autorizacion && <Alert variant="warning" title={t('cierre.requiere_autorizacion')} />}
                   <div className="fin-acciones" style={{ alignItems: 'center' }}>
-                    <Button variant="primary" size="lg" loading={cierre.cargando} disabled={faltaAutorizar} onClick={() => setConfirmando(true)}>
+                    <Button variant="primary" size="lg" loading={cierre.cargando} disabled={faltaAutorizar} onClick={() => setConfirmando(true)}
+                      title={cierre.cargando ? t('proceso.espera', { ns: 'common', operacion: t('cierre.operacion') }) : undefined}>
                       <Lock size={16} aria-hidden />{t('cierre.ejecutar')}
                     </Button>
                     {/* RF-87 FA-2/FA-3: responder «No» a la advertencia cancela el cierre; aquí todavía no empezó, así que
@@ -397,6 +404,10 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
               <Button variant="primary" size="md" onClick={ejecutar} aria-describedby="cierre-confirmar-periodo">{t('cierre.ejecutar')}</Button>
             </>
           )}>
+          {/* RF-107 8.5: cuántos activos se revaluarán (los que tienen precio más los que el Contador decidió estimar). */}
+          {aRevaluar !== null && (
+            <p style={{ margin: '0 0 var(--s3)', lineHeight: 'var(--lh-base)', fontWeight: 600 }}>{t('cierre.confirmar_activos', { count: aRevaluar })}</p>
+          )}
           <p id="cierre-confirmar-periodo" style={{ margin: 0, lineHeight: 'var(--lh-base)' }}>{t('cierre.confirmar_periodo', { periodo: nombrePeriodo(periodo) })}</p>
         </ModalShell>
       )}
