@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                                  |
 // |------------|-------------|------------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-270 RF-98: límite de versiones, activación bloqueada, estado inconsistente y permiso |
+// | 2026-11-22 | SaraSofGonzalez | TC-DIS-270 RF-98: el límite se avisa con «Activar» deshabilitado y su motivo; d cuenta solo «Activar» habilitados |
 /**
  * TC-DIS-270 — Verificar accesibilidad WCAG 2.1 AA de los bloqueos y alertas del ciclo de vida del
  * contrato (límite de versiones, activación bloqueada, transiciones no permitidas y estado inconsistente)
@@ -53,23 +54,32 @@ test.describe('TC-DIS-270 — Bloqueos y alertas del ciclo de vida del contrato'
   const versiones = () => main(page).getByRole('region', { name: /Versiones del contrato/i });
 
   test('a. [3.3.1 / 4.1.3 / 3.3.3] Límite de dos versiones vigentes al activar la 4.0 (Datos simulados)', async ({}, testInfo) => {
+    // Desde rc.56 la app avisa el límite antes de pulsar: «Activar» sale deshabilitado con el motivo que
+    // calcula el backend (motivo_no_activable). Si aun así se enviara, el backend responde 409.
     await simularContrato(page);
     await simularEscritura(page, /^\/integracion\/contratos\/\d+\/activar$/, 409,
       errorApi('LIMITE_VERSIONES_VIGENTES', 'Ya hay dos versiones vigentes (2.0 y 3.0). Retire la versión 2.0 antes de activar otra.'));
-    anotar(testInfo, 'Datos simulados', 'Escenario A; activar 4.0 responde 409 con el límite de versiones.');
+    anotar(testInfo, 'Datos simulados', 'Escenario A (2.0 en retiro y 3.0 activa); el motivo de la 4.0 repite el texto que devuelve el backend en TEST.');
     await irIntegracion(page, 'contrato', /Contrato contable/);
-    const boton = fila(versiones(), /^\s*4\.0/).getByRole('button', { name: /Activar/i });
-    await boton.focus();
-    const anuncios = anunciosDurante(page, 3000);
-    await page.keyboard.press('Enter');
-    const vistos = await anuncios;
+    const f = fila(versiones(), /^\s*4\.0/);
+    const boton = f.getByRole('button', { name: /Activar/i });
     await escanear(page, TC_ID, __dirname, 'limite-versiones', testInfo, LH);
-    const avisos = await alertas(main(page));
-    const focoEnBoton = await boton.evaluate((b) => document.activeElement === b).catch(() => false);
-    anotar(testInfo, 'Límite', `anuncios: ${vistos.join(' ¦ ') || '(ninguno)'} · avisos: ${avisos.join(' ¦ ')} · foco en "Activar": ${focoEnBoton}`);
-    expect.soft(vistos.some((a) => /dos versiones|l[ií]mite/i.test(a)), '4.1.3: el límite de versiones no se anuncia').toBe(true);
-    expect.soft(/2\.0/.test(avisos.join(' ')), '3.3.3: el mensaje no dice qué versión hay que retirar primero').toBe(true);
-    desviacion(focoEnBoton, '4.1.3: el anuncio del límite mueve el foco fuera del botón "Activar"');
+    const deshabilitado = await boton.isDisabled().catch(() => false);
+    const motivo = await boton.evaluate((b) => (b.getAttribute('aria-describedby') ?? '').split(/\s+/).map((id) => document.getElementById(id)?.textContent ?? '').join(' ').trim()).catch(() => '');
+    const texto = (await f.innerText()).replace(/\s+/g, ' ');
+    anotar(testInfo, 'Límite', `fila 4.0: ${texto} · "Activar" deshabilitado: ${deshabilitado} · descripción vinculada: ${motivo || '(ninguna)'}`);
+    let vistos: string[] = [];
+    if (!deshabilitado) {
+      // Si la app dejara pulsar, el límite tendría que anunciarse con el rechazo del backend.
+      await boton.focus();
+      const anuncios = anunciosDurante(page, 3000);
+      await page.keyboard.press('Enter');
+      vistos = await anuncios;
+      anotar(testInfo, 'Anuncios al pulsar', vistos.join(' ¦ ') || '(ninguno)');
+    }
+    expect.soft(deshabilitado || vistos.some((a) => /dos versiones|l[ií]mite|vigentes/i.test(a)), '4.1.3 / 3.3.1: el límite de versiones no se avisa ni antes ni después de pulsar "Activar"').toBe(true);
+    expect.soft(/vigentes/i.test(motivo) || vistos.some((a) => /vigentes/i.test(a)), '3.3.1 / 4.1.2: el motivo del límite no está vinculado a "Activar" (aria-describedby)').toBe(true);
+    expect.soft(/2\.0/.test(`${motivo} ${vistos.join(' ')}`), '3.3.3: el mensaje no dice qué versión hay que esperar o retirar primero').toBe(true);
   });
 
   test('b. [3.3.1 / 1.4.1] Activación bloqueada de la 5.0: el motivo se lee junto a la versión (Datos simulados)', async ({}, testInfo) => {
@@ -106,8 +116,8 @@ test.describe('TC-DIS-270 — Bloqueos y alertas del ciclo de vida del contrato'
     const avisos = await alertas(main(page));
     anotar(testInfo, 'Avisos', avisos.join(' ¦ ') || '(ninguno)');
     desviacion(avisos.some((a) => /inconsistente|m[aá]s de dos/i.test(a)), '4.1.3: con tres versiones vigentes no aparece ninguna alerta crítica (role="alert") que lo advierta y explique que se bloquean nuevas activaciones');
-    const activar = await versiones().getByRole('button', { name: /Activar/i }).count();
-    desviacion(activar === 0, '3.3.1: con el estado inconsistente se siguen ofreciendo botones "Activar"');
+    const activar = await versiones().getByRole('button', { name: /Activar/i }).evaluateAll((bs) => bs.filter((b) => !(b as HTMLButtonElement).disabled).length);
+    desviacion(activar === 0, '3.3.1: con el estado inconsistente se siguen ofreciendo botones "Activar" habilitados');
     const crudos = await textosCrudos(main(page));
     desviacion(crudos.length === 0, `regla de textos visibles: valores crudos → ${crudos.join(' ¦ ')}`);
   });
