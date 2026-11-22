@@ -1,0 +1,54 @@
+
+ RUN  v4.1.11 /home/claude/g024/fe
+
+[QA_MUTACION] indicador_nunca[0] aplicada en /home/claude/g024/fe/src/shared/design-system/ProcesoEnCurso.tsx
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx (7 tests | 2 failed) 986ms
+     × CP-02 y CP-03 operacion de mas de 3.000 ms: indicador a partir de t0+3.001 con spinner y sin progressbar 50ms
+     × CP-05 (y OBS-5) aviso proceso.largo respecto de t1 = aparicion del indicador 539ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-02 y CP-03 operacion de mas de 3.000 ms: indicador a partir de t0+3.001 con spinner y sin progressbar
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx:585:26
+    583|     const ok03 = !!ind3001 && spinners >= 1 && progressbars === 0;
+    584|     anotar('CP-03', ok03, `en t0+3001: indicador ${ind3001 ? 'visible'…
+    585|     expect(ok02 && ok03).toBe(true);
+       |                          ^
+    586|   });
+    587|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-05 (y OBS-5) aviso proceso.largo respecto de t1 = aparicion del indicador
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx:626:21
+    624|       anotar('CP-05', false, 'el indicador no apareció en los primeros…
+    625|       observaciones.push('OBS-5 (decisión de Sebastian 2026-11-21, ant…
+    626|       expect(false).toBe(true);
+       |                     ^
+    627|       return;
+    628|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+   Start at  15:14:49
+   Duration  2.56s (transform 700ms, setup 97ms, import 1.03s, tests 986ms, environment 316ms)
+

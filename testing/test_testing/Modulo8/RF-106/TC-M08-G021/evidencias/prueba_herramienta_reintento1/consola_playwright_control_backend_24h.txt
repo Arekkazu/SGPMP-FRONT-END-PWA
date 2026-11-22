@@ -1,0 +1,29 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › testing/test_testing/Modulo8/RF-106/TC-M08-G021/tc-m08-g021.pw.ts:248:1 › TC-M08-G021 parte navegador real (CP-10 a CP-17) (7.9s)
+
+
+  1) [chromium] › testing/test_testing/Modulo8/RF-106/TC-M08-G021/tc-m08-g021.pw.ts:248:1 › TC-M08-G021 parte navegador real (CP-10 a CP-17) 
+
+    Error: CP-11, CP-13, CP-15
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      408 |
+      409 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+    > 410 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+          |                                                                                                                      ^
+      411 | });
+      412 |
+        at /home/claude/g020r1/fe/testing/test_testing/Modulo8/RF-106/TC-M08-G021/tc-m08-g021.pw.ts:410:118
+
+    Error Context: ../../g021r1/pw_esc_backend_24h/pw-salida/tc-m08-g021.pw.ts-TC-M08-G-72cda-vegador-real-CP-10-a-CP-17--chromium/error-context.md
+
+    Error Context: ../../g021r1/pw_esc_backend_24h/pw-salida/tc-m08-g021.pw.ts-TC-M08-G-72cda-vegador-real-CP-10-a-CP-17--chromium/error-context.md
+
+  1 failed
+    [chromium] › testing/test_testing/Modulo8/RF-106/TC-M08-G021/tc-m08-g021.pw.ts:248:1 › TC-M08-G021 parte navegador real (CP-10 a CP-17) 

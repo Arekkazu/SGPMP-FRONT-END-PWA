@@ -1,0 +1,13 @@
+#!/bin/bash
+# uso: correr_pw.sh <build_dir> <nombre> [spec_alterno]
+B=$1; N=$2; O=/home/claude/g026/pr1/pw_$N; mkdir -p $O
+T=testing/test_testing/Modulo8/RF-107/TC-M08-G026
+cd /home/claude/g024/fe
+if [ -n "$3" ]; then mv $T/tc-m08-g026.pw.ts /home/claude/g026/aparte.pw.ts; cp $3 $T/tc-m08-g026.pw.ts; fi
+pkill -f servidor_g026 2>/dev/null; sleep 1
+MOCK_LOG=$O/mock.log nohup node /home/claude/g026/sim/servidor_g026.mjs $B normal 4173 > $O/mock_consola.txt 2>&1 &
+sleep 2
+STAGING_DIR=$O REINTENTO=1 RUN_ID=prueba-pw_$N QA_FRONT_URL=http://127.0.0.1:4173/sigab-test/ QA_VET_EMAIL=vet@qa.test QA_VET_PASSWORD=clave-qa-local QA_CHROME_PATH=/usr/bin/google-chrome timeout 400 pnpm exec playwright test --config $T/playwright.config.ts > $O/consola_playwright.txt 2>&1
+echo $? > $O/exit.txt
+pkill -f servidor_g026
+if [ -n "$3" ]; then mv /home/claude/g026/aparte.pw.ts $T/tc-m08-g026.pw.ts; fi

@@ -4,6 +4,7 @@
 |---|---|---|
 | 2026-11-20 | Juan Sebastian Gutierrez | Fase 1 y Fase 2 (construcción de Claude; la primera construcción de Argon se detuvo y borró la carpeta). Prueba de la herramienta en el contenedor: Vitest ×3 más 3 controles, y Playwright contra un build local más 4 controles |
 | 2026-11-20 | Juan Sebastian Gutierrez | Decisiones de Sebastian: OBS-7 queda como observación para Desarrollo; la corrida oficial la ejecuta Gemini Argon con un prompt cerrado. Sin cambios en los scripts |
+| 2026-11-21 | Juan Sebastian Gutierrez | Reintento 1 (INC-M08-NN-G021, GitHub #722): Fase 1 y adaptación de la herramienta por Claude (Vitest y Playwright v1.1; runner sin cambios). Tooltips de 12 h 00, −10 h y 61 min siguen retirados (decisión de Sebastian, 19:49), medidos como OBS-9 |
 
 **Casos:** TC-M08-052 (ventana de correspondencia entre inferencia y evento sanitario) y TC-M08-053 (colisión de eventos y orden al expandir el grupo).
 
@@ -186,3 +187,42 @@ Se probó con un build local (`VITE_BASE_PATH=/sigab-test/`) y la API simulada `
 | `controles/vite.control.config.ts` | `3D7FC106438531FB45D2D665EFAD6C0EB4867347FC6A2497E5F5D3338C6764ED` |
 
 **`src` probado:** `HistorialPredictivoView.tsx` `EFB39090…`, `PrediccionPage.tsx` `3A7B576F…`, `historialPredictivoApi.ts` `EEBCB360…`, `es-CO/prediction.json` `B51867FB…`.
+
+## Reintento 1 (2026-11-21): adaptación de la herramienta (Claude)
+
+**Cambio de Desarrollo (observado).** `a74c51cb` (INC-M08-387..390) en `test-JuanSG`, integrado por `03086c80` (#732); frontend HEAD `488f43f6`, `src/` sin cambios locales. `HistorialPredictivoView.tsx` (`6043535E…`): conector `ReferenceLine` punteado (`hp-conector`) por cada correspondencia con `colision=false` (:217); marcador «N eventos» (`hp-grupo`) por cada grupo en su posición; sin Tooltip de recharts, cada marcador con su `<title>` (:358, :364, :375, :385; la diferencia en :199); eventos como `<rect>` con `var(--sem-error)`; leyenda nueva (`prediction.json`:1071) y lista de pares con predicción y evento (`historialpredictivo.par`, :1111).
+
+**Despliegue en TEST:** bundle `index-BUhd1sjz.js`, chunk `PrediccionPage-Dy0FYjn5.js` con `hp-conector` y `hp-grupo` (navegador integrado, sin sesión, 2026-11-21). La precondición de despliegue del spec Playwright v1.1 exige además el texto de la leyenda nueva.
+
+**Specs de la ronda 1 sin cambios contra el código actual** (`prueba_herramienta_reintento1/`): Vitest 1/9 (los eventos `path` no se encuentran: `eventos=0/5`, pares sin medir; el texto «N eventos» incluye su `<title>`); Playwright: precondición de despliegue falsa («Se relacionan predicción y evento» ya no existe). Fallas de la herramienta, no del producto.
+
+**Specs v1.1** (Vitest `EB7F551B…`, Playwright `4BE6CE3E…`; respaldos de la ronda 1 en `fuentes_generador/ronda1/`: `2197E084…`, `5FE93861…`, DISENO `0166A97D…`). Checkpoints, esperados, fuentes y retirados literales de la ronda 1 (diff en `prueba_herramienta_reintento1/diff_*_ronda1_v11.txt`):
+
+| Id | Qué cambia | Checkpoints |
+|---|---|---|
+| ADAPT-1 | Eventos `path` o `rect` dentro de `.recharts-scatter-symbol`; centro del `rect` = `x + width/2` (lectura, posiciones del ratón y `<title>` del símbolo) | CP-01 a CP-08, CP-14 a CP-16 |
+| ADAPT-2 | Texto propio del `<text>` (sin su `<title>`) para reconocer «N eventos» | CP-06 a CP-08, CP-16 |
+| ADAPT-3 | Precondición de despliegue: «Una línea punteada une la predicción con su evento sanitario» y «grupos de eventos cercanos» | Precondición de la parte Playwright |
+
+Observaciones: OBS-5, OBS-6 y OBS-8 reescritas porque describían el código anterior (la vista arma el texto del par; usa `colision`; el tooltip es un `<title>`). OBS-9 nueva: el `<title>` de los pares retirados como checkpoint (E2 «Diferencia: 12 h», E5 «Diferencia: 10 h», E8 «Diferencia: 1 h 1 min»). **Decisión de Sebastian (2026-11-21 19:49):** esos tooltips siguen retirados, como quedó anotado en la ronda 1; OBS-9 es la evidencia. Runner sin cambios (`540E5492…`): sigue esperando 9 + 8 checkpoints.
+
+**Prueba de la herramienta** (contenedor, código de `488f43f6`, `TZ=America/Bogota`):
+
+| Parte | Corrida | Resultado |
+|---|---|---|
+| Vitest | normal ×3 | 9/9 idénticas |
+| Vitest | sin_conectores (vista sin `ReferenceLine`) | CP-01, 02, 03, 05 y 08 FALLA |
+| Vitest | sin_marcador_grupo (scatter de grupos vacío) | CP-06 y 07 FALLA |
+| Vitest | ventana_13 (simulador a 13 h, como en la ronda 1) | CP-04 y 05 FALLA (P3-E3 = 1) |
+| Vitest | grupo_desorden (como en la ronda 1) | CP-09 FALLA |
+| Vitest | evento_path_ronda1 (evento como `path` en el mismo centro) | 9/9 |
+| Playwright | normal ×3 (build local + API simulada) | 8/8 |
+| Playwright | build sin conectores | solo CP-14 FALLA (0 conectores) |
+| Playwright | build sin marcador de grupo | solo CP-16 FALLA |
+| Playwright | build sin `<title>` en los eventos | solo CP-14 FALLA («(sin tooltip)») |
+| Playwright | escenario backend_24h | CP-11, CP-13 y CP-15 FALLA (CP-15 ahora también, porque la vista dibuja lo que manda el backend) |
+| Playwright | escenario grupo_desorden | CP-12 y CP-17 FALLA |
+
+Ningún control dejó «No alcanzado». La guardia de escrituras no se volvió a probar: su código no cambió (el diff solo toca las partes de la tabla). La copia de la vista se restauró en modo binario tras cada control (SHA igual al del equipo).
+
+**Nota (2026-11-21 19:55):** el respaldo `fuentes_generador/ronda1/tc-m08-g021.pw.ts` entraba en el `testMatch` del config del caso (`playwright --list` dio 2 pruebas; el agente se detuvo en la verificación estática, sin corrida). Los respaldos se renombraron a `tc-m08-g021.pw.ts.txt` y `tc-m08-g021.test.tsx.txt` (mismos SHA: `5FE93861…`, `2197E084…`).

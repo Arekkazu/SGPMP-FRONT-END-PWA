@@ -1,0 +1,77 @@
+
+ RUN  v4.1.11 /home/claude/g024/fe
+
+[QA_MUTACION] indicador_pegado[0] aplicada en /home/claude/g024/fe/src/reportes/pages/ReportesPage.tsx
+stderr | testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-07 FALLIDO (422) a los 5.000 ms cierra indicador y muestra error con el message del 422
+[i18n] falta la clave "common:errores.por_codigo.VALIDACION_REPORTE" en es-CO — se muestra el espanol
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx (7 tests | 3 failed) 798ms
+     × CP-06 EXITOSO a los 5.000 ms cierra indicador y muestra banner de exito 45ms
+     × CP-07 FALLIDO (422) a los 5.000 ms cierra indicador y muestra error con el message del 422 46ms
+     × CP-08 timeout 60.000 ms cierra indicador y muestra mensaje FA-3 38ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-06 EXITOSO a los 5.000 ms cierra indicador y muestra banner de exito
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx:673:16
+    671|       `indicador=${ind ? 'sí' : 'no'}; banners_exito=${exitos.length} …
+    672|     );
+    673|     expect(ok).toBe(true);
+       |                ^
+    674|   });
+    675|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-07 FALLIDO (422) a los 5.000 ms cierra indicador y muestra error con el message del 422
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx:701:16
+    699|       `indicador=${ind ? 'sí' : 'no'}; errores=${encontrados.length} […
+    700|     );
+    701|     expect(ok).toBe(true);
+       |                ^
+    702|   });
+    703|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-08 timeout 60.000 ms cierra indicador y muestra mensaje FA-3
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx:730:18
+    728|         `indicador=${ind ? 'sí' : 'no'}; textos_error=[${textos.map((x…
+    729|       );
+    730|       expect(ok).toBe(true);
+       |                  ^
+    731|     } finally {
+    732|       diferida.resolver({ status: 201, data: crearReporteExito() });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 4 passed (7)
+   Start at  15:15:07
+   Duration  2.57s (transform 829ms, setup 74ms, import 1.23s, tests 798ms, environment 342ms)
+

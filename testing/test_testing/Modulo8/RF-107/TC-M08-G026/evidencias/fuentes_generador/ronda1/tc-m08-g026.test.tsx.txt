@@ -1,0 +1,761 @@
+// TC-M08-G026 - RF-107 Cola de errores y saturacion (TC-M08-065), coexistencia (TC-M08-066), sin duplicados
+// (TC-M08-067) y metadatos e historial de sesion (TC-M08-074). Parte Vitest (CP-01 a CP-20).
+// QA SGPMP - Evaluacion (ronda 1). Prueba de componente con Vitest + jsdom.
+//
+// Que se ejecuta de verdad (codigo de src/, sin modificarlo):
+//   - El administrador de la cola de M08: pushToast / dismissToast / useToast (src/shared/hooks/useToast.ts), que es
+//     la entrada por la que todos los modulos entregan su resultado, pintado por ToastHost y Alert reales.
+//   - CP-09: ReportesPage completa (vista previa -> generar -> ProcesoEnCurso -> error).
+//   - CP-10: ModalShell bloqueante y EstadoSincronizacion con la misma estructura de App.tsx (verificada literal).
+// La red se simula con el adaptador del mismo cliente `http` que usa la app. No se llama a TEST.
+//
+// Reporte: JSON parcial propio en STAGING_DIR (parcial_vitest_TC-M08-G026[_reintentoN].json); el runner lo une con
+// el parcial de Playwright (CP-21 a CP-24) en resultado_TC-M08-G026.json. Cada checkpoint arranca en FALLA
+// "No alcanzado"; `obtenido` es siempre lo que se leyo del DOM o del historial de la sesion.
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import React, { useState } from 'react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter, Route } from 'react-router-dom';
+import type { History } from 'history';
+import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import i18n from '../../../../../src/shared/i18n';
+import { http } from '../../../../../src/shared/api/http';
+import { fijarCatalogoErrores } from '../../../../../src/shared/api/catalogoErrores';
+import { limpiarToasts, pushToast, useToast } from '../../../../../src/shared/hooks/useToast';
+import { ToastHost } from '../../../../../src/shared/design-system/ToastHost';
+import { ModalShell } from '../../../../../src/shared/design-system/ModalShell';
+import { EstadoSincronizacion } from '../../../../../src/shared/design-system/EstadoSincronizacion';
+import { ReportesPage } from '../../../../../src/reportes/pages/ReportesPage';
+
+const TC = 'TC-M08-G026';
+const AQUI = dirname(fileURLToPath(import.meta.url));
+const RAIZ_FRONT = resolve(AQUI, '../../../../..');
+const ZONA = 'America/Bogota';
+
+// ---------------------------------------------------------------------------------------------------------------
+// Registro de checkpoints
+// ---------------------------------------------------------------------------------------------------------------
+type Estado = 'OK' | 'FALLA';
+interface Checkpoint { paso: string; caso: string; esperado: string; fuente: string; obtenido: string; estado: Estado }
+
+const CPS: Checkpoint[] = [
+  { paso: 'CP-01', caso: 'TC-M08-065 a',
+    esperado: 'Con E1 a E4 (id_operacion distintos) se ven exactamente E1, E2 y E3 como banners de error; E4 no se ve (espera en cola)',
+    fuente: 'RF-107 seccion 8.2 nivel 2 (maximo tres banners de error visibles); seccion 8.3 (cola de errores FIFO)' },
+  { paso: 'CP-02', caso: 'TC-M08-065 a',
+    esperado: 'Al cerrar E1 entra E4: se ven E2, E3 y E4, en ese orden',
+    fuente: 'RF-107 seccion 8.3 (cola FIFO: se muestra en cuanto el usuario cierra uno de los activos)' },
+  { paso: 'CP-03', caso: 'TC-M08-065 b (valor limite)',
+    esperado: 'Con 5 mensajes entre visibles y en cola (3 + 2) no hay banner de saturacion',
+    fuente: 'RF-107 seccion 8.3 (saturacion: supera el umbral de cinco); CA-14 (mas de 5)' },
+  { paso: 'CP-04', caso: 'TC-M08-065 b (valor limite)',
+    esperado: 'Con 6 (3 + 3) aparece "Hay 6 notificaciones pendientes. Toca aqui para ver todas." en lugar del banner de error mas antiguo (E1); E2 y E3 siguen visibles',
+    fuente: 'RF-107 seccion 8.3 (saturacion de la cola); CA-14' },
+  { paso: 'CP-05', caso: 'TC-M08-065 c',
+    esperado: 'Al pulsar el banner de saturacion se abre el historial de la sesion con todas las retroalimentaciones en orden cronologico; cada una con tipo, mensaje, hora y estado',
+    fuente: 'RF-107 seccion 8.3 (panel con el historial completo, ordenado cronologicamente, con tipo, mensaje, timestamp y estado)' },
+  { paso: 'CP-06', caso: 'TC-M08-065 d',
+    esperado: 'Con E4 en cola, al navegar fuera del modulo que origino los errores (/prediccion -> /reportes) la cola se descarta: 0 en cola y al cerrar un banner no entra E4',
+    fuente: 'RF-107 seccion 8.3 (la cola se descarta al navegar fuera del modulo que origino los errores). Decision de QA 20/11/2026: checkpoint segun la 8.3; modulo = prefijo de la ruta' },
+  { paso: 'CP-07', caso: 'TC-M08-066 a',
+    esperado: 'Con un exito visible llega un error: los dos se ven, el error queda debajo del exito; el exito desaparece a los 5 s de su llegada (4,999 s visible, 5,000 s oculto) y el error sigue',
+    fuente: 'RF-107 seccion 8.2 nivel 2 (el error se posiciona debajo del exito; el exito desaparece por su temporizador) y nivel 4' },
+  { paso: 'CP-08', caso: 'TC-M08-066 b',
+    esperado: 'Con un error visible llega un exito: el error sigue visible, en el mismo nodo y con el mismo texto, al llegar el exito y despues de que el exito expira',
+    fuente: 'RF-107 seccion 8.2 nivel 4 (un exito nunca reemplaza ni desplaza un error activo)' },
+  { paso: 'CP-09', caso: 'TC-M08-066 c',
+    esperado: 'Con el indicador de proceso en curso visible (generacion de un reporte) llega un error: el indicador se cierra y en su lugar aparece el error',
+    fuente: 'RF-107 seccion 8.2 nivel 3 (si llega un ERROR_CON_ACCION el indicador se cierra inmediatamente y el error toma su lugar)' },
+  { paso: 'CP-10', caso: 'TC-M08-066 d',
+    esperado: 'Con el modal critico (ModalShell bloqueante) abierto, el icono de sincronizacion sigue en el DOM y no esta oculto (sin hidden, sin aria-hidden, sin display:none ni visibility:hidden)',
+    fuente: 'RF-107 seccion 8.2 nivel 5 (nunca puede ser ocultado, incluido el modal critico); Postcondicion 4' },
+  { paso: 'CP-11', caso: 'TC-M08-067 a',
+    esperado: 'Dos eventos con el mismo id_operacion con el banner visible: un solo banner, con el contenido del segundo',
+    fuente: 'RF-107 seccion 8.3 (deduplicacion: si el banner aun esta visible su contenido se actualiza); CA-12' },
+  { paso: 'CP-12', caso: 'TC-M08-067 b',
+    esperado: 'Cerrado el banner por el usuario, un tercer evento con el mismo id_operacion se descarta en silencio: 0 banners y ninguna entrada nueva en el historial',
+    fuente: 'RF-107 seccion 8.3 (si el banner ya habia sido cerrado por el usuario, el evento se descarta silenciosamente)' },
+  { paso: 'CP-13', caso: 'TC-M08-067',
+    esperado: 'Con el id_operacion ya en la cola, un segundo evento no genera otro mensaje: sigue 1 en cola con ese id y, al entrar, se ve un solo banner de esa operacion',
+    fuente: 'RF-107 seccion 8.3 (antes de encolar se verifica si ya existe un mensaje en cola con el mismo id_operacion); CA-12' },
+  { paso: 'CP-14', caso: 'TC-M08-074',
+    esperado: 'En el historial de la sesion el exito (cierre automatico) figura con tipo Exito, su mensaje, su hora y estado expirado ("Se cerro solo"), y el error (cierre manual) con tipo Error, su mensaje, su hora y estado cerrado por el usuario ("Cerrado por ti"); todo en orden cronologico',
+    fuente: 'RF-107 seccion 8.3 (historial: tipo, mensaje, timestamp y estado activo / cerrado por el usuario / expirado); seccion 8.5 (tipo_retroalimentacion)' },
+  { paso: 'CP-15', caso: 'TC-M08-074',
+    esperado: 'El historial registra el id_operacion de cada retroalimentacion que lo trae (op-s del exito y op-e del error)',
+    fuente: 'RF-107 seccion 8.5 (Renderizado y registro: id_operacion; disponible en el historial de sesion)' },
+  { paso: 'CP-16', caso: 'TC-M08-074',
+    esperado: 'timestamp_mostrado = momento en que el mensaje se hizo visible: el error F4, encolado a las 09:02 y visible desde las 09:05 al cerrarse F1, figura con la hora 09:05',
+    fuente: 'RF-107 seccion 8.5 (timestamp_mostrado: fecha y hora exacta en que el mensaje se hizo visible al usuario)' },
+  { paso: 'CP-17', caso: 'TC-M08-074',
+    esperado: 'duracion_visible disponible en el historial: unos 5.000 ms para el exito y 30.000 ms para el error cerrado a mano a los 30 s',
+    fuente: 'RF-107 seccion 8.5 (duracion_visible en ms, por temporizador o por accion del usuario); TC-M08-074' },
+  { paso: 'CP-18', caso: 'TC-M08-074',
+    esperado: 'bloquea_interfaz disponible en el historial y en false para los banners de exito y de error',
+    fuente: 'RF-107 seccion 8.5 (bloquea_interfaz); TC-M08-074 (true solo en el modal)' },
+  { paso: 'CP-19', caso: 'TC-M08-074',
+    esperado: 'El modal critico mostrado en la sesion queda en el historial con bloquea_interfaz = true',
+    fuente: 'RF-107 seccion 8.5 (metadatos de toda retroalimentacion renderizada); TC-M08-074 (modal critico, bloquea_interfaz true)' },
+  { paso: 'CP-20', caso: 'TC-M08-074',
+    esperado: 'Mostrar, actualizar, encolar, cerrar y expirar avisos y abrir el historial no envia ninguna peticion al servidor (0 peticiones)',
+    fuente: 'RF-107 Postcondicion (la retroalimentacion visual no altera ni persiste datos de negocio)' },
+].map((c) => ({ ...c, obtenido: 'No alcanzado', estado: 'FALLA' as Estado }));
+
+const observaciones: string[] = [];
+const precondiciones: Array<{ nombre: string; ok: boolean; detalle: string }> = [];
+const retirados = [
+  { paso: 'TC-M08-074 (advertencia de log)', motivo: 'La advertencia de log por la contradiccion requiere_confirmacion / nivel_criticidad_accion se genera en TC-M08-068 (d), que es de TC-M08-G028; se evalua alli. En src/ ninguna accion usa nivel_criticidad_accion (solo InfraestructuraSection, que es otro concepto).' },
+];
+
+function anotar(paso: string, ok: boolean, obtenido: string): void {
+  const cp = CPS.find((c) => c.paso === paso);
+  if (!cp) throw new Error(`Checkpoint desconocido ${paso}`);
+  cp.obtenido = obtenido;
+  cp.estado = ok ? 'OK' : 'FALLA';
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Red simulada en el cliente `http` de la app (y registro de toda peticion)
+// ---------------------------------------------------------------------------------------------------------------
+type Respuesta = { status: number; data: unknown };
+interface RutaSimulada { metodo: string; patron: RegExp; responder: () => Respuesta | Promise<Respuesta> }
+let rutas: RutaSimulada[] = [];
+let peticiones: string[] = [];
+const sinRuta: string[] = [];
+const adaptadorOriginal = http.defaults.adapter;
+
+function simular(metodo: string, patron: RegExp, status: number, data: unknown): void {
+  rutas = [{ metodo, patron, responder: () => ({ status, data }) }, ...rutas];
+}
+function simularDiferida(metodo: string, patron: RegExp): { resolver: (r: Respuesta) => void } {
+  let resolver: (r: Respuesta) => void = () => undefined;
+  const promesa = new Promise<Respuesta>((ok) => { resolver = ok; });
+  rutas = [{ metodo, patron, responder: () => promesa }, ...rutas];
+  return { resolver: (r) => resolver(r) };
+}
+
+async function adaptador(config: InternalAxiosRequestConfig): Promise<AxiosResponse> {
+  const metodo = (config.method ?? 'get').toUpperCase();
+  const url = config.url ?? '';
+  peticiones.push(`${metodo} ${url}`);
+  const ruta = rutas.find((r) => r.metodo === metodo && r.patron.test(url));
+  if (!ruta) {
+    sinRuta.push(`${metodo} ${url}`);
+    throw new AxiosError(`QA: peticion sin respuesta simulada ${metodo} ${url}`, 'ERR_QA', config);
+  }
+  const { status, data } = await ruta.responder();
+  const respuesta: AxiosResponse = { data, status, statusText: '', headers: {}, config, request: {} };
+  if (status >= 200 && status < 300) return respuesta;
+  throw new AxiosError(`Request failed with status code ${status}`, status >= 500 ? 'ERR_BAD_RESPONSE' : 'ERR_BAD_REQUEST',
+    config, {}, respuesta);
+}
+
+/** Cuerpo de error estandar del backend (src/shared/error_handlers.py, _respuesta_error / app_error_handler). */
+function cuerpoError(code: string, message: string) {
+  return { error_code: code, message, fields: [], timestamp: '2026-11-20T14:00:00Z' };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Utilidades de DOM y del historial
+// ---------------------------------------------------------------------------------------------------------------
+const norm = (s: string | null | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
+const normHora = (s: string) => s.replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim();
+
+function zonaAvisos(): HTMLElement {
+  const zona = document.querySelector('.ds-toasts');
+  if (!zona) throw new Error('No se encontro la zona de avisos (.ds-toasts) de ToastHost');
+  return zona as HTMLElement;
+}
+function banners(variante?: 'success' | 'error'): HTMLElement[] {
+  const sel = variante ? `.ds-alert--${variante}` : '.ds-alert';
+  return Array.from(zonaAvisos().querySelectorAll(sel)) as HTMLElement[];
+}
+function titulo(a: HTMLElement): string { return norm(a.querySelector('.ds-alert__title')?.textContent); }
+function texto(a: HTMLElement): string { return norm(a.querySelector('.ds-alert__body')?.textContent); }
+function titulosError(): string[] { return banners('error').map(titulo); }
+function saturacion(): HTMLButtonElement | null {
+  return zonaAvisos().querySelector('.ds-toasts__saturacion');
+}
+function cerrarBanner(tituloBuscado: string): void {
+  const b = banners().find((x) => titulo(x) === tituloBuscado);
+  if (!b) throw new Error(`No hay banner "${tituloBuscado}" para cerrar`);
+  const boton = b.querySelector('.ds-alert__close') as HTMLButtonElement | null;
+  if (!boton) throw new Error(`El banner "${tituloBuscado}" no tiene boton de cierre`);
+  fireEvent.click(boton);
+}
+
+/** Hora con el mismo formato corto es-CO, calculada en America/Bogota (independiente de la zona del proceso). */
+function horaBogota(iso: string): string {
+  return normHora(new Date(iso).toLocaleTimeString('es-CO', { timeStyle: 'short', timeZone: ZONA }));
+}
+
+// Sonda: lee el estado publico del administrador de la cola (useToast) sin modificarlo.
+type EstadoToast = ReturnType<typeof useToast>;
+const sonda: { actual: EstadoToast | null } = { actual: null };
+function Sonda() { sonda.actual = useToast(); return null; }
+function estado(): EstadoToast {
+  if (!sonda.actual) throw new Error('La sonda de useToast no se monto');
+  return sonda.actual;
+}
+
+const navegador: { history: History | null } = { history: null };
+function Anfitrion({ ruta = '/prediccion/historial-predictivo', children }: { ruta?: string; children?: React.ReactNode }) {
+  return (
+    <MemoryRouter initialEntries={[ruta]}>
+      <Route path="*" render={({ history, location }) => {
+        navegador.history = history as unknown as History;
+        return <span data-testid="qa-ruta">{location.pathname}</span>;
+      }} />
+      {children}
+      <Sonda />
+      <ToastHost />
+    </MemoryRouter>
+  );
+}
+
+/**
+ * Avanza el reloj simulado dejando correr el ciclo de eventos como en el navegador: entre un temporizador y el
+ * siguiente se ejecutan las microtareas, asi React aplica el cambio del store (y desmonta lo que corresponda) antes
+ * del siguiente temporizador. Dentro de un unico act() React agrupa las actualizaciones hasta el final y un
+ * temporizador ya cancelado en el navegador (el de Alert.tsx:52-60) alcanza a dispararse: se verifico en el
+ * contenedor (agrupado -> "cerrado"; ciclo de eventos -> "expirado"). Ver DISENO, riesgo R-2.
+ */
+async function avanzar(ms: number): Promise<void> {
+  const g = globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+  const previo = g.IS_REACT_ACT_ENVIRONMENT;
+  g.IS_REACT_ACT_ENVIRONMENT = false;
+  try {
+    await vi.advanceTimersByTimeAsync(ms);
+  } finally {
+    g.IS_REACT_ACT_ENVIRONMENT = previo;
+  }
+  await act(async () => { /* aplica lo pendiente */ });
+}
+function empujar(variante: 'success' | 'error' | 'warning', tituloAviso: string, descripcion?: string, idOperacion?: string): void {
+  act(() => { pushToast(variante, tituloAviso, descripcion, idOperacion ? { idOperacion } : {}); });
+}
+
+/** Avanza el reloj hasta el instante ISO indicado (hora de Bogota). */
+async function irA(iso: string): Promise<void> {
+  const destino = new Date(iso).getTime();
+  const falta = destino - Date.now();
+  if (falta < 0) throw new Error(`El reloj ya paso ${iso}`);
+  await avanzar(falta);
+}
+
+/** Filas del panel de historial: tipo, mensaje y meta (hora y estado). */
+function filasHistorial(): Array<{ tipo: string; mensaje: string; meta: string; texto: string }> {
+  const dialogo = screen.getByRole('dialog', { name: 'Avisos de esta sesión' });
+  return Array.from(dialogo.querySelectorAll('.ds-toasts__historial li')).map((li) => {
+    const spans = li.querySelectorAll(':scope > span');
+    return {
+      tipo: norm(spans[0]?.textContent),
+      mensaje: norm(spans[1]?.textContent),
+      meta: normHora(spans[2]?.textContent ?? ''),
+      texto: normHora(li.textContent ?? ''),
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Ciclo de vida
+// ---------------------------------------------------------------------------------------------------------------
+beforeAll(async () => {
+  await i18n.changeLanguage('es-CO');
+  const zonaProceso = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  precondiciones.push({ nombre: 'Zona horaria del proceso = America/Bogota (formatearHora usa la del sistema)', ok: zonaProceso === ZONA, detalle: zonaProceso });
+
+  const app = readFileSync(join(RAIZ_FRONT, 'src/App.tsx'), 'utf8');
+  const iMain = app.indexOf('</main>');
+  const iSync = app.indexOf('<EstadoSincronizacion />');
+  precondiciones.push({ nombre: 'App.tsx: <EstadoSincronizacion /> es hermano posterior de <main> dentro de ds-app-content',
+    ok: app.includes('<div className="ds-app-content">') && iMain > 0 && iSync > iMain && app.indexOf('</div>', iMain) > iSync,
+    detalle: `</main> en ${iMain}, <EstadoSincronizacion /> en ${iSync}` });
+  precondiciones.push({ nombre: 'App.tsx monta <ToastHost /> una sola vez', ok: app.split('<ToastHost />').length === 2, detalle: '<ToastHost />' });
+
+  const baja = readFileSync(join(RAIZ_FRONT, 'src/biological_assets/components/RegistrarBajaModal.tsx'), 'utf8');
+  precondiciones.push({ nombre: 'RegistrarBajaModal usa ModalShell bloqueante en el paso de confirmacion',
+    ok: baja.includes('bloqueante={pendiente !== null}'), detalle: 'bloqueante={pendiente !== null}' });
+
+  const rep = readFileSync(join(RAIZ_FRONT, 'src/reportes/pages/ReportesPage.tsx'), 'utf8');
+  precondiciones.push({ nombre: 'ReportesPage muestra ProcesoEnCurso mientras genera',
+    ok: rep.includes("{generando && (") && rep.includes("<ProcesoEnCurso mensaje={t('generar.generando')} />"),
+    detalle: "{generando && ( ... <ProcesoEnCurso mensaje={t('generar.generando')} />" });
+
+  const host = readFileSync(join(RAIZ_FRONT, 'src/shared/design-system/ToastHost.tsx'), 'utf8');
+  precondiciones.push({ nombre: 'ToastHost abre el historial desde el aviso de saturacion',
+    ok: host.includes("className=\"ds-toasts__saturacion\" onClick={() => setVerHistorial(true)}"), detalle: 'ds-toasts__saturacion -> setVerHistorial(true)' });
+});
+
+beforeEach(() => {
+  rutas = [];
+  peticiones = [];
+  http.defaults.adapter = adaptador;
+  fijarCatalogoErrores({});
+  limpiarToasts();
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+  limpiarToasts();
+  fijarCatalogoErrores({});
+  http.defaults.adapter = adaptadorOriginal;
+  sonda.actual = null;
+  navegador.history = null;
+});
+
+afterAll(() => {
+  const ok = CPS.filter((c) => c.estado === 'OK').length;
+  const falla = CPS.length - ok;
+  if (sinRuta.length) observaciones.push(`Peticiones sin respuesta simulada durante la corrida: ${sinRuta.join(', ')}`);
+  const reporte = {
+    tc: TC,
+    parte: 'vitest',
+    reintento: Number(process.env.REINTENTO ?? '0'),
+    run_id: process.env.RUN_ID ?? '',
+    fecha: new Date().toISOString(),
+    summary: { total: CPS.length, ok, falla, veredicto: falla === 0 ? 'Aprobado' : 'Rechazado' },
+    precondiciones,
+    checkpoints: CPS,
+    observaciones,
+    retirados,
+  };
+  const dir = process.env.STAGING_DIR;
+  if (!dir) return;
+  mkdirSync(dir, { recursive: true });
+  const n = reporte.reintento;
+  writeFileSync(join(dir, `parcial_vitest_${TC}${n > 0 ? `_reintento${n}` : ''}.json`), `${JSON.stringify(reporte, null, 2)}\n`, 'utf8');
+});
+
+const T0 = '2026-11-20T09:00:00-05:00';
+
+// ---------------------------------------------------------------------------------------------------------------
+// TC-M08-065 - Cola de errores y saturacion
+// ---------------------------------------------------------------------------------------------------------------
+describe('TC-M08-065 Cola de errores y saturacion (RF-107 8.2 y 8.3)', () => {
+  it('CP-01 y CP-02 tres errores visibles, el cuarto en cola y entra al cerrar el primero', async () => {
+    vi.useFakeTimers({ now: new Date(T0) });
+    render(<Anfitrion />);
+    ['E1', 'E2', 'E3', 'E4'].forEach((e) => empujar('error', `Error ${e}`, `Detalle ${e}`, `op-${e}`));
+    const vis1 = titulosError();
+    const ok1 = vis1.length === 3 && vis1.join(',') === 'Error E1,Error E2,Error E3' && !vis1.includes('Error E4');
+    anotar('CP-01', ok1, `Banners de error visibles: [${vis1.join(', ')}]; en cola: [${estado().cola.map((t) => t.title).join(', ')}]`);
+
+    await avanzar(60_000);
+    cerrarBanner('Error E1');
+    const vis2 = titulosError();
+    const ok2 = vis2.join(',') === 'Error E2,Error E3,Error E4';
+    anotar('CP-02', ok2, `Tras cerrar E1 (60 s despues), banners de error visibles: [${vis2.join(', ')}]; en cola: ${estado().cola.length}`);
+    expect(ok1 && ok2, `${vis1} / ${vis2}`).toBe(true);
+  });
+
+  it('CP-03 y CP-04 cinco sin aviso; seis con el aviso de saturacion en lugar del error mas antiguo', async () => {
+    vi.useFakeTimers({ now: new Date(T0) });
+    render(<Anfitrion />);
+    ['E1', 'E2', 'E3', 'E4', 'E5'].forEach((e) => empujar('error', `Error ${e}`, undefined, `op-${e}`));
+    const sat5 = saturacion();
+    const ok3 = sat5 === null && titulosError().length === 3 && estado().cola.length === 2;
+    anotar('CP-03', ok3, `Con ${titulosError().length} visibles + ${estado().cola.length} en cola: banner de saturacion ${sat5 ? `presente ("${norm(sat5.textContent)}")` : 'ausente'}`);
+
+    empujar('error', 'Error E6', undefined, 'op-E6');
+    const sat6 = saturacion();
+    const txt = norm(sat6?.textContent);
+    const vis = titulosError();
+    const ok4 = sat6 !== null && txt === 'Hay 6 notificaciones pendientes. Toca aquí para ver todas.'
+      && !vis.includes('Error E1') && vis.includes('Error E2') && vis.includes('Error E3');
+    anotar('CP-04', ok4, `Con 3 visibles + ${estado().cola.length} en cola: banner de saturacion ${sat6 ? `"${txt}"` : 'ausente'}; banners de error visibles: [${vis.join(', ')}]`);
+    expect(ok3 && ok4, `${txt} / ${vis}`).toBe(true);
+  });
+
+  it('CP-05 el aviso de saturacion abre el historial de la sesion en orden cronologico', async () => {
+    vi.useFakeTimers({ now: new Date(T0) });
+    render(<Anfitrion />);
+    const llegadas: Array<{ titulo: string; iso: string; variante: 'success' | 'error' }> = [
+      { titulo: 'Exito S0', iso: '2026-11-20T09:00:00-05:00', variante: 'success' },
+      { titulo: 'Error E1', iso: '2026-11-20T09:01:00-05:00', variante: 'error' },
+      { titulo: 'Error E2', iso: '2026-11-20T09:02:00-05:00', variante: 'error' },
+      { titulo: 'Error E3', iso: '2026-11-20T09:03:00-05:00', variante: 'error' },
+      { titulo: 'Error E4', iso: '2026-11-20T09:04:00-05:00', variante: 'error' },
+      { titulo: 'Error E5', iso: '2026-11-20T09:05:00-05:00', variante: 'error' },
+      { titulo: 'Error E6', iso: '2026-11-20T09:06:00-05:00', variante: 'error' },
+    ];
+    for (const l of llegadas) { await irA(l.iso); empujar(l.variante, l.titulo, `Mensaje de ${l.titulo}`, `op-${l.titulo}`); }
+    const sat = saturacion();
+    if (!sat) throw new Error('No aparecio el banner de saturacion');
+    fireEvent.click(sat);
+    const filas = filasHistorial();
+    const esperadoTipos = llegadas.map((l) => (l.variante === 'success' ? 'Éxito' : 'Error'));
+    const estados = ['Visible', 'En espera', 'Cerrado por ti', 'Se cerró solo'];
+    const fallos: string[] = [];
+    if (filas.length !== llegadas.length) fallos.push(`${filas.length} filas, se esperaban ${llegadas.length}`);
+    llegadas.forEach((l, i) => {
+      const f = filas[i];
+      if (!f) return;
+      if (f.tipo !== esperadoTipos[i]) fallos.push(`fila ${i + 1} tipo "${f.tipo}"`);
+      if (!f.mensaje.includes(l.titulo) || !f.mensaje.includes(`Mensaje de ${l.titulo}`)) fallos.push(`fila ${i + 1} mensaje "${f.mensaje}"`);
+      if (!f.meta.includes(horaBogota(l.iso))) fallos.push(`fila ${i + 1} hora "${f.meta}" (esperada ${horaBogota(l.iso)})`);
+      if (!estados.some((e) => f.meta.endsWith(e))) fallos.push(`fila ${i + 1} sin estado reconocible "${f.meta}"`);
+    });
+    const ok = fallos.length === 0;
+    anotar('CP-05', ok, `Panel "Avisos de esta sesión" con ${filas.length} filas: ${filas.map((f) => `[${f.tipo} | ${f.mensaje} | ${f.meta}]`).join(' ')}${fallos.length ? ` | Diferencias: ${fallos.join('; ')}` : ''}`);
+    expect(ok, fallos.join('; ')).toBe(true);
+  });
+
+  it('CP-06 la cola se descarta al navegar fuera del modulo que origino los errores', async () => {
+    vi.useFakeTimers({ now: new Date(T0) });
+    render(<Anfitrion ruta="/prediccion/historial-predictivo" />);
+    ['E1', 'E2', 'E3', 'E4'].forEach((e) => empujar('error', `Error ${e}`, undefined, `op-${e}`));
+    const antes = `${estado().cola.length} en cola ([${estado().cola.map((t) => t.title).join(', ')}])`;
+    act(() => { navegador.history!.push('/reportes'); });
+    const ruta = screen.getByTestId('qa-ruta').textContent;
+    const enCola = estado().cola.length;
+    const visibles = titulosError();
+    cerrarBanner(visibles[0]);
+    const trasCerrar = titulosError();
+    const ok = ruta === '/reportes' && enCola === 0 && !trasCerrar.includes('Error E4');
+    anotar('CP-06', ok, `Antes de navegar: ${antes}. Ruta tras navegar: ${ruta}; en cola: ${enCola}; visibles: [${visibles.join(', ')}]; tras cerrar "${visibles[0]}": [${trasCerrar.join(', ')}]`);
+    expect(ok).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// TC-M08-066 - Coexistencia entre tipos de mensaje
+// ---------------------------------------------------------------------------------------------------------------
+describe('TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2)', () => {
+  it('CP-07 el error se ubica debajo del exito y el exito se va por su temporizador', async () => {
+    vi.useFakeTimers({ now: new Date(T0) });
+    render(<Anfitrion />);
+    empujar('success', 'Exito S', 'Reporte generado');
+    await avanzar(1_000);
+    empujar('error', 'Error X', 'No se pudo exportar');
+    const todos = banners();
+    const iS = todos.findIndex((b) => titulo(b) === 'Exito S');
+    const iE = todos.findIndex((b) => titulo(b) === 'Error X');
+    const orden = todos.map(titulo).join(', ');
+    await avanzar(3_999);
+    const a4999 = banners().map(titulo);
+    await avanzar(1);
+    const a5000 = banners().map(titulo);
+    const ok = iS >= 0 && iE > iS && a4999.includes('Exito S') && a4999.includes('Error X')
+      && !a5000.includes('Exito S') && a5000.includes('Error X');
+    anotar('CP-07', ok, `Orden en la zona de avisos al llegar el error: [${orden}]; a 4,999 s del exito: [${a4999.join(', ')}]; a 5,000 s: [${a5000.join(', ')}]`);
+    expect(ok).toBe(true);
+  });
+
+  it('CP-08 un exito no desplaza ni oculta un error activo', async () => {
+    vi.useFakeTimers({ now: new Date(T0) });
+    render(<Anfitrion />);
+    empujar('error', 'Error X', 'No se pudo exportar');
+    const nodo = banners('error')[0];
+    const textoAntes = texto(nodo);
+    await avanzar(2_000);
+    empujar('success', 'Exito S', 'Reporte generado');
+    const conExito = banners().map(titulo);
+    const mismo1 = zonaAvisos().contains(nodo) && texto(nodo) === textoAntes;
+    await avanzar(5_000);
+    const despues = banners().map(titulo);
+    const mismo2 = zonaAvisos().contains(nodo) && texto(nodo) === textoAntes;
+    const ok = mismo1 && mismo2 && conExito.includes('Exito S') && conExito.includes('Error X') && !despues.includes('Exito S') && despues.includes('Error X');
+    anotar('CP-08', ok, `Al llegar el exito: [${conExito.join(', ')}], error en el mismo nodo y texto: ${mismo1 ? 'si' : 'no'}; 5 s despues: [${despues.join(', ')}], mismo nodo y texto: ${mismo2 ? 'si' : 'no'} ("${texto(nodo)}")`);
+    expect(ok).toBe(true);
+  });
+
+  it('CP-09 con el proceso en curso llega un error: el indicador se cierra y el error toma su lugar', async () => {
+    simular('GET', /^\/reportes\/catalogo$/, 200, [{
+      tipo_reporte: 'REPORTE_INVENTARIO_BIOLOGICO', titulo: 'Inventario biológico', periodo_cerrado: false,
+      compara_periodos: false, limite_sincrono: 1000, filtros: [],
+    }]);
+    simular('GET', /^\/reportes$/, 200, []);
+    simular('POST', /^\/reportes\/vista-previa$/, 200, {
+      tipo_reporte: 'REPORTE_INVENTARIO_BIOLOGICO', titulo: 'Inventario biológico', encabezado: [], numero_registros: 12,
+      en_segundo_plano: false, sin_datos: false, mensaje: null, resumen: [], detalle: null, secciones: [], finales: [],
+      advertencias: [], aclaraciones: [],
+    });
+    const generar = simularDiferida('POST', /^\/reportes$/);
+    render(<Anfitrion ruta="/reportes"><ReportesPage /></Anfitrion>);
+    const select = await screen.findByLabelText(/^Reporte/);
+    await waitFor(() => expect(within(select).queryByText('Inventario biológico')).not.toBeNull());
+    fireEvent.change(select, { target: { value: 'REPORTE_INVENTARIO_BIOLOGICO' } });
+    fireEvent.click(await screen.findByRole('button', { name: /Ver vista previa/ }));
+    const exportar = await screen.findByRole('button', { name: /Exportar en PDF/ });
+    await waitFor(() => expect(exportar).not.toBeDisabled());
+    fireEvent.click(exportar);
+    const seccion = screen.getByRole('heading', { name: 'Generar un reporte' }).closest('section') as HTMLElement;
+    await waitFor(() => expect(seccion.querySelector('.ds-proceso')).not.toBeNull());
+    const procesoAntes = norm(seccion.querySelector('.ds-proceso')?.textContent);
+    await act(async () => { generar.resolver({ status: 500, data: cuerpoError('ERROR_INTERNO', 'No pudimos generar el reporte en este momento.') }); });
+    await waitFor(() => expect(seccion.querySelector('.ds-proceso')).toBeNull());
+    const errores = Array.from(seccion.querySelectorAll('.ds-alert--error')) as HTMLElement[];
+    const procesoDespues = seccion.querySelector('.ds-proceso');
+    const ok = procesoAntes.length > 0 && procesoDespues === null && errores.length === 1 && errores[0].getAttribute('role') === 'alert';
+    anotar('CP-09', ok, `Antes: indicador "${procesoAntes}". Tras el error: indicador ${procesoDespues ? 'presente' : 'ausente'}; ${errores.length} error(es) en la misma seccion: ${errores.map((e) => `"${texto(e)}"`).join(' | ')}; banners en la zona global: ${banners('error').length}`);
+    observaciones.push(`OBS-9 (066 c): el error de la generacion se muestra como Alert dentro de la seccion "Generar un reporte" (ReportesPage.tsx:263-269), no en la zona global de avisos (.ds-toasts tenia ${banners('error').length} banners de error).`);
+    expect(ok).toBe(true);
+  });
+
+  it('CP-10 con el modal critico abierto el icono de sincronizacion sigue en el DOM y no esta oculto', async () => {
+    function ConModal() {
+      const [abierto, setAbierto] = useState(true);
+      return (
+        <div className="ds-app-content">
+          <main id="contenido-principal">
+            <p>Contenido</p>
+            {abierto && (
+              <ModalShell title="Confirma la baja" onClose={() => setAbierto(false)} bloqueante
+                          footer={<><button type="button" onClick={() => setAbierto(false)}>Volver</button><button type="button">Confirmar baja</button></>}>
+                <p>El activo quedará dado de baja. Esta acción no se puede deshacer.</p>
+              </ModalShell>
+            )}
+          </main>
+          <EstadoSincronizacion />
+        </div>
+      );
+    }
+    render(<Anfitrion><ConModal /></Anfitrion>);
+    const dialogo = screen.getByRole('dialog', { name: 'Confirma la baja' });
+    const icono = document.querySelector('.ds-sync') as HTMLElement | null;
+    const ocultos: string[] = [];
+    for (let n: HTMLElement | null = icono; n && n !== document.body; n = n.parentElement) {
+      if (n.hasAttribute('hidden')) ocultos.push(`${n.tagName.toLowerCase()} hidden`);
+      if (n.getAttribute('aria-hidden') === 'true') ocultos.push(`${n.tagName.toLowerCase()} aria-hidden`);
+      const cs = window.getComputedStyle(n);
+      if (cs.display === 'none') ocultos.push(`${n.tagName.toLowerCase()} display:none`);
+      if (cs.visibility === 'hidden') ocultos.push(`${n.tagName.toLowerCase()} visibility:hidden`);
+    }
+    const inerte = icono?.closest('[inert]');
+    const ok = !!dialogo && icono !== null && document.body.contains(icono) && ocultos.length === 0;
+    anotar('CP-10', ok, `Modal bloqueante "Confirma la baja" abierto (role=dialog); icono .ds-sync ${icono ? `en el DOM ("${norm(icono.textContent)}")` : 'AUSENTE'}; ocultamientos: ${ocultos.length ? ocultos.join(', ') : 'ninguno'}`);
+    observaciones.push(`OBS-1 (066 d): con el modal critico abierto, el icono de sincronizacion ${inerte ? `queda dentro de un elemento inert (<${inerte.tagName.toLowerCase()}${inerte.className ? ` class="${inerte.className}"` : ''}>)` : 'no queda inert'}: no se puede pulsar ni lo ve el lector de pantalla (useModalA11y.ts:16-33, FUERA_DEL_INERT solo exime .ds-toasts). La 8.2 nivel 5 dice que nunca puede ser bloqueado, incluido el modal critico; el nivel 1 dice que el modal bloquea toda la interfaz. La oclusion visual se mide en la parte Playwright.`);
+    expect(ok, ocultos.join(', ')).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// TC-M08-067 - Sin mensajes duplicados para la misma operacion
+// ---------------------------------------------------------------------------------------------------------------
+describe('TC-M08-067 Sin mensajes duplicados (RF-107 8.3, CA-12)', () => {
+  it('CP-11 y CP-12 misma operacion: actualiza el banner visible y, cerrado, descarta el siguiente', async () => {
+    vi.useFakeTimers({ now: new Date(T0) });
+    render(<Anfitrion />);
+    empujar('error', 'No se pudo descargar el reporte', 'Intento 1: el archivo no esta disponible.', 'descarga-r1');
+    await avanzar(1_000);
+    empujar('error', 'No se pudo descargar el reporte', 'Intento 2: el archivo expiro.', 'descarga-r1');
+    const b = banners();
+    const ok11 = b.length === 1 && texto(b[0]).includes('Intento 2: el archivo expiro.') && !texto(b[0]).includes('Intento 1');
+    anotar('CP-11', ok11, `${b.length} banner(s): ${b.map((x) => `"${texto(x)}"`).join(' | ')}`);
+
+    cerrarBanner('No se pudo descargar el reporte');
+    const histAntes = estado().historial.length;
+    await avanzar(1_000);
+    empujar('error', 'No se pudo descargar el reporte', 'Intento 3.', 'descarga-r1');
+    const b3 = banners();
+    const histDespues = estado().historial.length;
+    const ok12 = b3.length === 0 && histDespues === histAntes;
+    anotar('CP-12', ok12, `Tras cerrar y enviar un tercer evento con el mismo id: ${b3.length} banner(s)${b3.length ? ` (${b3.map((x) => `"${texto(x)}"`).join(' | ')})` : ''}; entradas del historial ${histAntes} -> ${histDespues}`);
+    expect(ok11 && ok12).toBe(true);
+  });
+
+  it('CP-13 misma operacion ya en cola: no se genera otro mensaje', async () => {
+    vi.useFakeTimers({ now: new Date(T0) });
+    render(<Anfitrion />);
+    ['E1', 'E2', 'E3'].forEach((e) => empujar('error', `Error ${e}`, undefined, `op-${e}`));
+    empujar('error', 'Error Q', 'Primer intento', 'op-Q');
+    empujar('error', 'Error Q', 'Segundo intento', 'op-Q');
+    const enCola = estado().cola.filter((t) => t.idOperacion === 'op-Q').length;
+    const colaTotal = estado().cola.length;
+    const visiblesQ1 = banners().filter((x) => titulo(x) === 'Error Q').length;
+    cerrarBanner('Error E1');
+    cerrarBanner('Error E2');
+    const visiblesQ2 = banners().filter((x) => titulo(x) === 'Error Q');
+    const ok = enCola === 1 && colaTotal === 1 && visiblesQ1 === 0 && visiblesQ2.length === 1;
+    anotar('CP-13', ok, `Mensajes en cola con op-Q: ${enCola} (cola total ${colaTotal}); banners de Q antes de liberar espacio: ${visiblesQ1}; tras cerrar E1 y E2: ${visiblesQ2.length} banner(s) de Q (${visiblesQ2.map((x) => `"${texto(x)}"`).join(' | ')})`);
+    expect(ok).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// TC-M08-074 - Metadatos e historial de sesion
+// ---------------------------------------------------------------------------------------------------------------
+describe('TC-M08-074 Metadatos e historial de sesion (RF-107 8.3 y 8.5)', () => {
+  it('CP-14 a CP-20 el historial de la sesion con exito, error, cola y modal critico', async () => {
+    vi.useFakeTimers({ now: new Date(T0) });
+    const control: { abrir: (v: boolean) => void } = { abrir: () => undefined };
+    function ModalCritico() {
+      const [abierto, setAbierto] = useState(false);
+      control.abrir = setAbierto;
+      return abierto ? (
+        <ModalShell title="¿Confirmas esta acción?" onClose={() => setAbierto(false)} bloqueante
+                    footer={<button type="button" onClick={() => setAbierto(false)}>Cancelar</button>}>
+          <p>El período no podrá reabrirse ni modificarse.</p>
+        </ModalShell>
+      ) : null;
+    }
+    render(<Anfitrion><ModalCritico /></Anfitrion>);
+    const pet0 = peticiones.length;
+
+    // 09:00:00 exito S (op-s), expira solo a las 09:00:05
+    empujar('success', 'Exito S', 'Reporte generado', 'op-s');
+    await irA('2026-11-20T09:00:10-05:00');
+    // 09:00:10 error E (op-e), el usuario lo cierra a las 09:00:40 (30 s visible)
+    empujar('error', 'Error E', 'No se pudo exportar', 'op-e');
+    await irA('2026-11-20T09:00:40-05:00');
+    cerrarBanner('Error E');
+    // 09:01 F1-F3 visibles; 09:02 F4 a la cola; 09:05 se cierra F1 y entra F4
+    await irA('2026-11-20T09:01:00-05:00');
+    ['F1', 'F2', 'F3'].forEach((f) => empujar('error', `Error ${f}`, undefined, `op-${f}`));
+    await irA('2026-11-20T09:02:00-05:00');
+    empujar('error', 'Error F4', undefined, 'op-F4');
+    const f4EnCola = estado().cola.some((t) => t.title === 'Error F4');
+    await irA('2026-11-20T09:05:00-05:00');
+    cerrarBanner('Error F1');
+    const f4Visible = titulosError().includes('Error F4');
+    // 09:06 F5-F7 a la cola: 3 visibles + 3 en cola = saturacion
+    await irA('2026-11-20T09:06:00-05:00');
+    ['F5', 'F6', 'F7'].forEach((f) => empujar('error', `Error ${f}`, undefined, `op-${f}`));
+    // 09:07 modal critico abierto 30 s y cancelado
+    await irA('2026-11-20T09:07:00-05:00');
+    act(() => { control.abrir(true); });
+    const modalVisto = screen.queryByRole('dialog', { name: '¿Confirmas esta acción?' }) !== null;
+    await irA('2026-11-20T09:07:30-05:00');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    // 09:08 abrir el historial desde el aviso de saturacion
+    await irA('2026-11-20T09:08:00-05:00');
+    const sat = saturacion();
+    if (!sat) throw new Error('No aparecio el banner de saturacion para abrir el historial');
+    fireEvent.click(sat);
+    const filas = filasHistorial();
+    const hist = estado().historial as unknown as Array<Record<string, unknown>>;
+    // El cliente http pasa por interceptores asincronos: se deja correr el ciclo de eventos antes de contar.
+    await avanzar(1_000);
+    const pet1 = peticiones.length;
+    const clavesEntrada = hist.length ? Object.keys(hist[0]).sort().join(', ') : '(sin entradas)';
+    const fila = (t: string) => filas.find((f) => f.mensaje.startsWith(t));
+    const entrada = (t: string) => hist.find((h) => h.title === t);
+
+    // CP-14
+    const fS = fila('Exito S');
+    const fE = fila('Error E');
+    const iS = filas.findIndex((f) => f.mensaje.startsWith('Exito S'));
+    const iE = filas.findIndex((f) => f.mensaje.startsWith('Error E'));
+    const iF1 = filas.findIndex((f) => f.mensaje.startsWith('Error F1'));
+    const ok14 = !!fS && !!fE && fS.tipo === 'Éxito' && fE.tipo === 'Error'
+      && fS.mensaje.includes('Reporte generado') && fE.mensaje.includes('No se pudo exportar')
+      && fS.meta.includes(horaBogota('2026-11-20T09:00:00-05:00')) && fS.meta.endsWith('Se cerró solo')
+      && fE.meta.includes(horaBogota('2026-11-20T09:00:10-05:00')) && fE.meta.endsWith('Cerrado por ti')
+      && iS >= 0 && iS < iE && iE < iF1;
+    anotar('CP-14', ok14, `Fila del exito: ${fS ? `[${fS.tipo} | ${fS.mensaje} | ${fS.meta}]` : 'ausente'}; fila del error: ${fE ? `[${fE.tipo} | ${fE.mensaje} | ${fE.meta}]` : 'ausente'}; posiciones S=${iS}, E=${iE}, F1=${iF1} de ${filas.length}`);
+
+    // CP-15
+    const eS = entrada('Exito S');
+    const eE = entrada('Error E');
+    const ok15 = eS?.idOperacion === 'op-s' && eE?.idOperacion === 'op-e';
+    anotar('CP-15', ok15, `id de operacion en el historial: exito=${String(eS?.idOperacion)}, error=${String(eE?.idOperacion)} (campos de una entrada: ${clavesEntrada})`);
+
+    // CP-16
+    const fF4 = fila('Error F4');
+    const eF4 = entrada('Error F4');
+    const campoMostrado = eF4 ? Object.keys(eF4).find((k) => /mostrad|shown|visible_desde/i.test(k)) : undefined;
+    const valorMostrado = campoMostrado ? new Date(Number(eF4![campoMostrado]) || String(eF4![campoMostrado])).getTime() : NaN;
+    const h905 = horaBogota('2026-11-20T09:05:00-05:00');
+    const ok16 = f4EnCola && f4Visible && !!fF4 && fF4.meta.includes(h905)
+      && (campoMostrado === undefined || valorMostrado === new Date('2026-11-20T09:05:00-05:00').getTime());
+    anotar('CP-16', ok16, `F4 encolado a las 09:02: ${f4EnCola ? 'si' : 'no'}; visible tras cerrar F1 a las 09:05: ${f4Visible ? 'si' : 'no'}; fila del historial: ${fF4 ? `[${fF4.meta}]` : 'ausente'} (esperada ${h905}); en el historial de la sesion: creado=${eF4 ? new Date(Number(eF4.creado)).toISOString() : '?'}${campoMostrado ? `, ${campoMostrado}=${String(eF4![campoMostrado])}` : ', sin campo de momento mostrado'}`);
+
+    // CP-17
+    const campoDur = (h?: Record<string, unknown>) => (h ? Object.keys(h).find((k) => /duraci|duration/i.test(k)) : undefined);
+    const dS = campoDur(eS) ? Number(eS![campoDur(eS)!]) : NaN;
+    const dE = campoDur(eE) ? Number(eE![campoDur(eE)!]) : NaN;
+    const panelDur = filas.some((f) => /duraci|\bms\b/i.test(f.texto));
+    const ok17 = Math.abs(dS - 5000) <= 100 && Math.abs(dE - 30000) <= 100;
+    anotar('CP-17', ok17, `Duracion visible en el historial: exito=${Number.isNaN(dS) ? 'sin campo' : `${dS} ms`}, error=${Number.isNaN(dE) ? 'sin campo' : `${dE} ms`}; el panel ${panelDur ? 'muestra' : 'no muestra'} duraciones (campos de una entrada: ${clavesEntrada})`);
+
+    // CP-18
+    const campoBloq = (h?: Record<string, unknown>) => (h ? Object.keys(h).find((k) => /bloque|block/i.test(k)) : undefined);
+    const bS = campoBloq(eS) ? eS![campoBloq(eS)!] : undefined;
+    const bE = campoBloq(eE) ? eE![campoBloq(eE)!] : undefined;
+    const ok18 = bS === false && bE === false;
+    anotar('CP-18', ok18, `bloquea_interfaz en el historial: exito=${bS === undefined ? 'sin campo' : String(bS)}, error=${bE === undefined ? 'sin campo' : String(bE)}`);
+
+    // CP-19
+    const filaModal = filas.find((f) => f.texto.includes('¿Confirmas esta acción?'));
+    const eModal = hist.find((h) => JSON.stringify(h).includes('¿Confirmas esta acción?'));
+    const bModal = eModal && campoBloq(eModal) ? eModal[campoBloq(eModal)!] : undefined;
+    const ok19 = modalVisto && !!eModal && bModal === true;
+    anotar('CP-19', ok19, `Modal critico mostrado de 09:07:00 a 09:07:30: ${modalVisto ? 'si' : 'no'}; en el panel: ${filaModal ? `[${filaModal.texto}]` : 'ausente'}; en el historial de la sesion: ${eModal ? `entrada con bloquea_interfaz=${String(bModal)}` : 'ausente'} (${hist.length} entradas: ${hist.map((h) => String(h.title)).join(', ')})`);
+
+    // CP-20
+    const ok20 = pet1 - pet0 === 0;
+    anotar('CP-20', ok20, `Peticiones al servidor durante el escenario: ${pet1 - pet0}${pet1 - pet0 ? ` (${peticiones.slice(pet0).join(', ')})` : ''}`);
+
+    // Observaciones medidas en el mismo escenario
+    const nAvisos = filas.length;
+    observaciones.push(`OBS-7a (065 c): el historial se abre en un dialogo (role=dialog, ModalShell "Avisos de esta sesión") con ${nAvisos} filas; la 8.3 pide un panel lateral. La posicion se mide en la parte Playwright.`);
+    expect([ok14, ok15, ok16, ok17, ok18, ok19, ok20].every(Boolean), 'CP-14 a CP-20').toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Observaciones medidas (no cuentan para el veredicto)
+// ---------------------------------------------------------------------------------------------------------------
+describe('Observaciones medidas', () => {
+  it('OBS-3 doble clic en Exportar (067 c, FA-6 de la version anterior)', async () => {
+    simular('GET', /^\/reportes\/catalogo$/, 200, [{
+      tipo_reporte: 'REPORTE_INVENTARIO_BIOLOGICO', titulo: 'Inventario biológico', periodo_cerrado: false,
+      compara_periodos: false, limite_sincrono: 1000, filtros: [],
+    }]);
+    simular('GET', /^\/reportes$/, 200, []);
+    simular('POST', /^\/reportes\/vista-previa$/, 200, {
+      tipo_reporte: 'REPORTE_INVENTARIO_BIOLOGICO', titulo: 'Inventario biológico', encabezado: [], numero_registros: 12,
+      en_segundo_plano: false, sin_datos: false, mensaje: null, resumen: [], detalle: null, secciones: [], finales: [],
+      advertencias: [], aclaraciones: [],
+    });
+    const generar = simularDiferida('POST', /^\/reportes$/);
+    render(<Anfitrion ruta="/reportes"><ReportesPage /></Anfitrion>);
+    const select = await screen.findByLabelText(/^Reporte/);
+    await waitFor(() => expect(within(select).queryByText('Inventario biológico')).not.toBeNull());
+    fireEvent.change(select, { target: { value: 'REPORTE_INVENTARIO_BIOLOGICO' } });
+    fireEvent.click(await screen.findByRole('button', { name: /Ver vista previa/ }));
+    const exportar = await screen.findByRole('button', { name: /Exportar en PDF/ });
+    await waitFor(() => expect(exportar).not.toBeDisabled());
+    fireEvent.click(exportar);
+    fireEvent.click(exportar);
+    await waitFor(() => expect(document.querySelector('.ds-proceso')).not.toBeNull());
+    const posts = peticiones.filter((p) => p === 'POST /reportes').length;
+    const aviso = document.body.textContent?.includes('ya está en curso') ?? false;
+    await act(async () => { generar.resolver({ status: 500, data: cuerpoError('ERROR_INTERNO', 'No pudimos generar el reporte en este momento.') }); });
+    observaciones.push(`OBS-3 (067 c): doble clic en "Exportar en PDF" -> ${posts} POST /reportes enviado(s); boton deshabilitado tras el primer clic: ${exportar.hasAttribute('disabled') || exportar.getAttribute('aria-disabled') === 'true' ? 'si' : 'no'}; aviso "Esta operación ya está en curso o fue ejecutada recientemente.": ${aviso ? 'si' : 'no'}. El texto es de FA-6 (version anterior); la 8.3 vigente no lo nombra.`);
+    expect(true).toBe(true);
+  });
+
+  it('OBS-5, OBS-6 y OBS-8 casos que la 8.3 no define', async () => {
+    vi.useFakeTimers({ now: new Date(T0) });
+    render(<Anfitrion />);
+    // OBS-5: exito reemplazado por otro exito y luego un evento con el id del primero
+    empujar('success', 'Exito A', 'Primero', 'op-A');
+    await avanzar(1_000);
+    empujar('success', 'Exito B', 'Segundo', 'op-B');
+    const estadoA = (estado().historial as unknown as Array<Record<string, unknown>>).find((h) => h.title === 'Exito A')?.estado;
+    empujar('success', 'Exito A', 'Actualizacion de A', 'op-A');
+    const visiblesA = banners().map(titulo);
+    observaciones.push(`OBS-5: un exito reemplazado por otro queda en el historial con estado "${String(estadoA)}" (se muestra "Cerrado por ti" aunque el usuario no lo cerro; useToast.ts:125); un evento posterior con su id_operacion ${visiblesA.includes('Exito A') ? 'se muestra' : 'se descarta'} (visibles: [${visiblesA.join(', ')}]).`);
+    act(() => { limpiarToasts(); });
+    // OBS-6: banner que expiro solo y luego un evento con su id
+    empujar('success', 'Exito C', 'Primero', 'op-C');
+    await avanzar(5_000);
+    empujar('success', 'Exito C', 'Despues de expirar', 'op-C');
+    const visiblesC = banners().map((b) => texto(b));
+    observaciones.push(`OBS-6: tras expirar solo el banner de op-C, un evento con el mismo id_operacion ${visiblesC.length ? `crea un banner nuevo ("${visiblesC.join(' | ')}")` : 'se descarta'}. La 8.3 solo define el descarte cuando el usuario lo cerro.`);
+    act(() => { limpiarToasts(); });
+    // OBS-8: las advertencias cuentan para la saturacion
+    ['W1', 'W2', 'W3'].forEach((w) => empujar('warning', `Advertencia ${w}`, undefined, `op-${w}`));
+    ['E1', 'E2', 'E3'].forEach((e) => empujar('error', `Error ${e}`, undefined, `op-${e}`));
+    const sat = saturacion();
+    observaciones.push(`OBS-8: con 3 advertencias y 3 errores (0 visibles de error mas alla de las advertencias) el aviso de saturacion ${sat ? `aparece ("${norm(sat.textContent)}")` : 'no aparece'}; useToast.ts:78-80 cuenta advertencias y errores. La 8.3 habla de banners de error.`);
+    expect(true).toBe(true);
+  });
+});

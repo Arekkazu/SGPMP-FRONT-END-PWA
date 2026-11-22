@@ -1,6 +1,7 @@
 // | Fecha      | Nombre                  | Que se hizo |
 // |------------|-------------------------|-------------|
 // | 2026-11-20 | Juan Sebastian Gutierrez | TC-M08-G021 (TC-M08-052 y 053; RF-106): ventana de correspondencia y colision. Parte Vitest (CP-01 a CP-09) |
+// | 2026-11-21 | Juan Sebastian Gutierrez | v1.1 reintento 1 (INC de G021, GitHub #722): checkpoints, esperados y fuentes literales de la ronda 1; solo cambia la forma de medir porque el arreglo cambio el DOM: eventos <rect> (ADAPT-1) y texto propio del marcador "N eventos" sin su <title> (ADAPT-2); OBS-5, OBS-6 y OBS-8 reescritas porque describian el codigo anterior, y OBS-9 nueva (titulos de los pares cuyo tooltip sigue retirado) |
 //
 // QA SGPMP - Evaluacion (ronda 1). Presentacion de la vista con respuestas simuladas con la forma REAL del backend
 // (consultar_historial_predictivo_use_case.py:118-144). Las correspondencias y los grupos los calcula el simulador con
@@ -300,11 +301,17 @@ type Punto = { x: number; y: number };
 function leerPuntosLinea(): Punto[] {
   return Array.from(document.querySelectorAll('.recharts-line-dots circle')).map((el) => ({ x: Number(el.getAttribute('cx')), y: Number(el.getAttribute('cy')) }));
 }
-/** Marcadores de evento (path dentro de .recharts-scatter-symbol), con su centro; mismo criterio que G020. */
+/** Marcadores de evento (path o rect dentro de .recharts-scatter-symbol), con su centro; mismo criterio que G020. */
 function leerMarcadoresEvento(): Array<Punto & { el: Element }> {
-  return Array.from(document.querySelectorAll('.recharts-scatter-symbol path')).map((el) => {
+  // ADAPT-1 (reintento 1): desde a74c51cb el evento es un <rect> propio; se aceptan path (ronda 1) y rect.
+  return Array.from(document.querySelectorAll('.recharts-scatter-symbol path, .recharts-scatter-symbol rect')).map((el) => {
     let x = Number.NaN;
     let y = Number.NaN;
+    if (el.tagName.toLowerCase() === 'rect') {
+      x = Number(el.getAttribute('x')) + Number(el.getAttribute('width')) / 2;
+      y = Number(el.getAttribute('y')) + Number(el.getAttribute('height')) / 2;
+      return { x, y, el };
+    }
     const tr = el.getAttribute('transform') ?? el.parentElement?.getAttribute('transform') ?? '';
     const t = tr.match(/translate\(\s*([+-]?[\d.e+-]+)\s*(?:,\s*|\s+)([+-]?[\d.e+-]+)\s*\)/i);
     if (t) { x = Number(t[1]); y = Number(t[2]); } else {
@@ -340,7 +347,9 @@ function conectoresEntre(a: Punto, b: Punto): number {
 function leerMarcadoresGrupo(): Array<{ n: number; x: number; texto: string }> {
   const sup = document.querySelector('svg.recharts-surface');
   if (!sup) return [];
-  return Array.from(sup.querySelectorAll('text')).map((el) => ({ el, texto: norm(el.textContent) }))
+  // ADAPT-2 (reintento 1): solo el texto propio del <text>; el <title> hijo es el detalle al pasar el raton.
+  const propio = (el: Element) => Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent ?? '').join('');
+  return Array.from(sup.querySelectorAll('text')).map((el) => ({ el, texto: norm(propio(el)) }))
     .filter((t) => /^(\d+) eventos?$/.test(t.texto))
     .map((t) => ({ n: Number(t.texto.split(' ')[0]), x: Number(t.el.getAttribute('x')), texto: t.texto }));
 }
@@ -529,6 +538,9 @@ describe('TC-M08-052 Ventana de correspondencia (RF-106 Restricción 5b; CA-7 A 
     const ok = sel === '' && u3.ok && u4.ok && c3 === 0 && c4 === 0;
     const obtenido = `${sel ? `seleccion=${sel}; ` : ''}${u3.conteo}; conectores_P3_E3=${c3}; conectores_P4_E4=${c4}; punteados_fuera_de_la_cuadricula=${leerPunteados().length}`;
     anotar('CP-04', ok, obtenido);
+    // OBS-9 (reintento 1): el tooltip de 12 h 00, -10 h y 61 min sigue retirado (decision de la ronda 1); se mide el <title> como observacion.
+    const titulos = leerMarcadoresEvento().map((e, k) => `E${k + 1}: "${norm(e.el.querySelector('title')?.textContent)}"`);
+    observaciones.push(`OBS-9 (medida, 4001, Lineal; retirado como checkpoint): título de cada marcador de evento: [${titulos.join('; ')}]. Esperado por R5d para E2 "Diferencia: 12 h" y para E5 "Diferencia: 10 h".`);
     expect(ok, obtenido).toBe(true);
   });
 
@@ -549,7 +561,7 @@ describe('TC-M08-052 Ventana de correspondencia (RF-106 Restricción 5b; CA-7 A 
     anotar('CP-05', ok, obtenido);
 
     const lista = textosLista(/relacionadas? con (un )?eventos?/);
-    observaciones.push(`OBS-5 (medida, 4001): la vista lista las correspondencias como texto, debajo de la gráfica, en un desplegable (${lista.length} elementos): [${lista.map((t) => `"${t}"`).join(', ')}]. El texto lo arma el backend (historial_predictivo.py:101).`);
+    observaciones.push(`OBS-5 (medida, 4001): la vista lista las correspondencias como texto, debajo de la gráfica, en un desplegable (${lista.length} elementos): [${lista.map((t) => `"${t}"`).join(', ')}]. Reintento 1: la vista arma «Predicción del … y evento sanitario del …» (prediction.json, historialpredictivo.par) con la diferencia que envía el backend (historial_predictivo.py:101).`);
     expect(ok, obtenido).toBe(true);
   });
 });
@@ -590,6 +602,8 @@ describe('TC-M08-053 Colisión y cercanos no colisionados (RF-106 Restricción 5
     const ok = sel === '' && u.ok && !grupo.ok && conectores === 1;
     const obtenido = `${sel ? `seleccion=${sel}; ` : ''}${u.conteo}; sin_marcador_grupo=${u.ok ? !grupo.ok : '(no medido)'} ${grupo.detalle}; conectores_P8_E8=${conectores}`;
     anotar('CP-08', ok, obtenido);
+    const t8 = u.ok ? norm(leerMarcadoresEvento()[2]?.el.querySelector('title')?.textContent) : '(no medido)';
+    observaciones.push(`OBS-9 (medida, 4002, Lineal; retirado como checkpoint): título del marcador de E8 (61 min) = "${t8}". Esperado por R5d: "Diferencia: 1 h 1 min".`);
     expect(ok, obtenido).toBe(true);
   });
 
@@ -617,8 +631,8 @@ describe('Observaciones del código (no son checkpoints)', () => {
     observaciones.push('OBS-1: los límites (≤ 12 h y ≤ 1 h, inclusivos y en los dos sentidos) los calcula el backend (historial_predictivo.py:21, :84, :96-97); aquí el simulador los replica. Con datos reales se verifican en CP-10 a CP-13.');
     observaciones.push('OBS-2: la agrupación del backend es encadenada (historial_predictivo.py:84 compara con el último del grupo): marcadores a menos de 1 h entre sí forman un solo grupo aunque el primero y el último estén a más de 1 h. R5c no define las cadenas.');
     observaciones.push('OBS-3: CA-12 dice ±24 h y la Restricción 5b ±12 h (configurable en M09); se usa 12 h (valor por defecto y el de TEST).');
-    observaciones.push('OBS-6: la vista no usa el campo "colision" de las correspondencias (HistorialPredictivoView.tsx:261-266).');
-    observaciones.push('OBS-8: en recharts 3.10 el ComposedChart solo admite tooltip por eje (ComposedChart.js, allowedTooltipTypes = [\'axis\']) y con el eje X numérico el tooltip solo se ubica en los extremos del dominio (tooltipSelectors.js, scale.domain()); además marcadorTooltip lee payload[0], que es la línea (HistorialPredictivoView.tsx:124). Por eso el tooltip no puede mostrar un evento intermedio; se mide en navegador real en CP-14.');
+    observaciones.push('OBS-6 (reintento 1): la vista usa ahora el campo "colision": dibuja el conector y pone la diferencia en el título solo para las correspondencias con colision=false (HistorialPredictivoView.tsx:199 y :217); un par en colisión va al marcador "N eventos".');
+    observaciones.push('OBS-8 (reintento 1): el arreglo quitó el Tooltip de recharts (a74c51cb); cada marcador lleva su propio <title> (HistorialPredictivoView.tsx:358, :364, :375 y :385), que el navegador muestra al pasar el ratón. Lo que ve el usuario se mide en navegador real (CP-14). Texto de la ronda 1: en recharts 3.10 el ComposedChart solo admite tooltip por eje (ComposedChart.js, allowedTooltipTypes = [\'axis\']) y con el eje X numérico el tooltip solo se ubica en los extremos del dominio (tooltipSelectors.js, scale.domain()); además marcadorTooltip lee payload[0], que es la línea (HistorialPredictivoView.tsx:124). Por eso el tooltip no puede mostrar un evento intermedio; se mide en navegador real en CP-14.');
     expect(observaciones.length).toBeGreaterThan(0);
   });
 });

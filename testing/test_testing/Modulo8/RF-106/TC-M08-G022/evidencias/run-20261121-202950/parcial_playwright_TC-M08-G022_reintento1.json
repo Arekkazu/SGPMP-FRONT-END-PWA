@@ -1,0 +1,118 @@
+{
+  "tc": "TC-M08-G022",
+  "parte": "playwright",
+  "reintento": 1,
+  "run_id": "qa-m08-g022-20261121-202950",
+  "fecha": "2026-11-22T01:30:25.505Z",
+  "ambiente": "https://api.inmero.co/sigab-test/",
+  "summary": {
+    "total": 4,
+    "ok": 3,
+    "falla": 1,
+    "veredicto": "Rechazado"
+  },
+  "precondiciones": [
+    {
+      "nombre": "Credenciales del Veterinario en memoria",
+      "ok": true,
+      "detalle": "QA_VET_EMAIL / QA_VET_PASSWORD presentes"
+    },
+    {
+      "nombre": "Login del Veterinario 97 (una sola vez)",
+      "ok": true,
+      "detalle": "URL tras el login: /sigab-test/dashboard"
+    },
+    {
+      "nombre": "El activo 885 figura entre los animales o lotes del Veterinario",
+      "ok": true,
+      "detalle": "11 opciones"
+    },
+    {
+      "nombre": "GET /historial-predictivo/885 (Lineal) responde 200",
+      "ok": true,
+      "detalle": "HTTP 200"
+    },
+    {
+      "nombre": "Línea base del 885: >=2 predicciones (>=1 con valoración y >=1 sin valoración), 2 <= pendientes <= 20 con >=2 niveles",
+      "ok": true,
+      "detalle": "predicciones=24, con_valoracion=4, sin_valoracion=20, pendientes=4, niveles_pendientes=[2,3], ahora=2026-11-22T01:30:21.000Z (header Date)"
+    },
+    {
+      "nombre": "Parte B: existen dos predicciones pA y pB con al menos 10 días de diferencia",
+      "ok": true,
+      "detalle": "pA=2363c367@2026-07-01T11:34:36.477639+00:00, pB=7d597a54@2026-07-30T12:34:36.477639+00:00"
+    },
+    {
+      "nombre": "Parte B: ninguna de las 3 fechas simuladas queda a menos de 1 h de una predicción",
+      "ok": true,
+      "detalle": "fechas=[2026-07-01T17:34:36.477+00:00, 2026-07-30T18:34:36.477+00:00, 2026-08-02T00:34:36.477+00:00]"
+    },
+    {
+      "nombre": "Parte B: respuesta simulada servida (>=1) y 3 marcadores de retroalimentación dibujados",
+      "ok": true,
+      "detalle": "simuladas=1; marcadores_retro=3; clase_0=RETROALIMENTACION"
+    },
+    {
+      "nombre": "El frontend desplegado contiene \"Predicciones sin evaluar (más de 48 horas)\" y \"Registrar retroalimentación\"",
+      "ok": true,
+      "detalle": "bundle: index-BUhd1sjz.js; 28 scripts revisados"
+    },
+    {
+      "nombre": "Ninguna escritura no permitida hacia TEST",
+      "ok": true,
+      "detalle": "2 peticiones distintas de GET, todas permitidas"
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-11",
+      "caso": "TC-M08-054, 885 real",
+      "esperado": "La TVCO de la respuesta coincide con la calculada con la regla del RF a partir de \"predicciones\" y \"retroalimentaciones\" de la misma respuesta (porcentaje, tvco_denominador, tasa_error y texto con el formato de CA-3), y la vista muestra ese texto",
+      "fuente": "RF-106 Proceso 4; CA-3; Salida (tasa_error)",
+      "obtenido": "calculado={porcentaje=25, denom=4, tasa_error=75, conflictos=0, texto=\"25% (4 validadas; 20 excluidas: sin retro)\"} | backend={porcentaje=25, denom=4, tasa_error=75, conflictos=0, texto=\"25% (4 validadas; 20 excluidas: sin retro)\"} | pantalla=\"25% (4 validadas; 20 excluidas: sin retro)\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-12",
+      "caso": "TC-M08-056, 885 real",
+      "esperado": "\"pendientes\" contiene exactamente las predicciones sin valoración con más de 48 h, ordenadas por nivel_riesgo descendente y luego por fecha descendente, y la lista de la vista muestra los mismos ítems en ese orden, cada uno con \"Registrar retroalimentación\"",
+      "fuente": "RF-106 Proceso 5; CA-9; CA-4",
+      "obtenido": "calculados(20)=[511a6d66, 997b8cda, 5dbe4510, cb261b4f, 2363c367, d1f3cc43, 98c7697c, 31e7239e, b36ac73c, d929c162, 7c215bf1, 8f7c7542, 50e68201, 11e12f40, ac952c1d, fb07d478, 7d597a54, f056f99d, f7fea6d3, 86ebfac8] | backend(total=4)=[511a6d66, 997b8cda, 5dbe4510, 2363c367] | dom(count=4, domOk=true)=[\"27/10/26, 7:06 p. m. · Alto · Estrés térmicoRegistrar retroalimentació\", \"25/10/26, 8:06 p. m. · Medio · DeshidrataciónRegistrar retroalimentaci\", \"23/10/26, 6:06 p. m. · Medio · Gastroenteritis infecciosaRegistrar ret\", \"1/07/26, 6:34 a. m. · Medio · Septicemia o infección sistémicaRegistra\"]",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-13",
+      "caso": "TC-M08-055, navegador, conflicto simulado",
+      "esperado": "Al pasar el ratón sobre una de las dos valoraciones en conflicto se muestran ambas: autor, valoración y fecha y hora de cada una (\"QA Vet A → Correcta · <ts_A> / QA Vet B → Incorrecta · <ts_B>\")",
+      "fuente": "RF-106 Restricción 6 a (tooltip \"[Vet A] → [valor_A] · [ts_A] / [Vet B] → [valor_B] · [ts_B]\"); CA-8 (b)",
+      "obtenido": "marcador[1]=\"QA Vet A → Correcta · 30/07/26, 1:34 p. m. / QA Vet B → Incorrecta · 1/08/26, 7:34 p. m.\" | marcador[2]=\"QA Vet A → Correcta · 30/07/26, 1:34 p. m. / QA Vet B → Incorrecta · 1/08/26, 7:34 p. m.\" (esperado fechas 30/07/26, 1:34 p. m. y 1/08/26, 7:34 p. m.)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-14",
+      "caso": "TC-M08-055, navegador, conflicto simulado",
+      "esperado": "El ícono de conflicto de las dos valoraciones es un triángulo amarillo",
+      "fuente": "RF-106 Restricción 6 a; CA-8 (a)",
+      "obtenido": "tema=dark; marcador[1]={texto=\"⚠\", fill=\"rgb(245, 197, 24)\", fondo=\"rgb(23,26,21)\", amarillos=84, distintos_del_fondo=144, no_blancos=483} | marcador[2]={texto=\"⚠\", fill=\"rgb(245, 197, 24)\", fondo=\"rgb(23,26,21)\", amarillos=84, distintos_del_fondo=144, no_blancos=483}",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "Línea base 885: 24 predicciones (4 con valoración, 20 sin valoración), 3 eventos, 4 retroalimentaciones, 4 pendientes (niveles=[2,3]).",
+    "Parte B: GET simulados=1",
+    "Despliegue: bundle index-BUhd1sjz.js en https://api.inmero.co/sigab-test/."
+  ],
+  "retirados": [],
+  "escrituras": [
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/sesiones/",
+      "resultado": "al servidor (login 1)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    }
+  ]
+}

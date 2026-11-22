@@ -1,0 +1,148 @@
+{
+  "tc": "TC-M08-G026",
+  "parte": "playwright",
+  "reintento": 1,
+  "run_id": "prueba-pw_control_historial_centrado",
+  "fecha": "2026-11-22T18:53:11.359Z",
+  "ambiente": "http://127.0.0.1:4173/sigab-test/",
+  "summary": {
+    "total": 4,
+    "ok": 3,
+    "falla": 1,
+    "veredicto": "Rechazado"
+  },
+  "precondiciones": [
+    {
+      "nombre": "Credenciales del Veterinario en memoria",
+      "ok": true,
+      "detalle": "QA_VET_EMAIL / QA_VET_PASSWORD presentes"
+    },
+    {
+      "nombre": "Login del Veterinario 97 (una sola vez)",
+      "ok": true,
+      "detalle": "URL tras el login: /sigab-test/dashboard"
+    },
+    {
+      "nombre": "El activo 885 ofrece \"Baja\" al Veterinario (estado ACTIVO y permiso de crear eventos)",
+      "ok": true,
+      "detalle": "boton Baja visible=true"
+    },
+    {
+      "nombre": "El activo 885 figura entre los animales o lotes del Veterinario",
+      "ok": true,
+      "detalle": "1 opciones"
+    },
+    {
+      "nombre": "GET /historial-predictivo/885 responde 200",
+      "ok": true,
+      "detalle": "HTTP 200"
+    },
+    {
+      "nombre": "El frontend desplegado tiene la entrega #693 (ds-toasts__saturacion, ds-sync, \"Toca aquí para ver todas\")",
+      "ok": true,
+      "detalle": "bundle: index-BODVBtHd.js; 57 scripts revisados"
+    },
+    {
+      "nombre": "Ninguna escritura no permitida hacia TEST",
+      "ok": true,
+      "detalle": "11 peticiones distintas de GET, todas permitidas o simuladas"
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-21",
+      "caso": "TC-M08-065 d",
+      "esperado": "Al cerrar sesion con errores visibles y en cola, la cola y el historial se descartan: se llega a /login con un documento nuevo (el marcador puesto antes en window ya no existe) y no queda ningun aviso",
+      "fuente": "RF-107 seccion 8.3 (la cola se descarta al cerrar sesion)",
+      "obtenido": "Antes de cerrar sesion: 2 banners de error y aviso de saturacion visible. Despues: ruta /sigab-test/login, marcador ausente (documento nuevo), navegacion \"navigate\", 0 avisos, 0 avisos de saturacion",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-22",
+      "caso": "TC-M08-066",
+      "esperado": "Los banners de error y de exito se muestran en la parte superior de la pantalla, bajo el encabezado: borde superior del banner por debajo del AppBar y dentro del tercio superior de la ventana (1366x768)",
+      "fuente": "RF-107 seccion 8.2 nivel 2 (parte superior, bajo el encabezado) y nivel 4 (parte superior); Salida (banner en la parte superior)",
+      "obtenido": "Ventana 1366x768; AppBar termina en y=64; banner de error en {\"x\":970,\"y\":76,\"w\":380,\"h\":92}; banner de exito en {\"x\":970,\"y\":76,\"w\":380,\"h\":54}; tercio superior hasta y=256",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-23",
+      "caso": "TC-M08-065 c",
+      "esperado": "El historial de la sesion se abre en un panel lateral: pegado a un borde lateral de la ventana y con al menos el 90 % de su alto",
+      "fuente": "RF-107 seccion 8.3 (al hacer clic se abre un panel lateral con el historial completo)",
+      "obtenido": "Panel \"Avisos de esta sesión\" en {\"x\":323,\"y\":24,\"w\":720,\"h\":720} dentro de una ventana 1366x768 (lateral = toca x=0 o x=1366 y alto >= 691)",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-24",
+      "caso": "TC-M08-066 d",
+      "esperado": "Con el paso \"Confirma la baja\" (modal critico bloqueante) abierto, el icono de sincronizacion sigue visible",
+      "fuente": "RF-107 seccion 8.2 nivel 5 (nunca puede ser ocultado, incluido el modal critico); Postcondicion 4",
+      "obtenido": "Paso \"Confirma la baja\" abierto; icono .ds-sync visible=true, caja={\"x\":1094,\"y\":12,\"w\":120,\"h\":40}, texto \"Sincronizado\"",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "OBS-1 (066 d, navegador real): con el paso \"Confirma la baja\" abierto, el elemento en el centro del icono es <div class=\"ds-modal\"> (no es el icono: lo cubre el overlay del modal); icono dentro de [inert]: si; un clic en su centro no abre el panel de sincronizacion; el paso de confirmacion sigue abierto.",
+    "OBS-10 (control en navegador real del criterio R-2 de Vitest): el exito que expiro solo figura en el historial como \"ÉxitoEl historial sanitario se descargó1:53 p. m. · Se cerró solo · visible 5 s\". Aviso de saturacion: \"Hay 6 notificaciones pendientes. Toca aquí para ver todas.\". Filas del historial: 7.",
+    "Despliegue: bundle index-BODVBtHd.js en http://127.0.0.1:4173/sigab-test/."
+  ],
+  "retirados": [],
+  "escrituras": [
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/",
+      "resultado": "al servidor (login 1)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada por page.route (exito)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada por page.route (error)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada por page.route (error)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada por page.route (error)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada por page.route (error)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada por page.route (error)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/reportes",
+      "resultado": "simulada por page.route (error)"
+    },
+    {
+      "metodo": "DELETE",
+      "ruta": "/sigab-test/api/sesiones/",
+      "resultado": "al servidor (sesion)"
+    }
+  ]
+}

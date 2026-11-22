@@ -1,0 +1,56 @@
+// | Fecha      | Nombre                   | Que se hizo |
+// |------------|--------------------------|-------------|
+// | 2026-11-22 | Juan Sebastian Gutierrez | Controles de mutacion de TC-M08-G027 reintento 1: reemplazo exacto de texto en src\ solo en memoria (transform de Vite); src\ no se toca |
+// Uso (copiado a la raiz del repo, sin .txt): QA_MUTACION=<nombre> npx vitest run --config vitest.mutacion.config.mts <spec>
+import { defineConfig, mergeConfig, type Plugin } from 'vite';
+import base from './vite.config';
+
+type Mutacion = { archivo: string; de: string; a: string }[];
+const MUTACIONES: Record<string, Mutacion> = {
+  umbral_0: [{ archivo: 'src/shared/design-system/ProcesoEnCurso.tsx',
+    de: 'setTimeout(() => setVisible(true), UMBRAL_PROCESO_MS + 1)', a: 'setTimeout(() => setVisible(true), 0)' }],
+  indicador_nunca: [{ archivo: 'src/shared/design-system/ProcesoEnCurso.tsx',
+    de: 'if (!visible) return null;', a: 'if (true) return null;' }],
+  aviso_nunca: [{ archivo: 'src/shared/design-system/ProcesoEnCurso.tsx',
+    de: 'setTimeout(() => setLargo(true), AVISO_LARGO_MS)', a: 'setTimeout(() => setLargo(false), AVISO_LARGO_MS)' }],
+  progreso_50: [{ archivo: 'src/shared/design-system/ProcesoEnCurso.tsx',
+    de: '{ mensaje, progreso = null, detalle }', a: '{ mensaje, progreso = 50, detalle }' }],
+  sin_fa3: [{ archivo: 'src/shared/api/errors.ts',
+    de: "(tiempoAgotado && i18n.t('errores.tiempo_agotado', { ns: 'common' }))", a: "(false && i18n.t('errores.tiempo_agotado', { ns: 'common' }))" }],
+  sin_title_cierre: [{ archivo: 'src/financial_valuation/pages/CierreView.tsx',
+    de: "title={cierre.cargando ? t('proceso.espera', { ns: 'common', operacion: t('cierre.operacion') }) : undefined}", a: 'title={undefined}' }],
+  sin_guarda_modal: [
+    { archivo: 'src/shared/design-system/ModalShell.tsx', de: 'useState(() => (bloqueante ? operacionEnCurso() : null))', a: 'useState(() => (bloqueante ? null : null))' },
+    { archivo: 'src/shared/design-system/ModalShell.tsx', de: 'const operacion = operacionEnCurso();', a: 'const operacion = null;' },
+  ],
+  indicador_pegado: [{ archivo: 'src/reportes/pages/ReportesPage.tsx',
+    de: 'setGenerando(false);', a: 'void 0;' }],
+};
+
+const nombre = process.env.QA_MUTACION ?? '';
+const mutacion = MUTACIONES[nombre];
+if (!mutacion) throw new Error(`QA_MUTACION desconocida: "${nombre}"`);
+const aplicadas = new Map<number, number>();  // el resultado del control solo vale si la consola trae una linea [QA_MUTACION] por reemplazo
+
+function mutar(): Plugin {
+  return {
+    name: 'qa-mutacion-g027',
+    enforce: 'pre',
+    transform(code, id) {
+      const ruta = id.replace(/\\/g, '/').split('?')[0];
+      let salida = code;
+      mutacion.forEach((m, i) => {
+        if (!ruta.includes(m.archivo) || !salida.includes(m.de)) return;
+        const n = salida.split(m.de).length - 1;
+        if (n !== 1) throw new Error(`mutacion ${nombre}[${i}]: ${n} coincidencias en ${ruta}`);
+        salida = salida.replace(m.de, m.a);
+        aplicadas.set(i, (aplicadas.get(i) ?? 0) + 1);
+        // eslint-disable-next-line no-console
+        console.log(`[QA_MUTACION] ${nombre}[${i}] aplicada en ${ruta}`);
+      });
+      return salida === code ? null : { code: salida, map: null };
+    },
+  };
+}
+
+export default mergeConfig(base, defineConfig({ plugins: [mutar()] }));

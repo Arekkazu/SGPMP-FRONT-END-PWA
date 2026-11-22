@@ -5,6 +5,7 @@
 | Fecha | Autor | Descripción |
 |---|---|---|
 | 2026-11-20 | Juan Sebastian Gutierrez | Fase 1 (Claude) y Fase 2 (Argon): spec Vitest y runner |
+| 2026-11-21 | Juan Sebastian Gutierrez | Reintento 1 (INC-M08-387-G020, GitHub #721): Fase 1 y adaptación de la herramienta (spec v1.1, runner con tokens.css); decisión B de Sebastian sobre la posición de las valoraciones |
 
 ---
 
@@ -120,3 +121,43 @@ Spec revisado entero contra el prompt (SHA `52BA51CC…`); runner comparado con 
 - En `rango_completo`, CP-02 da `max_error_pos_rel=N/A` porque asocia marcadores y horas por orden y solo compara con conteos iguales; con 4 eventos el checkpoint ya falla por el conteo, que es lo que pedía el control.
 - Prueba de la herramienta (`prueba_herramienta_v2`): tres corridas idénticas con 7 OK y CP-05 FALLA (posiciones 0,0000 y 1,0000 frente a 0,8864 y 0,9434); cada control falla solo donde debe y con su obtenido real; en `rango_completo` CP-05 pasa a OK.
 - **Desvío menor de Argon:** borró `evidencias/prueba_herramienta_v1/` (salida de la corrida que falló por el selector del eje Y, antes de detenerse). No era evidencia del producto.
+
+## Reintento 1 (2026-11-21): adaptación de la herramienta (Claude)
+
+**Cambio de Desarrollo.** `a74c51cb` y `d19d23c1` (INC-M08-387..390), integrados en `test-JuanSG` por `03086c80` (#732, incluye #725); HEAD del frontend `488f43f6`, `src/` sin cambios locales (`git diff --ignore-cr-at-eol` vacío). `HistorialPredictivoView.tsx` (SHA `6043535E…`): eje X con `rangoDelEje()` (:45-48, `fecha_inicio T00:00:00` a `fecha_fin T23:59:59.999` de `rango_fechas_aplicado`) y 6 marcas; puntos como `<circle>` propio; eventos como `<rect>` con `fill="var(--sem-error)"` (:363); `<title>` dentro de cada marcador; conectores, «N eventos» (`hp-grupo`) y zoom. Antes, `7297f934` (QA M08 CU04 H-02) movió cada valoración a la fecha de su predicción (:96-99).
+
+**Despliegue en TEST (2026-11-21, navegador integrado, sin sesión).** `index-BUhd1sjz.js`; el chunk `PrediccionPage-Dy0FYjn5.js` contiene `T23:59:59.999`, `hp-conector`, `hp-grupo` y `zoom_acercar`.
+
+**Spec de la ronda 1 sin cambios contra el código actual** (`prueba_herramienta_reintento1/spec_ronda1_sin_cambios.json`): 4 OK y 4 FALLA (CP-02, 03, 06 y 08) por la herramienta, no por el producto: el selector de eventos (`path`) no ve los `<rect>`, el texto de la valoración incluye su `<title>`. CP-05 ya daba OK (p1 en 0,8864).
+
+**Decisión de Sebastian (2026-11-21 19:14, opción B).** La marca de la valoración se mide en la fecha de su predicción (entrega; RF-106 Proceso 3 «marcadores sobre la línea» y CA-8 a «en esa posición»). La diferencia con el Proceso 2.1 («Retroalimentaciones (RF-72; ts = registro Veterinario)») queda como OBS-6 para los líderes.
+
+**Spec v1.1** (`B74EFCDA…`; respaldo de la ronda 1 en `fuentes_generador/ronda1/`, `52BA51CC…`). Checkpoints, esperados y fuentes literales; solo cambia la forma de medir (diff en `prueba_herramienta_reintento1/diff_spec_ronda1_v11.txt`):
+
+| Id | Qué cambia | Checkpoints |
+|---|---|---|
+| ADAPT-1 | Eventos: `path` o `rect` dentro de `.recharts-scatter-symbol`; centro del `rect` = `x + width/2` | CP-02, CP-06, CP-07, CP-08 |
+| ADAPT-2 | El rojo se reconoce también por `var(--sem-error)`; precondición 5: todas las definiciones de `--sem-error` en `tokens.css` son rojas (hoy `#c0280a` y `#e06050`) | CP-02 |
+| ADAPT-3 | Texto propio de la valoración (sin su `<title>`) y sin el marcador `hp-grupo` | CP-03, CP-05, CP-07, CP-08 |
+| ADAPT-4 | Opción B: el tiempo de cada valoración es el de su predicción (CP-02); el «último marcador» de CP-05 (valoración del 31/10, p7) se espera en la fecha de p7 (0,9298) | CP-02, CP-05 |
+
+Observaciones nuevas en el JSON: OBS-6 (decisión B) y OBS-7 (el dominio del eje se arma sin zona, :45-48; depende de la zona del equipo, como OBS-1).
+
+**Runner** (`D2266C7A…`; respaldo `543D1EEF…`): solo agrega `src\shared\design-system\tokens.css` a la lista de SHA de `src` y una fila de historial. ASCII, CRLF, sin BOM.
+
+**Prueba de la herramienta** (contenedor, `fe_src.tgz` del HEAD `488f43f6`, `TZ=America/Bogota`; `prueba_herramienta_reintento1/`): normal ×3 idénticas, 8/8 OK, 5 precondiciones OK. Controles por mutación sobre la copia del contenedor:
+
+| Control | Mutación | Resultado |
+|---|---|---|
+| dominio_datos | eje vuelve a `['dataMin','dataMax']` | solo CP-05 FALLA (0,0000 y 1,0000) |
+| evento_azul | relleno del evento `var(--info-600)` | solo CP-02 FALLA |
+| evento_path_ronda1 | evento como `path` rojo (mecanismo de la ronda 1) | 8/8 OK |
+| retro_en_su_fecha | valoraciones en su propia fecha | solo CP-02 FALLA (`max_error_pos_rel=0,2395`) |
+| iconos_cambiados | ✓ y ✗ intercambiados | solo CP-03 FALLA |
+| sin_eventos_dibujados | scatter de eventos vacío | CP-02, CP-06 y CP-08 FALLA |
+| token_no_rojo | `--sem-error` oscuro en azul | precondición falsa: los 8 FALLA (el runner la trata como corrida inválida) |
+| grupo_en_885 | el 885 simulado trae un grupo (marcador «N eventos») | 8/8 OK |
+
+Ningún control dejó «No alcanzado». Tras los controles, la copia del contenedor se restauró del `fe_src.tgz` (SHA de la vista igual al del equipo) y una corrida normal dio lo mismo.
+
+**Nota (2026-11-21 19:55):** por la lección de G021, el respaldo `fuentes_generador/ronda1/tc-m08-g020.test.tsx` se renombró a `tc-m08-g020.test.tsx.txt` (mismo SHA `52BA51CC…`) para que ningún `vitest` sin ruta lo tome.

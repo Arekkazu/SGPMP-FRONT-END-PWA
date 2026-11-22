@@ -1,0 +1,38 @@
+--- /dev/fd/63	2026-11-21 20:25:35.132614832 -0500
++++ /dev/fd/62	2026-11-21 20:25:35.132614832 -0500
+@@ -1,6 +1,7 @@
+ # | Fecha      | Nombre                   | Que se hizo |
+ # |------------|--------------------------|-------------|
+ # | 2026-11-20 | Juan Sebastian Gutierrez | Runner de TC-M08-G022 (RF-106): Vitest (CP-01 a CP-10) + Playwright contra TEST (CP-11 a CP-14), reporte unido, escaneo al final. Base: runner de G026 |
++# | 2026-11-21 | Juan Sebastian Gutierrez | Reintento 1: CP-02 pasa a observacion (decision de Sebastian 2026-11-20); Vitest = 9 checkpoints y se exige la lista CP-01, CP-03 a CP-14. Nada mas cambia |
+ #
+ # Uso (desde la carpeta del caso, PowerShell 5.1):
+ #   .\ejecutar_tc_m08_g022.ps1                (ronda 1)
+@@ -13,14 +14,14 @@
+ #
+ # Codigos de salida:
+ #   0 todos los checkpoints OK | 1 hay checkpoints FALLA (corrida valida) | 2 configuracion o precondicion local
+-#   3 corrida invalida (parcial ausente, checkpoints distintos de 10 + 4, checkpoint no alcanzado, precondicion falsa,
++#   3 corrida invalida (parcial ausente, checkpoints distintos de 9 + 4, checkpoint no alcanzado, precondicion falsa,
+ #     escritura no permitida o exit incoherente) | 4 hallazgos en el escaneo de secretos | 6 resultados\ cambio
+ param(
+   [int]$Reintento = 0
+ )
+ $ErrorActionPreference = 'Stop'
+ $tc = 'TC-M08-G022'
+-$cpVitest = 10
++$cpVitest = 9
+ $cpPlaywright = 4
+ $frontUrl = 'https://api.inmero.co/sigab-test/'
+ $raiz = $PSScriptRoot
+@@ -184,8 +185,8 @@
+   if ($nP -ne $cpPlaywright) { $invalida.Add("checkpoints de Playwright = $nP, se esperaban $cpPlaywright") }
+   if ($cps.Count -ne ($cpVitest + $cpPlaywright)) { $invalida.Add("checkpoints = $($cps.Count), se esperaban $($cpVitest + $cpPlaywright)") }
+   $pasos = @($cps | ForEach-Object { $_.paso })
+-  for ($i = 1; $i -le ($cpVitest + $cpPlaywright); $i++) {
+-    $id = 'CP-{0:D2}' -f $i
++  $idsEsperados = @('CP-01') + @(3..14 | ForEach-Object { 'CP-{0:D2}' -f $_ })
++  foreach ($id in $idsEsperados) {
+     if (@($pasos | Where-Object { $_ -eq $id }).Count -ne 1) { $invalida.Add("$id ausente o repetido") }
+   }
+   foreach ($c in $cps) {

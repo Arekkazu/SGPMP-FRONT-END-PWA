@@ -4,6 +4,8 @@
 |---|---|---|
 | 2026-11-20 | Juan Sebastian Gutierrez | Fase 1 y Fase 2: Vitest (CP-01 a CP-20) + Playwright contra TEST (CP-21 a CP-24), probados en el contenedor; pendiente la corrida oficial |
 | 2026-11-20 | Juan Sebastian Gutierrez | Corrida oficial validada (Rechazado 17/24), promovida a `resultados/`; caso cerrado (ronda 1). Issue único INC-M08-NN-G026 |
+| 2026-11-22 | Claude / Juan Sebastian Gutierrez | Reintento 1 (#706, INC-M08-385-G026): Fase 1, specs v1.1 (ADAPT-1 a ADAPT-4, aprobados por Sebastian) y runner con dos archivos más de `src` en su lista de SHA; prueba de la herramienta en `evidencias/prueba_herramienta_reintento1/`; respaldo de la ronda 1 en `evidencias/fuentes_generador/ronda1/*.txt` (sección 9) |
+| 2026-11-22 | Claude / Juan Sebastian Gutierrez | Reintento 1 cerrado: corrida oficial `qa-m08-g026-20261122-141304` Aprobado 24/24, promovida a `resultados/resultado_TC-M08-G026_reintento1.json` por orden de Sebastian (sección 9.6) |
 
 **Casos:** TC-M08-065 (cola de errores y saturación), TC-M08-066 (coexistencia), TC-M08-067 (sin duplicados) y TC-M08-074 (metadatos e historial de sesión).
 
@@ -151,3 +153,83 @@ Previsión: **17 OK y 7 FALLA** (CP-06, CP-16 a CP-19, CP-22 y CP-23), es decir,
 - **Issue:** uno solo, INC-M08-NN-G026, con los cuatro defectos y siete observaciones (decisión de Sebastian, 2026-11-20). Falta el NN.
 - **Ajuste para la próxima versión del spec de Playwright:** enmascarar también el pie del menú lateral en las capturas, porque deja leer parte del nombre de la cuenta.
 - **Reevaluación:** reintento 1 (`-Reintento 1`, reporte `resultado_TC-M08-G026_reintento1.json`) cuando Desarrollo despliegue la corrección en TEST.
+
+## 9. Reintento 1 (2026-11-22)
+
+### 9.1 Cambio de Desarrollo (observado)
+
+- PR «Incidencias de QA de M08», issue 706 (INC-M08-385-G026): commit `ac134ec1`, integrado en `test-JuanSG` por `03086c80` (#732). Frontend HEAD `af93ae87` (`src/` sin cambios locales). Entre `f557e23a` (ronda 1) y HEAD también entraron `b370f754` (Escape lee la opción vigente en `useModalA11y`) y M8-14 (2026-11-19: el ícono de sincronización pasa al AppBar, `App.tsx` `estado={<EstadoSincronizacion />}`).
+- `useToast.ts` (`D9860DF0…`): `RegistroToast` con `tipo_retroalimentacion`, `timestamp_mostrado`, `duracion_visible`, `bloquea_interfaz`; `registrar()`/`marcar()` (:86-98); `descartarCola()` (estado `descartado`) y `registrarModalCritico()` (:177-188).
+- `ToastHost.tsx`: descarta la cola cuando cambia el primer segmento de la ruta (:24-30); historial `ModalShell lateral`; meta «hora · estado[ · visible N s]» con `timestamp_mostrado ?? creado` (:63-65).
+- `ModalShell.tsx`: el modal bloqueante se registra en el historial y no se abre con una operación en curso (`operacionEnCurso.ts`, arreglo de G027): avisa «Espera a que finalice … antes de continuar.» y se cierra.
+- `Layout.css`: `.ds-toasts { top: calc(var(--topbar-h) + var(--s3)) }`; `.ds-modal--lateral` (borde derecho, 420 px, alto `100dvh`).
+- `useLogout.ts`: `limpiarToasts()` antes de `location.replace`.
+- **Despliegue en TEST** (navegador integrado, sin sesión, 2026-11-22): `index-BUhd1sjz.js` y `index-Cd0A_9s-.css` con `top:calc(var(--topbar-h) + var(--s3))`, `ds-modal--lateral`, `timestamp_mostrado`, `bloquea_interfaz`, `CONFIRMACION_ACCION_CRITICA`, «Descartado al cambiar de sección» y «visible {{segundos}} s».
+
+### 9.2 Specs de la ronda 1 sin cambios contra el código actual
+
+Contenedor de Claude, `src/` de `af93ae87` (`prueba_herramienta_reintento1/ronda1_sin_cambios/`):
+- **Vitest:** 10 OK / 10 FALLA, todas de la herramienta: CP-05 y CP-14 exigían que la meta **terminara** en el estado (ahora sigue «· visible N s»); CP-09 esperaba el indicador 1 s y ahora aparece a los 3,001 s (arreglo de G027, RF-107 8.5 paso 3); su POST diferido quedó sin resolver, la operación siguió «en curso» (store de módulo) y los `ModalShell` bloqueantes de CP-10 y CP-14 a CP-20 no se abrieron («No alcanzado»); la precondición «`EstadoSincronizacion` hermano de `<main>`» fue falsa (M8-14).
+- **Playwright** (build local + `servidor_api_simulada.mjs.txt`, derivado del de G024 con la ficha y los eventos del 885 y el permiso 29/C): 4/4 OK; la máscara `.ds-appbar__right` tapaba el ícono que mide CP-24 y el pie del menú lateral seguía sin máscara.
+- Sonda de diagnóstico de la Fase 1 (`sonda_fase1/`): con las tres fallas de herramienta corregidas en una copia, 20/20.
+
+### 9.3 Specs v1.1 (aprobados por Sebastian, 2026-11-22)
+
+- **ADAPT-1 (CP-09, OBS-3 y guarda de fuga):** el indicador se espera hasta 5 s; si no aparece, CP-09 da FALLA con lo medido (no «No alcanzado»); CP-09 y OBS-3 tienen límite propio de 20 s (el de Vitest, 5 s, las cortaba y el código seguía en segundo plano: en el primer control anotó el conteo de peticiones de la prueba siguiente). Toda respuesta diferida se resuelve en `afterEach` y se espera a que `operacionEnCurso()` quede vacía; CP-10 y CP-14 registran la precondición «Sin operación en curso heredada».
+- **ADAPT-2 (CP-05, CP-14):** el estado de una fila del historial es el segundo campo de «hora · estado[ · visible N s]» (`estadoDeMeta`).
+- **ADAPT-3 (CP-10):** el spec monta `.ds-app-content > header.ds-appbar > .ds-appbar__right > EstadoSincronizacion`, seguido de `main`; precondiciones literales nuevas sobre `App.tsx` (`estado={<EstadoSincronizacion />}` entre `<AppBar` y `<main`, una sola vez) y `AppBar.tsx` (`{estado}` primer hijo de `.ds-appbar__right`).
+- **ADAPT-4 (capturas de Playwright):** máscaras `.ds-appbar__avatar` y `.ds-sidebar__footer` en lugar de `.ds-appbar__right`.
+- Observaciones de texto fijo reescritas porque describían el código anterior: OBS-1 (`FUERA_DEL_INERT`, el ícono en el AppBar), OBS-5 (`useToast.ts`:153), OBS-7a (ahora mide la clase `ds-modal--lateral`), OBS-8 (`useToast.ts`:106-108), OBS-9 (`ReportesPage.tsx`:272) y el texto del obtenido de CP-17 («el panel muestra duraciones» detecta «visible N s»).
+- Runner: solo agrega `AppBar.tsx` y `operacionEnCurso.ts` a la lista de SHA de `src`. Sin cambios: checkpoints, esperados, fuentes, retirado, guardia de escrituras, `playwright.config.ts` y `unir_reporte_tc_m08_g026.mjs`.
+- Diffs: `prueba_herramienta_reintento1/diff_*_ronda1_vs_v1.1.txt`.
+
+### 9.4 Prueba de la herramienta (`evidencias/prueba_herramienta_reintento1/`)
+
+Contenedor de Claude, `src/` de `af93ae87`. Controles con plugin de Vite que reemplaza texto exacto en memoria (`controles/vite.control_*.config.ts`; `vitest run --config` o `vite build --config`); `src/` no se toca.
+
+| Corrida | Resultado |
+|---|---|
+| `vitest_normal_1` a `3` | 20/20, exit 0, todas las precondiciones OK (CP-09 tarda ~3,1 s) |
+| `vitest_control_sin_descarte` | solo CP-06 FALLA |
+| `vitest_control_hora_llegada` | solo CP-16 FALLA |
+| `vitest_control_sin_duracion` | solo CP-17 FALLA (CP-05 y CP-14 siguen OK sin «visible N s»: ADAPT-2 acepta las dos formas) |
+| `vitest_control_sin_bloquea` | solo CP-18 FALLA |
+| `vitest_control_sin_registro_modal` | solo CP-19 FALLA |
+| `vitest_control_indicador_nunca` | solo CP-09 FALLA («no visible en 5.000 ms … POST /reportes enviados: 1»); OBS-3 registra «Indicador visible en 5 s: no» |
+| `vitest_control_sync_oculto` | solo CP-10 FALLA |
+| `vitest_control_estado_crudo` | CP-05 y CP-14 FALLA (control de ADAPT-2) |
+| `vitest_control_fuga_operacion` (spec sin la resolución del `afterEach` + `indicador_nunca`) | precondición «Sin operación heredada» falsa en CP-10 y CP-14: el runner dejaría la corrida inválida |
+| `pw_normal_1` a `3` | 4/4, exit 0; avisos en y=76 bajo el AppBar (y=64); panel en x=946, 420×768; ícono visible |
+| `pw_control_avisos_abajo` | solo CP-22 FALLA (y=661 y 699) |
+| `pw_control_historial_centrado` | solo CP-23 FALLA (x=323, 720×720) |
+| `pw_control_confirmar_baja` | precondición «Ninguna escritura no permitida» falsa (`POST …/885/eventos/baja` abortado); el simulador no recibió la escritura |
+
+Ningún «No alcanzado» fuera de los controles que lo provocan a propósito. Capturas revisadas: avatar y pie del menú enmascarados, ícono «Sincronizado» visible en CP-24. SHA de la prueba en `prueba_herramienta_reintento1/SHA256SUMS.txt`.
+
+### 9.5 Archivos del reintento 1 (SHA-256 en la entrega)
+
+`tc-m08-g026.test.tsx` v1.1, `tc-m08-g026.pw.ts` v1.1 y `ejecutar_tc_m08_g026.ps1` (reintento 1); `playwright.config.ts` y `unir_reporte_tc_m08_g026.mjs` sin cambios. Respaldos de la ronda 1 en `evidencias/fuentes_generador/ronda1/` (`*.test.tsx.txt`, `*.pw.ts.txt`, `*.ps1.txt`, `*.mjs.txt`, `*.config.ts.txt`, `DISENO_TC-M08-G026.md.txt`).
+
+**Hallazgo de la Fase 1:** `evidencias/PROMOCION_TC-M08-G026.txt`, citado en la sección 8 y en el estado, no existe en el equipo; el reporte promovido sí (`resultados/resultado_TC-M08-G026.json`, `FB2E897F…`).
+
+### 9.6 Corrida oficial y promoción
+
+- **RUN** `qa-m08-g026-20261122-141304` (staging `evidencias/run-20261122-141304/`), 2026-11-22 14:13, exit 0, `-Reintento 1`, ejecutada por el agente con el prompt cerrado (SHA, HEAD, `Test-Path` del `_reintento1.json` = False, `ParseFile`, `vitest list` = 13 pruebas, `playwright --list` = 1 prueba en 1 archivo, una ejecución).
+- **Validada por Claude contra los archivos del equipo:** SHA de los 5 archivos del caso y de los 16 de `src` (HEAD `af93ae87`, sin cambios locales; `AppBar.tsx` `944ED474…`, `operacionEnCurso.ts` `47627F99…`); una sola carpeta `run-*` nueva, sin archivos fuera del staging; 24 checkpoints OK, ninguno «No alcanzado»; 16 precondiciones OK (incluidas las de ADAPT-1 y ADAPT-3 y el bundle `index-BUhd1sjz.js`); mismo `run_id` y reintento en las dos partes; peticiones distintas de GET: login, 2 refresh, 7 `POST /reportes` simulados y el `DELETE /sesiones/` del cierre; escaneo 0 hallazgos y revisión manual sin `eyJ`, `Bearer` ni correos; `pw-salida` solo con `.last-run.json`; capturas (tema oscuro) con el avatar y el pie del menú enmascarados y el ícono «Sincronizado» visible; la parte Vitest es idéntica, obtenido por obtenido, a `vitest_normal_1`.
+
+| CP | Obtenido (reintento 1) | Ronda 1 |
+|---|---|---|
+| CP-01 a CP-05, CP-07, CP-08, CP-11 a CP-15, CP-20 | Igual que en la prueba normal | OK |
+| CP-06 | 0 en cola tras pasar a `/reportes`; al cerrar E1 no entra E4 | FALLA → **OK** |
+| CP-09, CP-10 | Indicador «Generando el reporte...» y luego el error; ícono en el AppBar sin ocultar | OK |
+| CP-16 | F4 en 9:05 a. m. (`timestamp_mostrado`) | FALLA → **OK** |
+| CP-17 | 5.000 ms y 30.000 ms | FALLA → **OK** |
+| CP-18 | `false` en los banners | FALLA → **OK** |
+| CP-19 | Modal crítico en el historial con `bloquea_interfaz=true` | FALLA → **OK** |
+| CP-21 | `/login` con documento nuevo, 0 avisos | OK |
+| CP-22 | Avisos en y=76 bajo el AppBar (y=64) | FALLA → **OK** |
+| CP-23 | Panel en x=946, 420 × 768 | FALLA → **OK** |
+| CP-24 | Ícono visible («Sincronizado») con «Confirma la baja» abierto | OK |
+
+- **Observaciones que siguen:** OBS-1 (el ícono queda `inert` y bajo el overlay del modal: contradicción 8.2 nivel 1 / nivel 5, para Análisis), OBS-3, OBS-5, OBS-6, OBS-8 y OBS-9 (sin cambios de fondo respecto de la ronda 1).
+- **Promoción** (2026-11-22, por orden de Sebastian): `resultados/resultado_TC-M08-G026_reintento1.json` = `118E9147E715F84598845744845ECBD4F6226790B76A9748737EC77CA59287AA`, igual en origen y destino; ronda 1 intacta (`FB2E897F…`). Registro `evidencias/PROMOCION_TC-M08-G026_reintento1.txt`. Lectura: total 24, passed 24, failed 0 → **Aprobado**. INC-M08-385-G026 (GitHub 706) corregido.

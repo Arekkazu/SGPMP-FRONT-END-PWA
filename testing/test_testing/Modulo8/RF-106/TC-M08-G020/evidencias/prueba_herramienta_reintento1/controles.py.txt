@@ -1,0 +1,62 @@
+"""Controles por mutacion del reintento 1 de G020: mutan una COPIA en el contenedor, corren el spec y restauran."""
+import json, os, subprocess, sys
+
+FE = '/home/claude/g020r1/fe'
+VISTA = 'src/prediction/pages/HistorialPredictivoView.tsx'
+TOKENS = 'src/shared/design-system/tokens.css'
+SPEC = 'testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx'
+TODOS = [f'CP-0{i}' for i in range(1, 9)]
+
+GRUPO_VIEJO = ("        retroalimentaciones: RETROS_BASE.map((r) => ({ ...r })),\n"
+               "        grupos: [],\n"
+               "        correspondencias: [],\n"
+               "        tvco: { ...TVCO_BASE },\n"
+               "        pendientes: pendientesDeBase(preds),\n"
+               "        metadatos: {\n"
+               "          total_inferencias: 7,\n"
+               "          total_eventos_sanitarios: 2,")
+GRUPO_NUEVO = GRUPO_VIEJO.replace("grupos: [],", "grupos: [[{ ...EVENTOS_BASE[0] }, { ...PREDICCIONES_BASE[1] }]],")
+
+CONTROLES = [
+    ('dominio_datos', VISTA, [("domain={visible ?? ['dataMin', 'dataMax']}", "domain={['dataMin', 'dataMax']}")], ['CP-05']),
+    ('evento_azul', VISTA, [('fill="var(--sem-error)">', 'fill="var(--info-600)">')], ['CP-02']),
+    ('evento_path_ronda1', VISTA, [
+        ('<rect x={(p.cx ?? 0) - 5} y={(p.cy ?? 0) - 5} width={10} height={10} fill="var(--sem-error)">',
+         '<path d={`M${(p.cx ?? 0) - 5},${(p.cy ?? 0) - 5}L${(p.cx ?? 0) + 5},${(p.cy ?? 0) + 5}`} fill="var(--danger-600, #dc2626)">'),
+        ('</rect>', '</path>')], []),
+    ('retro_en_su_fecha', VISTA, [('return { ...r, x: p ? tiempo(p) : tiempo(r),', 'return { ...r, x: tiempo(r),')], ['CP-02']),
+    ('iconos_cambiados', VISTA, [("{ CORRECTO: '✓', INCORRECTO: '✗',", "{ CORRECTO: '✗', INCORRECTO: '✓',")], ['CP-03']),
+    ('sin_eventos_dibujados', VISTA, [('<Scatter data={dibujo?.eventos ?? []}', '<Scatter data={[]}')], ['CP-02', 'CP-06', 'CP-08']),
+    ('token_no_rojo', TOKENS, [('--sem-error: #e06050;', '--sem-error: #2563eb;')], TODOS),
+    ('grupo_en_885', SPEC, [(GRUPO_VIEJO, GRUPO_NUEVO)], []),
+]
+
+salida = []
+for nombre, rel, reemplazos, esperadas in CONTROLES:
+    ruta = os.path.join(FE, rel)
+    original = open(ruta, encoding='utf-8').read()
+    mut = original
+    for viejo, nuevo in reemplazos:
+        n = mut.count(viejo)
+        assert n == 1, f'{nombre}: {n} apariciones de {viejo[:60]!r}'
+        mut = mut.replace(viejo, nuevo)
+    staging = f'/home/claude/g020r1/ctl_{nombre}'
+    try:
+        open(ruta, 'w', encoding='utf-8', newline='').write(mut)
+        env = dict(os.environ, TZ='America/Bogota', STAGING_DIR=staging, REINTENTO='1', RUN_ID=f'control-{nombre}')
+        p = subprocess.run(['pnpm', 'exec', 'vitest', 'run', SPEC, '--reporter=verbose'], cwd=FE, env=env,
+                           capture_output=True, text=True, timeout=300)
+        open(f'/home/claude/g020r1/consola_ctl_{nombre}.txt', 'w').write(p.stdout + p.stderr)
+    finally:
+        open(ruta, 'w', encoding='utf-8', newline='').write(original)
+    rep = json.load(open(f'{staging}/resultado_TC-M08-G020_reintento1.json'))
+    fallas = [c['paso'] for c in rep['checkpoints'] if c['estado'] == 'FALLA']
+    no_alc = [c['paso'] for c in rep['checkpoints'] if 'No alcanzado' in c['obtenido']]
+    ok = sorted(fallas) == sorted(esperadas) and not no_alc
+    linea = {'control': nombre, 'exit': p.returncode, 'fallas': fallas, 'esperadas': esperadas,
+             'no_alcanzado': no_alc, 'como_previsto': ok,
+             'obtenidos_falla': {c['paso']: c['obtenido'][:260] for c in rep['checkpoints'] if c['estado'] == 'FALLA'}}
+    salida.append(linea)
+    print(json.dumps(linea, ensure_ascii=False))
+json.dump(salida, open('/home/claude/g020r1/controles_resultado.json', 'w'), ensure_ascii=False, indent=2)
+sys.exit(0 if all(x['como_previsto'] for x in salida) else 1)

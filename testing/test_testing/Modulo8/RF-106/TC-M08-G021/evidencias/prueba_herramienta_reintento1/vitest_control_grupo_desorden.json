@@ -1,0 +1,136 @@
+{
+  "tc": "TC-M08-G021",
+  "parte": "vitest",
+  "reintento": 1,
+  "run_id": "control-grupo_desorden",
+  "fecha": "2026-11-22T00:41:46.417Z",
+  "summary": {
+    "total": 9,
+    "ok": 8,
+    "falla": 1,
+    "veredicto": "Rechazado"
+  },
+  "precondiciones": [
+    {
+      "nombre": "Zona horaria del proceso es America/Bogota",
+      "ok": true,
+      "detalle": "timeZone=America/Bogota"
+    },
+    {
+      "nombre": "PrediccionPage.tsx protege la pestaña con historial_clinico_predictivo en lectura",
+      "ok": true,
+      "detalle": "permisoNombre: ['historial_clinico_predictivo', ACCION_R]"
+    },
+    {
+      "nombre": "Textos de es-CO usados por la medición (prediction.json, historialpredictivo)",
+      "ok": true,
+      "detalle": "{\"modo_AGRUPADO\":\"Agrupada\",\"modo_LINEAL\":\"Lineal\",\"n_eventos_other\":\"{{count}} eventos\",\"grupos_other\":\"{{count}} grupos de eventos cercanos\"}"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 4001 (correspondencias y grupos)",
+      "ok": true,
+      "detalle": "ventana=12; correspondencias=[\"P1-E1 600 \\\"Diferencia: 10 h\\\" false\",\"P2-E2 720 \\\"Diferencia: 12 h\\\" false\",\"P5-E5 600 \\\"Diferencia: 10 h\\\" false\"]; grupos=[]"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 4002 (correspondencias y grupos)",
+      "ok": true,
+      "detalle": "ventana=12; correspondencias=[\"P6-E6 30 \\\"Diferencia: 0 h 30 min\\\" true\",\"P7-E7 60 \\\"Diferencia: 1 h\\\" true\",\"P8-E8 61 \\\"Diferencia: 1 h 1 min\\\" false\",\"P9-E9 20 \\\"Diferencia: 0 h 20 min\\\" true\"]; grupos=[\"P6,E6\",\"P7,E7\",\"P9,E9,R9\"]"
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "caso": "TC-M08-052 Δt 10 h (4001, Lineal)",
+      "esperado": "Exactamente 1 conector punteado (discontinuo) entre el punto de P1 y el marcador de E1",
+      "fuente": "RF-106 Restricción 5b; Proceso 2.1 (regla de correspondencia R5b: vínculo visual con conector discontinuo); CA-7 (A)",
+      "obtenido": "puntos=5/5; eventos=5/5; conectores_P1_E1=1; punteados_fuera_de_la_cuadricula=3",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "caso": "TC-M08-052 Δt 12 h 00 min (4001, Lineal)",
+      "esperado": "Exactamente 1 conector punteado entre el punto de P2 y el marcador de E2",
+      "fuente": "RF-106 Restricción 5b (|Δt| ≤ ventana de 12 h); Proceso 2.1",
+      "obtenido": "puntos=5/5; eventos=5/5; conectores_P2_E2=1; punteados_fuera_de_la_cuadricula=3",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "caso": "TC-M08-052 Δt -10 h, el evento antes de la predicción (4001, Lineal)",
+      "esperado": "Exactamente 1 conector punteado entre el punto de P5 y el marcador de E5",
+      "fuente": "RF-106 Restricción 5b (ventana temporal bidireccional de ±12 h)",
+      "obtenido": "puntos=5/5; eventos=5/5; conectores_P5_E5=1; punteados_fuera_de_la_cuadricula=3",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "caso": "TC-M08-052 Δt 12 h 01 min y 20 h (4001, Lineal)",
+      "esperado": "0 conectores entre P3 y E3 y 0 conectores entre P4 y E4 (marcadores independientes)",
+      "fuente": "RF-106 Restricción 5b (si la diferencia supera la ventana: elementos independientes); CA-7 (B)",
+      "obtenido": "puntos=5/5; eventos=5/5; conectores_P3_E3=0; conectores_P4_E4=0; punteados_fuera_de_la_cuadricula=3",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "caso": "TC-M08-052 en modo Agrupada (4001)",
+      "esperado": "En modo Agrupada: exactamente 1 conector punteado en P1-E1, P2-E2 y P5-E5, y 0 conectores en P3-E3 y P4-E4",
+      "fuente": "RF-106 CA-7 (verificar renderizado en LINEAL y AGRUPADO); Restricción 5b",
+      "obtenido": "puntos/eventos=5/5; conectores:; P1-E1=1; P2-E2=1; P3-E3=0; P4-E4=0; P5-E5=1",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "caso": "TC-M08-053 colisión a 30 min (4002)",
+      "esperado": "En Lineal y en Agrupada hay en la gráfica un marcador \"2 eventos\" en la posición de P6/E6",
+      "fuente": "RF-106 Restricción 5c; Proceso 2.1 (Colisión R5c: marcador agrupado \"N eventos\"); CA-7 (C)",
+      "obtenido": "P6/E6: LINEAL marcadores_N_eventos=[\"2 eventos\"@x=687.8, \"2 eventos\"@x=693.5, \"3 eventos\"@x=704.9] (miembros x=687.8/687.8); AGRUPADO marcadores_N_eventos=[\"2 eventos\"@x=687.8, \"2 eventos\"@x=693.5, \"3 eventos\"@x=704.9] (miembros x=687.8/687.8); lista_agrupado=[\"2 eventos · 1/10/26, 10:00 a. m.Predicción · 1/10/26, 10:00 \", \"2 eventos · 4/10/26, 10:00 a. m.Predicción · 4/10/26, 10:00 \", \"3 eventos · 10/10/26, 10:00 a. m.Predicción · 10/10/26, 10:0\"]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "caso": "TC-M08-053 colisión a 60 min (4002)",
+      "esperado": "En Lineal y en Agrupada hay en la gráfica un marcador \"2 eventos\" en la posición de P7/E7",
+      "fuente": "RF-106 Restricción 5c (|Δt| ≤ 1 h)",
+      "obtenido": "P7/E7: LINEAL marcadores_N_eventos=[\"2 eventos\"@x=687.8, \"2 eventos\"@x=693.5, \"3 eventos\"@x=704.9] (miembros x=693.5/693.6); AGRUPADO marcadores_N_eventos=[\"2 eventos\"@x=687.8, \"2 eventos\"@x=693.5, \"3 eventos\"@x=704.9] (miembros x=693.5/693.6); lista_agrupado=[\"2 eventos · 1/10/26, 10:00 a. m.Predicción · 1/10/26, 10:00 \", \"2 eventos · 4/10/26, 10:00 a. m.Predicción · 4/10/26, 10:00 \", \"3 eventos · 10/10/26, 10:00 a. m.Predicción · 10/10/26, 10:0\"]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08",
+      "caso": "TC-M08-053 61 min, cercanos no colisionados (4002, Lineal)",
+      "esperado": "Sin marcador de grupo en P8/E8 y exactamente 1 conector punteado entre el punto de P8 y el marcador de E8",
+      "fuente": "RF-106 Restricción 5d; Proceso 2.1 (Cercanos no colisionados R5d: conector discontinuo)",
+      "obtenido": "puntos=4/4; eventos=4/4; sin_marcador_grupo=true [\"2 eventos\"@x=687.8, \"2 eventos\"@x=693.5, \"3 eventos\"@x=704.9] (miembros x=699.2/699.3); conectores_P8_E8=1",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-09",
+      "caso": "TC-M08-053 grupo de tres (4002, Agrupada)",
+      "esperado": "Al expandir los grupos, el grupo de tres lista sus elementos en el orden retroalimentación (R9), evento sanitario (E9), predicción (P9); cada elemento se identifica por su fecha y hora",
+      "fuente": "RF-106 Restricción 5c (prioridad visual al expandir: 1° RF-72, 2° RF-41, 3° RF-67); Proceso 2.1",
+      "obtenido": "details_open=true; grupos=3; grupo_de_3=[\"Predicción · 10/10/26, 10:00 a. m.\", \"historialpredictivo.tipo.DIAGNOSTICO · 10/10/26, 10:20 a. m.\", \"Evaluación · 10/10/26, 10:40 a. m.\"]; orden_identificado=[P9, E9, R9]",
+      "estado": "FALLA"
+    }
+  ],
+  "observaciones": [
+    "OBS-9 (medida, 4001, Lineal; retirado como checkpoint): título de cada marcador de evento: [E1: \"1/10/26, 8:00 p. m. · Evento QA 5101 · Vet QA · Diferencia: 10 h\"; E2: \"4/10/26, 10:00 p. m. · Evento QA 5102 · Vet QA · Diferencia: 12 h\"; E3: \"7/10/26, 10:01 p. m. · Evento QA 5103 · Vet QA\"; E4: \"11/10/26, 6:00 a. m. · Evento QA 5104 · Vet QA\"; E5: \"13/10/26, 12:00 a. m. · Evento QA 5105 · Vet QA · Diferencia: 10 h\"]. Esperado por R5d para E2 \"Diferencia: 12 h\" y para E5 \"Diferencia: 10 h\".",
+    "OBS-5 (medida, 4001): la vista lista las correspondencias como texto, debajo de la gráfica, en un desplegable (3 elementos): [\"Predicción del 1/10/26, 10:00 a. m. y evento sanitario del 1/10/26, 8:00 p. m.: Diferencia: 10 h\", \"Predicción del 4/10/26, 10:00 a. m. y evento sanitario del 4/10/26, 10:00 p. m.: Diferencia: 12 h\", \"Predicción del 13/10/26, 10:00 a. m. y evento sanitario del 13/10/26, 12:00 a. m.: Diferencia: 10 h\"]. Reintento 1: la vista arma «Predicción del … y evento sanitario del …» (prediction.json, historialpredictivo.par) con la diferencia que envía el backend (historial_predictivo.py:101).",
+    "OBS-4 (medida, 4002, Lineal): en la posición del grupo P6/E6 siguen dibujados 1 punto(s) de la línea y 1 marcador(es) de evento por separado.",
+    "OBS-9 (medida, 4002, Lineal; retirado como checkpoint): título del marcador de E8 (61 min) = \"7/10/26, 11:01 a. m. · Evento QA 5203 · Vet QA · Diferencia: 1 h 1 min\". Esperado por R5d: \"Diferencia: 1 h 1 min\".",
+    "OBS-7 (medida, 4002, Agrupada): etiquetas de tipo al expandir los grupos: [\"Predicción\", \"historialpredictivo.tipo.CONTROL_PREVENTIVO\", \"historialpredictivo.tipo.DIAGNOSTICO\", \"Evaluación\"]. Con la forma real de la respuesta, el \"tipo\" de un evento sanitario es su tipo clínico (DIAGNOSTICO, TRATAMIENTO…), porque serial() pone {\"tipo\": m.tipo, ..., **m.datos} y datos trae \"tipo\": e[\"tipo\"] (consultar_historial_predictivo_use_case.py:105 y :118-119); la vista traduce historialpredictivo.tipo.<tipo> (HistorialPredictivoView.tsx:255) y espera EVENTO_SANITARIO (historialPredictivoApi.ts:8; tooltip :130).",
+    "OBS-1: los límites (≤ 12 h y ≤ 1 h, inclusivos y en los dos sentidos) los calcula el backend (historial_predictivo.py:21, :84, :96-97); aquí el simulador los replica. Con datos reales se verifican en CP-10 a CP-13.",
+    "OBS-2: la agrupación del backend es encadenada (historial_predictivo.py:84 compara con el último del grupo): marcadores a menos de 1 h entre sí forman un solo grupo aunque el primero y el último estén a más de 1 h. R5c no define las cadenas.",
+    "OBS-3: CA-12 dice ±24 h y la Restricción 5b ±12 h (configurable en M09); se usa 12 h (valor por defecto y el de TEST).",
+    "OBS-6 (reintento 1): la vista usa ahora el campo \"colision\": dibuja el conector y pone la diferencia en el título solo para las correspondencias con colision=false (HistorialPredictivoView.tsx:199 y :217); un par en colisión va al marcador \"N eventos\".",
+    "OBS-8 (reintento 1): el arreglo quitó el Tooltip de recharts (a74c51cb); cada marcador lleva su propio <title> (HistorialPredictivoView.tsx:358, :364, :375 y :385), que el navegador muestra al pasar el ratón. Lo que ve el usuario se mide en navegador real (CP-14). Texto de la ronda 1: en recharts 3.10 el ComposedChart solo admite tooltip por eje (ComposedChart.js, allowedTooltipTypes = ['axis']) y con el eje X numérico el tooltip solo se ubica en los extremos del dominio (tooltipSelectors.js, scale.domain()); además marcadorTooltip lee payload[0], que es la línea (HistorialPredictivoView.tsx:124). Por eso el tooltip no puede mostrar un evento intermedio; se mide en navegador real en CP-14."
+  ],
+  "retirados": [
+    {
+      "paso": "TC-M08-052/053 límites exactos con datos reales",
+      "motivo": "La ventana (≤ 12 h) y la colisión (≤ 1 h) las calcula el backend (historial_predictivo.py:21, :84, :96-97). En TEST no hay pares a 12 h 00, 12 h 01, 60 ni 61 min (el 885 tiene 600, 30 y 1200 min). Con datos reales se miden los tres escenarios de CA-7 en la parte Playwright (CP-10 a CP-17)"
+    },
+    {
+      "paso": "Tooltip con la diferencia en 12 h 00, -10 h y 61 min (\"Diferencia: 12 h\", \"Diferencia: 10 h\", \"Diferencia: 1 h 1 min\")",
+      "motivo": "jsdom no activa el tooltip de recharts (el contenedor no tiene tamaño: con mouseEnter/mouseMove sobre el símbolo y sobre .recharts-wrapper el tooltip queda vacío y oculto), así que en Vitest no se puede medir lo que ve el usuario. El tooltip se mide en navegador real (CP-14, par de 10 h del 885); en TEST no hay pares de 12 h 00, -10 h ni 61 min"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+3a4
+> // | 2026-11-22 | Juan Sebastian Gutierrez | v1.1 reintento 1 (#728): ADAPT-1, los puntos de la línea se cuentan con '.recharts-line-dots circle' (el arreglo dibuja cada punto con un <circle> propio, sin la clase recharts-dot); observación fija 2 reescrita; observación dinámica de avisos y botones con 2.000 marcadores. Checkpoints, esperados, fuentes y retirado sin cambios |
+74c75
+<   'El tooltip por marcador ya está reportado en INC-M08-NN-G021 e INC-M08-NN-G022.',
+---
+>   'El detalle por marcador al pasar el ratón (un <title> en cada marcador) se evalúa en G021 y G022 (corregido en sus reintentos 1); G024 no lo mide.',
+372c373
+<         const l = document.querySelectorAll('.recharts-line-dots .recharts-dot').length;
+---
+>         const l = document.querySelectorAll('.recharts-line-dots circle').length;
+383c384
+<       Lp: document.querySelectorAll('.recharts-line-dots .recharts-dot').length,
+---
+>       Lp: document.querySelectorAll('.recharts-line-dots circle').length,
+415c416
+<         Lp: document.querySelectorAll('.recharts-line-dots .recharts-dot').length,
+---
+>         Lp: document.querySelectorAll('.recharts-line-dots circle').length,
+437c438
+<       const l = document.querySelectorAll('.recharts-line-dots .recharts-dot').length;
+---
+>       const l = document.querySelectorAll('.recharts-line-dots circle').length;
+452c453
+<     Lp: document.querySelectorAll('.recharts-line-dots .recharts-dot').length,
+---
+>     Lp: document.querySelectorAll('.recharts-line-dots circle').length,
+628a630,643
+>   // Observación (reintento 1): avisos de la gráfica y estado de los botones de la línea de tiempo con 2.000 marcadores.
+>   const estado2000 = await page.evaluate(() => {
+>     const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+>     const h3 = Array.from(document.querySelectorAll('h3')).find((el) => n(el.textContent) === 'Línea de tiempo');
+>     const card = h3?.parentElement;
+>     if (!card) return { avisos: [] as string[], botones: [] as string[] };
+>     const avisos = Array.from(card.querySelectorAll('[role="status"]')).map((el) => n(el.textContent)).filter(Boolean);
+>     const grupo = card.querySelector('[role="group"]');
+>     const botones = grupo
+>       ? Array.from(grupo.querySelectorAll('button')).map((b) => `${n(b.textContent)}${(b as HTMLButtonElement).disabled ? ' (deshabilitado)' : ''}`)
+>       : [];
+>     return { avisos, botones };
+>   });
+>   observaciones.push(`Con 2.000 marcadores: avisos de la gráfica=${JSON.stringify(estado2000.avisos)}; botones de la línea de tiempo=${JSON.stringify(estado2000.botones)}.`);

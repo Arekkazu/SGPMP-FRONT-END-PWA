@@ -1,0 +1,540 @@
+// | Fecha      | Nombre                  | Que se hizo |
+// |------------|-------------------------|-------------|
+// | 2026-11-20 | Juan Sebastian Gutierrez | TC-M08-G022 (TC-M08-054, 055 y 056; RF-106): parte Playwright (CP-11 a CP-14); datos reales del 885 en TEST y conflicto simulado con page.route |
+// | 2026-11-20 | Juan Sebastian Gutierrez | v1.1: CP-14 decodifica la captura en una pestaña about:blank aparte (sin depender de la CSP de TEST) y exige además amarillos/no_blancos >= 0.2 |
+// | 2026-11-21 | Juan Sebastian Gutierrez | v1.3 reintento 1 (INC-M08-NN-G022, GitHub #726): checkpoints, esperados y fuentes literales. El icono se lee sin su <title> ni el marcador hp-grupo (ADAPT-1); CP-14 mide el amarillo contra el color de fondo real del recorte y no contra el blanco (ADAPT-2, pendiente de la ronda 1: la cuenta de TEST usa tema oscuro) y registra el tema |
+// | 2026-11-20 | Juan Sebastian Gutierrez | v1.2: las fechas simuladas de la parte B buscan la primera hora libre (a más de 1 h de toda predicción y entre sí); la corrida 20261120-223000 quedó inválida porque el 885 tiene una predicción 24 h después de la primera |
+//
+// QA SGPMP - Evaluacion (ronda 1). Navegador real (Chromium) contra el frontend desplegado en TEST, cuenta Veterinario 97,
+// activo 885. Parte A: datos reales del 885 (sin interceptar) para TVCO y pendientes. Parte B: conflicto simulado con
+// page.route (solo lectura, no escribe en el servidor) para tooltip de conflicto y color del icono por pixeles.
+//
+// SOLO LECTURA:
+//   - Solo pasan al servidor los GET y la sesion (POST /sesiones/ una vez, POST /sesiones/refresh, DELETE /sesiones/).
+//   - Cualquier otro metodo se aborta; si es de la API, la corrida es invalida (precondicion falsa en afterAll).
+//   - POST /usuarios/me/fcm-token y hosts de Google/Firebase se abortan y se anotan.
+//   - No se pulsa "Exportar", "Registrar retroalimentacion" ni nada de otro modulo. Cambiar a "Agrupada" en Parte B es simulado.
+// Credenciales solo en memoria (QA_VET_EMAIL / QA_VET_PASSWORD, las pone el runner). Sin traza ni video.
+//
+// Reporte: JSON parcial propio en STAGING_DIR (parcial_playwright_TC-M08-G022[_reintentoN].json); el runner lo une con el
+// parcial de Vitest. Cada checkpoint arranca en FALLA "No alcanzado".
+import { test, expect, type Page, type Route, type Request, type Response } from '@playwright/test';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const TC = 'TC-M08-G022';
+const ACTIVO = 885;
+const BASE = (process.env.QA_FRONT_URL ?? 'https://api.inmero.co/sigab-test/').replace(/\/?$/, '/');
+const STAGING = process.env.STAGING_DIR ?? '';
+const REINTENTO = Number(process.env.REINTENTO ?? '0');
+const HORA_MS = 3_600_000;
+const DIA_MS = 24 * HORA_MS;
+
+type Estado = 'OK' | 'FALLA';
+interface Checkpoint { paso: string; caso: string; esperado: string; fuente: string; obtenido: string; estado: Estado }
+const CPS: Checkpoint[] = [
+  { paso: 'CP-11', caso: 'TC-M08-054, 885 real',
+    esperado: 'La TVCO de la respuesta coincide con la calculada con la regla del RF a partir de "predicciones" y "retroalimentaciones" de la misma respuesta (porcentaje, tvco_denominador, tasa_error y texto con el formato de CA-3), y la vista muestra ese texto',
+    fuente: 'RF-106 Proceso 4; CA-3; Salida (tasa_error)' },
+  { paso: 'CP-12', caso: 'TC-M08-056, 885 real',
+    esperado: '"pendientes" contiene exactamente las predicciones sin valoración con más de 48 h, ordenadas por nivel_riesgo descendente y luego por fecha descendente, y la lista de la vista muestra los mismos ítems en ese orden, cada uno con "Registrar retroalimentación"',
+    fuente: 'RF-106 Proceso 5; CA-9; CA-4' },
+  { paso: 'CP-13', caso: 'TC-M08-055, navegador, conflicto simulado',
+    esperado: 'Al pasar el ratón sobre una de las dos valoraciones en conflicto se muestran ambas: autor, valoración y fecha y hora de cada una ("QA Vet A → Correcta · <ts_A> / QA Vet B → Incorrecta · <ts_B>")',
+    fuente: 'RF-106 Restricción 6 a (tooltip "[Vet A] → [valor_A] · [ts_A] / [Vet B] → [valor_B] · [ts_B]"); CA-8 (b)' },
+  { paso: 'CP-14', caso: 'TC-M08-055, navegador, conflicto simulado',
+    esperado: 'El ícono de conflicto de las dos valoraciones es un triángulo amarillo',
+    fuente: 'RF-106 Restricción 6 a; CA-8 (a)' },
+].map((c) => ({ ...c, obtenido: 'No alcanzado', estado: 'FALLA' as Estado }));
+
+const precondiciones: Array<{ nombre: string; ok: boolean; detalle: string }> = [];
+const observaciones: string[] = [];
+const escrituras: Array<{ metodo: string; ruta: string; resultado: string }> = [];
+const violaciones: string[] = [];
+
+function anotar(paso: string, ok: boolean, obtenido: string): void {
+  const cp = CPS.find((c) => c.paso === paso)!;
+  cp.obtenido = obtenido;
+  cp.estado = ok ? 'OK' : 'FALLA';
+}
+function precondicion(nombre: string, ok: boolean, detalle: string): void {
+  precondiciones.push({ nombre, ok, detalle });
+  if (!ok) {
+    for (const c of CPS) { c.obtenido = `Precondición no cumplida (${nombre}): ${detalle}`; c.estado = 'FALLA'; }
+    throw new Error(`Precondicion falsa: ${nombre} (${detalle})`);
+  }
+}
+function captura(page: Page, nombre: string): Promise<unknown> {
+  if (!STAGING) return Promise.resolve();
+  return page.screenshot({
+    path: join(STAGING, `captura_${TC}_${nombre}.png`),
+    mask: [page.locator('.ds-appbar__right'), page.locator('.ds-sidebar__footer')],
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Guardia de escrituras (sin ninguna accion simulada: esta parte no escribe nada)
+// ---------------------------------------------------------------------------------------------------------------
+let logins = 0;
+async function guardia(route: Route, req: Request): Promise<void> {
+  const metodo = req.method();
+  if (metodo === 'GET' || metodo === 'HEAD' || metodo === 'OPTIONS') return route.continue();
+  const url = new URL(req.url());
+  const ruta = url.pathname;
+  if (/googleapis\.com|gstatic\.com|firebaseio\.com|firebase\.com/.test(url.hostname)) {
+    escrituras.push({ metodo, ruta: `${url.hostname}${ruta}`, resultado: 'abortada (host externo)' });
+    return route.abort();
+  }
+  if (metodo === 'POST' && /\/sesiones\/?$/.test(ruta)) {
+    logins += 1;
+    escrituras.push({ metodo, ruta, resultado: `al servidor (login ${logins})` });
+    if (logins > 1) { violaciones.push(`segundo login (${ruta})`); return route.abort(); }
+    return route.continue();
+  }
+  if ((metodo === 'POST' && /\/sesiones\/refresh\/?$/.test(ruta)) || (metodo === 'DELETE' && /\/sesiones\/?$/.test(ruta))) {
+    escrituras.push({ metodo, ruta, resultado: 'al servidor (sesion)' });
+    return route.continue();
+  }
+  if (metodo === 'POST' && /\/usuarios\/me\/fcm-token\/?$/.test(ruta)) {
+    escrituras.push({ metodo, ruta, resultado: 'abortada (registro de push)' });
+    return route.abort();
+  }
+  escrituras.push({ metodo, ruta, resultado: 'ABORTADA (no permitida)' });
+  violaciones.push(`${metodo} ${ruta}`);
+  return route.abort();
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Utilidades
+// ---------------------------------------------------------------------------------------------------------------
+type Marcador = Record<string, unknown> & { fecha: string };
+interface Tvco {
+  porcentaje: number | null;
+  texto: string;
+  tvco_denominador: number;
+  tvco_excluidas_conflicto: number;
+  excluidas_sin_retroalimentacion: number;
+  tasa_error: number | null;
+}
+interface PendienteItem {
+  id_resultado_inferencia: string;
+  fecha_inferencia: string;
+  nivel_riesgo: number | null;
+  condicion: string;
+}
+interface Historial {
+  predicciones: Marcador[];
+  eventos_sanitarios: Marcador[];
+  retroalimentaciones: Marcador[];
+  grupos: Marcador[][];
+  correspondencias: Array<Record<string, unknown>>;
+  tvco: Tvco;
+  pendientes: { total: number; pagina: number; por_pagina: number; items: PendienteItem[] };
+  metadatos: {
+    total_inferencias: number;
+    total_eventos_sanitarios: number;
+    total_retroalimentaciones: number;
+    total_pendientes: number;
+    total_conflictos: number;
+  };
+}
+
+const norm = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+const ms = (s: string) => new Date(s).getTime();
+const iso = (s: string) => s.replace(/\.000Z$/, '+00:00').replace(/Z$/, '+00:00');
+const corto = (v: unknown) => String(v ?? '').slice(0, 8);
+const ICONOS_CONFLICTO = new Set(['⚠', '⚠️', '▲', '△']);
+const NIVEL_LABEL: Record<number, string> = { 0: 'Sin riesgo', 1: 'Bajo', 2: 'Medio', 3: 'Alto' };
+
+function clase(m: Marcador): 'RETROALIMENTACION' | 'EVENTO_SANITARIO' | 'PREDICCION' {
+  if ('id_evento' in m) return 'EVENTO_SANITARIO';
+  if ('valoracion' in m) return 'RETROALIMENTACION';
+  return 'PREDICCION';
+}
+function fechaBogota(s: string): string {
+  return norm(new Date(s).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Bogota' }));
+}
+
+function calcularTvco(predicciones: Marcador[], retroalimentaciones: Marcador[]): Tvco {
+  const valoraciones = new Map<string, Set<string>>();
+  for (const r of retroalimentaciones) {
+    const id = String(r.id_resultado_inferencia);
+    if (!valoraciones.has(id)) valoraciones.set(id, new Set());
+    valoraciones.get(id)!.add(String(r.valoracion));
+  }
+  let sinRetro = 0;
+  let conflicto = 0;
+  let validadas = 0;
+  let correctas = 0;
+  for (const p of predicciones) {
+    const id = String(p.id_resultado_inferencia);
+    const vals = valoraciones.get(id);
+    if (!vals || vals.size === 0) sinRetro += 1;
+    else if (vals.size > 1) conflicto += 1;
+    else {
+      validadas += 1;
+      if (vals.has('CORRECTO')) correctas += 1;
+    }
+  }
+  if (validadas === 0) {
+    return {
+      porcentaje: null, texto: 'Sin datos suficientes para calcular', tvco_denominador: 0,
+      tvco_excluidas_conflicto: conflicto, excluidas_sin_retroalimentacion: sinRetro, tasa_error: null,
+    };
+  }
+  const porcentaje = Math.round((correctas / validadas) * 10000) / 100;
+  const tasaError = Math.round((100 - porcentaje) * 100) / 100;
+  const excluidas = sinRetro + conflicto;
+  let texto = `${porcentaje}% (${validadas} ${validadas === 1 ? 'validada' : 'validadas'}`;
+  if (excluidas > 0) {
+    const partes: string[] = [];
+    if (conflicto > 0) partes.push(sinRetro === 0 ? 'conflicto' : `${conflicto} conflicto`);
+    if (sinRetro > 0) partes.push(conflicto === 0 ? 'sin retro' : `${sinRetro} sin retro`);
+    texto += `; ${excluidas} ${excluidas === 1 ? 'excluida' : 'excluidas'}: ${partes.join(' + ')}`;
+  }
+  texto += ')';
+  return {
+    porcentaje, texto, tvco_denominador: validadas,
+    tvco_excluidas_conflicto: conflicto, excluidas_sin_retroalimentacion: sinRetro, tasa_error: tasaError,
+  };
+}
+
+async function esperarEstable(page: Page): Promise<void> {
+  await expect(page.getByText('Cargando historial...')).toHaveCount(0, { timeout: 30_000 });
+  let anterior = '';
+  const limite = Date.now() + 10_000;
+  while (Date.now() < limite) {
+    await page.waitForTimeout(250);
+    const f = await page.evaluate(() => [
+      document.querySelectorAll('.recharts-scatter-symbol').length,
+      document.querySelectorAll('li').length,
+    ].join('|'));
+    if (f === anterior) return;
+    anterior = f;
+  }
+}
+
+/** Texto que se muestra al pasar el raton sobre el marcador de retroalimentacion k: tooltip de recharts, <title> y role="tooltip". */
+async function tooltipEnRetro(page: Page, k: number, px: number, py: number): Promise<string> {
+  await page.mouse.move(px, py);
+  await page.waitForTimeout(400);
+  const texto = await page.evaluate((idx) => {
+    const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+    const el = document.querySelectorAll('.recharts-scatter-symbol text:not(.hp-grupo)')[idx]; // ADAPT-1
+    const simbolo = el?.closest('.recharts-scatter-symbol');
+    const tip = document.querySelector('.recharts-tooltip-wrapper') as HTMLElement | null;
+    const visible = tip && getComputedStyle(tip).visibility !== 'hidden' ? n(tip.innerText) : '';
+    const partes = [
+      visible,
+      ...Array.from(simbolo?.querySelectorAll('title') ?? []).map((t) => n(t.textContent)),
+      ...Array.from(document.querySelectorAll('[role="tooltip"]')).map((t) => n(t.textContent)),
+    ].filter((s) => s !== '');
+    return partes.length ? partes.join(' | ') : '(sin tooltip)';
+  }, k);
+  await page.mouse.move(5, 5);
+  await page.waitForTimeout(200);
+  return texto;
+}
+
+/** Cuenta pixeles amarillos y no blancos en el recorte de un marcador de retroalimentacion. */
+async function medirPixelesAmarillos(page: Page, k: number): Promise<{ texto: string; fill: string; tema: string; amarillos: number; noBlancos: number; noFondo: number; fondo: string }> {
+  const loc = page.locator('.recharts-scatter-symbol text:not(.hp-grupo)').nth(k); // ADAPT-1
+  const meta = await loc.evaluate((el) => ({
+    // ADAPT-1: solo el texto propio del icono, sin su <title>.
+    texto: Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent ?? '').join('').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim(),
+    fill: getComputedStyle(el).fill,
+    tema: document.documentElement.getAttribute('data-theme') ?? '(sin data-theme)',
+  }));
+  const box = await loc.boundingBox();
+  if (!box || box.width <= 0 || box.height <= 0) {
+    return { ...meta, amarillos: 0, noBlancos: 0, noFondo: 0, fondo: '(sin recorte)' };
+  }
+  const clip = {
+    x: Math.max(0, Math.floor(box.x) - 2),
+    y: Math.max(0, Math.floor(box.y) - 2),
+    width: Math.ceil(box.width) + 4,
+    height: Math.ceil(box.height) + 4,
+  };
+  const png = await page.screenshot({ clip, type: 'png' });
+  const b64 = png.toString('base64');
+  let conteo = { amarillos: 0, noBlancos: 0, noFondo: 0, fondo: '' };
+  const lienzo = await page.context().newPage();
+  try {
+    conteo = await lienzo.evaluate(async (data) => {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = (e) => reject(e);
+      img.src = `data:image/png;base64,${data}`;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+    const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    // ADAPT-2: el fondo es el color mas frecuente del borde del recorte (2 px alrededor del icono).
+    const W = canvas.width;
+    const H = canvas.height;
+    const frecuencia = new Map<string, number>();
+    for (let y = 0; y < H; y += 1) for (let x = 0; x < W; x += 1) {
+      if (x > 1 && x < W - 2 && y > 1 && y < H - 2) continue;
+      const i = (y * W + x) * 4;
+      const clave = `${px[i]},${px[i + 1]},${px[i + 2]}`;
+      frecuencia.set(clave, (frecuencia.get(clave) ?? 0) + 1);
+    }
+    const fondo = [...frecuencia].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '255,255,255';
+    const [fr, fg, fb] = fondo.split(',').map(Number);
+    let amarillos = 0;
+    let noBlancos = 0;
+    let noFondo = 0;
+    for (let i = 0; i < px.length; i += 4) {
+      const r = px[i];
+      const g = px[i + 1];
+      const b = px[i + 2];
+      if (r + g + b < 700) noBlancos += 1;
+      if (Math.abs(r - fr) + Math.abs(g - fg) + Math.abs(b - fb) > 60) noFondo += 1;
+      if (r >= 170 && g >= 130 && b <= 120 && (r - b) >= 80 && (g - b) >= 50) amarillos += 1;
+    }
+    return { amarillos, noBlancos, noFondo, fondo: `rgb(${fondo})` };
+    }, b64);
+  } catch (e) {
+    return { ...meta, fill: `${meta.fill}; error_decodificando=${String((e as Error)?.message ?? e).slice(0, 120)}`, amarillos: 0, noBlancos: 0, noFondo: 0, fondo: '(error)' };
+  } finally {
+    await lienzo.close();
+  }
+  return { ...meta, ...conteo };
+}
+
+test.afterAll(() => {
+  if (violaciones.length) precondiciones.push({ nombre: 'Ninguna escritura no permitida hacia TEST', ok: false, detalle: violaciones.join('; ') });
+  else precondiciones.push({ nombre: 'Ninguna escritura no permitida hacia TEST', ok: true, detalle: `${escrituras.length} peticiones distintas de GET, todas permitidas` });
+  if (precondiciones.some((p) => !p.ok)) {
+    const nombres = precondiciones.filter((p) => !p.ok).map((p) => p.nombre).join('; ');
+    for (const c of CPS) if (!c.obtenido.startsWith('Precondición no cumplida')) { c.obtenido = `Precondición no cumplida (${nombres}); medido: ${c.obtenido}`; c.estado = 'FALLA'; }
+  }
+  const ok = CPS.filter((c) => c.estado === 'OK').length;
+  const reporte = {
+    tc: TC, parte: 'playwright', reintento: REINTENTO, run_id: process.env.RUN_ID ?? '', fecha: new Date().toISOString(),
+    ambiente: BASE,
+    summary: { total: CPS.length, ok, falla: CPS.length - ok, veredicto: ok === CPS.length ? 'Aprobado' : 'Rechazado' },
+    precondiciones, checkpoints: CPS, observaciones, retirados: [] as Array<{ paso: string; motivo: string }>, escrituras,
+  };
+  if (!STAGING) return;
+  mkdirSync(STAGING, { recursive: true });
+  writeFileSync(join(STAGING, `parcial_playwright_${TC}${REINTENTO > 0 ? `_reintento${REINTENTO}` : ''}.json`), `${JSON.stringify(reporte, null, 2)}\n`, 'utf8');
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Recorrido unico (un solo login)
+// ---------------------------------------------------------------------------------------------------------------
+test('TC-M08-G022 parte navegador real (CP-11 a CP-14)', async ({ page }) => {
+  test.setTimeout(300_000);
+  const correo = process.env.QA_VET_EMAIL ?? '';
+  const clave = process.env.QA_VET_PASSWORD ?? '';
+  precondicion('Credenciales del Veterinario en memoria', correo.length > 3 && clave.length > 3, 'QA_VET_EMAIL / QA_VET_PASSWORD presentes');
+
+  const scripts: Array<{ nombre: string; cuerpo: string }> = [];
+  page.on('response', async (r) => {
+    if (r.request().resourceType() !== 'script') return;
+    try { scripts.push({ nombre: new URL(r.url()).pathname.split('/').pop() ?? '', cuerpo: await r.text() }); } catch { /* recurso sin cuerpo */ }
+  });
+  await page.route('**/*', guardia);
+
+  // -- Login (una sola vez; un fallo no se reintenta)
+  await page.goto(`${BASE}login`);
+  await page.locator('input[autocomplete="email"]').fill(correo);
+  await page.locator('input[autocomplete="current-password"]').fill(clave);
+  await page.getByRole('button', { name: 'Ingresar' }).click();
+  await page.waitForURL((u) => !u.pathname.endsWith('/login'), { timeout: 30_000 }).catch(() => undefined);
+  precondicion('Login del Veterinario 97 (una sola vez)', !page.url().endsWith('/login'), `URL tras el login: ${new URL(page.url()).pathname}`);
+
+  // -- Parte A: Historial predictivo del 885 en Lineal (datos reales, sin interceptar)
+  const respOpciones = page.waitForResponse((r) => /\/reportes\/opciones\/activo/.test(r.url()) && r.request().method() === 'GET', { timeout: 30_000 });
+  await page.goto(`${BASE}prediccion/historial-predictivo`);
+  const opciones = (await (await respOpciones).json()) as Array<{ valor: number; etiqueta: string }>;
+  const opcion = opciones.find((o) => Number(o.valor) === ACTIVO);
+  precondicion(`El activo ${ACTIVO} figura entre los animales o lotes del Veterinario`, !!opcion, `${opciones.length} opciones`);
+  const esHistorial = (modo: string) => (r: Response) => new RegExp(`/historial-predictivo/${ACTIVO}\\?`).test(r.url()) && r.url().includes(`modo_visualizacion=${modo}`) && r.request().method() === 'GET';
+  const respLineal = page.waitForResponse(esHistorial('LINEAL'), { timeout: 30_000 });
+  const combo = page.getByRole('combobox', { name: 'Animal o lote' });
+  await combo.fill(opcion!.etiqueta);
+  const opcionLista = page.getByRole('option', { name: opcion!.etiqueta, exact: true });
+  if (await opcionLista.count()) await opcionLista.first().click();
+  const rLineal = await respLineal;
+  precondicion(`GET /historial-predictivo/${ACTIVO} (Lineal) responde 200`, rLineal.status() === 200, `HTTP ${rLineal.status()}`);
+  const headerDate = rLineal.headers().date;
+  const ahora = headerDate ? ms(headerDate) : Date.now();
+  const h = (await rLineal.json()) as Historial;
+
+  // -- Precondicion de linea base del 885
+  const idsConRetro = new Set(h.retroalimentaciones.map((r) => String(r.id_resultado_inferencia)));
+  const nConRetro = h.predicciones.filter((p) => idsConRetro.has(String(p.id_resultado_inferencia))).length;
+  const nSinRetro = h.predicciones.length - nConRetro;
+  const nivelesPend = new Set(h.pendientes.items.map((x) => Number(x.nivel_riesgo ?? 0)));
+  precondicion(
+    `Línea base del ${ACTIVO}: >=2 predicciones (>=1 con valoración y >=1 sin valoración), 2 <= pendientes <= 20 con >=2 niveles`,
+    h.predicciones.length >= 2 && nConRetro >= 1 && nSinRetro >= 1 && h.pendientes.total >= 2 && h.pendientes.total <= 20 && nivelesPend.size >= 2,
+    `predicciones=${h.predicciones.length}, con_valoracion=${nConRetro}, sin_valoracion=${nSinRetro}, pendientes=${h.pendientes.total}, niveles_pendientes=[${[...nivelesPend].sort().join(',')}], ahora=${new Date(ahora).toISOString()} (${headerDate ? 'header Date' : 'Date.now'})`,
+  );
+
+  await esperarEstable(page);
+
+  // -- CP-11: TVCO real del 885
+  const tvcoCalc = calcularTvco(h.predicciones, h.retroalimentaciones);
+  const tvcoCardLoc = page.locator('xpath=//div[normalize-space(.)="Tasa de validación clínica"]/following-sibling::div[1]');
+  const tvcoPantalla = (await tvcoCardLoc.count()) ? norm(await tvcoCardLoc.first().textContent()) : '(sin TVCO)';
+  const ok11 = h.tvco.porcentaje === tvcoCalc.porcentaje
+    && h.tvco.tvco_denominador === tvcoCalc.tvco_denominador
+    && h.tvco.tasa_error === tvcoCalc.tasa_error
+    && h.tvco.texto === tvcoCalc.texto
+    && h.metadatos.total_conflictos === tvcoCalc.tvco_excluidas_conflicto
+    && tvcoPantalla === h.tvco.texto;
+  anotar(
+    'CP-11',
+    ok11,
+    `calculado={porcentaje=${tvcoCalc.porcentaje}, denom=${tvcoCalc.tvco_denominador}, tasa_error=${tvcoCalc.tasa_error}, conflictos=${tvcoCalc.tvco_excluidas_conflicto}, texto="${tvcoCalc.texto}"} | backend={porcentaje=${h.tvco.porcentaje}, denom=${h.tvco.tvco_denominador}, tasa_error=${h.tvco.tasa_error}, conflictos=${h.metadatos.total_conflictos}, texto="${h.tvco.texto}"} | pantalla="${tvcoPantalla}"`,
+  );
+
+  // -- CP-12: Pendientes reales del 885
+  const pendCalc = h.predicciones
+    .filter((p) => !idsConRetro.has(String(p.id_resultado_inferencia)) && ahora - ms(p.fecha) > 48 * HORA_MS)
+    .sort((a, b) => (Number(b.nivel_riesgo ?? 0) - Number(a.nivel_riesgo ?? 0)) || (ms(b.fecha) - ms(a.fecha)));
+  const idsCalc = pendCalc.map((p) => corto(p.id_resultado_inferencia));
+  const idsBack = h.pendientes.items.map((p) => corto(p.id_resultado_inferencia));
+  const lisDom = await page.evaluate(() => {
+    const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+    const h3 = Array.from(document.querySelectorAll('h3')).find((el) => n(el.textContent) === 'Predicciones sin evaluar (más de 48 horas)');
+    const cont = h3?.parentElement;
+    if (!cont) return [] as Array<{ texto: string; botones: string[] }>;
+    return Array.from(cont.querySelectorAll('ul > li')).map((li) => ({
+      texto: n(li.textContent),
+      botones: Array.from(li.querySelectorAll('button')).map((b) => n(b.textContent)),
+    }));
+  });
+  const domOk = lisDom.length === h.pendientes.items.length && h.pendientes.items.every((it, i) => {
+    const fecha = fechaBogota(it.fecha_inferencia);
+    const nivel = NIVEL_LABEL[Number(it.nivel_riesgo ?? 0)] ?? '';
+    return lisDom[i].texto.includes(fecha) && lisDom[i].texto.includes(nivel) && lisDom[i].botones.includes('Registrar retroalimentación');
+  });
+  const ok12 = h.pendientes.total === pendCalc.length && JSON.stringify(idsBack) === JSON.stringify(idsCalc) && domOk;
+  anotar(
+    'CP-12',
+    ok12,
+    `calculados(${pendCalc.length})=[${idsCalc.join(', ')}] | backend(total=${h.pendientes.total})=[${idsBack.join(', ')}] | dom(count=${lisDom.length}, domOk=${domOk})=[${lisDom.map((l) => `"${l.texto.slice(0, 70)}"`).join(', ')}]`,
+  );
+
+  await captura(page, 'historial_885');
+  observaciones.push(`Línea base ${ACTIVO}: ${h.predicciones.length} predicciones (${nConRetro} con valoración, ${nSinRetro} sin valoración), ${h.eventos_sanitarios.length} eventos, ${h.retroalimentaciones.length} retroalimentaciones, ${h.pendientes.total} pendientes (niveles=[${[...nivelesPend].sort().join(',')}]).`);
+
+  // -- Parte B: conflicto simulado con page.route (solo lectura)
+  const hB = JSON.parse(JSON.stringify(h)) as Historial;
+  const ordenadas = [...hB.predicciones].sort((a, b) => ms(a.fecha) - ms(b.fecha));
+  const pA = ordenadas[0];
+  const pB = ordenadas.find((p) => ms(p.fecha) - ms(pA.fecha) >= 10 * DIA_MS);
+  precondicion('Parte B: existen dos predicciones pA y pB con al menos 10 días de diferencia', Boolean(pA && pB),
+    `pA=${pA ? `${corto(pA.id_resultado_inferencia)}@${pA.fecha}` : '(ausente)'}, pB=${pB ? `${corto(pB.id_resultado_inferencia)}@${pB.fecha}` : '(ausente)'}`);
+
+  const libre = (desde: number, usadas: number[]): number => {
+    for (let k = 0; k < 96; k += 1) {
+      const t = desde + (6 + k) * HORA_MS;
+      if (!hB.predicciones.some((p) => Math.abs(t - ms(p.fecha)) <= HORA_MS) && !usadas.some((u) => Math.abs(t - u) <= HORA_MS)) return t;
+    }
+    return desde + DIA_MS;
+  };
+  const tA1 = libre(ms(pA.fecha), []);
+  const tB1 = libre(ms(pB!.fecha), [tA1]);
+  const tB2 = libre(tB1 + 2 * DIA_MS, [tA1, tB1]);
+  const tsA1 = iso(new Date(tA1).toISOString());
+  const tsB1 = iso(new Date(tB1).toISOString());
+  const tsB2 = iso(new Date(tB2).toISOString());
+  const fechasSim = [tsA1, tsB1, tsB2];
+  const colisionPred = fechasSim.some((f) => hB.predicciones.some((p) => Math.abs(ms(f) - ms(p.fecha)) <= HORA_MS));
+  precondicion('Parte B: ninguna de las 3 fechas simuladas queda a menos de 1 h de una predicción', !colisionPred,
+    `fechas=[${fechasSim.join(', ')}]`);
+
+  const idA = String(pA.id_resultado_inferencia);
+  const idB = String(pB!.id_resultado_inferencia);
+  hB.retroalimentaciones = [
+    { tipo: 'RETROALIMENTACION', fecha: tsA1, id_resultado_inferencia: idA, valoracion: 'CORRECTO', veterinario: 'QA Vet A', observaciones: null, en_conflicto: false },
+    { tipo: 'RETROALIMENTACION', fecha: tsB1, id_resultado_inferencia: idB, valoracion: 'CORRECTO', veterinario: 'QA Vet A', observaciones: null, en_conflicto: true },
+    { tipo: 'RETROALIMENTACION', fecha: tsB2, id_resultado_inferencia: idB, valoracion: 'INCORRECTO', veterinario: 'QA Vet B', observaciones: null, en_conflicto: true },
+  ];
+  hB.grupos = [];
+  hB.correspondencias = [];
+  hB.eventos_sanitarios = [];
+  for (const p of hB.predicciones) {
+    const id = String(p.id_resultado_inferencia);
+    p.en_conflicto = id === idB;
+    p.tiene_retroalimentacion = id === idA || id === idB;
+  }
+  hB.tvco = calcularTvco(hB.predicciones, hB.retroalimentaciones);
+  hB.metadatos.total_conflictos = 1;
+  hB.metadatos.total_retroalimentaciones = 3;
+  hB.metadatos.total_eventos_sanitarios = 0;
+
+  let simuladas = 0;
+  const rutaSimulada = new RegExp(`/historial-predictivo/${ACTIVO}\\?`);
+  const manejadorSimulado = (route: Route) => {
+    simuladas += 1;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(hB) });
+  };
+  await page.route(rutaSimulada, manejadorSimulado);
+
+  const respAgrupado = page.waitForResponse(esHistorial('AGRUPADO'), { timeout: 30_000 });
+  await page.getByRole('radio', { name: 'Agrupada' }).check();
+  await respAgrupado;
+  await page.locator('.recharts-wrapper').first().scrollIntoViewIfNeeded();
+  await esperarEstable(page);
+
+  const nRetrosDom = await page.locator('.recharts-scatter-symbol text:not(.hp-grupo)').count(); // ADAPT-1
+  precondicion('Parte B: respuesta simulada servida (>=1) y 3 marcadores de retroalimentación dibujados', simuladas >= 1 && nRetrosDom === 3,
+    `simuladas=${simuladas}; marcadores_retro=${nRetrosDom}; clase_0=${clase(hB.retroalimentaciones[0])}`);
+
+  // -- CP-13: tooltip de conflicto en los dos marcadores en conflicto (indices 1 y 2)
+  const centros = await page.evaluate(() => Array.from(document.querySelectorAll('.recharts-scatter-symbol text:not(.hp-grupo)')).map((el) => { // ADAPT-1
+    const r = el.getBoundingClientRect();
+    return { px: r.left + r.width / 2, py: r.top + r.height / 2 };
+  }));
+  const t1 = await tooltipEnRetro(page, 1, centros[1].px, centros[1].py);
+  const t2 = await tooltipEnRetro(page, 2, centros[2].px, centros[2].py);
+  const fA = fechaBogota(tsB1);
+  const fB = fechaBogota(tsB2);
+  const cumpleTooltip = (t: string) => t.includes('QA Vet A') && t.includes('QA Vet B')
+    && (t.includes('Correcta') || t.includes('CORRECTO'))
+    && (t.includes('Incorrecta') || t.includes('INCORRECTO'))
+    && t.includes(fA) && t.includes(fB);
+  const ok13 = cumpleTooltip(t1) || cumpleTooltip(t2);
+  anotar('CP-13', ok13, `marcador[1]="${t1}" | marcador[2]="${t2}" (esperado fechas ${fA} y ${fB})`);
+
+  // -- CP-14: triangulo amarillo por pixeles en los dos marcadores en conflicto (indices 1 y 2)
+  // CONTROL tema oscuro: se fuerza data-theme=dark antes de medir CP-14
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+  await page.waitForTimeout(400);
+  const m1 = await medirPixelesAmarillos(page, 1);
+  const m2 = await medirPixelesAmarillos(page, 2);
+  // ADAPT-2: la proporcion se toma sobre los pixeles distintos del fondo real (en tema oscuro todo el recorte es "no blanco").
+  const amarillo = (m: { amarillos: number; noFondo: number }) => m.amarillos >= 10 && m.noFondo > 0 && m.amarillos / m.noFondo >= 0.2;
+  const ok14 = amarillo(m1) && ICONOS_CONFLICTO.has(m1.texto) && amarillo(m2) && ICONOS_CONFLICTO.has(m2.texto);
+  anotar(
+    'CP-14',
+    ok14,
+    `tema=${m1.tema}; marcador[1]={texto="${m1.texto}", fill="${m1.fill}", fondo="${m1.fondo}", amarillos=${m1.amarillos}, distintos_del_fondo=${m1.noFondo}, no_blancos=${m1.noBlancos}} | marcador[2]={texto="${m2.texto}", fill="${m2.fill}", fondo="${m2.fondo}", amarillos=${m2.amarillos}, distintos_del_fondo=${m2.noFondo}, no_blancos=${m2.noBlancos}}`,
+  );
+
+  await captura(page, 'conflicto_simulado');
+  await page.unroute(rutaSimulada, manejadorSimulado);
+  observaciones.push(`Parte B: GET simulados=${simuladas}`);
+
+  // -- Precondicion de despliegue con los scripts que cargo la app
+  const todo = scripts.map((s) => s.cuerpo).join('\n');
+  const index = [...new Set(scripts.map((s) => s.nombre).filter((n) => /^index-.*\.js$/.test(n)))];
+  await page.goto('about:blank');
+  observaciones.push(`Despliegue: bundle ${index.join(', ') || '(no identificado)'} en ${BASE}.`);
+  precondicion('El frontend desplegado contiene "Predicciones sin evaluar (más de 48 horas)" y "Registrar retroalimentación"',
+    todo.includes('Predicciones sin evaluar (más de 48 horas)') && todo.includes('Registrar retroalimentación'),
+    `bundle: ${index.join(', ') || '(sin index-*.js)'}; ${scripts.length} scripts revisados`);
+
+  expect(violaciones, violaciones.join('; ')).toEqual([]);
+  expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+});

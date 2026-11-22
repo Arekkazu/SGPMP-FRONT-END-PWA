@@ -1,6 +1,7 @@
 // | Fecha      | Nombre                   | Que se hizo |
 // |------------|--------------------------|-------------|
 // | 2026-11-21 | Juan Sebastian Gutierrez | TC-M08-G027 (TC-M08-063 y TC-M08-064; RF-107): proceso en curso, umbrales, aviso 30 s, timeout y bloqueo de operaciones dependientes v1 |
+// | 2026-11-22 | Juan Sebastian Gutierrez | v1.1 reintento 1 (#730, INC-M08-392-G027). CP-02 segun la entrega (decision de Sebastian 2026-11-22): el indicador se activa por tiempo transcurrido (> 3.000 ms), no por tiempo_estimado_operacion; la diferencia con R129 / 8.5 es la OBS-6. ADAPT-1: CP-03 se mide con el indicador visible. ADAPT-2: t1 = instante real en que aparece el indicador (esperado literal de la ronda 1). CP-04 pasa a OBS-5 (decision de Sebastian 2026-11-21): 10 checkpoints. OBS-1 reescrita. P7: umbral de la entrega |
 //
 // QA SGPMP - Evaluacion (ronda 1). Prueba de componente con Vitest + jsdom.
 // Red simulada SOLO con http.defaults.adapter (emula timeout de axios). No se llama a TEST.
@@ -48,22 +49,18 @@ const CPS: Checkpoint[] = [
   },
   {
     paso: 'CP-02',
-    esperado: 'tiempo_estimado_operacion=3001 y duración 3001 ms: indicador visible en t0+0 y t0+3000 con el texto exacto de reportes.json generar.generando',
-    fuente: 'RF-107 Entradas R129; 8.5 paso 3',
+    esperado: 'Operación de 10.000 ms (la respuesta trae tiempo_estimado_operacion=3001, que el frontend no usa): el indicador NO se ve en t0+3.000 y SÍ en t0+3.001, con el texto exacto de reportes.json generar.generando (activación por tiempo transcurrido, según la entrega; decisión de Sebastian 2026-11-22)',
+    fuente: 'RF-107 8.5 paso 3 (umbral de 3.000 ms) según la entrega del issue 730; la diferencia con R129 y la 8.5 («evalúa el campo tiempo_estimado_operacion») es la OBS-6',
   },
   {
     paso: 'CP-03',
-    esperado: 'Durante CP-02 (progreso null): hay spinner (svg.ds-btn__spinner dentro del indicador) y NO hay role="progressbar"',
+    esperado: 'Durante CP-02, con el indicador visible (t0+3.001; progreso null): hay spinner (svg.ds-btn__spinner dentro del indicador) y NO hay role="progressbar"',
     fuente: 'RF-107 Entradas R129, R131; 8.5 paso 3 («null: spinner con el mensaje»)',
   },
-  {
-    paso: 'CP-04',
-    esperado: 'Operación de 45.000 ms. t1 = instante en que el indicador aparece. En t1+30.000 NO hay texto común proceso.largo',
-    fuente: 'RF-107 8.5 paso 3 («supera los 30 segundos»); TC-M08-063 d («30,000 s no»)',
-  },
+  // CP-04 (t1+30.000 sin aviso) pasa a observación OBS-5 por decisión de Sebastian (2026-11-21): limite exacto del reloj simulado.
   {
     paso: 'CP-05',
-    esperado: 'Misma operación: en t1+30.001 el texto exacto de proceso.largo está visible dentro del indicador',
+    esperado: 'Operación de 45.000 ms; t1 = instante en que el indicador aparece: en t1+30.001 el texto exacto de proceso.largo está visible dentro del indicador',
     fuente: 'RF-107 8.5 paso 3',
   },
   {
@@ -421,6 +418,7 @@ function contarEnSrc(re: RegExp): number {
 // Ciclo de vida
 // ---------------------------------------------------------------------------------------------------------------
 let refsTiempoEstimadoSrc = 0;
+let refsTiempoEstimadoCodigo = 0;
 let usosProgresoSrc = 0;
 
 beforeAll(async () => {
@@ -431,6 +429,8 @@ beforeAll(async () => {
   const p3 = /generar\([\s\S]*?\{ timeout: 60000 \}/.test(leer('src/reportes/api/reportesApi.ts'));
   const p4 = leer('src/financial_valuation/pages/CierreView.tsx').includes("<ModalShell bloqueante title={t('cierre.confirmar_titulo'");
   const p5 = leer('src/accounting_integration/pages/ClientesView.tsx').includes("bloqueante={estado.accion === 'revocar'}");
+  const procesoSrc = leer('src/shared/design-system/ProcesoEnCurso.tsx');
+  const p7 = procesoSrc.includes('export const UMBRAL_PROCESO_MS = 3_000;') && procesoSrc.includes('setTimeout(() => setVisible(true), UMBRAL_PROCESO_MS + 1)');
 
   vi.useFakeTimers({ now: new Date(T_BASE) });
   const tA = Date.now();
@@ -445,8 +445,10 @@ beforeAll(async () => {
   precondiciones.push({ nombre: "P4 CierreView.tsx contiene <ModalShell bloqueante title={t('cierre.confirmar_titulo'", ok: p4, detalle: p4 ? 'encontrado' : 'ausente' });
   precondiciones.push({ nombre: "P5 ClientesView.tsx contiene bloqueante={estado.accion === 'revocar'}", ok: p5, detalle: p5 ? 'encontrado' : 'ausente' });
   precondiciones.push({ nombre: 'P6 Reloj simulado avanza Date.now() con vi.advanceTimersByTimeAsync', ok: p6, detalle: `delta=${tB - tA} ms` });
+  precondiciones.push({ nombre: 'P7 ProcesoEnCurso.tsx: umbral de la entrega (UMBRAL_PROCESO_MS = 3_000; visible a UMBRAL_PROCESO_MS + 1)', ok: p7, detalle: p7 ? 'encontrado' : 'ausente' });
 
   refsTiempoEstimadoSrc = contarEnSrc(/tiempo_estimado_operacion/g);
+  refsTiempoEstimadoCodigo = contarEnSrc(/^(?!\s*(\/\/|\*|\/\*)).*tiempo_estimado_operacion/gm);
   usosProgresoSrc = contarEnSrc(/<ProcesoEnCurso[^>]*\bprogreso=/g);
 });
 
@@ -477,7 +479,8 @@ afterAll(() => {
       c.estado = 'FALLA';
     }
   }
-  observaciones.push(`OBS-1: tiempo_estimado_operacion aparece ${refsTiempoEstimadoSrc} veces en src\\ ni lo envía el backend (lectura de Claude, backend 135bc318); lecturas medidas: CP-01=${lecturasPorCp['CP-01'] ?? 0}, CP-02=${lecturasPorCp['CP-02'] ?? 0}.`);
+  observaciones.push(`OBS-1: tiempo_estimado_operacion tiene ${refsTiempoEstimadoSrc} referencia(s) en src\\ .ts/.tsx, ${refsTiempoEstimadoCodigo} fuera de comentarios; el backend no lo envía (lectura de Claude, backend 135bc318). Lecturas del campo por la app (lector instrumentado en las respuestas simuladas): CP-01=${lecturasPorCp['CP-01'] ?? 0}, CP-02=${lecturasPorCp['CP-02'] ?? 0}.`);
+  observaciones.push('OBS-6 (decisión de Sebastian, 2026-11-22): RF-107 Entradas R129 («Si > 3000 ms, se activa PROCESO_EN_CURSO») y 8.5 paso 3 («M08 evalúa el campo tiempo_estimado_operacion para decidir si debe activar el indicador») piden activar el indicador desde el inicio según la estimación; la entrega del issue 730 lo muestra pasados 3.000 ms de operación porque el contrato no trae el campo. CP-02 se mide según la entrega. Para los líderes y Análisis.');
   observaciones.push(`OBS-2: ProcesoEnCurso acepta progreso 0-100 (barra), pero ningún llamador le pasa progreso (usos con prop progreso en src\\: ${usosProgresoSrc}).`);
   observaciones.push('OBS-3: el «tiempo máximo permitido» de FA-3 no lo define el RF; se tomó el timeout del cliente de generar (60.000 ms, reportesApi.ts).');
   observaciones.push('OBS-4: el cierre usa su propia barra de RF-87 («Progreso» de CierreView), no ProcesoEnCurso.');
@@ -542,10 +545,10 @@ describe('TC-M08-063 Indicador de proceso en curso (RF-107 8.5)', () => {
     expect(ok).toBe(true);
   });
 
-  it('CP-02 y CP-03 operacion 3.001 ms muestra indicador con spinner y sin progressbar', async () => {
+  it('CP-02 y CP-03 operacion de mas de 3.000 ms: indicador a partir de t0+3.001 con spinner y sin progressbar', async () => {
     vi.useFakeTimers({ now: new Date(T_BASE) });
     const textoEsperado = i18n.t('generar.generando', { ns: 'reportes' });
-    simularConRetraso('POST', /^\/reportes$/, 3001, 201, crearReporteExito(3001));
+    simularConRetraso('POST', /^\/reportes$/, 10000, 201, crearReporteExito(3001));
     const btn = await montarReportesYPrepararExportar(3001);
     if (!btn) {
       anotar('CP-02', false, 'no se pudo preparar el botón Exportar en PDF');
@@ -557,51 +560,55 @@ describe('TC-M08-063 Indicador de proceso en curso (RF-107 8.5)', () => {
     fireEvent.click(btn);
     await avanzar(0);
     const ind0 = indicadorProceso();
-    const txt0 = ind0 ? norm(ind0.textContent) : '';
-    const spinners = ind0 ? ind0.querySelectorAll('svg.ds-btn__spinner').length : 0;
-    const progressbars = ind0 ? ind0.querySelectorAll('[role="progressbar"]').length : 0;
-
     await avanzar(3000);
     const ind3000 = indicadorProceso();
     const txt3000 = ind3000 ? norm(ind3000.textContent) : '';
-
     await avanzar(1);
+    // ADAPT-1: CP-03 se mide con el indicador visible (la entrega lo muestra pasados 3.000 ms).
+    const ind3001 = indicadorProceso();
+    const txt3001 = ind3001 ? norm(ind3001.textContent) : '';
+    const spinners = ind3001 ? ind3001.querySelectorAll('svg.ds-btn__spinner').length : 0;
+    const progressbars = ind3001 ? ind3001.querySelectorAll('[role="progressbar"]').length : 0;
+
+    await avanzar(7000);
     await esperarEstable();
 
     lecturasPorCp['CP-02'] = lecturasTiempoEstimado;
-    const ok02 = !!ind0 && !!ind3000 && txt0 === textoEsperado && txt3000 === textoEsperado;
+    const ok02 = !ind3000 && !!ind3001 && txt3001 === textoEsperado;
     anotar(
       'CP-02',
       ok02,
-      `t0+0=${ind0 ? 'visible' : 'ausente'} ("${txt0}"), t0+3000=${ind3000 ? 'visible' : 'ausente'} ("${txt3000}"); lecturas=${lecturasTiempoEstimado}`,
+      `t0+0=${ind0 ? 'visible' : 'ausente'}, t0+3000=${ind3000 ? `visible ("${txt3000}")` : 'ausente'}, t0+3001=${ind3001 ? `visible ("${txt3001}")` : 'ausente'}; lecturas del campo=${lecturasTiempoEstimado}`,
     );
-    const ok03 = !!ind0 && spinners >= 1 && progressbars === 0;
-    anotar('CP-03', ok03, `spinners=${spinners}, progressbars=${progressbars}, texto="${txt0}"`);
+    const ok03 = !!ind3001 && spinners >= 1 && progressbars === 0;
+    anotar('CP-03', ok03, `en t0+3001: indicador ${ind3001 ? 'visible' : 'ausente'}, spinners=${spinners}, progressbars=${progressbars}, texto="${txt3001}"`);
     expect(ok02 && ok03).toBe(true);
   });
 
-  it('CP-04 y CP-05 aviso proceso.largo ausente en t1+30.000 y visible en t1+30.001', async () => {
+  it('CP-05 (y OBS-5) aviso proceso.largo respecto de t1 = aparicion del indicador', async () => {
     vi.useFakeTimers({ now: new Date(T_BASE) });
     const textoLargoEsperado = i18n.t('proceso.largo', { ns: 'common' });
     simularConRetraso('POST', /^\/reportes$/, 45000, 201, crearReporteExito(45000));
     const btn = await montarReportesYPrepararExportar(45000);
     if (!btn) {
-      anotar('CP-04', false, 'no se pudo preparar el botón Exportar en PDF');
       anotar('CP-05', false, 'no se pudo preparar el botón Exportar en PDF');
       expect(false).toBe(true);
       return;
     }
 
+    // ADAPT-2: t1 = instante real (reloj simulado) en que el indicador aparece, como dice el esperado; la ronda 1
+    // suponia t1 = t0 porque el indicador se veia de inmediato. Se avanza de a 1 ms y se lee la pantalla tras
+    // drenar microtareas (resolucion 1 ms), hasta 10.000 ms.
+    let t1: number | null = null;
     fireEvent.click(btn);
+    const t0 = Date.now();
     await avanzar(0);
-    const indT1 = indicadorProceso();
-    if (!indT1) {
-      await avanzar(45000);
-      await esperarEstable();
-      anotar('CP-04', false, 'indicador no apareció en t0 (sin t1)');
-      anotar('CP-05', false, 'indicador no apareció en t0 (sin t1)');
-      expect(false).toBe(true);
-      return;
+    await drenarMicrotareas();
+    if (indicadorProceso()) t1 = Date.now();
+    while (t1 === null && Date.now() - t0 < 10_000) {
+      await avanzar(1);
+      await drenarMicrotareas();
+      if (indicadorProceso()) t1 = Date.now();
     }
 
     const leerAvisoLargo = (): string => {
@@ -611,26 +618,36 @@ describe('TC-M08-063 Indicador de proceso en curso (RF-107 8.5)', () => {
       return avisos.join(' | ');
     };
 
-    await avanzar(29999);
-    const en29999 = leerAvisoLargo();
-    await avanzar(1);
-    const en30000 = leerAvisoLargo();
-    await avanzar(1);
-    const en30001 = leerAvisoLargo();
+    if (t1 === null) {
+      await avanzar(35000);
+      await esperarEstable();
+      anotar('CP-05', false, 'el indicador no apareció en los primeros 10.000 ms (sin t1)');
+      observaciones.push('OBS-5 (decisión de Sebastian 2026-11-21, antes CP-04): sin t1, el indicador no apareció en 10.000 ms.');
+      expect(false).toBe(true);
+      return;
+    }
 
-    await avanzar(15000);
+    const tA = t1;
+    const puntos = [
+      { nombre: 't0+29.999', en: t0 + 29_999 }, { nombre: 't0+30.000', en: t0 + 30_000 }, { nombre: 't0+30.001', en: t0 + 30_001 },
+      { nombre: 't1+29.999', en: tA + 29_999 }, { nombre: 't1+30.000', en: tA + 30_000 }, { nombre: 't1+30.001', en: tA + 30_001 },
+    ].sort((a, b) => a.en - b.en);
+    const leido: Record<string, string> = {};
+    for (const p of puntos) {
+      const falta = p.en - Date.now();
+      if (falta > 0) await avanzar(falta);
+      leido[p.nombre] = leerAvisoLargo();
+    }
+    const fin = t0 + 45_000 + 1_000 - Date.now();
+    if (fin > 0) await avanzar(fin);
     await esperarEstable();
 
-    const ok04 = en29999 === '' && en30000 === '';
-    anotar(
-      'CP-04',
-      ok04,
-      `t1+29.999=${en29999 ? `presente ("${en29999}")` : 'ausente'}; t1+30.000=${en30000 ? `presente ("${en30000}")` : 'ausente'}`,
-    );
-    const ok05 = en30001 === textoLargoEsperado;
-    anotar('CP-05', ok05, `t1+30.001="${en30001 || '(ausente)'}"`);
-    expect(ok04 && ok05).toBe(true);
-  });
+    const desc = (n: string) => `${n}=${leido[n] ? 'presente' : 'ausente'}`;
+    const ok05 = leido['t1+30.001'] === textoLargoEsperado;
+    anotar('CP-05', ok05, `t1=t0+${tA - t0} ms; t1+30.001="${leido['t1+30.001'] || '(ausente)'}"`);
+    observaciones.push(`OBS-5 (decisión de Sebastian 2026-11-21, antes CP-04: límite exacto del reloj simulado): t1=t0+${tA - t0} ms; ${desc('t1+29.999')}, ${desc('t1+30.000')}; respecto del inicio de la operación: ${desc('t0+29.999')}, ${desc('t0+30.000')}, ${desc('t0+30.001')} (el aviso de 30 s cuenta desde el inicio, según la entrega).`);
+    expect(ok05).toBe(true);
+  }, 60_000);
 
   it('CP-06 EXITOSO a los 5.000 ms cierra indicador y muestra banner de exito', async () => {
     vi.useFakeTimers({ now: new Date(T_BASE) });

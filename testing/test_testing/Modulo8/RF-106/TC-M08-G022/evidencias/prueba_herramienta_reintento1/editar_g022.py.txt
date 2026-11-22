@@ -1,0 +1,114 @@
+"""Cambios exactos del reintento 1 de G022: spec Vitest, spec Playwright y runner (cada texto viejo debe aparecer una sola vez).
+Uso: editar_g022.py <carpeta del caso>"""
+import sys, os
+
+caso = sys.argv[1]
+
+
+def aplicar(nombre, cambios, binario=False):
+    ruta = os.path.join(caso, nombre)
+    s = open(ruta, 'rb').read() if binario else open(ruta, encoding='utf-8', newline='').read()
+    for viejo, nuevo in cambios:
+        n = s.count(viejo)
+        assert n == 1, f'{nombre}: {n} apariciones de {viejo[:100]!r}'
+        s = s.replace(viejo, nuevo)
+    if binario:
+        open(ruta, 'wb').write(s)
+    else:
+        open(ruta, 'w', encoding='utf-8', newline='').write(s)
+    print(nombre, 'ok', len(cambios))
+
+
+# ---------------------------------------------------------------- Vitest
+aplicar('tc-m08-g022.test.tsx', [
+    ("// | 2026-11-20 | Juan Sebastian Gutierrez | v1.1: CP-07 y CP-08 buscan el total de conflictos fuera del texto de la TVCO (el control vitest_simulador_conflicto dio OK falso en CP-07) |\n",
+     "// | 2026-11-20 | Juan Sebastian Gutierrez | v1.1: CP-07 y CP-08 buscan el total de conflictos fuera del texto de la TVCO (el control vitest_simulador_conflicto dio OK falso en CP-07) |\n"
+     "// | 2026-11-21 | Juan Sebastian Gutierrez | v1.3 reintento 1 (INC-M08-NN-G022, GitHub #726): CP-02 pasa a observacion OBS-4 por decision de Sebastian (2026-11-20); el icono de la valoracion se lee sin su <title> ni el marcador hp-grupo (ADAPT-1). El resto de checkpoints, esperados y fuentes, literales |\n"),
+    ("  { paso: 'CP-02', caso: 'TC-M08-054 a, d y e (5001, 5004, 5005)',\n"
+     "    esperado: 'Se ve la tasa de error junto a la TVCO: 25 %, 100 % y 0 %',\n"
+     "    fuente: 'RF-106 Salida («tasa_error (%) = 100% - tvco»); TC-M08-054 (a, d, e)' },\n",
+     "  // CP-02 (tasa de error visible) pasa a observacion OBS-4 por decision de Sebastian (2026-11-20); se mide abajo.\n"),
+    ("  return Array.from(document.querySelectorAll('.recharts-scatter-symbol text')).map((t) => norm(t.textContent));",
+     "  // ADAPT-1 (reintento 1): solo el texto propio del icono; el <title> hijo es el detalle al pasar el raton.\n"
+     "  return Array.from(document.querySelectorAll('.recharts-scatter-symbol text:not(.hp-grupo)'))\n"
+     "    .map((t) => norm(Array.from(t.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent ?? '').join('')));"),
+    ("  it('CP-02 Tasa de error 25%, 100% y 0% (5001, 5004, 5005)', async () => {",
+     "  it('OBS-4 Tasa de error 25%, 100% y 0% (5001, 5004, 5005; antes CP-02)', async () => {"),
+    ("    const obtenido = partes.join(' | ');\n    anotar('CP-02', ok, obtenido);\n    expect(ok, obtenido).toBe(true);\n",
+     "    const obtenido = partes.join(' | ');\n"
+     "    // Observacion por decision de Sebastian (2026-11-20): no cuenta en el veredicto.\n"
+     "    observaciones.push(`OBS-4 (medida; antes CP-02, decisión de Sebastian 2026-11-20): tasa de error visible junto a la TVCO (RF-106 Salida, tasa_error = 100% - tvco; CA-11 no la nombra) = ${ok ? 'sí' : 'no'}. ${obtenido}`);\n"
+     "    expect(partes.length).toBe(3);\n"),
+])
+
+# ---------------------------------------------------------------- Playwright
+SEL_V = ".recharts-scatter-symbol text')"
+aplicar('tc-m08-g022.pw.ts', [
+    ("// | 2026-11-20 | Juan Sebastian Gutierrez | v1.1: CP-14 decodifica la captura en una pestaña about:blank aparte (sin depender de la CSP de TEST) y exige además amarillos/no_blancos >= 0.2 |\n",
+     "// | 2026-11-20 | Juan Sebastian Gutierrez | v1.1: CP-14 decodifica la captura en una pestaña about:blank aparte (sin depender de la CSP de TEST) y exige además amarillos/no_blancos >= 0.2 |\n"
+     "// | 2026-11-21 | Juan Sebastian Gutierrez | v1.3 reintento 1 (INC-M08-NN-G022, GitHub #726): checkpoints, esperados y fuentes literales. El icono se lee sin su <title> ni el marcador hp-grupo (ADAPT-1); CP-14 mide el amarillo contra el color de fondo real del recorte y no contra el blanco (ADAPT-2, pendiente de la ronda 1: la cuenta de TEST usa tema oscuro) y registra el tema |\n"),
+    ("    const el = document.querySelectorAll('.recharts-scatter-symbol text')[idx];",
+     "    const el = document.querySelectorAll('.recharts-scatter-symbol text:not(.hp-grupo)')[idx]; // ADAPT-1"),
+    ("async function medirPixelesAmarillos(page: Page, k: number): Promise<{ texto: string; fill: string; amarillos: number; noBlancos: number }> {\n"
+     "  const loc = page.locator('.recharts-scatter-symbol text').nth(k);\n"
+     "  const meta = await loc.evaluate((el) => ({\n"
+     "    texto: (el.textContent ?? '').replace(/[\\u00A0\\u202F]/g, ' ').replace(/\\s+/g, ' ').trim(),\n"
+     "    fill: getComputedStyle(el).fill,\n"
+     "  }));",
+     "async function medirPixelesAmarillos(page: Page, k: number): Promise<{ texto: string; fill: string; tema: string; amarillos: number; noBlancos: number; noFondo: number; fondo: string }> {\n"
+     "  const loc = page.locator('.recharts-scatter-symbol text:not(.hp-grupo)').nth(k); // ADAPT-1\n"
+     "  const meta = await loc.evaluate((el) => ({\n"
+     "    // ADAPT-1: solo el texto propio del icono, sin su <title>.\n"
+     "    texto: Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent ?? '').join('').replace(/[\\u00A0\\u202F]/g, ' ').replace(/\\s+/g, ' ').trim(),\n"
+     "    fill: getComputedStyle(el).fill,\n"
+     "    tema: document.documentElement.getAttribute('data-theme') ?? '(sin data-theme)',\n"
+     "  }));"),
+    ("    return { ...meta, amarillos: 0, noBlancos: 0 };\n  }\n  const clip = {",
+     "    return { ...meta, amarillos: 0, noBlancos: 0, noFondo: 0, fondo: '(sin recorte)' };\n  }\n  const clip = {"),
+    ("  let conteo = { amarillos: 0, noBlancos: 0 };",
+     "  let conteo = { amarillos: 0, noBlancos: 0, noFondo: 0, fondo: '' };"),
+    ("    let amarillos = 0;\n    let noBlancos = 0;\n    for (let i = 0; i < px.length; i += 4) {\n"
+     "      const r = px[i];\n      const g = px[i + 1];\n      const b = px[i + 2];\n"
+     "      if (r + g + b < 700) noBlancos += 1;\n"
+     "      if (r >= 170 && g >= 130 && b <= 120 && (r - b) >= 80 && (g - b) >= 50) amarillos += 1;\n    }\n"
+     "    return { amarillos, noBlancos };",
+     "    // ADAPT-2: el fondo es el color mas frecuente del borde del recorte (2 px alrededor del icono).\n"
+     "    const W = canvas.width;\n    const H = canvas.height;\n"
+     "    const frecuencia = new Map<string, number>();\n"
+     "    for (let y = 0; y < H; y += 1) for (let x = 0; x < W; x += 1) {\n"
+     "      if (x > 1 && x < W - 2 && y > 1 && y < H - 2) continue;\n"
+     "      const i = (y * W + x) * 4;\n"
+     "      const clave = `${px[i]},${px[i + 1]},${px[i + 2]}`;\n"
+     "      frecuencia.set(clave, (frecuencia.get(clave) ?? 0) + 1);\n    }\n"
+     "    const fondo = [...frecuencia].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '255,255,255';\n"
+     "    const [fr, fg, fb] = fondo.split(',').map(Number);\n"
+     "    let amarillos = 0;\n    let noBlancos = 0;\n    let noFondo = 0;\n    for (let i = 0; i < px.length; i += 4) {\n"
+     "      const r = px[i];\n      const g = px[i + 1];\n      const b = px[i + 2];\n"
+     "      if (r + g + b < 700) noBlancos += 1;\n"
+     "      if (Math.abs(r - fr) + Math.abs(g - fg) + Math.abs(b - fb) > 60) noFondo += 1;\n"
+     "      if (r >= 170 && g >= 130 && b <= 120 && (r - b) >= 80 && (g - b) >= 50) amarillos += 1;\n    }\n"
+     "    return { amarillos, noBlancos, noFondo, fondo: `rgb(${fondo})` };"),
+    ("    return { ...meta, fill: `${meta.fill}; error_decodificando=${String((e as Error)?.message ?? e).slice(0, 120)}`, amarillos: 0, noBlancos: 0 };",
+     "    return { ...meta, fill: `${meta.fill}; error_decodificando=${String((e as Error)?.message ?? e).slice(0, 120)}`, amarillos: 0, noBlancos: 0, noFondo: 0, fondo: '(error)' };"),
+    ("  const nRetrosDom = await page.locator('.recharts-scatter-symbol text').count();",
+     "  const nRetrosDom = await page.locator('.recharts-scatter-symbol text:not(.hp-grupo)').count(); // ADAPT-1"),
+    ("  const centros = await page.evaluate(() => Array.from(document.querySelectorAll('.recharts-scatter-symbol text')).map((el) => {",
+     "  const centros = await page.evaluate(() => Array.from(document.querySelectorAll('.recharts-scatter-symbol text:not(.hp-grupo)')).map((el) => { // ADAPT-1"),
+    ("  const amarillo = (m: { amarillos: number; noBlancos: number }) => m.amarillos >= 10 && m.noBlancos > 0 && m.amarillos / m.noBlancos >= 0.2;",
+     "  // ADAPT-2: la proporcion se toma sobre los pixeles distintos del fondo real (en tema oscuro todo el recorte es \"no blanco\").\n"
+     "  const amarillo = (m: { amarillos: number; noFondo: number }) => m.amarillos >= 10 && m.noFondo > 0 && m.amarillos / m.noFondo >= 0.2;"),
+    ("    `marcador[1]={texto=\"${m1.texto}\", fill=\"${m1.fill}\", amarillos=${m1.amarillos}, no_blancos=${m1.noBlancos}} | marcador[2]={texto=\"${m2.texto}\", fill=\"${m2.fill}\", amarillos=${m2.amarillos}, no_blancos=${m2.noBlancos}}`,",
+     "    `tema=${m1.tema}; marcador[1]={texto=\"${m1.texto}\", fill=\"${m1.fill}\", fondo=\"${m1.fondo}\", amarillos=${m1.amarillos}, distintos_del_fondo=${m1.noFondo}, no_blancos=${m1.noBlancos}} | marcador[2]={texto=\"${m2.texto}\", fill=\"${m2.fill}\", fondo=\"${m2.fondo}\", amarillos=${m2.amarillos}, distintos_del_fondo=${m2.noFondo}, no_blancos=${m2.noBlancos}}`,"),
+])
+
+# ---------------------------------------------------------------- Runner (ASCII, CRLF)
+aplicar('ejecutar_tc_m08_g022.ps1', [
+    (b"# | 2026-11-20 | Juan Sebastian Gutierrez | Runner de TC-M08-G022 (RF-106): Vitest (CP-01 a CP-10) + Playwright contra TEST (CP-11 a CP-14), reporte unido, escaneo al final. Base: runner de G026 |\r\n",
+     b"# | 2026-11-20 | Juan Sebastian Gutierrez | Runner de TC-M08-G022 (RF-106): Vitest (CP-01 a CP-10) + Playwright contra TEST (CP-11 a CP-14), reporte unido, escaneo al final. Base: runner de G026 |\r\n"
+     b"# | 2026-11-21 | Juan Sebastian Gutierrez | Reintento 1: CP-02 pasa a observacion (decision de Sebastian 2026-11-20); Vitest = 9 checkpoints y se exige la lista CP-01, CP-03 a CP-14. Nada mas cambia |\r\n"),
+    (b"#   3 corrida invalida (parcial ausente, checkpoints distintos de 10 + 4,",
+     b"#   3 corrida invalida (parcial ausente, checkpoints distintos de 9 + 4,"),
+    (b"$cpVitest = 10\r\n", b"$cpVitest = 9\r\n"),
+    (b"  for ($i = 1; $i -le ($cpVitest + $cpPlaywright); $i++) {\r\n    $id = 'CP-{0:D2}' -f $i\r\n",
+     b"  $idsEsperados = @('CP-01') + @(3..14 | ForEach-Object { 'CP-{0:D2}' -f $_ })\r\n  foreach ($id in $idsEsperados) {\r\n"),
+], binario=True)

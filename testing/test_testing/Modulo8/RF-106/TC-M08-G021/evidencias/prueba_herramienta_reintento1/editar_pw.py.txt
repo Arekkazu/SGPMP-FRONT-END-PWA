@@ -1,0 +1,69 @@
+"""Cambios exactos del reintento 1 al spec Playwright de G021 (cada texto viejo debe aparecer una sola vez)."""
+import sys
+
+ruta = sys.argv[1]
+s = open(ruta, encoding='utf-8', newline='').read()
+assert '\r\n' not in s, 'el spec tiene CRLF; revisar'
+
+primera = s.split('\n', 3)
+CAMBIOS = [
+    (
+        "  return page.evaluate(() => {\n"
+        "    const nums = (d: string) => (d.match(/[+-]?\\d+(?:\\.\\d+)?(?:e[+-]?\\d+)?/gi) ?? []).map(Number);\n"
+        "    const sup = document.querySelector('svg.recharts-surface');\n"
+        "    const puntos = Array.from(document.querySelectorAll('.recharts-line-dots circle')).map((el) => ({ x: Number(el.getAttribute('cx')), y: Number(el.getAttribute('cy')) }));\n"
+        "    const eventos = Array.from(document.querySelectorAll('.recharts-scatter-symbol path')).map((el) => {\n"
+        "      let x = Number.NaN; let y = Number.NaN;\n"
+        "      const tr = el.getAttribute('transform') ?? el.parentElement?.getAttribute('transform') ?? '';\n"
+        "      const t = tr.match(/translate\\(\\s*([+-]?[\\d.e+-]+)\\s*(?:,\\s*|\\s+)([+-]?[\\d.e+-]+)\\s*\\)/i);\n"
+        "      if (t) { x = Number(t[1]); y = Number(t[2]); } else {",
+        "  return page.evaluate(() => {\n"
+        "    const nums = (d: string) => (d.match(/[+-]?\\d+(?:\\.\\d+)?(?:e[+-]?\\d+)?/gi) ?? []).map(Number);\n"
+        "    const sup = document.querySelector('svg.recharts-surface');\n"
+        "    const puntos = Array.from(document.querySelectorAll('.recharts-line-dots circle')).map((el) => ({ x: Number(el.getAttribute('cx')), y: Number(el.getAttribute('cy')) }));\n"
+        "    // ADAPT-1 (reintento 1): desde a74c51cb el evento es un <rect> propio; se aceptan path (ronda 1) y rect.\n"
+        "    const eventos = Array.from(document.querySelectorAll('.recharts-scatter-symbol path, .recharts-scatter-symbol rect')).map((el) => {\n"
+        "      let x = Number.NaN; let y = Number.NaN;\n"
+        "      const tr = el.getAttribute('transform') ?? el.parentElement?.getAttribute('transform') ?? '';\n"
+        "      const t = tr.match(/translate\\(\\s*([+-]?[\\d.e+-]+)\\s*(?:,\\s*|\\s+)([+-]?[\\d.e+-]+)\\s*\\)/i);\n"
+        "      if (el.tagName.toLowerCase() === 'rect') {\n"
+        "        x = Number(el.getAttribute('x')) + Number(el.getAttribute('width')) / 2;\n"
+        "        y = Number(el.getAttribute('y')) + Number(el.getAttribute('height')) / 2;\n"
+        "      } else if (t) { x = Number(t[1]); y = Number(t[2]); } else {",
+    ),
+    (
+        "    const grupos = sup ? Array.from(sup.querySelectorAll('text')).map((el) => ({ el, texto: (el.textContent ?? '').replace(/\\s+/g, ' ').trim() }))",
+        "    // ADAPT-2 (reintento 1): solo el texto propio del <text>; el <title> hijo es el detalle al pasar el raton.\n"
+        "    const propio = (el: Element) => Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent ?? '').join('');\n"
+        "    const grupos = sup ? Array.from(sup.querySelectorAll('text')).map((el) => ({ el, texto: propio(el).replace(/\\s+/g, ' ').trim() }))",
+    ),
+    (
+        "    const simbolo = document.querySelectorAll('.recharts-scatter-symbol path')[k]?.closest('.recharts-scatter-symbol');",
+        "    const simbolo = document.querySelectorAll('.recharts-scatter-symbol path, .recharts-scatter-symbol rect')[k]?.closest('.recharts-scatter-symbol'); // ADAPT-1",
+    ),
+    (
+        "    const ev = await page.evaluate(() => Array.from(document.querySelectorAll('.recharts-scatter-symbol path')).map((el) => {",
+        "    const ev = await page.evaluate(() => Array.from(document.querySelectorAll('.recharts-scatter-symbol path, .recharts-scatter-symbol rect')).map((el) => { // ADAPT-1",
+    ),
+    (
+        "  precondicion('El frontend desplegado tiene la vista del historial predictivo de #693 (\"Se relacionan predicción y evento\", \"grupos de eventos cercanos\")',\n"
+        "    todo.includes('Se relacionan predicción y evento') && todo.includes('grupos de eventos cercanos'),",
+        "  // ADAPT-3 (reintento 1): la leyenda de #693 cambio con el arreglo de #722 (a74c51cb, prediction.json:1071);\n"
+        "  // se exige el texto nuevo, que ademas confirma que el arreglo esta desplegado.\n"
+        "  precondicion('El frontend desplegado tiene la vista del historial predictivo con el arreglo de #722 (\"Una línea punteada une la predicción con su evento sanitario\", \"grupos de eventos cercanos\")',\n"
+        "    todo.includes('Una línea punteada une la predicción con su evento sanitario') && todo.includes('grupos de eventos cercanos'),",
+    ),
+]
+for viejo, nuevo in CAMBIOS:
+    n = s.count(viejo)
+    assert n == 1, f'{n} apariciones de: {viejo[:100]!r}'
+    s = s.replace(viejo, nuevo)
+assert s.count(".recharts-scatter-symbol path'") == 0, 'queda un selector de evento sin adaptar'
+
+# historial: despues de la ultima fila "| 2026-11-20 |" de la cabecera
+lineas = s.split('\n')
+idx = max(i for i, l in enumerate(lineas[:15]) if l.startswith('// | 2026-11-20 |'))
+lineas.insert(idx + 1, "// | 2026-11-21 | Juan Sebastian Gutierrez | v1.1 reintento 1 (INC de G021, GitHub #722): checkpoints, esperados y fuentes literales de la ronda 1; solo cambia la forma de medir porque el arreglo cambio el DOM: eventos <rect> (ADAPT-1), texto propio del marcador \"N eventos\" sin su <title> (ADAPT-2) y texto de la leyenda en la precondicion de despliegue (ADAPT-3) |")
+s = '\n'.join(lineas)
+open(ruta, 'w', encoding='utf-8', newline='').write(s)
+print('ok', len(CAMBIOS) + 1, 'cambios; cabecera en la linea', idx + 2)

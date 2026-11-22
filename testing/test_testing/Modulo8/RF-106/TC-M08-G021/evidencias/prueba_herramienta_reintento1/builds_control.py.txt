@@ -1,0 +1,25 @@
+"""Builds de control (Playwright G021): mutan la COPIA de la vista en modo binario, construyen y restauran."""
+import os, subprocess
+
+FE = '/home/claude/g020r1/fe'
+VISTA = os.path.join(FE, 'src/prediction/pages/HistorialPredictivoView.tsx')
+MUT = {
+    'sin_conectores': [(b"const conectores = (datos?.correspondencias ?? []).filter((c) => !c.colision).flatMap((c) => {",
+                        b"const conectores = (datos?.correspondencias ?? []).filter(() => false).flatMap((c) => {")],
+    'sin_grupo': [(b"<Scatter data={gruposPts}", b"<Scatter data={[]}")],
+    'sin_title_evento': [(b"{p.payload && <title>{tituloEvento(p.payload)}</title>}", b"{null}")],
+}
+original = open(VISTA, 'rb').read()
+for nombre, reemplazos in MUT.items():
+    mut = original
+    for viejo, nuevo in reemplazos:
+        assert mut.count(viejo) == 1, (nombre, viejo)
+        mut = mut.replace(viejo, nuevo)
+    try:
+        open(VISTA, 'wb').write(mut)
+        env = dict(os.environ, VITE_BASE_PATH='/sigab-test/', VITE_API_BASE_URL='http://127.0.0.1:4173/sigab-test/api')
+        p = subprocess.run(['pnpm', 'exec', 'vite', 'build', '--outDir', f'/home/claude/g021r1/build_{nombre}'], cwd=FE, env=env,
+                           capture_output=True, text=True, timeout=500)
+        print(nombre, 'build_exit', p.returncode)
+    finally:
+        open(VISTA, 'wb').write(original)

@@ -1,6 +1,7 @@
 # | Fecha      | Nombre                   | Que se hizo |
 # |------------|--------------------------|-------------|
 # | 2026-11-20 | Juan Sebastian Gutierrez | Runner de TC-M08-G026 (RF-107): Vitest (CP-01 a CP-20) + Playwright contra TEST (CP-21 a CP-24), reporte unido, escaneo al final |
+# | 2026-11-22 | Juan Sebastian Gutierrez | Reintento 1 (#706): AppBar.tsx y operacionEnCurso.ts en la lista de SHA de src (los usan ADAPT-1 y ADAPT-3 de los specs v1.1) |
 #
 # Uso (desde la carpeta del caso, PowerShell 5.1):
 #   .\ejecutar_tc_m08_g026.ps1                (ronda 1)
@@ -102,7 +103,8 @@ $fuentes = @(
   'src\shared\design-system\ModalShell.tsx', 'src\shared\hooks\useModalA11y.ts', 'src\shared\design-system\EstadoSincronizacion.tsx',
   'src\shared\design-system\ProcesoEnCurso.tsx', 'src\shared\design-system\Layout.css', 'src\reportes\pages\ReportesPage.tsx',
   'src\prediction\pages\HistorialPredictivoView.tsx', 'src\biological_assets\components\RegistrarBajaModal.tsx',
-  'src\auth\hooks\useLogout.ts', 'src\App.tsx', 'src\shared\i18n\locales\es-CO\common.json'
+  'src\auth\hooks\useLogout.ts', 'src\App.tsx', 'src\shared\i18n\locales\es-CO\common.json',
+  'src\shared\design-system\AppBar.tsx', 'src\shared\hooks\operacionEnCurso.ts'
 )
 $shaFuentes = @()
 foreach ($f in $fuentes) {

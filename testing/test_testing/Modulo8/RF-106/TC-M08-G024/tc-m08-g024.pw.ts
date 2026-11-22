@@ -1,6 +1,7 @@
 // | Fecha      | Nombre                   | Que se hizo |
 // |------------|--------------------------|-------------|
 // | 2026-11-21 | Juan Sebastian Gutierrez | TC-M08-G024 (TC-M08-060; RF-106): rendimiento en Chromium y WebKit con respuestas simuladas; existencia de zoom/scroll y de paginación/virtualización v1 |
+// | 2026-11-22 | Juan Sebastian Gutierrez | v1.1 reintento 1 (#728): ADAPT-1, los puntos de la línea se cuentan con '.recharts-line-dots circle' (el arreglo dibuja cada punto con un <circle> propio, sin la clase recharts-dot); observación fija 2 reescrita; observación dinámica de avisos y botones con 2.000 marcadores. Checkpoints, esperados, fuentes y retirado sin cambios |
 //
 // QA SGPMP - Evaluacion (ronda 1). Navegador real (Chromium y WebKit) contra el frontend desplegado en TEST, cuenta
 // Veterinario 97, activo 885. Solo lectura: GET /historial-predictivo/885 se responde con respuestas sinteticas grandes
@@ -71,7 +72,7 @@ const RETIRADOS: Array<{ paso: string; motivo: string }> = [
 const precondiciones: Array<{ nombre: string; ok: boolean; detalle: string }> = [];
 const observaciones: string[] = [
   'RNF-02 y RNF-05 no definen un criterio medible; CP-05 y CP-06 solo verifican la existencia del mecanismo (decisión de Sebastian, 2026-11-21).',
-  'El tooltip por marcador ya está reportado en INC-M08-NN-G021 e INC-M08-NN-G022.',
+  'El detalle por marcador al pasar el ratón (un <title> en cada marcador) se evalúa en G021 y G022 (corregido en sus reintentos 1); G024 no lo mide.',
 ];
 const escrituras: Array<{ metodo: string; ruta: string; resultado: string }> = [];
 const violaciones: string[] = [];
@@ -369,7 +370,7 @@ async function medir(page: Page, esc: Escenario | null, etiqueta: string): Promi
       const w = window as unknown as { __qaFin: number | null };
       w.__qaFin = null;
       const tick = () => {
-        const l = document.querySelectorAll('.recharts-line-dots .recharts-dot').length;
+        const l = document.querySelectorAll('.recharts-line-dots circle').length;
         const s = document.querySelectorAll('.recharts-scatter-symbol').length;
         const cargando = (document.body.textContent ?? '').includes('Cargando historial...');
         if (l === expL && s === expS && !cargando) { w.__qaFin = Date.now(); return; }
@@ -380,7 +381,7 @@ async function medir(page: Page, esc: Escenario | null, etiqueta: string): Promi
     await page.waitForFunction(() => (window as unknown as { __qaFin: number | null }).__qaFin !== null, { timeout: 30_000 }).catch(() => null);
     const res = await page.evaluate(() => ({
       fin: (window as unknown as { __qaFin: number | null }).__qaFin,
-      Lp: document.querySelectorAll('.recharts-line-dots .recharts-dot').length,
+      Lp: document.querySelectorAll('.recharts-line-dots circle').length,
       Sp: document.querySelectorAll('.recharts-scatter-symbol').length,
     }));
     return {
@@ -412,7 +413,7 @@ async function medir(page: Page, esc: Escenario | null, etiqueta: string): Promi
     while (Date.now() < limite) {
       await page.waitForTimeout(500);
       const cur = await page.evaluate(() => ({
-        Lp: document.querySelectorAll('.recharts-line-dots .recharts-dot').length,
+        Lp: document.querySelectorAll('.recharts-line-dots circle').length,
         Sp: document.querySelectorAll('.recharts-scatter-symbol').length,
         cargando: (document.body.textContent ?? '').includes('Cargando historial...'),
       }));
@@ -434,7 +435,7 @@ async function medir(page: Page, esc: Escenario | null, etiqueta: string): Promi
     const w = window as unknown as { __qaFin: number | null };
     w.__qaFin = null;
     const tick = () => {
-      const l = document.querySelectorAll('.recharts-line-dots .recharts-dot').length;
+      const l = document.querySelectorAll('.recharts-line-dots circle').length;
       const s = document.querySelectorAll('.recharts-scatter-symbol').length;
       const cargando = (document.body.textContent ?? '').includes('Cargando historial...');
       if (l === expL && s === expS && !cargando) { w.__qaFin = Date.now(); return; }
@@ -449,7 +450,7 @@ async function medir(page: Page, esc: Escenario | null, etiqueta: string): Promi
   await page.waitForFunction(() => (window as unknown as { __qaFin: number | null }).__qaFin !== null, { timeout: 30_000 }).catch(() => null);
   const res = await page.evaluate(() => ({
     fin: (window as unknown as { __qaFin: number | null }).__qaFin,
-    Lp: document.querySelectorAll('.recharts-line-dots .recharts-dot').length,
+    Lp: document.querySelectorAll('.recharts-line-dots circle').length,
     Sp: document.querySelectorAll('.recharts-scatter-symbol').length,
   }));
   return {
@@ -626,6 +627,20 @@ test('TC-M08-G024 rendimiento Chromium y WebKit (CP-01 a CP-06)', async ({ page,
       .filter((b) => (!cardPend || !cardPend.contains(b)) && rePag.test(n(b.textContent)))
       .map((b) => n(b.textContent));
   });
+  // Observación (reintento 1): avisos de la gráfica y estado de los botones de la línea de tiempo con 2.000 marcadores.
+  const estado2000 = await page.evaluate(() => {
+    const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+    const h3 = Array.from(document.querySelectorAll('h3')).find((el) => n(el.textContent) === 'Línea de tiempo');
+    const card = h3?.parentElement;
+    if (!card) return { avisos: [] as string[], botones: [] as string[] };
+    const avisos = Array.from(card.querySelectorAll('[role="status"]')).map((el) => n(el.textContent)).filter(Boolean);
+    const grupo = card.querySelector('[role="group"]');
+    const botones = grupo
+      ? Array.from(grupo.querySelectorAll('button')).map((b) => `${n(b.textContent)}${(b as HTMLButtonElement).disabled ? ' (deshabilitado)' : ''}`)
+      : [];
+    return { avisos, botones };
+  });
+  observaciones.push(`Con 2.000 marcadores: avisos de la gráfica=${JSON.stringify(estado2000.avisos)}; botones de la línea de tiempo=${JSON.stringify(estado2000.botones)}.`);
   const dibujados = m2000.Lp + m2000.Sp;
   const ok06 = dibujados < 2000 || pagGrafica.length > 0;
   anotar(

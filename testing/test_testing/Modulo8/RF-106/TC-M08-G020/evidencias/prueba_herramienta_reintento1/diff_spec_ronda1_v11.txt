@@ -1,0 +1,133 @@
+--- spec_ronda1.tsx	2026-11-21 19:15:18.657550191 -0500
++++ fe/testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx	2026-11-21 19:17:42.114256263 -0500
+@@ -1,4 +1,5 @@
+ // | 2026-11-20 | Juan Sebastian Gutierrez | TC-M08-G020 (TC-M08-051 y 057; RF-106): linea de tiempo, marcadores, hora de Bogota y estados vacios o parciales |
++// | 2026-11-21 | Juan Sebastian Gutierrez | v1.1 reintento 1 (INC-M08-387-G020): checkpoints, esperados y fuentes literales de la ronda 1; solo cambia la forma de medir porque el arreglo cambio el DOM: eventos <rect> (ADAPT-1), relleno var(--sem-error) con precondicion de tokens.css (ADAPT-2), texto de la valoracion sin su <title> y sin el marcador hp-grupo (ADAPT-3); valoraciones medidas en la fecha de su prediccion por decision de Sebastian 2026-11-21 (opcion B, ADAPT-4; OBS-6) |
+ //
+ // Respuestas simuladas con la forma real de consultar_historial_predictivo_use_case.py; reporte JSON propio en STAGING_DIR;
+ // cada checkpoint arranca en FALLA "No alcanzado"; obtenido = lo medido del DOM o de la URL real de la petición.
+@@ -165,6 +166,13 @@
+   { tipo: 'RETROALIMENTACION', id_resultado_inferencia: 'p7', valoracion: 'SIN_EVENTO', fecha: '2026-10-31T12:00:00Z', veterinario: 'Vet QA', observaciones: null, en_conflicto: false },
+ ];
+ 
++/** ADAPT-4: fecha de la prediccion evaluada por una valoracion (opcion B de Sebastian, 2026-11-21). */
++function fechaPrediccionDe(r: MarcadorRaw): string {
++  const p = PREDICCIONES_BASE.find((x) => x.id_resultado_inferencia === r.id_resultado_inferencia);
++  if (!p) throw new Error(`Valoracion sin prediccion en los datos simulados: ${r.id_resultado_inferencia}`);
++  return p.fecha;
++}
++
+ function pendientesDeBase(preds: MarcadorRaw[]) {
+   const ids = ['p3', 'p2', 'p1'];
+   return {
+@@ -429,12 +437,17 @@
+   return document.querySelectorAll('.recharts-line-dots circle').length;
+ }
+ 
++// ADAPT-1 (reintento 1): desde a74c51cb el evento es un <rect> propio; se aceptan path (ronda 1) y rect.
++const SEL_EVENTO = '.recharts-scatter-symbol path, .recharts-scatter-symbol rect';
++// ADAPT-3 (reintento 1): el marcador "N eventos" (hp-grupo) tambien es un <text> del scatter; no es una valoracion.
++const SEL_VALORACION = '.recharts-scatter-symbol text:not(.hp-grupo)';
++
+ function contarMarcadoresEvento(): number {
+-  return document.querySelectorAll('.recharts-scatter-symbol path').length;
++  return document.querySelectorAll(SEL_EVENTO).length;
+ }
+ 
+ function contarMarcadoresValoracion(): number {
+-  return document.querySelectorAll('.recharts-scatter-symbol text').length;
++  return document.querySelectorAll(SEL_VALORACION).length;
+ }
+ 
+ function leerPuntosLinea(): Array<{ cx: number; cy: number }> {
+@@ -445,12 +458,16 @@
+ }
+ 
+ function leerMarcadoresEvento(): Array<{ x: number; y: number; fill: string }> {
+-  return Array.from(document.querySelectorAll('.recharts-scatter-symbol path')).map((el) => {
++  return Array.from(document.querySelectorAll(SEL_EVENTO)).map((el) => {
+     const cxAttr = el.getAttribute('cx');
+     const cyAttr = el.getAttribute('cy');
+     let x = Number.NaN;
+     let y = Number.NaN;
+-    if (cxAttr !== null && cyAttr !== null) {
++    if (el.tagName.toLowerCase() === 'rect') {
++      // ADAPT-1: centro del rectangulo
++      x = Number(el.getAttribute('x')) + Number(el.getAttribute('width')) / 2;
++      y = Number(el.getAttribute('y')) + Number(el.getAttribute('height')) / 2;
++    } else if (cxAttr !== null && cyAttr !== null) {
+       x = Number(cxAttr);
+       y = Number(cyAttr);
+     } else {
+@@ -476,10 +493,11 @@
+ }
+ 
+ function leerMarcadoresValoracion(): Array<{ x: number; y: number; texto: string }> {
+-  return Array.from(document.querySelectorAll('.recharts-scatter-symbol text')).map((el) => ({
++  return Array.from(document.querySelectorAll(SEL_VALORACION)).map((el) => ({
+     x: Number(el.getAttribute('x')),
+     y: Number(el.getAttribute('y')),
+-    texto: (el.textContent ?? '').trim(),
++    // ADAPT-3: solo el texto propio del marcador; el <title> hijo es el detalle al pasar el raton.
++    texto: Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent ?? '').join('').trim(),
+   }));
+ }
+ 
+@@ -594,6 +612,30 @@
+     ok: histView.includes(prec4),
+     detalle: prec4,
+   });
++  // Precondicion 5 (reintento 1, ADAPT-2): todas las definiciones de --sem-error en tokens.css son rojas
++  // (matiz <= 20 o >= 340 grados y saturacion >= 0,5).
++  const tokens = readFileSync(join(RAIZ_FRONT, 'src/shared/design-system/tokens.css'), 'utf8');
++  const defs = Array.from(tokens.matchAll(/--sem-error\s*:\s*(#[0-9a-fA-F]{6})\s*;/g)).map((m) => m[1]);
++  const esRojo = (hex: string) => {
++    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
++    const max = Math.max(r, g, b);
++    const min = Math.min(r, g, b);
++    if (max !== r || max === min) return false;
++    const h = (60 * ((g - b) / (max - min)) + 360) % 360;
++    const l = (max + min) / 2;
++    const sat = (max - min) / (1 - Math.abs(2 * l - 1));
++    return (h <= 20 || h >= 340) && sat >= 0.5;
++  };
++  precondiciones.push({
++    nombre: 'tokens.css define --sem-error en rojo (todas sus definiciones)',
++    ok: defs.length > 0 && defs.every(esRojo),
++    detalle: `--sem-error=[${defs.join(', ')}]`,
++  });
++  observaciones.push(
++    'ADAPT-1 a ADAPT-4 (reintento 1): checkpoints, esperados y fuentes literales de la ronda 1. Cambia solo la forma de medir: eventos <rect> (a74c51cb), relleno var(--sem-error), texto de la valoracion sin su <title> ni el marcador hp-grupo, y valoraciones en la fecha de su prediccion (decision de Sebastian 2026-11-21, opcion B). Detalle en evidencias/DISENO_TC-M08-G020.md.',
++    'OBS-6: la marca de cada valoracion se dibuja sobre su prediccion (HistorialPredictivoView.tsx:96-99, 7297f934, QA M08 CU04 H-02). RF-106 Proceso 2.1 alinea las retroalimentaciones con "ts = registro Veterinario"; Proceso 3 las pone como "marcadores sobre la linea" y CA-8 (a) "en esa posicion". Decision de Sebastian 2026-11-21: se sigue la entrega (opcion B). Para los lideres.',
++    'OBS-7: el dominio del eje X se arma con new Date(`${fecha}T00:00:00`) y `T23:59:59.999` sin zona (HistorialPredictivoView.tsx:45-48): depende de la zona del equipo, como la hora de OBS-1. Medido con TZ=America/Bogota.',
++  );
+ });
+ 
+ beforeEach(() => {
+@@ -745,12 +787,14 @@
+     const nEventosOk = evs.length === 2;
+     const rojoOk =
+       evs.length > 0 &&
+-      evs.every((e) => e.fill.includes('--danger-600') || e.fill.toLowerCase().includes('#dc2626'));
++      // ADAPT-2: el arreglo usa el token var(--sem-error); la precondicion 5 verifica que tokens.css lo define en rojo.
++      evs.every((e) => e.fill.includes('--danger-600') || e.fill.toLowerCase().includes('#dc2626') || e.fill.includes('--sem-error'));
+ 
+     // Tiempos reales de la respuesta recibida o del conjunto 885
+     const tPreds = PREDICCIONES_BASE.map((p) => new Date(p.fecha).getTime()).sort((a, b) => a - b);
+     const tEvs = EVENTOS_BASE.map((e) => new Date(e.fecha).getTime()).sort((a, b) => a - b);
+-    const tRets = RETROS_BASE.map((r) => new Date(r.fecha).getTime()).sort((a, b) => a - b);
++    // ADAPT-4 (decision de Sebastian 2026-11-21, opcion B): la valoracion se ubica en la fecha de su prediccion.
++    const tRets = RETROS_BASE.map((r) => new Date(fechaPrediccionDe(r)).getTime()).sort((a, b) => a - b);
+ 
+     const todosX = [...pts.map((p) => p.cx), ...evs.map((e) => e.x), ...rets.map((r) => r.x)];
+     const todosT = [...tPreds, ...tEvs, ...tRets];
+@@ -859,7 +903,8 @@
+     const inicioRango = new Date('2025-11-20T05:00:00Z').getTime();
+     const finRango = new Date('2026-11-21T04:59:59.999Z').getTime();
+     const tP1 = new Date('2026-10-10T15:00:00Z').getTime();
+-    const tUltRetro = new Date('2026-10-31T12:00:00Z').getTime();
++    // ADAPT-4 (opcion B): la valoracion de 2026-10-31T12:00:00Z (p7) se dibuja en la fecha de su prediccion.
++    const tUltRetro = new Date(fechaPrediccionDe(RETROS_BASE.find((r) => r.fecha === '2026-10-31T12:00:00Z')!)).getTime();
+ 
+     const espRelP1 = (tP1 - inicioRango) / (finRango - inicioRango);
+     const espRelUlt = (tUltRetro - inicioRango) / (finRango - inicioRango);

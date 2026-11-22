@@ -4,6 +4,7 @@
 |---|---|---|
 | 2026-11-20 | Juan Sebastian Gutierrez | Fase 1 aprobada (diseño de Claude) y Fase 2 v1 (construcción con `PROMPT_CONSTRUCCION_ARGON_G022_v1.md`). Detención en `prueba_herramienta_v1` porque el control `vitest_simulador_conflicto` dio OK falso en CP-07 |
 | 2026-11-20 | Juan Sebastian Gutierrez | v1.1: corrección autorizada en `tc-m08-g022.test.tsx` (CP-07 y CP-08 buscan el total de conflictos fuera del texto de la TVCO). Prueba de la herramienta completa en `prueba_herramienta_v2`: 8 corridas Vitest y 5 corridas Playwright local |
+| 2026-11-21 | Juan Sebastian Gutierrez | Reintento 1 (INC-M08-NN-G022, GitHub #726): Fase 1 y adaptación de la herramienta por Claude (Vitest y Playwright v1.3, runner con 9 + 4 checkpoints). CP-02 pasa a observación OBS-4 (decisión de Sebastian del 2026-11-20) |
 
 **Casos:** TC-M08-054 (TVCO y tasa de error), TC-M08-055 (conflictos de retroalimentación: ícono, exclusión en TVCO, tooltip y concordancia) y TC-M08-056 (predicciones pendientes de evaluar con más de 48 h, orden y paginación).
 
@@ -187,3 +188,38 @@ En `tc-m08-g022.pw.ts` **v1.2** (`76C34384365A291D9AD7A01E1B787B41293235F2805E7F
 |---|---|---|
 | `playwright_normal` | 2/4 OK (CP-11, CP-12), 2 FALLA (CP-13, CP-14); 10/10 precondiciones OK | CP-11 OK: `calculado={porcentaje=50, denom=2, tasa_error=50, conflictos=0, texto="50% (2 validadas; 6 excluidas: sin retro)"} \| backend={...} \| pantalla="50% (2 validadas; 6 excluidas: sin retro)"` · CP-12 OK: `calculados(6)=[dd000007, dd000003, dd000005, dd000006, dd000008, dd000004] \| backend(total=6)=[dd000007, dd000003, dd000005, dd000006, dd000008, dd000004] \| dom(count=6, domOk=true)` · CP-13 FALLA: `marcador[1]="(sin tooltip)" \| marcador[2]="(sin tooltip)" (esperado fechas 15/07/26, 4:00 p. m. y 17/07/26, 10:00 p. m.)` · CP-14 FALLA: `marcador[1]={texto="⚠", fill="rgb(0, 0, 0)", amarillos=10, no_blancos=75} \| marcador[2]={texto="⚠", fill="rgb(0, 0, 0)", amarillos=6, no_blancos=75}` (`10/75 = 0.13 < 0.2`, `6/75 = 0.08 < 0.2`) |
 | `playwright_vista_control` | 4/4 OK, 0 FALLA; 10/10 precondiciones OK | CP-11 OK · CP-12 OK · CP-13 OK: `marcador[1]="QA Vet A → Correcta · 15/07/26, 4:00 p. m. / QA Vet B → Incorrecta · 17/07/26, 10:00 p. m." \| marcador[2]="QA Vet A → Correcta · 15/07/26, 4:00 p. m. / QA Vet B → Incorrecta · 17/07/26, 10:00 p. m."` · CP-14 OK: `marcador[1]={texto="⚠", fill="rgb(234, 179, 8)", amarillos=27, no_blancos=64} \| marcador[2]={texto="⚠", fill="rgb(234, 179, 8)", amarillos=21, no_blancos=69}` (`27/64 = 0.42 >= 0.2`, `21/69 = 0.30 >= 0.2`) |
+
+## Reintento 1 (2026-11-21): adaptación de la herramienta (Claude)
+
+**Cambio de Desarrollo (observado).** `a74c51cb` (#726) en `test-JuanSG`, HEAD `488f43f6`, `src/` sin cambios locales. `HistorialPredictivoView.tsx` (`6043535E…`):371-375: el «⚠» de un conflicto lleva `fill="#f5c518"` con borde `var(--sem-warning)`; los demás íconos usan `var(--text-primary)`; cada marca lleva un `<title>` con todas las valoraciones de su predicción («Vet → Correcta · fecha / …», `tituloRetro`, :207-210). Desde `7297f934` las marcas van sobre su predicción (las dos en conflicto comparten posición).
+
+**Specs de la ronda 1 sin cambios contra el código actual** (`prueba_herramienta_reintento1/`): Vitest 7/10 (CP-02 por la tasa de error, que ya era observación; CP-06 y CP-08 por la herramienta: el texto del ícono incluye su `<title>`); Playwright 3/4 (CP-14 por la herramienta: el texto incluye el `<title>`; el color ya era amarillo, `rgb(245,197,24)`).
+
+**Cambios** (respaldos de la ronda 1 en `fuentes_generador/ronda1/*.txt`; diffs en `prueba_herramienta_reintento1/`):
+
+| Archivo | SHA | Qué cambia |
+|---|---|---|
+| `tc-m08-g022.test.tsx` v1.3 | `6EE8FCA9…` | CP-02 sale de los checkpoints y se mide como OBS-4 (decisión de Sebastian, 2026-11-20); ADAPT-1: ícono sin `<title>` ni `hp-grupo` (CP-06, CP-08) |
+| `tc-m08-g022.pw.ts` v1.3 | `D26F70D5…` | ADAPT-1 en CP-13 y CP-14; ADAPT-2 (pendiente de la ronda 1): CP-14 mide amarillos sobre los píxeles distintos del fondo real del recorte (color más frecuente del borde) y registra el tema |
+| `ejecutar_tc_m08_g022.ps1` | `C314309F…` | 9 + 4 checkpoints; exige CP-01 y CP-03 a CP-14 |
+
+Checkpoints (salvo CP-02), esperados, fuentes y retirados literales de la ronda 1. Config y unión sin cambios.
+
+**Prueba de la herramienta** (contenedor, código de `488f43f6`):
+
+| Parte | Corrida | Resultado |
+|---|---|---|
+| Vitest | normal ×3 | 9/9 idénticas; OBS-4: tasa de error no visible |
+| Vitest | tvco_solo_porcentaje | CP-01, 03, 04, 05, 07 y 08 FALLA |
+| Vitest | conflicto_sin_icono | solo CP-06 FALLA (✓, ✓, ✗) |
+| Vitest | pendientes_invertidos | solo CP-09 FALLA (yo había previsto también CP-10; la página 2 tiene un solo ítem y no cambia: error de previsión, no de la herramienta) |
+| Vitest | siguiente_no_pagina | solo CP-10 FALLA |
+| Playwright | normal ×3 (build local + API simulada) | 4/4 |
+| Playwright | backend_tvco / backend_orden | solo CP-11 / solo CP-12 FALLA |
+| Playwright | conflicto_negro (tema claro) | solo CP-14 FALLA (0 amarillos) |
+| Playwright | sin_title_retro | solo CP-13 FALLA («(sin tooltip)») |
+| Playwright | title_solo_propia | solo CP-13 FALLA (una valoración por marca) |
+| Playwright | tema oscuro (copia del spec con `data-theme=dark`) | 4/4: fondo `rgb(23,26,21)`, amarillos 108 de 141 distintos del fondo (con el criterio de la ronda 1, 108/575 no blancos = 0,19, habría dado FALLA falso) |
+| Playwright | tema oscuro + conflicto_negro | solo CP-14 FALLA (0 amarillos) |
+
+Ningún control dejó «No alcanzado». La guardia de escrituras no cambió y no se volvió a probar.

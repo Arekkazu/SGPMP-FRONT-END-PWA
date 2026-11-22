@@ -1,4 +1,5 @@
 # | 2026-11-20 | Juan Sebastian Gutierrez | Runner de TC-M08-G020 (RF-106): Vitest con respuestas simuladas, TZ America/Bogota, escaneo al final |
+# | 2026-11-21 | Juan Sebastian Gutierrez | Reintento 1 (INC-M08-387-G020): tokens.css en la lista de SHA de src (lo lee la precondicion 5 del spec v1.1); nada mas cambia |
 #
 # Uso (desde la carpeta del caso, PowerShell 5.1):
 #   .\ejecutar_tc_m08_g020.ps1                (ronda 1)
@@ -88,7 +89,8 @@ $fuentes = @(
   'src\reportes\api\reportesApi.ts',
   'src\shared\i18n\formato.ts',
   'src\shared\i18n\locales\es-CO\prediction.json',
-  'src\shared\i18n\locales\es-CO\common.json'
+  'src\shared\i18n\locales\es-CO\common.json',
+  'src\shared\design-system\tokens.css'
 )
 $shaFuentes = @()
 foreach ($f in $fuentes) {
