@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                                     |
 // |------------|-------------|---------------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-293 RF-107: modal de confirmación de las 4 acciones críticas              |
+// | 2026-11-22 | Laura032005 | TC-DIS-293 RF-107: la pantalla de clientes externos se llama «Sistemas externos» (1.5.0-rc.1) |
 /**
  * TC-DIS-293 — Verificar accesibilidad WCAG 2.1 AA del modal de confirmación de acción crítica (baja de
  * activo, reversión, cierre de período y revocación de credenciales) [CRÍTICO]
@@ -99,7 +100,7 @@ test.describe('TC-DIS-293 — Modal de confirmación de acción crítica', () =>
     try {
       await simularClientes(s.page);
       anotar(testInfo, 'Datos simulados', 'Clientes QA de M07 (Datos_Semilla §4). No se confirma.');
-      await irA(s.page, 'integracion/clientes', /Acceso de AgroFusion/);
+      await irA(s.page, 'integracion/clientes', /Sistemas externos|Acceso de AgroFusion/);
       await revisarModalCritico(s.page, testInfo, 'la revocación', main(s.page).getByRole('button', { name: 'Revocar QA Cliente Para Revocar 1' }), null, /definitiva|no se puede deshacer/i);
     } finally {
       await quitarSimulaciones(s.page);
