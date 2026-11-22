@@ -9,6 +9,7 @@
 // | 2026-11-18 | Arekkazu | M08 RF-104..107: ruta /reportes, indicador de sincronización, catálogo de errores y avisos con navegación |
 // | 2026-11-19 | Arekkazu | M8-14 RF-107: indicador de sincronización en la barra superior, no flotando sobre el contenido |
 // | 2026-11-20 | Arekkazu | INICIO SIGAB: «/» sin sesión muestra la portada (la app instalada sigue yendo al login) |
+// | 2026-11-21 | Arekkazu | PAGINA 404: una dirección inexistente muestra «página no encontrada» en vez de la pantalla en blanco |
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
@@ -75,6 +76,7 @@ import { SsoCallbackPage } from './auth/pages/SsoCallbackPage';
 import { CompletarPerfilSsoPage } from './auth/pages/CompletarPerfilSsoPage';
 import { InicioPage, esAppInstalada } from './auth/pages/InicioPage';
 import { SelectorIdioma } from './shared/design-system/SelectorIdioma';
+import { NoEncontradoPage } from './shared/pages/NoEncontradoPage';
 
 /* Private pages */
 // Cada modulo de negocio se descarga al entrar a su ruta, no en el arranque:
@@ -418,6 +420,9 @@ function AppRoutes() {
 
       {/* Default */}
       <Route exact path="/" component={RutaRaiz} />
+
+      {/* Sin path: toda dirección que no coincide arriba (nginx manda todo a index.html) */}
+      <Route component={NoEncontradoPage} />
     </IonRouterOutlet>
   );
 }
