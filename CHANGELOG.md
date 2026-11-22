@@ -1,3 +1,9 @@
+## [1.4.0-rc.57](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.56...v1.4.0-rc.57) (2026-11-22)
+
+### Features
+
+* **app:** pagina no encontrada para direcciones inexistentes en vez de la pantalla en blanco ([3220565](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/3220565bd6716f5d79ae4dbb46b564237530dbe6))
+
 ## [1.4.0-rc.56](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.4.0-rc.55...v1.4.0-rc.56) (2026-11-21)
 
 ### Features
