@@ -5,21 +5,25 @@
 // | 2026-10-30 | Arekkazu | INC-M04-229-G070 RF-72: el Administrador amplía la ventana de un resultado |
 // | 2026-11-02 | Arekkazu | AJF-09 RF-67: aviso de inmutabilidad sin la norma NIC 41 y en i18n |
 // | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU04 H-01/H-03 RF-67: detalle de la inferencia y filtro con todas las patologías |
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-282..285 RF-106: tabla con evento sanitario, retroalimentación y conflicto; vista, zoom, TVCO, CSV y anuncios |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { History, ShieldCheck, Download, Clock, TrendingUp } from 'lucide-react';
+import { History, ShieldCheck, Download, Clock, TrendingUp, ZoomIn, ZoomOut, Activity, Stethoscope, MessageSquare, TriangleAlert } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
+import { Anunciador } from '../../shared/design-system/Anunciador';
 import { TH, TD, THEAD_ROW } from '../components/tableStyles';
 import { useHistorial } from '../hooks/useHistorial';
 import { usePatologias } from '../hooks/usePatologias';
 import { useRetroalimentacion } from '../hooks/useRetroalimentacion';
 import { HistorialFiltros, historialFiltrosVacio, type HistorialFiltrosState } from '../components/HistorialFiltros';
-import { HistorialTimeline } from '../components/HistorialTimeline';
+import { HistorialTimeline, textoDespues, textoRetros } from '../components/HistorialTimeline';
+import { relacionar, tasaValidacion } from '../lib/historialClinico';
+import { diasAtrasLocal } from '../../shared/lib/fecha';
 import { LineChartPrediccion } from '../components/LineChartPrediccion';
 import { RetroalimentacionFormModal, type RetroContexto } from '../components/RetroalimentacionFormModal';
 import { AmpliarVentanaRetroModal } from '../components/AmpliarVentanaRetroModal';
@@ -59,6 +63,12 @@ export function HistorialView() {
   const [pagina, setPagina] = useState(0);
   const [cortes, setCortes] = useState<number[]>([0]);
   const resultadosRef = useRef<HTMLDivElement>(null);
+  // RF-106: modo de la línea de tiempo y qué incluye; el anuncio dice qué cambió (4.1.3).
+  const [agrupado, setAgrupado] = useState(true);
+  const [incluirSanitarios, setIncluirSanitarios] = useState(true);
+  const [incluirRetro, setIncluirRetro] = useState(true);
+  const [aviso, setAviso] = useState('');
+  const consultado = useRef(false);
   const reiniciarPaginas = () => { setPagina(0); setCortes([0]); };
 
   useEffect(() => {
@@ -98,17 +108,31 @@ export function HistorialView() {
     }
   };
 
-  const consultarHistorial = () => {
-    if (!filtros.idActivo) return;
+  const consultarHistorial = (f: HistorialFiltrosState = filtros) => {
+    if (!f.idActivo) return;
     const api: ConsultarHistorialFiltros = {
-      fecha_inicio: filtros.fecha_inicio,
-      fecha_fin: filtros.fecha_fin,
-      incluir_alertas: filtros.incluir_alertas,
+      fecha_inicio: f.fecha_inicio,
+      fecha_fin: f.fecha_fin,
+      incluir_alertas: f.incluir_alertas,
     };
-    if (filtros.nivel_riesgo) api.nivel_riesgo = Number(filtros.nivel_riesgo);
-    if (filtros.id_patologia && !poblacional) api.id_patologia = Number(filtros.id_patologia);
+    if (f.nivel_riesgo) api.nivel_riesgo = Number(f.nivel_riesgo);
+    if (f.id_patologia && !poblacional) api.id_patologia = Number(f.id_patologia);
     reiniciarPaginas();
-    consultar(Number(filtros.idActivo), api);
+    consultado.current = true;
+    consultar(Number(f.idActivo), api);
+  };
+
+  // 2.1.1 (TC-DIS-284): acercar o alejar el período de la línea de tiempo con botones (mitad o doble, hasta 24 meses).
+  const zoom = (factor: 0.5 | 2) => {
+    const fin = new Date(`${filtros.fecha_fin}T00:00:00`);
+    const dias = Math.max(1, Math.round((fin.getTime() - new Date(`${filtros.fecha_inicio}T00:00:00`).getTime()) / 86_400_000));
+    const nuevos = Math.min(730, Math.max(1, Math.round(dias * factor)));
+    const hoy = new Date(`${diasAtrasLocal(0)}T00:00:00`).getTime();
+    const inicio = diasAtrasLocal(Math.round((hoy - fin.getTime()) / 86_400_000) + nuevos);
+    const siguiente = { ...filtros, fecha_inicio: inicio };
+    setFiltros(siguiente);
+    setAviso(t(factor < 1 ? 'historialview.zoom_acercado' : 'historialview.zoom_alejado', { dias: nuevos }));
+    consultarHistorial(siguiente);
   };
 
   const onLimpiar = () => { setFiltros(historialFiltrosVacio()); reiniciarPaginas(); limpiar(); };
@@ -123,22 +147,39 @@ export function HistorialView() {
     setPagina(destino);
     window.setTimeout(() => resultadosRef.current?.focus(), 0);
   };
-  const eventosPagina = eventos.slice(cortes[pagina] ?? 0, cortes[pagina + 1] ?? eventos.length);
+  const relaciones = useMemo(() => relacionar(eventos), [eventos]);
+  const tvco = useMemo(() => tasaValidacion(relaciones.values()), [relaciones]);
+  const inferencias = relaciones.size;
+  // 4.1.3 (TC-DIS-282): al terminar cada consulta se anuncia cuántas inferencias quedaron.
+  useEffect(() => {
+    if (loading || !consultado.current) return;
+    setAviso(t('historialview.inferencias_encontradas', { count: inferencias }));
+  }, [loading, inferencias, t]);
+  const visible = (e: EventoHistorialResponse) => (incluirSanitarios || e.tipo_evento !== 'EVENTO_SANITARIO')
+    && (incluirRetro || e.tipo_evento !== 'RETROALIMENTACION');
+  const eventosPagina = eventos.slice(cortes[pagina] ?? 0, cortes[pagina + 1] ?? eventos.length).filter(visible);
   const haySiguiente = cortes[pagina + 1] != null || !!cursor;
 
   const poblacional = activoDe(filtros.idActivo)?.tipo === 'POBLACIONAL';
   // 1.1.1 (TC-DIS-187): los mismos puntos de la gráfica, en tabla.
   const filasTendencia = useMemo(() => [...eventos]
     .sort((a, b) => a.fecha_evento.localeCompare(b.fecha_evento))
-    .map((e) => ({
-      id: e.id_evento,
-      fecha: formatearFecha(e.fecha_evento),
-      nivel: extraerNivelRiesgo(e.payload),
-      patologia: extraerPatologia(e.payload),
-      confianza: extraerConfianza(e.payload),
-      score: typeof e.payload?.score_anomalia === 'number' ? e.payload.score_anomalia : null,
-    }))
-    .filter((f) => f.nivel != null), [eventos]);
+    .filter((e) => e.tipo_evento === 'INFERENCIA')
+    .map((e) => {
+      const r = relaciones.get(e.id_evento);
+      return {
+        id: e.id_evento,
+        fecha: formatearFecha(e.fecha_evento, { dateStyle: 'medium', timeStyle: 'short' }),
+        nivel: extraerNivelRiesgo(e.payload),
+        patologia: extraerPatologia(e.payload),
+        confianza: extraerConfianza(e.payload),
+        score: typeof e.payload?.score_anomalia === 'number' ? e.payload.score_anomalia : null,
+        sanitario: r?.sanitario ? t('historialview.sanitario_celda', { descripcion: r.sanitario.descripcion, cuando: textoDespues(r.sanitario.minutos, t) }) : t('historialview.sin_sanitario'),
+        retro: r?.retros.length ? textoRetros(r.retros, t) : t('historialview.sin_retro'),
+        conflicto: r?.conflicto ? t('historialview.conflicto_si', { valoraciones: textoRetros(r.retros, t) }) : t('historialview.conflicto_no'),
+      };
+    })
+    .filter((f) => f.nivel != null), [eventos, relaciones, t]);
 
   const chartData = useMemo(() => {
     return [...eventos]
@@ -150,14 +191,24 @@ export function HistorialView() {
       .filter((d) => d.nivel != null);
   }, [eventos]);
 
+  // RF-106 (TC-DIS-285): el historial se exporta como reporte legible (CSV con las columnas de la tabla), no como JSON.
   const exportarLocal = () => {
-    const blob = new Blob([JSON.stringify(eventos, null, 2)], { type: 'application/json' });
+    setAviso(t('historialview.exportando'));
+    const celda = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const encabezados = [t('historialview.col_fecha'), t('historialview.col_nivel'), t('historialview.col_enfermedad'), t('historialview.col_confianza'),
+      t('historialview.col_sanitario'), t('historialview.col_retro'), t('historialview.col_conflicto')];
+    const filas = filasTendencia.map((f) => [f.fecha, NIVEL_RIESGO_LABEL[f.nivel as number] ?? '', f.patologia ?? '',
+      f.confianza != null ? `${Math.round(f.confianza * 100)} %` : '', f.sanitario, f.retro, f.conflicto]);
+    const csv = [encabezados, ...filas].map((fila) => fila.map(celda).join(';')).join('\r\n');
+    const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `historial_activo_${filtros.idActivo || 'x'}.json`;
+    const activo = activoDe(filtros.idActivo)?.identificador ?? filtros.idActivo ?? 'activo';
+    a.download = `historial_${String(activo).replace(/[^\w-]+/g, '_')}.csv`;
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
+    setAviso(t('historialview.exportado'));
   };
 
   const enviarRetro = async (dto: Parameters<typeof retro.registrar>[0]) => {
@@ -203,6 +254,16 @@ export function HistorialView() {
           loading={loading}
         />
 
+        <Anunciador mensaje={aviso} />
+        {consultado.current && !loading && inferencias > 0 && (
+          // RF-106 (TC-DIS-285): tasa de validación clínica observada y pendientes de retroalimentación, en texto.
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s5)', marginBottom: 'var(--s4)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            <p style={{ margin: 0 }}>{tvco.tasa === null ? t('historialview.tvco_sin_datos')
+              : t('historialview.tvco_valor', { tasa: Math.round(tvco.tasa * 100), correctas: tvco.correctas, validadas: tvco.validadas, count: tvco.excluidas })}</p>
+            <p style={{ margin: 0 }}>{t('historialview.pendientes_valor', { count: tvco.pendientes })}</p>
+          </div>
+        )}
+
         {/* Tabs: Exportar va fuera del tablist (axe aria-required-children, TC-DIS-187/188/191/192). */}
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--s2)', flexWrap: 'wrap', borderBottom: '1px solid var(--surface-border)', marginBottom: 'var(--s5)' }}>
           <div role="tablist" aria-label={t('historialview.vista_de_historial')} style={{ display: 'flex', gap: 'var(--s2)', flex: 1 }}>
@@ -216,19 +277,52 @@ export function HistorialView() {
               );
             })}
           </div>
-          <Button variant="ghost" size="sm" disabled={eventos.length === 0} onClick={exportarLocal} title="Exportación local (el backend aún no expone exportación de historial)">
+          <Button variant="ghost" size="sm" disabled={eventos.length === 0} onClick={exportarLocal}>
             <ShieldCheck size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />
             <Download size={14} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('historialview.exportar')}</Button>
         </div>
 
         {tab === 'timeline' ? (
           <div id="hist-panel-timeline" role="tabpanel" aria-labelledby="hist-tab-timeline">
+            {/* RF-106 (TC-DIS-283/284): modo, qué incluir, zoom del período y leyenda de los marcadores. */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s4)', alignItems: 'center', marginBottom: 'var(--s4)', fontSize: '13px' }}>
+              <fieldset style={{ border: 0, margin: 0, padding: 0, display: 'flex', gap: 'var(--s3)', alignItems: 'center' }}>
+                <legend style={{ float: 'left', fontWeight: 600, marginRight: 'var(--s2)' }}>{t('historialview.modo')}</legend>
+                {([[true, 'historialview.modo_agrupado'], [false, 'historialview.modo_lineal']] as const).map(([valor, clave]) => (
+                  <label key={clave} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <input type="radio" name="hist-modo" checked={agrupado === valor} onChange={() => { setAgrupado(valor); setAviso(t(clave)); }} />{t(clave)}
+                  </label>
+                ))}
+              </fieldset>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <input type="checkbox" checked={incluirSanitarios} onChange={(e) => setIncluirSanitarios(e.target.checked)} />{t('historialview.incluir_eventos')}
+              </label>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <input type="checkbox" checked={incluirRetro} onChange={(e) => setIncluirRetro(e.target.checked)} />{t('historialview.incluir_retro')}
+              </label>
+              <span style={{ display: 'inline-flex', gap: 'var(--s2)' }}>
+                <Button variant="secondary" size="sm" disabled={!filtros.idActivo || loading} onClick={() => zoom(0.5)}><ZoomIn size={14} aria-hidden />{t('historialview.acercar')}</Button>
+                <Button variant="secondary" size="sm" disabled={!filtros.idActivo || loading} onClick={() => zoom(2)}><ZoomOut size={14} aria-hidden />{t('historialview.alejar')}</Button>
+              </span>
+            </div>
+            <section aria-labelledby="hist-leyenda" style={{ marginBottom: 'var(--s4)', fontSize: '12px', color: 'var(--text-secondary)' }}>
+              <h2 id="hist-leyenda" style={{ fontSize: '13px', margin: '0 0 var(--s1)' }}>{t('historialview.leyenda')}</h2>
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', gap: 'var(--s4)' }}>
+                <li style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Activity size={13} aria-hidden />{t('historialview.leyenda_inferencia')}</li>
+                <li style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Stethoscope size={13} aria-hidden />{t('historialview.leyenda_sanitario')}</li>
+                <li style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><MessageSquare size={13} aria-hidden />{t('historialview.leyenda_retro')}</li>
+                <li style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><TriangleAlert size={13} aria-hidden />{t('historialview.leyenda_conflicto')}</li>
+              </ul>
+            </section>
             <div ref={resultadosRef} tabIndex={-1} aria-label={t('historialview.resultados_pagina', { n: pagina + 1 })} style={{ outline: 'none' }}>
               {loading ? (
                 <div style={{ padding: 'var(--s8)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{t('historialview.consultando_historial')}</div>
               ) : (
                 <HistorialTimeline
                   eventos={eventosPagina}
+                  relaciones={relaciones}
+                  agrupado={agrupado}
+                  incluirRetro={incluirRetro}
                   puedeRetroalimentar={puedeRetroalimentar && online && !fromCache}
                   onRetroalimentar={setRetroEvento}
                   puedeAmpliar={puedeAmpliar && online && !fromCache}
@@ -240,14 +334,15 @@ export function HistorialView() {
             {(pagina > 0 || haySiguiente) && (
               <nav aria-label={t('historialview.paginacion')} style={{ display: 'flex', justifyContent: 'center', gap: 'var(--s2)', marginTop: 'var(--s5)' }}>
                 <Button variant="ghost" size="sm" disabled={pagina === 0 || loadingMas} onClick={() => { void irAPagina(pagina - 1); }}>{t('historialview.anterior')}</Button>
-                <span style={{ alignSelf: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>{t('historialview.pagina_n', { n: pagina + 1 })}</span>
+                {/* 4.1.3 / 2.1.1 (TC-DIS-284): la página actual se anuncia y lleva aria-current. */}
+                <span role="status" style={{ alignSelf: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}><span aria-current="page">{t('historialview.pagina_n', { n: pagina + 1 })}</span></span>
                 <Button variant="secondary" size="sm" loading={loadingMas} disabled={!haySiguiente || loadingMas} onClick={() => { void irAPagina(pagina + 1); }}>{t('historialview.cargar_mas')}</Button>
               </nav>
             )}
           </div>
         ) : (
           <div id="hist-panel-tendencia" role="tabpanel" aria-labelledby="hist-tab-tendencia" style={{ background: 'var(--surface-card)', border: '1px solid var(--surface-border)', borderRadius: 'var(--r-lg)', padding: 'var(--s5)' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('historialview.evolucion_del_nivel_de_riesgo_sanitario')}</h3>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>{t('historialview.evolucion_del_nivel_de_riesgo_sanitario')}</h2>
             <LineChartPrediccion
               data={chartData}
               xKey="fecha"
@@ -274,6 +369,9 @@ export function HistorialView() {
                           <th scope="col" style={TH}>{t('historialview.col_confianza')}</th>
                         </>
                       )}
+                      <th scope="col" style={TH}>{t('historialview.col_sanitario')}</th>
+                      <th scope="col" style={TH}>{t('historialview.col_retro')}</th>
+                      <th scope="col" style={TH}>{t('historialview.col_conflicto')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -289,6 +387,9 @@ export function HistorialView() {
                             <td style={TD}>{f.confianza != null ? `${Math.round(f.confianza * 100)} %` : '—'}</td>
                           </>
                         )}
+                        <td style={TD}>{f.sanitario}</td>
+                        <td style={TD}>{f.retro}</td>
+                        <td style={TD}>{f.conflicto}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -320,7 +421,12 @@ export function HistorialView() {
             id_resultado_inferencia: retroEvento.id_resultado_inferencia,
             id_activo_biologico: retroEvento.id_activo_biologico,
             nombre_activo: activoDe(retroEvento.id_activo_biologico)?.identificador,
-            resumen: `Evento: ${retroEvento.tipo_evento}`,
+            // 2.4.4 (TC-DIS-285): el formulario dice a qué inferencia corresponde (fecha, nivel y enfermedad).
+            resumen: t('historialview.retro_resumen', {
+              fecha: formatearFecha(retroEvento.fecha_evento, { dateStyle: 'medium', timeStyle: 'short' }),
+              nivel: NIVEL_RIESGO_LABEL[extraerNivelRiesgo(retroEvento.payload) as number] ?? t('historialview.sin_nivel'),
+              enfermedad: extraerPatologia(retroEvento.payload) ?? t('historialview.sin_patologia'),
+            }),
           } as RetroContexto}
           patologiasOpciones={opcionesPara(retroEvento.id_activo_biologico)}
           saving={retro.saving}

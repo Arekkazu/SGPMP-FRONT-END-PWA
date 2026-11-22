@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-22 | Arekkazu | USAB2 M810 RF-107: confirmar revocar o rotar la credencial es bloqueante |
 import { useEffect, useState } from 'react';
 import { Copy, KeyRound, RefreshCw, X } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -55,13 +58,14 @@ function CredencialGenerada({ credencial, onListo }: { credencial: CredencialMqt
  * del Edge y el de cada dispositivo activo que lo apunta (RF-21).
  */
 export function CredencialMqttModal({ dispositivo, onClose }: { dispositivo: DispositivoIotResponse; onClose: () => void }) {
-  const dialogRef = useModalA11y(onClose);
   const { t } = useT('configuration');
   const online = useOnlineStatus();
   const puedeEmitir = usePermission(11, 3);
   const puedeRevocar = usePermission(11, 4);
   const { estado, credencial, loading, saving, error, saveError, cargar, emitir, revocar, descartarCredencial } = useCredencialMqtt();
   const [confirmando, setConfirmando] = useState<'rotar' | 'revocar' | null>(null);
+  // RF-107 R3 (USAB M810): mientras se confirma revocar o rotar, el diálogo no se cierra con Escape, la X ni un clic fuera.
+  const dialogRef = useModalA11y(onClose, { escape: confirmando === null });
   const id = dispositivo.id_dispositivo_iot;
 
   useEffect(() => { cargar(id); }, [cargar, id]);
@@ -81,7 +85,7 @@ export function CredencialMqttModal({ dispositivo, onClose }: { dispositivo: Dis
       aria-modal="true"
       aria-labelledby="credencial-mqtt-titulo"
       className="ds-modal" style={{ zIndex: 1010 }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (confirmando === null && e.target === e.currentTarget) onClose(); }}
     >
       <div className="ds-modal__panel" style={{ padding: 'var(--s6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s3)', marginBottom: 'var(--s4)' }}>
@@ -92,9 +96,11 @@ export function CredencialMqttModal({ dispositivo, onClose }: { dispositivo: Dis
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, marginTop: 2, fontFamily: 'var(--font-mono)' }}>{dispositivo.serial}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('credencialmqttmodal.cerrar')}>
-            <X size={18} aria-hidden />
-          </Button>
+          {confirmando === null && (
+            <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('credencialmqttmodal.cerrar')}>
+              <X size={18} aria-hidden />
+            </Button>
+          )}
         </div>
 
         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: 0 }}>{t('credencialmqttmodal.subtitulo')}</p>

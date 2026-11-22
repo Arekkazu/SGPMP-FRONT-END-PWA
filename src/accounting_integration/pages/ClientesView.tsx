@@ -5,6 +5,7 @@
 // | 2026-11-19 | Arekkazu | M7-04/06/07 RF-101: errores por campo, credencial vencida y formulario vacío |
 // | 2026-11-20 | Arekkazu | A11Y-M07 TC-DIS-271 RF-101: tabla en ScrollRegion y un id por canal en «Solicitudes por minuto» |
 // | 2026-11-22 | Arekkazu | A11Y2-M07 TC-DIS-271..273 RF-101: errores al salir del campo y del backend bajo su campo; estados con ícono |
+// | 2026-11-22 | Arekkazu | USAB2 M810 RF-107: cambiar la credencial se confirma en un diálogo bloqueante |
 import React, { useEffect, useState } from 'react';
 import { Copy, KeyRound, PauseCircle, PencilLine, PlayCircle, Plus, RotateCw, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -259,7 +260,8 @@ function RotarModal({ cliente, onCerrar, onRotado }: { cliente: ClienteExterno; 
   const ver = (campo: string) => (tocados.has(campo) ? errores[campo] : undefined) ?? (servidor?.campo === campo ? servidor.mensaje : undefined);
   const tocar = (campo: string) => () => setTocados((x) => new Set(x).add(campo));
   return (
-    <ModalShell title={t('clientes.rotar', { cliente: cliente.nombre })} onClose={onCerrar} maxWidth={560}
+    // RF-107 R3 (USAB M810): cambiar la credencial deja sin servicio la actual de inmediato; el diálogo es bloqueante.
+    <ModalShell title={t('clientes.rotar', { cliente: cliente.nombre })} onClose={onCerrar} maxWidth={560} bloqueante
       footer={<>
         <Button variant="secondary" size="md" onClick={onCerrar}>{t('comun.cancelar')}</Button>
         <Button variant="danger" size="md" loading={rotacion.cargando} onClick={async () => {
