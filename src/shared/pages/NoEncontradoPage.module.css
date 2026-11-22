@@ -1,0 +1,83 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-11-21 | Arekkazu | PAGINA 404: página no encontrada con tokens (claro y oscuro), mismo lenguaje visual de la portada |  */
+
+/* Contenedor con su propio scroll: IonRouterOutlet posiciona cada página a pantalla completa. */
+.pagina {
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-lg);
+  line-height: var(--lh-base);
+}
+.pagina p { margin: 0; }
+.pagina a:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+
+.contenedor {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-left: max(var(--s4), env(safe-area-inset-left));
+  padding-right: max(var(--s4), env(safe-area-inset-right));
+}
+
+.encabezado { background: var(--surface-card); border-bottom: 1px solid var(--surface-border); }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--s10); padding-top: var(--s2); padding-bottom: var(--s2); }
+.marca { display: flex; align-items: center; gap: var(--s2); color: var(--text-primary); text-decoration: none; font-weight: 800; font-size: var(--fs-heading-md); }
+/* Fijo en los dos temas, como el favicon y el logo del login. */
+.isotipo { width: 42px; height: 42px; border-radius: var(--r-lg); background: var(--brand-cta); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+
+.escenario { flex: 1 0 auto; position: relative; overflow: hidden; display: flex; background: var(--brand-50); }
+.escenarioIn { position: relative; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s7) 56px; padding-top: 56px; padding-bottom: 150px; }
+.texto { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: var(--s5); }
+.codigo { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border-radius: var(--r-full); background: var(--surface-card); border: 1px solid var(--surface-border); font-size: var(--fs-body-md); font-weight: 800; letter-spacing: var(--ls-wide); color: var(--text-secondary); }
+.codigo i { width: 10px; height: 10px; border-radius: 50%; background: var(--sem-warning-border); box-shadow: 0 0 0 4px var(--sem-warning-bg); }
+.titulo { margin: 0; font-size: clamp(36px, 5.6vw, 62px); line-height: 1.04; letter-spacing: -0.035em; font-weight: 800; text-wrap: balance; }
+.titulo em { position: relative; z-index: 0; font-style: normal; color: var(--brand-600); white-space: nowrap; }
+.titulo em::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0.04em; height: 0.22em; z-index: -1; border-radius: var(--r-sm); background: var(--sem-warning-border); }
+.lead { font-size: 19px; color: var(--text-secondary); max-width: 30em; }
+.botones { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
+.botones > * { min-height: 52px; }
+.ruta { font-size: var(--fs-body-md); color: var(--text-muted); overflow-wrap: anywhere; }
+.ruta code { font-family: var(--font-mono); font-size: var(--fs-mono-md); background: var(--surface-card); border: 1px solid var(--surface-border); border-radius: var(--r-sm); padding: 2px 6px; }
+
+/* Ilustración: decoración con su descripción en el <svg role="img">. */
+.dibujo { flex: 1 1 360px; min-width: 0; display: flex; justify-content: center; }
+.dibujo svg { width: 100%; max-width: 460px; height: auto; overflow: visible; }
+.dibujo text { font-family: var(--font-sans); }
+.sol { fill: var(--sem-warning-border); }
+.madera { stroke: var(--sem-warning); }
+.poste { fill: var(--sem-warning); }
+.letrero { fill: var(--sem-warning-bg); stroke: var(--sem-warning); }
+.letreroTexto { fill: var(--sem-warning); }
+.pregunta { fill: var(--brand-600); }
+.pasto { stroke: var(--brand-500); fill: none; }
+/* La vaca es blanca y negra en los dos temas: los neutros no cambian en oscuro. */
+.vaca rect, .vaca ellipse { fill: var(--neutral-0); stroke: var(--neutral-800); }
+.vaca .hocico { fill: var(--neutral-200); }
+.trazo { stroke: var(--neutral-800); }
+.mancha { fill: var(--neutral-800); }
+.lomas { position: absolute; left: 0; right: 0; bottom: -1px; z-index: 1; display: block; width: 100%; height: 170px; }
+.loma1 { fill: var(--brand-100); }
+.loma2 { fill: var(--brand-200); }
+.loma3 { fill: var(--surface-bg); }
+
+.pie { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s3); padding-top: 28px; padding-bottom: max(28px, env(safe-area-inset-bottom)); font-size: var(--fs-body-md); color: var(--text-muted); }
+
+@media (max-width: 760px) {
+  .escenarioIn { padding-top: var(--s7); padding-bottom: 110px; }
+  .dibujo { order: -1; }
+  .dibujo svg { max-width: 320px; }
+  .lomas { height: 100px; }
+}
+@media (max-width: 420px) {
+  .botones > * { width: 100%; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cola { transform-origin: 318px 238px; animation: cola 2.4s ease-in-out infinite; }
+}
+@keyframes cola { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(14deg); } }
