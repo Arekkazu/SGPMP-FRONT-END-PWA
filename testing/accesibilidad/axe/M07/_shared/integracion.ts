@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                                 |
 // |------------|-------------|-----------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-267..276 RF-98/101/102: utilidades de las pruebas de accesibilidad de M07 |
+// | 2026-11-22 | SaraSofGonzalez | TC-DIS-267..270 RF-98: versiones simuladas con motivo_no_activable y versiones_que_retira |
 /**
  * Utilidades de los specs de accesibilidad de M07 (Integración contable, /integracion/*).
  *
@@ -127,21 +128,43 @@ export function version(id: number, v: string, tipo: 'MAJOR' | 'MINOR', estado: 
   };
 }
 
+type VersionSimulada = ReturnType<typeof version>;
+
+/**
+ * Completa `motivo_no_activable` y `versiones_que_retira` con las mismas reglas y textos que devuelve el
+ * backend en TEST (leídos el 2026-11-22): anexo no aprobado, o dos versiones vigentes con una en retiro.
+ * Sin estos campos, «Activar» abre su confirmación sobre datos incompletos y la sección se cae (falso negativo).
+ */
+export function conReglasDeActivacion(lista: VersionSimulada[], anexos: Array<{ id_mapeo_anexo_aaef: number; estado: string }> = ANEXOS) {
+  const vigentes = lista.filter((c) => c.estado === 'ACTIVO' || c.estado === 'DEPRECADO');
+  const enRetiro = lista.find((c) => c.estado === 'DEPRECADO');
+  const activa = lista.find((c) => c.estado === 'ACTIVO');
+  const fecha = (iso: unknown) => String(iso ?? '').slice(0, 10).split('-').reverse().join('/');
+  return lista.map((c) => {
+    if (c.estado !== 'PENDIENTE') return { ...c, motivo_no_activable: null, versiones_que_retira: [] as string[] };
+    const aprobado = anexos.some((a) => a.id_mapeo_anexo_aaef === c.id_mapeo_anexo_aaef && a.estado === 'APROBADO');
+    const motivo = !aprobado ? `La versión ${c.contrato_version} no tiene un anexo de mapeo aprobado.`
+      : vigentes.length >= 2 && enRetiro ? `Ya hay ${vigentes.length} versiones vigentes y la versión ${enRetiro.contrato_version} ya está en retiro hasta el ${fecha(enRetiro.fecha_inactivacion)}. Podrá activar una nueva versión cuando termine ese retiro.`
+        : null;
+    return { ...c, motivo_no_activable: motivo, versiones_que_retira: c.tipo_cambio === 'MAJOR' && activa ? [activa.contrato_version] : [] as string[] };
+  });
+}
+
 /** Escenario A de Datos_Semilla_M07_M08.md §3.2: dos versiones vigentes (2.0 en retiro y 3.0 activa). */
-export const CONTRATOS_A = [
+export const CONTRATOS_A = conReglasDeActivacion([
   version(401, '1.0', 'MAJOR', 'INACTIVO', '2026-01-01', 301, { fecha_deprecacion: '2026-04-01T08:00:00', fecha_inactivacion: '2026-06-30' }),
   version(402, '2.0', 'MAJOR', 'DEPRECADO', '2026-07-01', 301, { fecha_deprecacion: '2026-10-17T08:00:00', fecha_inactivacion: '2027-01-15' }),
   version(403, '3.0', 'MAJOR', 'ACTIVO', '2026-10-17', 301),
   version(404, '3.1', 'MINOR', 'PENDIENTE', '2027-03-01', 301),
   version(405, '4.0', 'MAJOR', 'PENDIENTE', '2026-11-01', 302),
   version(406, '5.0', 'MAJOR', 'PENDIENTE', '2026-11-01', 303),
-];
+]);
 
 /** Escenario B (§3.3): 2.0 ya retirada; 3.0 activa y 4.0 lista para activarse. */
-export const CONTRATOS_B = CONTRATOS_A.map((c) => (c.contrato_version === '2.0' ? { ...c, estado: 'INACTIVO', fecha_inactivacion: '2026-11-16' } : c));
+export const CONTRATOS_B = conReglasDeActivacion(CONTRATOS_A.map((c) => (c.contrato_version === '2.0' ? { ...c, estado: 'INACTIVO', fecha_inactivacion: '2026-11-16' } : c)));
 
 /** Estado inconsistente (RF-98 5.6): tres versiones vigentes a la vez. Solo se puede simular. */
-export const CONTRATOS_INCONSISTENTES = CONTRATOS_A.map((c) => (c.contrato_version === '4.0' ? { ...c, estado: 'ACTIVO', fecha_activacion: '2026-11-02T08:00:00' } : c));
+export const CONTRATOS_INCONSISTENTES = conReglasDeActivacion(CONTRATOS_A.map((c) => (c.contrato_version === '4.0' ? { ...c, estado: 'ACTIVO', fecha_activacion: '2026-11-02T08:00:00' } : c)));
 
 export async function simularContrato(page: Page, contratos: unknown[] = CONTRATOS_A, anexos: unknown[] = ANEXOS) {
   await concederPermisos(page, permisosCompletos(R.contratos));
