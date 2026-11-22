@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                                     |
 // |------------|-------------|---------------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-273 RF-101: listado de clientes por estado y acciones suspender, reactivar y revocar |
+// | 2026-11-22 | Laura032005 | TC-DIS-273 RF-101: el título de la pantalla pasó a «Sistemas externos» (1.5.0-rc.1) |
 /**
  * TC-DIS-273 — Verificar accesibilidad WCAG 2.1 AA del listado de clientes con estados ACTIVO,
  * SUSPENDIDO y REVOCADO y de las acciones suspender, reactivar y revocar [CRÍTICO]
@@ -50,7 +51,7 @@ test.describe('TC-DIS-273 — Listado de clientes externos y cambios de estado',
   const tabla = () => main(page).locator('table').first();
 
   test('a. [1.3.1 / 1.4.1] Listado real con los tres estados', async ({}, testInfo) => {
-    await irIntegracion(page, 'clientes', /Acceso de AgroFusion/);
+    await irIntegracion(page, 'clientes', /Sistemas externos|Acceso de AgroFusion/);
     const denegado = await accesoDenegado(page).isVisible();
     precondicion(!denegado, 'el Administrador de TEST no tiene permiso sobre clientes_externos');
     await escanear(page, TC_ID, __dirname, 'listado-real', testInfo, LH);
@@ -70,7 +71,7 @@ test.describe('TC-DIS-273 — Listado de clientes externos y cambios de estado',
     await simularClientes(page);
     await simularEscritura(page, /^\/integracion\/clientes\/\d+\/suspender$/, 200, {});
     anotar(testInfo, 'Datos simulados', 'Clientes QA de §4; suspender responde 200 sin llegar al backend.');
-    await irIntegracion(page, 'clientes', /Acceso de AgroFusion/);
+    await irIntegracion(page, 'clientes', /Sistemas externos|Acceso de AgroFusion/);
     const disparador = main(page).getByRole('button', { name: 'Suspender QA Cliente Activo' });
     const d = await abrirYAuditarDialogo(page, disparador);
     expect(d.abierto, 'Suspender no abre un diálogo').toBe(true);
@@ -94,7 +95,7 @@ test.describe('TC-DIS-273 — Listado de clientes externos y cambios de estado',
 
   test('c. [2.4.3 / RF-107] Revocar: el modal crítico no se cierra con Escape ni con clic fuera (Datos simulados)', async ({}, testInfo) => {
     await simularClientes(page);
-    await irIntegracion(page, 'clientes', /Acceso de AgroFusion/);
+    await irIntegracion(page, 'clientes', /Sistemas externos|Acceso de AgroFusion/);
     const disparador = main(page).getByRole('button', { name: 'Revocar QA Cliente Para Revocar 1' });
     const d = await abrirYAuditarDialogo(page, disparador);
     expect(d.abierto, 'Revocar no abre un diálogo').toBe(true);
@@ -118,7 +119,7 @@ test.describe('TC-DIS-273 — Listado de clientes externos y cambios de estado',
   test('d. [4.1.3 / 3.3.3] Sistema revocado: sin acción de reactivar y explicación en texto (Datos simulados)', async ({}, testInfo) => {
     await simularClientes(page);
     await simularEscritura(page, /^\/integracion\/clientes\/\d+\/reactivar$/, 409, errorApi('CLIENTE_REVOCADO', 'Un sistema revocado no se puede reactivar. Registre uno nuevo.'));
-    await irIntegracion(page, 'clientes', /Acceso de AgroFusion/);
+    await irIntegracion(page, 'clientes', /Sistemas externos|Acceso de AgroFusion/);
     const revocado = fila(tabla(), 'QA Cliente Revocado');
     const botones = await revocado.getByRole('button').count();
     const texto = (await revocado.innerText()).replace(/\s+/g, ' ');
