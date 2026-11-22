@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo                                                        |
 // |------------|----------|--------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: huella sin redibujar, fallo aislado, caché y push        |
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-277 RF-103: con la misma huella tampoco cambia la hora del pie |
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { dashboardApi, type DatosWidget } from '../api/dashboardApi';
@@ -24,14 +25,16 @@ describe('useWidgetDatos (RF-103)', () => {
     cache.put.mockResolvedValue('');
   });
 
-  it('con la misma huella no cambia el contenido, solo la hora', async () => {
+  // TC-DIS-277: el pie «Actualizado a las…» es una región viva; si los datos no cambian, tampoco cambia su hora.
+  it('con la misma huella no cambia nada: ni el contenido ni la hora', async () => {
     api.datos.mockResolvedValueOnce(respuesta('a')).mockResolvedValueOnce(respuesta('a', '2026-11-14T15:00:30Z'));
     const { result } = renderHook(() => useWidgetDatos('semaforo_areas', 3, 30, false, 7));
     await waitFor(() => expect(result.current.respuesta).not.toBeNull());
     const datosAntes = result.current.respuesta!.datos;
 
     act(() => result.current.recargar());
-    await waitFor(() => expect(result.current.respuesta!.actualizado_en).toBe('2026-11-14T15:00:30Z'));
+    await waitFor(() => expect(api.datos).toHaveBeenCalledTimes(2));
+    expect(result.current.respuesta!.actualizado_en).toBe('2026-11-14T15:00:00Z');
     expect(result.current.respuesta!.datos).toBe(datosAntes);
     expect(api.datos).toHaveBeenCalledWith('semaforo_areas', 3);
   });

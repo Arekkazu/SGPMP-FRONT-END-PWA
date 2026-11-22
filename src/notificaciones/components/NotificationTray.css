@@ -1,3 +1,7 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-289/290 RF-105: no leídas legibles en oscuro, lista y rótulo «Sin leer» |
+*/
 .notification-tray__overlay {
   position: fixed;
   inset: var(--topbar-h) 0 0;
@@ -137,6 +141,27 @@
 
 .notification-tray__item--unread {
   background: var(--brand-50);
+}
+
+/* TC-DIS-289/290: en oscuro --brand-50 es una superficie verde oscura contra la que no se calcularon los tokens de
+   texto (botones y errores a 4:1). Ahí la no leída conserva la superficie de la tarjeta y la marca un borde y el
+   rótulo «Sin leer». */
+[data-theme="dark"] .notification-tray__item--unread {
+  background: transparent;
+  box-shadow: inset 3px 0 0 var(--brand-500);
+}
+
+.notification-tray__lista { list-style: none; margin: 0; padding: 0; }
+
+.notification-tray__item:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+
+.notification-tray__sin-leer {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--brand-600);
 }
 
 .notification-tray__unread-dot {

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-290 RF-105: el relleno de los botones primarios usa la variante clara del color |
 /**
  * Identidad visual institucional aplicada a la interfaz (RF-26 + RF-27).
  *
@@ -111,10 +114,14 @@ export function aplicarIdentidad(marca: MarcaAplicable, tema: TemaAplicado): voi
   const estilo = document.documentElement.style;
 
   if (primario) {
+    // TC-DIS-290: --brand-cta es relleno con texto blanco. La variante oscura del color se aclara para leerse como
+    // texto sobre fondo oscuro, y como relleno dejaba el blanco en 3,86:1; el relleno usa la variante clara, que
+    // cumple 4.5:1 frente al blanco en los dos temas.
+    const relleno = colorParaTema(accesibilidad, 'primary_color', 'light', identidad.primary_color) ?? primario;
     estilo.setProperty(VAR_PRIMARIO, primario);
     estilo.setProperty(VAR_PRIMARIO_FUERTE, primario);
-    estilo.setProperty(VAR_CTA, primario);
-    estilo.setProperty(VAR_CTA_HOVER, primario);
+    estilo.setProperty(VAR_CTA, relleno);
+    estilo.setProperty(VAR_CTA_HOVER, relleno);
     estilo.setProperty(VAR_NAV, oscurecerParaNav(primario));
   } else {
     estilo.removeProperty(VAR_PRIMARIO);

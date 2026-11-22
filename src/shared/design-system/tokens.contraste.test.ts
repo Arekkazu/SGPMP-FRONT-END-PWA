@@ -125,7 +125,7 @@ describe('contraste WCAG 2.1 AA (1.4.3) de tokens.css', () => {
     });
 
     it('el texto blanco de --brand-cta y --sem-error-solid cumple 4.5:1', () => {
-      for (const relleno of ['brand-cta', 'brand-cta-hover', 'sem-error-solid']) {
+      for (const relleno of ['brand-cta', 'brand-cta-hover', 'sem-error-solid', 'sem-success-solid', 'sem-warning-solid', 'sem-neutral-solid']) {
         expect(contraste('#ffffff', resolver(relleno, tema))).toBeGreaterThanOrEqual(
           AA_TEXTO_NORMAL,
         );

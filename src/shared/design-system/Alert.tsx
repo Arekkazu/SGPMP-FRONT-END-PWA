@@ -3,6 +3,7 @@
 // | 2026-10-29 | Arekkazu | TC-DIS-162 a11y 3.3.1: solo el éxito se cierra solo; info queda hasta que cambie el estado |
 // | 2026-11-18 | Arekkazu | M08 RF-107: el éxito dura 5 s y el error puede llevar botón de acción correctiva |
 // | 2026-11-22 | Arekkazu | A11Y2-M07 TC-DIS-276 RF-102: la acción correctiva puede ser un enlace (lleva al registro alterado) |
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-292 RF-107: el aviso de éxito es role="status" (polite) |
 import React, { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n/useT';
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react';
@@ -66,8 +67,9 @@ export function Alert({ variant, title, description, onDismiss, className = '', 
     <div
       id={id}
       ref={ref}
-      role="alert"
-      aria-live="assertive"
+      // TC-DIS-292: el éxito se anuncia como estado (no interrumpe al lector); error y advertencia, como alerta.
+      role={variant === 'success' ? 'status' : 'alert'}
+      aria-live={variant === 'success' ? 'polite' : 'assertive'}
       className={['ds-alert', `ds-alert--${variant}`, className].filter(Boolean).join(' ')}
       style={style}
     >

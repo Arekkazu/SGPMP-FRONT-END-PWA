@@ -1,9 +1,11 @@
 // | Fecha      | Nombre   | Que se hizo                                              |
 // |------------|----------|----------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: histórico de una variable en el dashboard     |
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-279 RF-103: tabla alternativa del histórico |
 import React, { useMemo } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatearFechaHora, formatearHora, formatearNumero } from '../../shared/i18n/formato';
+import { useT } from '../../shared/i18n/useT';
 
 interface Serie {
   sensor: string;
@@ -27,9 +29,19 @@ export default function LineaHistorico({ datos }: { datos: Record<string, unknow
     return [...porInstante.values()].sort((a, b) => String(a.t).localeCompare(String(b.t)));
   }, [series]);
   const unidad = series[0]?.unidad ?? '';
+  const { t } = useT('dashboard');
+  const valor = (v: unknown) => (typeof v === 'number' ? `${formatearNumero(v, { maximumFractionDigits: 1 })} ${unidad}`.trim() : t('historico.sin_lectura'));
 
   return (
     <div style={{ width: '100%', height: 180 }}>
+      {/* 1.1.1 (TC-DIS-279): la gráfica tiene tabla alternativa con los mismos puntos. */}
+      <table className="ds-sr-only">
+        <caption>{t('historico.tabla')}</caption>
+        <thead><tr><th scope="col">{t('historico.col_hora')}</th>{series.map((s) => <th key={`${s.sensor}-${s.variable}`} scope="col">{`${s.sensor} · ${s.variable}`}</th>)}</tr></thead>
+        <tbody>{filas.slice(-24).map((f) => (
+          <tr key={String(f.t)}><th scope="row">{formatearFechaHora(String(f.t))}</th>{series.map((s, i) => <td key={`${s.sensor}-${s.variable}`}>{valor(f[`s${i}`])}</td>)}</tr>
+        ))}</tbody>
+      </table>
       <ResponsiveContainer>
         <LineChart data={filas} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-border)" />

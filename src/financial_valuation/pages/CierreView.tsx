@@ -9,6 +9,7 @@
 // | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-82..94: reporte de usabilidad del 11-11 (período por defecto, titular, formatos y nombres) |
 // | 2026-11-18 | Arekkazu | M08 RF-107 tipo 5: la confirmación del cierre no se cierra con Escape ni con clic afuera |
 // | 2026-11-21 | Arekkazu | INC-M08-392-G027/393-G028 RF-107: cierre en curso para todo el sistema, botón que explica el bloqueo y activos a revaluar en el diálogo |
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-292/294 RF-107: error del cierre con acción correctiva y «N/Total activos procesados» |
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Download, Lock, XCircle } from 'lucide-react';
@@ -172,7 +173,10 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
     const r = await enOperacion(t('cierre.operacion'), () => cierre.ejecutar(id, {
       autorizar_exclusiones: excluye || autorizarLineas, incluir_activos_sin_precio: false, activos_estimados: activosEstimados }));
     if (r) {
-      pushToast('success', t('cierre.cerrado', { periodo: nombrePeriodo(periodo) }), t('cierre.cerrado_detalle', { count: r.comprobantes.length }));
+      // RF-107 (TC-DIS-294): el fin del proceso dice «[N]/[Total] activos procesados».
+      const totalActivos = r.activos_procesados + r.activos_excluidos.length;
+      pushToast('success', t('cierre.cerrado', { periodo: nombrePeriodo(periodo) }),
+        `${t('cierre.activos_procesados', { n: r.activos_procesados, total: totalActivos })} ${t('cierre.cerrado_detalle', { count: r.comprobantes.length })}`);
       onCerrado(r.id_periodo_siguiente);
     } else {
       prevalidar(id);
@@ -245,7 +249,12 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
             {checks.length > 0 && <BadgeTono tono={completas === checks.length ? 'success' : 'warning'}>{t('cierre.completas', { n: completas, total: checks.length })}</BadgeTono>}
           </div>
           <p style={{ ...SECUNDARIO, margin: 'var(--s1) 0 var(--s4)' }}>{t('cierre.prevalidacion_ayuda')}</p>
-          <ErrorApi error={prevalidacion.error ?? cierre.error ?? cancelacion.error} />
+          {/* TC-DIS-292: el rechazo del cierre lleva su acción correctiva: registrar el precio o volver a validar. */}
+          <ErrorApi error={prevalidacion.error ?? cierre.error ?? cancelacion.error} accion={cierre.error && !prevalidacion.error
+            ? (/PRECIO/.test(cierre.error.code) || /precio/i.test(cierre.error.message)
+              ? { texto: t('cierre.ir_a_precios'), ruta: 'finanzas/precios' }
+              : { texto: t('cierre.volver_a_validar'), onClick: () => prevalidar(id) })
+            : undefined} />
           {prevalidacion.cargando && !pv && <p style={SECUNDARIO}>{t('comun.cargando')}</p>}
           {pv && (
             <>

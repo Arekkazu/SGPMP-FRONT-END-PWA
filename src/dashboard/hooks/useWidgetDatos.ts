@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo                                                            |
 // |------------|----------|------------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: datos de un widget con refresco, corte a 2 s, caché y push    |
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-277 RF-103: pausa de la actualización y pie estable si los datos no cambian |
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { dashboardApi, type DatosWidget } from '../api/dashboardApi';
 import { db } from '../../shared/db/db';
@@ -45,6 +46,8 @@ export function useWidgetDatos(
   reaccionaAlertas: boolean,
   idUsuario: number | null,
   habilitado = true,
+  /** WCAG 2.2.2: el usuario pausó la actualización automática; el widget no se vuelve a pedir solo. */
+  pausado = false,
 ): EstadoWidgetDatos & { recargar: () => void } {
   const [estado, setEstado] = useState<EstadoWidgetDatos>(INICIAL);
   const huella = useRef<string | null>(null);
@@ -56,8 +59,10 @@ export function useWidgetDatos(
       const respuesta = await dashboardApi.datos(clave, idFinca);
       const igual = respuesta.huella !== '' && respuesta.huella === huella.current;
       huella.current = respuesta.huella;
+      // TC-DIS-277: con la misma huella no cambia nada en pantalla, tampoco la hora del pie (que es una región viva):
+      // «Actualizado a las…» dice cuándo cambiaron los datos, y un ciclo sin cambios no produce anuncios.
       setEstado((previo) => ({
-        respuesta: igual && previo.respuesta ? { ...previo.respuesta, actualizado_en: respuesta.actualizado_en } : respuesta,
+        respuesta: igual && previo.respuesta ? previo.respuesta : respuesta,
         cargando: false,
         noDisponible: respuesta.estado === 'ERROR',
         desdeCache: false,
@@ -95,7 +100,7 @@ export function useWidgetDatos(
   }, [cargar]);
 
   useEffect(() => {
-    if (!habilitado) return undefined;
+    if (!habilitado || pausado) return undefined;
     const id = window.setInterval(() => {
       if (document.visibilityState === 'visible') void cargar();
     }, Math.max(frecuenciaSeg, 15) * 1000);
@@ -107,7 +112,7 @@ export function useWidgetDatos(
       document.removeEventListener('visibilitychange', alVolver);
       window.removeEventListener('online', alVolver);
     };
-  }, [cargar, frecuenciaSeg, habilitado]);
+  }, [cargar, frecuenciaSeg, habilitado, pausado]);
 
   useEffect(() => {
     if (!reaccionaAlertas || !habilitado) return undefined;

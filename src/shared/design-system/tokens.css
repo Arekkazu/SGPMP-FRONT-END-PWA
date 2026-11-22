@@ -1,3 +1,7 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-279/280 RF-103: rellenos -solid de éxito, advertencia y neutro |
+*/
 :root {
   /* T-15: los controles nativos (checkbox, date picker, scrollbar) siguen el tema.
      Sin esto, en oscuro se pintaban con el aspecto claro del navegador. */
@@ -63,6 +67,11 @@
      encima. Fijo en ambos temas: >=4.5:1 con #fff, a diferencia de --sem-error
      que en dark se aclara para servir de texto/icono sobre superficie oscura. */
   --sem-error-solid: #c0280a;
+  /* TC-DIS-279/280: rellenos de los tramos de las barras del panel, con texto blanco encima (>=4.5:1 en los
+     dos temas). --sem-success / --sem-warning son tokens de texto y en oscuro se aclaran. */
+  --sem-success-solid: #226a28;
+  --sem-warning-solid: #986000;
+  --sem-neutral-solid: #5c6360;
 
   /* Surfaces */
   --surface-bg: var(--neutral-50);
