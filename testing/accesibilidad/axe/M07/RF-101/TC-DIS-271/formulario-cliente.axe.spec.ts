@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                              |
 // |------------|-------------|--------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-271 RF-101: formulario de registro y edición de cliente externo   |
+// | 2026-11-22 | Laura032005 | TC-DIS-271 RF-101: el título de la pantalla pasó a «Sistemas externos» (1.5.0-rc.1) |
 /**
  * TC-DIS-271 — Verificar accesibilidad WCAG 2.1 AA del formulario de registro y edición de cliente
  * externo (campos obligatorios, validaciones y errores)
@@ -55,7 +56,7 @@ test.describe('TC-DIS-271 — Formulario de registro y edición de cliente exter
   }
 
   test('a. [3.3.2 / 2.4.3 / 4.1.2] Formulario de registro: etiquetas, requeridos y foco (clientes reales)', async ({}, testInfo) => {
-    await irIntegracion(page, 'clientes', /Acceso de AgroFusion/);
+    await irIntegracion(page, 'clientes', /Sistemas externos|Acceso de AgroFusion/);
     const denegado = await accesoDenegado(page).isVisible();
     precondicion(!denegado, 'el Administrador de TEST no tiene permiso sobre clientes_externos');
     if (denegado) { await escanear(page, TC_ID, __dirname, 'registro-vacio', testInfo, LH); return; }
@@ -81,7 +82,7 @@ test.describe('TC-DIS-271 — Formulario de registro y edición de cliente exter
 
   test('b. [3.3.1 / 4.1.3] Validaciones del formulario: canal, vencimiento y duración (Datos simulados)', async ({}, testInfo) => {
     await simularClientes(page);
-    await irIntegracion(page, 'clientes', /Acceso de AgroFusion/);
+    await irIntegracion(page, 'clientes', /Sistemas externos|Acceso de AgroFusion/);
     const { d } = await abrirRegistro();
     for (const canal of await d.getByRole('group', { name: /Qué puede hacer/i }).getByRole('checkbox').all()) await canal.uncheck();
     await d.getByLabel(/^La credencial vence el/).fill('');
@@ -107,7 +108,7 @@ test.describe('TC-DIS-271 — Formulario de registro y edición de cliente exter
     for (const [nombre, status, cuerpo, ip] of casos) {
       await simularClientes(page);
       await simularEscritura(page, /^\/integracion\/clientes\/?$/, status, cuerpo);
-      await irIntegracion(page, 'clientes', /Acceso de AgroFusion/);
+      await irIntegracion(page, 'clientes', /Sistemas externos|Acceso de AgroFusion/);
       const { d } = await abrirRegistro();
       await d.getByLabel(/^Nombre del sistema/).fill('QA Cliente Activo');
       await d.getByLabel(/^Código interno/).fill('QA_NUEVO');
@@ -129,7 +130,7 @@ test.describe('TC-DIS-271 — Formulario de registro y edición de cliente exter
   test('d. [2.1.1 / 2.4.3] Edición de "QA Cliente Activo" solo con teclado (Datos simulados)', async ({}, testInfo) => {
     await simularClientes(page);
     await simularEscritura(page, /^\/integracion\/clientes\/\d+$/, 200, {});
-    await irIntegracion(page, 'clientes', /Acceso de AgroFusion/);
+    await irIntegracion(page, 'clientes', /Sistemas externos|Acceso de AgroFusion/);
     const editar = main(page).getByRole('button', { name: 'Editar QA Cliente Activo' });
     await editar.focus();
     await page.keyboard.press('Enter');
