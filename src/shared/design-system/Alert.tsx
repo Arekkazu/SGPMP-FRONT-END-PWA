@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-29 | Arekkazu | TC-DIS-162 a11y 3.3.1: solo el éxito se cierra solo; info queda hasta que cambie el estado |
 // | 2026-11-18 | Arekkazu | M08 RF-107: el éxito dura 5 s y el error puede llevar botón de acción correctiva |
+// | 2026-11-22 | Arekkazu | A11Y2-M07 TC-DIS-276 RF-102: la acción correctiva puede ser un enlace (lleva al registro alterado) |
 import React, { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n/useT';
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react';
@@ -30,8 +31,8 @@ interface AlertProps {
   className?: string;
   style?: React.CSSProperties;
   id?: string;
-  /** RF-107 tipo 2: botón de acción correctiva («Ir a configurar especies»). */
-  accion?: { texto: string; onClick: () => void };
+  /** RF-107 tipo 2: botón de acción correctiva («Ir a configurar especies»); con `href` es un enlace. */
+  accion?: { texto: string; onClick: () => void; href?: string };
 }
 
 export function Alert({ variant, title, description, onDismiss, className = '', style, id, accion }: AlertProps) {
@@ -76,7 +77,11 @@ export function Alert({ variant, title, description, onDismiss, className = '', 
         {/* El espacio separa título y detalle en el texto que lee el lector de pantalla
             ("Error al guardarError inesperado…", #189); en la columna flex no se ve. */}
         {description && <>{' '}<span className="ds-alert__desc">{description}</span></>}
-        {accion && (
+        {accion?.href && (
+          // Con <base href> un ancla #id navega a otra ruta (#271, #685): se evita la navegación y la acción mueve el foco.
+          <a className="ds-alert__accion" href={accion.href} onClick={(e) => { e.preventDefault(); accion.onClick(); }}>{accion.texto}</a>
+        )}
+        {accion && !accion.href && (
           <button type="button" className="ds-alert__accion" onClick={accion.onClick}>{accion.texto}</button>
         )}
       </div>

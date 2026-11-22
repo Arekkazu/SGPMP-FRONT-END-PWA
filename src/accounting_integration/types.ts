@@ -3,6 +3,7 @@
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: tipos de la API /integracion |
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-98: la auditoría se filtra por titular |
 // | 2026-11-19 | Arekkazu | M7-03/M7-11 RF-98/RF-102: condiciones de activación y nombre de quien actuó |
+// | 2026-11-22 | Arekkazu | A11Y2-M07 TC-DIS-274/275 RF-102: huella del evento y filtros por sistema y ruta |
 
 export type Canal = 'IDENTIDAD_M2M' | 'CONSULTA_AAEF';
 export type EstadoCliente = 'ACTIVO' | 'SUSPENDIDO' | 'REVOCADO';
@@ -43,9 +44,14 @@ export interface EventoIntegracion {
   fecha_hasta: string | null; version_contrato: string | null; tamano_payload_bytes: number | null;
   nombre_usuario: string | null; correo_usuario: string | null; nombre_cliente: string | null;
   json_detalle: Record<string, unknown> | null; integridad: 'INTEGRO' | 'CORRUPTO';
+  /** Huella SHA-256 guardada con el registro; se recalcula al consultarlo. */
+  hash_integridad?: string | null;
 }
 export interface PaginaEventos { items: EventoIntegracion[]; pagina: number; tamano: number; total: number }
-export interface FiltrosAuditoria { tipo_evento?: string; desde?: string; hasta?: string; codigo_http?: number; numero_id_tributaria?: string }
+export interface FiltrosAuditoria {
+  tipo_evento?: string; desde?: string; hasta?: string; codigo_http?: number; numero_id_tributaria?: string;
+  id_cliente_externo?: number; endpoint?: string;
+}
 
 // Documento AAEF tal como lo recibe AgroFusion (RF-97 5.4).
 export interface LineaAaef { Code: string; Name: string; Description: string; accounting_account: string[]; Value: number }

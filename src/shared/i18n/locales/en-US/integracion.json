@@ -107,7 +107,10 @@
     "secreto": "Secret (client_secret)",
     "secreto_guardado": "I saved it",
     "copiar": "Copy the secret",
-    "copiado": "Secret copied."
+    "copiado": "Secret copied.",
+    "revocado_explicacion": "Permanently revoked: it cannot be reactivated. If you need it, register a new one.",
+    "canales_ayuda": "Required: choose at least one.",
+    "error_motivo": "Write the reason for the change (at least 3 characters)."
   },
   "canal": {
     "CONSULTA_AAEF": "Query the accounting document",
@@ -185,7 +188,39 @@
     "comprobante_no_disponible": "Not available yet",
     "gracia": "Notice period for the previous version (days)",
     "gracia_ayuda": "At least {{min}} days. Leave it empty to use {{defecto}}.",
-    "descripcion_campo": "Description (optional)"
+    "descripcion_campo": "Description (optional)",
+    "estandar": "AAEF standard version: {{version}}. It is the one the external accounting system accepts and it does not change with the contract version.",
+    "inconsistente": "Critical alert: inconsistent contract state. There are {{n}} versions in force at the same time ({{versiones}}) and only two are allowed.",
+    "inconsistente_detalle": "No other version can be activated until it is fixed. Tell technical support so they retire the extra one.",
+    "col_retiro": "Retirement",
+    "ver_detalle": "View the details of version {{version}}",
+    "det_identificador": "Identifier",
+    "det_identificador_valor": "Contract {{version}} (AAEF standard {{estandar}})",
+    "det_huella": "Annex fingerprint",
+    "det_plazo": "Retirement period",
+    "det_plazo_valor": "{{n}} days",
+    "det_sin_plazo": "Not applicable (minor change)",
+    "det_historial": "History",
+    "det_retiro_iniciado": "Retirement started on {{fecha}}",
+    "det_sin_descripcion": "No description",
+    "retirada_el": "Retired on {{fecha}}",
+    "quedan_dias_one": "{{count}} day of the retirement period left",
+    "quedan_dias_other": "{{count}} days of the retirement period left",
+    "retirada_explicacion": "No longer available: a retired version cannot be reactivated or modified.",
+    "sin_retiro": "No retirement scheduled",
+    "deprecado_listo": "Version {{version}} is being retired: it answers until {{fecha}}.",
+    "deprecar_explicacion": "Version {{version}} keeps answering during the period and stops being available on {{fecha}}. Retirement cannot be reverted.",
+    "deprecar_confirmar": "Retire version {{version}}",
+    "version_ayuda": "Use the major.minor format, for example 4.0.",
+    "error_version": "Write the version in the major.minor format, for example 4.0.",
+    "error_vigencia": "Choose the effective date.",
+    "error_mapeadores": "Choose at least one document to send.",
+    "error_gracia_vacia": "Write the retirement period in days.",
+    "error_gracia": "The retirement period must be at least {{min}} days.",
+    "aviso_plazo": "The field “Retirement period of the previous version” appeared; it is required for a major change (at least {{min}} days).",
+    "aviso_sin_plazo": "A minor change does not retire the previous version: the “Retirement period” field was removed.",
+    "transformadores_ayuda": "Choose at least one.",
+    "gracia_ayuda_requerida": "Required for a major change. At least {{min}} days; {{defecto}} suggested."
   },
   "estado": {
     "OBSOLETO": "Obsolete",
@@ -231,7 +266,25 @@
     "paginacion": "Audit pages",
     "anterior": "Previous page",
     "siguiente": "Next page",
-    "pagina": "Page {{pagina}} of {{paginas}} · {{total}} records"
+    "pagina": "Page {{pagina}} of {{paginas}} · {{total}} records",
+    "sistema_filtro": "External system",
+    "ruta_filtro": "Requested path",
+    "encontrados_one": "{{count}} record found",
+    "encontrados_other": "{{count}} records found",
+    "exportando": "Generating the {{formato}} file of the audit…",
+    "exportado": "{{formato}} file ready: the audit was downloaded.",
+    "alterados_titulo_one": "Critical alert: {{count}} audit record was altered",
+    "alterados_titulo_other": "Critical alert: {{count}} audit records were altered",
+    "alterados_detalle": "Its integrity fingerprint no longer matches the stored one. Review the event and tell the security officer.",
+    "ver_evento_alterado": "View the altered event",
+    "detalle_titulo": "Event details: {{evento}}",
+    "det_identificador": "Event identifier",
+    "det_tipo": "Event type",
+    "det_fecha": "Date and time",
+    "det_ruta": "Requested path",
+    "det_sin_ruta": "No path (action inside the system)",
+    "det_huella": "Integrity fingerprint (SHA-256)",
+    "det_sin_huella": "No fingerprint stored"
   },
   "evento": {
     "PAQUETE_AAEF_CONSULTADO": "AgroFusion queried the accounting document",
@@ -307,5 +360,6 @@
     "500": "Internal error",
     "503": "Service unavailable"
   },
-  "integridad": { "INTEGRO": "Intact", "CORRUPTO": "Altered" }
+  "integridad": { "INTEGRO": "Intact", "CORRUPTO": "Altered" },
+  "ruta": { "consulta": "Accounting document request", "acceso": "External system access request", "auditoria": "Audit query" }
 }
