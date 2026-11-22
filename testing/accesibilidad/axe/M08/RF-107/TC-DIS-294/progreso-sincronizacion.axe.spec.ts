@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                                     |
 // |------------|-------------|---------------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-294 RF-107: barra de progreso de un proceso largo y estado de sincronización |
+// | 2026-11-22 | Laura032005 | TC-DIS-294 RF-107: el indicador de proceso aparece pasados 3 s (1.5.0-rc.1) |
 /**
  * TC-DIS-294 — Verificar accesibilidad WCAG 2.1 AA del indicador de proceso en curso (spinner y barra de
  * progreso) y del ícono de estado de sincronización (SINCRONIZADO, SINCRONIZANDO, OFFLINE, CONFLICTO)
@@ -66,7 +67,8 @@ test.describe('TC-DIS-294 — Progreso de un proceso largo y estado de sincroniz
     await irFinanzas(page, 'cierre', /Cierre del período/);
     const anuncios = anunciosDurante(page, ESPERA + 3000);
     await confirmarCierre(page);
-    await page.waitForTimeout(2500);
+    // Desde 1.5.0-rc.1 el indicador de proceso solo aparece pasados 3 s (RF-107 8.5 paso 3).
+    await page.waitForTimeout(4500);
     const barra = await page.locator('[role="progressbar"]').evaluateAll((els) => els.map((e) => ({
       nombre: e.getAttribute('aria-label') ?? (e.getAttribute('aria-labelledby') ? document.getElementById(e.getAttribute('aria-labelledby')!)?.textContent ?? '' : ''),
       now: e.getAttribute('aria-valuenow'), max: e.getAttribute('aria-valuemax'), texto: e.getAttribute('aria-valuetext'),
