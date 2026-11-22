@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                                   |
 // |------------|-------------|-------------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-272 RF-101: secreto mostrado una sola vez al rotar (copiar, aviso y cierre) |
+// | 2026-11-22 | Laura032005 | TC-DIS-272 RF-101: el título de la pantalla pasó a «Sistemas externos» (1.5.0-rc.1) |
 /**
  * TC-DIS-272 — Verificar accesibilidad WCAG 2.1 AA de la visualización única del client_secret al
  * registrar o rotar (copiar, aviso de no recuperable y cierre) [CRÍTICO]
@@ -56,7 +57,7 @@ test.describe('TC-DIS-272 — Secreto visible una sola vez al rotar la credencia
   async function abrirRotacion() {
     await simularClientes(page);
     await simularEscritura(page, /^\/integracion\/clientes\/\d+\/rotar$/, 200, { client_secret: SECRETO_SIMULADO });
-    await irIntegracion(page, 'clientes', /Acceso de AgroFusion/);
+    await irIntegracion(page, 'clientes', /Sistemas externos|Acceso de AgroFusion/);
     await disparador().focus();
     await page.keyboard.press('Enter');
     await dialogo(page).waitFor({ state: 'visible' });
