@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: estado de registros y trabajos con icono y texto |
+// | 2026-11-10 | Arekkazu | TC-DIS-208 RF-80: resultados PARCIAL y ADVERTENCIA de la bitácora con su icono |
 import React from 'react';
 import { CheckCircle2, Ban, Clock, AlertTriangle, Loader } from 'lucide-react';
 import { Badge, type BadgeVariant } from '../../shared/design-system/Badge';
@@ -16,6 +17,8 @@ const VARIANTE: Record<string, { variante: BadgeVariant; icono: React.ReactNode 
   EXITOSO: { variante: 'success', icono: <CheckCircle2 size={12} aria-hidden /> },
   GENERADO: { variante: 'success', icono: <CheckCircle2 size={12} aria-hidden /> },
   RECHAZADO: { variante: 'error', icono: <AlertTriangle size={12} aria-hidden /> },
+  PARCIAL: { variante: 'warning', icono: <AlertTriangle size={12} aria-hidden /> },
+  ADVERTENCIA: { variante: 'warning', icono: <AlertTriangle size={12} aria-hidden /> },
   ANULADO: { variante: 'neutral', icono: <Ban size={12} aria-hidden /> },
   REEMPLAZADO: { variante: 'neutral', icono: <Ban size={12} aria-hidden /> },
   PENDIENTE: { variante: 'warning', icono: <Clock size={12} aria-hidden /> },

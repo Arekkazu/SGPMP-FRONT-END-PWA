@@ -1,6 +1,9 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-04 | Arekkazu | RF-19 v1.1: titular tributario de la finca (M06 cierra por titular) |
 import { http } from '../../shared/api/http';
 import type {
-  FincaResponse, RegistrarFincaDTO, EditarFincaDTO,
+  FincaResponse, RegistrarFincaDTO, EditarFincaDTO, TitularFinca,
   InfraestructuraResponse, RegistrarInfraestructuraDTO, EditarInfraestructuraDTO,
 } from '../types';
 
@@ -29,6 +32,16 @@ export const fincasApi = {
   async desactivar(id: number): Promise<FincaResponse> {
     const res = await http.patch<FincaResponse>(`/configuracion/fincas/${id}/desactivar`);
     return res.data;
+  },
+
+  /** RF-19 v1.1: entidad que lleva la contabilidad de la finca (M06 cierra por titular). */
+  async titular(id: number): Promise<TitularFinca> {
+    return (await http.get<TitularFinca>(`/configuracion/fincas/${id}/titular`)).data;
+  },
+
+  /** `tipo_id_tributaria: null` quita el titular. */
+  async asignarTitular(id: number, dto: Omit<TitularFinca, 'id_finca' | 'nombre'>): Promise<TitularFinca> {
+    return (await http.put<TitularFinca>(`/configuracion/fincas/${id}/titular`, dto)).data;
   },
 
   async reactivar(id: number): Promise<FincaResponse> {

@@ -1,6 +1,9 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-24: el resto de la página queda inert mientras el modal está abierto |
+// | 2026-11-10 | Arekkazu | TC-DIS-242/252/258 RF-87/COT/92: el foco inicial puede ir a la acción segura ([data-autofocus]) |
+// | 2026-11-18 | Arekkazu | M08 RF-107 R3: los modales de acción crítica no se cierran con Escape |
+// | 2026-11-20 | Arekkazu | A11Y-M08 TC-DIS-293 RF-107: Escape lee la opción vigente, no la del montaje (baja que pasa a resumen) |
 import { useEffect, useRef } from 'react';
 
 const SELECTOR_FOCABLES =
@@ -39,9 +42,10 @@ function esVisible(el: HTMLElement): boolean {
 /**
  * Comportamiento accesible para modales (QA TC-DIS-33):
  *
- * - Al montar: mueve el foco al primer elemento enfocable del panel y deja el
- *   resto de la página `inert` (T-24).
- * - `Escape` cierra el modal.
+ * - Al montar: mueve el foco al elemento marcado con `data-autofocus` (la acción
+ *   segura de un diálogo destructivo, WCAG 2.4.3) o, si no hay, al primer
+ *   enfocable del panel; deja el resto de la página `inert` (T-24).
+ * - `Escape` cierra el modal, salvo en una confirmación crítica (`{ escape: false }`, RF-107 R3).
  * - `Tab` / `Shift+Tab` ciclan el foco dentro del panel (trap).
  * - Al desmontar: devuelve el foco al elemento que lo tenía.
  *
@@ -49,23 +53,26 @@ function esVisible(el: HTMLElement): boolean {
  * `role="dialog"`). El callback de cierre puede ser una lambda inline; el hook
  * conserva la última versión sin reiniciar el efecto.
  */
-export function useModalA11y(onClose: () => void) {
+export function useModalA11y(onClose: () => void, opciones: { escape?: boolean } = {}) {
   const panelRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  // Un modal puede cambiar de paso (formulario → confirmación crítica) sin desmontarse.
+  const permiteEscapeRef = useRef(true);
+  permiteEscapeRef.current = opciones.escape !== false;
 
   useEffect(() => {
     const panel = panelRef.current;
     const focoPrevio = document.activeElement as HTMLElement | null;
     if (panel) pila.push(panel);
     const inertes = panel ? inertizarFondo(panel) : [];
-    panel?.querySelector<HTMLElement>(SELECTOR_FOCABLES)?.focus();
+    (panel?.querySelector<HTMLElement>('[data-autofocus]') ?? panel?.querySelector<HTMLElement>(SELECTOR_FOCABLES))?.focus();
 
     const manejarTecla = (event: KeyboardEvent) => {
       if (panel && pila[pila.length - 1] !== panel) return;
       if (event.key === 'Escape') {
         event.stopPropagation();
-        onCloseRef.current();
+        if (permiteEscapeRef.current) onCloseRef.current();
         return;
       }
       if (event.key !== 'Tab' || !panel) return;

@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-12 | Arekkazu | TC-DIS-255/261 RF-27: la marca se repinta también al cambiar de tema con el botón de la barra |
 /**
  * Aplica al arrancar la sesión el tema y la identidad visual guardados (RF-26 + RF-27).
  *
@@ -59,7 +62,16 @@ export function useTemaSesion(token: string | null): TemaAplicado {
     return suscribirPreferenciaSistema(() => setTema(aplicarTema(THEME_MODE.SISTEMA)));
   }, [themeMode]);
 
-  // 3. La marca institucional se repinta con la variante accesible del tema activo.
+  // 3. El botón de la barra y la pantalla de configuración escriben `data-theme` sin pasar
+  //    por aquí: sin seguir el atributo, la marca se quedaba con la variante del otro tema
+  //    (2,68:1 sobre fondo oscuro, TC-DIS-255/261).
+  useEffect(() => {
+    const observador = new MutationObserver(() => setTema(temaActivo()));
+    observador.observe(document.documentElement, { attributeFilter: ['data-theme'] });
+    return () => observador.disconnect();
+  }, []);
+
+  // 4. La marca institucional se repinta con la variante accesible del tema activo.
   useEffect(() => {
     if (!contexto) {
       limpiarIdentidad();
@@ -71,7 +83,7 @@ export function useTemaSesion(token: string | null): TemaAplicado {
     );
   }, [contexto, tema]);
 
-  // 4. Al cerrar sesión, la interfaz vuelve a su paleta propia.
+  // 5. Al cerrar sesión, la interfaz vuelve a su paleta propia.
   useEffect(() => {
     if (token) return;
     limpiarIdentidad();

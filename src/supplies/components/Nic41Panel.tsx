@@ -1,17 +1,21 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-79: consolidación y versiones del reporte NIC-41 por ciclo |
+// | 2026-11-10 | Arekkazu | TC-DIS-206/207 RF-79: selector de versión, reporte anterior, aviso de incompleto con icono y causa |
 import React, { useCallback, useEffect, useState } from 'react';
-import { FileCheck2, Eye, PencilLine } from 'lucide-react';
+import { AlertTriangle, FileCheck2, Eye, PencilLine } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { Select } from '../../shared/design-system/Select';
 import { Alert } from '../../shared/design-system/Alert';
+import { Badge } from '../../shared/design-system/Badge';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { usePermission } from '../../shared/rbac/usePermission';
 import { avisarExito } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import { ACCION_E, RECURSO_NIC41 } from '../rbac';
 import { useNic41 } from '../hooks/useCosteo';
+import { useAsync } from '../hooks/useAsync';
+import { costeoApi } from '../api/costeoApi';
 import { formatoFecha, formatoMoneda } from '../lib/formato';
 import type { ProvisionNic41 } from '../types';
 import { EstadoRegistroBadge } from './EstadoRegistroBadge';
@@ -26,6 +30,7 @@ export function Nic41Panel({ idActivo, idGestionFasesActiva, online }: Props) {
   const { t } = useT('supplies');
   const puedeEjecutar = usePermission(RECURSO_NIC41, ACCION_E);
   const { ciclos, versiones, consolidacion, detalle, correccion } = useNic41();
+  const acumulado = useAsync(costeoApi.acumuladoCiclo);
   const [idGestion, setIdGestion] = useState<number | null>(idGestionFasesActiva);
   const [verId, setVerId] = useState<number | null>(null);
   const [aCorregir, setACorregir] = useState<ProvisionNic41 | null>(null);
@@ -38,7 +43,8 @@ export function Nic41Panel({ idActivo, idGestionFasesActiva, online }: Props) {
   }, [idGestion, instancias]);
 
   const { ejecutar: cargarVersiones } = versiones;
-  useEffect(() => { if (idGestion !== null) cargarVersiones(idGestion); }, [idGestion, cargarVersiones]);
+  const { ejecutar: cargarAcumulado } = acumulado;
+  useEffect(() => { if (idGestion !== null) { cargarVersiones(idGestion); cargarAcumulado(idGestion); } }, [idGestion, cargarVersiones, cargarAcumulado]);
 
   const { ejecutar: cargarDetalle } = detalle;
   const paginaDetalle = useCallback((pagina: number) => { if (verId !== null) cargarDetalle(verId, pagina); }, [verId, cargarDetalle]);
@@ -46,6 +52,7 @@ export function Nic41Panel({ idActivo, idGestionFasesActiva, online }: Props) {
   const seleccionada = instancias.find((c) => c.id_gestion_fases === idGestion);
   const lista = [...(versiones.data?.versiones ?? [])].sort((a, b) => b.version_reporte - a.version_reporte);
   const ultima = lista[0];
+  const abrir = (id: number | null) => { if (id === null) return; detalle.limpiar(); setVerId(id); };
 
   const consolidar = async () => {
     if (idGestion === null) return;
@@ -71,6 +78,19 @@ export function Nic41Panel({ idActivo, idGestionFasesActiva, online }: Props) {
               ))}
             </Select>
           </div>
+          {lista.length > 0 && (
+            <div style={{ minWidth: 200 }}>
+              {/* Selector de versión (WCAG 2.1.1): abre el detalle de la versión elegida sin buscar su fila. */}
+              <Select id="nic41-version" label={t('nic41.version_col')} value="" onChange={(e) => abrir(Number(e.target.value) || null)}>
+                <option value="">{t('nic41.elegir_version')}</option>
+                {lista.map((v) => (
+                  <option key={v.id_provision ?? v.version_reporte} value={v.id_provision ?? ''}>
+                    {t('nic41.version', { n: v.version_reporte })} · {t(`estado.${v.estado}`, { defaultValue: v.estado })}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
           {puedeEjecutar && (
             <Button variant="primary" size="md" disabled={!online || !seleccionada || seleccionada.es_activa} loading={consolidacion.cargando} onClick={consolidar}
               title={seleccionada?.es_activa ? t('nic41.solo_cerrado') : undefined}>
@@ -97,39 +117,51 @@ export function Nic41Panel({ idActivo, idGestionFasesActiva, online }: Props) {
               </tr>
             </thead>
             <tbody>
-              {lista.map((v) => (
-                <tr key={v.id_provision ?? v.version_reporte}>
-                  <td style={TD}>
-                    v{v.version_reporte}
-                    {v.motivo_correccion && <div style={{ ...SECUNDARIO, maxWidth: 320 }}>{v.motivo_correccion}</div>}
-                  </td>
-                  <td style={TD}>{formatoFecha(v.fecha_generacion, true)}</td>
-                  <td style={TD_NUM}>{formatoMoneda(v.monto_provision)}</td>
-                  <td style={TD}>
-                    <EstadoRegistroBadge estado={v.estado} />
-                    {v.es_reporte_potencialmente_incompleto && <div style={{ ...SECUNDARIO, color: 'var(--sem-warning)', marginTop: 'var(--s1)' }}>{t('nic41.incompleto')}</div>}
-                  </td>
-                  <td style={{ ...TD, whiteSpace: 'nowrap' }}>
-                    {v.id_provision !== null && (
-                      <Button variant="ghost" size="sm" onClick={() => { detalle.limpiar(); setVerId(v.id_provision); }}>
-                        <Eye size={16} aria-hidden />{t('comun.ver')}
-                      </Button>
-                    )}
-                    {puedeEjecutar && v === ultima && v.id_provision !== null && (
-                      <Button variant="ghost" size="sm" disabled={!online} onClick={() => { correccion.limpiar(); setACorregir(v); }}>
-                        <PencilLine size={16} aria-hidden />{t('nic41.corregir')}
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {lista.map((v) => {
+                const anterior = lista.find((x) => x.id_provision === v.id_reporte_anterior);
+                return (
+                  <tr key={v.id_provision ?? v.version_reporte}>
+                    <td style={TD}>
+                      {t('nic41.version', { n: v.version_reporte })}
+                      {v.id_reporte_anterior !== null && (
+                        <div style={SECUNDARIO}>{t('nic41.reemplaza_a', { version: anterior ? t('nic41.version', { n: anterior.version_reporte }) : t('nic41.version_anterior') })}</div>
+                      )}
+                      {v.motivo_correccion && <div style={{ ...SECUNDARIO, maxWidth: 320 }}>{v.motivo_correccion}</div>}
+                    </td>
+                    <td style={TD}>{formatoFecha(v.fecha_generacion, true)}</td>
+                    <td style={TD_NUM}>{formatoMoneda(v.monto_provision)}</td>
+                    <td style={TD}>
+                      <EstadoRegistroBadge estado={v.estado} />
+                      {v.es_reporte_potencialmente_incompleto && (
+                        <div style={{ marginTop: 'var(--s1)' }}>
+                          <Badge variant="warning"><AlertTriangle size={12} aria-hidden />{t('nic41.incompleto')}</Badge>
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ ...TD, whiteSpace: 'nowrap' }}>
+                      {v.id_provision !== null && (
+                        <Button variant="ghost" size="sm" onClick={() => abrir(v.id_provision)}>
+                          <Eye size={16} aria-hidden />{t('comun.ver')}
+                        </Button>
+                      )}
+                      {puedeEjecutar && v === ultima && v.id_provision !== null && (
+                        <Button variant="ghost" size="sm" disabled={!online} onClick={() => { correccion.limpiar(); setACorregir(v); }}>
+                          <PencilLine size={16} aria-hidden />{t('nic41.corregir')}
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </ScrollRegion>
       )}
 
       {verId !== null && (
-        <Nic41DetalleModal provision={detalle.data} cargando={detalle.cargando} error={detalle.error} onPagina={paginaDetalle} onCerrar={() => setVerId(null)} />
+        <Nic41DetalleModal provision={detalle.data} cargando={detalle.cargando} error={detalle.error} acumulado={acumulado.data}
+          versionAnterior={lista.find((x) => x.id_provision === detalle.data?.id_reporte_anterior) ?? null}
+          onPagina={paginaDetalle} onVerAnterior={abrir} onCerrar={() => setVerId(null)} />
       )}
       {aCorregir && (
         <MotivoModal

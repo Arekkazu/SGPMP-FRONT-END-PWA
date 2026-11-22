@@ -2,6 +2,14 @@
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: módulo de suministros (ruta /suministros) |
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 T-16: cierre por inactividad con motivo y ruta de retorno |
+// | 2026-11-04 | Arekkazu | M06 RF-82..94: módulo financiero NIC 41 (ruta /finanzas) |
+// | 2026-11-06 | Arekkazu | M07 RF-95..102: integración contable con AgroFusion (ruta /integracion) |
+// | 2026-11-14 | Arekkazu | SSO AgroFusion: AgroFusion devuelve a /sso?token=, no a /sso/callback |
+// | 2026-11-14 | Arekkazu | M08 RF-103: un push refresca al instante los widgets de alertas |
+// | 2026-11-18 | Arekkazu | M08 RF-104..107: ruta /reportes, indicador de sincronización, catálogo de errores y avisos con navegación |
+// | 2026-11-19 | Arekkazu | M8-14 RF-107: indicador de sincronización en la barra superior, no flotando sobre el contenido |
+// | 2026-11-20 | Arekkazu | INICIO SIGAB: «/» sin sesión muestra la portada (la app instalada sigue yendo al login) |
+// | 2026-11-21 | Arekkazu | PAGINA 404: una dirección inexistente muestra «página no encontrada» en vez de la pantalla en blanco |
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link, Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
@@ -35,6 +43,10 @@ import { useTemaSesion } from './shared/tema/useTemaSesion';
 import { useSyncOnReconnect } from './shared/sync/useSyncOnReconnect';
 import { ContextoProvider } from './shared/contexto/ContextoProvider';
 import { ToastHost } from './shared/design-system/ToastHost';
+import { EstadoSincronizacion } from './shared/design-system/EstadoSincronizacion';
+import { cargarCatalogoErrores } from './shared/api/catalogoErrores';
+import { http } from './shared/api/http';
+import i18n from './shared/i18n';
 import { useContexto } from './shared/contexto/useContexto';
 import { BienvenidaSinFinca } from './shared/contexto/BienvenidaSinFinca';
 import { SinEspeciesEmptyState } from './shared/contexto/SinEspeciesEmptyState';
@@ -49,6 +61,8 @@ import { useT } from './shared/i18n/useT';
 import { NotificationTray } from './notificaciones/components/NotificationTray';
 import { useNotificaciones } from './notificaciones/hooks/useNotificaciones';
 import { usePushNotifications } from './notificaciones/hooks/usePushNotifications';
+import type { MessagePayload } from 'firebase/messaging';
+import { EVENTO_PUSH } from './dashboard/hooks/useWidgetDatos';
 
 /* Auth pages */
 import { LoginPage } from './auth/pages/LoginPage';
@@ -60,7 +74,9 @@ import { RecuperarPage } from './auth/pages/RecuperarPage';
 import { RestablecerPage } from './auth/pages/RestablecerPage';
 import { SsoCallbackPage } from './auth/pages/SsoCallbackPage';
 import { CompletarPerfilSsoPage } from './auth/pages/CompletarPerfilSsoPage';
+import { InicioPage, esAppInstalada } from './auth/pages/InicioPage';
 import { SelectorIdioma } from './shared/design-system/SelectorIdioma';
+import { NoEncontradoPage } from './shared/pages/NoEncontradoPage';
 
 /* Private pages */
 // Cada modulo de negocio se descarga al entrar a su ruta, no en el arranque:
@@ -75,6 +91,9 @@ const ActivosBiologicosPage = lazy(() => import('./biological_assets/pages/Activ
 const TelemetryPage = lazy(() => import('./telemetry/pages/TelemetryPage').then((m) => ({ default: m.TelemetryPage })));
 const PrediccionPage = lazy(() => import('./prediction/pages/PrediccionPage').then((m) => ({ default: m.PrediccionPage })));
 const SuministrosPage = lazy(() => import('./supplies/pages/SuministrosPage').then((m) => ({ default: m.SuministrosPage })));
+const FinanzasPage = lazy(() => import('./financial_valuation/pages/FinanzasPage').then((m) => ({ default: m.FinanzasPage })));
+const IntegracionPage = lazy(() => import('./accounting_integration/pages/IntegracionPage').then((m) => ({ default: m.IntegracionPage })));
+const ReportesPage = lazy(() => import('./reportes/pages/ReportesPage').then((m) => ({ default: m.ReportesPage })));
 
 /** Mientras llega el chunk de la pagina: anuncio para el lector, sin salto visual. */
 function CargandoPagina() {
@@ -115,6 +134,16 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   // Sin service worker con Background Sync en este proyecto: la cola de escrituras
   // offline se reintenta aquí en cuanto vuelve el evento `online` del navegador.
   useSyncOnReconnect(token !== null);
+  // RF-107 RNF-03: los mensajes de error que el Administrador configuró en M09, en el idioma del usuario.
+  const [idioma, setIdioma] = useState(i18n.language);
+  useEffect(() => {
+    const cambio = (lng: string) => setIdioma(lng);
+    i18n.on('languageChanged', cambio);
+    return () => { i18n.off('languageChanged', cambio); };
+  }, []);
+  useEffect(() => {
+    if (token) void cargarCatalogoErrores(http, idioma);
+  }, [token, idioma]);
   const { sinFinca, sinEspecies } = useContexto();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -139,8 +168,10 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
   const idUsuario = userInfo?.id_usuario
     ?? (Number.isInteger(idDesdeClaims) && idDesdeClaims > 0 ? idDesdeClaims : null);
   const notificaciones = useNotificaciones(idUsuario);
-  const refrescarPorPush = useCallback(() => {
+  const refrescarPorPush = useCallback((payload?: MessagePayload) => {
     void notificaciones.cargar(true);
+    // RF-103 CA-2: los widgets de alertas del dashboard se piden en el acto, sin esperar su ciclo.
+    window.dispatchEvent(new CustomEvent(EVENTO_PUSH, { detail: payload?.data ?? {} }));
   }, [notificaciones.cargar]);
   const push = usePushNotifications({ idUsuario, onNotification: refrescarPorPush });
 
@@ -202,6 +233,7 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
           notificationCount={notificaciones.noLeidas}
           notificationsOpen={notificationsOpen}
           onNotificationsClick={alternarNotificaciones}
+          estado={<EstadoSincronizacion />}
         />
         <NotificationTray
           open={notificationsOpen}
@@ -222,6 +254,10 @@ function AppShell({ children, operativa = true }: { children: React.ReactNode; o
           onLoadMore={() => void notificaciones.cargarMas()}
           onMarkAsRead={notificaciones.marcarComoLeida}
           onMarkAllAsRead={notificaciones.marcarTodasLeidas}
+          filtros={notificaciones.filtros}
+          onCambiarFiltros={notificaciones.setFiltros}
+          onAtender={notificaciones.atender}
+          onDescartar={notificaciones.descartar}
           markingAll={notificaciones.marcandoTodas}
           onEnablePush={push.requestNotificationPermission}
           onDismissError={notificaciones.clearError}
@@ -342,10 +378,12 @@ function AuthedRoute({
 // "/" es el start_url del manifest: la PWA instalada siempre abre aquí. Redirigir
 // a /login sin mirar la sesión mandaba al login a quien tenía la cookie de refresco
 // vigente, y sin red ni siquiera llegaba a usar la sesión offline guardada.
+// Sin sesión, el navegador muestra la portada; la app instalada va directo al login.
 function RutaRaiz() {
   const { token, sesionOffline, isBootstrapping } = useAuth();
   if (isBootstrapping) return null;
-  return <Redirect to={token || sesionOffline ? '/dashboard' : '/login'} />;
+  if (token || sesionOffline) return <Redirect to="/dashboard" />;
+  return esAppInstalada() ? <Redirect to="/login" /> : <InicioPage />;
 }
 
 function AppRoutes() {
@@ -358,6 +396,8 @@ function AppRoutes() {
       <Route exact path="/reenviar-activacion" component={ReenviarPage} />
       <Route exact path="/recuperar-contrasena" component={RecuperarPage} />
       <Route exact path="/restablecer-contrasena" component={RestablecerPage} />
+      {/* AgroFusion devuelve siempre a https://inmero.co/{proyecto}/sso?token=... */}
+      <Route exact path="/sso" component={SsoCallbackPage} />
       <Route exact path="/sso/callback" component={SsoCallbackPage} />
 
       {/* Rutas autenticadas sin AppShell y sin guardia de perfil incompleto */}
@@ -374,9 +414,15 @@ function AppRoutes() {
       <PrivateRoute path="/telemetria" component={TelemetryPage} />
       <PrivateRoute path="/prediccion" component={PrediccionPage} />
       <PrivateRoute path="/suministros" component={SuministrosPage} />
+      <PrivateRoute path="/finanzas" component={FinanzasPage} />
+      <PrivateRoute path="/integracion" component={IntegracionPage} />
+      <PrivateRoute path="/reportes" component={ReportesPage} />
 
       {/* Default */}
       <Route exact path="/" component={RutaRaiz} />
+
+      {/* Sin path: toda dirección que no coincide arriba (nginx manda todo a index.html) */}
+      <Route component={NoEncontradoPage} />
     </IonRouterOutlet>
   );
 }
@@ -388,8 +434,9 @@ const App: React.FC = () => (
       <ContextoProvider>
         <IonReactRouter basename={import.meta.env.BASE_URL}>
           <AppRoutes />
+          {/* Dentro del router: el botón de acción correctiva de un aviso navega (RF-107 tipo 2). */}
+          <ToastHost />
         </IonReactRouter>
-        <ToastHost />
       </ContextoProvider>
     </AuthProvider>
   </IonApp>

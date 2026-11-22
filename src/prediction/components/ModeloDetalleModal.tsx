@@ -8,6 +8,7 @@
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 M4-07 RF-69: clases de la matriz de confusión por nombre |
 // | 2026-10-31 | Arekkazu | USAB-M03-M04 T-19/T-22 RF-65/69/70: componentes con etiqueta y números en formato regional |
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
+// | 2026-11-03 | Arekkazu | QA-M04 RF-69: el animal de la versión por su identificador, no «Animal #49» |
 import React, { useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Rocket, Save, CheckCircle2, XCircle, Info, MoonStar } from 'lucide-react';
@@ -98,7 +99,7 @@ export function ModeloDetalleModal({ modelo, loading, puedeEditar, puedeEjecutar
             <Pill tono="neutral">{etiquetaTipoModelo(modelo.tipo_modelo)}</Pill>
             {modelo.paradigma && <Pill tono="neutral">{modelo.paradigma}</Pill>}
             {modelo.componente && <Pill tono="neutral">{etiquetaComponente(modelo.componente)}</Pill>}
-            {modelo.id_activo_biologico != null && <Pill tono="neutral">{t('modelodetallemodal.activo_biologico', { id: modelo.id_activo_biologico })}</Pill>}
+            {modelo.id_activo_biologico != null && <Pill tono="neutral">{t('modelodetallemodal.activo_biologico', { nombre: modelo.identificador_activo ?? `#${modelo.id_activo_biologico}` })}</Pill>}
             {modelo.fuente_datos && modelo.fuente_datos !== 'REAL' && <Pill tono="warning">{t(`modelostable.fuente.${modelo.fuente_datos}`)}</Pill>}
             {modelo.esta_produccion && <Pill tono="success">{t('modelodetallemodal.en_produccion')}</Pill>}
           </div>

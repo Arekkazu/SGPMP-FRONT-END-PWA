@@ -1,6 +1,9 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: tipos de dominio del módulo de suministros |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 N-05 RF-74: nombre del activo en los fallos y motivo de la interrupción |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario; el selector de activo se acota a esa finca |
 // =====================================================================
 // Módulo 5 — Suministros · Tipos de dominio
 // Contrato: OpenAPI de src/supplies (rama integracion/rfc012-016).
@@ -18,6 +21,8 @@ export interface ActivoOpcion {
   nombre_especie: string | null;
   nombre_infraestructura: string | null;
   nombre_estado: string | null;
+  id_finca?: number | null;
+  nombre_finca?: string | null;
 }
 
 export interface InstanciaCiclo {
@@ -48,6 +53,8 @@ export interface ConsumoAlimento {
   fecha_registro: string | null;
   justificacion_anulacion: string | null;
   fecha_hora_anulacion: string | null;
+  /** Nombre visible del activo (lo trae el listado). */
+  identificador_activo?: string | null;
 }
 
 export interface RegistrarConsumoPayload {
@@ -74,6 +81,7 @@ export interface FiltrosRegistros {
   fecha_hasta?: string;
   estado_registro?: string;
   tipo_alimento?: string;
+  id_finca?: number;
 }
 
 export interface Lista<T> { total: number; items: T[] }
@@ -101,6 +109,7 @@ export interface Medicamento {
   estado_registro: EstadoRegistro;
   justificacion_anulacion: string | null;
   fecha_hora_anulacion: string | null;
+  identificador_activo?: string | null;
 }
 
 export interface RegistroMedicamentoRespuesta {
@@ -171,12 +180,20 @@ export interface EstadoBatchIca {
   cantidad_activos_pendientes: number;
   cantidad_fallidos: number;
   causa_interrupcion: string | null;
+  motivo_interrupcion?: string | null;
   num_workers: number;
+}
+
+/** Opción del filtro «Usuario» de la bitácora de M05 (N-07). */
+export interface ActorAuditoria {
+  id_usuario: number;
+  nombre: string;
 }
 
 export interface FalloIca {
   id_fallo: number | null;
   id_activo_biologico: number;
+  nombre_activo?: string | null;
   periodo_evaluacion: string | null;
   causa_fallo: string;
   intentos: number;
@@ -284,6 +301,8 @@ export interface GenerarReportePayload {
 export interface ReporteGasto {
   id_reporte_gasto_acumulado: number | null;
   id_activo_biologico: number | null;
+  /** Nombre visible del activo del alcance (lo trae el historial). */
+  nombre_activo?: string | null;
   id_infraestructura: number | null;
   id_especie: number | null;
   fecha_inicio: string;
@@ -411,6 +430,9 @@ export interface EventoAuditoriaSuministro {
   hash_integridad?: string | null;
   registro_incompleto?: boolean | null;
   detalle_causa?: string | null;
+  nombre_activo?: string | null;
+  /** Nulo si el rol no puede leer el nombre de ese usuario. */
+  nombre_usuario?: string | null;
 }
 
 export interface FiltrosAuditoria {
@@ -420,6 +442,7 @@ export interface FiltrosAuditoria {
   fecha_hasta?: string;
   entidad_afectada?: string;
   id_activo_biologico?: number;
+  id_finca?: number;
   resultado?: string;
   clasificacion_registro?: string;
   pagina?: number;

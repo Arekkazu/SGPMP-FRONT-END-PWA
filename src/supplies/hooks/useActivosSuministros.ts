@@ -1,11 +1,12 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-74..81: catálogo de activos para elegir a quién se le registra |
+// | 2026-11-10 | Arekkazu | H-M05-01: el selector sugiere todos los activos visibles, no solo los primeros 500 |
 import { useEffect, useState } from 'react';
 import { activosApi } from '../api/activosApi';
 import type { ActivoOpcion } from '../types';
 
-const MAX_PAGINAS = 5; // ponytail: hasta 500 activos sugeridos; el campo acepta igual cualquier ID.
+const MAX_PAGINAS = 30; // ponytail: 3.000 activos sugeridos; el campo acepta igual cualquier ID.
 
 /** Sugerencias del selector de activo. Si falla, el selector sigue aceptando el ID escrito. */
 export function useActivosSuministros() {

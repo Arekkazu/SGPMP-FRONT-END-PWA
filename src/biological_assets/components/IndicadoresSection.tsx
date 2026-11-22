@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-14 | Arekkazu | QA-M06: fila de campos alineada arriba (CLAUDE.md, filas de campos) |
 import React, { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { Gauge, AlertTriangle } from 'lucide-react';
@@ -114,7 +117,7 @@ export function IndicadoresSection({ idActivo }: Props) {
       <div style={CARD}>
         <h2 style={{ display: 'flex', alignItems: 'center', gap: 'var(--s2)', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 var(--s4)' }}>
           <Gauge size={16} aria-hidden />{t('indicadoressection.indicadores_zootecnicos')}</h2>
-        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-start' }}>
           <div>
             <label style={LABEL} htmlFor="ind-tipo">{t('indicadoressection.tipo')}</label>
             <select id="ind-tipo" style={SELECT} value={tipo} onChange={(e) => setTipo(e.target.value as TipoIndicador)}>

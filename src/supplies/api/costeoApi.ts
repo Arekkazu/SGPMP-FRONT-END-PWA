@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-78/RF-79: costeo directo del ciclo y provisión NIC-41 |
+// | 2026-11-10 | Arekkazu | TC-DIS-206 RF-79: acumulado por instancia de ciclo para explicar un reporte incompleto |
 import { http } from '../../shared/api/http';
 import type {
   AcumuladoCiclo, CorreccionSuministroPayload, ProvisionNic41, RegistrarSuministroDirectoPayload,
@@ -14,6 +15,10 @@ export const costeoApi = {
   /** 404 si el activo no tiene ciclo productivo activo. */
   async acumuladoActivo(idActivo: number): Promise<AcumuladoCiclo> {
     return (await http.get<AcumuladoCiclo>(`${COSTEO}/acumulado/activo/${idActivo}`)).data;
+  },
+  /** Acumulado de una instancia de ciclo (también cerrada): la referencia del reporte NIC-41. */
+  async acumuladoCiclo(idGestionFases: number): Promise<AcumuladoCiclo> {
+    return (await http.get<AcumuladoCiclo>(`${COSTEO}/acumulado/ciclo/${idGestionFases}`)).data;
   },
   async registrar(payload: RegistrarSuministroDirectoPayload): Promise<ResultadoRegistroSuministro> {
     return (await http.post<ResultadoRegistroSuministro>(COSTEO, payload)).data;

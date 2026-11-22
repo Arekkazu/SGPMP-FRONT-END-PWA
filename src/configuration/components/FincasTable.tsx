@@ -1,7 +1,10 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-04 | Arekkazu | RF-19 v1.1: titular tributario de la finca (M06 cierra por titular) |
 import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { Plus, RefreshCw, Pencil, PowerOff, RotateCcw } from 'lucide-react';
+import { Plus, RefreshCw, Pencil, PowerOff, RotateCcw, Landmark } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { usePaginado } from '../../shared/hooks/useBusqueda';
@@ -11,6 +14,7 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useFincas } from '../hooks/useFincas';
 import { FincaModal } from './FincaModal';
+import { TitularFincaModal } from './TitularFincaModal';
 import type { FincaResponse } from '../types';
 import { useModalA11y } from '../../shared/hooks/useModalA11y';
 
@@ -19,7 +23,8 @@ type ModalState =
   | { tipo: 'crear' }
   | { tipo: 'editar'; finca: FincaResponse }
   | { tipo: 'desactivar'; finca: FincaResponse }
-  | { tipo: 'reactivar'; finca: FincaResponse };
+  | { tipo: 'reactivar'; finca: FincaResponse }
+  | { tipo: 'titular'; finca: FincaResponse };
 
 const TH: React.CSSProperties = {
   padding: 'var(--s2) var(--s4)',
@@ -225,6 +230,11 @@ export function FincasTable() {
                             <Pencil size={15} aria-hidden />
                           </Button>
                         )}
+                        {online && (
+                          <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'titular', finca: f })} aria-label={t('titular.abrir', { finca: f.nombre })} title={t('titular.abrir', { finca: f.nombre })}>
+                            <Landmark size={15} aria-hidden />
+                          </Button>
+                        )}
                         {puedeDesact && f.es_activo && online && (
                           <Button variant="ghost" size="sm" onClick={() => setModal({ tipo: 'desactivar', finca: f })} aria-label={`Desactivar ${f.nombre}`}>
                             <PowerOff size={15} aria-hidden style={{ color: 'var(--sem-error)' }} />
@@ -259,6 +269,7 @@ export function FincasTable() {
           onEditar={editar}
         />
       )}
+      {modal.tipo === 'titular' && <TitularFincaModal finca={modal.finca} puedeEditar={puedeEditar} onCerrar={cerrar} />}
       {modal.tipo === 'desactivar' && (
         <ConfirmModal
           titulo="Confirmar desactivación"

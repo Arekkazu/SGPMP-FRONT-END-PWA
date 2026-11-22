@@ -1,19 +1,22 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-76: formulario de aplicación de medicamento |
-import React, { useState } from 'react';
+// | 2026-11-10 | Arekkazu | TC-DIS-214 RF-76: población del lote y dosis por individuo calculadas en vivo |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
+import React, { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { Button } from '../../shared/design-system/Button';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
-import { Alert } from '../../shared/design-system/Alert';
+import { AvisoServidor } from './AvisoServidor';
 import { useT } from '../../shared/i18n/useT';
 import { useErroresDeServidor } from '../../shared/hooks/useErroresDeServidor';
 import { hoyLocal } from '../../shared/lib/fecha';
 import { humanizar } from '../../shared/lib/etiquetas';
 import type { ApiError } from '../../shared/api/errors';
-import { decimalPositivo } from '../lib/formato';
+import { decimalPositivo, formatoCantidad } from '../lib/formato';
+import { porIndividuo, usePoblacionActivo } from '../hooks/usePoblacionActivo';
 import { VIAS_ADMINISTRACION, type ActivoOpcion, type RegistrarMedicamentoPayload } from '../types';
 import { SelectorActivo } from './SelectorActivo';
 import { AreaTexto } from './AreaTexto';
@@ -51,18 +54,32 @@ interface Props {
 
 const ahora = () => new Date().toTimeString().slice(0, 5);
 
-export function MedicamentoFormModal({ activos, cargandoActivos, enviando, error, onGuardar, onCerrar }: Props) {
+// RF-76 precondición 3: se medica un activo ACTIVO o EN_TRATAMIENTO; el selector no ofrece los demás.
+const ESTADOS_REGISTRABLES = ['ACTIVO', 'EN_TRATAMIENTO'];
+
+export function MedicamentoFormModal({ activos: todos, cargandoActivos, enviando, error, onGuardar, onCerrar }: Props) {
   const { t } = useT('supplies');
+  const activos = useMemo(() => todos.filter((a) => ESTADOS_REGISTRABLES.includes(a.nombre_estado ?? '')), [todos]);
   const [idActivo, setIdActivo] = useState<number | null>(null);
-  const { register, control, handleSubmit, setError, formState: { errors } } = useForm<Form>({
+  const poblacion = usePoblacionActivo(idActivo);
+  const { register, control, handleSubmit, watch, setError, formState: { errors } } = useForm<Form>({
     mode: 'onBlur',
     defaultValues: {
       activo: '', nombre_medicamento: '', fecha_aplicacion: hoyLocal(), hora_aplicacion: ahora(), via_administracion: '',
-      dosis_aplicada: '', unidad_dosis: '', periodo_retiro_dias: '0', costo_unitario: '', nombre_veterinario: '',
+      dosis_aplicada: '', unidad_dosis: '', periodo_retiro_dias: '', costo_unitario: '', nombre_veterinario: '',
       motivo_aplicacion: '', lote: '', fecha_vencimiento_lote: '', observaciones: '',
     },
   });
   const alertaGeneral = useErroresDeServidor(error, setError, CAMPOS);
+  // RF-76: en un lote la dosis total se reparte entre los individuos vivos.
+  const esLote = poblacion.tipo === 'POBLACIONAL';
+  const unidad = watch('unidad_dosis').trim() || 'ml';
+  const dosisIndividuo = esLote ? porIndividuo(decimalPositivo(watch('dosis_aplicada')), poblacion.cantidadActual) : null;
+  const textoPoblacion = idActivo === null ? t('consumo.sin_activo_elegido')
+    : poblacion.cargando ? t('comun.cargando')
+      : !esLote ? t('consumo.no_aplica_individual')
+        : poblacion.cantidadActual ? formatoCantidad(poblacion.cantidadActual, 0) : t('consumo.sin_poblacion');
+  const textoIndividuo = dosisIndividuo ? `${formatoCantidad(dosisIndividuo)} ${unidad}` : esLote ? t('medicamento.dosis_individuo_pendiente') : textoPoblacion;
 
   const enviar = (f: Form) => onGuardar({
     id_activo_biologico: idActivo as number,
@@ -93,7 +110,6 @@ export function MedicamentoFormModal({ activos, cargandoActivos, enviando, error
       )}
     >
       <form onSubmit={handleSubmit(enviar)} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s4)' }}>
-        {alertaGeneral && error && <Alert variant={error.status === 409 ? 'error' : 'warning'} title={error.message} />}
         <Controller
           name="activo"
           control={control}
@@ -139,6 +155,9 @@ export function MedicamentoFormModal({ activos, cargandoActivos, enviando, error
             error={errors.unidad_dosis?.message}
             {...register('unidad_dosis', { validate: (v) => !!v.trim() || t('medicamento.unidad_requerida') })}
           />
+          {/* Solo lectura: población del lote y dosis que recibe cada individuo (RF-76). */}
+          <Input id="medicamento-cantidad-actual" label={t('consumo.cantidad_actual')} value={textoPoblacion} readOnly aria-readonly="true" tabIndex={-1} />
+          <Input id="medicamento-dosis-por-individuo" label={t('medicamento.dosis_individuo_unidad', { unidad })} value={textoIndividuo} readOnly aria-readonly="true" tabIndex={-1} />
           <Input
             id="medicamento-costo" label={t('medicamento.costo_unitario')} type="number" step="any" min={0} required
             hint={t('medicamento.costo_unitario_hint')} error={errors.costo_unitario?.message}
@@ -150,6 +169,11 @@ export function MedicamentoFormModal({ activos, cargandoActivos, enviando, error
             {...register('periodo_retiro_dias', { validate: (v) => v === '' || (Number.isInteger(Number(v)) && Number(v) >= 0) || t('medicamento.retiro_invalido') })}
           />
         </div>
+        <p aria-live="polite" style={{ margin: 0, fontSize: 'var(--fs-body-md)', color: 'var(--text-secondary)' }}>
+          {dosisIndividuo
+            ? t('medicamento.dosis_individuo_vivo', { valor: formatoCantidad(dosisIndividuo), unidad, poblacion: formatoCantidad(poblacion.cantidadActual, 0) })
+            : esLote ? t('medicamento.dosis_individuo_pendiente') : t('medicamento.dosis_individuo_no_aplica')}
+        </p>
         <Input
           id="medicamento-vet" label={t('medicamento.veterinario')} required maxLength={150}
           error={errors.nombre_veterinario?.message}
@@ -165,6 +189,7 @@ export function MedicamentoFormModal({ activos, cargandoActivos, enviando, error
           <Input id="medicamento-vence" label={t('medicamento.vence_lote')} type="date" hint={t('comun.opcional')} error={errors.fecha_vencimiento_lote?.message} {...register('fecha_vencimiento_lote')} />
         </div>
         <AreaTexto id="medicamento-obs" label={t('comun.observaciones')} maxLength={500} hint={t('comun.opcional')} {...register('observaciones')} />
+        {alertaGeneral && error && <AvisoServidor error={error} />}
       </form>
     </ModalShell>
   );

@@ -17,6 +17,9 @@
 // | 2026-11-02 | Arekkazu | AJF-14 RF-71: solicitud por animal y procesos de reentrenamiento |
 // | 2026-11-03 | Arekkazu | RF-72: bandeja de inferencias por evaluar (antes datos de ejemplo) |
 // | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU01 H-16 RF-64: filtro nombre del listado de patologías |
+// | 2026-11-03 | Arekkazu | QA-M04 RF-69: el animal de la versión por su identificador, no «Animal #49» |
+// | 2026-11-18 | Arekkazu | M08 RF-106: filtro de la bandeja por animal |
+// | 2026-11-21 | Arekkazu | INC-M08-390-G023 RF-106: la bandeja acepta la predicción pedida desde el historial |
 // =====================================================================
 // Módulo 4 — Predicción / IA · Tipos de dominio
 // Contrato: do-it/prediction/api_reference_m04_prediction_iot.md
@@ -294,6 +297,8 @@ export interface VersionModeloResponse {
   metricas_poblacionales: Record<string, number | boolean> | null;
   /** RFC-010: animal del modelo INDIVIDUAL (uno por animal); null en POBLACIONAL y META. */
   id_activo_biologico: number | null;
+  /** Identificador del animal («BOV-001»); null si no se pudo leer. */
+  identificador_activo?: string | null;
   /** RFC-010; null solo en versiones leídas de la caché. */
   fuente_datos: FuenteDatos | null;
   estado_version: EstadoVersion;
@@ -740,4 +745,8 @@ export interface BandejaRetroalimentacionResponse {
 export interface FiltrosBandejaRetro {
   estado_evaluacion?: EstadoEvaluacion;
   nivel_riesgo?: number;
+  /** RF-106: la bandeja de un solo animal (cuando se llega desde el historial predictivo). */
+  id_activo_biologico?: number;
+  /** RF-106: la predicción elegida en el historial entra aunque no sea de riesgo moderado o alto, y va primero. */
+  id_resultado_inferencia?: string;
 }

@@ -3,6 +3,8 @@
 // | 2026-11-02 | Arekkazu | AJF-12 RF-71: vista oficial sin modo demo: avance por modelo, solicitudes, versiones creadas y calibración por animal |
 // | 2026-11-02 | Arekkazu | AJF-14 RF-71 FE-1..4: procesos reales con fases y solicitud por animal |
 // | 2026-11-03 | Arekkazu | AJF-14 RF-71: la lista de animales sin barra final y con aviso si no carga |
+// | 2026-11-03 | Arekkazu | QA-M04 RF-69: el animal de la versión por su identificador, no «Animal #49» |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { RefreshCw, ClipboardList, Boxes, Gauge as GaugeIcon, CheckCircle2, Loader2, Cpu, Play } from 'lucide-react';
@@ -94,7 +96,7 @@ export function ReentrenamientoView() {
           <h2 id="re-procesos" style={H2}><Cpu size={17} aria-hidden />{t('procesos.titulo')}</h2>
           <p style={AYUDA}>{t('procesos.ayuda')}</p>
           <div style={{ ...CARD, marginBottom: 'var(--s4)' }}>
-            <div style={{ display: 'flex', gap: 'var(--s3)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 'var(--s3)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 240px', minWidth: 0 }}>
                 <Combobox
                   id="re-animal"
@@ -110,11 +112,13 @@ export function ReentrenamientoView() {
                   hint={errorActivos ? t('procesos.animales_no_cargaron') : undefined}
                 />
               </div>
-              <Button variant="primary" size="sm" loading={r.enviandoAnimal} disabled={!!motivoAnimal}
-                aria-describedby={motivoAnimal ? 're-animal-motivo' : undefined}
-                onClick={async () => { if (idAnimal != null && await r.solicitarAnimal(idAnimal)) { setAnimal(''); setIdAnimal(null); } }}>
-                <Play size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('avisoreentrenamiento.solicitar')}
-              </Button>
+              <div className="ds-campo-accion">
+                <Button variant="primary" size="sm" loading={r.enviandoAnimal} disabled={!!motivoAnimal}
+                  aria-describedby={motivoAnimal ? 're-animal-motivo' : undefined}
+                  onClick={async () => { if (idAnimal != null && await r.solicitarAnimal(idAnimal)) { setAnimal(''); setIdAnimal(null); } }}>
+                  <Play size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('avisoreentrenamiento.solicitar')}
+                </Button>
+              </div>
             </div>
             {motivoAnimal && <p id="re-animal-motivo" style={{ margin: 'var(--s2) 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{motivoAnimal}</p>}
             {r.errorAnimal && <Alert variant={r.errorAnimal.status === 409 || r.errorAnimal.status === 422 ? 'warning' : 'error'} title={t('avisoreentrenamiento.no_se_pudo_solicitar')} description={r.errorAnimal.message} style={{ marginTop: 'var(--s3)' }} />}
@@ -208,7 +212,7 @@ export function ReentrenamientoView() {
                 <li key={v.id_version_modelo} style={{ ...CARD, padding: 'var(--s3) var(--s4)', display: 'flex', justifyContent: 'space-between', gap: 'var(--s3)', flexWrap: 'wrap', alignItems: 'center' }}>
                   <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
                     <strong>{v.nombre_version}</strong> · {etiquetaTipoModelo(v.tipo_modelo)}
-                    {v.id_activo_biologico != null && ` · ${t('modelostable.activo_biologico', { id: v.id_activo_biologico })}`}
+                    {v.id_activo_biologico != null && ` · ${t('modelostable.activo_biologico', { nombre: v.identificador_activo ?? `#${v.id_activo_biologico}` })}`}
                     <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)' }}>{v.fecha_registro ? formatearFechaHora(v.fecha_registro) : '—'}</span>
                   </span>
                   <span style={{ display: 'inline-flex', gap: 'var(--s2)', alignItems: 'center' }}>

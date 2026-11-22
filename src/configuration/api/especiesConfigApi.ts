@@ -1,9 +1,12 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-20 | Arekkazu | FE-09 RF-17: PATCH es_critica de la variable ambiental (RFC-016) |
+// | 2026-11-10 | Arekkazu | #512 RF-16/RF-37: ciclos productivos con sus fases en orden |
+// | 2026-11-10 | Arekkazu | #391/#392 RF-16: densidad máxima por etapa |
 import { http } from '../../shared/api/http';
 import type {
-  CicloBiologicoResponse, RegistrarCicloDTO, EditarCicloDTO,
+  CicloBiologicoResponse, RegistrarCicloDTO, EditarCicloDTO, ConfigurarDensidadEtapaDTO,
+  CicloProductivoResponse, GuardarCicloProductivoDTO,
   PatologiaEspecieItemResponse, RegistrarPatologiaDTO, EditarPatologiaDTO,
   MetricaProduccionResponse, RegistrarMetricaDTO, EditarMetricaDTO, CicloMetrica,
   UmbralAmbientalResponse, RegistrarUmbralDTO, EditarUmbralDTO,
@@ -42,6 +45,33 @@ export const ciclosApi = {
   async reactivar(id: number): Promise<CicloBiologicoResponse> {
     const res = await http.patch<CicloBiologicoResponse>(`/configuracion/ciclos/${id}/reactivar`);
     return res.data;
+  },
+
+  /** #391: densidad máxima de la etapa. */
+  async configurarDensidad(id: number, dto: ConfigurarDensidadEtapaDTO): Promise<CicloBiologicoResponse> {
+    const res = await http.patch<CicloBiologicoResponse>(`/configuracion/ciclos/${id}/densidad`, dto);
+    return res.data;
+  },
+};
+
+/** #512: ciclos productivos de la especie; RF-37 los usa para abrir y avanzar las fases de un activo. */
+export const ciclosProductivosApi = {
+  async listar(idEspecie: number): Promise<CicloProductivoResponse[]> {
+    const res = await http.get<Listado<CicloProductivoResponse>>('/configuracion/ciclos-productivos', {
+      params: { id_especie: idEspecie },
+    });
+    return res.data.items;
+  },
+  async registrar(idEspecie: number, dto: GuardarCicloProductivoDTO): Promise<CicloProductivoResponse> {
+    const res = await http.post<CicloProductivoResponse>('/configuracion/ciclos-productivos', { id_especie: idEspecie, ...dto });
+    return res.data;
+  },
+  async editar(id: number, dto: GuardarCicloProductivoDTO): Promise<CicloProductivoResponse> {
+    const res = await http.put<CicloProductivoResponse>(`/configuracion/ciclos-productivos/${id}`, dto);
+    return res.data;
+  },
+  async eliminar(id: number): Promise<void> {
+    await http.delete(`/configuracion/ciclos-productivos/${id}`);
   },
 };
 

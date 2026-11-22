@@ -3,9 +3,12 @@
 // | 2026-10-22 | Leandro | FE-12 RF-57: conserva mensaje público de rechazos |
 // | 2026-10-23 | Arekkazu | RF-29: el mensaje del backend se interpola en los códigos con datos variables |
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
+// | 2026-11-18 | Arekkazu | M08 RF-107: el catálogo de mensajes de M09 manda sobre el texto de la respuesta |
+// | 2026-11-21 | Arekkazu | INC-M08-392-G027 RF-107 FA-3: el tiempo agotado dice que la operación no se completó |
 import type { AxiosError } from 'axios';
 
 import i18n from '../i18n';
+import { mensajeDelCatalogo } from './catalogoErrores';
 import { formatearHora } from '../i18n/formato';
 
 export interface ApiError {
@@ -17,6 +20,8 @@ export interface ApiError {
   status: number;
   /** Cada campo que fallo, con su mensaje sin la etiqueta. `field` vacio = error de modelo. */
   fields?: BackendFieldError[];
+  /** RF-107 tipo 2: botón de acción correctiva del catálogo de M09 (ruta interna del front). */
+  accion?: { texto: string; ruta: string };
 }
 
 export interface BackendFieldError {
@@ -31,7 +36,12 @@ export function mapToApiError(error: AxiosError): ApiError {
   const code = (data?.error_code as string) ?? (data?.code as string) ?? (data?.detail as string) ?? `HTTP_${status}`;
   const fields = data?.fields as BackendFieldError[] | undefined;
   const mensajeBackend = resolveMessage(status, data, fields);
-  const message = (code === 'CUENTA_BLOQUEADA' && bloqueoEnHoraLocal(mensajeBackend))
+  const catalogo = mensajeDelCatalogo(code);
+  // RF-107 FA-3: sin respuesta porque se agotó el tiempo, la operación no se completó y se puede reintentar.
+  const tiempoAgotado = !error.response && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT');
+  const message = (tiempoAgotado && i18n.t('errores.tiempo_agotado', { ns: 'common' }))
+    || catalogo?.mensaje
+    || (code === 'CUENTA_BLOQUEADA' && bloqueoEnHoraLocal(mensajeBackend))
     || traducirPorCodigo(code, mensajeBackend);
   const field = fields?.[0]?.field ?? (data?.field as string | undefined);
   const porCampo = fields?.map((f) => ({
@@ -41,7 +51,8 @@ export function mapToApiError(error: AxiosError): ApiError {
 
   const backendMessage = (status === 403 || status === 422) && typeof data?.message === 'string'
     ? data.message.trim() || undefined : undefined;
-  return { code, message, backendMessage, field, status, fields: porCampo?.length ? porCampo : undefined };
+  return { code, message, backendMessage, field, status, fields: porCampo?.length ? porCampo : undefined,
+    accion: catalogo?.accion };
 }
 
 function stripPydanticPrefix(msg: string): string {

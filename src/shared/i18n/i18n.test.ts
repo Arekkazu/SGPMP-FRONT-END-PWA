@@ -1,3 +1,7 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-05 | Arekkazu | M06 prototipos: ningún texto visible con códigos internos del proyecto |
+// | 2026-11-14 | Arekkazu | QA-M06: ningún texto visible cita párrafos de la norma («NIC 41 ¶26») |
 /**
  * RF-29 — consistencia entre idiomas y comportamiento de fallback.
  *
@@ -71,6 +75,14 @@ describe('catálogos de traducción', () => {
     expect(Object.keys(porCodigo)).toContain('IDIOMA_NO_DISPONIBLE');
     expect(Object.keys(porCodigo)).toContain('CONFLICTO_PERFIL_MODIFICADO');
     expect(Object.keys(porCodigo)).toContain('ERROR_PERSISTENCIA_IDIOMA');
+  });
+
+  // CLAUDE.md § Textos visibles: el usuario nunca lee «RF-18», «M04», «Módulo 6» ni el párrafo de la norma («¶26»).
+  it('ningún texto visible menciona códigos internos del proyecto ni párrafos de la norma', () => {
+    const codigo = /\bRF-?\d{1,3}\b|\bRFC-?\d|\bM0\d\b|[Mm][óo]dulo \d|\bCU-\d|¶/;
+    const conCodigo = LOCALES.flatMap((loc) => NAMESPACES.flatMap((ns) =>
+      valores(RECURSOS[loc][ns] as Arbol).filter(([, v]) => typeof v === 'string' && codigo.test(v)).map(([k]) => `${loc}/${ns}:${k}`)));
+    expect(conCodigo).toEqual([]);
   });
 });
 

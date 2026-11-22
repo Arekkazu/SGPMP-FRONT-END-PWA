@@ -38,6 +38,29 @@ import { useState } from 'react'
 
 ---
 
+## Textos visibles, vacíos y filtros (obligatorio desde 2026-11-05)
+
+1. **Nunca un código interno en pantalla.** Ningún texto visible — título, rótulo, columna, badge, chip, toast,
+   placeholder, ayuda, nombre de pestaña — dice `RF-xx`, `RFC-xxx`, `Módulo N`, `M01`…`M09`, `CU-xx`, el nombre de
+   una tabla o columna del backend ni un valor de enum crudo (`PENDIENTE_CUENTA`, `INICIAL_RF82`). Se usa lo que el
+   usuario ve en el software («Suministros», «Activos biológicos»). Tampoco se citan párrafos de la norma
+   («(NIC 41 ¶26 y ¶51)», «(¶50)»): el texto dice qué pasa, no dónde lo dice la norma. «NIC 41» aparece solo
+   donde nombra algo que el usuario reconoce como tal (el módulo «Finanzas NIC 41», el comprobante, el informe
+   de revelaciones). `i18n.test.ts` rechaza el «¶». Los prototipos de diseño traen chips «RF-82» y columnas
+   «ID PRECIO (RF-89)»: se toma su idea, nunca esas etiquetas.
+2. **Nada de `null`, `undefined`, `NaN` ni códigos sueltos.** Un enum se muestra por su traducción (`t('estado.X')`);
+   un dato opcional vacío se muestra con lo que significa («Sin vencimiento», «Indefinida», «Sin cuenta asignada»)
+   y `—` solo cuando de verdad no aplica. Nunca una columna o tabla cuyo contenido sea ids o códigos internos
+   (`#123`, `tabla_origen`); si el usuario necesita identificar algo, se muestra su identificador de negocio.
+3. **Filtros con lógica y completos.** Cada listado tiene búsqueda y un filtro por cada dimensión que muestra la
+   tabla y que el usuario necesita acotar (estado, especie, tipo, origen…). Las opciones salen del catálogo o de
+   los datos reales, nunca valores que el backend no conoce; los filtros se combinan con AND; «Limpiar filtros»
+   aparece cuando hay alguno activo; el pie dice «Mostrando X de Y»; y el estado vacío distingue «no hay
+   registros» de «ningún registro coincide con los filtros». Si el filtro lo resuelve el backend, el endpoint
+   debe aceptarlo y validarlo (ver CLAUDE.md del backend).
+
+---
+
 ## Qué cubre este documento
 
 - Stack y versiones instaladas
@@ -341,6 +364,7 @@ de esos solo `Gauge` está implementado — los demás siguen siendo especificac
 | Nunca usar color como único indicador de estado | Añadir siempre icono + texto + patrón junto al color (WCAG 1.4.1) |
 | Máximo 3 toasts simultáneos | Límite de carga cognitiva definido por diseño |
 | Errores de campo van debajo del input con `role="alert"` | Anuncio inmediato para lectores de pantalla; nunca en alerta global |
+| Filas de campos alineadas arriba, botones en `.ds-campo-accion` | Con `align-items: end` la ayuda o el error de un campo sube su input sobre los vecinos (ver «Filas de campos») |
 
 ### Grid y breakpoints
 
@@ -613,6 +637,24 @@ interface ApiError {
 - El botón de envío se deshabilita durante la petición y muestra spinner
 - Al recibir error 400/409 del backend, mapear el campo `field` de `ApiError` al error del campo en `react-hook-form`
 - Requeridos: asterisco (*) + `aria-required="true"` en el input
+
+### Filas de campos (obligatorio desde 2026-11-14)
+
+Una fila con varios campos y botones (filtros, parámetros, «agregar») **se alinea arriba**
+(`align-items: start`), nunca abajo (`end` / `flex-end`). Con `end`, la ayuda o el error que `Input`,
+`Select` y `Combobox` ponen debajo del control alarga ese campo y su input queda más alto que los vecinos;
+`SelectorActivo` trae ayuda siempre, así que la fila sale torcida desde el primer render. Es el desalineado
+que QA reportó en Suministros, Finanzas y Auditoría, cada vez en una fila nueva.
+
+- Los botones de la fila van en `<div className="ds-campo-accion">` (`Input.css`): un rótulo vacío los baja a
+  la altura de los inputs. Nada de `paddingBottom` ni rótulos `&nbsp;` a mano.
+- `FILTROS` (`supplies/components/estilos.ts`) y `.fin-filtros` ya vienen alineados arriba: úsalos.
+- Un grupo con leyenda (`fieldset` + `legend`) dentro de la fila deja la leyenda en `ds-sr-only`; una leyenda
+  visible encima de los rótulos baja sus inputs.
+- Rótulos cortos: alineada arriba, un rótulo que parte en dos líneas baja su input. Si no se puede acortar,
+  esa fila no lleva campos con ayuda y se queda abajo.
+- `Layout.responsive.test.ts` falla con cualquier `align-items: end` nuevo; las filas que ya lo tienen sin ayuda
+  ni error (encabezados, pestañas) están registradas ahí con el motivo.
 
 ---
 

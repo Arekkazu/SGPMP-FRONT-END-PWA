@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 N-02 RF-16: la pestaña Fases crea y nombra «fases», no «ciclos» |
 import React, { useEffect, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -124,7 +127,7 @@ function CicloModal({
       <div className="ds-modal__panel" style={{ padding: 'var(--s6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--s5)' }}>
           <h2 id="ciclo-modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-            {modoEditar ? `Editar ciclo — ${ciclo!.nombre}` : 'Nuevo ciclo biológico'}
+            {modoEditar ? t('ciclossection.editar_fase', { nombre: ciclo!.nombre }) : t('ciclossection.nueva_fase')}
           </h2>
           <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('ciclossection.cerrar')}>
             <X size={18} aria-hidden />
@@ -187,7 +190,7 @@ function CicloModal({
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)', marginTop: 'var(--s6)' }}>
             <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>{t('ciclossection.cancelar')}</Button>
             <Button type="submit" variant="primary" size="md" loading={saving}>
-              {modoEditar ? 'Guardar cambios' : 'Registrar ciclo'}
+              {modoEditar ? t('ciclossection.guardar_cambios') : t('ciclossection.registrar_fase')}
             </Button>
           </div>
         </form>
@@ -212,7 +215,7 @@ function ConfirmDesactivar({ ciclo, reactivar = false, saving, onCancel, onConfi
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--s6)', lineHeight: 1.5 }}>
           {reactivar
             ? t('ciclossection.reactivar_texto', { nombre: ciclo.nombre })
-            : `¿Deseas desactivar el ciclo "${ciclo.nombre}"? Los datos históricos permanecerán accesibles.`}
+            : t('ciclossection.desactivar_texto', { nombre: ciclo.nombre })}
         </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--s3)' }}>
           <Button variant="secondary" size="md" onClick={onCancel} disabled={saving}>{t('ciclossection.cancelar')}</Button>
@@ -276,7 +279,7 @@ export function CiclosSection({ idEspecie }: Props) {
           </Button>
           {puedeCrear && (
             <Button variant="primary" size="sm" onClick={() => setModal({ tipo: 'crear' })}>
-              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('ciclossection.nuevo_ciclo')}</Button>
+              <Plus size={15} aria-hidden style={{ marginRight: 'var(--s1)' }} />{t('ciclossection.nueva_fase')}</Button>
           )}
         </div>
       </div>

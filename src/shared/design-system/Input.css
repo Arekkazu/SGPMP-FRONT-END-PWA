@@ -1,3 +1,7 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-11-14 | Arekkazu | QA-M06: .ds-campo-accion, botones de una fila de campos a la altura de los inputs | */
+
 .ds-field {
   display: flex;
   flex-direction: column;
@@ -122,6 +126,30 @@
 .ds-field__hint {
   font-size: 11px;
   color: var(--text-muted);
+}
+
+/* Botones dentro de una fila de campos. La fila se alinea arriba, nunca abajo (CLAUDE.md, «Filas de campos»):
+ * con align-items end, la ayuda o el error bajo un campo lo alarga y su input queda más alto que los vecinos.
+ * Un rótulo vacío con la letra de .ds-field__label baja los botones a la fila de los inputs (48px). */
+.ds-campo-accion {
+  display: grid;
+  grid-template-rows: auto var(--s9);
+  grid-auto-flow: column;
+  justify-content: start;
+  align-items: center;
+  gap: 6px var(--s2);
+}
+
+.ds-campo-accion::before {
+  content: '\00a0';
+  grid-row: 1;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+}
+
+.ds-campo-accion > * {
+  grid-row: 2;
 }
 
 /* textarea variant */

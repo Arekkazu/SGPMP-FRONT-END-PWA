@@ -1,6 +1,12 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-23 | Arekkazu | M05 RF-81: historial de suministros por activo, filtros, resumen y exportación |
+// | 2026-11-10 | Arekkazu | TC-DIS-218/219 RF-81: rangos agrupados con fieldset, columnas de unidad y origen, resumen anunciado |
+// | 2026-11-11 | Arekkazu | USAB-M05-M06 RF-74..81: reporte de usabilidad del 11-11 (nombres en lugar de ids, textos y formatos) |
+// | 2026-11-12 | Arekkazu | TC-DIS-218 RF-81: la paginación muestra la página pedida al instante, sin esperar al servidor |
+// | 2026-11-12 | Arekkazu | USAB-M05-M06 R-02 RF-81: el rango de fechas pasa a dos filas en celulares grandes |
+// | 2026-11-14 | Arekkazu | QA-M06: filas de campos alineadas arriba; el botón va en .ds-campo-accion |
+// | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: filtro por finca del usuario; el selector de activo se acota a esa finca |
 import React, { useEffect, useState } from 'react';
 import { Search, FileDown, History } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -13,6 +19,7 @@ import { usePermission } from '../../shared/rbac/usePermission';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
+import { humanizar } from '../../shared/lib/etiquetas';
 import { ACCION_R, RECURSO_HISTORIAL } from '../rbac';
 import { useHistorialSuministros } from '../hooks/useHistorialSuministros';
 import { useSondeoTrabajo } from '../hooks/useSondeoTrabajo';
@@ -25,8 +32,12 @@ import { EstadoVacio } from '../components/EstadoVacio';
 import { SelectorActivo } from '../components/SelectorActivo';
 import { Paginacion } from '../components/Paginacion';
 import { FILTROS, PANEL, SECUNDARIO, TABLA, TD, TD_NUM, TH, TH_NUM } from '../components/estilos';
+import { SelectorFinca } from '../../shared/fincas/SelectorFinca';
 
 const POR_PAGINA = 50;
+// La fila de filtros se alinea arriba: una leyenda visible encima de los rótulos bajaba los inputs del grupo
+// por debajo de los vecinos. Queda para el lector de pantalla; los rótulos de cada extremo se ven.
+const GRUPO: React.CSSProperties = { border: 0, padding: 0, margin: 0, minWidth: 0 };
 
 export function HistorialView() {
   const { t } = useT('supplies');
@@ -36,6 +47,7 @@ export function HistorialView() {
   const { consulta, exportacion, descarga, consultarTrabajo } = useHistorialSuministros();
   const [texto, setTexto] = useState('');
   const [idActivo, setIdActivo] = useState<number | null>(null);
+  const [idFinca, setIdFinca] = useState<number | null>(null);
   const [errorActivo, setErrorActivo] = useState<string>();
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
@@ -102,7 +114,7 @@ export function HistorialView() {
     <>
       <EncabezadoVista
         titulo={t('historial.titulo')}
-        descripcion={t('historial.descripcion')}
+        descripcion={t('historial.subtitulo')}
         acciones={filtros && (
           <>
             <Button variant="secondary" size="md" disabled={!online} loading={exportacion.cargando} onClick={() => exportar('PDF')}><FileDown size={16} aria-hidden />PDF</Button>
@@ -111,19 +123,32 @@ export function HistorialView() {
         )}
       />
       <form onSubmit={buscar} role="search" style={{ ...FILTROS, marginBottom: 'var(--s5)' }}>
-        <SelectorActivo id="historial-activo" activos={activos} cargando={cargandoActivos} value={texto} required error={errorActivo} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
-        <Input id="historial-desde" label={t('comun.desde')} type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
-        <Input id="historial-hasta" label={t('comun.hasta')} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} error={rangoInvalido ? t('comun.rango_invalido') : undefined} />
+        <SelectorFinca id="historial-finca" idFinca={idFinca} onChange={(id) => { setIdFinca(id); setTexto(''); setIdActivo(null); }} />
+        <SelectorActivo id="historial-activo" activos={activos} cargando={cargandoActivos} idFinca={idFinca} value={texto} required error={errorActivo} onChange={(x, id) => { setTexto(x); setIdActivo(id); }} />
+        {/* Los rangos van agrupados (fieldset + legend): el lector anuncia a qué rango pertenece cada extremo (WCAG 1.3.1). */}
+        <fieldset style={GRUPO}>
+          <legend className="ds-sr-only">{t('historial.rango_fechas')}</legend>
+          {/* R-02: «Desde» y «Hasta» pasan a dos filas cuando no caben, sin desbordar la página (500-700 px). */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--s3)' }}>
+            <Input id="historial-desde" label={t('comun.desde')} type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
+            <Input id="historial-hasta" label={t('comun.hasta')} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} error={rangoInvalido ? t('comun.rango_invalido') : undefined} />
+          </div>
+        </fieldset>
         <Select id="historial-tipo" label={t('historial.tipo')} value={tipo} onChange={(e) => setTipo(e.target.value)}>
           {TIPOS_SUMINISTRO.map((x) => <option key={x} value={x}>{x === 'TODOS' ? t('comun.todos') : t(`tipo.${x}`)}</option>)}
         </Select>
         <Select id="historial-origen" label={t('historial.origen_precio')} value={origen} onChange={(e) => setOrigen(e.target.value)}>
           {ORIGENES_PRECIO.map((x) => <option key={x} value={x}>{x === 'TODOS' ? t('comun.todos') : t(`origen.${x}`)}</option>)}
         </Select>
-        <Input id="historial-min" label={t('historial.costo_min')} type="number" step="any" min={0} value={costoMin} onChange={(e) => setCostoMin(e.target.value)} />
-        <Input id="historial-max" label={t('historial.costo_max')} type="number" step="any" min={0} value={costoMax} onChange={(e) => setCostoMax(e.target.value)}
-          error={costosInvalidos ? t('historial.costos_invalidos') : undefined} />
-        <div style={{ paddingBottom: 'var(--s1)' }}>
+        <fieldset style={GRUPO}>
+          <legend className="ds-sr-only">{t('historial.rango_costo')}</legend>
+          <div className="ds-fg2" style={{ gap: 'var(--s3)' }}>
+            <Input id="historial-min" label={t('historial.costo_min')} type="number" step="any" min={0} value={costoMin} onChange={(e) => setCostoMin(e.target.value)} />
+            <Input id="historial-max" label={t('historial.costo_max')} type="number" step="any" min={0} value={costoMax} onChange={(e) => setCostoMax(e.target.value)}
+              error={costosInvalidos ? t('historial.costos_invalidos') : undefined} />
+          </div>
+        </fieldset>
+        <div className="ds-campo-accion">
           <Button type="submit" variant="secondary" size="md" loading={consulta.cargando}><Search size={16} aria-hidden />{t('comun.consultar')}</Button>
         </div>
       </form>
@@ -159,7 +184,7 @@ export function HistorialView() {
       ) : pagina && (
         <>
           {resumen && (
-            <section aria-label={t('historial.resumen')} style={{ ...PANEL, marginBottom: 'var(--s4)', display: 'flex', gap: 'var(--s6)', flexWrap: 'wrap' }}>
+            <section aria-label={t('historial.resumen')} aria-live="polite" style={{ ...PANEL, marginBottom: 'var(--s4)', display: 'flex', gap: 'var(--s6)', flexWrap: 'wrap' }}>
               <div>
                 <p style={{ margin: 0, fontSize: 'var(--fs-label-md)', fontWeight: 600, color: 'var(--text-muted)' }}>{t('historial.monto_total')}</p>
                 <p style={{ margin: 'var(--s1) 0 0', fontSize: 'var(--fs-heading-md)', fontWeight: 800, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatoMoneda(resumen.monto_total_filtrado)}</p>
@@ -193,7 +218,9 @@ export function HistorialView() {
                       <th style={TH}>{t('historial.descripcion')}</th>
                       <th style={TH}>{t('historial.ciclo')}</th>
                       <th style={TH_NUM}>{t('historial.cantidad')}</th>
+                      <th style={TH}>{t('historial.unidad')}</th>
                       <th style={TH_NUM}>{t('historial.precio')}</th>
+                      <th style={TH}>{t('historial.origen_precio')}</th>
                       <th style={TH_NUM}>{t('historial.costo')}</th>
                       <th style={TH}>{t('historial.operacion')}</th>
                     </tr>
@@ -205,8 +232,10 @@ export function HistorialView() {
                         <td style={TD}>{t(`tipo.${l.tipo_suministro}`, { defaultValue: l.tipo_suministro })}</td>
                         <td style={TD}>{l.descripcion}{l.observacion && <div style={{ ...SECUNDARIO, maxWidth: 280 }}>{l.observacion}</div>}</td>
                         <td style={TD}>{l.nombre_ciclo ?? `#${l.id_ciclo_productivo}`}{l.estado_ciclo && <div style={SECUNDARIO}>{l.estado_ciclo}</div>}</td>
-                        <td style={TD_NUM}>{formatoCantidad(l.cantidad)} {l.unidad_medida}</td>
-                        <td style={TD_NUM}>{formatoMoneda(l.precio_unitario)}<div style={SECUNDARIO}>{t(`origen.${l.origen_precio}`, { defaultValue: l.origen_precio })}</div></td>
+                        <td style={TD_NUM}>{formatoCantidad(l.cantidad)}</td>
+                        <td style={TD}>{l.unidad_medida}</td>
+                        <td style={TD_NUM}>{formatoMoneda(l.precio_unitario)}</td>
+                        <td style={TD}>{t(`origen.${l.origen_precio}`, { defaultValue: humanizar(l.origen_precio) })}</td>
                         <td style={TD_NUM}>{formatoMoneda(l.costo_registro)}</td>
                         <td style={TD}>{t(`operacion.${l.tipo_operacion}`, { defaultValue: l.tipo_operacion })}</td>
                       </tr>
@@ -215,7 +244,7 @@ export function HistorialView() {
                 </table>
               </ScrollRegion>
               {resumen && (
-                <Paginacion pagina={resumen.pagina_actual} totalPaginas={resumen.total_paginas} total={resumen.total_registros_filtrados}
+                <Paginacion pagina={filtros.pagina ?? resumen.pagina_actual} totalPaginas={resumen.total_paginas} total={resumen.total_registros_filtrados}
                   onCambiar={(p) => setFiltros((f) => (f ? { ...f, pagina: p } : f))} />
               )}
             </>

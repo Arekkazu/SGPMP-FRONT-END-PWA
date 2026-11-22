@@ -38,7 +38,7 @@
       "AUDITORIA_NO_DISPONIBLE": "Security error: the operation could not be audited, so it was blocked. Please try again later.",
       "CADENA_HEARTBEAT_INVALIDA": "The heartbeat settings are inconsistent: each state threshold must be greater than the previous one.",
       "CAPACIDAD_EXCEDIDA": "Capacity exceeded: the area would exceed its effective capacity (lowest species density × area surface).",
-      "CONFIGURACION_OPERATIVA_AUSENTE": "There is no active operating configuration (RF-18). Configure it before continuing.",
+      "CONFIGURACION_OPERATIVA_AUSENTE": "There is no active operating configuration. Configure it before continuing.",
       "CONFLICTO_CONCURRENCIA": "The record was modified by another user. Reload and try again.",
       "CONFLICTO_PERFIL_MODIFICADO": "Data conflict: the update failed because your profile is being modified right now. Please try again in a few seconds.",
       "CUENTA_NO_ACTIVA": "Access denied: your account is not active, so your role's permissions do not apply.",
@@ -98,7 +98,8 @@
       "429": "Too many requests. Please wait a few minutes before trying again."
     },
     "titulo_cargar": "Failed to load",
-    "titulo_guardar": "Failed to save"
+    "titulo_guardar": "Failed to save",
+    "tiempo_agotado": "The operation could not be completed. Please try again."
   },
   "estados": {
     "activo": "Active",
@@ -142,6 +143,24 @@
     "detalle": "Your role is not allowed to see it. If you need it, ask the administrator.",
     "detalle_seccion": "Your role is not allowed to see “{{seccion}}”. If you need it, ask the administrator.",
     "volver_al_inicio": "Back to home"
+  },
+  "no_encontrado": {
+    "titulo_pagina": "Page not found · SIGAB",
+    "nav_aria": "Main",
+    "inicio_aria": "SIGAB, go to home",
+    "tema_oscuro": "Switch to dark mode",
+    "tema_claro": "Switch to light mode",
+    "codigo": "Error {{codigo}}",
+    "titulo": "This page wandered off the",
+    "titulo_resalte": "pasture",
+    "lead": "We looked everywhere and couldn't find it. The link may be misspelled or the page may no longer exist.",
+    "volver_al_inicio": "Back to home",
+    "regresar": "Go back to the previous page",
+    "direccion": "Address requested:",
+    "letrero": "Which way was it?",
+    "dibujo_aria": "A cow looks at a wooden sign that reads {{codigo}}, path not found",
+    "pie_sistema": "SIGAB · Multispecies Livestock Management System",
+    "pie_ayuda": "Think this is a system error? Let the administrator know."
   },
   "exito": {
     "registrado": "Created successfully",
@@ -188,5 +207,77 @@
   "filtros": {
     "rango_invertido": "The «To» date must be on or after the «From» date.",
     "fechas_obligatorias": "Enter both the «From» and «To» dates."
+  },
+  "finca": {
+    "etiqueta": "Farm",
+    "placeholder": "Farm name or ID",
+    "cargando": "Loading farms…",
+    "sin_resolver": "Pick a farm from the list or type its ID.",
+    "sin_fincas": "You have no farms assigned.",
+    "titular": "Holder (tax ID)",
+    "titular_placeholder": "Holder tax ID, without the check digit",
+    "sin_titulares": "None of your farms has a tax holder."
+  },
+  "avisos": {
+    "saturacion_one": "There is {{count}} pending notice. Tap here to see them all.",
+    "saturacion_other": "There are {{count}} pending notices. Tap here to see them all.",
+    "historial_titulo": "Notices of this session",
+    "tipo": {
+      "success": "Success",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Information",
+      "critica": "Critical action confirmation"
+    },
+    "estado": {
+      "activo": "Visible",
+      "en_cola": "Waiting",
+      "cerrado": "Closed by you",
+      "expirado": "Closed automatically",
+      "descartado": "Discarded when you changed section"
+    },
+    "duracion": "visible {{segundos}} s"
+  },
+  "proceso": {
+    "largo": "This operation may take a few minutes. You can keep using other sections of the system while you wait.",
+    "espera": "Wait for {{operacion}} to finish before continuing."
+  },
+  "sincronizacion": {
+    "aria": "Sync status: {{estado}}. See details",
+    "titulo": "Data synchronization",
+    "estado": {
+      "SINCRONIZADO": "Synced",
+      "SINCRONIZANDO": "Syncing",
+      "OFFLINE": "Offline",
+      "CONFLICTO": "Conflict"
+    },
+    "descripcion": {
+      "SINCRONIZADO": "All data is up to date.",
+      "SINCRONIZANDO": "Data is being sent or received.",
+      "OFFLINE": "No connection. Saved data is shown and what you record will be sent when the connection is back.",
+      "CONFLICTO": "Some data changed on the server while you were offline. Check it in the corresponding module."
+    },
+    "offline_desde": "Offline since {{hora}}. What you record will be sent automatically when the connection is back.",
+    "col": {
+      "modulo": "Module",
+      "estado": "Status",
+      "ultimo": "Last exchange",
+      "pendientes": "Pending",
+      "accion": "What to do"
+    },
+    "modulo": {
+      "activos": "Biological assets",
+      "telemetria": "Telemetry",
+      "prediccion": "Prediction",
+      "suministros": "Supplies",
+      "finanzas": "Finance",
+      "integracion": "Accounting integration"
+    },
+    "sin_intercambio": "No exchange in this session",
+    "accion": {
+      "SINCRONIZANDO": "Wait for the uploads to finish",
+      "OFFLINE": "They will be sent when the connection is back",
+      "CONFLICTO": "Resolve the conflict in the module"
+    }
   }
 }

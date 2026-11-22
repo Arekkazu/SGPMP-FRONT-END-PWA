@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-31 | Arekkazu | RF-71: aviso de datos insuficientes para reentrenar el modelo individual |
 // | 2026-10-31 | Arekkazu | RF-71/RF-73: botón para solicitar el reentrenamiento |
+// | 2026-11-05 | Arekkazu | M06 prototipos: el aviso nombra la bitácora de Predicción, no «M04» |
 /** RF-71: aviso por modelo individual según las retroalimentaciones nuevas (200 / 500). */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -46,7 +47,7 @@ describe('AvisoReentrenamiento (RF-71)', () => {
     const [boton] = await screen.findAllByText('Solicitar reentrenamiento');
     expect(screen.getAllByText('Solicitar reentrenamiento')).toHaveLength(1);  // grandes está INSUFICIENTE
     fireEvent.click(boton);
-    expect(await screen.findByText(/Solicitud registrada en la bitácora de M04 con 250/)).toBeTruthy();
+    expect(await screen.findByText(/Solicitud registrada en la bitácora de Predicción con 250/)).toBeTruthy();
     expect(modelosApi.solicitarReentrenamiento).toHaveBeenCalledWith('MODELO_ESPECIES_MEDIANAS');
     expect(screen.queryByText('Solicitar reentrenamiento')).toBeNull();
   });

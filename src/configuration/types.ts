@@ -5,6 +5,10 @@
 // | 2026-10-20 | Arekkazu | FE-09 RF-17: es_critica en la variable ambiental (RFC-016) |
 // | 2026-10-30 | Arekkazu | INC-M03-135-G01 RF-49: especies compatibles de un sensor |
 // | 2026-10-31 | Claude   | INC-M03-246-G88 RF-58: tolerancia T del semáforo configurable en el umbral |
+// | 2026-11-04 | Arekkazu | RF-19 v1.1: titular tributario de la finca (M06 cierra por titular) |
+// | 2026-11-10 | Arekkazu | #512 RF-16/RF-37: ciclos productivos con sus fases en orden |
+// | 2026-11-10 | Arekkazu | #391/#392 RF-16: densidad máxima por etapa |
+// | 2026-11-14 | Arekkazu | M08 RF-103: opciones por widget, frecuencia y cómo se dibuja |
 import type { TipoModelo } from '../prediction/types';
 
 /** RF-15 v1.1: clasificación productiva de la especie; de ella sale su modelo de IA (AVES → MODELO_AVES). */
@@ -82,6 +86,16 @@ export interface FincaResponse {
   id_usuario: number | null;
   /** Nombre del productor (RF-19); null si el backend no lo puede resolver. */
   nombre_usuario?: string | null;
+}
+
+/** RF-19 v1.1: titular tributario de la finca; sin titular los cuatro campos son null. */
+export interface TitularFinca {
+  id_finca: number;
+  nombre: string;
+  tipo_id_tributaria: 'NIT' | 'CC' | 'CE' | null;
+  numero_id_tributaria: string | null;
+  dv: string | null;
+  razon_social: string | null;
 }
 
 export interface RegistrarFincaDTO {
@@ -340,6 +354,12 @@ export interface CicloBiologicoResponse {
   id_especie: number;
   es_activo: boolean;
   fecha_actualizacion: string | null;
+  /** #391: animales por m² que admite un lote en esta etapa; null = sin configurar. Decimal como texto. */
+  densidad_maxima?: string | null;
+  /** #391: kg por m²; opcional. */
+  biomasa_maxima?: string | null;
+  /** #391: porcentaje del máximo desde el que la ficha del lote avisa (80, 85, 90 o 95). */
+  aviso_preventivo_pct?: number;
   /** #54 (RF-16): solo en cliente — true mientras la escritura offline que lo creó/tocó
    *  sigue en syncQueue. No lo emite el backend. */
   pendienteSync?: boolean;
@@ -685,7 +705,11 @@ export interface WidgetConfigDTO {
   span_columnas: number;
   visible: boolean;
   orden: number;
+  /** Opciones elegidas en «Configurar widget» (RF-103); vacío = las del widget por defecto. */
+  parametros?: ParametrosWidget;
 }
+
+export type ParametrosWidget = Record<string, number | string | number[] | null>;
 
 export interface DashboardLayoutResponse {
   id_dashboard_layout: number | null;
@@ -693,6 +717,8 @@ export interface DashboardLayoutResponse {
   grid: WidgetConfigDTO[];
   active_widget: string[];
   fecha_actualizacion: string | null;
+  /** Segundos entre actualizaciones automáticas del dashboard (RF-103, 15 a 120). */
+  frecuencia_actualizacion: number;
   // Se reenvia en el PATCH para que el backend detecte que el perfil cambio
   // mientras el usuario editaba (RF-28, conflicto de concurrencia).
   version_perfil: number | null;
@@ -702,6 +728,15 @@ export interface GuardarDashboardDTO {
   layout_config: WidgetConfigDTO[];
   active_widget: string[];
   version_perfil?: number | null;
+  frecuencia_actualizacion?: number;
+}
+
+/** Opción configurable de un widget: áreas, especies y sensores salen de la finca activa. */
+export interface OpcionWidget {
+  nombre: string;
+  tipo: 'areas' | 'area' | 'especies' | 'sensores' | 'lista';
+  valores: (number | string)[];
+  defecto: number | string | number[] | null;
 }
 
 // El catalogo lo define el backend (modulo9.widgets) y viene filtrado por el rol
@@ -713,6 +748,13 @@ export interface WidgetCatalogoItem {
   nombre: string;
   grupo: string;
   span_predeterminado: 1 | 2;
+  /** Cómo se dibuja (RF-103): semaforo, lecturas, cifra, conversion, lista, barras, estados, linea. */
+  visual?: string | null;
+  opciones?: OpcionWidget[];
+  /** False: funciona sin finca activa (widgets contables). */
+  requiere_finca?: boolean;
+  /** Se pide de nuevo apenas llega un push de alerta. */
+  reacciona_a_alertas?: boolean;
 }
 
 export interface WidgetDatosResponse {
@@ -804,3 +846,21 @@ export interface AplicacionPlantillaResponse {
   after_snapshot: Record<string, unknown> | null;
   fecha_aplicacion: string | null;
 }
+
+/** #391: densidad máxima de una etapa. */
+export interface ConfigurarDensidadEtapaDTO {
+  densidad_maxima: string;
+  biomasa_maxima: string | null;
+  aviso_preventivo_pct: 80 | 85 | 90 | 95;
+  fecha_actualizacion: string | null;
+}
+
+/** #512 (RF-16, RF-37): ciclo productivo de la especie con sus fases en el orden en que se recorren. */
+export interface FaseCicloProductivo { orden: number; id_ciclo_biologico: number; nombre: string; duracion_dias: number }
+export interface CicloProductivoResponse {
+  id_ciclo_productivo: number; nombre: string; id_especie: number; duracion_dias: number;
+  /** Algún animal o lote ya pasó por el ciclo: solo se le puede cambiar el nombre. */
+  en_uso: boolean;
+  fases: FaseCicloProductivo[];
+}
+export interface GuardarCicloProductivoDTO { nombre: string; id_ciclos_biologicos: number[] }

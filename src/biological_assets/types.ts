@@ -5,6 +5,8 @@
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-11-02 | Arekkazu | AJF-01 RF-46: categorías de telemetría y predicción en el historial |
 // | 2026-11-03 | Arekkazu | QA-M02 RF-49: la ficha solo consulta los sensores asociados; ya no crea asociaciones |
+// | 2026-11-10 | Arekkazu | #393 RF-36: estado de la densidad del lote en el listado y en sus datos |
+// | 2026-11-15 | Arekkazu | INC-M06-364-G71 RF-45/RF-93: valor de la venta en la baja e ingreso por venta en el estado de resultados |
 // =====================================================================
 // Módulo 2 — Activos Biológicos · Tipos de dominio
 // Contrato: do-it/biological_assets/.../api_reference_m02_activos_biologicos.md
@@ -155,6 +157,24 @@ export interface ActivoListItem {
   nombre_infraestructura?: string | null;
   fecha_inicio_ciclo?: string | null;
   cantidad_actual?: number | null;
+  /** #393: solo en lotes. */
+  estado_densidad?: EstadoDensidadLote | null;
+}
+
+/** #393/#394 (RF-36): densidad del lote frente al máximo que le aplica, el más estricto entre etapa y especie. */
+export type EstadoDensidad = 'OK' | 'AVISO' | 'EXCEDE' | 'SIN_CONFIGURAR';
+export interface EstadoDensidadLote {
+  estado: EstadoDensidad;
+  densidad_maxima: string | null;
+  fuente: 'ETAPA' | 'ESPECIE' | null;
+  nombre_etapa: string | null;
+  porcentaje_del_maximo: string | null;
+  aviso_preventivo_pct: number;
+  superficie: string | null;
+  capacidad_maxima: number | null;
+  cupo_disponible: number | null;
+  biomasa_maxima: string | null;
+  biomasa_por_m2: string | null;
 }
 
 export interface ListarActivosFiltros {
@@ -270,6 +290,8 @@ export interface EventoBajaResponse {
   cantidad_afectada: number;
   tipo: string;
   motivo_baja: string | null;
+  valor_venta?: string | null;      // solo en una venta
+  referencia_venta?: string | null;
 }
 
 export interface EventoSanitarioResponse {
@@ -341,6 +363,8 @@ export interface RegistrarEventoBajaDTO {
   fecha_baja: string;                      // date
   motivo_baja: string;
   cantidad_afectada?: number | null;       // solo LOTE (baja parcial)
+  valor_venta?: string;                    // solo venta: lo recibido (decimal con 2 cifras)
+  referencia_venta?: string;               // solo venta: factura o remisión
 }
 
 export interface RegistrarEventoSanitarioDTO {

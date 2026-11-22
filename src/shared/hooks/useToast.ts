@@ -1,50 +1,200 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-18 | Arekkazu | M08 RF-107: un solo éxito de 5 s, errores en cola de 3, saturación e historial de la sesión |
+// | 2026-11-21 | Arekkazu | INC-M08-385-G026 RF-107: metadatos de la 8.5 en el historial, modales críticos y cola descartada al cambiar de módulo |
 import { useSyncExternalStore } from 'react';
 import i18n from '../i18n';
 
 export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
+
+export interface AccionToast {
+  texto: string;
+  /** Ruta interna del front a la que lleva el botón (sin la base). */
+  ruta: string;
+}
 
 export interface Toast {
   id: string;
   variant: ToastVariant;
   title: string;
   description?: string;
+  /** RF-107 8.3: misma operación → se actualiza el aviso visible en vez de apilar otro. */
+  idOperacion?: string;
+  accion?: AccionToast;
 }
 
+/** RF-107: los cinco tipos de retroalimentación (los que pasan por esta cola o por un modal crítico). */
+export type TipoRetroalimentacion = 'CONFIRMACION_EXITOSA' | 'ERROR_CON_ACCION' | 'CONFIRMACION_ACCION_CRITICA';
+
+/** RF-107 8.5 «Renderizado y registro»: lo que queda en el historial de la sesión por cada aviso mostrado. */
+export interface RegistroToast extends Toast {
+  creado: number;
+  estado: 'activo' | 'en_cola' | 'cerrado' | 'expirado' | 'descartado';
+  tipo_retroalimentacion: TipoRetroalimentacion;
+  /** Cuándo se hizo visible (no cuándo llegó: un error en cola aparece después). `null` mientras espera. */
+  timestamp_mostrado: number | null;
+  /** Milisegundos visible hasta cerrarse, por el usuario o por el temporizador. `null` mientras se ve. */
+  duracion_visible: number | null;
+  /** Solo el modal de una acción crítica bloquea la interfaz; los banners no. */
+  bloquea_interfaz: boolean;
+}
+
+export interface OpcionesToast {
+  idOperacion?: string;
+  accion?: AccionToast;
+}
+
+/** RF-107 tipo 1: el éxito se ve 5 s; errores y advertencias quedan hasta que el usuario los cierre. */
 const AUTO_DISMISS: Record<ToastVariant, number | null> = {
-  success: 4000,
+  success: 5000,
   info: 6000,
   warning: null,
   error: null,
 };
 
-/** Límite de carga cognitiva del DS (CLAUDE.md): máximo 3 visibles. */
-const MAX_TOASTS = 3;
+/** RF-107 8.2: máximo 3 avisos de error visibles; los demás esperan en cola (FIFO). */
+export const MAX_ERRORES_VISIBLES = 3;
+/** RF-107 8.3: con más de 5 entre visibles y en cola se muestra el aviso de saturación. */
+export const UMBRAL_SATURACION = 5;
 
 /*
- * Cola global (T-02 del reporte UAT): solo 2 de 10 creaciones confirmaban algo.
- * Es un store de módulo y no un Context para que los hooks de cada módulo
- * puedan avisar el éxito sin que cada página monte un proveedor; `ToastHost`
- * lo pinta una sola vez en App.
+ * Cola global (T-02 del reporte UAT): store de módulo para que los hooks de cada módulo avisen sin montar un
+ * proveedor; `ToastHost` la pinta una sola vez en App.
+ *
+ * RF-107: el éxito es uno solo (uno nuevo reemplaza al anterior y reinicia los 5 s); los errores se encolan de a
+ * 3 visibles; el historial de la sesión guarda todo lo mostrado para el panel del aviso de saturación.
  */
-let toasts: Toast[] = [];
+let visibles: Toast[] = [];
+let cola: Toast[] = [];
+let historial: RegistroToast[] = [];
 let ultimoId = 0;
+let estado = { visibles, cola, historial };
+const temporizadores = new Map<string, ReturnType<typeof setTimeout>>();
 const oyentes = new Set<() => void>();
 
-function emitir(siguiente: Toast[]) {
-  toasts = siguiente;
+function emitir() {
+  estado = { visibles, cola, historial };
   oyentes.forEach((o) => o());
 }
 
-export function dismissToast(id: string) {
-  emitir(toasts.filter((t) => t.id !== id));
+function marcar(id: string, nuevo: RegistroToast['estado']) {
+  const ahora = Date.now();
+  historial = historial.map((h) => {
+    if (h.id !== id) return h;
+    if (nuevo === 'activo') return { ...h, estado: nuevo, timestamp_mostrado: ahora };
+    const duracion = h.timestamp_mostrado === null ? null : ahora - h.timestamp_mostrado;
+    return { ...h, estado: nuevo, duracion_visible: duracion };
+  });
 }
 
-export function pushToast(variant: ToastVariant, title: string, description?: string): string {
+function registrar(t: Toast, estadoInicial: RegistroToast['estado'], extra: Partial<RegistroToast> = {}) {
+  const ahora = Date.now();
+  historial = [...historial, {
+    ...t, creado: ahora, estado: estadoInicial,
+    tipo_retroalimentacion: esPersistente(t) ? 'ERROR_CON_ACCION' : 'CONFIRMACION_EXITOSA',
+    timestamp_mostrado: estadoInicial === 'activo' ? ahora : null, duracion_visible: null, bloquea_interfaz: false,
+    ...extra,
+  }];
+}
+
+function programar(t: Toast) {
+  const delay = AUTO_DISMISS[t.variant];
+  clearTimeout(temporizadores.get(t.id));
+  if (delay !== null) temporizadores.set(t.id, setTimeout(() => cerrar(t.id, 'expirado'), delay));
+}
+
+function esPersistente(t: Toast) {
+  return t.variant === 'error' || t.variant === 'warning';
+}
+
+function promover() {
+  while (cola.length && visibles.filter(esPersistente).length < MAX_ERRORES_VISIBLES) {
+    const [siguiente, ...resto] = cola;
+    cola = resto;
+    visibles = [...visibles, siguiente];
+    marcar(siguiente.id, 'activo');
+  }
+}
+
+function cerrar(id: string, como: 'cerrado' | 'expirado') {
+  clearTimeout(temporizadores.get(id));
+  temporizadores.delete(id);
+  visibles = visibles.filter((t) => t.id !== id);
+  marcar(id, como);
+  promover();
+  emitir();
+}
+
+export function dismissToast(id: string) {
+  cerrar(id, 'cerrado');
+}
+
+export function pushToast(variant: ToastVariant, title: string, description?: string,
+                          opciones: OpcionesToast = {}): string {
+  const { idOperacion, accion } = opciones;
+  if (idOperacion) {
+    const visible = visibles.find((t) => t.idOperacion === idOperacion);
+    if (visible) {
+      // Misma operación: se actualiza el aviso que ya se ve.
+      const actualizado = { ...visible, variant, title, description, accion };
+      visibles = visibles.map((t) => (t.id === visible.id ? actualizado : t));
+      programar(actualizado);
+      emitir();
+      return visible.id;
+    }
+    if (cola.some((t) => t.idOperacion === idOperacion)) return cola.find((t) => t.idOperacion === idOperacion)!.id;
+    if (historial.some((h) => h.idOperacion === idOperacion && h.estado === 'cerrado')) return '';
+  }
+  const toast: Toast = { id: String(++ultimoId), variant, title, description, idOperacion, accion };
+  if (variant === 'success') {
+    // Un solo éxito a la vez: el nuevo reemplaza al anterior y reinicia el temporizador.
+    visibles.filter((t) => t.variant === 'success').forEach((t) => {
+      clearTimeout(temporizadores.get(t.id));
+      marcar(t.id, 'cerrado');
+    });
+    visibles = [...visibles.filter((t) => t.variant !== 'success'), toast];
+  } else if (esPersistente(toast) && visibles.filter(esPersistente).length >= MAX_ERRORES_VISIBLES) {
+    cola = [...cola, toast];
+  } else {
+    visibles = [...visibles, toast];
+  }
+  registrar(toast, cola.includes(toast) ? 'en_cola' : 'activo');
+  if (!cola.includes(toast)) programar(toast);
+  emitir();
+  return toast.id;
+}
+
+/**
+ * RF-107 8.3: los errores que esperan en la cola se descartan al salir del módulo que los originó; los visibles
+ * se quedan hasta que el usuario los cierre.
+ */
+export function descartarCola() {
+  if (!cola.length) return;
+  cola.forEach((t) => marcar(t.id, 'descartado'));
+  cola = [];
+  emitir();
+}
+
+/**
+ * RF-107 8.5: el modal de una acción crítica también queda en el historial, como lo único que bloquea la interfaz.
+ * Devuelve la función que lo marca cerrado (con su duración visible).
+ */
+export function registrarModalCritico(titulo: string): () => void {
   const id = String(++ultimoId);
-  emitir([...toasts, { id, variant, title, description }].slice(-MAX_TOASTS));
-  const delay = AUTO_DISMISS[variant];
-  if (delay !== null) setTimeout(() => dismissToast(id), delay);
-  return id;
+  registrar({ id, variant: 'warning', title: titulo }, 'activo',
+    { tipo_retroalimentacion: 'CONFIRMACION_ACCION_CRITICA', bloquea_interfaz: true });
+  emitir();
+  return () => { marcar(id, 'cerrado'); emitir(); };
+}
+
+/** Cierra sesión: el historial y la cola no pasan a otro usuario (RF-107 8.3). */
+export function limpiarToasts() {
+  temporizadores.forEach((t) => clearTimeout(t));
+  temporizadores.clear();
+  visibles = [];
+  cola = [];
+  historial = [];
+  emitir();
 }
 
 export type Exito = 'registrado' | 'guardado' | 'desactivado' | 'reactivado' | 'eliminado' | 'estado' | 'pendiente_sync';
@@ -60,6 +210,15 @@ function suscribir(oyente: () => void) {
 }
 
 export function useToast() {
-  const lista = useSyncExternalStore(suscribir, () => toasts, () => toasts);
-  return { toasts: lista, push: pushToast, dismiss: dismissToast };
+  const actual = useSyncExternalStore(suscribir, () => estado, () => estado);
+  const pendientes = actual.visibles.filter(esPersistente).length + actual.cola.length;
+  return {
+    toasts: actual.visibles,
+    cola: actual.cola,
+    historial: actual.historial,
+    saturado: pendientes > UMBRAL_SATURACION,
+    pendientes,
+    push: pushToast,
+    dismiss: dismissToast,
+  };
 }

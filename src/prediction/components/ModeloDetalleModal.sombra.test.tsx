@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-10-31 | Arekkazu | RFC-010 RF-69: estado SOMBRA, versión por animal y fuente de datos |
 // | 2026-11-02 | Arekkazu | AJF-08 RF-69: SOMBRA se muestra como "En prueba" |
+// | 2026-11-03 | Arekkazu | QA-M04 RF-69: el animal de la versión por su identificador, no «Animal #49» |
 /** RFC-010: un modelo SINTETICA solo va a sombra; uno REAL se promueve de sombra a producción. */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -49,6 +50,12 @@ describe('ModeloDetalleModal · RFC-010', () => {
     expect(screen.getByText(/solo corre en prueba hasta reentrenarse con datos reales/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Poner en prueba/ }));
     expect(onSolicitarSombra).toHaveBeenCalledOnce();
+  });
+
+  it('el animal se muestra por su identificador cuando el backend lo trae', () => {
+    abrir(version({ identificador_activo: 'BOV-001-DEV' }));
+    expect(screen.getByText('Animal BOV-001-DEV')).toBeTruthy();
+    expect(screen.queryByText('Animal #9001')).toBeNull();
   });
 
   it('una versión real en sombra con notas se promueve a producción', () => {

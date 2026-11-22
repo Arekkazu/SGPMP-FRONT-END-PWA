@@ -1,24 +1,76 @@
 /* | Fecha      | Nombre   | Que se hizo |
    |------------|----------|-------------|
-   | 2026-10-24 | Arekkazu | USAB-M03-M04 T-07: fila desplazable sin barra visible y con degradado |  */
+   | 2026-10-24 | Arekkazu | USAB-M03-M04 T-07: fila desplazable sin barra visible y con degradado |
+   | 2026-11-11 | Arekkazu | USAB-M06 RF-82..94: filas que se parten y navegación en dos niveles (grupo y sección) | */
 
+/* Lo que no cabe pasa a otra línea: deslizar de lado para descubrir pestañas ocultas
+   cansaba y escondía secciones (usabilidad 11-11, WCAG 1.4.10). */
 .ds-pestanas-modulo {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--s2);
+  column-gap: var(--s2);
   padding: 0 var(--page-pad);
   border-bottom: 1px solid var(--surface-border);
   background: var(--surface-card);
-  overflow-x: auto;
-  /* T-07: sin barra nativa con flechas; el degradado avisa que hay más. El
-     degradado cae sobre el padding derecho, así que no tapa nada cuando cabe. */
-  scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--page-pad)), transparent);
-  mask-image: linear-gradient(to right, #000 calc(100% - var(--page-pad)), transparent);
 }
 
-.ds-pestanas-modulo::-webkit-scrollbar {
-  display: none;
+/* Dos niveles: arriba los grupos (subrayado), abajo las secciones del grupo (píldoras). */
+.ds-pestanas-modulo--niveles {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+}
+
+.ds-pestanas-modulo__fila,
+.ds-pestanas-modulo__secciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  padding: 0 var(--page-pad);
+}
+
+.ds-pestanas-modulo__fila {
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.ds-pestanas-modulo__secciones {
+  padding-top: var(--s3);
+  padding-bottom: var(--s3);
+}
+
+.ds-pestanas-modulo__seccion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  min-height: var(--s9);
+  padding: 0 var(--s4);
+  border: 1.5px solid var(--surface-border);
+  border-radius: var(--r-full);
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ds-pestanas-modulo__seccion:hover:not([aria-current='page']) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.ds-pestanas-modulo__seccion:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Activa: relleno, borde y peso a la vez, igual que SubPestanas (WCAG 1.4.1). */
+.ds-pestanas-modulo__seccion[aria-current='page'] {
+  background: var(--brand-50);
+  border-color: var(--brand-500);
+  color: var(--brand-700);
+  font-weight: 700;
 }
 
 .ds-pestanas-modulo__item {
@@ -50,7 +102,8 @@
 }
 
 /* Activa: borde más grueso, negrita y color de acento a la vez (13.1, WCAG 1.4.1). */
-.ds-pestanas-modulo__item[aria-current='page'] {
+/* El grupo actual (aria-current="true") se marca igual que la pestaña activa. */
+.ds-pestanas-modulo__item[aria-current] {
   border-bottom-color: var(--brand-500);
   color: var(--brand-600);
   font-weight: 700;
@@ -71,4 +124,24 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: var(--ls-wider);
+}
+
+/* Al final: debe ganarle a las reglas base de arriba. */
+/* En el celular caben dos por línea: menos relleno y sin icono (el texto basta). */
+@media (max-width: 479px) {
+  .ds-pestanas-modulo__item {
+    padding: var(--s2);
+  }
+
+  .ds-pestanas-modulo__secciones {
+    gap: var(--s1);
+  }
+
+  .ds-pestanas-modulo__seccion {
+    padding: 0 var(--s3);
+  }
+
+  .ds-pestanas-modulo__seccion svg {
+    display: none;
+  }
 }

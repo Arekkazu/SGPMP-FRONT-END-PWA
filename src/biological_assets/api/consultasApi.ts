@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-10 | Arekkazu | #393 RF-36: estado de la densidad del lote en el listado y en sus datos |
 import { http } from '../../shared/api/http';
 import type {
   ConsultaAsociacionResponse,
@@ -7,8 +10,7 @@ import type {
   ConsultarIndicadoresFiltros,
   IndicadoresActivoResponse,
   DatosConsolidadosFiltros,
-  DatosConsolidadosResponse,
-} from '../types';
+  DatosConsolidadosResponse, EstadoDensidadLote } from '../types';
 
 const BASE = '/activos-biologicos';
 
@@ -31,6 +33,12 @@ export const consultasApi = {
       params: filtros,
     });
     return res.data;
+  },
+
+  /** #393/#394 (RF-36): ficha del lote; aquí se usa su estado de densidad. */
+  async estadoDensidadLote(idActivo: number): Promise<EstadoDensidadLote | null> {
+    const res = await http.get<{ estado_densidad: EstadoDensidadLote | null }>(`${BASE}/${idActivo}/ficha-lote`);
+    return res.data.estado_densidad;
   },
 
   async fichaIntegral(idActivo: number): Promise<FichaIntegralResponse> {

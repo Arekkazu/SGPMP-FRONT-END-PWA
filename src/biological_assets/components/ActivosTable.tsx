@@ -1,7 +1,11 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-10 | Arekkazu | #393 RF-36: estado de la densidad del lote en el listado y en sus datos |
 import React from 'react';
 import { useT } from '../../shared/i18n/useT';
 import { ChevronRight, Boxes, User } from 'lucide-react';
 import { EstadoPill } from './EstadoPill';
+import { EstadoDensidadTexto } from './DensidadLote';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import type { ActivoListItem } from '../types';
 import { alActivarConTeclado } from '../../shared/lib/teclado';
@@ -75,7 +79,7 @@ export function ActivosTable({ activos, loading, hayFiltros = false, onAbrir }: 
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body-md)' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid var(--surface-border)', background: 'var(--surface-hover)' }}>
-            {['Identificador', 'Tipo', 'Especie', 'Estado', 'Infraestructura', ''].map((h, i) => (
+            {['Identificador', 'Tipo', 'Especie', 'Estado', 'Infraestructura', t('densidadlote.columna'), ''].map((h, i) => (
               <th key={i} style={TH}>{h}</th>
             ))}
           </tr>
@@ -117,6 +121,9 @@ export function ActivosTable({ activos, loading, hayFiltros = false, onAbrir }: 
               </td>
               <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '12px' }}>
                 {a.nombre_infraestructura ?? '—'}
+              </td>
+              <td style={TD}>
+                {a.estado_densidad ? <EstadoDensidadTexto estado={a.estado_densidad.estado} /> : '—'}
               </td>
               <td style={{ ...TD, textAlign: 'right', color: 'var(--text-muted)' }}>
                 <ChevronRight size={16} aria-hidden />

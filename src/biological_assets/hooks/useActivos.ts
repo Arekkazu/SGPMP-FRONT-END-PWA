@@ -1,3 +1,6 @@
+// | Fecha      | Nombre           | Que se hizo                                   |
+// |------------|------------------|-----------------------------------------------|
+// | 2026-11-03 | Arekkazu         | RF-33: búsqueda de activos sobre todas las páginas |
 import { useState, useCallback } from 'react';
 import { activosApi } from '../api/activosApi';
 import { cacheActivos, getActivosCache } from '../db/activosTable';
@@ -29,16 +32,20 @@ export function useActivos() {
   const [saveError, setSaveError] = useState<ApiError | null>(null);
   const [fromCache, setFromCache] = useState(false);
 
-  const cargar = useCallback(async (filtros: ListarActivosFiltros = {}) => {
+  // `todas`: trae todas las páginas (para buscar sobre el registro completo, no solo la página visible).
+  const cargar = useCallback(async (filtros: ListarActivosFiltros = {}, todas = false) => {
     setLoading(true);
     setError(null);
     try {
-      const pagina = await activosApi.listar(filtros);
-      const registros = pagina.registros ?? [];
+      const pagina = await activosApi.listar(todas ? { ...filtros, pagina: 1, page_size: 100 } : filtros);
+      const registros = [...(pagina.registros ?? [])];
+      for (let p = 2; todas && p <= (pagina.total_paginas ?? 1); p++) {
+        registros.push(...((await activosApi.listar({ ...filtros, pagina: p, page_size: 100 })).registros ?? []));
+      }
       setActivos(registros);
       setPaginacion({
-        pagina: pagina.pagina_actual ?? 1,
-        totalPaginas: pagina.total_paginas ?? 1,
+        pagina: todas ? 1 : pagina.pagina_actual ?? 1,
+        totalPaginas: todas ? 1 : pagina.total_paginas ?? 1,
         totalRegistros: pagina.total_registros ?? registros.length,
       });
       setFromCache(false);
