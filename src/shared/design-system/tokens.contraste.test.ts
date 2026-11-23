@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-287/288 RF-104: texto de marca sobre el hover de secundario y fantasma |
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -116,8 +119,13 @@ describe('contraste WCAG 2.1 AA (1.4.3) de tokens.css', () => {
       );
     });
 
+    // TC-DIS-287/288: el texto de los botones secundario y fantasma sobre su fondo al pasar el puntero.
+    it('--brand-600 cumple 4.5:1 sobre --brand-50 (hover de secundario y fantasma)', () => {
+      expect(contraste(resolver('brand-600', tema), resolver('brand-50', tema))).toBeGreaterThanOrEqual(AA_TEXTO_NORMAL);
+    });
+
     it('el texto blanco de --brand-cta y --sem-error-solid cumple 4.5:1', () => {
-      for (const relleno of ['brand-cta', 'brand-cta-hover', 'sem-error-solid']) {
+      for (const relleno of ['brand-cta', 'brand-cta-hover', 'sem-error-solid', 'sem-success-solid', 'sem-warning-solid', 'sem-neutral-solid']) {
         expect(contraste('#ffffff', resolver(relleno, tema))).toBeGreaterThanOrEqual(
           AA_TEXTO_NORMAL,
         );

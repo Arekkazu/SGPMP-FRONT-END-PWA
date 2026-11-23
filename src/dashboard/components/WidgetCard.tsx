@@ -1,7 +1,8 @@
 // | Fecha      | Nombre   | Que se hizo                                                             |
 // |------------|----------|-------------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: widget con datos propios, estado, hora y acceso a su módulo  |
-import React from 'react';
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-277/281 RF-103: cambio del dato anunciado, «Ver más» con su widget y acceso sin conexión |
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CloudOff } from 'lucide-react';
 import type { WidgetCatalogoItem, WidgetConfigDTO } from '../../configuration/types';
@@ -10,6 +11,7 @@ import { useT } from '../../shared/i18n/useT';
 import { formatearHora } from '../../shared/i18n/formato';
 import { useWidgetDatos } from '../hooks/useWidgetDatos';
 import { Visual } from './visuales';
+import { Anunciador } from '../../shared/design-system/Anunciador';
 
 // Acceso rápido de cada widget a la pantalla de su módulo (los widgets son de solo lectura).
 const DESTINO: Record<string, string> = {
@@ -31,20 +33,37 @@ interface Props {
   frecuencia: number;
   idUsuario: number | null;
   enLinea: boolean;
+  /** WCAG 2.2.2: actualización automática pausada desde el panel. */
+  pausado?: boolean;
 }
 
 /**
  * Un widget del dashboard. Pide sus propios datos: si falla, solo él muestra «Datos no disponibles»
  * y conserva lo último que tenía, con su hora (CA-5, CA-9). Sin datos, conserva su lugar en la grilla.
  */
-export function WidgetCard({ celda, widget, idFinca, frecuencia, idUsuario, enLinea }: Props) {
+export function WidgetCard({ celda, widget, idFinca, frecuencia, idUsuario, enLinea, pausado = false }: Props) {
   const { t } = useT('dashboard');
   const Icono = iconoWidget(widget.clave);
   const necesitaFinca = widget.requiere_finca !== false;
   const { respuesta, cargando, noDisponible, desdeCache, rechazo, recargar } = useWidgetDatos(
-    widget.clave, idFinca, frecuencia, Boolean(widget.reacciona_a_alertas), idUsuario, !necesitaFinca || idFinca !== null,
+    widget.clave, idFinca, frecuencia, Boolean(widget.reacciona_a_alertas), idUsuario, !necesitaFinca || idFinca !== null, pausado,
   );
   const destino = DESTINO[widget.clave];
+  // 4.1.3 (TC-DIS-277): cuando cambia el dato de este widget se anuncia ese widget, una vez y sin mover el foco.
+  // El primer dato y el cambio de finca no se anuncian (el panel ya avisa la finca).
+  const cuerpoRef = useRef<HTMLDivElement>(null);
+  const huellaPrevia = useRef<string | null>(null);
+  const [anuncio, setAnuncio] = useState('');
+  const huellaActual = respuesta ? (respuesta.huella || JSON.stringify(respuesta.datos)) : null;
+  useEffect(() => { huellaPrevia.current = null; setAnuncio(''); }, [idFinca]);
+  useEffect(() => {
+    if (!huellaActual) return;
+    if (huellaPrevia.current && huellaPrevia.current !== huellaActual) {
+      const datos = (cuerpoRef.current?.innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 160);
+      setAnuncio(t('widget.cambio', { widget: widget.nombre, datos }));
+    }
+    huellaPrevia.current = huellaActual;
+  }, [huellaActual, widget.nombre, t]);
 
   let cuerpo: React.ReactNode;
   if (cargando && !respuesta) {
@@ -84,7 +103,8 @@ export function WidgetCard({ celda, widget, idFinca, frecuencia, idUsuario, enLi
         <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: -8 }}>{t('widget.todas_las_areas')}</span>
       )}
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>{cuerpo}</div>
+      <div ref={cuerpoRef} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>{cuerpo}</div>
+      <Anunciador mensaje={anuncio} />
 
       <footer style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 11, color: 'var(--text-muted)' }}>
         <span role="status" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -100,8 +120,9 @@ export function WidgetCard({ celda, widget, idFinca, frecuencia, idUsuario, enLi
             {t('widget.reintentar')}
           </button>
         )}
-        {destino && !noDisponible && (enLinea
-          ? <Link to={destino} style={{ fontSize: 12, fontWeight: 600 }}>{t('widget.ir_al_modulo')}</Link>
+        {/* 2.4.4 (TC-DIS-281): cada acceso rápido nombra su widget; sin conexión dice que vuelve con la red. */}
+        {destino && (enLinea
+          ? <Link to={destino} style={{ fontSize: 12, fontWeight: 600 }}>{t('widget.ir_al_modulo')}<span className="ds-sr-only">{t('widget.ir_al_modulo_de', { widget: widget.nombre })}</span></Link>
           : <span>{t('widget.con_conexion')}</span>)}
       </footer>
     </article>

@@ -2,8 +2,9 @@
 // |------------|----------|--------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: cómo se dibuja cada widget (semáforo, cifras, listas…)  |
 // | 2026-11-19 | Arekkazu | M8-16 RF-103: plurales correctos y nombres de área completos en el semáforo |
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-278..280 RF-103: alertas por área, barras con estado y tabla alternativa, íconos de estado |
 import React, { Suspense, lazy } from 'react';
-import { AlertTriangle, CheckCircle2, CircleSlash, OctagonAlert } from 'lucide-react';
+import { AlertTriangle, Ban, CheckCircle2, CircleSlash, Clock, OctagonAlert, Power, Radio, Stethoscope, Wrench } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
 import { formatearFecha, formatearNumero, formatearRelativo } from '../../shared/i18n/formato';
 
@@ -20,6 +21,8 @@ const COLOR_SEMAFORO: Record<string, { color: string; fondo: string; Icono: type
 };
 
 const texto = (v: unknown) => (v === null || v === undefined || v === '' ? '—' : String(v));
+/** Alertas activas del área: el backend da el total (`alertas`) o sus partes (críticas y advertencias). */
+const alertasDe = (a: Fila) => Number(a.alertas ?? Number(a.criticas ?? 0) + Number(a.advertencias ?? 0));
 const filas = (datos: Datos, campo = 'items') => (Array.isArray(datos[campo]) ? (datos[campo] as Fila[]) : []);
 
 /** Un estado del semáforo con color, ícono y palabra: se entiende sin leer números (CA-7). */
@@ -48,6 +51,8 @@ function Semaforo({ datos }: { datos: Datos }) {
           <li key={String(a.id_infraestructura)} style={{ display: 'flex', justifyContent: 'space-between', gap: 6,
             alignItems: 'center', fontSize: 13, color: 'var(--text-secondary)' }}>
             <span style={{ overflowWrap: 'anywhere' }}>{texto(a.nombre)}</span>
+            {/* 1.1.1 / 4.1.2 (TC-DIS-278): cuántas alertas tiene, no solo el color del estado. */}
+            {alertasDe(a) > 0 && <span style={{ fontSize: 12, whiteSpace: 'nowrap', marginLeft: 'auto' }}>{t('semaforo.alertas', { count: alertasDe(a) })}</span>}
             <EstadoSemaforo estado={String(a.estado)} />
           </li>
         ))}
@@ -139,17 +144,25 @@ function Conversion({ datos }: { datos: Datos }) {
   );
 }
 
-// Series de cada widget de barras: campo, color y texto.
-const SERIES: Record<string, { campo: string; filas: string; etiqueta: string; series: [string, string][] }> = {
+// Series de cada widget de barras: campo, relleno e ícono. Los rellenos son tokens -solid (fijos en los dos temas,
+// con texto blanco a 4,5:1 o más); un token de texto (--sem-*) como relleno daba 2,4:1 en oscuro (TC-DIS-279/280).
+type Serie = [string, string, typeof CheckCircle2];
+const SERIES: Record<string, { campo: string; filas: string; etiqueta: string; series: Serie[] }> = {
   inventario_especies: { campo: 'especie', filas: 'especies', etiqueta: 'valores.inventario',
-    series: [['activos', 'var(--sem-success)'], ['en_tratamiento', 'var(--sem-warning)'], ['bajas', 'var(--text-muted)']] },
+    series: [['activos', 'var(--sem-success-solid)', CheckCircle2], ['en_tratamiento', 'var(--sem-warning-solid)', Stethoscope], ['bajas', 'var(--sem-neutral-solid)', Ban]] },
   distribucion_riesgo: { campo: 'especie', filas: 'especies', etiqueta: 'valores.riesgo',
-    series: [['normal', 'var(--sem-success)'], ['moderado', 'var(--sem-warning)'], ['alto', 'var(--sem-error)']] },
+    series: [['normal', 'var(--sem-success-solid)', CheckCircle2], ['moderado', 'var(--sem-warning-solid)', AlertTriangle], ['alto', 'var(--sem-error-solid)', OctagonAlert]] },
   alertas_sanitarias: { campo: 'tipo', filas: 'tipos', etiqueta: 'valores.alertas_sanitarias',
-    series: [['criticas', 'var(--sem-error)'], ['no_criticas', 'var(--sem-warning)']] },
+    series: [['criticas', 'var(--sem-error-solid)', OctagonAlert], ['no_criticas', 'var(--sem-warning-solid)', AlertTriangle]] },
 };
 
-/** Barras apiladas con CSS: livianas y legibles en 360 px; cada tramo dice su número. */
+const PORCENTAJE = { style: 'percent', maximumFractionDigits: 0 } as const;
+
+/**
+ * Barras apiladas con CSS: livianas y legibles en 360 px. Cada tramo dice su estado y su número (1.3.1), los tramos
+ * van separados por una línea blanca (1.4.11: contraste entre vecinos) y la tabla alternativa repite los datos con
+ * encabezados de fila y columna (1.1.1).
+ */
 function Barras({ clave, datos }: { clave: string; datos: Datos }) {
   const { t } = useT('dashboard');
   const def = SERIES[clave];
@@ -160,9 +173,9 @@ function Barras({ clave, datos }: { clave: string; datos: Datos }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 12 }}>
-        {def.series.map(([serie, color]) => (
+        {def.series.map(([serie, color, Icono]) => (
           <li key={serie} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span aria-hidden style={{ width: 10, height: 10, borderRadius: 2, background: color }} />
+            <Icono size={14} color={color} aria-hidden />
             {t(`${def.etiqueta}.${serie}`)}
           </li>
         ))}
@@ -174,21 +187,56 @@ function Barras({ clave, datos }: { clave: string; datos: Datos }) {
           <div key={String(f[def.campo])} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{nombre}</span>
             <div role="img" aria-label={def.series.map(([s]) => `${t(`${def.etiqueta}.${s}`)}: ${f[s] ?? 0}`).join(', ')}
-              style={{ display: 'flex', height: 18, borderRadius: 4, overflow: 'hidden', background: 'var(--surface-hover)' }}>
-              {total > 0 && def.series.map(([serie, color]) => {
+              style={{ display: 'flex', flexWrap: 'wrap', minHeight: 20, borderRadius: 4, overflow: 'hidden', background: 'var(--surface-hover)' }}>
+              {total > 0 && def.series.filter(([serie]) => Number(f[serie] ?? 0) > 0).flatMap(([serie, color], i) => {
                 const n = Number(f[serie] ?? 0);
-                return n > 0 ? (
-                  <span key={serie} style={{ width: `${(n / total) * 100}%`, background: color, color: 'var(--text-inverse)',
-                    fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: '18px' }}>{n}</span>
-                ) : null;
+                const tramo = (
+                  <span key={serie} style={{ flex: `${n} 1 auto`, minWidth: 'max-content', padding: '0 6px', background: color, color: '#ffffff',
+                    fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: '20px' }}>{`${t(`${def.etiqueta}.${serie}`)}: ${n}`}</span>
+                );
+                return i === 0 ? [tramo] : [<i key={`${serie}-sep`} aria-hidden style={{ width: 2, background: '#ffffff' }} />, tramo];
               })}
             </div>
           </div>
         );
       })}
+      <table className="ds-sr-only">
+        <caption>{t(`${def.etiqueta}.tabla`)}</caption>
+        <thead><tr>
+          <th scope="col">{t(`${def.etiqueta}.col_fila`)}</th>
+          {def.series.map(([s]) => <th key={s} scope="col">{t(`${def.etiqueta}.${s}`)}</th>)}
+          {clave === 'distribucion_riesgo' && <><th scope="col">{t('valores.riesgo.enfermedad')}</th><th scope="col">{t('valores.riesgo.probabilidad')}</th></>}
+        </tr></thead>
+        <tbody>
+          {items.map((f) => (
+            <tr key={String(f[def.campo])}>
+              <th scope="row">{clave === 'alertas_sanitarias' ? t(`valores.tipo_alerta.${String(f.tipo)}`, { defaultValue: String(f.tipo) }) : texto(f[def.campo])}</th>
+              {def.series.map(([s]) => <td key={s}>{Number(f[s] ?? 0)}</td>)}
+              {clave === 'distribucion_riesgo' && <>
+                <td>{f.patologia ? String(f.patologia) : t('valores.riesgo.sin_prediccion')}</td>
+                <td>{typeof f.probabilidad === 'number' ? formatearNumero(f.probabilidad, PORCENTAJE) : t('valores.riesgo.sin_prediccion')}</td>
+              </>}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {/* RF-103 (TC-DIS-279): la enfermedad más probable de cada especie y su probabilidad, también a la vista. */}
+      {clave === 'distribucion_riesgo' && items.some((f) => f.patologia) && (
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, fontSize: 12, color: 'var(--text-secondary)' }}>
+          {items.filter((f) => f.patologia).map((f) => (
+            <li key={String(f[def.campo])}>{t('valores.riesgo.principal', { especie: texto(f[def.campo]), enfermedad: String(f.patologia),
+              probabilidad: typeof f.probabilidad === 'number' ? formatearNumero(f.probabilidad, PORCENTAJE) : '—' })}</li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
+
+// 1.4.1 (TC-DIS-280): cada estado de dispositivo con su ícono; cuatro de cinco comparten color.
+const ICONO_DISPOSITIVO: Record<string, typeof CheckCircle2> = {
+  ACTIVO: CheckCircle2, BUFFER_ACTIVO: Clock, 'SIN_SEÑAL': Radio, INACTIVO: Power, EN_MANTENIMIENTO: Wrench,
+};
 
 function Estados({ datos }: { datos: Datos }) {
   const { t } = useT('dashboard');
@@ -197,13 +245,17 @@ function Estados({ datos }: { datos: Datos }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
       <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{t('estados_iot.total', { cantidad: datos.total, count: Number(datos.total) })}</span>
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {Object.entries(conteo).map(([estado, n]) => (
-          <li key={estado} style={{ padding: '2px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700,
-            background: estado === 'ACTIVO' ? 'var(--sem-success-bg)' : 'var(--sem-warning-bg)',
-            color: estado === 'ACTIVO' ? 'var(--sem-success)' : 'var(--sem-warning)' }}>
-            {t(`valores.estado_dispositivo.${estado}`, { defaultValue: estado })}: {n}
-          </li>
-        ))}
+        {Object.entries(conteo).map(([estado, n]) => {
+          const Icono = ICONO_DISPOSITIVO[estado] ?? CircleSlash;
+          return (
+            <li key={estado} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700,
+              background: estado === 'ACTIVO' ? 'var(--sem-success-bg)' : 'var(--sem-warning-bg)',
+              color: estado === 'ACTIVO' ? 'var(--sem-success)' : 'var(--sem-warning)' }}>
+              <Icono size={12} aria-hidden />
+              {t(`valores.estado_dispositivo.${estado}`, { defaultValue: estado })}: {n}
+            </li>
+          );
+        })}
       </ul>
       <Lista clave="dispositivos_sin_senal" datos={{ items: filas(datos) }} />
     </div>

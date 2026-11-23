@@ -4,14 +4,17 @@
 // | 2026-11-19 | Arekkazu | M8-11/M8-14 RF-103: rol sin panel va a su sección y sin indicador de sincronización repetido |
 // | 2026-11-20 | Arekkazu | QA-M08 CU01 H-01 RF-103: useFincaActiva se importa de shared/fincas |
 // | 2026-11-21 | destroyerban | INC-M08-381-G004 RF-103: abre sin conexión con el último layout guardado |
-import React, { useEffect, useMemo, useState } from 'react';
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-277/281 RF-103: pausar la actualización y anunciar finca y reconexión |
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Redirect } from 'react-router-dom';
-import { LayoutGrid, OctagonAlert } from 'lucide-react';
+import { LayoutGrid, OctagonAlert, Pause, Play } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
 import { useAuth } from '../../shared/auth/useAuth';
 import { R_AUDITORIA, R_AUDITORIA_CIERRES } from '../../accounting_integration/rbac';
 import { Alert } from '../../shared/design-system/Alert';
 import { Select } from '../../shared/design-system/Select';
+import { Button } from '../../shared/design-system/Button';
+import { Anunciador } from '../../shared/design-system/Anunciador';
 import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { useDashboardLayout, type CacheLayout } from '../../configuration/hooks/useDashboardLayout';
 import { useContexto } from '../../shared/contexto/useContexto';
@@ -60,6 +63,15 @@ export function DashboardPage() {
   const { sinEspecies } = useContexto();
   const { fincas, idFinca, elegir } = useFincaActiva(idUsuario);
   const criticas = useCriticasPendientes(enLinea);
+  // WCAG 2.2.2 (TC-DIS-277): la actualización automática se puede pausar y reanudar.
+  const [pausado, setPausado] = useState(false);
+  // 4.1.3 (TC-DIS-281): el cambio de finca y la vuelta de la conexión se anuncian.
+  const [aviso, setAviso] = useState('');
+  const estabaEnLinea = useRef(enLinea);
+  useEffect(() => {
+    if (enLinea && !estabaEnLinea.current) setAviso(t('dashboardpage.conexion_restablecida'));
+    estabaEnLinea.current = enLinea;
+  }, [enLinea, t]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -93,13 +105,27 @@ export function DashboardPage() {
           {/* RF-103 restricción 6: una finca a la vez; con una sola, no hay selector. */}
           {fincas.length > 1 && (
             <Select id="dashboard-finca" label={t('finca.etiqueta')} value={idFinca ?? ''}
-              onChange={(e) => elegir(Number(e.target.value))} style={{ minWidth: 200 }}>
+              onChange={(e) => {
+                const id = Number(e.target.value);
+                elegir(id);
+                setAviso(t('finca.cambiada', { finca: fincas.find((f) => f.id_finca === id)?.nombre ?? '' }));
+              }} style={{ minWidth: 200 }}>
               {fincas.map((f) => <option key={f.id_finca} value={f.id_finca}>{f.nombre}</option>)}
             </Select>
+          )}
+          {celdas.length > 0 && (
+            <Button variant="secondary" size="sm" aria-pressed={pausado} onClick={() => {
+              setPausado(!pausado);
+              setAviso(t(pausado ? 'dashboardpage.actualizacion_reanudada' : 'dashboardpage.actualizacion_pausada'));
+            }}>
+              {pausado ? <Play size={14} aria-hidden /> : <Pause size={14} aria-hidden />}
+              {t(pausado ? 'dashboardpage.reanudar' : 'dashboardpage.pausar', { segundos: frecuencia })}
+            </Button>
           )}
         </div>
       </div>
 
+      <Anunciador mensaje={aviso} />
       {criticas > 0 && (
         <div role="alert" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', flexWrap: 'wrap', marginBottom: 'var(--s5)',
           padding: 'var(--s4)', borderRadius: 'var(--r-lg)', background: 'var(--sem-error-bg)', border: '1px solid var(--sem-error-border)',
@@ -139,7 +165,7 @@ export function DashboardPage() {
         <div className="dashboard-grid">
           {celdas.map(({ celda, widget }) => (
             <WidgetCard key={widget.id_widget} celda={celda} widget={widget} idFinca={idFinca}
-              frecuencia={frecuencia} idUsuario={idUsuario} enLinea={enLinea} />
+              frecuencia={frecuencia} idUsuario={idUsuario} enLinea={enLinea} pausado={pausado} />
           ))}
         </div>
       ) : error ? null : (

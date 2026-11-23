@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-104: catálogo por rol, filtros obligatorios, vista previa y segundo plano |
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-287 RF-104: el aviso de segundo plano usa el texto del RF |
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -75,7 +76,7 @@ describe('Reportes (RF-104)', () => {
     fireEvent.change(screen.getByLabelText(/Fecha de inicio/), { target: { value: '2026-11-01' } });
     fireEvent.change(screen.getByLabelText(/Fecha de fin/), { target: { value: '2026-11-18' } });
     fireEvent.click(screen.getByRole('button', { name: /Ver vista previa/ }));
-    expect(await screen.findByText('Este reporte se generará en segundo plano')).toBeInTheDocument();
+    expect(await screen.findByText('Tu reporte está siendo generado. Te avisaremos cuando esté listo.')).toBeInTheDocument();
     expect(screen.getByText('BOV-1')).toBeInTheDocument();
     api.listar.mockResolvedValue([enProceso]);
     fireEvent.click(screen.getByRole('button', { name: /Exportar en PDF/ }));

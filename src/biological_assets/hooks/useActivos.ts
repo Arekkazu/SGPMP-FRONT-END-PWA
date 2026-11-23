@@ -1,6 +1,7 @@
 // | Fecha      | Nombre           | Que se hizo                                   |
 // |------------|------------------|-----------------------------------------------|
 // | 2026-11-03 | Arekkazu         | RF-33: búsqueda de activos sobre todas las páginas |
+// | 2026-11-22 | Arekkazu | INC-M08-384-G025 RF-107: el aviso del registro usa la plantilla de la sección 8.5 |
 import { useState, useCallback } from 'react';
 import { activosApi } from '../api/activosApi';
 import { cacheActivos, getActivosCache } from '../db/activosTable';
@@ -11,7 +12,8 @@ import type {
   ActivoBiologicoResponse,
 } from '../types';
 import type { ApiError } from '../../shared/api/errors';
-import { avisarExito } from '../../shared/hooks/useToast';
+import { pushToast } from '../../shared/hooks/useToast';
+import i18n from '../../shared/i18n';
 
 interface PaginacionState {
   pagina: number;
@@ -99,7 +101,13 @@ export function useActivos() {
       setSaveError(null);
       try {
         const nuevo = await activosApi.registrar(dto);
-        avisarExito('registrado', nuevo.identificador ?? `#${nuevo.id_activo_biologico}`);
+        // RF-107 8.5 (INC-M08-384-G025): plantilla fija del registro, con el valor inicial reconocido.
+        const identificador = nuevo.identificador ?? `#${nuevo.id_activo_biologico}`;
+        const costo = Number(nuevo.costo_adquisicion);
+        pushToast('success', nuevo.costo_adquisicion != null && Number.isFinite(costo)
+          ? i18n.t('exito.activo_registrado_valor', { ns: 'common', identificador,
+            monto: new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(costo) })
+          : i18n.t('exito.activo_registrado', { ns: 'common', identificador }));
         return nuevo;
       } catch (e) {
         setSaveError(e as ApiError);

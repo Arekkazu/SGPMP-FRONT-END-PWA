@@ -2,6 +2,7 @@
 // |------------|----------|--------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-105: filtros, 50 por página, atender y descartar notificaciones |
 // | 2026-11-19 | Arekkazu | M8-04 RF-105: los filtros de la bandeja llegan a la consulta |
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-291 RF-105: la bandeja filtra también las archivadas |
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ApiError } from '../../shared/api/errors';
 import { notificacionesApi } from '../api/notificacionesApi';
@@ -17,7 +18,7 @@ import type { FiltrosNotificaciones, NotificacionInternaResponse } from '../type
 const TAMANO_PAGINA = 50;
 
 /** Filtros de la bandeja (RF-105); sin `estado` se ve el panel principal (nuevas y leídas). */
-export type FiltrosBandeja = Pick<FiltrosNotificaciones, 'nivel' | 'estado' | 'modulo'>;
+export type FiltrosBandeja = Pick<FiltrosNotificaciones, 'nivel' | 'estado' | 'modulo' | 'incluir_archivadas'>;
 const INTERVALO_ACTUALIZACION_MS = 60_000;
 
 function comoApiError(error: unknown): ApiError {
