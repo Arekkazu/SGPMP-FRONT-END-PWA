@@ -1,3 +1,7 @@
+/* | Fecha      | Nombre   | Que se hizo |
+   |------------|----------|-------------|
+   | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-287/288 RF-104: hover de secundario y fantasma legible en oscuro; botón-enlace |
+*/
 .ds-btn {
   display: inline-flex;
   align-items: center;
@@ -35,7 +39,8 @@
   border-color: var(--brand-400);
 }
 .ds-btn--secondary:hover:not(:disabled) { background: var(--brand-50); }
-[data-theme="dark"] .ds-btn--secondary:hover:not(:disabled) { background: var(--brand-900); }
+/* TC-DIS-287/288: en oscuro la rampa de marca está invertida (--brand-50 es el verde oscuro); el override con
+   --brand-900 dejaba texto y fondo claros a la vez (2,08:1). El hover usa --brand-50 en los dos temas. */
 
 .ds-btn--danger {
   background: var(--sem-error-solid);
@@ -50,7 +55,6 @@
   border-color: transparent;
 }
 .ds-btn--ghost:hover:not(:disabled) { background: var(--brand-50); }
-[data-theme="dark"] .ds-btn--ghost:hover:not(:disabled) { background: var(--brand-900); }
 
 .ds-btn:disabled,
 .ds-btn--loading {
@@ -103,3 +107,20 @@
 @keyframes ds-spin {
   to { transform: rotate(360deg); }
 }
+
+/* Texto que abre un detalle (versión del contrato, evento de auditoría): se lee como texto, se opera como botón. */
+.ds-enlace-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand-600);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ds-enlace-boton:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--r-sm, 4px); }

@@ -2,6 +2,7 @@
 // |------------|----------|-----------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-103: caché de los widgets del dashboard sin conexión |
 // | 2026-11-21 | destroyerban | INC-M08-381-G004 RF-103: caché del layout, catálogo y fincas del dashboard |
+// | 2026-11-22 | Arekkazu | INC-M08-394-G031 RF-107: la operación en conflicto guarda la respuesta del servidor y su fecha |
 import Dexie, { type Table } from 'dexie';
 import type { JwtClaims, PermisoUsuario, UserInfo } from '../auth/AuthContext';
 
@@ -233,6 +234,9 @@ export interface SyncOperation {
   error?: string;
   /** HTTP del rechazo en firme — distingue un 409 de nombre duplicado de otros 4xx al mostrar el conflicto (#450). */
   status?: number;
+  /** RF-107 8.4 (#734): lo que respondió el servidor al rechazarla y cuándo, para mostrar el conflicto. */
+  servidor?: string;
+  fechaConflicto?: number;
   /** `sub` de quien la encoló: otro usuario que inicie sesión en el dispositivo no la reenvía con su token. */
   usuario?: string;
 }

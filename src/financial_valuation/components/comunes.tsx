@@ -11,7 +11,9 @@
 // | 2026-11-14 | Arekkazu | FILTRO-FINCA RF-25: criterio «Finca» de los listados con el combobox de las fincas del usuario |
 // | 2026-11-15 | Arekkazu | QA-M06 CU13 H-04 RF-94: insignia de severidad compartida por la bitácora y su detalle |
 // | 2026-11-16 | Arekkazu | QA-M06 CU03 H-01 RF-84 FA-2/FA-3: color del cálculo validado manualmente |
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-292 RF-107: el error de la API se cierra con teclado y ofrece su acción correctiva |
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { AlertTriangle, Ban, CheckCircle2, Clock, FilterX, Info, RotateCcw, Search, SearchX, XCircle } from 'lucide-react';
 import { Badge } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
@@ -96,8 +98,22 @@ export function EstadoBadge({ estado }: { estado: string | null | undefined }) {
   return <BadgeTono tono={VARIANTE[estado] ?? 'neutral'} icono={ICONO_ESTADO[estado]}>{t(`estado.${estado}`, { defaultValue: t('comun.sin_estado') })}</BadgeTono>;
 }
 
-export function ErrorApi({ error }: { error: ApiError | null }) {
-  return error ? <Alert variant="error" title={error.message} style={{ marginBottom: 'var(--s4)' }} /> : null;
+/**
+ * RF-107 tipo 2 (TC-DIS-292): el error queda hasta que el usuario lo cierra y, si hay cómo arreglarlo, ofrece la
+ * acción correctiva (la del catálogo de errores o la que pase la pantalla).
+ */
+export function ErrorApi({ error, accion }: { error: ApiError | null; accion?: { texto: string; ruta?: string; onClick?: () => void } }) {
+  const history = useHistory();
+  const [cerrado, setCerrado] = useState<ApiError | null>(null);
+  if (!error || cerrado === error) return null;
+  const correctiva = error.accion ?? accion;
+  return (
+    <Alert variant="error" title={error.message} style={{ marginBottom: 'var(--s4)' }} onDismiss={() => setCerrado(error)}
+      accion={correctiva ? { texto: correctiva.texto, onClick: () => {
+        if ('onClick' in correctiva && correctiva.onClick) correctiva.onClick();
+        else if (correctiva.ruta) history?.push(`/${correctiva.ruta.replace(/^\//, '')}`);
+      } } : undefined} />
+  );
 }
 
 /** "0.0500" → "5"; las fracciones del backend se editan como porcentaje. */
