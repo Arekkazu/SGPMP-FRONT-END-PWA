@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                                     |
 // |------------|-------------|---------------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-284 RF-106: marcadores agrupados, filtros y paginación por teclado y estado vacío |
+// | 2026-11-22 | SaraSofGonzalez | TC-DIS-284 RF-106: «Cargar más» se alcanza con Tab antes de medir el foco visible |
 /**
  * TC-DIS-284 — Verificar accesibilidad WCAG 2.1 AA de la interacción con la línea de tiempo (marcadores
  * agrupados, tooltips, zoom y filtros) y del estado vacío
@@ -109,7 +110,12 @@ test.describe('TC-DIS-284 — Interacción con la línea de tiempo y estado vac�
     const nav = main(page).getByRole('navigation', { name: 'Paginación del historial' });
     await expect.soft(nav, 'No aparece la paginación con 25 eventos').toBeVisible();
     const siguiente = nav.getByRole('button', { name: 'Cargar más' });
+    // Se llega con Tab (Shift+Tab y Tab): tras el clic en «Consultar», un .focus() por programa no activa
+    // :focus-visible y daría un falso «sin foco».
     await siguiente.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    expect.soft(await siguiente.evaluate((b) => document.activeElement === b), '2.1.1: "Cargar más" no se alcanza con Tab').toBe(true);
     expect.soft(await focoVisible(page), '2.4.7: "Cargar más" no muestra el foco').toBe(true);
     await page.keyboard.press('Enter');
     await page.waitForTimeout(800);
