@@ -3,12 +3,14 @@
 // | 2026-11-18 | Arekkazu | M08 RF-104: elegir reporte, filtros, vista previa, PDF/Excel, segundo plano y mis reportes |
 // | 2026-11-19 | Arekkazu | M08 RF-104: vista previa con la estructura de las plantillas V1.1 |
 // | 2026-11-21 | Arekkazu | INC-M08-392-G027 RF-107: la generación queda en curso para el resto del sistema y los botones explican el bloqueo |
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-286/287 RF-104: cambio de tipo anunciado, foco tras exportar, texto del RF y nombre de «Descargar» |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Download, Eye, FileText, X } from 'lucide-react';
 import { Alert } from '../../shared/design-system/Alert';
 import { Badge, type BadgeVariant } from '../../shared/design-system/Badge';
 import { Button } from '../../shared/design-system/Button';
+import { Anunciador } from '../../shared/design-system/Anunciador';
 import { ProcesoEnCurso } from '../../shared/design-system/ProcesoEnCurso';
 import { enOperacion } from '../../shared/hooks/operacionEnCurso';
 import { Select } from '../../shared/design-system/Select';
@@ -68,6 +70,8 @@ export function ReportesPage() {
   const [reportes, setReportes] = useState<Reporte[]>([]);
   const [descargando, setDescargando] = useState<string | null>(null);
   const enProcesoAntes = useRef<Set<string>>(new Set());
+  const [aviso, setAviso] = useState('');
+  const misReportesRef = useRef<HTMLHeadingElement>(null);
 
   const reporte = useMemo(() => catalogo?.find((r) => r.tipo_reporte === tipo) ?? null, [catalogo, tipo]);
 
@@ -100,6 +104,9 @@ export function ReportesPage() {
   }, [hayEnProceso, online, cargarReportes]);
 
   const cambiarTipo = (nuevo: TipoReporte | '') => {
+    // 4.1.3 (TC-DIS-286): los filtros cambian con el tipo; se avisa sin mover el foco.
+    const elegido = catalogo?.find((r) => r.tipo_reporte === nuevo);
+    setAviso(elegido ? t('filtros.cambiaron', { reporte: elegido.titulo, count: elegido.filtros.filter((f) => f.obligatorio).length }) : '');
     setTipo(nuevo);
     setValores({});
     setErrores({});
@@ -182,9 +189,13 @@ export function ReportesPage() {
         await descargar(r);
       } else {
         enProcesoAntes.current.add(r.id_reporte);
+        // RF-104: el texto del RF para la generación en segundo plano.
+        pushToast('info', t('avisos.en_segundo_plano'), undefined, { idOperacion: `reporte-${r.id_reporte}` });
       }
       setPrevia(null);
       void cargarReportes();
+      // 2.4.3 (TC-DIS-287): «Exportar» desaparece con la vista previa; el foco pasa a «Mis reportes», donde queda el archivo.
+      window.setTimeout(() => misReportesRef.current?.focus(), 0);
     } catch (e) {
       manejarError(e);
     } finally {
@@ -218,6 +229,7 @@ export function ReportesPage() {
                accion={{ texto: t('reintentar'), onClick: cargarCatalogo }} />
       )}
 
+      <Anunciador mensaje={aviso} />
       <section style={SECCION} aria-labelledby="titulo-generar">
         <h2 id="titulo-generar" style={{ margin: '0 0 var(--s4)', fontSize: 'var(--fs-title-sm, 18px)' }}>{t('generar.titulo')}</h2>
         {catalogo && catalogo.length === 0 ? (
@@ -287,7 +299,7 @@ export function ReportesPage() {
       )}
 
       <section style={SECCION} aria-labelledby="titulo-mis-reportes">
-        <h2 id="titulo-mis-reportes" style={{ margin: '0 0 var(--s2)', fontSize: 'var(--fs-title-sm, 18px)' }}>{t('mis.titulo')}</h2>
+        <h2 id="titulo-mis-reportes" ref={misReportesRef} tabIndex={-1} style={{ margin: '0 0 var(--s2)', fontSize: 'var(--fs-title-sm, 18px)' }}>{t('mis.titulo')}</h2>
         <p style={{ margin: '0 0 var(--s4)', color: 'var(--text-secondary)' }}>{t('mis.descripcion')}</p>
         {reportes.some((r) => r.estado === 'EN_PROCESO') && (
           <div style={{ marginBottom: 'var(--s4)' }}>
@@ -332,7 +344,7 @@ export function ReportesPage() {
                         {r.estado === 'GENERADO' && (
                           <Button size="sm" variant="secondary" loading={descargando === r.id_reporte}
                                   disabled={!online || descargando === r.id_reporte} onClick={() => void descargar(r)}
-                                  aria-label={t('mis.descargar_aria', { titulo: r.titulo })}>
+                                  aria-label={r.partes.length > 1 ? t('mis.descargar_partes_aria', { count: r.partes.length, titulo: r.titulo }) : t('mis.descargar_aria', { titulo: r.titulo })}>
                             <Download size={14} aria-hidden /> {r.partes.length > 1 ? t('mis.descargar_partes', { count: r.partes.length }) : t('mis.descargar')}
                           </Button>
                         )}

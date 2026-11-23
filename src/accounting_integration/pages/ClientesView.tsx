@@ -4,21 +4,25 @@
 // | 2026-11-18 | Arekkazu | M08 RF-107 tipo 5: revocar un cliente externo se confirma en un diálogo bloqueante |
 // | 2026-11-19 | Arekkazu | M7-04/06/07 RF-101: errores por campo, credencial vencida y formulario vacío |
 // | 2026-11-20 | Arekkazu | A11Y-M07 TC-DIS-271 RF-101: tabla en ScrollRegion y un id por canal en «Solicitudes por minuto» |
+// | 2026-11-22 | Arekkazu | A11Y2-M07 TC-DIS-271..273 RF-101: errores al salir del campo y del backend bajo su campo; estados con ícono |
+// | 2026-11-22 | Arekkazu | USAB2 M810 RF-107: cambiar la credencial se confirma en un diálogo bloqueante |
+// | 2026-11-22 | Arekkazu | SAST RF-101: sin el mapeo client_secret → campo (Bearer CWE-798, falso positivo) |
 import React, { useEffect, useState } from 'react';
 import { Copy, KeyRound, PauseCircle, PencilLine, PlayCircle, Plus, RotateCw, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import { ScrollRegion } from '../../shared/design-system/ScrollRegion';
 import { Input } from '../../shared/design-system/Input';
 import { Alert } from '../../shared/design-system/Alert';
-import { Badge } from '../../shared/design-system/Badge';
 import { ModalShell } from '../../shared/design-system/ModalShell';
 import { AccesoDenegado } from '../../shared/design-system/AccesoDenegado';
 import { usePermissionPorNombre } from '../../shared/rbac/usePermission';
 import { pushToast } from '../../shared/hooks/useToast';
 import { useT } from '../../shared/i18n/useT';
 import {
-  EncabezadoVista, ErrorApi, EstadoVacio, MotivoModal, SECUNDARIO, TABLA, TD, TH, formatoFecha, useAsync,
+  BadgeTono, EncabezadoVista, ErrorApi, EstadoVacio, MotivoModal, SECUNDARIO, TABLA, TD, TH, formatoFecha, useAsync,
 } from '../../financial_valuation/components/comunes';
+import { hoyLocal } from '../../shared/lib/fecha';
+import { errorDeCampo } from '../errores';
 import { integracionApi } from '../api/integracionApi';
 import { ACCION_C, ACCION_D, ACCION_R, ACCION_U, R_CLIENTES } from '../rbac';
 import type { Canal, ClienteExterno, ConfiguracionCliente } from '../types';
@@ -71,7 +75,8 @@ export function ClientesView() {
                 return (
                   <tr key={c.id_cliente_externo}>
                     <td style={TD}><strong>{c.nombre}</strong><span className="fin-secundario">{t('clientes.client_id', { id: c.identificador_publico })}</span></td>
-                    <td style={TD}><Badge variant={COLOR_ESTADO[c.estado] ?? 'neutral'}>{t(`estado_cliente.${c.estado}`)}</Badge></td>
+                    <td style={TD}><BadgeTono tono={COLOR_ESTADO[c.estado] ?? 'neutral'}>{t(`estado_cliente.${c.estado}`)}</BadgeTono>
+                      {revocado && <span className="fin-secundario" style={{ maxWidth: 220 }}>{t('clientes.revocado_explicacion')}</span>}</td>
                     <td style={TD}>{c.canales.map((x) => (
                       <span key={x.canal} style={{ display: 'block' }}>{t(`canal.${x.canal}`)}
                         <span className="fin-secundario">{t('clientes.limite', { n: x.limite_por_minuto })}</span></span>
@@ -80,7 +85,7 @@ export function ClientesView() {
                       <span className="fin-secundario">{t('clientes.vigencia_token', { n: c.ttl_token_canal_minutos })}</span></td>
                     <td style={{ ...TD, whiteSpace: 'nowrap' }}>{!c.credencial ? t('clientes.sin_credencial')
                       : new Date(c.credencial.fecha_expiracion).getTime() < Date.now() ? <>
-                        <Badge variant="error">{t('clientes.vencida')}</Badge>
+                        <BadgeTono tono="error">{t('clientes.vencida')}</BadgeTono>
                         <span className="fin-secundario">{t('clientes.vencio', { fecha: formatoFecha(c.credencial.fecha_expiracion) })}</span>
                         {!revocado && puedeEditar && (
                           <Button variant="ghost" size="sm" onClick={() => setRotar(c)}><RotateCw size={14} aria-hidden />{t('clientes.cambiar_credencial')}</Button>
@@ -128,8 +133,15 @@ export function ClientesView() {
 function hoyMas(dias: number): string {
   const d = new Date();
   d.setDate(d.getDate() + dias);
-  return d.toISOString().slice(0, 10);
+  return hoyLocal(d);
 }
+
+/** Campo del formulario al que va cada error del backend (TC-DIS-271 c). */
+const CAMPOS_CLIENTE = {
+  nombre: 'nombre', codigo: 'codigo', identificador_publico: 'clientId', fecha_vencimiento: 'vence', canales: 'canales',
+  ip_permitida: 'ip', ttl_token_canal_minutos: 'ttl',
+};
+const CAMPOS_EDICION = { canales: 'canales', ip_permitida: 'ip', ttl_token_canal_minutos: 'ttl' };
 
 /** IPv4 con red opcional (203.0.113.10 o 203.0.113.0/24), cada parte entre 0 y 255. */
 export function ipValida(texto: string): boolean {
@@ -148,6 +160,9 @@ function ClienteModal({ cliente, onCerrar, onRegistrado }: {
   const [codigo, setCodigo] = useState('');
   const [clientId, setClientId] = useState('');
   const [intentado, setIntentado] = useState(false);
+  // 3.3.1: el error se muestra al salir del campo, sin esperar a «Guardar».
+  const [tocados, setTocados] = useState<Set<string>>(new Set());
+  const tocar = (campo: string) => () => setTocados((x) => new Set(x).add(campo));
   const [vence, setVence] = useState(hoyMas(365));
   const [secretoPropio, setSecretoPropio] = useState('');
   const [ip, setIp] = useState(cliente?.ip_permitida ?? '');
@@ -173,7 +188,10 @@ function ClienteModal({ cliente, onCerrar, onRegistrado }: {
     ip: ip.trim() && !ipValida(ip.trim()) ? t('clientes.error_ip') : undefined,
     ttl: !(Number(ttl) >= 5 && Number(ttl) <= 60) ? t('clientes.error_ttl') : undefined,
   };
-  const ver = (campo: string) => (intentado ? errores[campo] : undefined);
+  // Al editar solo se muestran canales, origen y duración: un error de otro campo va arriba del formulario.
+  const servidor = errorDeCampo(registro.error ?? edicion.error, cliente ? CAMPOS_EDICION : CAMPOS_CLIENTE);
+  const ver = (campo: string) => ((intentado || tocados.has(campo)) ? errores[campo] : undefined)
+    ?? (servidor?.campo === campo ? servidor.mensaje : undefined);
   const enviando = registro.cargando || edicion.cargando;
 
   const guardar = async () => {
@@ -194,33 +212,34 @@ function ClienteModal({ cliente, onCerrar, onRegistrado }: {
         <Button variant="secondary" size="md" onClick={onCerrar}>{t('comun.cancelar')}</Button>
         <Button variant="primary" size="md" loading={enviando} onClick={guardar}>{t('comun.guardar')}</Button>
       </>}>
-      <ErrorApi error={registro.error ?? edicion.error} />
+      <ErrorApi error={servidor ? null : registro.error ?? edicion.error} />
       <div style={{ display: 'grid', gap: 'var(--s4)' }}>
         {!cliente && <>
-          <Input label={t('clientes.nombre')} value={nombre} onChange={(e) => setNombre(e.target.value)} required error={ver('nombre')} />
-          <Input label={t('clientes.codigo')} hint={t('clientes.codigo_ayuda')} value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())} required error={ver('codigo')} />
-          <Input label={t('clientes.client_id_campo')} hint={t('clientes.client_id_ayuda')} value={clientId} onChange={(e) => setClientId(e.target.value)} required error={ver('clientId')} />
-          <Input label={t('clientes.fecha_vencimiento')} type="date" value={vence} onChange={(e) => setVence(e.target.value)} required error={ver('vence')} />
+          <Input label={t('clientes.nombre')} value={nombre} onChange={(e) => setNombre(e.target.value)} onBlur={tocar('nombre')} required error={ver('nombre')} />
+          <Input label={t('clientes.codigo')} hint={t('clientes.codigo_ayuda')} value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())} onBlur={tocar('codigo')} required error={ver('codigo')} />
+          <Input label={t('clientes.client_id_campo')} hint={t('clientes.client_id_ayuda')} value={clientId} onChange={(e) => setClientId(e.target.value)} onBlur={tocar('clientId')} required error={ver('clientId')} />
+          <Input label={t('clientes.fecha_vencimiento')} type="date" value={vence} onChange={(e) => setVence(e.target.value)} onBlur={tocar('vence')} required error={ver('vence')} />
           <Input label={t('clientes.secreto_propio')} hint={t('clientes.secreto_propio_ayuda')} type="password" autoComplete="new-password"
             value={secretoPropio} onChange={(e) => setSecretoPropio(e.target.value)} />
         </>}
-        <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
+        <fieldset className="ds-field" style={{ border: 0, padding: 0, margin: 0 }} aria-describedby="cliente-canales-ayuda">
           <legend style={{ fontWeight: 600, marginBottom: 'var(--s2)' }}>{t('clientes.canales')}</legend>
+          <span id="cliente-canales-ayuda" className="fin-secundario" style={{ marginBottom: 'var(--s2)' }}>{t('clientes.canales_ayuda')}</span>
           {CANALES.map((c) => (
             <div key={c} style={{ display: 'grid', gridTemplateColumns: '1fr 160px', gap: 'var(--s3)', alignItems: 'end', marginBottom: 'var(--s3)' }}>
               <label style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center' }}>
-                <input type="checkbox" checked={limites[c] !== ''} onChange={(e) => setLimites({ ...limites, [c]: e.target.checked ? '60' : '' })} />
+                <input type="checkbox" checked={limites[c] !== ''} onChange={(e) => { setLimites({ ...limites, [c]: e.target.checked ? '60' : '' }); tocar('canales')(); }} />
                 <span>{t(`canal.${c}`)}<span className="fin-secundario">{t(`canal_ayuda.${c}`)}</span></span>
               </label>
               <Input id={`limite-por-minuto-${c}`} label={t('clientes.limite_campo')} aria-label={`${t('clientes.limite_campo')} · ${t(`canal.${c}`)}`}
                 type="number" min={1} value={limites[c]} disabled={limites[c] === ''}
-                onChange={(e) => setLimites({ ...limites, [c]: e.target.value })} />
+                onChange={(e) => setLimites({ ...limites, [c]: e.target.value })} onBlur={tocar('canales')} />
             </div>
           ))}
           {ver('canales') && <span className="ds-field__error" role="alert">{ver('canales')}</span>}
         </fieldset>
-        <Input label={t('clientes.ip')} hint={t('clientes.ip_ayuda')} value={ip} onChange={(e) => setIp(e.target.value)} error={ver('ip')} />
-        <Input label={t('clientes.ttl')} hint={t('clientes.ttl_ayuda')} type="number" min={5} max={60} value={ttl} onChange={(e) => setTtl(e.target.value)} error={ver('ttl')} />
+        <Input label={t('clientes.ip')} hint={t('clientes.ip_ayuda')} value={ip} onChange={(e) => setIp(e.target.value)} onBlur={tocar('ip')} error={ver('ip')} />
+        <Input label={t('clientes.ttl')} hint={t('clientes.ttl_ayuda')} type="number" min={5} max={60} value={ttl} onChange={(e) => setTtl(e.target.value)} onBlur={tocar('ttl')} required error={ver('ttl')} />
       </div>
     </ModalShell>
   );
@@ -232,20 +251,32 @@ function RotarModal({ cliente, onCerrar, onRotado }: { cliente: ClienteExterno; 
   const [motivo, setMotivo] = useState('');
   const [vence, setVence] = useState(hoyMas(365));
   const [secretoPropio, setSecretoPropio] = useState('');
+  // TC-DIS-272: sin motivo, el error sale bajo «Motivo» (al salir del campo o al confirmar), no solo un botón apagado.
+  const [tocados, setTocados] = useState<Set<string>>(new Set());
+  const errores: Record<string, string | undefined> = {
+    motivo: motivo.trim().length >= 3 ? undefined : t('clientes.error_motivo'),
+    vence: vence ? undefined : t('clientes.error_vence'),
+  };
+  const servidor = errorDeCampo(rotacion.error, { motivo: 'motivo', fecha_vencimiento: 'vence' });
+  const ver = (campo: string) => (tocados.has(campo) ? errores[campo] : undefined) ?? (servidor?.campo === campo ? servidor.mensaje : undefined);
+  const tocar = (campo: string) => () => setTocados((x) => new Set(x).add(campo));
   return (
-    <ModalShell title={t('clientes.rotar', { cliente: cliente.nombre })} onClose={onCerrar} maxWidth={560}
+    // RF-107 R3 (USAB M810): cambiar la credencial deja sin servicio la actual de inmediato; el diálogo es bloqueante.
+    <ModalShell title={t('clientes.rotar', { cliente: cliente.nombre })} onClose={onCerrar} maxWidth={560} bloqueante
       footer={<>
         <Button variant="secondary" size="md" onClick={onCerrar}>{t('comun.cancelar')}</Button>
-        <Button variant="danger" size="md" disabled={motivo.trim().length < 3 || !vence} loading={rotacion.cargando} onClick={async () => {
+        <Button variant="danger" size="md" loading={rotacion.cargando} onClick={async () => {
+          setTocados(new Set(Object.keys(errores)));
+          if (Object.values(errores).some(Boolean)) return;
           const r = await rotacion.ejecutar(cliente.id_cliente_externo, motivo.trim(), vence, secretoPropio || undefined);
           if (r) onRotado(r.client_secret);
         }}>{t('clientes.rotar_confirmar')}</Button>
       </>}>
       <Alert variant="warning" title={t('clientes.rotar_aviso')} style={{ marginBottom: 'var(--s4)' }} />
-      <ErrorApi error={rotacion.error} />
+      <ErrorApi error={servidor ? null : rotacion.error} />
       <div style={{ display: 'grid', gap: 'var(--s4)' }}>
-        <Input label={t('clientes.motivo')} value={motivo} onChange={(e) => setMotivo(e.target.value)} required />
-        <Input label={t('clientes.fecha_vencimiento')} type="date" value={vence} onChange={(e) => setVence(e.target.value)} required />
+        <Input label={t('clientes.motivo')} value={motivo} onChange={(e) => setMotivo(e.target.value)} onBlur={tocar('motivo')} required error={ver('motivo')} />
+        <Input label={t('clientes.fecha_vencimiento')} type="date" value={vence} onChange={(e) => setVence(e.target.value)} onBlur={tocar('vence')} required error={ver('vence')} />
         <Input label={t('clientes.secreto_propio')} hint={t('clientes.secreto_propio_ayuda')} type="password" autoComplete="new-password"
           value={secretoPropio} onChange={(e) => setSecretoPropio(e.target.value)} />
       </div>

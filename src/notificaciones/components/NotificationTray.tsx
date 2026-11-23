@@ -2,16 +2,18 @@
 // |------------|----------|------------------------------------------------------------------------|
 // | 2026-11-14 | Arekkazu | M08 RF-105: nivel, ocurrencias, filtros, atender con acción y descartar  |
 // | 2026-11-20 | Arekkazu | QA-M08 CU03 H-02/H-03 RF-105/107: un solo estado del push y nivel con ícono en todos los avisos |
-import React, { useEffect, useState } from 'react';
+// | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-289..291 RF-105: lista, «sin leer» en texto, foco, anuncios, limpiar filtros y archivadas |
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
-import { AlertOctagon, AlertTriangle, Bell, BellRing, Check, Info, RefreshCw, X } from 'lucide-react';
+import { AlertOctagon, AlertTriangle, Bell, BellRing, Check, CircleDot, FilterX, Info, RefreshCw, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
 import type { PushPermission } from '../hooks/usePushNotifications';
 import { MODULOS_NOTIFICACION, type NotificacionInternaResponse } from '../types';
 import type { FiltrosBandeja } from '../hooks/useNotificaciones';
 import { Select } from '../../shared/design-system/Select';
+import { Anunciador } from '../../shared/design-system/Anunciador';
 import './NotificationTray.css';
 
 // Espejo de `modulo1.tipos_eventos` (backend: `evento_categoria.py`). No se
@@ -84,10 +86,12 @@ const COLOR_NIVEL: Record<string, { color: string; fondo: string; Icono: typeof 
 };
 
 /** Atender (con la acción documentada, obligatoria en una crítica) o descartar una notificación. */
-function CierreNotificacion({ notificacion, onAtender, onDescartar }: {
+function CierreNotificacion({ notificacion, onAtender, onDescartar, onResuelta }: {
   notificacion: NotificacionInternaResponse;
   onAtender?: (id: number, accion?: string) => Promise<string | null>;
   onDescartar?: (id: number) => Promise<string | null>;
+  /** 4.1.3 / 2.4.3 (TC-DIS-290): se anuncia el resultado y el foco vuelve a la bandeja, no a <body>. */
+  onResuelta?: (mensaje: string) => void;
 }) {
   const { t } = useT('notificaciones');
   const [abierto, setAbierto] = useState(false);
@@ -96,12 +100,12 @@ function CierreNotificacion({ notificacion, onAtender, onDescartar }: {
   const [enviando, setEnviando] = useState(false);
   const critica = notificacion.nivel === 'CRITICA';
   const id = notificacion.id_notificacion;
-  const ejecutar = async (fn: () => Promise<string | null>) => {
+  const ejecutar = async (fn: () => Promise<string | null>, resultado: string) => {
     setEnviando(true);
     const rechazo = await fn();
     setEnviando(false);
     setError(rechazo);
-    if (!rechazo) setAbierto(false);
+    if (!rechazo) { setAbierto(false); onResuelta?.(resultado); }
   };
   if (!notificacion.puede_atenderse || !onAtender) return null;
   return (
@@ -112,12 +116,13 @@ function CierreNotificacion({ notificacion, onAtender, onDescartar }: {
             {t(critica ? 'notificationtray.que_hiciste_obligatorio' : 'notificationtray.que_hiciste')}
           </label>
           <textarea id={`accion-${id}`} rows={2} value={accion} maxLength={1000} onChange={(e) => setAccion(e.target.value)}
+            autoFocus required={critica} aria-required={critica}
             aria-invalid={Boolean(error)} aria-describedby={error ? `accion-error-${id}` : undefined}
             style={{ width: '100%', fontSize: 13, padding: 6, borderRadius: 6, border: '1px solid var(--surface-border)' }} />
           {error && <span id={`accion-error-${id}`} role="alert" style={{ fontSize: 12, color: 'var(--sem-error)' }}>{error}</span>}
           <div style={{ display: 'flex', gap: 6 }}>
             <Button type="button" variant="primary" size="sm" loading={enviando}
-              onClick={() => void ejecutar(() => onAtender(id, accion))}>{t('notificationtray.confirmar_atendida')}</Button>
+              onClick={() => void ejecutar(() => onAtender(id, accion), t('notificationtray.atendida_listo'))}>{t('notificationtray.confirmar_atendida')}</Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => { setAbierto(false); setError(null); }}>
               {t('notificationtray.cancelar')}
             </Button>
@@ -128,7 +133,7 @@ function CierreNotificacion({ notificacion, onAtender, onDescartar }: {
           <Button type="button" variant="secondary" size="sm" onClick={() => setAbierto(true)}>{t('notificationtray.marcar_atendida')}</Button>
           {notificacion.puede_descartarse && onDescartar && (
             <Button type="button" variant="ghost" size="sm" loading={enviando}
-              onClick={() => void ejecutar(() => onDescartar(id))}>{t('notificationtray.descartar')}</Button>
+              onClick={() => void ejecutar(() => onDescartar(id), t('notificationtray.descartada_listo'))}>{t('notificationtray.descartar')}</Button>
           )}
           {error && <span role="alert" style={{ fontSize: 12, color: 'var(--sem-error)' }}>{error}</span>}
         </div>
@@ -182,17 +187,35 @@ export function NotificationTray({
   onDescartar,
 }: NotificationTrayProps) {
   const { t } = useT('notificaciones');
+  const [aviso, setAviso] = useState('');
+  // 2.4.3 (TC-DIS-289): tras «Mostrar más» el foco pasa a la primera notificación nueva.
+  const focoTrasCargar = useRef<number | null>(null);
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
+    // 2.4.3: al cerrar (Escape, X o clic fuera) el foco vuelve a quien abrió la bandeja (la campana).
+    const previo = document.activeElement as HTMLElement | null;
     document.getElementById('notification-tray-close')?.focus();
     const cerrarConEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', cerrarConEscape);
-    return () => document.removeEventListener('keydown', cerrarConEscape);
+    return () => {
+      document.removeEventListener('keydown', cerrarConEscape);
+      if (previo?.isConnected) previo.focus();
+    };
   }, [open, onClose]);
+  useEffect(() => {
+    const desde = focoTrasCargar.current;
+    if (desde === null || notificaciones.length <= desde) return;
+    focoTrasCargar.current = null;
+    document.getElementById(`notificacion-${notificaciones[desde].id_notificacion}`)?.focus();
+  }, [notificaciones]);
 
   if (!open) return null;
+
+  const enfocarTitulo = () => window.setTimeout(() => document.getElementById('notification-tray-title')?.focus(), 0);
+  const resuelta = (mensaje: string) => { setAviso(mensaje); enfocarTitulo(); };
+  const hayFiltros = Object.values(filtros).some(Boolean);
 
   const pushStatus = estadoPush(pushPermission, Boolean(pushError));
 
@@ -208,8 +231,12 @@ export function NotificationTray({
       >
         <header className="notification-tray__header">
           <div>
-            <h2 id="notification-tray-title">{t('notificationtray.notificaciones')}</h2>
-            <p>{noLeidas} sin leer de {total}</p>
+            <h2 id="notification-tray-title" tabIndex={-1}>{t('notificationtray.notificaciones')}</h2>
+            {/* 4.1.3 (TC-DIS-289/290): el contador de no leídas se anuncia al cambiar. */}
+            <p role="status">{hayFiltros
+              ? t('notificationtray.resumen_filtrado', { noLeidas, total })
+              : t('notificationtray.resumen', { noLeidas, total })}</p>
+            <Anunciador mensaje={aviso} />
             {onMarkAllAsRead && noLeidas > 0 && !fromCache && (
               <Button type="button" variant="ghost" size="sm" loading={markingAll} onClick={() => void onMarkAllAsRead()}>
                 {t('notificationtray.marcar_todas_leidas')}
@@ -309,22 +336,39 @@ export function NotificationTray({
               <option value="">{t('notificationtray.todos')}</option>
               {MODULOS_NOTIFICACION.map((m) => <option key={m} value={m}>{t(`notificationtray.modulo.${m}`)}</option>)}
             </Select>
+            {/* RF-105 (TC-DIS-291): la bandeja muestra los últimos 90 días; las archivadas se piden aparte. */}
+            <label style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+              <input type="checkbox" checked={Boolean(filtros.incluir_archivadas)}
+                onChange={(e) => onCambiarFiltros({ ...filtros, incluir_archivadas: e.target.checked || undefined })} />
+              {t('notificationtray.incluir_archivadas')}
+            </label>
+            {hayFiltros && (
+              <Button type="button" variant="ghost" size="sm" style={{ gridColumn: '1 / -1', justifySelf: 'start' }}
+                onClick={() => { onCambiarFiltros({}); setAviso(t('notificationtray.filtros_limpios')); }}>
+                <FilterX size={14} aria-hidden />{t('notificationtray.limpiar_filtros')}
+              </Button>
+            )}
           </div>
         )}
 
-        <div className="notification-tray__list" aria-live="polite">
+        {/* Solo el estado vacío es región viva: la lista entera anunciaba cada página que se cargaba. */}
+        <div className="notification-tray__list">
           {loading && notificaciones.length === 0 && (
-            <p className="notification-tray__empty">{t('notificationtray.cargando_notificaciones')}</p>
+            <p className="notification-tray__empty" role="status">{t('notificationtray.cargando_notificaciones')}</p>
           )}
           {!loading && notificaciones.length === 0 && (
-            <div className="notification-tray__empty">
+            <div className="notification-tray__empty" role="status">
               <Bell size={24} aria-hidden />
-              <p>{t('notificationtray.no_tienes_notificaciones')}</p>
+              <p>{t(hayFiltros ? 'notificationtray.ninguna_coincide' : 'notificationtray.no_tienes_notificaciones')}</p>
             </div>
           )}
+          {/* 1.3.1 (TC-DIS-289): las notificaciones son una lista. */}
+          <ul className="notification-tray__lista">
           {notificaciones.map((notificacion) => (
+            <li key={notificacion.id_notificacion}>
             <article
-              key={notificacion.id_notificacion}
+              id={`notificacion-${notificacion.id_notificacion}`}
+              tabIndex={-1}
               className={`notification-tray__item${
                 notificacion.es_leido ? '' : ' notification-tray__item--unread'
               }`}
@@ -344,6 +388,10 @@ export function NotificationTray({
                       </span>
                     );
                   })()}
+                  {/* 1.4.1: «sin leer» se dice en texto, no solo con el punto de color y la negrita. */}
+                  {!notificacion.es_leido && (
+                    <span className="notification-tray__sin-leer"><CircleDot size={12} aria-hidden />{t('notificationtray.sin_leer')}</span>
+                  )}
                   {(notificacion.ocurrencias ?? 1) > 1 && (
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('notificationtray.repeticiones', { cantidad: notificacion.ocurrencias })}</span>
                   )}
@@ -360,7 +408,7 @@ export function NotificationTray({
                     {t('notificationtray.ver_detalle')}
                   </Link>
                 )}
-                <CierreNotificacion notificacion={notificacion} onAtender={onAtender} onDescartar={onDescartar} />
+                <CierreNotificacion notificacion={notificacion} onAtender={onAtender} onDescartar={onDescartar} onResuelta={resuelta} />
               </div>
               {!notificacion.es_leido && (
                 <Button
@@ -369,7 +417,14 @@ export function NotificationTray({
                   size="sm"
                   className="notification-tray__read-button"
                   disabled={marcandoIds.has(notificacion.id_notificacion)}
-                  onClick={() => void onMarkAsRead(notificacion.id_notificacion)}
+                  onClick={async () => {
+                    // 2.4.3: el botón desaparece al marcarla; el foco queda en la notificación (o en el título).
+                    const id = notificacion.id_notificacion;
+                    if (await onMarkAsRead(id)) {
+                      setAviso(t('notificationtray.leida_listo'));
+                      window.setTimeout(() => (document.getElementById(`notificacion-${id}`) ?? document.getElementById('notification-tray-title'))?.focus(), 0);
+                    }
+                  }}
                   aria-label={`Marcar como leída: ${notificacion.mensaje}`}
                   title={t('notificationtray.marcar_como_leida')}
                 >
@@ -377,7 +432,9 @@ export function NotificationTray({
                 </Button>
               )}
             </article>
+            </li>
           ))}
+          </ul>
         </div>
 
         {hasMore && (
@@ -387,7 +444,7 @@ export function NotificationTray({
               variant="ghost"
               size="sm"
               loading={loadingMore}
-              onClick={onLoadMore}
+              onClick={() => { focoTrasCargar.current = notificaciones.length; onLoadMore(); }}
             >{t('notificationtray.mostrar_mas')}</Button>
           </footer>
         )}

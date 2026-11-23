@@ -107,7 +107,10 @@
     "secreto": "Secreto (client_secret)",
     "secreto_guardado": "Ya lo guardé",
     "copiar": "Copiar el secreto",
-    "copiado": "Secreto copiado."
+    "copiado": "Secreto copiado.",
+    "revocado_explicacion": "Revocado de forma definitiva: no se puede reactivar. Si lo necesita, registre uno nuevo.",
+    "canales_ayuda": "Obligatorio: elija al menos uno.",
+    "error_motivo": "Escriba el motivo del cambio (al menos 3 caracteres)."
   },
   "canal": {
     "CONSULTA_AAEF": "Consultar el documento contable",
@@ -185,7 +188,39 @@
     "comprobante_no_disponible": "Aún no disponible",
     "gracia": "Plazo de retiro de la versión anterior (días)",
     "gracia_ayuda": "Mínimo {{min}} días. Si lo dejas vacío se usan {{defecto}}.",
-    "descripcion_campo": "Descripción (opcional)"
+    "descripcion_campo": "Descripción (opcional)",
+    "estandar": "Versión del estándar AAEF: {{version}}. Es la que acepta la contabilidad externa y no cambia con la versión del contrato.",
+    "inconsistente": "Alerta crítica: estado inconsistente del contrato. Hay {{n}} versiones vigentes a la vez ({{versiones}}) y solo puede haber dos.",
+    "inconsistente_detalle": "Mientras se corrige no se puede activar otra versión. Avise al soporte técnico para que retire la que sobra.",
+    "col_retiro": "Retiro",
+    "ver_detalle": "Ver el detalle de la versión {{version}}",
+    "det_identificador": "Identificador",
+    "det_identificador_valor": "Contrato {{version}} (estándar AAEF {{estandar}})",
+    "det_huella": "Huella del anexo",
+    "det_plazo": "Plazo de retiro",
+    "det_plazo_valor": "{{n}} días",
+    "det_sin_plazo": "No aplica (cambio menor)",
+    "det_historial": "Historial",
+    "det_retiro_iniciado": "Retiro iniciado el {{fecha}}",
+    "det_sin_descripcion": "Sin descripción",
+    "retirada_el": "Retirada el {{fecha}}",
+    "quedan_dias_one": "Queda {{count}} día del plazo de retiro",
+    "quedan_dias_other": "Quedan {{count}} días del plazo de retiro",
+    "retirada_explicacion": "Ya no está disponible: una versión retirada no se puede reactivar ni modificar.",
+    "sin_retiro": "Sin retiro programado",
+    "deprecado_listo": "La versión {{version}} quedó en retiro: responde hasta el {{fecha}}.",
+    "deprecar_explicacion": "La versión {{version}} seguirá respondiendo durante el plazo y dejará de estar disponible el {{fecha}}. El retiro no se puede revertir.",
+    "deprecar_confirmar": "Retirar la versión {{version}}",
+    "version_ayuda": "Use el formato mayor.menor, por ejemplo 4.0.",
+    "error_version": "Escriba la versión con el formato mayor.menor, por ejemplo 4.0.",
+    "error_vigencia": "Elija la fecha de vigencia.",
+    "error_mapeadores": "Elija al menos un documento para enviar.",
+    "error_gracia_vacia": "Escriba el plazo de retiro en días.",
+    "error_gracia": "El plazo de retiro debe ser de al menos {{min}} días.",
+    "aviso_plazo": "Apareció el campo «Plazo de retiro de la versión anterior», obligatorio en un cambio mayor (mínimo {{min}} días).",
+    "aviso_sin_plazo": "Un cambio menor no retira la versión anterior: se quitó el campo «Plazo de retiro».",
+    "transformadores_ayuda": "Elija al menos uno.",
+    "gracia_ayuda_requerida": "Obligatorio en un cambio mayor. Mínimo {{min}} días; se sugieren {{defecto}}."
   },
   "estado": {
     "OBSOLETO": "Obsoleto",
@@ -231,7 +266,25 @@
     "paginacion": "Páginas de la auditoría",
     "anterior": "Página anterior",
     "siguiente": "Página siguiente",
-    "pagina": "Página {{pagina}} de {{paginas}} · {{total}} registros"
+    "pagina": "Página {{pagina}} de {{paginas}} · {{total}} registros",
+    "sistema_filtro": "Sistema externo",
+    "ruta_filtro": "Ruta consultada",
+    "encontrados_one": "{{count}} registro encontrado",
+    "encontrados_other": "{{count}} registros encontrados",
+    "exportando": "Generando el archivo {{formato}} de la auditoría…",
+    "exportado": "Archivo {{formato}} listo: se descargó la auditoría.",
+    "alterados_titulo_one": "Alerta crítica: {{count}} registro de la auditoría fue alterado",
+    "alterados_titulo_other": "Alerta crítica: {{count}} registros de la auditoría fueron alterados",
+    "alterados_detalle": "Su huella de integridad ya no coincide con la que se guardó. Revise el evento y avise al responsable de seguridad.",
+    "ver_evento_alterado": "Ver el evento alterado",
+    "detalle_titulo": "Detalle del evento: {{evento}}",
+    "det_identificador": "Identificador del evento",
+    "det_tipo": "Tipo de evento",
+    "det_fecha": "Fecha y hora",
+    "det_ruta": "Ruta consultada",
+    "det_sin_ruta": "Sin ruta (acción dentro del sistema)",
+    "det_huella": "Huella de integridad (SHA-256)",
+    "det_sin_huella": "Sin huella registrada"
   },
   "evento": {
     "PAQUETE_AAEF_CONSULTADO": "AgroFusion consultó el documento contable",
@@ -307,5 +360,6 @@
     "500": "Error interno",
     "503": "Servicio no disponible"
   },
-  "integridad": { "INTEGRO": "Íntegro", "CORRUPTO": "Alterado" }
+  "integridad": { "INTEGRO": "Íntegro", "CORRUPTO": "Alterado" },
+  "ruta": { "consulta": "Consulta del documento contable", "acceso": "Solicitud de acceso del sistema externo", "auditoria": "Consulta de la auditoría" }
 }

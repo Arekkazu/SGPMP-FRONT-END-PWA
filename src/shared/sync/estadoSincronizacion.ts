@@ -1,9 +1,11 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-107 tipo 4: estado global y por módulo de la sincronización |
+// | 2026-11-22 | Arekkazu | INC-M08-394-G031 RF-107: el panel recibe las operaciones en cola y en conflicto |
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { getConflictos, getQueue, SYNC_REPLAY_TERMINADO } from './syncQueue';
+import type { SyncOperation } from '../db/db';
 
 export type EstadoSync = 'SINCRONIZADO' | 'SINCRONIZANDO' | 'OFFLINE' | 'CONFLICTO';
 
@@ -63,10 +65,12 @@ export interface DetalleModulo {
 
 /** Estado global y por módulo: OFFLINE sin red, CONFLICTO si la cola tiene conflictos, SINCRONIZANDO con
  *  peticiones en vuelo u operaciones encoladas que se están enviando; si no, SINCRONIZADO. */
-export function useEstadoSincronizacion(): { estado: EstadoSync; modulos: DetalleModulo[]; desde: number | null } {
+export function useEstadoSincronizacion(): {
+  estado: EstadoSync; modulos: DetalleModulo[]; desde: number | null; operaciones: SyncOperation[];
+} {
   useSyncExternalStore(suscribir, () => version, () => version);
   const online = useOnlineStatus();
-  const [cola, setCola] = useState<{ modulo: string; conflicto?: boolean }[]>([]);
+  const [cola, setCola] = useState<SyncOperation[]>([]);
   const [desde, setDesde] = useState<number | null>(null);
 
   useEffect(() => {
@@ -95,5 +99,5 @@ export function useEstadoSincronizacion(): { estado: EstadoSync; modulos: Detall
   const estado: EstadoSync = !online ? 'OFFLINE'
     : modulos.some((m) => m.conflictos) ? 'CONFLICTO'
       : enCurso > 0 || modulos.some((m) => m.pendientes) ? 'SINCRONIZANDO' : 'SINCRONIZADO';
-  return { estado, modulos, desde };
+  return { estado, modulos, desde, operaciones: cola };
 }

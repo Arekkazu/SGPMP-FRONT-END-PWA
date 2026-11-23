@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-22 | Arekkazu | INC-M08-394-G031 RF-107: al marcar el conflicto se guarda lo que dijo el servidor |
 import { db, type SyncOperation } from '../db/db';
 
 // `sub` del usuario en sesión (en línea u offline), lo fija AuthContext. `enqueue`
@@ -105,6 +108,9 @@ export async function replay(): Promise<void> {
           conflicto: true,
           status,
           error: (e as { message?: string } | null)?.message ?? 'No se pudo sincronizar.',
+          servidor: (e as { backendMessage?: string; message?: string } | null)?.backendMessage
+            ?? (e as { message?: string } | null)?.message,
+          fechaConflicto: Date.now(),
         });
         huboCambios = true;
       }
