@@ -16,11 +16,101 @@
     "violaciones": []
   },
   "linea-marcadores-escritorio": {
-    "fecha": "2026-11-23T05:55:52.576Z",
-    "violaciones": []
+    "fecha": "2026-11-23T21:58:22.605Z",
+    "violaciones": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "tags": [
+          "cat.color",
+          "wcag2aa",
+          "wcag143",
+          "TTv5",
+          "TT13.c",
+          "EN-301-549",
+          "EN-9.1.4.3",
+          "ACT",
+          "RGAAv4",
+          "RGAA-3.2.1"
+        ],
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "help": "Elements must meet minimum color contrast ratio thresholds",
+        "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+        "nodes": [
+          {
+            "any": [
+              {
+                "id": "color-contrast",
+                "data": {
+                  "fgColor": "#1e854c",
+                  "bgColor": "#f8f9f7",
+                  "contrastRatio": 4.4,
+                  "fontSize": "9.8pt (13px)",
+                  "fontWeight": "bold",
+                  "messageKey": null,
+                  "expectedContrastRatio": "4.5:1"
+                },
+                "relatedNodes": [
+                  {
+                    "html": "<div style=\"min-height: 100%; background: var(--surface-bg);\">",
+                    "target": [
+                      "#contenido-principal > div"
+                    ]
+                  }
+                ],
+                "impact": "serious",
+                "message": "Element has insufficient color contrast of 4.4 (foreground color: #1e854c, background color: #f8f9f7, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "serious",
+            "html": "<button id=\"hist-tab-timeline\" role=\"tab\" aria-selected=\"true\" aria-controls=\"hist-panel-timeline\" tabindex=\"0\" style=\"display: inline-flex...\">",
+            "target": [
+              "#hist-tab-timeline"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.4 (foreground color: #1e854c, background color: #f8f9f7, font size: 9.8pt (13px), font weight: bold). Expected contrast ratio of 4.5:1"
+          },
+          {
+            "any": [
+              {
+                "id": "color-contrast",
+                "data": {
+                  "fgColor": "#1e854c",
+                  "bgColor": "#f8f9f7",
+                  "contrastRatio": 4.4,
+                  "fontSize": "9.0pt (12px)",
+                  "fontWeight": "normal",
+                  "messageKey": null,
+                  "expectedContrastRatio": "4.5:1"
+                },
+                "relatedNodes": [
+                  {
+                    "html": "<div style=\"min-height: 100%; background: var(--surface-bg);\">",
+                    "target": [
+                      "#contenido-principal > div"
+                    ]
+                  }
+                ],
+                "impact": "serious",
+                "message": "Element has insufficient color contrast of 4.4 (foreground color: #1e854c, background color: #f8f9f7, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "serious",
+            "html": "<button class=\"ds-btn ds-btn--ghost ds-btn--sm\" aria-busy=\"false\">",
+            "target": [
+              "div:nth-child(5) > .ds-btn--ghost.ds-btn.ds-btn--sm"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.4 (foreground color: #1e854c, background color: #f8f9f7, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
   },
   "linea-oscuro-escritorio": {
-    "fecha": "2026-11-23T05:56:32.817Z",
+    "fecha": "2026-11-23T21:58:49.434Z",
     "violaciones": []
   }
 }
