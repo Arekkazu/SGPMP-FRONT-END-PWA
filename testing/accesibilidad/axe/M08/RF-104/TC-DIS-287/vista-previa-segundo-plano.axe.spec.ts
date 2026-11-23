@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                                     |
 // |------------|-------------|---------------------------------------------------------------------------------|
 // | 2026-11-19 | Laura032005 | TC-DIS-287 RF-104: vista previa, generación en segundo plano y descarga por teclado |
+// | 2026-11-23 | Laura032005 | TC-DIS-287 RF-104: aviso de segundo plano con el texto del RF y «Descargar N partes» con su texto visible (1.5.1) |
 /**
  * TC-DIS-287 — Verificar accesibilidad WCAG 2.1 AA de la vista previa del reporte (primeras 20 filas), del estado
  * de generación en segundo plano y de la descarga
@@ -124,7 +125,7 @@ test.describe('TC-DIS-287 — Vista previa, segundo plano y descarga de reportes
     await elegirReporte(page, tipos[0].valor);
     await llenarFiltrosObligatorios(page);
     await main(page).getByRole('button', { name: 'Ver vista previa' }).click();
-    const aviso = main(page).getByText('Este reporte se generará en segundo plano');
+    const aviso = main(page).getByText(/Este reporte se generará en segundo plano|Tu reporte está siendo generado/).first();
     await expect.soft(aviso, 'No aparece el aviso de generación en segundo plano').toBeVisible({ timeout: 15_000 });
     const exportar = main(page).getByRole('button', { name: /^Exportar en/ });
     await exportar.focus();
@@ -148,7 +149,7 @@ test.describe('TC-DIS-287 — Vista previa, segundo plano y descarga de reportes
       r.fulfill({ status: 200, contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', body: Buffer.from('PK simulado') }));
     anotar(testInfo, 'Datos simulados', 'Reporte listo dividido en 2 partes de 50 MB; cada parte responde con un archivo de prueba.');
     await irReportes(page);
-    const boton = main(page).getByRole('button', { name: /^Descargar el reporte/ });
+    const boton = main(page).getByRole('button', { name: /^Descargar (el reporte|\d+ partes?)/ });
     await expect(boton, 'No aparece "Descargar" en Mis reportes').toBeVisible();
     const fila = (await main(page).locator('tbody tr').first().innerText()).replace(/\s+/g, ' ');
     anotar(testInfo, 'Fila del reporte en partes', `${fila} · botón: "${await boton.getAttribute('aria-label')}" / "${(await boton.innerText()).trim()}"`);
