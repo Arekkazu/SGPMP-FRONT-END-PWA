@@ -2,6 +2,7 @@
 // |------------|-------------|--------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-271 RF-101: formulario de registro y edición de cliente externo   |
 // | 2026-11-22 | Laura032005 | TC-DIS-271 RF-101: el título de la pantalla pasó a «Sistemas externos» (1.5.0-rc.1) |
+// | 2026-11-23 | Laura032005 | TC-DIS-271 RF-101: «Guardar» valida al pulsarlo y el rechazo duplicado necesita fecha de vencimiento y un canal (1.5.1) |
 /**
  * TC-DIS-271 — Verificar accesibilidad WCAG 2.1 AA del formulario de registro y edición de cliente
  * externo (campos obligatorios, validaciones y errores)
@@ -88,6 +89,8 @@ test.describe('TC-DIS-271 — Formulario de registro y edición de cliente exter
     await d.getByLabel(/^La credencial vence el/).fill('');
     await d.getByLabel(/Duración de cada acceso/).fill('70');
     await d.getByLabel(/Duración de cada acceso/).blur();
+    // Desde 1.5.1 «Guardar» queda habilitado y valida al pulsarlo: el error de un grupo sin tocar aparece al intentar guardar.
+    await d.getByRole('button', { name: 'Guardar' }).click();
     await page.waitForTimeout(300);
     await escanear(page, TC_ID, __dirname, 'registro-errores', testInfo, LH);
     const guardar = await d.getByRole('button', { name: 'Guardar' }).isDisabled();
@@ -113,6 +116,10 @@ test.describe('TC-DIS-271 — Formulario de registro y edición de cliente exter
       await d.getByLabel(/^Nombre del sistema/).fill('QA Cliente Activo');
       await d.getByLabel(/^Código interno/).fill('QA_NUEVO');
       await d.getByLabel(/^Identificador del sistema/).fill('qa-nuevo');
+      // La fecha de vencimiento es obligatoria: sin ella el formulario se detiene antes de enviar y el rechazo simulado no llega.
+      await d.getByLabel(/^La credencial vence el/).fill('2027-12-31');
+      // También exige al menos un canal: se marca el primero para que el envío llegue al rechazo simulado.
+      await d.getByRole('group', { name: /Qué puede hacer/i }).getByRole('checkbox').first().check();
       if (ip) await d.getByLabel(/Dirección o red permitida/).fill(ip);
       await d.getByRole('button', { name: 'Guardar' }).click();
       await page.waitForTimeout(800);
