@@ -1,0 +1,29 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › testing/qa_scratch_g022r2/control_tema_oscuro.pw.ts:331:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) (4.4s)
+
+
+  1) [chromium] › testing/qa_scratch_g022r2/control_tema_oscuro.pw.ts:331:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) 
+
+    Error: CP-14
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      537 |
+      538 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+    > 539 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+          |                                                                                                                      ^
+      540 | });
+      541 |
+        at /home/claude/g031r1/fe/testing/qa_scratch_g022r2/control_tema_oscuro.pw.ts:539:118
+
+    Error Context: ../../g022r2/salidas/playwright_control_tema_oscuro_negro/pw-salida/control_tema_oscuro.pw.ts--911d7-vegador-real-CP-11-a-CP-14--chromium/error-context.md
+
+    Error Context: ../../g022r2/salidas/playwright_control_tema_oscuro_negro/pw-salida/control_tema_oscuro.pw.ts--911d7-vegador-real-CP-11-a-CP-14--chromium/error-context.md
+
+  1 failed
+    [chromium] › testing/qa_scratch_g022r2/control_tema_oscuro.pw.ts:331:1 › TC-M08-G022 parte navegador real (CP-11 a CP-14) 

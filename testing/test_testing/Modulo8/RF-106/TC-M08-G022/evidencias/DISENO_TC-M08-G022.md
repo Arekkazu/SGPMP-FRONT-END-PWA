@@ -5,6 +5,7 @@
 | 2026-11-20 | Juan Sebastian Gutierrez | Fase 1 aprobada (diseño de Claude) y Fase 2 v1 (construcción con `PROMPT_CONSTRUCCION_ARGON_G022_v1.md`). Detención en `prueba_herramienta_v1` porque el control `vitest_simulador_conflicto` dio OK falso en CP-07 |
 | 2026-11-20 | Juan Sebastian Gutierrez | v1.1: corrección autorizada en `tc-m08-g022.test.tsx` (CP-07 y CP-08 buscan el total de conflictos fuera del texto de la TVCO). Prueba de la herramienta completa en `prueba_herramienta_v2`: 8 corridas Vitest y 5 corridas Playwright local |
 | 2026-11-21 | Juan Sebastian Gutierrez | Reintento 1 (INC-M08-NN-G022, GitHub #726): Fase 1 y adaptación de la herramienta por Claude (Vitest y Playwright v1.3, runner con 9 + 4 checkpoints). CP-02 pasa a observación OBS-4 (decisión de Sebastian del 2026-11-20) |
+| 2026-11-23 | Juan Sebastian Gutierrez | Reintento 2 (INC-M08-396-G022, GitHub sgpmp-backend 1229): Fase 1 y Fase 2 mínima por Claude. Herramienta v1.3 sin cambios (mismos SHA); solo cambia `-Reintento 2`. Prueba de la herramienta en `evidencias/prueba_herramienta_reintento2/` con el control nuevo `backend_evaluables` |
 
 **Casos:** TC-M08-054 (TVCO y tasa de error), TC-M08-055 (conflictos de retroalimentación: ícono, exclusión en TVCO, tooltip y concordancia) y TC-M08-056 (predicciones pendientes de evaluar con más de 48 h, orden y paginación).
 
@@ -223,3 +224,23 @@ Checkpoints (salvo CP-02), esperados, fuentes y retirados literales de la ronda 
 | Playwright | tema oscuro + conflicto_negro | solo CP-14 FALLA (0 amarillos) |
 
 Ningún control dejó «No alcanzado». La guardia de escrituras no cambió y no se volvió a probar.
+
+## Reintento 2 (2026-11-23): herramienta sin cambios (Claude)
+
+**Motivo.** CP-12 falló en el reintento 1 por un defecto del backend (pendientes filtrados con el criterio de la bandeja de RF-72, `evaluables()` de `655bc00af`). Desarrollo lo corrigió en `f27e4bb4` (sgpmp-backend, PR 1230, «INC-M08-396-G022», Closes 1229): `pendientes()` toma toda inferencia sin retroalimentación con más de 48 h, de cualquier nivel, por nivel y fecha descendentes. Es la misma regla con la que el spec calcula el esperado de CP-12.
+
+**Fase 1 (observado).** Backend `test-JuanSG` HEAD `bf3e5aeb` con el cambio (el revert del PR 1214 no lo toca). Frontend `f10009d5`: `HistorialPredictivoView.tsx` igual que en `488f43f6`; los 12 archivos de `src` del runner con el mismo SHA en el equipo y en el contenedor. TEST (2026-11-23 06:16, Veterinario 159, solo GET): el 885 tiene 24 predicciones, 4 con valoración; el backend y la vista dan 20 pendientes (niveles 0 a 3), los mismos 20 que da la regla; TVCO «25% (4 validadas; 20 excluidas: sin retro)». La más reciente sin valorar es del 2026-10-28, así que la precondición «2 ≤ pendientes ≤ 20» se cumple en el límite.
+
+**Archivos.** Sin cambios: `tc-m08-g022.test.tsx` v1.3 `6EE8FCA9…`, `tc-m08-g022.pw.ts` v1.3 `D26F70D5…`, `playwright.config.ts` `0944565D…`, `unir_reporte_tc_m08_g022.mjs` `EB924789…`, `ejecutar_tc_m08_g022.ps1` `C314309F…`. Checkpoints, esperados, fuentes, retirados y observaciones del reintento 1, literales. Reporte: `resultado_TC-M08-G022_reintento2.json` (`-Reintento 2`).
+
+**Prueba de la herramienta** (contenedor, código de `f10009d5`; detalle en `prueba_herramienta_reintento2/LEEME.txt`):
+
+| Parte | Corrida | Resultado |
+|---|---|---|
+| Vitest | normal ×3 | 9/9, idénticas entre sí y al reintento 1 |
+| Vitest | tvco_solo_porcentaje / conflicto_sin_icono / pendientes_invertidos / siguiente_no_pagina | iguales al reintento 1 (CP-01, 03, 04, 05, 07 y 08 / CP-06 / CP-09 / CP-10) |
+| Playwright | normal ×3 (build local + API simulada) | 4/4, idénticas entre sí; solo POST de sesión |
+| Playwright | backend_tvco, backend_orden, conflicto_negro, sin_title_retro, title_solo_propia, tema oscuro, tema oscuro + conflicto_negro | iguales al reintento 1 |
+| Playwright | **backend_evaluables** (nuevo: la API simulada aplica el filtro de `655bc00af`) | solo CP-12 FALLA: calculados 6, backend 3, vista 3; precondiciones OK |
+
+Ningún control dejó «No alcanzado». El único cambio del arnés es el escenario `backend_evaluables` (`diff_mock_reintento1_vs_reintento2.txt`).

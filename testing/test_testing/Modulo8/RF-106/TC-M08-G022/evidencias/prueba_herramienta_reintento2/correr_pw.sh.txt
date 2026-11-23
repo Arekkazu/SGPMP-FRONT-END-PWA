@@ -1,0 +1,12 @@
+#!/bin/bash
+# uso: correr_pw.sh <nombre_salida> <escenario> <dist>
+set -u
+N=$1; E=$2; DIST=$3; P=4173
+W=/home/claude/g022r2; O=$W/salidas/$N; rm -rf $O; mkdir -p $O
+pkill -f lanzar_mock.mjs 2>/dev/null; sleep 0.5
+(cd $W/mock && MOCK_LOG=$O/mock.log exec node lanzar_mock.mjs $DIST $E $P > $O/mock_stdout.txt 2>&1) &
+MP=$!; sleep 1.5
+grep -q "mock $E en $P" $O/mock_stdout.txt || { echo "MOCK NO ARRANCO: $(head -3 $O/mock_stdout.txt)"; exit 1; }
+cd /home/claude/g031r1/fe && QA_FRONT_URL=http://127.0.0.1:$P/sigab-test/ QA_VET_EMAIL=vet.qa@prueba.invalid QA_VET_PASSWORD=clave-de-prueba STAGING_DIR=$O REINTENTO=2 RUN_ID=prueba-$N QA_CHROME_PATH=/usr/bin/google-chrome TZ=America/Bogota timeout 400 pnpm exec playwright test --config ${PWCONFIG:-testing/test_testing/Modulo8/RF-106/TC-M08-G022/playwright.config.ts} > $O/consola_playwright.txt 2>&1
+echo $? > $O/exit.txt
+kill $MP 2>/dev/null; wait $MP 2>/dev/null; pkill -f lanzar_mock.mjs 2>/dev/null

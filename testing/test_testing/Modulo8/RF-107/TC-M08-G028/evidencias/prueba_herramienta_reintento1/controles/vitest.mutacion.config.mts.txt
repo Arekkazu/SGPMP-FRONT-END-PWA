@@ -1,0 +1,51 @@
+// Controles por mutacion del reintento 1 de TC-M08-G028 (prueba de la herramienta; no es parte de la corrida oficial).
+// Uso: QA_MUTACION=<nombre> pnpm exec vitest run <spec> --config <este archivo>. Reemplazo exacto en memoria (nunca en src\),
+// con CRLF normalizado, guarda «aparece 1 vez» y una linea [QA_MUTACION] por reemplazo aplicado.
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { mergeConfig, type Plugin } from 'vite';
+import base from '../../../../../../vite.config';
+
+const AQUI = dirname(fileURLToPath(import.meta.url));
+const RAIZ = resolve(AQUI, '../../../../../..');
+
+type Mut = { archivo: string; viejo: string; nuevo: string };
+const MUTACIONES: Record<string, Mut[]> = {
+  reversion_sin_irreversible: [{ archivo: 'src/financial_valuation/components/DetalleActivoModal.tsx',
+    viejo: "descripcion={t('valor.revertir_ayuda', { activo: identificador })}",
+    nuevo: "descripcion={'Genera el asiento espejo del reconocimiento.'}" }],
+  reversion_sin_activo: [{ archivo: 'src/financial_valuation/components/DetalleActivoModal.tsx',
+    viejo: "titulo={t('valor.revertir_titulo', { activo: identificador })} descripcion={t('valor.revertir_ayuda', { activo: identificador })}",
+    nuevo: "titulo={t('valor.revertir_titulo', { activo: 'este activo' })} descripcion={t('valor.revertir_ayuda', { activo: 'este activo' })}" }],
+  cierre_no_bloqueante: [{ archivo: 'src/financial_valuation/pages/CierreView.tsx',
+    viejo: "<ModalShell bloqueante title={t('cierre.confirmar_titulo', { periodo: nombrePeriodo(periodo) })}",
+    nuevo: "<ModalShell title={t('cierre.confirmar_titulo', { periodo: nombrePeriodo(periodo) })}" }],
+  operacion_heredada: [{ archivo: 'src/shared/hooks/operacionEnCurso.ts',
+    viejo: "return enCurso.length ? enCurso[enCurso.length - 1] : null;",
+    nuevo: "return 'una operacion de prueba';" }],
+};
+
+function mutacion(): Plugin {
+  const nombre = process.env.QA_MUTACION ?? '';
+  const lista = MUTACIONES[nombre];
+  if (!lista) throw new Error(`QA_MUTACION desconocida: "${nombre}"`);
+  return {
+    name: 'qa-g028-r1-mutacion',
+    enforce: 'pre',
+    transform(code, id) {
+      const ruta = id.replace(/\\/g, '/').split('?')[0];
+      const aplicables = lista.filter((m) => ruta.endsWith(m.archivo));
+      if (!aplicables.length) return null;
+      let c = code.replace(/\r\n/g, '\n');
+      for (const m of aplicables) {
+        const veces = c.split(m.viejo).length - 1;
+        if (veces !== 1) throw new Error(`[QA_MUTACION] ${nombre}: el texto viejo aparece ${veces} veces en ${m.archivo}`);
+        c = c.replace(m.viejo, m.nuevo);
+        console.log(`[QA_MUTACION] ${nombre} aplicado en ${m.archivo}`);
+      }
+      return { code: c, map: null };
+    },
+  };
+}
+
+export default mergeConfig(base, { root: RAIZ, plugins: [mutacion()] });

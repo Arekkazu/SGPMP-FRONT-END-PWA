@@ -1,0 +1,164 @@
+--- /home/claude/g031r1/build/ronda1.test.tsx	2026-11-22 23:15:34.835417158 -0500
++++ /mnt/user-data/outputs/g031r1/r1_tc-m08-g031.test.tsx	2026-11-22 23:18:30.759037689 -0500
+@@ -1,13 +1,15 @@
+ // | Fecha      | Nombre                   | Que se hizo |
+ // |------------|--------------------------|-------------|
+ // | 2026-11-21 | Juan Sebastian Gutierrez | TC-M08-G031 (RF-107, TC-M08-071): estado de sincronizacion y panel por modulo v1 |
++// | 2026-11-22 | Juan Sebastian Gutierrez | v1.1 reintento 1 (INC-M08-394-G031, GitHub 734): ADAPT-1 en CP-09 (cola tras «Ver cola», etiquetas i18n, lista de modulos con datos guardados); OBS-1 y OBS-2 reescritas; OBS-6 a OBS-10 nuevas. Checkpoints, esperados y fuentes literales de la ronda 1 |
+ //
+-// QA SGPMP - Evaluacion (ronda 1). Prueba de componente con Vitest + jsdom, sin red.
++// QA SGPMP - Evaluacion (ronda 1; reintento 1 con v1.1). Prueba de componente con Vitest + jsdom, sin red.
+ // Reporte: JSON propio en STAGING_DIR (resultado_TC-M08-G031[_reintentoN].json). Cada checkpoint arranca en FALLA "No alcanzado".
+ import { writeFileSync, mkdirSync } from 'node:fs';
+ import { join } from 'node:path';
+ import React from 'react';
+ import { act, cleanup, fireEvent, render, within } from '@testing-library/react';
++import { MemoryRouter, Route } from 'react-router-dom';
+ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+ import type { SyncOperation } from '../../../../../src/shared/db/db';
+ 
+@@ -245,6 +247,10 @@
+ let obs3Detalle = 'no medido';
+ let obs4SvgSincronizando = 'no medido';
+ let obs5FilasCp02 = 'no medido';
++let obs6Servidor = 'no medido';
++let obs8Destino = 'no medido';
++let obs9Registro = 'no medido';
++let obs10Fecha = 'no medido';
+ 
+ beforeAll(async () => {
+   await i18n.changeLanguage('es-CO');
+@@ -280,11 +286,16 @@
+     }
+   }
+ 
+-  observaciones.push(`OBS-1: panel en ventana centrada (ModalShell) y no lateral (8.4) — ${obs1Detalle}. Enlazada a INC-M08-NN-G026, defecto 4.`);
+-  observaciones.push('OBS-2: el ícono está en la barra superior (App.tsx:232, AppBar); la «barra inferior» corresponde al Tipo 4 de la Descripción (versión anterior).');
++  observaciones.push(`OBS-1: el panel se abre en ventana centrada y no como panel lateral (8.4: «se despliega un panel lateral») — ${obs1Detalle}. ModalShell admite \`lateral\` desde el arreglo de INC-M08-385-G026 (historial de la sesión), pero EstadoSincronizacion no lo usa. Decisión de la ronda 1: observación.`);
++  observaciones.push('OBS-2: el ícono está en la barra superior (App.tsx:236, prop estado del AppBar); la «barra inferior» corresponde al Tipo 4 de la Descripción (versión anterior).');
+   observaciones.push(`OBS-3: texto/aviso mostrado al pasar a CONFLICTO frente a FA-7 (que la 8.x no nombra) — ${obs3Detalle}.`);
+   observaciones.push(`OBS-4: svg de SINCRONIZANDO="${obs4SvgSincronizando}" (lucide-cloud-cog: engranaje, no reloj). Clases de color por estado: ds-sync--SINCRONIZADO, ds-sync--SINCRONIZANDO, ds-sync--OFFLINE, ds-sync--CONFLICTO (jsdom no aplica CSS).`);
+   observaciones.push(`OBS-5: con solo una petición en vuelo (CP-02), estado por módulo de cada fila — ${obs5FilasCp02}.`);
++  observaciones.push(`OBS-6: CP-10 se mide como en la ronda 1 (valor del servidor = /servidor/i), por decisión de Sebastian del 2026-11-22 (opción B). RF-107 8.4 pide «el valor disponible en el servidor»; la app muestra el mensaje con que el servidor rechazó el envío (syncQueue.ts:111 servidor = backendMessage ?? message; backendMessage solo con 403 y 422, errors.ts:52). Medido con la operación simulada (error «El nombre ya existe.», sin valor del servidor): ${obs6Servidor}.`);
++  observaciones.push('OBS-7: la lista de módulos con datos guardados sale de los intercambios exitosos de la sesión en memoria (estadoSincronizacion.ts ultimoExito; EstadoSincronizacion.tsx conCache = módulos con ultimo), no del caché de IndexedDB (Dexie). Al abrir la app sin red no hay intercambios en la sesión y diría «Este equipo todavía no tiene datos guardados de ningún módulo.» aunque haya datos guardados. Leído del código; no medido en jsdom.');
++  observaciones.push(`OBS-8: «Resolver conflicto» navega a la pantalla del módulo y no a una vista de resolución donde se elija qué versión conservar (8.4: «navega a la vista específica donde el usuario elige manualmente qué versión conservar»). Medido con MemoryRouter: ${obs8Destino}.`);
++  observaciones.push(`OBS-9: en conflicto se identifica el módulo y el tipo de cambio, no el campo o registro (8.4: «el campo o registro en conflicto»); el valor local son hasta 3 valores del payload sin nombre de campo — ${obs9Registro}.`);
++  observaciones.push(`OBS-10: «Conflicto desde» es la hora en que el servidor rechazó el envío (syncQueue.ts:113 fechaConflicto = Date.now()) o, si falta, la de creación de la operación; 8.4 pide «la fecha en que se originó la divergencia» — ${obs10Fecha}.`);
+ 
+   const ok = CPS.filter((c) => c.estado === 'OK').length;
+   const falla = CPS.length - ok;
+@@ -481,6 +492,12 @@
+   });
+ 
+   it('CP-09 Contenido OFFLINE: tiempo transcurrido, acciones encoladas y modulos con cache', async () => {
++    // ADAPT-1 (reintento 1): el arreglo de INC-M08-394-G031 muestra las acciones encoladas traducidas y dentro de
++    // la cola que abre «Ver cola» (8.4: enlace «para revisar las operaciones pendientes de envío»), y nombra los
++    // módulos con datos guardados en vez de la palabra «caché». Se conservan esperado y fuente literales.
++    // Intercambio exitoso de Activos antes de cortar la red (no depende del orden de las pruebas).
++    peticionIniciada();
++    peticionTerminada('/activos-biologicos/885', true);
+     mockGetQueue.mockResolvedValue(OPS_OFFLINE_ACTIVOS);
+     render(<EstadoSincronizacion />);
+     await esperarEstable();
+@@ -492,16 +509,47 @@
+     const panel = await abrirYLeerPanel();
+     const txt = panel.textoCompleto;
+     const tieneTiempo = /\b\d+\s*(s|seg|segundos?|min|minutos?|h|horas?)\b/i.test(txt);
+-    const tieneEv = txt.includes('registrar_evento');
+-    const tieneCrec = txt.includes('registrar_crecimiento');
++
++    // (iii) módulos con caché: un elemento del diálogo, fuera de la tabla, que habla de caché o de datos guardados
++    // y nombra el módulo con el intercambio sembrado.
++    const dlg = document.querySelector('[role="dialog"]') as HTMLElement | null;
++    const fueraDeTabla = dlg
++      ? (Array.from(dlg.querySelectorAll('p, li, div')) as HTMLElement[])
++        .filter((el) => !el.closest('table') && el.children.length === 0)
++        .map((el) => norm(el.textContent))
++      : [];
++    const lineaCache = fueraDeTabla.find((t) => /cach[eé]|datos guardados en este equipo/i.test(t)) ?? '(ninguna)';
++    const tieneCache = /cach[eé]|datos guardados en este equipo/i.test(lineaCache) && lineaCache.includes('Activos biológicos');
++
++    // (ii) acciones encoladas: la acción de la fila de Activos (Ver cola) y la lista que despliega.
++    const filaActivos = panel.filas.find((f) => f.modulo === 'Activos biológicos');
++    const ctrlCola = filaActivos?.accionTd?.querySelector('button, a') as HTMLElement | null ?? null;
++    let txtCola = txt;
++    let ctrlTexto = '(sin control en la fila de Activos)';
++    if (ctrlCola) {
++      ctrlTexto = norm(ctrlCola.textContent);
++      await act(async () => {
++        fireEvent.click(ctrlCola);
++        await Promise.resolve();
++      });
++      txtCola = norm((document.querySelector('[role="dialog"]') as HTMLElement | null)?.textContent);
++    }
++    const etiqueta = (clave: string): string => {
++      const v = i18n.t(`common:sincronizacion.operacion.${clave}`);
++      return v && !v.includes('sincronizacion.operacion') ? v : clave;
++    };
++    const etqEv = etiqueta('registrar_evento');
++    const etqCrec = etiqueta('registrar_crecimiento');
++    const tieneEv = txtCola.includes('registrar_evento') || txtCola.includes(etqEv);
++    const tieneCrec = txtCola.includes('registrar_crecimiento') || txtCola.includes(etqCrec);
+     const tieneAcciones = tieneEv && tieneCrec;
+-    const tieneCache = /cach[eé]/i.test(txt);
+ 
+     const ok = tieneTiempo && tieneAcciones && tieneCache;
+     anotar(
+       'CP-09',
+       ok,
+-      `tiempo=${tieneTiempo}; acciones(registrar_evento=${tieneEv}, registrar_crecimiento=${tieneCrec}); cache=${tieneCache}; texto="${txt}"`,
++      `tiempo=${tieneTiempo}; acciones(registrar_evento=${tieneEv} [«${etqEv}»], registrar_crecimiento=${tieneCrec} [«${etqCrec}»], control="${ctrlTexto}"); `
++      + `cache=${tieneCache} [linea="${lineaCache}"]; texto="${txt}"; texto_tras_control="${txtCola}"`,
+     );
+     expect(ok).toBe(true);
+   });
+@@ -515,6 +563,15 @@
+     const tieneLocal = txt.includes('Lote QA 1');
+     const tieneServidor = /servidor/i.test(txt);
+     const tieneFecha = /\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/.test(txt);
++    const dlgC = document.querySelector('[role="dialog"]') as HTMLElement | null;
++    const hojas = dlgC
++      ? (Array.from(dlgC.querySelectorAll('li, div, strong, p')) as HTMLElement[])
++        .filter((el) => !el.closest('table') && el.children.length === 0).map((el) => norm(el.textContent))
++      : [];
++    const lineaServ = hojas.find((t) => /servidor/i.test(t) && !/cambiaron en el servidor/i.test(t)) ?? '(ninguna fuera de la descripción)';
++    obs6Servidor = `línea="${lineaServ}"; igual al error de la operación=${lineaServ.includes(OP_CONFLICTO.error ?? '§')}`;
++    obs9Registro = `líneas=[${hojas.filter((t) => /Lote QA 1|Activos biológicos:/.test(t)).map((t) => `«${t}»`).join(', ')}]`;
++    obs10Fecha = `línea="${hojas.find((t) => /desde/i.test(t)) ?? '(ninguna)'}"; creadoEn=2026-11-21 14:30 (Bogotá), sin fechaConflicto`;
+ 
+     const ok = tieneLocal && tieneServidor && tieneFecha;
+     anotar(
+@@ -525,6 +582,33 @@
+     expect(ok).toBe(true);
+   });
+ 
++  it('OBS-8 destino de «Resolver conflicto» (observacion, sin aserciones)', async () => {
++    mockGetConflictos.mockResolvedValue([OP_CONFLICTO]);
++    let ruta = '(sin leer)';
++    try {
++      render(
++        <MemoryRouter initialEntries={['/inicio']}>
++          <EstadoSincronizacion />
++          <Route render={({ location }) => { ruta = location.pathname; return null; }} />
++        </MemoryRouter>,
++      );
++      await esperarEstable();
++      const panel = await abrirYLeerPanel();
++      const fila = panel.filas.find((f) => f.modulo === 'Activos biológicos');
++      const btn = fila?.accionTd?.querySelector('button, a') as HTMLElement | null ?? null;
++      if (btn) {
++        await act(async () => {
++          fireEvent.click(btn);
++          await Promise.resolve();
++        });
++      }
++      const dialogo = document.querySelector('[role="dialog"]') ? 'abierto' : 'cerrado';
++      obs8Destino = `control="${btn ? norm(btn.textContent) : '(ninguno)'}"; ruta: /inicio -> ${ruta}; diálogo ${dialogo}`;
++    } catch (e) {
++      obs8Destino = `no medido (${(e as Error).message})`;
++    }
++  });
++
+   it('CP-11 SINCRONIZANDO por modulo: 3 operaciones en cola para suministros', async () => {
+     mockGetQueue.mockResolvedValue(OPS_SUMINISTROS_3);
+     render(<EstadoSincronizacion />);

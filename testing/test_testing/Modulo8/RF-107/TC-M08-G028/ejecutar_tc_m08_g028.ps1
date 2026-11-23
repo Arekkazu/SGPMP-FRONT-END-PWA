@@ -1,6 +1,7 @@
 # | Fecha      | Nombre                   | Que se hizo |
 # |------------|--------------------------|-------------|
 # | 2026-11-21 | Juan Sebastian Gutierrez | Runner de TC-M08-G028 (RF-107, TC-M08-068 y TC-M08-069): Vitest en staging, JSON propio, sin tocar resultados\, escaneo al final con reescaneo. Base: runner de G027 |
+# | 2026-11-23 | Juan Sebastian Gutierrez | Reintento 1 (INC-M08-393-G028): 12 checkpoints con lista explicita de ids; operacionEnCurso.ts en la lista de SHA; estado de src sin finales de linea (git diff --ignore-cr-at-eol --numstat) |
 #
 # Uso (desde la carpeta del caso, PowerShell 5.1):
 #   .\ejecutar_tc_m08_g028.ps1                (ronda 1)
@@ -11,14 +12,15 @@
 #
 # Codigos de salida:
 #   0 todos los checkpoints OK | 1 hay checkpoints FALLA (corrida valida) | 2 configuracion o precondicion local
-#   3 corrida invalida (JSON ausente, checkpoints distintos de 13, checkpoint no alcanzado, precondicion del spec
+#   3 corrida invalida (JSON ausente, checkpoints distintos de los 12 del diseno, checkpoint no alcanzado, precondicion del spec
 #     falsa o exit de Vitest incoherente) | 4 hallazgos en el escaneo de secretos | 6 resultados\ cambio durante la corrida
 param(
   [int]$Reintento = 0
 )
 $ErrorActionPreference = 'Stop'
 $tc = 'TC-M08-G028'
-$checkpointsEsperados = 13
+$checkpointsEsperados = 12
+$idsEsperados = @('CP-01', 'CP-02', 'CP-03', 'CP-04', 'CP-05', 'CP-06', 'CP-08', 'CP-09', 'CP-10', 'CP-11', 'CP-12', 'CP-13')
 $raiz = $PSScriptRoot
 $front = (Resolve-Path (Join-Path $raiz '..\..\..\..\..')).Path
 $spec = Join-Path $raiz 'tc-m08-g028.test.tsx'
@@ -68,6 +70,7 @@ $shaRunner = (Get-FileHash -Algorithm SHA256 -Path $runner).Hash
 $fuentes = @(
   'src\shared\design-system\ModalShell.tsx',
   'src\shared\hooks\useModalA11y.ts',
+  'src\shared\hooks\operacionEnCurso.ts',
   'src\shared\design-system\Button.tsx',
   'src\supplies\components\MotivoModal.tsx',
   'src\biological_assets\components\EventosSection.tsx',
@@ -101,8 +104,8 @@ if ($git) {
   try {
     $ErrorActionPreference = 'Continue'
     $gitHead = (& git rev-parse HEAD 2>$null | Out-String).Trim()
-    $cambios = @(& git status --porcelain -- src 2>$null)
-    $gitSrc = if ($cambios.Count -eq 0) { 'src sin cambios locales' } else { "src con $($cambios.Count) cambio(s) locales: " + ($cambios -join '; ') }
+    $cambios = @(& git diff --ignore-cr-at-eol --numstat HEAD -- src 2>$null | Where-Object { $_ })
+    $gitSrc = if ($cambios.Count -eq 0) { 'src sin cambios locales (sin contar finales de linea)' } else { "src con $($cambios.Count) cambio(s) locales (sin contar finales de linea): " + ($cambios -join '; ') }
   } finally {
     $ErrorActionPreference = 'Stop'
     Pop-Location
@@ -144,9 +147,11 @@ if (-not (Test-Path $jsonRes)) {
   $cps = @($rep.checkpoints)
   if ($cps.Count -ne $checkpointsEsperados) { $invalida.Add("checkpoints = $($cps.Count), se esperaban $checkpointsEsperados") }
   $pasos = @($cps | ForEach-Object { $_.paso })
-  for ($i = 1; $i -le $checkpointsEsperados; $i++) {
-    $id = 'CP-{0:D2}' -f $i
+  foreach ($id in $idsEsperados) {
     if (@($pasos | Where-Object { $_ -eq $id }).Count -ne 1) { $invalida.Add("$id ausente o repetido") }
+  }
+  foreach ($p in $pasos) {
+    if ($idsEsperados -notcontains $p) { $invalida.Add("checkpoint no esperado: $p") }
   }
   foreach ($c in $cps) {
     if (@('OK', 'FALLA') -notcontains $c.estado) { $invalida.Add("$($c.paso) con estado '$($c.estado)'") }

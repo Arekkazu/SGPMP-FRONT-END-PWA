@@ -1,0 +1,49 @@
+// Controles por mutacion del reintento 1 de TC-M08-G025 (prueba de la herramienta; no es parte de la corrida oficial).
+// Uso: QA_MUTACION=<nombre> pnpm exec vitest run <spec> --config <este archivo>. Reemplazo exacto en memoria (nunca en src\),
+// con CRLF normalizado, guarda «aparece 1 vez» y una linea [QA_MUTACION] por reemplazo aplicado.
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { mergeConfig, type Plugin } from 'vite';
+import base from '../../../../../../vite.config';
+
+const AQUI = dirname(fileURLToPath(import.meta.url));
+const RAIZ = resolve(AQUI, '../../../../../..');
+
+type Mut = { archivo: string; viejo: string; nuevo: string };
+const MUTACIONES: Record<string, Mut[]> = {
+  registro_sin_valor: [{ archivo: 'src/biological_assets/hooks/useActivos.ts',
+    viejo: "pushToast('success', nuevo.costo_adquisicion != null && Number.isFinite(costo)",
+    nuevo: "pushToast('success', false && Number.isFinite(costo)" }],
+  cierre_con_comprobantes: [{ archivo: 'src/financial_valuation/pages/CierreView.tsx',
+    viejo: "t('cierre.cerrado_plantilla', { periodo: nombrePeriodo(periodo), count: r.activos_procesados })",
+    nuevo: "t('cierre.cerrado_plantilla', { periodo: nombrePeriodo(periodo), count: r.comprobantes.length })" }],
+  exito_sin_check: [{ archivo: 'src/shared/design-system/Alert.tsx',
+    viejo: 'success: <CheckCircle size={16} aria-hidden />,', nuevo: 'success: <Info size={16} aria-hidden />,' }],
+  exito_rol_alert: [{ archivo: 'src/shared/design-system/Alert.tsx',
+    viejo: "role={variant === 'success' ? 'status' : 'alert'}", nuevo: "role={'alert'}" }],
+};
+
+function mutacion(): Plugin {
+  const nombre = process.env.QA_MUTACION ?? '';
+  const lista = MUTACIONES[nombre];
+  if (!lista) throw new Error(`QA_MUTACION desconocida: "${nombre}"`);
+  return {
+    name: 'qa-g025-r1-mutacion',
+    enforce: 'pre',
+    transform(code, id) {
+      const ruta = id.replace(/\\/g, '/').split('?')[0];
+      const aplicables = lista.filter((m) => ruta.endsWith(m.archivo));
+      if (!aplicables.length) return null;
+      let c = code.replace(/\r\n/g, '\n');
+      for (const m of aplicables) {
+        const veces = c.split(m.viejo).length - 1;
+        if (veces !== 1) throw new Error(`[QA_MUTACION] ${nombre}: el texto viejo aparece ${veces} veces en ${m.archivo}`);
+        c = c.replace(m.viejo, m.nuevo);
+        console.log(`[QA_MUTACION] ${nombre} aplicado en ${m.archivo}`);
+      }
+      return { code: c, map: null };
+    },
+  };
+}
+
+export default mergeConfig(base, { root: RAIZ, plugins: [mutacion()] });

@@ -1,0 +1,29 @@
+"""Builds de control (Playwright G022, reintento 2; copia del de reintento 1 con rutas del contenedor): mutan la COPIA de la vista en modo binario, construyen y restauran."""
+import os, subprocess
+
+FE = '/home/claude/g031r1/fe'
+VISTA = os.path.join(FE, 'src/prediction/pages/HistorialPredictivoView.tsx')
+MUT = {
+    # el icono de conflicto vuelve al negro sin borde (como en la ronda 1)
+    'conflicto_negro': [(b"fill={conflicto ? AMARILLO : 'var(--text-primary)'} stroke={conflicto ? 'var(--sem-warning)' : undefined}",
+                         b"fill={conflicto ? '#000000' : 'var(--text-primary)'} stroke={undefined}")],
+    # sin <title> en las valoraciones
+    'sin_title_retro': [(b"{p.payload && <title>{tituloRetro(p.payload)}</title>}", b"{null}")],
+    # el <title> solo lista la valoracion propia (como el tooltip de la ronda 1)
+    'title_solo_propia': [(b".filter((r) => r.id_resultado_inferencia === m.id_resultado_inferencia)",
+                           b".filter((r) => r.id_resultado_inferencia === m.id_resultado_inferencia && r.veterinario === m.veterinario && r.valoracion === m.valoracion)")],
+}
+original = open(VISTA, 'rb').read()
+for nombre, reemplazos in MUT.items():
+    mut = original
+    for viejo, nuevo in reemplazos:
+        assert mut.count(viejo) == 1, (nombre, viejo)
+        mut = mut.replace(viejo, nuevo)
+    try:
+        open(VISTA, 'wb').write(mut)
+        env = dict(os.environ, VITE_BASE_PATH='/sigab-test/', VITE_API_BASE_URL='http://127.0.0.1:4173/sigab-test/api')
+        p = subprocess.run(['pnpm', 'exec', 'vite', 'build', '--outDir', f'/home/claude/g022r2/build_{nombre}'], cwd=FE, env=env,
+                           capture_output=True, text=True, timeout=500)
+        print(nombre, 'build_exit', p.returncode)
+    finally:
+        open(VISTA, 'wb').write(original)

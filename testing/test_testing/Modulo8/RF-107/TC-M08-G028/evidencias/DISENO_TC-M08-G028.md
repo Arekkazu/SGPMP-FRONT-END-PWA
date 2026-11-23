@@ -151,3 +151,35 @@ Ninguna.
 - `src\shared\i18n\locales\es-CO\supplies.json`: `C279268B1929836F49EB7A0FF1D85C731F2C8532AC9ECEA9FAAA3A64B1CEC914`
 - `src\shared\i18n\locales\es-CO\common.json`: `81E2B962499A555DD7EEE4DB360A610AF13DD8D91E24D2E542B8AD5A8056EA59`
 - `src\shared\i18n\locales\es-CO\reportes.json`: `74A06B5AB5A8FC3B606333F407EB86A9D19CE20A05E25103EE4DC7205FAFE0CA`
+
+
+## Reintento 1 (2026-11-23, INC-M08-393-G028, GitHub 731)
+
+| Fecha | Autor | Qué se hizo |
+|---|---|---|
+| 2026-11-23 | Juan Sebastian Gutierrez | Fase 1 y 2 del reintento 1: spec v1.1 (12 checkpoints, ADAPT-1, P7, OBS-6 reescrita) y runner con lista explícita de ids; prueba de la herramienta en `prueba_herramienta_reintento1/` |
+
+**Respaldo de la ronda 1:** `fuentes_generador/ronda1/*.txt` (spec `A335957C…`, runner `87EF71A9…`, DISENO `1E394C5A…`) y `$HOME/respaldo_g028_ronda1/` de la VM.
+
+**Código observado:** frontend `test-JuanSG` HEAD `f10009d5` (`src` sin cambios salvo finales de línea). `ac134ec1` (INC-M08-393-G028, PR 732): `valor.revertir_titulo` = «Revertir el reconocimiento inicial de {{activo}}» y `valor.revertir_ayuda` = «La reversión del reconocimiento de {{activo}} es definitiva: no se puede deshacer…» (`finanzas.json`:462-463; `DetalleActivoModal.tsx`:54). `b370f754` (PR 723): `useModalA11y` lee la opción `escape` de un `ref` (`useModalA11y.ts`:61-62 y :75). Desde la ronda 1, `ModalShell` no abre un diálogo crítico con una operación en curso (`operacionEnCurso.ts`, G027).
+
+**Checkpoints del reintento 1 (12):** CP-01 a CP-06 y CP-08 a CP-13, con el esperado y la fuente de la ronda 1.
+
+**Spec v1.1:**
+- **ADAPT-1:** el diálogo de la reversión se reconocía por su título exacto `valor.revertir_titulo` sin parámetros; desde `ac134ec1` el título lleva el activo y la búsqueda no lo encontraba (con el spec de la ronda 1 sin cambios, la reversión daba «sin diálogo» en CP-02 y CP-09 a CP-13). Ahora se reconoce por la parte fija de la plantilla con cualquier activo, para que CP-09 siga midiendo si el diálogo nombra el activo. Controles: `reversion_sin_activo` (título y descripción sin el activo → solo CP-09 FALLA, «nombra=no») y `reversion_sin_irreversible` (solo CP-09 FALLA); la corrida normal da OK.
+- **P7 (nueva):** al empezar cada prueba `operacionEnCurso()` debe ser `null` (lección de G026); si no, todo FALLA por precondición. Control `operacion_heredada` → P7 falsa.
+- **OBS-6 reescrita:** el Escape en «Confirma la baja» es el defecto 2 de INC-M08-384-G025, corregido en `b370f754`; medido en el reintento: «sigue abierto, 0 POST».
+
+**Runner:** 12 ids explícitos (rechaza ids de más o de menos); `operacionEnCurso.ts` en la lista de SHA; estado de `src` con `git diff --ignore-cr-at-eol --numstat`; el escaneo ya iba al final.
+
+**Prueba de la herramienta** (contenedor, `src` de `f10009d5`; config único `controles/vitest.mutacion.config.mts.txt` con `QA_MUTACION`, reemplazo exacto y `[QA_MUTACION] … aplicado` en cada consola):
+
+| Corrida | OK / 12 | FALLA | Previsto |
+|---|---:|---|---|
+| `normal_1` a `normal_3` | 12 | — | Sí, idénticas salvo fecha y run_id; OBS-6 «sigue abierto, 0 POST» |
+| `control_reversion_sin_irreversible` | 11 | CP-09 | Sí |
+| `control_reversion_sin_activo` | 11 | CP-09 (nombra=no) | Sí |
+| `control_cierre_no_bloqueante` | 9 | CP-10, CP-11, CP-12 | Sí |
+| `control_operacion_heredada` | 0 | todos, por P7 falsa | Sí |
+
+Ningún «No alcanzado».

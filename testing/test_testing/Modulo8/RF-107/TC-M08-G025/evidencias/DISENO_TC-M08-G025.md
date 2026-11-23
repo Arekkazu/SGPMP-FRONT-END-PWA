@@ -139,3 +139,42 @@ El código de `src/` no se modifica.
 **Tipos:** `tsc` sobre el spec con el `tsconfig` del proyecto no da errores propios. Solo faltan los tipos de Node (`@types/node` no está en el proyecto), y eso no afecta a Vitest.
 
 **PowerShell:** no se pudo ejecutar aquí. El agente valida el runner con `Parser::ParseFile` (0 errores) antes de correrlo.
+
+
+## Reintento 1 (2026-11-22, INC-M08-384-G025, GitHub 705)
+
+| Fecha | Autor | Qué se hizo |
+|---|---|---|
+| 2026-11-22 | Juan Sebastian Gutierrez | Fase 1 y 2 del reintento 1: spec v1.1 (CP-03 sin role=alert por decisión de Sebastian; observaciones reescritas y nuevas) y runner con el escaneo al final; prueba de la herramienta en `prueba_herramienta_reintento1/` |
+
+**Respaldo de la ronda 1:** `fuentes_generador/ronda1/*.txt` y `$HOME/respaldo_g025_ronda1/` de la VM: spec `D4D2AE4B…`, runner `9DB42590…`, DISENO `3F12B3DA…` (SHA verificado en el equipo).
+
+**Cambio de Desarrollo (observado).** Commit `0f42adbb` («INC-M08-384-G025… Closes #705»), PR #766; frontend HEAD `f10009d5`, `src` sin cambios salvo finales de línea.
+- `useActivos.ts`: `pushToast('success', …)` con `exito.activo_registrado_valor` (identificador y monto `Intl.NumberFormat('es-CO')`); sin `costo_adquisicion` usa `exito.activo_registrado`.
+- `CierreView.tsx`: título `cierre.cerrado_plantilla` con `activos_procesados`; detalle «N/Total activos procesados. Se generaron N comprobantes.» (TC-DIS-294).
+- Defecto 2 (Escape en «Confirma la baja»): `b370f754` (#723); `useModalA11y.ts`:61-62 y :75 leen `escape` de `permiteEscapeRef`; prueba `useModalA11y.test.tsx`:70 (TC-DIS-293). No es checkpoint de G025: se reverifica en G028/G029 (OBS-6 de G028).
+- Fuera del INC: `bd1b0f5f` (A11Y2-M08 TC-DIS-292) cambió el éxito a `role="status"` (`Alert.tsx`:71).
+- TEST `index-BsxWgc0X.js`: «Valor inicial reconocido», `activo_registrado_valor`, `cerrado_plantilla_other` y `role: success ? "status" : "alert"` (fetch sin caché ni sesión).
+
+**Spec de la ronda 1 sin cambios:** 10/11. CP-01 y CP-02 pasan a OK; CP-03 pasa de OK a FALLA por `role="status"`.
+
+**Decisión de Sebastian (2026-11-22, opción A):** el `role=alert` del esperado de CP-03 no tiene fuente (RF-107 Tipo 1, Apariencia: «banner verde en la parte superior de la pantalla con ícono de check»; RNF-05: WCAG 2.1 AA). CP-03 mide variante verde e ícono de check; el rol medido queda en OBS-rol.
+
+**Spec v1.1:** CP-03 sin el rol en el esperado ni en la medición (el obtenido sigue mostrando el rol); OBS-rol, OBS-cierre-detalle y OBS-sin-costo nuevas (esta última medida en una prueba sin aserciones con `costo_adquisicion` null); OBS-CA01 reescrita (la posición se midió en G026 CP-22) y OBS-alcance con `HistorialPredictivoView.tsx`:190. El resto, literal. Vitest: 15 pruebas, 11 checkpoints.
+
+**Runner del reintento 1:** mismos 11 checkpoints; resumen y RUN_INVALIDA antes del escaneo; escaneo recursivo con reescaneo del propio escaneo (corrige la nota de la ronda 1); `ModalShell`, `useModalA11y`, `operacionEnCurso` y los JSON de es-CO en la lista de SHA; estado de `src` con `git diff --ignore-cr-at-eol --numstat`.
+
+**Prueba de la herramienta** (contenedor, `fe_src.tgz` `74DB706B…` de HEAD `f10009d5`):
+
+| Corrida | OK / 11 | FALLA | Previsto |
+|---|---:|---|---|
+| `ronda1_sin_cambios` (v1) | 10 | CP-03 (role="status") | Sí |
+| `normal_1` a `normal_3` (v1.1) | 11 | — | Sí, idénticas salvo fecha y run_id |
+| `control_registro_sin_valor` | 10 | CP-01 | Sí |
+| `control_cierre_con_comprobantes` | 10 | CP-02 («3 activos fueron revaluados») | Sí |
+| `control_exito_sin_check` | 10 | CP-03 (`lucide-info`) | Sí |
+| `control_exito_rol_alert` | 11 | — (OBS-rol registra «alert») | Sí: el rol ya no cuenta |
+
+Config único `controles/vitest.mutacion.config.mts.txt` (`QA_MUTACION`, reemplazo exacto, CRLF normalizado, `[QA_MUTACION] … aplicado` en las 4 consolas). Ningún «No alcanzado».
+
+**Hallazgo:** el registro de promoción de la ronda 1 (`evidencias/PROMOCION_TC-M08-G025.txt`), citado en el estado, no existe en el equipo; el reporte promovido sí (`DA4111E5…`).

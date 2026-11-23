@@ -1,0 +1,126 @@
+{
+  "tc": "TC-M08-G025",
+  "reintento": 1,
+  "run_id": "qa-m08-g025-20261122-234842",
+  "fecha": "2026-11-23T04:48:51.289Z",
+  "summary": {
+    "total": 11,
+    "ok": 11,
+    "falla": 0,
+    "veredicto": "Aprobado"
+  },
+  "precondiciones": [
+    {
+      "nombre": "Linea de HistorialPredictivoView.tsx que muestra el error",
+      "ok": true,
+      "detalle": "pushToast('error', t('historialpredictivo.no_exporto'), err.message, { accion: err.accion });"
+    },
+    {
+      "nombre": "ToastHost navega con history.push a /<ruta_accion>",
+      "ok": true,
+      "detalle": "history.push(`/${x.accion!.ruta}`)"
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "caso": "TC-M08-061 a",
+      "esperado": "Banner de exito con el texto \"El activo BOV-2024-001 fue registrado correctamente. Valor inicial reconocido: $1.639.000 COP.\"",
+      "fuente": "RF-107 seccion 8.5 (EXITOSO, plantilla fija REGISTRO_ACTIVO); Tipo 1 (ejemplo); CA-09",
+      "obtenido": "1 banner(s) de exito; texto: \"El activo BOV-2024-001 fue registrado correctamente. Valor inicial reconocido: $1.639.000 COP.\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "caso": "TC-M08-061 b",
+      "esperado": "Banner de exito con el texto \"El periodo [periodo] fue cerrado correctamente. 120 activos fueron revaluados.\" (N = activos_procesados de la respuesta del cierre)",
+      "fuente": "RF-107 seccion 8.5 (EXITOSO, plantilla fija CIERRE_PERIODO); CA-09",
+      "obtenido": "1 banner(s) de exito; texto: \"El período Octubre de 2026 fue cerrado correctamente. 120 activos fueron revaluados. 120/120 activos procesados. Se generaron 3 comprobantes.\" (periodo mostrado por la app: \"Octubre de 2026\"; activos_procesados=120; comprobantes=3)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "caso": "TC-M08-061",
+      "esperado": "El aviso de exito es un banner verde (variante success) con icono de check (sin role=alert: decision de Sebastian del 2026-11-22, opcion A; RF-107 Tipo 1 no define el rol; ver OBS-rol)",
+      "fuente": "RF-107 Tipo 1 (Apariencia)",
+      "obtenido": "clase=\"ds-alert ds-alert--success\"; icono=\"lucide lucide-circle-check-big\"; role=\"status\" (no cuenta, ver OBS-rol)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "caso": "TC-M08-061 (valor limite)",
+      "esperado": "Visible a los 4,999 s y oculto a los 5,000 s",
+      "fuente": "RF-107 Tipo 1 (Duracion 5 s); seccion 8.2 nivel 4",
+      "obtenido": "banners de exito: t=0 s -> 1; t=4,999 s -> 1; t=5,000 s -> 0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "caso": "TC-M08-061 c",
+      "esperado": "A los 2 s el usuario lo cierra con el boton de cierre y el banner desaparece",
+      "fuente": "RF-107 Tipo 1 (\"El usuario puede cerrarlo antes\")",
+      "obtenido": "t=2 s: 1 banner(s); boton de cierre \"Cerrar alerta\"; tras pulsarlo: 0 banner(s)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "caso": "TC-M08-061 d",
+      "esperado": "Un segundo exito a los 3 s deja un solo banner, con el mensaje nuevo; el temporizador se reinicia: visible a los 7,999 s y oculto a los 8,000 s",
+      "fuente": "RF-107 seccion 8.3 (regla de unicidad para mensajes de exito); seccion 8.2 nivel 4",
+      "obtenido": "t=3 s (tras el 2.o exito): 1 banner(s) [\"El activo BOV-2024-002 fue registrado correctamente. Valor inicial reconocido: $1.639.000 COP.\"]; t=7,999 s: 1 banner(s) \"El activo BOV-2024-002 fue registrado correctamente. Valor inicial reconocido: $1.639.000 COP.\"; t=8,000 s: 0 banner(s)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "caso": "TC-M08-062 a",
+      "esperado": "PERIODO_NO_CERRADO: banner rojo (variante error) con icono de error, el texto del catalogo \"Este reporte solo se genera sobre periodos contables cerrados.\" (no el del servidor) y el boton \"Ir al cierre de periodo\" que navega a /finanzas",
+      "fuente": "RF-107 seccion 8.5 (FALLIDO: texto y boton del catalogo de M09); Tipo 2; catalogo sembrado (migracion a7c3e91f5b20); v7 (el catalogo tiene prioridad sobre el texto del servidor)",
+      "obtenido": "1 banner(s) de error; clase=\"ds-alert ds-alert--error\"; icono=\"lucide lucide-circle-x\"; texto=\"No se pudo exportar el historial Este reporte solo se genera sobre períodos contables cerrados.\"; boton=\"Ir al cierre de período\"; ruta tras pulsar=\"/finanzas\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08",
+      "caso": "TC-M08-062 b",
+      "esperado": "OPERACION_DUPLICADA: el texto del catalogo \"Esta operacion ya esta en curso o fue ejecutada recientemente.\" y ningun boton de accion",
+      "fuente": "RF-107 seccion 8.5 (boton solo si hay accion definida); catalogo sembrado (migracion a7c3e91f5b20)",
+      "obtenido": "1 banner(s) de error; texto=\"No se pudo exportar el historial Esta operación ya está en curso o fue ejecutada recientemente.\"; botones de accion=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-09",
+      "caso": "TC-M08-062 c",
+      "esperado": "Clave fuera del catalogo (PERIODOS_FUERA_DE_ORDEN): el texto en lenguaje natural del servidor \"El periodo de comparacion debe ser anterior al periodo base.\", sin la clave cruda ni codigo HTTP, y sin boton",
+      "fuente": "Decision de QA: criterio de Desarrollo (v7 y catalogoErrores.ts: fuera del catalogo se usa el texto del servidor); RF-107 Restriccion 1 y CA-02",
+      "obtenido": "1 banner(s) de error; texto=\"No se pudo exportar el historial El período de comparación debe ser anterior al período base.\"; botones de accion=0; revision de terminos tecnicos: ninguno",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-10",
+      "caso": "TC-M08-062 e",
+      "esperado": "Con 422, 404, 409 y 500 (cuerpo real del backend) cada banner tiene texto en lenguaje natural y ninguno muestra solo el codigo HTTP, un termino tecnico, la clave cruda ni \"[object Object]\"",
+      "fuente": "RF-107 Restriccion 1; CA-02; Tipo 2 (\"sin codigos HTTP ni terminos tecnicos\")",
+      "obtenido": "422 (REPORTE_EN_PROCESO): \"No se pudo exportar el historial El reporte todavía se está generando. Te avisaremos cuando esté listo.\" -> sin hallazgos || 404 (PERIODO_INEXISTENTE): \"No se pudo exportar el historial El período contable elegido no existe.\" -> sin hallazgos || 409 (CIERRE_NO_CANCELABLE): \"No se pudo exportar el historial Solo se puede cancelar un cierre que espera la autorización de exclusiones.\" -> sin hallazgos || 500 (ERROR_INTERNO): \"No se pudo exportar el historial Ocurrió un error interno. Intenta de nuevo; si el problema persiste, contacta al equipo de soporte.\" -> sin hallazgos",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-11",
+      "caso": "TC-M08-062 f",
+      "esperado": "El banner de error sigue visible a los 10 s (y a los 60 s) y se cierra al pulsar el boton de cierre",
+      "fuente": "RF-107 Tipo 2 (persiste hasta que el usuario lo cierre)",
+      "obtenido": "banners de error: t=0 s -> 1; t=10 s -> 1; t=60 s -> 1; boton de cierre presente; tras pulsarlo -> 0",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "OBS-cierre-detalle: despues de la plantilla de la 8.5 el aviso del cierre agrega un detalle (CierreView.tsx, TC-DIS-294: «N/Total activos procesados» y comprobantes). Texto medido: \"El período Octubre de 2026 fue cerrado correctamente. 120 activos fueron revaluados. 120/120 activos procesados. Se generaron 3 comprobantes.\". La 8.5 da solo la plantilla; CP-02 exige que la contenga.",
+    "OBS-rol (decision de Sebastian del 2026-11-22, opcion A): el aviso de exito tiene role=\"status\". La ronda 1 exigia role=alert sin fuente en el RF-107 (Tipo 1 solo pide banner verde con icono de check; RNF-05 pide WCAG 2.1 AA). El cambio a role=\"status\" viene de A11Y2-M08 TC-DIS-292 (Alert.tsx:71, commit bd1b0f5f); el error sigue con role=alert.",
+    "OBS-d (TC-M08-062 d, FALLIDO sin clave): la especificacion no define el mensaje. Con un 502 sin cuerpo se mostro: \"No se pudo exportar el historial Ocurrió un error inesperado. Intenta nuevamente.\". FA-2 dice \"Ocurrió un problema técnico. Intenta nuevamente o contacta al administrador.\"",
+    "OBS-g (TC-M08-062 g, clave con es_activo=false): la especificacion no define que significa una clave inactiva. Se mostro: \"No se pudo exportar el historial El período del 01/10/2026 al 31/10/2026 no está cerrado. Solo se pueden generar reportes sobre períodos contables cerrados.\" con 0 boton(es) de accion.",
+    "OBS-sin-costo: con costo_adquisicion null (origen NACIMIENTO) el aviso fue \"El activo BOV-2024-003 fue registrado correctamente.\". La 8.5 no define el «valor inicial reconocido» cuando el origen no es compra (pendiente de Analisis desde la ronda 1).",
+    "OBS-FA5 (TC-M08-061 e, exito con advertencias): las Entradas vigentes del RF-107 no tienen un campo para advertencias y la seccion 8.5 no tiene esa rama; FA-5 solo aparece en la Descripcion. No se prueba.",
+    "OBS-CA01 y posicion: el tiempo de aparicion (<= 500 ms) no se mide en jsdom; se cubre en TC-M08-073 (G030). La posicion \"en la parte superior\" se mide en navegador real en TC-M08-G026 (CP-22, OK en su reintento 1).",
+    "OBS-FA2 (decision de QA): por indicacion del evaluador se sigue el criterio de Desarrollo (v7: el catalogo tiene prioridad sobre el texto del servidor; fuera del catalogo se muestra el texto del servidor). La seccion 8.5 y FA-2 del RF-107 piden el mensaje generico para una clave no catalogada; queda como diferencia documentada con la especificacion.",
+    "OBS-alcance: el error al registrar un activo se muestra dentro del formulario y no en el banner de M08; hoy solo HistorialPredictivoView y ReportesPage usan el banner de error con boton (revisado en HEAD f10009d5). Las pruebas de error usan el manejo de HistorialPredictivoView.tsx:190."
+  ],
+  "retirados": []
+}

@@ -1,6 +1,7 @@
 # | Fecha      | Nombre                   | Que se hizo |
 # |------------|--------------------------|-------------|
 # | 2026-11-19 | Juan Sebastian Gutierrez | Runner de TC-M08-G025 (RF-107): Vitest en staging, JSON propio, sin tocar resultados\, escaneo de secretos solo reporte |
+# | 2026-11-22 | Juan Sebastian Gutierrez | Reintento 1 (INC-M08-384-G025): resumen y RUN_INVALIDA antes del escaneo, escaneo recursivo con reescaneo del resumen y del propio escaneo; useModalA11y, ModalShell y operacionEnCurso en la lista de SHA; estado de src sin finales de linea (git diff --ignore-cr-at-eol --numstat). Mismos 11 checkpoints |
 #
 # Uso (desde la carpeta del caso, PowerShell 5.1):
 #   .\ejecutar_tc_m08_g025.ps1                (ronda 1)
@@ -69,7 +70,9 @@ $fuentes = @(
   'src\shared\hooks\useToast.ts', 'src\shared\design-system\ToastHost.tsx', 'src\shared\design-system\Alert.tsx',
   'src\shared\api\errors.ts', 'src\shared\api\catalogoErrores.ts', 'src\shared\api\http.ts',
   'src\biological_assets\hooks\useActivos.ts', 'src\financial_valuation\pages\CierreView.tsx',
-  'src\prediction\pages\HistorialPredictivoView.tsx', 'src\reportes\api\reportesApi.ts'
+  'src\prediction\pages\HistorialPredictivoView.tsx', 'src\reportes\api\reportesApi.ts',
+  'src\shared\design-system\ModalShell.tsx', 'src\shared\hooks\useModalA11y.ts', 'src\shared\hooks\operacionEnCurso.ts',
+  'src\shared\i18n\locales\es-CO\common.json', 'src\shared\i18n\locales\es-CO\finanzas.json'
 )
 $shaFuentes = @()
 foreach ($f in $fuentes) {
@@ -85,8 +88,8 @@ if ($git) {
   try {
     $ErrorActionPreference = 'Continue'
     $gitHead = (& git rev-parse HEAD 2>$null | Out-String).Trim()
-    $cambios = @(& git status --porcelain -- src 2>$null)
-    $gitSrc = if ($cambios.Count -eq 0) { 'src sin cambios locales' } else { "src con $($cambios.Count) cambio(s) locales: " + ($cambios -join '; ') }
+    $cambios = @(& git diff --ignore-cr-at-eol --numstat HEAD -- src 2>$null | Where-Object { $_ })
+    $gitSrc = if ($cambios.Count -eq 0) { 'src sin cambios locales (sin contar finales de linea)' } else { "src con $($cambios.Count) cambio(s) locales (sin contar finales de linea): " + ($cambios -join '; ') }
   } finally {
     $ErrorActionPreference = 'Stop'
     Pop-Location
@@ -154,46 +157,14 @@ if ($rep) {
 }
 Escribir (Join-Path $staging "checkpoints_$tc$sufijo.txt") (($lineasCp -join "`r`n") + "`r`n")
 
-# ---- escaneo de secretos (solo reporte, nunca reescribe)
-$patrones = [ordered]@{}
-$patrones['prefijo_jwt'] = 'ey' + 'J'
-$patrones['bearer'] = 'Bearer ' + 'ey'
-$patrones['cabecera_sandbox'] = 'X-Sandbox-Secret:'
-$envFile = Join-Path $front '.env.test'
-if (Test-Path $envFile) {
-  foreach ($l in (Get-Content -Path $envFile -Encoding UTF8)) {
-    if ($l -match '^\s*([A-Za-z0-9_]*(PASSWORD|SECRET|TOKEN)[A-Za-z0-9_]*)\s*=\s*(.+)$') {
-      $v = $matches[3].Trim().Trim('"').Trim("'")
-      if ($v.Length -ge 6) { $patrones["valor_$($matches[1])"] = $v }
-    }
-  }
-}
-$hallazgos = New-Object System.Collections.Generic.List[string]
-$archivos = @(Get-ChildItem -Path $staging -File)
-foreach ($a in $archivos) {
-  $texto = Get-Content -Path $a.FullName -Raw -Encoding UTF8
-  if (-not $texto) { continue }
-  foreach ($k in $patrones.Keys) {
-    if ($texto.Contains([string]$patrones[$k])) { $hallazgos.Add("$($a.Name): $k") }
-  }
-}
-$patrones.Clear()
-$textoEscaneo = "Archivos revisados: $($archivos.Count)`r`nPatrones: prefijo JWT, Bearer, cabecera del sandbox y valores *PASSWORD*/*SECRET*/*TOKEN* de .env.test (si existe)`r`n"
-if ($hallazgos.Count -eq 0) { $textoEscaneo += "Hallazgos: 0`r`n" }
-else { $textoEscaneo += "Hallazgos: $($hallazgos.Count)`r`n" + ($hallazgos -join "`r`n") + "`r`n" }
-Escribir (Join-Path $staging "escaneo_secretos_$tc$sufijo.txt") $textoEscaneo
-
 # ---- resultados\ sin cambios
 $shaResDespues = ShaCarpeta $resultados
 $resCambio = $shaResAntes -ne $shaResDespues
 
-# ---- codigo de salida
-if ($invalida.Count -gt 0) { $codigo = 3; $motivo = 'corrida invalida: ' + ($invalida -join '; ') }
-elseif ($hallazgos.Count -gt 0) { $codigo = 4; $motivo = "escaneo de secretos con $($hallazgos.Count) hallazgos" }
-elseif ($resCambio) { $codigo = 6; $motivo = 'resultados\ cambio durante la corrida' }
-elseif ($rep.summary.falla -gt 0) { $codigo = 1; $motivo = "$($rep.summary.falla) checkpoint(s) FALLA" }
-else { $codigo = 0; $motivo = 'todos los checkpoints OK' }
-
+# ---- resumen y RUN_INVALIDA antes del escaneo, para que el escaneo los incluya
+if ($invalida.Count -gt 0) {
+  Escribir (Join-Path $staging "RUN_INVALIDA_$tc$sufijo.txt") (($invalida -join "`r`n") + "`r`n")
+}
 $resumen = @(
   "Caso: $tc (RF-107, TC-M08-061 y TC-M08-062)",
   "RUN: $runId",
@@ -212,9 +183,50 @@ $resumen += @(
   "Exit de Vitest: $exitVitest",
   ("Checkpoints: " + $(if ($rep) { "$($rep.summary.total) total, $($rep.summary.ok) OK, $($rep.summary.falla) FALLA" } else { '(sin JSON)' })),
   ("Veredicto: " + $(if ($rep) { $rep.summary.veredicto } else { '(sin JSON)' })),
-  "Escaneo de secretos: $($hallazgos.Count) hallazgos",
   ("resultados\: " + $(if ($resCambio) { 'CAMBIO' } else { 'sin cambios' })),
-  "Codigo de salida: $codigo ($motivo)"
+  ("Corrida: " + $(if ($invalida.Count -gt 0) { 'INVALIDA: ' + ($invalida -join '; ') } else { 'valida' })),
+  "Escaneo de secretos: ver escaneo_secretos_$tc$sufijo.txt"
 )
-Escribir (Join-Path $staging "resumen_$tc$sufijo.txt") (($resumen -join "`r`n") + "`r`n")
+$rutaResumen = Join-Path $staging "resumen_$tc$sufijo.txt"
+Escribir $rutaResumen (($resumen -join "`r`n") + "`r`n")
+
+# ---- escaneo de secretos al final (solo reporte, nunca reescribe; todo el staging recursivo, mas reescaneo)
+$patrones = [ordered]@{}
+$patrones['prefijo_jwt'] = 'ey' + 'J'
+$patrones['bearer'] = 'Bearer ' + 'ey'
+$patrones['cabecera_sandbox'] = 'X-Sandbox-Secret:'
+$envFile = Join-Path $front '.env.test'
+if (Test-Path $envFile) {
+  foreach ($l in (Get-Content -Path $envFile -Encoding UTF8)) {
+    if ($l -match '^\s*([A-Za-z0-9_]*(PASSWORD|SECRET|TOKEN)[A-Za-z0-9_]*)\s*=\s*(.+)$') {
+      $v = $matches[3].Trim().Trim('"').Trim("'")
+      if ($v.Length -ge 6) { $patrones["valor_$($matches[1])"] = $v }
+    }
+  }
+}
+$hallazgos = New-Object System.Collections.Generic.List[string]
+$archivos = @(Get-ChildItem -Path $staging -File -Recurse)
+foreach ($a in $archivos) {
+  $texto = Get-Content -Path $a.FullName -Raw -Encoding UTF8
+  if (-not $texto) { continue }
+  foreach ($k in $patrones.Keys) {
+    if ($texto.Contains([string]$patrones[$k])) { $hallazgos.Add("$($a.FullName.Substring($staging.Length + 1)): $k") }
+  }
+}
+$textoEscaneo = "Archivos revisados: $($archivos.Count) (todo el staging, recursivo, incluido el resumen)`r`nPatrones: prefijo JWT, Bearer, cabecera del sandbox y valores *PASSWORD*/*SECRET*/*TOKEN* de .env.test (si existe)`r`n"
+if ($hallazgos.Count -eq 0) { $textoEscaneo += "Hallazgos: 0`r`n" }
+else { $textoEscaneo += "Hallazgos: $($hallazgos.Count)`r`n" + ($hallazgos -join "`r`n") + "`r`n" }
+$rutaEscaneo = Join-Path $staging "escaneo_secretos_$tc$sufijo.txt"
+Escribir $rutaEscaneo $textoEscaneo
+$propio = Get-Content -Path $rutaEscaneo -Raw -Encoding UTF8
+foreach ($k in $patrones.Keys) { if ($propio.Contains([string]$patrones[$k])) { $hallazgos.Add("escaneo_secretos: $k") } }
+$patrones.Clear()
+
+# ---- codigo de salida
+if ($invalida.Count -gt 0) { $codigo = 3; $motivo = 'corrida invalida: ' + ($invalida -join '; ') }
+elseif ($hallazgos.Count -gt 0) { $codigo = 4; $motivo = "escaneo de secretos con $($hallazgos.Count) hallazgos" }
+elseif ($resCambio) { $codigo = 6; $motivo = 'resultados\ cambio durante la corrida' }
+elseif ($rep.summary.falla -gt 0) { $codigo = 1; $motivo = "$($rep.summary.falla) checkpoint(s) FALLA" }
+else { $codigo = 0; $motivo = 'todos los checkpoints OK' }
+[System.IO.File]::AppendAllText($rutaResumen, "Codigo de salida: $codigo ($motivo)`r`n", (New-Object System.Text.UTF8Encoding $false))
 Salir $codigo $motivo

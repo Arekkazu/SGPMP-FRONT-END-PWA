@@ -1,0 +1,46 @@
+PRUEBA DE LA HERRAMIENTA - TC-M08-G022, REINTENTO 2 (RF-106; INC-M08-396-G022, GitHub sgpmp-backend 1229)
+
+| Fecha      | Autor                    | Que se hizo |
+|------------|--------------------------|-------------|
+| 2026-11-23 | Juan Sebastian Gutierrez | Fase 2 minima del reintento 2 (Claude, contenedor), por orden de Sebastian |
+
+1. Alcance
+   - Los archivos del caso NO cambian respecto del reintento 1 (mismos SHA-256 en el equipo):
+     tc-m08-g022.test.tsx 6EE8FCA9..., tc-m08-g022.pw.ts D26F70D5..., playwright.config.ts 0944565D...,
+     unir_reporte_tc_m08_g022.mjs EB924789..., ejecutar_tc_m08_g022.ps1 C314309F... Sin adaptaciones nuevas.
+   - El reintento 2 solo cambia el parametro del runner: -Reintento 2 (reporte resultado_TC-M08-G022_reintento2.json).
+   - Codigo probado: frontend f10009d5 (los 12 archivos de src del runner con el mismo SHA que en el equipo).
+     HistorialPredictivoView.tsx no cambio desde 488f43f6 (HEAD del reintento 1).
+   - Cambio de Desarrollo medido: backend f27e4bb4 (pendientes = toda inferencia sin retroalimentacion con mas de 48 h, de
+     cualquier nivel). Lo mide CP-12 contra TEST en la corrida oficial; aqui se comprueba que la herramienta lo distingue.
+
+2. Fase 1 (spec sin cambios, -Reintento 1 en el contenedor)
+   - vitest_fase1_spec_sin_cambios.json: 9/9 OK, obtenidos identicos a vitest_normal_1 del reintento 1.
+   - playwright_fase1_spec_sin_cambios.json: 4/4 OK; CP-11 a CP-13 identicos; CP-14 solo cambia el conteo de pixeles.
+
+3. Corridas normales (REINTENTO=2)
+   - Vitest x3: 9/9 OK, 11 precondiciones OK, obtenidos identicos entre si y al reintento 1.
+   - Playwright x3 (build local de f10009d5 + API simulada): 4/4 OK, 10 precondiciones OK, identicas entre si.
+     Peticiones distintas de GET a la API simulada: solo POST /sesiones/ y POST /sesiones/refresh.
+
+4. Controles (mutacion de una copia en el contenedor; la vista se restaura y su SHA vuelve a 6043535E...)
+   Vitest:
+   - tvco_solo_porcentaje -> FALLA CP-01, 03, 04, 05, 07 y 08 (previsto).
+   - conflicto_sin_icono -> FALLA CP-06 (previsto).
+   - pendientes_invertidos -> FALLA CP-09 (igual que en el reintento 1: la pagina 2 tiene un solo item; error de prevision
+     ya anotado en el DISENO, no de la herramienta).
+   - siguiente_no_pagina -> FALLA CP-10 (previsto).
+   Playwright:
+   - backend_tvco -> FALLA CP-11; backend_orden -> FALLA CP-12; conflicto_negro -> FALLA CP-14;
+     sin_title_retro y title_solo_propia -> FALLA CP-13; tema oscuro -> 4/4 OK; tema oscuro + conflicto_negro -> FALLA CP-14.
+     Iguales al reintento 1.
+   - NUEVO backend_evaluables (API simulada con el filtro del backend del reintento 1, evaluables() de 655bc00af):
+     FALLA solo CP-12 (calculados 6, backend 3, vista 3), precondiciones OK. Demuestra que la herramienta da FALLA con el
+     defecto de INC-M08-396-G022 y OK con la regla de RF-106 (corridas normales).
+   - Ningun "No alcanzado" en ninguna corrida.
+
+5. Archivos
+   - Scripts del contenedor con extension .txt (controles_vitest.py.txt, builds_control.py.txt, correr_pw.sh.txt,
+     control_tema_oscuro.pw.ts.txt) y la API simulada (servidor_api_simulada.mjs.txt + lanzar_mock.mjs).
+   - diff_mock_reintento1_vs_reintento2.txt: unico cambio del arnes, el escenario backend_evaluables.
+   - No es parte de la corrida oficial ni toca TEST.

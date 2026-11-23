@@ -1,8 +1,9 @@
 // | Fecha      | Nombre                   | Que se hizo |
 // |------------|--------------------------|-------------|
 // | 2026-11-21 | Juan Sebastian Gutierrez | TC-M08-G028 (TC-M08-068 y TC-M08-069; RF-107): confirmacion de acciones criticas, contenido del dialogo y modo bloqueante v1 |
+// | 2026-11-23 | Juan Sebastian Gutierrez | v1.1 reintento 1 (INC-M08-393-G028, GitHub 731): 12 checkpoints; ADAPT-1 el dialogo de la reversion se busca por su titulo con el activo ({{activo}} desde ac134ec1); P7 sin operacion en curso heredada; OBS-6 reescrita (Escape corregido en b370f754) |
 //
-// QA SGPMP - Evaluacion (ronda 1). Prueba de componente con Vitest + jsdom.
+// QA SGPMP - Evaluacion (ronda 1; reintento 1 con v1.1). Prueba de componente con Vitest + jsdom.
 // Red simulada SOLO con http.defaults.adapter (emula timeout de axios). No se llama a TEST.
 // Reporte: JSON propio en STAGING_DIR (resultado_TC-M08-G028[_reintentoN].json). Cada checkpoint arranca en FALLA "No alcanzado".
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
@@ -18,6 +19,7 @@ import i18n from '../../../../../src/shared/i18n';
 import { http } from '../../../../../src/shared/api/http';
 import { fijarCatalogoErrores } from '../../../../../src/shared/api/catalogoErrores';
 import { limpiarToasts } from '../../../../../src/shared/hooks/useToast';
+import { operacionEnCurso } from '../../../../../src/shared/hooks/operacionEnCurso';
 import { ToastHost } from '../../../../../src/shared/design-system/ToastHost';
 import { AuthContext } from '../../../../../src/shared/auth/AuthContext';
 import { EventosSection } from '../../../../../src/biological_assets/components/EventosSection';
@@ -73,11 +75,6 @@ const CPS: Checkpoint[] = [
     paso: 'CP-06',
     esperado: 'El diálogo del cierre contiene el nombre del período tal como lo muestra la app (nombrePeriodo: «Octubre de 2026»)',
     fuente: 'RF-107 8.5 (CIERRE_PERIODO: «el período a cerrar»)',
-  },
-  {
-    paso: 'CP-07',
-    esperado: 'El diálogo del cierre contiene el número de activos que se revaluarán: el texto del diálogo cumple /\\b\\d+\\s+activos?\\b/i',
-    fuente: 'RF-107 8.5 («el número de activos que serán revaluados»)',
   },
   {
     paso: 'CP-08',
@@ -478,8 +475,13 @@ function simularRutasReversion(): void {
 }
 
 function dialogoReversionAbierto(): HTMLElement | null {
-  const tituloEsp = tFin('valor.revertir_titulo');
-  return dialogosAbiertos().find((d) => tituloDialogo(d) === tituloEsp) ?? null;
+  // ADAPT-1 (reintento 1): desde ac134ec1 el título lleva el activo («Revertir el reconocimiento inicial de {{activo}}»).
+  // Se reconoce por la parte fija de la plantilla (con cualquier activo), así CP-09 sigue midiendo si se nombra el activo.
+  const [antes, despues] = tFin('valor.revertir_titulo', { activo: 'QAMARCAACTIVO' }).split('QAMARCAACTIVO');
+  return dialogosAbiertos().find((d) => {
+    const t = tituloDialogo(d);
+    return t.startsWith(antes) && t.endsWith(despues ?? '') && t.length > antes.length + (despues ?? '').length;
+  }) ?? null;
 }
 
 async function abrirConfirmacionReversion(montar = true): Promise<{ dlg: HTMLElement | null; detalle: string }> {
@@ -622,7 +624,11 @@ beforeAll(async () => {
   refsNivelCrit = contarEnSrc(/nivel_criticidad_accion/g);
 });
 
+// P7 (reintento 1): ModalShell no abre un diálogo crítico si quedó registrada una operación en curso (operacionEnCurso.ts).
+const operacionesHeredadas: string[] = [];
 beforeEach(() => {
+  const heredada = operacionEnCurso();
+  if (heredada) operacionesHeredadas.push(`${expect.getState().currentTestName ?? '?'}: ${heredada}`);
   rutas = [];
   peticiones = [];
   http.defaults.adapter = adaptador;
@@ -639,6 +645,11 @@ afterEach(() => {
 });
 
 afterAll(() => {
+  precondiciones.push({
+    nombre: 'P7 Sin operación en curso heredada al empezar cada prueba (operacionEnCurso() = null)',
+    ok: operacionesHeredadas.length === 0,
+    detalle: operacionesHeredadas.length ? operacionesHeredadas.join(' | ') : 'ninguna',
+  });
   if (precondiciones.some((p) => !p.ok)) {
     const nombres = precondiciones.filter((p) => !p.ok).map((p) => p.nombre).join('; ');
     for (const c of CPS) {
@@ -660,7 +671,7 @@ afterAll(() => {
   observaciones.push(`OBS-3: textos de botones en paso de confirmación — ${fmtObs3}. La 8.5 dice «Confirmar» y «Cancelar». Decisión del evaluador: observación.`);
   observaciones.push(`OBS-4: la baja contiene "BOV-QA-G028"=${obs4ContieneId ? 'sí' : 'no'} (texto="${obs4TextoBaja}"). Decisión del evaluador: observación.`);
   observaciones.push('OBS-5: en la baja, cancelar desde «Confirma la baja» exige pulsar «Volver» y luego «Cancelar».');
-  observaciones.push(`OBS-6: Escape en «Confirma la baja»: ${obs6Resultado}. Defecto ya reportado en INC-M08-NN-G025 (defecto 2); no cuenta en este caso.`);
+  observaciones.push(`OBS-6: Escape en «Confirma la baja»: ${obs6Resultado}. Es el defecto 2 de INC-M08-384-G025, corregido por Desarrollo en b370f754 (#723: useModalA11y lee la opción escape de un ref); se reverifica aquí y no cuenta en este caso.`);
   if (sinRuta.length) observaciones.push(`Peticiones sin ruta simulada: ${sinRuta.join(', ')}`);
 
   const ok = CPS.filter((c) => c.estado === 'OK').length;
@@ -855,20 +866,16 @@ describe('TC-M08-068 Confirmacion de acciones criticas y accion no critica (RF-1
 });
 
 // ---------------------------------------------------------------------------------------------------------------
-// TC-M08-069 (a) - Contenido de los dialogos de confirmacion (CP-06 a CP-09)
+// TC-M08-069 (a) - Contenido de los dialogos de confirmacion (CP-06, CP-08 y CP-09)
 // ---------------------------------------------------------------------------------------------------------------
 describe('TC-M08-069 Contenido de dialogos de confirmacion (RF-107 8.5)', () => {
-  it('CP-06, CP-07 y CP-08 Dialogo del cierre: periodo, conteo de activos y advertencia de irreversibilidad', async () => {
+  it('CP-06 y CP-08 Dialogo del cierre: periodo y advertencia de irreversibilidad', async () => {
     const { dlg } = await abrirConfirmacionCierre(true);
     const texto = dlg ? norm(dlg.textContent) : '(sin diálogo)';
     const esperadoPeriodo = nombrePeriodo(PERIODO_7);
 
     const ok06 = dlg !== null && texto.includes(esperadoPeriodo);
     anotar('CP-06', ok06, `esperado="${esperadoPeriodo}"; texto="${texto}"`);
-
-    const matchConteo = dlg ? texto.match(/\b\d+\s+activos?\b/i) : null;
-    const ok07 = matchConteo !== null;
-    anotar('CP-07', ok07, `coincidencia=${matchConteo ? `"${matchConteo[0]}"` : 'ninguna'}; texto="${texto}"`);
 
     const mReabr = dlg ? texto.match(/(reabr|irreversible)/i) : null;
     const mModif = dlg ? texto.match(/(modific|inmutable)/i) : null;
@@ -879,7 +886,7 @@ describe('TC-M08-069 Contenido de dialogos de confirmacion (RF-107 8.5)', () => 
       `patrones={reabr_o_irreversible=${mReabr ? `"${mReabr[0]}"` : 'no'}, modific_o_inmutable=${mModif ? `"${mModif[0]}"` : 'no'}}; texto="${texto}"`,
     );
 
-    expect(ok06 && ok07 && ok08).toBe(true);
+    expect(ok06 && ok08).toBe(true);
   });
 
   it('CP-09 Reversion y revocacion: nombran lo afectado y advierten irreversibilidad', async () => {

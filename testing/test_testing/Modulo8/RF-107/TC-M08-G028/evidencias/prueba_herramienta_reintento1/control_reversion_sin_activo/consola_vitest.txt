@@ -1,0 +1,39 @@
+
+ RUN  v4.1.11 /home/claude/g031r1/fe
+
+[QA_MUTACION] reversion_sin_activo aplicado en src/financial_valuation/components/DetalleActivoModal.tsx
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-068 Confirmacion de acciones criticas y accion no critica (RF-107 8.1) > CP-01 Baja: confirmacion previa, cancelar sin POST y confirmar ejecuta exactamente 1 POST 183ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-068 Confirmacion de acciones criticas y accion no critica (RF-107 8.1) > CP-02 Reversion: dialogo previo, cancelar sin POST y confirmar ejecuta exactamente 1 POST 59ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-068 Confirmacion de acciones criticas y accion no critica (RF-107 8.1) > CP-03 Cierre: dialogo previo, cancelar sin POST y confirmar ejecuta exactamente 1 POST 73ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-068 Confirmacion de acciones criticas y accion no critica (RF-107 8.1) > CP-04 Revocacion: dialogo previo, cancelar sin POST y confirmar ejecuta exactamente 1 POST 45ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-068 Confirmacion de acciones criticas y accion no critica (RF-107 8.1) > CP-05 Accion no critica (Exportar en PDF): 0 dialogos y exactamente 1 POST /reportes 35ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Contenido de dialogos de confirmacion (RF-107 8.5) > CP-06 y CP-08 Dialogo del cierre: periodo y advertencia de irreversibilidad 29ms
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Contenido de dialogos de confirmacion (RF-107 8.5) > CP-09 Reversion y revocacion: nombran lo afectado y advierten irreversibilidad 42ms
+   → expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Restricciones de cierre bloqueante (RF-107 8.5 y CA-05) > CP-10 Escape en reversion, cierre y revocacion: los 3 siguen abiertos y 0 POST 92ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Restricciones de cierre bloqueante (RF-107 8.5 y CA-05) > CP-11 Clic en el fondo del dialogo en los 4 dialogos: los 4 siguen abiertos y 0 POST 66ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Restricciones de cierre bloqueante (RF-107 8.5 y CA-05) > CP-12 Ninguno de los 4 dialogos tiene el boton X (acciones.cerrar) 76ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Restricciones de cierre bloqueante (RF-107 8.5 y CA-05) > CP-13 Con cada uno de los 4 dialogos abiertos, avanzar 600.000 ms: siguen abiertos y 0 POST 79ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Contenido de dialogos de confirmacion (RF-107 8.5) > CP-09 Reversion y revocacion: nombran lo afectado y advierten irreversibilidad
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx:933:16
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  05:52:30
+   Duration  2.22s (transform 720ms, setup 64ms, import 1.04s, tests 815ms, environment 219ms)
+

@@ -1,0 +1,60 @@
+CP-01 | OK
+  Esperado: Baja: al llegar a «Confirma la baja» hay 1 diálogo y 0 POST de baja; «Volver» y luego «Cancelar» cierran sin POST (0); repetir el flujo y «Confirmar baja» => exactamente 1 POST de baja
+  Obtenido: en_confirmacion={dialogos=1, post=0}; tras_volver_y_cancelar={dialogos=0, post=0}; tras_confirmar={post=1}
+  Fuente:   RF-107 8.1; Restricciones; CA-03
+CP-02 | OK
+  Esperado: Reversión: al pulsar «Revertir reconocimiento» hay 1 diálogo y 0 POST; «Cancelar» => diálogo cerrado y 0 POST; reabrir, motivo, confirmar => 1 POST de reversión
+  Obtenido: en_confirmacion={dialogos=1, post=0}; tras_cancelar={dialogos=0, post=0}; tras_confirmar={post=1}
+  Fuente:   RF-107 8.1; CA-03
+CP-03 | OK
+  Esperado: Cierre: «Cerrar período» => 1 diálogo y 0 POST de cierre; «Cancelar» => 0; reabrir y confirmar => 1 POST
+  Obtenido: en_confirmacion={dialogos=1, post=0}; tras_cancelar={dialogos=0, post=0}; tras_confirmar={post=1}
+  Fuente:   RF-107 8.1; CA-03
+CP-04 | OK
+  Esperado: Revocación: «Revocar QA Cliente G028» => 1 diálogo y 0 POST; «Cancelar» => 0; reabrir, motivo, confirmar => 1 POST
+  Obtenido: en_confirmacion={dialogos=1, post=0}; tras_cancelar={dialogos=0, post=0}; tras_confirmar={post=1}
+  Fuente:   RF-107 8.1; CA-03
+CP-05 | OK
+  Esperado: Acción no crítica: «Exportar en PDF» => 0 diálogos en todo momento y exactamente 1 POST /reportes
+  Obtenido: boton_exportar=presente; dialogos=[antes=0, inmediato=0, despues=0]; post_reportes=1
+  Fuente:   RF-107 8.1 («requiere_confirmacion = false: no muestra ningún modal»)
+CP-06 | OK
+  Esperado: El diálogo del cierre contiene el nombre del período tal como lo muestra la app (nombrePeriodo: «Octubre de 2026»)
+  Obtenido: esperado="Octubre de 2026"; texto="¿Cerrar el período Octubre de 2026?Vas a cerrar Octubre de 2026 · Finca QA · NIT 900123456. El período queda inmutable: los hechos con fecha de este período que lleguen después se registran en el siguiente.Se cerrará Octubre de 2026: la acción es irreversible.CancelarCerrar período"
+  Fuente:   RF-107 8.5 (CIERRE_PERIODO: «el período a cerrar»)
+CP-08 | OK
+  Esperado: El diálogo del cierre advierte que no podrá reabrirse ni modificarse: el texto cumple /(reabr|irreversible)/i Y /(modific|inmutable)/i
+  Obtenido: patrones={reabr_o_irreversible="irreversible", modific_o_inmutable="inmutable"}; texto="¿Cerrar el período Octubre de 2026?Vas a cerrar Octubre de 2026 · Finca QA · NIT 900123456. El período queda inmutable: los hechos con fecha de este período que lleguen después se registran en el siguiente.Se cerrará Octubre de 2026: la acción es irreversible.CancelarCerrar período"
+  Fuente:   RF-107 8.5
+CP-09 | OK
+  Esperado: Reversión y revocación: el texto del diálogo (título + descripción) nombra lo afectado («BOV-QA-G028-R» en la reversión; «QA Cliente G028» en la revocación) Y advierte la irreversibilidad /(irreversible|no se puede deshacer|definitiv)/i. Exige 2 diálogos evaluados
+  Obtenido: evaluados=2/2; reversion={texto="Revertir el reconocimiento inicial de BOV-QA-G028-R | La reversión del reconocimiento de BOV-QA-G028-R es definitiva: no se puede deshacer. Genera el asiento espejo y solo es posible si el activo no tiene mediciones ni costos posteriores.", nombra=sí, irreversible=sí}; revocacion={texto="Revocar | La revocación de QA Cliente G028 es definitiva: no se puede deshacer.", nombra=sí, irreversible=sí}
+  Fuente:   RF-107 8.5 («para las demás acciones críticas: qué datos serán afectados, qué cambio es irreversible»)
+CP-10 | OK
+  Esperado: Escape (fireEvent.keyDown(document, {key:'Escape'})) con el diálogo de confirmación abierto de la reversión, el cierre y la revocación: los 3 siguen abiertos y 0 POST
+  Obtenido: reversion: sigue abierto, post=0; cierre: sigue abierto, post=0; revocacion: sigue abierto, post=0
+  Fuente:   RF-107 Restricciones («no tiene cierre por tecla Escape»); 8.5; CA-05
+CP-11 | OK
+  Esperado: Clic en el fondo del diálogo (fireEvent.click sobre el propio [role="dialog"]) en los 4 diálogos (la baja en su paso «Confirma la baja»): los 4 siguen abiertos y 0 POST
+  Obtenido: baja: sigue abierto, post=0; reversion: sigue abierto, post=0; cierre: sigue abierto, post=0; revocacion: sigue abierto, post=0
+  Fuente:   RF-107 Restricciones; CA-05
+CP-12 | OK
+  Esperado: Ninguno de los 4 diálogos (la baja en «Confirma la baja») tiene el botón X (acciones.cerrar)
+  Obtenido: baja: boton_X=ausente; reversion: boton_X=ausente; cierre: boton_X=ausente; revocacion: boton_X=ausente
+  Fuente:   RF-107 8.5 («dos botones»); CA-05; v7
+CP-13 | OK
+  Esperado: Con cada uno de los 4 diálogos abiertos (la baja en «Confirma la baja»), avanzar 600.000 ms: siguen abiertos y 0 POST
+  Obtenido: baja: tras_600000ms=sigue abierto, post=0; reversion: tras_600000ms=sigue abierto, post=0; cierre: tras_600000ms=sigue abierto, post=0; revocacion: tras_600000ms=sigue abierto, post=0
+  Fuente:   RF-107 8.5 («No tiene ningún temporizador de cierre automático»)
+
+Retirados:
+- 068 (b) configurar requiere_confirmacion=false: el campo no existe en el frontend; las confirmaciones están fijas en cada vista
+- 068 (d) contradicción nivel_criticidad_accion/requiere_confirmacion y advertencia en log: los campos no existen y no hay log en el frontend
+
+Observaciones (no cuentan para el veredicto):
+- OBS-1: referencias en src\ a requiere_confirmacion=0, nivel_criticidad_accion=0.
+- OBS-2: título e ícono de advertencia (svg o .ds-alert--warning) — baja: titulo="Registrar baja", icono_advertencia=sí; reversion: titulo="Revertir el reconocimiento inicial de BOV-QA-G028-R", icono_advertencia=no; cierre: titulo="¿Cerrar el período Octubre de 2026?", icono_advertencia=no; revocacion: titulo="Revocar", icono_advertencia=no. El Tipo 5 de la Descripción (versión anterior) pide «¿Confirmas esta acción?» con ícono.
+- OBS-3: textos de botones en paso de confirmación — baja: ["Volver", "Confirmar baja"]; reversion: ["Cancelar", "Revertir reconocimiento"]; cierre: ["Cancelar", "Cerrar período"]; revocacion: ["Cancelar", "Revocar"]. La 8.5 dice «Confirmar» y «Cancelar». Decisión del evaluador: observación.
+- OBS-4: la baja contiene "BOV-QA-G028"=no (texto="Registrar bajaRegistro de baja La baja de un activo individual es total. La baja es definitiva y no se puede deshacer.Confirma la bajaTipo de bajaMuerteFecha de baja2026-11-23Motivo de la bajaBaja de prueba QA G028VolverConfirmar baja"). Decisión del evaluador: observación.
+- OBS-5: en la baja, cancelar desde «Confirma la baja» exige pulsar «Volver» y luego «Cancelar».
+- OBS-6: Escape en «Confirma la baja»: sigue abierto, 0 POST. Es el defecto 2 de INC-M08-384-G025, corregido por Desarrollo en b370f754 (#723: useModalA11y lee la opción escape de un ref); se reverifica aquí y no cuenta en este caso.
