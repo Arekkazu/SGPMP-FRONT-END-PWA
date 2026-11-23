@@ -7,6 +7,7 @@
 // | 2026-10-29 | Arekkazu | TC-DIS-150 RF-57 a11y 4.1.3/2.4.3: refresco cada 60 s, anuncios y foco de regreso |
 // | 2026-10-29 | Arekkazu | USAB-M03 prototipo RF-57: las tarjetas del resumen filtran por estado |
 // | 2026-10-29 | Arekkazu | USAB-M03 prototipo T-23 RF-57: alertas en tarjetas con la acción a un toque |
+// | 2026-11-23 | Arekkazu | QA-M08 CU05 H-04 RF-107: atender o cerrar una alerta muestra el aviso de éxito con sus datos |
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { formatearNumero } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -16,6 +17,7 @@ import { useOnlineStatus } from '../../shared/hooks/useOnlineStatus';
 import { Alert } from '../../shared/design-system/Alert';
 import { Anunciador } from '../../shared/design-system/Anunciador';
 import { Button } from '../../shared/design-system/Button';
+import { pushToast } from '../../shared/hooks/useToast';
 import { useAccionesAlerta } from '../hooks/useAccionesAlerta';
 import { accionesAlerta } from '../lib/accionesAlerta';
 import { useAlertas } from '../hooks/useAlertas';
@@ -27,6 +29,7 @@ import { useActivos } from '../hooks/useActivos';
 import { AlertaDetalleModal } from '../components/AlertaDetalleModal';
 import { etiquetaEstadoAlerta } from '../components/EstadoAlertaPill';
 import { etiquetaCodigo } from '../lib/etiquetaCodigo';
+import { ubicacionAlerta } from '../lib/detalleAlerta';
 import { CambiarEstadoAlertaModal } from '../components/CambiarEstadoAlertaModal';
 import { Paginacion } from '../components/Paginacion';
 import { KpiCard } from '../components/KpiCard';
@@ -162,6 +165,10 @@ export function AlertasView() {
     if (ok) {
       if (enLinea) cerrarAccion(); else { setAccion(null); cerrarDetalle(); }
       setAnuncio(t('alertasview.anuncio_estado', { id, estado: etiquetaEstadoAlerta(dto.nuevo_estado) }));
+      // CU05 H-04 (RF-107 CA-01, CA-09): aviso de éxito visible con los datos de la alerta, no solo el anuncio.
+      pushToast('success', t('alertasview.anuncio_estado', { id, estado: etiquetaEstadoAlerta(dto.nuevo_estado) }),
+        [etiquetaCodigo(objetivo.tipo_alerta), ubicacionAlerta(objetivo), objetivo.valor != null ? `${objetivo.valor} ${objetivo.unidad ?? ''}`.trim() : '']
+          .filter(Boolean).join(' · '));
       // Silenciosa: las filas no se desmontan y el foco puede volver a la suya.
       cargar(build(paginacion.pagina), true);
       cargarResumen();

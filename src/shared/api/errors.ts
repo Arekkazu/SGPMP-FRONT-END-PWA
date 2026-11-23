@@ -5,6 +5,7 @@
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-11-18 | Arekkazu | M08 RF-107: el catálogo de mensajes de M09 manda sobre el texto de la respuesta |
 // | 2026-11-21 | Arekkazu | INC-M08-392-G027 RF-107 FA-3: el tiempo agotado dice que la operación no se completó |
+// | 2026-11-23 | Arekkazu | QA-M08 CU05 H-05 RF-107 FA-4: sin red, cualquier acción avisa SIN_CONEXION, no el genérico |
 import type { AxiosError } from 'axios';
 
 import i18n from '../i18n';
@@ -39,7 +40,12 @@ export function mapToApiError(error: AxiosError): ApiError {
   const catalogo = mensajeDelCatalogo(code);
   // RF-107 FA-3: sin respuesta porque se agotó el tiempo, la operación no se completó y se puede reintentar.
   const tiempoAgotado = !error.response && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT');
+  // RF-107 FA-4 (QA M08 CU05 H-05): sin respuesta porque no hay red, el aviso es el de SIN_CONEXION del catálogo
+  // en cualquier acción (antes, revocar una credencial sin conexión decía «Ocurrió un error inesperado»).
+  const sinRed = !error.response && !tiempoAgotado
+    && (error.code === 'ERR_NETWORK' || (typeof navigator !== 'undefined' && navigator.onLine === false));
   const message = (tiempoAgotado && i18n.t('errores.tiempo_agotado', { ns: 'common' }))
+    || (sinRed && (mensajeDelCatalogo('SIN_CONEXION')?.mensaje || i18n.t('errores.sin_conexion', { ns: 'common' })))
     || catalogo?.mensaje
     || (code === 'CUENTA_BLOQUEADA' && bloqueoEnHoraLocal(mensajeBackend))
     || traducirPorCodigo(code, mensajeBackend);

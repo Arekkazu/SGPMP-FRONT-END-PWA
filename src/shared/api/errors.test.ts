@@ -3,6 +3,7 @@
 // | 2026-10-23 | Arekkazu | RF-29: código con datos variables en es-CO y en-US |
 // | 2026-10-23 | Arekkazu | PR-667: fechas en el día y la hora local del usuario, no en UTC |
 // | 2026-11-21 | Arekkazu | INC-M08-392-G027 RF-107 FA-3: tiempo agotado |
+// | 2026-11-23 | Arekkazu | QA-M08 CU05 H-05 RF-107 FA-4: sin red avisa SIN_CONEXION |
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { AxiosError } from 'axios';
@@ -171,8 +172,13 @@ it('el tiempo agotado dice que la operación no se completó (RF-107 FA-3)', () 
   const err = mapToApiError({ code: 'ECONNABORTED' } as AxiosError);
   expect(err.status).toBe(0);
   expect(err.message).toBe('La operación no pudo completarse. Intenta nuevamente.');
-  // Otro fallo sin respuesta sigue con el mensaje genérico.
-  expect(mapToApiError({ code: 'ERR_NETWORK' } as AxiosError).message).toBe('Ocurrió un error inesperado. Intenta nuevamente.');
+});
+
+it('sin red, cualquier acción avisa que no hay conexión, no el genérico (RF-107 FA-4, QA M08 CU05 H-05)', () => {
+  const err = mapToApiError({ code: 'ERR_NETWORK' } as AxiosError);
+  expect(err.status).toBe(0);
+  expect(err.code).toBe('HTTP_0');
+  expect(err.message).toBe('Sin conexión. La operación se reintentará automáticamente cuando vuelva la conexión.');
 });
 
 describe('bloqueoEnHoraLocal', () => {

@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-104: filtros de cada reporte armados desde el catálogo del backend |
+// | 2026-11-23 | Arekkazu | QA-M08 CU02 H-03 RF-104: la lista con «Todos» del catálogo arranca en «Todos», no en su primer valor |
 import React, { useEffect, useState } from 'react';
 import { Input } from '../../shared/design-system/Input';
 import { Select } from '../../shared/design-system/Select';
@@ -76,11 +77,14 @@ export function FiltrosReporte({ reporte, valores, errores, onCambiar }: Filtros
           );
         }
         if (f.tipo === 'lista') {
+          // CU02 H-03: si el catálogo trae «TODOS», no hay opción vacía. Con value '' el navegador mostraba el
+          // primer valor («Alto», «Vacuna») sin elegirlo: el filtro no se enviaba y elegirlo no disparaba onChange.
+          const conTodos = f.valores.includes('TODOS');
           return (
             <Select key={f.nombre} id={`filtro-${f.nombre}`} label={f.etiqueta} required={f.obligatorio}
-                    value={String(valores[f.nombre] ?? '')} error={error}
+                    value={String(valores[f.nombre] ?? (conTodos ? 'TODOS' : ''))} error={error}
                     onChange={(e) => onCambiar(f.nombre, e.target.value || undefined)}>
-              {!f.valores.includes('TODOS') && <option value="">{t('filtros.todos')}</option>}
+              {!conTodos && <option value="">{t('filtros.todos')}</option>}
               {f.valores.map((v) => <option key={v} value={v}>{t(`valores.${v}`, { defaultValue: v })}</option>)}
             </Select>
           );

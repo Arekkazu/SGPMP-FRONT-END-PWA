@@ -1,3 +1,6 @@
+// | Fecha      | Nombre   | Que se hizo |
+// |------------|----------|-------------|
+// | 2026-11-23 | Arekkazu | QA-M08 CU02 H-02 RF-104: la descripción se lee completa (filtros y checksum del reporte) |
 import React from 'react';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT, useNombreModulo } from '../../shared/i18n/useT';
@@ -32,11 +35,6 @@ function tipoLabel(tipo: number, catalogo: TipoEvento[]): string {
 function tipoBadge(tipo: number, catalogo: TipoEvento[]) {
   const categoria = catalogo.find((t) => t.id_tipo_evento === tipo)?.categoria;
   return (categoria && BADGE_POR_CATEGORIA[categoria]) ?? 'inactivo';
-}
-
-function truncar(texto: string | undefined, max: number): string {
-  if (!texto) return '—';
-  return texto.length > max ? texto.slice(0, max) + '…' : texto;
 }
 
 function formatFecha(fecha: string): string {
@@ -123,10 +121,11 @@ export function AuditoriaTable({ eventos, loading, onVerificar, tiposEvento }: P
               </td>
               <td
                 headers="th-descripcion"
-                style={{ padding: 'var(--s3) var(--s4)', color: 'var(--text-secondary)', maxWidth: 220, overflowWrap: 'break-word', wordBreak: 'normal' }}
-                title={e.descripcion}
+                style={{ padding: 'var(--s3) var(--s4)', color: 'var(--text-secondary)', minWidth: 220, maxWidth: 320, overflowWrap: 'anywhere' }}
               >
-                {truncar(e.descripcion, 55)}
+                {/* CU02 H-02 (RF-104 CA-15): completa, no cortada a 55 caracteres con el resto solo en un title que el
+                    teclado y el táctil no alcanzan; la de un reporte trae los filtros y el checksum del archivo. */}
+                {e.descripcion || '—'}
               </td>
               <td headers="th-resultado" style={{ padding: 'var(--s3) var(--s4)', whiteSpace: 'nowrap' }}>
                 <Badge variant={e.resultado === 'EXITOSO' || e.resultado === 'EXITO' ? 'activo' : 'eliminado'}>
