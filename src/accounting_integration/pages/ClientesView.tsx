@@ -6,6 +6,7 @@
 // | 2026-11-20 | Arekkazu | A11Y-M07 TC-DIS-271 RF-101: tabla en ScrollRegion y un id por canal en «Solicitudes por minuto» |
 // | 2026-11-22 | Arekkazu | A11Y2-M07 TC-DIS-271..273 RF-101: errores al salir del campo y del backend bajo su campo; estados con ícono |
 // | 2026-11-22 | Arekkazu | USAB2 M810 RF-107: cambiar la credencial se confirma en un diálogo bloqueante |
+// | 2026-11-22 | Arekkazu | SAST RF-101: sin el mapeo client_secret → campo (Bearer CWE-798, falso positivo) |
 import React, { useEffect, useState } from 'react';
 import { Copy, KeyRound, PauseCircle, PencilLine, PlayCircle, Plus, RotateCw, XCircle } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
@@ -138,7 +139,7 @@ function hoyMas(dias: number): string {
 /** Campo del formulario al que va cada error del backend (TC-DIS-271 c). */
 const CAMPOS_CLIENTE = {
   nombre: 'nombre', codigo: 'codigo', identificador_publico: 'clientId', fecha_vencimiento: 'vence', canales: 'canales',
-  ip_permitida: 'ip', ttl_token_canal_minutos: 'ttl', client_secret: 'secreto',
+  ip_permitida: 'ip', ttl_token_canal_minutos: 'ttl',
 };
 const CAMPOS_EDICION = { canales: 'canales', ip_permitida: 'ip', ttl_token_canal_minutos: 'ttl' };
 
@@ -219,7 +220,7 @@ function ClienteModal({ cliente, onCerrar, onRegistrado }: {
           <Input label={t('clientes.client_id_campo')} hint={t('clientes.client_id_ayuda')} value={clientId} onChange={(e) => setClientId(e.target.value)} onBlur={tocar('clientId')} required error={ver('clientId')} />
           <Input label={t('clientes.fecha_vencimiento')} type="date" value={vence} onChange={(e) => setVence(e.target.value)} onBlur={tocar('vence')} required error={ver('vence')} />
           <Input label={t('clientes.secreto_propio')} hint={t('clientes.secreto_propio_ayuda')} type="password" autoComplete="new-password"
-            value={secretoPropio} onChange={(e) => setSecretoPropio(e.target.value)} error={ver('secreto')} />
+            value={secretoPropio} onChange={(e) => setSecretoPropio(e.target.value)} />
         </>}
         <fieldset className="ds-field" style={{ border: 0, padding: 0, margin: 0 }} aria-describedby="cliente-canales-ayuda">
           <legend style={{ fontWeight: 600, marginBottom: 'var(--s2)' }}>{t('clientes.canales')}</legend>
@@ -256,7 +257,7 @@ function RotarModal({ cliente, onCerrar, onRotado }: { cliente: ClienteExterno; 
     motivo: motivo.trim().length >= 3 ? undefined : t('clientes.error_motivo'),
     vence: vence ? undefined : t('clientes.error_vence'),
   };
-  const servidor = errorDeCampo(rotacion.error, { motivo: 'motivo', fecha_vencimiento: 'vence', client_secret: 'secreto' });
+  const servidor = errorDeCampo(rotacion.error, { motivo: 'motivo', fecha_vencimiento: 'vence' });
   const ver = (campo: string) => (tocados.has(campo) ? errores[campo] : undefined) ?? (servidor?.campo === campo ? servidor.mensaje : undefined);
   const tocar = (campo: string) => () => setTocados((x) => new Set(x).add(campo));
   return (
@@ -277,7 +278,7 @@ function RotarModal({ cliente, onCerrar, onRotado }: { cliente: ClienteExterno; 
         <Input label={t('clientes.motivo')} value={motivo} onChange={(e) => setMotivo(e.target.value)} onBlur={tocar('motivo')} required error={ver('motivo')} />
         <Input label={t('clientes.fecha_vencimiento')} type="date" value={vence} onChange={(e) => setVence(e.target.value)} onBlur={tocar('vence')} required error={ver('vence')} />
         <Input label={t('clientes.secreto_propio')} hint={t('clientes.secreto_propio_ayuda')} type="password" autoComplete="new-password"
-          value={secretoPropio} onChange={(e) => setSecretoPropio(e.target.value)} error={ver('secreto')} />
+          value={secretoPropio} onChange={(e) => setSecretoPropio(e.target.value)} />
       </div>
     </ModalShell>
   );
