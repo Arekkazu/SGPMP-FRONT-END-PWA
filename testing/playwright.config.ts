@@ -1,3 +1,6 @@
+// | Fecha      | Nombre      | Que se hizo |
+// |------------|-------------|-------------|
+// | 2026-11-23 | Laura032005 | TC-DIS-282..285 RF-106: URL base configurable con SIGAB_BASE_URL (TEST por defecto) |
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
@@ -43,7 +46,10 @@ export default defineConfig({
 
   use: {
     /* Es buena práctica incluir la diagonal final */
-    baseURL: 'https://api.inmero.co/sigab-test/',
+    // SIGAB_BASE_URL permite correr contra otro ambiente; por defecto, TEST. Para dev, junto con el prefijo de su API:
+    //   MSYS_NO_PATHCONV=1 SIGAB_BASE_URL=https://inmero.co/sigab-dev/ API_PREFIX=/api-sgpmp-dev npx playwright test …
+    // (en Git Bash, sin MSYS_NO_PATHCONV=1 el prefijo se convierte en una ruta de Windows y las simulaciones no aplican).
+    baseURL: process.env.SIGAB_BASE_URL ?? 'https://api.inmero.co/sigab-test/',
     trace: 'on-first-retry',
   },
 
