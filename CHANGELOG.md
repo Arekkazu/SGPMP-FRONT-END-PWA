@@ -7,6 +7,16 @@
 * **rf106-mod8:** consultar del historial diagnostico vuelve a consultar (QA M08 ronda 3) ([4e0a3fd](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4e0a3fd7e03e7da107860a04a6044487435d8693))
 * **rf107-mod8:** ver cola sin conexion, aviso de exito al atender y SIN_CONEXION ante errores de red (QA M08 CU05 H-03, H-04, H-05) ([b9c0387](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b9c03876adbfca15102197367abc164cd4c46060))
 
+## [1.5.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.5.0...v1.5.1) (2026-11-23)
+
+### Bug Fixes
+
+* **rf101-mod7:** quita el mapeo del secreto a su campo que Bearer marcaba como secreto escrito en el codigo (CWE-798) ([1542151](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1542151a146aaa784528435fa827507e84f78446))
+* **rf103-mod8:** panel, reportes, bandeja y avisos accesibles (TC-DIS-277..281, 286..294) ([bd1b0f5](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/bd1b0f5f2b8a9401247e98d39d04546c51b35653))
+* **rf106-mod8:** historial con evento sanitario, retroalimentacion, conflicto, vista y TVCO (TC-DIS-282..285) ([4705339](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/47053395a8011f5e8b2f1e50a26fb23551dcdf3a))
+* **rf107-mod8:** panel de sincronizacion con detalle del conflicto y acciones, y avisos de exito con la plantilla 8.5 (INC-M08-394-G031, INC-M08-384-G025) ([0f42adb](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/0f42adbb3479c32259a66fdcbe41fb34a097d09e)), closes [#734](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/734) [#705](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/705)
+* **rf98-mod7:** versiones, sistemas externos y auditoria de la integracion accesibles (TC-DIS-267..276) ([1de75ac](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/1de75acf59ca9b0d1d6f9c45f7b9a9a4905c9166))
+
 ## [1.5.1-rc.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.5.0...v1.5.1-rc.1) (2026-11-23)
 
 ### Bug Fixes
