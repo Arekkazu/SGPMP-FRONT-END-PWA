@@ -7,6 +7,7 @@
 // | 2026-11-06 | Arekkazu | M07 RF-95..102: Integración contable en el menú (recursos por nombre) |
 // | 2026-11-18 | Arekkazu | M08 RF-104: módulo Reportes, visible con permiso para generar al menos un reporte |
 // | 2026-11-20 | Arekkazu | QA-M08 CU01 H-01 RF-103: muestra la finca elegida en el selector del panel |
+// | 2026-11-23 | Arekkazu | QA-M08 CU01 H-01 (reabierto) RF-103: con otra finca elegida, marca del producto y no la identidad de otra finca |
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -120,16 +121,18 @@ export function Sidebar({ onLogout, open, onNavigate }: SidebarProps) {
   // RF-26: la marca de la finca activa sustituye a la del producto cuando existe.
   // Sin identidad configurada se conserva la de SIGAB, que es el comportamiento previo.
   const { contexto } = useContexto();
-  const identidad = contexto?.identidad_visual ?? null;
+  // La finca elegida en el selector del panel (RF-103 R6), no la que el backend da por defecto. Solo para quien
+  // tiene finca activa propia: el Administrador no tiene y conserva la descripción del producto.
+  const { fincas, idFinca } = useFincaActiva(userInfo?.id_usuario ?? null);
+  const elegida = contexto?.finca_activa ? fincas.find((f) => f.id_finca === idFinca)?.nombre : undefined;
+  // CU01 H-01 (reabierto, Veterinario): la identidad visual del contexto es la de la finca que el backend da por
+  // defecto. Si en el panel se eligió otra, el encabezado no puede mostrar la de esa otra finca: va la del producto.
+  const identidad = elegida && elegida !== contexto?.finca_activa ? null : contexto?.identidad_visual ?? null;
   // M9-09: si el logo no carga se vuelve a la marca por defecto, no a una imagen rota.
   const [logoRoto, setLogoRoto] = React.useState(false);
   React.useEffect(() => setLogoRoto(false), [identidad?.logo_path]);
   const logoUrl = logoRoto ? null : resolverLogoUrl(identidad?.logo_path);
   const nombreOrg = identidad?.org_display_name || t('marca.nombre');
-  // La finca elegida en el selector del panel (RF-103 R6), no la que el backend da por defecto. Solo para quien
-  // tiene finca activa propia: el Administrador no tiene y conserva la descripción del producto.
-  const { fincas, idFinca } = useFincaActiva(userInfo?.id_usuario ?? null);
-  const elegida = contexto?.finca_activa ? fincas.find((f) => f.id_finca === idFinca)?.nombre : undefined;
   const subtitulo = elegida || contexto?.finca_activa || t('marca.descripcion');
 
   const nombreUsuario = userInfo ? capitalizar(`${userInfo.nombre} ${userInfo.apellidos}`) : '';
