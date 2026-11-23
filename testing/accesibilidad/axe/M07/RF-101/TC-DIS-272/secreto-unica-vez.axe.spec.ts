@@ -2,6 +2,7 @@
 // |------------|-------------|-------------------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-272 RF-101: secreto mostrado una sola vez al rotar (copiar, aviso y cierre) |
 // | 2026-11-22 | Laura032005 | TC-DIS-272 RF-101: el título de la pantalla pasó a «Sistemas externos» (1.5.0-rc.1) |
+// | 2026-11-23 | Laura032005 | TC-DIS-272 RF-101: el diálogo de cambio de credencial no se cierra con Escape; se cancela (1.5.1) |
 /**
  * TC-DIS-272 — Verificar accesibilidad WCAG 2.1 AA de la visualización única del client_secret al
  * registrar o rotar (copiar, aviso de no recuperable y cierre) [CRÍTICO]
@@ -48,6 +49,12 @@ test.describe('TC-DIS-272 — Secreto visible una sola vez al rotar la credencia
   test.afterEach(async () => {
     if (!page) return;
     await page.keyboard.press('Escape').catch(() => {});
+    // Desde 1.5.1 el diálogo de cambio de credencial no se cierra con Escape (confirmación crítica): se cancela.
+    const abierto = dialogo(page);
+    if (await abierto.isVisible().catch(() => false)) {
+      await abierto.getByRole('button', { name: /^(Cancelar|Cerrar)$/ }).first().click().catch(() => {});
+      await abierto.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+    }
     await quitarSimulaciones(page);
     await temaOscuro(page, false);
   });
